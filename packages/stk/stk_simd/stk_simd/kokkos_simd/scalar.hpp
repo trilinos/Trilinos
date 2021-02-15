@@ -140,7 +140,7 @@ class simd<T, simd_abi::scalar> {
     copy_from(value.data(), element_aligned_tag());
   }
 #ifdef STK_VOLATILE_SIMD
-  SIMD_ALWAYS_INLINE inline
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline
   simd(simd const volatile& value)
     :m_value(value.m_value)
   {}
@@ -167,7 +167,7 @@ class simd<T, simd_abi::scalar> {
     return simd(m_value + other.m_value);
   }
 #ifdef STK_VOLATILE_SIMD
-  SIMD_ALWAYS_INLINE inline void plus_equals(simd const volatile& other) volatile {
+  SIMD_ALWAYS_INLINE SIMD_HOST_DEVICE inline void plus_equals(simd const volatile& other) volatile {
     m_value = m_value + other.m_value;
   }
 #endif

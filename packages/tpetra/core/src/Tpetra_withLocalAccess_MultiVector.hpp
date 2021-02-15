@@ -169,7 +169,7 @@ namespace Tpetra {
         else {
           using access_mode = typename local_access_type::access_mode;
           constexpr bool is_write_only =
-            std::is_same<access_mode, write_only>::value;
+            std::is_same<access_mode, Access::WriteOnly>::value;
           if (is_write_only) {
             LA.G_.clear_sync_state();
           }
@@ -208,7 +208,7 @@ namespace Tpetra {
           }
 
           constexpr bool is_read_only =
-            std::is_same<access_mode, read_only>::value;
+            std::is_same<access_mode, Access::ReadOnly>::value;
           if (! is_read_only) {
             LA.G_.template modify<execution_space>();
           }
@@ -246,14 +246,14 @@ namespace Tpetra {
     static_assert(
       Kokkos::is_view<
         GetMasterLocalObject<
-          LocalAccess<Tpetra::MultiVector<>, read_only>
+          LocalAccess<Tpetra::MultiVector<>, Access::ReadOnly>
         >::master_local_view_type
       >::value, "Missing GetMasterLocalObject specialization");
 
     static_assert(
       Kokkos::is_view<
         GetMasterLocalObject<
-          LocalAccess<Tpetra::MultiVector<>, Kokkos::HostSpace, read_only>
+          LocalAccess<Tpetra::MultiVector<>, Kokkos::HostSpace, Access::ReadOnly>
         >::master_local_view_type
       >::value, "Missing GetMasterLocalObject specialization");
 
@@ -335,7 +335,7 @@ namespace Tpetra {
         else {
           using access_mode = typename local_access_type::access_mode;
           constexpr bool is_write_only =
-            std::is_same<access_mode, write_only>::value;
+            std::is_same<access_mode, Access::WriteOnly>::value;
           if (is_write_only) {
             LA.G_.clear_sync_state();
           }
@@ -345,7 +345,7 @@ namespace Tpetra {
           }
 
           constexpr bool is_read_only =
-            std::is_same<access_mode, read_only>::value;
+            std::is_same<access_mode, Access::ReadOnly>::value;
           if (! is_read_only) {
             LA.G_.template modify<execution_space>();
           }
@@ -386,14 +386,14 @@ namespace Tpetra {
     static_assert(
       Kokkos::is_view<
         GetMasterLocalObject<
-          LocalAccess<Tpetra::Vector<>, read_only>
+          LocalAccess<Tpetra::Vector<>, Access::ReadOnly>
         >::master_local_view_type
       >::value, "Missing GetMasterLocalObject specialization");
 
     static_assert(
       Kokkos::is_view<
         GetMasterLocalObject<
-          LocalAccess<Tpetra::Vector<>, Kokkos::HostSpace, read_only>
+          LocalAccess<Tpetra::Vector<>, Kokkos::HostSpace, Access::ReadOnly>
         >::master_local_view_type
       >::value, "Missing GetMasterLocalObject specialization");
 
@@ -429,7 +429,7 @@ namespace Tpetra {
       // MV::impl_scalar_type**, where
       // MV = Tpetra::MultiVector<SC, LO, GO, NT>.
       using output_data_type = typename std::conditional<
-        std::is_same<access_mode, read_only>::value,
+        std::is_same<access_mode, Access::ReadOnly>::value,
         typename master_local_view_type::const_data_type,
         typename master_local_view_type::non_const_data_type>::type;
 
@@ -484,7 +484,7 @@ namespace Tpetra {
       // input_view_type::non_const_data_type is V::impl_scalar_type*,
       // where V = Tpetra::Vector<SC, LO, GO, NT>.
       using output_data_type = typename std::conditional<
-        std::is_same<access_mode, read_only>::value,
+        std::is_same<access_mode, Access::ReadOnly>::value,
         typename master_local_view_type::const_data_type,
         typename master_local_view_type::non_const_data_type>::type;
 

@@ -146,14 +146,17 @@ typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Hierarch
 #ifdef MUELU_HIERARCHYUTILS_SHORT
 typedef MueLu::HierarchyUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node> HierarchyUtils;
 #endif
+#ifdef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
+typedef MueLu::InterfaceAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationFactory;
+#endif
 #ifdef MUELU_IFPACK2SMOOTHER_SHORT
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Smoother;
 #endif
 #ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> IndefBlockedDiagonalSmoother;
 #endif
-#ifdef MUELU_INTERFACEAGGREGATIONFACTORY_SHORT
-typedef MueLu::InterfaceAggregationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InterfaceAggregationFactory;
+#ifdef MUELU_INITIALBLOCKNUMBERFACTORY_SHORT
+typedef MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InitialBlockNumberFactory;
 #endif
 #ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
 typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
@@ -370,6 +373,9 @@ typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> UzawaSmooth
 #endif
 #ifdef MUELU_VISUALIZATIONHELPERS_SHORT
 typedef MueLu::VisualizationHelpers<Scalar,LocalOrdinal,GlobalOrdinal,Node> VisualizationHelpers;
+#endif
+#ifdef MUELU_ZEROSUBBLOCKAFACTORY_SHORT
+typedef MueLu::ZeroSubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZeroSubBlockAFactory;
 #endif
 #ifdef MUELU_ZOLTANINTERFACE_SHORT
 typedef MueLu::ZoltanInterface<Scalar,LocalOrdinal,GlobalOrdinal,Node> ZoltanInterface;

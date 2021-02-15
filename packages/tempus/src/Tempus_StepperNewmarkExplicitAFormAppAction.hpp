@@ -15,7 +15,7 @@
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperNewmarkExplicitAForm;
 
 /** \brief Application Action for StepperNewmarkExplicitAForm.
@@ -34,11 +34,11 @@ template<class Scalar> class StepperNewmarkExplicitAForm;
  *  \caption{Newmark Explicit-A with application-action locations indicated.}
  *  \begin{algorithmic}[1]
  *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute displacement and velocity predictors 
+ *    \State Compute displacement and velocity predictors
  *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
  *    \State Form $\ddot{x}_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
  *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_EXPLICIT\_EVAL)}
- *    \State Correct velocity 
+ *    \State Correct velocity
  *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
  *  \end{algorithmic}
  *  \f}

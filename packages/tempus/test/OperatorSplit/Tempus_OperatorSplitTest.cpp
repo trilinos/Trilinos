@@ -52,23 +52,19 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
   // Setup the explicit VanDerPol ModelEvaluator
   RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-  auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+  RCP<const Thyra::ModelEvaluator<double> > explicitModel =
+    rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
   // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-  auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+  RCP<const Thyra::ModelEvaluator<double> > implicitModel =
+    rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
 
-  RCP<Tempus::StepperFactory<double> > sf =
-    Teuchos::rcp(new Tempus::StepperFactory<double>());
-
-  auto subStepper1 =
-    sf->createStepperForwardEuler(explicitModel, Teuchos::null);
-
-  auto subStepper2 =
-    sf->createStepperBackwardEuler(implicitModel, Teuchos::null);
+  auto subStepper1 = Tempus::createStepperForwardEuler(explicitModel, Teuchos::null);
+  auto subStepper2 = Tempus::createStepperBackwardEuler(implicitModel, Teuchos::null);
 
   stepper->addStepper(subStepper1);
   stepper->addStepper(subStepper2);
@@ -79,7 +75,6 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
   ParameterList tscPL = pl->sublist("Demo Integrator")
                            .sublist("Time Step Control");
-  timeStepControl->setStepType (tscPL.get<std::string>("Integrator Step Type"));
   timeStepControl->setInitIndex(tscPL.get<int>   ("Initial Time Index"));
   timeStepControl->setInitTime (tscPL.get<double>("Initial Time"));
   timeStepControl->setFinalTime(tscPL.get<double>("Final Time"));

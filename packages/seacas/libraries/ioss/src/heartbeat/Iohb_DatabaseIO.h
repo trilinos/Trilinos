@@ -45,7 +45,7 @@ namespace Ioss {
 namespace Iohb {
   class Layout;
 
-  enum Format { DEFAULT = 0, SPYHIS = 1, TEXT, TS_TEXT, CSV, TS_CSV };
+  enum class Format { DEFAULT = 0, SPYHIS = 1, TEXT, TS_TEXT, CSV, TS_CSV };
 
   class IOFactory : public Ioss::IOFactory
   {
@@ -191,9 +191,9 @@ namespace Iohb {
     bool        appendOutput{false};
     bool        addTimeField{false};
 
-    bool        initialized_{false};
-    bool        streamNeedsDelete{false};
-    enum Format fileFormat { DEFAULT };
+    bool   initialized_{false};
+    bool   streamNeedsDelete{false};
+    Format fileFormat{Format::DEFAULT};
   };
 } // namespace Iohb
 #endif // IOSS_Iohb_DatabaseIO_h

@@ -9,20 +9,13 @@
 #ifndef Tempus_TimeStepControl_impl_hpp
 #define Tempus_TimeStepControl_impl_hpp
 
-// Teuchos
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-//Step control strategy
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyComposite.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_TimeStepControlStrategyIntegralController.hpp"
 
-//Thyra
-#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 
@@ -38,7 +31,6 @@ TimeStepControl<Scalar>::TimeStepControl()
     finalIndex_         (1000000),
     maxAbsError_        (1.0e-08),
     maxRelError_        (1.0e-08),
-    stepType_           ("Variable"),
     maxFailures_        (10),
     maxConsecFailures_  (5),
     numTimeSteps_       (-1),
@@ -67,7 +59,6 @@ TimeStepControl<Scalar>::TimeStepControl(
   int                 finalIndex,
   Scalar              maxAbsError,
   Scalar              maxRelError,
-  std::string         stepType,
   int                 maxFailures,
   int                 maxConsecFailures,
   int                 numTimeSteps,
@@ -77,8 +68,8 @@ TimeStepControl<Scalar>::TimeStepControl(
   std::vector<Scalar> outputTimes,
   int                 outputIndexInterval,
   Scalar              outputTimeInterval,
-  Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy)
-  : isInitialized_      (false),
+  Teuchos::RCP<TimeStepControlStrategy<Scalar>> stepControlStrategy)
+  : isInitialized_      (false              ),
     initTime_           (initTime           ),
     finalTime_          (finalTime          ),
     minTimeStep_        (minTimeStep        ),
@@ -88,7 +79,6 @@ TimeStepControl<Scalar>::TimeStepControl(
     finalIndex_         (finalIndex         ),
     maxAbsError_        (maxAbsError        ),
     maxRelError_        (maxRelError        ),
-    stepType_           (stepType           ),
     maxFailures_        (maxFailures        ),
     maxConsecFailures_  (maxConsecFailures  ),
     numTimeSteps_       (numTimeSteps       ),
@@ -102,21 +92,14 @@ TimeStepControl<Scalar>::TimeStepControl(
     dtAfterOutput_      (0.0                ),
     stepControlStrategy_(stepControlStrategy)
 {
+  setNumTimeSteps(getNumTimeSteps());
   this->initialize();
 }
 
 
 template<class Scalar>
-void TimeStepControl<Scalar>::initialize()
+void TimeStepControl<Scalar>::initialize() const
 {
-  // Override parameters
-  if (getStepType() == "Constant") {
-    setMinTimeStep( getInitTimeStep() );
-    setMaxTimeStep( getInitTimeStep() );
-  }
-  setNumTimeSteps(getNumTimeSteps());
-
-
   TEUCHOS_TEST_FOR_EXCEPTION(
     (getInitTime() > getFinalTime() ), std::logic_error,
     "Error - Inconsistent time range.\n"
@@ -167,12 +150,37 @@ void TimeStepControl<Scalar>::initialize()
   TEUCHOS_TEST_FOR_EXCEPTION(
     (getStepType() != "Constant" and getStepType() != "Variable"),
     std::out_of_range,
-      "Error - 'Integrator Step Type' does not equal none of these:\n"
+      "Error - 'Step Type' does not equal one of these:\n"
     << "  'Constant' - Integrator will take constant time step sizes.\n"
     << "  'Variable' - Integrator will allow changes to the time step size.\n"
-    << "  stepType = " << getStepType()  << "\n");
+    << "  stepType = " << getStepType() << "\n");
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    (stepControlStrategy_ == Teuchos::null), std::logic_error,
+    "Error - Strategy is unset!\n");
+
+  stepControlStrategy_->initialize();
 
   isInitialized_ = true;   // Only place where this is set to true!
+}
+
+
+template<class Scalar>
+void TimeStepControl<Scalar>::
+printDtChanges(int istep, Scalar dt_old, Scalar dt_new, std::string reason) const
+{
+  if (!getPrintDtChanges()) return;
+
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,0,"printDtChanges");
+
+  std::stringstream message;
+  message << std::scientific
+                   <<std::setw(6)<<std::setprecision(3)<<istep
+    << " *  (dt = "<<std::setw(9)<<std::setprecision(3)<<dt_old
+    <<   ", new = "<<std::setw(9)<<std::setprecision(3)<<dt_new
+    << ")  " << reason << std::endl;
+  *out << message.str();
 }
 
 
@@ -188,7 +196,7 @@ void TimeStepControl<Scalar>::checkInitialized()
 
 
 template<class Scalar>
-void TimeStepControl<Scalar>::getNextTimeStep(
+void TimeStepControl<Scalar>::setNextTimeStep(
   const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
   Status & integratorStatus)
 {
@@ -196,83 +204,72 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
   checkInitialized();
 
-  TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::getNextTimeStep()");
+  TEMPUS_FUNC_TIME_MONITOR("Tempus::TimeStepControl::setNextTimeStep()");
   {
-    RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,0,"getNextTimeStep");
-
-    // Lambda function to report changes to dt.
-    auto changeDT = [] (int istep, Scalar dt_old, Scalar dt_new,
-                        std::string reason)
-    {
-      std::stringstream message;
-      message << std::scientific
-                       <<std::setw(6)<<std::setprecision(3)<<istep
-        << " *  (dt = "<<std::setw(9)<<std::setprecision(3)<<dt_old
-        <<   ", new = "<<std::setw(9)<<std::setprecision(3)<<dt_new
-        << ")  " << reason << std::endl;
-      return message.str();
-    };
-
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     const Scalar lastTime = solutionHistory->getCurrentState()->getTime();
     const int iStep = workingState->getIndex();
-    Scalar dt = workingState->getTimeStep();
+    Scalar dt   = workingState->getTimeStep();
+    Scalar time = workingState->getTime();
     bool output = false;
 
     RCP<StepperState<Scalar> > stepperState = workingState->getStepperState();
 
+    // If last time step was adjusted for output, reinstate previous dt.
     if (getStepType() == "Variable") {
-      // If last time step was adjusted for output, reinstate previous dt.
       if (outputAdjustedDt_ == true) {
-        if (printDtChanges_) *out << changeDT(iStep, dt, dtAfterOutput_,
-          "Reset dt after output.");
+        printDtChanges(iStep, dt, dtAfterOutput_, "Reset dt after output.");
         dt = dtAfterOutput_;
+        time = lastTime + dt;
         outputAdjustedDt_ = false;
         dtAfterOutput_ = 0.0;
       }
 
       if (dt <= 0.0) {
-        if (printDtChanges_) *out << changeDT(iStep, dt, getInitTimeStep(),
-          "Reset dt to initial dt.");
+        printDtChanges(iStep, dt, getInitTimeStep(), "Reset dt to initial dt.");
         dt = getInitTimeStep();
+        time = lastTime + dt;
       }
 
       if (dt < getMinTimeStep()) {
-        if (printDtChanges_) *out << changeDT(iStep, dt, getMinTimeStep(),
-          "Reset dt to minimum dt.");
+        printDtChanges(iStep, dt, getMinTimeStep(), "Reset dt to minimum dt.");
         dt = getMinTimeStep();
+        time = lastTime + dt;
       }
     }
 
-    // update dt for the step control strategy to be informed
+    // Update dt for the step control strategy to be informed
     workingState->setTimeStep(dt);
+    workingState->setTime(time);
 
-    // call the step control strategy (to update dt if needed)
-    stepControlStrategy_->getNextTimeStep(*this, solutionHistory,
-                                         integratorStatus);
+    // Call the step control strategy (to update dt if needed)
+    stepControlStrategy_->setNextTimeStep(*this, solutionHistory,
+                                          integratorStatus);
 
-    // get the dt (probably have changed by stepControlStrategy_)
+    // Get the dt (probably have changed by stepControlStrategy_)
     dt = workingState->getTimeStep();
+    time = workingState->getTime();
 
     if (getStepType() == "Variable") {
       if (dt < getMinTimeStep()) { // decreased below minimum dt
-        if (printDtChanges_) *out << changeDT(iStep, dt, getMinTimeStep(),
+        printDtChanges(iStep, dt, getMinTimeStep(),
           "dt is too small.  Resetting to minimum dt.");
         dt = getMinTimeStep();
+        time = lastTime + dt;
       }
       if (dt > getMaxTimeStep()) { // increased above maximum dt
-        if (printDtChanges_) *out << changeDT(iStep, dt, getMaxTimeStep(),
+        printDtChanges(iStep, dt, getMaxTimeStep(),
           "dt is too large.  Resetting to maximum dt.");
         dt = getMaxTimeStep();
+        time = lastTime + dt;
       }
     }
 
 
     // Check if we need to output this step index
     std::vector<int>::const_iterator it =
-      std::find(outputIndices_.begin(), outputIndices_.end(), iStep);
-    if (it != outputIndices_.end()) output = true;
+      std::find(getOutputIndices().begin(), getOutputIndices().end(), iStep);
+    if (it != getOutputIndices().end()) output = true;
 
     const int iInterval = getOutputIndexInterval();
     if ( (iStep - getInitIndex()) % iInterval == 0) output = true;
@@ -309,19 +306,9 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       const bool outputExactly = getOutputExactly();
       if (getStepType() == "Variable" && outputExactly == true) {
         // Adjust time step to hit output times.
-        if (std::abs((lastTime+dt-oTime)/(lastTime+dt)) < reltol) {
+        if ( time > oTime ) {
           output = true;
-          if (printDtChanges_) *out << changeDT(iStep, dt, oTime - lastTime,
-            "Adjusting dt for numerical roundoff to hit the next output time.");
-          // Next output time IS VERY near next time (<reltol away from it),
-          // e.g., adjust for numerical roundoff.
-          outputAdjustedDt_ = true;
-          dtAfterOutput_ = dt;
-          dt = oTime - lastTime;
-        } else if (lastTime*(1.0+reltol) < oTime &&
-                   oTime < (lastTime+dt-getMinTimeStep())*(1.0+reltol)) {
-          output = true;
-          if (printDtChanges_) *out << changeDT(iStep, dt, oTime - lastTime,
+          printDtChanges(iStep, dt, oTime - lastTime,
             "Adjusting dt to hit the next output time.");
           // Next output time is not near next time
           // (>getMinTimeStep() away from it).
@@ -329,14 +316,26 @@ void TimeStepControl<Scalar>::getNextTimeStep(
           outputAdjustedDt_ = true;
           dtAfterOutput_ = dt;
           dt = oTime - lastTime;
-        } else {
-          if (printDtChanges_) *out << changeDT(iStep, dt, (oTime - lastTime)/2.0,
+          time = lastTime + dt;
+        } else if (std::fabs((time-oTime)/(time)) < reltol) {
+          output = true;
+          printDtChanges(iStep, dt, oTime - lastTime,
+            "Adjusting dt for numerical roundoff to hit the next output time.");
+          // Next output time IS VERY near next time (<reltol away from it),
+          // e.g., adjust for numerical roundoff.
+          outputAdjustedDt_ = true;
+          dtAfterOutput_ = dt;
+          dt = oTime - lastTime;
+          time = lastTime + dt;
+        } else  if (std::fabs((time + getMinTimeStep() - oTime)/oTime) < reltol ) {
+          printDtChanges(iStep, dt, (oTime - lastTime)/2.0,
             "The next output time is within the minimum dt of the next time. "
             "Adjusting dt to take two steps.");
           // Next output time IS near next time
           // (<getMinTimeStep() away from it).
           // Take two time steps to get to next output time.
           dt = (oTime - lastTime)/2.0;
+          time = lastTime + dt;
         }
       } else {
         // Stepping over output time and want this time step for output,
@@ -348,11 +347,14 @@ void TimeStepControl<Scalar>::getNextTimeStep(
 
     // Adjust time step to hit final time or correct for small
     // numerical differences.
-    if ((lastTime + dt > getFinalTime() ) ||
-        (std::abs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
-      if (printDtChanges_) *out << changeDT(iStep, dt, getFinalTime() - lastTime,
-        "Adjusting dt to hit final time.");
-      dt = getFinalTime() - lastTime;
+    if (getStepType() == "Variable") {
+      if ((lastTime + dt > getFinalTime() ) ||
+          (std::fabs((lastTime+dt-getFinalTime())/(lastTime+dt)) < reltol)) {
+        printDtChanges(iStep, dt, getFinalTime() - lastTime,
+          "Adjusting dt to hit final time.");
+        dt = getFinalTime() - lastTime;
+        time = lastTime + dt;
+      }
     }
 
     // Check for negative time step.
@@ -367,31 +369,44 @@ void TimeStepControl<Scalar>::getNextTimeStep(
       << getFinalTime() << "]\n"
       "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      (lastTime + dt > getFinalTime()), std::out_of_range,
-      "Error - Time step move time OUT OF time range.\n"
-      "    [timeMin, timeMax] = [" << getInitTime() << ", "
-      << getFinalTime() << "]\n"
-      "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
+    if (getStepType() == "Variable") {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        (lastTime + dt > getFinalTime()), std::out_of_range,
+        "Error - Time step move time OUT OF time range.\n"
+        "    [timeMin, timeMax] = [" << getInitTime() << ", "
+        << getFinalTime() << "]\n"
+        "    T + dt = " << lastTime <<" + "<< dt <<" = " << lastTime + dt <<"\n");
+    }
 
     workingState->setTimeStep(dt);
-    workingState->setTime(lastTime + dt);
+    workingState->setTime(time);
     workingState->setOutput(output);
   }
   return;
 }
 
 
-/// Test if time is within range: include timeMin and exclude timeMax.
+/// Test if time is within range: include initTime and exclude finalTime.
 template<class Scalar>
-bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const{
-  const Scalar relTol = 1.0e-14;
-  bool tir = (getInitTime()*(1.0-relTol) <= time and
-              time < getFinalTime()*(1.0-relTol));
-  return tir;
+bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const
+{
+  // Get absolute tolerance 1.0e-(i+14), i.e., 14 digits of accuracy.
+  const int relTol = 14;
+  const int i =
+    (getInitTime() == 0) ? 0 : 1 + (int)std::floor(std::log10(std::fabs(getInitTime()) ) );
+  const Scalar absTolInit = std::pow(10, i-relTol);
+  const int j =
+    (getFinalTime() == 0) ? 0 : 1 + (int)std::floor(std::log10(std::fabs(getFinalTime()) ) );
+  const Scalar absTolFinal = std::pow(10, j-relTol);
+
+  const bool test1 = getInitTime() - absTolInit <= time;
+  const bool test2 = time < getFinalTime() - absTolFinal;
+
+  return (test1 and test2);
 }
 
 
+/// Test if index is within range: include initIndex and exclude finalIndex.
 template<class Scalar>
 bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
   bool iir = (getInitIndex() <= iStep and iStep < getFinalIndex());
@@ -402,6 +417,9 @@ bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
 template<class Scalar>
 void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION( getStepType() != "Constant", std::out_of_range,
+      "Error - Can only use setNumTimeSteps() when 'Step Type' == 'Constant'.\n");
+
   if (numTimeSteps >= 0) {
     numTimeSteps_ = numTimeSteps;
     setFinalIndex(getInitIndex() + numTimeSteps_);
@@ -413,15 +431,14 @@ void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps)
     setInitTimeStep(initTimeStep);
     setMinTimeStep (initTimeStep);
     setMaxTimeStep (initTimeStep);
-    setStepType("Constant");
 
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
     Teuchos::OSTab ostab(out,1,"setNumTimeSteps");
-    *out << "Warning - Setting 'Number of Time Steps' = " << getNumTimeSteps()
+    *out << "Warning - setNumTimeSteps() Setting 'Number of Time Steps' = " << getNumTimeSteps()
          << "  Set the following parameters: \n"
          << "  'Final Time Index'     = " << getFinalIndex() << "\n"
          << "  'Initial Time Step'    = " << getInitTimeStep() << "\n"
-         << "  'Integrator Step Type' = " << getStepType() << std::endl;
+         << "  'Step Type'            = " << getStepType() << std::endl;
 
     isInitialized_ = false;
   }
@@ -458,27 +475,27 @@ void TimeStepControl<Scalar>::describe(
     }
 
     out << description() << "::describe:" << std::endl
-        << "initTime           = " << initTime_            << std::endl
-        << "finalTime          = " << finalTime_           << std::endl
-        << "minTimeStep        = " << minTimeStep_         << std::endl
-        << "initTimeStep       = " << initTimeStep_        << std::endl
-        << "maxTimeStep        = " << maxTimeStep_         << std::endl
-        << "initIndex          = " << initIndex_           << std::endl
-        << "finalIndex         = " << finalIndex_          << std::endl
-        << "maxAbsError        = " << maxAbsError_         << std::endl
-        << "maxRelError        = " << maxRelError_         << std::endl
-        << "stepType           = " << stepType_            << std::endl
-        << "maxFailures        = " << maxFailures_         << std::endl
-        << "maxConsecFailures  = " << maxConsecFailures_   << std::endl
-        << "numTimeSteps       = " << numTimeSteps_        << std::endl
-        << "printDtChanges     = " << printDtChanges_      << std::endl
-        << "outputExactly      = " << outputExactly_       << std::endl
-        << "outputIndices      = " << listIdx.str()        << std::endl
-        << "outputTimes        = " << listTimes.str()      << std::endl
-        << "outputIndexInterval= " << outputIndexInterval_ << std::endl
-        << "outputTimeInterval = " << outputTimeInterval_  << std::endl
-        << "outputAdjustedDt   = " << outputAdjustedDt_    << std::endl
-        << "dtAfterOutput      = " << dtAfterOutput_       << std::endl
+        << "stepType           = " << getStepType()            << std::endl
+        << "initTime           = " << getInitTime()            << std::endl
+        << "finalTime          = " << getFinalTime()           << std::endl
+        << "minTimeStep        = " << getMinTimeStep()         << std::endl
+        << "initTimeStep       = " << getInitTimeStep()        << std::endl
+        << "maxTimeStep        = " << getMaxTimeStep()         << std::endl
+        << "initIndex          = " << getInitIndex()           << std::endl
+        << "finalIndex         = " << getFinalIndex()          << std::endl
+        << "maxAbsError        = " << getMaxAbsError()         << std::endl
+        << "maxRelError        = " << getMaxRelError()         << std::endl
+        << "maxFailures        = " << getMaxFailures()         << std::endl
+        << "maxConsecFailures  = " << getMaxConsecFailures()   << std::endl
+        << "numTimeSteps       = " << getNumTimeSteps()        << std::endl
+        << "printDtChanges     = " << getPrintDtChanges()      << std::endl
+        << "outputExactly      = " << getOutputExactly()       << std::endl
+        << "outputIndices      = " << listIdx.str()            << std::endl
+        << "outputTimes        = " << listTimes.str()          << std::endl
+        << "outputIndexInterval= " << getOutputIndexInterval() << std::endl
+        << "outputTimeInterval = " << getOutputTimeInterval()  << std::endl
+        << "outputAdjustedDt   = " << outputAdjustedDt_        << std::endl
+        << "dtAfterOutput      = " << dtAfterOutput_           << std::endl
         << "stepControlSrategy = " << std::endl;
         stepControlStrategy_->describe(out, verbLevel);
   }
@@ -489,14 +506,14 @@ template<class Scalar>
 void TimeStepControl<Scalar>::setTimeStepControlStrategy(
   Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
 {
+  using Teuchos::rcp;
+
   if ( tscs != Teuchos::null ) {
     stepControlStrategy_ = tscs;
-    //stepControlStrategy_->addStrategy(tscs);
   } else {
-    stepControlStrategy_ = Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
-    //stepControlStrategy_ = Teuchos::rcp(new TimeStepControlStrategy<Scalar>());
+    stepControlStrategy_ =
+      rcp(new TimeStepControlStrategyConstant<Scalar>(getInitTimeStep()));
   }
-
   isInitialized_ = false;
 }
 
@@ -505,7 +522,7 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 TimeStepControl<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
+  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList("Time Step Control");
 
   pl->set<double>("Initial Time"          , getInitTime()    , "Initial time");
   pl->set<double>("Final Time"            , getFinalTime()   , "Final time");
@@ -519,16 +536,9 @@ TimeStepControl<Scalar>::getValidParameters() const
     "on the fly given the size of the time domain.  Overides and resets\n"
     "  'Final Time Index'     = 'Initial Time Index' + 'Number of Time Steps'\n"
     "  'Initial Time Step'    = "
-    "('Final Time' - 'Initial Time')/'Number of Time Steps'\n"
-    "  'Integrator Step Type' = 'Constant'\n");
+    "('Final Time' - 'Initial Time')/'Number of Time Steps'\n");
   pl->set<double>("Maximum Absolute Error", getMaxAbsError() , "Maximum absolute error");
   pl->set<double>("Maximum Relative Error", getMaxRelError() , "Maximum relative error");
-
-  pl->set<std::string>("Integrator Step Type", getStepType(),
-    "'Integrator Step Type' indicates whether the Integrator will allow "
-    "the time step to be modified.\n"
-    "  'Constant' - Integrator will take constant time step sizes.\n"
-    "  'Variable' - Integrator will allow changes to the time step size.\n");
 
   pl->set<bool>  ("Print Time Step Changes", getPrintDtChanges(),
     "Print timestep size when it changes");
@@ -568,9 +578,7 @@ TimeStepControl<Scalar>::getValidParameters() const
   pl->set<int>   ("Maximum Number of Consecutive Stepper Failures", getMaxConsecFailures(),
     "Maximum number of consecutive Stepper failures");
 
-  Teuchos::RCP<Teuchos::ParameterList> tscsPL = Teuchos::parameterList("Time Step Control Strategy");
-  tscsPL->set<std::string>("Time Step Control Strategy List","");
-  pl->set("Time Step Control Strategy", *tscsPL);
+  pl->set("Time Step Control Strategy", *stepControlStrategy_->getValidParameters());
 
   return pl;
 }
@@ -580,7 +588,7 @@ TimeStepControl<Scalar>::getValidParameters() const
 // ------------------------------------------------------------------------
 template <class Scalar>
 Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
-  Teuchos::RCP<Teuchos::ParameterList> const& pList)
+  Teuchos::RCP<Teuchos::ParameterList> const& pList, bool runInitialize)
 {
   using Teuchos::RCP;
   using Teuchos::ParameterList;
@@ -599,7 +607,6 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
   tsc->setFinalIndex(       pList->get<int>   ("Final Time Index"));
   tsc->setMaxAbsError(      pList->get<double>("Maximum Absolute Error"));
   tsc->setMaxRelError(      pList->get<double>("Maximum Relative Error"));
-  tsc->setStepType(         pList->get<std::string>("Integrator Step Type"));
   tsc->setMaxFailures(      pList->get<int>   ("Maximum Number of Stepper Failures"));
   tsc->setMaxConsecFailures(pList->get<int>   ("Maximum Number of Consecutive Stepper Failures"));
   tsc->setPrintDtChanges(   pList->get<bool>  ("Print Time Step Changes"));
@@ -624,18 +631,12 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
       pos = str.find_first_of(delimiters, lastPos);
     }
 
-    int outputIndexInterval = pList->get<int>("Output Index Interval");
-    tsc->setOutputIndexInterval(outputIndexInterval);
-    Scalar output_i = tsc->getInitIndex();
-    while (output_i <= tsc->getFinalIndex()) {
-      outputIndices.push_back(output_i);
-      output_i += outputIndexInterval;
-    }
-
     // order output indices
     std::sort(outputIndices.begin(),outputIndices.end());
     tsc->setOutputIndices(outputIndices);
   }
+
+  tsc->setOutputIndexInterval(pList->get<int>("Output Index Interval"));
 
   // Parse output times
   {
@@ -660,68 +661,48 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
     // order output times
     std::sort(outputTimes.begin(),outputTimes.end());
     outputTimes.erase(std::unique(outputTimes.begin(),
-                                   outputTimes.end()   ),
-                                   outputTimes.end()     );
+                                  outputTimes.end()   ),
+                                  outputTimes.end()     );
     tsc->setOutputTimes(outputTimes);
   }
 
   tsc->setOutputTimeInterval(pList->get<double>("Output Time Interval"));
 
-  // set the time step control strategy
-  auto stepControlStrategy =
-    Teuchos::rcp(new TimeStepControlStrategyComposite<Scalar>());
 
-  if (tsc->getStepType() == "Constant") {
-     stepControlStrategy->addStrategy(
-       Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>()));
-  } else if (tsc->getStepType() == "Variable") {
-     // add TSCS from "Time Step Control Strategy List"
+  if ( !pList->isParameter("Time Step Control Strategy") ) {
 
-     RCP<ParameterList> tscsPL =
-       Teuchos::sublist(pList, "Time Step Control Strategy", true);
-     // Construct from TSCS sublist
-     std::vector<std::string> tscsLists;
+    tsc->setTimeStepControlStrategy();  // i.e, set default Constant timestep strategy.
 
-     // string tokenizer
-     tscsLists.clear();
-     std::string str = tscsPL->get<std::string>("Time Step Control Strategy List");
-     std::string delimiters(",");
-     // Skip delimiters at the beginning
-     std::string::size_type lastPos = str.find_first_not_of(delimiters, 0);
-     // Find the first delimiter
-     std::string::size_type pos     = str.find_first_of(delimiters, lastPos);
-     while ((pos != std::string::npos) || (lastPos != std::string::npos)) {
-        // Found a token, add it to the vector
-        std::string token = str.substr(lastPos,pos-lastPos);
-        tscsLists.push_back(token);
-        if(pos==std::string::npos) break;
+  } else {
 
-        lastPos = str.find_first_not_of(delimiters, pos); // Skip delimiters
-        pos = str.find_first_of(delimiters, lastPos);     // Find next delimiter
-     }
+    RCP<ParameterList> tscsPL =
+      Teuchos::sublist(pList, "Time Step Control Strategy", true);
 
-     // For each sublist name tokenized, add the TSCS
-     for( auto el: tscsLists){
-
-        RCP<ParameterList> pl =
-           Teuchos::rcp(new ParameterList(tscsPL->sublist(el)));
-
-        RCP<TimeStepControlStrategy<Scalar>> ts;
-
-        // construct appropriate TSCS
-        if(pl->get<std::string>("Name") == "Integral Controller")
-           ts = Teuchos::rcp(new TimeStepControlStrategyIntegralController<Scalar>(pl));
-        else if(pl->get<std::string>("Name") == "Basic VS")
-           ts = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>(pl));
-
-        stepControlStrategy->addStrategy(ts);
-     }
+    auto strategyType = tscsPL->get<std::string>("Strategy Type");
+    if (strategyType == "Constant") {
+      tsc->setTimeStepControlStrategy(
+        createTimeStepControlStrategyConstant<Scalar>(tscsPL));
+    } else if (strategyType == "Basic VS") {
+      tsc->setTimeStepControlStrategy(
+        createTimeStepControlStrategyBasicVS<Scalar>(tscsPL));
+    } else if (strategyType == "Integral Controller") {
+      tsc->setTimeStepControlStrategy(
+        createTimeStepControlStrategyIntegralController<Scalar>(tscsPL));
+    } else if (strategyType == "Composite") {
+      tsc->setTimeStepControlStrategy(
+        createTimeStepControlStrategyComposite<Scalar>(tscsPL));
+    } else {
+      RCP<Teuchos::FancyOStream> out =
+        Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      Teuchos::OSTab ostab(out,1, "createTimeStepControl()");
+      *out << "Warning -- Did not find a Tempus strategy to create!\n"
+           << "'Strategy Type' = '" << strategyType << "'\n"
+           << "Should call setTimeStepControlStrategy() with this\n"
+           << "(app-specific?) strategy, and initialize().\n" << std::endl;
+    }
   }
 
-  tsc->setTimeStepControlStrategy(stepControlStrategy);
-
-  tsc->initialize();
-
+  if (runInitialize) tsc->initialize();
   return tsc;
 }
 

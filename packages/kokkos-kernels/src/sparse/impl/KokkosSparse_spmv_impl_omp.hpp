@@ -47,7 +47,6 @@ namespace Impl {
 #ifdef KOKKOS_ENABLE_OPENMP
 template<typename AMatrix, typename XVector, typename YVector>
 void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatrix A, XVector x, typename YVector::const_value_type& s_b, YVector y) {
-
   typedef typename YVector::non_const_value_type value_type;
   typedef typename AMatrix::ordinal_type         ordinal_type;
   typedef typename AMatrix::non_const_size_type            size_type;

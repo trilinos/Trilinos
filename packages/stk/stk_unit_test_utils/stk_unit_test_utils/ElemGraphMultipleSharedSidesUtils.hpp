@@ -244,7 +244,7 @@ inline void test_element_death_with_multiple_shared_sides(stk::mesh::BulkData& b
     stk::mesh::impl::ParallelSelectedInfo remoteActiveSelector;
     stk::mesh::impl::populate_selected_value_for_remote_elements(bulkData, bulkData.get_face_adjacent_element_graph(), activePart, remoteActiveSelector);
 
-    process_killed_elements(bulkData, bulkData.get_face_adjacent_element_graph(), get_killed_elements(bulkData), activePart, remoteActiveSelector, {&activePart, &skinPart});
+    process_killed_elements(bulkData, get_killed_elements(bulkData), activePart, remoteActiveSelector, {&activePart, &skinPart});
     test_total_sides_and_sides_per_element(bulkData, 2u, {2u, 2u});
 }
 

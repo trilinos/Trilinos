@@ -1,5 +1,7 @@
-#include <gtest/gtest.h>
-#include <stk_util/util/StkNgpVector.hpp>
+#include "gtest/gtest.h"
+#include "stk_util/util/StkNgpVector.hpp"  // for NgpVector, NgpVector<>::DeviceType
+#include <cstddef>                         // for size_t
+#include <string>                          // for string
 
 namespace {
 

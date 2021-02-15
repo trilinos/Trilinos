@@ -23,7 +23,7 @@ namespace KokkosBatched {
     KOKKOS_INLINE_FUNCTION
     static int
     invoke(const MemberType &member,
-	   const int m, 
+	   const int m, const int n, 
            const int k, 
            /* */ ValueType * A, const int as0, const int as1,
            /* */ ValueType * t, const int ts,
@@ -44,12 +44,12 @@ namespace KokkosBatched {
       if (is_Q_zero)
         TeamVectorSetInternal::invoke(member, m, value_type(1), Q, qs0+qs1);
       else
-        TeamVectorSetIdentityInternal::invoke(member, m, Q, qs0, qs1);
+        TeamVectorSetIdentityInternal::invoke(member, m, n, Q, qs0, qs1);
       member.team_barrier();
       
       return TeamVectorApplyQ_LeftForwardInternal
         ::invoke(member,
-		 m, m, k,
+		 m, n, k,
                  A, as0, as1, 
                  t, ts,
                  Q, qs0, qs1,

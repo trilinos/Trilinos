@@ -68,13 +68,7 @@ int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
   else if (strncmp(elem_blk_parm->elem_type, "QUAD", 3) == 0) {
     elem_blk_parm->elem_type_val = EX_EL_QUAD;
     elem_blk_parm->num_sides     = 4;
-    if (elem_blk_parm->num_nodes_per_elem == 4) {
-      elem_blk_parm->num_nodes_per_side[0] = 2;
-      elem_blk_parm->num_nodes_per_side[1] = 2;
-      elem_blk_parm->num_nodes_per_side[2] = 2;
-      elem_blk_parm->num_nodes_per_side[3] = 2;
-    }
-    else if (elem_blk_parm->num_nodes_per_elem == 5) {
+    if (elem_blk_parm->num_nodes_per_elem == 4 || elem_blk_parm->num_nodes_per_elem == 5) {
       elem_blk_parm->num_nodes_per_side[0] = 2;
       elem_blk_parm->num_nodes_per_side[1] = 2;
       elem_blk_parm->num_nodes_per_side[2] = 2;
@@ -162,15 +156,8 @@ int ex__get_block_param(int exoid, ex_entity_id id, int ndim,
     elem_blk_parm->elem_type_val = EX_EL_HEX;
     elem_blk_parm->num_sides     = 6;
     /* determine side set node stride */
-    if (elem_blk_parm->num_nodes_per_elem == 8) { /* 8-node bricks */
-      elem_blk_parm->num_nodes_per_side[0] = 4;
-      elem_blk_parm->num_nodes_per_side[1] = 4;
-      elem_blk_parm->num_nodes_per_side[2] = 4;
-      elem_blk_parm->num_nodes_per_side[3] = 4;
-      elem_blk_parm->num_nodes_per_side[4] = 4;
-      elem_blk_parm->num_nodes_per_side[5] = 4;
-    }
-    else if (elem_blk_parm->num_nodes_per_elem == 9) { /* 9-node bricks */
+    if (elem_blk_parm->num_nodes_per_elem == 8 ||
+        elem_blk_parm->num_nodes_per_elem == 9) { /* 8/9-node bricks */
       elem_blk_parm->num_nodes_per_side[0] = 4;
       elem_blk_parm->num_nodes_per_side[1] = 4;
       elem_blk_parm->num_nodes_per_side[2] = 4;

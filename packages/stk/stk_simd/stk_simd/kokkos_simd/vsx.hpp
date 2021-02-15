@@ -199,30 +199,22 @@ SIMD_ALWAYS_INLINE inline simd<float, simd_abi::vsx> choose(
 
 template <>
 class simd_mask<double, simd_abi::vsx> {
-  /* Note: ideally, __vector __bool long would be the thing to use here.
-   * however, GCC is missing key functions like vec_and for __vector __bool long.
-   * that is why we use __vector unsigned long instead and convert back and forth
-   */
-  using ideal_type = __vector __bool long;
-  using supported_type = __vector unsigned long;
-  supported_type m_value;
-  using ulong_t = unsigned long;
+  __vector __bool long long m_value;
+  using ll_t = long long;
+  using ull_t = unsigned long long;
  public:
   using value_type = bool;
   using simd_type = simd_mask<double, simd_abi::vsx>;
   using abi_type = simd_abi::vsx;
   SIMD_ALWAYS_INLINE inline simd_mask() = default;
   SIMD_ALWAYS_INLINE inline simd_mask(bool value)
-    :m_value{ulong_t(-long(value)), ulong_t(-long(value))}
+    :m_value{ull_t(-ll_t(value)), ull_t(-ll_t(value))}
   {}
   SIMD_ALWAYS_INLINE inline static constexpr int size() { return 2; }
-  SIMD_ALWAYS_INLINE inline constexpr simd_mask(ideal_type const& value_in)
-    :m_value(supported_type(value_in))
-  {}
-  SIMD_ALWAYS_INLINE inline constexpr simd_mask(supported_type const& value_in)
+  SIMD_ALWAYS_INLINE inline constexpr simd_mask(__vector __bool long long const& value_in)
     :m_value(value_in)
   {}
-  SIMD_ALWAYS_INLINE inline constexpr supported_type get() const { return m_value; }
+  SIMD_ALWAYS_INLINE inline constexpr __vector __bool long long get() const { return m_value; }
   SIMD_ALWAYS_INLINE inline simd_mask operator||(simd_mask const& other) const {
     return simd_mask(vec_or(m_value, other.m_value));
   }

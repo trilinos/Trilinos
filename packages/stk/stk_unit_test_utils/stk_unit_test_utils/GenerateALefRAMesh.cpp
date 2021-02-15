@@ -159,18 +159,21 @@ void populate_AA_sideset(stk::mesh::BulkData& bulk,
     ThrowRequire(elem.size() == ordinal.size());
 
     stk::mesh::SideSet& sideSet = bulk.create_sideset(*parts[0]);
+    sideSet.set_accept_all_internal_non_coincident_entries(false);
     for (unsigned i = 0; i < elem.size(); ++i) {
         sideSet.add( { bulk.get_entity(stk::topology::ELEMENT_RANK, elem[i]),
                 ordinal[i] });
     }
 
-    bulk.create_side_entities(sideSet, parts);
     stk::mesh::Part* block_1 = meta.get_part("block_1");
     EXPECT_TRUE(block_1 != nullptr);
 
     meta.set_part_id(*block_1, 1);
     std::vector<const stk::mesh::Part*> touchingParts { block_1 };
     meta.set_surface_to_block_mapping(parts[0], touchingParts);
+
+    // tookusa: Order is important for the incremental sideset updater ... surface to block mapping must be set first
+    bulk.create_side_entities(sideSet, parts);
 }
 
 stk::mesh::Part* create_AA_mesh_with_sideset(stk::mesh::BulkData &bulk,
@@ -220,15 +223,13 @@ void populate_AB_sideset(stk::mesh::BulkData& bulk,
     ThrowRequire(elem.size() == ordinal.size());
 
     stk::mesh::SideSet &sideSet = bulk.create_sideset(*parts[0]);
-
+    sideSet.set_accept_all_internal_non_coincident_entries(false);
     for(unsigned i=0; i<elem.size(); ++i) {
         const stk::mesh::Entity element = bulk.get_entity(stk::topology::ELEMENT_RANK, elem[i]);
         if (bulk.is_valid(element)) {
             sideSet.add({element, ordinal[i]});
         }
     }
-
-    bulk.create_side_entities(sideSet, parts);
 
     stk::mesh::Part* block_1 = meta.get_part("block_1");
     EXPECT_TRUE(block_1 != nullptr);
@@ -258,6 +259,9 @@ void populate_AB_sideset(stk::mesh::BulkData& bulk,
         touchingParts = {block_2};
         meta.set_surface_to_block_mapping(parts[2], touchingParts);
     }
+
+    // tookusa: Order is important for the incremental sideset updater ... surface to block mapping must be set first
+    bulk.create_side_entities(sideSet, parts);
 }
 
 stk::mesh::Part* create_AB_mesh_with_sideset(stk::mesh::BulkData &bulk,
@@ -339,12 +343,16 @@ stk::mesh::Part* create_AB_mesh_with_sideset_and_distribution_factors(stk::mesh:
     stk::mesh::Part* sidePart = parts[0];
     ThrowRequire(nullptr != sidePart);
     const unsigned numberOfStates = 1;
-    stk::mesh::Field<double> & ssField = meta.declare_field<stk::mesh::Field<double>>(stk::topology::FACE_RANK, fieldName, numberOfStates);
+    stk::mesh::Field<double,shards::ArrayDimension> & ssField = meta.declare_field<stk::mesh::Field<double,shards::ArrayDimension>>(stk::topology::FACE_RANK, fieldName, numberOfStates);
     for (stk::mesh::Part* part : parts)
     {
       stk::io::set_distribution_factor_field(*part, ssField);
     }
-    stk::mesh::put_field_on_mesh(ssField, *sidePart, &initValue);
+    stk::topology sideTopo = sidePart->topology();
+    ThrowRequireMsg(sideTopo != stk::topology::INVALID_TOPOLOGY, "sidePart "<<sidePart->name()<<" has invalid topology.");
+    unsigned numNodes = sideTopo.num_nodes();
+    std::vector<double> initValVec(numNodes, initValue);
+    stk::mesh::put_field_on_mesh(ssField, *sidePart, numNodes, initValVec.data());
 
     create_AB_mesh(bulk, elemOrdering);
 

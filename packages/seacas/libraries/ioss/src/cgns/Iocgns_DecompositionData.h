@@ -11,13 +11,13 @@
 #include <string>
 #include <vector>
 
-#define USE_ROBIN
-#if defined USE_STD
+#define CG_USE_ROBIN
+#if defined CG_USE_STD
 #include <unordered_map>
-#elif defined USE_HOPSCOTCH
-#include <hash/bhopscotch_map.h>
-#elif defined USE_ROBIN
-#include <hash/robin_map.h>
+#elif defined CG_USE_HOPSCOTCH
+#include <bhopscotch_map.h>
+#elif defined CG_USE_ROBIN
+#include <robin_map.h>
 #endif
 
 #include <cstddef>
@@ -113,12 +113,12 @@ namespace Iocgns {
 
     // Maps nodes shared between zones.
     // TODO: Currently each processor has same map; need to figure out how to reduce size
-#if defined USE_STD
+#if defined CG_USE_STD
     using ZoneSharedMap = std::unordered_map<cgsize_t, cgsize_t>;
-#elif defined USE_HOPSCOTCH
+#elif defined CG_USE_HOPSCOTCH
     //    using ZoneSharedMap = tsl::hopscotch_map<cgsize_t, cgsize_t>;
     using ZoneSharedMap = tsl::bhopscotch_map<cgsize_t, cgsize_t>;
-#elif defined USE_ROBIN
+#elif defined CG_USE_ROBIN
     using ZoneSharedMap = tsl::robin_map<cgsize_t, cgsize_t>;
 #endif
     ZoneSharedMap m_zoneSharedMap;

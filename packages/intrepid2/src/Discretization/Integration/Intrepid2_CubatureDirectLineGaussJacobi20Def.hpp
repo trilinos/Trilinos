@@ -48,10 +48,10 @@
 
 namespace Intrepid2 {
 
-  template <typename SpT, typename PT, typename WT>
-  CubatureDirectLineGaussJacobi20<SpT,PT,WT>::
+  template <typename DT, typename PT, typename WT>
+  CubatureDirectLineGaussJacobi20<DT,PT,WT>::
   CubatureDirectLineGaussJacobi20(const ordinal_type degree)
-    : CubatureDirect<SpT>(degree, 1) {
+    : CubatureDirect<DT>(degree, 1) {
     
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 ||
                                   degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreePyr), std::out_of_range,
@@ -68,12 +68,12 @@ namespace Intrepid2 {
                                           pointRange.second,
                                           Parameters::MaxDimension);
 
-      auto points = Kokkos::create_mirror_view(typename SpT::memory_space(), points_host);
+      auto points = Kokkos::create_mirror_view(typename DT::memory_space(), points_host);
 
       Kokkos::deep_copy(points,points_host);
 
       // dst
-      this->cubatureData_.points_ = Kokkos::DynRankView<PT,SpT>("CubatureDirectLineGaussJacobi20::cubatureData_::points_",
+      this->cubatureData_.points_ = Kokkos::DynRankView<PT,DT>("CubatureDirectLineGaussJacobi20::cubatureData_::points_",
                                                                 pointRange.second,
                                                                 Parameters::MaxDimension);
       // copy
@@ -85,7 +85,7 @@ namespace Intrepid2 {
                                        pointRange.second);
 
       // dst
-      this->cubatureData_.weights_ = Kokkos::DynRankView<WT,SpT>("CubatureDirectLineGaussJacobi20::cubatureData_::weights_",
+      this->cubatureData_.weights_ = Kokkos::DynRankView<WT,DT>("CubatureDirectLineGaussJacobi20::cubatureData_::weights_",
                                                                  pointRange.second);
       // copy
       Kokkos::deep_copy(Kokkos::subdynrankview(this->cubatureData_.weights_, Kokkos::ALL()) , Kokkos::subdynrankview(weights, Kokkos::ALL()));
@@ -106,9 +106,9 @@ namespace Intrepid2 {
   /*
     This static const member contains templates for GaussJacobi20(-Legendre) rules.
   */
-  template<typename SpT, typename PT, typename WT>
-  const typename CubatureDirect<SpT,PT,WT>::CubatureDataStatic
-  CubatureDirectLineGaussJacobi20<SpT,PT,WT>::
+  template<typename DT, typename PT, typename WT>
+  const typename CubatureDirect<DT,PT,WT>::CubatureDataStatic
+  CubatureDirectLineGaussJacobi20<DT,PT,WT>::
   cubatureDataStatic_[cubatureDataStaticSize] = {
     // Collection of GaussJacobi20 rules on [-1,1]
     // The rule with array index i is exact for polynomials up to order i

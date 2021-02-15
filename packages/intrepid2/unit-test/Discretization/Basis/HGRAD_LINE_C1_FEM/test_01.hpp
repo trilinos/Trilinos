@@ -73,7 +73,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int HGRAD_LINE_C1_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -86,7 +86,8 @@ namespace Intrepid2 {
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
+      
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -110,7 +111,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -120,7 +121,7 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> lineBasis;
+      Basis_HGRAD_LINE_C1_FEM<DeviceType,outputValueType,pointValueType> lineBasis;
       //typedef typename decltype(lineBasis)::OutputViewType OutputViewType;
       //typedef typename decltype(lineBasis)::PointViewType  PointViewType;
 
@@ -312,7 +313,7 @@ namespace Intrepid2 {
           { {-0.5}, {0.5} }
         };
 
-        Basis_HGRAD_LINE_C1_FEM<DeviceSpaceType> lineBasis;
+        Basis_HGRAD_LINE_C1_FEM<DeviceType> lineBasis;
 
         // Define array containing the 2 vertices of the reference Line, its center and another point
         DynRankViewHost ConstructWithLabel(lineNodesHost, 4, 1);
@@ -321,7 +322,7 @@ namespace Intrepid2 {
         lineNodesHost(2,0) =   0.0;
         lineNodesHost(3,0) =   0.5;
 
-        const auto lineNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lineNodesHost);
+        const auto lineNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lineNodesHost);
         Kokkos::deep_copy(lineNodes, lineNodesHost);
 
         // Generic array for the output values; needs to be properly resized depending on the operator type

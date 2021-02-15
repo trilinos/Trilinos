@@ -79,7 +79,7 @@ namespace {
         stk::mesh::MetaData& meta = bulk.mesh_meta_data();
         stk::mesh::EntityVector entities;
         stk::mesh::Selector entitySelector = meta.locally_owned_part() & rootTopologyPart;
-        stk::mesh::get_selected_entities(entitySelector, bulk.buckets(rank), entities);
+        stk::mesh::get_entities(bulk, rank, entitySelector, entities);
         std::vector<stk::mesh::PartVector> addParts;
         std::vector<stk::mesh::PartVector> removeParts;
         for(stk::mesh::Entity entity : entities)
@@ -116,7 +116,7 @@ namespace {
         ThrowRequireMsg(colorField != nullptr, "Root topology part not supported, created after I/O for topology " << rootTopologyPart.topology().name());
 
         stk::mesh::EntityVector entities;
-        stk::mesh::get_selected_entities(rootTopologyPart, bulk.buckets(rank), entities);
+        stk::mesh::get_entities(bulk, rank, rootTopologyPart, entities);
         for(stk::mesh::Entity entity : entities)
         {
             if(localIds.does_entity_have_local_id(entity))

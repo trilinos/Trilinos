@@ -158,6 +158,16 @@ int ex_open_par_int(const char *path, int mode, int *comp_ws, int *io_ws, float 
 
   if (mode & EX_WRITE) {
     nc_mode = (NC_WRITE | NC_MPIIO);
+#if NC_HAS_HDF5
+    if (mode & EX_NETCDF4) {
+      nc_mode |= NC_NETCDF4;
+    }
+#endif
+#if NC_HAS_CDF5
+    if (mode & EX_64BIT_DATA) {
+      nc_mode |= NC_64BIT_DATA;
+    }
+#endif
   }
   else {
     nc_mode = (NC_NOWRITE | NC_SHARE | NC_MPIIO);

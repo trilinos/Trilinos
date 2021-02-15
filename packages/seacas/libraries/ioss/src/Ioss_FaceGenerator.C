@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,10 +18,12 @@
 #include <Ioss_Region.h>
 
 #include <algorithm>
+#include <numeric>
 #include <chrono>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #include <functional>
+#include <numeric>
 #include <random>
 #include <utility>
 
@@ -274,7 +276,7 @@ namespace {
         conn[3]            = check_faces[i + 4];
         size_t     element = check_faces[i + 5];
         Ioss::Face face(id, conn);
-        auto       face_iter = faces.find(face);
+        auto       face_iter = faces.find(face, face.hashId_);
         if (face_iter != faces.end()) {
           // we have a match... This is a shared interior face
           (*face_iter).add_element(element); // Already has face multiplied in.
@@ -358,11 +360,11 @@ namespace Ioss {
     std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 #if DO_TIMING
-    auto starth = std::chrono::high_resolution_clock::now();
+    auto starth = std::chrono::steady_clock::now();
 #endif
     hash_node_ids(ids);
 #if DO_TIMING
-    auto endh = std::chrono::high_resolution_clock::now();
+    auto endh = std::chrono::steady_clock::now();
 #endif
 
     const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
@@ -375,7 +377,7 @@ namespace Ioss {
     }
 
 #if DO_TIMING
-    auto endf = std::chrono::high_resolution_clock::now();
+    auto endf = std::chrono::steady_clock::now();
 #endif
     size_t face_count = 0;
     for (auto eb : ebs) {
@@ -383,7 +385,7 @@ namespace Ioss {
       face_count += faces_[eb->name()].size();
     }
 #if DO_TIMING
-    auto endp  = std::chrono::high_resolution_clock::now();
+    auto endp  = std::chrono::steady_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
     fmt::print("Node ID hash time:   \t{:.6n} ms\t{:12n} nodes/second\n"
@@ -415,11 +417,11 @@ namespace Ioss {
     std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 #if DO_TIMING
-    auto starth = std::chrono::high_resolution_clock::now();
+    auto starth = std::chrono::steady_clock::now();
 #endif
     hash_node_ids(ids);
 #if DO_TIMING
-    auto endh = std::chrono::high_resolution_clock::now();
+    auto endh = std::chrono::steady_clock::now();
 #endif
 
     auto & my_faces = faces_["ALL"];
@@ -433,16 +435,16 @@ namespace Ioss {
     }
 
 #if DO_TIMING
-    auto endf = std::chrono::high_resolution_clock::now();
+    auto endf = std::chrono::steady_clock::now();
 #endif
     resolve_parallel_faces(region_, my_faces, hashIds_, (INT)0);
 
 #if DO_TIMING
-    auto endp  = std::chrono::high_resolution_clock::now();
+    auto endp  = std::chrono::steady_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
-    fmt::print("Node ID hash time:   \t{} ms\t{} nodes/second\n"
-               "Face generation time:\t{} ms\t{} faces/second.\n",
+    fmt::print("Node ID hash time:   \t{:.3f} ms\t{:.3} nodes/second\n"
+               "Face generation time:\t{:.3f} ms\t{:.3} faces/second.\n",
                std::chrono::duration<double, std::milli>(diffh).count(),
                hashIds_.size() / std::chrono::duration<double>(diffh).count(),
                std::chrono::duration<double, std::milli>(difff).count(),
@@ -452,12 +454,12 @@ namespace Ioss {
     size_t proc_count = region_.get_database()->util().parallel_size();
 
     if (proc_count > 1) {
-      fmt::print("Parallel time:       \t{} ms\t{} faces/second.\n",
+      fmt::print("Parallel time:       \t{:.3f} ms\t{:.3} faces/second.\n",
                  std::chrono::duration<double, std::milli>(diffp).count(),
                  my_faces.size() / std::chrono::duration<double>(diffp).count());
     }
 #endif
-    fmt::print("Total time:          \t{} ms\n\n",
+    fmt::print("Total time:          \t{:.3f} ms\n\n",
                std::chrono::duration<double, std::milli>(endp - starth).count());
 #endif
   }

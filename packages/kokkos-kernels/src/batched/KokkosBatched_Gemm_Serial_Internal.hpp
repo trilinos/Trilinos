@@ -45,7 +45,7 @@ namespace KokkosBatched {
          /**/  ValueType *__restrict__ C, const int cs0, const int cs1) {
     // C = beta C + alpha A B
     // C (m x n), A(m x k), B(k x n)
-      
+
     const ScalarType one(1.0), zero(0.0);
 
     if      (beta == zero) SerialSetInternal  ::invoke(m, n, zero, C, cs0, cs1);

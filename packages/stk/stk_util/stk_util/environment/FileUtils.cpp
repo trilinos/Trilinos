@@ -32,14 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
+#include "stk_util/environment/FileUtils.hpp"
+#include "stk_util/environment/EnvData.hpp"         // for EnvData
+#include "stk_util/environment/ParsedOptions.hpp"   // for ParsedOptions
+#include "stk_util/environment/ProgramOptions.hpp"  // for get_parsed_options
+#include <cstddef>                                  // for size_t
+#include <algorithm>                                // for max
 
-#include <stk_util/environment/FileUtils.hpp>
-#include <stddef.h>                     // for size_t
-#include <algorithm>                    // for max
-#include <stk_util/environment/EnvData.hpp>  // for EnvData
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <vector>                       // for vector
 
 namespace {
   std::string  get_input_file_basename()

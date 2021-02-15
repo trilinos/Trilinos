@@ -38,7 +38,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/SameType.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/StaticAssert.hpp>
@@ -717,6 +716,82 @@ bool unpack_not_owned_verify(const BulkData& mesh,
   }
 
   return result ;
+}
+
+void check_matching_parts_count(unsigned partsCount, int rank, int commSize, MPI_Comm comm)
+{
+  std::vector<unsigned> partsCounts(commSize);
+
+  int status = MPI_Allgather(&partsCount, 1, MPI_UNSIGNED,
+                             partsCounts.data(), 1, MPI_UNSIGNED,
+                             comm);
+
+  if(status != MPI_SUCCESS) {
+    std::string error = "MPI_Allgather FAILED: MPI_Allgather = " + std::to_string(status);
+    throw std::runtime_error(error);
+  }
+
+  for(auto count : partsCounts) {
+    bool hasEqualPartCounts = count == partsCount;
+    if(rank == 0) {
+      ThrowRequireMsg(hasEqualPartCounts,
+                      "Rank: " + std::to_string(rank) +
+                      " found unmatching part ordinal counts across procs in calls to change_entity_parts with selector");
+    } else {
+      ThrowRequire(hasEqualPartCounts);
+    }
+  }
+}
+
+void check_matching_parts(const PartVector& parts, unsigned partsCount, int rank, int commSize, MPI_Comm comm)
+{
+  std::vector<unsigned> partOrds;
+  for(Part* part : parts) {
+    stk::util::insert_keep_sorted_and_unique(part->mesh_meta_data_ordinal(), partOrds);
+  }
+
+  std::vector<unsigned> recvPartOrds(partsCount * commSize);
+
+  int status = MPI_Allgather(partOrds.data(), partsCount, MPI_UNSIGNED,
+                             recvPartOrds.data(), partsCount, MPI_UNSIGNED,
+                             comm);
+
+  if(status != MPI_SUCCESS) {
+    std::string error = "MPI_Allgather FAILED: MPI_Allgather = " + std::to_string(status);
+    throw std::runtime_error(error);
+  }
+
+  for(unsigned i = 0; i < recvPartOrds.size(); i++) {
+    bool hasEqualPartOrds = recvPartOrds[i] == partOrds[i % partsCount];
+    if(rank == 0) {
+      ThrowRequireMsg(hasEqualPartOrds,
+                      "Rank: " + std::to_string(rank) +
+                      " found unmatching part ordinals in change_entity_parts with selector");
+    } else {
+      ThrowRequire(hasEqualPartOrds);
+    }
+  }
+}
+
+void check_matching_parts_across_procs(const PartVector& parts, MPI_Comm comm)
+{
+  int rank, commSize;
+  MPI_Comm_rank(comm, &rank);
+  MPI_Comm_size(comm, &commSize);
+  unsigned partsCount = parts.size();
+  check_matching_parts_count(partsCount, rank, commSize, comm);
+  check_matching_parts(parts, partsCount, rank, commSize, comm);
+}
+
+void check_matching_selectors_and_parts_across_procs(const Selector& selector,
+                                                     const PartVector& add_parts,
+                                                     const PartVector& remove_parts,
+                                                     MPI_Comm comm)
+{
+  PartVector selectorParts;
+  selector.get_parts(selectorParts);
+  check_matching_parts_across_procs(selectorParts, comm);
+  check_matching_parts_across_procs(add_parts, comm);
 }
 
 } // namespace impl

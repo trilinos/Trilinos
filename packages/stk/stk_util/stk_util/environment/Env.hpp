@@ -35,11 +35,10 @@
 #ifndef STK_UTIL_ENVIRONMENT_Env_hpp
 #define STK_UTIL_ENVIRONMENT_Env_hpp
 
-#include <stk_util/stk_config.h>
+#include "stk_util/parallel/Parallel.hpp"  // for MPI_Comm
+#include <ios>                             // for ostream
+#include <string>                          // for string
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <ios>                          // for ostream
-#include <string>                       // for string
 
 
 namespace sierra {

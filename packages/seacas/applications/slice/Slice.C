@@ -62,10 +62,10 @@ size_t partial_count = 1000000000;
 namespace {
   void progress(const std::string &output)
   {
-    static auto start = std::chrono::high_resolution_clock::now();
+    static auto start = std::chrono::steady_clock::now();
 
     if ((debug_level & 1) != 0) {
-      auto                          now  = std::chrono::high_resolution_clock::now();
+      auto                          now  = std::chrono::steady_clock::now();
       std::chrono::duration<double> diff = now - start;
       fmt::print(stderr, " [{:.2f} - {:L}]\t{}\n", diff.count(), Ioss::Utils::get_memory_info(),
                  output);
@@ -1002,7 +1002,7 @@ namespace {
     progress("\tReserve processor coordinate vectors");
 
     Ioss::DatabaseIO *db    = region.get_database();
-    Ioex::DatabaseIO *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     size_t node_count = region.get_property("node_count").get_int();
 
@@ -1090,7 +1090,7 @@ namespace {
     std::vector<std::vector<double>> coordinates(processor_count);
 
     Ioss::DatabaseIO *db    = region.get_database();
-    Ioex::DatabaseIO *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     size_t node_count = region.get_property("node_count").get_int();
 
@@ -1183,7 +1183,7 @@ namespace {
     size_t processor_count = proc_region.size();
 
     Ioss::DatabaseIO *db    = region.get_database();
-    Ioex::DatabaseIO *ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto *            ex_db = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     std::vector<INT> glob_conn;
     size_t           offset = 0;
@@ -1224,6 +1224,9 @@ namespace {
                 connectivity[p].push_back(glob_conn[el++]);
               }
             }
+            else {
+              el += element_nodes;
+            }
           }
           offset += count;
         }
@@ -1238,6 +1241,9 @@ namespace {
             for (size_t k = 0; k < element_nodes; k++) {
               connectivity[p].push_back(glob_conn[el++]);
             }
+          }
+          else {
+            el += element_nodes;
           }
         }
         offset += element_count;
@@ -1313,7 +1319,7 @@ namespace {
 
     size_t            sum_on_proc_count = 0;
     Ioss::DatabaseIO *db                = region.get_database();
-    Ioex::DatabaseIO *ex_db             = dynamic_cast<Ioex::DatabaseIO *>(db);
+    auto *            ex_db             = dynamic_cast<Ioex::DatabaseIO *>(db);
 
     auto & ebs         = region.get_element_blocks();
     size_t block_count = ebs.size();

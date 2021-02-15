@@ -139,7 +139,7 @@ public:
     impl::ParallelGraphInfo &get_parallel_graph_info() { return m_parallel_graph_info; }
     const impl::ParallelGraphInfo &get_parallel_graph_info() const { return m_parallel_graph_info; }
 
-    void insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo& p_info);
+    bool insert_parallel_info_for_graph_edge(const GraphEdge& graphEdge, const impl::ParallelInfo& p_info);
     void erase_parallel_info_for_graph_edge(const GraphEdge& graphEdge);
 
     impl::LocalId convert_remote_global_id_to_negative_local_id(stk::mesh::EntityId remoteElementId) const;

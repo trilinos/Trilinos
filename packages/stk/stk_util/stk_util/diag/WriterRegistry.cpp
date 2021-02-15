@@ -32,8 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/diag/WriterRegistry.hpp>
-#include <stk_util/diag/Option.hpp>               // for OptionMaskParser
+#include "stk_util/diag/WriterRegistry.hpp"
+#include "stk_util/diag/Option.hpp"               // for OptionMaskParser
 #include "stk_util/util/Writer.hpp"               // for WriterThrowSafe
 #include "stk_util/util/Writer_fwd.hpp"           // for Writer
 #include "stk_util/util/string_case_compare.hpp"  // for LessCase

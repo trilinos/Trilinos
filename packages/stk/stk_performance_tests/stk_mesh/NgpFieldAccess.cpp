@@ -48,6 +48,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/ExodusTranslator.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_util/stk_config.h>
 #include <stk_performance_tests/stk_mesh/timer.hpp>
 #include <stk_performance_tests/stk_mesh/calculate_centroid.hpp>
@@ -173,7 +174,7 @@ TEST_F(NgpFieldAccess, CentroidPartialBlock)
   stk::mesh::fill_element_block_parts(get_meta(), stk::topology::HEX_8, elemBlockParts);
 
   timer.start_timing();
-  get_bulk().get_updated_ngp_mesh();
+  stk::mesh::get_updated_ngp_mesh(get_bulk());
   for (int run=0; run<NUM_RUNS; run++) {
     for (const stk::mesh::Part* blockPart : elemBlockParts) {
       stk::performance_tests::calculate_centroid_using_coord_field<stk::mesh::NgpField<double>>(

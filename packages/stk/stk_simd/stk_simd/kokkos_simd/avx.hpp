@@ -291,7 +291,7 @@ class simd<double, simd_abi::avx> {
     return *this;
   }
   template <class Flags>
-  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags /*flags*/)
+  SIMD_ALWAYS_INLINE inline simd(double const* ptr, Flags flags)
     :m_value(_mm256_loadu_pd(ptr))
   {}
   SIMD_ALWAYS_INLINE inline simd(double const* ptr, int stride)

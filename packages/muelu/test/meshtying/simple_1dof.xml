@@ -77,6 +77,7 @@
       <Parameter name="factory" type="string" value="InterfaceAggregationFactory"/>
       <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use aggregates from primal block! -->
       <Parameter name="number of DOFs per dual node" type="int" value="1"/>
+      <Parameter name="Dual/primal mapping strategy" type="string" value="node-based"/>
       <Parameter name="DualNodeID2PrimalNodeID" type="string" value="myInterfaceMappingFact" />
     </ParameterList>
 

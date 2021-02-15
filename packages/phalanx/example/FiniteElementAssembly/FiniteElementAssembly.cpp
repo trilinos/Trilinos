@@ -260,6 +260,23 @@ int main(int argc, char *argv[])
       fm.requireField<Jacobian>(*scatter_tag_j);
     }
 
+    // Test that we can query if a field is supported before
+    // postRegistrationSetup()
+    {
+      RCP<PHX::FieldTag> search_tag = rcp(new Tag<MyTraits::Residual::ScalarT>("residual_0",scatter_layout));
+      const auto& dag = fm.getDagManager<MyTraits::Residual>();
+      const auto& field_to_eval = dag.queryRegisteredFields();
+      auto search = std::find_if(field_to_eval.begin(),
+                                 field_to_eval.end(),
+                                 [&] (const auto& tag_identifier)
+                                 {return (search_tag->identifier() == tag_identifier.first);});
+      TEUCHOS_ASSERT(search != field_to_eval.end());
+      const auto& evaluators = dag.queryRegisteredEvaluators();
+      auto e = evaluators[search->second].get();
+      auto test = Teuchos::rcp_dynamic_cast<const ScatterResidual<Residual,MyTraits>>(e);
+      TEUCHOS_ASSERT(nonnull(test));
+    }
+
     fm.postRegistrationSetup(nullptr);
     fm.writeGraphvizFile("example_fem",".dot",true,true);
 

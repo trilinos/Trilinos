@@ -32,22 +32,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
-#include <stk_util/environment/Scheduler.hpp>
-#include <stk_util/environment/EnvData.hpp>
-#include <stk_util/util/SignalHandler.hpp>
-#include <stk_util/util/Callback.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include "stk_util/environment/Scheduler.hpp"
+#include "stk_util/environment/EnvData.hpp"      // for EnvData
+#include "stk_util/parallel/ParallelReduce.hpp"  // for all_reduce_max
+#include "stk_util/util/Callback.hpp"            // for create_callback
+#include "stk_util/util/SignalHandler.hpp"       // for SignalHandler
+#include <cassert>                               // for assert
+#include <float.h>                               // for DBL_MAX, FLT_MAX
+#include <cmath>                                 // for ceil
+#include <iostream>                              // for operator<<, basic_ostream::operator<<
+#include <limits>                                // for numeric_limits
+#include <utility>                               // for pair, swap
 
-#include <float.h>
-#include <cmath>
-#include <assert.h>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <exception>
-#include <limits>
 
 #ifndef TIME_MAX
 #define TIME_MAX DBL_MAX

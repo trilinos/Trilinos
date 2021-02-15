@@ -21,8 +21,18 @@ get_kokkos_device_list() {
   for DEVICE_ in $PARSE_DEVICES_LST
   do 
      UC_DEVICE=$(echo $DEVICE_ | tr "[:lower:]" "[:upper:]")
+     if [ "${UC_DEVICE}" == "CUDA" ]; then
+       WITH_CUDA_BACKEND=ON
+     fi
+     if [ "${UC_DEVICE}" == "HIP" ]; then
+       WITH_HIP_BACKEND=ON
+     fi
      KOKKOS_DEVICE_CMD="-DKokkos_ENABLE_${UC_DEVICE}=ON ${KOKKOS_DEVICE_CMD}"
   done
+  if [ "${WITH_CUDA_BACKEND}" == "ON" ] && [ "${WITH_HIP_BACKEND}" == "ON" ]; then
+     echo "Invalid configuration - Cuda and Hip cannot be simultaneously enabled"
+     exit
+  fi
 }
 
 get_kokkos_arch_list() {
@@ -55,6 +65,24 @@ get_kokkos_cuda_option_list() {
      fi
      if [ "${CUDA_OPT_NAME}" != "" ]; then
         KOKKOS_CUDA_OPTION_CMD="-DKokkos_ENABLE_${CUDA_OPT_NAME}=ON ${KOKKOS_CUDA_OPTION_CMD}"
+     fi
+  done
+}
+
+get_kokkos_hip_option_list() {
+  echo parsing KOKKOS_HIP_OPTIONS=$KOKKOS_HIP_OPTIONS
+  KOKKOS_HIP_OPTION_CMD=
+  PARSE_HIP_LST=$(echo $KOKKOS_HIP_OPTIONS | tr "," "\n")
+  for HIP_ in $PARSE_HIP_LST
+  do
+     HIP_OPT_NAME=
+     if  [ "${HIP_}" == "rdc" ]; then
+        HIP_OPT_NAME=HIP_RELOCATABLE_DEVICE_CODE
+     else
+        echo "${HIP_} is not a valid hip option..."
+     fi
+     if [ "${HIP_OPT_NAME}" != "" ]; then
+        KOKKOS_HIP_OPTION_CMD="-DKokkos_ENABLE_${HIP_OPT_NAME}=ON ${KOKKOS_HIP_OPTION_CMD}"
      fi
   done
 }
@@ -196,15 +224,21 @@ display_help_text() {
       echo "--prefix=/Install/Path:                       Path to install the KokkosKernels library."
       echo ""
       echo "--with-cuda[=/Path/To/Cuda]:                  Enable Cuda and set path to Cuda Toolkit."
+      echo "--with-hip[=/Path/To/Hip]:                    Enable Hip and set path to ROCM Toolkit."
       echo "--with-openmp:                                Enable OpenMP backend."
       echo "--with-pthread:                               Enable Pthreads backend."
       echo "--with-serial:                                Enable Serial backend."
       echo "--with-devices:                               Explicitly add a set of backends."
       echo ""
       echo "--arch=[OPT]:  Set target architectures. Options are:"
-      echo "               [AMD]"
+      echo "               [AMD: CPU]"
       echo "                 AMDAVX          = AMD CPU"
-      echo "                 EPYC            = AMD EPYC Zen-Core CPU"
+      echo "                 ZEN             = AMD Zen-Core CPU"
+      echo "                 ZEN2            = AMD Zen2-Core CPU"
+      echo "               [AMD: GPU]"
+      echo "                 VEGA900         = AMD GPU MI25 GFX900"
+      echo "                 VEGA906         = AMD GPU MI50/MI60 GFX906"
+      echo "                 VEGA908         = AMD GPU"
       echo "               [ARM]"
       echo "                 ARMV80          = ARMv8.0 Compatible CPU"
       echo "                 ARMV81          = ARMv8.1 Compatible CPU"
@@ -264,6 +298,8 @@ display_help_text() {
       echo "                                "
       echo "--with-cuda-options=[OPT]:    Additional options to CUDA:"
       echo "                                force_uvm, use_ldg, enable_lambda, rdc"
+      echo "--with-hip-options=[OPT]:     Additional options to HIP:"
+      echo "                                rdc"
       echo "--with-scalars=[SCALARS]:     Set scalars to be instantiated."
       echo "                                Options: float, double, complex_float, complex_double"
       echo "--with-ordinals=[ORDINALS]:   Set ordinals to be instantiated."
@@ -307,6 +343,10 @@ KOKKOS_MAKEINSTALL_J=4
 
 KERNELS_DEFAULT_ETI_OPTION=""
 
+# For tracking if Cuda and Hip devices are enabled simultaneously
+WITH_CUDA_BACKEND=OFF
+WITH_HIP_BACKEND=OFF
+
 while [[ $# > 0 ]]
 do
   key="$1"
@@ -339,6 +379,19 @@ do
     --with-cuda*)
       update_kokkos_devices Cuda
       CUDA_PATH="${key#*=}"
+      ;;
+    --with-hip)
+      update_kokkos_devices Hip
+      HIP_PATH_HIPCC=$(command -v hipcc)
+      HIP_PATH=${HIP_PATH_HIPCC%/bin/hipcc}
+      ;;
+    # Catch this before '--with-hip*'
+    --with-hip-options*)
+      KOKKOS_HIP_OPTIONS="${key#*=}"
+      ;;
+    --with-hip*)
+      update_kokkos_devices Hip
+      HIP_PATH="${key#*=}"
       ;;
     --with-openmp)
       update_kokkos_devices OpenMP
@@ -606,6 +659,7 @@ get_kokkos_device_list
 get_kokkos_option_list
 get_kokkos_arch_list
 get_kokkos_cuda_option_list
+get_kokkos_hip_option_list
 
 get_kernels_scalar_list
 get_kernels_ordinals_list
@@ -655,9 +709,9 @@ cd ${KOKKOS_INSTALL_PATH}
 
 # Configure kokkos
 echo ""
-echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
+echo cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} ${KOKKOS_HIP_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
 echo ""
-cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
+cmake $COMPILER_CMD  -DCMAKE_CXX_FLAGS="${KOKKOS_CXXFLAGS//\"}" -DCMAKE_EXE_LINKER_FLAGS="${KOKKOS_LDFLAGS//\"}" -DCMAKE_INSTALL_PREFIX=${KOKKOS_INSTALL_PATH} ${KOKKOS_DEVICE_CMD} ${KOKKOS_ARCH_CMD} -DKokkos_ENABLE_TESTS=${KOKKOS_DO_TESTS} -DKokkos_ENABLE_EXAMPLES=${KOKKOS_DO_EXAMPLES} ${KOKKOS_OPTION_CMD} ${KOKKOS_CUDA_OPTION_CMD} ${KOKKOS_HIP_OPTION_CMD} -DCMAKE_VERBOSE_MAKEFILE=ON -DCMAKE_CXX_EXTENSIONS=OFF ${STANDARD_CMD} ${KOKKOS_BUILDTYPE_CMD} ${KOKKOS_BC_CMD} ${KOKKOS_HWLOC_CMD} ${KOKKOS_HWLOC_PATH_CMD} ${KOKKOS_MEMKIND_CMD} ${KOKKOS_MEMKIND_PATH_CMD} ${KOKKOS_PATH}
 
 # Install kokkos library
 make install -j $KOKKOS_MAKEINSTALL_J

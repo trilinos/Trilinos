@@ -35,15 +35,14 @@
 #ifndef stk_util_parallel_ParallelComm_hpp
 #define stk_util_parallel_ParallelComm_hpp
 
-#include <cstddef>                      // for size_t, ptrdiff_t
-#include <vector>
-#include <map>
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/util/ReportHandler.hpp> // for ThrowAssertMsg
-
-namespace stk { template <unsigned int N> struct CommBufferAlign; }
-
-//------------------------------------------------------------------------
+#include "stk_util/parallel/Parallel.hpp"   // for MPI_Irecv, MPI_Wait, MPI_Barrier, MPI_Send
+#include "stk_util/stk_config.h"            // for STK_HAS_MPI
+#include "stk_util/util/ReportHandler.hpp"  // for ThrowAssertMsg, ThrowRequire
+#include <cstddef>                          // for size_t, ptrdiff_t
+#include <map>                              // for map
+#include <stdexcept>                        // for runtime_error
+#include <string>                           // for string
+#include <vector>                           // for vector
 
 namespace stk {
 
@@ -57,12 +56,7 @@ namespace stk {
  */
 class CommSparse;
 class CommNeighbors;
-
-/** Pack and unpack buffers for the sparse all-to-all communication.
- */
-class CommBuffer ;
-
-//------------------------------------------------------------------------
+class CommBroadcast;
 
 class CommBuffer {
 public:
@@ -202,14 +196,14 @@ private:
 //----------------------------------------------------------------------
 // Inlined template implementations for the CommBuffer
 
-template<>
-struct CommBufferAlign<1> {
-  static size_t align( size_t ) { return 0 ; }
-};
-
 template<unsigned N>
 struct CommBufferAlign {
   static size_t align( size_t i ) { i %= N ; return i ? ( N - i ) : 0 ; }
+};
+
+template<>
+struct CommBufferAlign<1> {
+  static size_t align( size_t ) { return 0 ; }
 };
 
 template<typename T>

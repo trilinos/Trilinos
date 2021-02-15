@@ -40,6 +40,7 @@
 #include "stk_mesh/base/NgpMesh.hpp"
 #include "stk_mesh/base/NgpField.hpp"
 #include "stk_mesh/base/GetNgpField.hpp"
+#include "stk_mesh/base/GetNgpMesh.hpp"
 #include "stk_mesh/base/GetEntities.hpp"
 
 namespace stk {
@@ -131,7 +132,7 @@ void calculate_centroid_using_coord_field(const stk::mesh::BulkData &bulk, const
 {
   const stk::mesh::FieldBase& coords = *bulk.mesh_meta_data().coordinate_field();
   stk::mesh::NgpField<double>& ngpCentroid = stk::mesh::get_updated_ngp_field<double>(centroid);
-  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   stk::mesh::NgpField<double>& ngpCoords = stk::mesh::get_updated_ngp_field<double>(coords);
   calculate_centroid(ngpMesh, ngpCoords, selector, ngpCentroid);
@@ -175,7 +176,7 @@ inline
 std::vector<double> get_centroid_average_from_device(stk::mesh::BulkData &bulk, stk::mesh::Field<double, stk::mesh::Cartesian3d> &centroid, const stk::mesh::Selector& selector)
 {
   stk::mesh::NgpField<double>& ngpField = stk::mesh::get_updated_ngp_field<double>(centroid);
-  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
 
   typedef Kokkos::View<double*, stk::mesh::MemSpace> DeviceAverageView;
   typedef typename DeviceAverageView::HostMirror HostAverageView;

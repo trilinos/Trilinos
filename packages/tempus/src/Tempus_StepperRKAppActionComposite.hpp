@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperRKAppActionComposite_hpp
 #define Tempus_StepperRKAppActionComposite_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperRKAppAction.hpp"
 #include <vector>
 

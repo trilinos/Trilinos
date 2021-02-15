@@ -182,7 +182,7 @@ module load ninja/1.7.2
 # CMake
 #module swap cmake/3.6.2 cmake/3.12.3
 module unload cmake/3.6.2
-module load cmake/3.12.3
+module load cmake/3.19.3
 
 # HWLOC
 

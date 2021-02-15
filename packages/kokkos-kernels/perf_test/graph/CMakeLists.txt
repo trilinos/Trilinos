@@ -11,6 +11,11 @@ KOKKOSKERNELS_ADD_EXECUTABLE(
   SOURCES KokkosGraph_color_d2.cpp       
   )
 
+KOKKOSKERNELS_ADD_EXECUTABLE(
+  graph_mis_d2
+  SOURCES KokkosGraph_mis_d2.cpp       
+  )
+
 
 #Below will probably fail on GPUs.
 #KOKKOSKERNELS_ADD_EXECUTABLE(

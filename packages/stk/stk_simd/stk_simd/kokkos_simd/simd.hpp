@@ -53,6 +53,7 @@
 #include "vector_size.hpp"
 #endif
 
+#ifndef SIMD_FORCE_SCALAR
 #if defined( __CUDACC__ )
 #include "cuda_warp.hpp"
 
@@ -82,12 +83,15 @@
 #endif
 
 #endif
+#endif
 
 namespace SIMD_NAMESPACE {
 
 namespace simd_abi {
 
-#if defined(__CUDACC__)
+#if defined(SIMD_FORCE_SCALAR)
+using native = scalar;
+#elif defined(__CUDACC__)
 using native = scalar;
 #elif defined(__HIPCC__) 
 using native = scalar;

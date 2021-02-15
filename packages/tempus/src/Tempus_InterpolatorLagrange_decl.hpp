@@ -9,6 +9,7 @@
 #ifndef Tempus_InterpolatorLagrange_decl_hpp
 #define Tempus_InterpolatorLagrange_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Interpolator.hpp"
 
 namespace Tempus {
@@ -69,7 +70,7 @@ private:
 
 };
 
-// non-member constructor
+// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<InterpolatorLagrange<Scalar> > lagrangeInterpolator()
 {

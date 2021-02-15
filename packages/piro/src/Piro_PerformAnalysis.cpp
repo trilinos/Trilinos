@@ -63,7 +63,6 @@
 #ifdef HAVE_PIRO_ROL
 #include "ROL_ThyraVector.hpp"
 #include "ROL_ScaledThyraVector.hpp"
-#include "ROL_HessianScaledThyraVector.hpp"
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
@@ -82,8 +81,13 @@
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #endif
 
+#ifdef HAVE_PIRO_TEKO
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_PreconditionerFactory.hpp"
+#ifdef HAVE_PIRO_ROL
+#include "ROL_HessianScaledThyraVector.hpp"
+#endif
+#endif
 
 using std::cout; using std::endl; using std::string;
 using Teuchos::RCP; using Teuchos::rcp; using Teuchos::ParameterList;
@@ -247,7 +251,7 @@ Piro::PerformROLAnalysis(
   RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
   int g_index = rolParams.get<int>("Response Vector Index", 0);
 
-  int num_parameters = rolParams.get<int>("Number of Parameters", 1);
+  int num_parameters = rolParams.get<int>("Number Of Parameters", 1);
   std::vector<int> p_indices(num_parameters);
   std::vector<std::string> p_names;
 
@@ -505,6 +509,7 @@ Piro::PerformROLAnalysis(
   ROL::Ptr<ROL::Algorithm<double> > algo;
   algo = ROL::makePtr<ROL::Algorithm<double>>(step, status,false);
 
+#ifdef HAVE_PIRO_TEKO
   Teko::LinearOp H, invH;
   if (useHessianDotProduct) {
     *out << "\nStart the computation of H_pp" << std::endl;
@@ -552,6 +557,7 @@ Piro::PerformROLAnalysis(
     H = Teuchos::null;
     invH = Teuchos::null;
   }
+#endif
 
 
   //this is for testing the PrimalScaledThyraVector. At the moment the scaling is set to 1, so it is not changing the dot product
@@ -559,8 +565,13 @@ Piro::PerformROLAnalysis(
   ::Thyra::put_scalar<double>( 1.0, scaling_vector_x.ptr());
   //::Thyra::randomize<double>( 0.5, 2.0, scaling_vector_x.ptr());
   ROL::PrimalScaledThyraVector<double> rol_x_primal(x, scaling_vector_x);
+#ifdef HAVE_PIRO_TEKO
   ROL::PrimalHessianScaledThyraVector<double> rol_p_primal(p, H, invH, removeMeanOfTheRHS);
-
+#else
+  Teuchos::RCP<Thyra::VectorBase<double> > scaling_vector_p = p->clone_v();
+  ::Thyra::put_scalar<double>( 1.0, scaling_vector_p.ptr());
+  ROL::PrimalScaledThyraVector<double> rol_p_primal(p, scaling_vector_p);
+#endif
   // Run Algorithm
   std::vector<std::string> output;
   Teuchos::RCP<ROL::BoundConstraint<double> > boundConstraint;

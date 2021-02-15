@@ -180,7 +180,6 @@ int index			/* index of vector parameter; -1 if scalar */
         ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
 	ZOLTAN_FREE(&name);
     	ZOLTAN_FREE(&val);
-       
     }
     else {
         if (!strcmp(val, "DEFAULT")){

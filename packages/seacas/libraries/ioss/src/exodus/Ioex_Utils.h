@@ -18,6 +18,13 @@
 #include <string>
 #include <vector>
 
+#define EXU_USE_HOPSCOTCH
+#if defined EXU_USE_HOPSCOTCH
+#include <hopscotch_map.h>
+#elif defined EXU_USE_ROBIN
+#include <robin_map.h>
+#endif
+
 // Contains code that is common between the file-per-processor and
 // parallel exodus and base exodus classes.
 
@@ -31,10 +38,10 @@ namespace Ioex {
   using SideSetSet  = std::set<std::string>;
   using SideSetMap  = std::map<std::string, const std::string, std::less<const std::string>>;
 
-  struct TopologyMapCompare
+  using NameTopoKey = std::pair<std::string, const Ioss::ElementTopology *>;
+  struct NameTopoKeyCompare
   {
-    bool operator()(const std::pair<std::string, const Ioss::ElementTopology *> &lhs,
-                    const std::pair<std::string, const Ioss::ElementTopology *> &rhs) const
+    bool operator()(const NameTopoKey &lhs, const NameTopoKey &rhs) const
     {
       assert(lhs.second != nullptr);
       assert(rhs.second != nullptr);
@@ -43,8 +50,23 @@ namespace Ioex {
     }
   };
 
-  using TopologyMap =
-      std::map<std::pair<std::string, const Ioss::ElementTopology *>, int, TopologyMapCompare>;
+  struct NameTopoKeyHash
+  {
+    size_t operator()(const NameTopoKey &name_topo) const
+    {
+      return std::hash<std::string>{}(name_topo.first) +
+             std::hash<size_t>{}((size_t)name_topo.second);
+    }
+  };
+
+#if defined EXU_USE_HOPSCOTCH
+  using TopologyMap = tsl::hopscotch_map<NameTopoKey, int, NameTopoKeyHash>;
+#elif defined EXU_USE_ROBIN
+  using TopologyMap = tsl::robin_map<NameTopoKey, int, NameTopoKeyHash>;
+#else
+  // This is the original method that was used in IOSS prior to using hopscotch or robin map.
+  using TopologyMap = std::map<NameTopoKey, int, NameTopoKeyCompare>;
+#endif
 
   const char *Version();
   bool        check_processor_info(int exodusFilePtr, int processor_count, int processor_id);

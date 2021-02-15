@@ -7,7 +7,7 @@
 # After the environment is no longer needed, it can be purged using
 # $ module purge
 # or Trilinos/cmake/unload_sems_dev_env.sh
- 
+
 module purge
 
 source /projects/sems/modulefiles/utils/sems-modules-init.sh
@@ -26,7 +26,7 @@ module load sems-superlu/4.3/base
 # - One of the SEMS modules will load CMake 3.4.x also,
 #   so this will pull in the SEMS cmake 3.10.3 version
 #   for Trilinos compatibility.
-module load sems-cmake/3.10.3
+module load sems-cmake/3.17.1
 module load sems-ninja_fortran/1.8.2
 
 module load sems-git/2.10.1

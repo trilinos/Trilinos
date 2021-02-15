@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -251,12 +251,15 @@ namespace Iocgns {
     if (!m_lineDecomposition.empty()) {
       // See if the ordinal is specified as "__ordinal_{ijk}" which is used for testing...
       if (m_lineDecomposition.find("__ordinal_") == 0) {
-        // Get the ordinal... (last character of string)
-        char ordinal = m_lineDecomposition[m_lineDecomposition.size() - 1];
-        int  ord     = ordinal == 'i' ? 0 : ordinal == 'j' ? 1 : 2;
-        for (auto zone : m_structuredZones) {
+	auto sub = m_lineDecomposition.substr(10);
+	unsigned int ord = 0;
+	for (size_t i = 0; i < sub.size(); i++) {
+	  char ordinal = sub[i];
+	  ord |= ordinal == 'i' ? Ordinal::I : ordinal == 'j' ? Ordinal::J : Ordinal::K;
+	}
+	for (auto zone : m_structuredZones) {
           if (zone->is_active()) {
-            zone->m_lineOrdinal = ord;
+            zone->m_lineOrdinal |= ord;
           }
         }
       }

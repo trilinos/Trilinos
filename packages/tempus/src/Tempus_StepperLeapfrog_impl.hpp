@@ -9,9 +9,10 @@
 #ifndef Tempus_StepperLeapfrog_impl_hpp
 #define Tempus_StepperLeapfrog_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperLeapfrogModifierDefault.hpp"
+
 
 namespace Tempus {
 
@@ -218,6 +219,26 @@ StepperLeapfrog<Scalar>::getValidParameters() const
   getValidParametersBasic(pl, this->getStepperType());
   pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperLeapfrog<Scalar> >
+createStepperLeapfrog(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperLeapfrog<Scalar>());
+  stepper->setStepperExplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

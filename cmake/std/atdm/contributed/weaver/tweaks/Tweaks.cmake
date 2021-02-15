@@ -9,6 +9,9 @@ ATDM_SET_CACHE(Trilinos_CUDA_SLOTS_PER_GPU 2 CACHE STRING)
 #
 # Disables across multiple builds on 'weaver'
 #
+ATDM_SET_ENABLE(SEACASIoss_structured_cgns_assembly_copy_DISABLE ON)
+ATDM_SET_ENABLE(SEACASIoss_structured_cgns_assembly_copy_fpp_DISABLE ON)
+ATDM_SET_ENABLE(Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_DISABLE ON)
 
 # Disable known failures for SPARC Trilinos configuration (#3632)
 ATDM_SET_ENABLE(PanzerAdaptersIOSS_tIOSSConnManager2_MPI_2_DISABLE ON)

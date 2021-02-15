@@ -77,7 +77,10 @@ void fill_element_side_nodes_from_topology(const stk::mesh::BulkData& bulkData, 
     const stk::mesh::Entity* localElemNodes = bulkData.begin_nodes(element);
 
     unsigned num_nodes_this_side = localElemTopology.side_topology(side_index).num_nodes();
-    if(num_nodes_this_side == 0) return;
+    if(num_nodes_this_side == 0) {
+      localElemSideNodes.clear();
+      return;
+    }
 
     localElemSideNodes.resize(num_nodes_this_side);
 

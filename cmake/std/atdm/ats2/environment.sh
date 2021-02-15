@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-# ats2 jobs all use the same environmnet changes to the
+# ats2 jobs all use the same environment changes to the
 # sourced script below will impact jobs on both of those
 # machines. please be mindful of this when making changes
 
@@ -104,6 +104,12 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
 
   # Don't use ninja as the fortran compiler test is broken.
   export ATDM_CONFIG_USE_NINJA=OFF
+
+  export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
+
+  # set the gcc compiler XL  will use for backend to one that handles c++14
+  export XLC_USR_CONFIG=/opt/ibm/xlC/16.1.1/etc/xlc.cfg.rhel.7.6.gcc.7.3.1.cuda.10.1.243
+  export XLF_USR_CONFIG=/opt/ibm/xlf/16.1.1/etc/xlf.cfg.rhel.7.5.gcc.7.3.1.cuda.10.1.243
 fi
 
 # Set up stuff related to CUDA
@@ -160,7 +166,7 @@ export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_R
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
 export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a"

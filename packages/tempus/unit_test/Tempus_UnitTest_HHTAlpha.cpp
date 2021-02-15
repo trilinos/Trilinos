@@ -13,7 +13,7 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperHHTAlpha.hpp"
 #include "Tempus_StepperHHTAlphaModifierBase.hpp"
 #include "Tempus_StepperHHTAlphaModifierXBase.hpp"
 #include "Tempus_StepperHHTAlphaObserverBase.hpp"
@@ -39,8 +39,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-
-using Tempus::StepperFactory;
 
 
 // ************************************************************

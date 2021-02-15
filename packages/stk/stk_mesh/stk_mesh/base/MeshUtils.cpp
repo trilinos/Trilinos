@@ -65,7 +65,7 @@ void find_ghosted_nodes_that_need_to_be_shared(const stk::mesh::BulkData & bulk,
                     unsigned num_nodes = bulk.num_nodes(bucket[n]);
                     for (unsigned j=0;j<num_nodes;++j)
                     {
-                        if (bulk.in_receive_ghost(bulk.entity_key(nodes[j])))
+                        if (bulk.in_receive_ghost(nodes[j]))
                         {
                             ghosted_nodes_that_are_now_shared.push_back(nodes[j]);
                         }
@@ -89,9 +89,8 @@ void fixup_ghosted_to_shared_nodes(stk::mesh::BulkData & bulk)
 
     for (int phase=0;phase<2;++phase)
     {
-        for (size_t i = 0; i < ghosted_nodes_that_are_now_shared.size(); ++i)
+        for (Entity node : ghosted_nodes_that_are_now_shared)
         {
-            stk::mesh::Entity node = ghosted_nodes_that_are_now_shared[i];
             int proc = bulk.parallel_owner_rank(node);
             comm.send_buffer(proc).pack<stk::mesh::EntityKey>(bulk.entity_key(node));
         }

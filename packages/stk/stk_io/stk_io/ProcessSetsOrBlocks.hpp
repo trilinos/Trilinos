@@ -212,14 +212,18 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
       stk::mesh::Part* part = get_part_for_grouping_entity(region, meta, entity);
       stk::mesh::PartVector elemParts = {part};
       if (part != nullptr) {
-          stk::topology topo = part->topology();
-          ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
-
           std::vector<INT> elem_ids ;
           std::vector<INT> connectivity ;
 
           entity->get_field_data("ids", elem_ids);
           entity->get_field_data("connectivity", connectivity);
+
+          if (elem_ids.empty()) {
+            continue;
+          }
+
+          stk::topology topo = part->topology();
+          ThrowRequireMsg( topo != stk::topology::INVALID_TOPOLOGY, " INTERNAL_ERROR: Part " << part->name() << " has invalid topology");
 
           bulk.declare_entities(stk::topology::ELEM_RANK, elem_ids, elemParts, elems);
 

@@ -32,6 +32,7 @@ export ATDM_CONFIG_BUILD_COUNT=32
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]]; then
   module load sparc-dev/intel-19.0.4_mpich-7.7.15_hsw
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
+  export OMP_NUM_THREADS=2
   unset OMP_PLACES
 elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   module load sparc-dev/intel-19.0.4_mpich-7.7.15_knl
@@ -40,10 +41,11 @@ elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
   export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node=8"
   # KNL nodes have 272 virtual cores.
   # Allow now more than 34 virtual cores per task.
-  export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;-c 4"
+  export ATDM_CONFIG_MPI_POST_FLAGS="--hint=nomultithread;-c 8"
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=1
   export ATDM_CONFIG_SBATCH_EXTRA_ARGS="-p knl -C cache --hint=multithread"
   export ATDM_CONFIG_BUILD_COUNT=8
+  export OMP_NUM_THREADS=8
   unset OMP_PLACES
   unset OMP_PROC_BIND
 else
@@ -61,8 +63,6 @@ echo "Using ats1 compiler stack $ATDM_CONFIG_COMPILER to build $ATDM_CONFIG_BUIL
 
 # Exclude bad nodes.
 export ATDM_CONFIG_SBATCH_EXTRA_ARGS="$ATDM_CONFIG_SBATCH_EXTRA_ARGS --exclude=nid00021,nid00020"
-
-export OMP_NUM_THREADS=2
 
 # Common modules and paths
 export PATH=/projects/netpub/atdm/ninja-1.8.2/bin:$PATH

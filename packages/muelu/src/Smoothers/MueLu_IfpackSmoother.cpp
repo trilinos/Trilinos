@@ -315,7 +315,7 @@ namespace MueLu {
     std::ostringstream out;
     // The check "GetVerbLevel() == Test" is to avoid
     // failures in the EasyInterface test.
-    if (prec_ == Teuchos::null || this->GetVerbLevel() == Test) {
+    if (prec_ == Teuchos::null || this->GetVerbLevel() == InterfaceTest) {
       out << SmootherPrototype::description();
       out << "{type = " << type_ << "}";
     } else {

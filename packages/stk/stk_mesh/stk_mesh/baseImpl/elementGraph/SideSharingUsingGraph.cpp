@@ -9,7 +9,10 @@ namespace stk { namespace mesh {
 stk::mesh::EntityVector fill_shared_entities_that_need_fixing(const stk::mesh::BulkData& bulkData)
 {
     stk::mesh::EntityVector sides;
-    stk::mesh::get_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(bulkData.mesh_meta_data().side_rank()), sides);
+    const bool sortByGlobalId = false;
+    const stk::mesh::MetaData& meta = bulkData.mesh_meta_data();
+    stk::mesh::Selector owned = meta.locally_owned_part();
+    stk::mesh::get_entities(bulkData, meta.side_rank(), owned, sides, sortByGlobalId);
 
     stk::mesh::EntityVector sidesThatNeedFixing;
     stk::mesh::EntityVector nodeVec;

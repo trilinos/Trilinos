@@ -194,8 +194,8 @@ public:
     virtual std::string getDescription() const = 0;
   //@}
 
-  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageXDot() {return stageXDot_;};
-  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;};
+  std::vector<Teuchos::RCP<Thyra::VectorBase<Scalar> > >& getStageXDot() {return stageXDot_;}
+  Teuchos::RCP<Thyra::VectorBase<Scalar> >& getXTilde() {return xTilde_;}
 
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const
@@ -215,6 +215,20 @@ public:
   //@}
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+
+  /// Set StepperDIRK member data from the ParameterList.
+  virtual void setStepperDIRKValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+  {
+    if (pl != Teuchos::null) {
+      // Can not validate because of optional Parameters, e.g., 'Solver Name'.
+      //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+      this->setStepperValues(pl);
+      if ( pl->isParameter("Use Embedded") )
+        this->setUseEmbedded(pl->get<bool>("Use Embedded"));
+      if ( pl->isParameter("Zero Initial Guess") )
+        this->setZeroInitialGuess(pl->get<bool>("Zero Initial Guess"));
+    }
+  }
 
 
 protected:

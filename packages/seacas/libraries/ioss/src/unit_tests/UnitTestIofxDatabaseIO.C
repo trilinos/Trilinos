@@ -172,10 +172,10 @@ namespace {
     // in exodus file: sideset 1 is elements 1 and 3, sideset 2 is 3 and 2 (however it is reversed
     // in results below)
 
-    std::vector<std::vector<int64_t>> gold_element_ids  = {{1, 3}, {2, 3}};
-    std::vector<std::vector<int64_t>> gold_side_ids     = {{6, 2}, {5, 1}};
-    std::vector<std::vector<int64_t>> gold_sideset_conn = {{5, 6, 7, 8, 5, 8, 7, 6},
-                                                           {5, 8, 7, 6, 5, 6, 7, 8}};
+    std::vector<std::vector<int64_t>> gold_element_ids  = {{3, 1}, {3, 2}};
+    std::vector<std::vector<int64_t>> gold_side_ids     = {{2, 6}, {1, 5}};
+    std::vector<std::vector<int64_t>> gold_sideset_conn = {{5, 8, 7, 6, 5, 6, 7, 8},
+                                                           {5, 6, 7, 8, 5, 8, 7, 6}};
 
     for (size_t i = 0; i < sidesets.size(); ++i) {
       std::vector<int64_t> element_ids;

@@ -96,6 +96,17 @@ double BalanceSettings::getVertexWeightMultiplierForVertexInSearch() const
     return 15;
 }
 
+void BalanceSettings::setVertexWeightBlockMultiplier(const std::string & blockName, double multiplier)
+{
+  m_vertexWeightBlockMultipliers[blockName] = multiplier;
+}
+
+const BlockWeightMultipliers &
+BalanceSettings::getVertexWeightBlockMultipliers() const
+{
+  return m_vertexWeightBlockMultipliers;
+}
+
 bool BalanceSettings::isIncrementalRebalance() const
 {
     return false;

@@ -9,15 +9,12 @@
 #ifndef Tempus_SolutionHistory_impl_hpp
 #define Tempus_SolutionHistory_impl_hpp
 
-// Teuchos
 #include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-// Tempus
-#include "Tempus_InterpolatorFactory.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
-//#include "Thyra_VectorStdOps.hpp"
+#include "Tempus_InterpolatorFactory.hpp"
 
 
 namespace {
@@ -586,6 +583,36 @@ SolutionHistory<Scalar>::unSetInterpolator()
  interpolator_ = lagrangeInterpolator<Scalar>();
  return old_interpolator;
 }
+
+
+template<class Scalar>
+void SolutionHistory<Scalar>::printHistory(std::string verb) const
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  Teuchos::OSTab ostab(out,1,"SolutionHistory::printHistory");
+  *out << name_ << "  (size=" << history_->size() << ")"
+       << "  (w - working; c - current; i - interpolated)" << std::endl;
+  for (int i=0; i<(int)history_->size() ; ++i) {
+    auto state = (*history_)[i];
+    *out << "  ";
+    if (state == getWorkingState()) *out << "w - ";
+    else if (state == getCurrentState()) *out << "c - ";
+    else if (state->getIsInterpolated() == true) *out<<"i - ";
+    else *out << "    ";
+    *out << "[" << i << "] = " << state << std::endl;
+    if (verb == "medium" or verb == "high") {
+      if (state != Teuchos::null) {
+        auto x = state->getX();
+        *out << "      x       = " << x << std::endl
+             << "      norm(x) = " << Thyra::norm(*x) << std::endl;
+      }
+    }
+    if (verb == "high") {
+      (*history_)[i]->describe(*out,this->getVerbLevel());
+    }
+  }
+}
+
 
 // Nonmember constructors.
 // ------------------------------------------------------------------------

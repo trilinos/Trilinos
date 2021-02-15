@@ -11,11 +11,13 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
-#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperRKAppAction.hpp"
 
 
 namespace Tempus {
+
+// Forward Declaration
+template<class Scalar> class StepperRKBase;
 
 /** \brief Base modifier for StepperRK.
  *
