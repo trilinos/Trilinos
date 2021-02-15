@@ -214,7 +214,9 @@ is not `CLANG`, then these options are ignored.)
 **`<fpic>`:** The following `<build-name>` keyword will result in `-fPIC`
 being added to `CMAKE_CXX_FLAGS`:
 
-* `fpic`: Add `-fPIC` to `CMAKE_CXX_FLAGS`
+* `fpic`: Turn on `CMAKE_POSITION_INDEPENDENT_CODE`
+* `no-fpic`: Turn off `CMAKE_POSITION_INDEPENDENT_CODE`
+
 
 <a name="complex"/>
 
