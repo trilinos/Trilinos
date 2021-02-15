@@ -225,10 +225,10 @@ elif atdm_match_buildname_keyword asan; then
 fi
 
 # Use -fPIC or not
-if atdm_match_buildname_keyword fpic; then
-  export ATDM_CONFIG_FPIC=ON
-elif atdm_match_buildname_keyword no-fpic; then
+if atdm_match_buildname_keyword no-fpic; then
   export ATDM_CONFIG_FPIC=OFF
+elif atdm_match_buildname_keyword fpic; then
+  export ATDM_CONFIG_FPIC=ON
 fi
 
 # Enable complex (double) data-types or not
