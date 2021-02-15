@@ -5,7 +5,9 @@
 
 module load StdEnv
 module load sparc-dev/cuda-10.1.243_gcc-7.3.1_spmpi-rolling
-#export OMPI_CXX=`which g++`
+module swap python/2.7.16 python/3.8.2
+module swap gcc/7.3.1 gcc/8.3.1
+
 current_dir=`dirname $BASH_SOURCE`
 Trilinos_dir=`realpath $current_dir/../../..`
 export OMPI_CXX=${Trilinos_dir}/packages/kokkos/bin/nvcc_wrapper
