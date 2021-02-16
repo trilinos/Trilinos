@@ -835,18 +835,17 @@ namespace MueLuTests {
 #   endif
 
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-    GO nx = 299*comm->getSize();
+    GO nx = 10*comm->getSize();
     Teuchos::ParameterList galeriList, ifpack2Params;
     galeriList.set("nx", nx);
     RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);    
-
 
     ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
 
     // Multigrid Hierarchy
     Hierarchy H(A);
     H.setVerbLevel(Teuchos::VERB_HIGH);
-    H.SetMaxCoarseSize(50);
+    H.SetMaxCoarseSize(2);
 
     // Multigrid setup phase (using default parameters)
     FactoryManager M0; // how to build aggregates and smoother of the first level

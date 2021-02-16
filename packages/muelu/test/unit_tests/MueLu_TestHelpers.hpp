@@ -850,16 +850,17 @@ namespace MueLuTests {
          // Make the base graph
          RCP<Matrix> old_matrix    = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList,lib);
          RCP<const CrsGraph> old_graph   = old_matrix->getCrsGraph();
+         RCP<const Map> old_rowmap = old_graph->getRowMap();
          RCP<const Map> old_colmap = old_graph->getColMap();
          int blocksize = 3;
 
          // Block Map
          LO orig_num_rows = (LO) old_graph->getRowMap()->getNodeNumElements();
          Teuchos::Array<GlobalOrdinal> owned_rows(blocksize*orig_num_rows);
-         for(LO i=0, CT=0; i<orig_num_rows; i++) {
+         for(LO i=0; i<orig_num_rows; i++) {
+           GO old_gid = old_rowmap->getGlobalElement(i);
            for(int j=0; j<blocksize; j++) {
-             owned_rows[i*blocksize+j] = CT;
-             CT++;
+             owned_rows[i*blocksize+j] = old_gid*blocksize+j;
            }
          }
          RCP<Map> new_map = Xpetra::MapFactory<LO,GO,NO>::Build(lib,GO_INVALID,owned_rows(),0,comm);
@@ -880,7 +881,7 @@ namespace MueLuTests {
              for(LO j=0; j<(LO)old_indices.size(); j++) {
                for(int jj=0; jj<blocksize; jj++) {           
                 new_indices[0] = old_colmap->getGlobalElement(old_indices[j]) * blocksize + jj;
-                new_values[0]  = old_values[j] * ( (ii == jj) ? blocksize*blocksize : 1 );
+                new_values[0]  = old_values[j] * ( (ii == jj && i == old_indices[j] ) ? blocksize*blocksize : 1 );
                 new_matrix->insertGlobalValues(GRID,new_indices(),new_values);
                }
              }
