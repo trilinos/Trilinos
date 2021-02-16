@@ -200,8 +200,9 @@ namespace MueLu {
     ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
 
     // If the user asked us to convert the matrix into BlockCrsMatrix form, we do that now
-    int blocksize = A_->GetFixedBlockSize();
-    if(blocksize > 1 && paramList.isParameter("smoother: use blockcrsmatrix storage") && paramList.get<bool>("smoother: use blockcrsmatrix storage")) {
+    if(paramList.isParameter("smoother: use blockcrsmatrix storage") && paramList.get<bool>("smoother: use blockcrsmatrix storage") && A_->GetFixedBlockSize()) {
+      // NOTE: Don't think you can move this out of the if block.  You can't. The test MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1 will fail
+      int blocksize = A_->GetFixedBlockSize();
       using TpetraBlockCrsMatrix = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
       RCP<CrsMatrixWrap> AcrsWrap = rcp_dynamic_cast<CrsMatrixWrap>(A_);
       if(AcrsWrap.is_null()) 
