@@ -261,13 +261,15 @@ if( n>0 ){
 
     Teuchos::BLAS<LO ,SC> blas;
 
-    Teuchos::RCP< dense_matrix_type > Hnew
-      = Teuchos::rcp ( new dense_matrix_type (Teuchos::View, H, n, n-1, 0, 0));
+//    Teuchos::RCP< dense_matrix_type > Hnew
+//      = Teuchos::rcp ( new dense_matrix_type (Teuchos::View, H, n, n-1, 0, 0));
+    dense_matrix_type Hnew (Teuchos::View, H, n+1, n, 0, 0);
+    dense_matrix_type Tcol (Teuchos::View, T, n, 1, 0, n);
 
     blas.TRMV ( Teuchos::UPPER_TRI, 
       Teuchos::NO_TRANS, Teuchos::NON_UNIT_DIAG, n,
       Hnew.values(), Hnew.stride(),
-      tp.values(), 1 );
+      Tcol.values(), Tcol.stride() );
       
       
     for(int i = 0; i < n; i++ ){
