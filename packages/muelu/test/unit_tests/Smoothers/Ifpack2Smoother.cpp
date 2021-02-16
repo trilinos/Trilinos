@@ -462,7 +462,7 @@ namespace MueLuTests {
 #   include <MueLu_UseShortNames.hpp>
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
+
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
       Teuchos::ParameterList matrixParams, ifpack2Params;
 
@@ -470,8 +470,6 @@ namespace MueLuTests {
       matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
 
       RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
-
-      A->SetFixedBlockSize(3);// Hardcoded in the builder
       ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
       
       Ifpack2Smoother smoother("RELAXATION",ifpack2Params);
@@ -482,32 +480,7 @@ namespace MueLuTests {
 
       TEST_EQUALITY(1,1);
     }
-  } 
-
- TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, BlockCrsMatrix_Relaxation, Scalar, LocalOrdinal, GlobalOrdinal, Node)
-  {
-#   include <MueLu_UseShortNames.hpp>
-    MUELU_TESTING_SET_OSTREAM;
-    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
-    typedef typename Teuchos::ScalarTraits<SC>::magnitudeType magnitude_type;
-    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-      Teuchos::ParameterList matrixParams, ifpack2Params;
-
-      matrixParams.set("matrixType","Laplace1D");
-      matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
-
-      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
-      ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
-      
-      Ifpack2Smoother smoother("RELAXATION",ifpack2Params);
-      
-      Level level; TestHelpers::TestFactory<SC,LO,GO,NO>::createTwoLevelHierarchy(level);
-      level.Set("A", A);
-      smoother.Setup(level);
-
-      TEST_EQUALITY(1,1);
-    }
-  } 
+  }
 
 
 
