@@ -4324,29 +4324,11 @@ namespace Tpetra {
     owningView_.modify_host ();
   }
 
-
-#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
- template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDeviceUnsafe () const {
-    return view_.view_device ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHostUnsafe () const {
-    return view_.view_host ();
-  }
-
-#else
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewDevice () const {
-    if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
     return view_.view_device ();
   }
 
@@ -4354,8 +4336,6 @@ namespace Tpetra {
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewHost () const {
-    if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
     return view_.view_host ();
   }
 #endif

@@ -76,9 +76,6 @@ namespace Teuchos {
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 
 
-// NOTE: This is for developer use only.
-#define DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
-
 namespace Tpetra {
 
 
@@ -1614,7 +1611,7 @@ namespace Tpetra {
     }
 
 
-#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Return a view of the local data on a specific device. This is a
     ///   generalization of getLocalViewHost() and getLocalViewDevice(). The
     ///   returned view has type dual_view_type::t_dev or dual_view_type::t_host,
@@ -1646,37 +1643,17 @@ namespace Tpetra {
     /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
     /// \endcode
     template<class TargetDeviceType>
-    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    TPETRA_DEPRECATED typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView () const
     {
-      bool returnDevice = true;
-      {
-        auto tmp = view_.template view<TargetDeviceType>();
-        if (tmp == this->view_.view_host()) returnDevice = false;
-      }
-      if (returnDevice)
-      {
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
-      }
-      else
-      {
-        //v is dual_view_type::t_host
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
-      }
       return view_.template view<TargetDeviceType>();
     }
 
-    typename dual_view_type::t_host getLocalViewHostUnsafe () const;
-    typename dual_view_type::t_dev getLocalViewDeviceUnsafe () const;
-
-#else
     //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
-    typename dual_view_type::t_host getLocalViewHost () const;
+    TPETRA_DEPRECATED typename dual_view_type::t_host getLocalViewHost () const;
 
     //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
-    typename dual_view_type::t_dev getLocalViewDevice () const;
+    TPETRA_DEPRECATED typename dual_view_type::t_dev getLocalViewDevice () const;
 #endif
 
     //@}
