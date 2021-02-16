@@ -889,6 +889,7 @@ namespace MueLuTests {
          new_matrix->fillComplete();
          Op = rcp(new CrsMatrixWrap(new_matrix));
          if(new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: CrsMatrixWrap constructor failed");         
+         Op->SetFixedBlockSize(blocksize);
 #endif
          return Op;
       } // BuildBlockMatrixAsPoint()
