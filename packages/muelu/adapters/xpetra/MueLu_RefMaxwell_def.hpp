@@ -1401,31 +1401,41 @@ namespace MueLu {
       P11res_    = MultiVectorFactory::Build(R11_->getRangeMap(), numVectors);
     else
       P11res_    = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
-    if (D0_T_R11_colMapsMatch_)
+    P11res_->setObjectLabel("P11res");
+    if (D0_T_R11_colMapsMatch_) {
       D0TR11Tmp_ = MultiVectorFactory::Build(R11_->getColMap(), numVectors);
+      D0TR11Tmp_->setObjectLabel("D0TR11Tmp");
+    }
     if (!ImporterH_.is_null()) {
       P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
+      P11resTmp_->setObjectLabel("P11resTmp");
       P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
     } else
       P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
+    P11x_->setObjectLabel("P11x");
     if (!D0_T_Matrix_.is_null())
       D0res_     = MultiVectorFactory::Build(D0_T_Matrix_->getRangeMap(), numVectors);
     else
       D0res_     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    D0res_->setObjectLabel("D0res");
     if (!Importer22_.is_null()) {
       D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
+      D0resTmp_->setObjectLabel("D0resTmp");
       D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
     } else
       D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    D0x_->setObjectLabel("D0x");
     if (!AH_.is_null()) {
       if (!ImporterH_.is_null() && !implicitTranspose_)
         P11resSubComm_ = MultiVectorFactory::Build(P11resTmp_, Teuchos::View);
       else
         P11resSubComm_ = MultiVectorFactory::Build(P11res_, Teuchos::View);
       P11resSubComm_->replaceMap(AH_->getRangeMap());
+      P11resSubComm_->setObjectLabel("P11resSubComm");
 
       P11xSubComm_ = MultiVectorFactory::Build(P11x_, Teuchos::View);
       P11xSubComm_->replaceMap(AH_->getDomainMap());
+      P11xSubComm_->setObjectLabel("P11xSubComm");
     }
     if (!A22_.is_null()) {
       if (!Importer22_.is_null() && !implicitTranspose_)
@@ -1433,11 +1443,14 @@ namespace MueLu {
       else
         D0resSubComm_ = MultiVectorFactory::Build(D0res_, Teuchos::View);
       D0resSubComm_->replaceMap(A22_->getRangeMap());
+      D0resSubComm_->setObjectLabel("D0resSubComm");
 
       D0xSubComm_ = MultiVectorFactory::Build(D0x_, Teuchos::View);
       D0xSubComm_->replaceMap(A22_->getDomainMap());
+      D0xSubComm_->setObjectLabel("D0xSubComm");
     }
     residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), numVectors);
+    residual_->setObjectLabel("residual");
   }
 
 
