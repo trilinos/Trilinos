@@ -131,7 +131,7 @@ public:
                const ordinal_type   order);
   };
 
-  template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+  template<typename DevieType, ordinal_type numPtsPerEval,
   typename outputValueValueType, class ...outputValueProperties,
   typename inputPointValueType,  class ...inputPointProperties>
   static void
@@ -210,26 +210,26 @@ public:
 
 }
 
-template<typename ExecSpaceType = void,
+template<typename DevieType = void,
     typename outputValueType = double,
     typename pointValueType = double>
 class Basis_HGRAD_TET_Cn_FEM_ORTH
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+    : public Basis<DevieType,outputValueType,pointValueType> {
     public:
   typedef double value_type;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+  typedef typename Basis<DevieType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
+  typedef typename Basis<DevieType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
+  typedef typename Basis<DevieType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
 
   /** \brief  Constructor.
    */
   Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order );
 
-  using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+  using OutputViewType = typename Basis<DevieType,outputValueType,pointValueType>::OutputViewType;
+  using PointViewType  = typename Basis<DevieType,outputValueType,pointValueType>::PointViewType;
+  using ScalarViewType = typename Basis<DevieType,outputValueType,pointValueType>::ScalarViewType;
   
-  using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+  using Basis<DevieType,outputValueType,pointValueType>::getValues;
 
   virtual
   void
@@ -245,7 +245,7 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
     #endif
     constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+    getValues<DevieType,numPtsPerEval>( outputValues,
         inputPoints,
         this->getDegree(),
         operatorType );
