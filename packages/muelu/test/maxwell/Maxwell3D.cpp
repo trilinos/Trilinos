@@ -381,6 +381,13 @@ bool SetupSolveWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     if (reuse) {
       TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
       for (int solveno = 0; solveno<2; solveno++) {
+        // SM_Matrix->resumeFill();
+        // SM_Matrix->fillComplete();
+        if (X0.is_null())
+          X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+        else
+          X = X0;
+        problem -> setProblem( X, B );
         Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
         Belos::ReturnType status = solver -> solve();
         int iters = solver -> getNumIters();
@@ -516,6 +523,13 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     if (reuse) {
       TEUCHOS_ASSERT(precType == "MueLu-RefMaxwell");
       for (int solveno = 0; solveno<2; solveno++) {
+        // SM_Matrix->resumeFill();
+        // SM_Matrix->fillComplete();
+        if (X0.is_null())
+          X->putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+        else
+          X = X0;
+        problem -> setProblem( X, B );
         Teuchos::rcp_dynamic_cast<MueLu::RefMaxwell<SC,LO,GO,NO> >(preconditioner)->resetMatrix(SM_Matrix);
         Belos::ReturnType status = solver -> solve();
         int iters = solver -> getNumIters();
