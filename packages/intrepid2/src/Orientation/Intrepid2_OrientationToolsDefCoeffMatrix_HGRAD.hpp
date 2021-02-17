@@ -138,7 +138,6 @@ getCoeffMatrix_HGRAD(OutputViewType &output, /// this is device view
 #endif
 
   using host_device_type = typename Kokkos::HostSpace::device_type;
-  ///using device_type = typename OutputViewType::device_type;
   using value_type = typename OutputViewType::non_const_value_type;
 
   //
