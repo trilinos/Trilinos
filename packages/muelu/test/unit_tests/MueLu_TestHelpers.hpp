@@ -871,7 +871,7 @@ namespace MueLuTests {
          RCP<CrsMatrix> new_matrix = Xpetra::CrsMatrixFactory<SC,LO,GO,NO>::Build(new_map,blocksize*old_graph->getNodeMaxNumRowEntries());
          if(new_matrix.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: Matrix constructor failed");
          for(LO i=0; i<orig_num_rows; i++) {
-           Teuchos::ArrayView<const GO> old_indices;
+           Teuchos::ArrayView<const LO> old_indices;
            Teuchos::ArrayView<const SC> old_values;
            Teuchos::Array<GO> new_indices(1);
            Teuchos::Array<SC> new_values(1);
@@ -881,7 +881,7 @@ namespace MueLuTests {
              for(LO j=0; j<(LO)old_indices.size(); j++) {
                for(int jj=0; jj<blocksize; jj++) {           
                 new_indices[0] = old_colmap->getGlobalElement(old_indices[j]) * blocksize + jj;
-                new_values[0]  = old_values[j] * ( (ii == jj && i == old_indices[j] ) ? blocksize*blocksize : 1 );
+                new_values[0]  = old_values[j] * (SC)( (ii == jj && i == old_indices[j] ) ? blocksize*blocksize : 1 );
                 new_matrix->insertGlobalValues(GRID,new_indices(),new_values);
                }
              }
