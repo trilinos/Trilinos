@@ -50,7 +50,7 @@ public:
 };
 
 #ifdef KOKKOS_ENABLE_HIP
-  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP> KokkosHIPWrapperNode;
+  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace> KokkosHIPWrapperNode;
 #endif
 
 #ifdef KOKKOS_ENABLE_CUDA
