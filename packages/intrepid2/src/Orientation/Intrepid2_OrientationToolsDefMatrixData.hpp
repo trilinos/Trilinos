@@ -248,9 +248,18 @@ namespace Intrepid2 {
     
     CoeffMatrixDataViewType matData;
     if (found == ortCoeffData.end()) {
-      auto basis_host = basis->getHostBasis();
-      matData = createCoeffMatrixInternal(basis_host.getRawPtr());
-      ortCoeffData.insert(std::make_pair(key, matData));
+#if defined(KOKKOS_ENABLE_CUDA_UVM)
+      {
+        matData = createCoeffMatrixInternal(basis_host);
+        ortCoeffData.insert(std::make_pair(key, matData));
+      }
+#else
+      {
+        auto basis_host = basis->getHostBasis();
+        matData = createCoeffMatrixInternal(basis_host.getRawPtr());
+        ortCoeffData.insert(std::make_pair(key, matData));
+      }
+#endif
     } else {
       matData = found->second;
     }

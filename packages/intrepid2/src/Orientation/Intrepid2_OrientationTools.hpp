@@ -98,9 +98,8 @@
 #include "Intrepid2_HDIV_TET_I1_FEM.hpp"
 #include "Intrepid2_HDIV_WEDGE_I1_FEM.hpp"
 
-/// KK: these cannot be included now
-//#include "Intrepid2_HierarchicalBasisFamily.hpp"
-//#include "Intrepid2_NodalBasisFamily.hpp"
+#include "Intrepid2_HierarchicalBasisFamily.hpp"
+#include "Intrepid2_NodalBasisFamily.hpp"
 
 #include "Teuchos_LAPACK.hpp"
 
@@ -449,7 +448,7 @@ namespace Intrepid2 {
              typename elemNodeValueType, class ...elemNodeProperties>
     inline 
     static void
-    getOrientation(/* */ Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+    getOrientation(Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
 
@@ -465,7 +464,7 @@ namespace Intrepid2 {
              typename BasisType>
     inline
     static void
-    modifyBasisByOrientation(/* */ Kokkos::DynRankView<outputValueType,outputProperties...> output,
+    modifyBasisByOrientation(Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const OrientationViewType orts,
                              const BasisType * basis);
