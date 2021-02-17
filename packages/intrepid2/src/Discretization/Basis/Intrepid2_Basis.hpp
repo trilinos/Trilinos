@@ -898,11 +898,14 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
                                     ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
-    /// create a basis object living on host
+    /** \brief creates and returns a basis object living host.
+     
+        \return pointer to a basis living host.
+     */
     virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputValueType, PointValueType>
     getHostBasis() const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
-                                    ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
+                                    ">>> ERROR (Basis::getHostBasis): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
   }; // class Basis
