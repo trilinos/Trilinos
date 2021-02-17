@@ -311,6 +311,10 @@ class Basis_HDIV_TRI_In_FEM
     INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
   }
 
+  BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+  getHostBasis() const override{
+    return Teuchos::rcp(new Basis_HDIV_TRI_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_, pointType_));
+  }
     private:
 
   /** \brief expansion coefficients of the nodal basis in terms of the
