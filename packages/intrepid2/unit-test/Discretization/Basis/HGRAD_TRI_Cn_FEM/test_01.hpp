@@ -78,7 +78,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HGRAD_TRI_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -92,6 +92,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -111,10 +112,10 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
       typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+      typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
 //      typedef Kokkos::DynRankView<PointValueType,HostSpaceType>   DynRankViewHostPointValueType;
 
 
@@ -128,7 +129,7 @@ namespace Intrepid2 {
       typedef OutValueType outputValueType;
       typedef PointValueType pointValueType;
 
-      typedef Basis_HGRAD_TRI_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> TriBasisType;
+      typedef Basis_HGRAD_TRI_Cn_FEM<DeviceType,outputValueType,pointValueType> TriBasisType;
 
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
@@ -155,7 +156,7 @@ namespace Intrepid2 {
         PointTools::getLattice(lattice_scalar, tri_3, order, 0, POINTTYPE_WARPBLEND);
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
 
-        RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+        RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
         DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice);
         triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
 
@@ -245,7 +246,7 @@ namespace Intrepid2 {
         PointTools::getLattice(lattice_scalar, tri_3, order, 0, POINTTYPE_WARPBLEND);
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
 
-        RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+        RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
         DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, polydim , np_lattice , dim);
         triBasis.getValues(basisAtLattice, lattice, OPERATOR_CURL);

@@ -79,7 +79,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HVOL_TET_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -92,7 +92,7 @@ namespace Intrepid2 {
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
+      using DeviceSpaceType = typename DeviceType::execution_space;      
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -112,17 +112,17 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
       typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+      typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
 
       const scalar_type tol = tolerence();
       int errorFlag = 0;
 
-      typedef Basis_HVOL_TET_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> TetBasisType;
+      typedef Basis_HVOL_TET_Cn_FEM<DeviceType,OutValueType,PointValueType> TetBasisType;
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
       const ordinal_type dim = 3;
 
@@ -144,7 +144,7 @@ namespace Intrepid2 {
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, numPoints , dim);
 
         tetBasis.getDofCoords(lattice_scalar);
-        RealSpaceTools<DeviceSpaceType>::clone(lattice, lattice_scalar);        
+        RealSpaceTools<DeviceType>::clone(lattice, lattice_scalar);        
 
         DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, numFields , numPoints);
         tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
@@ -231,7 +231,7 @@ namespace Intrepid2 {
         DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice, dim);
         DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
         PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
-        RealSpaceTools<DeviceSpaceType>::clone(lattice, lattice_scalar);        
+        RealSpaceTools<DeviceType>::clone(lattice, lattice_scalar);        
         
 
         int deriv_order = 2;
