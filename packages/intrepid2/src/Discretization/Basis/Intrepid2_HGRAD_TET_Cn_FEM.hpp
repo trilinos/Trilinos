@@ -109,7 +109,7 @@ namespace Intrepid2 {
                          const vinvViewType        vinv );
       };
 
-      template<typename ExecSpaceType, ordinal_type numPtsPerEval,
+      template<typename Devicetype, ordinal_type numPtsPerEval,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties,
                typename vinvValueType,        class ...vinvProperties>
@@ -181,27 +181,27 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename ExecSpaceType = void,
+  template<typename Devicetype = void,
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HGRAD_TET_Cn_FEM
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+    : public Basis<Devicetype,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using OrdinalTypeArray1DHost = typename Basis<Devicetype,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<Devicetype,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<Devicetype,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
-    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+    using OutputViewType = typename Basis<Devicetype,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<Devicetype,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<Devicetype,outputValueType,pointValueType>::ScalarViewType;
 
-    typedef typename Basis<ExecSpaceType,outputValueType,pointValueType>::scalarType  scalarType;
+    typedef typename Basis<Devicetype,outputValueType,pointValueType>::scalarType  scalarType;
 
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
         coefficients of the nodal basis in terms of phis_ */
-    Kokkos::DynRankView<scalarType,ExecSpaceType> vinv_;
+    Kokkos::DynRankView<scalarType,Devicetype> vinv_;
 
     /** \brief type of lattice used for creating the DoF coordinates  */
     EPointType pointType_;
@@ -215,7 +215,7 @@ namespace Intrepid2 {
 
 
 
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+    using Basis<Devicetype,outputValueType,pointValueType>::getValues;
 
     virtual
     void
@@ -231,7 +231,7 @@ namespace Intrepid2 {
 #endif
       constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
       Impl::Basis_HGRAD_TET_Cn_FEM::
-        getValues<ExecSpaceType,numPtsPerEval>( outputValues,
+        getValues<Devicetype,numPtsPerEval>( outputValues,
                                                 inputPoints,
                                                 this->vinv_,
                                                 operatorType);
@@ -287,7 +287,7 @@ namespace Intrepid2 {
       return (this->basisDegree_ > 2);
     }
 
-    Kokkos::DynRankView<typename ScalarViewType::const_value_type,ExecSpaceType>
+    Kokkos::DynRankView<typename ScalarViewType::const_value_type,Devicetype>
     getVandermondeInverse() const {
       return vinv_;
     }
@@ -313,15 +313,15 @@ namespace Intrepid2 {
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecSpaceType,outputValueType,pointValueType>
+    BasisPtr<Devicetype,outputValueType,pointValueType>
     getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         return Teuchos::rcp(new
-            Basis_HGRAD_LINE_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            Basis_HGRAD_LINE_Cn_FEM<Devicetype,outputValueType,pointValueType>
             (this->basisDegree_, pointType_));
       } else if(subCellDim == 2) {
         return Teuchos::rcp(new
-            Basis_HGRAD_TRI_Cn_FEM<ExecSpaceType,outputValueType,pointValueType>
+            Basis_HGRAD_TRI_Cn_FEM<Devicetype,outputValueType,pointValueType>
             (this->basisDegree_, pointType_));
       }
 

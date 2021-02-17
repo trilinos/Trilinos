@@ -78,7 +78,7 @@ namespace Test {
     }
 
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -91,12 +91,12 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
+  using DeviceSpaceType = typename DeviceType::execution_space;   
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-//  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-//  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+ *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+ *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
   <<"\n"
@@ -113,10 +113,10 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
@@ -125,7 +125,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
   int errorFlag = 0;
   constexpr ordinal_type dim =2;
 
-  typedef Basis_HDIV_TRI_In_FEM<DeviceSpaceType,OutValueType,PointValueType> TriBasisType;
+  typedef Basis_HDIV_TRI_In_FEM<DeviceType,OutValueType,PointValueType> TriBasisType;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
     *outStream
@@ -145,7 +145,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
     triBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
     DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
     triBasis.getDofCoeffs(dofCoeffs);
@@ -201,7 +201,7 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
     triBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
@@ -279,11 +279,11 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
       DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lattice_host_scalar);
+      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
       deep_copy(lattice_scalar, lattice_host_scalar);
 
       DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-      RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+      RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
       DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
       triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
@@ -390,11 +390,11 @@ int HDIV_TRI_In_FEM_Test01(const bool verbose) {
       DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lattice_host_scalar);
+      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
       deep_copy(lattice_scalar, lattice_host_scalar);
 
       DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-      RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+      RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
       DynRankViewOutValueType ConstructWithLabelOutView(basisDivAtLattice, cardinality , np_lattice);
       triBasis.getValues(basisDivAtLattice, lattice, OPERATOR_DIV);
