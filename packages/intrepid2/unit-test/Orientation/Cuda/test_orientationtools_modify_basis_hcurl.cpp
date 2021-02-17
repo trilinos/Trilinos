@@ -61,8 +61,8 @@ int main(int argc, char *argv[]) {
   
   int r_val = 0;
 
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Cuda>, Kokkos::Cuda>(verbose);
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HCURL<Kokkos::Cuda>(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >, Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HCURL<Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
 
   //r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HCURL<Intrepid2::Basis_HCURL_TRI_In_FEM<Kokkos::Cuda>, Kokkos::Cuda>(verbose);  
 

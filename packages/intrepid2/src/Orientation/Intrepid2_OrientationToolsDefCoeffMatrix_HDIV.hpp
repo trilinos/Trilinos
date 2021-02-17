@@ -326,7 +326,9 @@ getCoeffMatrix_HDIV(OutputViewType &output,
   {
     // move the data to original device memory
     const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofSubcell);
-    Kokkos::deep_copy(Kokkos::subview(output, range, range), PhiMat);
+    auto suboutput = Kokkos::subview(output, range, range);
+    auto tmp = Kokkos::create_mirror_view_and_copy(typename OutputViewType::device_type::memory_space(), PhiMat);
+    Kokkos::deep_copy(suboutput, tmp);
   }
 }
 }

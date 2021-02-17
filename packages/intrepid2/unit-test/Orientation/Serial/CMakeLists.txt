@@ -71,14 +71,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   ) 
   
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_Orientation_QUAD_newBasis
-  SOURCES test_orientation_QUAD_newBasis.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  ) 
+# TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#   Test_Orientation_QUAD_newBasis
+#   SOURCES test_orientation_QUAD_newBasis.cpp
+#   ARGS PrintItAll
+#   NUM_MPI_PROCS 1
+#   PASS_REGULAR_EXPRESSION "TEST PASSED"
+#   ADD_DIR_TO_NAME
+#   ) 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Test_Orientation_TRI
@@ -107,11 +107,11 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ADD_DIR_TO_NAME
   )
   
- TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Test_Orientation_HEX_newBasis
-  SOURCES test_orientation_HEX_newBasis.cpp
-  ARGS PrintItAll
-  NUM_MPI_PROCS 1
-  PASS_REGULAR_EXPRESSION "TEST PASSED"
-  ADD_DIR_TO_NAME
-  )
+ # TRIBITS_ADD_EXECUTABLE_AND_TEST(
+ #  Test_Orientation_HEX_newBasis
+ #  SOURCES test_orientation_HEX_newBasis.cpp
+ #  ARGS PrintItAll
+ #  NUM_MPI_PROCS 1
+ #  PASS_REGULAR_EXPRESSION "TEST PASSED"
+ #  ADD_DIR_TO_NAME
+ #  )

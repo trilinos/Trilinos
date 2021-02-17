@@ -59,9 +59,9 @@ int main(int argc, char *argv[]) {
   
   int r_val =0;
 
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HGRAD<Kokkos::Cuda>(verbose);
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HGRAD<Kokkos::Cuda>(verbose);
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HGRAD<Kokkos::Cuda>(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HGRAD<Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HGRAD<Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HGRAD<Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
 
   Kokkos::finalize();
   return r_val;

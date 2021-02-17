@@ -275,7 +275,7 @@ namespace Intrepid2 {
         numEdges = cellTopo.getEdgeCount()*ordinal_type(basis->getDofCount(1, 0) > 0),
         numFaces = cellTopo.getFaceCount();
 
-      const Kokkos::RangePolicy<DT> policy(0, numCells);
+      const Kokkos::RangePolicy<typename DT::execution_space> policy(0, numCells);
       typedef F_modifyBasisByOrientation
         <decltype(orts),
          decltype(output),decltype(input),
