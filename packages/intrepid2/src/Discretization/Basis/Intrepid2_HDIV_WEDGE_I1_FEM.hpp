@@ -263,10 +263,10 @@ namespace Intrepid2 {
     }
 
 
-    BasisPtr<Kokkos::HostSpace::device_type,outputValueType,pointValueType>                                                                                                                                                                   
-    getHostBasis() const override{                                                                                                                                                                                                            
-      return Teuchos::rcp(new Basis_HDIV_WEDGE_I1_FEM<Kokkos::HostSpace::device_type,outputValueType,pointValueType>());
-    }  
+    BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HDIV_WEDGE_I1_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>());
+    }
   };
 }// namespace Intrepid2
 

@@ -899,8 +899,8 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
     }
 
     /// create a basis object living on host
-    virtual BasisPtr<Kokkos::HostSpace::device_type, OutputValueType, PointValueType>
-    getHostBasis() {
+    virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputValueType, PointValueType>
+    getHostBasis() const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
     }

@@ -309,10 +309,10 @@ getValues<DeviceType,numPtsPerEval>( outputValues,
     INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
   }
 
-  BasisPtr<Kokkos::HostSpace::device_type,outputValueType,pointValueType>                                                                                                                                                                   
-  getHostBasis() const override{                                                                                                                                                                                                            
-    return Teuchos::rcp(new Basis_HDIV_TET_In_FEM<Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_, pointType_));                                                                                        
-  }  
+  BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+  getHostBasis() const override{
+    return Teuchos::rcp(new Basis_HDIV_TET_In_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_, pointType_));
+  }
     private:
 
   /** \brief expansion coefficients of the nodal basis in terms of the
