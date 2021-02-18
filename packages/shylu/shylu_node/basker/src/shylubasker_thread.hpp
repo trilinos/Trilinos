@@ -38,7 +38,7 @@ namespace BaskerNS
     {
       //printf("THREADS BARRIER INIT, %d  \n", _nthreads);
 
-      init_flg = BASKER_TRUE;
+      Finalize();
 
       nthreads = _nthreads;
       ntasks   = _tasks;
@@ -61,30 +61,27 @@ namespace BaskerNS
       {
         exit_token[i] = BASKER_FALSE;
       }
-
+      init_flg = BASKER_TRUE;
     }//end BaskerPointBarrier
 
     ~BaskerPointBarrier()
     {
       //JDB: Need to figure out why this does not work
-      //Finalize();
+      Finalize();
     }//end ~BaskerPointBarrier()
     
     inline
     void Finalize()
     {
-      //std::cout << "flag: " << init_flg << std::endl;
       if(init_flg == BASKER_TRUE)
       {
         for(Int i = 0; i < nthreads; ++i)
         {
           delete [] token[i];
         }
-
         delete [] token;
         delete [] exit_token;
       }
-
       init_flg = BASKER_FALSE;
     }//end Finalize()
     

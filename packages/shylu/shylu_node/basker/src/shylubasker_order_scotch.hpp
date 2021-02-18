@@ -780,6 +780,10 @@ namespace BaskerNS
     //Right now defaulting parts to two
     BT.nparts = 2;
 
+    if (num_levels > 0) {
+      free(sg.Ap);
+      free(sg.Ai);
+    }
     free(sg.permtab);
     free(sg.peritab);
     free(sg.rangtab);

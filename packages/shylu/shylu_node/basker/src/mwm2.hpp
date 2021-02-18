@@ -1014,6 +1014,7 @@ L160:
       }
     }//if(n != num)
 
+    delete [] Q;
     return 0;
   }//end mwm_bn
 
@@ -1076,6 +1077,11 @@ L160:
 
     if(num == n)
     {
+      delete [] d;
+      delete [] jperm;
+      delete [] iperm;
+      delete [] L;
+      delete [] pr;
       return 0;
     }
 
@@ -1105,6 +1111,11 @@ L160:
     printf("\n");
     #endif
 
+    delete [] d;
+    delete [] jperm;
+    delete [] iperm;
+    delete [] L;
+    delete [] pr;
     return 0;
   }//end mwm()
 
@@ -1173,6 +1184,13 @@ L160:
 
     if(num == n)
     {
+      delete [] U;
+      delete [] d;
+      delete [] jperm;
+      delete [] iperm;
+      delete [] L;
+      delete [] pr;
+      delete [] min_val;
       return 0;
     }
     
@@ -1195,6 +1213,13 @@ L160:
  
     if(num == n)
     {
+      delete [] U;
+      delete [] d;
+      delete [] jperm;
+      delete [] iperm;
+      delete [] L;
+      delete [] pr;
+      delete [] min_val;
       return 0;
     }
 
@@ -1228,6 +1253,13 @@ L160:
     printf("\n");
     #endif
 		  
+    delete [] U;
+    delete [] d;
+    delete [] jperm;
+    delete [] iperm;
+    delete [] L;
+    delete [] pr;
+    delete [] min_val;
     return 0;
   }//end mwm()
 
@@ -1547,7 +1579,6 @@ L160:
     Entry dnew;
 
     Int *Q = new Int[n+1]; //Q
-    //Int *L = new Int[n+1]; //Location in Q
     Int *out = new Int[n+1];
 
     //reinit varaibles
@@ -1592,6 +1623,8 @@ L160:
             printf("\n dnew < 0 \n");
             printf("j: %d i: %d k: %d val: %e U: %e dnew: %e \n", j, i, k, val[k], U[i], dnew);
 
+            delete [] Q;
+            delete [] out;
             return -1;
           }
 
@@ -1905,6 +1938,8 @@ L160:
     }//if-num!=n, we where unsuccessful
 
     //Done!
+    delete [] Q;
+    delete [] out;
     return 0;
   }//end mwm_diag_prod()
 
