@@ -288,6 +288,7 @@ namespace Intrepid2 {
     }
 
     Kokkos::DynRankView<typename ScalarViewType::const_value_type,Devicetype>
+
     getVandermondeInverse() const {
       return vinv_;
     }
@@ -328,6 +329,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
+    BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HGRAD_TET_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_, pointType_));
+    }
   };
 
 }// namespace Intrepid2

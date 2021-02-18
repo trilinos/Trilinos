@@ -261,6 +261,10 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
+    BasisPtr<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HGRAD_HEX_C1_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>());
+    }
   };
 }// namespace Intrepid2
 
