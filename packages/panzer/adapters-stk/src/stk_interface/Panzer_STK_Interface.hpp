@@ -640,9 +640,27 @@ public:
      * in lexiographic order (uses the sorting built into the std::map).
      * This method can only be called after <code>initialize</code>.
      *
-     * \param[in,out] names Vector of names of the element blocks.
+     * \param[in,out] names Vector of names of the node sets.
      */
    void getNodesetNames(std::vector<std::string> & name) const;
+
+   /** Get a vector containing the names of the edge blocks.
+     * This function always returns the current set of edge blocks
+     * in lexiographic order (uses the sorting built into the std::map).
+     * This method can only be called after <code>initialize</code>.
+     *
+     * \param[in,out] names Vector of names of the edge blocks.
+     */
+   void getEdgeBlockNames(std::vector<std::string> & names) const;
+   
+   /** Get a vector containing the names of the face blocks.
+     * This function always returns the current set of face blocks
+     * in lexiographic order (uses the sorting built into the std::map).
+     * This method can only be called after <code>initialize</code>.
+     *
+     * \param[in,out] names Vector of names of the face blocks.
+     */
+   void getFaceBlockNames(std::vector<std::string> & names) const;
 
    //! Get a pointer to the locally owned part
    stk::mesh::Part * getOwnedPart() const
