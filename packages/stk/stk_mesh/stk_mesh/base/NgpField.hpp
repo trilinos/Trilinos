@@ -818,23 +818,24 @@ private:
     Kokkos::deep_copy(unHostInnerView, unBufferInnerView);
   }
 
-  void copy_bucket_from_host_to_device(Bucket* bucket, unsigned numPerEntity, unsigned numContiguousBuckets = 1)
+  void copy_bucket_from_host_to_device(Bucket* bucket, unsigned maxNumPerEntity, unsigned numContiguousBuckets = 1)
   {
     unsigned selectedBucketOffset = newHostSelectedBucketOffset(bucket->bucket_id());
 
     UnmanagedHostInnerView<T> unHostInnerView(&hostData(selectedBucketOffset,0,0),
-                                              bucketCapacity*numContiguousBuckets, numPerEntity);
+                                              bucketCapacity*numContiguousBuckets, maxNumPerEntity);
 
-    fill_host_view(bucket, unHostInnerView, numPerEntity);
+    auto bucketNumPerEntity = stk::mesh::field_scalars_per_entity(*hostField, *bucket);
+    fill_host_view(bucket, unHostInnerView, bucketNumPerEntity);
 
-    T* bufferPtr = deviceBuffer.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
-    UnmanagedDevInnerView<T> unBufferInnerView(bufferPtr, bucketCapacity*numContiguousBuckets, numPerEntity);
+    T* bufferPtr = deviceBuffer.data() + selectedBucketOffset * bucketCapacity * maxNumPerEntity;
+    UnmanagedDevInnerView<T> unBufferInnerView(bufferPtr, bucketCapacity*numContiguousBuckets, maxNumPerEntity);
     Kokkos::deep_copy(unBufferInnerView, unHostInnerView);
 
-    T* devicePtr = deviceData.data() + selectedBucketOffset * bucketCapacity * numPerEntity;
-    UnmanagedDevInnerView<T> unDeviceInnerView(devicePtr, ORDER_INDICES(bucketCapacity*numContiguousBuckets, numPerEntity));
+    T* devicePtr = deviceData.data() + selectedBucketOffset * bucketCapacity * maxNumPerEntity;
+    UnmanagedDevInnerView<T> unDeviceInnerView(devicePtr, ORDER_INDICES(bucketCapacity*numContiguousBuckets, maxNumPerEntity));
 
-    transpose_buffer_into_contiguous_device_data(bucketCapacity*numContiguousBuckets, numPerEntity, unBufferInnerView, unDeviceInnerView);
+    transpose_buffer_into_contiguous_device_data(bucketCapacity*numContiguousBuckets, maxNumPerEntity, unBufferInnerView, unDeviceInnerView);
     Kokkos::fence();
   }
 
