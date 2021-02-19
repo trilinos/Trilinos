@@ -27,22 +27,22 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability.
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
- * 
- *  \f{algorithm}{                                                                                                   
- *  \renewcommand{\thealgorithm}{}                                                                                   
- *  \caption{BDF2 with the locations of the modifier modifications indicated.  Note                                     
- *  that the following algorithm in only applied after the first two steps (where                                    
- *  the appAction for the start-up stepper is used)}                                                                 
- *  \begin{algorithmic}[1]                                                                                           
- *    \State {\it modifier.modify(solutionHistory, stepper, BEGIN\_STEP)}                                          
- *    \State Set old values of $x_{n}$, $x_{n-1}$ to the new values of $x_{n-1}$, $x_{n-2}$ respectively.            
- *    \State {\it modifier.modify(solutionHistory, stepper, BEFORE\_SOLVE)}                                        
- *    \State Solve $F( (3 x_{n} - 4 x _{n-1} + x_{n-2})/(3\Delta t),x_{n},t_{n}) for $x_n$                           
- *    \State {\it modifier.modify(solutionHistory, stepper, AFTER\_SOLVE)}                                         
- *    \State $\dot{x}_{n} \leftarrow (3 x_{n} - 4 x_{n-1} + x_{n-2})/(3\Delta t)$                                    
- *    \State {\it modifier.modify(solutionHistory, stepper, END\_STEP)}                                            
- *  \end{algorithmic}                                                                                                
- *  \f}                                                                                                              
+ *
+ *  \f{algorithm}{
+ *  \renewcommand{\thealgorithm}{}
+ *  \caption{BDF2 with the locations of the modifier modifications indicated.  Note
+ *  that the following algorithm in only applied after the first two steps (where
+ *  the appAction for the start-up stepper is used)}
+ *  \begin{algorithmic}[1]
+ *    \State {\it modifier.modify(solutionHistory, stepper, BEGIN\_STEP)}
+ *    \State Set old values of $x_{n}$, $x_{n-1}$ to the new values of $x_{n-1}$, $x_{n-2}$ respectively.
+ *    \State {\it modifier.modify(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *    \State Solve $F( (3 x_{n} - 4 x _{n-1} + x_{n-2})/(3\Delta t),x_{n},t_{n}) for $x_n$
+ *    \State {\it modifier.modify(solutionHistory, stepper, AFTER\_SOLVE)}
+ *    \State $\dot{x}_{n} \leftarrow (3 x_{n} - 4 x_{n-1} + x_{n-2})/(3\Delta t)$
+ *    \State {\it modifier.modify(solutionHistory, stepper, END\_STEP)}
+ *  \end{algorithmic}
+ *  \f}
  */
 template<class Scalar>
 class StepperBDF2ModifierBase

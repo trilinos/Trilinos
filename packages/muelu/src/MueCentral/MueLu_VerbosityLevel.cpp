@@ -117,6 +117,7 @@ namespace MueLu {
     verbMap["statistics"]     = Statistics;
     verbMap["timings"]        = Timings;
     verbMap["test"]           = Test;
+    verbMap["interfacetest"]  = InterfaceTest;
     //for users and developers
     verbMap["none"]           = None;
     verbMap["low"]            = Low;

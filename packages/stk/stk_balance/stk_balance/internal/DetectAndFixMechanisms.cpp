@@ -128,8 +128,9 @@ std::vector<stk::mesh::EntityVector> get_elements_per_component(const stk::mesh:
 
     std::vector<stk::mesh::EntityVector> elementsPerComponent(num_dsd);
 
+    const bool sortById = true;
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(), elements, sortById);
 
     for(size_t i=0;i<list_ptr.size()-1;++i)
     {

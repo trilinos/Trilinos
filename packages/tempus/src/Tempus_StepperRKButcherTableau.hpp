@@ -14,6 +14,7 @@
 #pragma clang system_header
 #endif
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperExplicitRK.hpp"
 #include "Tempus_StepperDIRK.hpp"
 #include "Tempus_RKButcherTableau.hpp"
@@ -101,6 +102,26 @@ protected:
     this->tableau_->setTVDCoeff(1.0);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_ForwardEuler<Scalar> >
+createStepperERK_ForwardEuler(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_ForwardEuler<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -204,6 +225,26 @@ public:
       this->getStepperType(),A,b,c,order,order,order));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_4Stage4thOrder<Scalar> >
+createStepperERK_4Stage4thOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_4Stage4thOrder<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -324,6 +365,26 @@ protected:
       this->getStepperType(),A,b,c,order,order,order,bstar));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_BogackiShampine32<Scalar> >
+createStepperERK_BogackiShampine32(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_BogackiShampine32<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -458,6 +519,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_Merson45<Scalar> >
+createStepperERK_Merson45(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_Merson45<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief Explicit RK 3/8th Rule Butcher Tableau
  *
@@ -565,6 +646,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_3_8Rule<Scalar> >
+createStepperERK_3_8Rule(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_3_8Rule<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Explicit 4 Stage 3rd order by Runge
  *
@@ -670,6 +771,26 @@ protected:
       this->getStepperType(),A,b,c,order,order,order));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_4Stage3rdOrderRunge<Scalar> >
+createStepperERK_4Stage3rdOrderRunge(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_4Stage3rdOrderRunge<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -782,6 +903,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_5Stage3rdOrderKandG<Scalar> >
+createStepperERK_5Stage3rdOrderKandG(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_5Stage3rdOrderKandG<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Explicit 3 Stage 3rd order
  *
@@ -878,6 +1019,26 @@ protected:
       this->getStepperType(),A,b,c,order,order,order));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_3Stage3rdOrder<Scalar> >
+createStepperERK_3Stage3rdOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_3Stage3rdOrder<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -1007,6 +1168,28 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_3Stage3rdOrderTVD<Scalar> >
+createStepperERK_3Stage3rdOrderTVD(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl,
+  const std::string stepperType)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_3Stage3rdOrderTVD<Scalar>());
+  stepper->setStepperType(stepperType);
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Explicit 3 Stage 3rd order by Heun
  *
@@ -1113,6 +1296,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_3Stage3rdOrderHeun<Scalar> >
+createStepperERK_3Stage3rdOrderHeun(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_3Stage3rdOrderHeun<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Explicit Midpoint
  *
@@ -1213,6 +1416,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_Midpoint<Scalar> >
+createStepperERK_Midpoint(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_Midpoint<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Explicit Ralston
  *
@@ -1307,6 +1530,28 @@ protected:
     this->tableau_->setTVDCoeff(0.5);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_Ralston<Scalar> >
+createStepperERK_Ralston(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl,
+  std::string stepperType)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_Ralston<Scalar>());
+  stepper->setStepperType(stepperType);
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -1410,6 +1655,28 @@ protected:
     this->tableau_->setTVDCoeff(1.0);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_Trapezoidal<Scalar> >
+createStepperERK_Trapezoidal(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl,
+  std::string stepperType)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
+  stepper->setStepperType(stepperType);
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -1532,6 +1799,26 @@ protected:
     this->tableau_->setTVDCoeff(sspcoef);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_SSPERK54<Scalar> >
+createStepperERK_SSPERK54(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_SSPERK54<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -1680,6 +1967,38 @@ public:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperERK_General<Scalar> >
+createStepperERK_General(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperERK_General<Scalar>());
+  stepper->setStepperRKValues(pl);
+
+  if (pl != Teuchos::null) {
+    if (pl->isParameter("Tableau")) {
+      auto t = stepper->createTableau(pl);
+      stepper->setTableau( t->A(),t->b(),t->c(),
+                           t->order(),t->orderMin(),t->orderMax(),
+                           t->bstar() );
+    }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stepper->getTableau()->isImplicit() == true, std::logic_error,
+    "Error - General ERK received an implicit Butcher Tableau!\n");
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief Backward Euler Runge-Kutta Butcher Tableau
  *
@@ -1776,6 +2095,26 @@ protected:
     this->tableau_->setTVDCoeff(sspcoef);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperDIRK_BackwardEuler<Scalar> >
+createStepperDIRK_BackwardEuler(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperDIRK_BackwardEuler<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -1922,6 +2261,29 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_2Stage2ndOrder<Scalar> >
+createStepperSDIRK_2Stage2ndOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_2Stage2ndOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (pl != Teuchos::null)
+    stepper->setGamma(pl->get<double>("gamma", 0.2928932188134524));
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief SDIRK 3 Stage 2nd  order
  *
@@ -2050,6 +2412,26 @@ protected:
   }
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_3Stage2ndOrder<Scalar> >
+createStepperSDIRK_3Stage2ndOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -2244,6 +2626,32 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_2Stage3rdOrder<Scalar> >
+createStepperSDIRK_2Stage3rdOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_2Stage3rdOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (pl != Teuchos::null) {
+    stepper->setGammaType(
+      pl->get<std::string>("Gamma Type", "3rd Order A-stable"));
+    stepper->setGamma(pl->get<double>("gamma", 0.7886751345948128));
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief EDIRK 2 Stage 3rd order
  *
@@ -2353,6 +2761,25 @@ protected:
     this->tableau_->setTVDCoeff(1.5);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+template<class Scalar>
+Teuchos::RCP<StepperEDIRK_2Stage3rdOrder<Scalar> >
+createStepperEDIRK_2Stage3rdOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperEDIRK_2Stage3rdOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -2496,6 +2923,30 @@ protected:
     Scalar thetaDefault_;
     Scalar theta_;
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperDIRK_1StageTheta<Scalar> >
+createStepperDIRK_1StageTheta(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperDIRK_1StageTheta<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (pl != Teuchos::null) {
+    stepper->setTheta(pl->get<double>("theta", 0.5));
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -2654,6 +3105,30 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperEDIRK_2StageTheta<Scalar> >
+createStepperEDIRK_2StageTheta(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperEDIRK_2StageTheta<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (pl != Teuchos::null) {
+    stepper->setTheta(pl->get<double>("theta", 0.5));
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Trapezoidal Rule (A.K.A. RK Crank-Nicolson)
  *
@@ -2765,6 +3240,31 @@ protected:
     this->tableau_->setTVDCoeff(2.0);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperEDIRK_TrapezoidalRule<Scalar> >
+createStepperEDIRK_TrapezoidalRule(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  // This stepper goes by various names (e.g., 'RK Trapezoidal Rule'
+  // and 'RK Crank-Nicolson').  Make sure it is set to the default name.
+  if (pl != Teuchos::null)
+    pl->set<std::string>("Stepper Type", "RK Trapezoidal Rule");
+
+  auto stepper = Teuchos::rcp(new StepperEDIRK_TrapezoidalRule<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -2887,6 +3387,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_ImplicitMidpoint<Scalar> >
+createStepperSDIRK_ImplicitMidpoint(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_ImplicitMidpoint<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
  *
@@ -2993,6 +3513,26 @@ protected:
     this->tableau_->setTVDCoeff(4.0);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_SSPDIRK22<Scalar> >
+createStepperSDIRK_SSPDIRK22(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK22<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -3107,6 +3647,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_SSPDIRK32<Scalar> >
+createStepperSDIRK_SSPDIRK32(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK32<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief Strong Stability Preserving Diagonally-Implicit RK Butcher Tableau
  *
@@ -3215,6 +3775,26 @@ protected:
     this->tableau_->setTVDCoeff(sspcoef);
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_SSPDIRK23<Scalar> >
+createStepperSDIRK_SSPDIRK23(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK23<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -3331,6 +3911,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_SSPDIRK33<Scalar> >
+createStepperSDIRK_SSPDIRK33(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_SSPDIRK33<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief RK Implicit 1 Stage 1st order Radau IA
  *
@@ -3431,6 +4031,26 @@ protected:
       this->getStepperType(),A,b,c,order,order,order,emptyBStar,false));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperDIRK_1Stage1stOrderRadauIA<Scalar> >
+createStepperDIRK_1Stage1stOrderRadauIA(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperDIRK_1Stage1stOrderRadauIA<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -3552,6 +4172,26 @@ protected:
   }
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperDIRK_2Stage2ndOrderLobattoIIIB<Scalar> >
+createStepperDIRK_2Stage2ndOrderLobattoIIIB(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperDIRK_2Stage2ndOrderLobattoIIIB<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -3719,6 +4359,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_5Stage4thOrder<Scalar> >
+createStepperSDIRK_5Stage4thOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_5Stage4thOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief SDIRK 3 Stage 4th order
  *
@@ -3851,6 +4511,26 @@ protected:
       this->getStepperType(),A,b,c,order,order,order));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_3Stage4thOrder<Scalar> >
+createStepperSDIRK_3Stage4thOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_3Stage4thOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -4037,6 +4717,26 @@ protected:
 };
 
 
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_5Stage5thOrder<Scalar> >
+createStepperSDIRK_5Stage5thOrder(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_5Stage5thOrder<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
+
 // ----------------------------------------------------------------------------
 /** \brief SDIRK 2(1) pair
  *
@@ -4146,6 +4846,26 @@ protected:
       this->getStepperType(),A,b,c,order,order,order,bstar));
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSDIRK_21Pair<Scalar> >
+createStepperSDIRK_21Pair(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSDIRK_21Pair<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 // ----------------------------------------------------------------------------
@@ -4301,6 +5021,38 @@ public:
     return pl;
   }
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperDIRK_General<Scalar> >
+createStepperDIRK_General(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperDIRK_General<Scalar>());
+  stepper->setStepperDIRKValues(pl);
+
+  if (pl != Teuchos::null) {
+    if (pl->isParameter("Tableau")) {
+      auto t = stepper->createTableau(pl);
+      stepper->setTableau( t->A(),t->b(),t->c(),
+                           t->order(),t->orderMin(),t->orderMax(),
+                           t->bstar() );
+    }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stepper->getTableau()->isDIRK() != true, std::logic_error,
+    "Error - General DIRK did not receive a DIRK Butcher Tableau!\n");
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
 
 
 } // namespace Tempus

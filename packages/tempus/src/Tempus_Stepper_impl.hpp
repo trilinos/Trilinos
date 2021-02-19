@@ -282,5 +282,28 @@ bool Stepper<Scalar>::isValidSetup(
 }
 
 
+template<class Scalar>
+void Stepper<Scalar>::
+setStepperValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", this->getStepperType());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != this->getStepperType() ,std::runtime_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='"
+      + this->getStepperType() + "').");
+    this->setStepperType(stepperType);
+
+    this->setUseFSAL(pl->get<bool>("Use FSAL", false));
+    this->setICConsistency(
+      pl->get<std::string>("Initial Condition Consistency", "None"));
+    this->setICConsistencyCheck(
+      pl->get<bool>("Initial Condition Consistency Check", false));
+  }
+}
+
+
 } // namespace Tempus
 #endif // Tempus_Stepper_impl_hpp

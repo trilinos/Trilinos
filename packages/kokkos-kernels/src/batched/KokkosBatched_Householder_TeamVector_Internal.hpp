@@ -68,6 +68,7 @@ namespace KokkosBatched {
          [&](const int &i) {
           x2[i*x2s] *= inv_chi1_minus_alpha;
         });
+      member.team_barrier();
 
       // later consider to use the following
       // SerialScaleInternal::invoke(m_x2, inv_chi1_minus_alpha, x2, x2s);

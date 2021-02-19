@@ -270,7 +270,7 @@ make_view(const ViewAllocateWithoutInitializing& init,
           size_t N0 = 0, size_t N1 = 0, size_t N2 = 0, size_t N3 = 0,
           size_t N4 = 0, size_t N5 = 0, size_t N6 = 0, size_t N7 = 0)
 {
-  return ViewType(view_alloc(init.label,
+  return ViewType(view_alloc(((Kokkos::Impl::ViewCtorProp<void, std::string>)init).value,
                                            WithoutInitializing,
                                            cijk),
                   N0, N1, N2, N3, N4, N5, N6, N7);

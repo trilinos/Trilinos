@@ -56,6 +56,7 @@
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_InitialBlockNumberFactory.hpp"
 #include "MueLu_LineDetectionFactory.hpp"
 // #include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_NoFactory.hpp"
@@ -197,6 +198,7 @@ namespace MueLu {
       if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
+      if (varName == "BlockNumber")                     return SetAndReturnDefaultFactory(varName, rcp(new InitialBlockNumberFactory()));
       if (varName == "LineDetection_VertLineIds")       return SetAndReturnDefaultFactory(varName, rcp(new LineDetectionFactory()));
       if (varName == "LineDetection_Layers")            return GetFactory("LineDetection_VertLineIds");
       if (varName == "CoarseNumZLayers")                return GetFactory("LineDetection_VertLineIds");
@@ -252,7 +254,6 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Print() const {
     std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
-
     Teuchos::FancyOStream& fancy = GetOStream(Debug);
 
     fancy << "Users factory table (factoryTable_):" << std::endl;

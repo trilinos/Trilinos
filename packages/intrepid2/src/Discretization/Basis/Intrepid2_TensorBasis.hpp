@@ -364,8 +364,8 @@ struct OperatorTensorDecomposition
             {
               for (ordinal_type subComponentBasis=0; subComponentBasis<basisOpDecomposition.numBasisComponents(); subComponentBasis++)
               {
-                const auto &op = basisOpDecomposition.op(subVectorEntryOrdinal, subComponentBasis);
-                expandedBasisOpsForSimpleVectorEntry[subVectorEntryOrdinal].push_back(op);
+                const auto &basisOp = basisOpDecomposition.op(subVectorEntryOrdinal, subComponentBasis);
+                expandedBasisOpsForSimpleVectorEntry[subVectorEntryOrdinal].push_back(basisOp);
               }
             }
           }
@@ -381,8 +381,8 @@ struct OperatorTensorDecomposition
             const ordinal_type numBasisComponents = basisOpDecomposition.numBasisComponents();
             for (ordinal_type subComponentBasis=0; subComponentBasis<numBasisComponents; subComponentBasis++)
             {
-              const auto &op = basisOpDecomposition.op(subVectorEntryOrdinal, basisComponentOrdinal);
-              addExpandedOp( op );
+              const auto &basisOp = basisOpDecomposition.op(subVectorEntryOrdinal, basisComponentOrdinal);
+              addExpandedOp( basisOp );
             }
           }
         }

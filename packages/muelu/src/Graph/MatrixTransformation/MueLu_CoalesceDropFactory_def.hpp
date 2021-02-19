@@ -49,6 +49,7 @@
 #include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_CrsGraph.hpp>
 #include <Xpetra_ImportFactory.hpp>
+#include <Xpetra_ExportFactory.hpp>
 #include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Matrix.hpp>
@@ -118,10 +119,11 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: drop tol");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: drop scheme");
+    SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(
-        rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian"), "aggregation: drop scheme")));
+      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","block diagonal","block diagonal classical","block diagonal distance laplacian"), "aggregation: drop scheme")));
+                                                                        
     }
     SET_VALID_ENTRY("aggregation: distance laplacian algo");
     SET_VALID_ENTRY("aggregation: classical algo");
@@ -131,45 +133,102 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
+    validParamList->set< RCP<const FactoryBase> >("BlockNumber",        Teuchos::null, "Generating factory for Coordinates");
 
     return validParamList;
   }
-
+    
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CoalesceDropFactory() : predrop_(Teuchos::null) { }
-
+  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "UnAmalgamationInfo");
-
+    
     const ParameterList& pL = GetParameterList();
     if (pL.get<bool>("lightweight wrap") == true) {
-      if (pL.get<std::string>("aggregation: drop scheme") == "distance laplacian")
-        Input(currentLevel, "Coordinates");
-
-    }
+      std::string algo = pL.get<std::string>("aggregation: drop scheme");
+      if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
+        Input(currentLevel, "Coordinates");    
+      }
+      if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" || algo == "block diagonal")  {
+        Input(currentLevel, "BlockNumber");
+      }
+    }     
+    
   }
-
+  
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const {
-
+    
     FactoryMonitor m(*this, "Build", currentLevel);
-
+    
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType real_type;
     typedef Xpetra::MultiVector<real_type,LO,GO,NO> RealValuedMultiVector;
-
+    typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+    
     if (predrop_ != Teuchos::null)
       GetOStream(Parameters0) << predrop_->description();
 
-    RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
+    RCP<Matrix> realA = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
-
     const ParameterList  & pL = GetParameterList();
     bool doExperimentalWrap = pL.get<bool>("lightweight wrap");
 
     GetOStream(Parameters0) << "lightweight wrap = " << doExperimentalWrap << std::endl;
+    std::string algo = pL.get<std::string>("aggregation: drop scheme");
+    
+    RCP<RealValuedMultiVector> Coords;
+
+    RCP<Matrix> A;    
+    if(algo == "distance laplacian" ) { 
+      // Grab the coordinates for distance laplacian
+      Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
+      A = realA;
+    }
+    else if(algo == "block diagonal") {
+      // Handle the "block diagonal" filtering and then leave
+      BlockDiagonalize(currentLevel,realA,false);
+      return;
+    }
+    else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian")  {
+      // Handle the "block diagonal" filtering, and then continue onward
+      RCP<Matrix> filteredMatrix = BlockDiagonalize(currentLevel,realA,true);
+      if(algo == "block diagonal") return;
+      else if(algo == "block diagonal distance laplacian") {  
+        // We now need to expand the coordinates by the interleaved blocksize
+        LO blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
+        RCP<RealValuedMultiVector> OldCoords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
+        if (OldCoords->getLocalLength() != realA->getNodeNumRows()) {
+           LO dim = (LO) OldCoords->getNumVectors();
+           Coords = RealValuedMultiVectorFactory::Build(realA->getRowMap(),dim);
+           for(LO k=0; k<dim; k++){
+             ArrayRCP<const real_type> old_vec = OldCoords->getData(k);
+             ArrayRCP<real_type>       new_vec = Coords->getDataNonConst(k);
+             for(LO i=0; i <(LO)OldCoords->getLocalLength(); i++) {   
+               LO new_base = i*dim;
+               for(LO j=0; j<blocksize; j++) 
+                new_vec[new_base + j] = old_vec[i];
+             }
+          }
+        }
+        else {
+          Coords = OldCoords;
+        }  
+        algo = "distance laplacian";
+      }
+      else if(algo == "block diagonal classical") {
+        algo = "classical";
+      }
+      // Both cases
+      A = filteredMatrix;
+    }
+    else {
+      A = realA;
+    }
+
 
     // decide wether to use the fast-track code path for standard maps or the somewhat slower
     // code path for non-standard maps
@@ -183,8 +242,6 @@ namespace MueLu {
     }*/
 
     if (doExperimentalWrap) {
-      std::string algo = pL.get<std::string>("aggregation: drop scheme");
-
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "classical", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
       TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian)");
 
@@ -214,7 +271,7 @@ namespace MueLu {
 # endif
 #endif
       ////////////////////////////////////////////////////
-
+ 
       enum decisionAlgoType {defaultAlgo, unscaled_cut, scaled_cut, scaled_cut_symmetric};
 
       decisionAlgoType distanceLaplacianAlgo = defaultAlgo;
@@ -716,7 +773,7 @@ namespace MueLu {
         // ap: somehow, if I move this line to [*1*], Belos throws an error
         // I'm not sure what's going on. Do we always have to Get data, if we did
         // DeclareInput for it?
-        RCP<RealValuedMultiVector> Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
+        //        RCP<RealValuedMultiVector> Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
 
         // Detect and record rows that correspond to Dirichlet boundary conditions
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
@@ -789,9 +846,9 @@ namespace MueLu {
             RCP<const Import> importer;
             {
               SubFactoryMonitor m1(*this, "Import construction", currentLevel);
-              if (blkSize == 1 && A->getCrsGraph()->getImporter() != Teuchos::null) {
+              if (blkSize == 1 &&  realA->getCrsGraph()->getImporter() != Teuchos::null) {
                 GetOStream(Warnings1) << "Using existing importer from matrix graph" << std::endl;
-                importer = A->getCrsGraph()->getImporter();
+                importer = realA->getCrsGraph()->getImporter();
               } else {
                 GetOStream(Warnings0) << "Constructing new importer instance" << std::endl;
                 importer = ImportFactory::Build(uniqueMap, nonUniqueMap);
@@ -1288,6 +1345,7 @@ namespace MueLu {
 
     } //if (doExperimentalWrap) ... else ...
 
+
   } //Build
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1423,6 +1481,124 @@ namespace MueLu {
 
     return;
   }
+
+
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BlockDiagonalize(Level & currentLevel,const RCP<Matrix>& A,bool generate_matrix) const {
+    typedef Teuchos::ScalarTraits<SC> STS;
+ 
+    const ParameterList  & pL = GetParameterList();
+    const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+
+    RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(currentLevel, "BlockNumber");
+    RCP<LocalOrdinalVector> ghostedBlockNumber;
+    GetOStream(Statistics1) << "Using BlockDiagonal Graph (with provided blocking)"<<std::endl;      
+
+    // Ghost the column block numbers if we need to
+    RCP<const Import> importer = A->getCrsGraph()->getImporter();
+    if(!importer.is_null()) {
+      SubFactoryMonitor m1(*this, "Block Number import", currentLevel);      
+      ghostedBlockNumber= Xpetra::VectorFactory<LO,LO,GO,NO>::Build(importer->getTargetMap());
+      ghostedBlockNumber->doImport(*BlockNumber, *importer, Xpetra::INSERT);
+    } 
+    else {
+      ghostedBlockNumber = BlockNumber;
+    }
+
+    // Accessors for block numbers
+    Teuchos::ArrayRCP<const LO> row_block_number = BlockNumber->getData(0);
+    Teuchos::ArrayRCP<const LO> col_block_number = ghostedBlockNumber->getData(0);
+
+    // allocate space for the local graph
+    ArrayRCP<size_t> rows_mat;   
+    ArrayRCP<LO> rows_graph,columns;
+    ArrayRCP<SC> values;
+    RCP<CrsMatrixWrap> crs_matrix_wrap;
+    
+    if(generate_matrix) {
+      crs_matrix_wrap = rcp(new CrsMatrixWrap(A->getRowMap(), A->getColMap(), 0));
+      crs_matrix_wrap->getCrsMatrix()->allocateAllValues(A->getNodeNumEntries(), rows_mat, columns, values);
+    }
+    else {
+      rows_graph.resize(A->getNodeNumRows()+1);
+      columns.resize(A->getNodeNumEntries());
+      values.resize(A->getNodeNumEntries());
+    }
+      
+    LO realnnz = 0;
+    GO numDropped = 0, numTotal = 0;
+    for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
+      LO row_block = row_block_number[row];
+      size_t nnz = A->getNumEntriesInLocalRow(row);
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      A->getLocalRowView(row, indices, vals);
+
+      LO rownnz = 0;
+      for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+        LO col = indices[colID];
+        LO col_block = col_block_number[col];
+        
+        if(row_block == col_block) {
+          if(generate_matrix) values[realnnz] = vals[colID];
+          columns[realnnz++] = col;
+          rownnz++;
+        } else
+          numDropped++;
+      }
+      if(generate_matrix) rows_mat[row+1] = realnnz;
+      else rows_graph[row+1] = realnnz;
+    }
+    
+    ArrayRCP<const bool> boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        
+    if(!generate_matrix) {
+      // We can't resize an Arrayrcp and pass the checks for setAllValues
+      values.resize(realnnz);
+      columns.resize(realnnz);
+    }
+    numTotal = A->getNodeNumEntries();
+
+    if (GetVerbLevel() & Statistics1) {
+      GO numLocalBoundaryNodes  = 0;
+      GO numGlobalBoundaryNodes = 0;
+      for (LO i = 0; i < boundaryNodes.size(); ++i)
+        if (boundaryNodes[i])
+          numLocalBoundaryNodes++;
+      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+      MueLu_sumAll(comm, numLocalBoundaryNodes, numGlobalBoundaryNodes);
+      GetOStream(Statistics1) << "Detected " << numGlobalBoundaryNodes << " Dirichlet nodes" << std::endl;
+
+      GO numGlobalTotal, numGlobalDropped;
+      MueLu_sumAll(comm, numTotal,   numGlobalTotal);
+      MueLu_sumAll(comm, numDropped, numGlobalDropped);
+      GetOStream(Statistics1) << "Number of dropped entries in block-diagonalized matrix graph: " << numGlobalDropped << "/" << numGlobalTotal;
+      if (numGlobalTotal != 0)
+        GetOStream(Statistics1) << " (" << 100*Teuchos::as<double>(numGlobalDropped)/Teuchos::as<double>(numGlobalTotal) << "%)";
+      GetOStream(Statistics1) << std::endl;
+    }
+
+    Set(currentLevel, "Filtering", true);    
+
+    if(generate_matrix) {
+      // NOTE: Trying to use A's Import/Export objects will cause the code to segfault back in Build() with errors on the Import
+      // if you're using Epetra.  I'm not really sure why. By using the Col==Domain and Row==Range maps, we get null Import/Export objects
+      // here, which is legit, because we never use them anyway.
+      crs_matrix_wrap->getCrsMatrix()->setAllValues(rows_mat,columns,values);      
+      crs_matrix_wrap->getCrsMatrix()->expertStaticFillComplete(A->getColMap(), A->getRowMap());
+    }
+    else {
+      RCP<GraphBase> graph =  rcp(new LWGraph(rows_graph, columns, A->getRowMap(), A->getColMap(), "block-diagonalized graph of A"));
+      graph->SetBoundaryNodeMap(boundaryNodes);
+      Set(currentLevel, "Graph",       graph);
+    }
+
+
+    Set(currentLevel, "DofsPerNode", 1);
+    return crs_matrix_wrap;
+  }
+
 } //namespace MueLu
 
 #endif // MUELU_COALESCEDROPFACTORY_DEF_HPP

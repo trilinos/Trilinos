@@ -276,7 +276,7 @@ namespace KokkosSparse{
               for(int j = 0; j < N; j++)
                 lsum.data[j] += val * _Xvector(colIndex, colStart + j);
             }, sum);
-          Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+          Kokkos::single(Kokkos::PerThread(teamMember),[&] ()
           {
             nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(row);
             for(int i = 0; i < N; i++)
@@ -420,7 +420,7 @@ namespace KokkosSparse{
 
                   product += product2;
                   //update the new vector entries.
-                  Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+                  Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
                       nnz_lno_t block_row_index = ii * block_size + i;
                       nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);
                       _Xvector(block_row_index, vec) += omega * (_Yvector(block_row_index, vec) - product) * invDiagonalVal;
@@ -484,7 +484,7 @@ namespace KokkosSparse{
 
           Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& ii) {
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-              Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+              Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
                   for(nnz_lno_t i = 0; i < block_size; diagonal_positions[i++] = -1);
                 });
 #endif
@@ -542,7 +542,7 @@ namespace KokkosSparse{
                       valueToUpdate += all_shared_memory[colind] * _adj_vals(current_row_begin + colind);
                     }, product);
 
-                  Kokkos::single(Kokkos::PerThread(teamMember),[=] ()
+                  Kokkos::single(Kokkos::PerThread(teamMember),[&] ()
                   {
                     nnz_lno_t block_row_index = ii * block_size + i;
                     nnz_scalar_t invDiagonalVal = _permuted_inverse_diagonal(block_row_index);
@@ -554,9 +554,8 @@ namespace KokkosSparse{
                     }
                   });
 
-#if !defined(__CUDA_ARCH__)
 #if KOKKOSSPARSE_IMPL_PRINTDEBUG
-                  if (/*i == 0 && ii == 1*/ ii == 0 || (block_size == 1 && ii < 2) ){
+                  if (!KokkosKernels::Impl::kk_is_gpu_exec_space<typename team_member_t::execution_space>() && (ii == 0 || (block_size == 1 && ii < 2))){
                     std::cout << "\n\n\nrow:" << ii * block_size + i;
                     std::cout << "\nneighbors:";
                     for (nnz_lno_t z = 0; z < block_row_size; ++z){
@@ -573,7 +572,6 @@ namespace KokkosSparse{
 
                     std::cout << std::endl << "block_row_index:" << ii * block_size + i <<  " _Xvector(block_row_index):" << _Xvector(ii * block_size + i, vec) << std::endl << std::endl<< std::endl;
                   }
-#endif
 #endif
                   //row_begin += row_size * block_size;
                 }
@@ -737,31 +735,16 @@ namespace KokkosSparse{
         timer.reset();
 #endif
 
-
-#if defined( KOKKOS_ENABLE_CUDA )
-        if (std::is_same<Kokkos::Cuda, MyExecSpace >::value){
-          for (nnz_lno_t i = 0; i < numColors; ++i){
-            nnz_lno_t color_index_begin = h_color_xadj(i);
-            nnz_lno_t color_index_end = h_color_xadj(i + 1);
-
-            if (color_index_begin + 1 >= color_index_end ) continue;
-            auto colorsubset =
-              subview(color_adj, Kokkos::pair<row_lno_t, row_lno_t> (color_index_begin, color_index_end));
-            MyExecSpace().fence();
-            Kokkos::sort (colorsubset);
-            //TODO: MD 08/2017: If I remove the below fence, code fails on cuda.
-            //I do not see any reason yet it to fail.
-            MyExecSpace().fence();
-          }
-        }
-#endif
-
-        MyExecSpace().fence();
+        // TODO BMK: Why are the vertices in each color set only being sorted on GPU?
+        // Wouldn't it have a locality benefit on CPU too?
+        if(KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
+          KokkosKernels::Impl::sort_crs_graph<MyExecSpace, decltype(color_xadj), decltype(color_adj)>(color_xadj, color_adj);
+          MyExecSpace().fence();
 #ifdef KOKKOSSPARSE_IMPL_TIME_REVERSE
-        std::cout << "SORT_TIME:" << timer.seconds() << std::endl;
-        timer.reset();
-        //std::cout << "sort" << std::endl;
+          std::cout << "SORT_TIME:" << timer.seconds() << std::endl;
+          timer.reset();
 #endif
+        }
 
         row_lno_persistent_work_view_t permuted_xadj ("new xadj", num_rows + 1);
         nnz_lno_persistent_work_view_t old_to_new_map ("old_to_new_index_", num_rows );
@@ -843,8 +826,7 @@ namespace KokkosSparse{
           nnz_lno_t num_values_in_l2 = 0;
           nnz_lno_t num_big_rows = 0;
 
-          KokkosKernels::Impl::ExecSpaceType ex_sp = this->handle->get_handle_exec_space();
-          if (ex_sp != KokkosKernels::Impl::Exec_CUDA){
+          if (!KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
             //again, if it is on CPUs, we make L1 as big as we need.
             size_t l1mem = 1;
             while(l1mem < level_1_mem){
@@ -882,12 +864,11 @@ namespace KokkosSparse{
               num_big_rows = KOKKOSKERNELS_MACRO_MIN(num_large_rows, (size_type)(MyExecSpace::concurrency() / suggested_vector_size));
               //std::cout << "num_big_rows:" << num_big_rows << std::endl;
 
-#if defined( KOKKOS_ENABLE_CUDA )
-              if (ex_sp == KokkosKernels::Impl::Exec_CUDA) {
+              if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
                 //check if we have enough memory for this. lower the concurrency if we do not have enugh memory.
                 size_t free_byte ;
                 size_t total_byte ;
-                cudaMemGetInfo( &free_byte, &total_byte ) ;
+                KokkosKernels::Impl::kk_get_free_total_memory<typename pool_memory_space::memory_space>(free_byte, total_byte);
                 size_t required_size = size_t (num_big_rows) * level_2_mem;
                 if (required_size + num_big_rows * sizeof(int) > free_byte){
                   num_big_rows = ((((free_byte - num_big_rows * sizeof(int))* 0.8) /8 ) * 8) / level_2_mem;
@@ -900,7 +881,6 @@ namespace KokkosSparse{
                   num_big_rows = min_chunk_size;
                 }
               }
-#endif
             }
           }
 
@@ -1165,7 +1145,7 @@ namespace KokkosSparse{
           // change fill_matrix_numeric so that they store the internal matrix as above.
           // the rest will wok fine.
 
-          if (this->handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA){
+          if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>()) {
             Kokkos::parallel_for( "KokkosSparse::GaussSeidel::Team_fill_matrix_numeric",
                                   team_policy_t(num_rows / rows_per_team + 1 , suggested_team_size, suggested_vector_size),
                                   fill_matrix_numeric(
@@ -1209,7 +1189,7 @@ namespace KokkosSparse{
                                      block_size,
                                      block_matrix_size);
 
-            if (this->handle->get_handle_exec_space() == KokkosKernels::Impl::Exec_CUDA || block_size > 1){
+            if (KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>() || block_size > 1){
               Kokkos::parallel_for("KokkosSparse::GaussSeidel::team_get_matrix_diagonals",
                                    team_policy_t((num_rows + rows_per_team - 1) / rows_per_team, suggested_team_size, suggested_vector_size),
                                    gmd );

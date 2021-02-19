@@ -20,7 +20,7 @@ namespace Ioss {
                              occurred. */
     STATE_READONLY,     /**< An input database that is not in STATE_UNKNOWN is in this
                              state, which means that it cannot be written to or changed. */
-    STATE_CLOSED,       /**< The sates are not nested, so each state must end with a transition
+    STATE_CLOSED,       /**< The states are not nested, so each state must end with a transition
                              to this state prior to entering the next state. */
     STATE_DEFINE_MODEL, /**< Defining the metadata, which defines the topology of the model
                              (nontransient, geometry and topology). */

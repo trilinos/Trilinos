@@ -100,12 +100,12 @@ void assert_rank_ordering( const Part & superset ,
                            const char * method )
 {
   ThrowErrorMsgIf( superset.primary_entity_rank() < subset.primary_entity_rank(),
-                   method << "(...) FAILED Requirement that " <<
-                   "Part[ " << superset.name() <<
-                   " , rank(" << superset.primary_entity_rank() <<
-                   ") ] has greater rank than " <<
-                   "Part[ " << subset.name() <<
-                   " , rank(" << subset.primary_entity_rank() << ") ]");
+                   method << " Part '" << subset.name() << "' (rank="
+                   << subset.primary_entity_rank() << ", topology=" 
+                   << subset.topology() << ") can't be a subset of part '" << superset.name()
+                   << "' (rank="<<superset.primary_entity_rank()<<", topology="
+                   << superset.topology() << "), needs to have rank <= "
+                   << superset.primary_entity_rank());
 }
 
 } // namespace
@@ -233,7 +233,8 @@ static const char INTERNAL_PART_PREFIX  = '{';
 static const char INTERNAL_PART_POSTFIX = '}';
 bool is_internal_part(const Part& part)
 {
-    return part.name().size() > 2 && *part.name().begin() == INTERNAL_PART_PREFIX && *part.name().rbegin() == INTERNAL_PART_POSTFIX;
+    const std::string& partName = part.name();
+    return partName.size() > 2 && partName.front() == INTERNAL_PART_PREFIX && partName.back() == INTERNAL_PART_POSTFIX;
 }
 std::string convert_to_internal_name(const std::string& part_name)
 {

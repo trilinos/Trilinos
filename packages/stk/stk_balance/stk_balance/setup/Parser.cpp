@@ -34,6 +34,8 @@
 #include "Parser.hpp"
 #include "stk_balance/search_tolerance_algs/SecondShortestEdgeFaceSearchTolerance.hpp"
 #include "stk_util/environment/Env.hpp"  // for deprecatedOutputDirectory warnings
+#include "stk_util/command_line/CommandLineParserUtils.hpp"
+#include "stk_util/util/string_utils.hpp"
 
 namespace stk {
 namespace balance {
@@ -103,6 +105,7 @@ void Parser::parse_command_line_options(int argc, const char** argv, BalanceSett
   set_contact_search(settings);
   set_contact_search_tolerance(settings);
   set_decomp_method(settings);
+  set_vertex_weight_block_multiplier(settings);
 }
 
 std::string Parser::get_quick_error() const
@@ -137,18 +140,24 @@ void Parser::add_options_to_parser()
   stk::CommandLineOption sdDefaults{m_optionNames.sdDefaults, "", sdStream.str()};
 
   stk::CommandLineOption faceSearchAbsTol{m_optionNames.faceSearchAbsTol, "",
-                                          "Use an absolute tolerance for face contact search. "
-                                          "Optionally provide a numeric tolerance value."};
+                           "Use an absolute tolerance for face contact search. "
+                           "Optionally provide a numeric tolerance value."};
   stk::CommandLineOption faceSearchRelTol{m_optionNames.faceSearchRelTol, "",
-                                          "Use a tolerance relative to the face size for face contact search. "
-                                          "Optionally provide a numeric tolerance value."};
+                           "Use a tolerance relative to the face size for face contact search. "
+                           "Optionally provide a numeric tolerance value."};
   stk::CommandLineOption contactSearch{m_optionNames.contactSearch, "",
-                                       "Use proximity search for contact [on|off]"};
+                           "Use proximity search for contact [on|off]"};
   stk::CommandLineOption decompMethod{m_optionNames.decompMethod, "",
-                                      "Use this geometric decomposition method [rcb|rib|multijagged] "
-                                      "or graph-based decomposition method [parmetis].\n"
-                                      "Note that geometric methods do not use contact search and "
-                                      "ignore all search-related options, as well as ignoring spider elements."};
+                           "Use this geometric decomposition method [rcb|rib|multijagged] "
+                           "or graph-based decomposition method [parmetis]. "
+                           "Note that geometric methods do not use contact search and "
+                           "ignore all search-related options, as well as ignoring spider elements."};
+  stk::CommandLineOption vertexWeightBlockMultiplier{m_optionNames.vertexWeightBlockMultiplier, "",
+                           "EXPERIMENTAL: Specify a list of vertex weight multipliers through "
+                           "comma-separated block_name:weight pairs to use for each element in "
+                           "the block.  A multiplier of 1.0 is used for each unspecified block.\n"
+                           " Syntax example: block_1:1.5,block_2:3"};
+
 
   m_commandLineParser.add_required_positional<std::string>(infile);
   m_commandLineParser.add_optional_positional<std::string>(outputDirectory, ".");
@@ -159,6 +168,7 @@ void Parser::add_options_to_parser()
   m_commandLineParser.add_optional_implicit(faceSearchRelTol, m_defaults.faceSearchRelTol);
   m_commandLineParser.add_optional(contactSearch, m_defaults.contactSearch);
   m_commandLineParser.add_optional(decompMethod, m_defaults.decompMethod);
+  m_commandLineParser.add_optional(vertexWeightBlockMultiplier, m_defaults.vertexWeightBlockMultiplier);
 }
 
 void Parser::setup_messages(const char** argv)
@@ -245,6 +255,24 @@ void Parser::set_decomp_method(BalanceSettings& settings) const
 {
   if (m_commandLineParser.is_option_parsed(m_optionNames.decompMethod)) {
     settings.setDecompMethod(m_commandLineParser.get_option_value<std::string>(m_optionNames.decompMethod));
+  }
+}
+
+void Parser::set_vertex_weight_block_multiplier(BalanceSettings& settings) const
+{
+  if (m_commandLineParser.is_option_parsed(m_optionNames.vertexWeightBlockMultiplier)) {
+    const std::string blockMultiplierString =
+        m_commandLineParser.get_option_value<std::string>(m_optionNames.vertexWeightBlockMultiplier);
+    std::vector<std::string> blockSegments = stk::split_csv_string(blockMultiplierString);
+    for (const std::string & blockSegment : blockSegments) {
+      std::vector<std::string> multiplierSegments = stk::split_string(stk::trim_string(blockSegment), ':');
+      ThrowRequireMsg(multiplierSegments.size() == 2,
+                      "Require block_name:value pairs for vertex weight block multiplier (" <<
+                      stk::trim_string(blockSegment) << ")");
+      const std::string blockName = stk::trim_string(multiplierSegments[0]);
+      const double multiplier = std::stod(stk::trim_string(multiplierSegments[1]));
+      settings.setVertexWeightBlockMultiplier(blockName, multiplier);
+    }
   }
 }
 

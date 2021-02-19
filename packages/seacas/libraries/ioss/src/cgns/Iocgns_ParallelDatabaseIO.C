@@ -382,6 +382,9 @@ namespace Iocgns {
     }
 
     get_step_times__();
+    if (open_create_behavior() == Ioss::DB_APPEND) {
+      return;
+    }
 
     m_meshType = Utils::check_mesh_type(get_file_pointer());
 

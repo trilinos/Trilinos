@@ -32,7 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_io/FillMesh.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <fstream>
@@ -46,7 +45,7 @@ TEST_F(Assembly, readWriteAssembly_simple)
   const std::string assemblyName("simpleAssembly");
   const std::vector<std::string> partNames {"block_1", "block_2"};
 
-  stk::mesh::Part& assemblyPart = create_assembly(assemblyName);
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
   stk::mesh::Part& block1Part = create_io_part(partNames[0]);
   stk::mesh::Part& block2Part = create_io_part(partNames[1]);
   declare_subsets(assemblyPart, {&block1Part, &block2Part});
@@ -54,6 +53,41 @@ TEST_F(Assembly, readWriteAssembly_simple)
   move_element(1, block1Part, block2Part);
 
   test_write_then_read_assemblies(1);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_emptyblock)
+{
+  if(stk::parallel_machine_size(get_comm()) != 1) { return; }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames {"block_1", "block_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& block1Part = create_io_part(partNames[0]);
+  stk::mesh::Part& block2Part = create_io_part(partNames[1]);
+  declare_subsets(assemblyPart, {&block1Part, &block2Part});
+  stk::io::fill_mesh("generated:2x2x2", get_bulk());
+
+  test_write_then_read_assemblies(1);
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_excludeBlock2)
+{
+  if(stk::parallel_machine_size(get_comm()) != 1) { return; }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames {"block_1", "block_2"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& block1Part = create_io_part(partNames[0], 1);
+  stk::mesh::Part& block2Part = create_io_part(partNames[1], 2);
+  declare_subsets(assemblyPart, {&block1Part, &block2Part});
+  stk::io::fill_mesh("generated:2x2x2", get_bulk());
+  move_element(1, block1Part, block2Part);
+
+  test_write_then_read_assemblies(1, &block2Part);
 }
 
 TEST_F(Assembly, readWriteAssembly_multiple)
@@ -65,8 +99,8 @@ TEST_F(Assembly, readWriteAssembly_multiple)
   const std::string assembly2Name("assembly2");
   const std::vector<std::string> partNames {"block_1", "block_2"};
 
-  stk::mesh::Part& assembly1Part = create_assembly(assembly1Name);
-  stk::mesh::Part& assembly2Part = create_assembly(assembly2Name);
+  stk::mesh::Part& assembly1Part = create_assembly(assembly1Name, 100);
+  stk::mesh::Part& assembly2Part = create_assembly(assembly2Name, 200);
   stk::mesh::Part& block1Part = create_io_part(partNames[0]);
   stk::mesh::Part& block2Part = create_io_part(partNames[1]);
   declare_subsets(assembly1Part, {&block1Part, &block2Part});
@@ -90,8 +124,9 @@ TEST_F(Assembly, readWriteAssembly_hierarchy)
 
   stk::mesh::Part* parentAssemblyPart;
   stk::mesh::PartVector subAssemblyParts;
-  std::tie(parentAssemblyPart, subAssemblyParts) = create_assembly_hierarchy(parentAssemblyName,
-                                                     {subAssembly1Name, subAssembly2Name});
+  std::tie(parentAssemblyPart, subAssemblyParts) = create_assembly_hierarchy(parentAssemblyName, 1000,
+                                                     {subAssembly1Name, subAssembly2Name},
+                                                     {2000, 2001});
   stk::mesh::Part& block1Part = create_io_part(leafPartNames[0]);
   stk::mesh::Part& block2Part = create_io_part(leafPartNames[1]);
   stk::mesh::Part& block3Part = create_io_part(leafPartNames[2]);

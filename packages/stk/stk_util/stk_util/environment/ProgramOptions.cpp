@@ -32,8 +32,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>
-#include <stk_util/environment/ProgramOptions.hpp>
+#include "stk_util/environment/ProgramOptions.hpp"
+#include "stk_util/environment/OptionsSpecification.hpp"  // for OptionsSpecification
+#include "stk_util/environment/ParsedOptions.hpp"         // for ParsedOptions
 
 namespace stk {
 

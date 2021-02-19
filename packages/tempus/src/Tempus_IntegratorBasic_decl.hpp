@@ -9,22 +9,15 @@
 #ifndef Tempus_IntegratorBasic_decl_hpp
 #define Tempus_IntegratorBasic_decl_hpp
 
-// Teuchos
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_Time.hpp"
-// Thyra
 #include "Thyra_ModelEvaluator.hpp"
-#include "Thyra_NonlinearSolverBase.hpp"
-// Tempus
+
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserverBasic.hpp"
 #include "Tempus_IntegratorObserverComposite.hpp"
 
-#include <string>
 
 namespace Tempus {
 
@@ -217,23 +210,23 @@ protected:
   bool isInitialized_;
 };
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType);
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic();
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,

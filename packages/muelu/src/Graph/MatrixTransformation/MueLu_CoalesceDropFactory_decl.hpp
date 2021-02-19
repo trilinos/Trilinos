@@ -50,6 +50,7 @@
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_ExportFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
@@ -173,6 +174,9 @@ namespace MueLu {
     void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
 
+
+    // When we want to decouple a block diagonal system (returns Teuchos::null if generate_matrix is false)
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > BlockDiagonalize(Level & currentLevel,const RCP<Matrix> & A, bool generate_matrix) const;
 
   }; //class CoalesceDropFactory
 

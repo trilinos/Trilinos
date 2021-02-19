@@ -51,11 +51,11 @@
 
 namespace Intrepid2 {
 
-  template<typename SpT, typename PT, typename WT>
+  template<typename DT, typename PT, typename WT>
   template<typename cubPointValueType,  class ...cubPointProperties,
            typename cubWeightValueType, class ...cubWeightProperties>
   void
-  CubatureTensorPyr<SpT,PT,WT>::
+  CubatureTensorPyr<DT,PT,WT>::
   getCubatureImpl( Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPoints,
                    Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeights ) const {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -65,11 +65,11 @@ namespace Intrepid2 {
                                   static_cast<ordinal_type>(cubWeights.extent(0)) < this->getNumPoints(), std::out_of_range,
                                   ">>> ERROR (CubatureTensor): Insufficient space allocated for cubature points or weights.");
 #endif
-    CubatureTensor<SpT,PT,WT>::getCubatureImpl( cubPoints, cubWeights );
+    CubatureTensor<DT,PT,WT>::getCubatureImpl( cubPoints, cubWeights );
 
     typedef Kokkos::DynRankView<cubPointValueType, cubPointProperties...>  cubPointViewType;
     typedef Kokkos::DynRankView<cubWeightValueType,cubWeightProperties...> cubWeightViewType;
-    typedef typename ExecSpace<typename cubPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename ExecSpace<typename cubPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
     const auto loopSize = this->getNumPoints();
     Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);

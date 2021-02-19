@@ -46,6 +46,15 @@
 namespace stk {
 namespace mesh {
 
+inline void require_ngp_mesh_rank_limit(const stk::mesh::MetaData& meta)
+{
+  const size_t maxNumRanks = stk::topology::NUM_RANKS;
+  const size_t numRanks = meta.entity_rank_count();
+  ThrowRequireMsg(numRanks <= maxNumRanks,
+                "stk::mesh::NgpMesh: too many entity ranks ("<<numRanks
+                <<"). Required to be less-or-equal stk::topology::NUM_RANKS");
+}
+
 inline stk::NgpVector<unsigned> get_bucket_ids(const stk::mesh::BulkData &bulk,
                                                stk::mesh::EntityRank rank,
                                                const stk::mesh::Selector &selector)
@@ -96,7 +105,7 @@ template <typename ViewType>
 void transpose_contiguous_device_data_into_buffer(unsigned numEntitiesInBlock, unsigned numPerEntity,
                                                   ViewType & deviceView, ViewType & bufferView)
 {
-  Kokkos::parallel_for(numEntitiesInBlock,
+  Kokkos::parallel_for("transpose_contiguous_device_data_into_buffer", numEntitiesInBlock,
     KOKKOS_LAMBDA(const int& entityIdx) {
       for (unsigned i = 0; i < numPerEntity; i++) {
         bufferView(entityIdx, i) = deviceView(ORDER_INDICES(entityIdx, i));
@@ -109,7 +118,7 @@ template <typename ViewType>
 void transpose_buffer_into_contiguous_device_data(unsigned numEntitiesInBlock, unsigned numPerEntity,
                                                   ViewType & bufferView, ViewType & deviceView)
 {
-  Kokkos::parallel_for(numEntitiesInBlock,
+  Kokkos::parallel_for("transpose_buffer_into_contiguous_device_data", numEntitiesInBlock,
     KOKKOS_LAMBDA(const int& entityIdx) {
       for (unsigned i = 0; i < numPerEntity; i++) {
         deviceView(ORDER_INDICES(entityIdx, i)) = bufferView(entityIdx, i);
@@ -131,7 +140,7 @@ void transpose_all_device_data_into_buffer(const stk::mesh::FieldBase & stkField
 
     typedef Kokkos::TeamPolicy<stk::mesh::ExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
     const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::ExecSpace>(numBuckets, Kokkos::AUTO);
-    Kokkos::parallel_for(teamPolicy,
+    Kokkos::parallel_for("transpose_all_device_data_into_buffer", teamPolicy,
                          KOKKOS_LAMBDA(const TeamHandleType & team) {
                            const unsigned bucketIndex = team.league_rank();
                            const unsigned bucketSize = bucketSizes.device_get(bucketIndex);
@@ -159,7 +168,7 @@ void transpose_buffer_into_all_device_data(const stk::mesh::FieldBase & stkField
 
     typedef Kokkos::TeamPolicy<stk::mesh::ExecSpace, stk::mesh::ScheduleType>::member_type TeamHandleType;
     const auto& teamPolicy = Kokkos::TeamPolicy<stk::mesh::ExecSpace>(numBuckets, Kokkos::AUTO);
-    Kokkos::parallel_for(teamPolicy,
+    Kokkos::parallel_for("transpose_buffer_into_all_device_data", teamPolicy,
                          KOKKOS_LAMBDA(const TeamHandleType & team) {
                            const unsigned bucketIndex = team.league_rank();
                            const unsigned bucketSize = bucketSizes.device_get(bucketIndex);

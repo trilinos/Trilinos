@@ -2086,8 +2086,9 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
             haveLaunchedContributionToLeftFamily  = true;
             haveLaunchedContributionToRightFamily = true;
             
-            std::initializer_list<int> upperBounds {cellDataExtent,leftComponentFieldCount,rightComponentFieldCount}; // separately declared in effort to get around Intel 17.0.1 compiler weirdness.
-            auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0}, upperBounds);
+            Kokkos::Array<int,3> upperBounds {cellDataExtent,leftComponentFieldCount,rightComponentFieldCount}; // separately declared in effort to get around Intel 17.0.1 compiler weirdness.
+            Kokkos::Array<int,3> lowerBounds {0,0,0};
+            auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>(lowerBounds, upperBounds);
             // TODO: note that for best performance, especially with Fad types, we should replace this parallel for with a Functor and use hierarchical parallelism
             Kokkos::parallel_for("compute field integrals", policy,
                                  KOKKOS_LAMBDA (const int &cellDataOrdinal, const int &leftFieldOrdinal, const int &rightFieldOrdinal) {

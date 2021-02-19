@@ -2658,6 +2658,8 @@ std::string Relaxation<MatrixType>::description () const
   else {
     os << "INVALID";
   }
+  if(hasBlockCrsMatrix_)
+    os<<", BlockCrs";
 
   os  << ", " << "sweeps: " << NumSweeps_ << ", "
       << "damping factor: " << DampingFactor_ << ", ";

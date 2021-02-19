@@ -222,8 +222,8 @@ getCoeffMatrix_HDIV(OutputViewType &output,
   PointTools::getLattice(refPtsSubcell, subcellTopo, latticeDegree, 1);//, POINTTYPE_WARPBLEND);
 
   // evaluate values on the modified cell
-  typename CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
-  CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
+  typename Intrepid2::CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
+  Intrepid2::CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
 
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
   PointViewType refPtsCell("refPtsCell", ndofSubcell, cellDim);

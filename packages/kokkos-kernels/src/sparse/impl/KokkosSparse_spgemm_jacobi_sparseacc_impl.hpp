@@ -220,6 +220,10 @@ namespace KokkosSparse{
 	case KokkosKernels::Impl::Exec_CUDA:
 	  return row_index;
 #endif
+#if defined( KOKKOS_ENABLE_HIP )
+	case KokkosKernels::Impl::Exec_HIP:
+	  return row_index;
+#endif
 	}
       }
 
@@ -816,7 +820,7 @@ namespace KokkosSparse{
 	  // Initialize hashmaps
 	  if (c_row_size > max_first_level_hash_size){
 	    while (tmp == NULL){
-	      Kokkos::single(Kokkos::PerTeam(teamMember),[=] (volatile nnz_lno_t * &memptr) {
+	      Kokkos::single(Kokkos::PerTeam(teamMember),[&] (volatile nnz_lno_t * &memptr) {
 		  memptr = (volatile nnz_lno_t * )( memory_space.allocate_chunk(row_index));
 		}, tmp);
 	    }
@@ -1181,6 +1185,8 @@ namespace KokkosSparse{
 				  dinv_view_t dinv,
 				  KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space)
     {
+      using pool_memory_space = KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t>;
+      constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
       if (KOKKOSKERNELS_VERBOSE){
 	std::cout << "\tSPARSE ACC MODE" << std::endl;
       }
@@ -1238,7 +1244,7 @@ namespace KokkosSparse{
 
       // Choose the SpGEMM algorithm and corresponding parameters
       if (this->spgemm_algorithm == SPGEMM_KK || this->spgemm_algorithm == SPGEMM_KK_LP){
-	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+	if (exec_gpu) {
 	  size_type average_row_nnz = overall_nnz / this->a_row_cnt;
 	  size_t average_row_flops = original_overall_flops / this->a_row_cnt;
 
@@ -1310,7 +1316,7 @@ namespace KokkosSparse{
 	    }
 	  }
 	}
-	// If CUDA is not enabled, we decide whether we want to use a sparse or a dense acumulator 
+	// If non-GPU, we decide whether we want to use a sparse or a dense acumulator 
 	else {
 
 	  bool run_dense = false;
@@ -1364,7 +1370,7 @@ namespace KokkosSparse{
 
 
       // Compute the memory pool size
-      if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (exec_gpu) {
 	if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
 	  tmp_max_nnz = 1;
 	}
@@ -1395,26 +1401,9 @@ namespace KokkosSparse{
 	chunksize += min_hash_size ; //this is for the hash begins
 	chunksize += max_nnz; //this is for hash nexts
       }
-      int num_chunks = concurrency / suggested_vector_size;
 
-#if defined( KOKKOS_ENABLE_CUDA )
-      if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-	size_t free_byte ;
-	size_t total_byte ;
-	cudaMemGetInfo( &free_byte, &total_byte ) ;
-	size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-	if (KOKKOSKERNELS_VERBOSE)
-	  std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-	if (required_size + num_chunks > free_byte){
-	  num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-	}
-	nnz_lno_t min_chunk_size = 1;
-	while (min_chunk_size * 2 <= num_chunks) {
-	  min_chunk_size *= 2;
-	}
-	num_chunks = min_chunk_size;
-      }
-#endif
+      nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
+        (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
       if (KOKKOSKERNELS_VERBOSE){
 	std::cout << "\t\t max_nnz: " << max_nnz
@@ -1428,11 +1417,10 @@ namespace KokkosSparse{
 
       // Allocate the memory pool
       KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
-      if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (exec_gpu) {
 	my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
       }
 
-      typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
       Kokkos::Impl::Timer timer;
       pool_memory_space m_space(num_chunks, chunksize, -1,  my_pool_type);
       MyExecSpace().fence();
@@ -1470,7 +1458,7 @@ namespace KokkosSparse{
       }
       timer.reset();
 
-      if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+      if (exec_gpu) {
 	if (algorithm_to_run == SPGEMM_KK_MEMORY_SPREADTEAM){
 	  if (thread_shmem_key_size <= 0) {
 	    std::cout << "KokkosSPGEMM_jacobi_sparseacc SPGEMM_KK_MEMORY_SPREADTEAM: Insufficient shmem available for key for hash map accumulator - Terminating" << std::endl;

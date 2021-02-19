@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperNewmarkImplicitAForm_decl_hpp
 #define Tempus_StepperNewmarkImplicitAForm_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 #include "Tempus_StepperNewmarkImplicitAFormAppAction.hpp"
@@ -187,6 +188,17 @@ private:
   Teuchos::RCP<StepperNewmarkImplicitAFormAppAction<Scalar> > stepperNewmarkImpAppAction_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkImplicitAForm<Scalar> >
+createStepperNewmarkImplicitAForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperNewmarkImplicitAForm_decl_hpp

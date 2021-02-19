@@ -9,9 +9,10 @@
 #ifndef Tempus_StepperForwardEuler_impl_hpp
 #define Tempus_StepperForwardEuler_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperForwardEulerModifierDefault.hpp"
+
 
 namespace Tempus {
 
@@ -215,6 +216,26 @@ StepperForwardEuler<Scalar>::getValidParameters() const
   pl->set<bool>("Use FSAL", true);
   pl->set<std::string>("Initial Condition Consistency", "Consistent");
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperForwardEuler<Scalar> >
+createStepperForwardEuler(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperForwardEuler<Scalar>());
+  stepper->setStepperExplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

@@ -37,7 +37,7 @@
 #include <unistd.h>                     // for unlink
 #include <map>                          // for _Rb_tree_const_iterator, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
-#include <stk_util/unit_test_support/parameterTestUtils.hpp>
+#include "parameterTestUtils.hpp"
 #include <stk_util/util/ParameterList.hpp>  // for ParameterList, etc
 #include <string>                       // for string
 #include <utility>                      // for pair

@@ -37,7 +37,6 @@
 #include <stk_io/IossBridge.hpp>        // for is_part_io_part
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <gtest/gtest.h>
 #include <string>                       // for string
@@ -140,6 +139,55 @@ TEST(StkMeshIoBroker, outputEqualsInput)
     }
 }
 //BeginDocTest1
+
+void assert_read_mesh_has_original_topology(const std::string& fileName,
+                                            const std::string& expectedTopologyType)
+{
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh(fileName, bulk);
+
+  stk::mesh::Part* block1 = meta.get_part("block_1");
+  ASSERT_TRUE(block1 != nullptr);
+  ASSERT_TRUE(stk::io::is_part_io_part(*block1));
+  ASSERT_TRUE(stk::io::has_original_topology_type(*block1));
+  ASSERT_EQ(expectedTopologyType, stk::io::get_original_topology_type(*block1));
+}
+
+void read_then_write_mesh(const std::string& inputFileName,
+                          const std::string& outputFileName)
+{
+  
+  stk::mesh::MetaData meta(3);
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::io::fill_mesh(inputFileName, bulk);
+  stk::io::write_mesh(outputFileName, bulk);
+}
+
+TEST(StkMeshIoBroker, originalTopologyType)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  std::string fileName = stk::unit_test_util::get_option("--mesh", "no-mesh-specified");
+  if (fileName == "no-mesh-specified") { return; }
+
+  const bool isBar = (fileName == "bar.exo");
+  const bool isBeam = (fileName == "beam.exo");
+  ASSERT_TRUE(isBar || isBeam);
+  std::string expectedTopologyType("beam2");
+  if (isBar) {
+    expectedTopologyType = "bar2";
+  }
+
+  assert_read_mesh_has_original_topology(fileName, expectedTopologyType);
+
+  std::string tmpFileName("tmpMesh.exo");
+  read_then_write_mesh(fileName, tmpFileName);
+
+  assert_read_mesh_has_original_topology(tmpFileName, expectedTopologyType);
+
+  unlink(tmpFileName.c_str());
+}
 
 }
 

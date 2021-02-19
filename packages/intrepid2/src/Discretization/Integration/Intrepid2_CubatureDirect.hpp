@@ -70,11 +70,11 @@ namespace Intrepid2 {
       All templates are defined on a reference cell and can be mapped to physical space
       cells by the methods available in the MultiCell class.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureDirect
-    : public Cubature<ExecSpaceType,pointValueType,weightValueType> {
+    : public Cubature<DeviceType,pointValueType,weightValueType> {
   protected:
 
     /**
@@ -106,11 +106,12 @@ namespace Intrepid2 {
 
       /** \brief  Array with the (X,Y,Z) coordinates of the cubature points.
        */
-      Kokkos::DynRankView<pointValueType,ExecSpaceType> points_;
+      Kokkos::DynRankView<pointValueType,DeviceType> points_;
 
       /** \brief  Array with the associated cubature weights.
        */
-      Kokkos::DynRankView<weightValueType,ExecSpaceType> weights_;
+      Kokkos::DynRankView<weightValueType,DeviceType> weights_;
+
     };
 
     /** \brief The degree of polynomials that are integrated
@@ -177,10 +178,10 @@ namespace Intrepid2 {
     //
     // Cubature public functions
     //
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename Cubature<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType;
+    typedef typename Cubature<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
-    using Cubature<ExecSpaceType,pointValueType,weightValueType>::getCubature;
+    using Cubature<DeviceType,pointValueType,weightValueType>::getCubature;
 
     virtual
     void
@@ -233,10 +234,10 @@ namespace Intrepid2 {
         cubatureData_(b.cubatureData_) {}
 
     CubatureDirect(const ordinal_type degree,
-                   const ordinal_type dimension)
-      : degree_(degree),
-        dimension_(dimension),
-        cubatureData_() {}
+                   const ordinal_type dimension) 
+    : degree_(degree),
+      dimension_(dimension),
+      cubatureData_() {}
 
   };
 

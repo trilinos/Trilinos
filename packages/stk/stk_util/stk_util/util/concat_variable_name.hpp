@@ -35,7 +35,7 @@
 #ifndef STK_UTIL_UTIL_CONCAT_VARIABLE_NAME_H
 #define STK_UTIL_UTIL_CONCAT_VARIABLE_NAME_H
 
-#include <string>
+#include <string>  // for string
 namespace stk {
 namespace util {
   /*!

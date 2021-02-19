@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperBDF2_decl_hpp
 #define Tempus_StepperBDF2_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperBDF2AppAction.hpp"
@@ -75,91 +76,92 @@ class StepperBDF2 : virtual public Tempus::StepperImplicit<Scalar>
 {
 public:
 
-    /** \brief Default constructor.
-     *
-     *  - Requires the following calls before takeStep():
-     *    setModel() and initialize().
-     */
-    StepperBDF2();
+  /** \brief Default constructor.
+   *
+   *  - Requires the following calls before takeStep():
+   *    setModel() and initialize().
+   */
+  StepperBDF2();
 
-    StepperBDF2(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-      const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
-      const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
-      bool useFSAL,
-      std::string ICConsistency,
-      bool ICConsistencyCheck,
-      bool zeroInitialGuess,
-      const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction);
+  StepperBDF2(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<Stepper<Scalar> >& startUpStepper,
+    bool useFSAL,
+    std::string ICConsistency,
+    bool ICConsistencyCheck,
+    bool zeroInitialGuess,
+    const Teuchos::RCP<StepperBDF2AppAction<Scalar> >& stepperBDF2AppAction);
 
-    /// \name Basic stepper methods
-    //@{
-    virtual void setModel(
-      const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
+  /// \name Basic stepper methods
+  //@{
+  virtual void setModel(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
-    virtual void setAppAction(
-      Teuchos::RCP<StepperBDF2AppAction<Scalar> > appAction);
+  virtual void setAppAction(
+    Teuchos::RCP<StepperBDF2AppAction<Scalar> > appAction);
 
-    virtual Teuchos::RCP<StepperBDF2AppAction<Scalar> > getAppAction() const
-    { return stepperBDF2AppAction_; }
+  virtual Teuchos::RCP<StepperBDF2AppAction<Scalar> > getAppAction() const
+  { return stepperBDF2AppAction_; }
 
-    /// Set the stepper to use in first step
-    void setStartUpStepper(std::string startupStepperType);
-    void setStartUpStepper(Teuchos::RCP<Stepper<Scalar> > startupStepper);
+  /// Set the stepper to use in first step
+  void setStartUpStepper(std::string startupStepperType);
+  void setStartUpStepper(Teuchos::RCP<Stepper<Scalar> > startupStepper);
 
-    /// Initialize during construction and after changing input parameters.
-    virtual void initialize();
+  /// Initialize during construction and after changing input parameters.
+  virtual void initialize();
 
-    /// Set the initial conditions and make them consistent.
-    virtual void setInitialConditions (
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+  /// Set the initial conditions and make them consistent.
+  virtual void setInitialConditions (
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Take the specified timestep, dt, and return true if successful.
-    virtual void takeStep(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+  /// Take the specified timestep, dt, and return true if successful.
+  virtual void takeStep(
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    /// Get a default (initial) StepperState
-    virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
-    virtual Scalar getOrder() const {return order_;}
-    virtual Scalar getOrderMin() const {return 1.0;}
-    virtual Scalar getOrderMax() const {return 2.0;}
+  /// Get a default (initial) StepperState
+  virtual Teuchos::RCP<Tempus::StepperState<Scalar> > getDefaultStepperState();
+  virtual Scalar getOrder() const {return order_;}
+  virtual Scalar getOrderMin() const {return 1.0;}
+  virtual Scalar getOrderMax() const {return 2.0;}
 
-    virtual bool isExplicit()         const {return false;}
-    virtual bool isImplicit()         const {return true;}
-    virtual bool isExplicitImplicit() const
-    {return isExplicit() and isImplicit();}
-    virtual bool isOneStepMethod()   const {return false;}
-    virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-    virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
-    //@}
+  virtual bool isExplicit()         const {return false;}
+  virtual bool isImplicit()         const {return true;}
+  virtual bool isExplicitImplicit() const
+  {return isExplicit() and isImplicit();}
+  virtual bool isOneStepMethod()   const {return false;}
+  virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
+  virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
+  //@}
 
-    /// Return alpha = d(xDot)/dx.
-    virtual Scalar getAlpha(const Scalar dt) const {return getAlpha(dt,dt);}
-    virtual Scalar getAlpha(const Scalar dt, const Scalar dtOld) const
-    { return (Scalar(2.0)*dt + dtOld)/(dt*(dt + dtOld)); }
-    /// Return beta  = d(x)/dx.
-    virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
+  /// Return alpha = d(xDot)/dx.
+  virtual Scalar getAlpha(const Scalar dt) const {return getAlpha(dt,dt);}
+  virtual Scalar getAlpha(const Scalar dt, const Scalar dtOld) const
+  { return (Scalar(2.0)*dt + dtOld)/(dt*(dt + dtOld)); }
+  /// Return beta  = d(x)/dx.
+  virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
 
-    /// Compute the first time step given the supplied startup stepper
-    virtual void computeStartUp(
-      const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
+  /// Compute the first time step given the supplied startup stepper
+  virtual void computeStartUp(
+    const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-    /// \name Overridden from Teuchos::Describable
-    //@{
-    virtual void describe(Teuchos::FancyOStream        & out,
-                          const Teuchos::EVerbosityLevel verbLevel) const;
-    //@}
+  /// \name Overridden from Teuchos::Describable
+  //@{
+  virtual void describe(Teuchos::FancyOStream        & out,
+                        const Teuchos::EVerbosityLevel verbLevel) const;
+  //@}
 
-    virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
+  virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  private:
+private:
 
-    Teuchos::RCP<Stepper<Scalar> >              startUpStepper_;
-    Teuchos::RCP<StepperBDF2AppAction<Scalar> > stepperBDF2AppAction_;
-    Scalar                                      order_ = Scalar(2.0);
-  };
+  Teuchos::RCP<Stepper<Scalar> >              startUpStepper_;
+  Teuchos::RCP<StepperBDF2AppAction<Scalar> > stepperBDF2AppAction_;
+  Scalar                                      order_ = Scalar(2.0);
+};
+
 
 /** \brief Time-derivative interface for BDF2.
  *
@@ -218,6 +220,15 @@ private:
   Scalar                                         dt_;    // = t_n - t_{n-1}
   Scalar                                         dtOld_; // = t_{n-1} - t_{n-2}
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperBDF2<Scalar> >
+createStepperBDF2(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

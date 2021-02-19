@@ -95,7 +95,7 @@ namespace Impl{
     if (!std::is_same<size_type, int>::value)
       sptrsv_handle->allocate_tmp_int_rowmap(row_map.extent(0));
     const int* rm  = !std::is_same<size_type, int>::value ? sptrsv_handle->get_int_rowmap_ptr_copy(row_map) : (const int*)row_map.data();
-    const int* ent =  entries.data();
+    const int* ent = (const int*) entries.data();
     const scalar_type* vals = values.data();
 
     if (std::is_same<scalar_type,double>::value) {
@@ -297,7 +297,7 @@ namespace Impl{
     int nnz = entries.extent_int(0);
 
     const int* rm  = !std::is_same<size_type, int>::value ? sptrsv_handle->get_int_rowmap_ptr() : (const int*)row_map.data();
-    const int* ent =  entries.data(); 
+    const int* ent = (const int*) entries.data();
     const scalar_type* vals = values.data();
     const scalar_type* bv = rhs.data();
     scalar_type* xv = lhs.data();

@@ -13,7 +13,15 @@
 #include "Tempus_StepperForwardEuler_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperForwardEuler)
+
+  // Nonmember constructor
+  template Teuchos::RCP<StepperForwardEuler<double> >
+  createStepperForwardEuler(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
+
 }
 
 #endif

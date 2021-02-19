@@ -17,4 +17,5 @@ export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 
 # Use manually installed cmake and ninja to try to avoid module loading
 # problems (see TRIL-208)
-export PATH=/ascldap/users/rabartl/install/white-ride/cmake-3.11.2/bin:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
+export PATH=/home/atdm-devops-admin/tools/ride/cmake-3.17.2/bin/:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH
+# export PATH=/ascldap/users/rabartl/install/white-ride/cmake-3.11.2/bin:/ascldap/users/rabartl/install/white-ride/ninja-1.8.2/bin:$PATH

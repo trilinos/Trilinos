@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -84,7 +84,7 @@ namespace Iotr {
     }
   }
 
-  int Tensor::output_count(int in) const
+  size_t Tensor::output_count(size_t in) const
   {
     // Does not modify the entity count...
     return in;
@@ -95,23 +95,23 @@ namespace Iotr {
     assert(field.get_type() == Ioss::Field::REAL);
     auto *r = static_cast<double *>(data);
 
-    int count      = field.raw_count();
-    int components = field.raw_storage()->component_count();
+    auto count      = field.raw_count();
+    auto components = field.raw_storage()->component_count();
 
     bool success = false;
     switch (type_) {
     case TRACE:
     case INVARIANT1: {
-      int j = 0;
-      for (int i = 0; i < count * components; i += components) {
+      size_t j = 0;
+      for (size_t i = 0; i < count * components; i += components) {
         r[j++] = r[i] + r[i + 1] + r[i + 2];
       }
     }
       success = true;
       break;
     case INVARIANT2: {
-      int j = 0;
-      for (int i = 0; i < count * components; i += components) {
+      size_t j = 0;
+      for (size_t i = 0; i < count * components; i += components) {
         r[j++] = r[i + 3] * r[i + 3] + r[i + 4] * r[i + 4] + r[i + 5] * r[i + 5] -
                  (r[i + 0] * r[i + 1] + r[i + 1] * r[i + 2] + r[i + 0] * r[i + 2]);
       }

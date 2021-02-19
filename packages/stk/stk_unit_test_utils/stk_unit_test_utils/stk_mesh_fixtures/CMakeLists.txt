@@ -58,6 +58,13 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../..)
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
 
+IF(NOT Trilinos_ENABLE_STKIO)
+
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/degenerate_mesh.cpp")
+LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/heterogeneous_mesh.cpp")
+
+ENDIF()
+
 #
 # C) Define the targets for package's library(s)
 #

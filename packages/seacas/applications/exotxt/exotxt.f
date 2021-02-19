@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -8,9 +8,7 @@ C=======================================================================
       PROGRAM EXOTXT
 C=======================================================================
 
-C   --*** EXO2TXT *** Renamed for ExodusIIv2 database
 C   --*** EXOTXT *** (EXOTXT) EXODUS to TEXT translator
-C   --   Written by Amy Gilkey - revised 03/02/88
 C   --   Modified for ExodusIIv2 database format
 C   --
 C   --EXOTXT reads either from an EXODUS database or from the user
@@ -50,8 +48,8 @@ C     C(1) dynamic memory base array for character data
 C     Program Information
 C.
       QAINFO(1) = 'exotxt                          '
-      QAINFO(2) = '2018/08/14                      '
-      QAINFO(3) = ' 2.00                           '
+      QAINFO(2) = '2021/01/28                      '
+      QAINFO(3) = ' 2.01                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -583,7 +581,7 @@ C     Delete dynamic memory
   140 CONTINUE
 
       CLOSE (NTXT, IOSTAT=K)
-      call exclos(ndb, ierr)
+      if (ndb .ne. 11 .and. ndb .gt. 0) call exclos(ndb, ierr)
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))
 

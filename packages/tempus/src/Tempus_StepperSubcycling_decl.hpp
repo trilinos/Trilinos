@@ -123,7 +123,6 @@ public:
     virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
     virtual void setSubcyclingInitTimeStep(Scalar InitTimeStep);
     virtual void setSubcyclingMaxTimeStep(Scalar MaxTimeStep);
-    virtual void setSubcyclingStepType(std::string StepType);
     virtual void setSubcyclingMaxFailures(int MaxFailures);
     virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
     virtual void setSubcyclingScreenOutputIndexInterval(int i);
@@ -159,6 +158,16 @@ protected:
   Teuchos::RCP<IntegratorBasic<Scalar> >            scIntegrator_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> >
+createStepperSubcycling(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
 
 } // namespace Tempus
 

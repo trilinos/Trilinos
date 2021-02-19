@@ -63,6 +63,13 @@
 #include <typeinfo> // typeid (T)
 #include <cstdio>
 
+#define FAILURE() {printf("%s:%s:%d: Failure\n", __FILE__, __func__, __LINE__); success = 0;}
+
+#if 0
+#define TRACE() printf("%s:%s:%d: Trace\n", __FILE__, __func__, __LINE__);
+#else
+#define TRACE()
+#endif
 
 namespace {
   // Whether Kokkos::Details::ArithTraits<ScalarType> implements
@@ -183,6 +190,7 @@ public:
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const
   {
+    TRACE();
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // not using this argument
     int success = 1;
@@ -203,7 +211,7 @@ public:
     // std::numeric_limits.
     if (! AT::is_specialized) {
       printf ("! AT::is_specialized\n");
-      success = 0;
+      FAILURE();
     }
 
     // It's OK to refer to std::numeric_limits constants in a device
@@ -211,11 +219,11 @@ public:
     // as device functions).
     if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
       printf ("AT::is_integer not same as numeric_limits\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
       printf ("AT::is_exact not same as numeric_limits\n");
-      success = 0;
+      FAILURE();
     }
 
     const ScalarType zero = AT::zero ();
@@ -224,34 +232,34 @@ public:
     // Test properties of the arithmetic and multiplicative identities.
     if (zero + zero != zero) {
       printf ("0 + 0 != 0\n");
-      success = 0;
+      FAILURE();
     }
     if (zero + one != one) {
       printf ("0 + 1 != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (one - one != zero) {
       printf ("1 - 1 != 0\n");
-      success = 0;
+      FAILURE();
     }
     // This is technically 1 even of Z_2, since in that field, one
     // is its own inverse (so -one == one).
     if ((one + one) - one != one) {
       printf ("(1 + 1) - 1 != 1\n");
-      success = 0;
+      FAILURE();
     }
 
     if (AT::abs (zero) != zero) {
       printf ("AT::abs(0) != 0\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::abs (one) != one) {
       printf ("AT::abs(1) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_signed && AT::abs (-one) != one) {
       printf ("AT::is_signed and AT::abs(-1) != 1\n");
-      success = 0;
+      FAILURE();
     }
     // Need enable_if to test whether T can be compared using <=.
     // However, mag_type should always be comparable using <=.
@@ -260,7 +268,7 @@ public:
     // They should work even for a set only containing zero.
     if (AT::abs (zero) > AT::abs (AT::max ())) {
       printf ("AT::abs(0) > AT::abs (AT::max ())\n");
-      success = 0;
+      FAILURE();
     }
 
     dst = dst && success;
@@ -312,17 +320,17 @@ public:
     // std::numeric_limits.
     if (! AT::is_specialized) {
       out << "ArithTraits is not specialized for T" << endl;
-      success = 0;
+      FAILURE();
     }
 
     if (AT::is_integer != std::numeric_limits<ScalarType>::is_integer) {
       out << "AT::is_integer != std::numeric_limits<ScalarType>::is_integer" << endl;
-      success = 0;
+      FAILURE();
     }
 
     if (AT::is_exact != std::numeric_limits<ScalarType>::is_exact) {
       out << "AT::is_exact != std::numeric_limits<ScalarType>::is_exact" << endl;
-      success = 0;
+      FAILURE();
     }
 
     const ScalarType zero = AT::zero ();
@@ -331,35 +339,35 @@ public:
 
     if (zero + zero != zero) {
       out << "zero + zero != zero" << endl;
-      success = 0;
+      FAILURE();
     }
     if (zero + one != one) {
       out << "zero + one != one" << endl;
-      success = 0;
+      FAILURE();
     }
     if (one - one != zero) {
       out << "one - one != zero" << endl;
-      success = 0;
+      FAILURE();
     }
     // This is technically 1 even of Z_2, since in that field, one
     // is its own inverse (so -one == one).
     if ((one + one) - one != one) {
       out << "(one + one) - one != one" << endl;
-      success = 0;
+      FAILURE();
     }
 
     if (AT::abs (zero) != zero) {
       out << "AT::abs (zero) != zero" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::abs (one) != one) {
       out << "AT::abs (one) != one" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::is_signed) {
       if (AT::abs (-one) != one) {
         out << "AT::abs (-one) != one" << endl;
-        success = 0;
+        FAILURE();
       }
     }
     // Need enable_if to test whether T can be compared using <=.
@@ -369,19 +377,19 @@ public:
     // // They should work even for a set only containing zero.
     if (AT::abs (zero) > AT::abs (AT::max ())) {
       out << "AT::abs (zero) > AT::abs (AT::max ())" << endl;
-      success = 0;
+      FAILURE();
     }
 
     if (AT::has_infinity) {
       if (! AT::isInf (AT::infinity())) {
         out << "AT::isInf (inf) != true" << endl;
-        success = 0;
+        FAILURE();
       }
     }
     if ( ! std::is_same< ScalarType, decltype(AT::infinity()) >::value )
     {
       std::cout << "AT::infinity() return value has wrong type" << endl;
-      success = 0;
+      FAILURE();
     }
 
     // Run the parent class' remaining tests, if any.
@@ -462,12 +470,13 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
+    TRACE();
     //typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
 
     if (HasTranscendentals<ScalarType>::value) {
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -488,7 +497,7 @@ protected:
 
     if (HasTranscendentals<ScalarType>::value) {
       out << "HasTranscendentals<T>::value is true" << endl;
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -542,12 +551,13 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
+    TRACE();
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
 
     if (! HasTranscendentals<ScalarType>::value) {
-      success = 0;
+      FAILURE();
     }
 
     const ScalarType zero = AT::zero ();
@@ -576,20 +586,20 @@ public:
       result = AT::pow (two, three);
       if (!equal(result,eight)) {
         printf ("AT::pow(2,3) != 8\n");
-        success = 0;
+        FAILURE();
       }
     }
     if (!equal(AT::pow (three, zero) , one)) {
       printf ("AT::pow(3,0) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::pow (three, one) , three)) {
       printf ("AT::pow(3,1) != 3\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::pow (three, two) , nine)) {
       printf ("AT::pow(3,2) != 9\n");
-      success = 0;
+      FAILURE();
     }
 
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
@@ -597,7 +607,7 @@ public:
       result = AT::pow (three, three);
       if (!equal(result , twentySeven)) {
         printf ("AT::pow(3,3) != 27\n");
-        success = 0;
+        FAILURE();
       }
     }
 
@@ -606,93 +616,93 @@ public:
       result = AT::pow (-three, one);
       if (!equal(result , -three)) {
         printf ("AT::pow(-3,1) != -3\n");
-        success = 0;
+        FAILURE();
       }
       result = AT::pow (-three, two);
       if (!equal(result , nine)) {
         printf ("AT::pow(-3,2) != 9\n");
-        success = 0;
+        FAILURE();
       }
       result = AT::pow (-three, three);
       if (!equal(result , -twentySeven)) {
         printf ("AT::pow(-3,3) != 27\n");
-        success = 0;
+        FAILURE();
       }
     }
 
     if (!equal(AT::sqrt (zero) , zero)) {
       printf ("AT::sqrt(0) != 0\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::sqrt (one) , one)) {
       printf ("AT::sqrt(1) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::sqrt (thirtySix) , six)) {
       printf ("AT::sqrt(36) != 6\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::sqrt (sixtyFour) , eight)) {
       printf ("AT::sqrt(64) != 8\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::sqrt (fortyTwo) , six)) {
         printf ("AT:sqrt(42) != 6\n");
-        success = 0;
+        FAILURE();
       }
       if (!equal(AT::sqrt (oneTwentySeven) , eleven)) {
         printf ("AT::sqrt(127) != 11\n");
-        success = 0;
+        FAILURE();
       }
     }
 
     if (!equal(AT::cbrt (zero) , zero)) {
       printf ("AT::cbrt(0) != 0\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::cbrt (one) , one)) {
       printf ("AT::cbrt(1) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::cbrt (twentySeven) , three)) {
       printf ("AT::cbrt(27) != 3\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::cbrt (sixtyFour) , four)) {
       printf ("AT::cbrt(64) != 4\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::cbrt (fortyTwo) , three)) {
         printf ("AT:cbrt(42) != 3\n");
-        success = 0;
+        FAILURE();
       }
       if (!equal(AT::cbrt (oneTwentySeven) , five)) {
         printf ("AT::cbrt(127) != 5\n");
-        success = 0;
+        FAILURE();
       }
     }
 
     if (!equal(AT::exp (zero) , one)) {
       printf ("AT::cbrt(0) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_complex) {
       const ScalarType val = two; //(two.real(), two.real());
       if (!equal(AT::conj (AT::exp  (val)) , 
                  AT::exp  (AT::conj (val)))) {
         printf ("AT::conj(exp(complex(2,2))) != AT::exp(conj(complex(2,2)))\n");
-        success = 0;
+        FAILURE();
       }
     }
     if (!equal(AT::log (one) , zero)) {
       printf ("AT::log(1) != 0\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::log10 (one) , zero)) {
       printf ("AT::log10(1) != 0\n");
-      success = 0;
+      FAILURE();
     }
 
     if (AT::is_complex) {
@@ -701,11 +711,11 @@ public:
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
         printf ("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
-        success = 0;
+        FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
         printf ("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
-        success = 0;
+        FAILURE();
       } 
     } else {
       ScalarType val = three; 
@@ -713,25 +723,25 @@ public:
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
         printf ("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
-        success = 0;
+        FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
         printf ("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
-        success = 0;
+        FAILURE();
       } 
     }
 
     if (!equal(AT::asin (AT::sin (one)), one)) {
       printf ("AT::asin(sin(1)) != 1\n");
-      success = 0;
+      FAILURE();
     } 
     if (!equal(AT::acos (AT::cos (one)), one)) {
       printf ("AT::acos(cos(1)) != 1\n");
-      success = 0;
+      FAILURE();
     } 
     if (!equal(AT::atan (AT::tan (one)), one)) {
       printf ("AT::atan(tan(1)) != 1\n");
-      success = 0;
+      FAILURE();
     } 
 
     // Call the base class' implementation.  Every subclass'
@@ -752,7 +762,7 @@ protected:
 
     if (! HasTranscendentals<ScalarType>::value) {
       out << "HasTranscendentals<T>::value is false" << endl;
-      success = 0;
+      FAILURE();
     }
 
     const ScalarType zero = AT::zero ();
@@ -781,20 +791,20 @@ protected:
       result = AT::pow (two, three);
       if (result != eight) {
         out << "AT::pow (two, three) != eight" << endl;
-        success = 0;
+        FAILURE();
       }
     }
     if (AT::pow (three, zero) != one) {
       out << "AT::pow (three, zero) != one" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::pow (three, one) != three) {
       out << "AT::pow (three, one) != three" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::pow (three, two) != nine) {
       out << "AT::pow (three, two) != nine" << endl;
-      success = 0;
+      FAILURE();
     }
 
     // This fails inexplicably for complex numbers on gcc 4.2.1 on Mac.
@@ -803,7 +813,7 @@ protected:
       if (result != twentySeven) {
         out << "AT::pow (three, three) = " << result
             << " != twentySeven = " << twentySeven << endl;
-        success = 0;
+        FAILURE();
       }
     }
 
@@ -813,95 +823,95 @@ protected:
       if (result != -three) {
         out << "AT::pow (-three, one) = " << result
             << " != -three = " << -three << endl;
-        success = 0;
+        FAILURE();
       }
       result = AT::pow (-three, two);
       if (result != nine) {
         out << "AT::pow (-three, two) = " << result
             << " != nine = " << nine << endl;
-        success = 0;
+        FAILURE();
       }
       result = AT::pow (-three, three);
       if (result != -twentySeven) {
         out << "AT::pow (-three, three) = " << result
             << " != -twentySeven = " << twentySeven << endl;
-        success = 0;
+        FAILURE();
       }
     }
 
     if (AT::sqrt (zero) != zero) {
       out << "AT::sqrt (zero) != zero" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::sqrt (one) != one) {
       out << "AT::sqrt (one) != one" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::sqrt (thirtySix) != six) {
       out << "AT::sqrt (thirtySix) != six" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::sqrt (sixtyFour) != eight) {
       out << "AT::sqrt (sixtyFour) != eight" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::is_integer) {
       if (AT::sqrt (fortyTwo) != six) {
         out << "AT::sqrt (fortyTwo) != six" << endl;
-        success = 0;
+        FAILURE();
       }
       if (AT::sqrt (oneTwentySeven) != eleven) {
         out << "AT::sqrt (oneTwentySeven) != eleven" << endl;
-        success = 0;
+        FAILURE();
       }
     }
 
     if (!equal(AT::cbrt (zero) , zero)) {
       printf ("AT::cbrt(0) != 0\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::cbrt (one) , one)) {
       printf ("AT::cbrt(1) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::cbrt (twentySeven) , three)) {
       printf ("AT::cbrt(27) != 3\n");
-      success = 0;
+      FAILURE();
     }
     if (!equal(AT::cbrt (sixtyFour) , four)) {
       printf ("AT::cbrt(64) != 4\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_integer) {
       if (!equal(AT::cbrt (fortyTwo) , three)) {
         printf ("AT:cbrt(42) != 3\n");
-        success = 0;
+        FAILURE();
       }
       if (!equal(AT::cbrt (oneTwentySeven) , five)) {
         printf ("AT::cbrt(127) != 5\n");
-        success = 0;
+        FAILURE();
       }
     }
 
     if (!equal(AT::exp (zero) , one)) {
       printf ("AT::cbrt(0) != 1\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::is_complex) {
       const ScalarType val = two; //(two.real(), two.real());
       if (!equal(AT::conj (AT::exp  (val)) , 
                  AT::exp  (AT::conj (val)))) {
         printf ("AT::conj(exp(complex(2,0))) != AT::exp(conj(complex(2,0)))\n");
-        success = 0;
+        FAILURE();
       }
     }
     if (AT::log (one) != zero) {
       out << "AT::log (one) != zero" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::log10 (one) != zero) {
       out << "AT::log10 (one) != zero" << endl;
-      success = 0;
+      FAILURE();
     }
 
     if (AT::is_complex) {
@@ -910,11 +920,11 @@ protected:
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
         printf ("AT(complex):: sin(val)*sin(val) + cos(val)*cos(val) != 1\n");
-        success = 0;
+        FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
         printf ("AT(complex):: sin(val)/cos(val) != AT(real)::tan(val)\n");
-        success = 0;
+        FAILURE();
       } 
     } else {
       const ScalarType val = three; 
@@ -922,25 +932,25 @@ protected:
       const auto val_cos = AT::cos (val);
       if (!equal(val_sin*val_sin + val_cos*val_cos , one)) {
         printf ("AT(real):: sin(val)*sin(val) + cos(a)*cos(a) != 1\n");
-        success = 0;
+        FAILURE();
       } 
       if (!equal(val_sin/val_cos , AT::tan(val))) {
         printf ("AT(real):: sin(val)/cos(val) != AT(real)::tan(val)\n");
-        success = 0;
+        FAILURE();
       } 
     }
 
     if (!equal(AT::asin (AT::sin (three)), three)) {
       printf ("AT::asin(sin(3)) != 3\n");
-      success = 0;
+      FAILURE();
     } 
     if (!equal(AT::acos (AT::cos (three)), three)) {
       printf ("AT::acos(cos(3)) != 3\n");
-      success = 0;
+      FAILURE();
     } 
     if (!equal(AT::atan (AT::tan (three)), three)) {
       printf ("AT::atan(tan(3)) != 3\n");
-      success = 0;
+      FAILURE();
     } 
 
     // Call the base class' implementation.  Every subclass'
@@ -1020,17 +1030,32 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
+    TRACE();
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
 
     // Apparently, std::numeric_limits<ScalarType>::is_signed is 1
     // only for real numbers.
-    if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
-      success = 0;
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
+    if (std::is_same<ScalarType, Kokkos::Experimental::half_t>::value) {
+      if (AT::is_signed != 0x1)
+        FAILURE();
+    } else
+#else
+    {
+      if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
+        printf(
+            "AT::is_signed = 0x%x, std::numeric_limits<ScalarType>::is_signed "
+            "= 0x%x\n",
+            AT::is_signed, std::numeric_limits<ScalarType>::is_signed);
+        FAILURE();
+      }
     }
+#endif // KOKKOS_HALF_T_IS_FLOAT
+
     if (AT::is_complex) {
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -1052,11 +1077,11 @@ protected:
     // Apparently, std::numeric_limits<ScalarType>::is_signed is 1 only for real numbers.
     if (AT::is_signed != std::numeric_limits<ScalarType>::is_signed) {
       out << "ArithTraits<T>::is_signed != std::numeric_limits<ScalarType>::is_signed" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::is_complex) {
       out << "ArithTraits<T>::is_complex is wrong" << endl;
-      success = 0;
+      FAILURE();
     }
     // Call the base class' implementation.  Every subclass'
     // implementation of testHostImpl() should (must) do this, in
@@ -1090,12 +1115,13 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
+    TRACE();
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
 
     if (! AT::is_complex) {
-      success = 0;
+      FAILURE();
     }
     typedef typename AT::mag_type mag_type;
     const mag_type one = Kokkos::Details::ArithTraits<mag_type>::one ();
@@ -1108,7 +1134,7 @@ public:
     // Test conjugation.
     if (AT::conj (oneMinusOne) != onePlusOne ||
         AT::conj (onePlusOne) != oneMinusOne) {
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -1129,7 +1155,7 @@ protected:
 
     if (! AT::is_complex) {
       out << "ArithTraits<T>::is_complex is wrong" << endl;
-      success = 0;
+      FAILURE();
     }
     typedef typename AT::mag_type mag_type;
     const mag_type one = Kokkos::Details::ArithTraits<mag_type>::one ();
@@ -1142,11 +1168,11 @@ protected:
     // Test conjugation.
     if (AT::conj (oneMinusOne) != onePlusOne) {
       out << "AT::conj ((1, -1)) != (1, 1)" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::conj (onePlusOne) != oneMinusOne) {
       out << "AT::conj ((1, 1)) != (1, -1)" << endl;
-      success = 0;
+      FAILURE();
     }
     // Call the base class' implementation.  Every subclass'
     // implementation of testHostImpl() should (must) do this, in
@@ -1232,17 +1258,19 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
+    TRACE();
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
 
     if (AT::is_exact) {
       printf ("AT::is_exact is 1\n");
-      success = 0;
+      FAILURE();
     }
+
     if (! AT::isNan (AT::nan ())) {
       printf ("NaN is not NaN\n");
-      success = 0;
+      FAILURE();
     }
 
     const ScalarType zero = AT::zero ();
@@ -1250,19 +1278,19 @@ public:
 
     if (AT::isInf (zero)) {
       printf ("0 is Inf\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::isInf (one)) {
       printf ("1 is Inf\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::isNan (zero)) {
       printf ("0 is NaN\n");
-      success = 0;
+      FAILURE();
     }
     if (AT::isNan (one)) {
       printf ("1 is NaN\n");
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -1283,14 +1311,14 @@ protected:
 
     if (AT::is_exact) {
       out << "AT::is_exact is wrong" << endl;
-      success = 0;
+      FAILURE();
     }
 
     //if (std::numeric_limits<ScalarType>::is_iec559) {
     //success = success && AT::isInf (AT::inf ());
     if (! AT::isNan (AT::nan ())) {
       out << "isNan or nan failed" << endl;
-      success = 0;
+      FAILURE();
     }
     //}
 
@@ -1299,19 +1327,19 @@ protected:
 
     if (AT::isInf (zero)) {
       out << "isInf(zero) is 1" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::isInf (one)) {
       out << "isInf(one) is 1" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::isNan (zero)) {
       out << "isNan(zero) is 1" << endl;
-      success = 0;
+      FAILURE();
     }
     if (AT::isNan (one)) {
       out << "isNan(one) is 1" << endl;
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -1351,13 +1379,14 @@ public:
 
   KOKKOS_INLINE_FUNCTION void
   operator () (size_type iwork, value_type& dst) const {
+    TRACE();
     typedef Kokkos::Details::ArithTraits<ScalarType> AT;
     (void) iwork; // forestall compiler warning for unused variable
     int success = 1;
 
     if (! AT::is_exact) {
       printf ("! AT:is_exact\n");
-      success = 0;
+      FAILURE();
     }
 
     // Call the base class' implementation.  Every subclass'
@@ -1378,7 +1407,7 @@ protected:
 
     if (! AT::is_exact) {
       out << "AT::is_exact is wrong" << endl;
-      success = 0;
+      FAILURE();
     }
     // Call the base class' implementation.  Every subclass'
     // implementation of testHostImpl() should (must) do this, in
@@ -1532,6 +1561,13 @@ int runAllArithTraitsDeviceTests (std::ostream& out, const int verbose)
   // Built-in real floating-point types
   //
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
+  TRACE();
+  success = success && curSuccess;
+  curSuccess =
+      testArithTraitsOnDevice<Kokkos::Experimental::half_t, DeviceType>(
+          out, verbose);
+#endif // KOKKOS_HALF_T_IS_FLOAT
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<double, DeviceType> (out, verbose);
 
@@ -1542,7 +1578,7 @@ int runAllArithTraitsDeviceTests (std::ostream& out, const int verbose)
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<Kokkos::complex<float>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnDevice<Kokkos::complex<double>, DeviceType> (out, verbose);
 
-  return success;
+  return success && curSuccess;
 }
 
 
@@ -1598,7 +1634,7 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
 
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<float, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<double, DeviceType> (out, verbose);
-#ifndef KOKKOS_ENABLE_CUDA
+#if !defined( KOKKOS_ENABLE_CUDA ) && !defined( KOKKOS_ENABLE_HIP )
   // This would spill tons of warnings about host device stuff otherwise
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<long double, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<std::complex<float>, DeviceType> (out, verbose);
@@ -1609,11 +1645,17 @@ int runAllArithTraitsHostTests (std::ostream& out, const int verbose)
   // Kokkos' complex floating-point types
   //
 
+#if defined(KOKKOS_HALF_T_IS_FLOAT)
+  success = success && curSuccess;
+  TRACE();
+  curSuccess = testArithTraitsOnHost<Kokkos::Experimental::half_t, DeviceType>(
+      out, verbose);
+#endif // KOKKOS_HALF_T_IS_FLOAT
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<float>, DeviceType> (out, verbose);
   success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<double>, DeviceType> (out, verbose);
   //success = success && curSuccess; curSuccess = testArithTraitsOnHost<Kokkos::complex<long double>, DeviceType> (out, verbose);
 
-  return success;
+  return success && curSuccess;
 }
 
 template <typename device>
@@ -1627,8 +1669,8 @@ void test_ArithTraits ()
     int overflow(int c) { return c; }
   };
   NullBuffer null_buffer;
-  //std::ostream &out = std::cout;
-  std::ostream out(&null_buffer);
+  std::ostream &out = std::cerr;
+  //std::ostream out(&null_buffer);
 
 
   bool success = true;

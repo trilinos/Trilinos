@@ -10,8 +10,8 @@
 #include <ratio>  // for ratio
 double get_time()
 {
-  static auto                   start = std::chrono::high_resolution_clock::now();
-  auto                          now   = std::chrono::high_resolution_clock::now();
+  static auto                   start = std::chrono::steady_clock::now();
+  auto                          now   = std::chrono::steady_clock::now();
   std::chrono::duration<double> diff  = now - start;
   return diff.count();
 }

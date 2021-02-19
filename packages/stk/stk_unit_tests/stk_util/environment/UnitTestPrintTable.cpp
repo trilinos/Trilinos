@@ -32,10 +32,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <iostream>                     // for ostringstream, etc
-#include <stk_util/diag/PrintTable.hpp>  // for operator<<, PrintTable, etc
-#include <gtest/gtest.h>
-#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"
+#include "stk_util/diag/PrintTable.hpp"  // for operator<<, PrintTable, end_col, end_row, end_he...
+#include <iostream>                      // for ostringstream, endl, basic_ostream, ostream, hex
+#include <string>                        // for operator==, string
 
 
 

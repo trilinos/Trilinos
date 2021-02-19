@@ -35,9 +35,9 @@
 #ifndef STK_UTIL_ENVIRONMENT_RUNTIMEDOOMED_HPP
 #define STK_UTIL_ENVIRONMENT_RUNTIMEDOOMED_HPP
 
-#include <sstream>
+#include "stk_util/environment/RuntimeMessage.hpp"  // for MessageCode, MessageCode::s_defaultMe...
+#include <sstream>                                  // for ostringstream, ios_base, ostream
 
-#include <stk_util/environment/RuntimeMessage.hpp>
 
 namespace stk {
 

@@ -32,10 +32,15 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 
-#include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
-#include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include <stk_util/util/ReportHandler.hpp>
+#include "stk_util/parallel/GenerateParallelUniqueIDs.hpp"
+#include "stk_util/parallel/MPI.hpp"                     // for Datatype
+#include "stk_util/parallel/ParallelIndexGapFinder.hpp"  // for parallel_index_gap_finder_global
+#include "stk_util/parallel/ParallelReduce.hpp"          // for all_reduce_max
+#include "stk_util/util/ReportHandler.hpp"               // for ThrowRequireMsg
+#include <algorithm>                                     // for max, max_element
+#include <cstdint>                                       // for uint64_t
+#include <sstream>                                       // for operator<<, ostringstream, basic...
+#include <stdexcept>                                     // for runtime_error
 
 namespace stk {
 

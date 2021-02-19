@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -32,7 +32,7 @@ namespace Iotr {
 
   const Ioss::VariableType *Scale::output_storage(const Ioss::VariableType *in) const { return in; }
 
-  int Scale::output_count(int in) const
+  size_t Scale::output_count(size_t in) const
   {
     // Does not modify the entity count...
     return in;

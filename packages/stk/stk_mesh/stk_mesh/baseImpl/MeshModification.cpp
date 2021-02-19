@@ -17,6 +17,10 @@ bool MeshModification::modification_begin(const std::string description)
     {
         m_bulkData.mesh_meta_data().set_mesh_on_fields(&m_bulkData);
         m_bulkData.m_entity_repo->update_num_ranks(m_bulkData.mesh_meta_data().entity_rank_count());
+        const unsigned numRanks = m_bulkData.mesh_meta_data().entity_rank_count(); 
+        if (numRanks > m_bulkData.m_selector_to_buckets_maps.size()) {
+          m_bulkData.m_selector_to_buckets_maps.resize(numRanks);
+        }
     }
 
     if ( this->in_modifiable_state() ) return false ;
@@ -40,13 +44,9 @@ bool MeshModification::modification_begin(const std::string description)
     const stk::mesh::FieldVector allFields = m_bulkData.mesh_meta_data().get_fields();
     for (FieldBase * stkField : allFields) {
       stkField->sync_to_host();
-#ifdef STK_DEBUG_FIELD_SYNC
-      stk::mesh::NgpFieldBase * ngpField = stkField->get_debug_ngp_field();
-      if (ngpField != nullptr) {
-        ngpField->detect_device_field_modification();
-        stkField->fill_last_mod_location_field_from_device();
+      if (stkField->has_ngp_field()) {
+        impl::get_ngp_field(*stkField)->debug_modification_begin();
       }
-#endif
     }
 
     this->increment_sync_count();

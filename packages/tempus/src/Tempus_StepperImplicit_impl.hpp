@@ -367,5 +367,38 @@ bool StepperImplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 }
 
 
+template<class Scalar>
+void StepperImplicit<Scalar>::
+setStepperImplicitValues(
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  if (pl != Teuchos::null) {
+    // Can not validate because of optional Parameters, e.g., 'Solver Name'.
+    //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+    this->setStepperValues(pl);
+    this->setZeroInitialGuess(pl->get<bool>("Zero Initial Guess", false));
+  }
+  this->setStepperSolverValues(pl);
+}
+
+
+template<class Scalar>
+void StepperImplicit<Scalar>::
+setStepperSolverValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  if (pl != Teuchos::null) {
+    setDefaultSolver();
+    std::string solverName = pl->get<std::string>("Solver Name");
+    if ( pl->isSublist(solverName) ) {
+      auto solverPL = Teuchos::parameterList();
+      solverPL = Teuchos::sublist(pl, solverName);
+      Teuchos::RCP<Teuchos::ParameterList> noxPL =
+        Teuchos::sublist(solverPL,"NOX",true);
+      getSolver()->setParameterList(noxPL);
+    }
+  }
+}
+
+
 } // namespace Tempus
 #endif // Tempus_StepperImplicit_impl_hpp

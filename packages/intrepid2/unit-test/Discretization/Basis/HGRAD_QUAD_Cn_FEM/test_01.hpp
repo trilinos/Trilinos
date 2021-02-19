@@ -77,7 +77,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -91,6 +91,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
+  using DeviceSpaceType = typename DeviceType::execution_space;
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -116,10 +117,10 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;      
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;      
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;      
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
@@ -127,7 +128,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
   const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  typedef Basis_HGRAD_QUAD_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> QuadBasisType;
+  typedef Basis_HGRAD_QUAD_Cn_FEM<DeviceType,OutValueType,PointValueType> QuadBasisType;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
 
@@ -315,7 +316,7 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, basisCardinality , dim);
 
     quadBasis.getDofCoords(dofCoords);
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,dofCoords);
+    RealSpaceTools<DeviceType>::clone(lattice,dofCoords);
 
     auto lattice_host = Kokkos::create_mirror_view(lattice);
 
@@ -590,9 +591,9 @@ int HGRAD_QUAD_Cn_FEM_Test01(const bool verbose) {
       quadNodesHost(9,0) =1./3.;  quadNodesHost(9,1) =-3./5.;
 
 
-      auto quadNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
+      auto quadNodes_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), quadNodesHost);
       Kokkos::deep_copy(quadNodes_scalar, quadNodesHost);
-      RealSpaceTools<DeviceSpaceType>::clone(quadNodes, quadNodes_scalar);
+      RealSpaceTools<DeviceType>::clone(quadNodes, quadNodes_scalar);
       // auto quadNodesHost2 = Kokkos::create_mirror_view(quadNodes);
       // Kokkos::deep_copy(quadNodesHost2, quadNodes);
 

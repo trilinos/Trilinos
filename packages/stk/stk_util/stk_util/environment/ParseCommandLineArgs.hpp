@@ -34,9 +34,8 @@
 #ifndef STK_UTIL_ENVIRONMENT_PARSECOMMANDLINEARGS_HPP
 #define STK_UTIL_ENVIRONMENT_PARSECOMMANDLINEARGS_HPP
 
-#include <stk_util/stk_config.h>
-#include <stk_util/environment/OptionsSpecification.hpp>
-#include <stk_util/environment/ParsedOptions.hpp>
+namespace stk { class OptionsSpecification; }
+namespace stk { class ParsedOptions; }
 
 namespace stk {
 

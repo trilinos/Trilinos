@@ -50,6 +50,8 @@
 
 #include <KokkosKernels_config.h>
 #include <Kokkos_Complex.hpp>
+#include <KokkosKernels_Half.hpp>
+#include <Kokkos_Macros.hpp>
 
 #ifdef HAVE_KOKKOSKERNELS_QUADMATH
 #  include <quadmath.h>
@@ -63,16 +65,6 @@
 #ifdef __CUDACC__
 #  include <math_constants.h>
 #endif
-//
-// mfh 24 Dec 2013: Temporary measure for testing; will go away.
-//
-#ifndef KOKKOS_FORCEINLINE_FUNCTION
-#  ifdef __CUDA_ARCH__
-#    define KOKKOS_FORCEINLINE_FUNCTION inline __host__ __device__
-#  else
-#    define KOKKOS_FORCEINLINE_FUNCTION
-#  endif // __CUDA_ARCH__
-#endif // KOKKOS_FORCEINLINE_FUNCTION
 
 namespace { // anonymous
 
@@ -674,6 +666,179 @@ public:
   //@}
 };
 
+// Since Kokkos::Experimental::half_t falls back to float, only define
+// ArithTraits if half_t is a backend specialization
+#if defined(KOKKOS_HALF_T_IS_FLOAT) &&\
+    !KOKKOS_HALF_T_IS_FLOAT
+template <>
+class ArithTraits<Kokkos::Experimental::half_t> {
+public:
+  typedef Kokkos::Experimental::half_t val_type;
+  typedef val_type mag_type;
+
+  static const bool is_specialized = true;
+  static const bool is_signed = true;
+  static const bool is_integer = false;
+  static const bool is_exact = false;
+  static const bool is_complex = false;
+
+  static constexpr bool has_infinity = true;
+  static KOKKOS_FORCEINLINE_FUNCTION val_type infinity() { return Kokkos::Experimental::cast_to_half(HUGE_VALF); }
+
+  static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
+    #ifndef __CUDA_ARCH__
+    using std::isinf;
+    #endif
+    return isinf (Kokkos::Experimental::cast_from_half<float>(x));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
+    #ifndef __CUDA_ARCH__
+    using std::isnan;
+    #endif
+    return isnan(Kokkos::Experimental::cast_from_half<float>(x));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(fabs(Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type zero () {
+    return Kokkos::Experimental::cast_to_half(0.0F);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type one () {
+    return Kokkos::Experimental::cast_to_half(1.0F);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type min () {
+    return Kokkos::Experimental::cast_to_half(-KOKKOSKERNELS_IMPL_FP16_MAX);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type max () {
+    return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MAX);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type real (const val_type x) {
+    return x;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type imag (const val_type) {
+    return Kokkos::Experimental::cast_to_half(0.0F);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conj (const val_type x) {
+    return x;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type pow (const val_type x, const val_type y) {
+    return Kokkos::Experimental::cast_to_half(::pow(Kokkos::Experimental::cast_from_half<float>(x),
+                 Kokkos::Experimental::cast_from_half<float>(y)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::sqrt (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::cbrt (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::exp (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::log (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type log10 (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::log10 (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sin (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::sin (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cos (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::cos (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tan (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::tan (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type sinh (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::sinh (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type cosh (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::cosh (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type tanh (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::tanh (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type asin (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::asin (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type acos (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::acos (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type atan (const val_type x) {
+    return Kokkos::Experimental::cast_to_half(::atan (Kokkos::Experimental::cast_from_half<float>(x)));
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type epsilon () {
+    //return ::pow(2, -KOKKOSKERNELS_IMPL_FP16_SIGNIFICAND_BITS);
+    return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_EPSILON);
+  }
+  // Backwards compatibility with Teuchos::ScalarTraits.
+  typedef mag_type magnitudeType;
+  // C++ doesn't have a standard "half-float" type.
+  typedef val_type halfPrecision;
+  typedef double doublePrecision;
+
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+  static KOKKOS_FORCEINLINE_FUNCTION bool isnaninf (const val_type x) {
+    return isNan (x) || isInf (x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION magnitudeType magnitude (const val_type x) {
+    return abs(x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type conjugate (const val_type x) {
+    return conj(x);
+  }
+  static std::string name () {
+    return "half";
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type squareroot (const val_type x) {
+    return sqrt(x);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
+#ifdef __CUDA_ARCH__
+    return Kokkos::Experimental::cast_to_half(CUDART_NAN_F);
+#else
+    return Kokkos::Experimental::cast_to_half(std::numeric_limits<float>::quiet_NaN());
+#endif // __CUDA_ARCH__
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type eps () {
+    return epsilon ();
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type sfmin () {
+    return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MIN);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int base () {
+    return KOKKOSKERNELS_IMPL_FP16_RADIX;
+  }
+  // Use float to allow running on both host and device
+  static KOKKOS_FORCEINLINE_FUNCTION float prec () {
+    float e = KOKKOSKERNELS_IMPL_FP16_EPSILON;
+    float b = (float) base();
+    float r = e * b;
+    return r;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int t () {
+    return KOKKOSKERNELS_IMPL_FP16_MANT_DIG;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rnd () {
+    return Kokkos::Experimental::cast_to_half(1.0);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emin () {
+    return KOKKOSKERNELS_IMPL_FP16_MIN_EXP;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmin () {
+    return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MIN);
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION int emax () {
+    return KOKKOSKERNELS_IMPL_FP16_MAX_EXP;
+  }
+  static KOKKOS_FORCEINLINE_FUNCTION mag_type rmax () {
+    return Kokkos::Experimental::cast_to_half(KOKKOSKERNELS_IMPL_FP16_MAX);
+  }
+};
+#endif // KOKKOS_HALF_T_IS_FLOAT && KOKKOS_ENABLE_CUDA_HALF
 
 template<>
 class ArithTraits<float> {
@@ -691,13 +856,13 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION float infinity() { return HUGE_VALF; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const float x) {
-    #ifndef __CUDA_ARCH__
+    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
     #endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const float x) {
-    #ifndef __CUDA_ARCH__
+    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
     #endif
     return isnan (x);
@@ -801,9 +966,11 @@ public:
     return sqrt (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION float nan () {
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__)
     return CUDART_NAN_F;
     //return nan (); //this returns 0???
+#elif defined(__HIP_DEVICE_COMPILE__)
+    return ::nanf("");
 #else
     return std::numeric_limits<float>::quiet_NaN();
 #endif // __CUDA_ARCH__
@@ -840,7 +1007,6 @@ public:
   }
 };
 
-
 /// \brief Partial specialization for std::complex<RealFloatType>.
 ///
 /// The C++ Standard Library (with C++03 at least) only allows
@@ -865,13 +1031,13 @@ public:
   }
 
   static bool isInf (const std::complex<RealFloatType>& x) {
-    #ifndef __CUDA_ARCH__
+    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
     #endif
     return isinf (real (x)) || isinf (imag (x));
   }
   static bool isNan (const std::complex<RealFloatType>& x) {
-    #ifndef __CUDA_ARCH__
+    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
     #endif
     return isnan (real (x)) || isnan (imag (x));
@@ -1045,13 +1211,13 @@ public:
   static KOKKOS_FORCEINLINE_FUNCTION double infinity() { return HUGE_VAL; }
 
   static KOKKOS_FORCEINLINE_FUNCTION bool isInf (const val_type x) {
-    #ifndef __CUDA_ARCH__
+    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isinf;
     #endif
     return isinf (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION bool isNan (const val_type x) {
-    #ifndef __CUDA_ARCH__
+    #ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
     using std::isnan;
     #endif
     return isnan (x);
@@ -1126,9 +1292,11 @@ public:
     return ::atan (x);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type nan () {
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__)
     return CUDART_NAN;
     //return nan (); // this returns 0 ???
+#elif defined(__HIP_DEVICE_COMPILE__)
+    return ::nan("");
 #else
     return std::numeric_limits<val_type>::quiet_NaN();
 #endif // __CUDA_ARCH__
@@ -1140,8 +1308,10 @@ public:
   // Backwards compatibility with Teuchos::ScalarTraits.
   typedef mag_type magnitudeType;
   typedef float halfPrecision;
-#ifdef __CUDA_ARCH__
+#if defined(__CUDA_ARCH__)
   typedef double doublePrecision; // CUDA doesn't support long double, unfortunately
+#elif defined(__HIP_DEVICE_COMPILE__)
+  typedef double doublePrecision; // HIP does not support long double unfortunately
 #else
   typedef long double doublePrecision;
 #endif // __CUDA_ARCH__
@@ -1197,9 +1367,10 @@ public:
 };
 
 
-// CUDA does not support long double in device functions, so none of
-// the class methods in this specialization are marked as device
-// functions.
+// CUDA and HIP do not support long double in device functions,
+// so none of the class methods in this specialization are marked
+// as device functions.
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 template<>
 class ArithTraits<long double> {
 public:
@@ -1213,18 +1384,14 @@ public:
   static const bool is_complex = false;
 
   static constexpr bool has_infinity = true;
-  static KOKKOS_FORCEINLINE_FUNCTION long double infinity() { return HUGE_VALL; }
+  static long double infinity() { return HUGE_VALL; }
 
   static bool isInf (const val_type& x) {
-    #ifndef __CUDA_ARCH__
     using std::isinf;
-    #endif
     return isinf (x);
   }
   static bool isNan (const val_type& x) {
-    #ifndef __CUDA_ARCH__
     using std::isnan;
-    #endif
     return isnan (x);
   }
   static mag_type abs (const val_type& x) {
@@ -1359,7 +1526,8 @@ public:
   static mag_type rmax () {
     return LDBL_MAX;
   }
-};
+}; // long double specialization
+#endif // KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
 
 #ifdef HAVE_KOKKOSKERNELS_QUADMATH
 
@@ -2923,11 +3091,13 @@ public:
     return intPowSigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
+    using std::sqrt;
+    using std::abs;
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    return static_cast<val_type> ( sqrt (static_cast<long double> (abs (x))));
 #else
-    return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
-#endif // __CUDA_ARCH__
+    return static_cast<val_type> ( sqrt (static_cast<double> (abs (x))));
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type log (const val_type x) {
     return static_cast<val_type> ( ::log (static_cast<double> (abs (x))));
@@ -3048,18 +3218,20 @@ public:
     return intPowUnsigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
+    using std::sqrt;
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    return static_cast<val_type> ( sqrt (static_cast<long double> (x)));
 #else
-    return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
-#endif // __CUDA_ARCH__
+    return static_cast<val_type> ( sqrt (static_cast<double> (x)));
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
-#else
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::cbrtl;
     return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
-#endif // __CUDA_ARCH__
+#else
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<double> (x)));
@@ -3184,7 +3356,15 @@ public:
     return intPowSigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-#ifdef __CUDA_ARCH__
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::sqrt;
+    using std::abs;
+    // IEEE 754 promises that long double has at least 64 significand
+    // bits, so we can use it to represent any signed or unsigned
+    // 64-bit integer type exactly.  However, CUDA does not implement
+    // long double for device functions.
+    return static_cast<val_type> ( sqrt (static_cast<long double> (abs (x))));
+#else
     // Casting from a 64-bit integer type to double does result in a
     // loss of accuracy.  However, it gives us a good first
     // approximation.  For very large numbers, we may lose some
@@ -3196,20 +3376,16 @@ public:
     // correctness.  It actually should suffice to check numbers
     // within 1 of the result.
     return static_cast<val_type> ( ::sqrt (static_cast<double> (abs (x))));
-#else
-    // IEEE 754 promises that long double has at least 64 significand
-    // bits, so we can use it to represent any signed or unsigned
-    // 64-bit integer type exactly.  However, CUDA does not implement
-    // long double for device functions.
-    return static_cast<val_type> ( ::sqrt (static_cast<long double> (abs (x))));
-#endif // __CUDA_ARCH__
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::cbrtl;
+    using std::abs;
+    return static_cast<val_type> ( cbrtl (static_cast<long double> (abs (x))));
 #else
-    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (abs (x))));
-#endif // __CUDA_ARCH__
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (abs (x))));
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<double> (abs (x))));
@@ -3334,18 +3510,20 @@ public:
     return intPowUnsigned<val_type> (x, y);
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type sqrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::sqrt;
+    return static_cast<val_type> ( sqrt (static_cast<long double> (x)));
 #else
-    return static_cast<val_type> ( ::sqrt (static_cast<long double> (x)));
-#endif // __CUDA_ARCH__
+    return static_cast<val_type> ( ::sqrt (static_cast<double> (x)));
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type cbrt (const val_type x) {
-#ifdef __CUDA_ARCH__
-    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+#ifdef KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST
+    using std::cbrtl;
+    return static_cast<val_type> ( cbrtl (static_cast<long double> (x)));
 #else
-    return static_cast<val_type> ( ::cbrtl (static_cast<long double> (x)));
-#endif // __CUDA_ARCH__
+    return static_cast<val_type> ( ::cbrt (static_cast<double> (x)));
+#endif
   }
   static KOKKOS_FORCEINLINE_FUNCTION val_type exp (const val_type x) {
     return static_cast<val_type> ( ::exp (static_cast<double> (x)));

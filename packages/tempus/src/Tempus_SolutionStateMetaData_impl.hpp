@@ -9,7 +9,6 @@
 #ifndef Tempus_SolutionStateMetaData_impl_hpp
 #define Tempus_SolutionStateMetaData_impl_hpp
 
-#include "Tempus_config.hpp"
 
 namespace Tempus {
 

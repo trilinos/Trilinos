@@ -31,28 +31,27 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
+#ifndef STK_UNIT_TESTS_STK_IO_Assembly_hpp
+#define STK_UNIT_TESTS_STK_IO_Assembly_hpp
+
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_io/FillMesh.hpp>
+#include <stk_mesh/base/ExodusTranslator.hpp>
 #include <stk_topology/topology.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
+#include "IOMeshFixture.hpp"
 #include <fstream>
 
-class Assembly : public stk::unit_test_util::MeshFixture
+class Assembly : public IOMeshFixture
 {
 protected:
-  stk::mesh::Part& create_assembly(const std::string& assemblyName)
+  stk::mesh::Part& create_assembly(const std::string& assemblyName, int id)
   {
     stk::mesh::Part& assemblyPart = get_meta().declare_part(assemblyName);
     stk::io::put_assembly_io_part_attribute(assemblyPart);
+    get_meta().set_part_id(assemblyPart, id);
     return assemblyPart;
-  }
-
-  stk::mesh::Part& create_io_part(const std::string& partName)
-  {
-    stk::mesh::Part& part = get_meta().declare_part_with_topology(partName, stk::topology::HEX_8);
-    stk::io::put_io_part_attribute(part);
-    return part;
   }
 
   void declare_subsets(stk::mesh::Part& parentPart, const stk::mesh::PartVector& subsetParts)
@@ -63,14 +62,16 @@ protected:
   }
 
   std::pair<stk::mesh::Part*, stk::mesh::PartVector>
-  create_assembly_hierarchy(const std::string& parentAssemblyName,
-                            const std::vector<std::string>& subAssemblyNames)
+  create_assembly_hierarchy(const std::string& parentAssemblyName, int parentId,
+                            const std::vector<std::string>& subAssemblyNames,
+                            const std::vector<int>& subAssemblyIds)
   {
-    stk::mesh::Part& parentAssemblyPart = create_assembly(parentAssemblyName);
+    stk::mesh::Part& parentAssemblyPart = create_assembly(parentAssemblyName, parentId);
 
     stk::mesh::PartVector subAssemblyParts;
+    unsigned counter = 0;
     for(const std::string& subAssemblyName : subAssemblyNames) {
-      subAssemblyParts.push_back(&create_assembly(subAssemblyName));
+      subAssemblyParts.push_back(&create_assembly(subAssemblyName, subAssemblyIds[counter++]));
     }
 
     declare_subsets(parentAssemblyPart, subAssemblyParts);
@@ -90,8 +91,9 @@ protected:
   
     stk::mesh::Part* parentAssemblyPart;
     stk::mesh::PartVector subAssemblyParts;
-    std::tie(parentAssemblyPart, subAssemblyParts) = create_assembly_hierarchy(parentAssemblyName,
-                                                       {subAssembly1Name, subAssembly2Name});
+    std::tie(parentAssemblyPart, subAssemblyParts) = create_assembly_hierarchy(parentAssemblyName, 100,
+                                                       {subAssembly1Name, subAssembly2Name},
+                                                       {200, 201});
   
     std::string subSubAssemblyName("mySubSubAssembly");
     std::string subSubSubAssembly1Name("mySubSubSubAssembly1");
@@ -99,8 +101,9 @@ protected:
   
     stk::mesh::Part* subSubAssemblyPart;
     stk::mesh::PartVector subSubSubAssemblyParts;
-    std::tie(subSubAssemblyPart, subSubSubAssemblyParts) = create_assembly_hierarchy(subSubAssemblyName, 
-                                                       {subSubSubAssembly1Name, subSubSubAssembly2Name});
+    std::tie(subSubAssemblyPart, subSubSubAssemblyParts) = create_assembly_hierarchy(subSubAssemblyName, 101,
+                                                       {subSubSubAssembly1Name, subSubSubAssembly2Name},
+                                                       {300, 301});
   
     ASSERT_EQ(2u, subAssemblyParts.size());
     declare_subsets(*subAssemblyParts[0], {subSubAssemblyPart});
@@ -131,14 +134,6 @@ protected:
     }
   }
 
-  void move_element(const stk::mesh::EntityId elemId,
-                    stk::mesh::Part& sourcePart,
-                    stk::mesh::Part& destPart)
-  {
-    stk::mesh::Entity elem = get_bulk().get_entity(stk::topology::ELEM_RANK, elemId);
-    get_bulk().batch_change_entity_parts({elem}, {&destPart}, {&sourcePart});
-  }
-
   void test_sub_assembly_names(const std::string& assemblyName,
                                const std::vector<std::string>& expectedSubAssemblyNames)
   {
@@ -150,7 +145,8 @@ protected:
   }
 
   void compare_assemblies(const stk::mesh::MetaData& meta1,
-                          const stk::mesh::MetaData& meta2)
+                          const stk::mesh::MetaData& meta2,
+                          stk::mesh::Part* excludedBlock = nullptr)
   {
     std::vector<std::string> assemblyNames1 = stk::io::get_assembly_names(meta1);
     std::vector<std::string> assemblyNames2 = stk::io::get_assembly_names(meta2);
@@ -164,32 +160,39 @@ protected:
       const stk::mesh::Part* assemblyPart2 = meta2.get_part(assemblyNames2[i]);
       EXPECT_TRUE(stk::io::is_part_assembly_io_part(*assemblyPart1));
       EXPECT_TRUE(stk::io::is_part_assembly_io_part(*assemblyPart2));
+      EXPECT_EQ(assemblyPart1->id(), assemblyPart2->id());
 
       EXPECT_EQ(stk::io::get_sub_assembly_names(meta1, assemblyNames1[i]),
                 stk::io::get_sub_assembly_names(meta2, assemblyNames2[i]));
 
       stk::mesh::PartVector leafParts1 = stk::io::get_unique_leaf_parts(meta1, assemblyNames1[i]);
       stk::mesh::PartVector leafParts2 = stk::io::get_unique_leaf_parts(meta2, assemblyNames2[i]);
-      ASSERT_EQ(leafParts1.size(), leafParts2.size());
+      ASSERT_GE(leafParts1.size(), leafParts2.size());
       for(size_t j=0; j<leafParts1.size(); ++j) {
-        EXPECT_TRUE(stk::mesh::find(leafParts2, leafParts1[j]->name()) != nullptr);
+        if (excludedBlock == nullptr || leafParts1[j]->name() != excludedBlock->name()) {
+          EXPECT_TRUE(stk::mesh::find(leafParts2, leafParts1[j]->name()) != nullptr);
+        }
       }
     }
   }
 
-  void test_write_then_read_assemblies(size_t expectedNumAssemblies)
+  void test_write_then_read_assemblies(size_t expectedNumAssemblies,
+                                       stk::mesh::Part* blockToExclude = nullptr)
   {
     const std::string fileName("meshWithAssemblies.e");
-    stk::io::write_mesh(fileName, get_bulk());
+    stk::mesh::Selector meshSubsetSelector = create_subset_selector(blockToExclude);
+    stk::io::write_mesh_subset(fileName, get_bulk(), meshSubsetSelector);
 
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
     stk::io::fill_mesh(fileName, bulk);
 
     EXPECT_EQ(expectedNumAssemblies, stk::io::get_assembly_names(meta).size());
-    compare_assemblies(get_meta(), meta);
+    compare_assemblies(get_meta(), meta, blockToExclude);
 
     unlink(fileName.c_str());
   }
 };
+
+#endif
 

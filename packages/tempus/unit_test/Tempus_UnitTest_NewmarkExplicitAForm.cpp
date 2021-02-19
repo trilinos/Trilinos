@@ -13,10 +13,11 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
+#include "Tempus_StepperNewmarkExplicitAForm.hpp"
 #include "Tempus_StepperNewmarkExplicitAFormModifierBase.hpp"
 #include "Tempus_StepperNewmarkExplicitAFormModifierXBase.hpp"
 #include "Tempus_StepperNewmarkExplicitAFormModifierDefault.hpp"
@@ -39,8 +40,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-
-using Tempus::StepperFactory;
 
 
 // ************************************************************

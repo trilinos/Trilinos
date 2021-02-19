@@ -114,6 +114,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_INTELMPI-2018.4" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+  # Point CMake 3.19 compiler checks to missing symbols
+  export LDFLAGS="$LDFLAGS -lifcore"
 
 elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
   atdm_config_load_sparc_dev_module sparc-dev/intel-19.0.3_mpich2-3.2
@@ -136,6 +138,8 @@ elif [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.3_MPICH2-3.2" ]; then
   export ATDM_CONFIG_OPENMP_FORTRAN_FLAGS=-fopenmp
   export ATDM_CONFIG_OPENMP_FORTRAN_LIB_NAMES=gomp
   export ATDM_CONFIG_OPENMP_GOMP_LIBRARY=-lgomp
+  # Point CMake 3.19 compiler checks to missing symbols
+  export LDFLAGS="$LDFLAGS -lifcore"
 
 elif [ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1.243_GNU-7.2.0_OPENMPI-4.0.3" ]; then
   # ninja is running into issues with response files when building shared libraries with CUDA.
@@ -193,7 +197,7 @@ fi
 
 # Use updated Ninja and CMake
 module load sems-env
-module load sems-cmake/3.12.2
+module load sems-cmake/3.19.1
 module load sems-ninja_fortran/1.8.2
 
 export ATDM_CONFIG_USE_HWLOC=OFF

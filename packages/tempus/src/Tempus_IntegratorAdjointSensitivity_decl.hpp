@@ -10,6 +10,7 @@
 #define Tempus_IntegratorAdjointSensitivity_decl_hpp
 
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
 
@@ -188,14 +189,14 @@ protected:
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> > dgdp_;
 };
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorAdjointSensitivity<Scalar> >
 integratorAdjointSensitivity();
