@@ -81,7 +81,11 @@ namespace FROSch {
 
     enum DofOrdering {NodeWise=0,DimensionWise=1,Custom=2};
 
-    enum NullSpace {LaplaceNullSpace=0,LinearElasticityNullSpace=1};
+    enum class NullSpaceType
+    {
+      Laplace = 0,
+      Elasticity = 1
+    };
 
         enum Verbosity {None=0,All=1};
 
@@ -335,7 +339,7 @@ namespace FROSch {
 
     template <class SC, class LO,class GO,class NO>
     RCP<const MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
-                                                        unsigned nullSpaceType,
+                                                        const NullSpaceType nullSpaceType,
                                                         RCP<const Map<LO,GO,NO> > repeatedMap,
                                                         unsigned dofsPerNode,
                                                         ArrayRCP<RCP<const Map<LO,GO,NO> > > dofsMaps,
