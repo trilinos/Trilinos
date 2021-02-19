@@ -1114,7 +1114,7 @@ public:
       for (LO lclRow = rowBegin; lclRow != rowEnd; lclRow += rowStride) {
         const LO actlRow = lclRow - 1;
 
-        little_host_vec_type B_cur = B.getLocalBlock (actlRow, 0);
+        auto B_cur = B.getLocalBlock (actlRow, 0, Access::ReadOnly);
         COPY (B_cur, X_lcl);
         SCAL (static_cast<impl_scalar_type> (omega), X_lcl);
 
@@ -1124,7 +1124,7 @@ public:
           const LO meshCol = indHost_[absBlkOff];
           const_little_block_type A_cur =
             getConstLocalBlockFromAbsOffset (absBlkOff);
-          little_host_vec_type X_cur = X.getLocalBlock (meshCol, 0);
+          auto X_cur = X.getLocalBlock (meshCol, 0, Access::ReadOnly);
 
           // X_lcl += alpha*A_cur*X_cur
           const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
@@ -1136,7 +1136,7 @@ public:
         // unmanaged already, so we don't have to take unmanaged
         // subviews first.
         auto D_lcl = Kokkos::subview (D_inv, actlRow, ALL (), ALL ());
-        little_host_vec_type X_update = X.getLocalBlock (actlRow, 0);
+        auto X_update = X.getLocalBlock (actlRow, 0, Access::WriteOnly);
         FILL (X_update, zero);
         GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
       } // for each local row of the matrix
@@ -1146,7 +1146,7 @@ public:
         for (LO j = 0; j < numVecs; ++j) {
           LO actlRow = lclRow-1;
 
-          little_host_vec_type B_cur = B.getLocalBlock (actlRow, j);
+          auto B_cur = B.getLocalBlock (actlRow, j, Access::ReadOnly);
           COPY (B_cur, X_lcl);
           SCAL (static_cast<impl_scalar_type> (omega), X_lcl);
 
@@ -1156,7 +1156,7 @@ public:
             const LO meshCol = indHost_[absBlkOff];
             const_little_block_type A_cur =
               getConstLocalBlockFromAbsOffset (absBlkOff);
-            little_host_vec_type X_cur = X.getLocalBlock (meshCol, j);
+            auto X_cur = X.getLocalBlock (meshCol, j, Access::ReadOnly);
 
             // X_lcl += alpha*A_cur*X_cur
             const Scalar alpha = meshCol == actlRow ? one_minus_omega : minus_omega;
@@ -1164,7 +1164,7 @@ public:
           } // for each entry in the current local row of the matrx
 
           auto D_lcl = Kokkos::subview (D_inv, actlRow, ALL (), ALL ());
-          auto X_update = X.getLocalBlock (actlRow, j);
+          auto X_update = X.getLocalBlock (actlRow, j, Access::WriteOnly);
           FILL (X_update, zero);
           GEMV (one, D_lcl, X_lcl, X_update); // overwrite X_update
         } // for each entry in the current local row of the matrix

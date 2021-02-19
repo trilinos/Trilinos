@@ -287,7 +287,8 @@ namespace {
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto X_cur = X.getLocalBlock (whichBlk, whichVec);
+          auto X_cur = X.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadWrite);
           // This doesn't actually assume UVM, since we're modifying
           // the current block of X on the host.  The sync below will
           // sync back to device memory.
@@ -313,7 +314,8 @@ namespace {
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec);
+          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadOnly);
 
           // Compare Y_cur normwise to prototypeY.  This doesn't
           // actually assume UVM, since we're modifying the host
@@ -346,7 +348,8 @@ namespace {
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec);
+          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadOnly);
 
           // Compare Y_cur normwise to prototypeY.  This doesn't
           // actually assume UVM, since we're modifying the host
@@ -514,7 +517,8 @@ namespace {
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto X_cur = X.getLocalBlock (whichBlk, whichVec);
+          auto X_cur = X.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadWrite);
           // This doesn't actually assume UVM, since we're modifying
           // the current block of X on the host.  The sync below will
           // sync back to device memory.

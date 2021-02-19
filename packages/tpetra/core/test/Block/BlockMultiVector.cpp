@@ -289,8 +289,8 @@ namespace {
     // has 48 rows on each process: 12 mesh points, and 4 degrees of
     // freedom per mesh point ("block size").  Rows 20-23 thus
     // correspond to local mesh point 5.
-    typedef typename BMV::little_vec_type::HostMirror little_host_vec_type;
-    little_host_vec_type X_5_1 = X.getLocalBlock (5, colToModify);
+    typedef typename BMV::little_host_vec_type little_host_vec_type;
+    auto X_5_1 = X.getLocalBlock (5, colToModify, Tpetra::Access::ReadWrite);
 
     // All entries of X_5_1 must be zero.  First make a block with all
     // zero entries, then test.  It's not worth testing the
@@ -306,12 +306,11 @@ namespace {
       X_5_1(i) = static_cast<Scalar> (i + 1); // all are nonzero
     }
     TEST_ASSERT( ! equal (X_5_1, zeroLittleVector) && ! equal (zeroLittleVector, X_5_1) );
-    X.modify_host();
 
     // Make sure that getLocalBlock() returns a read-and-write view,
     // not a deep copy.  Do this by calling getLocalBlock(5,1) again,
     // and testing that changes to X_5_1 are reflected in the result.
-    little_host_vec_type X_5_1_new = X.getLocalBlock (5, colToModify);
+    auto X_5_1_new = X.getLocalBlock (5, colToModify, Tpetra::Access::ReadOnly);
     TEST_ASSERT( equal (X_5_1_new, X_5_1) && equal (X_5_1, X_5_1_new) );
     TEST_ASSERT( ! equal (X_5_1_new, zeroLittleVector) &&
                  ! equal (zeroLittleVector, X_5_1_new) );
@@ -321,7 +320,8 @@ namespace {
          localMeshIndex < static_cast<LO> (numLocalMeshPoints);
          ++localMeshIndex) {
       for (LO curCol = 0; curCol < numVecs; ++curCol) {
-        little_host_vec_type X_cur = X.getLocalBlock (localMeshIndex, curCol);
+        auto X_cur = X.getLocalBlock (localMeshIndex, curCol,
+                                      Tpetra::Access::ReadOnly);
         if (curCol != colToModify) {
           TEST_ASSERT( equal (X_cur, zeroLittleVector) &&
                        equal (zeroLittleVector, X_cur) );
@@ -382,7 +382,7 @@ namespace {
     using Teuchos::reduceAll;
     using Teuchos::RCP;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
-    typedef typename BMV::little_vec_type::HostMirror little_host_vec_type;
+    typedef typename BMV::little_host_vec_type little_host_vec_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::global_size_t GST;
@@ -426,12 +426,14 @@ namespace {
     // the first GID on the calling process in the mesh Map overlaps
     // with one GID on exactly one process.
     const LO colToModify = 1;
-    little_host_vec_type X_overlap =
-      X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), colToModify);
-    TEST_ASSERT( X_overlap.data () != NULL );
-    TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)), static_cast<size_t> (blockSize) );
-
     {
+      auto X_overlap =
+        X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), 
+                         colToModify, Tpetra::Access::WriteOnly);
+      TEST_ASSERT( X_overlap.data () != NULL );
+      TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)),
+                           static_cast<size_t> (blockSize) );
+
       const int lclOk = (X_overlap.data () != NULL &&
                          static_cast<size_t> (X_overlap.extent (0)) == static_cast<size_t> (blockSize)) ? 1 : 0;
       int gblOk = 1;
@@ -439,12 +441,11 @@ namespace {
       TEUCHOS_TEST_FOR_EXCEPTION(
         gblOk == 0, std::logic_error, "Some process reported that X_overlap "
         "is an empty block.");
-    }
 
-    for (LO i = 0; i < blockSize; ++i) {
-      X_overlap(i) = static_cast<Scalar> (i+1);
+      for (LO i = 0; i < blockSize; ++i) {
+        X_overlap(i) = static_cast<Scalar> (i+1);
+      }
     }
-    X.modify_host();
 
     { // BlockMultiVector relies on the point multivector infrastructure
       const auto pointMeshMap = BMV::makePointMap(meshMap, blockSize);
@@ -453,36 +454,39 @@ namespace {
       Y.getMultiVectorView().doImport (X.getMultiVectorView(), pointImport, Tpetra::REPLACE);
     }
 
-    little_host_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
+    {
+      auto X_overlap =
+           X.getLocalBlock (meshMap.getLocalElement(meshMap.getMinGlobalIndex()), 
+                            colToModify, Tpetra::Access::ReadOnly);
 
-    // Forestall compiler warning for unused variable.
-    (void) Y_overlap;
+      Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
+      little_host_vec_type zeroLittleVector ((typename little_host_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
 
-    Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-    little_host_vec_type zeroLittleVector ((typename little_host_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
-
-    for (LO col = 0; col < numVecs; ++col) {
-      for (LO localMeshRow = meshMap.getMinLocalIndex ();
-           localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
-        little_host_vec_type Y_cur = Y.getLocalBlock (localMeshRow, col);
-        if (col != colToModify) {
-          TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
-                       equal (zeroLittleVector, Y_cur) );
-          TEST_ASSERT( ! equal (Y_cur, X_overlap) &&
-                       ! equal (X_overlap, Y_cur) );
-        }
-        if (localMeshRow != meshMap.getMinLocalIndex ()) {
-          TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
-                       equal (zeroLittleVector, Y_cur) );
-          TEST_ASSERT( ! equal (Y_cur, X_overlap) &&
-                       ! equal (X_overlap, Y_cur) );
-        }
-        if (col == colToModify && localMeshRow == meshMap.getMinLocalIndex ()) {
-          TEST_ASSERT( equal (Y_cur, X_overlap) && equal (X_overlap, Y_cur) );
+      for (LO col = 0; col < numVecs; ++col) {
+        for (LO localMeshRow = meshMap.getMinLocalIndex ();
+             localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
+          auto Y_cur = Y.getLocalBlock (localMeshRow, col,
+                                        Tpetra::Access::ReadOnly);
+          if (col != colToModify) {
+            TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
+                         equal (zeroLittleVector, Y_cur) );
+            TEST_ASSERT( ! equal (Y_cur, X_overlap) &&
+                         ! equal (X_overlap, Y_cur) );
+          }
+          if (localMeshRow != meshMap.getMinLocalIndex ()) {
+            TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&
+                         equal (zeroLittleVector, Y_cur) );
+            TEST_ASSERT( ! equal (Y_cur, X_overlap) &&
+                         ! equal (X_overlap, Y_cur) );
+          }
+          if (col == colToModify && localMeshRow == meshMap.getMinLocalIndex ()) {
+            TEST_ASSERT( equal (Y_cur, X_overlap) && equal (X_overlap, Y_cur) );
+          }
         }
       }
     }
   }
+    
 
   //
   // Make sure that BlockMultiVector's "offset view" constructors work.

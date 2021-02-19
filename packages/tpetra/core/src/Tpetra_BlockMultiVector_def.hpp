@@ -300,9 +300,9 @@ void
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
-                        const Scalar vals[]) const
+                        const Scalar vals[]) 
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex);
+  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::WriteOnly);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   Kokkos::deep_copy (X_dst, X_src);
@@ -314,7 +314,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceLocalValues (const LO localRowIndex,
                     const LO colIndex,
-                    const Scalar vals[]) const
+                    const Scalar vals[])
 {
   if (! meshMap_.isNodeLocalElement (localRowIndex)) {
     return false;
@@ -329,7 +329,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceGlobalValues (const GO globalRowIndex,
                      const LO colIndex,
-                     const Scalar vals[]) const
+                     const Scalar vals[])
 {
   const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
@@ -345,9 +345,9 @@ void
 BlockMultiVector<Scalar, LO, GO, Node>::
 sumIntoLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
-                        const Scalar vals[]) const
+                        const Scalar vals[])
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex);
+  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
@@ -358,7 +358,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 sumIntoLocalValues (const LO localRowIndex,
                     const LO colIndex,
-                    const Scalar vals[]) const
+                    const Scalar vals[])
 {
   if (! meshMap_.isNodeLocalElement (localRowIndex)) {
     return false;
@@ -373,7 +373,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 sumIntoGlobalValues (const GO globalRowIndex,
                      const LO colIndex,
-                     const Scalar vals[]) const
+                     const Scalar vals[])
 {
   const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
@@ -384,6 +384,7 @@ sumIntoGlobalValues (const GO globalRowIndex,
   }
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE_KDD
 template<class Scalar, class LO, class GO, class Node>
 bool
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -392,7 +393,7 @@ getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
   if (! meshMap_.isNodeLocalElement (localRowIndex)) {
     return false;
   } else {
-    auto X_ij = getLocalBlock (localRowIndex, colIndex);
+    auto X_ij = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
     vals = reinterpret_cast<Scalar*> (X_ij.data ());
     return true;
   }
@@ -407,13 +408,14 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
     return false;
   } else {
-    auto X_ij = getLocalBlock (localRowIndex, colIndex);
+    auto X_ij = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
     vals = reinterpret_cast<Scalar*> (X_ij.data ());
     return true;
   }
 }
+#endif
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE_KDD
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -449,7 +451,7 @@ typename BlockMultiVector<Scalar, LO, GO, Node>::const_little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex,
-               Tpetra::Access::ReadOnlyStruct) const
+               Access::ReadOnlyStruct) const
 {
   //if (!isValidLocalMeshIndex(localRowIndex)) {
   //  return const_little_host_vec_type();
@@ -460,7 +462,51 @@ getLocalBlock (const LO localRowIndex,
 //    impl_scalar_type* blockRaw = this->getRawPtr() + offset;
 //    return little_host_vec_type(blockRaw, blockSize);
 
-    auto hostView = mv_.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto hostView = mv_.getLocalViewHost(Access::ReadOnly);
+    LO startRow = localRowIndex*blockSize;
+    LO endRow = startRow + blockSize;
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow), colIndex);
+  //}
+}
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalBlock (const LO localRowIndex,
+               const LO colIndex,
+               Access::WriteOnlyStruct)
+{
+  //if (!isValidLocalMeshIndex(localRowIndex)) {
+  //  return const_little_host_vec_type();
+  //} else {
+    const size_t blockSize = getBlockSize();
+//    const size_t offset = colIndex * this->getStrideY() +
+//      localRowIndex * blockSize;
+//    impl_scalar_type* blockRaw = this->getRawPtr() + offset;
+//    return little_host_vec_type(blockRaw, blockSize);
+
+    auto hostView = mv_.getLocalViewHost(Access::WriteOnly);
+    LO startRow = localRowIndex*blockSize;
+    LO endRow = startRow + blockSize;
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow), colIndex);
+  //}
+}
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalBlock (const LO localRowIndex,
+               const LO colIndex,
+               Access::ReadWriteStruct)
+{
+  //if (!isValidLocalMeshIndex(localRowIndex)) {
+  //  return const_little_host_vec_type();
+  //} else {
+    const size_t blockSize = getBlockSize();
+//    const size_t offset = colIndex * this->getStrideY() +
+//      localRowIndex * blockSize;
+//    impl_scalar_type* blockRaw = this->getRawPtr() + offset;
+//    return little_host_vec_type(blockRaw, blockSize);
+
+    auto hostView = mv_.getLocalViewHost(Access::ReadWrite);
     LO startRow = localRowIndex*blockSize;
     LO endRow = startRow + blockSize;
     return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow), colIndex);
