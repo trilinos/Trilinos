@@ -257,6 +257,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: algorithm\" type=\"string\" value=\"forward\"/>"
   "<Parameter name=\"aggregate qualities: zero threshold\" type=\"double\" value=\"1e-12\"/>"
   "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
+  "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -710,6 +711,8 @@ namespace MueLu {
          ("aggregate qualities: zero threshold","aggregate qualities: zero threshold")
       
          ("aggregate qualities: percentiles","aggregate qualities: percentiles")
+      
+         ("aggregate qualities: mode","aggregate qualities: mode")
       
          ("export data","export data")
       
