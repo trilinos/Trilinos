@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperBackwardEuler_decl_hpp
 #define Tempus_StepperBackwardEuler_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperBackwardEulerAppAction.hpp"
@@ -234,6 +235,15 @@ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld_;
   Scalar                                         s_;    // = 1.0/dt
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperBackwardEuler<Scalar> >
+createStepperBackwardEuler(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

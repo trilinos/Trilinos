@@ -16,7 +16,10 @@
 #include "Tempus_IntegratorObserverSubcycling.hpp"
 
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperForwardEuler.hpp"
+#include "Tempus_StepperBackwardEuler.hpp"
 #include "Tempus_StepperSubcycling.hpp"
+#include "Tempus_StepperOperatorSplit.hpp"
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 
@@ -33,6 +36,7 @@ namespace Tempus_Test {
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_const_cast;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
@@ -106,11 +110,11 @@ TEUCHOS_UNIT_TEST(Subcycling, ConstructingFromDefaults)
 
   // Setup the SinCosModel ------------------------------------
   auto model = rcp(new SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   stepper->setSubcyclingStepper(stepperFE);
 
   stepper->setSubcyclingMinTimeStep      (0.1);
@@ -229,11 +233,11 @@ TEUCHOS_UNIT_TEST(Subcycling, SinCosAdapt)
 
     // Setup the SinCosModel ------------------------------------
     auto model = rcp(new SinCosModel<double>());
+    auto modelME=rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
     // Setup Stepper for field solve ----------------------------
     auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-    auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+    auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
     stepper->setSubcyclingStepper(stepperFE);
 
     stepper->setSubcyclingMinTimeStep      (dt/10.0);
@@ -394,15 +398,16 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     auto pl = Teuchos::rcp_const_cast<Teuchos::ParameterList> (
       tmpModel->getValidParameters());
     pl->set("Coeff epsilon", 0.1);
-    auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(pl));
-    auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(pl));
+    RCP<const Thyra::ModelEvaluator<double> > explicitModel =
+      rcp(new VanDerPol_IMEX_ExplicitModel<double>(pl));
+    RCP<const Thyra::ModelEvaluator<double> > implicitModel =
+      rcp(new VanDerPol_IMEX_ImplicitModel<double>(pl));
 
     // Setup Steppers for field solve ---------------------------
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
 
     // Explicit Subcycling Stepper
     auto stepperSC = rcp(new Tempus::StepperSubcycling<double>());
-    auto stepperFE = sf->createStepperForwardEuler(explicitModel,Teuchos::null);
+    auto stepperFE = Tempus::createStepperForwardEuler(explicitModel,Teuchos::null);
     stepperFE->setUseFSAL(false);
     stepperFE->initialize();
     stepperSC->setSubcyclingStepper(stepperFE);
@@ -425,8 +430,7 @@ TEUCHOS_UNIT_TEST(Subcycling, VanDerPolOperatorSplit)
     stepperSC->initialize();
 
     // Implicit Stepper
-    auto stepperBE =
-      sf->createStepperBackwardEuler(implicitModel, Teuchos::null);
+    auto stepperBE = Tempus::createStepperBackwardEuler(implicitModel, Teuchos::null);
 
     // Operator-Split Stepper
     auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());

@@ -51,19 +51,8 @@ TRIBITS_ADD_ADVANCED_TEST( clean_workspace_UnitTests
   )
 
 
-TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverMerge_UnitTests
-  OVERALL_WORKING_DIRECTORY TEST_NAME
-  OVERALL_NUM_MPI_PROCS 1
-  EXCLUDE_IF_NOT_TRUE TFW_Python_Testing
-  TEST_0 CMND ${PYTHON_EXECUTABLE}
-    ARGS ${CMAKE_CURRENT_SOURCE_DIR}/../../cmake/std/unittests/TestPullRequestLinuxDriverMerge.py -v
-    PASS_REGULAR_EXPRESSION "OK"
-  )
-
-
-
 # Run the discoverable unit tests under the cmake/std directory tree
-TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriverTest_UnitTests
+TRIBITS_ADD_ADVANCED_TEST( PullRequestLinuxDriver_UnitTests
     OVERALL_WORKING_DIRECTORY TEST_NAME
     OVERALL_NUM_MPI_PROCS 1
     EXCLUDE_IF_NOT_TRUE TFW_Python_Testing

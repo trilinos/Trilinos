@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -15,7 +15,7 @@ class SystemInterface
 {
 public:
   SystemInterface();
-  ~SystemInterface();
+  ~SystemInterface() = default;
 
   bool parse_options(int argc, char **argv);
 
@@ -38,13 +38,13 @@ public:
 private:
   void enroll_options();
 
-  double minimumTime_;
-  double maximumTime_;
+  double minimumTime_{0.0};
+  double maximumTime_{-1.0};
 
   GetLongOption options_; //!< Options parsing
 
-  std::string inputFile_;
-  std::string outputFile_;
+  std::string inputFile_{};
+  std::string outputFile_{};
 
   StringIdVector globalVarNames_;
   StringIdVector nodeVarNames_;
@@ -53,7 +53,7 @@ private:
   StringIdVector ssetVarNames_;
   StringIdVector varsToList_;
 
-  bool listVars_;
-  char fieldSuffix_;
+  bool listVars_{false};
+  char fieldSuffix_{0};
 };
 #endif

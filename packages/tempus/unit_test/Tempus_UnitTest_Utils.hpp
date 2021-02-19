@@ -9,8 +9,16 @@
 #ifndef Tempus_UnitTest_Utils_hpp
 #define Tempus_UnitTest_Utils_hpp
 
+#include "NOX_Thyra.H"
+
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperRKButcherTableau.hpp"
+
 #include "Tempus_SolutionHistory.hpp"
+
+#include "Tempus_StepperIMEX_RK.hpp"
+#include "Tempus_StepperIMEX_RK_Partition.hpp"
+
 #include "Tempus_StepperRKModifierBase.hpp"
 #include "Tempus_StepperRKModifierXBase.hpp"
 #include "Tempus_StepperRKObserverBase.hpp"

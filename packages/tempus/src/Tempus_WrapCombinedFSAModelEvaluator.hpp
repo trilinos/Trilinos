@@ -9,6 +9,7 @@
 #ifndef Tempus_WrapCombinedFSAModelEvaluator_hpp
 #define Tempus_WrapCombinedFSAModelEvaluator_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_CombinedFSA.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_CombinedFSA.hpp"
 

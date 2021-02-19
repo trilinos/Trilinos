@@ -1664,7 +1664,7 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
     const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState field_state, std::vector<std::string>* multiStateSuffixes)
     {
       if(nullptr != multiStateSuffixes) {
-          ThrowRequireMsg((field_state >= stk::mesh::StateNone) && (multiStateSuffixes->size() >= field_state),
+          ThrowRequireMsg((multiStateSuffixes->size() >= field_state),
                           "Invalid field state index '" << field_state << "'");
           return (*multiStateSuffixes)[field_state];
       }
@@ -3474,8 +3474,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
       void define_input_sideset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
-        if (meta.spatial_dimension() <= meta.side_rank())
-          return;
+        unsigned sideRank = meta.side_rank();
+        if (meta.spatial_dimension() <= sideRank) return;
 
         const Ioss::SideSetContainer& side_sets = region.get_sidesets();
         for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();

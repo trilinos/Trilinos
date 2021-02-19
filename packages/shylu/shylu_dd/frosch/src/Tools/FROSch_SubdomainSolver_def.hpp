@@ -147,7 +147,7 @@ namespace FROSch {
                 }
             }
             MueLuHierarchy_ = MueLuFactory_->CreateHierarchy(); // Das vor den if block
-            MueLuHierarchy_->GetLevel(0)->Set("A",K_); // Das in den if block
+            MueLuHierarchy_->GetLevel(0)->Set("A", Teuchos::rcp_const_cast<XMatrix>(K_)); // Das in den if block
             MueLuHierarchy_->GetLevel(0)->Set("Nullspace", nullspace);
 #else
             ThrowErrorMissingPackage("FROSch::SubdomainSolver", "MueLu");

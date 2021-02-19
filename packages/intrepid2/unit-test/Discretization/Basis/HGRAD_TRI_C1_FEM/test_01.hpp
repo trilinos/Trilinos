@@ -72,7 +72,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int HGRAD_TRI_C1_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -86,6 +86,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -110,7 +111,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -120,7 +121,7 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HGRAD_TRI_C1_FEM<DeviceSpaceType,outputValueType,pointValueType> triBasis;
+      Basis_HGRAD_TRI_C1_FEM<DeviceType,outputValueType,pointValueType> triBasis;
       //typedef typename decltype(triBasis)::OutputViewType OutputViewType;
       //typedef typename decltype(triBasis)::PointViewType  PointViewType;
 
@@ -325,7 +326,7 @@ namespace Intrepid2 {
         triNodesHost(3,0) =  0.5;  triNodesHost(3,1) =  0.5;
         triNodesHost(4,0) =  0.0;  triNodesHost(4,1) =  0.75;
 
-        auto triNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), triNodesHost);
+        auto triNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), triNodesHost);
         Kokkos::deep_copy(triNodes, triNodesHost);
 
         // Dimensions for the output arrays:

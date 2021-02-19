@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -12,11 +12,8 @@ C=======================================================================
 cDEC$ OPTIMIZE:0
 #endif
 C     --*** TXTEXO *** (TXTEXO) TEXT to EXODUS translator
-C     --   Written by Amy Gilkey - revised 03/02/88
-C     --
 C     --TXTEXO reads a text file and writes an EXODUS database file.
-C     --
-C     --Expects the input text file on unit 20, the output database on unit 11.
+C     --Expects the input text file on unit 20, the output database on unit 12.
 
       include 'exodusII.inc'
       INCLUDE 'argparse.inc'
@@ -40,8 +37,8 @@ C     --A - the dynamic memory base array
 C     Program Information
 C.
       QAINFO(1) = 'txtexo                          '
-      QAINFO(2) = '2018/08/14                      '
-      QAINFO(3) = ' 2.01                           '
+      QAINFO(2) = '2021/01/28                      '
+      QAINFO(3) = ' 2.02                           '
       QAINFO(4) = '                                '
       QAINFO(5) = '                                '
       QAINFO(6) = '                                '
@@ -58,6 +55,9 @@ C.
       IF (NERR .GT. 0) GOTO 130
 
 C     --Open the database and write the initial variables
+      NTXT = 20
+      NDB = 12
+
       NARG = argument_count()
       if (narg .lt. 2) then
         CALL PRTERR ('FATAL', 'Filename not specified.')
@@ -68,9 +68,6 @@ C     --Open the database and write the initial variables
         CALL PRTERR ('FATAL', 'Syntax is: "txtexo text_file db_file"')
         GOTO 140
       end if
-
-      NTXT = 20
-      NDB = 12
 
       CALL get_argument(1,FILNAM, LFIL)
       open(unit=ntxt, file=filnam(:lfil), status='old', iostat=ierr)
@@ -315,7 +312,7 @@ C     --Read the database time steps
  140  CONTINUE
 
       CLOSE (NTXT, IOSTAT=IDUM)
-      call exclos(ndb, ierr)
+      if (ndb .ne. 12 .and. ndb .gt. 0) call exclos(ndb, ierr)
 
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))

@@ -32,7 +32,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_io/FillMesh.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <fstream>

@@ -70,7 +70,7 @@ export ATDM_CONFIG_USE_CUDA=OFF
 export ATDM_CONFIG_USE_PTHREADS=OFF
 export ATDM_CONFIG_CUDA_RDC=OFF
 export ATDM_CONFIG_ADDRESS_SANITIZER=OFF
-export ATDM_CONFIG_FPIC=OFF
+export ATDM_CONFIG_FPIC=ON
 export ATDM_CONFIG_COMPLEX=OFF
 export ATDM_CONFIG_SHARED_LIBS=OFF
 export ATDM_CONFIG_PT_PACKAGES=OFF
@@ -225,7 +225,9 @@ elif atdm_match_buildname_keyword asan; then
 fi
 
 # Use -fPIC or not
-if atdm_match_buildname_keyword fpic; then
+if atdm_match_buildname_keyword no-fpic; then
+  export ATDM_CONFIG_FPIC=OFF
+elif atdm_match_buildname_keyword fpic; then
   export ATDM_CONFIG_FPIC=ON
 fi
 

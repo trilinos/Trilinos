@@ -58,7 +58,6 @@ namespace Access
   constexpr struct WriteOnlyStruct WriteOnly = WriteOnlyStruct();
   //Tag indicating intent to both read up-to-date data and modify it.
   constexpr struct ReadWriteStruct ReadWrite = ReadWriteStruct();
-  
 }
 }
 

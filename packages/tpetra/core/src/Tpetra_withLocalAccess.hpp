@@ -62,7 +62,6 @@ namespace Tpetra {
     template<> struct is_access_mode<Access::ReadOnlyStruct> : public std::true_type {};
     template<> struct is_access_mode<Access::ReadWriteStruct> : public std::true_type {};
     template<> struct is_access_mode<Access::WriteOnlyStruct> : public std::true_type {};
-
     /// \brief Given a global object, get its default memory space
     ///   (both the type and the default instance thereof).
     ///

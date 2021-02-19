@@ -12,7 +12,7 @@
 // Teuchos
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
-//#include "Tempus_Types.hpp"
+#include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
 

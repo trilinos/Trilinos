@@ -804,6 +804,7 @@ IF (Stokhos_ENABLE_Sacado)
         Details::packCrsMatrix
         Details::unpackCrsMatrixAndCombine
         replaceDiagonalCrsMatrix
+        BlockCrsMatrix_Helpers
         )
       SET(TPETRAEXT_ETI_CLASSES
         MatrixMatrix

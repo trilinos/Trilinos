@@ -78,7 +78,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   Teuchos::RCP<std::ostream> outStream;
   Teuchos::oblackholestream bhs; // outputs nothing
@@ -90,7 +90,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
+  using DeviceSpaceType = typename DeviceType::execution_space;   
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -111,10 +111,10 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
       << "|                                                                             |\n"
       << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
@@ -122,7 +122,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
   const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  typedef Basis_HDIV_HEX_In_FEM<DeviceSpaceType,OutValueType,PointValueType> HexBasisType;
+  typedef Basis_HDIV_HEX_In_FEM<DeviceType,OutValueType,PointValueType> HexBasisType;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
   constexpr ordinal_type dim = 3;
 
@@ -153,11 +153,11 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
 
-    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), hexNodesHost);
     Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
 
     DynRankViewPointValueType ConstructWithLabelPointView(hexNodes, 8, 3);
-    RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
+    RealSpaceTools<DeviceType>::clone(hexNodes, hexNodes_scalar);
 
     // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();
@@ -275,7 +275,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     hexBasis.getDofCoeffs(dofCoeffs);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, dim);
     hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
@@ -330,7 +330,7 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     hexBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numFields , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, numFields, numFields, dim);
     hexBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
@@ -451,9 +451,9 @@ int HDIV_HEX_In_FEM_Test01(const bool verbose) {
     hexNodesHost(6,0) = -1.0; hexNodesHost(6,1) =  1.0; hexNodesHost(6,2) =  1.0;
     hexNodesHost(7,0) =  1.0; hexNodesHost(7,1) =  1.0; hexNodesHost(7,2) =  1.0;
 
-    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), hexNodesHost);
+    auto hexNodes_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), hexNodesHost);
     Kokkos::deep_copy(hexNodes_scalar, hexNodesHost);
-    RealSpaceTools<DeviceSpaceType>::clone(hexNodes, hexNodes_scalar);
+    RealSpaceTools<DeviceType>::clone(hexNodes, hexNodes_scalar);
 
     // Array dimensions
     const ordinal_type numFields = hexBasis.getCardinality();

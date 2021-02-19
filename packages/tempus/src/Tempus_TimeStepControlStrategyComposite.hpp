@@ -9,6 +9,7 @@
 #ifndef Tempus_TimeStepControlStrategyComposite_hpp
 #define Tempus_TimeStepControlStrategyComposite_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
@@ -17,8 +18,6 @@
 
 
 namespace Tempus {
-
-template<class Scalar> class TimeStepControl;
 
 /** \brief TimeStepControlStrategyComposite loops over a vector of TimeStepControlStrategies.
  *

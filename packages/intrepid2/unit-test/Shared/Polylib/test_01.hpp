@@ -165,7 +165,7 @@ namespace Intrepid2 {
       return sum;
     }
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int Polylib_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -179,6 +179,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 

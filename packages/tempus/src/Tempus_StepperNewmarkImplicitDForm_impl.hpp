@@ -9,20 +9,14 @@
 #ifndef Tempus_StepperNewmarkImplicitDForm_impl_hpp
 #define Tempus_StepperNewmarkImplicitDForm_impl_hpp
 
-#include "NOX_Thyra.H"
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormModifierDefault.hpp"
-#include "Tempus_config.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 
 //#define VERBOSE_DEBUG_OUTPUT
 //#define DEBUG_OUTPUT
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template <class Scalar>
-class StepperFactory;
 
 template <class Scalar>
 void
@@ -231,10 +225,14 @@ StepperNewmarkImplicitDForm<Scalar>::setModel(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   validSecondOrderODE_DAE(appModel);
-  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
+  this->wrapperModel_ =
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(
       appModel, "Newmark Implicit d-Form"));
-  this->wrapperModel_ = wrapperModel;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->getSolver() == Teuchos::null, std::logic_error,
+    "Error - Solver is not set!\n");
+  this->getSolver()->setModel(this->wrapperModel_);
 
   this->isInitialized_ = false;
 }
@@ -512,6 +510,41 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
 
   return pl;
 }
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> >
+createStepperNewmarkImplicitDForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperNewmarkImplicitDForm<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (pl != Teuchos::null) {
+    if (pl->isSublist("Newmark Parameters")) {
+      auto newmarkPL = pl->sublist("Newmark Parameters", true);
+      std::string schemeName =
+        newmarkPL.get<std::string>("Scheme Name", "Average Acceleration");
+      stepper->setSchemeName(schemeName);
+      if (schemeName == "User Defined") {
+        stepper->setBeta (newmarkPL.get<double>("Beta",  0.25));
+        stepper->setGamma(newmarkPL.get<double>("Gamma", 0.5 ));
+      }
+    } else {
+      stepper->setSchemeName("Average Acceleration");
+    }
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
 
 }  // namespace Tempus
 #endif  // Tempus_StepperNewmarkImplicitDForm_impl_hpp

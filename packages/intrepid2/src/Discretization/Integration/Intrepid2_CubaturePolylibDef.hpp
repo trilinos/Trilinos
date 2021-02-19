@@ -48,13 +48,13 @@
 
 namespace Intrepid2 {
 
-  template <typename SpT, typename PT, typename WT>
-  CubaturePolylib<SpT,PT,WT>::
+  template <typename DT, typename PT, typename WT>
+  CubaturePolylib<DT,PT,WT>::
   CubaturePolylib(const ordinal_type degree,
                   const EPolyType polytype,
                   const double alpha,
                   const double beta) 
-    : CubatureDirect<SpT,PT,WT>(degree, 1) {
+    : CubatureDirect<DT,PT,WT>(degree, 1) {
 
     INTREPID2_TEST_FOR_EXCEPTION( degree < 0 ||
                                   degree > static_cast<ordinal_type>(Parameters::MaxCubatureDegreeEdge), std::out_of_range,
@@ -82,8 +82,8 @@ namespace Intrepid2 {
                                   beta,
                                   polytype );
     
-    this->cubatureData_.points_  = Kokkos::DynRankView<PT,SpT>("CubaturePolylib::cubatureData_::points_",  npts, 1);
-    this->cubatureData_.weights_ = Kokkos::DynRankView<WT,SpT>("CubaturePolylib::cubatureData_::weights_", npts);
+    this->cubatureData_.points_  = Kokkos::DynRankView<PT,DT>("CubaturePolylib::cubatureData_::points_",  npts, 1);
+    this->cubatureData_.weights_ = Kokkos::DynRankView<WT,DT>("CubaturePolylib::cubatureData_::weights_", npts);
 
     Kokkos::deep_copy(Kokkos::subdynrankview(this->cubatureData_.points_, Kokkos::ALL(), 0), points );  
     Kokkos::deep_copy(this->cubatureData_.weights_, weights );  

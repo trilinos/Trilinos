@@ -4,25 +4,20 @@
  *  Created on: Oct 10, 2020
  *      Author: Ramon J. Moral(Contractor, STRA LLC)
  * 		John Niederhouse(ORG 1443, SNL, Coordinator)
- *  Copyright: Sandia National Labs, OCT-2020
+ *  Copyright: Sandia National Labs, 2020, 2021
  */
 
 #ifndef INCLUDE_N2EDATATYPES_H_
 #define INCLUDE_N2EDATATYPES_H_
 
-#include <cstring>
 #include <exodusII.h>
-#include <fstream>
-#include <map>
+#include <cstring>
 #include <string>
 #include <tuple>
-#include <vector>
-
-using namespace std;
 
 namespace N2EModules {
 
-  const string N2EFileCues[5]{"UNSP", "GRID", "CTETRA", "CHEXA", "PSOLID"};
+  const std::string N2EFileCues[5]{"UNSP", "GRID", "CTETRA", "CHEXA", "PSOLID"};
   // These are the supported element types for this
   // application.
 
@@ -36,7 +31,7 @@ namespace N2EModules {
     int64_t        numFacesPerElem;
     int64_t        numAttrPerElem;
 
-    supportedElements(ex_entity_type elType, string elDesc, int64_t nodesPer, int64_t edgesPer,
+    supportedElements(ex_entity_type elType, std::string elDesc, int64_t nodesPer, int64_t edgesPer,
                       int64_t facesPer, int64_t attrPer)
     {
 
@@ -50,8 +45,8 @@ namespace N2EModules {
   };
 
   const supportedElements ExoElTypes[] = {
-      supportedElements(ex_entity_type::EX_ELEM_BLOCK, string("TET"), 4, 6, 4, 1),
-      supportedElements(ex_entity_type::EX_ELEM_BLOCK, string("HEX"), 8, 12, 6, 1)};
+      supportedElements(ex_entity_type::EX_ELEM_BLOCK, std::string("TET"), 4, 6, 4, 1),
+      supportedElements(ex_entity_type::EX_ELEM_BLOCK, std::string("HEX"), 8, 12, 6, 1)};
 
   struct N2EPoint3D
   {
@@ -61,10 +56,10 @@ namespace N2EModules {
   {
     double v[8];
   };
-  using sectionType = tuple<unsigned /*propID*/, unsigned /*MATID*/>;
-  using gridType    = tuple<unsigned /*GRIDID*/, N2EPoint3D>;
-  using elementType =
-      tuple<unsigned /*ID*/, unsigned /*propId*/, unsigned /*numNodes*/, N2EGridPtList /*nodes*/>;
+  using sectionType = std::tuple<unsigned /*propID*/, unsigned /*MATID*/>;
+  using gridType    = std::tuple<unsigned /*GRIDID*/, N2EPoint3D>;
+  using elementType = std::tuple<unsigned /*ID*/, unsigned /*propId*/, unsigned /*numNodes*/,
+                                 N2EGridPtList /*nodes*/>;
 
 } // namespace N2EModules
 #endif /* INCLUDE_N2EDATATYPES_H_ */
