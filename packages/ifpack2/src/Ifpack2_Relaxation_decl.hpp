@@ -50,8 +50,6 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
-#include "KokkosSparse_sor_sequential_impl.hpp"
-#include "Tpetra_BlockView.hpp"
 #include "Ifpack2_Details_GaussSeidel.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
