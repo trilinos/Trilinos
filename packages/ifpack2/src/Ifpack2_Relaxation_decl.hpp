@@ -107,7 +107,7 @@ pp. 2864-2887.
 
 Richardson and Jacobi will always use your matrix's native sparse matrix-vector
 multiply kernel.  This should give good performance, since we have
-spent a lot of effort tuning Tpetra's kernels.  Depending on the node_type
+spent a lot of effort tuning Tpetra's kernels.  Depending on the Node
 type of your Tpetra matrix, it may also exploit threads for additional
 parallelism within each MPI process.  In contrast, Gauss-Seidel and
 symmetric Gauss-Seidel are intrinsically sequential methods within an
@@ -115,7 +115,7 @@ MPI process.  This prevents us from exposing more parallelism via
 threads.  The difference should become more apparent as your code
 moves away from a "one MPI process per core" model, to a "one MPI
 process per socket or node" model, assuming that you are using a
-thread-parallel node_type type.
+thread-parallel Node type.
 
 Relaxation works with any Tpetra::RowMatrix input.  If your
 Tpetra::RowMatrix happens to be a Tpetra::CrsMatrix, the Gauss-Seidel
@@ -258,7 +258,7 @@ public:
   //! The type of global indices in the input MatrixType.
   typedef typename MatrixType::global_ordinal_type global_ordinal_type;
 
-  //! The node_type type used by the input MatrixType.
+  //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
 
   //! The Kokkos device type used by the input MatrixType.
