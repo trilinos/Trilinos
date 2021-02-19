@@ -201,10 +201,13 @@ public:
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef Kokkos::View<const impl_scalar_type *, device_type> 
+  typedef Kokkos::View<const impl_scalar_type *, device_type>
           const_little_vec_type;
 //KDD  typedef typename const_little_vec_type::HostMirror const_little_host_vec_type;
-  typedef Kokkos::View<const impl_scalar_type*, typename Kokkos::HostSpace>
+
+  typedef typename mv_type::dual_view_type::t_host::device_type
+          host_device_type;
+  typedef Kokkos::View<const impl_scalar_type*, host_device_type>
           const_little_host_vec_type;
 
   //@}
