@@ -134,6 +134,7 @@
      <parameter>
        <name>hierarchy label</name>
        <type>string</type>
+       <name-ML>ML label</name-ML>
        <default>""</default>
        <description>Label for the hierarchy. Is applied to timer labels.</description>
        <visible>true</visible>
@@ -1103,7 +1104,7 @@
       <name>sa: enforce constraints</name>
       <type>bool</type>
       <default>false</default>
-      <description>Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa. 
+      <description>Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa.
 Only used when tentative: calculate qr is set to false.</description>
       <visible>false</visible>
       <name-ML>not supported by ML</name-ML>
