@@ -194,9 +194,9 @@ public:
   /// strategy circa 2014 to move from "classic" Tpetra to the Kokkos
   /// refactor version.
   typedef Kokkos::View<impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+                       Kokkos::LayoutLeft,
+                       device_type>
+                       //Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_vec_type;
   typedef typename little_vec_type::HostMirror
           little_host_vec_type;
@@ -206,11 +206,12 @@ public:
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef Kokkos::View<const impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<const impl_scalar_type*, device_type>
           const_little_vec_type;
+  //typedef typename const_little_vec_type::HostMirror // THIS DOES NOT WORK, it strips the const
+  //typedef Kokkos::View<const impl_scalar_type*, Kokkos::HostSpace> // THIS WORKS
+  typedef Kokkos::View<const impl_scalar_type*, typename const_little_vec_type::HostMirrorSpace>
+          const_little_host_vec_type;
 
   //@}
   //! \name Constructors
@@ -606,7 +607,12 @@ public:
   /// future.  If you insist not to use \c auto, then please use the
   /// \c little_vec_type typedef to deduce the correct return type;
   /// don't try to hard-code the return type yourself.
-  little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  TPETRA_DEPRECATED little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
+#endif
+  const_little_host_vec_type getLocalBlock(const LO localRowIndex, const LO colIndex, Tpetra::Access::ReadOnlyStruct) const;
+  //little_host_vec_type getLocalBlock(const LO localRowIndex, const LO colIndex, Tpetra::Access::ReadWriteStruct);
+  //little_host_vec_type getLocalBlock(const LO localRowIndex, const LO colIndex, Tpetra::Access::WriteOnlyStruct);
   //@}
 
 protected:

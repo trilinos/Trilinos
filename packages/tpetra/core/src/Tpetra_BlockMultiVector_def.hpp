@@ -413,6 +413,7 @@ getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) con
   }
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -440,6 +441,30 @@ getLocalBlock (const LO localRowIndex,
     impl_scalar_type* blockRaw = this->getRawPtr () + offset;
     return little_host_vec_type (blockRaw, blockSize);
   }
+}
+#endif
+
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::const_little_host_vec_type
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalBlock (const LO localRowIndex,
+               const LO colIndex,
+               Tpetra::Access::ReadOnlyStruct) const
+{
+  //if (!isValidLocalMeshIndex(localRowIndex)) {
+  //  return const_little_host_vec_type();
+  //} else {
+    const size_t blockSize = getBlockSize();
+//    const size_t offset = colIndex * this->getStrideY() +
+//      localRowIndex * blockSize;
+//    impl_scalar_type* blockRaw = this->getRawPtr() + offset;
+//    return little_host_vec_type(blockRaw, blockSize);
+
+    auto hostView = mv_.getLocalViewHost(Tpetra::Access::ReadOnly);
+    LO startRow = localRowIndex*blockSize;
+    LO endRow = startRow + blockSize;
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow), colIndex);
+  //}
 }
 
 template<class Scalar, class LO, class GO, class Node>
