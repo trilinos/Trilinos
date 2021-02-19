@@ -9,6 +9,7 @@
 #ifndef Tempus_IntegratorObserver_hpp
 #define Tempus_IntegratorObserver_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_TimeStepControl.hpp"
 
 // Forward declarations

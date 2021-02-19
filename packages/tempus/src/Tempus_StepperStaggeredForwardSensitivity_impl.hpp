@@ -9,19 +9,17 @@
 #ifndef Tempus_StepperStaggeredForwardSensitivity_impl_hpp
 #define Tempus_StepperStaggeredForwardSensitivity_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
-#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
-#include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
-namespace Tempus {
+#include "Tempus_StepperFactory.hpp"
+#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
+#include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
 
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
+
+namespace Tempus {
 
 
 template<class Scalar>

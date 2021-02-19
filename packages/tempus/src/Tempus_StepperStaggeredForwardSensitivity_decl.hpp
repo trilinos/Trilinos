@@ -9,8 +9,10 @@
 #ifndef Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 #define Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
+
 
 namespace Tempus {
 

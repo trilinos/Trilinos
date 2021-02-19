@@ -55,8 +55,8 @@ findincdir pnetcdf.h pnetcdf_inc_dir
 findlibdir libpnetcdf.a pnetcdf_lib_dir
 echo "pnetcdf_lib_dir: $pnetcdf_lib_dir"
 
-parmetis_inc_dir=$sierra_dir/TPLs_src/ParMetis/include
-metis_inc_dir=$sierra_dir/TPLs_src/ParMetis/metis/include
+parmetis_inc_dir=$sierra_dir/TPLs_src/parmetis/include
+metis_inc_dir=$sierra_dir/TPLs_src/parmetis/metis/include
 
 findlibdir libparmetis.a parmetis_lib_dir
 echo "parmetis_lib_dir: ${parmetis_lib_dir}"

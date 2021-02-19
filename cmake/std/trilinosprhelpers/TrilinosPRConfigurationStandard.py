@@ -66,7 +66,7 @@ class TrilinosPRConfigurationStandard(TrilinosPRConfigurationBase):
 
         if not self.args.dry_run:
             try:
-                subprocess.check_call(cmd)
+                subprocess.check_call(cmd, env=os.environ)
                 # Note: check_call will throw an exception if there's a problem.
             except:
                 print("--- ctest command failed!")

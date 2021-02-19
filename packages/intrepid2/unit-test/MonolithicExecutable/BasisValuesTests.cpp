@@ -185,6 +185,20 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisValues, DefaultConstructor )
+  {
+    // test of default-constructed basis values object.
+    BasisValues<double> emptyBasisValues;
+    TEST_EQUALITY(0, emptyBasisValues.rank());
+    for (int d=0; d<8; d++)
+    {
+      TEST_EQUALITY(0, emptyBasisValues.extent(d));
+      TEST_EQUALITY(0, emptyBasisValues.extent_int(d));
+    }
+    TEST_EQUALITY(0, emptyBasisValues.numFamilies());
+  }
+
+
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_LINE )
   {
     using Basis = HierarchicalBasisFamily<>::HGRAD_LINE;

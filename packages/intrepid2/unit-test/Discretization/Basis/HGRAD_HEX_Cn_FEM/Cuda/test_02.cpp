@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
   {
     const bool verbose = (argc-1) > 0;
-    Intrepid2::Test::HGRAD_HEX_Cn_FEM_Test02<double, double, Kokkos::Cuda>(verbose);
+    Intrepid2::Test::HGRAD_HEX_Cn_FEM_Test02<double, double, Kokkos::Cuda >(verbose);
   }
   Kokkos::finalize();
   return 0;

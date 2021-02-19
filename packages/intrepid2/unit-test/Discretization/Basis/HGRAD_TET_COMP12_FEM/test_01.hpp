@@ -74,7 +74,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int HGRAD_TET_COMP12_FEM_Test01(const bool verbose) {
       
       Teuchos::RCP<std::ostream> outStream;
@@ -87,7 +87,7 @@ namespace Intrepid2 {
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
+      using DeviceSpaceType = typename DeviceType::execution_space;      
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -112,7 +112,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType>   DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -122,7 +122,7 @@ namespace Intrepid2 {
       // for virtual function, value and point types are declared in the class
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HGRAD_TET_COMP12_FEM<DeviceSpaceType,outputValueType,pointValueType> tetBasis;
+      Basis_HGRAD_TET_COMP12_FEM<DeviceType,outputValueType,pointValueType> tetBasis;
 
       *outStream
         << "\n"
@@ -295,7 +295,7 @@ namespace Intrepid2 {
         tetNodesHost(8,0) = 0.5;  tetNodesHost(8,1) = 0.0;  tetNodesHost(8,2) = 0.5;
         tetNodesHost(9,0) = 0.0;  tetNodesHost(9,1) = 0.5;  tetNodesHost(9,2) = 0.5;
         
-        auto tetNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetNodesHost);
+        auto tetNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), tetNodesHost);
         Kokkos::deep_copy(tetNodes, tetNodesHost);
 
         DynRankViewHost ConstructWithLabel(tetPointsHost, 9, 3);
@@ -324,7 +324,7 @@ namespace Intrepid2 {
         tetPointsHost(8,1) = 0.1381966011250105151795413165634361882280;
         tetPointsHost(8,2) = 0.5854101966249684544613760503096914353161;
 
-        auto tetPoints = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetPointsHost);
+        auto tetPoints = Kokkos::create_mirror_view(typename DeviceType::memory_space(), tetPointsHost);
         Kokkos::deep_copy(tetPoints, tetPointsHost);
 
         // Dimensions for the output arrays:
@@ -409,7 +409,7 @@ namespace Intrepid2 {
             }
           }
           
-          auto tetRandomPoints = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), tetRandomPointsHost);
+          auto tetRandomPoints = Kokkos::create_mirror_view(typename DeviceType::memory_space(), tetRandomPointsHost);
           Kokkos::deep_copy(tetRandomPoints, tetRandomPointsHost);
 
           DynRankView vals = DynRankView("vals", numFields, numRandomPoints);

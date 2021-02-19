@@ -3,81 +3,171 @@
 #include <stk_coupling/Constants.hpp>
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
-#include <stk_coupling/ConfigurationInfo.hpp>
+#include <stk_coupling/SyncInfo.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include "StkMesh.hpp"
 #include <iostream>
 #include <sstream>
 
-std::string app_name()
+class MockFuego
 {
-  return "Mock-Fuego";
-}
+public:
+  MockFuego()
+  : m_appName("Mock-Fuego"),
+    m_mesh(),
+    m_doneFlagName("time step status"),
+    m_doingSendTransfer(false),
+    m_sendFieldName()
+  {}
+
+  ~MockFuego()
+  {
+    stk::parallel_machine_finalize();
+  }
+
+  void read_input_and_setup_split_comms(int argc, char** argv)
+  {
+    m_commWorld = stk::parallel_machine_init(&argc, &argv);
+    int myWorldRank = stk::parallel_machine_rank(m_commWorld);
+    int numWorldRanks = stk::parallel_machine_size(m_commWorld);
+
+    {
+      std::ostringstream os;
+      os << m_appName << ": my world rank is: " << myWorldRank << " out of " << numWorldRanks;
+      std::cout << os.str() << std::endl;
+    }
+    int defaultColor = stk::coupling::string_to_color(m_appName);
+    int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
+
+    m_commApp = stk::coupling::split_comm(m_commWorld, color);
+    std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
+    int myAppRank = stk::parallel_machine_rank(m_commApp);
+    int numAppRanks = stk::parallel_machine_size(m_commApp);
+
+    {
+      std::ostringstream os;
+      os << m_appName << ": color="<<color<<", my app rank is: " << myAppRank << " out of " << numAppRanks << std::endl;
+      os << m_appName << ": my root-rank: " << rootRanks.first << ", other app's root-rank: " << rootRanks.second;
+      std::cout << os.str() << std::endl;
+    }
+  }
+
+  void communicate_initial_setup()
+  {
+    m_myInfo = create_sync_info();
+
+    m_myInfo.set_value(stk::coupling::AppName, m_appName);
+
+    m_otherInfo = m_myInfo.exchange(m_commWorld, m_commApp);
+
+    {
+      std::ostringstream os;
+      os << m_appName << ": other app 'app_name': " << m_otherInfo.get_value<std::string>(stk::coupling::AppName);
+      if(stk::parallel_machine_rank(m_commApp) == 0) std::cout << os.str() << std::endl;
+    }
+  }
+
+  double compute_time_step()
+  {
+    return 0.005;
+  }
+
+  void do_physics_solve()
+  {
+  }
+
+  void setup_fields_and_transfers()
+  {
+    constexpr int numberOfSteps = 10;
+
+    double initialTime = 0.0;
+    double timeStep = compute_time_step();
+    m_step = 0;
+    m_finalTime = initialTime + numberOfSteps * timeStep;
+  }
+
+  void perform_transfers()
+  {
+  }
+
+  bool time_to_stop()
+  {
+    bool timeToStop = (m_currentTime >= m_finalTime) || m_otherInfo.get_value<bool>(m_doneFlagName, false);
+  
+    if (timeToStop) {
+      std::ostringstream os;
+      os << m_appName << " finished, final time: " << m_finalTime << std::endl;
+      if(stk::parallel_machine_rank(m_commApp) == 0) std::cout << os.str();
+    }
+    return timeToStop;
+  }
+
+  void communicate_time_step_info()
+  {
+    m_myInfo.set_value("step", m_step);
+    m_myInfo.set_value(stk::coupling::CurrentTime, m_currentTime);
+    m_myInfo.set_value(stk::coupling::FinalTime, m_finalTime);
+
+    m_otherInfo = m_myInfo.exchange(m_commWorld, m_commApp);
+  }
+
+  void update_current_time()
+  {
+    m_currentTime = m_step*compute_time_step();
+
+    std::ostringstream os;
+    os << m_appName << ": "<<stk::coupling::CurrentTime<<": " << m_currentTime;
+    if(stk::parallel_machine_rank(m_commApp) == 0) std::cout << os.str() << std::endl;
+
+    ++m_step;
+  }
+
+  void communicate_finish()
+  {
+    m_myInfo = create_sync_info();
+    m_myInfo.set_value(m_doneFlagName, true);
+    m_myInfo.exchange(m_commWorld, m_commApp);
+  }
+
+private:
+  stk::coupling::SyncInfo create_sync_info()
+  {
+    return stk::coupling::SyncInfo(m_appName);
+  }
+
+  std::string m_appName;
+  std::shared_ptr<mock::StkMesh> m_mesh;
+  std::string m_doneFlagName;
+
+  stk::ParallelMachine m_commWorld;
+  stk::ParallelMachine m_commApp;
+
+  stk::coupling::SyncInfo m_myInfo;
+  stk::coupling::SyncInfo m_otherInfo;
+
+  double m_currentTime;
+  double m_finalTime;
+  int m_step;
+  bool m_doingSendTransfer;
+  std::string m_sendFieldName;
+};
 
 int main(int argc, char** argv)
 {
-  stk::ParallelMachine commWorld = stk::parallel_machine_init(&argc, &argv);
-  int myWorldRank = stk::parallel_machine_rank(commWorld);
-  int numWorldRanks = stk::parallel_machine_size(commWorld);
+  MockFuego app;
+  app.read_input_and_setup_split_comms(argc, argv);
+  app.communicate_initial_setup();
+  app.setup_fields_and_transfers();
 
-  {
-    std::ostringstream os;
-    os << app_name() << ": my world rank is: " << myWorldRank << " out of " << numWorldRanks;
-    std::cout << os.str() << std::endl;
-  }
-  int defaultColor = stk::coupling::string_to_color(app_name());
-  int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
+  do {
+    app.communicate_time_step_info();
+    app.perform_transfers();
+    app.do_physics_solve();
+    app.update_current_time();
+  } while (!app.time_to_stop());
 
-  stk::ParallelMachine commApp = stk::coupling::split_comm(commWorld, color);
-  std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(commWorld, commApp);
-  int myAppRank = stk::parallel_machine_rank(commApp);
-  int numAppRanks = stk::parallel_machine_size(commApp);
+  app.communicate_finish();
 
-  {
-    std::ostringstream os;
-    os << app_name() << ": color="<<color<<", my app rank is: " << myAppRank << " out of " << numAppRanks << std::endl;
-    os << app_name() << ": my root-rank: " << rootRanks.first << ", other app's root-rank: " << rootRanks.second;
-    std::cout << os.str() << std::endl;
-  }
-
-  stk::coupling::ConfigurationInfo myInfo;
-
-  myInfo.set_value(stk::coupling::AppName, app_name());
-
-  stk::coupling::ConfigurationInfo otherInfo = myInfo.exchange(commWorld, commApp);
-
-  {
-    std::ostringstream os;
-    os << app_name() << ": other app 'app_name': " << otherInfo.get_value<std::string>(stk::coupling::AppName);
-    if(myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
-  }
-
-
-  constexpr int numberOfSteps = 10;
-
-  double initialTime = 0.0;
-  double timeStep = 0.005;
-  double finalTime = numberOfSteps * timeStep;
-  for(int step = 0; step <= numberOfSteps; ++step) {
-    double currentTime = initialTime + step*timeStep;
-
-    myInfo.set_value("step", step);
-    myInfo.set_value("current time", currentTime);
-    myInfo.set_value(stk::coupling::FinalTime, finalTime);
-
-    otherInfo = myInfo.exchange(commWorld, commApp);
-
-    std::ostringstream os;
-    os << app_name() << ": current time: " << currentTime;
-    if(myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
-  }
-  
-  {
-    std::ostringstream os;
-    os << app_name() << " finished, final time: " << finalTime << std::endl;
-    if(myWorldRank == rootRanks.first) std::cout << os.str();
-  }
-
-  stk::parallel_machine_finalize();
   return 0;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -27,14 +27,7 @@ namespace {
   void parse_variable_names(const char *tokens, StringIdVector *variable_list);
 } // namespace
 
-SystemInterface::SystemInterface()
-    : minimumTime_(0.0), maximumTime_(-1.0), inputFile_(), outputFile_(), listVars_(false),
-      fieldSuffix_(0)
-{
-  enroll_options();
-}
-
-SystemInterface::~SystemInterface() = default;
+SystemInterface::SystemInterface() { enroll_options(); }
 
 void SystemInterface::enroll_options()
 {

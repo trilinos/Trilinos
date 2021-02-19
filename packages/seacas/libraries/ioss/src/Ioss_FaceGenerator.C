@@ -360,11 +360,11 @@ namespace Ioss {
     std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 #if DO_TIMING
-    auto starth = std::chrono::high_resolution_clock::now();
+    auto starth = std::chrono::steady_clock::now();
 #endif
     hash_node_ids(ids);
 #if DO_TIMING
-    auto endh = std::chrono::high_resolution_clock::now();
+    auto endh = std::chrono::steady_clock::now();
 #endif
 
     const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
@@ -377,7 +377,7 @@ namespace Ioss {
     }
 
 #if DO_TIMING
-    auto endf = std::chrono::high_resolution_clock::now();
+    auto endf = std::chrono::steady_clock::now();
 #endif
     size_t face_count = 0;
     for (auto eb : ebs) {
@@ -385,7 +385,7 @@ namespace Ioss {
       face_count += faces_[eb->name()].size();
     }
 #if DO_TIMING
-    auto endp  = std::chrono::high_resolution_clock::now();
+    auto endp  = std::chrono::steady_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
     fmt::print("Node ID hash time:   \t{:.6n} ms\t{:12n} nodes/second\n"
@@ -417,11 +417,11 @@ namespace Ioss {
     std::vector<INT> ids;
     nb->get_field_data("ids", ids);
 #if DO_TIMING
-    auto starth = std::chrono::high_resolution_clock::now();
+    auto starth = std::chrono::steady_clock::now();
 #endif
     hash_node_ids(ids);
 #if DO_TIMING
-    auto endh = std::chrono::high_resolution_clock::now();
+    auto endh = std::chrono::steady_clock::now();
 #endif
 
     auto & my_faces = faces_["ALL"];
@@ -435,12 +435,12 @@ namespace Ioss {
     }
 
 #if DO_TIMING
-    auto endf = std::chrono::high_resolution_clock::now();
+    auto endf = std::chrono::steady_clock::now();
 #endif
     resolve_parallel_faces(region_, my_faces, hashIds_, (INT)0);
 
 #if DO_TIMING
-    auto endp  = std::chrono::high_resolution_clock::now();
+    auto endp  = std::chrono::steady_clock::now();
     auto diffh = endh - starth;
     auto difff = endf - endh;
     fmt::print("Node ID hash time:   \t{:.3f} ms\t{:.3} nodes/second\n"

@@ -11,7 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperRKBase.hpp"
-#include "Tempus_RKButcherTableau.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
 
@@ -318,6 +317,10 @@ public:
       Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau = Teuchos::null,
       Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau = Teuchos::null);
 
+    virtual void setTableaus(
+      Teuchos::RCP<Teuchos::ParameterList> stepperPL,
+      std::string stepperType);
+
     /// Return explicit tableau.
     virtual Teuchos::RCP<const RKButcherTableau<Scalar> > getExplicitTableau() const
     { return explicitTableau_; }
@@ -473,6 +476,16 @@ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xTilde_;
   Scalar                                         s_;      // = 1/(dt*a_ii)
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperIMEX_RK<Scalar> >
+createStepperIMEX_RK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

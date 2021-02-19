@@ -13,9 +13,9 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
+#include "Tempus_StepperLeapfrog.hpp"
 #include "Tempus_StepperLeapfrogModifierBase.hpp"
 #include "Tempus_StepperLeapfrogObserverBase.hpp"
 #include "Tempus_StepperLeapfrogModifierXBase.hpp"
@@ -39,7 +39,6 @@ using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
 
-using Tempus::StepperFactory;
 
 
 // ************************************************************

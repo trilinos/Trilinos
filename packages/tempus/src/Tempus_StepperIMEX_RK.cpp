@@ -13,7 +13,16 @@
 #include "Tempus_StepperIMEX_RK_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperIMEX_RK)
+
+  // Nonmember constructor
+  template Teuchos::RCP<StepperIMEX_RK<double> >
+  createStepperIMEX_RK(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
+    std::string stepperType,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
+
 }
 
 #endif

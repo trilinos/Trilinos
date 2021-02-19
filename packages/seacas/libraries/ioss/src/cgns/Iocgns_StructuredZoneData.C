@@ -1,10 +1,11 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_SmartAssert.h>
 #include <algorithm>
 #include <cgns/Iocgns_StructuredZoneData.h>
 #include <fmt/color.h>
@@ -196,7 +197,7 @@ namespace {
 
     const auto &adam_name = parent->m_adam->m_name;
 
-    assert(c1->m_adam->m_zone == c2->m_adam->m_zone);
+    SMART_ASSERT(c1->m_adam->m_zone == c2->m_adam->m_zone)(c1->m_adam->m_zone)(c2->m_adam->m_zone);
 
     c1->m_zoneConnectivity.emplace_back(c1_base + "--" + c2_base, c1->m_zone, adam_name, c2->m_zone,
                                         transform, range_beg, range_end, donor_range_beg,
@@ -223,7 +224,7 @@ namespace Iocgns {
     m_name = "zone_" + std::to_string(zone);
 
     auto ordinals = Ioss::tokenize(nixnjxnk, "x");
-    assert(ordinals.size() == 3);
+    SMART_ASSERT(ordinals.size() == 3)(ordinals.size());
 
     m_ordinal[0] = std::stoi(ordinals[0]);
     m_ordinal[1] = std::stoi(ordinals[1]);
@@ -253,13 +254,13 @@ namespace Iocgns {
     size_t work2 = ord2 * m_ordinal[0] * m_ordinal[1];
 
     // Don't decompose along m_lineOrdinal direction and Avoid decompositions 1-cell thick.
-    if (m_lineOrdinal == 0 || m_ordinal[0] == 1 || ord0 == 1 || m_ordinal[0] - ord0 == 1) {
+    if (m_lineOrdinal & Ordinal::I || m_ordinal[0] == 1 || ord0 == 1 || m_ordinal[0] - ord0 == 1) {
       work0 = 0;
     }
-    if (m_lineOrdinal == 1 || m_ordinal[1] == 1 || ord1 == 1 || m_ordinal[1] - ord1 == 1) {
+    if (m_lineOrdinal & Ordinal::J || m_ordinal[1] == 1 || ord1 == 1 || m_ordinal[1] - ord1 == 1) {
       work1 = 0;
     }
-    if (m_lineOrdinal == 2 || m_ordinal[2] == 1 || ord2 == 1 || m_ordinal[2] - ord2 == 1) {
+    if (m_lineOrdinal & Ordinal::K || m_ordinal[2] == 1 || ord2 == 1 || m_ordinal[2] - ord2 == 1) {
       work2 = 0;
     }
 
@@ -269,13 +270,13 @@ namespace Iocgns {
       work0 = ord0 * m_ordinal[1] * m_ordinal[2];
       work1 = ord1 * m_ordinal[0] * m_ordinal[2];
       work2 = ord2 * m_ordinal[0] * m_ordinal[1];
-      if (m_lineOrdinal == 0 || m_ordinal[0] == 1) {
+      if (m_lineOrdinal & Ordinal::I || m_ordinal[0] == 1) {
         work0 = 0;
       }
-      if (m_lineOrdinal == 1 || m_ordinal[1] == 1) {
+      if (m_lineOrdinal & Ordinal::J || m_ordinal[1] == 1) {
         work1 = 0;
       }
-      if (m_lineOrdinal == 2 || m_ordinal[2] == 1) {
+      if (m_lineOrdinal & Ordinal::K || m_ordinal[2] == 1) {
         work2 = 0;
       }
       enforce_1cell_constraint = false;
@@ -296,7 +297,7 @@ namespace Iocgns {
       min_delta   = delta2;
     }
 
-    int ordinal = min_ordinal;
+    unsigned int ordinal = min_ordinal;
 
     // One more check to try to produce more "squarish" decompositions.
     // Check the ratio of max ordinal to selected min_ordinal and if > 1.5 (heuristic), choose the
@@ -304,7 +305,8 @@ namespace Iocgns {
     int max_ordinal    = -1;
     int max_ordinal_sz = 0;
     for (int i = 0; i < 3; i++) {
-      if (m_lineOrdinal != i && m_ordinal[i] > max_ordinal_sz) {
+      unsigned ord = i == 0 ? 1 : 2 * i;
+      if (!(m_lineOrdinal & ord) && m_ordinal[i] > max_ordinal_sz) {
         max_ordinal    = i;
         max_ordinal_sz = m_ordinal[i];
       }
@@ -319,7 +321,7 @@ namespace Iocgns {
       return std::make_pair(nullptr, nullptr);
     }
 
-    assert(ordinal != m_lineOrdinal);
+    //    SMART_ASSERT(!(ordinal & m_lineOrdinal))(ordinal)(m_lineOrdinal);
 
     m_child1 = new StructuredZoneData;
     m_child2 = new StructuredZoneData;
@@ -330,7 +332,7 @@ namespace Iocgns {
     if (m_child1->m_ordinal[ordinal] == 0) {
       m_child1->m_ordinal[ordinal] = 1;
     }
-    assert(!enforce_1cell_constraint || m_child1->m_ordinal[ordinal] != 1);
+    SMART_ASSERT(!enforce_1cell_constraint || m_child1->m_ordinal[ordinal] != 1)(!enforce_1cell_constraint)(m_child1->m_ordinal[ordinal] != 1);
 
     m_child1->m_offset = m_offset; // Child1 offsets the same as parent;
 
