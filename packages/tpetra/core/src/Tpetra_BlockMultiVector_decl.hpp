@@ -642,10 +642,12 @@ protected:
   //@}
 
 protected:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! Raw pointer to the MultiVector's data.
   impl_scalar_type* getRawPtr () const {
     return mvData_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Stride between consecutive local entries in the same column.
   size_t getStrideX () const {
@@ -677,6 +679,7 @@ protected:
   mv_type mv_;
 
 private:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Raw pointer to the above Tpetra::MultiVector's data.
   ///
   /// Keeping this is a temporary measure that ensures that the
@@ -686,6 +689,7 @@ private:
   /// because the data belong to the Vector, which we keep for the
   /// lifetime of the BlockMultiVector.
   impl_scalar_type* mvData_;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
