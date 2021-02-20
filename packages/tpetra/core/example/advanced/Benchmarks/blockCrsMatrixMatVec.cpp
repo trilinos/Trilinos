@@ -80,14 +80,9 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef Kokkos::Details::ArithTraits<IST> KAT;
   typedef typename block_crs_matrix_type::device_type::memory_space device_memory_space;
-  typedef Kokkos::View<IST*,
-    Kokkos::LayoutRight,
-    Kokkos::HostSpace,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
-  typedef Kokkos::View<IST**,
-    Kokkos::LayoutRight,
-    Kokkos::HostSpace,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_blk_type;
+  typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
+  typedef typename block_crs_matrix_type::little_block_type little_blk_type;
+
   const auto G = A.getCrsGraph ();
 
   const IST zero = KAT::zero ();
@@ -120,7 +115,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-      auto Y_cur = Y.getLocalBlock (lclRow, j);
+      auto Y_cur = Y.getLocalBlock (lclRow, j, Tpetra::Access::WriteOnly);
       if (beta == zero) {
         FILL (Y_lcl, zero);
       } else if (beta == one) {
@@ -137,7 +132,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
         auto A_cur_1d = Kokkos::subview (val, absBlkOff * blockSize * blockSize);
         little_blk_type A_cur (A_cur_1d.data (), blockSize, blockSize);
-        auto X_cur = X.getLocalBlock (meshCol, j);
+        auto X_cur = X.getLocalBlock (meshCol, j, Tpetra::Access::ReadOnly);
 
         GEMV (alpha, A_cur, X_cur, Y_lcl); // Y_lcl += alpha*A_cur*X_cur
       } // for each entry in the current local row of the matrix
