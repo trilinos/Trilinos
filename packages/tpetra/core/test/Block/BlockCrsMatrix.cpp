@@ -1340,8 +1340,7 @@ namespace {
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::const_little_host_vec_type Y_lcl = 
-                    Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
+      auto Y_lcl = Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
       for (LO i = 0; i < blockSize; ++i) {
         TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), requiredValue );
       }
@@ -1352,8 +1351,7 @@ namespace {
     Kokkos::fence ();
 
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::const_little_host_vec_type Y_lcl =
-                    Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
+      auto Y_lcl = Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
       for (LO i = 0; i < blockSize; ++i) {
         TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), STS::zero () );
       }
@@ -1505,8 +1503,7 @@ namespace {
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     bool valsMatch = true;
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::const_little_host_vec_type Y_lcl = 
-                    Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
+      auto Y_lcl = Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
       for (LO i = 0; i < blockSize; ++i) {
         if (static_cast<Scalar> (Y_lcl(i)) != requiredValue) {
           valsMatch = false;
@@ -1753,7 +1750,7 @@ namespace {
       // const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
       // bool valsMatch = true;
       // for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      //   typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      //   auto Y_lcl = Y.getLocalBlock(lclMeshRow, 0,Tpetra::Access::ReadOnly);
       //   for (LO i = 0; i < blockSize; ++i) {
       //     if (Y_lcl(i) != requiredValue) {
       //       valsMatch = false;
@@ -1934,8 +1931,7 @@ namespace {
 
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      typename BV::little_host_vec_type xlcl = 
-                   solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadWrite);
+      auto xlcl = solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadWrite);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       out << "row = " << lclRowInd << endl;
       for (LO k = 0; k < blockSize; ++k) {
@@ -1948,8 +1944,7 @@ namespace {
                                STS::one (), Tpetra::Backward);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      typename BV::const_little_host_vec_type xlcl = 
-                   solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadOnly);
+      auto xlcl = solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadOnly);
       const ST* x = reinterpret_cast<const ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[k], tol );
@@ -2134,8 +2129,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
-      typename BV::little_host_vec_type xlcl =
-               solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadWrite);
+      auto xlcl = solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadWrite);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );
@@ -2202,8 +2196,7 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
       const LO rowOffset = lclRowInd - meshRowMap.getMinLocalIndex ();
-      typename BV::little_host_vec_type xlcl = 
-                   solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadWrite);
+      auto xlcl = solution.getLocalBlock (lclRowInd, Tpetra::Access::ReadWrite);
       ST* x = reinterpret_cast<ST*> (xlcl.data ());
       for (LO k = 0; k < blockSize; ++k) {
         TEST_FLOATING_EQUALITY( x[k], exactSolution[rowOffset], tol );

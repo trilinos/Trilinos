@@ -84,11 +84,7 @@ namespace Tpetra {
 /// constants or pointers (e.g., they do not reallocate memory).
 ///
 /// BlockMultiVector stores entries in a column corresponding to
-/// degrees of freedom for the same mesh point contiguously.  This is
-/// not strictly necessary; we could generalize so that they are
-/// stored in a strided fashion, or even take away the layout
-/// assumption and only allow access to entries by copy (e.g.,
-/// getLocalRowCopy() instead of getLocalRowView()).
+/// degrees of freedom for the same mesh point contiguously. 
 ///
 /// Here is how you are supposed to use this class:
 ///
@@ -203,7 +199,6 @@ public:
   /// its entries.
   typedef Kokkos::View<const impl_scalar_type *, device_type>
           const_little_vec_type;
-//KDD  typedef typename const_little_vec_type::HostMirror const_little_host_vec_type;
 
   typedef typename mv_type::dual_view_type::t_host::device_type
           host_device_type;
@@ -569,32 +564,6 @@ public:
   ///   is invalid on the calling process.
   bool sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE_KDD
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a local index.
-  ///
-  /// \param localRowIndex [in] Local index of the mesh point.
-  /// \param colIndex [in] Column (vector) to view.
-  /// \param vals [out] View of the entries at the given mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given local index of the mesh point
-  ///   is invalid on the calling process.
-  bool getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const;
-
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a global index.
-  ///
-  /// \param globalRowIndex [in] Global index of the mesh point.
-  /// \param colIndex [in] Column (vector) to view.
-  /// \param vals [out] View of the entries at the given mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given global index of the mesh point
-  ///   is invalid on the calling process.
-  bool getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) const;
-#endif
-
   /// \brief Get a host view of the degrees of freedom at the given
   ///   mesh point.
   ///
@@ -608,21 +577,22 @@ public:
   /// don't try to hard-code the return type yourself.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   TPETRA_DEPRECATED little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
-#endif
+#endif // TPETRA_DEPRECATED
+
   const_little_host_vec_type getLocalBlock(
     const LO localRowIndex, 
     const LO colIndex, 
-    Tpetra::Access::ReadOnlyStruct) const;
+    Access::ReadOnlyStruct) const;
 
   little_host_vec_type getLocalBlock(
     const LO localRowIndex, 
     const LO colIndex, 
-    Tpetra::Access::ReadWriteStruct);
+    Access::ReadWriteStruct);
 
   little_host_vec_type getLocalBlock(
     const LO localRowIndex, 
     const LO colIndex, 
-    Tpetra::Access::WriteOnlyStruct);
+    Access::WriteOnlyStruct);
   //@}
 
 protected:

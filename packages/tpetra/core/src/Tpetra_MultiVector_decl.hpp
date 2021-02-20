@@ -1416,27 +1416,27 @@ namespace Tpetra {
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on host.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host::const_type getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const;
+    typename dual_view_type::t_host::const_type getLocalViewHost(Access::ReadOnlyStruct) const;
 
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on host.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host getLocalViewHost(Tpetra::Access::ReadWriteStruct);
+    typename dual_view_type::t_host getLocalViewHost(Access::ReadWriteStruct);
 
     /// \brief Return a mutable view of this MultiVector's local data on host, assuming all existing data will be overwritten.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host getLocalViewHost(Tpetra::Access::WriteOnlyStruct);
+    typename dual_view_type::t_host getLocalViewHost(Access::WriteOnlyStruct);
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev::const_type getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const;
+    typename dual_view_type::t_dev::const_type getLocalViewDevice(Access::ReadOnlyStruct) const;
 
     /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev getLocalViewDevice(Tpetra::Access::ReadWriteStruct);
+    typename dual_view_type::t_dev getLocalViewDevice(Access::ReadWriteStruct);
 
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev getLocalViewDevice(Tpetra::Access::WriteOnlyStruct);
+    typename dual_view_type::t_dev getLocalViewDevice(Access::WriteOnlyStruct);
 
     //! Clear "modified" flags on both host and device sides.
     void clear_sync_state ();
@@ -1518,17 +1518,17 @@ namespace Tpetra {
     /// \code
     /// typedef typename mv_type::dual_view_type dual_view_type;
     /// typedef typename dual_view_type::t_dev device_view_type;
-    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> (Tpetra::Access::ReadWrite);
+    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> (Access::ReadWrite);
     /// \endcode
     /// and if you want to get the host mirror of that View, do this:
     /// \code
     /// typedef typename dual_view_type::host_mirror_space host_execution_space;
     /// typedef typename dual_view_type::t_host host_view_type;
-    /// host_view_type hostView = DV.getLocalView<host_execution_space> (Tpetra::Access::ReadWrite);
+    /// host_view_type hostView = DV.getLocalView<host_execution_space> (Access::ReadWrite);
     /// \endcode
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
-    getLocalView (Tpetra::Access::ReadOnlyStruct) const
+    getLocalView (Access::ReadOnlyStruct) const
     {
       //This type is only used to see what the DualView::view<TargetDeviceType>() will return.
       //That logic inside DualView is too complicated to replicate here.
@@ -1556,7 +1556,7 @@ namespace Tpetra {
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Tpetra::Access::ReadWriteStruct)
+    getLocalView (Access::ReadWriteStruct)
     {
       bool returnDevice = true;
       {
@@ -1584,7 +1584,7 @@ namespace Tpetra {
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Tpetra::Access::WriteOnlyStruct)
+    getLocalView (Access::WriteOnlyStruct)
     {
       bool returnDevice = true;
       {

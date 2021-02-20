@@ -3696,7 +3696,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host::const_type
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const
+  getLocalViewHost(Access::ReadOnlyStruct) const
   {
     //returning dual_view_type::t_host::const_type
     if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
@@ -3709,7 +3709,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Tpetra::Access::ReadWriteStruct)
+  getLocalViewHost(Access::ReadWriteStruct)
   {
     //returning dual_view_type::t_host::type
     if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
@@ -3723,7 +3723,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Tpetra::Access::WriteOnlyStruct)
+  getLocalViewHost(Access::WriteOnlyStruct)
   {
     //returning dual_view_type::t_host::type
     if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
@@ -3737,7 +3737,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev::const_type
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const
+  getLocalViewDevice(Access::ReadOnlyStruct) const
   {
     //returning dual_view_type::t_dev::const_type
     if (owningView_.h_view.use_count() > owningView_.d_view.use_count())
@@ -3750,7 +3750,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Tpetra::Access::ReadWriteStruct)
+  getLocalViewDevice(Access::ReadWriteStruct)
   {
     //returning dual_view_type::t_dev::type
     if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
@@ -3764,7 +3764,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Tpetra::Access::WriteOnlyStruct)
+  getLocalViewDevice(Access::WriteOnlyStruct)
   {
     //returning dual_view_type::t_dev::type
     if (owningView_.h_view.use_count() > owningView_.d_view.use_count())

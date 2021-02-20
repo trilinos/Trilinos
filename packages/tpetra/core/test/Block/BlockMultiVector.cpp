@@ -289,14 +289,14 @@ namespace {
     // has 48 rows on each process: 12 mesh points, and 4 degrees of
     // freedom per mesh point ("block size").  Rows 20-23 thus
     // correspond to local mesh point 5.
-    typedef typename BMV::little_host_vec_type little_host_vec_type;
     auto X_5_1 = X.getLocalBlock (5, colToModify, Tpetra::Access::ReadWrite);
 
     // All entries of X_5_1 must be zero.  First make a block with all
     // zero entries, then test.  It's not worth testing the
     // corresponding entries of X_mv yet; we'll do that below.
-    Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-    little_host_vec_type zeroLittleVector ( (typename little_host_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
+    typename BMV::little_host_vec_type zeroLittleVector ("zero", blockSize);
+    Kokkos::deep_copy(zeroLittleVector, STS::zero());
+
     TEST_ASSERT( equal (X_5_1, zeroLittleVector) && equal (zeroLittleVector, X_5_1) );
 
     // Put some data in the block.  This will help us test whether the
@@ -382,7 +382,6 @@ namespace {
     using Teuchos::reduceAll;
     using Teuchos::RCP;
     typedef Tpetra::BlockMultiVector<Scalar, LO, GO, Node> BMV;
-    typedef typename BMV::little_host_vec_type little_host_vec_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::global_size_t GST;
@@ -459,8 +458,8 @@ namespace {
            X.getLocalBlock (meshMap.getLocalElement(meshMap.getMinGlobalIndex()), 
                             colToModify, Tpetra::Access::ReadOnly);
 
-      Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
-      little_host_vec_type zeroLittleVector ((typename little_host_vec_type::value_type*)zeroArray.getRawPtr (), blockSize);
+      typename BMV::little_host_vec_type zeroLittleVector ("zero", blockSize);
+      Kokkos::deep_copy(zeroLittleVector, STS::zero());
 
       for (LO col = 0; col < numVecs; ++col) {
         for (LO localMeshRow = meshMap.getMinLocalIndex ();
