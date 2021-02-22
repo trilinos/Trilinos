@@ -483,11 +483,11 @@ namespace Intrepid2
   // which is to say that we go 3,1,2.
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_Family3_Family1_HEX
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>
   {
     using Family3 = Basis_Derived_HDIV_Family3_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family1 = Basis_Derived_HDIV_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::BasisBase>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -505,11 +505,11 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_HEX
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>
   {
     using Family31 = Basis_Derived_HDIV_Family3_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family2  = Basis_Derived_HDIV_Family2_HEX        <HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis<typename HGRAD_LINE::BasisBase>;
 
     std::string name_;
     ordinal_type order_x_;

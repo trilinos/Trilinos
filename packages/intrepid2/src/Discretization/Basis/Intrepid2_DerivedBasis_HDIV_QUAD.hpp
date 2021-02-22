@@ -335,11 +335,11 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HDIV_QUAD
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>
   {
     using Family1 = Basis_Derived_HDIV_Family1_QUAD<HGRAD_LINE, HVOL_LINE>;
     using Family2 = Basis_Derived_HDIV_Family2_QUAD<HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>;
 
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
