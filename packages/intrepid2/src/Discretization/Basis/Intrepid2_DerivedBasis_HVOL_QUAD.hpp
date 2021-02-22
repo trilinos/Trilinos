@@ -64,12 +64,12 @@ namespace Intrepid2
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_QUAD
   :
-  public Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
+  public Basis_TensorBasis<typename HVOL_LINE::BasisBase>
   {
   protected:
     std::string name_;
     using LineBasis = HVOL_LINE;
-    using TensorBasis = Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>;
+    using TensorBasis = Basis_TensorBasis<typename HVOL_LINE::BasisBase>;
   public:
 
    using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
@@ -80,6 +80,7 @@ namespace Intrepid2
     using PointViewType  = typename HVOL_LINE::PointViewType ;
     using ScalarViewType = typename HVOL_LINE::ScalarViewType;
     
+    using BasisBase = typename HVOL_LINE::BasisBase;
     
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.

@@ -66,7 +66,7 @@ namespace Intrepid2
 {
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family1_QUAD
-  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_TensorBasis<typename HGRAD_LINE::BasisBase>
   {
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
@@ -77,10 +77,12 @@ namespace Intrepid2
     using PointViewType  = typename HGRAD_LINE::PointViewType ;
     using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
+    using BasisBase = typename HGRAD_LINE::BasisBase;
+    
     using LineGradBasis = HGRAD_LINE;
     using LineHVolBasis = HVOL_LINE;
     
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -191,7 +193,7 @@ namespace Intrepid2
 
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family2_QUAD
-  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_TensorBasis<typename HGRAD_LINE::BasisBase>
   {
 
   public:
@@ -206,7 +208,9 @@ namespace Intrepid2
     using LineGradBasis = HGRAD_LINE;
     using LineHVolBasis = HVOL_LINE;
     
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using BasisBase = typename HGRAD_LINE::BasisBase;
+    
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.

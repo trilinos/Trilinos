@@ -66,7 +66,7 @@ namespace Intrepid2
   // TODO: make this a subclass of TensorBasis3 instead, following what we've done for H(curl) and H(div)
   template<class HGRAD_LINE>
   class Basis_Derived_HGRAD_HEX
-  : public Basis_TensorBasis<typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_TensorBasis<typename HGRAD_LINE::BasisBase>
   {
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
@@ -79,7 +79,8 @@ namespace Intrepid2
     
     using LineBasis = HGRAD_LINE;
     using QuadBasis = Intrepid2::Basis_Derived_HGRAD_QUAD<HGRAD_LINE>;
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using BasisBase = typename HGRAD_LINE::BasisBase;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
 
     std::string name_;
     ordinal_type order_x_;
