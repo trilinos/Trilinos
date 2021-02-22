@@ -51,6 +51,15 @@ namespace {
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
                                   Scalar, LO, GO, Node)
 {
+// Test for issue #8794
+// Build a matrix using insertGlobalValues
+// The matrix will have some sparse rows (number of nonzeros <= 5) and
+// some dense rows (number of nonzeros = 101).
+// The two implementations of insert_crs_indices that differ depending 
+// on the number of indices being inserted are tested.
+// Multiply the matrix time a vector of global IDs and compare the result
+// to expected values.
+
   using map_t = Tpetra::Map<>;
   using matrix_t = Tpetra::CrsMatrix<Scalar>;
   using vector_t = Tpetra::Vector<Scalar>;
