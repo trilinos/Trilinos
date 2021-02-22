@@ -175,13 +175,15 @@ namespace Intrepid2 {
   class Basis_HGRAD_LINE_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
-
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisBase::OrdinalTypeArray3DHost;
+    
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType ;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
 
   private:
 
@@ -195,7 +197,7 @@ namespace Intrepid2 {
     Basis_HGRAD_LINE_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);  
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
