@@ -105,7 +105,11 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
   # Don't use ninja as the fortran compiler test is broken.
   export ATDM_CONFIG_USE_NINJA=OFF
 
-  export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
+  if [[ "CUDA" == "$ATDM_CONFIG_NODE_TYPE" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
+  else
+    export ATDM_CONFIG_CXX_FLAGS="-qxflag=disable__cplusplusOverride"
+  fi
 
   # set the gcc compiler XL  will use for backend to one that handles c++14
   export XLC_USR_CONFIG=/opt/ibm/xlC/16.1.1/etc/xlc.cfg.rhel.7.6.gcc.7.3.1.cuda.10.1.243
