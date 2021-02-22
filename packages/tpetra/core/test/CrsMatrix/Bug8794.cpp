@@ -1,18 +1,59 @@
+/*
+// @HEADER
+// ***********************************************************************
+//
+//          Tpetra: Templated Linear Algebra Services Package
+//                 Copyright (2008) Sandia Corporation
+//
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are
+// met:
+//
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+//
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// 3. Neither the name of the Corporation nor the names of the
+// contributors may be used to endorse or promote products derived from
+// this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
+// EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+// PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+// LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+// NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//
+// ************************************************************************
+// @HEADER
+*/
+
 
 #include "Tpetra_Core.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
+#include "TpetraCore_ETIHelperMacros.h"
 
-int main(int narg, char** arg)
+
+namespace {
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
+                                  Scalar, LO, GO, Node)
 {
-  Tpetra::ScopeGuard ts(&narg, &arg);
-
   using map_t = Tpetra::Map<>;
-  using gno_t = typename map_t::global_ordinal_type;
-  using lno_t = typename map_t::local_ordinal_type;
-  using node_t = typename map_t::node_type;
-  using scalar_t = double;
-  using matrix_t = Tpetra::CrsMatrix<scalar_t>;
-  using vector_t = Tpetra::Vector<scalar_t>;
+  using matrix_t = Tpetra::CrsMatrix<Scalar>;
+  using vector_t = Tpetra::Vector<Scalar>;
 
   auto comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -34,8 +75,8 @@ int main(int narg, char** arg)
   // insert nonzeros on np processors; 
   // let fillComplete migrate according to mapNpM1
 
-  Teuchos::Array<gno_t> cols(maxNzPerRow);
-  Teuchos::Array<scalar_t> vals(maxNzPerRow, 1.);
+  Teuchos::Array<GO> cols(maxNzPerRow);
+  Teuchos::Array<Scalar> vals(maxNzPerRow, 1.);
 
   matrix_t Amat(map, maxNzPerRow);
 
@@ -47,24 +88,23 @@ int main(int narg, char** arg)
     auto expectedData = expected.getDataNonConst();
     for (size_t i = 0; i < map->getNodeNumElements(); i++) {
 
-      gno_t gid = map->getGlobalElement(i);
+      GO gid = map->getGlobalElement(i);
       int nz = 0;
 
       if (gid % (divisor+1) == 1) {  // dense row
         for (int j = 0; j < nrows; j+=divisor) {
-          gno_t tmp = (gid + j) % nrows;
+          GO tmp = (gid + j) % nrows;
           cols[nz++] = tmp;
-std::cout << me << " of " << np << " (i,j) " << gid << " " << tmp << std::endl;
-          expectedData[i] += tmp;
+          expectedData[i] += Scalar(tmp);
         }
       }
       else {  // sparse row
         cols[nz++] = gid;
-        expectedData[i] += scalar_t(gid);
-        if (gid+1 < nrows) { cols[nz++] = gid+1; expectedData[i] += gid+1; }
-        if (gid+2 < nrows) { cols[nz++] = gid+2; expectedData[i] += gid+2; }
-        if (gid-1 >= 0)    { cols[nz++] = gid-1; expectedData[i] += gid-1; }
-        if (gid-2 >= 0)    { cols[nz++] = gid-2; expectedData[i] += gid-2; }
+        expectedData[i] += Scalar(gid);
+        if (gid+1<nrows) {cols[nz++] = gid+1; expectedData[i] += Scalar(gid+1);}
+        if (gid+2<nrows) {cols[nz++] = gid+2; expectedData[i] += Scalar(gid+2);}
+        if (gid-1>=0)    {cols[nz++] = gid-1; expectedData[i] += Scalar(gid-1);}
+        if (gid-2>=0)    {cols[nz++] = gid-2; expectedData[i] += Scalar(gid-2);}
       }
   
       Amat.insertGlobalValues(gid, cols(0,nz), vals(0,nz));
@@ -115,5 +155,13 @@ std::cout << me << " of " << np << " (i,j) " << gid << " " << tmp << std::endl;
   if (gerr) std::cout << "TEST FAILED with " << gerr << " errors" << std::endl;
   else std::cout << "TEST PASSED" << std::endl;
 
-  return gerr;
+  TEST_ASSERT(gerr == 0);
+}
+
+#define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Bug8794, InsertDenseRows, SCALAR, LO, GO, NODE) 
+
+  TPETRA_ETI_MANGLING_TYPEDEFS()
+
+  TPETRA_INSTANTIATE_TESTMV( UNIT_TEST_GROUP )
 }
