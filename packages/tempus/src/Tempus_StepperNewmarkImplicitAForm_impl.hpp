@@ -263,6 +263,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
 
   if (numStates > 1) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"StepperNewmarkImplicitAForm::setInitialConditions()");
     *out << "Warning -- SolutionHistory has more than one state!\n"
          << "Setting the initial conditions on the currentState.\n"<<std::endl;
@@ -305,6 +306,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
   if (icConsistency == "None") {
     if (initialState->getXDotDot() == Teuchos::null) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1,
         "StepperNewmarkImplicitAForm::setInitialConditions()");
       *out << "Warning -- Requested IC consistency of 'None' but\n"
@@ -397,6 +399,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
 
     if (reldiff > eps) {
       RCP<Teuchos::FancyOStream> out = this->getOStream();
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1,
         "StepperNewmarkImplicitAForm::setInitialConditions()");
       *out << "Warning -- Failed consistency check but continuing!\n"
@@ -410,6 +413,7 @@ void StepperNewmarkImplicitAForm<Scalar>::setInitialConditions(
 
   if (!(this->getUseFSAL())) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,
       "StepperNewmarkImplicitAForm::setInitialConditions()");
     *out << "\nWarning -- The First-Same-As-Last (FSAL) principle is "
@@ -523,6 +527,7 @@ void StepperNewmarkImplicitAForm<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  out.setOutputToRootOnly(0);
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
@@ -543,6 +548,7 @@ template<class Scalar>
 bool StepperNewmarkImplicitAForm<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
   bool isValidSetup = true;
+  out.setOutputToRootOnly(0);
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
 

@@ -377,6 +377,7 @@ describe(
   const Teuchos::EVerbosityLevel verbLevel) const
 {
   out << description() << "::describe" << std::endl;
+  out.setOutputToRootOnly(0);
   state_integrator_->describe(out, verbLevel);
   adjoint_integrator_->describe(out, verbLevel);
 }

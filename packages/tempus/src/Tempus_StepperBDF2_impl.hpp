@@ -239,6 +239,7 @@ void StepperBDF2<Scalar>::computeStartUp(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,1,"StepperBDF2::computeStartUp()");
   *out << "Warning -- Taking a startup step for BDF2 using '"
        << startUpStepper_->getStepperType()<<"'!" << std::endl;
@@ -271,6 +272,7 @@ void StepperBDF2<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel ) const
 {
+  out.setOutputToRootOnly(0);
   out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
@@ -296,6 +298,7 @@ template<class Scalar>
 bool StepperBDF2<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
   bool isValidSetup = true;
+  out.setOutputToRootOnly(0);
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;

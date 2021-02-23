@@ -151,6 +151,7 @@ template<class Scalar>
 void Stepper<Scalar>::initialize()
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->setOutputToRootOnly(0);
 
   bool isValidSetup = this->isValidSetup(*out);
 
@@ -177,6 +178,7 @@ void Stepper<Scalar>::setUseFSALTrueOnly(bool a)
 {
   if (a == false) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALTrueOnly()");
     *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
          << "can only be set to true.  Leaving set to true." << std::endl;
@@ -190,6 +192,7 @@ void Stepper<Scalar>::setUseFSALFalseOnly(bool a)
 {
   if (a == true) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALFalseOnly()");
     *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
          << "can only be set to false.  Leaving set to false." << std::endl;
@@ -252,6 +255,7 @@ template<class Scalar>
 void Stepper<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << "--- Stepper ---\n"
       << "  isInitialized_      = " << Teuchos::toString(isInitialized_) << std::endl
       << "  stepperType_        = " << stepperType_ << std::endl
@@ -273,6 +277,7 @@ bool Stepper<Scalar>::isValidSetup(
   if ( !(ICConsistency_ == "None" || ICConsistency_ == "Zero" ||
          ICConsistency_ == "App"  || ICConsistency_ == "Consistent") ) {
     isValidSetup = false;
+    out.setOutputToRootOnly(0);
     out << "The IC consistency does not have a valid value!\n"
         << "('None', 'Zero', 'App' or 'Consistent')\n"
         << "  ICConsistency  = " << ICConsistency_ << "\n";

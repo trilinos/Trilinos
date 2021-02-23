@@ -245,6 +245,7 @@ describe(
   Teuchos::FancyOStream          &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << description() << "::describe" << std::endl;
   integrator_->describe(out, verbLevel);
 }

@@ -126,6 +126,7 @@ template<class Scalar>
 void StepperHHTAlpha<Scalar>::setBeta(Scalar beta)
 {
   if (schemeName_ != "Newmark Beta User Defined") {
+    out_->setOutputToRootOnly(0);
     *out_ << "\nWARNING: schemeName != 'Newmark Beta User Defined' (= '"
           << schemeName_ << "').\n"
           << " Leaving as beta = " << beta_ << "!\n";
@@ -135,6 +136,7 @@ void StepperHHTAlpha<Scalar>::setBeta(Scalar beta)
   beta_ = beta;
 
   if (beta_ == 0.0) {
+    out_->setOutputToRootOnly(0);
     *out_ << "\nWARNING: Running (implicit implementation of) Newmark "
           << "Implicit a-Form Stepper with Beta = 0.0, which \n"
           << "specifies an explicit scheme.  Mass lumping is not possible, "
@@ -158,6 +160,7 @@ template<class Scalar>
 void StepperHHTAlpha<Scalar>::setGamma(Scalar gamma)
 {
   if (schemeName_ != "Newmark Beta User Defined") {
+    out_->setOutputToRootOnly(0);
     *out_ << "\nWARNING: schemeName != 'Newmark Beta User Defined' (= '"
           << schemeName_ << "').\n"
           << " Leaving as gamma = " << gamma_ << "!\n";

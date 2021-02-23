@@ -72,6 +72,7 @@ public:
     void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
+      out.setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,2,"describe");
       out << description() << "::describe:" << std::endl
           << "Strategy Type = " << this->getStrategyType()<< std::endl
@@ -237,6 +238,7 @@ createTimeStepControlStrategyComposite(
     } else {
       RCP<Teuchos::FancyOStream> out =
         Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1, "createTimeStepControlStrategyComposite()");
       *out << "Warning -- Unknown strategy type!\n"
            << "'Strategy Type' = '" << strategyType << "'\n"
@@ -251,6 +253,7 @@ createTimeStepControlStrategyComposite(
   if (tscsc->size() == 0) {
     RCP<Teuchos::FancyOStream> out =
       Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1, "createTimeStepControlStrategyComposite()");
     *out << "Warning -- Did not find a Tempus strategy to create!\n"
          << "Should call addStrategy() with (app-specific?) strategy(ies),\n"

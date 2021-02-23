@@ -182,6 +182,7 @@ void SolutionStateMetaData<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
+    out.setOutputToRootOnly(0);
     out << description() << "::describe:" << std::endl
         << "time           = " << time_ << std::endl
         << "iStep          = " << iStep_ << std::endl

@@ -25,6 +25,7 @@ observeStartIntegrator(const Integrator<Scalar>& integrator){
 
   std::time_t begin = std::time(nullptr);
   const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "\nTempus - IntegratorBasic\n"
        << std::asctime(std::localtime(&begin)) << "\n"
@@ -74,6 +75,7 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
      integrator.getStepperTimer()->reset();
 
      const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+     out->setOutputToRootOnly(0);
      Teuchos::OSTab ostab(out,0,"ScreenOutput");
      *out<<std::scientific
         <<std::setw( 6)<<std::setprecision(3)<<cs->getIndex()
