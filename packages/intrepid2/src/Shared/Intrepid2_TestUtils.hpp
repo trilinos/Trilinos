@@ -71,7 +71,7 @@ namespace Intrepid2
 #ifdef KOKKOS_ENABLE_CUDA
   using DefaultTestDeviceType = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
 #else
-  using DefaultTestDeviceType = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>;
+  using DefaultTestDeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
 #endif
 
   //! Use Teuchos small number determination on host; pass this to Intrepid2::relErr() on device.
