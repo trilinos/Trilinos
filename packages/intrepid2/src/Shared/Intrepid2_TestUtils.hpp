@@ -67,6 +67,13 @@ namespace Intrepid2
   //! Maximum number of derivatives to track for Fad types in tests.
   constexpr int MAX_FAD_DERIVATIVES_FOR_TESTS = 3;
 
+  //! Default Kokkos::Device to use for tests; depends on platform
+#ifdef KOKKOS_ENABLE_CUDA
+  using DefaultTestDeviceType = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
+#else
+  using DefaultTestDeviceType = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>;
+#endif
+
   //! Use Teuchos small number determination on host; pass this to Intrepid2::relErr() on device.
   template <class Scalar>
   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType

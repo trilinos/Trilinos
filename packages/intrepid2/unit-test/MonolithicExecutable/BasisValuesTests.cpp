@@ -251,6 +251,24 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_LINE_DeviceType )
+  {
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_LINE;
+    
+    // for now, the BasisValues path only supports the standard exact-sequence operators
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      Basis basis(polyOrder);
+      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_QUAD )
   {
     using Basis = HierarchicalBasisFamily<>::HGRAD_QUAD;
