@@ -54,7 +54,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
 // Test for issue #8794
 // Build a matrix using insertGlobalValues
 // The matrix will have some sparse rows (number of nonzeros <= 5) and
-// some dense rows (number of nonzeros = 101).
+// some dense rows (number of nonzeros = 501).
 // The two implementations of insert_crs_indices that differ depending 
 // on the number of indices being inserted are tested.
 // Multiply the matrix time a vector of global IDs and compare the result
@@ -68,7 +68,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   int me = comm->getRank();
   int np = comm->getSize();
 
-  int nrows = 10001;
+  int nrows = 50001;
   int divisor = 100;
   int maxNzPerRow = nrows / divisor + 1;
 
