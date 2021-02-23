@@ -3958,7 +3958,6 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (this->isFillComplete ()) {
-      diag.template modify<device_type> ();
       const auto D_lcl = diag.template getLocalView<device_type> (Access::ReadWrite);
       // 1-D subview of the first (and only) column of D_lcl.
       const auto D_lcl_1d =
@@ -4004,7 +4003,6 @@ namespace Tpetra {
     // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
     // we write a device kernel, it will not need to assume UVM.
 
-    diag.template modify<device_type> ();
     auto D_lcl = diag.template getLocalView<device_type> (Access::ReadWrite);
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     // Get 1-D subview of the first (and only) column of D_lcl.
@@ -5387,10 +5385,6 @@ namespace Tpetra {
 
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
     auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
-    // TODO (24 Jul 2019) uncomment later; this line of code wasn't
-    // here before, so we need to test it separately before pushing.
-    //
-    // Y.modify_device ();
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
