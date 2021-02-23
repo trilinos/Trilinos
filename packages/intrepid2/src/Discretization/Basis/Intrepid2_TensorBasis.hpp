@@ -560,7 +560,7 @@ struct OperatorTensorDecomposition
   {
   public:
     using BasisBase = BasisBaseClass;
-    using BasisPtr   = Teuchos::RCP<BasisBase>;
+    using BasisPtr  = Teuchos::RCP<BasisBase>;
   
   protected:
     BasisPtr basis1_;
@@ -585,10 +585,12 @@ struct OperatorTensorDecomposition
         \param [in] basis1 - the first component basis
         \param [in] basis2 - the second component basis
      */
-    Basis_TensorBasis(BasisPtr basis1, BasisPtr basis2)
+    Basis_TensorBasis(BasisPtr basis1, BasisPtr basis2, EFunctionSpace functionSpace = FUNCTION_SPACE_MAX)
     :
     basis1_(basis1),basis2_(basis2)
     {
+      this->functionSpace_ = functionSpace;
+      
       Basis_TensorBasis* basis1AsTensor = dynamic_cast<Basis_TensorBasis*>(basis1_.get());
       if (basis1AsTensor)
       {
@@ -1348,7 +1350,16 @@ struct OperatorTensorDecomposition
       FunctorType functor(outputValues, outputValues1, outputValues2, tensorPoints, weight);
       Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
     }
-  };
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "TensorBasis subclasses must override getHostBasis");
+    }
+  }; // Basis_TensorBasis
   
   /** \struct Intrepid2::TensorBasis3_Functor
       \brief  Functor for computing values for the TensorBasis3 class.
@@ -1599,30 +1610,23 @@ struct OperatorTensorDecomposition
         }
       }
     }
-  };
+  }; // TensorBasis3_Functor
   
   
-  template<typename Basis1, typename Basis2, typename Basis3,
-  typename ExecutionSpace = typename Basis1::ExecutionSpace,
-  typename OutputScalar   = typename Basis1::OutputValueType,
-  typename PointScalar    = typename Basis1::PointValueType>
+  template<typename BasisBaseClass = void>
   class Basis_TensorBasis3
-  : public Basis_TensorBasis<typename Basis1::BasisBase>
+  : public Basis_TensorBasis<BasisBaseClass>
   {
-    using TensorBasis = Basis_TensorBasis<typename Basis1::BasisBase>;
-    
+    using BasisBase   = BasisBaseClass;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
   public:
-    using OutputViewType = typename TensorBasis::OutputViewType;
-    using PointViewType  = typename TensorBasis::PointViewType;
-    using ScalarViewType = typename TensorBasis::ScalarViewType;
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
     
-    using OutputValueType = typename TensorBasis::OutputValueType;
-    using PointValueType  = typename TensorBasis::PointValueType;
+    using OutputValueType = typename BasisBase::OutputValueType;
+    using PointValueType  = typename BasisBase::PointValueType;
     
-    static_assert(std::is_same<typename Basis1::BasisBase, typename Basis2::BasisBase>::value, "all bases in TensorBasis must agree on their base class type");
-    static_assert(std::is_same<typename Basis1::BasisBase, typename Basis3::BasisBase>::value, "all bases in TensorBasis must agree on their base class type");
-    
-    using BasisBase = typename Basis1::BasisBase;
     using BasisPtr  = Teuchos::RCP<BasisBase>;
   protected:
     BasisPtr basis1_;
@@ -1849,15 +1853,26 @@ struct OperatorTensorDecomposition
       basis2_->getValues(outputValues2,inputPoints2,operatorType2);
       basis3_->getValues(outputValues3,inputPoints3,operatorType3);
       
-      const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputScalar>();
-      const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
+      const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputValueType>();
+      const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointValueType>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
+      
+      using ExecutionSpace = typename BasisBase::ExecutionSpace;
       
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,Kokkos::AUTO(),vectorSize);
       
-      using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputScalar, OutputViewType>;
+      using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputValueType, OutputViewType>;
       FunctorType functor(outputValues, outputValues1, outputValues2, outputValues3, tensorPoints, weight);
       Kokkos::parallel_for( policy , functor, "TensorBasis3_Functor");
+    }
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "TensorBasis3 subclasses must override getHostBasis");
     }
   };
 } // end namespace Intrepid2

@@ -186,6 +186,7 @@ namespace Intrepid2
   {
   public:
     using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = LegendreBasis_HVOL_LINE<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar>;
     
     using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;

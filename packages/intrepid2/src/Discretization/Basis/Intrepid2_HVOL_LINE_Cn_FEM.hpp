@@ -178,6 +178,7 @@ namespace Intrepid2 {
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
     using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    using HostBasis = Basis_HVOL_LINE_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
     
     using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
@@ -190,7 +191,7 @@ namespace Intrepid2 {
     /** \brief  Constructor.
      */
     Basis_HVOL_LINE_Cn_FEM(const ordinal_type order,
-                            const EPointType   pointType = POINTTYPE_EQUISPACED);  
+                           const EPointType   pointType = POINTTYPE_EQUISPACED);  
 
     using BasisBase::getValues;
 

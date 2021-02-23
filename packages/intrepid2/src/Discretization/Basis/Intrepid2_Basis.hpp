@@ -75,6 +75,11 @@ class Basis;
 template <typename DeviceType = void, typename OutputType = double, typename PointType = double>
 using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
 
+/** \brief Pointer to a Basis whose device type is on the host (Kokkos::HostSpace::device_type), allowing host access to input and output views, and ensuring host execution of basis evaluation.
+ */
+template <typename OutputType = double, typename PointType = double>
+using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputType, PointType>;
+
   /** \class  Intrepid2::Basis
       \brief  An abstract base class that defines interface for concrete basis implementations for
               Finite Element (FEM) and Finite Volume/Finite Difference (FVD) discrete spaces.
@@ -902,7 +907,7 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
     
        \return Pointer to the new Basis object.
     */
-    virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputValueType, PointValueType>
+    virtual HostBasisPtr<OutputValueType, PointValueType>
     getHostBasis() const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getHostBasis): this method is not supported or should be overridden accordingly by derived classes.");

@@ -140,7 +140,7 @@ namespace Intrepid2
       }
     }
     
-    using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
+    using BasisBase::getValues;
 
     /** \brief  multi-component getValues() method (required/called by TensorBasis)
         \param [out] outputValues - the view into which to place the output values
@@ -217,7 +217,7 @@ namespace Intrepid2
           \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
           \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
        */
-    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+    Teuchos::RCP<BasisBase>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         switch(subCellOrd) {
@@ -231,6 +231,19 @@ namespace Intrepid2
       }
 
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      using HostBasis  = Basis_Derived_HGRAD_QUAD<typename HGRAD_LINE::HostBasis>;
+      
+      auto hostBasis = Teuchos::rcp(new HostBasis(order_x_, order_y_, pointType_));
+      
+      return hostBasis;
     }
   };
 } // end namespace Intrepid2

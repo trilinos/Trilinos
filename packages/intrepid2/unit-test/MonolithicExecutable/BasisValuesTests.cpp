@@ -93,6 +93,13 @@ namespace
     TensorPoints<PointScalar> tensorPoints;
     TensorData<WeightScalar>  tensorWeights;
     
+    using HostPointViewType = Kokkos::DynRankView<PointScalar,Kokkos::HostSpace>;
+    using HostWeightViewType = Kokkos::DynRankView<WeightScalar,Kokkos::HostSpace>;
+    auto hostQuadrature = cub_factory.create<Kokkos::HostSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    HostPointViewType hostPoints("quadrature points ref cell - host", numRefPoints, spaceDim);
+    HostWeightViewType hostWeights("quadrature weights ref cell - host", numRefPoints);
+    hostQuadrature->getCubature(hostPoints, hostWeights);
+    
     using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
@@ -127,13 +134,21 @@ namespace
     
     testFloatingEquality2(points,tensorPoints,  relTol, absTol, out, success, "points", "tensorPoints");
         
+    auto hostBasisPtr = basis.getHostBasis();
+        
     for (const auto &op : opsToTest)
     {
       auto basisValuesView = basis.allocateOutputView(numRefPoints, op);
       auto basisValues     = basis.allocateBasisValues(tensorPoints, op);
       
+      auto hostBasisView   = hostBasisPtr->allocateOutputView(numRefPoints, op);
+      
       basis.getValues(basisValuesView, points, op);
       basis.getValues(basisValues, tensorPoints, op);
+      
+      // copy basisValuesView to host for hostBasis comparison
+      auto basisValuesViewHostMirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesView);
+      hostBasisPtr->getValues(hostBasisView, hostPoints, op);
       
       out << "Comparing getValues() results for " << EOperatorToString(op) << std::endl;
       
@@ -152,6 +167,16 @@ namespace
             printFunctor2(basisValues,     out, "basisValues");
             printFunctor2(basisValuesView, out, "basisValuesView");
           }
+          
+          localSuccess = true;
+          testFloatingEquality2(basisValuesView, basisValues, relTol, absTol, out, localSuccess, "DynRankView path - device", "DynRankView path - host");
+          success = success && localSuccess;
+          
+          if (!localSuccess)
+          {
+            printFunctor2(hostBasisView,             out, "hostBasisView");
+            printFunctor2(basisValuesViewHostMirror, out, "basisValuesViewHostMirror");
+          }
         }
         else if (basisValuesView.rank() == 3)
         {
@@ -163,6 +188,16 @@ namespace
           {
             printFunctor3(basisValues,     out, "basisValues");
             printFunctor3(basisValuesView, out, "basisValuesView");
+          }
+          
+          localSuccess = true;
+          testFloatingEquality3(basisValuesView, basisValues, relTol, absTol, out, localSuccess, "DynRankView path - device", "DynRankView path - host");
+          success = success && localSuccess;
+          
+          if (!localSuccess)
+          {
+            printFunctor3(hostBasisView,             out, "hostBasisView");
+            printFunctor3(basisValuesViewHostMirror, out, "basisValuesViewHostMirror");
           }
         }
         else

@@ -176,6 +176,8 @@ namespace Intrepid2 {
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
     using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+      
+    using HostBasis = Basis_HGRAD_LINE_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
     
     using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
     using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
@@ -190,7 +192,7 @@ namespace Intrepid2 {
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
         coefficients of the nodal basis in terms of phis_ */
     Kokkos::DynRankView<typename ScalarViewType::value_type,DeviceType> vinv_;
-
+    EPointType   pointType_;
   public:
     /** \brief  Constructor.
      */
@@ -272,6 +274,16 @@ namespace Intrepid2 {
       return getPnCardinality<1>(this->basisDegree_);
     }
 
+  /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+      
+         \return Pointer to the new Basis object.
+      */
+     virtual HostBasisPtr<outputValueType,pointValueType>
+     getHostBasis() const override {
+       auto hostBasis = Teuchos::rcp(new HostBasis(this->basisDegree_, pointType_));
+       
+       return hostBasis;
+     }
   };
 
 }// namespace Intrepid2
