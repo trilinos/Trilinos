@@ -84,13 +84,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostView, LO, GO, Scalar , Node 
   vector_t defaultVec(defaultMap);
   defaultVec.putScalar(scalar);
 
-<<<<<<< HEAD
   // Check result; all vector entries should be 0
   auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
-=======
-  // Check result; all vector entries should be scalar
-  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly());
->>>>>>> test changes
 
   for (size_t i = 0; i < defaultVec.getLocalLength(); i++) {
     if (data(i,0) != scalar) { 
@@ -137,7 +132,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceView, LO, GO, Scalar , Nod
   defaultVec.putScalar(scalar);
 
   // Check result; all vector entries should be 0
-  auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly());
+  auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
   auto data_old = defaultVec.getLocalView();
 
   if (data != data_old) {
