@@ -236,23 +236,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_LINE )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_LINE;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_LINE_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_LINE;
     
@@ -270,23 +253,6 @@ namespace
   }
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_QUAD )
-  {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_QUAD;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_QUAD_DeviceType )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_QUAD;
@@ -306,23 +272,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_TRI )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_TRI;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_TRI_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_TRI;
     
@@ -340,23 +289,6 @@ namespace
   }
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_HEX )
-  {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_HEX;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_HEX_DeviceType )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_HEX;
@@ -376,23 +308,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_TET )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_TET;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_TET_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_TET;
     
@@ -410,23 +325,6 @@ namespace
   }
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHDIV_QUAD )
-  {
-    using Basis = HierarchicalBasisFamily<>::HDIV_QUAD;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHDIV_QUAD_DeviceType )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HDIV_QUAD;
@@ -446,23 +344,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHDIV_TRI )
   {
-    using Basis = NodalBasisFamily<>::HDIV_TRI; // Hierarchical basis family does not yet support HDIV_TRI
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, NodalHDIV_TRI_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = NodalBasisFamily<DeviceType>::HDIV_TRI; // Hierarchical basis family does not yet support HDIV_TRI
     
@@ -480,23 +361,6 @@ namespace
   }
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHDIV_HEX )
-  {
-    using Basis = HierarchicalBasisFamily<>::HDIV_HEX;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHDIV_HEX_DeviceType )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HDIV_HEX;
@@ -516,23 +380,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHDIV_TET )
   {
-    using Basis = NodalBasisFamily<>::HDIV_TET;  // Hierarchical basis family does not yet support HDIV_TET
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, NodalHDIV_TET_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = NodalBasisFamily<DeviceType>::HDIV_TET;  // Hierarchical basis family does not yet support HDIV_TET
     
@@ -550,23 +397,6 @@ namespace
   }
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHCURL_QUAD )
-  {
-    using Basis = HierarchicalBasisFamily<>::HCURL_QUAD;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHCURL_QUAD_DeviceType )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HCURL_QUAD;
@@ -586,23 +416,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TRI )
   {
-    using Basis = NodalBasisFamily<>::HCURL_TRI;  // Hierarchical basis family does not yet support HCURL_TRI
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TRI_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = NodalBasisFamily<DeviceType>::HCURL_TRI;  // Hierarchical basis family does not yet support HCURL_TRI
     
@@ -621,23 +434,6 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHCURL_HEX )
   {
-    using Basis = HierarchicalBasisFamily<>::HCURL_HEX;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHCURL_HEX_DeviceType )
-  {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = HierarchicalBasisFamily<DeviceType>::HCURL_HEX;
     
@@ -654,12 +450,13 @@ namespace
     }
   }
 
-  TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TET )
+  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHVOL_QUAD )
   {
-    using Basis = NodalBasisFamily<>::HCURL_TET;  // Hierarchical basis family does not yet support HCURL_TET
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HVOL_QUAD;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
     
     const double relTol=1e-13;
     const double absTol=1e-13;
@@ -671,7 +468,25 @@ namespace
     }
   }
 
-  TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TET_DeviceType )
+  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHVOL_HEX )
+  {
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HVOL_HEX;
+    
+    // for now, the BasisValues path only supports the standard exact-sequence operators
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      Basis basis(polyOrder);
+      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TET )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = NodalBasisFamily<DeviceType>::HCURL_TET;  // Hierarchical basis family does not yet support HCURL_TET
@@ -690,23 +505,6 @@ namespace
   }
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHGRAD_LINE )
-  {
-    using Basis = NodalBasisFamily<>::HGRAD_LINE;
-    
-    // for now, the BasisValues path only supports the standard exact-sequence operators
-    std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
-    
-    const double relTol=1e-13;
-    const double absTol=1e-13;
-    
-    for (int polyOrder=1; polyOrder<5; polyOrder++)
-    {
-      Basis basis(polyOrder);
-      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
-    }
-  }
-
-  TEUCHOS_UNIT_TEST( BasisValues, NodalHGRAD_LINE_DeviceType )
   {
     using DeviceType = Intrepid2::DefaultTestDeviceType;
     using Basis = NodalBasisFamily<DeviceType>::HGRAD_LINE;
