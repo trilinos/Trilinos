@@ -418,7 +418,9 @@ insert_crs_indices(
   size_t num_inserted = 0;
 
   size_t numIndicesLookup = num_assigned + num_new_indices;
-  const size_t useLookUpTableThreshold = 50;
+
+  // Threshold determined from test/Utils/insertCrsIndicesThreshold.cpp
+  const size_t useLookUpTableThreshold = 400; 
 
   if (numIndicesLookup <= useLookUpTableThreshold || num_new_indices == 1) {
     // For rows with few nonzeros, can use a serial search to find duplicates
