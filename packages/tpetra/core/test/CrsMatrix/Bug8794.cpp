@@ -98,25 +98,48 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
     for (size_t i = 0; i < map->getNodeNumElements(); i++) {
 
       GO gid = map->getGlobalElement(i);
-      int nz = 0;
+      bool denseRow = (gid % (divisor+1) == 1);
 
-      if (gid % (divisor+1) == 1) {  // dense row
-        for (int j = 0; j < nrows; j+=divisor) {
-          GO tmp = (gid + j) % nrows;
-          cols[nz++] = tmp;
-          expectedData[i] += Scalar(tmp);
-        }
-      }
-      else {  // sparse row
+      if (!denseRow) {  // sparse row
+        int nz = 0;
         cols[nz++] = gid;
         expectedData[i] += Scalar(gid);
         if (gid+1<nrows) {cols[nz++] = gid+1; expectedData[i] += Scalar(gid+1);}
         if (gid+2<nrows) {cols[nz++] = gid+2; expectedData[i] += Scalar(gid+2);}
         if (gid-1>=0)    {cols[nz++] = gid-1; expectedData[i] += Scalar(gid-1);}
         if (gid-2>=0)    {cols[nz++] = gid-2; expectedData[i] += Scalar(gid-2);}
+        Amat.insertGlobalValues(gid, cols(0,nz), vals(0,nz));
       }
-  
-      Amat.insertGlobalValues(gid, cols(0,nz), vals(0,nz));
+      else { // dense row
+        if (gid % 2) {  // Insert many nonzeros all at once
+          int nz = 0;
+          for (int j = 0; j < nrows; j+=divisor) {
+            GO tmp = (gid + j) % nrows;
+            cols[nz++] = tmp;
+            expectedData[i] += Scalar(tmp);
+          }
+          Amat.insertGlobalValues(gid, cols(0,nz), vals(0,nz));
+        }
+        else {  // Insert many nonzeros in batches, with some duplicates
+          int nz = 0;
+          int nrowsCutoff = nrows - 10*divisor;
+
+          for (int j = 0; j < nrowsCutoff; j+=divisor) {
+            GO tmp = (gid + j) % nrows;
+            cols[nz++] = tmp;
+            expectedData[i] += Scalar(tmp);
+          }
+          Amat.insertGlobalValues(gid, cols(0,nz), vals(0,nz));
+
+          nz = 0;
+          for (int j = 0; j < nrows; j+=divisor) {
+            GO tmp = (gid + j) % nrows;
+            cols[nz++] = tmp;
+            expectedData[i] += Scalar(tmp);
+          }
+          Amat.insertGlobalValues(gid, cols(0,nz), vals(0,nz));
+        }
+      }
     }
   
     Amat.fillComplete();
@@ -135,7 +158,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
     x.clear_sync_state();
     x.modify_host();
     auto xData = x.getDataNonConst();
-    for (int i = 0; i < map->getNodeNumElements(); i++) 
+    for (size_t i = 0; i < map->getNodeNumElements(); i++) 
       xData[i] = map->getGlobalElement(i);
   }
 
