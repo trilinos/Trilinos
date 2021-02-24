@@ -453,7 +453,7 @@ insert_crs_indices(
 
     // Put existing indices into the lookup table
     for (size_t k = 0; k < num_assigned; k++) {
-      idxLookup[cur_indices[k]] = start+k;
+      idxLookup[cur_indices[start+k]] = start+k;
     }
 
     // Check for new indices in table; insert if not there yet
