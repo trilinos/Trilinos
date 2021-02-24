@@ -160,6 +160,44 @@ TEST(UnitTestSyncInfo, exchange)
   EXPECT_EQ(expectedStringValue, otherInfo.get_value<std::string>("stringValue"));
 }
 
+TEST(UnitTestSyncInfo, exchangeAsymmetric)
+{
+  stk::ParallelMachine global = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(global) != 4) return;
+
+  int globalRank = stk::parallel_machine_rank(global);
+  const int color = (globalRank >= 2) ? 1 : 0;
+  stk::ParallelMachine local = stk::coupling::split_comm(MPI_COMM_WORLD, color);
+
+  stk::coupling::SyncInfo config;
+  if (color == 0)
+  {
+    config.set_value<int>("rank", 2);
+    config.set_value<double>("score", 12.75);
+  }
+  else
+  {
+    config.set_value<int>("rank", 7);
+    config.set_value<std::string>("name", "codeB");
+    config.set_value<double>("meta", -3.1);
+  }
+
+  stk::coupling::SyncInfo otherConfig = config.exchange(global, local);
+
+  if (color == 0)
+  {
+    EXPECT_EQ("codeB", otherConfig.get_value<std::string>("name"));
+    EXPECT_NEAR(-3.1, otherConfig.get_value<double>("meta"), 1e-12);
+    EXPECT_EQ(7, otherConfig.get_value<int>("rank"));
+  }
+  else
+  {
+    ASSERT_ANY_THROW(otherConfig.get_value<std::string>("name"));
+    EXPECT_NEAR(12.75, otherConfig.get_value<double>("score"), 1e-12);
+    EXPECT_EQ(2, otherConfig.get_value<int>("rank"));
+  }
+}
+
 TEST(UnitTestSyncInfo, choose_value_mine_smaller)
 {
   using stk::coupling::SyncMode;

@@ -23,6 +23,7 @@ public:
     : m_appName("Mock-Salinas"),
       m_mesh(),
       m_doneFlagName("time step status"),
+      m_iAmRootRank(false),
       m_doingRecvTransfer(false),
       m_recvFieldName()
   { }
@@ -35,11 +36,10 @@ public:
   void read_input_and_setup_split_comms(int argc, char** argv)
   {
     m_commWorld = stk::parallel_machine_init(&argc, &argv);
+    int myWorldRank = stk::parallel_machine_rank(m_commWorld);
+    int numWorldRanks = stk::parallel_machine_size(m_commWorld);
 
     {
-      int myWorldRank = stk::parallel_machine_rank(m_commWorld);
-      int numWorldRanks = stk::parallel_machine_size(m_commWorld);
-
       std::ostringstream os;
       os << m_appName << ": my world rank is: " << myWorldRank << " out of " << numWorldRanks;
       std::cout << os.str() << std::endl;
@@ -49,11 +49,12 @@ public:
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
     m_commApp = stk::coupling::split_comm(m_commWorld, color);
 
-    {
-      std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-      int myAppRank = stk::parallel_machine_rank(m_commApp);
-      int numAppRanks = stk::parallel_machine_size(m_commApp);
+    std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
+    int myAppRank = stk::parallel_machine_rank(m_commApp);
+    int numAppRanks = stk::parallel_machine_size(m_commApp);
+    m_iAmRootRank = myWorldRank == rootRanks.first;
 
+    {
       std::ostringstream os;
       os << m_appName << ": color="<<color<<", my app rank is: " << myAppRank << " out of " << numAppRanks << std::endl;
       os << m_appName << ": my root-rank: " << rootRanks.first << ", other app's root-rank: " << rootRanks.second;
@@ -73,21 +74,29 @@ public:
     m_otherInfo = m_myInfo.exchange(m_commWorld, m_commApp);
 
     {
-      int myWorldRank = stk::parallel_machine_rank(m_commWorld);
-      std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-
       std::ostringstream os;
       os << m_appName << ": other app 'app_name': " << m_otherInfo.get_value<std::string>(stk::coupling::AppName);
-      if (myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
+      if (m_iAmRootRank) std::cout << os.str() << std::endl;
     }
 
-    m_doingRecvTransfer = (m_otherInfo.get_value<std::string>(stk::coupling::AppName, "none")=="Mock-Sparc");
-    m_recvFieldName = "Flux";
+    std::string otherAppName = m_otherInfo.get_value<std::string>(stk::coupling::AppName, "none");
+
+    if (otherAppName=="Mock-Sparc") {
+      m_doingRecvTransfer = true;
+      m_recvFieldName = "traction";
+    }
+    if (otherAppName=="Mock-Aria") {
+      m_doingRecvTransfer = true;
+      m_recvFieldName = "temperature";
+    }
+
     {
-      std::ostringstream os;
-      os << m_appName << ": going to do recv-transfer (field='"<<m_recvFieldName<<"'): "
-         << (m_doingRecvTransfer ? "true" : "false")<<std::endl;
-      if (stk::parallel_machine_rank(m_commApp)==0) std::cout << os.str() << std::endl;
+      if (m_doingRecvTransfer) {
+        std::ostringstream os;
+        os << m_appName << ": will recv-transfer (field='"<<m_recvFieldName<<"') "
+           <<" from other app: "<<otherAppName<<std::endl;
+        if (m_iAmRootRank) std::cout << os.str() << std::endl;
+      }
     }
   }
 
@@ -107,10 +116,7 @@ public:
     bool done = m_otherInfo.get_value<bool>(m_doneFlagName, false);
 
     {
-      int myWorldRank = stk::parallel_machine_rank(m_commWorld);
-      std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-
-      if (done && myWorldRank == rootRanks.first) std::cout << m_appName << " ending because other app ending" << std::endl;
+      if (done && m_iAmRootRank) std::cout << m_appName << " ending because other app ending" << std::endl;
     }
 
     return done;
@@ -122,12 +128,9 @@ public:
     m_finalTime = m_otherInfo.get_value<double>(stk::coupling::FinalTime);
 
     {
-      int myWorldRank = stk::parallel_machine_rank(m_commWorld);
-      std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-
       std::ostringstream os;
       os << m_appName << ": "<<stk::coupling::CurrentTime<<": " << m_currentTime << ", final time: " << m_finalTime;
-      if(myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
+      if(m_iAmRootRank) std::cout << os.str() << std::endl;
     }
   }
 
@@ -177,6 +180,7 @@ private:
 
   stk::ParallelMachine m_commWorld;
   stk::ParallelMachine m_commApp;
+  bool m_iAmRootRank;
 
   stk::coupling::SyncInfo m_myInfo;
   stk::coupling::SyncInfo m_otherInfo;
