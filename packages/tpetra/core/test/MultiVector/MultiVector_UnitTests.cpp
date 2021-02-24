@@ -2761,7 +2761,6 @@ namespace {
     out << "Create A, and fill with random numbers" << endl;
     MV A(map, numVectors, false);
     A.randomize();
-    A.sync_host();
 
     out << "Stash away norms of columns of A" << endl;
     Array<Mag> Anrms(numVectors);
@@ -2885,15 +2884,6 @@ namespace {
           }
           break;
       }
-      /// each vector shares the dual view sync flag
-      /// for this testing, we need to add modify flag for all B
-      B.modify_host();
-      /// KJ: biran, it looks like that get view interface has a logic problem.
-      ///     after I elect the modify host flag, the next vector should not be 
-      ///     synced as this test workflow does not touch the device. 
-      ///     somehow if I do not explicitly sync to device, the work vector is 
-      ///     overwritten again and again.
-      B.sync_device();
     }
 
     lclSuccess = success ? 1 : 0;
@@ -2918,6 +2908,7 @@ namespace {
       MV C (map, numVectors, false);
       C.scale (as<Scalar> (2), A);
       C.update (-1.0,B,1.0);
+
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm1(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
