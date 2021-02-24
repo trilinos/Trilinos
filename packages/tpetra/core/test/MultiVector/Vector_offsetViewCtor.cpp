@@ -63,7 +63,6 @@ namespace { // (anonymous)
     using vector_type = VectorType;
     using LO = typename vector_type::local_ordinal_type;
 
-    x.modify_device ();
     auto x_lcl_d_2d = x.getLocalViewDevice(Tpetra::Access::ReadWrite);
     auto x_lcl_d = Kokkos::subview (x_lcl_d_2d, Kokkos::ALL (), 0);
 
@@ -75,7 +74,6 @@ namespace { // (anonymous)
         x_lcl_d(lclRow) = toScalar<IST> (lclRow+1);
       });
     execution_space().fence ();
-    x.sync_host ();
   }
 
   template<class VectorType>
@@ -164,7 +162,6 @@ namespace { // (anonymous)
       // That is, is the new Vector a view of the original Vector?
       {
         x.putScalar (Teuchos::ScalarTraits<ST>::one ());
-        x.sync_host ();
         auto x_offset_lcl_h_2d = x_offset.getLocalViewDevice(Tpetra::Access::ReadWrite);
         auto x_offset_lcl_h =
           Kokkos::subview (x_offset_lcl_h_2d, Kokkos::ALL (), 0);

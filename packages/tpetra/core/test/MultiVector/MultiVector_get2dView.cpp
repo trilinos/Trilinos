@@ -112,8 +112,6 @@ namespace { // (anonymous)
     // of 0, because 0 is the default fill value.
     out << "Fill X" << endl;
     curVal = STS::one ();
-    X.template sync<device_type> ();
-    X.template modify<device_type> ();
     for (size_t j = 0; j < numCols; ++j) {
       X.getVectorNonConst (j)->putScalar (curVal);
       curVal += STS::one ();
@@ -123,8 +121,6 @@ namespace { // (anonymous)
     // expected values.
     out << "Test fill of X" << endl;
     V diff (map);
-    diff.template sync<device_type> ();
-    diff.template modify<device_type> ();
     {
       Teuchos::OSTab tab2 (out);
 
@@ -288,7 +284,6 @@ namespace { // (anonymous)
 
       // Sync back to device, so we can test whether the modifications
       // took effect.
-      X_noncontig->template sync<device_type> ();
       for (size_t j = 0; j < numColsSubset; ++j) {
         auto X_col = X_noncontig->getVector (j);
         diff.putScalar (flagVal);

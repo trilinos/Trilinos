@@ -210,7 +210,6 @@ namespace { // (anonymous)
           curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
         }
       }
-      X.sync_device ();
     }
 
     // Make a "backup" of X, for later comparison.
@@ -226,9 +225,6 @@ namespace { // (anonymous)
 
     out << "Modify the entries of that view, on host" << endl;
     {
-      X_sub->sync_host ();
-      X_sub->modify_host ();
-
       // Use negative values to distinguish changes to the subview.
       for (LO k = 0; k < static_cast<LO> (cols.size ()); ++k) {
         const LO j = cols[k];
@@ -340,7 +336,6 @@ namespace { // (anonymous)
     }
 
     out << "Sync X_sub to device" << endl;
-    X_sub->sync_device ();
 
     // At this point, the device version of X_sub and the device
     // version of the corresponding columns of X should be the same.
@@ -442,8 +437,6 @@ namespace { // (anonymous)
 
       out << "Fill the master MultiVector X" << endl;
       {
-        X.sync_host ();
-        X.modify_host ();
         auto X_lcl = X.getLocalViewHost(Tpetra::Access::ReadWrite);
 
         TEST_EQUALITY( static_cast<LO> (X_lcl.extent (0)), lclNumRows );
@@ -462,12 +455,10 @@ namespace { // (anonymous)
             curVal = curVal + Kokkos::Details::ArithTraits<IST>::one ();
           }
         }
-        X.sync_device ();
       }
 
       // Make a "backup" of X, for later comparison.
       MV X_copy (X, Teuchos::Copy);
-      X_copy.sync_device (); // just to make sure
 
       out << "Create first view Y of a noncontiguous subset of columns of X" << endl;
       Teuchos::Array<size_t> Y_cols (4);
@@ -490,9 +481,6 @@ namespace { // (anonymous)
       out << "Sync Y to host, and modify it there.  "
         "Don't sync it back to device." << endl;
       {
-        Y->sync_host ();
-        Y->modify_host ();
-
         // Multiply all entries by 2.
         for (LO k = 0; k < static_cast<LO> (Y_cols.size ()); ++k) {
           const LO j = Y_cols[k];
@@ -519,9 +507,6 @@ namespace { // (anonymous)
       {
         /// with multi non-contiguous memory space, syncing Z 
         /// would sync Y part (actually it sync the entire view of X).
-        Z->sync_device ();
-        Z->modify_device ();
-
         for (LO k = 0; k < static_cast<LO> (Z_cols.size ()); ++k) {
           const LO j = Z_cols[k];
           TEST_ASSERT( j < static_cast<LO> (X.getNumVectors ()) );
@@ -541,7 +526,6 @@ namespace { // (anonymous)
         }
 
         // THIS is the thing that tests for Issue #364.
-        Z->sync_host ();
       }
 
       // Check that Z's sync to host did not cause all of X to get

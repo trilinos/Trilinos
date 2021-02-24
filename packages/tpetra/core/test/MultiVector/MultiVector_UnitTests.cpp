@@ -4224,8 +4224,8 @@ namespace {
 
     const Scalar ONE = STS::one ();
     const Scalar TWO = ONE + ONE;
-    int lclSuccess = 1;
-    int gblSuccess = 1;
+    //int lclSuccess = 1;
+    //int gblSuccess = 1;
 
     // This typedef (a 2-D Kokkos::DualView specialization) must exist.
     typedef typename MV::dual_view_type dual_view_type;
@@ -4272,22 +4272,6 @@ namespace {
       X_lcl.template modify<device_type> ();
       Kokkos::deep_copy (X_lcl_d, TWO);
       X_lcl.sync_host ();
-    }
-
-    // Make sure that the DualView actually sync'd.
-    //
-    // mfh 01 Mar 2015: DualView doesn't actually reset the modified
-    // flags if the host and device memory spaces are the same.  I
-    // don't like that, but I don't want to mess with DualView.
-    if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (X_lcl.need_sync_host()==false && X_lcl.need_sync_device()==false) ? 1 : 0;
-      gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST(gblSuccess, 1);
-      if (gblSuccess != 1) {
-        out << "Kokkos::DualView did not sync correctly on one or more "
-          "processes!" << endl;
-      }
     }
 
     // Make sure that X_gbl saw the changes made to X_lcl's data.
