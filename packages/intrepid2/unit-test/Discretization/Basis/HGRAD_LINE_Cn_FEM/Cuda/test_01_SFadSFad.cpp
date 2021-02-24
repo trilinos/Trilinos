@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::HGRAD_LINE_Cn_FEM_Test01<Fad_SFadType, Fad_SFadType, Kokkos::Cuda>(verbose);
+  const int r_val = Intrepid2::Test::HGRAD_LINE_Cn_FEM_Test01<Fad_SFadType, Fad_SFadType, Kokkos::Cuda >(verbose);
 
   Kokkos::finalize();
   return r_val;

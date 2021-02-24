@@ -76,7 +76,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HGRAD_LINE_Cn_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -90,6 +90,7 @@ namespace Test {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -114,10 +115,10 @@ namespace Test {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-      typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+      typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+      typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
       typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-      typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+      typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
       //typedef Kokkos::DynRankView<PointValueType,HostSpaceType> DynRankViewHostPointValueType;
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
@@ -131,7 +132,7 @@ namespace Test {
       typedef PointValueType pointValueType;
       //typedef ValueType weightValueType;
 
-      typedef Basis_HGRAD_LINE_Cn_FEM<DeviceSpaceType,outputValueType,pointValueType> LineBasisType;
+      typedef Basis_HGRAD_LINE_Cn_FEM<DeviceType,outputValueType,pointValueType> LineBasisType;
       constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
       *outStream
@@ -257,7 +258,7 @@ namespace Test {
             lineBasis.getDofCoords(dofCoords_scalar);
             
             DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numDofs , spaceDim);
-            RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+            RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
             DynRankViewOutValueType ConstructWithLabelOutView(vals, numDofs, numPoints);
             lineBasis.getValues(vals, dofCoords, OPERATOR_VALUE);
