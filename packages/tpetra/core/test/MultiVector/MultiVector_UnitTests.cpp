@@ -3798,11 +3798,6 @@ namespace {
 
     myOut << "Modify entries of x and y" << endl;
 
-    x.sync_host ();
-    y.sync_host ();
-    x.modify_host ();
-    y.modify_host ();
-
     // dot([i], [i]) should be 1, not -1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
     y.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), STM::one ()));
@@ -3812,11 +3807,6 @@ namespace {
     TEST_EQUALITY( results[0], STS::one() );
 
     myOut << "Modify entries of x and y" << endl;
-
-    x.sync_host ();
-    y.sync_host ();
-    x.modify_host ();
-    y.modify_host ();
 
     // dot([-i], [i]) should be -1, not +1.
     x.replaceLocalValue (LO (0), 0, scalar_type (STM::zero (), -STM::one ()));
@@ -4188,55 +4178,12 @@ namespace {
       return; // no sense in continuing.
     }
 
-    // putScalar doesn't sync afterwards, so we have to sync manually.
-    // It has the option to modify the data in the last modified
-    // location without sync.  (This is supposed to avoid allocation,
-    // once Kokkos::DualView gets the feature of lazy allocation on
-    // modify.)
-    //
-    // The use of "execution_space" and not "memory_space" here
-    // ensures that Kokkos won't attempt to use a host execution space
-    // that hasn't been initialized.  For example, if Kokkos::OpenMP
-    // is disabled and Kokkos::Threads is enabled, the latter is
-    // always the default execution space of Kokkos::HostSpace, even
-    // when ExecSpace is Kokkos::Serial.  That's why we use
-    // execution_space here and not memory_space.
-
-    if (X->need_sync_host ()) {
-      out << "Sync to host" << endl;
-      X->sync_host ();
-    } else if (X->template need_sync<device_type> ()) {
-      out << "Sync to device" << endl;
-      X->template sync<device_type> ();
-    } else {
-      out << "No need to sync" << endl;
-    }
-
-    // mfh 01 Mar 2015: DualView doesn't actually reset the modified
-    // flags if the host and device memory spaces are the same.  I
-    // don't like that, but I don't want to mess with DualView.
-    const bool hostAndDeviceSpacesSame =
-      std::is_same<typename device_type::memory_space,
-                   Kokkos::HostSpace>::value;
-    if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (! X->need_sync_host () &&
-                    ! X->template need_sync<device_type> ()) ? 1 : 0;
-      gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST(gblSuccess, 1);
-      if (gblSuccess != 1) {
-        out << "Kokkos::DualView did not sync correctly on one or more "
-          "processes!" << endl;
-      }
-    }
-
     // Modify the data through the host View, by setting all of its
     // entries to a different number than before.  (ONE and TWO differ
     // even in the finite field Z_2.)
     {
       auto X_lcl_h = X->getLocalViewHost(Tpetra::Access::WriteOnly);
       Kokkos::deep_copy (X_lcl_h, ONE);
-      X->template sync<device_type> ();
     }
     // Now compute the inf-norms of the columns of X.  (We want a
     // separate mechanism from methods that return Kokkos::DualView or
@@ -4297,26 +4244,6 @@ namespace {
       X_lcl.modify_host ();
       Kokkos::deep_copy (X_lcl_h, ONE);
       X_lcl.template sync<device_type> ();
-    }
-
-    // Make sure that the DualView actually sync'd.
-    //
-    // mfh 01 Mar 2015: DualView doesn't actually reset the modified
-    // flags if the host and device memory spaces are the same.  I
-    // don't like that, but I don't want to mess with DualView.
-    
-    const bool hostAndDeviceSpacesSame = std::is_same<
-      typename dual_view_type::t_dev::memory_space,
-      typename dual_view_type::t_host::memory_space>::value;
-    if (! hostAndDeviceSpacesSame) {
-      lclSuccess = (X_lcl.need_sync_host()==false && X_lcl.need_sync_device()==false) ? 1 : 0;
-      gblSuccess = 1;
-      reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
-      TEST_EQUALITY_CONST(gblSuccess, 1);
-      if (gblSuccess != 1) {
-        out << "Kokkos::DualView did not sync correctly on one or more "
-          "processes!" << endl;
-      }
     }
 
     // Hand off the Kokkos::DualView to a Tpetra::MultiVector.
@@ -4492,7 +4419,6 @@ namespace {
 
     // Now change the values in X_lcl.  X_gbl should see them.  Be
     // sure to tell X_gbl that we want to modify its data on device.
-    X_gbl.template modify<device_type> ();
     Kokkos::deep_copy (X_lcl, TWO);
 
     // Tpetra::MultiVector::normInf _should_ either read from the most
@@ -4537,7 +4463,6 @@ namespace {
 
     // We modified on device above, and we're about to modify on host
     // now, so we need to sync to host first.
-    X_gbl.sync_host ();
     auto X_host = X_gbl.getLocalViewHost(Tpetra::Access::ReadWrite);
     
     {
@@ -4554,7 +4479,6 @@ namespace {
     }
     
     Kokkos::deep_copy (X_host, THREE);
-    X_gbl.sync_device ();
     {
       lclSuccess = success ? 1 : 0;
       gblSuccess = 0; // output argument
