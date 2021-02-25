@@ -46,7 +46,6 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_Vector.hpp"
-#include "Tpetra_withLocalAccess_MultiVector.hpp"
 #include "Tpetra_Export_decl.hpp"
 #include "Tpetra_Import_decl.hpp"
 #include "Kokkos_ArithTraits.hpp"
@@ -391,53 +390,22 @@ fusedCase (vector_type& W,
 {
   vector_type& X_colMap = importVector (X);
 
-  // Only need these aliases because we lack C++14 generic lambdas.
-  using Tpetra::with_local_access_function_argument_type;
-  using ro_lcl_vec_type =
-    with_local_access_function_argument_type<
-      decltype (readOnly (B))>;
-  using wo_lcl_vec_type =
-    with_local_access_function_argument_type<
-      decltype (writeOnly (B))>;
-  using rw_lcl_vec_type =
-    with_local_access_function_argument_type<
-      decltype (readWrite (B))>;
-
-  using Tpetra::withLocalAccess;
-  using Tpetra::readOnly;
-  using Tpetra::readWrite;
-  using Tpetra::writeOnly;
   using Impl::scaled_damped_residual_vector;
   using STS = Teuchos::ScalarTraits<SC>;
 
   auto A_lcl = A.getLocalMatrix ();
+  auto Dinv_lcl = Kokkos::subview(D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+  auto B_lcl = Kokkos::subview(B.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+  auto X_lcl = Kokkos::subview(X_colMap.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   if (beta == STS::zero ()) {
-    withLocalAccess
-      ([&] (const wo_lcl_vec_type& W_lcl,
-            const ro_lcl_vec_type& D_lcl,
-            const ro_lcl_vec_type& B_lcl,
-            const ro_lcl_vec_type& X_lcl) {
-         scaled_damped_residual_vector (alpha, W_lcl, D_lcl,
-                                        B_lcl, A_lcl, X_lcl, beta);
-       },
-       writeOnly (W),
-       readOnly (D_inv),
-       readOnly (B),
-       readOnly (X_colMap));
+    auto W_lcl = Kokkos::subview(W.getLocalViewDevice(Tpetra::Access::WriteOnly), Kokkos::ALL(), 0);
+    scaled_damped_residual_vector (alpha, W_lcl, Dinv_lcl,
+        B_lcl, A_lcl, X_lcl, beta);
   }
   else { // need to read _and_ write W if beta != 0
-    withLocalAccess
-      ([&] (const rw_lcl_vec_type& W_lcl,
-            const ro_lcl_vec_type& D_lcl,
-            const ro_lcl_vec_type& B_lcl,
-            const ro_lcl_vec_type& X_lcl) {
-         scaled_damped_residual_vector (alpha, W_lcl, D_lcl,
-                                        B_lcl, A_lcl, X_lcl, beta);
-       },
-       readWrite (W),
-       readOnly (D_inv),
-       readOnly (B),
-       readOnly (X_colMap));
+    auto W_lcl = Kokkos::subview(W.getLocalViewDevice(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
+    scaled_damped_residual_vector (alpha, W_lcl, Dinv_lcl,
+        B_lcl, A_lcl, X_lcl, beta);
   }
 }
 
