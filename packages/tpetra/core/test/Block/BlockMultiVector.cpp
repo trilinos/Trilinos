@@ -263,7 +263,7 @@ namespace {
     //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
 
     BMV X (meshMap, blockSize, numVecs);
-    X.sync_host();
+    //X.sync_host();
 
     typedef typename BMV::mv_type mv_type;
     mv_type X_mv = X.getMultiVectorView ();
@@ -414,8 +414,8 @@ namespace {
 
     BMV X (meshMap, blockSize, numVecs);
     BMV Y (overlappingMeshMap, blockSize, numVecs);
-    X.sync_host();
-    Y.sync_host();
+    //X.sync_host();
+    //Y.sync_host();
 
     //
     // Fill X with meaningful things to test Import with REPLACE combine mode.
