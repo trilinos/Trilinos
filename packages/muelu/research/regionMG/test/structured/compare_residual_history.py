@@ -1,6 +1,22 @@
 import os
 import sys
 
+def check_residual(goldResidual, testResidual, maxDiff, relDiff=1e-7, precisionThreshold=1e-7):
+    res=False
+    if(abs(goldResidual) < precisionThreshold):
+        print("Using absolute error")
+        # Check residual using absolute error
+        # as values are to small to check reliably
+        # with relative error due to machine precision
+        if(abs(goldResidual - testResidual) < maxDiff):
+            res=True
+    else:
+        print("Using relative error")
+        if(abs(goldResidual - testResidual) / abs(goldResidual) < relDiff):
+            res=True
+
+    return res
+
 numIterPassed = False
 goldConvergenceHistoryPassed = True
 
@@ -39,7 +55,7 @@ if numIterPassed:
         goldResidual = float((goldConvergenceHistory[iteration].split())[1])
         testResidual = float((testLogConvergenceHistory[iteration].split())[1])
 
-        if abs(goldResidual-testResidual) < maxDiff:
+        if check_residual(goldResidual, testResidual, maxDiff):
             print(('Residual in iteration {}: OK').format(str(iteration)))
         else:
             print(('Residual in iteration {}: WRONG -- deviation from value in gold file.').format(str(iteration)))
@@ -47,7 +63,7 @@ if numIterPassed:
             break
 
 # Print final result to be processed by Tribits
-if numIterPassed and goldConvergenceHistory:
+if numIterPassed and goldConvergenceHistoryPassed:
     print('End Result: TEST PASSED')
 else:
     print('End Result: TEST FAILED')
