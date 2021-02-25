@@ -1306,7 +1306,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION constexpr
     typename std::enable_if<std::is_integral<iType>::value, size_t>::type
     extent(const iType& r) const {
-      return extents_(r);
+      return extents_[r];
     }
     
     //! returns true for containers that have two dimensions marked as BLOCK_PLUS_DIAGONAL for which the non-diagonal block is empty or size 1.
