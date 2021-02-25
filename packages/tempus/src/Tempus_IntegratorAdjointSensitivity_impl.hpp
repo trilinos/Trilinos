@@ -488,7 +488,7 @@ buildSolutionHistory(
   RCP<ParameterList> shPL =
     Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
                      "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   RCP<const VectorSpaceBase<Scalar> > x_space = model_->get_x_space();
   RCP<const VectorSpaceBase<Scalar> > adjoint_space =

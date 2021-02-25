@@ -117,9 +117,7 @@ enum StorageType {
 template<class Scalar>
 class SolutionHistory
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >,
-    virtual public Teuchos::ParameterListAcceptor
-//, virtual public InterpolatorAcceptingObjectBase<Scalar>
+    virtual public Teuchos::VerboseObject<SolutionHistory<Scalar> >
 {
 public:
 
@@ -134,16 +132,14 @@ public:
     StorageType                               storageType,
     int                                       storageLimit);
 
-  /// Contructor (Slated for deprecation.  Use createSolutionHistory(shPL);)
-  SolutionHistory(Teuchos::RCP<Teuchos::ParameterList> shPL);
-
   /// Destructor
   ~SolutionHistory() {}
 
   /// \name Basic SolutionHistory Methods
   //@{
     /// Add solution state to history
-    void addState(const Teuchos::RCP<SolutionState<Scalar> >& state);
+    void addState(const Teuchos::RCP<SolutionState<Scalar> >& state,
+                  bool doChecks = true);   // <-- Perform internal checks.
 
     /// Add a working solution state to history
     void addWorkingState(const Teuchos::RCP<SolutionState<Scalar> >& state,
@@ -171,7 +167,7 @@ public:
     /// Promote the working state to current state
     void promoteWorkingState();
 
-    void clear() {history_->clear();}
+    void clear() {history_->clear(); isInitialized_ = false;}
   //@}
 
   /// \name Accessor methods
@@ -185,6 +181,11 @@ public:
     /// Get underlining history
     Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > >
       getHistory() const {return history_;}
+
+    /// Set underlining history
+    void setHistory(
+      Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > h)
+    { history_ = h; isInitialized_ = false; }
 
     /// Subscript operator
     Teuchos::RCP<SolutionState<Scalar> > operator[](const int i) {
@@ -245,8 +246,11 @@ public:
     /// Get the maximum storage of this history
     int getStorageLimit() const {return storageLimit_;}
 
-    void setStorageType(StorageType st) {storageType_ = st;}
-    StorageType getStorageType() {return storageType_;}
+    void setStorageType(StorageType st);
+    StorageType getStorageType() const {return storageType_;}
+
+    void setStorageTypeString(std::string st);
+    std::string getStorageTypeString() const;
 
     /// Return the current minimum time of the SolutionStates
     Scalar minTime() const {return (history_->front())->getTime();}
@@ -254,26 +258,33 @@ public:
     /// Return the current maximum time of the SolutionStates
     Scalar maxTime() const {return (history_->back())->getTime();}
 
-    /// Get the state with timestep index equal to n
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexN() const;
+    /** \brief Get the state with timestep index equal to n
+     *
+     *  If not available return Teuchos::null;
+     */
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexN(bool warn = true) const;
 
-    /// Get the state with timestep index equal to n-1
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM1() const;
+    /** \brief Get the state with timestep index equal to n-1
+     *
+     *  If not available return Teuchos::null;
+     */
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM1(bool warn = true) const;
 
-    /// Get the state with timestep index equal to n-2
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM2() const;
+    /** \brief Get the state with timestep index equal to n-2
+     *
+     *  If not available return Teuchos::null;
+     */
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndexNM2(bool warn = true) const;
 
-    /// Get the state with timestep index equal to "index"
-    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndex(int index) const;
+    /** \brief Get the state with timestep index equal to "index"
+     *
+     *  If not available return Teuchos::null;
+     */
+    Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndex(int index, bool warn = true) const;
   //@}
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
     Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
     Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  //@}
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -294,17 +305,23 @@ public:
 
   void printHistory(std::string verb="low") const;
 
+  void initialize() const;
+  bool isInitialized() { return isInitialized_; }
+  void checkInitialized();
+
 
 protected:
 
   std::string                               name_;
-  Teuchos::RCP<Teuchos::ParameterList>      shPL_;
   Teuchos::RCP<std::vector<Teuchos::RCP<SolutionState<Scalar> > > > history_;
   Teuchos::RCP<Interpolator<Scalar> >       interpolator_;
   StorageType                               storageType_;
   int                                       storageLimit_;
 
   Teuchos::RCP<SolutionState<Scalar> > workingState_; ///< The state being worked on
+
+  mutable bool isInitialized_;     ///< Bool if SolutionHistory is initialized.
+
 };
 
 
