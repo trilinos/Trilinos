@@ -138,7 +138,7 @@ public:
 
     // sync changes back to device, since the user doesn't know that
     // we had to run on host.
-    diag.template sync<typename device_type::memory_space> ();
+    //diag.template sync<typename device_type::memory_space> ();
   }
 
   void operator () (const LO& lclRowInd, LO& errCount) const {

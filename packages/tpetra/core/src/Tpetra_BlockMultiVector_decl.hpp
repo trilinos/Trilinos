@@ -455,20 +455,20 @@ public:
   ///   MultiVector as modified in the space in which you modified
   ///   it, by calling the modify() method with the appropriate
   ///   template parameter.
-  template<class TargetMemorySpace>
-  void sync () {
-    mv_.template sync<typename TargetMemorySpace::memory_space> ();
-  }
+  // template<class TargetMemorySpace>
+  // void sync () {
+  //   mv_.template sync<typename TargetMemorySpace::memory_space> ();
+  // }
 
-  /// \brief Update data to the host
-  void sync_host() {
-    mv_.sync_host();
-  }
+  // /// \brief Update data to the host
+  // void sync_host() {
+  //   mv_.sync_host();
+  // }
 
-  /// \brief Update data to the device
-  void sync_device() {
-    mv_.sync_device();
-  }
+  // /// \brief Update data to the device
+  // void sync_device() {
+  //   mv_.sync_device();
+  // }
 
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
@@ -491,20 +491,20 @@ public:
   /// If <tt>TargetDeviceType::memory_space</tt> is the same as this
   /// object's memory space, then mark the device's data as modified.
   /// Otherwise, mark the host's data as modified.
-  template<class TargetMemorySpace>
-  void modify () {
-    mv_.template modify<typename TargetMemorySpace::memory_space> ();
-  }
+  // template<class TargetMemorySpace>
+  // void modify () {
+  //   mv_.template modify<typename TargetMemorySpace::memory_space> ();
+  // }
 
-  /// \brief Mark data as modified on the host
-  void modify_host() {
-    mv_.modify_host();
-  }
+  // /// \brief Mark data as modified on the host
+  // void modify_host() {
+  //   mv_.modify_host();
+  // }
 
-  /// \brief Mark data as modified on the device
-  void modify_device() {
-    mv_.modify_device();
-  }
+  // /// \brief Mark data as modified on the device
+  // void modify_device() {
+  //   mv_.modify_device();
+  // }
   //@}
   //! \name Fine-grained data access
   //@{

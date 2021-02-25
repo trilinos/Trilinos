@@ -1471,7 +1471,7 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_host ();
-      sourceMV.sync_host();
+      //sourceMV.sync_host();
     }
     else {
       // nde 06 Feb 2020: If 'exports' does not require resize
@@ -1481,7 +1481,7 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_device ();
-      sourceMV.sync_device();
+      //sourceMV.sync_device();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -2086,8 +2086,8 @@ namespace Tpetra {
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-        const_cast<MV&>(x).sync_device ();
-        const_cast<MV&>(y).sync_device ();
+        //const_cast<MV&>(x).sync_device ();
+        //const_cast<MV&>(y).sync_device ();
 
         auto x_2d = x.getLocalViewDevice(Access::ReadOnly);
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);

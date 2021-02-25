@@ -2843,10 +2843,10 @@ namespace Tpetra {
       // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
       // runs on host.  (See comments below.)  Thus, we need to access
       // the host versions of these data.
-      const_cast<DMV&> (B).sync_host ();
-      X.sync_host ();
-      X.modify_host ();
-      const_cast<MMV&> (D).sync_host ();
+      // const_cast<DMV&> (B).sync_host ();
+      // X.sync_host ();
+      // X.modify_host ();
+      // const_cast<MMV&> (D).sync_host ();
 
       auto B_lcl = B.template getLocalView<host_mem_space>(Access::ReadOnly);
       auto X_lcl = X.template getLocalView<host_mem_space>(Access::ReadWrite);
@@ -2880,9 +2880,9 @@ namespace Tpetra {
                                                    D_lcl.data (),
                                                    static_cast<impl_scalar_type> (dampingFactor),
                                                    dir.c_str ());
-      const_cast<DMV&> (B).template sync<dev_mem_space> ();
-      X.template sync<dev_mem_space> ();
-      const_cast<MMV&> (D).template sync<dev_mem_space> ();
+      // const_cast<DMV&> (B).template sync<dev_mem_space> ();
+      // X.template sync<dev_mem_space> ();
+      // const_cast<MMV&> (D).template sync<dev_mem_space> ();
     }
 
     /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
@@ -2952,10 +2952,10 @@ namespace Tpetra {
       // mfh 28 Aug 2017: The current local Gauss-Seidel kernel only
       // runs on host.  (See comments below.)  Thus, we need to access
       // the host versions of these data.
-      const_cast<DMV&> (B).sync_host ();
-      X.sync_host ();
-      X.modify_host ();
-      const_cast<MMV&> (D).sync_host ();
+      //const_cast<DMV&> (B).sync_host ();
+      //X.sync_host ();
+      //X.modify_host ();
+      //const_cast<MMV&> (D).sync_host ();
 
       auto B_lcl = B.template getLocalView<host_mem_space>(Access::ReadOnly);
       auto X_lcl = X.template getLocalView<host_mem_space>(Access::ReadWrite);
@@ -2992,9 +2992,9 @@ namespace Tpetra {
                                                             static_cast<LO> (lclNumRows),
                                                             static_cast<impl_scalar_type> (dampingFactor),
                                                             dir.c_str ());
-      const_cast<DMV&> (B).template sync<dev_mem_space> ();
-      X.template sync<dev_mem_space> ();
-      const_cast<MMV&> (D).template sync<dev_mem_space> ();
+      //const_cast<DMV&> (B).template sync<dev_mem_space> ();
+      //X.template sync<dev_mem_space> ();
+      //const_cast<MMV&> (D).template sync<dev_mem_space> ();
     }
 
     /// \brief Return another CrsMatrix with the same entries, but
