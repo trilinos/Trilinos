@@ -282,8 +282,8 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      X.sync_host ();
-      X.modify_host ();
+      //X.sync_host ();
+      //X.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -296,7 +296,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X.sync_device ();
+      //X.sync_device ();
     }
 
     myOut << "Call Y.blockWiseMultiply(alpha, D, X)" << endl;
@@ -309,8 +309,8 @@ namespace {
     myOut << "maxVecNorm = " << maxVecNorm << endl;
 
     {
-      Y.sync_host ();
-      Y.modify_host ();
+      //Y.sync_host ();
+      //Y.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -333,7 +333,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      Y.sync_device ();
+      //Y.sync_device ();
     }
 
     myOut << "Call Y.blockWiseMultiply(alpha, D, X) again, where Y has nonzero "
@@ -344,7 +344,7 @@ namespace {
     myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     {
-      Y.sync_host ();
+      //Y.sync_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -512,8 +512,8 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      X.sync_host ();
-      X.modify_host ();
+      //X.sync_host ();
+      //X.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
@@ -526,7 +526,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X.sync_device ();
+      //X.sync_device ();
     }
 
     // Fill Y with some initial value, so that using beta != 0 gives a

@@ -3753,7 +3753,7 @@ public:
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
     Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
     // We're filling diag on host for now.
-    diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
+    //diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -3784,7 +3784,7 @@ public:
       rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
     }
 
-    diag.template sync<memory_space> (); // sync vec of diag entries back to dev
+    //diag.template sync<memory_space> (); // sync vec of diag entries back to dev
   }
 
   template<class Scalar, class LO, class GO, class Node>

@@ -48,8 +48,6 @@
 #include "Tpetra_BlockView.hpp"
 #include "Ifpack2_Utilities.hpp"
 #include "MatrixMarket_Tpetra.hpp"
-#include "Tpetra_transform_MultiVector.hpp"
-#include "Tpetra_withLocalAccess_MultiVector.hpp"
 #include "Tpetra_Details_residual.hpp"
 #include <cstdlib>
 #include <memory>
@@ -940,7 +938,6 @@ void Relaxation<MatrixType>::computeBlockCrs ()
 template<class MatrixType>
 void Relaxation<MatrixType>::compute ()
 {
-  using Tpetra::readWrite;
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
   using Teuchos::ArrayView;
@@ -1081,36 +1078,26 @@ void Relaxation<MatrixType>::compute ()
     // combine diagonal extraction above with L1 modification into a
     // single parallel loop.
     if (DoL1Method_ && IsParallel_) {
-      vector_type& gblDiag = *Diagonal_;
-      using rw_type =
-        decltype (readWrite (gblDiag).on (Kokkos::HostSpace ()));
-      // Once we have C++14, we can get rid of this alias and use
-      // "auto" in the lambda below.
-      using lcl_vec_type =
-        Tpetra::with_local_access_function_argument_type<rw_type>;
       const row_matrix_type& A_row = *A_;
-      const magnitude_type L1_eta = L1Eta_;
-      Tpetra::withLocalAccess
-        ([&A_row, L1_eta, numMyRows] (const lcl_vec_type& diag) {
-           const magnitude_type two = STM::one () + STM::one ();
-           const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
-           Array<local_ordinal_type> indices (maxLength);
-           Array<scalar_type> values (maxLength);
-           size_t numEntries;
+      auto diag = Diagonal_->getLocalViewHost(Tpetra::Access::ReadWrite);
+      const magnitude_type two = STM::one () + STM::one ();
+      const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
+      Array<local_ordinal_type> indices (maxLength);
+      Array<scalar_type> values (maxLength);
+      size_t numEntries;
 
-           for (LO i = 0; i < numMyRows; ++i) {
-             A_row.getLocalRowCopy (i, indices (), values (), numEntries);
-             magnitude_type diagonal_boost = STM::zero ();
-             for (size_t k = 0 ; k < numEntries; ++k) {
-               if (indices[k] > numMyRows) {
-                 diagonal_boost += STS::magnitude (values[k] / two);
-               }
-             }
-             if (KAT::magnitude (diag[i]) < L1_eta * diagonal_boost) {
-               diag[i] += diagonal_boost;
-             }
-           }
-         }, readWrite (gblDiag).on (Kokkos::HostSpace ()));
+      for (LO i = 0; i < numMyRows; ++i) {
+        A_row.getLocalRowCopy (i, indices (), values (), numEntries);
+        magnitude_type diagonal_boost = STM::zero ();
+        for (size_t k = 0 ; k < numEntries; ++k) {
+          if (indices[k] > numMyRows) {
+            diagonal_boost += STS::magnitude (values[k] / two);
+          }
+        }
+        if (KAT::magnitude (diag(i, 0)) < L1Eta_ * diagonal_boost) {
+          diag(i, 0) += diagonal_boost;
+        }
+      }
     }
 
     //
@@ -1143,77 +1130,69 @@ void Relaxation<MatrixType>::compute ()
       magnitude_type minMagDiagEntryMag = STM::zero ();
       magnitude_type maxMagDiagEntryMag = STM::zero ();
 
-      vector_type& gblDiag = *Diagonal_;
-      // Once we have C++14, we can get rid of these two aliases and
-      // use "auto" in the lambda below.
-      using rw_type =
-        decltype (readWrite (gblDiag).on (Kokkos::HostSpace ()));
-      using lcl_vec_type =
-        Tpetra::with_local_access_function_argument_type<rw_type>;
-      Tpetra::withLocalAccess
-        ([&] (const lcl_vec_type& diag) {
-           // As we go, keep track of the diagonal entries with the
-           // least and greatest magnitude.  We could use the trick of
-           // starting min with +Inf and max with -Inf, but that
-           // doesn't work if scalar_type is a built-in integer type.
-           // Thus, we have to start by reading the first diagonal
-           // entry redundantly.
-           if (numMyRows != 0) {
-             const magnitude_type d_0_mag = KAT::abs (diag[0]);
-             minMagDiagEntryMag = d_0_mag;
-             maxMagDiagEntryMag = d_0_mag;
-           }
+      auto diag2d = Diagonal_->getLocalViewHost(Tpetra::Access::ReadWrite);
+      auto diag = Kokkos::subview(diag2d, Kokkos::ALL(), 0);
+      // As we go, keep track of the diagonal entries with the
+      // least and greatest magnitude.  We could use the trick of
+      // starting min with +Inf and max with -Inf, but that
+      // doesn't work if scalar_type is a built-in integer type.
+      // Thus, we have to start by reading the first diagonal
+      // entry redundantly.
+      if (numMyRows != 0) {
+        const magnitude_type d_0_mag = KAT::abs (diag(0));
+        minMagDiagEntryMag = d_0_mag;
+        maxMagDiagEntryMag = d_0_mag;
+      }
 
-           // Go through all the diagonal entries.  Compute counts of
-           // small-magnitude, zero, and negative-real-part entries.
-           // Invert the diagonal entries that aren't too small.  For
-           // those too small in magnitude, replace them with
-           // 1/MinDiagonalValue_ (or 1/eps if MinDiagonalValue_
-           // happens to be zero).
-           for (LO i = 0; i < numMyRows; ++i) {
-             const IST d_i = diag[i];
-             const magnitude_type d_i_mag = KAT::abs (d_i);
-             // Work-around for GitHub Issue #5269.
-             //const magnitude_type d_i_real = KAT::real (d_i);
-             const auto d_i_real = getRealValue (d_i);
+      // Go through all the diagonal entries.  Compute counts of
+      // small-magnitude, zero, and negative-real-part entries.
+      // Invert the diagonal entries that aren't too small.  For
+      // those too small in magnitude, replace them with
+      // 1/MinDiagonalValue_ (or 1/eps if MinDiagonalValue_
+      // happens to be zero).
+      for (LO i = 0; i < numMyRows; ++i) {
+        const IST d_i = diag(i);
+        const magnitude_type d_i_mag = KAT::abs (d_i);
+        // Work-around for GitHub Issue #5269.
+        //const magnitude_type d_i_real = KAT::real (d_i);
+        const auto d_i_real = getRealValue (d_i);
 
-             // We can't compare complex numbers, but we can compare their
-             // real parts.
-             if (d_i_real < STM::zero ()) {
-               ++numNegDiagEntries;
-             }
-             if (d_i_mag < minMagDiagEntryMag) {
-               minMagDiagEntryMag = d_i_mag;
-             }
-             if (d_i_mag > maxMagDiagEntryMag) {
-               maxMagDiagEntryMag = d_i_mag;
-             }
+        // We can't compare complex numbers, but we can compare their
+        // real parts.
+        if (d_i_real < STM::zero ()) {
+          ++numNegDiagEntries;
+        }
+        if (d_i_mag < minMagDiagEntryMag) {
+          minMagDiagEntryMag = d_i_mag;
+        }
+        if (d_i_mag > maxMagDiagEntryMag) {
+          maxMagDiagEntryMag = d_i_mag;
+        }
 
-             if (fixTinyDiagEntries_) {
-               // <= not <, in case minDiagValMag is zero.
-               if (d_i_mag <= minDiagValMag) {
-                 ++numSmallDiagEntries;
-                 if (d_i_mag == STM::zero ()) {
-                   ++numZeroDiagEntries;
-                 }
-                 diag[i] = oneOverMinDiagVal;
-               }
-               else {
-                 diag[i] = KAT::one () / d_i;
-               }
-             }
-             else { // Don't fix zero or tiny diagonal entries.
-               // <= not <, in case minDiagValMag is zero.
-               if (d_i_mag <= minDiagValMag) {
-                 ++numSmallDiagEntries;
-                 if (d_i_mag == STM::zero ()) {
-                   ++numZeroDiagEntries;
-                 }
-               }
-               diag[i] = KAT::one () / d_i;
-             }
-           }
-         }, readWrite (gblDiag).on (Kokkos::HostSpace ()));
+        if (fixTinyDiagEntries_) {
+          // <= not <, in case minDiagValMag is zero.
+          if (d_i_mag <= minDiagValMag) {
+            ++numSmallDiagEntries;
+            if (d_i_mag == STM::zero ()) {
+              ++numZeroDiagEntries;
+            }
+            diag(i) = oneOverMinDiagVal;
+          }
+          else {
+            diag(i) = KAT::one () / d_i;
+          }
+        }
+        else { // Don't fix zero or tiny diagonal entries.
+          // <= not <, in case minDiagValMag is zero.
+          if (d_i_mag <= minDiagValMag) {
+            ++numSmallDiagEntries;
+            if (d_i_mag == STM::zero ()) {
+              ++numZeroDiagEntries;
+            }
+          }
+          diag(i) = KAT::one () / d_i;
+        }
+      }
 
       // Count floating-point operations of computing the inverse diagonal.
       //
@@ -1269,9 +1248,6 @@ void Relaxation<MatrixType>::compute ()
       // diagonal, and the original diagonal's inverse.
       vector_type diff (A_->getRowMap ());
       diff.reciprocal (*origDiag);
-      if (Diagonal_->need_sync_device ()) {
-        Diagonal_->sync_device ();
-      }
       diff.update (-one, *Diagonal_, one);
       globalDiagNormDiff_ = diff.norm2 ();
     }
@@ -1280,28 +1256,22 @@ void Relaxation<MatrixType>::compute ()
         // Go through all the diagonal entries.  Invert those that
         // aren't too small in magnitude.  For those that are too
         // small in magnitude, replace them with oneOverMinDiagVal.
-        vector_type& gblDiag = *Diagonal_;
-        Tpetra::transform
-          ("Ifpack2::Relaxation::compute: Invert & fix diagonal",
-           gblDiag, gblDiag,
-           KOKKOS_LAMBDA (const IST& d_i) {
-            const magnitude_type d_i_mag = KAT::magnitude (d_i);
-
-            // <= not <, in case minDiagValMag is zero.
-            if (d_i_mag <= minDiagValMag) {
-              return oneOverMinDiagVal;
-            }
-            else {
-              // For Stokhos types, operator/ returns an expression
-              // type.  Explicitly convert to IST before returning.
-              return IST (KAT::one () / d_i);
-            }
-          });
+        auto localDiag = Diagonal_->getLocalViewDevice(Tpetra::Access::ReadWrite);
+        Kokkos::parallel_for(Kokkos::RangePolicy<MyExecSpace>(0, localDiag.extent(0)),
+        KOKKOS_LAMBDA (const IST& d_i) {
+          const magnitude_type d_i_mag = KAT::magnitude (d_i);
+          // <= not <, in case minDiagValMag is zero.
+          if (d_i_mag <= minDiagValMag) {
+            return oneOverMinDiagVal;
+          }
+          else {
+            // For Stokhos types, operator/ returns an expression
+            // type.  Explicitly convert to IST before returning.
+            return IST (KAT::one () / d_i);
+          }
+        });
       }
       else { // don't fix tiny or zero diagonal entries
-        if (Diagonal_->need_sync_device ()) {
-          Diagonal_->sync_device ();
-        }
         Diagonal_->reciprocal (*Diagonal_);
       }
 
@@ -1311,10 +1281,6 @@ void Relaxation<MatrixType>::compute ()
       else {
         ComputeFlops_ += numMyRows;
       }
-    }
-
-    if (Diagonal_->need_sync_device ()) {
-      Diagonal_->sync_device ();
     }
 
     if (PrecType_ == Ifpack2::Details::MTGS  ||
@@ -1332,7 +1298,9 @@ void Relaxation<MatrixType>::compute ()
          "when the input matrix is a Tpetra::CrsMatrix.");
       local_matrix_type kcsr = crsMat->getLocalMatrix ();
 
-      auto diagView_2d = Diagonal_->getLocalViewDevice ();
+      //TODO BMK: This should be ReadOnly, and KokkosKernels should accept a
+      //const-valued view for user-provided D^-1. OK for now, Diagonal_ is nonconst.
+      auto diagView_2d = Diagonal_->getLocalViewDevice (Tpetra::Access::ReadWrite);
       auto diagView_1d = Kokkos::subview (diagView_2d, Kokkos::ALL (), 0);
       using KokkosSparse::Experimental::gauss_seidel_numeric;
       gauss_seidel_numeric<mt_kernel_handle_type,

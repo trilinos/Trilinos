@@ -95,10 +95,10 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   // NOTE (mfh 01 Jun 2016) This is a host code, so we have to sync
   // all the objects to host.  We sync them back to device after we're
   // done.  That's why all objects come in by nonconst reference.
-  A.sync_host ();
-  X.sync_host ();
-  Y.sync_host ();
-  Y.modify_host (); // only Y gets modified here
+  // A.sync_host ();
+  // X.sync_host ();
+  // Y.sync_host ();
+  // Y.modify_host (); // only Y gets modified here
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
@@ -144,9 +144,9 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   // Sync everything back to device when we're done.  This only
   // actually copies Y back to device, but it ensures that all the
   // modified flags are right.
-  A.template sync<device_memory_space> ();
-  X.template sync<device_memory_space> ();
-  Y.template sync<device_memory_space> ();
+  // A.template sync<device_memory_space> ();
+  // X.template sync<device_memory_space> ();
+  // Y.template sync<device_memory_space> ();
 }
 
 
@@ -533,8 +533,8 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   RCP<matrix_type> A = rcp (new matrix_type (*graph, blkSize));
 
   // We're filling on the host.
-  A->sync_host ();
-  A->modify_host ();
+  // A->sync_host ();
+  // A->modify_host ();
 
   // This only matters if filling with random values.  We only do that
   // if opts.runTest is true (that is, if we're testing correctness of
@@ -583,7 +583,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   }
 
   // We're done filling on the host, so sync to device.
-  A->sync<device_type::memory_space> ();
+  //A->sync<device_type::memory_space> ();
   return A;
 }
 

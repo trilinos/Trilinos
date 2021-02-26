@@ -221,7 +221,6 @@ namespace { // (anonymous)
     const IST lclNumRowsIST = toValueHost<IST> (X.getLocalLength ());
 
     if (X.need_sync_device ()) { // modify on host
-      X.modify_host ();
       if (X.isConstantStride ()) {
         view2dIota (X.getLocalViewHost(Tpetra::Access::ReadWrite), startValueIST);
       }
@@ -238,7 +237,6 @@ namespace { // (anonymous)
       }
     }
     else { // modify on device
-      X.modify_device ();
       if (X.isConstantStride ()) {
         view2dIota (X.getLocalViewDevice(Tpetra::Access::ReadWrite), startValueIST);
       }
@@ -324,7 +322,6 @@ namespace { // (anonymous)
         Y.putScalar (flagValue);
 
         if (modify_MV_on_host) {
-          X.sync_host ();
           Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::WriteOnly), flagValue);
         }
         else {

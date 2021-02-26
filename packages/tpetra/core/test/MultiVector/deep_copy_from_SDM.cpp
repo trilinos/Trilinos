@@ -228,7 +228,6 @@ namespace { // (anonymous)
             MV X (map, numCols);
 
             if (modify_MV_on_host) {
-              X.sync_host ();
               Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::WriteOnly), flagValue);
             }
             else {
@@ -260,7 +259,6 @@ namespace { // (anonymous)
 
       for (bool modify_MV_on_host : {false, true}) {
         if (modify_MV_on_host) {
-          X.sync_host ();
           Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::WriteOnly), flagValue);
         }
         else {

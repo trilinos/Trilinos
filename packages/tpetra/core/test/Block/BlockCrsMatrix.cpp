@@ -428,7 +428,7 @@ namespace {
       BV Y (* (graph.getRangeMap ()), blockSize);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
@@ -538,7 +538,7 @@ namespace {
       BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
@@ -651,7 +651,7 @@ namespace {
       BV Y (* (graph.getRangeMap ()), blockSize);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
@@ -768,7 +768,7 @@ namespace {
       BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();

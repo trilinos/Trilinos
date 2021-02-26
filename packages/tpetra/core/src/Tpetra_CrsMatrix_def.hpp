@@ -4037,7 +4037,7 @@ namespace Tpetra {
     // See #1510.  In case diag has already been marked modified on
     // device, we need to clear that flag, since the code below works
     // on host.
-    diag.clear_sync_state ();
+    //diag.clear_sync_state ();
 
     // For now, we fill the Vector on the host and sync to device.
     // Later, we may write a parallel kernel that works entirely on
@@ -4066,7 +4066,7 @@ namespace Tpetra {
           lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
         }
       });
-    diag.sync_device ();
+    //diag.sync_device ();
   }
 
 
@@ -4112,10 +4112,10 @@ namespace Tpetra {
 
     if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
-      if (xp->template need_sync<dev_memory_space> ()) {
-        using Teuchos::rcp_const_cast;
-        rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
-      }
+      // if (xp->template need_sync<dev_memory_space> ()) {
+      //   using Teuchos::rcp_const_cast;
+      //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
+      // }
       auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::leftScaleLocalCrsMatrix;
@@ -4171,10 +4171,10 @@ namespace Tpetra {
 
     if (this->isFillComplete()) {
       using dev_memory_space = typename device_type::memory_space;
-      if (xp->template need_sync<dev_memory_space> ()) {
-        using Teuchos::rcp_const_cast;
-        rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
-      }
+      // if (xp->template need_sync<dev_memory_space> ()) {
+      //   using Teuchos::rcp_const_cast;
+      //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
+      // }
       auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::rightScaleLocalCrsMatrix;

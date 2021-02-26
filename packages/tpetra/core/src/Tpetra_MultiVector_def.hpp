@@ -558,7 +558,7 @@ namespace Tpetra {
     // The user gave us a device view.  In order to respect its
     // initial contents, we mark the DualView as "modified on device."
     // That way, the next sync will synchronize it with the host view.
-    this->modify_device ();
+    view_.modify_device ();
     origView_ = view_;
     owningView_ = view_;
   }
@@ -1033,18 +1033,19 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    if (copyOnHost) {
-      sourceMV.sync_host();
-      this->sync_host ();
-      this->modify_host ();
-    }
-    else {
-      sourceMV.sync_device();
-      if (this->need_sync_device ()) {
-        this->sync_device ();
-      }
-      this->modify_device ();
-    }
+    /// KJ: this logic is not necessary anymore
+    // if (copyOnHost) {
+    //   sourceMV.sync_host();
+    //   this->sync_host ();
+    //   this->modify_host ();
+    // }
+    // else {
+    //   sourceMV.sync_device();
+    //   if (this->need_sync_device ()) {
+    //     this->sync_device ();
+    //   }
+    //   this->modify_device ();
+    // }
 
     if (verbose) {
       std::ostringstream os;
@@ -1470,7 +1471,7 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_host ();
-      sourceMV.sync_host();
+      //sourceMV.sync_host();
     }
     else {
       // nde 06 Feb 2020: If 'exports' does not require resize
@@ -1480,7 +1481,7 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_device ();
-      sourceMV.sync_device();
+      //sourceMV.sync_device();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -1703,16 +1704,17 @@ namespace Tpetra {
 
     // We have to sync before modifying, because this method may read
     // as well as write (depending on the CombineMode).
-    if (unpackOnHost) {
-      imports.sync_host();
-      this->sync_host ();
-      this->modify_host ();
-    }
-    else {
-      imports.sync_device();
-      this->sync_device ();
-      this->modify_device ();
-    }
+    /// KJ : this does not need anymore
+    // if (unpackOnHost) {
+    //   imports.sync_host();
+    //   this->sync_host ();
+    //   this->modify_host ();
+    // }
+    // else {
+    //   imports.sync_device();
+    //   this->sync_device ();
+    //   this->modify_device ();
+    // }
     auto imports_d = imports.view_device ();
     auto imports_h = imports.view_host ();
     auto importLIDs_d = importLIDs.view_device ();
@@ -2084,8 +2086,8 @@ namespace Tpetra {
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-        const_cast<MV&>(x).sync_device ();
-        const_cast<MV&>(y).sync_device ();
+        //const_cast<MV&>(x).sync_device ();
+        //const_cast<MV&>(y).sync_device ();
 
         auto x_2d = x.getLocalViewDevice(Access::ReadOnly);
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
@@ -2383,7 +2385,8 @@ namespace Tpetra {
     // See #1510.  In case diag has already been marked modified on
     // host or device, we need to clear those flags, since the code
     // below works on device.
-    this->view_.clear_sync_state();
+    /// KJ: this does not sound right
+    ///this->view_.clear_sync_state();
     //Note BMK: if we knew this MV was not a subview of another, this could be WriteOnly
     auto thisView = this->getLocalViewDevice(Access::ReadWrite);
 
@@ -2425,7 +2428,7 @@ namespace Tpetra {
     const bool runOnHost = runKernelOnHost(*this);
     //Note BMK: if we knew this MV was not a subview, the access below could be WriteOnly
 
-    this->clear_sync_state();
+    //this->clear_sync_state();
     if (! runOnHost) {
       auto X = this->getLocalViewDevice(Access::ReadWrite);
       if (this->isConstantStride ()) {
@@ -4024,7 +4027,7 @@ namespace Tpetra {
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
 
-      this->modify_device ();
+      //this->modify_device ();
 
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
@@ -4157,11 +4160,9 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
-    this->sync_host();
-
+    auto view = this->getLocalViewHost(Access::ReadWrite);
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
-    view_.h_view (lclRow, colInd) = ScalarValue;
-    this->modify_host();
+    view (lclRow, colInd) = ScalarValue;
   }
 
 
@@ -4190,16 +4191,15 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
-    this->sync_host();
-
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+
+    auto view = this->getLocalViewHost(Access::ReadWrite);
     if (atomic) {
-      Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
+      Kokkos::atomic_add (& (view(lclRow, colInd)), value);
     }
     else {
-      view_.h_view (lclRow, colInd) += value;
+      view(lclRow, colInd) += value;
     }
-    this->modify_host();
   }
 
 
@@ -4593,7 +4593,10 @@ namespace Tpetra {
     // contents in either memory space, and we don't want
     // DualView::modify to complain about "concurrent modification" of
     // host and device Views.
-    this->clear_sync_state();
+
+    /// KJ: this is problematic. assign funtion is used to construct a subvector
+    ///     if the sync flag is reset here, it lose all our control over getLocalView interface
+    ///this->clear_sync_state();
 
     // If need sync to device, then host has most recent version.
     const bool src_last_updated_on_host = src.need_sync_device ();
@@ -4683,8 +4686,9 @@ namespace Tpetra {
     input_view_type src_view =
       Kokkos::subview (src_orig, pair_type (0, numRows), Kokkos::ALL ());
 
-    dst.clear_sync_state ();
-    dst.modify_device ();
+    /// KJ : this does not sound correct
+    //dst.clear_sync_state ();
+    //dst.modify_device ();
     constexpr bool src_isConstantStride = true;
     Teuchos::ArrayView<const size_t> srcWhichVectors (nullptr, 0);
     localDeepCopy (dst.getLocalViewDevice(Access::ReadWrite),

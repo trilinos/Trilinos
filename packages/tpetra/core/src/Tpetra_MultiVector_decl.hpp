@@ -2558,8 +2558,8 @@ namespace Tpetra {
       << " and dst has " << dst.getLocalLength () << " row(s).");
 
     const bool srcMostUpToDateOnDevice = ! src.need_sync_device ();
-    dst.clear_sync_state ();
-    dst.modify_device ();
+    //dst.clear_sync_state ();
+    //dst.modify_device ();
 
     if (src.isConstantStride () && dst.isConstantStride ()) {
       if (srcMostUpToDateOnDevice) {
