@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef FROSCH_AMESOS2SOLVEREPETRA_DECL_HPP
-#define FROSCH_AMESOS2SOLVEREPETRA_DECL_HPP
+#ifndef _FROSCH_AMESOS2SOLVEREPETRA_DECL_HPP
+#define _FROSCH_AMESOS2SOLVEREPETRA_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
