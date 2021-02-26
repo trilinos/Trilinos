@@ -1078,7 +1078,7 @@ void createRegionData(const int numDimensions,
   }
 
   // Have all the GIDs and LIDs we stort them in place with std::sort()
-  // Subsequently we bring unique values to the begining of the array with
+  // Subsequently we bring unique values to the beginning of the array with
   // std::unique() and delete the duplicates with erase.
   std::sort(interfaceLIDsData.begin(), interfaceLIDsData.end());
   interfaceLIDsData.erase(std::unique(interfaceLIDsData.begin(), interfaceLIDsData.end()),
