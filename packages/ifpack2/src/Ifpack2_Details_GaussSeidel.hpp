@@ -238,7 +238,7 @@ namespace Details
           row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v);
+          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
           for(LO k = 0; k < blockSize; k++)
           {
             accum(k, v) = bRow(k);
@@ -252,7 +252,7 @@ namespace Details
           IST* blk = &Avalues(j * bs2);
           for(LO v = 0; v < numVecs; v++)
           {
-            auto xCol = x.getLocalBlock (col, v);
+            auto xCol = x.getLocalBlock (col, v, Tpetra::Access::ReadOnly);
             for(LO br = 0; br < blockSize; br++)
             {
               for(LO bc = 0; bc < blockSize; bc++)
@@ -279,7 +279,7 @@ namespace Details
         //Update x
         for(LO v = 0; v < numVecs; v++)
         {
-          auto xRow = x.getLocalBlock (row, v);
+          auto xRow = x.getLocalBlock (row, v, Tpetra::Access::ReadWrite);
           for(LO k = 0; k < blockSize; k++)
           {
             xRow(k) += omega * dinv_accum(k, v);
