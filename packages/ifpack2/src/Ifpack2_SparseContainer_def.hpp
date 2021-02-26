@@ -139,7 +139,7 @@ void SparseContainer<MatrixType, InverseType>::clearBlocks ()
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType,InverseType>::
-solveBlockMV(inverse_mv_type& X,
+solveBlockMV(const inverse_mv_type& X,
              inverse_mv_type& Y,
              int blockIndex,
              Teuchos::ETransp mode,
@@ -165,7 +165,7 @@ solveBlockMV(inverse_mv_type& X,
 
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType, InverseType>::
-apply (HostView X,
+apply (ConstHostView X,
        HostView Y,
        int blockIndex,
        Teuchos::ETransp mode,
@@ -285,9 +285,9 @@ apply (HostView X,
 //==============================================================================
 template<class MatrixType, class InverseType>
 void SparseContainer<MatrixType, InverseType>::
-weightedApply (HostView X,
+weightedApply (ConstHostView X,
                HostView Y,
-               HostView D,
+               ConstHostView D,
                int blockIndex,
                Teuchos::ETransp mode,
                SC alpha,

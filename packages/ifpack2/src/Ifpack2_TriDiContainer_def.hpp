@@ -277,7 +277,7 @@ void TriDiContainer<MatrixType, LocalScalarType>::factor ()
 
 template<class MatrixType, class LocalScalarType>
 void TriDiContainer<MatrixType, LocalScalarType>::
-solveBlock(HostSubviewLocal X,
+solveBlock(ConstHostSubviewLocal X,
            HostSubviewLocal Y,
            int blockIndex,
            Teuchos::ETransp mode,

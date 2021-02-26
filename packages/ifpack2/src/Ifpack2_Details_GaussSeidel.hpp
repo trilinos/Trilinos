@@ -71,7 +71,6 @@ namespace Details
     {
       numRows = A.getNodeNumRows();
       inverseDiagVec = inverseDiagVec_;
-      inverseDiagVec->sync_host();
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
@@ -88,7 +87,6 @@ namespace Details
     {
       numRows = A.getNodeNumRows();
       inverseDiagVec = inverseDiagVec_;
-      inverseDiagVec->sync_host();
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
@@ -141,7 +139,7 @@ namespace Details
       //note: direction is either Forward or Backward (Symmetric is handled in apply())
       LO numApplyRows = useApplyRows ? (LO) applyRows.size() : numRows;
       //note: inverseDiagMV always has only one column
-      auto inverseDiag = inverseDiagVec->get1dView();
+      auto inverseDiag = Kokkos::subview(inverseDiagVec->getLocalViewHost(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
       bool forward = direction == Tpetra::Forward;
       if(multipleRHS)
       {
@@ -172,7 +170,7 @@ namespace Details
             }
           }
           //Update x
-          IST dinv = inverseDiag[row];
+          IST dinv = inverseDiag(row);
           for(LO k = 0; k < numVecs; k++)
           {
             if(omegaNotOne)
@@ -184,9 +182,9 @@ namespace Details
       }
       else
       {
-        auto xlcl = Kokkos::subview(x.getLocalViewHost(), Kokkos::ALL(), 0);
-        auto blcl = Kokkos::subview(b.getLocalViewHost(), Kokkos::ALL(), 0);
-        auto dlcl = Kokkos::subview(inverseDiagVec->getLocalViewHost(), Kokkos::ALL(), 0);
+        auto xlcl = Kokkos::subview(x.getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
+        auto blcl = Kokkos::subview(b.getLocalViewHost(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+        auto dlcl = Kokkos::subview(inverseDiagVec->getLocalViewHost(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
         for(LO i = 0; i < numApplyRows; i++)
         {
           LO row;

@@ -168,11 +168,8 @@ struct GlobalReciprocalThreshold<TpetraVectorType, false> {
     typedef typename TpetraVectorType::impl_scalar_type value_type;
     typedef typename TpetraVectorType::device_type::memory_space memory_space;
 
-    X.template sync<memory_space> ();
-    X.template modify<memory_space> ();
-
     const value_type minValS = static_cast<value_type> (minVal);
-    auto X_0 = Kokkos::subview (X.template getLocalView<memory_space> (),
+    auto X_0 = Kokkos::subview (X.template getLocalView<memory_space> (Tpetra::Access::ReadWrite),
                                 Kokkos::ALL (), 0);
     LocalReciprocalThreshold<decltype (X_0) >::compute (X_0, minValS);
   }
@@ -1052,21 +1049,22 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
     // In debug mode, make sure that all diagonal entries are
     // positive, on all processes.  Note that *out_ only prints on
     // Process 0 of the matrix's communicator.
-    D_rangeMap->sync_host ();
-    auto D_lcl = D_rangeMap->getLocalViewHost ();
-    auto D_lcl_1d = Kokkos::subview (D_lcl, Kokkos::ALL (), 0);
-
-    typedef typename MV::impl_scalar_type IST;
-    typedef typename MV::local_ordinal_type LO;
-    typedef Kokkos::Details::ArithTraits<IST> STS;
-    typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
-
-    const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
     bool foundNonpositiveValue = false;
-    for (LO i = 0; i < lclNumRows; ++i) {
-      if (STS::real (D_lcl_1d(i)) <= STM::zero ()) {
-        foundNonpositiveValue = true;
-        break;
+    {
+      auto D_lcl = D_rangeMap->getLocalViewHost (Tpetra::Access::ReadOnly);
+      auto D_lcl_1d = Kokkos::subview (D_lcl, Kokkos::ALL (), 0);
+
+      typedef typename MV::impl_scalar_type IST;
+      typedef typename MV::local_ordinal_type LO;
+      typedef Kokkos::Details::ArithTraits<IST> STS;
+      typedef Kokkos::Details::ArithTraits<typename STS::mag_type> STM;
+
+      const LO lclNumRows = static_cast<LO> (D_rangeMap->getLocalLength ());
+      for (LO i = 0; i < lclNumRows; ++i) {
+        if (STS::real (D_lcl_1d(i)) <= STM::zero ()) {
+          foundNonpositiveValue = true;
+          break;
+        }
       }
     }
 
@@ -1439,8 +1437,7 @@ computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts) const
   x.randomize ();
 
   if (nonnegativeRealParts) {
-    x.template modify<dev_memory_space> ();
-    auto x_lcl = x.template getLocalView<dev_memory_space> ();
+    auto x_lcl = x.template getLocalView<dev_memory_space> (Tpetra::Access::ReadWrite);
     auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
 
     const LO lclNumRows = static_cast<LO> (x.getLocalLength ());

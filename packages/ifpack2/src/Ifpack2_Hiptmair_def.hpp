@@ -319,10 +319,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     RCP<const MV> Xcopy;
     {
-      auto X_lcl_host = X.getLocalViewHost ();
-      auto Y_lcl_host = Y.getLocalViewHost ();
-
-      if (X_lcl_host.data () == Y_lcl_host.data ()) {
+      if (X.aliases(Y)) {
         Xcopy = rcp (new MV (X, Teuchos::Copy));
       } else {
         Xcopy = rcpFromRef (X);

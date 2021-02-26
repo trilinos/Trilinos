@@ -225,12 +225,7 @@ elementWiseMultiplyMultiVector (MultiVectorType& X,
 
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
-  if (X.template need_sync<dev_memory_space> ()) {
-    X.template sync<dev_memory_space> ();
-  }
-  X.template modify<dev_memory_space> ();
-
-  auto X_lcl = X.template getLocalView<dev_memory_space> ();
+  auto X_lcl = X.template getLocalView<dev_memory_space> (Tpetra::Access::ReadWrite);
   if (static_cast<std::size_t> (X.getNumVectors ()) == std::size_t (1)) {
     using pair_type = Kokkos::pair<index_type, index_type>;
     auto X_lcl_1d = Kokkos::subview (X_lcl, pair_type (0, lclNumRows), 0);
@@ -431,12 +426,7 @@ elementWiseDivideMultiVector (MultiVectorType& X,
 
   const index_type lclNumRows = static_cast<index_type> (X.getLocalLength ());
 
-  if (X.template need_sync<dev_memory_space> ()) {
-    X.template sync<dev_memory_space> ();
-  }
-  X.template modify<dev_memory_space> ();
-
-  auto X_lcl = X.template getLocalView<dev_memory_space> ();
+  auto X_lcl = X.template getLocalView<dev_memory_space> (Tpetra::Access::ReadWrite);
   if (static_cast<std::size_t> (X.getNumVectors ()) == std::size_t (1)) {
     using pair_type = Kokkos::pair<index_type, index_type>;
     auto X_lcl_1d = Kokkos::subview (X_lcl, pair_type (0, lclNumRows), 0);

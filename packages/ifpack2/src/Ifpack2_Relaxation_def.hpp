@@ -554,12 +554,8 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
       // If X and Y alias one another, then we need to create an
       // auxiliary vector, Xcopy (a deep copy of X).
       RCP<const MV> Xcopy;
-      // FIXME (mfh 12 Sep 2014) This test for aliasing is incomplete.
       {
-        auto X_lcl_host = X.getLocalViewHost ();
-        auto Y_lcl_host = Y.getLocalViewHost ();
-
-        if (X_lcl_host.data () == Y_lcl_host.data ()) {
+        if (X.aliases(Y)) {
           Xcopy = rcp (new MV (X, Teuchos::Copy));
         } else {
           Xcopy = rcpFromRef (X);
@@ -1599,7 +1595,6 @@ ApplyInverseSerialGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordi
     Y2 = rcpFromRef (Y);
   }
 
-  const_cast<multivector_type&>(X).sync_host();
   for (int j = 0; j < NumSweeps_; ++j) {
     // data exchange is here, once per sweep
     if (IsParallel_) {
@@ -1612,9 +1607,7 @@ ApplyInverseSerialGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordi
         Y2->doImport (Y, *Importer_, Tpetra::INSERT);
       }
     }
-    Y2->sync_host();
     serialGaussSeidel_->apply(*Y2, X, direction);
-    Y2->modify_host();
 
     // FIXME (mfh 02 Jan 2013) This is only correct if row Map == range Map.
     if (IsParallel_) {
@@ -1725,45 +1718,6 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
     X_colMap = cachedMV_;
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
-#ifdef HAVE_TPETRA_DEBUG
-    auto X_colMap_host_view = X_colMap->getLocalViewHost ();
-    auto X_domainMap_host_view = X_domainMap->getLocalViewHost ();
-
-    if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (X_colMap_host_view.data () != X_domainMap_host_view.data (),
-         std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: Pointer to "
-         "start of column Map view of X is not equal to pointer to start of "
-         "(domain Map view of) X.  This may mean that Tpetra::MultiVector::"
-         "offsetViewNonConst is broken.  "
-         "Please report this bug to the Tpetra developers.");
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap_host_view.extent (0) < X_domainMap_host_view.extent (0) ||
-        X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
-        std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
-        "X_colMap has fewer local rows than X_domainMap.  "
-        "X_colMap_host_view.extent(0) = " << X_colMap_host_view.extent (0)
-        << ", X_domainMap_host_view.extent(0) = "
-        << X_domainMap_host_view.extent (0)
-        << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
-        << ", and X_domainMap->getLocalLength() = "
-        << X_domainMap->getLocalLength ()
-        << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
-        "is broken.  Please report this bug to the Tpetra developers.");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap->getNumVectors () != X_domainMap->getNumVectors (),
-        std::logic_error, "Tpetra::CrsMatrix::gaussSeidelCopy: "
-        "X_colMap has a different number of columns than X_domainMap.  "
-        "X_colMap->getNumVectors() = " << X_colMap->getNumVectors ()
-        << " != X_domainMap->getNumVectors() = "
-        << X_domainMap->getNumVectors ()
-        << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
-        "is broken.  Please report this bug to the Tpetra developers.");
-#endif // HAVE_TPETRA_DEBUG
-
     if (ZeroStartingSolution_) {
       // No need for an Import, since we're filling with zeros.
       X_colMap->putScalar (ZERO);
@@ -1781,17 +1735,14 @@ ApplyInverseSerialGS_CrsMatrix(const crs_matrix_type& A,
     copyBackOutput = true; // Don't forget to copy back at end.
   } // if column and domain Maps are (not) the same
 
-  const_cast<multivector_type&>(B).sync_host();
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (! importer.is_null () && sweep > 0) {
       // We already did the first Import for the zeroth sweep above,
       // if it was necessary.
       X_colMap->doImport (*X_domainMap, *importer, Tpetra::INSERT);
     }
-    X_colMap->sync_host ();
     // Do local Gauss-Seidel (forward, backward or symmetric)
     serialGaussSeidel_->apply(*X_colMap, B, direction);
-    X_colMap->modify_host ();
   }
 
   if (copyBackOutput) {
@@ -2066,45 +2017,6 @@ ApplyInverseMTGS_CrsMatrix(
 
     X_domainMap = X_colMap->offsetViewNonConst (domainMap, 0);
 
-#ifdef HAVE_IFPACK2_DEBUG
-    auto X_colMap_host_view = X_colMap->template getLocalView<Kokkos::HostSpace> ();
-    auto X_domainMap_host_view = X_domainMap->template getLocalView<Kokkos::HostSpace> ();
-
-    if (X_colMap->getLocalLength () != 0 && X_domainMap->getLocalLength ()) {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        X_colMap_host_view.data () != X_domainMap_host_view.data (),
-        std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
-        "Pointer to start of column Map view of X is not equal to pointer to "
-        "start of (domain Map view of) X.  This may mean that "
-        "Tpetra::MultiVector::offsetViewNonConst is broken.  "
-        "Please report this bug to the Tpetra developers.");
-    }
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      X_colMap_host_view.extent (0) < X_domainMap_host_view.extent (0) ||
-      X_colMap->getLocalLength () < X_domainMap->getLocalLength (),
-      std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
-      "X_colMap has fewer local rows than X_domainMap.  "
-      "X_colMap_host_view.extent(0) = " << X_colMap_host_view.extent (0)
-      << ", X_domainMap_host_view.extent(0) = "
-      << X_domainMap_host_view.extent (0)
-      << ", X_colMap->getLocalLength() = " << X_colMap->getLocalLength ()
-      << ", and X_domainMap->getLocalLength() = "
-      << X_domainMap->getLocalLength ()
-      << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
-      "is broken.  Please report this bug to the Tpetra developers.");
-
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      X_colMap->getNumVectors () != X_domainMap->getNumVectors (),
-      std::logic_error, "Ifpack2::Relaxation::MTGaussSeidel: "
-      "X_colMap has a different number of columns than X_domainMap.  "
-      "X_colMap->getNumVectors() = " << X_colMap->getNumVectors ()
-      << " != X_domainMap->getNumVectors() = "
-      << X_domainMap->getNumVectors ()
-      << ".  This means that Tpetra::MultiVector::offsetViewNonConst "
-      "is broken.  Please report this bug to the Tpetra developers.");
-#endif // HAVE_IFPACK2_DEBUG
-
     if (ZeroStartingSolution_) {
       // No need for an Import, since we're filling with zeros.
       X_colMap->putScalar (ZERO);
@@ -2174,24 +2086,24 @@ ApplyInverseMTGS_CrsMatrix(
       KokkosSparse::Experimental::symmetric_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
           kcsr.graph.row_map, kcsr.graph.entries, kcsr.values,
-          X_colMap->getLocalViewDevice(),
-          B_in->getLocalViewDevice(),
+          X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
+          B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else if (direction == Tpetra::Forward) {
       KokkosSparse::Experimental::forward_sweep_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-          X_colMap->getLocalViewDevice (),
-          B_in->getLocalViewDevice(),
+          X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
+          B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else if (direction == Tpetra::Backward) {
       KokkosSparse::Experimental::backward_sweep_gauss_seidel_apply
       (mtKernelHandle_.getRawPtr(), A_->getNodeNumRows(), A_->getNodeNumCols(),
           kcsr.graph.row_map,kcsr.graph.entries, kcsr.values,
-          X_colMap->getLocalViewDevice(),
-          B_in->getLocalViewDevice(),
+          X_colMap->getLocalViewDevice(Tpetra::Access::ReadWrite),
+          B_in->getLocalViewDevice(Tpetra::Access::ReadOnly),
           zero_x_vector, update_y_vector, DampingFactor_, 1);
     }
     else {
