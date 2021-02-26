@@ -51,13 +51,13 @@ template<class Real>
 std::string TrustRegion<Real>::typeToString( TrustRegion<Real>::Type tr ) {
   std::string retString;
   switch(tr) {
-    case Type::CauchyPoint:   retString = "Cauchy Point";        break;
-    case Type::TruncatedCG:   retString = "Truncated CG";        break;
-    case Type::SPG:           retString = "SPG";                 break;
-    case Type::Dogleg:        retString = "Dogleg";              break;
-    case Type::DoubleDogleg:  retString = "Double Dogleg";       break;
-    case Type::Last:          retString = "Last Type (Dummy)";   break;
-    default:                  retString = "INVALID ETrustRegionU";
+    case Type::CauchyPoint:  retString = "Cauchy Point";        break;
+    case Type::TruncatedCG:  retString = "Truncated CG";        break;
+    case Type::SPG:          retString = "SPG";                 break;
+    case Type::DogLeg:       retString = "DogLeg";              break;
+    case Type::DoubleDogLeg: retString = "Double DogLeg";       break;
+    case Type::Last:         retString = "Last Type (Dummy)";   break;
+    default:                 retString = "INVALID TrustRegion";
   }
   return retString;
 }

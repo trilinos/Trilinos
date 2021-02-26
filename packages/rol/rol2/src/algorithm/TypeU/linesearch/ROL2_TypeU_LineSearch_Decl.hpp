@@ -4,7 +4,7 @@
 //               Rapid Optimization Library (ROL) Package
 //                 Copyright (2014) Sandia Corporation
 //
-ROL2_TypeU_LineSearch_Decl.hpp// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without

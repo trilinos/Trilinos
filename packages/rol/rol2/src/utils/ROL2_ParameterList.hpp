@@ -7,9 +7,28 @@
 #include <memory>
 
 namespace ROL2 {
+
 class ParameterList {
-public:
-  using std::string;
+/*
+  template<class Value>
+  struct Parameter {
+    Parameter( Value v ) : value(v) {}
+    operator Value () const { return value; }
+    Value value;
+    std::uint16_t readCount, writeCount;
+  };
+
+  using bool_type    = Parameter<bool>;
+  using int_type     = Parameter<int>;
+  using double_type  = Parameter<double>;
+  using string_type  = Parameter<std::string>;
+  using parlist_type = Parameter<ParameterList>;
+  
+  template<typename value_type>
+  inline static auto param( value_type v ) { 
+    return Parameter<Value>(v); 
+  }
+*/
   template<typename value_type> using dict = std::map<string,value_type>;
 
   //-----------------------------------------------------------------------
@@ -63,11 +82,11 @@ public:
 
 private:
 
-  dict<bool>                           bools_;
-  dict<int>                            ints_;
-  dict<double>                         doubles_;
-  dict<string>                         strings_;
-  dict<std::unique_ptr<ParameterList>> sublists_;
+  dict<bool>                     bools_;
+  dict<int>                      ints_;
+  dict<double>                   doubles_;
+  dict<string>                   strings_;
+  dict<std::unique_ptr<parlist>> sublists_;
 
 }; // ParameterList
 } // namespace ROL

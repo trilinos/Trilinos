@@ -62,10 +62,10 @@ public:
   TrustRegionAlgorithm( ParameterList&     parlist,
                         Ptr<Secant<Real>>& secant = nullPtr );
 
-  void run( Vector<Real>&       x,
-            const Vector<Real>& g, 
-            Objective<Real>&    obj,
-            std::ostream&       outStream = std::cout);
+  void run(       Vector<Real>&    x,
+            const Vector<Real>&    g, 
+                  Objective<Real>& obj,
+                  std::ostream&    outStream = std::cout);
 
   void writeHeader( std::ostream& = std::cout ) const override;
 
@@ -101,7 +101,7 @@ private:
   Real                        gamma2_; ///< Radius increase rate.
   Real                        TRsafe_; ///< Safeguard size for numerically evaluating ratio.
   Real                        eps_;    ///< Safeguard for numerically evaluating ratio.
-  TRUtils::ETRFlag            TRflag_; ///< Trust-region exit flag.
+  TrustRegion<Real>::Flag     TRflag_; ///< Trust-region exit flag.
   int                         SPflag_; ///< Subproblem solver termination flag.
   int                         SPiter_; ///< Subproblem solver iteration count.
 

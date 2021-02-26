@@ -2,8 +2,6 @@
 #ifndef ROL2_TYPEU_ALGORITHM_DECL_HPP
 #define ROL2_TYPEU_ALGORITHM_DECL_HPP
 
-#include "ROL2_Algorithm_Decl.hpp"
-
 namespace ROL2 {
 namespace TypeU {
 
@@ -24,7 +22,7 @@ public:
     Last
   };
 
-  ENumMap<Type> type_dict;
+  EnumMap<Type> type_dict;
 
   /** \class ROL2::Algorithm_U::State 
       \brief Common container for quantities used by unconstrained algorithms.

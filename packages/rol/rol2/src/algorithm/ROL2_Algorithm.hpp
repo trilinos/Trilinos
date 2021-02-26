@@ -42,10 +42,6 @@ class Algorithm {
     */
     virtual bool is_initialized() const = 0;
 
-
-  protected:
-
-
   }; 
 
   //-------------------------------------------------------------------
@@ -63,7 +59,7 @@ class Algorithm {
 
   virtual void writeHeader( std::ostream& ) const = 0;
 
-  virtual void writeName( std::ostream& ) const = 0;
+  virtual void writeName( std::ostream& os ) const { os << "ROL >> "; } 
 
   virtual void writeOutput( std::ostream& ) const = 0;
 

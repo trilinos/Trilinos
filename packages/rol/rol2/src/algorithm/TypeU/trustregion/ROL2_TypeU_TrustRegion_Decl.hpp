@@ -90,9 +90,9 @@ public:
                       Real                    del,        // Trust-region radius
                       TrustRegionModel<Real>& model) = 0; // Trust-region model
 
-  static bool isValidType( Type tr ) { return type < Type::Last; }
+//  static bool isValidType( Type tr ) { return type < Type::Last; }
 
-  static Type stringToType( std::string s );
+//  static Type stringToType( std::string s );
  
   static Real initialRadius(       int&                    nfval,
                              const Vector<Real>&           x,
