@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SUBDOMAINSOLVER_DEF_hpp
-#define _FROSCH_SUBDOMAINSOLVER_DEF_hpp
+#ifndef _FROSCH_SUBDOMAINSOLVER_DEF_HPP
+#define _FROSCH_SUBDOMAINSOLVER_DEF_HPP
 
 #include <FROSch_SubdomainSolver_decl.hpp>
 

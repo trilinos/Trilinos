@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SUBDOMAINSOLVER_DECL_hpp
-#define _FROSCH_SUBDOMAINSOLVER_DECL_hpp
+#ifndef _FROSCH_SUBDOMAINSOLVER_DECL_HPP
+#define _FROSCH_SUBDOMAINSOLVER_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 

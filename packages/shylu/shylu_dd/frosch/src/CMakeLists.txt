@@ -34,6 +34,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/CoarseSpaces)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/InterfaceSets)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzOperators)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SchwarzPreconditioners)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/SolverInterfaces)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Tools)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/Adapters)
 
@@ -115,6 +116,18 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
+  SolverInterfaces/FROSch_Amesos2SolverEpetra_decl.hpp
+  SolverInterfaces/FROSch_Amesos2SolverEpetra_def.hpp
+  SolverInterfaces/FROSch_Amesos2SolverTpetra_decl.hpp
+  SolverInterfaces/FROSch_Amesos2SolverTpetra_def.hpp
+  SolverInterfaces/FROSch_Solver_decl.hpp
+  SolverInterfaces/FROSch_Solver_def.hpp
+  SolverInterfaces/FROSch_SolverFactory_decl.hpp
+  SolverInterfaces/FROSch_SolverFactory_def.hpp
+  SolverInterfaces/FROSch_ThyraPreconditioner_decl.hpp
+  SolverInterfaces/FROSch_ThyraPreconditioner_def.hpp
+  SolverInterfaces/FROSch_ThyraSolver_decl.hpp
+  SolverInterfaces/FROSch_ThyraSolver_def.hpp
   Tools/FROSch_ExtractSubmatrices_decl.hpp
   Tools/FROSch_ExtractSubmatrices_def.hpp
   Tools/FROSch_Output.h

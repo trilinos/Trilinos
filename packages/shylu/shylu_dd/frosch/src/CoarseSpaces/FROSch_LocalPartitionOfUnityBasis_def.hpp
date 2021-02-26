@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_PARTITIONOFUNITYBASIS_DEF_hpp
-#define _FROSCH_PARTITIONOFUNITYBASIS_DEF_hpp
+#ifndef _FROSCH_PARTITIONOFUNITYBASIS_DEF_HPP
+#define _FROSCH_PARTITIONOFUNITYBASIS_DEF_HPP
 
 #include <FROSch_LocalPartitionOfUnityBasis_decl.hpp>
 
