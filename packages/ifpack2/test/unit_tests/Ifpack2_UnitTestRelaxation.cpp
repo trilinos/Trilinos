@@ -909,12 +909,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   using mag_type = typename STS::magnitudeType;
   const auto tol = mag_type(100.0) * STS::eps();
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j], exactSol, tol);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol, tol);
     }
   }
 }
@@ -1026,13 +1024,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   exactSol[1] = -0.25;
   exactSol[2] = 0.625;
 
-  yBlock.sync_host();
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(lcl_row, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }
@@ -1079,12 +1075,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   exactSol[1] = -0.25;
   exactSol[2] = 0.5;
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    auto yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }

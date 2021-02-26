@@ -49,7 +49,6 @@
 #include "Teuchos_TypeNameTraits.hpp"
 #include <iterator>
 
-
 namespace {
 
   //
@@ -57,7 +56,7 @@ namespace {
   //
 
 ////
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostView, LO, GO, Scalar , Node )
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
   int me = comm->getRank();
@@ -74,7 +73,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
   Teuchos::Array<GO> myEntries(nGlobalEntries); 
 
   // Default one-to-one linear block map in Trilinos
-
   Teuchos::RCP<const map_t> defaultMap = 
            rcp(new map_t(nGlobalEntries, 0, comm));
 
@@ -94,7 +92,292 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
       std::cout << "Expected: " << scalar << ", got: "<< data(i, 0) << std::endl;
     }
   }
-    
+
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  HOSTVIEW TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceView, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar scalar = 100. * (me+1);
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
+
+  std::cout << me << " DEFAULT MAP" << std::endl;
+  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vector
+  vector_t defaultVec(defaultMap);
+  defaultVec.putScalar(scalar);
+
+  // Check result; all vector entries should be the same
+  auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  auto data_old = defaultVec.template getLocalView<Kokkos::Cuda> ();
+
+  if (data != data_old) {
+    ierr++;
+  }
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+//when holding a host view, requesting a device view should fail
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostDeviceView, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar scalar = 100. * (me+1);
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
+
+  std::cout << me << " DEFAULT MAP" << std::endl;
+  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vector
+  vector_t defaultVec(defaultMap);
+  defaultVec.putScalar(scalar);
+
+  // Check result; all vector entries should be the same
+  auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
+  ierr = 1;
+  try {
+    auto data_old = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  } catch (...) {
+    std::cout << me << " caught exception trying to get a device view while holding a local view" << std::endl;
+    ierr = 0;
+  }
+
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+//when holding a device view, requesting a local view should fail
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceHostView, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar scalar = 100. * (me+1);
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
+
+  std::cout << me << " DEFAULT MAP" << std::endl;
+  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vector
+  vector_t defaultVec(defaultMap);
+  defaultVec.putScalar(scalar);
+
+  // Check result; all vector entries should be the same
+  auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  ierr = 1;
+  try {
+    auto data_old = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
+  } catch (...) {
+    std::cout << me << " caught exception trying to get a local view while holding a device view" << std::endl;
+    ierr = 0;
+  }
+
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostViewSync, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar scalar = 100. * (me+1);
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
+
+  std::cout << me << " DEFAULT MAP" << std::endl;
+  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vector
+  vector_t defaultVec(defaultMap);
+  defaultVec.putScalar(scalar);
+
+  //localViewHost readOnly shouldn't set "need_sync_host"
+  {
+    auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
+    if (defaultVec.need_sync_host()) {
+      ierr++;
+    }
+  }
+  defaultVec.sync_host();
+  defaultVec.sync_device();
+
+  //localVewHost readWrite should set need_sync_device(), but not need_sync_host()
+  {
+    auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadWrite);
+    if (defaultVec.need_sync_host()) {
+      ierr++;
+    }
+    if (!defaultVec.need_sync_device()) {
+      ierr++;
+    }
+  }
+  defaultVec.sync_host();
+  defaultVec.sync_device();
+
+  //localViewHost writeOnly should set need_sync_device(), but not need_sync_host()
+  {
+    auto data = defaultVec.getLocalViewHost(Tpetra::Access::WriteOnly);
+    if (defaultVec.need_sync_host()) {
+      ierr++;
+    }
+    if (!defaultVec.need_sync_device()) {
+      ierr++;
+    }
+  }
+  defaultVec.sync_host();
+  defaultVec.sync_device();
+
+  if (ierr > 0) 
+    std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
+              << " FAILURES ON RANK " << me << std::endl;
+
+  int gerr;
+  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
+
+  TEST_ASSERT(gerr == 0);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar , Node )
+{
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
+  int me = comm->getRank();
+  int np = comm->getSize();
+  int ierr = 0;
+
+  Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
+
+  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using map_t = Tpetra::Map<LO,GO,Node>;
+
+  const size_t nGlobalEntries = 8 * np;
+  const Scalar scalar = 100. * (me+1);
+  Teuchos::Array<GO> myEntries(nGlobalEntries); 
+
+  // Default one-to-one linear block map in Trilinos
+  Teuchos::RCP<const map_t> defaultMap = 
+           rcp(new map_t(nGlobalEntries, 0, comm));
+
+  std::cout << me << " DEFAULT MAP" << std::endl;
+  defaultMap->describe(foo, Teuchos::VERB_EXTREME);
+
+  // Create vector
+  vector_t defaultVec(defaultMap);
+  defaultVec.putScalar(scalar);
+
+  //localViewDevice readOnly shouldn't set "need_sync_device"
+  {
+    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
+    if (defaultVec.need_sync_device()) {
+      ierr++;
+    }
+  }
+  defaultVec.sync_host();
+  defaultVec.sync_device();
+
+  //localVewDevice readWrite should set need_sync_host(), but not need_sync_device()
+  {
+    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadWrite);
+    if (defaultVec.need_sync_device()) {
+      ierr++;
+    }
+    if (!defaultVec.need_sync_host()) {
+      ierr++;
+    }
+  }
+  defaultVec.sync_host();
+  defaultVec.sync_device();
+
+  //localViewDevice writeOnly should set need_sync_host(), but not need_sync_device()
+  {
+    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::WriteOnly);
+    if (defaultVec.need_sync_device()) {
+      ierr++;
+    }
+    if (!defaultVec.need_sync_host()) {
+      ierr++;
+    }
+  }
+  defaultVec.sync_host();
+  defaultVec.sync_device();
 
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
@@ -107,13 +390,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, basic, LO, GO, Scalar , Node )
 }
 
 
-
 //
 // INSTANTIATIONS
 //
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, basic             , LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostView, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceView, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostDeviceView, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceHostView, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostViewSync, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceViewSync, LO, GO, SCALAR, NODE ) \
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

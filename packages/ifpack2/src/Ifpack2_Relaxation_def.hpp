@@ -1885,14 +1885,11 @@ ApplyInverseSerialGS_BlockCrsMatrix (const block_crs_matrix_type& A,
     yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, Tpetra::INSERT);
   }
 
-  const_cast<block_multivector_type&>(xBlock).sync_host();
   for (int sweep = 0; sweep < NumSweeps_; ++sweep) {
     if (performImport && sweep > 0) {
       yBlockCol_mv.doImport(yBlock_mv, *pointImporter_, Tpetra::INSERT);
     }
-    yBlockCol->sync_host();
     serialGaussSeidel_->applyBlock(*yBlockCol, xBlock, direction);
-    yBlockCol->modify_host();
     if (performImport) {
       Tpetra::deep_copy(Y, *yBlockColPointDomain);
     }
