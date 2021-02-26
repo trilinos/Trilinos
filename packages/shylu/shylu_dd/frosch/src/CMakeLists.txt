@@ -120,6 +120,8 @@ APPEND_SET(HEADERS
   SolverInterfaces/FROSch_Amesos2SolverEpetra_def.hpp
   SolverInterfaces/FROSch_Amesos2SolverTpetra_decl.hpp
   SolverInterfaces/FROSch_Amesos2SolverTpetra_def.hpp
+  SolverInterfaces/FROSch_BelosSolverEpetra_decl.hpp
+  SolverInterfaces/FROSch_BelosSolverEpetra_def.hpp
   SolverInterfaces/FROSch_Solver_decl.hpp
   SolverInterfaces/FROSch_Solver_def.hpp
   SolverInterfaces/FROSch_SolverFactory_decl.hpp

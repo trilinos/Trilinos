@@ -50,6 +50,12 @@
 #include <FROSch_Amesos2SolverEpetra_def.hpp>
 #endif
 #include <FROSch_Amesos2SolverTpetra_def.hpp>
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+#include <FROSch_BelosSolverEpetra_def.hpp>
+#endif
+#include <FROSch_BelosSolverTpetra_def.hpp>
+#endif
 #if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
 #include <FROSch_ThyraPreconditioner_def.hpp>
 #include <FROSch_ThyraSolver_def.hpp>
@@ -78,6 +84,12 @@ namespace FROSch {
         using Amesos2SolverEpetraPtr            = RCP<Amesos2SolverEpetra<SC,LO,GO,NO> >;
 #endif
         using Amesos2SolverTpetraPtr            = RCP<Amesos2SolverTpetra<SC,LO,GO,NO> >;
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+        using BelosSolverEpetraPtr              = RCP<BelosSolverEpetra<SC,LO,GO,NO> >;
+#endif
+        using BelosSolverTpetraPtr              = RCP<BelosSolverTpetra<SC,LO,GO,NO> >;
+#endif
 #if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
         using ThyraPreconditionerPtr            = RCP<ThyraPreconditioner<SC,LO,GO,NO> >;
         using ThyraSolverPtr                    = RCP<ThyraSolver<SC,LO,GO,NO> >;

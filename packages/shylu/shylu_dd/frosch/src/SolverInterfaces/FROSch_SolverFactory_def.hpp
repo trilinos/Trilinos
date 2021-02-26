@@ -56,47 +56,63 @@ namespace FROSch {
                                                                                      string description)
     {
         // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); k->describe(*fancy,VERB_EXTREME);
-        if (!parameterList->get("SolverType","Amesos").compare("Amesos")) {
+        if (!parameterList->get("SolverType","Amesos2").compare("Amesos")) {
             //return AmesosSolverPtr(new AmesosSolver<SC,LO,GO,NO>(k,parameterList,description));
-        } else if (!parameterList->get("SolverType","Amesos").compare("Amesos2")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("Amesos2")) {
             if (k->getRowMap()->lib()==UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
                 return Amesos2SolverEpetraPtr(new Amesos2SolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
 #else
-                ThrowErrorMissingPackage("FROSch::SolverFactory", "Epetra");
+                ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
 #endif
             } else if (k->getRowMap()->lib()==UseTpetra) {
                 return Amesos2SolverTpetraPtr(new Amesos2SolverTpetra<SC,LO,GO,NO>(k,parameterList,description));
             } else {
                 FROSCH_ASSERT(false, "FROSch::SolverFactory : ERROR: This can't happen. Either use Epetra or Tetra linear algebra stack.");
             }
-        } else if (!parameterList->get("SolverType","Amesos").compare("Ifpack2")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("Belos")) {
+#ifdef HAVE_SHYLU_DDFROSCH_BELOS
+            if (k->getRowMap()->lib()==UseEpetra) {
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+                return BelosSolverEpetraPtr(new BelosSolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
+#else
+                ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
+#endif
+            } else if (k->getRowMap()->lib()==UseTpetra) {
+                return BelosSolverTpetraPtr(new BelosSolverTpetra<SC,LO,GO,NO>(k,parameterList,description));
+            } else {
+                FROSCH_ASSERT(false, "FROSch::SolverFactory : ERROR: This can't happen. Either use Epetra or Tetra linear algebra stack.");
+            }
+#else
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Belos");
+#endif
+        } else if (!parameterList->get("SolverType","Amesos2").compare("Ifpack2")) {
             //return Ifpack2SolverPtr(new Ifpack2Solver<SC,LO,GO,NO>(k,parameterList,description));
-        } else if (!parameterList->get("SolverType","Amesos").compare("MueLu")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("MueLu")) {
             //return MueLuSolverPtr(new MueLuSolver<SC,LO,GO,NO>(k,parameterList,description));
-        } else if (!parameterList->get("SolverType","Amesos").compare("ThyraPreconditioner")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("ThyraPreconditioner")) {
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 #ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
             return ThyraPreconditionerPtr(new ThyraPreconditioner<SC,LO,GO,NO>(k,parameterList,description));
 #else
-            ThrowErrorMissingPackage("FROSch::SolverFactory", "Stratimikos");
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Stratimikos");
 #endif
 #else
-            ThrowErrorMissingPackage("FROSch::SolverFactory", "Thyra");
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Thyra");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos").compare("ThyraSolver")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("ThyraSolver")) {
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 #ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
             return ThyraSolverPtr(new ThyraSolver<SC,LO,GO,NO>(k,parameterList,description));
 #else
-            ThrowErrorMissingPackage("FROSch::SolverFactory", "Stratimikos");
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Stratimikos");
 #endif
 #else
-            ThrowErrorMissingPackage("FROSch::SolverFactory", "Thyra");
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Thyra");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos").compare("TwoLevelBlockPreconditioner")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("TwoLevelBlockPreconditioner")) {
             //return TwoLevelBlockPreconditionerSolverPtr(new TwoLevelBlockPreconditionerSolver<SC,LO,GO,NO>(k,parameterList,description));
-        } else if (!parameterList->get("SolverType","Amesos").compare("TwoLevelPreconditioner")) {
+        } else if (!parameterList->get("SolverType","Amesos2").compare("TwoLevelPreconditioner")) {
             //return TwoLevelPreconditionerSolverPtr(new TwoLevelPreconditionerSolver<SC,LO,GO,NO>(k,parameterList,description));
         } else {
             FROSCH_ASSERT(false,"SolverType unknown...");

@@ -221,7 +221,7 @@ int main(int argc, char *argv[])
     }
 
     CommWorld->barrier();
-    stackedTimer->stop("Thyra Elasticity Test");
+    stackedTimer->stop("FROSch Solver Factory Test");
     StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stackedTimer->report(*out,CommWorld,options);
