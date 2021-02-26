@@ -327,23 +327,24 @@ std::string IntegratorBasic<Scalar>::description() const
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out.setOutputToRootOnly(0);
-  out << description() << "::describe" << std::endl;
-  out << "solutionHistory= " << solutionHistory_->description()<<std::endl;
-  out << "timeStepControl= " << timeStepControl_->description()<<std::endl;
-  out << "stepper        = " << stepper_        ->description()<<std::endl;
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  *out << "solutionHistory= " << solutionHistory_->description()<<std::endl;
+  *out << "timeStepControl= " << timeStepControl_->description()<<std::endl;
+  *out << "stepper        = " << stepper_        ->description()<<std::endl;
 
   if (Teuchos::as<int>(verbLevel) >=
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    out << "solutionHistory= " << std::endl;
-    solutionHistory_->describe(out,verbLevel);
-    out << "timeStepControl= " << std::endl;
-    timeStepControl_->describe(out,verbLevel);
-    out << "stepper        = " << std::endl;
-    stepper_        ->describe(out,verbLevel);
+    *out << "solutionHistory= " << std::endl;
+    solutionHistory_->describe(in_out,verbLevel);
+    *out << "timeStepControl= " << std::endl;
+    timeStepControl_->describe(in_out,verbLevel);
+    *out << "stepper        = " << std::endl;
+    stepper_        ->describe(in_out,verbLevel);
   }
 }
 

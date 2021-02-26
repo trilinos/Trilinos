@@ -486,6 +486,7 @@ void StepperHHTAlpha<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
@@ -494,13 +495,15 @@ void StepperHHTAlpha<Scalar>::describe(
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
 
-  out << "--- StepperHHTAlpha ---\n";
-  out << "  schemeName_ = " << schemeName_ << std::endl;
-  out << "  beta_       = " << beta_       << std::endl;
-  out << "  gamma_      = " << gamma_      << std::endl;
-  out << "  alpha_f_    = " << alpha_f_    << std::endl;
-  out << "  alpha_m_    = " << alpha_m_    << std::endl;
-  out << "-----------------------" << std::endl;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  l_out->setOutputToRootOnly(0);
+  *l_out << "--- StepperHHTAlpha ---\n";
+  *l_out << "  schemeName_ = " << schemeName_ << std::endl;
+  *l_out << "  beta_       = " << beta_       << std::endl;
+  *l_out << "  gamma_      = " << gamma_      << std::endl;
+  *l_out << "  alpha_f_    = " << alpha_f_    << std::endl;
+  *l_out << "  alpha_m_    = " << alpha_m_    << std::endl;
+  *l_out << "-----------------------" << std::endl;
 }
 
 
