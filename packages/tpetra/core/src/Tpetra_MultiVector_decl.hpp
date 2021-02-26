@@ -56,6 +56,7 @@
 #include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -1530,8 +1531,6 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
     getLocalView (Access::ReadOnlyStruct) const
     {
-      //This type is only used to see what the DualView::view<TargetDeviceType>() will return.
-      //That logic inside DualView is too complicated to replicate here.
       bool returnDevice = true;
       {
         auto tmp = view_.template view<TargetDeviceType>();
@@ -1540,15 +1539,31 @@ namespace Tpetra {
       if (returnDevice)
       {
         //returning dual_view_type::t_dev::const_type
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " device while a host view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
         owningView_.sync_device();
       }
       else
       {
         //returning dual_view_type::t_host::const_type
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " host while a device view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
         owningView_.sync_host();
       }
       return view_.template view<TargetDeviceType>();
@@ -1566,16 +1581,32 @@ namespace Tpetra {
       if (returnDevice) 
       {
         //returning dual_view_type::t_dev::type
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " device while a host view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
         owningView_.sync_device();
         owningView_.modify_device();
       }
       else
       {
         //returning dual_view_type::t_host::type
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " host while a device view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
         owningView_.sync_host();
         owningView_.modify_host();
       }
@@ -1598,16 +1629,32 @@ namespace Tpetra {
       if (returnDevice)
       {
         //returning dual_view_type::t_dev::type
-        if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " device while a host view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
         owningView_.clear_sync_state();
         owningView_.modify_device();
       }
       else
       {
         //returning dual_view_type::t_host::type
-        if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
-          throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " host while a device view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
         owningView_.clear_sync_state();
         owningView_.modify_host();
       }

@@ -129,7 +129,7 @@ public:
     }
 
     // Side effects start below this point.
-    D_lcl_ = diag.getLocalViewHost(Access::ReadWrite);
+    D_lcl_ = diag.getLocalViewHost(Access::WriteOnly);
     D_lcl_1d_ = Kokkos::subview (D_lcl_, Kokkos::ALL (), 0);
 
     Kokkos::RangePolicy<host_execution_space, LO> range (0, lclNumRows);

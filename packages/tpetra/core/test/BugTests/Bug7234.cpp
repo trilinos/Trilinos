@@ -109,7 +109,6 @@ namespace {
     const int rank = comm->getRank();
     const int size = comm->getSize();
 
-std::cout << rank << " KDDKDD HELLO ONE" << std::endl;
     // Build the array: GIDs are BLOCKED - owned first, then shared
     Teuchos::Array<GO> owned_gids;
     Teuchos::Array<GO> shared_gids;
@@ -123,7 +122,6 @@ std::cout << rank << " KDDKDD HELLO ONE" << std::endl;
       owned_and_shared_gids.push_back(shared_gids[0]);
     }
 
-std::cout << rank << " KDDKDD HELLO TWO" << std::endl;
     out.setShowProcRank(true);
     out.setOutputToRootOnly(rank);
     out << "owned_map\n";
@@ -134,63 +132,63 @@ std::cout << rank << " KDDKDD HELLO TWO" << std::endl;
       out << i << " " << owned_and_shared_gids[i] << std::endl;
     out.setOutputToRootOnly(0);
 
-std::cout << rank << " KDDKDD HELLO THREE" << std::endl;
     RCP<TpetraMap> owned_map = rcp(new TpetraMap(Teuchos::OrdinalTraits<GST>::invalid(),owned_gids,GO(0),comm));
     RCP<TpetraMap> shared_map = rcp(new TpetraMap(Teuchos::OrdinalTraits<GST>::invalid(),shared_gids,GO(0),comm));
     RCP<TpetraMap> owned_and_shared_map = rcp(new TpetraMap(Teuchos::OrdinalTraits<GST>::invalid(),owned_and_shared_gids,GO(0),comm));
 
-std::cout << rank << " KDDKDD HELLO FOUR" << std::endl;
     bool zeroOut = true;
-    RCP<TpetraVec> owned_and_shared = rcp(new TpetraVec(owned_and_shared_map,zeroOut));
+    RCP<TpetraVec> owned_and_shared = 
+                   rcp(new TpetraVec(owned_and_shared_map,zeroOut));
     RCP<TpetraExport> exporter = rcp(new TpetraExport(shared_map,owned_map));
     RCP<TpetraImport> importer = rcp(new TpetraImport(owned_map,shared_map));
 
     // If we block the owned_and_shared, we can make the code much
     // more efficient with subviews.
-    RCP<TpetraVec> owned = owned_and_shared->offsetViewNonConst(owned_map,0);
-    RCP<TpetraVec> shared = owned_and_shared->offsetViewNonConst(shared_map,owned->getLocalLength());
+    RCP<TpetraVec> owned = 
+                  owned_and_shared->offsetViewNonConst(owned_map,0);
+    RCP<TpetraVec> shared = 
+                  owned_and_shared->offsetViewNonConst(shared_map,
+                                                       owned->getLocalLength());
 
-std::cout << rank << " KDDKDD HELLO FIVE" << std::endl;
     owned->putScalar(1.0);
     shared->doImport(*owned, *importer, Tpetra::REPLACE);
 
-std::cout << rank << " KDDKDD HELLO SIX" << std::endl;
     const double tol = Teuchos::ScalarTraits<double>::eps() * 100.0;
-  {
-    auto host_shared = shared->getLocalViewHost(Tpetra::Access::ReadOnly);
-    if (rank > 0) {
-      TEST_FLOATING_EQUALITY(host_shared(0,0),1.0,tol);
-    }
-  }
+    {
+      auto host_shared = shared->getLocalViewHost(Tpetra::Access::ReadOnly);
+      if (rank > 0) {
+        TEST_FLOATING_EQUALITY(host_shared(0,0),1.0,tol);
+      }
 
-  {
-    auto host_owned_and_shared = owned_and_shared->getLocalViewHost(Tpetra::Access::ReadOnly);
-    TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol);
-    TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol);
-    if (rank > 0) {
-      TEST_FLOATING_EQUALITY(host_owned_and_shared(2,0),1.0,tol);
+      auto host_owned_and_shared = 
+                owned_and_shared->getLocalViewHost(Tpetra::Access::ReadOnly);
+      TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol);
+      TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol);
+      if (rank > 0) {
+        TEST_FLOATING_EQUALITY(host_owned_and_shared(2,0),1.0,tol);
+      }
     }
-  }
 
-std::cout << rank << " KDDKDD HELLO SEVEN" << std::endl;
     // now test the export
     owned->doExport(*shared, *exporter, Tpetra::ADD);
 
-std::cout << rank << " KDDKDD HELLO EIGHT" << std::endl;
-  {
-    auto host_owned = owned->getLocalViewHost(Tpetra::Access::ReadOnly);
-    auto host_owned_and_shared = owned_and_shared->getLocalViewHost(Tpetra::Access::ReadOnly);
-    TEST_FLOATING_EQUALITY(host_owned(0,0),1.0,tol);
-    TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol); // check owned entries only
-    if (rank != size-1) {
-      TEST_FLOATING_EQUALITY(host_owned(1,0),2.0,tol);
-      TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),2.0,tol); // check owned entries only
+    {
+      auto host_owned = owned->getLocalViewHost(Tpetra::Access::ReadOnly);
+      auto host_owned_and_shared = 
+                owned_and_shared->getLocalViewHost(Tpetra::Access::ReadOnly);
+      TEST_FLOATING_EQUALITY(host_owned(0,0),1.0,tol);
+      // check owned entries only
+      TEST_FLOATING_EQUALITY(host_owned_and_shared(0,0),1.0,tol); 
+      if (rank != size-1) {
+        TEST_FLOATING_EQUALITY(host_owned(1,0),2.0,tol);
+        // check owned entries only
+        TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),2.0,tol); 
+      }
+      else {
+        TEST_FLOATING_EQUALITY(host_owned(1,0),1.0,tol);
+        // check owned entries only
+        TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol); 
+      }
     }
-    else {
-      TEST_FLOATING_EQUALITY(host_owned(1,0),1.0,tol);
-      TEST_FLOATING_EQUALITY(host_owned_and_shared(1,0),1.0,tol); // check owned entries only
-    }
-  }
-std::cout << rank << " KDDKDD HELLO NINE" << std::endl;
   }
 }
