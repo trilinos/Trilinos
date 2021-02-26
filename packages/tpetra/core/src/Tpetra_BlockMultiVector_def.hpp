@@ -320,7 +320,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
                         const Scalar vals[]) 
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::WriteOnly);
+  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   Kokkos::deep_copy (X_dst, X_src);

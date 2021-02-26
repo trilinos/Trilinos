@@ -2252,6 +2252,11 @@ namespace Tpetra {
     /// \warning This may be different on different processes.
     bool isConstantStride() const;
 
+    /// \brief Whether this multivector's memory might alias other. This is conservative: if either this or other
+    ///     is not constant stride, then it simply checks whether the contiguous memory allocations overlap. It
+    ///     doesn't check whether the sets of columns overlap. This is a symmetric relation: X.aliases(Y) == Y.aliases(X).
+    bool aliases(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& other) const;
+
     //@}
 
     //! @name Overridden from Teuchos::Describable

@@ -953,6 +953,20 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  aliases(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& other) const
+  {
+    //Don't actually get a view, just get pointers.
+    auto thisData = view_.h_view.data();
+    auto otherData = other.view_.h_view.data();
+    size_t thisSpan = view_.h_view.span();
+    size_t otherSpan = other.view_.h_view.span();
+    return (otherData <= thisData && thisData < otherData + otherSpan)
+      || (thisData <= otherData && otherData < thisData + thisSpan);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   checkSizes (const SrcDistObject& sourceObj)
   {
     // Check whether the source object is a MultiVector.  If not, then
