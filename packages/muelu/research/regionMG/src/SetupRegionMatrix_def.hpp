@@ -168,18 +168,20 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
   RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats);
   RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
 
-  Array<LO> tmp(regionMatVecLIDs());
-  std::sort(tmp.begin(), tmp.end());
-  auto vecEnd = std::unique(tmp.begin(), tmp.end());
-  auto vecStart = tmp.begin();
+  // Grab first and last element of sorted interface LIDs
+  Array<LO> interfaceLIDs(regionMatVecLIDs());
+  std::sort(interfaceLIDs.begin(), interfaceLIDs.end());
+  auto vecEnd = std::unique(interfaceLIDs.begin(), interfaceLIDs.end());
+  auto vecStart = interfaceLIDs.begin();
 
   GO rowGID;
   LocalOrdinal col;
   GlobalOrdinal colGID;
   std::size_t sizeOfCommonRegions;
+  std::size_t numEntries = 0;
   for(auto row = vecStart; row < vecEnd; ++row) {
     rowGID = rowMap->getGlobalElement(*row);
-    std::size_t numEntries = quasiRegionMats->getNumEntriesInLocalRow(*row); // number of entries in this row
+    numEntries = quasiRegionMats->getNumEntriesInLocalRow(*row); // number of entries in this row
     Array<SC> values(numEntries); // non-zeros in this row
     Array<LO> colInds(numEntries); // local column indices
     quasiRegionMats->getLocalRowCopy(*row, colInds, values, numEntries);
