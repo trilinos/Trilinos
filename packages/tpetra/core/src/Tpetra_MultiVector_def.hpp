@@ -2382,13 +2382,7 @@ namespace Tpetra {
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
-    // See #1510.  In case diag has already been marked modified on
-    // host or device, we need to clear those flags, since the code
-    // below works on device.
-    /// KJ: this does not sound right
-    ///this->view_.clear_sync_state();
-    //Note BMK: if we knew this MV was not a subview of another, this could be WriteOnly
-    auto thisView = this->getLocalViewDevice(Access::ReadWrite);
+    auto thisView = this->getLocalViewDevice(Access::WriteOnly);
 
     if (isConstantStride ()) {
       Kokkos::fill_random (thisView, rand_pool, min, max);
@@ -2426,11 +2420,8 @@ namespace Tpetra {
     //
     // If we need sync to device, then host has the most recent version.
     const bool runOnHost = runKernelOnHost(*this);
-    //Note BMK: if we knew this MV was not a subview, the access below could be WriteOnly
-
-    //this->clear_sync_state();
     if (! runOnHost) {
-      auto X = this->getLocalViewDevice(Access::ReadWrite);
+      auto X = this->getLocalViewDevice(Access::WriteOnly);
       if (this->isConstantStride ()) {
         fill (DES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2440,7 +2431,7 @@ namespace Tpetra {
       }
     }
     else { // last modified in host memory, so modify data there.
-      auto X = this->getLocalViewHost(Access::ReadWrite);
+      auto X = this->getLocalViewHost(Access::WriteOnly);
       if (this->isConstantStride ()) {
         fill (HES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -3729,6 +3720,11 @@ namespace Tpetra {
   getLocalViewHost(Access::WriteOnlyStruct)
   {
     //returning dual_view_type::t_host::type
+    if (owningView_.h_view != view_.h_view) {
+      // view is a subview of owningView_; for safety, need to do ReadWrite
+      return getLocalViewHost(Access::ReadWrite);
+    }
+
     if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
       throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
                                "host while a device view is alive");
@@ -3770,6 +3766,11 @@ namespace Tpetra {
   getLocalViewDevice(Access::WriteOnlyStruct)
   {
     //returning dual_view_type::t_dev::type
+    if (owningView_.h_view != view_.h_view) {
+      // view_ is a subview of owningView_; for safety, need to do ReadWrite
+      return getLocalViewDevice(Access::ReadWrite);
+    }
+
     if (owningView_.h_view.use_count() > owningView_.d_view.use_count())
       throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
                                "device while a host view is alive");

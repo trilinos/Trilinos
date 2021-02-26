@@ -1586,6 +1586,10 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Access::WriteOnlyStruct)
     {
+      if (owningView_.h_view != view_.h_view) {
+        // view_ is a subview of owningView_; for safety, need to use ReadWrite
+        return getLocalView<TargetDeviceType>(Access::ReadWrite);
+      }
       bool returnDevice = true;
       {
         auto tmp = view_.template view<TargetDeviceType>();

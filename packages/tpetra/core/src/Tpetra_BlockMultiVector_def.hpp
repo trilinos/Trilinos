@@ -44,6 +44,7 @@
 #include "Tpetra_BlockView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 namespace { // anonymous
 
   /// \brief Get a raw pointer to the (host) data in a
@@ -93,6 +94,7 @@ namespace { // anonymous
   }
 
 } // namespace (anonymous)
+#endif
 
 namespace Tpetra {
 
