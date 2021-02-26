@@ -589,6 +589,9 @@ public:
     const LO colIndex, 
     Access::ReadWriteStruct);
 
+  /// \brief Get a local block on host, with the intent to overwrite all blocks in the BlockMultiVector
+  ///   before accessing the data on device. If you only intend to modify some blocks on host, use ReadWrite
+  ///   instead (otherwise, previous changes on device may be lost)
   little_host_vec_type getLocalBlock(
     const LO localRowIndex, 
     const LO colIndex, 
