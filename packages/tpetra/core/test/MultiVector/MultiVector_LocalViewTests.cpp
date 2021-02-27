@@ -113,6 +113,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceView, LO, GO, Scalar , Nod
   Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
 
   using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
+  using device_t = typename vector_t::device_type;
   using map_t = Tpetra::Map<LO,GO,Node>;
 
   const size_t nGlobalEntries = 8 * np;
@@ -132,7 +133,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceView, LO, GO, Scalar , Nod
 
   // Check result; all vector entries should be the same
   auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
-  auto data_old = defaultVec.template getLocalView<Kokkos::Cuda> ();
+  auto data_old = defaultVec.template getLocalView<device_t> ();
 
   if (data != data_old) {
     ierr++;
