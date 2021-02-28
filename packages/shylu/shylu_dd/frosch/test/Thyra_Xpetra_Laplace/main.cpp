@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
 
-    int M = 4;
+    int M = 3;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 2;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");

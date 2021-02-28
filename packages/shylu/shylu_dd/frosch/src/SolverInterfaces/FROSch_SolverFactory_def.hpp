@@ -55,9 +55,17 @@ namespace FROSch {
                                                                                      ParameterListPtr parameterList,
                                                                                      string description)
     {
-        // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); k->describe(*fancy,VERB_EXTREME);
         if (!parameterList->get("SolverType","Amesos2").compare("Amesos")) {
-            //return AmesosSolverPtr(new AmesosSolver<SC,LO,GO,NO>(k,parameterList,description));
+#ifdef HAVE_SHYLU_DDFROSCH_AMESOS
+            FROSCH_ASSERT(k->getRowMap()->lib()==UseEpetra,"FROSch::SolverFactory : ERROR: Amesos is not compatible with Tpetra.");
+#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
+            return AmesosSolverEpetraPtr(new AmesosSolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
+#else
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Epetra");
+#endif
+#else
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Amesos");
+#endif
         } else if (!parameterList->get("SolverType","Amesos2").compare("Amesos2")) {
             if (k->getRowMap()->lib()==UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -87,7 +95,12 @@ namespace FROSch {
             ThrowErrorMissingPackage("FROSch::SolverFactory","Belos");
 #endif
         } else if (!parameterList->get("SolverType","Amesos2").compare("Ifpack2")) {
-            //return Ifpack2SolverPtr(new Ifpack2Solver<SC,LO,GO,NO>(k,parameterList,description));
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+            FROSCH_ASSERT(k->getRowMap()->lib()==UseTpetra,"FROSch::SolverFactory : ERROR: Ifpack2 is not compatible with Epetra.");
+            return Ifpack2PreconditionerTpetraPtr(new Ifpack2PreconditionerTpetra<SC,LO,GO,NO>(k,parameterList,description));
+#else
+            ThrowErrorMissingPackage("FROSch::SolverFactory","Ifpack2");
+#endif
         } else if (!parameterList->get("SolverType","Amesos2").compare("MueLu")) {
             //return MueLuSolverPtr(new MueLuSolver<SC,LO,GO,NO>(k,parameterList,description));
         } else if (!parameterList->get("SolverType","Amesos2").compare("ThyraPreconditioner")) {

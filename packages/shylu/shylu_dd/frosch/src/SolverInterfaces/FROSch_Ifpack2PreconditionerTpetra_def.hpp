@@ -39,10 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_BELOSSOLVERTPETRA_DEF_HPP
-#define _FROSCH_BELOSSOLVERTPETRA_DEF_HPP
+#ifndef _FROSCH_IFPACK2PRECONDITIONERTPETRA_DEF_HPP
+#define _FROSCH_IFPACK2PRECONDITIONERTPETRA_DEF_HPP
 
-#include <FROSch_BelosSolverTpetra_decl.hpp>
+#include <FROSch_Ifpack2PreconditionerTpetra_decl.hpp>
 
 
 namespace FROSch {
@@ -52,90 +52,73 @@ namespace FROSch {
     using namespace Xpetra;
 
     template<class SC,class LO,class GO,class NO>
-    int BelosSolverTpetra<SC,LO,GO,NO>::initialize()
+    int Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::initialize()
     {
-        FROSCH_TIMER_START_SOLVER(initializeTime,"BelosSolverTpetra::initialize");
+        FROSCH_TIMER_START_SOLVER(initializeTime,"Ifpack2PreconditionerTpetra::initialize");
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
+        Ifpack2Preconditioner_->initialize();
         return 0;
     }
 
     template<class SC,class LO,class GO,class NO>
-    int BelosSolverTpetra<SC,LO,GO,NO>::compute()
+    int Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::compute()
     {
-        FROSCH_TIMER_START_SOLVER(computeTime,"BelosSolverTpetra::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::BelosSolverTpetra : ERROR: !this->IsInitialized_");
+        FROSCH_TIMER_START_SOLVER(computeTime,"Ifpack2PreconditionerTpetra::compute");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::Ifpack2PreconditionerTpetra : ERROR: !this->IsInitialized_");
         this->IsComputed_ = true;
+        Ifpack2Preconditioner_->compute();
         return 0;
     }
 
     template<class SC,class LO,class GO,class NO>
-    void BelosSolverTpetra<SC,LO,GO,NO>::apply(const XMultiVector &x,
-                                               XMultiVector &y,
-                                               ETransp mode,
-                                               SC alpha,
-                                               SC beta) const
+    void Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::apply(const XMultiVector &x,
+                                                         XMultiVector &y,
+                                                         ETransp mode,
+                                                         SC alpha,
+                                                         SC beta) const
     {
-        FROSCH_TIMER_START_SOLVER(applyTime,"BelosSolverTpetra::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverTpetra : ERROR: !this->IsComputed_.");
+        FROSCH_TIMER_START_SOLVER(applyTime,"Ifpack2PreconditionerTpetra::apply");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::Ifpack2PreconditionerTpetra : ERROR: !this->IsComputed_.");
 
         const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x);
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
 
-        if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),y.getNumVectors());
-        const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorY = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(Y_.get());
+        const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorY = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&y);
         TMultiVectorPtr tpetraMultiVectorY = xTpetraMultiVectorY->getTpetra_MultiVector();
 
-        BelosLinearProblem_->setProblem(tpetraMultiVectorY,tpetraMultiVectorX);
-        BelosSolver_->solve();
-
-        y.update(alpha,*Y_,beta);
+        Ifpack2Preconditioner_->apply(*tpetraMultiVectorX,*tpetraMultiVectorY,mode,alpha,beta);
     }
 
     template<class SC,class LO,class GO,class NO>
-    int BelosSolverTpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
-                                                     bool reuseInitialize)
+    int Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
+                                                       bool reuseInitialize)
     {
-        FROSCH_TIMER_START_SOLVER(updateMatrixTime,"BelosSolverTpetra::updateMatrix");
-        this->K_ = k;
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra : ERROR: K_ is null.");
-
-        const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
-        const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
-        ConstTCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
-        TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
-
-        BelosLinearProblem_->setOperator(tpetraMat);
-
+        FROSCH_ASSERT(false,"FROSch::Ifpack2PreconditionerTpetra : ERROR: updateMatrix() is not implemented for the Ifpack2PreconditionerTpetra yet.");
         return 0;
     }
 
     template<class SC,class LO,class GO,class NO>
-    BelosSolverTpetra<SC,LO,GO,NO>::BelosSolverTpetra(ConstXMatrixPtr k,
-                                                      ParameterListPtr parameterList,
-                                                      string description) :
+    Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::Ifpack2PreconditionerTpetra(ConstXMatrixPtr k,
+                                                                          ParameterListPtr parameterList,
+                                                                          string description) :
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
-        FROSCH_TIMER_START_SOLVER(BelosSolverTpetraTime,"BelosSolverTpetra::BelosSolverTpetra");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::BelosSolverTpetra : ERROR: Not compatible with Epetra.")
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra : ERROR: K_ is null.");
+        FROSCH_TIMER_START_SOLVER(Ifpack2PreconditionerTpetraTime,"Ifpack2PreconditionerTpetra::Ifpack2PreconditionerTpetra");
+        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::Ifpack2PreconditionerTpetra : ERROR: Not compatible with Epetra.")
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Ifpack2PreconditionerTpetra : ERROR: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
         ConstTCrsMatrixPtr tpetraMat = xTpetraMat.getTpetra_CrsMatrix();
         TEUCHOS_TEST_FOR_EXCEPT(tpetraMat.is_null());
 
-        TMultiVectorPtr xTmp;
-        TMultiVectorPtr bTmp;
+        Ifpack2::Details::OneLevelFactory<TRowMatrix> ifpack2Factory;
+        Ifpack2Preconditioner_ = ifpack2Factory.create(this->ParameterList_->get("Solver","RILUK"),tpetraMat);
 
-        BelosLinearProblem_.reset(new BelosLinearProblem(tpetraMat,xTmp,bTmp));
-
-        BelosSolverFactory belosFactory;
-        ParameterListPtr solverParameterList = sublist(this->ParameterList_,"Belos");
-
-        BelosSolver_ = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
-
-        BelosSolver_->setProblem(BelosLinearProblem_);
+        ParameterListPtr ifpack2ParameterList = sublist(this->ParameterList_,"Ifpack2");
+        ifpack2ParameterList->setName("Ifpack2");
+        Ifpack2Preconditioner_->setParameters(*ifpack2ParameterList);
     }
 
 }

@@ -39,10 +39,10 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_BELOSSOLVEREPETRA_DEF_HPP
-#define _FROSCH_BELOSSOLVEREPETRA_DEF_HPP
+#ifndef _FROSCH_AMESOSSOLVEREPETRA_DEF_HPP
+#define _FROSCH_AMESOSSOLVEREPETRA_DEF_HPP
 
-#include <FROSch_BelosSolverEpetra_decl.hpp>
+#include <FROSch_AmesosSolverEpetra_decl.hpp>
 
 
 namespace FROSch {
@@ -52,73 +52,76 @@ namespace FROSch {
     using namespace Xpetra;
 
     template<class SC,class LO,class GO,class NO>
-    int BelosSolverEpetra<SC,LO,GO,NO>::initialize()
+    AmesosSolverEpetra<SC,LO,GO,NO>::~AmesosSolverEpetra()
     {
-        FROSCH_TIMER_START_SOLVER(initializeTime,"BelosSolverEpetra::initialize");
+        AmesosSolver_.reset();
+        EpetraLinearProblem_.reset();
+    }
+
+    template<class SC,class LO,class GO,class NO>
+    int AmesosSolverEpetra<SC,LO,GO,NO>::initialize()
+    {
+        FROSCH_TIMER_START_SOLVER(initializeTime,"AmesosSolverEpetra::initialize");
         this->IsInitialized_ = true;
         this->IsComputed_ = false;
+        AMESOS_CHK_ERR(AmesosSolver_->SymbolicFactorization());
         return 0;
     }
 
     template<class SC,class LO,class GO,class NO>
-    int BelosSolverEpetra<SC,LO,GO,NO>::compute()
+    int AmesosSolverEpetra<SC,LO,GO,NO>::compute()
     {
-        FROSCH_TIMER_START_SOLVER(computeTime,"BelosSolverEpetra::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::BelosSolverEpetra : ERROR: !this->IsInitialized_");
+        FROSCH_TIMER_START_SOLVER(computeTime,"AmesosSolverEpetra::compute");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::AmesosSolverEpetra : ERROR: !this->IsInitialized_");
         this->IsComputed_ = true;
+        AMESOS_CHK_ERR(AmesosSolver_->NumericFactorization());
         return 0;
     }
 
     template<class SC,class LO,class GO,class NO>
-    void BelosSolverEpetra<SC,LO,GO,NO>::apply(const XMultiVector &x,
-                                               XMultiVector &y,
-                                               ETransp mode,
-                                               SC alpha,
-                                               SC beta) const
+    void AmesosSolverEpetra<SC,LO,GO,NO>::apply(const XMultiVector &x,
+                                                 XMultiVector &y,
+                                                 ETransp mode,
+                                                 SC alpha,
+                                                 SC beta) const
     {
-        FROSCH_TIMER_START_SOLVER(applyTime,"BelosSolverEpetra::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverEpetra : ERROR: !this->IsComputed_.");
+        FROSCH_TIMER_START_SOLVER(applyTime,"AmesosSolverEpetra::apply");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::AmesosSolverEpetra : ERROR: !this->IsComputed_.");
 
         const EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const EpetraMultiVectorT<GO,NO> *>(&x);
         RCP<EMultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
 
-        if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),y.getNumVectors());
+        if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),x.getNumVectors());
         EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorY = dynamic_cast<EpetraMultiVectorT<GO,NO> *>(Y_.get());
         RCP<EMultiVector> epetraMultiVectorY = xEpetraMultiVectorY->getEpetra_MultiVector();
 
-        BelosLinearProblem_->setProblem(epetraMultiVectorY,epetraMultiVectorX);
-        BelosSolver_->solve();
+        EpetraLinearProblem_->SetLHS(epetraMultiVectorY.get());
+        EpetraLinearProblem_->SetRHS(epetraMultiVectorX.get());
+
+        FROSCH_ASSERT(mode==NO_TRANS,"FROSch::AmesosSolverEpetra : ERROR: mode!=NO_TRANS");
+        EpetraLinearProblem_->GetMatrix()->SetUseTranspose(mode==TRANS);
+        AmesosSolver_->Solve();
 
         y.update(alpha,*Y_,beta);
     }
 
     template<class SC,class LO,class GO,class NO>
-    int BelosSolverEpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
-                                                     bool reuseInitialize)
+    int AmesosSolverEpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
+                                                      bool reuseInitialize)
     {
-        FROSCH_TIMER_START_SOLVER(updateMatrixTime,"BelosSolverEpetra::updateMatrix");
-        this->K_ = k;
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverEpetra : ERROR: K_ is null.");
-
-        const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
-        const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
-        ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
-        TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
-
-        BelosLinearProblem_->setOperator(epetraMat);
-
+        FROSCH_ASSERT(false,"FROSch::AmesosSolverEpetra : ERROR: updateMatrix() is not implemented for the AmesosSolverEpetra yet.");
         return 0;
     }
 
     template<class SC,class LO,class GO,class NO>
-    BelosSolverEpetra<SC,LO,GO,NO>::BelosSolverEpetra(ConstXMatrixPtr k,
-                                                      ParameterListPtr parameterList,
-                                                      string description) :
+    AmesosSolverEpetra<SC,LO,GO,NO>::AmesosSolverEpetra(ConstXMatrixPtr k,
+                                                          ParameterListPtr parameterList,
+                                                          string description) :
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
-        FROSCH_TIMER_START_SOLVER(BelosSolverEpetraTime,"BelosSolverEpetra::BelosSolverEpetra");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseEpetra,"FROSch::BelosSolverEpetra : ERROR: Not compatible with Tpetra.")
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverEpetra : ERROR: K_ is null.");
+        FROSCH_TIMER_START_SOLVER(AmesosSolverEpetraTime,"AmesosSolverEpetra::AmesosSolverEpetra");
+        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseEpetra,"FROSch::AmesosSolverEpetra : ERROR: Not compatible with Tpetra.")
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::AmesosSolverEpetra : ERROR: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
@@ -128,14 +131,11 @@ namespace FROSch {
         EMultiVectorPtr xTmp;
         EMultiVectorPtr bTmp;
 
-        BelosLinearProblem_.reset(new BelosLinearProblem(epetraMat,xTmp,bTmp));
+        EpetraLinearProblem_.reset(new ELinearProblem(epetraMat.get(),xTmp.get(),bTmp.get()));
 
-        BelosSolverFactory belosFactory;
-        ParameterListPtr solverParameterList = sublist(this->ParameterList_,"Belos");
-
-        BelosSolver_ = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
-
-        BelosSolver_->setProblem(BelosLinearProblem_);
+        Amesos amesosFactory;
+        AmesosSolver_.reset(amesosFactory.Create(this->ParameterList_->get("Solver","Klu"),*EpetraLinearProblem_));
+        AmesosSolver_->SetParameters(this->ParameterList_->sublist("Amesos"));
     }
 
 }

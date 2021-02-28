@@ -46,6 +46,9 @@
 
 // FROSch
 #include <FROSch_Solver_def.hpp>
+#if defined(HAVE_SHYLU_DDFROSCH_AMESOS) && defined(HAVE_SHYLU_DDFROSCH_EPETRA)
+#include <FROSch_AmesosSolverEpetra_def.hpp>
+#endif
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
 #include <FROSch_Amesos2SolverEpetra_def.hpp>
 #endif
@@ -55,6 +58,9 @@
 #include <FROSch_BelosSolverEpetra_def.hpp>
 #endif
 #include <FROSch_BelosSolverTpetra_def.hpp>
+#endif
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+#include <FROSch_Ifpack2PreconditionerTpetra_def.hpp>
 #endif
 #if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
 #include <FROSch_ThyraPreconditioner_def.hpp>
@@ -80,6 +86,10 @@ namespace FROSch {
 
         using ParameterListPtr                  = typename Solver<SC,LO,GO,NO>::ParameterListPtr;
 
+        using SolverPtr                         = RCP<Solver<SC,LO,GO,NO> >;
+#if defined(HAVE_SHYLU_DDFROSCH_AMESOS) && defined(HAVE_SHYLU_DDFROSCH_EPETRA)
+        using AmesosSolverEpetraPtr             = RCP<AmesosSolverEpetra<SC,LO,GO,NO> >;
+#endif
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
         using Amesos2SolverEpetraPtr            = RCP<Amesos2SolverEpetra<SC,LO,GO,NO> >;
 #endif
@@ -90,11 +100,13 @@ namespace FROSch {
 #endif
         using BelosSolverTpetraPtr              = RCP<BelosSolverTpetra<SC,LO,GO,NO> >;
 #endif
+#ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
+        using Ifpack2PreconditionerTpetraPtr    = RCP<Ifpack2PreconditionerTpetra<SC,LO,GO,NO> >;
+#endif
 #if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
         using ThyraPreconditionerPtr            = RCP<ThyraPreconditioner<SC,LO,GO,NO> >;
         using ThyraSolverPtr                    = RCP<ThyraSolver<SC,LO,GO,NO> >;
 #endif
-        using SolverPtr                         = RCP<Solver<SC,LO,GO,NO> >;
 
     public:
 

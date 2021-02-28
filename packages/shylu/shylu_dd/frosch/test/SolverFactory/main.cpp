@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
 
-    int M = 4;
+    int M = 3;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 2;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
             cout << endl;
         }
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Laplacian #\n##############################\n" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Assembly Laplacian #\n######################\n" << endl;
 
         ParameterList GaleriList;
         GaleriList.set("nx", GO(N*M));
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
         xSolution->putScalar(ScalarTraits<SC>::zero());
         xRightHandSide->putScalar(ScalarTraits<SC>::one());
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "###########################\n# Construct Solver #\n###########################" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "####################\n# Construct Solver #\n####################" << endl;
 
         RCP<Solver<SC,LO,GO,NO> > FROSchSolverInterface = SolverFactory<SC,LO,GO,NO>::Build(K,parameterList,"Solver Tester");
 

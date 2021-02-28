@@ -7,6 +7,27 @@ ADD_SUBDIRECTORIES(
 ParameterLists
 )
 
+##############
+# Amesos Klu #
+##############
+## Epetra
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+TRIBITS_ADD_TEST(
+solverfactory
+NAME test_solverfactory_amesos_klu_DIM2_EPETRA
+ARGS "--DIM=2 --PLIST=ParameterLists/ParameterList_Amesos_Klu.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 1
+)
+TRIBITS_ADD_TEST(
+solverfactory
+NAME test_solverfactory_amesos_klu_DIM3_EPETRA
+ARGS "--DIM=3 --PLIST=ParameterLists/ParameterList_Amesos_Klu.xml --USEEPETRA"
+COMM mpi
+NUM_MPI_PROCS 1
+)
+ENDIF()
+
 ###############
 # Amesos2 Klu #
 ###############
@@ -53,14 +74,14 @@ solverfactory
 NAME test_solverfactory_belos_gmres_DIM2_EPETRA
 ARGS "--DIM=2 --PLIST=ParameterLists/ParameterList_Belos_GMRES.xml --USEEPETRA"
 COMM mpi
-NUM_MPI_PROCS 1
+NUM_MPI_PROCS 4
 )
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_belos_gmres_DIM3_EPETRA
 ARGS "--DIM=3 --PLIST=ParameterLists/ParameterList_Belos_GMRES.xml --USEEPETRA"
 COMM mpi
-NUM_MPI_PROCS 1
+NUM_MPI_PROCS 8
 )
 ENDIF()
 ##Tpetra
@@ -69,14 +90,33 @@ solverfactory
 NAME test_solverfactory_belos_gmres_DIM2_TPETRA
 ARGS "--DIM=2 --PLIST=ParameterLists/ParameterList_Belos_GMRES.xml --USETPETRA"
 COMM mpi
-NUM_MPI_PROCS 1
+NUM_MPI_PROCS 4
 )
 TRIBITS_ADD_TEST(
 solverfactory
 NAME test_solverfactory_belos_gmres_DIM3_TPETRA
 ARGS "--DIM=3 --PLIST=ParameterLists/ParameterList_Belos_GMRES.xml --USETPETRA"
 COMM mpi
-NUM_MPI_PROCS 1
+NUM_MPI_PROCS 8
+)
+
+#################
+# Ifpack2 RILUK #
+#################
+##Tpetra
+TRIBITS_ADD_TEST(
+solverfactory
+NAME test_solverfactory_ifpack2_riluk_DIM2_TPETRA
+ARGS "--DIM=2 --PLIST=ParameterLists/ParameterList_Ifpack2_RILUK.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 4
+)
+TRIBITS_ADD_TEST(
+solverfactory
+NAME test_solverfactory_ifpack2_riluk_DIM3_TPETRA
+ARGS "--DIM=3 --PLIST=ParameterLists/ParameterList_Ifpack2_RILUK.xml --USETPETRA"
+COMM mpi
+NUM_MPI_PROCS 8
 )
 
 #####################################################
