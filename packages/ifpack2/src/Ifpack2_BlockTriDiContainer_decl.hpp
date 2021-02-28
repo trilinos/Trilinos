@@ -420,6 +420,7 @@ namespace Ifpack2 {
     typedef typename Container<MatrixType>::import_type import_type;
 
     typedef typename Container<MatrixType>::HostView host_view_type;
+    typedef typename Container<MatrixType>::ConstHostView const_host_view_type;
     typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
     static_assert (std::is_same<MatrixType, row_matrix_type>::value,
@@ -445,7 +446,7 @@ namespace Ifpack2 {
                              int numSweeps = 1) const override {}
     
     void
-    apply (host_view_type X,
+    apply (const_host_view_type X,
            host_view_type Y,
            int blockIndex,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -453,9 +454,9 @@ namespace Ifpack2 {
            scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}
 
     void
-    weightedApply (host_view_type X,
+    weightedApply (const_host_view_type X,
                    host_view_type Y,
-                   host_view_type W,
+                   const_host_view_type W,
                    int blockIndex,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
