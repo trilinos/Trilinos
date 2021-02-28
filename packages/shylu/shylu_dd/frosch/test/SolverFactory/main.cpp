@@ -164,13 +164,6 @@ int main(int argc, char *argv[])
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
 
-        Comm->barrier();
-        if (Comm->getRank()==0) {
-            cout << "##################\n# Parameter List #\n##################" << endl;
-            parameterList->print(cout);
-            cout << endl;
-        }
-
         Comm->barrier(); if (Comm->getRank()==0) cout << "######################\n# Assembly Laplacian #\n######################\n" << endl;
 
         ParameterList GaleriList;
@@ -181,23 +174,21 @@ int main(int argc, char *argv[])
         GaleriList.set("my", GO(N));
         GaleriList.set("mz", GO(N));
 
-        RCP<const Map<LO,GO,NO> > UniqueNodeMap;
         RCP<const Map<LO,GO,NO> > UniqueMap;
         RCP<MultiVector<SC,LO,GO,NO> > Coordinates;
         RCP<Matrix<SC,LO,GO,NO> > K;
         if (Dimension==2) {
-            UniqueNodeMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian2D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
-            UniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueNodeMap,2);
+            UniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian2D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
             Coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map<LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("2D",UniqueMap,GaleriList);
-            RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Elasticity2D",UniqueMap,GaleriList);
+            RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace2D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         } else if (Dimension==3) {
-            UniqueNodeMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
-            UniqueMap = Xpetra::MapFactory<LO,GO,NO>::Build(UniqueNodeMap,3);
+            UniqueMap = Galeri::Xpetra::CreateMap<LO,GO,NO>(xpetraLib,"Cartesian3D",Comm,GaleriList); // RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); nodeMap->describe(*fancy,VERB_EXTREME);
             Coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map<LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("3D",UniqueMap,GaleriList);
-            RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Elasticity3D",UniqueMap,GaleriList);
+            RCP<Galeri::Xpetra::Problem<Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> > > Problem = Galeri::Xpetra::BuildProblem<SC,LO,GO,Map<LO,GO,NO>,CrsMatrixWrap<SC,LO,GO,NO>,MultiVector<SC,LO,GO,NO> >("Laplace3D",UniqueMap,GaleriList);
             K = Problem->BuildMatrix();
         }
+        RCP<const Map<LO,GO,NO> > RepeatedMap = BuildRepeatedMap<LO,GO,NO>(K->getCrsGraph());
 
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
         RCP<MultiVector<SC,LO,GO,NO> > xRightHandSide = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
@@ -205,8 +196,34 @@ int main(int argc, char *argv[])
         xSolution->putScalar(ScalarTraits<SC>::zero());
         xRightHandSide->putScalar(ScalarTraits<SC>::one());
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "####################\n# Construct Solver #\n####################" << endl;
+        RCP<ParameterList> twoLevelBlockPreconditionerList = sublist(sublist(parameterList,"FROSchPreconditioner"),"TwoLevelBlockPreconditioner");
+        twoLevelBlockPreconditionerList->set("Dimension",Dimension);
+        twoLevelBlockPreconditionerList->set("Overlap",Overlap);
+        ArrayRCP<DofOrdering> dofOrderings(1);
+        dofOrderings[0] = NodeWise;
+        twoLevelBlockPreconditionerList->set("DofOrdering Vector",dofOrderings);
+        ArrayRCP<UN> dofsPerNodeVector(1);
+        dofsPerNodeVector[0] = 1;
+        twoLevelBlockPreconditionerList->set("DofsPerNode Vector",dofsPerNodeVector);
+        ArrayRCP<RCP<const Map<LO,GO,NO> > > RepeatedMaps(1);
+        RepeatedMaps[0] = RepeatedMap;
+        twoLevelBlockPreconditionerList->set("Repeated Map Vector",RepeatedMaps);
 
+        RCP<ParameterList> twoLevelPreconditionerList = sublist(sublist(parameterList,"FROSchPreconditioner"),"TwoLevelPreconditioner");
+        twoLevelPreconditionerList->set("Dimension",Dimension);
+        twoLevelPreconditionerList->set("Overlap",Overlap);
+        twoLevelPreconditionerList->set("DofOrdering Vector",dofOrderings);
+        twoLevelPreconditionerList->set("DofsPerNode Vector",dofsPerNodeVector);
+        twoLevelPreconditionerList->set("Repeated Map Vector",RepeatedMaps);
+
+        Comm->barrier();
+        if (Comm->getRank()==0) {
+            cout << "##################\n# Parameter List #\n##################" << endl;
+            parameterList->print(cout);
+            cout << endl;
+        }
+
+        Comm->barrier(); if (Comm->getRank()==0) cout << "####################\n# Construct Solver #\n####################" << endl;
         RCP<Solver<SC,LO,GO,NO> > FROSchSolverInterface = SolverFactory<SC,LO,GO,NO>::Build(K,parameterList,"Solver Tester");
 
         FROSchSolverInterface->initialize();

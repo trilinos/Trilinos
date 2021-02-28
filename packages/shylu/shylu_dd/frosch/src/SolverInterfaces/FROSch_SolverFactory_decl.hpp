@@ -59,8 +59,12 @@
 #endif
 #include <FROSch_BelosSolverTpetra_def.hpp>
 #endif
+#include <FROSch_FROSchPreconditioner_def.hpp>
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
 #include <FROSch_Ifpack2PreconditionerTpetra_def.hpp>
+#endif
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
+#include <FROSch_MueLuPreconditioner_def.hpp>
 #endif
 #if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
 #include <FROSch_ThyraPreconditioner_def.hpp>
@@ -100,8 +104,12 @@ namespace FROSch {
 #endif
         using BelosSolverTpetraPtr              = RCP<BelosSolverTpetra<SC,LO,GO,NO> >;
 #endif
+        using FROSchPreconditionerPtr           = RCP<FROSchPreconditioner<SC,LO,GO,NO> >;
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
         using Ifpack2PreconditionerTpetraPtr    = RCP<Ifpack2PreconditionerTpetra<SC,LO,GO,NO> >;
+#endif
+#ifdef HAVE_SHYLU_DDFROSCH_MUELU
+        using MueLuPreconditionerPtr            = RCP<MueLuPreconditioner<SC,LO,GO,NO> >;
 #endif
 #if defined(HAVE_SHYLU_DDFROSCH_THYRA) && defined(HAVE_SHYLU_DDFROSCH_STRATIMIKOS)
         using ThyraPreconditionerPtr            = RCP<ThyraPreconditioner<SC,LO,GO,NO> >;

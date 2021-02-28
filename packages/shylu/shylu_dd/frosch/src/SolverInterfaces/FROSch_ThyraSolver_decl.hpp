@@ -45,6 +45,7 @@
 #include <ShyLU_DDFROSch_config.h>
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Stratimikos_FROSchXpetra.hpp"
 
 // FROSch
 #include <FROSch_Solver_def.hpp>
@@ -119,7 +120,7 @@ namespace FROSch {
         mutable XMultiVectorPtr YX_ = null;
         mutable MultiVectorBasePtr YT_ = null;
 
-        LinearOpWithSolveBasePtr ThyraSolver_;
+        LinearOpWithSolveBasePtr ThyraSolver_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

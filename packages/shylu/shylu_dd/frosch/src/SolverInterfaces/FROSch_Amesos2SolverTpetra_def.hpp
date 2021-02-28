@@ -71,7 +71,7 @@ namespace FROSch {
     int Amesos2SolverTpetra<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_SOLVER(computeTime,"Amesos2SolverTpetra::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::Amesos2SolverTpetra : ERROR: !this->IsInitialized_");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::Amesos2SolverTpetra: !this->IsInitialized_");
         this->IsComputed_ = true;
         Amesos2Solver_->numericFactorization();
         return 0;
@@ -85,7 +85,7 @@ namespace FROSch {
                                                 SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"Amesos2SolverTpetra::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::Amesos2SolverTpetra : ERROR: !this->IsComputed_.");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::Amesos2SolverTpetra: !this->IsComputed_.");
 
         const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x);
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
@@ -97,7 +97,7 @@ namespace FROSch {
         Amesos2Solver_->setX(tpetraMultiVectorY);
         Amesos2Solver_->setB(tpetraMultiVectorX);
 
-        FROSCH_ASSERT(mode==NO_TRANS,"FROSch::Amesos2SolverTpetra : ERROR: mode!=NO_TRANS");
+        FROSCH_ASSERT(mode==NO_TRANS,"FROSch::Amesos2SolverTpetra: mode!=NO_TRANS");
         Amesos2Solver_->solve(); // Was ist, wenn man mit der transponierten Matrix lösen will
 
         y.update(alpha,*Y_,beta);
@@ -109,7 +109,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_SOLVER(updateMatrixTime,"Amesos2SolverTpetra::updateMatrix");
         this->K_ = k;
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Amesos2SolverTpetra : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Amesos2SolverTpetra: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
@@ -131,8 +131,8 @@ namespace FROSch {
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(Amesos2SolverTpetraTime,"Amesos2SolverTpetra::Amesos2SolverTpetra");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::Amesos2SolverTpetra : ERROR: Not compatible with Epetra.")
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Amesos2SolverTpetra : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Amesos2SolverTpetra: K_ is null.");
+        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::Amesos2SolverTpetra: Not compatible with Epetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
@@ -143,7 +143,7 @@ namespace FROSch {
         TMultiVectorPtr bTmp;
 
         Amesos2Solver_ = Amesos2::create<TCrsMatrix,TMultiVector>(this->ParameterList_->get("Solver","Klu"),tpetraMat,xTmp,bTmp);
-        ParameterListPtr amesos2ParameterList = sublist(this->ParameterList_,"Amesos2");
+        ParameterListPtr amesos2ParameterList = sublist(sublist(this->ParameterList_,"Amesos2"),this->ParameterList_->get("Solver","Klu"));
         amesos2ParameterList->setName("Amesos2");
         Amesos2Solver_->setParameters(amesos2ParameterList);
     }

@@ -39,17 +39,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_BELOSSOLVEREPETRA_DECL_HPP
-#define _FROSCH_BELOSSOLVEREPETRA_DECL_HPP
+#ifndef _FROSCH_MUELUPRECONDITIONER_DECL_HPP
+#define _FROSCH_MUELUPRECONDITIONER_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
-#include <Xpetra_EpetraMultiVector.hpp>
-
-#include <BelosXpetraAdapterOperator.hpp>
-#include <BelosOperatorT.hpp>
-#include <BelosXpetraAdapter.hpp>
-#include <BelosSolverFactory.hpp>
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <MueLu_Utilities.hpp>
 
 // FROSch
 #include <FROSch_Solver_def.hpp>
@@ -64,38 +61,27 @@ namespace FROSch {
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class BelosSolverEpetra : public Solver<SC,LO,GO,NO> {
+    class MueLuPreconditioner : public Solver<SC,LO,GO,NO> {
 
     protected:
 
         // Xpetra
+        using XMatrix                           = typename Solver<SC,LO,GO,NO>::XMatrix;
+        using XMatrixPtr                        = typename Solver<SC,LO,GO,NO>::XMatrixPtr;
         using ConstXMatrixPtr                   = typename Solver<SC,LO,GO,NO>::ConstXMatrixPtr;
 
         using XMultiVector                      = typename Solver<SC,LO,GO,NO>::XMultiVector;
         using XMultiVectorPtr                   = typename Solver<SC,LO,GO,NO>::XMultiVectorPtr;
+        using ConstXMultiVectorPtr              = typename Solver<SC,LO,GO,NO>::ConstXMultiVectorPtr;
 
         using XMultiVectorFactory               = typename Solver<SC,LO,GO,NO>::XMultiVectorFactory;
-
-        // Epetra
-        using EOperator                         = Epetra_Operator;
-
-        using ECrsMatrix                        = Epetra_CrsMatrix;
-        using ECrsMatrixPtr                     = RCP<ECrsMatrix>;
-        using ConstECrsMatrixPtr                = RCP<const ECrsMatrix>;
-
-        using EMultiVector                      = Epetra_MultiVector;
-        using EMultiVectorPtr                   = RCP<EMultiVector>;
 
         // Teuchos
         using ParameterListPtr                  = typename Solver<SC,LO,GO,NO>::ParameterListPtr;
 
-        // Belos
-        using BelosLinearProblem                = Belos::LinearProblem<SC,EMultiVector,EOperator>;
-        using BelosLinearProblemPtr             = RCP<BelosLinearProblem>;
-        using BelosSolverFactory                = Belos::SolverFactory<SC,EMultiVector,EOperator>;
-        using BelosSolverFactoryPtr             = RCP<BelosSolverFactory>;
-        using BelosSolverManager                = Belos::SolverManager<SC,EMultiVector,EOperator>;
-        using BelosSolverManagerPtr             = RCP<BelosSolverManager>;
+        // MueLu
+        using MueLuFactoryPtr                   = RCP<MueLu::HierarchyManager<SC,LO,GO,NO> >;
+        using MueLuHierarchyPtr                 = RCP<MueLu::Hierarchy<SC,LO,GO,NO> >;
 
     public:
 
@@ -125,15 +111,15 @@ namespace FROSch {
     protected:
 
         //! Constructor
-        BelosSolverEpetra(ConstXMatrixPtr k,
-                          ParameterListPtr parameterList,
-                          string description);
+        MueLuPreconditioner(ConstXMatrixPtr k,
+                            ParameterListPtr parameterList,
+                            string description);
 
         mutable XMultiVectorPtr Y_ = null;
 
-        BelosLinearProblemPtr BelosLinearProblem_ = null;
+        MueLuFactoryPtr MueLuFactory_ = null;
 
-        BelosSolverManagerPtr BelosSolver_ = null;
+        MueLuHierarchyPtr MueLuHierarchy_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

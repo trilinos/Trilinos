@@ -123,7 +123,7 @@ namespace FROSch {
 
         mutable XMultiVectorPtr Y_ = null;
 
-        Amesos2SolverEpetraPtr Amesos2Solver_;
+        Amesos2SolverEpetraPtr Amesos2Solver_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

@@ -65,7 +65,7 @@ namespace FROSch {
     int Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_SOLVER(computeTime,"Ifpack2PreconditionerTpetra::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::Ifpack2PreconditionerTpetra : ERROR: !this->IsInitialized_");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::Ifpack2PreconditionerTpetra: !this->IsInitialized_");
         this->IsComputed_ = true;
         Ifpack2Preconditioner_->compute();
         return 0;
@@ -79,7 +79,7 @@ namespace FROSch {
                                                          SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"Ifpack2PreconditionerTpetra::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::Ifpack2PreconditionerTpetra : ERROR: !this->IsComputed_.");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::Ifpack2PreconditionerTpetra: !this->IsComputed_.");
 
         const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x);
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
@@ -94,7 +94,7 @@ namespace FROSch {
     int Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
                                                        bool reuseInitialize)
     {
-        FROSCH_ASSERT(false,"FROSch::Ifpack2PreconditionerTpetra : ERROR: updateMatrix() is not implemented for the Ifpack2PreconditionerTpetra yet.");
+        FROSCH_ASSERT(false,"FROSch::Ifpack2PreconditionerTpetra: updateMatrix() is not implemented for the Ifpack2PreconditionerTpetra yet.");
         return 0;
     }
 
@@ -105,8 +105,8 @@ namespace FROSch {
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(Ifpack2PreconditionerTpetraTime,"Ifpack2PreconditionerTpetra::Ifpack2PreconditionerTpetra");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::Ifpack2PreconditionerTpetra : ERROR: Not compatible with Epetra.")
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Ifpack2PreconditionerTpetra : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Ifpack2PreconditionerTpetra: K_ is null.");
+        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::Ifpack2PreconditionerTpetra: Not compatible with Epetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
@@ -116,7 +116,7 @@ namespace FROSch {
         Ifpack2::Details::OneLevelFactory<TRowMatrix> ifpack2Factory;
         Ifpack2Preconditioner_ = ifpack2Factory.create(this->ParameterList_->get("Solver","RILUK"),tpetraMat);
 
-        ParameterListPtr ifpack2ParameterList = sublist(this->ParameterList_,"Ifpack2");
+        ParameterListPtr ifpack2ParameterList = sublist(sublist(this->ParameterList_,"Ifpack2"),this->ParameterList_->get("Solver","RILUK"));
         ifpack2ParameterList->setName("Ifpack2");
         Ifpack2Preconditioner_->setParameters(*ifpack2ParameterList);
     }

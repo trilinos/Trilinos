@@ -39,19 +39,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_BELOSSOLVEREPETRA_DECL_HPP
-#define _FROSCH_BELOSSOLVEREPETRA_DECL_HPP
+#ifndef _FROSCH_FROSCHPRECONDITIONER_DECL_HPP
+#define _FROSCH_FROSCHPRECONDITIONER_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
-#include <Xpetra_EpetraMultiVector.hpp>
-
-#include <BelosXpetraAdapterOperator.hpp>
-#include <BelosOperatorT.hpp>
-#include <BelosXpetraAdapter.hpp>
-#include <BelosSolverFactory.hpp>
-
 // FROSch
+#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_Solver_def.hpp>
 
 
@@ -64,38 +59,34 @@ namespace FROSch {
               class LO = int,
               class GO = DefaultGlobalOrdinal,
               class NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    class BelosSolverEpetra : public Solver<SC,LO,GO,NO> {
+    class FROSchPreconditioner : public Solver<SC,LO,GO,NO> {
 
     protected:
 
         // Xpetra
         using ConstXMatrixPtr                   = typename Solver<SC,LO,GO,NO>::ConstXMatrixPtr;
 
-        using XMultiVector                      = typename Solver<SC,LO,GO,NO>::XMultiVector;
-        using XMultiVectorPtr                   = typename Solver<SC,LO,GO,NO>::XMultiVectorPtr;
+        using XMultiVector                      = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector                 = const MultiVector<SC,LO,GO,NO>;
+        using XMultiVectorPtr                   = RCP<XMultiVector>;
+        using ConstXMultiVectorPtr              = RCP<const XMultiVector>;
+        using ConstXMultiVectorPtrVecPtr        = ArrayRCP<ConstXMultiVectorPtr>;
 
         using XMultiVectorFactory               = typename Solver<SC,LO,GO,NO>::XMultiVectorFactory;
-
-        // Epetra
-        using EOperator                         = Epetra_Operator;
-
-        using ECrsMatrix                        = Epetra_CrsMatrix;
-        using ECrsMatrixPtr                     = RCP<ECrsMatrix>;
-        using ConstECrsMatrixPtr                = RCP<const ECrsMatrix>;
-
-        using EMultiVector                      = Epetra_MultiVector;
-        using EMultiVectorPtr                   = RCP<EMultiVector>;
 
         // Teuchos
         using ParameterListPtr                  = typename Solver<SC,LO,GO,NO>::ParameterListPtr;
 
-        // Belos
-        using BelosLinearProblem                = Belos::LinearProblem<SC,EMultiVector,EOperator>;
-        using BelosLinearProblemPtr             = RCP<BelosLinearProblem>;
-        using BelosSolverFactory                = Belos::SolverFactory<SC,EMultiVector,EOperator>;
-        using BelosSolverFactoryPtr             = RCP<BelosSolverFactory>;
-        using BelosSolverManager                = Belos::SolverManager<SC,EMultiVector,EOperator>;
-        using BelosSolverManagerPtr             = RCP<BelosSolverManager>;
+        // FROSch
+        using SchwarzPreconditionerPtr          = RCP<SchwarzPreconditioner<SC,LO,GO,NO> >;
+        using TwoLevelBlockPreconditionerPtr    = RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> >;
+        using TwoLevelPreconditionerPtr         = RCP<TwoLevelPreconditioner<SC,LO,GO,NO> >;
+
+        using UN                                = unsigned;
+        using UNVec                             = Array<UN>;
+        using UNVecPtr                          = ArrayRCP<UN>;
+
+        using GOVecPtr                          = ArrayRCP<GO>;
 
     public:
 
@@ -125,15 +116,11 @@ namespace FROSch {
     protected:
 
         //! Constructor
-        BelosSolverEpetra(ConstXMatrixPtr k,
-                          ParameterListPtr parameterList,
-                          string description);
+        FROSchPreconditioner(ConstXMatrixPtr k,
+                             ParameterListPtr parameterList,
+                             string description);
 
-        mutable XMultiVectorPtr Y_ = null;
-
-        BelosLinearProblemPtr BelosLinearProblem_ = null;
-
-        BelosSolverManagerPtr BelosSolver_ = null;
+        SchwarzPreconditionerPtr FROSchPreconditioner_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

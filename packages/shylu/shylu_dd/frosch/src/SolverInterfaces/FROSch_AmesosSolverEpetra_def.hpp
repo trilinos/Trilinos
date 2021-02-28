@@ -72,7 +72,7 @@ namespace FROSch {
     int AmesosSolverEpetra<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_SOLVER(computeTime,"AmesosSolverEpetra::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::AmesosSolverEpetra : ERROR: !this->IsInitialized_");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::AmesosSolverEpetra: !this->IsInitialized_");
         this->IsComputed_ = true;
         AMESOS_CHK_ERR(AmesosSolver_->NumericFactorization());
         return 0;
@@ -86,7 +86,7 @@ namespace FROSch {
                                                  SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"AmesosSolverEpetra::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::AmesosSolverEpetra : ERROR: !this->IsComputed_.");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::AmesosSolverEpetra: !this->IsComputed_.");
 
         const EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const EpetraMultiVectorT<GO,NO> *>(&x);
         RCP<EMultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
@@ -98,7 +98,7 @@ namespace FROSch {
         EpetraLinearProblem_->SetLHS(epetraMultiVectorY.get());
         EpetraLinearProblem_->SetRHS(epetraMultiVectorX.get());
 
-        FROSCH_ASSERT(mode==NO_TRANS,"FROSch::AmesosSolverEpetra : ERROR: mode!=NO_TRANS");
+        FROSCH_ASSERT(mode==NO_TRANS,"FROSch::AmesosSolverEpetra: mode!=NO_TRANS");
         EpetraLinearProblem_->GetMatrix()->SetUseTranspose(mode==TRANS);
         AmesosSolver_->Solve();
 
@@ -109,7 +109,7 @@ namespace FROSch {
     int AmesosSolverEpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
                                                       bool reuseInitialize)
     {
-        FROSCH_ASSERT(false,"FROSch::AmesosSolverEpetra : ERROR: updateMatrix() is not implemented for the AmesosSolverEpetra yet.");
+        FROSCH_ASSERT(false,"FROSch::AmesosSolverEpetra: updateMatrix() is not implemented for the AmesosSolverEpetra yet.");
         return 0;
     }
 
@@ -120,8 +120,8 @@ namespace FROSch {
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(AmesosSolverEpetraTime,"AmesosSolverEpetra::AmesosSolverEpetra");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseEpetra,"FROSch::AmesosSolverEpetra : ERROR: Not compatible with Tpetra.")
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::AmesosSolverEpetra : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::AmesosSolverEpetra: K_ is null.");
+        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseEpetra,"FROSch::AmesosSolverEpetra: Not compatible with Tpetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
@@ -135,7 +135,9 @@ namespace FROSch {
 
         Amesos amesosFactory;
         AmesosSolver_.reset(amesosFactory.Create(this->ParameterList_->get("Solver","Klu"),*EpetraLinearProblem_));
-        AmesosSolver_->SetParameters(this->ParameterList_->sublist("Amesos"));
+
+        ParameterListPtr amesosParameterList = sublist(sublist(this->ParameterList_,"Amesos"),this->ParameterList_->get("Solver","Klu"));
+        AmesosSolver_->SetParameters(*amesosParameterList);
     }
 
 }

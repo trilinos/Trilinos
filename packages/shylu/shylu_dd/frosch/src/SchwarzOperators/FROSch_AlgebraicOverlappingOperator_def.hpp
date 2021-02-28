@@ -64,7 +64,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Adding Layers Strategy","CrsGraph").compare("Old")) {
             AddingLayersStrategy_ = LayersOld;
         } else {
-            FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
+            FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
         }
     }
 
@@ -94,11 +94,11 @@ namespace FROSch {
             << " |"
             << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Solver type" << right
-            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("SolverType","Amesos")
+            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("SolverType","Amesos2")
             << " |"
             << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Solver" << right
-            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("Solver","Mumps")
+            << " | " << setw(41) << this->ParameterList_->sublist("Solver").get("Solver","Klu")
             << " |"
             << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Reuse symbolic factorization" << right
@@ -153,7 +153,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Verbosity","All").compare("All")) {
             verbosity = All;
         } else {
-            FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid verbosity level.");
+            FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid verbosity level.");
         }
         // ====================================================================================
 
@@ -225,7 +225,7 @@ namespace FROSch {
                     break;
 
                 default:
-                    FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
+                    FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
                     break;
             }
             if (verbosity==All) {
@@ -276,7 +276,7 @@ namespace FROSch {
                     break;
 
                 default:
-                    FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator : ERROR: Specify a valid strategy for adding layers.");
+                    FROSCH_ASSERT(false,"FROSch::AlgebraicOverlappingOperator: Specify a valid strategy for adding layers.");
                     break;
             }
         }

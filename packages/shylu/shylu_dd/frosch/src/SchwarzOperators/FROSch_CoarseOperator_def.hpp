@@ -71,7 +71,7 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_LEVELID(computeTime,"CoarseOperator::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator : ERROR: CoarseOperator has to be initialized before calling compute()");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
         //if (this->Verbose_) cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
 
@@ -457,11 +457,11 @@ namespace FROSch {
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(41) << "Solver type" << right
-                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos")
+                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos2")
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(41) << "Solver" << right
-                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("Solver","Mumps")
+                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("Solver","Klu")
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(41) << "Reuse symbolic factorization" << right
@@ -544,7 +544,7 @@ namespace FROSch {
                                                                          string("CoarseSolver (Level ") + to_string(this->LevelID_) + string(")")));
                     CoarseSolver_->initialize();
                 } else {
-                    FROSCH_ASSERT(!CoarseSolver_.is_null(),"FROSch::CoarseOperator : ERROR: CoarseSolver_.is_null()");
+                    FROSCH_ASSERT(!CoarseSolver_.is_null(),"FROSch::CoarseOperator: CoarseSolver_.is_null()");
                     CoarseSolver_->resetMatrix(CoarseMatrix_.getConst(),true);
                 }
                 CoarseSolver_->compute();
@@ -865,7 +865,7 @@ namespace FROSch {
             ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
 #endif
         } else {
-            FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unknown.");
+            FROSCH_ASSERT(false,"FROSch::CoarseOperator: Distribution type unknown.");
         }
 
         return 0;

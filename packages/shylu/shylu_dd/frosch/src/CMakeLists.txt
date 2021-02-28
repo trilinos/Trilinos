@@ -116,12 +116,22 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_def.hpp
+  SolverInterfaces/FROSch_AmesosSolverEpetra_decl.hpp
+  SolverInterfaces/FROSch_AmesosSolverEpetra_def.hpp
   SolverInterfaces/FROSch_Amesos2SolverEpetra_decl.hpp
   SolverInterfaces/FROSch_Amesos2SolverEpetra_def.hpp
   SolverInterfaces/FROSch_Amesos2SolverTpetra_decl.hpp
   SolverInterfaces/FROSch_Amesos2SolverTpetra_def.hpp
   SolverInterfaces/FROSch_BelosSolverEpetra_decl.hpp
   SolverInterfaces/FROSch_BelosSolverEpetra_def.hpp
+  SolverInterfaces/FROSch_BelosSolverTpetra_decl.hpp
+  SolverInterfaces/FROSch_BelosSolverTpetra_def.hpp
+  SolverInterfaces/FROSch_FROSchPreconditioner_decl.hpp
+  SolverInterfaces/FROSch_FROSchPreconditioner_def.hpp
+  SolverInterfaces/FROSch_Ifpack2PreconditionerTpetra_decl.hpp
+  SolverInterfaces/FROSch_Ifpack2PreconditionerTpetra_def.hpp
+  SolverInterfaces/FROSch_MueLuPreconditioner_decl.hpp
+  SolverInterfaces/FROSch_MueLuPreconditioner_def.hpp
   SolverInterfaces/FROSch_Solver_decl.hpp
   SolverInterfaces/FROSch_Solver_def.hpp
   SolverInterfaces/FROSch_SolverFactory_decl.hpp

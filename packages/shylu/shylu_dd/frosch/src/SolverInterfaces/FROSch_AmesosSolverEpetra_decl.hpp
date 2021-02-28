@@ -128,9 +128,9 @@ namespace FROSch {
 
         mutable XMultiVectorPtr Y_ = null;
 
-        AmesosSolverPtr AmesosSolver_;
+        AmesosSolverPtr AmesosSolver_ = null;
 
-        ELinearProblemPtr EpetraLinearProblem_;
+        ELinearProblemPtr EpetraLinearProblem_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

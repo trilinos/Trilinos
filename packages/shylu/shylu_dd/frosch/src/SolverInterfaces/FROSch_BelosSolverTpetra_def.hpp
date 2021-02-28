@@ -64,7 +64,7 @@ namespace FROSch {
     int BelosSolverTpetra<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_SOLVER(computeTime,"BelosSolverTpetra::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::BelosSolverTpetra : ERROR: !this->IsInitialized_");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::BelosSolverTpetra: !this->IsInitialized_");
         this->IsComputed_ = true;
         return 0;
     }
@@ -77,7 +77,7 @@ namespace FROSch {
                                                SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"BelosSolverTpetra::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverTpetra : ERROR: !this->IsComputed_.");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverTpetra: !this->IsComputed_.");
 
         const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x);
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
@@ -98,7 +98,7 @@ namespace FROSch {
     {
         FROSCH_TIMER_START_SOLVER(updateMatrixTime,"BelosSolverTpetra::updateMatrix");
         this->K_ = k;
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
@@ -117,8 +117,8 @@ namespace FROSch {
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(BelosSolverTpetraTime,"BelosSolverTpetra::BelosSolverTpetra");
-        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::BelosSolverTpetra : ERROR: Not compatible with Epetra.")
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::BelosSolverTpetra: K_ is null.");
+        FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseTpetra,"FROSch::BelosSolverTpetra: Not compatible with Epetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         const TpetraCrsMatrix<SC,LO,GO,NO>& xTpetraMat = dynamic_cast<const TpetraCrsMatrix<SC,LO,GO,NO>&>(*crsOp.getCrsMatrix());
@@ -131,10 +131,8 @@ namespace FROSch {
         BelosLinearProblem_.reset(new BelosLinearProblem(tpetraMat,xTmp,bTmp));
 
         BelosSolverFactory belosFactory;
-        ParameterListPtr solverParameterList = sublist(this->ParameterList_,"Belos");
-
-        BelosSolver_ = belosFactory.create(solverParameterList->get("Solver","GMRES"),sublist(solverParameterList,solverParameterList->get("Solver","GMRES")));
-
+        ParameterListPtr belosParameterList = sublist(sublist(this->ParameterList_,"Belos"),this->ParameterList_->get("Solver","GMRES"));
+        BelosSolver_ = belosFactory.create(this->ParameterList_->get("Solver","GMRES"),belosParameterList);
         BelosSolver_->setProblem(BelosLinearProblem_);
     }
 

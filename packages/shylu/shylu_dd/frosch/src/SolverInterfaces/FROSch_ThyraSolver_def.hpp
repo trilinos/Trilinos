@@ -65,7 +65,7 @@ namespace FROSch {
     int ThyraSolver<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_SOLVER(computeTime,"ThyraSolver::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::ThyraSolver : ERROR: !this->IsInitialized_");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::ThyraSolver: !this->IsInitialized_");
         this->IsComputed_ = true;
         return 0;
     }
@@ -78,7 +78,7 @@ namespace FROSch {
                                          SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"ThyraSolver::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::ThyraSolver : ERROR: !this->IsComputed_.");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::ThyraSolver: !this->IsComputed_.");
 
         ConstMultiVectorBasePtr xThyra = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(rcpFromRef(x));
         if (YX_.is_null()) YX_ = XMultiVectorFactory::Build(y.getMap(),y.getNumVectors());
@@ -89,7 +89,7 @@ namespace FROSch {
             case Teuchos::NO_TRANS:   tMode = Thyra::NOTRANS;       break;
             case Teuchos::TRANS:      tMode = Thyra::TRANS;         break;
             case Teuchos::CONJ_TRANS: tMode = Thyra::CONJTRANS;     break;
-            default: FROSCH_ASSERT(false,"FROSch::ThyraPreconditionerTpetra : ERROR: mode unknown.");
+            default: FROSCH_ASSERT(false,"FROSch::ThyraPreconditionerTpetra: mode unknown.");
         }
 
         SolveStatus<double> status = solve<double>(*ThyraSolver_,tMode,*xThyra,YT_.ptr());
@@ -100,7 +100,7 @@ namespace FROSch {
     int ThyraSolver<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
                                                bool reuseInitialize)
     {
-        FROSCH_ASSERT(false,"FROSch::ThyraSolver : ERROR: updateMatrix() is not implemented for the ThyraSolver yet.");
+        FROSCH_ASSERT(false,"FROSch::ThyraSolver: updateMatrix() is not implemented for the ThyraSolver yet.");
         return 0;
     }
 
@@ -111,7 +111,7 @@ namespace FROSch {
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(ThyraSolverTime,"ThyraSolver::ThyraSolver");
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::ThyraSolver : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::ThyraSolver: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         RCP<const Thyra::LinearOpBase<SC> > thyraOp = ThyraUtils<SC,LO,GO,NO>::toThyra(crsOp.getCrsMatrix());

@@ -65,7 +65,7 @@ namespace FROSch {
     int ThyraPreconditioner<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_SOLVER(computeTime,"ThyraPreconditioner::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::ThyraPreconditioner : ERROR: !this->IsInitialized_");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::ThyraPreconditioner: !this->IsInitialized_");
         this->IsComputed_ = true;
         return 0;
     }
@@ -78,7 +78,7 @@ namespace FROSch {
                                          SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"ThyraPreconditioner::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::ThyraPreconditioner : ERROR: !this->IsComputed_.");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::ThyraPreconditioner: !this->IsComputed_.");
 
         ConstMultiVectorBasePtr xThyra = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(rcpFromRef(x));
         MultiVectorBasePtr yThyra = rcp_const_cast<MultiVectorBase<SC> >(ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(rcpFromRef(y)));
@@ -88,7 +88,7 @@ namespace FROSch {
             case Teuchos::NO_TRANS:   tMode = Thyra::NOTRANS;       break;
             case Teuchos::TRANS:      tMode = Thyra::TRANS;         break;
             case Teuchos::CONJ_TRANS: tMode = Thyra::CONJTRANS;     break;
-            default: FROSCH_ASSERT(false,"FROSch::ThyraPreconditioner : ERROR: mode unknown.");
+            default: FROSCH_ASSERT(false,"FROSch::ThyraPreconditioner: mode unknown.");
         }
 
         ThyraPreconditioner_->getUnspecifiedPrecOp()->apply(tMode,*xThyra,yThyra.ptr(),alpha,beta);
@@ -98,7 +98,7 @@ namespace FROSch {
     int ThyraPreconditioner<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
                                                bool reuseInitialize)
     {
-        FROSCH_ASSERT(false,"FROSch::ThyraPreconditioner : ERROR: updateMatrix() is not implemented for the ThyraPreconditioner yet.");
+        FROSCH_ASSERT(false,"FROSch::ThyraPreconditioner: updateMatrix() is not implemented for the ThyraPreconditioner yet.");
         return 0;
     }
 
@@ -109,7 +109,7 @@ namespace FROSch {
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(ThyraPreconditionerTime,"ThyraPreconditioner::ThyraPreconditioner");
-        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::ThyraPreconditioner : ERROR: K_ is null.");
+        FROSCH_ASSERT(!this->K_.is_null(),"FROSch::ThyraPreconditioner: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
         RCP<const Thyra::LinearOpBase<SC> > thyraOp = ThyraUtils<SC,LO,GO,NO>::toThyra(crsOp.getCrsMatrix());

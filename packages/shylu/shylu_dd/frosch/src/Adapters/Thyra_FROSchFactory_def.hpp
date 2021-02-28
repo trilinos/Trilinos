@@ -272,7 +272,7 @@ namespace Thyra {
                       }
                     }
 
-                    FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
+                    FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory: repeatedMaps.is_null()");
                     // Extract the DofsPerNode  vector
                     dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
                     // Extract the DofOrdering vector
@@ -295,7 +295,7 @@ namespace Thyra {
 
                 SchwarzPreconditioner = TLBP;
             } else {
-                FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
+                FROSCH_ASSERT(false,"Thyra::FROSchFactory: Preconditioner Type is unknown.");
             }
 
             SchwarzPreconditioner->compute();
@@ -344,7 +344,7 @@ namespace Thyra {
                 TLBP->resetMatrix(A);
                 SchwarzPreconditioner = TLBP;
             } else {
-                FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
+                FROSCH_ASSERT(false,"Thyra::FROSchFactory: Preconditioner Type is unknown.");
             }
             // recompute SchwarzPreconditioner
             SchwarzPreconditioner->compute();
@@ -441,7 +441,7 @@ namespace Thyra {
 #endif
                 }
             }
-            FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
+            FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory: repeatedMap.is_null()");
         }
         return repeatedMap;
     }
@@ -465,7 +465,7 @@ namespace Thyra {
 #endif
                 }
             }
-            FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory : ERROR: coordinatesList.is_null()");
+            FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory: coordinatesList.is_null()");
         }
         return coordinatesList;
     }
@@ -489,7 +489,7 @@ namespace Thyra {
 #endif
                 }
             }
-            FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory : ERROR: nullSpaceBasis.is_null()");
+            FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory: nullSpaceBasis.is_null()");
         }
         return nullSpaceBasis;
     }

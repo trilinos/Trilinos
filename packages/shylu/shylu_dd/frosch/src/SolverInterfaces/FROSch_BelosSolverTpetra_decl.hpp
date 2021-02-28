@@ -129,9 +129,9 @@ namespace FROSch {
 
         mutable XMultiVectorPtr Y_ = null;
 
-        BelosLinearProblemPtr BelosLinearProblem_;
+        BelosLinearProblemPtr BelosLinearProblem_ = null;
 
-        BelosSolverManagerPtr BelosSolver_;
+        BelosSolverManagerPtr BelosSolver_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };

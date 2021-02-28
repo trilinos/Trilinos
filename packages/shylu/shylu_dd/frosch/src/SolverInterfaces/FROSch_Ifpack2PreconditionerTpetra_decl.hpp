@@ -121,7 +121,7 @@ namespace FROSch {
                           ParameterListPtr parameterList,
                           string description);
 
-        Ifpack2PreconditionerPtr Ifpack2Preconditioner_;
+        Ifpack2PreconditionerPtr Ifpack2Preconditioner_ = null;
 
         friend class SolverFactory<SC,LO,GO,NO>;
     };
