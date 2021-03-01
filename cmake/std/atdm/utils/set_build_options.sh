@@ -142,6 +142,8 @@ elif atdm_match_buildname_keyword clang-5.0.1; then
   export ATDM_CONFIG_COMPILER=CLANG-5.0.1
 elif atdm_match_buildname_keyword clang-7.0.1; then
   export ATDM_CONFIG_COMPILER=CLANG-7.0.1
+elif atdm_match_buildname_keyword clang-10.0.0; then
+  export ATDM_CONFIG_COMPILER=CLANG-10.0.0
 elif atdm_match_buildname_keyword clang; then
   export ATDM_CONFIG_COMPILER=CLANG
 else
