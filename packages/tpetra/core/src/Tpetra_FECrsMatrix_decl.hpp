@@ -44,11 +44,6 @@
 
 /// \file Tpetra_FECrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::FECrsMatrix class
-///
-/// If you want to use Tpetra::FECrsMatrix, include
-/// "Tpetra_FECrsMatrix.hpp" (a file which CMake generates and installs
-/// for you).  If you only want the declaration of Tpetra::FECrsMatrix,
-/// include this file (Tpetra_FECrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_decl.hpp"
 #include "Tpetra_FECrsGraph.hpp"
