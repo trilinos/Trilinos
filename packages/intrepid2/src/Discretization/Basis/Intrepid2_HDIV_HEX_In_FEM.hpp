@@ -281,7 +281,6 @@ namespace Intrepid2 {
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
     Kokkos::DynRankView<typename ScalarViewType::value_type,DeviceType> vinvLine_, vinvBubble_;
-
     EPointType pointType_;
   };
 

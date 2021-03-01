@@ -287,7 +287,8 @@ namespace Intrepid2 {
       return (this->basisDegree_ > 2);
     }
 
-    Kokkos::DynRankView<typename ScalarViewType::const_value_type,DeviceType>
+    Kokkos::DynRankView<typename ScalarViewType::const_value_type,Devicetype>
+
     getVandermondeInverse() const {
       return vinv_;
     }

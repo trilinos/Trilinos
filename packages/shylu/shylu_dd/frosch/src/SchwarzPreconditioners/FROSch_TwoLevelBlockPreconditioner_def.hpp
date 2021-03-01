@@ -208,16 +208,16 @@ namespace FROSch {
             // Build Null Space
             if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Stokes")) {
                 nullSpaceBasisVec.resize(2);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
-                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
+                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
             } if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Linear Elasticity")) {
               nullSpaceBasisVec.resize(repeatedMapVec.size());
               for (int i = 0;i<repeatedMapVec.size();i++) {
-                nullSpaceBasisVec[i] = BuildNullSpace(dimension,LinearElasticityNullSpace,repeatedMapVec[i],dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
+                nullSpaceBasisVec[i] = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMapVec[i],dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
               }
             }if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Laplace")) {
               nullSpaceBasisVec.resize(1);
-              nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+              nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
             }else if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasisVec.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
             } else {
@@ -373,17 +373,17 @@ namespace FROSch {
             // Build Null Space
             if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Stokes")) {
                 nullSpaceBasisVec.resize(2);
-                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
-                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
+                nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+                nullSpaceBasisVec[1] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[1],dofsPerNodeVec[1],dofsMapsVec[1]);
             } else if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Linear Elasticity")) {
               nullSpaceBasisVec.resize(repeatedMapVec.size());
               for (int i = 0;i<repeatedMapVec.size();i++) {
-                nullSpaceBasisVec[i] = BuildNullSpace(dimension,LinearElasticityNullSpace,repeatedMapVec[i],dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
+                nullSpaceBasisVec[i] = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMapVec[i],dofsPerNodeVec[i],dofsMapsVec[i],nodeListVec[i]);
 
               }
             }else if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Laplace")) {
               nullSpaceBasisVec.resize(1);
-              nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
+              nullSpaceBasisVec[0] = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMapVec[0],dofsPerNodeVec[0],dofsMapsVec[0]);
             }else if (!this->ParameterList_->get("Null Space Type","Stokes").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasisVec.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
             } else {

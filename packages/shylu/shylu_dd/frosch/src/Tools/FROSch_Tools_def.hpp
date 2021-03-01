@@ -1315,7 +1315,7 @@ namespace FROSch {
 
     template <class SC, class LO,class GO,class NO>
     RCP<const MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
-                                                        unsigned nullSpaceType,
+                                                        const NullSpaceType nullSpaceType,
                                                         RCP<const Map<LO,GO,NO> > repeatedMap,
                                                         unsigned dofsPerNode,
                                                         ArrayRCP<RCP<const Map<LO,GO,NO> > > dofsMaps,
@@ -1328,14 +1328,14 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode.");
 
         RCP<MultiVector<SC,LO,GO,NO> > nullSpaceBasis;
-        if (nullSpaceType==0) { // n-dimensional Laplace
+        if (nullSpaceType == NullSpaceType::Laplace) {
             nullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,dofsPerNode);
             for (unsigned i=0; i<dofsPerNode; i++) {
                 for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
                     nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = ScalarTraits<SC>::one();
                 }
             }
-        } else if (nullSpaceType==1) { // linear elasticity
+        } else if (nullSpaceType == NullSpaceType::Elasticity) {
             FROSCH_ASSERT(!nodeList.is_null(),"nodeList.is_null()==true. Cannot build the null space for linear elasticity.");
             FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"nodeList->getNumVectors()!=dimension.");
             FROSCH_ASSERT(dofsPerNode==dimension,"dofsPerNode==dimension.");
