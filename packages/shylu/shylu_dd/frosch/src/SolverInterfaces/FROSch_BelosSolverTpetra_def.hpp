@@ -130,8 +130,10 @@ namespace FROSch {
 
         BelosLinearProblem_.reset(new BelosLinearProblem(tpetraMat,xTmp,bTmp));
 
+        ParameterListPtr belosParameterList = sublist(this->ParameterList_,"Belos");
+        if (belosParameterList->isSublist(this->ParameterList_->get("Solver","GMRES"))) belosParameterList = sublist(belosParameterList,this->ParameterList_->get("Solver","GMRES"));
+
         BelosSolverFactory belosFactory;
-        ParameterListPtr belosParameterList = sublist(sublist(this->ParameterList_,"Belos"),this->ParameterList_->get("Solver","GMRES"));
         BelosSolver_ = belosFactory.create(this->ParameterList_->get("Solver","GMRES"),belosParameterList);
         BelosSolver_->setProblem(BelosLinearProblem_);
     }

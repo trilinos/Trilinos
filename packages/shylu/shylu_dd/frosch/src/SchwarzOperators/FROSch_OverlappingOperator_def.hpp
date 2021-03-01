@@ -211,13 +211,13 @@ namespace FROSch {
 
         if (!reuseSymbolicFactorization) {
             if (this->IsComputed_ && this->Verbose_) cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << endl;
-            SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,
-                                                                    sublist(this->ParameterList_,"Solver"),
-                                                                    string("Solver (Level ") + to_string(this->LevelID_) + string(")")));
+            SubdomainSolver_ = SolverFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_,
+                                                                 sublist(this->ParameterList_,"Solver"),
+                                                                 string("Solver (Level ") + to_string(this->LevelID_) + string(")"));
             SubdomainSolver_->initialize();
         } else {
             FROSCH_ASSERT(!SubdomainSolver_.is_null(),"FROSch::OverlappingOperator: SubdomainSolver_.is_null()");
-            SubdomainSolver_->resetMatrix(OverlappingMatrix_,true);
+            SubdomainSolver_->updateMatrix(OverlappingMatrix_,true);
         }
         this->IsComputed_ = true;
         return SubdomainSolver_->compute();

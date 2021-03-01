@@ -55,29 +55,6 @@
 #include "Galeri_XpetraUtils.hpp"
 #include "Galeri_XpetraMaps.hpp"
 
-// Thyra includes
-#include <Thyra_LinearOpWithSolveBase.hpp>
-#include <Thyra_VectorBase.hpp>
-#include <Thyra_SolveSupportTypes.hpp>
-#include <Thyra_LinearOpWithSolveBase.hpp>
-#include <Thyra_LinearOpWithSolveFactoryHelpers.hpp>
-#include <Thyra_TpetraLinearOp.hpp>
-#include <Thyra_TpetraMultiVector.hpp>
-#include <Thyra_TpetraVector.hpp>
-#include <Thyra_TpetraThyraWrappers.hpp>
-#include <Thyra_VectorBase.hpp>
-#include <Thyra_VectorStdOps.hpp>
-#ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-#include <Thyra_EpetraLinearOp.hpp>
-#endif
-#include <Thyra_VectorSpaceBase_def.hpp>
-#include <Thyra_VectorSpaceBase_decl.hpp>
-
-// Stratimikos includes
-#include <Stratimikos_FROSchXpetra.hpp>
-
-#include <Tpetra_Core.hpp>
-
 // Xpetra include
 #include <Xpetra_CrsMatrixWrap.hpp>
 #include <Xpetra_DefaultPlatform.hpp>

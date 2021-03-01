@@ -43,7 +43,8 @@
 #define _FROSCH_FROSCHPRECONDITIONER_DEF_HPP
 
 #include <FROSch_FROSchPreconditioner_decl.hpp>
-
+#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
 
 namespace FROSch {
 
@@ -72,10 +73,10 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     void FROSchPreconditioner<SC,LO,GO,NO>::apply(const XMultiVector &x,
-                                                         XMultiVector &y,
-                                                         ETransp mode,
-                                                         SC alpha,
-                                                         SC beta) const
+                                                  XMultiVector &y,
+                                                  ETransp mode,
+                                                  SC alpha,
+                                                  SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"FROSchPreconditioner::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::FROSchPreconditioner: !this->IsComputed_.");
@@ -85,7 +86,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int FROSchPreconditioner<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
-                                                       bool reuseInitialize)
+                                                        bool reuseInitialize)
     {
         FROSCH_ASSERT(false,"FROSch::FROSchPreconditioner: updateMatrix() is not implemented for the FROSchPreconditioner yet.");
         return 0;
@@ -93,15 +94,16 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     FROSchPreconditioner<SC,LO,GO,NO>::FROSchPreconditioner(ConstXMatrixPtr k,
-                                                                          ParameterListPtr parameterList,
-                                                                          string description) :
+                                                            ParameterListPtr parameterList,
+                                                            string description) :
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(FROSchPreconditionerTime,"FROSchPreconditioner::FROSchPreconditioner");
         FROSCH_ASSERT(!this->K_.is_null(),"FROSch::FROSchPreconditioner: K_ is null.");
 
         if (!this->ParameterList_->get("Solver","TwoLevelPreconditioner").compare("TwoLevelPreconditioner")) {
-            ParameterListPtr froschParameterList = sublist(sublist(this->ParameterList_,"FROSchPreconditioner"),this->ParameterList_->get("Solver","TwoLevelPreconditioner"));
+            ParameterListPtr froschParameterList = sublist(this->ParameterList_,"FROSchPreconditioner");
+            if (froschParameterList->isSublist(this->ParameterList_->get("Solver","TwoLevelPreconditioner"))) froschParameterList = sublist(froschParameterList,this->ParameterList_->get("Solver","TwoLevelPreconditioner"));
             // if (this->K_->getMap()->getComm()->getRank() == 0) froschParameterList->print(cout);
 
             ArrayRCP<RCP<const Map<LO,GO,NO> > > RepeatedMaps(1);
@@ -152,7 +154,8 @@ namespace FROSch {
 
             FROSchPreconditioner_ = twoLevelPreconditioner;
         } else if (!this->ParameterList_->get("Solver","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
-            ParameterListPtr froschParameterList = sublist(sublist(this->ParameterList_,"FROSchPreconditioner"),this->ParameterList_->get("Solver","TwoLevelPreconditioner"));
+            ParameterListPtr froschParameterList = sublist(this->ParameterList_,"FROSchPreconditioner");
+            if (froschParameterList->isSublist(this->ParameterList_->get("Solver","TwoLevelPreconditioner"))) froschParameterList = sublist(froschParameterList,this->ParameterList_->get("Solver","TwoLevelPreconditioner"));
             // if (this->K_->getMap()->getComm()->getRank() == 0) froschParameterList->print(cout);
 
             ArrayRCP<RCP<const Map<LO,GO,NO> > > RepeatedMaps(1);

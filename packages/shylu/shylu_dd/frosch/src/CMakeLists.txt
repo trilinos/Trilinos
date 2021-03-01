@@ -55,7 +55,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 #INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/packages/muelu/adapters/belos)
 
 APPEND_SET(HEADERS
-  Adapters/Stratimikos_FROSchXpetra.hpp
+  Adapters/Stratimikos_FROSch_decl.hpp
+  Adapters/Stratimikos_FROSch_def.hpp
   Adapters/Thyra_FROSchFactory_decl.hpp
   Adapters/Thyra_FROSchFactory_def.hpp
   Adapters/Thyra_FROSchLinearOp_decl.hpp
@@ -100,6 +101,7 @@ APPEND_SET(HEADERS
   SchwarzOperators/FROSch_RGDSWCoarseOperator_def.hpp
   SchwarzOperators/FROSch_SchwarzOperator_decl.hpp
   SchwarzOperators/FROSch_SchwarzOperator_def.hpp
+  SchwarzOperators/FROSch_SchwarzOperators_fwd.hpp
   SchwarzOperators/FROSch_SumOperator_decl.hpp
   SchwarzOperators/FROSch_SumOperator_def.hpp
   SchwarzPreconditioners/FROSch_AlgebraicOverlappingPreconditioner_decl.hpp
@@ -112,6 +114,7 @@ APPEND_SET(HEADERS
   SchwarzPreconditioners/FROSch_RGDSWPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_SchwarzPreconditioner_def.hpp
+  SchwarzPreconditioners/FROSch_SchwarzPreconditioners_fwd.hpp
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_decl.hpp
   SchwarzPreconditioners/FROSch_TwoLevelBlockPreconditioner_def.hpp
   SchwarzPreconditioners/FROSch_TwoLevelPreconditioner_decl.hpp

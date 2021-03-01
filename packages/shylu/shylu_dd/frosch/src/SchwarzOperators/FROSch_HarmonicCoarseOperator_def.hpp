@@ -733,9 +733,9 @@ namespace FROSch {
 
         // Jetzt der solver für kII
         if (indicesIDofsAll.size()>0) {
-            ExtensionSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(kII,
-                                                                    sublist(this->ParameterList_,"ExtensionSolver"),
-                                                                    string("ExtensionSolver (Level ") + to_string(this->LevelID_) + string(")")));
+            ExtensionSolver_ = SolverFactory<SC,LO,GO,NO>::Build(kII,
+                                                                 sublist(this->ParameterList_,"ExtensionSolver"),
+                                                                 string("ExtensionSolver (Level ") + to_string(this->LevelID_) + string(")"));
             ExtensionSolver_->initialize();
             ExtensionSolver_->compute();
             ExtensionSolver_->apply(*mVtmp,*mVPhiI);

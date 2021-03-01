@@ -44,8 +44,7 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
-#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Stratimikos_FROSchXpetra.hpp"
+#include "Stratimikos_FROSch_decl.hpp"
 
 // FROSch
 #include <FROSch_Solver_def.hpp>

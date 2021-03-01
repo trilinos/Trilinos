@@ -95,21 +95,21 @@ namespace FROSch {
     using namespace Xpetra;
 
     template <class SC,
-    class LO ,
-    class GO ,
-    class NO >
+              class LO,
+              class GO,
+              class NO>
     class OneLevelPreconditioner;
 
     template<class SC,
-    class LO,
-    class GO,
-    class NO>
+             class LO,
+             class GO,
+             class NO>
     class TwoLevelPreconditioner;
 
     template<class SC,
-    class LO,
-    class GO,
-    class NO>
+             class LO,
+             class GO,
+             class NO>
     class TwoLevelBlockPreconditioner;
 
     template <class SC = double,

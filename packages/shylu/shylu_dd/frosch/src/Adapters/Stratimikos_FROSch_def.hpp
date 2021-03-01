@@ -39,59 +39,36 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SOLVER_DEF_HPP
-#define _FROSCH_SOLVER_DEF_HPP
+#ifndef _STRATIMIKOS_FROSCH_DEF_HPP
+#define _STRATIMIKOS_FROSCH_DEF_HPP
 
-#include <FROSch_Solver_decl.hpp>
+#include "Stratimikos_FROSch_decl.hpp"
+
+#include "Thyra_FROSchFactory_def.hpp"
 
 
-namespace FROSch {
+namespace Stratimikos {
 
+    using namespace std;
     using namespace Teuchos;
-    using namespace Xpetra;
+    using namespace Thyra;
 
-    template<class SC,class LO,class GO,class NO>
-    typename Solver<SC,LO,GO,NO>::ConstXMapPtr Solver<SC,LO,GO,NO>::getDomainMap() const
+    template <typename LO,typename GO,typename NO>
+    void enableFROSch (DefaultLinearSolverBuilder& builder,
+                       const string& stratName)
     {
-        return K_->getRangeMap();
+        const RCP<const ParameterList> precValidParams = sublist(builder.getValidParameters(), "Preconditioner Types");
+
+        TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), logic_error,
+                                   "Stratimikos::enableFROSch cannot add \"" + stratName +"\" because it is already included in builder!");
+
+        using Base = PreconditionerFactoryBase<double>;
+        if (!stratName.compare("FROSch")) {
+            using Impl = FROSchFactory<double, LO, GO, NO>;
+            builder.setPreconditioningStrategyFactory(abstractFactoryStd<Base, Impl>(), stratName);
+        }
     }
 
-    template<class SC,class LO,class GO,class NO>
-    typename Solver<SC,LO,GO,NO>::ConstXMapPtr Solver<SC,LO,GO,NO>::getRangeMap() const
-    {
-        return K_->getDomainMap();
-    }
-
-    template<class SC,class LO,class GO,class NO>
-    bool Solver<SC,LO,GO,NO>::isInitialized() const
-    {
-        return IsInitialized_;
-    }
-
-    template<class SC,class LO,class GO,class NO>
-    bool Solver<SC,LO,GO,NO>::isComputed() const
-    {
-        return IsComputed_;
-    }
-
-    template<class SC,class LO,class GO,class NO>
-    void Solver<SC,LO,GO,NO>::residual(const XMultiVector & x,
-                                       const XMultiVector & b,
-                                       XMultiVector& r) const
-    {
-        apply(x,r);
-        r.update(ScalarTraits<SC>::one(),b,-ScalarTraits<SC>::one());
-    }
-
-    template<class SC,class LO,class GO,class NO>
-    Solver<SC,LO,GO,NO>::Solver(ConstXMatrixPtr k,
-                                ParameterListPtr parameterList,
-                                string description) :
-    K_ (k),
-    ParameterList_ (parameterList),
-    Description_ (description)
-    {}
-
-}
+} // namespace Stratimikos
 
 #endif

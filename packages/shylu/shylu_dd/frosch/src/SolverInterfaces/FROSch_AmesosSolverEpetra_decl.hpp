@@ -123,8 +123,8 @@ namespace FROSch {
 
         //! Constructor
         AmesosSolverEpetra(ConstXMatrixPtr k,
-                            ParameterListPtr parameterList,
-                            string description);
+                           ParameterListPtr parameterList,
+                           string description);
 
         mutable XMultiVectorPtr Y_ = null;
 

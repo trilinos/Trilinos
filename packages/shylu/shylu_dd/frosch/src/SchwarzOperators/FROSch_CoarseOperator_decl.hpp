@@ -110,7 +110,8 @@ namespace FROSch {
 
         using CoarseSpacePtr                = typename SchwarzOperator<SC,LO,GO,NO>::CoarseSpacePtr;
 
-        using SubdomainSolverPtr            = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using SolverPtr                     = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr              = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
 
         using UN                            = typename SchwarzOperator<SC,LO,GO,NO>::UN;
 
@@ -226,7 +227,7 @@ namespace FROSch {
 
         UN PartitionType_;
 
-        SubdomainSolverPtr CoarseSolver_;
+        SolverPtr CoarseSolver_;
 
         ParameterListPtr DistributionList_;
 

@@ -39,58 +39,52 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SOLVER_DEF_HPP
-#define _FROSCH_SOLVER_DEF_HPP
-
-#include <FROSch_Solver_decl.hpp>
-
+#ifndef _FROSCH_SCHWARZPRECONDITIONERS_FWD_HPP
+#define _FROSCH_SCHWARZPRECONDITIONERS_FWD_HPP
 
 namespace FROSch {
 
-    using namespace Teuchos;
-    using namespace Xpetra;
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class AlgebraicOverlappingPreconditioner;
 
-    template<class SC,class LO,class GO,class NO>
-    typename Solver<SC,LO,GO,NO>::ConstXMapPtr Solver<SC,LO,GO,NO>::getDomainMap() const
-    {
-        return K_->getRangeMap();
-    }
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class GDSWPreconditioner;
 
-    template<class SC,class LO,class GO,class NO>
-    typename Solver<SC,LO,GO,NO>::ConstXMapPtr Solver<SC,LO,GO,NO>::getRangeMap() const
-    {
-        return K_->getDomainMap();
-    }
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class OneLevelPreconditioner;
 
-    template<class SC,class LO,class GO,class NO>
-    bool Solver<SC,LO,GO,NO>::isInitialized() const
-    {
-        return IsInitialized_;
-    }
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class RGDSWPreconditioner;
 
-    template<class SC,class LO,class GO,class NO>
-    bool Solver<SC,LO,GO,NO>::isComputed() const
-    {
-        return IsComputed_;
-    }
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class SchwarzPreconditioner;
 
-    template<class SC,class LO,class GO,class NO>
-    void Solver<SC,LO,GO,NO>::residual(const XMultiVector & x,
-                                       const XMultiVector & b,
-                                       XMultiVector& r) const
-    {
-        apply(x,r);
-        r.update(ScalarTraits<SC>::one(),b,-ScalarTraits<SC>::one());
-    }
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class TwoLevelBlockPreconditioner;
 
-    template<class SC,class LO,class GO,class NO>
-    Solver<SC,LO,GO,NO>::Solver(ConstXMatrixPtr k,
-                                ParameterListPtr parameterList,
-                                string description) :
-    K_ (k),
-    ParameterList_ (parameterList),
-    Description_ (description)
-    {}
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class TwoLevelPreconditioner;
 
 }
 

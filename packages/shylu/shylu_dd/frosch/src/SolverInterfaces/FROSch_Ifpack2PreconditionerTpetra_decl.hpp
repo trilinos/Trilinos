@@ -44,6 +44,8 @@
 
 #include <ShyLU_DDFROSch_config.h>
 
+#include <Ifpack2_Details_OneLevelFactory_decl.hpp>
+
 // FROSch
 #include <FROSch_Solver_def.hpp>
 
@@ -118,8 +120,8 @@ namespace FROSch {
 
         //! Constructor
         Ifpack2PreconditionerTpetra(ConstXMatrixPtr k,
-                          ParameterListPtr parameterList,
-                          string description);
+                                    ParameterListPtr parameterList,
+                                    string description);
 
         Ifpack2PreconditionerPtr Ifpack2Preconditioner_ = null;
 

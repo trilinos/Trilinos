@@ -80,7 +80,7 @@
 
 // Stratimikos includes
 //#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include <Stratimikos_FROSchXpetra.hpp>
+#include <Stratimikos_FROSch_def.hpp>
 
 #include <Tpetra_Core.hpp>
 

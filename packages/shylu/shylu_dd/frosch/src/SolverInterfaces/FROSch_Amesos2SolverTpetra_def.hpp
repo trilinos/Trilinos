@@ -79,10 +79,10 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     void Amesos2SolverTpetra<SC,LO,GO,NO>::apply(const XMultiVector &x,
-                                                XMultiVector &y,
-                                                ETransp mode,
-                                                SC alpha,
-                                                SC beta) const
+                                                 XMultiVector &y,
+                                                 ETransp mode,
+                                                 SC alpha,
+                                                 SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"Amesos2SolverTpetra::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::Amesos2SolverTpetra: !this->IsComputed_.");
@@ -105,7 +105,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int Amesos2SolverTpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
-                                                      bool reuseInitialize)
+                                                       bool reuseInitialize)
     {
         FROSCH_TIMER_START_SOLVER(updateMatrixTime,"Amesos2SolverTpetra::updateMatrix");
         this->K_ = k;
@@ -142,9 +142,11 @@ namespace FROSch {
         TMultiVectorPtr xTmp;
         TMultiVectorPtr bTmp;
 
-        Amesos2Solver_ = Amesos2::create<TCrsMatrix,TMultiVector>(this->ParameterList_->get("Solver","Klu"),tpetraMat,xTmp,bTmp);
-        ParameterListPtr amesos2ParameterList = sublist(sublist(this->ParameterList_,"Amesos2"),this->ParameterList_->get("Solver","Klu"));
+        ParameterListPtr amesos2ParameterList = sublist(this->ParameterList_,"Amesos2");
+        if (amesos2ParameterList->isSublist(this->ParameterList_->get("Solver","Klu"))) amesos2ParameterList = sublist(amesos2ParameterList,this->ParameterList_->get("Solver","Klu"));
         amesos2ParameterList->setName("Amesos2");
+
+        Amesos2Solver_ = Amesos2::create<TCrsMatrix,TMultiVector>(this->ParameterList_->get("Solver","Klu"),tpetraMat,xTmp,bTmp);
         Amesos2Solver_->setParameters(amesos2ParameterList);
     }
 

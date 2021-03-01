@@ -142,9 +142,11 @@ namespace FROSch {
         EMultiVectorPtr xTmp;
         EMultiVectorPtr bTmp;
 
-        Amesos2Solver_ = Amesos2::create<ECrsMatrix,EMultiVector>(this->ParameterList_->get("Solver","Klu"),epetraMat,xTmp,bTmp);
-        ParameterListPtr amesos2ParameterList = sublist(sublist(this->ParameterList_,"Amesos2"),this->ParameterList_->get("Solver","Klu"));
+        ParameterListPtr amesos2ParameterList = sublist(this->ParameterList_,"Amesos2");
+        if (amesos2ParameterList->isSublist(this->ParameterList_->get("Solver","Klu"))) amesos2ParameterList = sublist(amesos2ParameterList,this->ParameterList_->get("Solver","Klu"));
         amesos2ParameterList->setName("Amesos2");
+
+        Amesos2Solver_ = Amesos2::create<ECrsMatrix,EMultiVector>(this->ParameterList_->get("Solver","Klu"),epetraMat,xTmp,bTmp);
         Amesos2Solver_->setParameters(amesos2ParameterList);
     }
 

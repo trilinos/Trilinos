@@ -45,9 +45,9 @@
 #include <ShyLU_DDFROSch_config.h>
 
 // FROSch
-#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
 #include <FROSch_Solver_def.hpp>
+
+#include <FROSch_SchwarzPreconditioners_fwd.hpp>
 
 
 namespace FROSch {
@@ -111,7 +111,7 @@ namespace FROSch {
                    SC beta=ScalarTraits<SC>::zero()) const;
 
         int updateMatrix(ConstXMatrixPtr k,
-                        bool reuseInitialize=false);
+                         bool reuseInitialize=false);
 
     protected:
 

@@ -74,7 +74,7 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 
 // Stratimikos includes
-#include <Stratimikos_FROSchXpetra.hpp>
+#include <Stratimikos_FROSch_def.hpp>
 
 #include <Tpetra_Core.hpp>
 

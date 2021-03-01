@@ -80,10 +80,10 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     void AmesosSolverEpetra<SC,LO,GO,NO>::apply(const XMultiVector &x,
-                                                 XMultiVector &y,
-                                                 ETransp mode,
-                                                 SC alpha,
-                                                 SC beta) const
+                                                XMultiVector &y,
+                                                ETransp mode,
+                                                SC alpha,
+                                                SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"AmesosSolverEpetra::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::AmesosSolverEpetra: !this->IsComputed_.");
@@ -136,7 +136,8 @@ namespace FROSch {
         Amesos amesosFactory;
         AmesosSolver_.reset(amesosFactory.Create(this->ParameterList_->get("Solver","Klu"),*EpetraLinearProblem_));
 
-        ParameterListPtr amesosParameterList = sublist(sublist(this->ParameterList_,"Amesos"),this->ParameterList_->get("Solver","Klu"));
+        ParameterListPtr amesosParameterList = sublist(this->ParameterList_,"Amesos");
+        if (amesosParameterList->isSublist(this->ParameterList_->get("Solver","Klu"))) amesosParameterList = sublist(amesosParameterList,this->ParameterList_->get("Solver","Klu"));
         AmesosSolver_->SetParameters(*amesosParameterList);
     }
 

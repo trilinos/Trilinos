@@ -72,10 +72,10 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     void ThyraPreconditioner<SC,LO,GO,NO>::apply(const XMultiVector &x,
-                                         XMultiVector &y,
-                                         ETransp mode,
-                                         SC alpha,
-                                         SC beta) const
+                                                 XMultiVector &y,
+                                                 ETransp mode,
+                                                 SC alpha,
+                                                 SC beta) const
     {
         FROSCH_TIMER_START_SOLVER(applyTime,"ThyraPreconditioner::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::ThyraPreconditioner: !this->IsComputed_.");
@@ -104,8 +104,8 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     ThyraPreconditioner<SC,LO,GO,NO>::ThyraPreconditioner(ConstXMatrixPtr k,
-                                                                      ParameterListPtr parameterList,
-                                                                      string description) :
+                                                          ParameterListPtr parameterList,
+                                                          string description) :
     Solver<SC,LO,GO,NO> (k,parameterList,description)
     {
         FROSCH_TIMER_START_SOLVER(ThyraPreconditionerTime,"ThyraPreconditioner::ThyraPreconditioner");

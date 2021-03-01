@@ -39,10 +39,17 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
-#define THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
+#ifndef _THYRA_FROSCH_FACTORY_DEF_HPP
+#define _THYRA_FROSCH_FACTORY_DEF_HPP
 
 #include "Thyra_FROSchFactory_decl.hpp"
+
+#include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
+#include <FROSch_GDSWPreconditioner_def.hpp>
+#include <FROSch_RGDSWPreconditioner_def.hpp>
+#include <FROSch_OneLevelPreconditioner_def.hpp>
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
+#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 
 
 namespace Thyra {
@@ -50,7 +57,6 @@ namespace Thyra {
     using namespace FROSch;
     using namespace std;
     using namespace Teuchos;
-    using namespace Thyra;
     using namespace Xpetra;
 
     //Constructor

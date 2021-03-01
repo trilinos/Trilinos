@@ -92,7 +92,7 @@ namespace FROSch {
 
     template<class SC,class LO,class GO,class NO>
     int Ifpack2PreconditionerTpetra<SC,LO,GO,NO>::updateMatrix(ConstXMatrixPtr k,
-                                                       bool reuseInitialize)
+                                                               bool reuseInitialize)
     {
         FROSCH_ASSERT(false,"FROSch::Ifpack2PreconditionerTpetra: updateMatrix() is not implemented for the Ifpack2PreconditionerTpetra yet.");
         return 0;
@@ -116,7 +116,8 @@ namespace FROSch {
         Ifpack2::Details::OneLevelFactory<TRowMatrix> ifpack2Factory;
         Ifpack2Preconditioner_ = ifpack2Factory.create(this->ParameterList_->get("Solver","RILUK"),tpetraMat);
 
-        ParameterListPtr ifpack2ParameterList = sublist(sublist(this->ParameterList_,"Ifpack2"),this->ParameterList_->get("Solver","RILUK"));
+        ParameterListPtr ifpack2ParameterList = sublist(this->ParameterList_,"Ifpack2");
+        if (ifpack2ParameterList->isSublist(this->ParameterList_->get("Solver","RILUK"))) ifpack2ParameterList = sublist(ifpack2ParameterList,this->ParameterList_->get("Solver","RILUK"));
         ifpack2ParameterList->setName("Ifpack2");
         Ifpack2Preconditioner_->setParameters(*ifpack2ParameterList);
     }

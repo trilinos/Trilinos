@@ -162,7 +162,7 @@ namespace FROSch {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
             FROSCH_DETAILTIMER_START_LEVELID(applyTime,"apply");
 #endif
-            Phi_->apply(x,*XCoarse_,TRANS);
+            Phi_->apply(x,*XCoarse_,Teuchos::TRANS);
         }
         for (UN j=0; j<GatheringMaps_.size(); j++) {
             XCoarseSolveTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],x.getNumVectors()); // AH 08/22/2019 TODO: Can we get rid of this? If possible, we should remove the whole GatheringMaps idea and replace it by some smart all-to-all MPI communication
@@ -539,13 +539,13 @@ namespace FROSch {
                 }
                 if (!reuseCoarseMatrixSymbolicFactorization) {
                     if (this->IsComputed_ && this->Verbose_) cout << "FROSch::CoarseOperator : Recomputing the Symbolic Factorization of the coarse matrix" << endl;
-                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,
-                                                                         sublist(this->ParameterList_,"CoarseSolver"),
-                                                                         string("CoarseSolver (Level ") + to_string(this->LevelID_) + string(")")));
+                    CoarseSolver_ = SolverFactory<SC,LO,GO,NO>::Build(CoarseMatrix_,
+                                                                      sublist(this->ParameterList_,"CoarseSolver"),
+                                                                      string("CoarseSolver (Level ") + to_string(this->LevelID_) + string(")"));
                     CoarseSolver_->initialize();
                 } else {
                     FROSCH_ASSERT(!CoarseSolver_.is_null(),"FROSch::CoarseOperator: CoarseSolver_.is_null()");
-                    CoarseSolver_->resetMatrix(CoarseMatrix_.getConst(),true);
+                    CoarseSolver_->updateMatrix(CoarseMatrix_.getConst(),true);
                 }
                 CoarseSolver_->compute();
             }
