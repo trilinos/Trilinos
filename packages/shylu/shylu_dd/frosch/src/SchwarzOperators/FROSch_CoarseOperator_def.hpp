@@ -831,11 +831,11 @@ namespace FROSch {
                 dofsPerNodeVector[0] = CoarseDofsPerNode_;
                 CoarseDofsMaps[0] = DMapRep;
 
-                sublist(this->ParameterList_,"CoarseSolver")->set("Repeated Map Vector",RepMapVector);
-                sublist(this->ParameterList_,"CoarseSolver")->set("Dofs Maps Vector",CoarseDofsMaps);
-                sublist(this->ParameterList_,"CoarseSolver")->set("DofOrdering Vector",dofOrderings);
-                sublist(this->ParameterList_,"CoarseSolver")->set("DofsPerNode Vector",dofsPerNodeVector);
-                sublist(this->ParameterList_,"CoarseSolver")->set("Nodes Map Vector",NodesMapVector);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Repeated Map Vector",RepMapVector);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Dofs Maps Vector",CoarseDofsMaps);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("DofOrdering Vector",dofOrderings);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("DofsPerNode Vector",dofsPerNodeVector);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Nodes Map Vector",NodesMapVector);
             }
 
             Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,uniEle,0,this->MpiComm_);
