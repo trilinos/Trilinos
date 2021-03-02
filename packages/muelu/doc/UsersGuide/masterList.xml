@@ -633,6 +633,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: phase2a agg factor</name>
+      <type>double</type>
+      <default>0.5</default>
+      <description>Agg factor for Phase 2a sizes</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: error on nodes with no on-rank neighbors</name>
       <type>bool</type>
       <default>false</default>
