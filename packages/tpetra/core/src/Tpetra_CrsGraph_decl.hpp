@@ -42,11 +42,6 @@
 
 /// \file Tpetra_CrsGraph_decl.hpp
 /// \brief Declaration of the Tpetra::CrsGraph class
-///
-/// If you want to use Tpetra::CrsGraph, include "Tpetra_CrsGraph.hpp"
-/// (a file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::CrsGraph, include this file
-/// (Tpetra_CrsGraph_decl.hpp).
 
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"

@@ -63,7 +63,8 @@ namespace panzer {
 namespace {
 
 void
-applyBV2Orientations(BasisValues2<double> & basis_values,
+applyBV2Orientations(const int num_cells,
+                     BasisValues2<double> & basis_values,
                      const Kokkos::View<const panzer::LocalOrdinal*,PHX::Device> & local_cell_ids,
                      const Teuchos::RCP<const OrientationsInterface> & orientations_interface)
 {
@@ -78,9 +79,10 @@ applyBV2Orientations(BasisValues2<double> & basis_values,
   if(basis_values.orientationsApplied())
     return;
 
-  const int num_cells = local_cell_ids.extent_int(0);
   const auto & local_orientations = *orientations_interface->getOrientations();
   std::vector<Intrepid2::Orientation> workset_orientations(num_cells);
+
+  // We can only apply orientations to owned and ghost cells - virtual cells are ignored (no orientations available)
   for(int i=0; i<num_cells; ++i)
     workset_orientations[i] = local_orientations[local_cell_ids[i]];
   basis_values.applyOrientations(workset_orientations,num_cells);
@@ -430,7 +432,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
     }
   }
 
-  applyBV2Orientations(*biv,getLocalCellIDs(),options_.orientations_);
+  applyBV2Orientations(numOwnedCells()+numGhostCells(),*biv,getLocalCellIDs(),options_.orientations_);
 
   basis_integration_values_map_[basis_description.getKey()][integration_description.getKey()] = biv;
 
@@ -503,7 +505,7 @@ getBasisValues(const panzer::BasisDescriptor & basis_description,
   // TODO: We call this separetely due to how BasisValues2 is structured - needs to be streamlined
   bpv->evaluateBasisCoordinates(getCellVertices(),numCells());
 
-  applyBV2Orientations(*bpv, getLocalCellIDs(), options_.orientations_);
+  applyBV2Orientations(numOwnedCells()+numGhostCells(),*bpv, getLocalCellIDs(), options_.orientations_);
 
   basis_point_values_map_[basis_description.getKey()][point_description.getKey()] = bpv;
 

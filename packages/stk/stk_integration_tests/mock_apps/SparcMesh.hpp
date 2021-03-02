@@ -30,9 +30,7 @@ public:
   using BoundingSphere = std::pair<stk::search::Sphere<double>, EntityProc>;
 
   SparcMesh(MPI_Comm mpiComm)
-  : m_comm(mpiComm), m_owning_rank(0), m_sourceEntityKey(3), m_destEntityKey(5),
-    m_sourceTemperatureValue(300.0), m_sourceFluxValue(4.4),
-    m_destTemperatureValue(100.0), m_destFluxValue(2.2)
+  : m_comm(mpiComm), m_owning_rank(0), m_sourceEntityKey(3), m_destEntityKey(5)
   {
   }
 
@@ -44,12 +42,10 @@ public:
                          const std::string & fieldName)
   {
     if (entityKey == m_sourceEntityKey) {
-      if (fieldName == "Temperature") return m_sourceTemperatureValue;
-      if (fieldName == "Flux") return m_sourceFluxValue;
+      return get_value_from_map(fieldName, m_sourceEntityFieldValues, -99.9);
     }
     if (entityKey == m_destEntityKey) {
-      if (fieldName == "Temperature") return m_destTemperatureValue;
-      if (fieldName == "Flux") return m_destFluxValue;
+      return get_value_from_map(fieldName, m_destEntityFieldValues, -99.9);
     }
     return -99.9;
   }
@@ -59,12 +55,10 @@ public:
                        const double & fieldValue)
   {
     if (entityKey == m_sourceEntityKey) {
-      if (fieldName == "Temperature") m_sourceTemperatureValue = fieldValue;
-      if (fieldName == "Flux") m_sourceFluxValue = fieldValue;
+      m_sourceEntityFieldValues[fieldName] = fieldValue;
     }
     if (entityKey == m_destEntityKey) {
-      if (fieldName == "Temperature") m_destTemperatureValue = fieldValue;
-      if (fieldName == "Flux") m_destFluxValue = fieldValue;
+      m_destEntityFieldValues[fieldName] = fieldValue;
     }
   }
 
@@ -101,14 +95,22 @@ public:
   }
 
 private:
+  using FieldValues = std::map<std::string,double>;
+  double get_value_from_map(const std::string& name, const FieldValues& fieldValues, const double& defaultIfNotFound)
+  {
+    FieldValues::const_iterator iter = fieldValues.find(name);
+    if (iter != fieldValues.end()) {
+      return iter->second;
+    }
+    return defaultIfNotFound;
+  }
+
   MPI_Comm m_comm;
   int m_owning_rank = 0;
   EntityKey m_sourceEntityKey;
   EntityKey m_destEntityKey;
-  double m_sourceTemperatureValue;
-  double m_sourceFluxValue;
-  double m_destTemperatureValue;
-  double m_destFluxValue;
+  FieldValues m_sourceEntityFieldValues;
+  FieldValues m_destEntityFieldValues;
 };
 
 }

@@ -156,7 +156,7 @@ namespace Intrepid2
     return getDkEnumeration<spaceDim>(entries);
   }
 
-template<typename ExecSpaceType, typename OutputValueType, typename PointValueType>
+template<typename BasisBase>
 class Basis_TensorBasis;
 
 /** \struct  Intrepid2::OperatorTensorDecomposition
@@ -274,14 +274,15 @@ struct OperatorTensorDecomposition
   }
   
   //! takes as argument bases that are components in this decomposition, and decomposes them further if they are tensor bases.  Returns a fully expanded decomposition.
-  template<typename ExecSpaceType, typename OutputValueType, class PointValueType>
-  OperatorTensorDecomposition expandedDecomposition(std::vector< Teuchos::RCP<Basis<ExecSpaceType,OutputValueType,PointValueType> > > &bases)
+  template<typename DeviceType, typename OutputValueType, class PointValueType>
+  OperatorTensorDecomposition expandedDecomposition(std::vector< Teuchos::RCP<Basis<DeviceType,OutputValueType,PointValueType> > > &bases)
   {
     const ordinal_type basesSize = bases.size();
     INTREPID2_TEST_FOR_EXCEPTION(basesSize != numBasisComponents_, std::invalid_argument, "The number of bases provided must match the number of basis components in this decomposition");
     
     ordinal_type numExpandedBasisComponents = 0;
-    using TensorBasis = Basis_TensorBasis<ExecSpaceType,OutputValueType,PointValueType>;
+    using BasisBase   = Basis<DeviceType,OutputValueType,PointValueType>;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
     std::vector<TensorBasis*> basesAsTensorBasis(numBasisComponents_);
     for (ordinal_type basisComponentOrdinal=0; basisComponentOrdinal<numBasisComponents_; basisComponentOrdinal++)
     {
@@ -552,16 +553,14 @@ struct OperatorTensorDecomposition
    across the quadrilateral dofs "row-wise".
    
   */
-  template<typename ExecSpaceType = void,
-           typename outputValueType = double,
-           typename pointValueType = double>
+  template<typename BasisBaseClass = void>
   class Basis_TensorBasis
   :
-  public Basis<ExecSpaceType,outputValueType,pointValueType>
+  public BasisBaseClass
   {
   public:
-    using BasisSuper = ::Intrepid2::Basis<ExecSpaceType,outputValueType,pointValueType>;
-    using BasisPtr   = Teuchos::RCP<BasisSuper>;
+    using BasisBase = BasisBaseClass;
+    using BasisPtr  = Teuchos::RCP<BasisBase>;
   
   protected:
     BasisPtr basis1_;
@@ -572,24 +571,26 @@ struct OperatorTensorDecomposition
     std::string name_; // name of the basis
   public:
     
-    using ExecutionSpace  = typename BasisSuper::ExecutionSpace;
-    using OutputValueType = typename BasisSuper::OutputValueType;
-    using PointValueType  = typename BasisSuper::PointValueType;
+    using ExecutionSpace  = typename BasisBase::ExecutionSpace;
+    using OutputValueType = typename BasisBase::OutputValueType;
+    using PointValueType  = typename BasisBase::PointValueType;
     
-    using OrdinalTypeArray1DHost = typename BasisSuper::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename BasisSuper::OrdinalTypeArray2DHost;
-    using OutputViewType         = typename BasisSuper::OutputViewType;
-    using PointViewType          = typename BasisSuper::PointViewType;
-    using TensorBasis            = Basis_TensorBasis<ExecutionSpace,OutputValueType,PointValueType>;
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    using OutputViewType         = typename BasisBase::OutputViewType;
+    using PointViewType          = typename BasisBase::PointViewType;
+    using TensorBasis            = Basis_TensorBasis<BasisBaseClass>;
   public:
     /** \brief  Constructor.
         \param [in] basis1 - the first component basis
         \param [in] basis2 - the second component basis
      */
-    Basis_TensorBasis(BasisPtr basis1, BasisPtr basis2)
+    Basis_TensorBasis(BasisPtr basis1, BasisPtr basis2, EFunctionSpace functionSpace = FUNCTION_SPACE_MAX)
     :
     basis1_(basis1),basis2_(basis2)
     {
+      this->functionSpace_ = functionSpace;
+      
       Basis_TensorBasis* basis1AsTensor = dynamic_cast<Basis_TensorBasis*>(basis1_.get());
       if (basis1AsTensor)
       {
@@ -763,7 +764,7 @@ struct OperatorTensorDecomposition
      
         Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    virtual BasisValues<OutputValueType,ExecSpaceType> allocateBasisValues( TensorPoints<PointValueType,ExecSpaceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
+    virtual BasisValues<OutputValueType,ExecutionSpace> allocateBasisValues( TensorPoints<PointValueType,ExecutionSpace> points, const EOperator operatorType = OPERATOR_VALUE) const override
     {
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
@@ -777,31 +778,31 @@ struct OperatorTensorDecomposition
       if (useVectorData)
       {
         const int numFamilies = 1;
-        std::vector< std::vector<TensorData<OutputValueType,ExecSpaceType> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,ExecSpaceType> >(numVectorComponents));
+        std::vector< std::vector<TensorData<OutputValueType,ExecutionSpace> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,ExecutionSpace> >(numVectorComponents));
         
         const int familyOrdinal = 0;
         for (ordinal_type vectorComponentOrdinal=0; vectorComponentOrdinal<numVectorComponents; vectorComponentOrdinal++)
         {
           if (!opDecomposition.identicallyZeroComponent(vectorComponentOrdinal))
           {
-            std::vector< Data<OutputValueType,ExecSpaceType> > componentData;
+            std::vector< Data<OutputValueType,ExecutionSpace> > componentData;
             for (ordinal_type r=0; r<numBasisComponents; r++)
             {
               const int numComponentPoints = points.componentPointCount(r);
               const EOperator op = opDecomposition.op(vectorComponentOrdinal, r);
               auto componentView = tensorComponents_[r]->allocateOutputView(numComponentPoints, op);
-              componentData.push_back(Data<OutputValueType,ExecSpaceType>(componentView));
+              componentData.push_back(Data<OutputValueType,ExecutionSpace>(componentView));
             }
-            vectorComponents[familyOrdinal][vectorComponentOrdinal] = TensorData<OutputValueType,ExecSpaceType>(componentData);
+            vectorComponents[familyOrdinal][vectorComponentOrdinal] = TensorData<OutputValueType,ExecutionSpace>(componentData);
           }
         }
-        VectorData<OutputValueType,ExecSpaceType> vectorData(vectorComponents);
-        return BasisValues<OutputValueType,ExecSpaceType>(vectorData);
+        VectorData<OutputValueType,ExecutionSpace> vectorData(vectorComponents);
+        return BasisValues<OutputValueType,ExecutionSpace>(vectorData);
       }
       else
       {
         // TensorData: single tensor product
-        std::vector< Data<OutputValueType,ExecSpaceType> > componentData;
+        std::vector< Data<OutputValueType,ExecutionSpace> > componentData;
         
         const ordinal_type vectorComponentOrdinal = 0;
         for (ordinal_type r=0; r<numBasisComponents; r++)
@@ -815,20 +816,20 @@ struct OperatorTensorDecomposition
           //  we want Data to insulate us from that fact)
           const Kokkos::Array<int,7> extents {componentView.extent_int(0), componentView.extent_int(1), 1,1,1,1,1};
           Kokkos::Array<DataVariationType,7> variationType {GENERAL, GENERAL, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT };
-          componentData.push_back(Data<OutputValueType,ExecSpaceType>(componentView, rank, extents, variationType));
+          componentData.push_back(Data<OutputValueType,ExecutionSpace>(componentView, rank, extents, variationType));
         }
         
-        TensorData<OutputValueType,ExecSpaceType> tensorData(componentData);
+        TensorData<OutputValueType,ExecutionSpace> tensorData(componentData);
         
-        std::vector< TensorData<OutputValueType,ExecSpaceType> > tensorDataEntries {tensorData};
-        return BasisValues<OutputValueType,ExecSpaceType>(tensorDataEntries);
+        std::vector< TensorData<OutputValueType,ExecutionSpace> > tensorDataEntries {tensorData};
+        return BasisValues<OutputValueType,ExecutionSpace>(tensorDataEntries);
       }
     }
     
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)
-    using BasisSuper::getValues;
+    using BasisBase::getValues;
     
     /** \brief  Method to extract component points from composite points.
         \param [in]  inputPoints                  - points defined on the composite cell topology
@@ -885,14 +886,14 @@ struct OperatorTensorDecomposition
      
      Note that getDofCoords() is not supported by all bases; in particular, hierarchical bases do not generally support this.
      */
-    virtual void getDofCoords( typename BasisSuper::ScalarViewType dofCoords ) const override
+    virtual void getDofCoords( typename BasisBase::ScalarViewType dofCoords ) const override
     {
       int spaceDim1 = basis1_->getBaseCellTopology().getDimension();
       int spaceDim2 = basis2_->getBaseCellTopology().getDimension();
       
-      using ValueType    = typename BasisSuper::ScalarViewType::value_type;
-      using ResultLayout = typename DeduceLayout< typename BasisSuper::ScalarViewType >::result_layout;
-      using DeviceType   = typename BasisSuper::ScalarViewType::device_type;
+      using ValueType    = typename BasisBase::ScalarViewType::value_type;
+      using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
+      using DeviceType   = typename BasisBase::ScalarViewType::device_type;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
       
       const ordinal_type basisCardinality1 = basis1_->getCardinality();
@@ -930,11 +931,11 @@ struct OperatorTensorDecomposition
 
      Note that getDofCoeffs() is not supported by all bases; in particular, hierarchical bases do not generally support this.
      */
-    virtual void getDofCoeffs( typename BasisSuper::ScalarViewType dofCoeffs ) const override
+    virtual void getDofCoeffs( typename BasisBase::ScalarViewType dofCoeffs ) const override
     {
-      using ValueType    = typename BasisSuper::ScalarViewType::value_type;
-      using ResultLayout = typename DeduceLayout< typename BasisSuper::ScalarViewType >::result_layout;
-      using DeviceType   = typename BasisSuper::ScalarViewType::device_type;
+      using ValueType    = typename BasisBase::ScalarViewType::value_type;
+      using ResultLayout = typename DeduceLayout< typename BasisBase::ScalarViewType >::result_layout;
+      using DeviceType   = typename BasisBase::ScalarViewType::device_type;
       using ViewType     = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
 
       ViewType dofCoeffs1("dofCoeffs1",basis1_->getCardinality());
@@ -1039,8 +1040,8 @@ struct OperatorTensorDecomposition
     */
     virtual
     void
-    getValues(       BasisValues<OutputValueType,ExecSpaceType> outputValues,
-               const TensorPoints<PointValueType,ExecSpaceType>  inputPoints,
+    getValues(       BasisValues<OutputValueType,ExecutionSpace> outputValues,
+               const TensorPoints<PointValueType,ExecutionSpace>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override
     {
       OperatorTensorDecomposition operatorDecomposition = getOperatorDecomposition(operatorType);
@@ -1065,7 +1066,7 @@ struct OperatorTensorDecomposition
             PointViewType  pointView      = inputPoints.getTensorComponent(basisOrdinal);
             
             // Data stores things in fixed-rank Kokkos::View, but Basis requires DynRankView.  We allocate a temporary DynRankView, then copy back to Data.
-            const Data<OutputValueType,ExecSpaceType> & outputData = tensorData.getTensorComponent(basisOrdinal);
+            const Data<OutputValueType,ExecutionSpace> & outputData = tensorData.getTensorComponent(basisOrdinal);
             
             auto basisValueView = outputData.getUnderlyingView();
             tensorComponents_[basisOrdinal]->getValues(basisValueView, pointView, op);
@@ -1076,7 +1077,7 @@ struct OperatorTensorDecomposition
             {
               if (basisValueView.rank() == 2)
               {
-                auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1)});
+                auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1)});
                 Kokkos::parallel_for("multiply basisValueView by weight", policy,
                 KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal) {
                   basisValueView(fieldOrdinal,pointOrdinal) *= weight;
@@ -1084,7 +1085,7 @@ struct OperatorTensorDecomposition
               }
               else if (basisValueView.rank() == 3)
               {
-                auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1),basisValueView.extent_int(2)});
+                auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{basisValueView.extent_int(0),basisValueView.extent_int(1),basisValueView.extent_int(2)});
                 Kokkos::parallel_for("multiply basisValueView by weight", policy,
                 KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal, const int &d) {
                   basisValueView(fieldOrdinal,pointOrdinal,d) *= weight;
@@ -1349,7 +1350,16 @@ struct OperatorTensorDecomposition
       FunctorType functor(outputValues, outputValues1, outputValues2, tensorPoints, weight);
       Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
     }
-  };
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "TensorBasis subclasses must override getHostBasis");
+    }
+  }; // Basis_TensorBasis
   
   /** \struct Intrepid2::TensorBasis3_Functor
       \brief  Functor for computing values for the TensorBasis3 class.
@@ -1600,28 +1610,24 @@ struct OperatorTensorDecomposition
         }
       }
     }
-  };
+  }; // TensorBasis3_Functor
   
   
-  template<typename Basis1, typename Basis2, typename Basis3,
-  typename ExecutionSpace = typename Basis1::ExecutionSpace,
-  typename OutputScalar   = typename Basis1::OutputValueType,
-  typename PointScalar    = typename Basis1::PointValueType>
+  template<typename BasisBaseClass = void>
   class Basis_TensorBasis3
-  : public Basis_TensorBasis<ExecutionSpace, OutputScalar, PointScalar>
+  : public Basis_TensorBasis<BasisBaseClass>
   {
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputScalar, PointScalar>;
-    
+    using BasisBase   = BasisBaseClass;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
   public:
-    using OutputViewType = typename TensorBasis::OutputViewType;
-    using PointViewType  = typename TensorBasis::PointViewType;
-    using ScalarViewType = typename TensorBasis::ScalarViewType;
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
     
-    using OutputValueType = typename TensorBasis::OutputValueType;
-    using PointValueType  = typename TensorBasis::PointValueType;
+    using OutputValueType = typename BasisBase::OutputValueType;
+    using PointValueType  = typename BasisBase::PointValueType;
     
-    using BasisSuper = ::Intrepid2::Basis<ExecutionSpace,OutputScalar,PointScalar>;
-    using BasisPtr   = Teuchos::RCP<BasisSuper>;
+    using BasisPtr  = Teuchos::RCP<BasisBase>;
   protected:
     BasisPtr basis1_;
     BasisPtr basis2_;
@@ -1847,15 +1853,26 @@ struct OperatorTensorDecomposition
       basis2_->getValues(outputValues2,inputPoints2,operatorType2);
       basis3_->getValues(outputValues3,inputPoints3,operatorType3);
       
-      const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputScalar>();
-      const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
+      const int outputVectorSize = getVectorSizeForHierarchicalParallelism<OutputValueType>();
+      const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointValueType>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
+      
+      using ExecutionSpace = typename BasisBase::ExecutionSpace;
       
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(basisCardinality1,Kokkos::AUTO(),vectorSize);
       
-      using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputScalar, OutputViewType>;
+      using FunctorType = TensorBasis3_Functor<ExecutionSpace, OutputValueType, OutputViewType>;
       FunctorType functor(outputValues, outputValues1, outputValues2, outputValues3, tensorPoints, weight);
       Kokkos::parallel_for( policy , functor, "TensorBasis3_Functor");
+    }
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "TensorBasis3 subclasses must override getHostBasis");
     }
   };
 } // end namespace Intrepid2

@@ -44,11 +44,6 @@
 
 /// \file Tpetra_Vector_decl.hpp
 /// \brief Declaration of the Tpetra::Vector class
-///
-/// If you want to use Tpetra::Vector, include "Tpetra_Vector.hpp" (a
-/// file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::Vector, include this file
-/// (Tpetra_Vector_decl.hpp).
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Vector_fwd.hpp"

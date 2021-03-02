@@ -24,6 +24,7 @@ public:
     : m_appName("Mock-Sparc"),
       m_mesh(),
       m_doneFlagName("time step status"),
+      m_iAmRootRank(false),
       m_doingSendTransfer(false),
       m_sendFieldName()
   { }
@@ -40,10 +41,11 @@ public:
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
     m_commApp = stk::coupling::split_comm(m_commWorld, color);
+    int myAppRank = stk::parallel_machine_rank(m_commApp);
+    m_iAmRootRank = myAppRank == 0;
 
     {
       std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-      int myAppRank = stk::parallel_machine_rank(m_commApp);
       int numAppRanks = stk::parallel_machine_size(m_commApp);
       int myWorldRank = stk::parallel_machine_rank(m_commWorld);
       int numWorldRanks = stk::parallel_machine_size(m_commWorld);
@@ -81,21 +83,29 @@ public:
     m_otherInfo = m_myInfo.exchange(m_commWorld, m_commApp);
 
     {
-      int myWorldRank = stk::parallel_machine_rank(m_commWorld);
-      std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-
       std::ostringstream os;
       os << m_appName << ": other app 'app_name': " << m_otherInfo.get_value<std::string>(stk::coupling::AppName);
-      if (myWorldRank == rootRanks.first) std::cout << os.str() << std::endl;
+      if (m_iAmRootRank) std::cout << os.str() << std::endl;
     }
 
-    m_doingSendTransfer = (m_otherInfo.get_value<std::string>(stk::coupling::AppName, "none")=="Mock-Salinas");
-    m_sendFieldName = "Flux";
+    std::string otherAppName = m_otherInfo.get_value<std::string>(stk::coupling::AppName, "none");
+
+    if (otherAppName=="Mock-Salinas") {
+      m_doingSendTransfer = true;
+      m_sendFieldName = "sparc-traction";
+    }
+    if (otherAppName=="Mock-Aria") {
+      m_doingSendTransfer = true;
+      m_sendFieldName = "heat-transfer-coefficient";
+    }
+
     {
-      std::ostringstream os;
-      os << m_appName << ": going to do send-transfer (field='"<<m_sendFieldName<<"'): "
-         << (m_doingSendTransfer ? "true" : "false")<<std::endl;
-      if (stk::parallel_machine_rank(m_commApp)==0) std::cout << os.str() << std::endl;
+      if (m_doingSendTransfer) {
+        std::ostringstream os;
+        os << m_appName << ": will do send-transfer (field='"<<m_sendFieldName<<"') "
+           <<" to other app: "<<otherAppName<<std::endl;
+        if (m_iAmRootRank) std::cout << os.str() << std::endl;
+      }
     }
 
     stk::coupling::check_sync_mode_consistency(m_myInfo, m_otherInfo);
@@ -113,6 +123,7 @@ public:
   void setup_fields_and_transfers()
   {
     if (!m_doingSendTransfer) { return; }
+    m_mesh->set_sparc_field_value(m_mesh->get_sparc_source_entity_key(), m_sendFieldName, 4.4);
     std::shared_ptr<mock::SparcSendAdapter> sendAdapter =
        std::make_shared<mock::SparcSendAdapter>(m_commWorld, *m_mesh, m_sendFieldName);
     std::shared_ptr<mock::EmptyRecvAdapter> recvAdapter;
@@ -204,7 +215,7 @@ public:
     }
 
     {
-      std::cout << m_appName << ": "<<stk::coupling::CurrentTime<<": " << m_currentTime << ", final time: " << m_finalTime << ", isTimeToStop: " << m_isTimeToStop << std::endl;
+      if (m_iAmRootRank) std::cout << m_appName << ": "<<stk::coupling::CurrentTime<<": " << m_currentTime << ", final time: " << m_finalTime << ", isTimeToStop: " << m_isTimeToStop << std::endl;
     }
   }
 
@@ -227,6 +238,7 @@ private:
 
   stk::ParallelMachine m_commWorld;
   stk::ParallelMachine m_commApp;
+  bool m_iAmRootRank;
 
   stk::coupling::SyncInfo m_myInfo;
   stk::coupling::SyncInfo m_otherInfo;
