@@ -128,10 +128,12 @@ namespace Intrepid2
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
        \param [in] points - if a valid points container, specifies the points at which the Jacobian will be evaluated.  (Invalid containers are acceptable for affine CellGeometry.)
        \param [in] pointsPerCell - the number of points at which the Jacobian will be evaluated in each cell.  If points is a valid container, pointsPerCell must match its first dimension.
+       \param [in] refData - the return from getJacobianRefData(); may be an empty container, depending on details of CellGeometry (e.g. if it is affine)
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobianDataPrivate(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const;
+    void setJacobianDataPrivate(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell,
+                                const Data<PointScalar,ExecSpaceType> &refData, const int startCell, const int endCell) const;
   protected:
     HypercubeNodeOrdering nodeOrdering_;
     CellGeometryType    cellGeometryType_;
@@ -318,21 +320,31 @@ namespace Intrepid2
     */
     Data<PointScalar,ExecSpaceType> allocateJacobianData(const int &numPoints, const int startCell=0, const int endCell=-1) const;
     
-    /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container.
-       \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
+    /** \brief Computes reference-space data for the specified points, to be used in setJacobian().
        \param [in] points - the points at which the Jacobian will be evaluated.
-       \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
-       \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
+       \return a Data object with any reference-space data required.  This may be empty, if no reference-space data is required in setJacobian().
     */
-    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int startCell=0, const int endCell=-1) const;
+    Data<PointScalar,ExecSpaceType> getJacobianRefData(const TensorPoints<PointScalar,ExecSpaceType> &points) const;
     
     /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container.
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
        \param [in] points - the points at which the Jacobian will be evaluated.
+       \param [in] refData - the return from getJacobianRefData(); may be an empty container, depending on details of CellGeometry (e.g. if it is affine)
        \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
        \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
     */
-    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const ScalarView<PointScalar,ExecSpaceType> &points, const int startCell=0, const int endCell=-1) const;
+    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const Data<PointScalar,ExecSpaceType> &refData,
+                     const int startCell=0, const int endCell=-1) const;
+    
+    /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container.
+       \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.
+       \param [in] points - the points at which the Jacobian will be evaluated.
+       \param [in] refData - the return from getJacobianRefData(); may be an empty container, depending on details of CellGeometry (e.g. if it is affine)
+       \param [in] startCell - the first cell ordinal for which the Jacobian will be evaluated (used to define worksets smaller than the whole CellGeometry).
+       \param [in] endCell - the first cell ordinal for which the Jacobian will not be evaluated (used to define worksets smaller than the whole CellGeometry); use -1 to indicate that all cells from startCell on should be evaluated.
+    */
+    void setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const ScalarView<PointScalar,ExecSpaceType> &points, const Data<PointScalar,ExecSpaceType> &refData,
+                     const int startCell=0, const int endCell=-1) const;
     
     /** \brief Compute Jacobian values for the reference-to-physical transformation, and place them in the provided container (variant for affine geometry).
        \param [out] jacobianData - a container, allocated by allocateJacobianData(), into which the evaluated Jacobians will be placed.

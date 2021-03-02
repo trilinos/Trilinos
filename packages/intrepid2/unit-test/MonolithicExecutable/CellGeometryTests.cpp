@@ -123,7 +123,8 @@ namespace
     }
     
     Data<PointScalar,ExecutionSpace> jacobians = cellGeometry.allocateJacobianData(tensorPoints);
-    cellGeometry.setJacobian(jacobians, tensorPoints);
+    auto refData = cellGeometry.getJacobianRefData(tensorPoints);
+    cellGeometry.setJacobian(jacobians, tensorPoints, refData);
     
     printFunctor4(jacobians, out, "jacobians from CellGeometry");
     testFloatingEquality4(expectedJacobians, jacobians, relTol, absTol, out, success, "expected Jacobians", "actual Jacobians from CellGeometry");
@@ -200,7 +201,9 @@ namespace
     jacobian = nonAffineCellGeometry.allocateJacobianData(cubaturePoints);
     jacobianDet = CellTools::allocateJacobianDet(jacobian);
     jacobianInv = CellTools::allocateJacobianInv(jacobian);
-    nonAffineCellGeometry.setJacobian(jacobian, cubaturePoints);
+    
+    auto refData = nonAffineCellGeometry.getJacobianRefData(cubaturePoints);
+    nonAffineCellGeometry.setJacobian(jacobian, cubaturePoints, refData);
     CellTools::setJacobianDet(jacobianDet, jacobian);
     CellTools::setJacobianInv(jacobianInv, jacobian);
     

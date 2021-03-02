@@ -249,7 +249,9 @@ namespace Intrepid2
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobianDataPrivate(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const
+  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobianDataPrivate(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points,
+                                                                                const int &pointsPerCell, const Data<PointScalar,ExecSpaceType> &refData,
+                                                                                const int startCell, const int endCell) const
   {
     const int numCellsWorkset = (endCell == -1) ? (numCells_ - startCell) : (endCell - startCell);
     
@@ -354,28 +356,14 @@ namespace Intrepid2
         {
           auto dataView = jacobianData.getUnderlyingView(); // (numCellsWorkset, pointsPerCell, spaceDim, spaceDim) allocated in allocateJacobianDataPrivate()
           
-          // it would be nice if we could avoid allocating and computing this reference space data every time a Jacobian is required.
-          // Once we have data IDs set up, we could verify that the point set matches the point set we previously computed at.
-          // At that point, we could make basisGradients a member variable, lazily filled during setJacobian().
-          auto basisGradients = basisForNodes->allocateBasisValues(points, OPERATOR_GRAD);
-          basisForNodes->getValues(basisGradients, points, OPERATOR_GRAD);
+          // refData should contain the basis gradients; shape is (F,P,D)
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!refData.isValid(), std::invalid_argument, "refData should be a valid container for cases with non-affine geometry");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.rank() != 3, std::invalid_argument, "refData should have shape (F,P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.extent_int(0) != basisForNodes->getCardinality(), std::invalid_argument, "refData should have shape (F,P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.extent_int(1) != points.extent_int(0), std::invalid_argument, "refData should have shape (F,P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.extent_int(2) != spaceDim, std::invalid_argument, "refData should have shape (F,P,D)");
           
-          // as an optimization here, we allocate a Kokkos View to store explicit, full gradients at each point.
-          // this worthwhile (if it in fact is) mainly due to operator() in BasisView being more expensive than that in DynRankView, and also
-          // due to the fact that tensor-product bases are stored unmultiplied, so accesses cascade, and end up involving extra multiplies.
-          int numPoints = points.extent_int(0);
-          int numFields = basisForNodes->getCardinality();
-          auto basisGradientsView = getMatchingViewWithLabel(dataView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
-          
-          auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numFields,numPoints,spaceDim});
-          
-          Kokkos::parallel_for("copy basis gradients", policy,
-          KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal, const int &d) {
-            basisGradientsView(fieldOrdinal,pointOrdinal,d) = basisGradients(fieldOrdinal,pointOrdinal,d);
-          });
-          ExecSpaceType().fence();
-          
-          CellTools::setJacobian(dataView, *this, basisGradientsView, startCell, endCell);
+          CellTools::setJacobian(dataView, *this, refData, startCell, endCell);
         }
       }
     }
@@ -656,9 +644,13 @@ namespace Intrepid2
       {
         auto cellMeasureData = cellMeasure.getTensorComponent(0).getUnderlyingView2();
         auto detData = jacobianDet.getUnderlyingView2();
-        Kokkos::parallel_for(
-        Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{detData.extent_int(0),detData.extent_int(1)}),
-        KOKKOS_LAMBDA (int cellOrdinal, int pointOrdinal) {
+        const int numCells = detData.extent_int(0);
+        const int numPoints = detData.extent_int(1);
+        // This lambda rewritten using single-dimension RangePolicy instead of MDRangePolicy to work around an apparent CUDA 10.1.243 compiler bug
+        Kokkos::parallel_for( numCells * numPoints,
+        KOKKOS_LAMBDA (const int &cellPointOrdinal) {
+          const int cellOrdinal  = cellPointOrdinal / numPoints;
+          const int pointOrdinal = cellPointOrdinal % numPoints;
           cellMeasureData(cellOrdinal,pointOrdinal) = detData(cellOrdinal,pointOrdinal) * cubatureWeights(pointOrdinal);
         });
       }
@@ -718,6 +710,74 @@ namespace Intrepid2
       }
     }
     else return GENERAL;
+  }
+
+  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  Data<PointScalar,ExecSpaceType> CellGeometry<PointScalar,spaceDim,ExecSpaceType>::getJacobianRefData(const TensorPoints<PointScalar,ExecSpaceType> &points) const
+  {
+    Data<PointScalar,ExecSpaceType> emptyRefData;
+    if (cellGeometryType_ == UNIFORM_GRID)
+    {
+      // no need for basis computations
+      return emptyRefData;
+    }
+    else if (cellGeometryType_ == TENSOR_GRID)
+    {
+      // no need for basis values
+      return emptyRefData;
+    }
+    else if ((cellGeometryType_ == FIRST_ORDER) || (cellGeometryType_ == HIGHER_ORDER))
+    {
+      const bool simplex = (spaceDim + 1 == cellToNodes_.extent_int(1));
+      if (simplex)
+      {
+        // no need for precomputed basis values
+        return emptyRefData;
+      }
+      else
+      {
+        using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
+        auto basisForNodes = this->basisForNodes();
+        
+        if (affine_)
+        {
+          // no need for precomputed basis values
+          return emptyRefData;
+        }
+        else
+        {
+          auto basisGradients = basisForNodes->allocateBasisValues(points, OPERATOR_GRAD);
+          basisForNodes->getValues(basisGradients, points, OPERATOR_GRAD);
+          
+          int numPoints = points.extent_int(0);
+          int numFields = basisForNodes->getCardinality();
+          
+          // At some (likely relatively small) memory cost, we copy the BasisGradients into an explicit (F,P,D) container.
+          // Given that we expect to reuse this for a non-trivial number of cell in the common use case, the extra memory
+          // cost is likely worth the increased flop count, etc.  (One might want to revisit this in cases of high spaceDim
+          // and/or very high polynomial order.)
+          
+          auto firstPointComponentView = points.getTensorComponent(0); // (P,D0)
+          auto basisGradientsView = getMatchingViewWithLabel(firstPointComponentView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
+          
+          auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numFields,numPoints,spaceDim});
+          
+          Kokkos::parallel_for("copy basis gradients", policy,
+          KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal, const int &d) {
+            basisGradientsView(fieldOrdinal,pointOrdinal,d) = basisGradients(fieldOrdinal,pointOrdinal,d);
+          });
+          ExecSpaceType().fence();
+          
+          Data<PointScalar,ExecSpaceType> basisRefData(basisGradientsView);
+          return basisRefData;
+        }
+      }
+    }
+    else
+    {
+      // TODO: handle the other cases
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "support for this CellGeometryType is not yet implemented");
+    }
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
@@ -1178,20 +1238,22 @@ namespace Intrepid2
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int startCell, const int endCell) const
+  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points,
+                                                                     const Data<PointScalar,ExecSpaceType> &refData, const int startCell, const int endCell) const
   {
     const int pointsPerCell = points.extent_int(0);
-    setJacobianDataPrivate(jacobianData,points,pointsPerCell,startCell,endCell);
+    setJacobianDataPrivate(jacobianData,points,pointsPerCell,refData,startCell,endCell);
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const ScalarView<PointScalar,ExecSpaceType> &points, const int startCell, const int endCell) const
+  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const ScalarView<PointScalar,ExecSpaceType> &points,
+                                                                     const Data<PointScalar,ExecSpaceType> &refData, const int startCell, const int endCell) const
   {
     // if points is rank 3, it has shape (C,P,D).  If it's rank 2, (P,D).
     const int pointDimension = (points.rank() == 3) ? 1 : 0;
     const int pointsPerCell = points.extent_int(pointDimension);
     TensorPoints<PointScalar,ExecSpaceType> tensorPoints(points);
-    setJacobianDataPrivate(jacobianData,tensorPoints,pointsPerCell,startCell,endCell);
+    setJacobianDataPrivate(jacobianData,tensorPoints,pointsPerCell,refData,startCell,endCell);
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
@@ -1200,7 +1262,8 @@ namespace Intrepid2
     INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!affine_, std::invalid_argument, "this version of setJacobian() is only supported for affine CellGeometry");
     
     TensorPoints<PointScalar,ExecSpaceType> emptyPoints;
-    setJacobianDataPrivate(jacobianData,emptyPoints,numPoints,startCell,endCell);
+    Data<PointScalar,ExecSpaceType> emptyRefData;
+    setJacobianDataPrivate(jacobianData,emptyPoints,numPoints,emptyRefData,startCell,endCell);
   }
 } // namespace Intrepid2
 

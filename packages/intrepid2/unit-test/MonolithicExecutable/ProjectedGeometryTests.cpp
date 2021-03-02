@@ -123,7 +123,8 @@ namespace
       TEST_EQUALITY(numCells,  jacobianDet.extent_int(0));
       TEST_EQUALITY(numPoints, jacobianDet.extent_int(1));
       
-      projectedGeometry.setJacobian(jacobian, cubaturePoints);
+      auto refData = projectedGeometry.getJacobianRefData(cubaturePoints);
+      projectedGeometry.setJacobian(jacobian, cubaturePoints, refData);
       CellTools<ExecutionSpace>::setJacobianDet(jacobianDet, jacobian);
       
       auto cellMeasure = projectedGeometry.allocateCellMeasure(jacobianDet, cubatureWeights);
