@@ -171,25 +171,45 @@ namespace FROSch {
         FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace: AssembledBasisMap_.is_null().");
         FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
 
-        GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        if (rowMap->lib()==UseEpetra) {
+            GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+            LO iD;
+            SC valueTmp;
+            for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
+                GOVec indices;
+                SCVec values;
+                for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
+                    valueTmp=AssembledBasis_->getData(j)[i];
+                    if (fabs(valueTmp)>treshold) {
+                        indices.push_back(AssembledBasisMap_->getGlobalElement(j));
+                        values.push_back(valueTmp);
+                    }
+                }
+                iD = repeatedMap->getGlobalElement(i);
 
-        LO iD;
-        SC valueTmp;
-
-        for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
-            GOVec indices;
-            SCVec values;
-            for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
-                valueTmp=AssembledBasis_->getData(j)[i];
-                if (fabs(valueTmp)>treshold) {
-                    indices.push_back(AssembledBasisMap_->getGlobalElement(j));
-                    values.push_back(valueTmp);
+                if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                    GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
                 }
             }
-            iD = repeatedMap->getGlobalElement(i);
+        } else {
+            GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+            LO iD;
+            SC valueTmp;
+            for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
+                LOVec indices;
+                SCVec values;
+                for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
+                    valueTmp=AssembledBasis_->getData(j)[i];
+                    if (fabs(valueTmp)>treshold) {
+                        indices.push_back(j);
+                        values.push_back(valueTmp);
+                    }
+                }
+                iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(i));
 
-            if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
-                GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
+                if (iD!=-1) { // This should prevent duplicate entries on the interface
+                    GlobalBasisMatrix_->insertLocalValues(iD,indices(),values());
+                }
             }
         }
         GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); GlobalBasisMatrix_->describe(*fancy,VERB_EXTREME);

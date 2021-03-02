@@ -76,7 +76,7 @@
 #endif
 
 #ifndef FROSCH_NOTIFICATION
-    #define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_OUTPUT_INDENT) << " " << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
+    #define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_OUTPUT_INDENT) << " " << "[NOTIFICATION] " << CLASS << ": " << OUTPUT << std::endl;
 #endif
 
 #ifndef FROSCH_TEST_OUTPUT
