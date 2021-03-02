@@ -43,6 +43,8 @@
 #ifndef PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 #define PANZER_STK_LOCAL_MESH_UTILITIES_HPP
 
+#include "Teuchos_RCP.hpp"
+
 namespace panzer
 {
   struct LocalMeshInfo;
@@ -52,7 +54,8 @@ namespace panzer_stk
 {
   class STK_Interface;
 
-  /** Create a structure containing information about the local portion of a given element block
+  /**
+   * \brief Create a structure containing information about the local portion of a given element block
    *
    * \param[in] mesh Reference to STK mesh interface
    *
