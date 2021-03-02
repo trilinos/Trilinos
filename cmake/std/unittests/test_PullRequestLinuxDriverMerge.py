@@ -387,7 +387,5 @@ class Test_run(unittest.TestCase):
         self.assertTrue(m_stdout.getvalue().endswith(expected_string))
 
 
-
-
 if __name__ == '__main__':
     unittest.main()  # pragma nocover

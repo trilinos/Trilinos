@@ -3474,8 +3474,8 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
 
       void define_input_sideset_fields(Ioss::Region &region, stk::mesh::MetaData &meta)
       {
-        if (meta.spatial_dimension() <= meta.side_rank())
-          return;
+        unsigned sideRank = meta.side_rank();
+        if (meta.spatial_dimension() <= sideRank) return;
 
         const Ioss::SideSetContainer& side_sets = region.get_sidesets();
         for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();

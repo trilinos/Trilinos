@@ -67,19 +67,19 @@ public:
 
     virtual void local_entities_created_or_deleted_notification(stk::mesh::EntityRank rank)
     {
-        ThrowRequireMsg(m_local_entities_created_or_deleted.size() > rank, "TestListener::local_entities_created_or_deleted ERROR, rank ("<<rank<<") out of range.");
+        ThrowRequireMsg(m_local_entities_created_or_deleted.size() > static_cast<unsigned>(rank), "TestListener::local_entities_created_or_deleted ERROR, rank ("<<rank<<") out of range.");
         m_local_entities_created_or_deleted[rank]++;
     }
 
     virtual void local_entity_comm_info_changed_notification(stk::mesh::EntityRank rank)
     {
-        ThrowRequireMsg(m_entity_comm_info_changed.size() > rank, "TestListener::global_entity_comm_info_changed ERROR, rank ("<<rank<<") out of range.");
+        ThrowRequireMsg(m_entity_comm_info_changed.size() > static_cast<unsigned>(rank), "TestListener::global_entity_comm_info_changed ERROR, rank ("<<rank<<") out of range.");
         m_entity_comm_info_changed[rank]++;
     }
 
     virtual void local_buckets_changed_notification(stk::mesh::EntityRank rank)
     {
-        ThrowRequireMsg(m_buckets_changed.size() > rank, "TestListener::global_buckets_changed ERROR, rank ("<<rank<<") out of range.");
+        ThrowRequireMsg(m_buckets_changed.size() > static_cast<unsigned>(rank), "TestListener::global_buckets_changed ERROR, rank ("<<rank<<") out of range.");
         m_buckets_changed[rank]++;
     }
 

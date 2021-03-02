@@ -446,6 +446,8 @@ bool Selector::is_all_unions() const
 
 namespace
 {
+template <typename T> T * get_pointer(T *item) { return item; }
+template <typename T> T * get_pointer(T &item) { return &item; }
 template <typename T> T & dereference_if_pointer(T *item) { return *item; }
 template <typename T> T & dereference_if_pointer(T &item) { return item; }
 }
@@ -454,11 +456,15 @@ template <typename VectorType>
 Selector selectUnion( const VectorType & union_vector )
 {
   Selector selector;
-  if (union_vector.size() > 0) {
-    selector = dereference_if_pointer(union_vector[0]);
-    for (unsigned i = 1 ; i < union_vector.size() ; ++i) {
-      selector |= dereference_if_pointer(union_vector[i]);
+  bool foundFirstNonNullptr = false;
+  for(unsigned i=0; i<union_vector.size(); ++i) {
+    if (get_pointer(union_vector[i]) == nullptr) continue;
+    if (!foundFirstNonNullptr) {
+      selector = dereference_if_pointer(union_vector[i]);
+      foundFirstNonNullptr = true;
+      continue;
     }
+    selector |= dereference_if_pointer(union_vector[i]);
   }
   return selector;
 }

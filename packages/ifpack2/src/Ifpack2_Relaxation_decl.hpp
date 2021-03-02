@@ -50,7 +50,7 @@
 #include "Tpetra_BlockCrsMatrix.hpp"
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
-
+#include "Ifpack2_Details_GaussSeidel.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Ifpack2 {
@@ -260,6 +260,9 @@ public:
 
   //! The Node type used by the input MatrixType.
   typedef typename MatrixType::node_type node_type;
+
+  //! The Kokkos device type used by the input MatrixType.
+  typedef typename MatrixType::node_type::device_type device_type;
 
   //! The type of the magnitude (absolute value) of a matrix entry.
   typedef typename Teuchos::ScalarTraits<scalar_type>::magnitudeType magnitude_type;
@@ -583,16 +586,25 @@ private:
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
+    typedef typename Kokkos::ArithTraits<scalar_type>::val_type impl_scalar_type;
+
   /// \brief Tpetra::CrsMatrix specialization used by this class.
   ///
   /// We use this for dynamic casts to dispatch to the most efficient
   /// implementation of various relaxation kernels.
   typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> crs_matrix_type;
+  typedef Tpetra::CrsGraph<local_ordinal_type,
+                            global_ordinal_type, node_type> crs_graph_type;
+  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
+                            global_ordinal_type, node_type> multivector_type;
   typedef Tpetra::BlockCrsMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_crs_matrix_type;
   typedef Tpetra::BlockMultiVector<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> block_multivector_type;
+
+  typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
+  typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
 
 
   //@}
@@ -610,6 +622,13 @@ private:
       <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;
   Teuchos::RCP<mt_kernel_handle_type> mtKernelHandle_;
+
+  //@}
+  //! \name Implementation of serial Gauss-Seidel.
+  //@{
+
+  using SerialGaussSeidel = Ifpack2::Details::GaussSeidel<scalar_type, local_ordinal_type, global_ordinal_type, node_type>;
+  Teuchos::RCP<SerialGaussSeidel> serialGaussSeidel_;
 
   //@}
   //! \name Unimplemented methods that you are syntactically forbidden to call.
@@ -646,38 +665,36 @@ private:
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
               Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
 
-  //! Apply Gauss-Seidel to X, returning the result in Y.
-  void ApplyInverseGS(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
-
-  //! Apply multi-threaded Gauss-Seidel to X, returning the result in Y.
+  //! Apply multi-threaded Gauss-Seidel for solving AX = B.
   void ApplyInverseMTGS_CrsMatrix(
-          const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      Tpetra::ESweepDirection direction) const;
 
-
-  //! Apply Gauss-Seidel for a Tpetra::RowMatrix specialization.
-  void ApplyInverseGS_RowMatrix(
+  //! Apply Gauss-Seidel to X, returning the result in Y. Calls one of the Crs/Row/BlockCrs specializations below.
+  void ApplyInverseSerialGS(
         const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+              Tpetra::ESweepDirection direction) const;
 
   //! Apply Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void
-  ApplyInverseGS_CrsMatrix (const crs_matrix_type& A,
-                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  void ApplyInverseSerialGS_CrsMatrix (const crs_matrix_type& A,
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      Tpetra::ESweepDirection direction) const;
+
+  //! Apply Gauss-Seidel for a Tpetra::RowMatrix specialization.
+  void ApplyInverseSerialGS_RowMatrix(
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+      Tpetra::ESweepDirection direction) const;
 
   //! Apply Gauss-Seidel for a Tpetra::BlockCrsMatrix specialization.
-  void
-  ApplyInverseGS_BlockCrsMatrix (const block_crs_matrix_type& A,
-                            const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                            Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y);
-
-  //! Apply symmetric Gauss-Seidel to X, returning the result in Y.
-  void ApplyInverseSGS(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
+  void ApplyInverseSerialGS_BlockCrsMatrix(
+      const block_crs_matrix_type& A,
+      const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
+      Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y,
+      Tpetra::ESweepDirection direction);
 
   //! Apply symmetric multi-threaded Gauss-Seidel to X, returning the result in Y.
   void ApplyInverseMTSGS_CrsMatrix(
@@ -688,23 +705,6 @@ private:
       const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& B,
       Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
       const Tpetra::ESweepDirection direction) const;
-
-  //! Apply symmetric Gauss-Seidel for a Tpetra::RowMatrix specialization.
-  void ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-              Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
-
-  //! Apply symmetric Gauss-Seidel for a Tpetra::CrsMatrix specialization.
-  void
-  ApplyInverseSGS_CrsMatrix (const crs_matrix_type& A,
-                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y) const;
-
-  //! Apply symmetric Gauss-Seidel for a Tpetra::BlockCrsMatrix specialization.
-  void
-  ApplyInverseSGS_BlockCrsMatrix (const block_crs_matrix_type& A,
-                             const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& X,
-                             Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Y);
 
   void computeBlockCrs ();
 
@@ -728,9 +728,9 @@ private:
   Teuchos::RCP<const row_matrix_type> A_;
   //! Time object to track timing (setup).
   //! Importer for parallel Gauss-Seidel and symmetric Gauss-Seidel.
-  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > Importer_;
+  Teuchos::RCP<const import_type> Importer_;
   //! Importer for block multivector versions of GS and SGS
-  Teuchos::RCP<const Tpetra::Import<local_ordinal_type,global_ordinal_type,node_type> > pointImporter_;
+  Teuchos::RCP<const import_type> pointImporter_;
   //! Contains the diagonal elements of \c A_.
   Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> > Diagonal_;
   //! MultiVector for caching purposes (so apply doesn't need to allocate one on each call)
