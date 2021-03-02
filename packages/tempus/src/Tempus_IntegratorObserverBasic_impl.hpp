@@ -106,6 +106,7 @@ observeEndIntegrator(const Integrator<Scalar>& integrator){
   std::time_t end = std::time(nullptr);
   const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
   const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "============================================================================\n"
        << "  Total runtime = " << runtime << " sec = "

@@ -248,7 +248,7 @@ describe(
   auto out = Teuchos::fancyOStream( in_out.getOStream() );
   out->setOutputToRootOnly(0);
   *out << description() << "::describe" << std::endl;
-  integrator_->describe(out, verbLevel);
+  integrator_->describe(in_out, verbLevel);
 }
 
 template<class Scalar>
