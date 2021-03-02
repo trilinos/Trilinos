@@ -1052,20 +1052,6 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    /// KJ: this logic is not necessary anymore
-    // if (copyOnHost) {
-    //   sourceMV.sync_host();
-    //   this->sync_host ();
-    //   this->modify_host ();
-    // }
-    // else {
-    //   sourceMV.sync_device();
-    //   if (this->need_sync_device ()) {
-    //     this->sync_device ();
-    //   }
-    //   this->modify_device ();
-    // }
-
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Copy" << endl;
@@ -1721,17 +1707,6 @@ namespace Tpetra {
 
     // We have to sync before modifying, because this method may read
     // as well as write (depending on the CombineMode).
-    /// KJ : this does not need anymore
-    // if (unpackOnHost) {
-    //   imports.sync_host();
-    //   this->sync_host ();
-    //   this->modify_host ();
-    // }
-    // else {
-    //   imports.sync_device();
-    //   this->sync_device ();
-    //   this->modify_device ();
-    // }
     auto imports_d = imports.view_device ();
     auto imports_h = imports.view_host ();
     auto importLIDs_d = importLIDs.view_device ();
@@ -4335,6 +4310,7 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4355,6 +4331,7 @@ namespace Tpetra {
   sync_device () {
     owningView_.sync_device ();
   }
+#endif // TPETRA_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -4370,6 +4347,7 @@ namespace Tpetra {
     return owningView_.need_sync_device ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4383,6 +4361,7 @@ namespace Tpetra {
   modify_host () {
     owningView_.modify_host ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4398,7 +4377,7 @@ namespace Tpetra {
   getLocalViewHost () const {
     return view_.view_host ();
   }
-#endif
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string

@@ -433,6 +433,7 @@ public:
                      BlockMultiVector<Scalar, LO, GO, Node>& Z,
                      const Scalar& beta);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //@}
   //! \name Implementation of "dual view semantics"
   //@{
@@ -455,20 +456,25 @@ public:
   ///   MultiVector as modified in the space in which you modified
   ///   it, by calling the modify() method with the appropriate
   ///   template parameter.
-  // template<class TargetMemorySpace>
-  // void sync () {
-  //   mv_.template sync<typename TargetMemorySpace::memory_space> ();
-  // }
+  template<class TargetMemorySpace>
+  TPETRA_DEPRECATED
+  void sync () {
+    mv_.template sync<typename TargetMemorySpace::memory_space> ();
+  }
 
-  // /// \brief Update data to the host
-  // void sync_host() {
-  //   mv_.sync_host();
-  // }
+  /// \brief Update data to the host
+  TPETRA_DEPRECATED
+  void sync_host() {
+    mv_.sync_host();
+  }
 
-  // /// \brief Update data to the device
-  // void sync_device() {
-  //   mv_.sync_device();
-  // }
+  /// \brief Update data to the device
+  TPETRA_DEPRECATED
+  void sync_device() {
+    mv_.sync_device();
+  }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
@@ -486,25 +492,32 @@ public:
     return mv_.need_sync_device();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
   /// \brief Mark data as modified on the given memory space.
   ///
   /// If <tt>TargetDeviceType::memory_space</tt> is the same as this
   /// object's memory space, then mark the device's data as modified.
   /// Otherwise, mark the host's data as modified.
-  // template<class TargetMemorySpace>
-  // void modify () {
-  //   mv_.template modify<typename TargetMemorySpace::memory_space> ();
-  // }
+  template<class TargetMemorySpace>
+  TPETRA_DEPRECATED
+  void modify () {
+    mv_.template modify<typename TargetMemorySpace::memory_space> ();
+  }
 
-  // /// \brief Mark data as modified on the host
-  // void modify_host() {
-  //   mv_.modify_host();
-  // }
+  /// \brief Mark data as modified on the host
+  TPETRA_DEPRECATED
+  void modify_host() {
+    mv_.modify_host();
+  }
 
-  // /// \brief Mark data as modified on the device
-  // void modify_device() {
-  //   mv_.modify_device();
-  // }
+  /// \brief Mark data as modified on the device
+  TPETRA_DEPRECATED
+  void modify_device() {
+    mv_.modify_device();
+  }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   //@}
   //! \name Fine-grained data access
   //@{

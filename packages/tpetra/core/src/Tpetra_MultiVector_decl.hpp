@@ -1439,7 +1439,9 @@ namespace Tpetra {
     /// This requires that there are no live host-space views.
     typename dual_view_type::t_dev getLocalViewDevice(Access::WriteOnlyStruct);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Clear "modified" flags on both host and device sides.
+    TPETRA_DEPRECATED
     void clear_sync_state ();
 
     /// \brief Update data on device or host only if data in the other
@@ -1461,15 +1463,19 @@ namespace Tpetra {
     ///   it, by calling the modify() method with the appropriate
     ///   template parameter.
     template<class TargetDeviceType>
+    TPETRA_DEPRECATED
     void sync () {
       view_.template sync<TargetDeviceType> ();
     }
 
     //! Synchronize to Host
+    TPETRA_DEPRECATED
     void sync_host ();
 
     //! Synchronize to Device
+    TPETRA_DEPRECATED
     void sync_device ();
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
@@ -1483,21 +1489,27 @@ namespace Tpetra {
     //! Whether this MultiVector needs synchronization to the device.
     bool need_sync_device () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
     ///
     /// If \c TargetDeviceType is the same as this MultiVector's
     /// device type, then mark the device's data as modified.
     /// Otherwise, mark the host's data as modified.
     template<class TargetDeviceType>
+    TPETRA_DEPRECATED
     void modify () {
       view_.template modify<TargetDeviceType> ();
     }
 
     //! Mark data as modified on the device side.
+    TPETRA_DEPRECATED
     void modify_device ();
 
     //! Mark data as modified on the host side.
+    TPETRA_DEPRECATED
     void modify_host ();
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Return a view of the local data on a specific device, with the given access mode.
     ///   The return type is either dual_view_type::t_dev, dual_view_type::t_host, or the const_type of
@@ -2614,8 +2626,6 @@ namespace Tpetra {
       << " and dst has " << dst.getLocalLength () << " row(s).");
 
     const bool srcMostUpToDateOnDevice = ! src.need_sync_device ();
-    //dst.clear_sync_state ();
-    //dst.modify_device ();
 
     if (src.isConstantStride () && dst.isConstantStride ()) {
       if (srcMostUpToDateOnDevice) {

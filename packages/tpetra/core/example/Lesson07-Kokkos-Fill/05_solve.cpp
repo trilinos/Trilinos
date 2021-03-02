@@ -423,9 +423,6 @@ int main (int argc, char* argv[]) {
     typedef dual_view_type::t_dev::memory_space memory_space;
     typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
-    x_exact.sync<memory_space> ();
-    x_exact.modify<memory_space> ();
-
     // Slight breakage with respect to GCC < 4.8.
     // mfh 20 Aug 2017: See also GitHub issue #1629.
 #if defined(__GNUC__)

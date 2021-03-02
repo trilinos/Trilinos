@@ -133,7 +133,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceView, LO, GO, Scalar , Nod
 
   // Check result; all vector entries should be the same
   auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
-  auto data_old = defaultVec.template getLocalView<device_t> ();
+  auto data_old = defaultVec.template getLocalView<device_t>(Tpetra::Access::ReadOnly);
 
   if (data != data_old) {
     ierr++;
@@ -281,8 +281,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostViewSync, LO, GO, Scalar , N
       ierr++;
     }
   }
-  defaultVec.sync_host();
-  defaultVec.sync_device();
 
   //localVewHost readWrite should set need_sync_device(), but not need_sync_host()
   {
@@ -294,8 +292,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostViewSync, LO, GO, Scalar , N
       ierr++;
     }
   }
-  defaultVec.sync_host();
-  defaultVec.sync_device();
 
   //localViewHost writeOnly should set need_sync_device(), but not need_sync_host()
   {
@@ -307,8 +303,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostViewSync, LO, GO, Scalar , N
       ierr++;
     }
   }
-  defaultVec.sync_host();
-  defaultVec.sync_device();
 
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 
@@ -354,8 +348,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar ,
       ierr++;
     }
   }
-  defaultVec.sync_host();
-  defaultVec.sync_device();
 
   //localVewDevice readWrite should set need_sync_host(), but not need_sync_device()
   {
@@ -367,8 +359,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar ,
       ierr++;
     }
   }
-  defaultVec.sync_host();
-  defaultVec.sync_device();
 
   //localViewDevice writeOnly should set need_sync_host(), but not need_sync_device()
   {
@@ -380,8 +370,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar ,
       ierr++;
     }
   }
-  defaultVec.sync_host();
-  defaultVec.sync_device();
 
   if (ierr > 0) 
     std::cout << "TEST FAILED:  DEFAULT-TO-DEFAULT TEST HAD " << ierr 

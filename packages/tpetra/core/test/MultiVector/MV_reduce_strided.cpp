@@ -86,14 +86,12 @@ bool multiVectorsLocallyEqual (Teuchos::FancyOStream& out,
   MV Y_copy;
   if (X.need_sync_host ()) {
     X_copy = MV (X, Teuchos::Copy);
-    X_copy.sync_host ();
   }
   else {
     X_copy = X; // harmless shallow copy
   }
   if (Y.need_sync_host ()) {
     Y_copy = MV (Y, Teuchos::Copy);
-    Y_copy.sync_host ();
   }
   else {
     Y_copy = Y; // harmless shallow copy
@@ -175,21 +173,14 @@ void reduceMultiVector2 (MV& Z)
   using Teuchos::reduceAll;
   using Teuchos::REDUCE_SUM;
 
-  if (Z.need_sync_host ()) {
-    Z.sync_host ();
-  }
-  Z.modify_host ();
-
   const size_t numRows = Z.getLocalLength ();
   const size_t numCols = Z.getNumVectors ();
   MV Z2 (Z.getMap (), Z.getNumVectors ());
-  Z2.sync_host ();
-  Z2.modify_host ();
   const auto& comm = * (Z.getMap ()->getComm ());
 
   for (size_t j = 0; j < numCols; ++j) {
     auto Z_j = Z.getVectorNonConst (j);
-    auto Z_j_lcl_2d = Z_j->getLocalViewHost(Tpetra::Access::WriteOnly);
+    auto Z_j_lcl_2d = Z_j->getLocalViewHost(Tpetra::Access::ReadWrite);
     auto Z_j_lcl = Kokkos::subview (Z_j_lcl_2d, Kokkos::ALL (), 0);
 
     auto Z2_j = Z2.getVectorNonConst (j);
@@ -200,7 +191,6 @@ void reduceMultiVector2 (MV& Z)
                Z_j_lcl.data (), Z2_j_lcl.data ());
     Kokkos::deep_copy (Z_j_lcl, Z2_j_lcl);
   }
-  Z.sync_device ();
 }
 
 //
@@ -243,13 +233,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
   // instead of 0, because 0 is the default fill value.
   {
     SC curVal = STS::one ();
-    Z0.sync_host ();
-    Z0.modify_host ();
     for (size_t j = 0; j < numCols; ++j) {
       Z0.getVectorNonConst (j)->putScalar (curVal);
       curVal += STS::one ();
     }
-    Z0.sync_device ();
   }
 
   MV Z1 (Z0, Teuchos::Copy);
