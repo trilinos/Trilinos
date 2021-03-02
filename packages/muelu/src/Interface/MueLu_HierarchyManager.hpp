@@ -405,7 +405,6 @@ namespace MueLu {
             agg = L->template Get< RCP<Aggregates> >(name,&*levelManagers_[data[i]+1]->GetFactory(name));  
           }
           else if (L->IsAvailable(name)) {
-            printf("- FOUND!\n");
             agg = L->template Get<RCP<Aggregates> >("Aggregates");
           }
           if(!agg.is_null()) {
@@ -413,8 +412,6 @@ namespace MueLu {
             Teuchos::FancyOStream fofs(rcp(&ofs,false));
             agg->print(fofs,Teuchos::VERB_EXTREME);
           }
-          else
-            printf("-NOT found!\n");
         }
       }
     }
