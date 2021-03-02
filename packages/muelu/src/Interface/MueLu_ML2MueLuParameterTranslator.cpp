@@ -152,6 +152,7 @@ namespace MueLu {
 
       if ( paramList.isParameter("smoother: sweeps") ) { mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("smoother: sweeps") << "\"/>" << std::endl; adaptingParamList.remove("smoother: sweeps",false); }
       if ( paramList.isParameter("smoother: damping factor") ) { mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("smoother: damping factor") << "\"/>" << std::endl; adaptingParamList.remove("smoother: damping factor",false); }
+      if ( paramList.isParameter("smoother: use l1 Gauss-Seidel") ) { mueluss << "<Parameter name=\"relaxation: use l1\" type=\"bool\" value=\"" << paramList.get<bool>("smoother: use l1 Gauss-Seidel") << "\"/>" << std::endl; adaptingParamList.remove("smoother: use l1 Gauss-Seidel",false); }
     }
 
     // Chebyshev

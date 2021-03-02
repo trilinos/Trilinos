@@ -562,7 +562,7 @@ namespace MueLu {
       
          ("parameterlist: syntax","parameterlist: syntax")
       
-         ("hierarchy label","hierarchy label")
+         ("ML label","hierarchy label")
       
          ("matvec params","matvec params")
       
