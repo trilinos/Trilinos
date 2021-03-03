@@ -64,12 +64,12 @@ namespace
   void testTensorPointCubature(const shards::CellTopology &cellTopo, const int &quadratureDegree,
                                const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using PointScalar = double;
     using WeightScalar = double;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = cellTopo.getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = cellTopo.getDimension();
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
@@ -79,7 +79,7 @@ namespace
     TensorPoints<PointScalar> tensorPoints;
     TensorData<WeightScalar>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)
