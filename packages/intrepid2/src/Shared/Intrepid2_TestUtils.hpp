@@ -109,10 +109,10 @@ namespace Intrepid2
 
   // we use DynRankView for both input points and values
   template<typename ScalarType>
-  using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>;
+  using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>; // TODO: change to DefaultTestDeviceType, once all Monolithic tests have been changed
 
   template<typename ScalarType>
-  using FixedRankViewType = Kokkos::View<ScalarType,Kokkos::DefaultExecutionSpace>;
+  using FixedRankViewType = Kokkos::View<ScalarType,Kokkos::DefaultExecutionSpace>; // TODO: change to DefaultTestDeviceType, once all Monolithic tests have been changed
 
   template<typename ScalarType>
   KOKKOS_INLINE_FUNCTION bool valuesAreSmall(const ScalarType &a, const ScalarType &b, const double &epsilon)
@@ -166,8 +166,8 @@ namespace Intrepid2
   }
 
   template<class BasisFamily>
-  inline Teuchos::RCP< Intrepid2::Basis<Kokkos::DefaultExecutionSpace,double,double> > getBasisUsingFamily(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
-                                                                                                           int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline Teuchos::RCP< Intrepid2::Basis<DefaultTestDeviceType,double,double> > getBasisUsingFamily(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
+                                                                                                   int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
   {
     using BasisPtr = typename BasisFamily::BasisPtr;
     
@@ -205,17 +205,17 @@ namespace Intrepid2
   }
 
   template<bool defineVertexFunctions>
-  inline Teuchos::RCP< Intrepid2::Basis<Kokkos::DefaultExecutionSpace,double,double> > getHierarchicalBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
-                                                                                                            int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline Teuchos::RCP< Intrepid2::Basis<DefaultTestDeviceType,double,double> > getHierarchicalBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
+                                                                                                    int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
   {
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
     using namespace Intrepid2;
     
-    using LineBasisGrad = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<ExecSpace, Scalar, Scalar, defineVertexFunctions, true>;
-    using LineBasisVol  = Intrepid2::LegendreBasis_HVOL_LINE< ExecSpace, Scalar, Scalar>;
-    using TriangleBasisFamily = Intrepid2::HierarchicalTriangleBasisFamily<ExecSpace, Scalar, Scalar, defineVertexFunctions>;
-    using TetrahedronBasisFamily = Intrepid2::HierarchicalTetrahedronBasisFamily<ExecSpace, Scalar, Scalar, defineVertexFunctions>;
+    using LineBasisGrad = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<DeviceType, Scalar, Scalar, defineVertexFunctions, true>;
+    using LineBasisVol  = Intrepid2::LegendreBasis_HVOL_LINE< DeviceType, Scalar, Scalar>;
+    using TriangleBasisFamily = Intrepid2::HierarchicalTriangleBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
+    using TetrahedronBasisFamily = Intrepid2::HierarchicalTetrahedronBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
     
     using BasisFamily = DerivedBasisFamily<LineBasisGrad, LineBasisVol, TriangleBasisFamily, TetrahedronBasisFamily>;
     

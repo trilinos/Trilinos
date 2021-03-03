@@ -62,11 +62,11 @@ namespace
   bool testSubBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs, const double tol, Teuchos::FancyOStream &out, bool &success,
                     int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1, bool defineVertexFunctions = true)
   {
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using OutputScalar = double;
     using PointScalar  = double;
     using namespace Intrepid2;
-    using Basis = Basis<ExecSpace,OutputScalar,PointScalar>;
+    using Basis = Basis<DeviceType,OutputScalar,PointScalar>;
     
     auto vectorsMatch = [](std::vector<int> lhs,std::vector<int> rhs)
     {
