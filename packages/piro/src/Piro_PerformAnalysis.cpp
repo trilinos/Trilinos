@@ -264,7 +264,7 @@ Piro::PerformROLAnalysis(
     }
   }
 
-  auto opt_paramList = Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false);
+  RCP<Teuchos::ParameterList> opt_paramList = Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false);
   if(analysisParams.isParameter("Enable Explicit Matrix Transpose")) {
     opt_paramList->set("Enable Explicit Matrix Transpose", analysisParams.get<bool>("Enable Explicit Matrix Transpose"));
   }

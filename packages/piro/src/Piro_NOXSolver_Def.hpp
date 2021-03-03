@@ -147,6 +147,8 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   Thyra::SolveStatus<Scalar> solve_status;
   const Thyra::SolveCriteria<Scalar> solve_criteria;
 
+  Teuchos::ParameterList analysisParams;
+
   if(solveState)
   {
     const auto timer = Teuchos::rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Piro::NOXSolver::evalModelImpl::solve")));
@@ -181,7 +183,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
     }
 
     if(appParams->isSublist("Analysis")){
-      Teuchos::ParameterList& analysisParams = appParams->sublist("Analysis");
+      analysisParams = appParams->sublist("Analysis");
       if(analysisParams.isSublist("Optimization Status")) {
         analysisParams.sublist("Optimization Status").set("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
         analysisParams.sublist("Optimization Status").set("Compute State", false);
@@ -201,7 +203,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
   modelInArgs.set_x(finalSolution);
 
-  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
+  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, analysisParams);
   
   bool computeReducedHessian = false;
   for (int g_index=0; g_index<this->num_g(); ++g_index) {
