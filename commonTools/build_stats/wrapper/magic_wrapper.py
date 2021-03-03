@@ -17,11 +17,14 @@ from WrapperCommandLineParser import WrapperCommandLineParser
 from WrapperOpTimer import WrapperOpTimer
 
 # given a dict of key/val pairs, write them as a CSV line
-def write_csv_map(filename,csv_map):
+def write_csv_map(filename,csv_map,csv_fields):
   try:
     with open(filename, 'w') as csvfile:
       writer = csv.DictWriter(csvfile,
-                              fieldnames=[ k for k in csv_map ])
+                              fieldnames=csv_fields,
+                              # ignore fields in the csv_map that aren't
+                              # in fieldnames
+                              extrasaction='ignore')
       writer.writeheader()
       writer.writerow(csv_map)
   except IOError:
@@ -47,7 +50,9 @@ def main(cmdline_args):
     #print("======> Gathering stats...", file=sys.stdout)
   else:
     # only run the command and return the return code
-    returncode = WrapperOpTimer.run_cmd([wcp.op] + wcp.op_args)
+    returncode = 0
+    for cmd in wcp.commands:
+      returncode |= WrapperOpTimer.run_cmd(cmd)
     #print("##======> NO stats {}".format(wcp.op_output_file), file=sys.stdout)
     return returncode
 
@@ -64,7 +69,9 @@ def main(cmdline_args):
 
     # ultimately, print the csv data to a file
     # make sure to quote csv columns
-    write_csv_map(wcp.output_stats_file, csv_map)
+    write_csv_map(wcp.output_stats_file,
+                  csv_map,
+                  csv_fields=wcp.get_output_fields(csv_map))
 
   # NOTE: Above, we don't write the *.timing file if the build failed because
   # the output target file may not exist!  And we don't want a CSV file entry

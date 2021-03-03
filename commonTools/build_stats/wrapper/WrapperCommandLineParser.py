@@ -19,9 +19,41 @@ class WrapperCommandLineParser:
     self.print_csv_banner = False
     # whatever the op's args should be
     self.op_args = []
+    # a list of lists of commands to evaluate
+    self.commands = []
     # whether we have the output arg
     self.have_output_arg = False
+    # ENV control variables
+    self.parse_nm = True
+    self.output_fields = None
+
+    self.parse_env_controls()
+    # finally parse the args
     self.parse_cmdline_args(cmdline_args)
+
+  def parse_env_controls(self):
+    """Parse control variables from the ENV (rather than command line)
+
+       TRILINOS_BUILD_STATS_OUTPUT_FIELDS : control what gets written to timing files
+        Can enable only some fields
+           e.g.,
+           FileName,FileSize,op
+    """
+    # optional, control which fields we write to a file
+    # This does not promise we will not parse all possible fields
+    # (That is to say, this does not promise any performance benefits)
+    self.output_fields = os.environ.get('TRILINOS_BUILD_STATS_OUTPUT_FIELDS')
+
+    parse_nm = os.environ.get('TRILINOS_BUILD_STATS_PARSE_NM', "True")
+    if parse_nm.lower() == 'true':
+      self.parse_nm = True
+    elif parse_nm.lower() == 'false':
+      self.parse_nm = False
+    else:
+      msg='ERROR: TRILINOS_BUILD_STATS_PARSE_NM is set to [{}]'.format(parse_nm)
+      msg+=', but valid values are True or False. Defaulting to True{}'.format(os.linesep)
+      sys.stderr.write(msg);
+      self.parse_nm = True
 
   def __repr__(self):
     return self.lcl_print()
@@ -45,6 +77,34 @@ class WrapperCommandLineParser:
                   op_output_file=self.op_output_file,
                   op=self.op,
                   print_csv_banner=self.print_csv_banner)
+
+  def get_output_fields(self,csv_map):
+    if self.output_fields:
+      # this assumes it is a string of comma separated labels
+      fields = self.output_fields.split(',')
+    else:
+      # apply sort here, so the output will be deterministic
+      fields = sorted([ k for k in csv_map ])
+
+    return fields
+
+  def generate_commandlets(self, cmdline_args):
+
+    # it seems we need to handle compound commands e.g., && (maybe ||)
+    cmdlet = []
+    for arg in cmdline_args:
+      if arg.strip() == "&&":
+        # add the command
+        self.commands.append(cmdlet)
+        # start a new command
+        cmdlet = []
+      elif arg.strip() != '':
+        cmdlet.append(arg)
+
+    if cmdlet:
+      self.commands.append(cmdlet)
+    # post - should have all commands broken up into lists of lists (of options)
+    return
 
   def parse_cmdline_arg_helper(self, cmdline_args):
 
@@ -110,10 +170,13 @@ class WrapperCommandLineParser:
 
       # Remove the first wrapper_arg_idx+1 args (script name + wrapper args)
       self.op_args = cmdline_args[wrapper_arg_idx+1:]
+      # we could clean this whole thing up some..
+      self.generate_commandlets([self.op] + self.op_args)
 
     except Exception as e:
       print("Got an error parsing the command line in the compiler wrapper python script")
       print(e)
+      raise
       # any error and we give up
       help_msg = ["Compiler wrapper:",
                   "  Usage: wrapper [---base-build-dir=<dir>] ----op=<compiler> [args] | ----get_header",

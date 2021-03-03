@@ -155,14 +155,17 @@ class WrapperOpTimer:
     fields = []
     csv_row = {}
 
-    cmd = [
-            '/usr/bin/time',
-            # '--append',
-            '--output=' + wcp.output_stats_file,
-            WrapperOpTimer.field_arg,
-            wcp.op ] + wcp.op_args
-
-    returncode = WrapperOpTimer.run_cmd(cmd)
+    cmdcount = 0
+    returncode = 0
+    for cmd in wcp.commands:
+      if cmdcount == 0:
+        cmd = [ '/usr/bin/time',
+                # '--append',
+                '--output=' + wcp.output_stats_file,
+                WrapperOpTimer.field_arg,
+               ] + cmd
+      cmdcount += 1
+      returncode |= WrapperOpTimer.run_cmd(cmd)
 
     # reading csv file
     with open(wcp.output_stats_file, 'r') as csvfile:
@@ -173,8 +176,16 @@ class WrapperOpTimer:
       fields = next(csvreader)
 
       # extracting each data row one by one
-      # we effectively retain on the last row.
+      # we effectively retain only the last row.
       # it isn't clear if we should expect multiple rows per file
+      #
+      # In the bash version of this I was able to handle multiple rows per file
+      # We could do that here, but it would require returning a list of csv maps
+      # On the system side of things, it is very murky.  We would need to ensure
+      # file integrity (concurrent reads/writes).  For now, it's
+      # best to enforce 1 file per operation performed. (which should happen if we
+      # name things correctly) - That is invalid is there is a cycle in the Build graph,
+      # but that is a larger problem.
       for row in csvreader:
         csv_row = dict(zip(fields, row))
 
