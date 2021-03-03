@@ -778,6 +778,7 @@ namespace Intrepid2
       // TODO: handle the other cases
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "support for this CellGeometryType is not yet implemented");
     }
+    return emptyRefData;
   }
   
   template<class PointScalar, int spaceDim, typename ExecSpaceType>
