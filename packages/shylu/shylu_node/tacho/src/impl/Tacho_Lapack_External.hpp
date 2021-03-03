@@ -42,6 +42,22 @@ namespace Tacho {
               int *ipiv,
               T *work, int lwork,
               int *info);
+#if defined (KOKKOS_ENABLE_CUDA)
+    static
+    int sytrf_buffersize(cusolverDnHandle_t handle,
+                         const int m,
+                         T *a, const int lda,
+                         int *lwork);
+    static
+    int sytrf(cusolverDnHandle_t handle,
+              const cublasFillMode_t uplo,
+              const int m,
+              T *a, const int lda,
+              int *ipiv,
+              T *W, const int lwork,
+              int *dev);
+#endif
+
   };
 }
 

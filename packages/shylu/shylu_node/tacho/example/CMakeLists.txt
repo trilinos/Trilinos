@@ -15,6 +15,20 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
 )
 
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleDeviceDenseSolverDouble
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleDeviceDenseSolver_double.cpp
+  COMM serial mpi
+)
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleDeviceDenseSolverDoubleComplex
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleDeviceDenseSolver_dcomplex.cpp
+  COMM serial mpi
+)
+
+
 IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes

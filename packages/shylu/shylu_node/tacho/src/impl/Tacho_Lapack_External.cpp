@@ -128,6 +128,41 @@ namespace Tacho {
                     info);
     return 0;
   }
+
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<float>::sytrf_buffersize(cusolverDnHandle_t handle,
+                                  const int m,
+                                  float *a, const int lda,
+                                  int *lwork) {
+    const int r_val = cusolverDnSsytrf_bufferSize(handle,
+                                                  m,
+                                                  a,
+                                                  lda, 
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<float>::sytrf(cusolverDnHandle_t handle,
+                       const cublasFillMode_t uplo,
+                       const int m,
+                       float *a, const int lda,
+                       int *ipiv,
+                       float *w, const int lwork,
+                       int *dev) {
+    const int r_val = cusolverDnSsytrf(handle,
+                                       uplo,
+                                       m,
+                                       a, lda,
+                                       ipiv,
+                                       w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
     
   template<>
   int
@@ -191,6 +226,40 @@ namespace Tacho {
                     info);
     return 0;
   }
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<double>::sytrf_buffersize(cusolverDnHandle_t handle,
+                                   const int m,
+                                   double *a, const int lda,
+                                   int *lwork) {
+    const int r_val = cusolverDnDsytrf_bufferSize(handle,
+                                                  m,
+                                                  a,
+                                                  lda, 
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<double>::sytrf(cusolverDnHandle_t handle,
+                       const cublasFillMode_t uplo,
+                       const int m,
+                       double *a, const int lda,
+                       int *ipiv,
+                       double *w, const int lwork,
+                       int *dev) {
+    const int r_val = cusolverDnDsytrf(handle,
+                                       uplo,
+                                       m,
+                                       a, lda,
+                                       ipiv,
+                                       w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
 
   template<>
   int 
@@ -255,6 +324,41 @@ namespace Tacho {
     return 0;
   }
 
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<Kokkos::complex<float> >::sytrf_buffersize(cusolverDnHandle_t handle,
+                                                    const int m,
+                                                    Kokkos::complex<float> *a, const int lda,
+                                                    int *lwork) {
+    const int r_val = cusolverDnCsytrf_bufferSize(handle,
+                                                  m,
+                                                  (cuComplex*)a,
+                                                  lda, 
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<Kokkos::complex<float> >::sytrf(cusolverDnHandle_t handle,
+                                         const cublasFillMode_t uplo,
+                                         const int m,
+                                         Kokkos::complex<float> *a, const int lda,
+                                         int *ipiv,
+                                         Kokkos::complex<float> *w, const int lwork,
+                                         int *dev) {
+    const int r_val = cusolverDnCsytrf(handle,
+                                       uplo,
+                                       m,
+                                       (cuComplex*)a, lda,
+                                       ipiv,
+                                       (cuComplex*)w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
+
   template<>
   int 
   Lapack<Kokkos::complex<double> >::potrf(const char uplo,
@@ -317,6 +421,42 @@ namespace Tacho {
                     info);
     return 0;
   }
+
+#if defined(KOKKOS_ENABLE_CUDA)
+  template<>
+  int 
+  Lapack<Kokkos::complex<double> >::sytrf_buffersize(cusolverDnHandle_t handle,
+                                                     const int m,
+                                                     Kokkos::complex<double> *a, const int lda,
+                                                     int *lwork) {
+    const int r_val = cusolverDnZsytrf_bufferSize(handle,
+                                                  m,
+                                                  (cuDoubleComplex*)a,
+                                                  lda, 
+                                                  lwork);
+    return r_val;
+  }
+
+  template<>
+  int 
+  Lapack<Kokkos::complex<double> >::sytrf(cusolverDnHandle_t handle,
+                                          const cublasFillMode_t uplo,
+                                          const int m,
+                                          Kokkos::complex<double> *a, const int lda,
+                                          int *ipiv,
+                                          Kokkos::complex<double> *w, const int lwork,
+                                          int *dev) {
+    const int r_val = cusolverDnZsytrf(handle,
+                                       uplo,
+                                       m,
+                                       (cuDoubleComplex*)a, lda,
+                                       ipiv,
+                                       (cuDoubleComplex*)w, lwork,
+                                       dev);
+    return r_val;
+  }
+#endif
+
 
   template<>
   int 
