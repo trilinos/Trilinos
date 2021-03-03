@@ -2152,6 +2152,39 @@ namespace Tpetra {
     global_size_t globalMaxNumRowEntries_ =
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
+    /// JJJ NEW
+
+    // Column indices should be const data after construction
+    using local_col_inds_JJJ_type = 
+          Kokkos::DualView<const local_ordinal_type*>;
+    using global_col_inds_JJJ_type = 
+          Kokkos::DualView<const global_ordinal_type*>;
+    
+    // Host view takes place of copies, illegal accesses and use of 
+    // getEntryOnHost
+    // Device view takes place of k_rowPtrs (except where k_rowPtrs doesn't 
+    // actually work in the code (e.g., insertCrsIndices); there, a host view
+    // is needed.
+    // Should be const data after construction
+    using row_ptrs_JJJ_type = 
+          Kokkos::DualView<const typename local_graph_type::size_type *>;
+    row_ptrs_JJJ_type rowPtrs_JJJ;
+
+    // Valid when isLocallyIndexed is true
+    // Device view takes place of k_lclInds1D_
+    local_col_inds_JJJ_type lclColInds_JJJ;
+
+    // Valid when isGloballyIndexed is true
+    // Free'd during fillComplete
+    // Device view takes place of k_gblInds1D_
+    global_col_inds_JJJ_type gblColInds_JJJ;
+
+    // FOR NOW...
+    // KEEP k_numRowEntries_ (though switch from HostMirror to Host)
+    // KEEP k_numAllocPerRow_ (though perhaps switch from HostMirror to Host)
+
+    /// JJJ NEW
+
     /// \brief The maximum number of entries to allow in each locally
     ///   owned row, per row.
     ///
