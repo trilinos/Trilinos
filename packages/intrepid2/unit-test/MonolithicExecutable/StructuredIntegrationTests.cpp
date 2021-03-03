@@ -416,7 +416,9 @@ ScalarView<Scalar,ExecSpaceType> performStandardQuadratureHypercube(int meshWidt
     Data<PointScalar,ExecSpaceType> jacobian = cellNodes.allocateJacobianData(tensorCubaturePoints);
     Data<PointScalar,ExecSpaceType> jacobianDet = CellTools<ExecSpaceType>::allocateJacobianDet(jacobian);
     Data<PointScalar,ExecSpaceType> jacobianInv = CellTools<ExecSpaceType>::allocateJacobianInv(jacobian);
-    cellNodes.setJacobian(jacobian, tensorCubaturePoints);
+    
+    auto refData = cellNodes.getJacobianRefData(tensorCubaturePoints);
+    cellNodes.setJacobian(jacobian, tensorCubaturePoints, refData);
     CellTools<ExecSpaceType>::setJacobianDet(jacobianDet, jacobian);
     CellTools<ExecSpaceType>::setJacobianInv(jacobianInv, jacobian);
     
