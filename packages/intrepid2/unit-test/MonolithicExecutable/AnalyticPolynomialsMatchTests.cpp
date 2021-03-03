@@ -231,13 +231,13 @@ namespace
     }
   }
   
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
   void testHierarchicalHGRAD_LINE_MatchesAnalyticValues(Intrepid2::EOperator op, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
     using namespace Intrepid2;
-    using BasisFamily = HierarchicalBasisFamily<ExecutionSpace,OutputScalar,PointScalar>;
+    using BasisFamily = HierarchicalBasisFamily<DeviceType,OutputScalar,PointScalar>;
     
     const int polyOrder = 4;
     auto hgradBasis = getLineBasis<BasisFamily>(FUNCTION_SPACE_HGRAD, polyOrder);
@@ -480,13 +480,13 @@ namespace
     }
   }
   
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
   void testHierarchicalHGRAD_TRIANGLE_MatchesAnalyticValues(Intrepid2::EOperator op, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
     using namespace Intrepid2;
-    using BasisFamily = HierarchicalBasisFamily<ExecutionSpace,OutputScalar,PointScalar>;
+    using BasisFamily = HierarchicalBasisFamily<DeviceType,OutputScalar,PointScalar>;
     
     const int spaceDim  = 2;
     const int polyOrder = 4;
@@ -951,25 +951,25 @@ namespace
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( AnalyticPolynomialsMatch, Hierarchical_HGRAD_LINE, OutputScalar, PointScalar )
   {
     const double tol = TEST_TOLERANCE_TIGHT;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     std::vector<Intrepid2::EOperator> operators = {{OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5, OPERATOR_D6, OPERATOR_D7, OPERATOR_D8, OPERATOR_D9, OPERATOR_D10}};
     for (auto op : operators)
     {
-      testHierarchicalHGRAD_LINE_MatchesAnalyticValues<ExecSpace,OutputScalar,PointScalar>(op, tol, out, success);
+      testHierarchicalHGRAD_LINE_MatchesAnalyticValues<DeviceType,OutputScalar,PointScalar>(op, tol, out, success);
     }
   }
   
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( AnalyticPolynomialsMatch, Hierarchical_HGRAD_TRI, OutputScalar, PointScalar )
   {
     const double tol = TEST_TOLERANCE_TIGHT;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
 //    std::vector<Intrepid2::EOperator> operators = {{OPERATOR_VALUE, OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5, OPERATOR_D6, OPERATOR_D7, OPERATOR_D8, OPERATOR_D9, OPERATOR_D10}};
     std::vector<Intrepid2::EOperator> operators = {OPERATOR_VALUE};
     for (auto op : operators)
     {
-      testHierarchicalHGRAD_TRIANGLE_MatchesAnalyticValues<ExecSpace,OutputScalar,PointScalar>(op, tol, out, success);
+      testHierarchicalHGRAD_TRIANGLE_MatchesAnalyticValues<DeviceType,OutputScalar,PointScalar>(op, tol, out, success);
     }
   }
   
@@ -978,8 +978,8 @@ namespace
     const int maxPolyOrder = 10;
     const double tol = TEST_TOLERANCE_TIGHT;
     
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
-    using HierarchicalBasisFamily = HierarchicalBasisFamily<ExecSpace,OutputScalar,PointScalar>;
+    using DeviceType = DefaultTestDeviceType;
+    using HierarchicalBasisFamily = HierarchicalBasisFamily<DeviceType,OutputScalar,PointScalar>;
     
     for (int derivativeOrder=1; derivativeOrder<=5; derivativeOrder++)
     {
@@ -992,9 +992,9 @@ namespace
   {
     // the following should match in H(grad) and H(vol), but are not expected to match in H(curl) and H(div)
     // (the latter differ in that Standard uses another H(grad) instance to represent the L^2 component of H(curl) and H(div), while Derived uses H(vol))
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
-    using DerivedNodalBasisFamily  = Intrepid2::DerivedNodalBasisFamily<ExecSpace,OutputScalar,PointScalar>;
-    using StandardNodalBasisFamily = Intrepid2::NodalBasisFamily       <ExecSpace,OutputScalar,PointScalar>;
+    using DeviceType = DefaultTestDeviceType;
+    using DerivedNodalBasisFamily  = Intrepid2::DerivedNodalBasisFamily<DeviceType,OutputScalar,PointScalar>;
+    using StandardNodalBasisFamily = Intrepid2::NodalBasisFamily       <DeviceType,OutputScalar,PointScalar>;
     
     const double tol = TEST_TOLERANCE_TIGHT;
     
