@@ -3715,6 +3715,9 @@ namespace Tpetra {
       }
       throw std::runtime_error(msg);
     }
+#if defined(KOKKOS_ENABLE_CUDA)
+    Kokkos::fence();
+#endif
     owningView_.sync_host();
     owningView_.modify_host();
     return view_.view_host();
@@ -3782,6 +3785,9 @@ namespace Tpetra {
       }
       throw std::runtime_error(msg);
     }
+#if defined(KOKKOS_ENABLE_CUDA)
+    Kokkos::fence();
+#endif
     owningView_.sync_device();
     owningView_.modify_device();
     return view_.view_device();
