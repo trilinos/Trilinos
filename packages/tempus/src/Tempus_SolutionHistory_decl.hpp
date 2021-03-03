@@ -246,10 +246,16 @@ public:
     /// Get the maximum storage of this history
     int getStorageLimit() const {return storageLimit_;}
 
+    /// Set the storage type via enum.
     void setStorageType(StorageType st);
+
+    /// Get the enum storage type.
     StorageType getStorageType() const {return storageType_;}
 
+    /// Set the storage type via string.
     void setStorageTypeString(std::string st);
+
+    /// Set the string storage type.
     std::string getStorageTypeString() const;
 
     /// Return the current minimum time of the SolutionStates
@@ -283,8 +289,11 @@ public:
     Teuchos::RCP<SolutionState<Scalar> > getStateTimeIndex(int index, bool warn = true) const;
   //@}
 
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
+  /// Return a valid ParameterList with current settings.
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  /// Return a valid non-const ParameterList with current settings.
+  Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -303,11 +312,19 @@ public:
     Teuchos::RCP<Interpolator<Scalar> > unSetInterpolator();
   //@}
 
+  /// Print information on States in the SolutionHistory.
   void printHistory(std::string verb="low") const;
 
+  /** \brief Initialize SolutionHistory
+   *
+   *  This function will check if all member data is initialized
+   *  and is consistent.  This function does not make member data
+   *  consistent, but just checks it.  This ensures it is inexpensive.
+   */
   void initialize() const;
+
+  /// Return if SolutionHistory is initialized.
   bool isInitialized() { return isInitialized_; }
-  void checkInitialized();
 
 
 protected:
