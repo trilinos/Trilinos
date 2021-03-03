@@ -134,7 +134,17 @@ set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
 # set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 # set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
-set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
+# Disable SEACAS tests that grep results out of stderr...
+set (SEACASIoss_create_path_fpp_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_lib_aprepro_lib_unit_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_lib_aprepro_lib_array_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_unit_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_array_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_command_line_vars_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_command_line_include_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_test_dump_reread_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+
+ (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 # set (CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "Kokkos turns off CXX extensions")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
