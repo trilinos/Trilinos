@@ -427,8 +427,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, LineNodalVersusHierarchicalCG_HGRAD )
   {
-    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using NodalBasis        = NodalBasisFamily<>::HGRAD_LINE;
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
@@ -447,8 +447,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, LineNodalCnVersusNodalC1_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_LINE_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C1Basis = Intrepid2::Basis_HGRAD_LINE_C1_FEM<Kokkos::DefaultExecutionSpace>;
+    using CnBasis = Intrepid2::Basis_HGRAD_LINE_Cn_FEM<DefaultTestDeviceType>;
+    using C1Basis = Intrepid2::Basis_HGRAD_LINE_C1_FEM<DefaultTestDeviceType>;
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
@@ -464,8 +464,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, LineHierarchicalDGVersusHierarchicalCG_HGRAD )
   {
-    using CGBasis = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_LINE;
+    using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
@@ -484,8 +484,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, QuadrilateralHierarchicalDGVersusHierarchicalCG_HGRAD )
   {
-    using CGBasis = HierarchicalBasisFamily<>::HGRAD_QUAD;
-    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_QUAD;
+    using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
+    using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
@@ -504,8 +504,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, QuadrilateralNodalVersusHierarchicalCG_HGRAD )
   {
-    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_QUAD;
-    using NodalBasis        = NodalBasisFamily<>::HGRAD_QUAD;
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
     
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1, OPERATOR_D2, OPERATOR_D3, OPERATOR_D4, OPERATOR_D5};
     
@@ -524,8 +524,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronHierarchicalDGVersusHierarchicalCG_HGRAD )
   {
-    using CGBasis = HierarchicalBasisFamily<>::HGRAD_HEX;
-    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_HEX;
+    using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
+    using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -543,8 +543,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalVersusHierarchicalCG_HGRAD )
   {
-    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_HEX;
-    using NodalBasis        = NodalBasisFamily<>::HGRAD_HEX;
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -562,8 +562,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalCnVersusNodalC1_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C1Basis = Intrepid2::Basis_HGRAD_HEX_C1_FEM<Kokkos::DefaultExecutionSpace>;
+    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<DefaultTestDeviceType>;
+    using C1Basis = Intrepid2::Basis_HGRAD_HEX_C1_FEM<DefaultTestDeviceType>;
 
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -579,8 +579,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalCnVersusNodalC2_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C2Basis = Intrepid2::Basis_HGRAD_HEX_C2_FEM<Kokkos::DefaultExecutionSpace>;
+    using CnBasis = Intrepid2::Basis_HGRAD_HEX_Cn_FEM<DefaultTestDeviceType>;
+    using C2Basis = Intrepid2::Basis_HGRAD_HEX_C2_FEM<DefaultTestDeviceType>;
 
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -598,8 +598,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )
   {
-    using CnBasis = Intrepid2::Basis_HGRAD_TET_Cn_FEM<Kokkos::DefaultExecutionSpace>;
-    using C2Basis = Intrepid2::Basis_HGRAD_TET_C2_FEM<Kokkos::DefaultExecutionSpace>;
+    using CnBasis = Intrepid2::Basis_HGRAD_TET_Cn_FEM<DefaultTestDeviceType>;
+    using C2Basis = Intrepid2::Basis_HGRAD_TET_C2_FEM<DefaultTestDeviceType>;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
@@ -616,8 +616,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronHierarchicalDGVersusHierarchicalCG_HGRAD )
   {
-    using CGBasis = HierarchicalBasisFamily<>::HGRAD_TET;
-    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_TET;
+    using CGBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TET;
+    using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TET;
     
     // these tolerances are selected such that we have a little leeway for architectural differences
     // (It is true, though, that we incur a fair amount of floating point error for higher order bases in higher dimensions)
@@ -635,8 +635,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalVersusHierarchicalCG_HGRAD )
   {
-    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_TET;
-    using NodalBasis        = NodalBasisFamily<>::HGRAD_TET;
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TET;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_TET;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
@@ -667,8 +667,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleNodalVersusHierarchicalCG_HGRAD )
   {
-    using HierarchicalBasis = HierarchicalBasisFamily<>::HGRAD_TRI;
-    using NodalBasis        = NodalBasisFamily<>::HGRAD_TRI;
+    using HierarchicalBasis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
+    using NodalBasis        = NodalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
@@ -688,8 +688,8 @@ namespace
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TriangleHierarchicalCGVersusHierarchicalDG_HGRAD )
   {
-    using CGBasis =   HierarchicalBasisFamily<>::HGRAD_TRI;
-    using DGBasis = DGHierarchicalBasisFamily<>::HGRAD_TRI;
+    using CGBasis =   HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
+    using DGBasis = DGHierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_TRI;
     
     // OPERATOR_D2 and above are not supported by either the nodal or the hierarchical basis at present...
     std::vector<EOperator> opsToTest {OPERATOR_GRAD, OPERATOR_D1};
