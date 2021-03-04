@@ -66,8 +66,8 @@
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
-#include "ROL_ThyraProductME_Objective_SimOpt.hpp"
-#include "ROL_ThyraProductME_Constraint_SimOpt.hpp"
+#include "Piro_ThyraProductME_Objective_SimOpt.hpp"
+#include "Piro_ThyraProductME_Constraint_SimOpt.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
@@ -298,8 +298,8 @@ Piro::PerformROLAnalysis(
   Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-  ROL::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel);
-  ROL::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel);
+  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 

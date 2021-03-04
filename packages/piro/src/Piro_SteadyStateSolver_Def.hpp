@@ -76,8 +76,8 @@
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
-#include "ROL_ThyraProductME_Objective_SimOpt.hpp"
-#include "ROL_ThyraProductME_Constraint_SimOpt.hpp"
+#include "Piro_ThyraProductME_Objective_SimOpt.hpp"
+#include "Piro_ThyraProductME_Constraint_SimOpt.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
@@ -432,8 +432,8 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
     ROL::Ptr<ROL::Vector<Scalar> > rol_lambda_ptr = ROL::makePtrFromRef(rol_lambda);
 
     for (int i=0; i<num_g_; ++i) {
-      ROL::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, i, p_indices, opt_paramList, Teuchos::VERB_NONE);
-      ROL::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, i, p_indices, opt_paramList, Teuchos::VERB_NONE);
+      Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, i, p_indices, opt_paramList, Teuchos::VERB_NONE);
+      Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, i, p_indices, opt_paramList, Teuchos::VERB_NONE);
 
       ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
       ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
@@ -1219,8 +1219,8 @@ void Piro::SteadyStateSolver<Scalar>::evalReducedHessian(
   }
 
   for (int g_index=0; g_index<num_g_; ++g_index) {
-    ROL::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, g_index, p_indices, opt_paramList, Teuchos::VERB_NONE);
-    ROL::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, g_index, p_indices, opt_paramList, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Objective_SimOpt<Scalar> obj(*model_, g_index, p_indices, opt_paramList, Teuchos::VERB_NONE);
+    Piro::ThyraProductME_Constraint_SimOpt<Scalar> constr(*model_, g_index, p_indices, opt_paramList, Teuchos::VERB_NONE);
 
     ROL::Ptr<ROL::Objective_SimOpt<Scalar> > obj_ptr = ROL::makePtrFromRef(obj);
     ROL::Ptr<ROL::Constraint_SimOpt<Scalar> > constr_ptr = ROL::makePtrFromRef(constr);
