@@ -317,7 +317,6 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     Data<Scalar,DefaultTestDeviceType> B(rightMatrixView, rank, extents, variationTypes, rightLastNonDiagonal);
     
     auto expectedResultView = getViewDefaultTestDT<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
-    auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     const int cellOrdinal = 0;
     auto policy = Kokkos::MDRangePolicy<typename DefaultTestDeviceType::execution_space,Kokkos::Rank<2>>({0,0},{spaceDim,spaceDim});
@@ -331,11 +330,9 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
         Scalar right = transposeB ? B(cellOrdinal,j,k) : B(cellOrdinal,k,j);
         result += left * right;
       }
-      expectedResultViewHost(cellOrdinal, i, j) = result;
+      expectedResultView(cellOrdinal, i, j) = result;
     });
-    
-    Kokkos::deep_copy(expectedResultView, expectedResultViewHost);
-    
+        
     auto actualResultData = Data<Scalar,DefaultTestDeviceType>::allocateMatMatResult(transposeA, A, transposeB, B);
     
     TEST_EQUALITY(       3,  actualResultData.rank());
