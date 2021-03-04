@@ -201,6 +201,50 @@ int driver (int argc, char *argv[]) {
         if (dev) printf("LDLt returns non-zero dev info %d\n", dev);
       }
     }
+
+
+    /// run LU
+    for (int iter=0;iter<4;++iter) {
+      Kokkos::deep_copy(A, Aback);
+      Kokkos::View<int*,Kokkos::LayoutLeft,device_type> ipiv("pivot", m);
+      {
+        value_type * A_ptr = A.data();
+        int * ipiv_ptr = ipiv.data();
+        int dev(0);
+        
+        timer.reset();
+#if defined (KOKKOS_ENABLE_CUDA) 
+        int lwork(0);
+        Tacho::Lapack<value_type>::getrf_buffersize(handle_lapack, 
+                                                    m, m,
+                                                    A_ptr, m, 
+                                                    &lwork);
+        printf("LU lwork %d\n", lwork);
+        Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> W("W", lwork);
+        value_type * W_ptr = W.data();
+        
+        Kokkos::View<int,device_type> dev_view("dev");
+        Tacho::Lapack<value_type>::getrf(handle_lapack,
+                                         m, m,
+                                         A_ptr, m,
+                                         W_ptr,
+                                         ipiv_ptr,
+                                         dev_view.data());
+        auto dev_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dev_view);
+        dev = dev_host();
+#else
+        Tacho::Lapack<value_type>::getrf(m, m,
+                                         A_ptr, m,
+                                         ipiv_ptr,
+                                         &dev);
+#endif
+        Kokkos::fence();
+        const double t = timer.seconds();
+        printf("LU time %e\n", t);
+        if (dev) printf("LU returns non-zero dev info %d\n", dev);
+      }
+    }
+
 #if defined (KOKKOS_ENABLE_CUDA) 
     {
       if (verbose) printf("cublas/cusolver handle destroy begin\n");
