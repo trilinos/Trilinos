@@ -93,7 +93,7 @@ namespace
         
         for (int i=1; i<=polyOrder; i++)
         {
-          if ( abs(integratedJacobiView(i)) > tol)
+          if ( abs(integratedJacobiViewHost(i)) > tol)
           {
             success = false;
             out << "for alpha = " << alpha << ", t = " << t << ", integrated Jacobi for polyOrder " << i;
