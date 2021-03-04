@@ -60,6 +60,8 @@ namespace
     using namespace Intrepid2;
     using Scalar = double;
     
+    // note that this test does not involve any access of View data; therefore, it should work fine regardless of the memory space of the View
+    
     using ViewIteratorScalar = ViewIterator<ViewType<Scalar>, Scalar>;
     
     // check that the increment operator works to give us the right number of entries
