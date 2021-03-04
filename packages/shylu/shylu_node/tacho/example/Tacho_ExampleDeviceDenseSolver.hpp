@@ -12,6 +12,7 @@ int driver (int argc, char *argv[]) {
   int nthreads = 1;
   bool verbose = true;
 
+  int max_iter = 1;
   int m = 10;
 
   Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
@@ -113,7 +114,7 @@ int driver (int argc, char *argv[]) {
     }
 
     /// run Cholesky
-    for (int iter=0;iter<4;++iter) {
+    for (int iter=0;iter<max_iter;++iter) {
       Kokkos::deep_copy(A, Aback);
       {
         value_type * A_ptr = A.data();
@@ -154,7 +155,7 @@ int driver (int argc, char *argv[]) {
     }
 
     /// run LDLt
-    for (int iter=0;iter<4;++iter) {
+    for (int iter=0;iter<max_iter;++iter) {
       Kokkos::deep_copy(A, Aback);
       Kokkos::View<int*,Kokkos::LayoutLeft,device_type> ipiv("pivot", m);
       {
@@ -197,6 +198,21 @@ int driver (int argc, char *argv[]) {
 #endif
         Kokkos::fence();
         const double t = timer.seconds();
+        auto AA = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
+        auto pp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), ipiv);
+        if (0) {
+          printf("LDL  = \n");
+          for (int i=0;i<m;++i) {
+            for (int j=0;j<m;++j)
+              std::cout << AA(i,j) << " ";
+            printf("\n");
+          }
+          printf("piv = \n");
+          for (int i=0;i<m;++i) {
+            printf("%d\n", pp(i));
+          }
+        }
+        
         printf("LDLt time %e\n", t);
         if (dev) printf("LDLt returns non-zero dev info %d\n", dev);
       }
