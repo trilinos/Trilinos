@@ -320,20 +320,19 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     const int cellOrdinal = 0;
-    for (int i=0; i<spaceDim; i++)
+    auto policy = Kokkos::MDRangePolicy<typename DefaultTestDeviceType::execution_space,Kokkos::Rank<2>>({0,0},{spaceDim,spaceDim});
+    Kokkos::parallel_for("compute first-order simplex Jacobians", policy,
+    KOKKOS_LAMBDA(const int &i, const int &j)
     {
-      for (int j=0; j<spaceDim; j++)
+      Scalar result =  0;
+      for (int k=0; k<spaceDim; k++)
       {
-        Scalar result =  0;
-        for (int k=0; k<spaceDim; k++)
-        {
-          Scalar left  = transposeA ? A(cellOrdinal,k,i) : A(cellOrdinal,i,k);
-          Scalar right = transposeB ? B(cellOrdinal,j,k) : B(cellOrdinal,k,j);
-          result += left * right;
-        }
-        expectedResultViewHost(cellOrdinal, i, j) = result;
+        Scalar left  = transposeA ? A(cellOrdinal,k,i) : A(cellOrdinal,i,k);
+        Scalar right = transposeB ? B(cellOrdinal,j,k) : B(cellOrdinal,k,j);
+        result += left * right;
       }
-    }
+      expectedResultViewHost(cellOrdinal, i, j) = result;
+    });
     
     Kokkos::deep_copy(expectedResultView, expectedResultViewHost);
     
