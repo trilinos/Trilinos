@@ -179,7 +179,25 @@ namespace Intrepid2 {
       });
     }
     
-    //! copy-like constructor for differing execution spaces.  This does a deep_copy of the underlying view.
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    TensorPoints(const TensorPoints<PointScalar,OtherDeviceType> &tensorPoints)
+    :
+    numTensorComponents_(tensorPoints.numTensorComponents()),
+    isValid_(tensorPoints.isValid())
+    {
+      if (isValid_)
+      {
+        for (ordinal_type r=0; r<numTensorComponents_; r++)
+        {
+          pointTensorComponents_[r] = tensorPoints.getTensorComponent(r);
+        }
+        initialize();
+      }
+    }
+    
+    //! copy-like constructor for differing memory spaces.  This does a deep_copy of the underlying view.
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
     TensorPoints(const TensorPoints<PointScalar,OtherDeviceType> &tensorPoints)
     :
