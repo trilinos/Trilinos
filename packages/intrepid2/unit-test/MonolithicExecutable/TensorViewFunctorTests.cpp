@@ -59,15 +59,15 @@ namespace
 {
   using namespace Intrepid2;
 
-  template<typename Scalar>
-  void runTensorViewFunctorTest(ViewType<Scalar> tensor_expected, ViewType<Scalar> view1, ViewType<Scalar> view2, double weight, bool tensorPoints,
+  template<typename ScalarViewType>
+  void runTensorViewFunctorTest(ScalarViewType tensor_expected, ScalarViewType view1, ScalarViewType view2, double weight, bool tensorPoints,
                                 Teuchos::FancyOStream &out, bool &success)
   {
     double tol = 1e-15;
     using namespace Intrepid2;
     
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
-    using ScalarViewType = ViewType<Scalar>;
+    using ExecutionSpace = typename ScalarViewType::execution_space;
+    using Scalar         = typename ScalarViewType::value_type;
     
     const bool hasADType = false;
     const int vectorSize = hasADType ? FAD_VECTOR_SIZE : VECTOR_SIZE;

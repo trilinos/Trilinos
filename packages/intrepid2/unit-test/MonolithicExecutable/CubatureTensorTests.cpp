@@ -67,13 +67,19 @@ namespace
     using DeviceType = DefaultTestDeviceType;
     using PointScalar = double;
     using WeightScalar = double;
+    using CubatureType   = Cubature<DeviceType,PointScalar,WeightScalar>;
+    using PointViewType  = typename CubatureType::PointViewTypeAllocatable;
+    using WeightViewType = typename CubatureType::WeightViewTypeAllocatable;
+    
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = cellTopo.getKey();
     auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = cellTopo.getDimension();
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
+    
+    PointViewType points("quadrature points ref cell", numRefPoints, spaceDim);
+    WeightViewType weights("quadrature weights ref cell", numRefPoints);
+    
     quadrature->getCubature(points, weights);
     
     TensorPoints<PointScalar> tensorPoints;
