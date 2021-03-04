@@ -37,6 +37,9 @@
 #include "Tacho_Copy.hpp"
 #include "Tacho_Copy_Internal.hpp"
 
+#include "Tacho_Symmetrize.hpp"
+#include "Tacho_Symmetrize_Internal.hpp"
+
 #include "Tacho_SetIdentity.hpp"
 #include "Tacho_SetIdentity_Internal.hpp"
 
