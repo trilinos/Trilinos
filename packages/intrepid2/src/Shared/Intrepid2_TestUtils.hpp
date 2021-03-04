@@ -115,6 +115,12 @@ namespace Intrepid2
   using FixedRankViewType = Kokkos::View<ScalarType,Kokkos::DefaultExecutionSpace>; // TODO: change to DefaultTestDeviceType, once all Monolithic tests have been changed
 
   template<typename ScalarType>
+  using ViewTypeDefaultTestDT = Kokkos::DynRankView<ScalarType,DefaultTestDeviceType>; // this one is to allow us to switch tests over incrementally; should collapse with ViewType once everything has been switched
+
+  template<typename ScalarType>
+  using FixedRankViewTypeDefaultTestDT = Kokkos::View<ScalarType,DefaultTestDeviceType>; // this one is to allow us to switch tests over incrementally; should collapse with FixedRankViewType once everything has been switched
+
+  template<typename ScalarType>
   KOKKOS_INLINE_FUNCTION bool valuesAreSmall(const ScalarType &a, const ScalarType &b, const double &epsilon)
   {
     using std::abs;
@@ -248,6 +254,37 @@ namespace Intrepid2
     else
     {
       return FixedRankViewType<value_type>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+    }
+  }
+
+  // this method is to allow us to switch tests over incrementally; should collapse with getView once everything has been switched
+  template<typename ValueType, class ... DimArgs>
+  inline ViewTypeDefaultTestDT<ValueType> getViewDefaultTestDT(const std::string &label, DimArgs... dims)
+  {
+    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    if (!allocateFadStorage)
+    {
+      return ViewTypeDefaultTestDT<ValueType>(label,dims...);
+    }
+    else
+    {
+      return ViewTypeDefaultTestDT<ValueType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+    }
+  }
+
+  // this method is to allow us to switch tests over incrementally; should collapse with ViewType once everything has been switched
+  template<typename ValueType, class ... DimArgs>
+  inline FixedRankViewTypeDefaultTestDT< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type > getFixedRankViewDefaultTestDT(const std::string &label, DimArgs... dims)
+  {
+    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    using value_type = typename RankExpander<ValueType, sizeof...(dims) >::value_type;
+    if (!allocateFadStorage)
+    {
+      return FixedRankViewTypeDefaultTestDT<value_type>(label,dims...);
+    }
+    else
+    {
+      return FixedRankViewTypeDefaultTestDT<value_type>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
     }
   }
 
