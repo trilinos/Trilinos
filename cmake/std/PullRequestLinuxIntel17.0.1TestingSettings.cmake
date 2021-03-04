@@ -68,6 +68,10 @@ set (MueLu_UnitTestsTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in 
 # (Temporarily) Disable randomly failing ROL test (#3103)
 set (ROL_example_poisson-inversion_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
+SET(SuperLUDist_INCLUDE_DIRS "$ENV{SEMS_SUPERLU_DIST_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
+SET(SuperLUDist_LIBRARY_DIRS "$ENV{SEMS_SUPERLU_DIST_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
+set (TPL_ENABLE_SuperLUDist ON CACHE BOOL "Set by default for PR testing")
+
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
 set (Tpetra_INST_INT_INT ON CACHE BOOL "INST_INT_INT ON")
