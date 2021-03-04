@@ -633,6 +633,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: phase2a agg factor</name>
+      <type>double</type>
+      <default>0.5</default>
+      <description>Agg factor for Phase 2a sizes</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: error on nodes with no on-rank neighbors</name>
       <type>bool</type>
       <default>false</default>
@@ -918,7 +927,7 @@
       <type>\parameterlist</type>
       <description>Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
-      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'', ``Aggregates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in

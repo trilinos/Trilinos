@@ -342,9 +342,9 @@ public:
         Kokkos::fence();
     }
 
-    //! Transformation of data under GMLS
+    //! Transformation of data under GMLS (allocates memory for output)
     //! 
-    //! This function is the go to function to be used when the alpha values have already been calculated and stored for use. The sampling functional provided instructs how a data transformation tensor is to be used on source data before it is provided to the GMLS operator. Once the sampling functional (if applicable) and the GMLS operator have been applied, this function also handles mapping the local vector back to the ambient space if working on a manifold problem and a target functional who has rank 1 output.
+    //! This function is the go-to function to be used when the alpha values have already been calculated and stored for use. The sampling functional provided instructs how a data transformation tensor is to be used on source data before it is provided to the GMLS operator. Once the sampling functional (if applicable) and the GMLS operator have been applied, this function also handles mapping the local vector back to the ambient space if working on a manifold problem and a target functional who has rank 1 output.
     //!
     //! Produces a Kokkos View as output with a Kokkos memory_space provided as a template tag by the caller. 
     //! The data type (double* or double**) must also be specified as a template type if one wish to get a 1D 
@@ -359,13 +359,58 @@ public:
     template <typename output_data_type = double**, typename output_memory_space, typename view_type_input_data, typename output_array_layout = typename view_type_input_data::array_layout>
     Kokkos::View<output_data_type, output_array_layout, output_memory_space>  // shares layout of input by default
             applyAlphasToDataAllComponentsAllTargetSites(view_type_input_data sampling_data, TargetOperation lro, const SamplingFunctional sro_in = PointSample, bool scalar_as_vector_if_needed = true, const int evaluation_site_local_index = 0) const {
+        // gather needed information for evaluation
+        auto nla = *(_gmls->getNeighborLists());
+
+        // determines the number of columns needed for output after action of the target functional
+        int output_dimensions = _gmls->getOutputDimensionOfOperation(lro);
+        auto global_dimensions = _gmls->getGlobalDimensions();
+        auto problem_type = _gmls->getProblemType();
+
+        typedef Kokkos::View<output_data_type, output_array_layout, output_memory_space> output_view_type;
+        // create view on whatever memory space the user specified with their template argument when calling this function
+        output_view_type target_output = createView<output_view_type>("output of target operation", 
+                nla.getNumberOfTargets(), output_dimensions);
+
+        output_view_type ambient_target_output;
+        bool transform_gmls_output_to_ambient = (problem_type==MANIFOLD && TargetOutputTensorRank[(int)lro]==1);
+        if (transform_gmls_output_to_ambient) {
+            ambient_target_output = createView<output_view_type>("output of transform to ambient space", 
+                nla.getNumberOfTargets(), global_dimensions);
+        }
+
+        applyAlphasToDataAllComponentsAllTargetSites(target_output, ambient_target_output, sampling_data, lro, sro_in, scalar_as_vector_if_needed, evaluation_site_local_index);
+
+        if (transform_gmls_output_to_ambient) {
+            return ambient_target_output;
+        } else {
+            return target_output;
+        }
+
+    }
+
+    //! Transformation of data under GMLS (does not allocate memory for output)
+    //! 
+    //! If space for the output result is already allocated, this function will populate the output result view (and possibly ambient target output). The sampling functional provided instructs how a data transformation tensor is to be used on source data before it is provided to the GMLS operator. Once the sampling functional (if applicable) and the GMLS operator have been applied, this function also handles mapping the local vector back to the ambient space if working on a manifold problem and a target functional who has rank 1 output.
+    //!
+    //! Fills a Kokkos View of output. 
+    //! 
+    //! Assumptions on input data:
+    //! \param target_output              [in] - 1D or 2D Kokkos View that has the resulting #targets * need output columns. Memory space for data can be host or device. 
+    //! \param ambient_target_output      [in] - Same view type as target_output, but dimensions should be #targets * global_dimension if this is being filled (if not being filled, then this can be an empty view)
+    //! \param sampling_data              [in] - 1D or 2D Kokkos View that has the layout #targets * columns of data. Memory space for data can be host or device. 
+    //! \param lro                        [in] - Target operation from the TargetOperation enum
+    //! \param sro_in                     [in] - Sampling functional from the SamplingFunctional enum
+    //! \param scalar_as_vector_if_needed [in] - If a 1D view is given, where a 2D view is expected (scalar values given where a vector was expected), then the scalar will be repeated for as many components as the vector has
+    //! \param evaluation_site_local_index [in] - 0 corresponds to evaluating at the target site itself, while a number larger than 0 indicates evaluation at a site other than the target, and specified by calling setAdditionalEvaluationSitesData on the GMLS class
+    template <typename view_type_output_data, typename view_type_input_data, typename output_array_layout = typename view_type_input_data::array_layout>
+    void applyAlphasToDataAllComponentsAllTargetSites(view_type_output_data target_output, view_type_output_data ambient_target_output, view_type_input_data sampling_data, TargetOperation lro, const SamplingFunctional sro_in = PointSample, bool scalar_as_vector_if_needed = true, const int evaluation_site_local_index = 0) const {
 
 
         // output can be device or host
         // input can be device or host
         // move everything to device and calculate there, then move back to host if necessary
 
-        typedef Kokkos::View<output_data_type, output_array_layout, output_memory_space> output_view_type;
 
         auto problem_type = _gmls->getProblemType();
         auto global_dimensions = _gmls->getGlobalDimensions();
@@ -382,12 +427,13 @@ public:
         // special case for VectorPointSample, because if it is on a manifold it includes data transform to local charts
         auto sro = (problem_type==MANIFOLD && sro_in==VectorPointSample) ? ManifoldVectorPointSample : sro_in;
 
-        // create view on whatever memory space the user specified with their template argument when calling this function
-        output_view_type target_output = createView<output_view_type>("output of target operation", 
-                nla.getNumberOfTargets(), output_dimensions);
+        compadre_assert_debug(target_output.extent(0)==(size_t)nla.getNumberOfTargets() 
+                && "First dimension of target_output is incorrect size.\n");
+        compadre_assert_debug(target_output.extent(1)==(size_t)output_dimensions 
+                && "Second dimension of target_output is incorrect size.\n");
 
         // make sure input and output columns make sense under the target operation
-        compadre_assert_debug(((output_dimensions==1 && output_view_type::rank==1) || output_view_type::rank!=1) && 
+        compadre_assert_debug(((output_dimensions==1 && view_type_output_data::rank==1) || view_type_output_data::rank!=1) && 
                 "Output view is requested as rank 1, but the target requires a rank larger than 1. Try double** as template argument.");
 
         // we need to specialize a template on the rank of the output view type and the input view type
@@ -460,10 +506,10 @@ public:
         if (transform_gmls_output_to_ambient) {
             Kokkos::fence();
 
-            // create view on whatever memory space the user specified with their template argument when calling this function
-            output_view_type ambient_target_output = createView<output_view_type>(
-                    "output of transform to ambient space", nla.getNumberOfTargets(),
-                    global_dimensions);
+            compadre_assert_debug(ambient_target_output.extent(0)==(size_t)nla.getNumberOfTargets() 
+                    && "First dimension of target_output is incorrect size.\n");
+            compadre_assert_debug(ambient_target_output.extent(1)==(size_t)global_dimensions 
+                    && "Second dimension of target_output is incorrect size.\n");
             auto transformed_output_subview_maker = CreateNDSliceOnDeviceView(ambient_target_output, false); 
             // output will always be the correct dimension
             for (int i=0; i<global_dimensions; ++i) {
@@ -474,12 +520,10 @@ public:
             }
             // copy back to whatever memory space the user requester through templating from the device
             Kokkos::deep_copy(ambient_target_output, transformed_output_subview_maker.copyToAndReturnOriginalView());
-            return ambient_target_output;
         }
 
         // copy back to whatever memory space the user requester through templating from the device
         Kokkos::deep_copy(target_output, output_subview_maker.copyToAndReturnOriginalView());
-        return target_output;
     }
 
 
@@ -613,7 +657,7 @@ public:
         }
     }
 
-    //! Generation of polynomial reconstruction coefficients by applying to data in GMLS
+    //! Generation of polynomial reconstruction coefficients by applying to data in GMLS (allocates memory for output)
     //! 
     //! Polynomial reconstruction coefficients exist for each target, but there are coefficients for each neighbor (a basis for all potentional input data). This function uses a particular choice of data to contract over this basis and return the polynomial reconstructions coefficients specific to this data.
     //!
@@ -629,11 +673,46 @@ public:
     Kokkos::View<output_data_type, output_array_layout, output_memory_space>  // shares layout of input by default
             applyFullPolynomialCoefficientsBasisToDataAllComponents(view_type_input_data sampling_data, bool scalar_as_vector_if_needed = true) const {
 
+        auto output_dimension_of_reconstruction_space = _gmls->calculateBasisMultiplier(_gmls->getReconstructionSpace());
+        auto coefficient_matrix_dims = _gmls->getPolynomialCoefficientsDomainRangeSize();
+
+        // gather needed information for evaluation
+        auto nla = *(_gmls->getNeighborLists());
+
+        // determines the number of columns needed for output
+        int output_dimensions = output_dimension_of_reconstruction_space;
+
+        typedef Kokkos::View<output_data_type, output_array_layout, output_memory_space> output_view_type;
+        // create view on whatever memory space the user specified with their template argument when calling this function
+        output_view_type coefficient_output("output coefficients", nla.getNumberOfTargets(), 
+                output_dimensions*_gmls->getPolynomialCoefficientsSize() /* number of coefficients */);
+
+        applyFullPolynomialCoefficientsBasisToDataAllComponents(coefficient_output, sampling_data, scalar_as_vector_if_needed);
+
+        return coefficient_output;
+        
+    }
+
+    //! Generation of polynomial reconstruction coefficients by applying to data in GMLS (does not allocate memory for output)
+    //! 
+    //! Polynomial reconstruction coefficients exist for each target, but there are coefficients for each neighbor (a basis for all potentional input data). This function uses a particular choice of data to contract over this basis and return the polynomial reconstructions coefficients specific to this data.
+    //!
+    //! Produces a Kokkos View as output with a Kokkos memory_space provided as a template tag by the caller. 
+    //! The data type (double* or double**) must also be specified as a template type if one wish to get a 1D 
+    //! Kokkos View back that can be indexed into with only one ordinal.
+    //! 
+    //! Assumptions on input data:
+    //! \param coefficient_output         [in] - 1D or 2D Kokkos View that has the layout #targets * #coefficients. Memory space for data can be host or device. 
+    //! \param sampling_data              [in] - 1D or 2D Kokkos View that has the layout #targets * columns of data. Memory space for data can be host or device. 
+    //! \param sro                        [in] - Sampling functional from the SamplingFunctional enum
+    //! \param scalar_as_vector_if_needed [in] - If a 1D view is given, where a 2D view is expected (scalar values given where a vector was expected), then the scalar will be repeated for as many components as the vector has
+    template <typename view_type_coefficient_output, typename view_type_input_data>
+    void applyFullPolynomialCoefficientsBasisToDataAllComponents(view_type_coefficient_output coefficient_output, 
+            view_type_input_data sampling_data, bool scalar_as_vector_if_needed = true) const {
+
         // output can be device or host
         // input can be device or host
         // move everything to device and calculate there, then move back to host if necessary
-
-        typedef Kokkos::View<output_data_type, output_array_layout, output_memory_space> output_view_type;
 
         auto global_dimensions = _gmls->getGlobalDimensions();
         auto output_dimension_of_reconstruction_space = _gmls->calculateBasisMultiplier(_gmls->getReconstructionSpace());
@@ -643,17 +722,17 @@ public:
         // gather needed information for evaluation
         auto nla = *(_gmls->getNeighborLists());
 
-        // determines the number of columns needed for output
-        int output_dimensions = output_dimension_of_reconstruction_space;
-
         const SamplingFunctional sro = _gmls->getDataSamplingFunctional();
 
-        // create view on whatever memory space the user specified with their template argument when calling this function
-        output_view_type coefficient_output("output coefficients", nla.getNumberOfTargets(), 
-                output_dimensions*_gmls->getPolynomialCoefficientsSize() /* number of coefficients */);
+        compadre_assert_debug(coefficient_output.extent(0)==(size_t)nla.getNumberOfTargets() 
+                && "First dimension of coefficient_output is incorrect size.\n");
+        // determines the number of columns needed for output
+        compadre_assert_debug(
+                coefficient_output.extent(1)==(size_t)output_dimension_of_reconstruction_space*_gmls->getPolynomialCoefficientsSize() 
+                /* number of coefficients */ && "Second dimension of coefficient_output is incorrect size.\n");
 
         // make sure input and output columns make sense under the target operation
-        compadre_assert_debug(((output_dimension_of_reconstruction_space==1 && output_view_type::rank==1) || output_view_type::rank!=1) && 
+        compadre_assert_debug(((output_dimension_of_reconstruction_space==1 && view_type_coefficient_output::rank==1) || view_type_coefficient_output::rank!=1) && 
                 "Output view is requested as rank 1, but the target requires a rank larger than 1. Try double** as template argument.");
 
         // we need to specialize a template on the rank of the output view type and the input view type
@@ -719,7 +798,6 @@ public:
 
         // copy back to whatever memory space the user requester through templating from the device
         Kokkos::deep_copy(coefficient_output, output_subview_maker.copyToAndReturnOriginalView());
-        return coefficient_output;
     }
 
 }; // Evaluator

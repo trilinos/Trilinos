@@ -70,10 +70,8 @@ namespace MueLu {
 
     if (verbLevel & Debug) {
       for (LO i = 0; i < rows_.size()-1; i++) {
-        out0 << i << ":";
         for (LO j = rows_[i]; j < rows_[i+1]; j++)
-          out0 << " " << columns_[j];
-        out0 << std::endl;
+          out0 << i << " " << columns_[j]<<std::endl;
       }
     }
   }
