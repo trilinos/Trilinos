@@ -2,94 +2,123 @@
 #ifndef ROL2_PARAMETERLIST_HPP
 #define ROL2_PARAMETERLIST_HPP
 
-#include <map>
-#include <string>
-#include <memory>
-
 namespace ROL2 {
 
-class ParameterList {
-/*
-  template<class Value>
-  struct Parameter {
-    Parameter( Value v ) : value(v) {}
-    operator Value () const { return value; }
-    Value value;
-    std::uint16_t readCount, writeCount;
-  };
+namespace detail {
 
-  using bool_type    = Parameter<bool>;
-  using int_type     = Parameter<int>;
-  using double_type  = Parameter<double>;
-  using string_type  = Parameter<std::string>;
-  using parlist_type = Parameter<ParameterList>;
-  
-  template<typename value_type>
-  inline static auto param( value_type v ) { 
-    return Parameter<Value>(v); 
+template<typename value_type>
+std::ostream& operator << ( std::ostream& os, std::vector<value_type>& v ) {
+  os << "[ ";
+  for( std::size_t k=0; k<v.size()-1; ++k ) os << v[k] << ", ";
+  os << v.back() << " ]" << std::endl;
+  return os;
+}
+
+
+template<typename value_type>
+class PList {
+public:
+
+  inline void set( std::string key, value_type value ) {
+    values_[key] = value;
   }
-*/
-  template<typename value_type> using dict = std::map<string,value_type>;
-
-  //-----------------------------------------------------------------------
-  // Fundamental Type Access
-
-  inline void set( string key, bool   value ) { bools_[key]   = value; }
-  inline void set( string key, int    value ) { ints_[key]    = value; }
-  inline void set( string key, double value ) { doubles_[key] = value; }
-  inline void set( string key, string value ) { strings_[key] = value; }
-
-  // These throw std::out_of_range exceptions if key not in dict
-  inline bool   get_bool(   string key ) const { return bools_.at(key);   }
-  inline int    get_int(    string key ) const { return ints_.at(key);    }
-  inline double get_double( string key ) const { return doubles_.at(key); }
-  inline string get_string( string key ) const { return strings_.at(key); }
-
-  bool get( string key, bool default_value ) { 
-    if( !bools_.count(key) ) set( key, default_value );
-    return get_bool(key);
+ 
+  inline value_type get( std::string key, value_type value ) {
+    if( values_.count(key) ) values_[key] = value;
+    return values_[key];
   }
 
-  int get( string key, int default_value ) { 
-    if( !ints_.count(key) ) set( key, default_value );
-    return get_ints(key);
-  }
+  virtual int get_level() = 0;// { return 0; }
 
-  double get( string key, double default_value ) { 
-    if( !doubles_.count(key) ) set( key, default_value );
-    return get_double(key);
-  }
-
-  string get( string key, string default_value ) { 
-    if( !strings_.count(key) ) set( key, default_value );
-    return get_string(key);
-  }
-
-  //-----------------------------------------------------------------------
-  // Sublist Access
-
-  ParameterList& sublist( string key, bool mustAlreadyExist=false ) {
-    if( mustAlreadyExist ) return *(sublists_.at(key));
-    else {   
-      if( !sublist_.count(key) ) sublists_[key] = std::make_unique<ParameterList>();
-      return *(sublists_[key]);
-    }
-  }
-
-  const ParameterList& sublist( string key ) const {
-    return *(sublists_.at(key));
+  friend std::ostream& operator << ( std::ostream& os, PList& plist ) {
+    for( auto it=plist.values_.begin(); it != plist.values_.end(); ++it )
+      os << std::string(2*(plist.get_level()),' ') << 
+            it->first << " : " << it->second << std::endl;
+    return os;
   }
 
 private:
+  std::map<std::string,value_type> values_;  
+}; // class detail::PList
 
-  dict<bool>                     bools_;
-  dict<int>                      ints_;
-  dict<double>                   doubles_;
-  dict<string>                   strings_;
-  dict<std::unique_ptr<parlist>> sublists_;
+
+
+template<typename...ValueTypes>
+class ParameterList : public PList<ValueTypes>... {
+public:
+
+  ParameterList( int level = 0 ) : level_(level) {}
+
+  template<typename value_type>
+  inline void set( std::string key, value_type value ) {
+    static_assert( disjunction_v<is_convertible<value_type,ValueTypes>...>,"" );
+    static_cast<PList<value_type>&>(*this).set( key, value );
+  }
+
+  inline void set( std::string key, const char* value ) {
+    set(key,std::string(value));
+  }
+
+  template<typename value_type>
+  inline value_type get( std::string key, value_type value ) {
+    static_assert( disjunction_v<is_convertible<value_type,ValueTypes>...>,"" );
+    return PList<value_type>::get( key, value );
+  }
+
+  inline std::string get( std::string key, const char* value ) {
+    return get(key,std::string(value));
+  }
+
+private:
+  int level_ = 0;
+
+}; // class detail::ParameterList
+
+template<typename...ValueTypes>
+void display( std::ostream& os, ParameterList<ValueTypes...>& parlist ) {
+  using expander = int[];
+  (void)expander{0, (void( os << static_cast<PList<ValueTypes>&>(parlist) ),0) ... };
+}
+
+
+
+} // namespace detail 
+
+
+class ParameterList : public detail::ParameterList<bool, 
+                                                   int,
+                                                   double,
+                                                   std::string,
+                                                   std::vector<int>,
+                                                   std::vector<double>,
+                                                   std::vector<std::string>> {
+public:
+
+  ParameterList( int level = 0 ) : level_(level) {}
+
+  ParameterList& sublist( std::string key, bool mustAlreadyExist=false );
+
+  int get_level() override { return level_; }
+
+  friend std::ostream& operator << ( std::ostream&  os, 
+                                     ParameterList& parlist ) {
+    detail::display( os , parlist );
+    os << std::endl;
+    for( auto it=parlist.sublists_.begin(); it != parlist.sublists_.end(); ++it )
+      os << std::string(2*parlist.get_level(),' ') <<
+           it->first << ":\n" << *(it->second);
+    return os;
+  }
+
+private:
+  std::map<std::string,std::unique_ptr<ParameterList>> sublists_;
+  int level_ = 0;  
 
 }; // ParameterList
-} // namespace ROL
+
+std::ostream& operator << ( std::ostream& os, ParameterList& parlist );
+
+} // namespace ROL2
 
 #endif // ROL2_PARAMETERLIST_HPP
 

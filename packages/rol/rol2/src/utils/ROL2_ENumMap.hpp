@@ -4,6 +4,12 @@
 
 namespace ROL2 {
 
+/** \class ROL2::EnumMap
+ *  \brief Defines a standardized bijective dictionary type object for
+ *         converting between ROL's option strings and their corresponding
+           enum values
+ */
+
 template<typename EType>
 class EnumMap {
 public:

@@ -2,10 +2,12 @@
 #ifndef ROL2_ENUMERATION_HPP
 #define ROL2_ENUMERATION_HPP
 
-namespace ROL2 {
+/** \file  ROL2_Enumeration.hpp
+ *  \brief Defines a standardized ROL2 scoped enum type and utility functions
+ *
+ */
 
-template<class T>
-constexpr bool is_enum_v = std::is_enum<T>::value;
+namespace ROL2 {
 
 template<class ENumType, class ReturnType>
 using enable_if_enum_t = std::enable_if_t<is_enum_v<ENumType>,ReturnType>;
@@ -27,7 +29,7 @@ template<typename T, typename=void>
 struct has_enum_Type : std::false_type {};
 
 template<typename T>
-struct has_enum_Type<T,void_t<member_Type_t<T>> {
+struct has_enum_Type<T,void_t<member_Type_t<T>>> {
   static constexpr auto value = is_enum_v<member_Type_t<T>>;
 };
 
@@ -56,21 +58,22 @@ template<typename object_type, typename return_type>
 using enable_if_has_enum_Flag_t = std::enable_if_t<has_enum_Type_v<object_type>,return_type>;
 
 
-/** \brief Universal valid value function for all ROL2 enums
-           All enums in ROL2 follow the same design
-
-           enum class ENumType : SomeIntegralType {
-             FirstValue = 0,
-             ...
-             Last 
-           };
-    
-          The ENumType values always start at 0, are consecutive,
-          and the largest value is denoted as Last. Values are 
-          considered valid if they are at least 0 and less than Last.
-          This function will throw an exception if the value is less than
-          0 or greater than ENumType::Last
-*/
+/** 
+ *  \brief Universal valid value function for all ROL2 enums
+ *         All enums in ROL2 follow the same design
+ *
+ *          enum class ENumType : SomeIntegralType {
+ *            FirstValue = 0,
+ *            ...
+ *            Last 
+ *          };
+ *   
+ *         The ENumType values always start at 0, are consecutive,
+ *         and the largest value is denoted as Last. Values are 
+ *         considered valid if they are at least 0 and less than Last.
+ *         This function will throw an exception if the value is less than
+ *         0 or greater than ENumType::Last
+ */
 
 template<class ENumType>
 enable_if_enum_t<ENumType,bool>
@@ -79,7 +82,7 @@ is_valid_enum_value( const ENumType& e ) {
   constexpr auto first   = static_cast<integral_type>(0);
   constexpr auto last    = static_cast<integral_type>(ENumType::Last);
             auto current = static_cast<integral_type>(e);
-  ROL_TEST_FOR_EXCEPTION( (current < first) || (current > last) ),
+  ROL_TEST_FOR_EXCEPTION( (current < first) || (current > last),
                           std::out_of_range, "The enum value is out of range" );
   return (first <= current) && (current < last);
 };
@@ -91,7 +94,7 @@ enable_if_enum_t<ENumType,ENumType&&>
 operator++ ( ENumType& e ) {
   using int_type = std::underlying_type_t<ENumType>;
   auto e_int = static_cast<int_type>(e);
-  constexpr auto last = static_cast<int_type>(EType::Last);
+  constexpr auto last = static_cast<int_type>(ENumType::Last);
   ROL_TEST_FOR_EXCEPTION( e_int >= last, std::out_of_range, 
                           "The enum value is out of range" );
   e = static_cast<ENumType>(++e_int);
@@ -105,7 +108,7 @@ enable_if_enum_t<ENumType,ENumType&&>
 operator++ ( ENumType& e, int ) {
   using int_type = std::underlying_type_t<ENumType>;
   auto e_int = static_cast<int_type>(e);
-  constexpr auto last = static_cast<int_type>(EType::Last);
+  constexpr auto last = static_cast<int_type>(ENumType::Last);
   ROL_TEST_FOR_EXCEPTION( e_int >= last, std::out_of_range, 
                           "The enum value is out of range" );
   e = static_cast<ENumType>(++e_int);
@@ -120,6 +123,7 @@ operator << ( std::ostream& os, ENumType e ) {
   return os;
 }
 
+} // namespace ROL2
 
-#endif //ROL2_ENUMERATION_HPP
+#endif // ROL2_ENUMERATION_HPP
 

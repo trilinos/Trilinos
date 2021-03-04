@@ -45,7 +45,7 @@
 #ifndef ROL2_TYPEU_LINESEARCH_DECL_H
 #define ROL2_TYPEU_LINESEARCH_DECL_H
 
-/** \class ROL::LineSearch_U
+/** \class ROL2::TypeU::LineSearch
     \brief Provides interface for and implements line searches.
 */
 
@@ -168,17 +168,6 @@ inline std::string enumToString( CurvatureCond e ) {
   return LineSearch<Real>::curvature_dict[e]; 
 }
 
-//template<class Real>
-//inline std::string stringToEnum( std::string s, const LineSearch<Real>& ) {
-//  return LineSearch<Real>::type_dict[s];
-//}
-//
-//template<class Real>
-//inline CurvatureCond stringToEnum( std::string, LineSearch<Real>::CurvatureCond ) {
-//  return curvature_dict[s];
-//}
-
-
 template<class Real>
 EnumMap<LineSearch<Real>::Type>
 LineSearch<Real>::type_dict = { "Iteration Scaling",
@@ -197,12 +186,7 @@ LineSearch<Real>::curvature_dict = { "Wolfe Conditions",
                                      "Approximate Wolfe Conditions",
                                      "Goldstein Conditions",
                                      "Null Curvature Condition" };
-
- 
-
-
-
-
+} // namespace TypeU
 } // namespace ROL2
 
 #endif // ROL2_TYPEU_LINESEARCH_DECL_H

@@ -18,6 +18,12 @@ constexpr Real ROL_MIN = std::numeric_limits<Real>::min();
 template<typename Real>
 constexpr Real ROL_EPSILON = std::numeric_limits<Real>::epsilon();
 
+template<typename Real=double>
+Real default_tolerance() {
+  static Real tol = std::sqrt( ROL_EPSILON<Real> );
+  return tol;
+}
+
 template<typename Real>
 constexpr Real ROL_INF = ROL_MAX<Real> * 0.1;
 
