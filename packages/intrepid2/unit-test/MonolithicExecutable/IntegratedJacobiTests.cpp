@@ -87,15 +87,17 @@ namespace
         {
           integratedJacobiValues(integratedJacobiView, alpha, polyOrder, x, t);
         });
-
+        
         Kokkos::fence();
+        auto integratedJacobiViewHost = getHostCopy(integratedJacobiView);
+        
         for (int i=1; i<=polyOrder; i++)
         {
           if ( abs(integratedJacobiView(i)) > tol)
           {
             success = false;
             out << "for alpha = " << alpha << ", t = " << t << ", integrated Jacobi for polyOrder " << i;
-            out << " at x=0 is not zero (it is " << integratedJacobiView(i) << ")\n";
+            out << " at x=0 is not zero (it is " << integratedJacobiViewHost(i) << ")\n";
           }
         }
       }
@@ -125,13 +127,15 @@ namespace
         });
         
         Kokkos::fence();
+        
+        auto integratedJacobiViewHost = getHostCopy(integratedJacobiView);
         const int i = 2;
-        double diff = integratedJacobiView(i) - expected_value;
+        double diff = integratedJacobiViewHost(i) - expected_value;
         if ( abs(diff) > tol)
         {
           success = false;
           out << "for alpha = " << alpha << ", t = " << t << ", integrated Jacobi for polyOrder " << i;
-          out << " at x=" << x << " is not x^2 - x * t (" << expected_value << "); instead, it is " << integratedJacobiView(i);
+          out << " at x=" << x << " is not x^2 - x * t (" << expected_value << "); instead, it is " << integratedJacobiViewHost(i);
           out << ", a difference of " << abs(diff) << ")\n";
         }
       }
