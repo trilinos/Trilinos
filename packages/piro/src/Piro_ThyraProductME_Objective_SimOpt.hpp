@@ -49,6 +49,7 @@
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Types.hpp"
 #include "Teuchos_VerbosityLevel.hpp"
+#include "Piro_ROL_ObserverBase.hpp"
 
 namespace Piro {
 
@@ -59,27 +60,28 @@ public:
 
 
   ThyraProductME_Objective_SimOpt(const Thyra::ModelEvaluator<double>& thyra_model_, int g_index_, const std::vector<int>& p_indices_,
-      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH) :
+      Teuchos::RCP<Teuchos::ParameterList> params_ = Teuchos::null, Teuchos::EVerbosityLevel verbLevel= Teuchos::VERB_HIGH,
+      Teuchos::RCP<ROL_ObserverBase<Real>> observer_ = Teuchos::null) :
         thyra_model(thyra_model_), g_index(g_index_), p_indices(p_indices_), params(params_),
         out(Teuchos::VerboseObjectBase::getDefaultOStream()),
-        verbosityLevel(verbLevel) {
+        verbosityLevel(verbLevel), observer(observer_)  {
     computeValue = computeGradient1 = computeGradient2 = true;
+    response_available = false;
     value_ = 0;
     rol_u_ptr = rol_z_ptr = Teuchos::null;
-    if(params != Teuchos::null) {
-      params->set<int>("Optimizer Iteration Number", -1);
-      params->set<Teuchos::RCP<ROL::Vector<Real> > >("Optimization Variable", Teuchos::null);
-    }
+    z_stored_ptr =  Teuchos::null;
+    if(params != Teuchos::null)
+      write_interval = params->get("Write Interval",1);
+    else
+      write_interval = 1;
   };
 
 
   Real value(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling applyAdjointJacobian_2
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::value" << std::endl;
@@ -110,17 +112,16 @@ public:
     value_ = ::Thyra::get_ele(*g,0);
 
     computeValue = false;
+    response_available = true;
 
     return value_;
   }
 
   void gradient_1(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling gradient_1
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_1" << std::endl;
@@ -175,6 +176,7 @@ public:
         *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_1, Computing Value" << std::endl;
       value_ = ::Thyra::get_ele(*thyra_g,0);
       computeValue = false;
+      response_available = true;
     }
 
     if (Teuchos::is_null(grad1_ptr_))
@@ -186,11 +188,9 @@ public:
 
   void gradient_2(ROL::Vector<Real> &g, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
 
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling gradient_2
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::gradient_2" << std::endl;
@@ -250,6 +250,7 @@ public:
     if(computeValue) {
       value_ = ::Thyra::get_ele(*thyra_g,0);
       computeValue = false;
+      response_available = true;
     }
 
     if (grad2_ptr_ == Teuchos::null)
@@ -310,13 +311,9 @@ public:
   void hessVec_11( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
       const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
-/* Disabling check for now
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling this function
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
-*/
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_11" << std::endl;
@@ -382,13 +379,9 @@ public:
   void hessVec_12( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
       const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
-/* disabling check for now
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling this function
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
-*/
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_12" << std::endl;
@@ -468,13 +461,9 @@ public:
   void hessVec_21( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
       const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
-/* disabling check for now
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling this function
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
-*/
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_21" << std::endl;
@@ -550,13 +539,9 @@ public:
   void hessVec_22( ROL::Vector<Real> &hv, const ROL::Vector<Real> &v,
       const ROL::Vector<Real> &u,  const ROL::Vector<Real> &z, Real &/*tol*/ ) {
 
-/* disabling check for now
-#ifdef  HAVE_ROL_DEBUG
-    //u and z should be updated in the update functions before calling this function
-    TEUCHOS_ASSERT(!u_hasChanged(u));
-    TEUCHOS_ASSERT(!z_hasChanged(z));
-#endif
-*/
+    //Test if u and/or z should be updated in the update functions
+    if (u_hasChanged(u) || z_hasChanged(z))
+      update(u,z);
 
     if(verbosityLevel >= Teuchos::VERB_MEDIUM)
       *out << "ROL::ThyraProductME_Objective_SimOpt::hessVec_22" << std::endl;
@@ -647,6 +632,7 @@ public:
       if(verbosityLevel >= Teuchos::VERB_HIGH)
         *out << "ROL::ThyraProductME_Objective_SimOpt::update, Either The State Or The Parameters Changed" << std::endl;
       computeValue = computeGradient1 = computeGradient2 = true;
+      response_available = false;
 
       if (Teuchos::is_null(rol_z_ptr))
         rol_z_ptr = z.clone();
@@ -657,17 +643,26 @@ public:
       rol_u_ptr->set(u);
     }
 
-    if(params != Teuchos::null) {
-      auto& z_stored_ptr = params->get<Teuchos::RCP<ROL::Vector<Real> > >("Optimization Variable");
-      if(Teuchos::is_null(z_stored_ptr) || z_hasChanged(*z_stored_ptr)) {
-        if(verbosityLevel >= Teuchos::VERB_HIGH)
-          *out << "ROL::ThyraProductME_Objective_SimOpt::update, Signaling That Parameter Changed" << std::endl;
-        params->set<bool>("Optimization Variables Changed", true);
-        if(Teuchos::is_null(z_stored_ptr))
-          z_stored_ptr = z.clone();
-        z_stored_ptr->set(z);
-      }
-      params->set<int>("Optimizer Iteration Number", iter);
+    if(Teuchos::is_null(z_stored_ptr) || z_hasChanged(*z_stored_ptr)) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::update, Signaling That Parameter Changed" << std::endl;
+      if(observer != Teuchos::null)
+        observer->parametersChanged();
+      if(Teuchos::is_null(z_stored_ptr))
+        z_stored_ptr = z.clone();
+      z_stored_ptr->set(z);
+    }
+
+    if((observer != Teuchos::null) && (iter >= 0) && (iter != iteration) && (iteration%write_interval == 0)) {
+      print = true;
+      iteration = iter;
+    }
+
+    if (print && response_available) {
+      const ROL::ThyraVector<Real>  & thyra_u = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
+      observer->observeSolution(iteration, *(thyra_u.getVector()), Teuchos::null, Teuchos::null, Teuchos::null);
+      observer->observeResponse(iteration);
+      print = false;
     }
   }
 
@@ -710,6 +705,13 @@ private:
   Teuchos::RCP<Teuchos::ParameterList> params;
   Teuchos::RCP<Teuchos::FancyOStream> out;
   Teuchos::EVerbosityLevel verbosityLevel;
+  Teuchos::RCP<ROL_ObserverBase<Real>> observer;
+  bool response_available;
+  bool print = false;
+  int iteration = -1;
+  int write_interval;
+
+  Teuchos::RCP<ROL::Vector<Real> > z_stored_ptr;
 
 };
 

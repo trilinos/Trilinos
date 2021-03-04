@@ -97,7 +97,8 @@ int
 Piro::PerformAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& analysisParams,
-    RCP< Thyra::VectorBase<double> >& result)
+    RCP< Thyra::VectorBase<double> >& result,
+    RCP< Piro::ROL_ObserverBase<double> > observer)
 {
 
   analysisParams.validateParameters(*Piro::getValidPiroAnalysisParameters(),0);
@@ -127,7 +128,7 @@ Piro::PerformAnalysis(
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
-                          analysisParams, result);
+                          analysisParams, result, observer);
 
   }
 #endif
@@ -216,7 +217,8 @@ int
 Piro::PerformROLAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& analysisParams,
-    RCP< Thyra::VectorBase<double> >& p)
+    RCP< Thyra::VectorBase<double> >& p,
+    RCP< Piro::ROL_ObserverBase<double> > observer)
 {
   auto rolParams = analysisParams.sublist("ROL");
 
@@ -298,8 +300,8 @@ Piro::PerformROLAnalysis(
   Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel);
-  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel);
+  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel, observer);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel, observer);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 
