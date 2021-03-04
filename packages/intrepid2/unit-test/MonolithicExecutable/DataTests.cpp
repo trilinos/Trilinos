@@ -82,7 +82,7 @@ namespace
     const int numRows = 3;
     const int numCols = 3;
     const Scalar lastValueToSet = 18;
-    auto zeroView = getView<Scalar>("GetWritableEntry view", numRows, numCols);
+    auto zeroView = getViewDefaultTestDT<Scalar>("GetWritableEntry view", numRows, numCols);
     Kokkos::deep_copy(zeroView,0);
     Data<double,DefaultTestDeviceType> data(zeroView);
     
@@ -93,7 +93,7 @@ namespace
       lastVal = lastValueToSet;
     });
     
-    auto expectedView = getView<Scalar>("GetWritableEntry expected view", numRows, numCols);
+    auto expectedView = getViewDefaultTestDT<Scalar>("GetWritableEntry expected view", numRows, numCols);
     auto expectedViewHost = Kokkos::create_mirror_view(expectedView);
     Kokkos::deep_copy(expectedViewHost,0);
     expectedViewHost(numRows-1,numCols-1) = lastValueToSet;
@@ -112,20 +112,20 @@ namespace
     
     using Scalar = double;
     const int spaceDim = 2;
-    auto matrixView = getView<Scalar>("full matrix", spaceDim, spaceDim);
+    auto matrixView = getViewDefaultTestDT<Scalar>("full matrix", spaceDim, spaceDim);
     auto matrixViewHost = Kokkos::create_mirror(matrixView);
     matrixViewHost(0,0) =  1.0;  matrixViewHost(0,1) =  2.0;
     matrixViewHost(1,0) = -1.0;  matrixViewHost(1,1) =  3.0;
     Kokkos::deep_copy(matrixView, matrixViewHost);
     
-    auto vecView = getView<Scalar>("vector", spaceDim);
+    auto vecView = getViewDefaultTestDT<Scalar>("vector", spaceDim);
     auto vecViewHost = Kokkos::create_mirror(vecView);
     
     vecViewHost(0) = 1.0;
     vecViewHost(1) = 2.0;
     Kokkos::deep_copy(vecView, vecViewHost);
     
-    auto expectedResultView = getView<Scalar>("result vector", spaceDim);
+    auto expectedResultView = getViewDefaultTestDT<Scalar>("result vector", spaceDim);
     auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     expectedResultViewHost(0) = matrixViewHost(0,0) * vecViewHost(0) + matrixViewHost(0,1) * vecViewHost(1);
@@ -152,19 +152,19 @@ namespace
     using Scalar = double;
     const int spaceDim = 2;
     const int cellCount = 1;
-    auto leftMatrixView = getView<Scalar>("left matrix", cellCount, spaceDim, spaceDim);
+    auto leftMatrixView = getViewDefaultTestDT<Scalar>("left matrix", cellCount, spaceDim, spaceDim);
     auto leftMatrixViewHost = Kokkos::create_mirror(leftMatrixView);
     leftMatrixViewHost(0,0,0) =  1.0;  leftMatrixViewHost(0,0,1) =  2.0;
     leftMatrixViewHost(0,1,0) = -1.0;  leftMatrixViewHost(0,1,1) =  3.0;
     Kokkos::deep_copy(leftMatrixView, leftMatrixViewHost);
     
-    auto rightMatrixView = getView<Scalar>("right matrix", cellCount, spaceDim, spaceDim);
+    auto rightMatrixView = getViewDefaultTestDT<Scalar>("right matrix", cellCount, spaceDim, spaceDim);
     auto rightMatrixViewHost = Kokkos::create_mirror(rightMatrixView);
     rightMatrixViewHost(0,0,0) =  1.0;  rightMatrixViewHost(0,0,1) =  2.0;
     rightMatrixViewHost(0,1,0) = -1.0;  rightMatrixViewHost(0,1,1) =  3.0;
     Kokkos::deep_copy(rightMatrixView, rightMatrixViewHost);
     
-    auto expectedResultView = getView<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
+    auto expectedResultView = getViewDefaultTestDT<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
     auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     const int cellOrdinal = 0;
@@ -285,7 +285,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     const int spaceDim = 3;
     const int leftLastNonDiagonal = 1;
     const int cellCount = 1;
-    auto leftMatrixView = getView<Scalar>("left matrix", cellCount, (leftLastNonDiagonal+1) * (leftLastNonDiagonal+1) + (spaceDim - leftLastNonDiagonal - 1));
+    auto leftMatrixView = getViewDefaultTestDT<Scalar>("left matrix", cellCount, (leftLastNonDiagonal+1) * (leftLastNonDiagonal+1) + (spaceDim - leftLastNonDiagonal - 1));
     auto leftMatrixViewHost = Kokkos::create_mirror(leftMatrixView);
     int entryIndex = 0;
     // Block:
@@ -296,7 +296,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     Kokkos::deep_copy(leftMatrixView, leftMatrixViewHost);
     
     const int rightLastNonDiagonal = 0;
-    auto rightMatrixView = getView<Scalar>("right matrix", cellCount, (rightLastNonDiagonal+1) * (rightLastNonDiagonal+1) + (spaceDim - rightLastNonDiagonal - 1));
+    auto rightMatrixView = getViewDefaultTestDT<Scalar>("right matrix", cellCount, (rightLastNonDiagonal+1) * (rightLastNonDiagonal+1) + (spaceDim - rightLastNonDiagonal - 1));
     auto rightMatrixViewHost = Kokkos::create_mirror(rightMatrixView);
     entryIndex = 0;
     // Diagonal:
@@ -316,7 +316,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     Data<Scalar,DefaultTestDeviceType> A( leftMatrixView, rank, extents, variationTypes, leftLastNonDiagonal);
     Data<Scalar,DefaultTestDeviceType> B(rightMatrixView, rank, extents, variationTypes, rightLastNonDiagonal);
     
-    auto expectedResultView = getView<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
+    auto expectedResultView = getViewDefaultTestDT<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
     auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     const int cellOrdinal = 0;
