@@ -1,9 +1,9 @@
-#ifndef __TACHO_COPY_INTERNAL_HPP__
-#define __TACHO_COPY_INTERNAL_HPP__
+#ifndef __TACHO_SYMMETRIZE_INTERNAL_HPP__
+#define __TACHO_SYMMETRIZE_INTERNAL_HPP__
 
 
-/// \file  Tacho_Copy_Internal.hpp
-/// \brief Copy
+/// \file  Tacho_Symmetrize_Internal.hpp
+/// \brief Symmetrize a square block matrix
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
 namespace Tacho {

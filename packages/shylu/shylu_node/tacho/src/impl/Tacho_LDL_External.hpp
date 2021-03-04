@@ -9,61 +9,77 @@
 
 namespace Tacho {
 
-    /// LAPACK LDL
-    /// ==========
-    template<typename ArgUplo>
-    struct LDL<ArgUplo,Algo::External> {
-      template<typename ViewTypeA,
-               typename ViewTypeP>
-      inline
-      static int
-      invoke(const ViewTypeA &A,
-             const ViewTypeP &P) {
+  /// LAPACK LDL
+  /// ==========
+  template<>
+  struct LDL<Uplo::Lower,Algo::External> {
+    template<typename ViewTypeA,
+             typename ViewTypeP,
+             typename ViewTypeD,
+             typename ViewTypeW>
+    inline
+    static int
+    invoke(const ViewTypeA &A,
+           const ViewTypeP &P,
+           const ViewTypeD &D,
+           const ViewTypeW &W) {
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-        typedef typename ViewTypeA::non_const_value_type value_type;
-        typedef typename ViewTypeP::non_const_value_type p_value_type;
+      typedef typename ViewTypeA::non_const_value_type value_type;
+      typedef typename ViewTypeP::non_const_value_type p_value_type;
         
-        static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
+      static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
+      static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
+      static_assert(ViewTypeD::rank == 2,"D is not rank 2 view.");
+      static_assert(ViewTypeW::rank == 1,"W is not rank 1 view.");
 
-        int r_val = 0;      
+      int r_val = 0;      
         
-        const ordinal_type m = A.extent(0);
-        if (m > 0) {
-          Lapack<value_type>::sytrf(ArgUplo::param,
-                                    m,
-                                    A.data(), A.stride_1(),
-                                    P.data(),
-                                    &r_val);
+      const ordinal_type m = A.extent(0);
+      if (m > 0) {
+        /// factorize LDL
+        Lapack<value_type>::sytrf('L',
+                                  m,
+                                  A.data(), A.stride_1(),
+                                  P.data(),
+                                  W.data(), W.extent(0),
+                                  &r_val);
           
-          TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error,
-                                   "LAPACK (sytrf) returns non-zero error code.");
-        }
-#else
-        TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
-#endif
-        return r_val;
-      }
+        TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error,
+                                 "LAPACK (sytrf) returns non-zero error code.");
+          
+        /// extract diag
+        {
+          const value_type one(1), zero(0);
+          for (ordinal_type i=0;i<m;) {
+            const ordinal_type piv = P(i);
+            if (piv > 0) {
+              /// 1x1 block 
+              D(i,0) = A(i,i);
+              A(i,i) = one;
+              ++i;
+            } else if (piv < 0) {
+              /// 2x2 symmetric block
+              D(i,  0) = A(i,  i  );
+              D(i+1,1) = A(i+1,i+1);
 
-      template<typename SchedulerType,
-               typename MemberType,
-               typename ViewTypeA,
-               typename ViewTypeP>
-      inline
-      static int
-      invoke(SchedulerType &sched,
-             MemberType &member,
-             const ViewTypeA &A,
-             const ViewTypeP &P) {
-#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
-        //Kokkos::single(Kokkos::PerTeam(member), [&]() {
-        invoke(A, P);
-        //});
-#else
-        TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
-#endif
-        return r_val;
+              const value_type offdiag = A(i+1,i);
+              D(i,  1) = offdiag;
+              D(i+1,0) = offdiag;
+              
+              A(i,i) = one;
+              A(i+1,i+1) = one;
+              A(i+1,i) = zero;
+            }
+          }
+        }
       }
-    };
+#else
+      TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
+#endif
+      return r_val;
+    }
+
+  };
 
 }
 
