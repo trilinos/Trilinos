@@ -278,7 +278,7 @@ namespace phalanx_test {
     auto host_a = Kokkos::create_mirror_view(a);
     Kokkos::deep_copy(host_a,a);
     const auto tol = 100.0 * std::numeric_limits<double>::epsilon();
-    for (int i=0; i < host_a.extent(0); ++i) {
+    for (std::size_t i=0; i < host_a.extent(0); ++i) {
       TEST_FLOATING_EQUALITY(host_a(i),11.0,tol);
     }
   }
