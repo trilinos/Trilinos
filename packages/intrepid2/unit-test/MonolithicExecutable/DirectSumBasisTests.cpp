@@ -84,8 +84,8 @@ namespace
     WeightViewType weights("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
-    TensorPoints<PointScalar> tensorPoints;
-    TensorData<WeightScalar>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
     using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());

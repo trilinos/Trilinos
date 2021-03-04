@@ -498,6 +498,32 @@ namespace Intrepid2 {
       setActiveDims();
     }
     
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    Data(const Data<DataScalar,OtherDeviceType> &data)
+    :
+    dataRank_(data.getUnderlyingViewRank()), extents_(data.getExtents()), variationType_(data.getVariationTypes()), blockPlusDiagonalLastNonDiagonal_(data.blockPlusDiagonalLastNonDiagonal()), rank_(data.rank())
+    {
+//      std::cout << "Entered copy-like Data constructor.\n";
+      if (dataRank_ != 0) // dataRank_ == 0 indicates an invalid Data object (a placeholder, can indicate zero value)
+      {
+        const auto view = data.getUnderlyingView();
+        switch (dataRank_)
+        {
+          case 1: data1_ = data.getUnderlyingView1(); break;
+          case 2: data2_ = data.getUnderlyingView2(); break;
+          case 3: data3_ = data.getUnderlyingView3(); break;
+          case 4: data4_ = data.getUnderlyingView4(); break;
+          case 5: data5_ = data.getUnderlyingView5(); break;
+          case 6: data6_ = data.getUnderlyingView6(); break;
+          case 7: data7_ = data.getUnderlyingView7(); break;
+          default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
+        }
+      }
+      setActiveDims();
+    }
+    
     //! copy-like constructor for differing execution spaces.  This does a deep_copy of the underlying view.
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
     Data(const Data<DataScalar,OtherDeviceType> &data)

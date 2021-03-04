@@ -179,6 +179,28 @@ namespace Intrepid2
     rank_(0)
     {}
     
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    TensorData(const TensorData<Scalar,OtherDeviceType> &tensorData)
+    {
+      if (tensorData.isValid())
+      {
+        numTensorComponents_ = tensorData.numTensorComponents();
+        for (ordinal_type r=0; r<numTensorComponents_; r++)
+        {
+          Data<Scalar,OtherDeviceType> otherTensorComponent = tensorData.getTensorComponent(r);
+          tensorComponents_[r] = Data<Scalar,DeviceType>(otherTensorComponent);
+        }
+        initialize();
+      }
+      else
+      {
+        extents_ = Kokkos::Array<ordinal_type,7>{0,0,0,0,0,0,0};
+        rank_    = 0;
+      }
+    }
+    
     /**
      \brief Copy-like constructor for differing execution spaces.  This performs a deep copy of the underlying data.
     */

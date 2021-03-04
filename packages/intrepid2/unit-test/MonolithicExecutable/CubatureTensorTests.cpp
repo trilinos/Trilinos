@@ -82,8 +82,8 @@ namespace
     
     quadrature->getCubature(points, weights);
     
-    TensorPoints<PointScalar> tensorPoints;
-    TensorData<WeightScalar>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
     using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
@@ -96,11 +96,11 @@ namespace
     }
     else
     {
-      std::vector<ViewType<PointScalar>> pointComponents {points};
-      tensorPoints = TensorPoints<PointScalar>(pointComponents);
-      Data<WeightScalar> weightData(weights);
-      std::vector<Data<WeightScalar>> weightComponents {weightData};
-      tensorWeights = TensorData<WeightScalar>(weightComponents);
+      std::vector<ViewTypeDefaultTestDT<PointScalar>> pointComponents {points};
+      tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
+      Data<WeightScalar,DeviceType> weightData(weights);
+      std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};
+      tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
     
     printView(points, out, "Points being tested");

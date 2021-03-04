@@ -281,6 +281,27 @@ namespace Intrepid2 {
       initialize();
     }
     
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    VectorData(const VectorData<Scalar,OtherDeviceType> &vectorData)
+    :
+    numFamilies_(vectorData.numFamilies()),
+    numComponents_(vectorData.numComponents())
+    {
+      if (vectorData.isValid())
+      {
+        for (unsigned i=0; i<numFamilies_; i++)
+        {
+          for (unsigned j=0; j<numComponents_; j++)
+          {
+            vectorComponents_[i][j] = vectorData.getComponent(i, j);
+          }
+        }
+        initialize();
+      }
+    }
+    
     //! copy-like constructor for differing execution spaces.  This does a deep copy of underlying views.
     template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
     VectorData(const VectorData<Scalar,OtherDeviceType> &vectorData)
