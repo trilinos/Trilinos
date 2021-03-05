@@ -124,7 +124,7 @@ namespace
     printFunctor2(points, out, "points being tested");
     printFunctor2(tensorPoints, out, "tensorPoints");
     
-    testFloatingEquality2(points,tensorPoints,  relTol, absTol, out, success, "points", "tensorPoints");
+    testFloatingEquality2(points, tensorPoints, relTol, absTol, out, success, "points", "tensorPoints");
         
     auto hostBasisPtr = basis.getHostBasis();
         
