@@ -82,8 +82,8 @@ namespace
 //! version of integrate that performs a standard integration for affine meshes; does not take advantage of the tensor product structure at all
 //! this version can be used to verify correctness of other versions
 template<class Scalar, typename DeviceType>
-void integrate_baseline_serial_host(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
-                                    const TensorData<Scalar,DeviceType> cellMeasures, const TransformedVectorData<Scalar,DeviceType> vectorDataRight)
+void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
+                        const TensorData<Scalar,DeviceType> cellMeasures, const TransformedVectorData<Scalar,DeviceType> vectorDataRight)
 {
   const int cellDataExtent = integrals.getDataExtent(0);
   const int numFieldsLeft  = vectorDataLeft.numFields();
@@ -110,55 +110,38 @@ void integrate_baseline_serial_host(Data<Scalar,DeviceType> integrals, const Tra
   // integral data may have shape (C,F1,F2) or (if the variation type is CONSTANT in the cell dimension) shape (F1,F2)
   const int integralViewRank = integrals.getUnderlyingViewRank();
   
-  for (int cellDataOrdinal=0; cellDataOrdinal<cellDataExtent; cellDataOrdinal++)
+  using ExecutionSpace = typename DeviceType::execution_space;
+  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{cellDataExtent,numFieldsLeft,numFieldsRight});
+  Kokkos::parallel_for("fill expanded cell nodes", policy,
+  KOKKOS_LAMBDA (const int &cellDataOrdinal, const int &fieldOrdinalLeft, const int &fieldOrdinalRight)
   {
-    for (int fieldOrdinalLeft=0; fieldOrdinalLeft<numFieldsLeft; fieldOrdinalLeft++)
+    Scalar integral=0;
+    for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
     {
-      for (int fieldOrdinalRight=0; fieldOrdinalRight<numFieldsRight; fieldOrdinalRight++)
+      Scalar pointSum = 0.0;
+      for (int d=0; d<spaceDim; d++)
       {
-//        {
-//          // DEBUGGING
-//          std::cout << "entry (" << cellDataOrdinal << "," << fieldOrdinalLeft << "," << fieldOrdinalRight << ")\n";
-//        }
-        
-        Scalar integral=0;
-        for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
-        {
-          Scalar pointSum = 0.0;
-          for (int d=0; d<spaceDim; d++)
-          {
-            pointSum += vectorDataLeft(cellDataOrdinal,fieldOrdinalLeft,pointOrdinal,d) * vectorDataRight(cellDataOrdinal,fieldOrdinalRight,pointOrdinal,d);
-          }
-//          {
-//            // DEBUGGING
-//            std::cout << "   pointSum for point " << pointOrdinal << ": " << pointSum << std::endl;
-//            std::cout << "   cellMeasure for point:" << cellMeasures(cellDataOrdinal,pointOrdinal) << std::endl;
-//          }
-          integral += pointSum * cellMeasures(cellDataOrdinal,pointOrdinal);
-        }
-//        {
-//          // DEBUGGING:
-//          std::cout << "  integral: " << integral << std::endl;
-//        }
-        if (integralViewRank == 3)
-        {
-          // shape (C,F1,F2)
-          auto integralView = integrals.getUnderlyingView3();
-          integralView(cellDataOrdinal,fieldOrdinalLeft,fieldOrdinalRight) = integral;
-        }
-        else
-        {
-          // shape (F1,F2)
-          auto integralView = integrals.getUnderlyingView2();
-          integralView(fieldOrdinalLeft,fieldOrdinalRight) = integral;
-        }
+        pointSum += vectorDataLeft(cellDataOrdinal,fieldOrdinalLeft,pointOrdinal,d) * vectorDataRight(cellDataOrdinal,fieldOrdinalRight,pointOrdinal,d);
       }
+      integral += pointSum * cellMeasures(cellDataOrdinal,pointOrdinal);
     }
-  }
+    if (integralViewRank == 3)
+    {
+      // shape (C,F1,F2)
+      auto integralView = integrals.getUnderlyingView3();
+      integralView(cellDataOrdinal,fieldOrdinalLeft,fieldOrdinalRight) = integral;
+    }
+    else
+    {
+      // shape (F1,F2)
+      auto integralView = integrals.getUnderlyingView2();
+      integralView(fieldOrdinalLeft,fieldOrdinalRight) = integral;
+    }
+  });
   
   int approximateFlopCount = (spaceDim*2 + 2) * numPoints * numFieldsLeft * numFieldsRight * cellDataExtent;
 //  printView(integralView, std::cout, "stiffness in " + std::to_string(spaceDim) + "D");
-  std::cout << "\n\nApproximate flop count (baseline): " << approximateFlopCount << std::endl;
+//  std::cout << "\n\nApproximate flop count (baseline): " << approximateFlopCount << std::endl;
 }
 
 //! version that uses the classic Intrepid2 paths
@@ -278,7 +261,7 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     auto integralsBaseline  = IntegrationTools::allocateIntegralData(vectorDataLeft, cellMeasures, vectorDataRight);
     auto integralsIntegrate = IntegrationTools::allocateIntegralData(vectorDataLeft, cellMeasures, vectorDataRight);
     
-    integrate_baseline_serial_host(integralsBaseline, vectorDataLeft, cellMeasures, vectorDataRight);
+    integrate_baseline(integralsBaseline, vectorDataLeft, cellMeasures, vectorDataRight);
     IntegrationTools::integrate(integralsIntegrate, vectorDataLeft, cellMeasures, vectorDataRight);
     
     const int integralsBaselineViewRank = integralsBaseline.getUnderlyingViewRank();
@@ -442,7 +425,7 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     
     auto integralDataBaseline = IntegrationTools::allocateIntegralData(transformedGradientValues, cellMeasures, transformedGradientValues);
     
-    integrate_baseline_serial_host(integralDataBaseline, transformedGradientValues, cellMeasures, transformedGradientValues);
+    integrate_baseline(integralDataBaseline, transformedGradientValues, cellMeasures, transformedGradientValues);
     
     out << "Comparing new integration path path with baseline integration…\n";
     testIntegrateMatchesBaseline(transformedGradientValues, cellMeasures, transformedGradientValues, out, success);
