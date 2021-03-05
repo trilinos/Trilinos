@@ -179,7 +179,7 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
   else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
   else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
   
-  auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<> >(cellTopo, fs, polyOrder);
+  auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
   
   int numFields = basis->getCardinality();
   int numHypercubes = 1;
