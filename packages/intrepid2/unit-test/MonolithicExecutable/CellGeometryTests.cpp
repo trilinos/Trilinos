@@ -64,15 +64,16 @@ using namespace Intrepid2;
 
 namespace
 {
-  template< typename PointScalar, int spaceDim, typename ExecutionSpace >
-  void testJacobiansAgree(Intrepid2::CellGeometry<PointScalar,spaceDim,ExecutionSpace> cellGeometry,
+  template< typename PointScalar, int spaceDim, typename DeviceType >
+  void testJacobiansAgree(Intrepid2::CellGeometry<PointScalar,spaceDim,DeviceType> cellGeometry,
                           const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
   {
     // copy the nodes from CellGeometry into a raw View
     const int numCells = cellGeometry.extent_int(0);
     const int numNodes = cellGeometry.extent_int(1);
-    ScalarView<PointScalar,ExecutionSpace> cellNodes = ViewType<PointScalar>("cell nodes", numCells, numNodes, spaceDim);
+    ScalarView<PointScalar,DeviceType> cellNodes("cell nodes", numCells, numNodes, spaceDim);
 
+    using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCells,numNodes,spaceDim});
     
     // "workset"
@@ -88,7 +89,7 @@ namespace
     const int quadratureDegree = 4;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = cellGeometry.cellTopology().getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, PointScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, PointScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     using WeightScalar = PointScalar;
     ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
@@ -98,13 +99,13 @@ namespace
     auto basisForNodes = cellGeometry.basisForNodes();
     out << std::endl << "basisForNodes: " << basisForNodes->getName() << std::endl;
 
-    ScalarView<PointScalar,ExecutionSpace> expectedJacobians = ViewType<PointScalar>("cell Jacobians", numCells, numRefPoints, spaceDim, spaceDim);
-    CellTools<ExecutionSpace>::setJacobian(expectedJacobians, points, cellNodes, basisForNodes);
+    ScalarView<PointScalar,DeviceType> expectedJacobians("cell Jacobians", numCells, numRefPoints, spaceDim, spaceDim);
+    CellTools<ExecutionSpace>::setJacobian(expectedJacobians, points, cellNodes, basisForNodes); // TODO: when CellTools supports DeviceType, change the template argument here
     
     TensorPoints<PointScalar> tensorPoints;
     TensorData<WeightScalar>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)
@@ -122,7 +123,7 @@ namespace
       tensorWeights = TensorData<WeightScalar>(weightComponents);
     }
     
-    Data<PointScalar,ExecutionSpace> jacobians = cellGeometry.allocateJacobianData(tensorPoints);
+    Data<PointScalar,DeviceType> jacobians = cellGeometry.allocateJacobianData(tensorPoints);
     auto refData = cellGeometry.getJacobianRefData(tensorPoints);
     cellGeometry.setJacobian(jacobians, tensorPoints, refData);
     
@@ -138,20 +139,20 @@ namespace
     const double relTol = 1e-12;
     const double absTol = 1e-12;
       
-    using ExecSpaceType = Kokkos::DefaultExecutionSpace;
-    CellGeometry<PointScalar,spaceDim,ExecSpaceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim>(1.0, meshWidth);
+    using DeviceType = DefaultTestDeviceType;
+    CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
     
     shards::CellTopology cellTopo;
     if      (spaceDim == 1) cellTopo = shards::getCellTopologyData< shards::Line<>          >();
     else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
     else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(cellTopo,polyOrder*2);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
     const int numPoints = cubature->getNumPoints();
     
     // now, compute Jacobian values in the classic, expanded way
-    ScalarView<double,ExecSpaceType> cubaturePoints("cubature points",numPoints,spaceDim);
-    ScalarView<double,ExecSpaceType> cubatureWeights("cubature weights", numPoints);
+    ScalarView<double,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
+    ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
     
     cubature->getCubature(cubaturePoints, cubatureWeights);
     
@@ -174,7 +175,8 @@ namespace
     auto expandedJacobian            = getView<PointScalar>("jacobian",             numCells, numPoints, spaceDim, spaceDim);
     auto expandedJacobianInverse     = getView<PointScalar>("jacobian inverse",     numCells, numPoints, spaceDim, spaceDim);
     
-    using CellTools = Intrepid2::CellTools<ExecSpaceType>;
+    using ExecutionSpace = typename DeviceType::execution_space;
+    using CellTools = Intrepid2::CellTools<DeviceType>;
     
     CellTools::setJacobian(expandedJacobian, cubaturePoints, expandedCellNodes, cellTopo);
     CellTools::setJacobianInv(expandedJacobianInverse, expandedJacobian);
@@ -196,7 +198,7 @@ namespace
     // test again, but now force CellGeometry to expand things
     // (this exercises a different code path within CellGeometry)
     bool copyAffineness = false;
-    CellGeometry<PointScalar,spaceDim,ExecSpaceType> nonAffineCellGeometry = getNodalCellGeometry(cellNodes, copyAffineness);
+    CellGeometry<PointScalar,spaceDim,DeviceType> nonAffineCellGeometry = getNodalCellGeometry(cellNodes, copyAffineness);
     
     jacobian = nonAffineCellGeometry.allocateJacobianData(cubaturePoints);
     jacobianDet = CellTools::allocateJacobianDet(jacobian);

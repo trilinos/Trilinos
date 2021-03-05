@@ -107,6 +107,9 @@ namespace Intrepid2
 
   static const double TEST_TOLERANCE_TIGHT = 1.e2 * std::numeric_limits<double>::epsilon();
 
+  template<typename ScalarType, typename DeviceType>
+  using ViewType2T = Kokkos::DynRankView<ScalarType,DeviceType>; // 2-template-argument ViewType; see getView2T().  Probably should consider this a placeholder; eventually, should collapse ViewType2T and ViewType (by requiring all ViewType instantiations to have two argumetns)
+
   // we use DynRankView for both input points and values
   template<typename ScalarType>
   using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>; // TODO: change to DefaultTestDeviceType, once all Monolithic tests have been changed
@@ -239,6 +242,20 @@ namespace Intrepid2
     else
     {
       return ViewType<ValueType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+    }
+  }
+
+  template<typename ValueType, typename DeviceType, class ... DimArgs>
+  inline ViewType2T<ValueType,DeviceType> getView2T(const std::string &label, DimArgs... dims)
+  {
+    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
+    if (!allocateFadStorage)
+    {
+      return ViewType2T<ValueType,DeviceType>(label,dims...);
+    }
+    else
+    {
+      return ViewType2T<ValueType,DeviceType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
     }
   }
 

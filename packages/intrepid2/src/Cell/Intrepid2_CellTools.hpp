@@ -102,8 +102,9 @@ namespace Intrepid2 {
   */
 
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   class CellTools {
+    using ExecSpaceType = typename DeviceType::execution_space;
   public:
 
     /** \brief  Checks if a cell topology has reference cell
@@ -512,7 +513,7 @@ namespace Intrepid2 {
         \return Data container with shape (C,P)
     */
     template<class PointScalar>
-    static Data<PointScalar> allocateJacobianDet( const Data<PointScalar> & jacobian );
+    static Data<PointScalar,DeviceType> allocateJacobianDet( const Data<PointScalar,DeviceType> & jacobian );
 
     /** \brief  Allocates and returns a Data container suitable for storing inverses corresponding to the Jacobians in the Data container provided
 
@@ -520,7 +521,7 @@ namespace Intrepid2 {
         \return Data container with shape (C,P,D,D)
     */
     template<class PointScalar>
-    static Data<PointScalar,ExecSpaceType> allocateJacobianInv( const Data<PointScalar,ExecSpaceType> & jacobian );
+    static Data<PointScalar,DeviceType> allocateJacobianInv( const Data<PointScalar,DeviceType> & jacobian );
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
 
@@ -528,8 +529,8 @@ namespace Intrepid2 {
         \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
     */
     template<class PointScalar>
-    static void setJacobianDet( Data<PointScalar,ExecSpaceType> & jacobianDet,
-                               const Data<PointScalar,ExecSpaceType> & jacobian);
+    static void setJacobianDet( Data<PointScalar,DeviceType> & jacobianDet,
+                               const Data<PointScalar,DeviceType> & jacobian);
 
     /** \brief  Computes determinants corresponding to the Jacobians in the Data container provided
 
@@ -537,8 +538,8 @@ namespace Intrepid2 {
         \param  jacobian          [in]    - data with shape (C,P,D,D), as returned by CellGeometry::allocateJacobianData()
     */
     template<class PointScalar>
-    static void setJacobianInv( Data<PointScalar,ExecSpaceType> & jacobianInv,
-                               const Data<PointScalar,ExecSpaceType> & jacobian);
+    static void setJacobianInv( Data<PointScalar,DeviceType> & jacobianInv,
+                               const Data<PointScalar,DeviceType> & jacobian);
     
     //============================================================================================//
     //                                                                                            //

@@ -119,9 +119,9 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   template<class PointScalar>
-  Data<PointScalar> CellTools<ExecSpaceType>::allocateJacobianDet( const Data<PointScalar> & jacobian )
+  Data<PointScalar,DeviceType> CellTools<DeviceType>::allocateJacobianDet( const Data<PointScalar,DeviceType> & jacobian )
   {
     auto extents           = jacobian.getExtents(); // C,P,D,D, which we reduce to C,P
     auto variationTypes    = jacobian.getVariationTypes();
@@ -137,25 +137,25 @@ namespace Intrepid2 {
     {
       auto data = jacobian.getUnderlyingView4();
       auto detData = getMatchingViewWithLabel(data, "Jacobian det data", data.extent_int(0), data.extent_int(1));
-      return Data<PointScalar,ExecSpaceType>(detData,2,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
     else if (cellVaries || pointVaries)
     {
       auto data = jacobian.getUnderlyingView3();
       auto detData = getMatchingViewWithLabel(data, "Jacobian det data", data.extent_int(0));
-      return Data<PointScalar,ExecSpaceType>(detData,2,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
     else
     {
       auto data = jacobian.getUnderlyingView1();
       auto detData = getMatchingViewWithLabel(data, "Jacobian det data", 1);
-      return Data<PointScalar,ExecSpaceType>(detData,2,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(detData,2,extents,variationTypes);
     }
   }
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   template<class PointScalar>
-  Data<PointScalar,ExecSpaceType> CellTools<ExecSpaceType>::allocateJacobianInv( const Data<PointScalar,ExecSpaceType> & jacobian )
+  Data<PointScalar,DeviceType> CellTools<DeviceType>::allocateJacobianInv( const Data<PointScalar,DeviceType> & jacobian )
   {
     auto extents        = jacobian.getExtents(); // C,P,D,D
     auto variationTypes = jacobian.getVariationTypes();
@@ -192,9 +192,9 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   template<class PointScalar>
-  void CellTools<ExecSpaceType>::setJacobianDet( Data<PointScalar,ExecSpaceType> &jacobianDet, const Data<PointScalar,ExecSpaceType> & jacobian )
+  void CellTools<DeviceType>::setJacobianDet( Data<PointScalar,DeviceType> &jacobianDet, const Data<PointScalar,DeviceType> & jacobian )
   {
     auto variationTypes = jacobian.getVariationTypes();
     
@@ -459,9 +459,9 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   template<class PointScalar>
-  void CellTools<ExecSpaceType>::setJacobianInv( Data<PointScalar,ExecSpaceType> &jacobianInv, const Data<PointScalar,ExecSpaceType> & jacobian )
+  void CellTools<DeviceType>::setJacobianInv( Data<PointScalar,DeviceType> &jacobianInv, const Data<PointScalar,DeviceType> & jacobian )
   {
     auto variationTypes  = jacobian.getVariationTypes();
     
@@ -784,18 +784,18 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename jacobianValueType,    class ...jacobianProperties,
            typename BasisGradientsType,
            typename WorksetType>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   setJacobian(       Kokkos::DynRankView<jacobianValueType,jacobianProperties...> jacobian,
                const WorksetType worksetCell,
                const BasisGradientsType gradients, const int startCell, const int endCell)
   {
     using JacobianViewType = Kokkos::DynRankView<jacobianValueType,jacobianProperties...>;
-    using ExecSpaceType    = typename ExecSpace<typename JacobianViewType::execution_space,SpT>::ExecSpaceType;
+    using ExecSpaceType    = typename DeviceType::execution_space;
     using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
     
     // resolve the -1 default argument for endCell into the true end cell index
