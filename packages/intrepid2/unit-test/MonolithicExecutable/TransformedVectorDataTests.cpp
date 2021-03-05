@@ -188,16 +188,17 @@ namespace
     
     const int numNodesPerCell = cellNodes.numNodesPerCell();
     ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
-    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    
+    using ExecutionSpace = typename DeviceType::execution_space;
+    auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
+    Kokkos::parallel_for("compute componentIntegrals", policy,
+    KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
     {
-      for (int nodeOrdinal=0; nodeOrdinal<numNodesPerCell; nodeOrdinal++)
+      for (int d=0; d<spaceDim; d++)
       {
-        for (int d=0; d<spaceDim; d++)
-        {
-          expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
-        }
+        expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
       }
-    }
+    });
     
     ScalarView<Scalar,DeviceType> expandedJacobian("jacobian", numCells, numPoints, spaceDim, spaceDim);
     ScalarView<Scalar,DeviceType> expandedJacobianInverse("jacobian inverse", numCells, numPoints, spaceDim, spaceDim);
