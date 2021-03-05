@@ -170,10 +170,10 @@ namespace
       }
     }
     
-    auto cellMeasures                = getView<PointScalar>("cell measures",        numCells, numPoints);
-    auto expandedJacobianDeterminant = getView<PointScalar>("jacobian determinant", numCells, numPoints);
-    auto expandedJacobian            = getView<PointScalar>("jacobian",             numCells, numPoints, spaceDim, spaceDim);
-    auto expandedJacobianInverse     = getView<PointScalar>("jacobian inverse",     numCells, numPoints, spaceDim, spaceDim);
+    auto cellMeasures                = getView2T<PointScalar,DeviceType>("cell measures",        numCells, numPoints);
+    auto expandedJacobianDeterminant = getView2T<PointScalar,DeviceType>("jacobian determinant", numCells, numPoints);
+    auto expandedJacobian            = getView2T<PointScalar,DeviceType>("jacobian",             numCells, numPoints, spaceDim, spaceDim);
+    auto expandedJacobianInverse     = getView2T<PointScalar,DeviceType>("jacobian inverse",     numCells, numPoints, spaceDim, spaceDim);
     
     using CellTools = Intrepid2::CellTools<DeviceType>;
     
