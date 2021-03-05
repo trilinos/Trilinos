@@ -100,10 +100,10 @@ namespace
     out << std::endl << "basisForNodes: " << basisForNodes->getName() << std::endl;
 
     ScalarView<PointScalar,DeviceType> expectedJacobians("cell Jacobians", numCells, numRefPoints, spaceDim, spaceDim);
-    CellTools<ExecutionSpace>::setJacobian(expectedJacobians, points, cellNodes, basisForNodes); // TODO: when CellTools supports DeviceType, change the template argument here
+    CellTools<DeviceType>::setJacobian(expectedJacobians, points, cellNodes, basisForNodes);
     
-    TensorPoints<PointScalar> tensorPoints;
-    TensorData<WeightScalar>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
     using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
@@ -175,7 +175,6 @@ namespace
     auto expandedJacobian            = getView<PointScalar>("jacobian",             numCells, numPoints, spaceDim, spaceDim);
     auto expandedJacobianInverse     = getView<PointScalar>("jacobian inverse",     numCells, numPoints, spaceDim, spaceDim);
     
-    using ExecutionSpace = typename DeviceType::execution_space;
     using CellTools = Intrepid2::CellTools<DeviceType>;
     
     CellTools::setJacobian(expandedJacobian, cubaturePoints, expandedCellNodes, cellTopo);
@@ -219,28 +218,28 @@ namespace
     const int spaceDim = 2;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,1};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,2};
     
-    using Geometry = CellGeometry<PointScalar, spaceDim, ExecutionSpace>;
+    using Geometry = CellGeometry<PointScalar, spaceDim, DeviceType>;
     Geometry::SubdivisionStrategy   subdivisionStrategy = Geometry::NO_SUBDIVISION;
     Geometry::HypercubeNodeOrdering nodeOrdering        = Geometry::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
     Geometry cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy, nodeOrdering);
     
     const int polyOrder = 3;
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecutionSpace>(cellGeometry.cellTopology(),polyOrder*2);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellGeometry.cellTopology(),polyOrder*2);
     auto tensorCubatureWeights = cubature->allocateCubatureWeights();
     auto tensorCubaturePoints  = cubature->allocateCubaturePoints();
     
     const int numCells  = cellGeometry.numCells();
     const int numPoints = tensorCubaturePoints.extent_int(0);
     
-    Data<PointScalar,ExecutionSpace> jacobian = cellGeometry.allocateJacobianData(tensorCubaturePoints);
-    Data<PointScalar,ExecutionSpace> jacobianDet = CellTools<ExecutionSpace>::allocateJacobianDet(jacobian);
+    Data<PointScalar,DeviceType> jacobian = cellGeometry.allocateJacobianData(tensorCubaturePoints);
+    Data<PointScalar,DeviceType> jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
     
     // jacobian should have shape (C,P,D,D)
     TEST_EQUALITY(4,         jacobian.rank());
@@ -256,7 +255,7 @@ namespace
     
     cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
     
-    TensorData<PointScalar,ExecutionSpace> cellMeasures = cellGeometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
+    TensorData<PointScalar,DeviceType> cellMeasures = cellGeometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
     
     // cellMeasures should have shape (C,P)
     TEST_EQUALITY(2,         cellMeasures.rank());
@@ -274,13 +273,13 @@ namespace
     const int spaceDim = 2;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,1};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,2};
     
-    using Geometry = CellGeometry<PointScalar, spaceDim, ExecutionSpace>;
+    using Geometry = CellGeometry<PointScalar, spaceDim, DeviceType>;
     Geometry::SubdivisionStrategy   subdivisionStrategy = Geometry::NO_SUBDIVISION;
     Geometry::HypercubeNodeOrdering nodeOrdering        = Geometry::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
     Geometry uniformCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy, nodeOrdering);
@@ -290,15 +289,15 @@ namespace
     
     const int polyOrder = 3;
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecutionSpace>(cellGeometry.cellTopology(),polyOrder*2);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellGeometry.cellTopology(),polyOrder*2);
     auto tensorCubatureWeights = cubature->allocateCubatureWeights();
     auto tensorCubaturePoints  = cubature->allocateCubaturePoints();
     
     const int numCells  = cellGeometry.numCells();
     const int numPoints = tensorCubaturePoints.extent_int(0);
     
-    Data<PointScalar,ExecutionSpace> jacobian = cellGeometry.allocateJacobianData(tensorCubaturePoints);
-    Data<PointScalar,ExecutionSpace> jacobianDet = CellTools<ExecutionSpace>::allocateJacobianDet(jacobian);
+    Data<PointScalar,DeviceType> jacobian = cellGeometry.allocateJacobianData(tensorCubaturePoints);
+    Data<PointScalar,DeviceType> jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
     
     // jacobian should have shape (C,P,D,D)
     TEST_EQUALITY(4,         jacobian.rank());
@@ -314,7 +313,7 @@ namespace
     
     cubature->getCubature(tensorCubaturePoints, tensorCubatureWeights);
     
-    TensorData<PointScalar,ExecutionSpace> cellMeasures = cellGeometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
+    TensorData<PointScalar,DeviceType> cellMeasures = cellGeometry.allocateCellMeasure(jacobianDet, tensorCubatureWeights);
     
     // cellMeasures should have shape (C,P)
     TEST_EQUALITY(2,         cellMeasures.rank());
@@ -333,14 +332,14 @@ namespace
     const double tol=1e-15;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     // unit quad should be defined as shards does: counter-clockwise, starting at the origin vertex
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,1};
     Kokkos::Array<int,spaceDim> gridCellCounts{1,1};
     
-    using Geometry = CellGeometry<PointScalar, spaceDim, ExecutionSpace>;
+    using Geometry = CellGeometry<PointScalar, spaceDim, DeviceType>;
     Geometry::SubdivisionStrategy   subdivisionStrategy = Geometry::NO_SUBDIVISION;
     Geometry::HypercubeNodeOrdering nodeOrdering        = Geometry::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
     Geometry cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy, nodeOrdering);
@@ -380,13 +379,13 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2};
     Kokkos::Array<int,spaceDim> gridCellCounts{4,8};
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim>::NO_SUBDIVISION;
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+    CellGeometry<PointScalar, spaceDim, DeviceType>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim, DeviceType>::NO_SUBDIVISION;
+    CellGeometry<PointScalar, spaceDim, DeviceType> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
     
     testJacobiansAgree(cellGeometry, relTol, absTol, out, success);
   }
@@ -398,13 +397,13 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2,3};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,4,8};
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim>::NO_SUBDIVISION;
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+    CellGeometry<PointScalar, spaceDim, DeviceType>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim, DeviceType>::NO_SUBDIVISION;
+    CellGeometry<PointScalar, spaceDim, DeviceType> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
     
     testJacobiansAgree(cellGeometry, relTol, absTol, out, success);
   }
@@ -416,18 +415,18 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,4};
     
-    using CellGeometryType = CellGeometry<PointScalar, spaceDim, ExecutionSpace>;
+    using CellGeometryType = CellGeometry<PointScalar, spaceDim, DeviceType>;
     
     std::vector<CellGeometryType::SubdivisionStrategy> subdivisionStrategies = {CellGeometryType::TWO_TRIANGLES_RIGHT, CellGeometryType::TWO_TRIANGLES_LEFT, CellGeometryType::FOUR_TRIANGLES};
     for (const auto & subdivisionStrategy : subdivisionStrategies)
     {
-      CellGeometry<PointScalar, spaceDim, ExecutionSpace> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+      CellGeometry<PointScalar, spaceDim, DeviceType> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
       testJacobiansAgree(cellGeometry, relTol, absTol, out, success);
     }
   }
@@ -439,18 +438,18 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2,4};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,4,2};
     
-    using CellGeometryType = CellGeometry<PointScalar, spaceDim, ExecutionSpace>;
+    using CellGeometryType = CellGeometry<PointScalar, spaceDim, DeviceType>;
     
     std::vector<CellGeometryType::SubdivisionStrategy> subdivisionStrategies = {CellGeometryType::FIVE_TETRAHEDRA}; // TODO: add CellGeometryType::SIX_TETRAHEDRA once CellGeometry supports that
     for (const auto & subdivisionStrategy : subdivisionStrategies)
     {
-      CellGeometry<PointScalar, spaceDim, ExecutionSpace> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+      CellGeometry<PointScalar, spaceDim, DeviceType> cellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
       testJacobiansAgree(cellGeometry, relTol, absTol, out, success);
     }
   }
@@ -492,13 +491,13 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2};
     Kokkos::Array<int,spaceDim> gridCellCounts{4,8};
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim>::NO_SUBDIVISION;
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+    CellGeometry<PointScalar, spaceDim, DeviceType>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim, DeviceType>::NO_SUBDIVISION;
+    CellGeometry<PointScalar, spaceDim, DeviceType> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
     
     const std::vector<bool> copyAffineValues {false, true};
     
@@ -519,13 +518,13 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2,3};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,4,8};
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim>::NO_SUBDIVISION;
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+    CellGeometry<PointScalar, spaceDim, DeviceType>::SubdivisionStrategy subdivisionStrategy = CellGeometry<PointScalar, spaceDim, DeviceType>::NO_SUBDIVISION;
+    CellGeometry<PointScalar, spaceDim, DeviceType> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
     
     const std::vector<bool> copyAffineValues {false, true};
     
@@ -545,18 +544,18 @@ namespace
     const double absTol=1e-13;
     
     using PointScalar = double;
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     Kokkos::Array<PointScalar,spaceDim> origin{0,0};
     Kokkos::Array<PointScalar,spaceDim> domainExtents{1,2};
     Kokkos::Array<int,spaceDim> gridCellCounts{2,4};
     
-    using CellGeometryType = CellGeometry<PointScalar, spaceDim, ExecutionSpace>;
+    using CellGeometryType = CellGeometry<PointScalar, spaceDim, DeviceType>;
     
     std::vector<CellGeometryType::SubdivisionStrategy> subdivisionStrategies = {CellGeometryType::TWO_TRIANGLES_RIGHT, CellGeometryType::TWO_TRIANGLES_LEFT, CellGeometryType::FOUR_TRIANGLES};
     for (const auto & subdivisionStrategy : subdivisionStrategies)
     {
-      CellGeometry<PointScalar, spaceDim, ExecutionSpace> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
+      CellGeometry<PointScalar, spaceDim, DeviceType> uniformGridCellGeometry(origin, domainExtents, gridCellCounts, subdivisionStrategy);
       
       // "affine" and "non-affine" paths for linear triangles should be identical in terms of e.g. the number of Jacobian evaluations (the affine structure is detected rather than enforced because of the claimAffine argument).  We test both possibilities anyway.
       const std::vector<bool> copyAffineValues {false, true};
