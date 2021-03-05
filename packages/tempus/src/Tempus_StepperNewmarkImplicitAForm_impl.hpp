@@ -442,7 +442,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
 
     auto thisStepper = Teuchos::rcpFromRef(*this);
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+      StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar> > workingState=solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar> > currentState=solutionHistory->getCurrentState();
@@ -474,13 +474,13 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     wrapperModel->initializeNewmark(v_new,d_new,dt,t,beta_,gamma_);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+      StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
     // Solve nonlinear system with a_new as initial guess
     const Thyra::SolveStatus<Scalar> sStatus = this->solveImplicitODE(a_new);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
     // Correct velocity, displacement.
     correctVelocity(*v_new, *v_new, *a_new, dt);
@@ -491,7 +491,7 @@ void StepperNewmarkImplicitAForm<Scalar>::takeStep(
     workingState->computeNorms(currentState);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+      StepperNewmarkImplicitAFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }

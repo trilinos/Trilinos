@@ -95,8 +95,10 @@ public:
 
   /// Constructor
   StepperLeapfrogModifierTest()
-    : testBEGIN_STEP(false), testBEFORE_X_UPDATE(false),testBEFORE_EXPLICIT_EVAL(false),
-      testBEFORE_XDOT_UPDATE(false), testCurrentValue(-0.99), testWorkingValue(-0.99),
+    : testBEGIN_STEP(false), testBEFORE_X_UPDATE(false),
+      testBEFORE_EXPLICIT_EVAL(false), testBEFORE_XDOT_UPDATE(false),
+      testEND_STEP(false),
+      testCurrentValue(-0.99), testWorkingValue(-0.99),
       testDt(-1.5), testType("")
   {}
 
@@ -138,6 +140,11 @@ public:
         testWorkingValue = get_ele(*(x), 0);
         break;
       }
+    case StepperLeapfrogAppAction<double>::END_STEP:
+      {
+        testEND_STEP = true;
+        break;
+      }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
                                  "Error - unknown action location.\n");
@@ -147,6 +154,7 @@ public:
   bool testBEFORE_X_UPDATE;
   bool testBEFORE_EXPLICIT_EVAL;
   bool testBEFORE_XDOT_UPDATE;
+  bool testEND_STEP;
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
@@ -199,6 +207,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Modifier)
   TEST_COMPARE(modifier->testBEFORE_EXPLICIT_EVAL, ==, true);
   TEST_COMPARE(modifier->testBEFORE_X_UPDATE, ==, true);
   TEST_COMPARE(modifier->testBEFORE_XDOT_UPDATE, ==, true);
+  TEST_COMPARE(modifier->testEND_STEP, ==, true);
 
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
@@ -220,6 +229,7 @@ public:
   StepperLeapfrogModifierXTest()
     : testX_BEGIN_STEP(false), testX_BEFORE_EXPLICIT_EVAL(false),
       testX_BEFORE_X_UPDATE(false), testX_BEFORE_XDOT_UPDATE(false),
+      testX_END_STEP(false),
       testX(0.0), testDt(-1.25), testTime(-1.25),testType("")
   {}
 
@@ -254,7 +264,12 @@ public:
     case StepperLeapfrogModifierXBase<double>::X_BEFORE_XDOT_UPDATE:
       {
         testX_BEFORE_XDOT_UPDATE = true;
-	testType = "Leapfrog - ModifierX";
+        testType = "Leapfrog - ModifierX";
+        break;
+      }
+    case StepperLeapfrogModifierXBase<double>::X_END_STEP:
+      {
+        testX_END_STEP = true;
         break;
       }
     default:
@@ -266,6 +281,7 @@ public:
   bool testX_BEFORE_EXPLICIT_EVAL;
   bool testX_BEFORE_X_UPDATE;
   bool testX_BEFORE_XDOT_UPDATE;
+  bool testX_END_STEP;
   double testX;
   double testDt;
   double testTime;
@@ -318,6 +334,7 @@ TEUCHOS_UNIT_TEST(LeapFrog, AppAction_ModifierX)
   TEST_COMPARE(modifierX->testX_BEFORE_EXPLICIT_EVAL, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_XDOT_UPDATE, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_X_UPDATE, ==, true);
+  TEST_COMPARE(modifierX->testX_END_STEP, ==, true);
 
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
@@ -339,6 +356,7 @@ public:
   StepperLeapfrogObserverTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testBEFORE_X_UPDATE(false), testBEFORE_XDOT_UPDATE(false),
+      testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
       testDt(-1.5), testType("")
   {}
@@ -347,9 +365,9 @@ public:
 
   /// Observe Leapfrog Stepper at action location.
   virtual void observe(
-		       Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-		       Teuchos::RCP<const Tempus::StepperLeapfrog<double> > stepper,
-		       const typename Tempus::StepperLeapfrogAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<const Tempus::StepperLeapfrog<double> > stepper,
+    const typename Tempus::StepperLeapfrogAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperLeapfrogAppAction<double>::BEGIN_STEP:
@@ -378,15 +396,21 @@ public:
         testWorkingValue = get_ele(*(x), 0);
         break;
       }
+    case StepperLeapfrogAppAction<double>::END_STEP:
+      {
+        testEND_STEP = true;
+        break;
+      }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testBEGIN_STEP;
   bool testBEFORE_EXPLICIT_EVAL;
   bool testBEFORE_X_UPDATE;
   bool testBEFORE_XDOT_UPDATE;
+  bool testEND_STEP;
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
@@ -437,6 +461,12 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Observer)
   stepper->takeStep(solutionHistory);
 
   // Testing that values can be observed through the observer.
+  TEST_COMPARE(observer->testBEGIN_STEP, ==, true);
+  TEST_COMPARE(observer->testBEFORE_EXPLICIT_EVAL, ==, true);
+  TEST_COMPARE(observer->testBEFORE_X_UPDATE, ==, true);
+  TEST_COMPARE(observer->testBEFORE_XDOT_UPDATE, ==, true);
+  TEST_COMPARE(observer->testEND_STEP, ==, true);
+
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
   x = solutionHistory->getWorkingState()->getX();

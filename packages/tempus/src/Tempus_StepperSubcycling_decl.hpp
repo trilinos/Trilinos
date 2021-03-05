@@ -31,6 +31,24 @@ namespace Tempus {
  *   - No restart capability within subcycling, but still have restart
  *     capability from the full timestep.
  *   - Do not need to keep a solution history of the subcycling.
+ *
+ *  <b> Algorithm </b>
+ *  The algorithm for Subcycling stepper is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Subcycling \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf Advance solution, $x_{n}$ from $x_{n-1}$, by cycling substeppers.}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
  */
 template<class Scalar>
 class StepperSubcycling : virtual public Tempus::Stepper<Scalar>

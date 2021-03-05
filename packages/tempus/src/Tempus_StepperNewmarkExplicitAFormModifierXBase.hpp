@@ -28,22 +28,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the NewmarkExplicitAForm algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Newmark Explicit-A with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, X\_BEGIN\_STEP)}
- *    \State Compute displacement and velocity predictors 
- *    \State {\it appAction.execute(solutionHistory, stepper, X\_BEFORE\_EXPLICIT\_EVAL)}
- *    \State Form $\ddot{x}_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
- *    \State {\it appAction.execute(solutionHistory, stepper, X\_AFTER\_EXPLICIT\_EVAL)}
- *    \State Correct velocity 
- *    \State {\it appAction.execute(solutionHistory, stepper, X\_END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperNewmarkExplicitAFormModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperNewmarkExplicitAFormAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperNewmarkExplicitAForm.
  */
 template<class Scalar>
 class StepperNewmarkExplicitAFormModifierXBase
