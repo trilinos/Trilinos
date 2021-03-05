@@ -166,7 +166,7 @@ template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
 ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, int polyOrder, int worksetSize)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
-  using CellTools = Intrepid2::CellTools<ExecutionSpace>;
+  using CellTools = Intrepid2::CellTools<DeviceType>;
   using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecutionSpace>;
   
   using namespace std;
