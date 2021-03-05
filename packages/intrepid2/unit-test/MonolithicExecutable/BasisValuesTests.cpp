@@ -121,18 +121,7 @@ namespace
       tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
     
-    out << "Points being tested:\n";
-    for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
-    {
-      out << pointOrdinal << ": " << "(";
-      for (int d=0; d<spaceDim; d++)
-      {
-        out << points(pointOrdinal,d);
-        if (d < spaceDim-1) out << ",";
-      }
-      out << ")\n";
-    }
-    
+    printFunctor2(points, out, "points being tested");
     printFunctor2(tensorPoints, out, "tensorPoints");
     
     testFloatingEquality2(points,tensorPoints,  relTol, absTol, out, success, "points", "tensorPoints");
