@@ -649,7 +649,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Ca
   Data<DataScalar,DeviceType> unitData(1.0, Kokkos::Array<int,2>{numFields,numComponentPoints});
   TensorData<DataScalar,DeviceType> unitTensorData(std::vector< Data<DataScalar,DeviceType> >{unitData,unitData});
   
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim);
   Kokkos::deep_copy(identityMatrixView, 1.0);
   
   Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
@@ -692,7 +692,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case1 
   Data<DataScalar,DeviceType> unitData(1.0, Kokkos::Array<int,2>{numFields,numPoints});
   TensorData<DataScalar,DeviceType> unitTensorData(std::vector< Data<DataScalar,DeviceType> >{unitData,unitData});
   
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int d1=0; d1<spaceDim; d1++)
@@ -736,11 +736,11 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case2 
   const int numComponentPoints = 1;
   const int numComponentFields = 1;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numComponentFields);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numComponentFields);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numComponentFields);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numComponentFields);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 2.0;
   
@@ -755,7 +755,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case2 
   
   TensorData<DataScalar,DeviceType> tensorData(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2});
   
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int d1=0; d1<spaceDim; d1++)
@@ -812,14 +812,14 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case3 
   const int numComponentPoints = 2;
   const int numFields = 2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields,numComponentPoints);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields,numComponentPoints);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0,0) = 1.0;
   fieldComponentDataViewHost1(0,1) = 2.0;
   fieldComponentDataViewHost1(1,0) = 3.0;
   fieldComponentDataViewHost1(1,1) = 4.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields,numComponentPoints);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields,numComponentPoints);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0,0) = 1.0/1.0;
   fieldComponentDataViewHost2(0,1) = 1.0/2.0;
@@ -837,7 +837,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case3 
     
   TensorData<DataScalar,DeviceType> tensorData(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2});
   
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int d1=0; d1<spaceDim; d1++)
@@ -884,12 +884,12 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case4 
   const int numFields2 = 1;
   const int numFieldsPerFamily = numFields1 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
   fieldComponentDataViewHost1(1) = 3.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields2);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 1.0/2.0;
   
@@ -905,7 +905,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case4 
     
   TensorData<DataScalar,DeviceType> nonzeroTensorData(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2});
   
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int d1=0; d1<spaceDim; d1++)
@@ -956,12 +956,12 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case5 
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2;
   const int numFieldsPerFamilyRight = numFields2 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
   fieldComponentDataViewHost1(1) = 3.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields2);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 1.0/2.0;
   fieldComponentDataViewHost2(1) = 1.0/3.0;
@@ -980,7 +980,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case5 
   TensorData<DataScalar,DeviceType>  tensorDataLeft(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2});
   TensorData<DataScalar,DeviceType> tensorDataRight(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData2,fieldComponentData2});
   
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int d1=0; d1<spaceDim; d1++)
@@ -1041,18 +1041,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Ca
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2 * numFields3;
   const int numFieldsPerFamilyRight = numFields1 * numFields3 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
 //  fieldComponentDataViewHost1(1) = 3.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields2);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 1.0;
   fieldComponentDataViewHost2(1) = 1.0/3.0;
   fieldComponentDataViewHost2(2) = 1.0/4.0;
   
-  auto fieldComponentDataView3 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 3", numFields3);
+  auto fieldComponentDataView3 = getFixedRankView<DataScalar>("field component data 3", numFields3);
   auto fieldComponentDataViewHost3 = Kokkos::create_mirror_view(fieldComponentDataView3);
   fieldComponentDataViewHost3(0) = 1.0;
   fieldComponentDataViewHost3(1) = 0.25;
@@ -1075,7 +1075,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_AxisAlignedPath_Ca
    
    const int numPoints = numComponentPoints * numComponentPoints * numComponentPoints;
    
-   auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim);
+   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim);
    Kokkos::deep_copy(identityMatrixView, 1.0);
    
    Kokkos::Array<int,4> transformationExtents {numCells, numPoints, spaceDim, spaceDim};
@@ -1130,18 +1130,18 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case6_
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2 * numFields3;
   const int numFieldsPerFamilyRight = numFields1 * numFields3 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
 //  fieldComponentDataViewHost1(1) = 3.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields2);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 1.0/2.0;
   fieldComponentDataViewHost2(1) = 1.0/3.0;
   fieldComponentDataViewHost2(2) = 1.0/4.0;
   
-  auto fieldComponentDataView3 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 3", numFields3);
+  auto fieldComponentDataView3 = getFixedRankView<DataScalar>("field component data 3", numFields3);
   auto fieldComponentDataViewHost3 = Kokkos::create_mirror_view(fieldComponentDataView3);
   fieldComponentDataViewHost3(0) = 0.5;
   fieldComponentDataViewHost3(1) = 0.25;
@@ -1162,7 +1162,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case6_
    TensorData<DataScalar,DeviceType>  tensorDataLeft(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2,fieldComponentData3});
    TensorData<DataScalar,DeviceType> tensorDataRight(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData3,fieldComponentData2});
    
-   auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
    auto identityMatrixViewHost = getHostCopy(identityMatrixView);
    
    for (int d1=0; d1<spaceDim; d1++)
@@ -1239,15 +1239,15 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case7_
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2 * numFields3;
   const int numFieldsPerFamilyRight = numFields1 * numFields3 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields2);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 1.0;
   
-  auto fieldComponentDataView3 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 3", numFields3);
+  auto fieldComponentDataView3 = getFixedRankView<DataScalar>("field component data 3", numFields3);
   auto fieldComponentDataViewHost3 = Kokkos::create_mirror_view(fieldComponentDataView3);
   fieldComponentDataViewHost3(0) = 1.0;
   
@@ -1267,7 +1267,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case7_
    TensorData<DataScalar,DeviceType>  tensorDataLeft(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2,fieldComponentData3});
    TensorData<DataScalar,DeviceType> tensorDataRight(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData3,fieldComponentData2});
    
-   auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
    auto identityMatrixViewHost = getHostCopy(identityMatrixView);
    
    for (int d1=0; d1<spaceDim; d1++)
@@ -1325,15 +1325,15 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case8_
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2 * numFields3;
   const int numFieldsPerFamilyRight = numFields1 * numFields3 * numFields2;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 1", numFields1);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("field component data 1", numFields1);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0) = 1.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 2", numFields2);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("field component data 2", numFields2);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0) = 1.0/2.0;
   
-  auto fieldComponentDataView3 = getFixedRankViewDefaultTestDT<DataScalar>("field component data 3", numFields3);
+  auto fieldComponentDataView3 = getFixedRankView<DataScalar>("field component data 3", numFields3);
   auto fieldComponentDataViewHost3 = Kokkos::create_mirror_view(fieldComponentDataView3);
   fieldComponentDataViewHost3(0) = 0.5;
   
@@ -1353,7 +1353,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case8_
    TensorData<DataScalar,DeviceType>  tensorDataLeft(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData2,fieldComponentData3});
    TensorData<DataScalar,DeviceType> tensorDataRight(std::vector< Data<DataScalar,DeviceType> >{fieldComponentData1,fieldComponentData3,fieldComponentData2});
    
-   auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+   auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
    auto identityMatrixViewHost = getHostCopy(identityMatrixView);
    
    for (int d1=0; d1<spaceDim; d1++)
@@ -1414,13 +1414,13 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case9_
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2 * numFields1;
   const int numFieldsPerFamilyRight = numFields1 * numFields2 * numFields1;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("imitation VALUE data", numFields1, numComponentPoints);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("imitation VALUE data", numFields1, numComponentPoints);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0,0) = 1.0;
   fieldComponentDataViewHost1(0,1) = 2.0;
   fieldComponentDataViewHost1(0,2) = 3.0;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("imitation GRAD data", numFields2, numComponentPoints);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("imitation GRAD data", numFields2, numComponentPoints);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0,0) = 1./1.0;
   fieldComponentDataViewHost2(0,1) = 1./2.0;
@@ -1444,7 +1444,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case9_
   TensorData<DataScalar,DeviceType> tensorDataRight3 = tensorDataLeft3;
    
   const int numPoints = numComponentPoints * numComponentPoints * numComponentPoints;
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", numPoints, spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", numPoints, spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
@@ -1503,12 +1503,12 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case10
   const int numFieldsPerFamilyLeft  = numFields1 * numFields2 * numFields1;
   const int numFieldsPerFamilyRight = numFields1 * numFields2 * numFields1;
   
-  auto fieldComponentDataView1 = getFixedRankViewDefaultTestDT<DataScalar>("imitation VALUE data", numFields1, numComponentPoints);
+  auto fieldComponentDataView1 = getFixedRankView<DataScalar>("imitation VALUE data", numFields1, numComponentPoints);
   auto fieldComponentDataViewHost1 = Kokkos::create_mirror_view(fieldComponentDataView1);
   fieldComponentDataViewHost1(0,0) = 1;
   fieldComponentDataViewHost1(0,1) = 1;
   
-  auto fieldComponentDataView2 = getFixedRankViewDefaultTestDT<DataScalar>("imitation GRAD data", numFields2, numComponentPoints);
+  auto fieldComponentDataView2 = getFixedRankView<DataScalar>("imitation GRAD data", numFields2, numComponentPoints);
   auto fieldComponentDataViewHost2 = Kokkos::create_mirror_view(fieldComponentDataView2);
   fieldComponentDataViewHost2(0,0) = 1;
   fieldComponentDataViewHost2(0,1) = 1;
@@ -1530,7 +1530,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case10
   TensorData<DataScalar,DeviceType> tensorDataRight2 = tensorDataLeft2;
   TensorData<DataScalar,DeviceType> tensorDataRight3 = tensorDataLeft3;
    
-  auto identityMatrixView = getFixedRankViewDefaultTestDT<DataScalar>("identity matrix", spaceDim, spaceDim);
+  auto identityMatrixView = getFixedRankView<DataScalar>("identity matrix", spaceDim, spaceDim);
   auto identityMatrixViewHost = getHostCopy(identityMatrixView);
   
   for (int d1=0; d1<spaceDim; d1++)
@@ -1563,7 +1563,7 @@ TEUCHOS_UNIT_TEST( StructuredIntegration, QuadratureSynthetic_GeneralPath_Case10
   TransformedVectorData<DataScalar,DeviceType>  transformedUnitVectorDataLeft(explicitIdentityMatrix,vectorDataLeft);
   TransformedVectorData<DataScalar,DeviceType> transformedUnitVectorDataRight(explicitIdentityMatrix,vectorDataRight);
   
-  auto cellMeasures = getFixedRankViewDefaultTestDT<DataScalar>("cellMeasures", numCells, numPoints);
+  auto cellMeasures = getFixedRankView<DataScalar>("cellMeasures", numCells, numPoints);
   
   auto cellMeasuresHost = getHostCopy(cellMeasures);
   

@@ -129,7 +129,8 @@ namespace
   template<typename Scalar>
   void runTensorViewFunctorTests(Teuchos::FancyOStream &out, bool &success)
   {
-    using ScalarViewType = ViewType<Scalar>;
+    using DeviceType = DefaultTestDeviceType;
+    using ScalarViewType = ViewType<Scalar,DeviceType>;
     
     // TEST 1: simple contraction
     // we'll use trivial fields so as to factor out problems in the tensor product logic

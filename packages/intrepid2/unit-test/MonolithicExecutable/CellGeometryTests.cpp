@@ -92,8 +92,8 @@ namespace
     auto quadrature = cub_factory.create<DeviceType, PointScalar, PointScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     using WeightScalar = PointScalar;
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
+    auto points  = getView<PointScalar,DeviceType>("quadrature points ref cell", numRefPoints, spaceDim);
+    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
     auto basisForNodes = cellGeometry.basisForNodes();
@@ -116,11 +116,11 @@ namespace
     }
     else
     {
-      std::vector<ViewType<PointScalar>> pointComponents {points};
-      tensorPoints = TensorPoints<PointScalar>(pointComponents);
+      std::vector<ViewType<PointScalar,DeviceType>> pointComponents {points};
+      tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
       Data<WeightScalar> weightData(weights);
-      std::vector<Data<WeightScalar>> weightComponents {weightData};
-      tensorWeights = TensorData<WeightScalar>(weightComponents);
+      std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};
+      tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
     
     Data<PointScalar,DeviceType> jacobians = cellGeometry.allocateJacobianData(tensorPoints);
@@ -158,7 +158,7 @@ namespace
     
     const int numCells        = cellNodes.numCells();
     const int numNodesPerCell = cellNodes.numNodesPerCell();
-    auto expandedCellNodes    = getView2T<PointScalar,DeviceType>("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
+    auto expandedCellNodes    = getView<PointScalar,DeviceType>("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
     using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
     Kokkos::parallel_for("fill expanded cell nodes", policy,
@@ -170,10 +170,10 @@ namespace
       }
     });
     
-    auto cellMeasures                = getView2T<PointScalar,DeviceType>("cell measures",        numCells, numPoints);
-    auto expandedJacobianDeterminant = getView2T<PointScalar,DeviceType>("jacobian determinant", numCells, numPoints);
-    auto expandedJacobian            = getView2T<PointScalar,DeviceType>("jacobian",             numCells, numPoints, spaceDim, spaceDim);
-    auto expandedJacobianInverse     = getView2T<PointScalar,DeviceType>("jacobian inverse",     numCells, numPoints, spaceDim, spaceDim);
+    auto cellMeasures                = getView<PointScalar,DeviceType>("cell measures",        numCells, numPoints);
+    auto expandedJacobianDeterminant = getView<PointScalar,DeviceType>("jacobian determinant", numCells, numPoints);
+    auto expandedJacobian            = getView<PointScalar,DeviceType>("jacobian",             numCells, numPoints, spaceDim, spaceDim);
+    auto expandedJacobianInverse     = getView<PointScalar,DeviceType>("jacobian inverse",     numCells, numPoints, spaceDim, spaceDim);
     
     using CellTools = Intrepid2::CellTools<DeviceType>;
     

@@ -106,7 +106,7 @@ namespace
       
       const int nodesPerCell = basisForNodes->getCardinality();
       
-      ViewType2T<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
+      ViewType<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
       
       ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, basisForNodes, flatCellGeometry, circularGeometry, circularGeometry);
 
@@ -178,7 +178,7 @@ namespace
     }
     const int nodesPerCell = linearBasis->getCardinality();
     
-    ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
+    ViewType<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
     
     using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, linearBasis, flatCellGeometry, exactGeometry, exactGeometry);
@@ -217,7 +217,7 @@ namespace
       numCells *= meshWidth;
     }
     const int nodesPerCell = hgradBasisForProjection->getCardinality();
-    ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
+    ViewType<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
     
     using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, hgradBasisForProjection, flatCellGeometry, exactGeometry, exactGeometry);
@@ -237,7 +237,7 @@ namespace
     auto hgradValuesAtNodes = hgradBasisForProjection->allocateOutputView(numNodesPerFlatCell);
     hgradBasisForProjection->getValues(hgradValuesAtNodes, refCellNodes, OPERATOR_VALUE);
 
-    ViewType<PointScalar> evaluatedNodes("projected nodes evaluated on flat cell", numCells, numNodesPerFlatCell, spaceDim);
+    ViewType<PointScalar,DeviceType> evaluatedNodes("projected nodes evaluated on flat cell", numCells, numNodesPerFlatCell, spaceDim);
     
     using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerFlatCell});

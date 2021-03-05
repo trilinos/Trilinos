@@ -170,6 +170,7 @@ namespace
   template<class Rank2View>
   void deviceGeneralizedMatrixMultiply(Rank2View &A, bool transposeA, Rank2View &B, Rank2View &C)
   {
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = typename Rank2View::value_type;
     const int N0 = transposeA ? A.extent_int(1) : A.extent_int(0);
     const int N1 = transposeA ? A.extent_int(0) : A.extent_int(1);
@@ -184,7 +185,7 @@ namespace
     {
       TEUCHOS_TEST_FOR_EXCEPTION(B.extent_int(dim) != C.extent_int(dim), std::invalid_argument, "B and C must agree in all dimensions beyond the first two");
     }
-    using ViewIteratorScalar = ViewIterator<ViewType<Scalar>, Scalar>;
+    using ViewIteratorScalar = ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
     Kokkos::parallel_for(N0, KOKKOS_LAMBDA(const int A_row_ordinal)
     {
       ViewIteratorScalar B_viewIterator(B);
@@ -224,7 +225,7 @@ namespace
 
   //! tests that two bases are equivalent; computes a conversion from one to the other and then uses that to confirm that the equivalence
   //! holds for OPERATOR_VALUE (as it should by construction), as well as the operators passed in in opsToTest.
-  template<class Basis1, class Basis2>
+  template<class DeviceType, class Basis1, class Basis2>
   void testBasisEquivalence(Basis1 &basis1, Basis2 &basis2, const std::vector<EOperator> &opsToTest,
                             const double relTol, const double absTol, Teuchos::FancyOStream &out, bool &success)
   {
@@ -235,26 +236,26 @@ namespace
     
     // get quadrature points for integrating up to 2*polyOrder
     const int quadratureDegree = 2*basis1.getDegree();
-    using ExecutionSpace = typename Basis1::ExecutionSpace;
     using PointScalar = typename Basis1::PointValueType;
     using WeightScalar = typename Basis1::OutputValueType;
     using Scalar = WeightScalar;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis1.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis1.getBaseCellTopology().getDimension();
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points 1D ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights 1D ref cell", numRefPoints);
+    auto points  = getView<PointScalar,DeviceType>( "quadrature points 1D ref cell",  numRefPoints, spaceDim);
+    auto weights = getView<WeightScalar,DeviceType>("quadrature weights 1D ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
+    auto pointsHost = getHostCopy(points);
     out << "Points being tested:\n";
     for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
     {
       out << pointOrdinal << ": " << "(";
       for (int d=0; d<spaceDim; d++)
       {
-        out << points(pointOrdinal,d);
+        out << pointsHost(pointOrdinal,d);
         if (d < spaceDim-1) out << ",";
       }
       out << ")\n";
@@ -264,16 +265,16 @@ namespace
     
     // set up a projection of basis2 onto basis1
     using Scalar = typename Basis1::OutputValueType;
-    ViewType<Scalar> basis1Values = getOutputView<Scalar>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
-    ViewType<Scalar> basis2Values = getOutputView<Scalar>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
+    auto basis1Values = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
+    auto basis2Values = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
     
     basis1.getValues(basis1Values, points, OPERATOR_VALUE);
     basis2.getValues(basis2Values, points, OPERATOR_VALUE);
     
     // integrate basis1 against itself to compute the SPD matrix A that we'll use to set up the basis conversion system
-    ViewType<Scalar> basis1_vs_basis1 = ViewType<Scalar>("basis 1 vs basis 1", basisCardinality, basisCardinality);
+    ViewType<Scalar,DeviceType> basis1_vs_basis1 = getView<Scalar, DeviceType>("basis 1 vs basis 1", basisCardinality, basisCardinality);
     // integrate basis1 against basis2 to compute the RHS b for the basis conversion system
-    ViewType<Scalar> basis1_vs_basis2 = ViewType<Scalar>("basis 1 vs basis 2", basisCardinality, basisCardinality);
+    ViewType<Scalar,DeviceType> basis1_vs_basis2 = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
     
     Kokkos::parallel_for(basisCardinality, KOKKOS_LAMBDA(const int basisOrdinal1)
     {
@@ -293,7 +294,7 @@ namespace
     });
     
     // each column in the following matrix will represent the corresponding member of basis 2 in terms of members of basis 1
-    ViewType<Scalar> basis1Coefficients("basis 1 coefficients to represent basis 2", basisCardinality, basisCardinality);
+    ViewType<Scalar,DeviceType> basis1Coefficients = getView<Scalar, DeviceType>("basis 1 vs basis 2", basisCardinality, basisCardinality);
     Kokkos::deep_copy(basis1Coefficients, basis1_vs_basis2);
     solveSystemUsingHostLapack(basis1_vs_basis1, basis1Coefficients);
     
@@ -403,7 +404,7 @@ namespace
     }
     
     // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
-    ViewType<Scalar> basis2ValuesFromBasis1 = getOutputView<Scalar>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
+    auto basis2ValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, OPERATOR_VALUE, basisCardinality, numRefPoints, spaceDim);
     deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1Values, basis2ValuesFromBasis1); // true: transpose
     
     testViewFloatingEquality(basis2Values, basis2ValuesFromBasis1, relTol, absTol, out, success, "expected", "actual");
@@ -411,14 +412,14 @@ namespace
     for (auto op : opsToTest)
     {
       out << "** Testing operator " << EOperatorToString(op) << " **\n";
-      ViewType<Scalar> basis1OpValues = getOutputView<Scalar>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
-      ViewType<Scalar> basis2OpValues = getOutputView<Scalar>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
+      auto basis1OpValues = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
+      auto basis2OpValues = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
       
       basis1.getValues(basis1OpValues, points, op);
       basis2.getValues(basis2OpValues, points, op);
       
       // compute the values for basis2 using basis1Coefficients, basis1Values, and confirm that these agree with basisValues2
-      ViewType<Scalar> basis2OpValuesFromBasis1 = getOutputView<Scalar>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
+      auto basis2OpValuesFromBasis1 = getOutputView<Scalar,DeviceType>(functionSpace, op, basisCardinality, numRefPoints, spaceDim);
       deviceGeneralizedMatrixMultiply(basis1Coefficients, true, basis1OpValues, basis2OpValuesFromBasis1); // true: transpose
       
       testViewFloatingEquality(basis2OpValues, basis2OpValuesFromBasis1, relTol, absTol, out, success, "expected", "actual");
@@ -441,7 +442,7 @@ namespace
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
-      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -459,7 +460,7 @@ namespace
     
     CnBasis cnBasis(1);
     C1Basis c1Basis;
-    testBasisEquivalence(cnBasis, c1Basis, opsToTest, relTol, absTol, out, success);
+    testBasisEquivalence<DefaultTestDeviceType>(cnBasis, c1Basis, opsToTest, relTol, absTol, out, success);
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, LineHierarchicalDGVersusHierarchicalCG_HGRAD )
@@ -478,7 +479,7 @@ namespace
     {
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
-      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -498,7 +499,7 @@ namespace
     {
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
-      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -518,7 +519,7 @@ namespace
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
-      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -537,7 +538,7 @@ namespace
     {
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
-      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -556,7 +557,7 @@ namespace
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
-      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
 
@@ -574,7 +575,7 @@ namespace
     const int polyOrder = 1;
     CnBasis cnBasis(polyOrder);
     C1Basis c1Basis;
-    testBasisEquivalence(cnBasis, c1Basis, opsToTest, relTol, absTol, out, success);
+    testBasisEquivalence<DefaultTestDeviceType>(cnBasis, c1Basis, opsToTest, relTol, absTol, out, success);
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, HexahedronNodalCnVersusNodalC2_HGRAD )
@@ -593,7 +594,7 @@ namespace
     const int polyOrder = 2;
     CnBasis cnBasis(polyOrder);
     C2Basis c2Basis;
-    testBasisEquivalence(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+    testBasisEquivalence<DefaultTestDeviceType>(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronNodalCnVersusNodalC2_HGRAD )
@@ -611,7 +612,7 @@ namespace
     
     CnBasis cnBasis(2);
     C2Basis c2Basis;
-    testBasisEquivalence(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
+    testBasisEquivalence<DefaultTestDeviceType>(cnBasis, c2Basis, opsToTest, relTol, absTol, out, success);
   }
   
   TEUCHOS_UNIT_TEST( BasisEquivalence, TetrahedronHierarchicalDGVersusHierarchicalCG_HGRAD )
@@ -629,7 +630,7 @@ namespace
     {
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
-      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -661,7 +662,7 @@ namespace
 //        std::cout << "face " << intrepid2FaceOrdinal << ": " << vertex0 << vertex1 << vertex2 << std::endl;
 //      }
       
-      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -682,7 +683,7 @@ namespace
     {
       HierarchicalBasis hierarchicalBasis(polyOrder);
       NodalBasis        nodalBasis(polyOrder);
-      testBasisEquivalence(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(nodalBasis, hierarchicalBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   
@@ -703,7 +704,7 @@ namespace
     {
       CGBasis cgBasis(polyOrder);
       DGBasis dgBasis(polyOrder);
-      testBasisEquivalence(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
+      testBasisEquivalence<DefaultTestDeviceType>(cgBasis, dgBasis, opsToTest, relTol, absTol, out, success);
     }
   }
   

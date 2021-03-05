@@ -196,7 +196,7 @@ namespace
     const int numFields          = numComponentFields * numComponentFields;
     const int numPoints          = numComponentPoints * numComponentPoints;
     
-    ScalarView<Scalar,DeviceType> fieldComponentDataView = getView<Scalar>("field component data", numComponentFields);
+    ScalarView<Scalar,DeviceType> fieldComponentDataView = getView<Scalar,DeviceType>("field component data", numComponentFields);
     auto fieldComponentDataViewHost = Kokkos::create_mirror_view(fieldComponentDataView);
     fieldComponentDataViewHost(0) = 1.0;
     

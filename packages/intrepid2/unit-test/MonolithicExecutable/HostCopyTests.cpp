@@ -159,10 +159,9 @@ namespace
     auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = cellTopo.getDimension();
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
+    auto points = getView<PointScalar,DeviceType>("quadrature points ref cell", numRefPoints, spaceDim);
+    auto weights = getView<WeightScalar,DeviceType>("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
-    
     
     TensorPoints<PointScalar,DeviceType> tensorPoints;
     TensorData<WeightScalar,DeviceType>  tensorWeights;
@@ -213,7 +212,7 @@ namespace
 
     // set up a simple diagonal scaling
     const double scaling = 0.1;
-    ViewType<Scalar> scalingView("scaling", 2);
+    ViewType<Scalar,DeviceType> scalingView("scaling", 2);
     Kokkos::deep_copy(scalingView, scaling);
     const int rank = 4; // (C,P,D,D)
     const int spaceDim = 2;

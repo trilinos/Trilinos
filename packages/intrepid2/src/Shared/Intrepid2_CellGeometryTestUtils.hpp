@@ -74,7 +74,7 @@ namespace Intrepid2
     using intView         = ScalarView<        int, DeviceType >;
     
     auto cellToNodes      = intView                          ("cell to nodes", numCells, numNodes);    // this will be a one-to-one mapping
-    PointScalarView nodes = getView2T<PointScalar,DeviceType>("nodes", numCells * numNodes, spaceDim); // we store redundant copies of vertices for each cell
+    PointScalarView nodes = getView<PointScalar,DeviceType>("nodes", numCells * numNodes, spaceDim); // we store redundant copies of vertices for each cell
 
     using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodes});

@@ -117,11 +117,11 @@ namespace
     if (polyOrderDim > 2) degrees[2] = polyOrder_z;
     
     int numPoints_1D = 5;
-    auto inputPoints = getInputPointsView<PointScalar>(cellTopo, numPoints_1D);
+    auto inputPoints = getInputPointsView<PointScalar,DeviceType>(cellTopo, numPoints_1D);
     int numPoints = inputPoints.extent_int(0);
     
     auto op = Intrepid2::OPERATOR_VALUE;
-    auto outputValues = getOutputView<OutputScalar>(fs, op, basis->getCardinality(), numPoints, spaceDim);
+    auto outputValues = getOutputView<OutputScalar,DeviceType>(fs, op, basis->getCardinality(), numPoints, spaceDim);
     
     basis->getValues(outputValues, inputPoints, op);
     out << "Testing sub-basis inclusion in degree ";
@@ -205,7 +205,7 @@ namespace
         continue; // next test case
       }
       
-      auto subBasisOutputValues = getOutputView<OutputScalar>(fs, op, subBasis->getCardinality(), numPoints, spaceDim);
+      auto subBasisOutputValues = getOutputView<OutputScalar,DeviceType>(fs, op, subBasis->getCardinality(), numPoints, spaceDim);
       subBasis->getValues(subBasisOutputValues, inputPoints, op);
       Kokkos::fence();
       bool vectorValued = (outputValues.rank() == 3); // F,P,D -- if scalar-valued, F,P

@@ -114,7 +114,7 @@ namespace
     }
     else
     {
-      std::vector<ViewTypeDefaultTestDT<PointScalar>> pointComponents {points};
+      std::vector<ViewType<PointScalar,DeviceType>> pointComponents {points};
       tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
       Data<WeightScalar,DeviceType> weightData(weights);
       std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};

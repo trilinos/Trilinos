@@ -68,7 +68,7 @@ namespace
   {
     // ideally, we would have closed-form expressions somewhere in here, as we do for integrated Legendre below
     // for now, though, this is just a thin wrapper around the call to Intrepid2::Polynomials::integratedJacobiValues()
-    auto values = getView2T<Scalar,Kokkos::HostSpace>("integrated Jacobi values", n+1);
+    auto values = getView<Scalar,Kokkos::HostSpace>("integrated Jacobi values", n+1);
     Polynomials::integratedJacobiValues(values, alpha, n, x, t);
     return values(n);
   }
@@ -244,16 +244,16 @@ namespace
     
     int numPoints_1D = 5;
     shards::CellTopology lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
-    auto inputPointsView = getInputPointsView<PointScalar>(lineTopo, numPoints_1D);
+    auto inputPointsView = getInputPointsView<PointScalar,DeviceType>(lineTopo, numPoints_1D);
     
-    auto hgradOutputView = getOutputView<OutputScalar>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints_1D, 1);
+    auto hgradOutputView = getOutputView<OutputScalar,DeviceType>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints_1D, 1);
     
     hgradBasis->getValues(hgradOutputView, inputPointsView, op);
     
     auto hgradOutputViewHost = getHostCopy(hgradOutputView);
     auto inputPointsViewHost = getHostCopy(inputPointsView);
     
-    auto expectedValuesView     = getView<OutputScalar>("expected values", hgradBasis->getCardinality());
+    auto expectedValuesView     = getView<OutputScalar,DeviceType>("expected values", hgradBasis->getCardinality());
     auto expectedValuesViewHost = getHostCopy(expectedValuesView);
     
     for (int pointOrdinal=0; pointOrdinal<numPoints_1D; pointOrdinal++)
@@ -346,7 +346,8 @@ namespace
   void testHierarchicalHVOL_LINE_MatchesAnalyticValues(Intrepid2::EOperator op, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
     using namespace Intrepid2;
-    using BasisFamily  = HierarchicalBasisFamily<>;
+    using DeviceType   = DefaultTestDeviceType;
+    using BasisFamily  = HierarchicalBasisFamily<DeviceType>;
     using PointScalar  = BasisFamily::PointValueType;
     using OutputScalar = BasisFamily::OutputValueType;
     
@@ -355,9 +356,9 @@ namespace
     
     int numPoints_1D = 5;
     shards::CellTopology lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
-    auto inputPointsView = getInputPointsView<PointScalar>(lineTopo, numPoints_1D);
+    auto inputPointsView = getInputPointsView<PointScalar,DeviceType>(lineTopo, numPoints_1D);
     
-    auto hvolOutputView = getOutputView<OutputScalar>(FUNCTION_SPACE_HVOL, op, hvolBasis->getCardinality(), numPoints_1D, 1);
+    auto hvolOutputView = getOutputView<OutputScalar,DeviceType>(FUNCTION_SPACE_HVOL, op, hvolBasis->getCardinality(), numPoints_1D, 1);
     
     hvolBasis->getValues(hvolOutputView, inputPointsView, op);
     
@@ -506,20 +507,20 @@ namespace
     
     int numPoints_1D = 5;
     shards::CellTopology triangleTopo = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<> >() );
-    auto inputPointsView = getInputPointsView<PointScalar>(triangleTopo, numPoints_1D);
+    auto inputPointsView = getInputPointsView<PointScalar,DeviceType>(triangleTopo, numPoints_1D);
     
     const int numPoints = inputPointsView.extent_int(0);
         
-    auto hgradOutputView = getOutputView<OutputScalar>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints, spaceDim);
+    auto hgradOutputView = getOutputView<OutputScalar,DeviceType>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints, spaceDim);
     hgradBasis->getValues(hgradOutputView, inputPointsView, op);
     
     auto hgradOutputViewHost  = getHostCopy(hgradOutputView);
     auto inputPointsViewHost = getHostCopy(inputPointsView);
     
-    ViewType<OutputScalar> expectedValuesView = getOutputView<OutputScalar>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints, spaceDim);
+    auto expectedValuesView = getOutputView<OutputScalar,DeviceType>(FUNCTION_SPACE_HGRAD, op, hgradBasis->getCardinality(), numPoints, spaceDim);
     auto expectedValuesViewHost = getHostCopy(expectedValuesView);
     
-    auto legendreValuesAtPoint = getView<OutputScalar>("Legendre values temporary storage", polyOrder+1);
+    auto legendreValuesAtPoint = getView<OutputScalar,DeviceType>("Legendre values temporary storage", polyOrder+1);
     auto legendreValuesAtPointHost = getHostCopy(legendreValuesAtPoint);
     
     for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
@@ -689,6 +690,7 @@ namespace
     using namespace Intrepid2;
     using Teuchos::rcp;
     
+    using DeviceType   = typename LineBasisFamily::DeviceType;
     using PointScalar  = typename LineBasisFamily::PointValueType;
     using OutputScalar = typename LineBasisFamily::OutputValueType;
     
@@ -700,11 +702,11 @@ namespace
     
     int numPoints_1D = 5;
     shards::CellTopology lineTopo = shards::CellTopology(shards::getCellTopologyData<shards::Line<> >() );
-    auto inputPointsView = getInputPointsView<PointScalar>(lineTopo, numPoints_1D);
+    auto inputPointsView = getInputPointsView<PointScalar,DeviceType>(lineTopo, numPoints_1D);
     const int spaceDim = 1;
     
-    auto hgradOutputView = getOutputView<OutputScalar>(FUNCTION_SPACE_HGRAD, opGrad, hgradBasis->getCardinality(), numPoints_1D, spaceDim);
-    auto hvolOutputView  = getOutputView<OutputScalar>(FUNCTION_SPACE_HVOL, opVol, hvolBasis->getCardinality(), numPoints_1D, spaceDim);
+    auto hgradOutputView = getOutputView<OutputScalar,DeviceType>(FUNCTION_SPACE_HGRAD, opGrad, hgradBasis->getCardinality(), numPoints_1D, spaceDim);
+    auto hvolOutputView  = getOutputView<OutputScalar,DeviceType>(FUNCTION_SPACE_HVOL, opVol, hvolBasis->getCardinality(), numPoints_1D, spaceDim);
     
     hgradBasis->getValues(hgradOutputView, inputPointsView, opGrad);
     hvolBasis->getValues(  hvolOutputView, inputPointsView, opVol);
@@ -870,22 +872,23 @@ namespace
     // copy dofMapToDerived to host view
 //    Kokkos::deep_copy(dofMapToStandardHost, dofMapToStandard);
     
+    using DeviceType   = typename DerivedNodalBasisFamily::DeviceType;
     using PointScalar  = typename DerivedNodalBasisFamily::PointValueType;
     using OutputScalar = typename DerivedNodalBasisFamily::OutputValueType;
     
     int numPoints_1D = 5;
-    auto inputPointsView = getInputPointsView<PointScalar>(cellTopo, numPoints_1D);
+    auto inputPointsView = getInputPointsView<PointScalar,DeviceType>(cellTopo, numPoints_1D);
     int numPoints = inputPointsView.extent_int(0);
-    auto standardOutputView = getOutputView<OutputScalar>(fs, op, standardCardinality, numPoints, spaceDim);
-    auto derivedOutputView  = getOutputView<OutputScalar>(fs, op, standardCardinality, numPoints, spaceDim);
+    auto standardOutputView = getOutputView<OutputScalar,DeviceType>(fs, op, standardCardinality, numPoints, spaceDim);
+    auto derivedOutputView  = getOutputView<OutputScalar,DeviceType>(fs, op, standardCardinality, numPoints, spaceDim);
     
     standardBasis->getValues(standardOutputView, inputPointsView, op);
     derivedBasis->getValues(derivedOutputView, inputPointsView, op);
     
     // derived may be in a different order.  Remap so it's in the same order as standard basis
-    auto derivedOutputViewRemapped = getOutputView<OutputScalar>(fs, op, standardCardinality, numPoints, spaceDim);
+    auto derivedOutputViewRemapped = getOutputView<OutputScalar,DeviceType>(fs, op, standardCardinality, numPoints, spaceDim);
     
-    using ViewIteratorScalar    = Intrepid2::ViewIterator<decltype(derivedOutputView), OutputScalar>;
+    using ViewIteratorScalar = Intrepid2::ViewIterator<decltype(derivedOutputView), OutputScalar>;
     const int entryCount = standardOutputView.size();
 
     Kokkos::RangePolicy < ExecutionSpace > policy(0,entryCount);

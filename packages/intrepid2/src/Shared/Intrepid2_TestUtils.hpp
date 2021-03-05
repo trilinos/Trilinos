@@ -107,21 +107,12 @@ namespace Intrepid2
 
   static const double TEST_TOLERANCE_TIGHT = 1.e2 * std::numeric_limits<double>::epsilon();
 
-  template<typename ScalarType, typename DeviceType>
-  using ViewType2T = Kokkos::DynRankView<ScalarType,DeviceType>; // 2-template-argument ViewType; see getView2T().  Probably should consider this a placeholder; eventually, should collapse ViewType2T and ViewType (by requiring all ViewType instantiations to have two argumetns)
-
   // we use DynRankView for both input points and values
-  template<typename ScalarType>
-  using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>; // TODO: change to DefaultTestDeviceType, once all Monolithic tests have been changed
+  template<typename ScalarType, typename DeviceType>
+  using ViewType = Kokkos::DynRankView<ScalarType,DeviceType>;
 
-  template<typename ScalarType>
-  using FixedRankViewType = Kokkos::View<ScalarType,Kokkos::DefaultExecutionSpace>; // TODO: change to DefaultTestDeviceType, once all Monolithic tests have been changed
-
-  template<typename ScalarType>
-  using ViewTypeDefaultTestDT = Kokkos::DynRankView<ScalarType,DefaultTestDeviceType>; // this one is to allow us to switch tests over incrementally; should collapse with ViewType once everything has been switched
-
-  template<typename ScalarType>
-  using FixedRankViewTypeDefaultTestDT = Kokkos::View<ScalarType,DefaultTestDeviceType>; // this one is to allow us to switch tests over incrementally; should collapse with FixedRankViewType once everything has been switched
+  template<typename ScalarType, typename DeviceType>
+  using FixedRankViewType = Kokkos::View<ScalarType,DeviceType>;
 
   template<typename ScalarType>
   KOKKOS_INLINE_FUNCTION bool valuesAreSmall(const ScalarType &a, const ScalarType &b, const double &epsilon)
@@ -231,77 +222,33 @@ namespace Intrepid2
     return getBasisUsingFamily<BasisFamily>(cellTopo, fs, polyOrder_x, polyOrder_y, polyOrder_z);
   }
 
-  template<typename ValueType, class ... DimArgs>
-  inline ViewType<ValueType> getView(const std::string &label, DimArgs... dims)
-  {
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
-    if (!allocateFadStorage)
-    {
-      return ViewType<ValueType>(label,dims...);
-    }
-    else
-    {
-      return ViewType<ValueType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
-    }
-  }
-
   template<typename ValueType, typename DeviceType, class ... DimArgs>
-  inline ViewType2T<ValueType,DeviceType> getView2T(const std::string &label, DimArgs... dims)
+  inline ViewType<ValueType,DeviceType> getView(const std::string &label, DimArgs... dims)
   {
     const bool allocateFadStorage = !std::is_pod<ValueType>::value;
     if (!allocateFadStorage)
     {
-      return ViewType2T<ValueType,DeviceType>(label,dims...);
+      return ViewType<ValueType,DeviceType>(label,dims...);
     }
     else
     {
-      return ViewType2T<ValueType,DeviceType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
-    }
-  }
-
-  template<typename ValueType, class ... DimArgs>
-  inline FixedRankViewType< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type > getFixedRankView(const std::string &label, DimArgs... dims)
-  {
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
-    using value_type = typename RankExpander<ValueType, sizeof...(dims) >::value_type;
-    if (!allocateFadStorage)
-    {
-      return FixedRankViewType<value_type>(label,dims...);
-    }
-    else
-    {
-      return FixedRankViewType<value_type>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
-    }
-  }
-
-  // this method is to allow us to switch tests over incrementally; should collapse with getView once everything has been switched
-  template<typename ValueType, class ... DimArgs>
-  inline ViewTypeDefaultTestDT<ValueType> getViewDefaultTestDT(const std::string &label, DimArgs... dims)
-  {
-    const bool allocateFadStorage = !std::is_pod<ValueType>::value;
-    if (!allocateFadStorage)
-    {
-      return ViewTypeDefaultTestDT<ValueType>(label,dims...);
-    }
-    else
-    {
-      return ViewTypeDefaultTestDT<ValueType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+      return ViewType<ValueType,DeviceType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
     }
   }
 
   // this method is to allow us to switch tests over incrementally; should collapse with ViewType once everything has been switched
   template<typename ValueType, class ... DimArgs>
-  inline FixedRankViewTypeDefaultTestDT< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type > getFixedRankViewDefaultTestDT(const std::string &label, DimArgs... dims)
+  inline FixedRankViewType< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type, DefaultTestDeviceType > getFixedRankView(const std::string &label, DimArgs... dims)
   {
     const bool allocateFadStorage = !std::is_pod<ValueType>::value;
     using value_type = typename RankExpander<ValueType, sizeof...(dims) >::value_type;
     if (!allocateFadStorage)
     {
-      return FixedRankViewTypeDefaultTestDT<value_type>(label,dims...);
+      return FixedRankViewType<value_type,DefaultTestDeviceType>(label,dims...);
     }
     else
     {
-      return FixedRankViewTypeDefaultTestDT<value_type>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+      return FixedRankViewType<value_type,DefaultTestDeviceType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
     }
   }
 
@@ -311,29 +258,29 @@ namespace Intrepid2
 
 The total number of points defined will be a triangular number; if n=numPointsBase, then the point count is the nth triangular number, given by n*(n+1)/2.
 */
-  template <typename PointValueType>
-  inline ViewType<PointValueType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
+  template <typename PointValueType, typename DeviceType>
+  inline ViewType<PointValueType,DeviceType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
   {
     const ordinal_type order = numPoints_1D - 1;
     ordinal_type numPoints = PointTools::getLatticeSize(cellTopo, order);
     ordinal_type spaceDim  = cellTopo.getDimension();
     
-    ViewType<PointValueType> inputPoints = getView<PointValueType>("input points",numPoints,spaceDim);
+    ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
     PointTools::getLattice(inputPoints, cellTopo, order, 0, POINTTYPE_EQUISPACED );
     
     return inputPoints;
   }
 
-  template<typename OutputValueType>
-  inline ViewType<OutputValueType> getOutputView(Intrepid2::EFunctionSpace fs, Intrepid2::EOperator op, int basisCardinality, int numPoints, int spaceDim)
+  template<typename OutputValueType, typename DeviceType>
+  inline ViewType<OutputValueType,DeviceType> getOutputView(Intrepid2::EFunctionSpace fs, Intrepid2::EOperator op, int basisCardinality, int numPoints, int spaceDim)
   {
     switch (fs) {
       case Intrepid2::FUNCTION_SPACE_HGRAD:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H^1 value output",basisCardinality,numPoints);
+            return getView<OutputValueType,DeviceType>("H^1 value output",basisCardinality,numPoints);
           case Intrepid2::OPERATOR_GRAD:
-            return getView<OutputValueType>("H^1 derivative output",basisCardinality,numPoints,spaceDim);
+            return getView<OutputValueType,DeviceType>("H^1 derivative output",basisCardinality,numPoints,spaceDim);
           case Intrepid2::OPERATOR_D1:
           case Intrepid2::OPERATOR_D2:
           case Intrepid2::OPERATOR_D3:
@@ -346,7 +293,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
           case Intrepid2::OPERATOR_D10:
           {
             const auto dkcard = getDkCardinality(op, spaceDim);
-            return getView<OutputValueType>("H^1 derivative output",basisCardinality,numPoints,dkcard);
+            return getView<OutputValueType,DeviceType>("H^1 derivative output",basisCardinality,numPoints,dkcard);
           }
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
@@ -354,21 +301,21 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       case Intrepid2::FUNCTION_SPACE_HCURL:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H(curl) value output",basisCardinality,numPoints,spaceDim);
+            return getView<OutputValueType,DeviceType>("H(curl) value output",basisCardinality,numPoints,spaceDim);
           case Intrepid2::OPERATOR_CURL:
             if (spaceDim == 2)
-              return getView<OutputValueType>("H(curl) derivative output",basisCardinality,numPoints);
+              return getView<OutputValueType,DeviceType>("H(curl) derivative output",basisCardinality,numPoints);
             else if (spaceDim == 3)
-              return getView<OutputValueType>("H(curl) derivative output",basisCardinality,numPoints,spaceDim);
+              return getView<OutputValueType,DeviceType>("H(curl) derivative output",basisCardinality,numPoints,spaceDim);
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
         }
       case Intrepid2::FUNCTION_SPACE_HDIV:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H(div) value output",basisCardinality,numPoints,spaceDim);
+            return getView<OutputValueType,DeviceType>("H(div) value output",basisCardinality,numPoints,spaceDim);
           case Intrepid2::OPERATOR_DIV:
-            return getView<OutputValueType>("H(div) derivative output",basisCardinality,numPoints);
+            return getView<OutputValueType,DeviceType>("H(div) derivative output",basisCardinality,numPoints);
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
         }
@@ -376,7 +323,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       case Intrepid2::FUNCTION_SPACE_HVOL:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H(vol) value output",basisCardinality,numPoints);
+            return getView<OutputValueType,DeviceType>("H(vol) value output",basisCardinality,numPoints);
           case Intrepid2::OPERATOR_D1:
           case Intrepid2::OPERATOR_D2:
           case Intrepid2::OPERATOR_D3:
@@ -389,7 +336,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
           case Intrepid2::OPERATOR_D10:
           {
             const auto dkcard = getDkCardinality(op, spaceDim);
-            return getView<OutputValueType>("H(vol) derivative output",basisCardinality,numPoints,dkcard);
+            return getView<OutputValueType,DeviceType>("H(vol) derivative output",basisCardinality,numPoints,dkcard);
           }
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
@@ -431,38 +378,39 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   //! Copy the values for the specified functor
   template<class Functor, class Scalar, int rank>
-  typename ViewType<Scalar>::HostMirror copyFunctorToHostView(const Functor &deviceFunctor)
+  typename ViewType<Scalar,DefaultTestDeviceType>::HostMirror copyFunctorToHostView(const Functor &deviceFunctor)
   {
     INTREPID2_TEST_FOR_EXCEPTION(rank != getFunctorRank(deviceFunctor), std::invalid_argument, "functor rank must match the template argument");
     
-    ViewType<Scalar> view;
+    using DeviceType = DefaultTestDeviceType;
+    ViewType<Scalar,DeviceType> view;
     const std::string label = "functor copy";
     const auto &f = deviceFunctor;
     switch (rank)
     {
       case 0:
-        view = getView<Scalar>(label);
+        view = getView<Scalar,DeviceType>(label);
         break;
       case 1:
-        view = getView<Scalar>(label, f.extent_int(0));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0));
         break;
       case 2:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1));
         break;
       case 3:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2));
         break;
       case 4:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3));
         break;
       case 5:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4));
         break;
       case 6:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5));
         break;
       case 7:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5), f.extent_int(6));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5), f.extent_int(6));
         break;
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported functor rank");
@@ -470,9 +418,9 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     
     int entryCount = view.size();
     
-    using ExecutionSpace = typename ViewType<Scalar>::execution_space;
+    using ExecutionSpace = typename ViewType<Scalar,DeviceType>::execution_space;
     
-    using ViewIteratorScalar    = Intrepid2::ViewIterator<ViewType<Scalar>, Scalar>;
+    using ViewIteratorScalar    = Intrepid2::ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
     using FunctorIteratorScalar = FunctorIterator<Functor, Scalar, rank>;
     
     Kokkos::RangePolicy < ExecutionSpace > policy(0,entryCount);
@@ -632,7 +580,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     static_assert( supports_rank<FunctorType2,rank>::value, "Both Functor1 and Functor2 must support the specified rank through operator().");
     using Functor1IteratorScalar = FunctorIterator<FunctorType1, Scalar, rank>;
     using Functor2IteratorScalar = FunctorIterator<FunctorType2, Scalar, rank>;
-    using ViewIteratorBool       = Intrepid2::ViewIterator<ViewType<bool>, bool>;
+    using ViewIteratorBool       = Intrepid2::ViewIterator<ViewType<bool,ExecutionSpace>, bool>;
 
     // check that rank/size match
     TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(functor1) != rank, std::invalid_argument, "functor1 and functor2 must agree in rank"); // Kokkos::View does not provide rank() method; getFunctorRank() provides common interface
@@ -649,7 +597,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     }
     if (entryCount == 0) return; // nothing to test
     
-    ViewType<bool> valuesMatch = getView<bool>("valuesMatch", entryCount);
+    ViewType<bool,ExecutionSpace> valuesMatch = getView<bool,ExecutionSpace>("valuesMatch", entryCount);
     
     Kokkos::RangePolicy < ExecutionSpace > policy(0,entryCount);
     Kokkos::parallel_for( policy,
