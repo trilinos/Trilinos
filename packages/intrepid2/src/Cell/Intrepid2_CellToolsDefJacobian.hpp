@@ -165,30 +165,30 @@ namespace Intrepid2 {
     {
       auto jacData = jacobian.getUnderlyingView4();
       auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2),jacData.extent(3));
-      return Data<PointScalar,ExecSpaceType>(invData,4,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 3)
     {
       auto jacData = jacobian.getUnderlyingView3();
       auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1),jacData.extent(2));
-      return Data<PointScalar,ExecSpaceType>(invData,4,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 2)
     {
       auto jacData = jacobian.getUnderlyingView2();
       auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0),jacData.extent(1));
-      return Data<PointScalar,ExecSpaceType>(invData,4,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else if (jacDataRank == 1)
     {
       auto jacData = jacobian.getUnderlyingView1();
       auto invData = getMatchingViewWithLabel(jacData, "Jacobian inv data",jacData.extent(0));
-      return Data<PointScalar,ExecSpaceType>(invData,4,extents,variationTypes);
+      return Data<PointScalar,DeviceType>(invData,4,extents,variationTypes);
     }
     else
     {
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "allocateJacobianInv requires jacobian to vary in *some* dimension…");
-      return Data<PointScalar,ExecSpaceType>(); // unreachable statement; this line added to avoid compiler warning on CUDA
+      return Data<PointScalar,DeviceType>(); // unreachable statement; this line added to avoid compiler warning on CUDA
     }
   }
 
