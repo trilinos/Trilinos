@@ -529,7 +529,8 @@ void jacobi_A_B_newmatrix_LowThreadGustavsonKernel(Scalar omega,
   }
 
   // Jacobi-specific inner stuff
-  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+  auto Dvals = 
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -770,7 +771,8 @@ void jacobi_A_B_reuse_LowThreadGustavsonKernel(Scalar omega,
   }
 
   // Jacobi-specific inner stuff
-  auto Dvals = Dinv.template getLocalView<scalar_memory_space>();
+  auto Dvals = 
+       Dinv.template getLocalView<scalar_memory_space>(Access::ReadOnly);
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();

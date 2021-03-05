@@ -2778,58 +2778,6 @@ namespace Tpetra {
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
                 const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
 
-    /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
-    ///
-    /// Apply a forward or backward sweep of Gauss-Seidel or
-    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
-    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
-    /// to 1.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in B.
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector B.  This may differ from the type of entries in
-    ///   A or in X.
-    ///
-    /// \param B [in] Right-hand side(s).
-    /// \param X [in/out] On input: initial guess(es).  On output:
-    ///   result multivector(s).
-    /// \param D [in] Inverse of diagonal entries of the matrix A.
-    /// \param omega [in] SOR damping factor.  omega = 1 results in
-    ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: Tpetra::Forward or
-    ///   Tpetra::Backward.  ("Symmetric" requires interprocess
-    ///   communication (before each sweep), which is not part of the
-    ///   local kernel.)
-
-    /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
-    ///
-    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
-    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
-    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
-    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
-    /// executed on a local subset of unknowns.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in B.
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector B.  This may differ from the type of entries in
-    ///   A or in X.
-    ///
-    /// \param B [in] Right-hand side(s).
-    /// \param X [in/out] On input: initial guess(es).  On output:
-    ///   result multivector(s).
-    /// \param D [in] Inverse of diagonal entries of the matrix A.
-    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
-    /// \param omega [in] SOR damping factor.  omega = 1 results in
-    ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: Tpetra::Forward or
-    ///   Tpetra::Backward.  ("Symmetric" requires interprocess
-    ///   communication (before each sweep), which is not part of the
-    ///   local kernel.)
-
     /// \brief Return another CrsMatrix with the same entries, but
     ///   converted to a different Scalar type \c T.
     template <class T>

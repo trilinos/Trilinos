@@ -195,7 +195,7 @@ private:
   {
     Teuchos::RCP<vector_t> vec = rcp(new vector_t(map));
 
-    auto data = vec->getLocalViewHost();
+    auto data = vec->getLocalViewHost(Tpetra::Access::ReadWrite);
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
       gno_t gid = map->getGlobalElement(i);
       data(i, 0) = scalar_t(gid);
@@ -220,8 +220,8 @@ private:
   {
     int ierr = 0;
 
-    vec->sync_host();
-    auto data = vec->getLocalViewHost();
+    //vec->sync_host();
+    auto data = vec->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
       gno_t gid = vec->getMap()->getGlobalElement(i);
@@ -246,8 +246,8 @@ private:
   {
     int ierr = 0;
 
-    vec->sync_host();
-    auto data = vec->getLocalViewHost();
+    //vec->sync_host();
+    auto data = vec->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
       ssize_t gid = ssize_t(vec->getMap()->getGlobalElement(i));
@@ -286,8 +286,8 @@ private:
     int ierr = 0;
 
     for (size_t v = 0; v < vec.size(); v++) {
-      vec[v]->sync_host();
-      auto data = vec[v]->getLocalViewHost();
+      //vec[v]->sync_host();
+      auto data = vec[v]->getLocalViewHost(Tpetra::Access::ReadOnly);
 
       for (size_t i = 0; i < vec[v]->getLocalLength(); i++) {
         gno_t gid = vec[v]->getMap()->getGlobalElement(i);

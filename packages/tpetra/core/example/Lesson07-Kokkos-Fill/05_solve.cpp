@@ -423,21 +423,18 @@ int main (int argc, char* argv[]) {
     typedef dual_view_type::t_dev::memory_space memory_space;
     typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
-    x_exact.sync<memory_space> ();
-    x_exact.modify<memory_space> ();
-
     // Slight breakage with respect to GCC < 4.8.
     // mfh 20 Aug 2017: See also GitHub issue #1629.
 #if defined(__GNUC__)
 #  if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-    auto x_exact_lcl = x_exact.getLocalView<memory_space> ();
+    auto x_exact_lcl = x_exact.getLocalView<memory_space> (Tpetra::Access::ReadWrite);
 #  elif __GNUC__ == 4 && __GNUC_MINOR__ > 7 // GCC >= 4.8
-    auto x_exact_lcl = x_exact.template getLocalView<memory_space> ();
+    auto x_exact_lcl = x_exact.template getLocalView<memory_space> (Tpetra::Access::ReadWrite);
 #  else // GCC >= 5
-    auto x_exact_lcl = x_exact.getLocalView<memory_space> ();
+    auto x_exact_lcl = x_exact.getLocalView<memory_space> (Tpetra::Access::ReadWrite);
 #  endif // __GNUC__ == 4 && __GNUC_MINOR__ <= 7
 #else // ! defined(__GNUC__)
-    auto x_exact_lcl = x_exact.template getLocalView<memory_space> ();
+    auto x_exact_lcl = x_exact.template getLocalView<memory_space> (Tpetra::Access::ReadWrite);
 #endif // defined(__GNUC__)
 
     Kokkos::parallel_for ("Compare solutions",

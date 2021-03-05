@@ -173,14 +173,14 @@ bool Container<MatrixType>::isComputed () const {
 
 template<class MatrixType>
 void Container<MatrixType>::
-applyMV(mv_type& X, mv_type& Y) const
+applyMV(const mv_type& X, mv_type& Y) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 
 template<class MatrixType>
 void Container<MatrixType>::
-weightedApplyMV(mv_type& X, mv_type& Y, vector_type& W) const
+weightedApplyMV(const mv_type& X, mv_type& Y, vector_type& W) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
@@ -193,14 +193,14 @@ getName()
 }
 
 template<class MatrixType>
-void Container<MatrixType>::DoGSBlock(HostView X, HostView Y, HostView Y2, HostView Resid,
+void Container<MatrixType>::DoGSBlock(ConstHostView X, HostView Y, HostView Y2, HostView Resid,
     SC dampingFactor, LO i) const
 {
   TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented.");
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoJacobi(HostView X, HostView Y, SC dampingFactor) const
+void Container<MatrixType>::DoJacobi(ConstHostView X, HostView Y, SC dampingFactor) const
 {
   using STS = Teuchos::ScalarTraits<ISC>;
   const ISC one = STS::one();
@@ -220,7 +220,7 @@ void Container<MatrixType>::DoJacobi(HostView X, HostView Y, SC dampingFactor) c
     {
       LO LRID = blockRows_[blockOffsets_[i]];
       getMatDiag();
-      HostView diagView = Diag_->getLocalViewHost();
+      auto diagView = Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
       ISC d = one / diagView(LRID, 0);
       for(size_t nv = 0; nv < numVecs; nv++)
       {
@@ -232,7 +232,7 @@ void Container<MatrixType>::DoJacobi(HostView X, HostView Y, SC dampingFactor) c
 }
 
 template <class MatrixType>
-void Container<MatrixType>::DoOverlappingJacobi(HostView X, HostView Y, HostView W, SC dampingFactor) const
+void Container<MatrixType>::DoOverlappingJacobi(ConstHostView X, HostView Y, ConstHostView W, SC dampingFactor) const
 {
   using STS = Teuchos::ScalarTraits<SC>;
   // Overlapping Jacobi
@@ -250,7 +250,7 @@ void Container<MatrixType>::DoOverlappingJacobi(HostView X, HostView Y, HostView
 //This is used 3 times: once in DoGaussSeidel and twice in DoSGS
 template<class MatrixType, typename LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
-    HostView X, HostView Y, HostView Y2, HostView Resid,
+    ConstHostView X, HostView Y, HostView Y2, HostView Resid,
     SC dampingFactor, LO i) const
 {
   using Teuchos::ArrayView;
@@ -302,7 +302,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     // singleton, can't access Containers_[i] as it was never filled and may be null.
     // a singleton calculation (just using matrix diagonal) is exact, all residuals should be zero.
     LO LRID = this->blockOffsets_[i];  // by definition, a singleton 1 row in block.
-    HostView diagView = this->Diag_->getLocalViewHost();
+    ConstHostView diagView = this->Diag_->getLocalViewHost(Tpetra::Access::ReadOnly);
     ISC d = one / diagView(LRID, 0);
     for(size_t m = 0; m < numVecs; m++)
     {
@@ -377,7 +377,7 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
 
 template<class MatrixType>
 void Container<MatrixType>::
-DoGaussSeidel(HostView X, HostView Y, HostView Y2, SC dampingFactor) const
+DoGaussSeidel(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const
 {
   using Teuchos::Array;
   using Teuchos::ArrayRCP;
@@ -410,7 +410,7 @@ DoGaussSeidel(HostView X, HostView Y, HostView Y2, SC dampingFactor) const
 
 template<class MatrixType>
 void Container<MatrixType>::
-DoSGS(HostView X, HostView Y, HostView Y2, SC dampingFactor) const
+DoSGS(ConstHostView X, HostView Y, HostView Y2, SC dampingFactor) const
 {
   // X = RHS, Y = initial guess
   using Teuchos::Array;
@@ -489,22 +489,22 @@ applyInverseJacobi (const mv_type& /* X */, mv_type& /* Y */,
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-applyMV (mv_type& X, mv_type& Y) const
+applyMV (const mv_type& X, mv_type& Y) const
 {
-  HostView XView = X.getLocalViewHost();
-  HostView YView = Y.getLocalViewHost();
+  ConstHostView XView = X.getLocalViewHost(Tpetra::Access::ReadOnly);
+  HostView YView = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
   this->apply (XView, YView, 0);
 }
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-weightedApplyMV (mv_type& X,
+weightedApplyMV (const mv_type& X,
                  mv_type& Y,
                  vector_type& W) const
 {
-  HostView XView = X.getLocalViewHost();
-  HostView YView = Y.getLocalViewHost();
-  HostView WView = W.getLocalViewHost();
+  ConstHostView XView = X.getLocalViewHost(Tpetra::Access::ReadOnly);
+  HostView YView = Y.getLocalViewHost(Tpetra::Access::ReadWrite);
+  ConstHostView WView = W.getLocalViewHost(Tpetra::Access::ReadOnly);
   weightedApply (XView, YView, WView, 0);
 }
 
@@ -517,7 +517,7 @@ getName()
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-solveBlock(HostSubviewLocal X,
+solveBlock(ConstHostSubviewLocal X,
            HostSubviewLocal Y,
            int blockIndex,
            Teuchos::ETransp mode,
@@ -573,7 +573,7 @@ translateRowToCol(LO row)
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-apply (HostView X,
+apply (ConstHostView X,
        HostView Y,
        int blockIndex,
        Teuchos::ETransp mode,
@@ -684,9 +684,9 @@ apply (HostView X,
 
 template<class MatrixType, class LocalScalarType>
 void ContainerImpl<MatrixType, LocalScalarType>::
-weightedApply(HostView X,
+weightedApply(ConstHostView X,
               HostView Y,
-              HostView D,
+              ConstHostView D,
               int blockIndex,
               Teuchos::ETransp mode,
               SC alpha,

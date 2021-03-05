@@ -165,8 +165,8 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // We want a _host_ View.  Vector implements "dual view"
     // semantics.  This is really only relevant for architectures with
     // two memory spaces.
-    x.sync_host ();
-    auto x_2d = x.getLocalViewHost ();
+
+    auto x_2d = x.getLocalViewHost(Tpetra::Access::ReadOnly);
     // getLocalView returns a 2-D View by default.  We want a 1-D
     // View, so we take a subview.
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
@@ -214,11 +214,9 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
     // away.  If you create two nonconst persisting views of the same
     // Vector, and modify the entries of one view during the lifetime
     // of the other view, the entries of the other view are undefined.
-    x.sync_host ();
-    auto x_2d = x.getLocalViewHost ();
+    auto x_2d = x.getLocalViewHost(Tpetra::Access::ReadWrite);
     auto x_1d = Kokkos::subview (x_2d, Kokkos::ALL (), 0);
-    // We're going to modify the data on host.
-    x.modify_host ();
+
 
     // Use local indices to access the entries of x_data.
     // x_data.extent (0) may be longer than the number of local
@@ -230,8 +228,6 @@ exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
       // as a function to convert k (an integer) to double.
       x_1d(k) += double (k);
     }
-    using memory_space = vector_type::device_type::memory_space;
-    x.sync<memory_space> ();
   }
 
   // Print the norm of x.

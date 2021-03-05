@@ -623,7 +623,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
 					    Arowptr, Acolind, Avals, false,
 					    Browptr, Bcolind, Bvals, false,
 					    row_mapC, entriesC, valuesC,
-					    omega, Dinv.getLocalViewDevice());
+					    omega, Dinv.getLocalViewDevice(Tpetra::Access::ReadOnly));
   kh.destroy_spgemm_handle();
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS

@@ -151,10 +151,10 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
          "message, it's likely that you are using a range Map Vector and that "
          "the CrsMatrix's row Map is overlapping.");
     }
-    if (rowScalingFactors.template need_sync<dev_memory_space> ()) {
-      const_cast<vec_type&> (rowScalingFactors).template sync<dev_memory_space> ();
-    }
-    auto row_lcl_2d = rowScalingFactors.template getLocalView<dev_memory_space> ();
+    // if (rowScalingFactors.template need_sync<dev_memory_space> ()) {
+    //   const_cast<vec_type&> (rowScalingFactors).template sync<dev_memory_space> ();
+    // }
+    auto row_lcl_2d = rowScalingFactors.template getLocalView<dev_memory_space> (Access::ReadOnly);
     row_lcl = Kokkos::subview (row_lcl_2d, Kokkos::ALL (), 0);
   }
   if (rightScale) {
@@ -165,10 +165,10 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
          "must be the same as the CrsMatrix's column Map.  If you see this "
          "message, it's likely that you are using a domain Map Vector.");
     }
-    if (colScalingFactors.template need_sync<dev_memory_space> ()) {
-      const_cast<vec_type&> (colScalingFactors).template sync<dev_memory_space> ();
-    }
-    auto col_lcl_2d = colScalingFactors.template getLocalView<dev_memory_space> ();
+    // if (colScalingFactors.template need_sync<dev_memory_space> ()) {
+    //   const_cast<vec_type&> (colScalingFactors).template sync<dev_memory_space> ();
+    // }
+    auto col_lcl_2d = colScalingFactors.template getLocalView<dev_memory_space> (Access::ReadOnly);
     col_lcl = Kokkos::subview (col_lcl_2d, Kokkos::ALL (), 0);
   }
 
