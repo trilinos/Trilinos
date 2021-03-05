@@ -68,7 +68,8 @@ namespace
   {
     // ideally, we would have closed-form expressions somewhere in here, as we do for integrated Legendre below
     // for now, though, this is just a thin wrapper around the call to Intrepid2::Polynomials::integratedJacobiValues()
-    auto values = getView<Scalar>("integrated Jacobi values", n+1);
+    using DeviceType = DefaultTestDeviceType;
+    auto values = getView2T<Scalar,DeviceType>("integrated Jacobi values", n+1);
     Polynomials::integratedJacobiValues(values, alpha, n, x, t);
     return values(n);
   }
