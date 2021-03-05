@@ -561,6 +561,7 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
 
     Y_tpetra->template modify<execution_space>();
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraVector_.getConstObj(), *X_tpetra, beta);
+    Kokkos::fence();
   } else {
     Teuchos::rcp_const_cast<TV>(tpetraVector_.getConstObj())->sync_host ();
     VectorDefaultBase<Scalar>::applyImpl(M_trans, X, Y, alpha, beta);
