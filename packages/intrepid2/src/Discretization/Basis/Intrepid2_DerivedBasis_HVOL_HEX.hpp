@@ -69,11 +69,12 @@ namespace Intrepid2
   template<class HVOL_LINE>
   class Basis_Derived_HVOL_HEX
   :
-  public Basis_TensorBasis<typename HVOL_LINE::ExecutionSpace, typename HVOL_LINE::OutputValueType, typename HVOL_LINE::PointValueType>
+  public Basis_TensorBasis<typename HVOL_LINE::BasisBase>
   // TODO: make this a subclass of TensorBasis3 instead, following what we've done for H(curl) and H(div)
   {
     std::string name_;
-
+    ordinal_type polyOrder_x_, polyOrder_y_, polyOrder_z_;
+    EPointType pointType_;
   public:
     using ExecutionSpace  = typename HVOL_LINE::ExecutionSpace;
     using OutputValueType = typename HVOL_LINE::OutputValueType;
@@ -83,9 +84,11 @@ namespace Intrepid2
     using PointViewType  = typename HVOL_LINE::PointViewType ;
     using ScalarViewType = typename HVOL_LINE::ScalarViewType;
     
+    using BasisBase = typename HVOL_LINE::BasisBase;
+    
     using LineBasis = HVOL_LINE;
     using QuadBasis = Intrepid2::Basis_Derived_HVOL_QUAD<HVOL_LINE>;
-    using TensorBasis = Basis_TensorBasis<ExecutionSpace, OutputValueType, PointValueType>;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -96,7 +99,11 @@ namespace Intrepid2
     Basis_Derived_HVOL_HEX(int polyOrder_x, int polyOrder_y, int polyOrder_z, const EPointType pointType=POINTTYPE_DEFAULT)
     :
     TensorBasis(Teuchos::rcp(new QuadBasis(polyOrder_x,polyOrder_y,pointType)),
-                Teuchos::rcp(new LineBasis(polyOrder_z,pointType)))
+                Teuchos::rcp(new LineBasis(polyOrder_z,pointType))),
+    polyOrder_x_(polyOrder_x),
+    polyOrder_y_(polyOrder_y),
+    polyOrder_z_(polyOrder_z),
+    pointType_(pointType)
     {
       this->functionSpace_ = FUNCTION_SPACE_HVOL;
 
@@ -168,6 +175,16 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
+    }
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual BasisPtr<typename Kokkos::HostSpace::device_type, typename BasisBase::OutputValueType, typename BasisBase::PointValueType>
+    getHostBasis() const override {
+      using HostBasisType  = Basis_Derived_HVOL_HEX<typename HVOL_LINE::HostBasis>;
+      return Teuchos::rcp( new HostBasisType(polyOrder_x_, polyOrder_y_, polyOrder_z_, pointType_) );
     }
   };
 } // end namespace Intrepid2

@@ -441,7 +441,7 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
       reduced_obj.gradient(rol_current_g, rol_p, tol);
 
       RCP<Thyra::VectorBase<Scalar> > g_out = outArgs.get_g(i);
-      Thyra::set_ele(i,tmp,g_out.ptr());
+      Thyra::set_ele(0,tmp,g_out.ptr());
 
       for (int j=0; j<num_p_; ++j) {
         if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, i, j).none() &&

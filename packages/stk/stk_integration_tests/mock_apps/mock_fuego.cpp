@@ -17,6 +17,7 @@ public:
   : m_appName("Mock-Fuego"),
     m_mesh(),
     m_doneFlagName("time step status"),
+    m_iAmRootRank(false),
     m_doingSendTransfer(false),
     m_sendFieldName()
   {}
@@ -43,6 +44,7 @@ public:
     m_commApp = stk::coupling::split_comm(m_commWorld, color);
     std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
     int myAppRank = stk::parallel_machine_rank(m_commApp);
+    m_iAmRootRank = myAppRank == 0;
     int numAppRanks = stk::parallel_machine_size(m_commApp);
 
     {
@@ -64,7 +66,7 @@ public:
     {
       std::ostringstream os;
       os << m_appName << ": other app 'app_name': " << m_otherInfo.get_value<std::string>(stk::coupling::AppName);
-      if(stk::parallel_machine_rank(m_commApp) == 0) std::cout << os.str() << std::endl;
+      if(m_iAmRootRank) std::cout << os.str() << std::endl;
     }
   }
 
@@ -98,7 +100,7 @@ public:
     if (timeToStop) {
       std::ostringstream os;
       os << m_appName << " finished, final time: " << m_finalTime << std::endl;
-      if(stk::parallel_machine_rank(m_commApp) == 0) std::cout << os.str();
+      if(m_iAmRootRank) std::cout << os.str();
     }
     return timeToStop;
   }
@@ -118,7 +120,7 @@ public:
 
     std::ostringstream os;
     os << m_appName << ": "<<stk::coupling::CurrentTime<<": " << m_currentTime;
-    if(stk::parallel_machine_rank(m_commApp) == 0) std::cout << os.str() << std::endl;
+    if (m_iAmRootRank) std::cout << os.str() << std::endl;
 
     ++m_step;
   }
@@ -142,6 +144,7 @@ private:
 
   stk::ParallelMachine m_commWorld;
   stk::ParallelMachine m_commApp;
+  bool m_iAmRootRank;
 
   stk::coupling::SyncInfo m_myInfo;
   stk::coupling::SyncInfo m_otherInfo;

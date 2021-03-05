@@ -125,6 +125,8 @@ namespace Intrepid2
         CellTools::mapToPhysicalFrame(evaluationGradPoints, evaluationGradPointsRefSpace, flatCellGeometry, hgradLinearBasisForFlatGeometry);
       }
       
+      auto refData = flatCellGeometry.getJacobianRefData(evaluationGradPoints);
+      
       // evaluate, transform, and project in each component
       auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},  {numCells,numPoints});
       auto gradPolicy  = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numCells,numGradPoints,spaceDim});
@@ -153,7 +155,7 @@ namespace Intrepid2
         // HGRADtransformGRAD  is multiplication by inverse of Jacobian, so here we want to multiply by Jacobian
         
         auto gradPointsJacobians = flatCellGeometry.allocateJacobianData(evaluationGradPoints);
-        flatCellGeometry.setJacobian(gradPointsJacobians,evaluationGradPoints);
+        flatCellGeometry.setJacobian(gradPointsJacobians,evaluationGradPoints,refData);
         
         Kokkos::parallel_for("evaluate geometry gradients for projection", gradPolicy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &d2) {

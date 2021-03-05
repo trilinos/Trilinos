@@ -99,11 +99,13 @@ namespace Compadre {
 
         const double det_g = MetricFactor(a_, h, u1, u2);
 
-        int partial_direction;
+        int partial_direction = -1;
         if (component == 0) { // comp 0 of surface curl, i.e. dy(p)
             partial_direction = 1;
         } else if (component == 1) { // comp 1 of surface curl, i.e. -dx(p)
             partial_direction = 0;
+        } else {
+            compadre_kernel_assert_release(false);
         }
         const double sign_change = (component == 1) ? -1 : 1;
         int n_x_pow = (partial_direction == 0) ? x_pow-1 : x_pow;
