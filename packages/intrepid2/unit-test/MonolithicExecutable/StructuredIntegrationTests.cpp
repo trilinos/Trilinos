@@ -162,7 +162,7 @@ void integrate_baseline_serial_host(Data<Scalar,DeviceType> integrals, const Tra
 }
 
 //! version that uses the classic Intrepid2 paths
-template<class Scalar, class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace>
+template<class Scalar, class PointScalar, int spaceDim, typename DeviceType>
 ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, int polyOrder, int worksetSize)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
@@ -194,8 +194,7 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
   // local stiffness matrix:
   ScalarView<Scalar,DeviceType> cellStiffness("cell stiffness matrices",numCells,numFields,numFields);
   
-  using Kokkos::DefaultExecutionSpace;
-  auto cubature = Intrepid2::DefaultCubatureFactory::create<DefaultExecutionSpace>(cellTopo,polyOrder*2);
+  auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
   int numPoints = cubature->getNumPoints();
   ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
   ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
