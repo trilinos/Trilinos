@@ -191,7 +191,7 @@ namespace
     
     using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
-    Kokkos::parallel_for("compute componentIntegrals", policy,
+    Kokkos::parallel_for("fill expanded cell nodes", policy,
     KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
     {
       for (int d=0; d<spaceDim; d++)
