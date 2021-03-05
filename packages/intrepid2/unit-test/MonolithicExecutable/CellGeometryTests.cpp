@@ -158,17 +158,17 @@ namespace
     
     const int numCells        = cellNodes.numCells();
     const int numNodesPerCell = cellNodes.numNodesPerCell();
-    auto expandedCellNodes    = getView<PointScalar>("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
-    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    auto expandedCellNodes    = getView2T<PointScalar,DeviceType>("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
+    using ExecutionSpace = typename DeviceType::execution_space;
+    auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
+    Kokkos::parallel_for("fill expanded cell nodes", policy,
+    KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
     {
-      for (int nodeOrdinal=0; nodeOrdinal<numNodesPerCell; nodeOrdinal++)
+      for (int d=0; d<spaceDim; d++)
       {
-        for (int d=0; d<spaceDim; d++)
-        {
-          expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
-        }
+        expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
       }
-    }
+    });
     
     auto cellMeasures                = getView2T<PointScalar,DeviceType>("cell measures",        numCells, numPoints);
     auto expandedJacobianDeterminant = getView2T<PointScalar,DeviceType>("jacobian determinant", numCells, numPoints);
