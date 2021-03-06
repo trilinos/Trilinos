@@ -4,7 +4,7 @@
 
 
 #include "ROL2_Utilities.hpp"
-#include "ROL2_Elementwise_UnaryFunction.hpp"
+#include "ROL2_Elementwise.hpp"
 
 
 

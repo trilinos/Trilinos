@@ -2,6 +2,7 @@
 #ifndef ROL2_UTILITIES_HPP
 #define ROL2_UTILITIES_HPP
 
+#include <array>
 #include <cmath>
 #include <cstdint>
 #include <exception>
