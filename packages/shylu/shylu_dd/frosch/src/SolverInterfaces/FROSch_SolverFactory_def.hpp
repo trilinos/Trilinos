@@ -109,7 +109,7 @@ namespace FROSch {
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU
             return MueLuPreconditionerPtr(new MueLuPreconditioner<SC,LO,GO,NO>(k,parameterList,description));
 #else
-            ThrowErrorMissingPackage("FROSch::SolverFactory","Ifpack2");
+            ThrowErrorMissingPackage("FROSch::SolverFactory","MueLu");
 #endif
         } else if (!parameterList->get("SolverType","Amesos2").compare("ThyraPreconditioner")) {
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
