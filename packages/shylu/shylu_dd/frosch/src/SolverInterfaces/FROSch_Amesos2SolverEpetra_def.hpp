@@ -98,7 +98,7 @@ namespace FROSch {
         Amesos2Solver_->setB(epetraMultiVectorX);
 
         FROSCH_ASSERT(mode==NO_TRANS,"FROSch::Amesos2SolverEpetra: mode!=NO_TRANS");
-        Amesos2Solver_->solve(); // Was ist, wenn man mit der transponierten Matrix lösen will
+        Amesos2Solver_->solve(); // What about solving with transposed matrices?
 
         y.update(alpha,*Y_,beta);
     }
