@@ -53,13 +53,13 @@ namespace FROSch {
     template<class SC,class LO,class GO,class NO>
     typename Solver<SC,LO,GO,NO>::ConstXMapPtr Solver<SC,LO,GO,NO>::getDomainMap() const
     {
-        return K_->getRangeMap();
+        return K_->getDomainMap();
     }
 
     template<class SC,class LO,class GO,class NO>
     typename Solver<SC,LO,GO,NO>::ConstXMapPtr Solver<SC,LO,GO,NO>::getRangeMap() const
     {
-        return K_->getDomainMap();
+        return K_->getRangeMap();
     }
 
     template<class SC,class LO,class GO,class NO>

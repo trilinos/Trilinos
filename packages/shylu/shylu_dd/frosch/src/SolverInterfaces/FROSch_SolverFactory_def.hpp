@@ -49,6 +49,7 @@
 
 namespace FROSch {
 
+    using namespace std;
     using namespace Teuchos;
     using namespace Xpetra;
 
@@ -57,7 +58,8 @@ namespace FROSch {
                                                                                      ParameterListPtr parameterList,
                                                                                      string description)
     {
-        if (!parameterList->get("SolverType","Amesos2").compare("Amesos")) {
+        const string solverType = parameterList->get("SolverType","Amesos2");
+        if (!solverType.compare("Amesos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
             FROSCH_ASSERT(k->getRowMap()->lib()==UseEpetra,"FROSch::SolverFactory: Amesos is not compatible with Tpetra.");
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -68,7 +70,7 @@ namespace FROSch {
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Amesos");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos2").compare("Amesos2")) {
+        } else if (!solverType.compare("Amesos2")) {
             if (k->getRowMap()->lib()==UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
                 return Amesos2SolverEpetraPtr(new Amesos2SolverEpetra<SC,LO,GO,NO>(k,parameterList,description));
@@ -80,7 +82,7 @@ namespace FROSch {
             } else {
                 FROSCH_ASSERT(false, "FROSch::SolverFactory: This can't happen. Either use Epetra or Tetra linear algebra stack.");
             }
-        } else if (!parameterList->get("SolverType","Amesos2").compare("Belos")) {
+        } else if (!solverType.compare("Belos")) {
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS
             if (k->getRowMap()->lib()==UseEpetra) {
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -96,22 +98,22 @@ namespace FROSch {
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Belos");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos2").compare("FROSchPreconditioner")) {
+        } else if (!solverType.compare("FROSchPreconditioner")) {
             return FROSchPreconditionerPtr(new FROSchPreconditioner<SC,LO,GO,NO>(k,parameterList,description));
-        } else if (!parameterList->get("SolverType","Amesos2").compare("Ifpack2")) {
+        } else if (!solverType.compare("Ifpack2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
             FROSCH_ASSERT(k->getRowMap()->lib()==UseTpetra,"FROSch::SolverFactory: Ifpack2 is not compatible with Epetra.");
             return Ifpack2PreconditionerTpetraPtr(new Ifpack2PreconditionerTpetra<SC,LO,GO,NO>(k,parameterList,description));
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Ifpack2");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos2").compare("MueLu")) {
+        } else if (!solverType.compare("MueLu")) {
 #ifdef HAVE_SHYLU_DDFROSCH_MUELU
             return MueLuPreconditionerPtr(new MueLuPreconditioner<SC,LO,GO,NO>(k,parameterList,description));
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Ifpack2");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos2").compare("ThyraPreconditioner")) {
+        } else if (!solverType.compare("ThyraPreconditioner")) {
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 #ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
             return ThyraPreconditionerPtr(new ThyraPreconditioner<SC,LO,GO,NO>(k,parameterList,description));
@@ -121,7 +123,7 @@ namespace FROSch {
 #else
             ThrowErrorMissingPackage("FROSch::SolverFactory","Thyra");
 #endif
-        } else if (!parameterList->get("SolverType","Amesos2").compare("ThyraSolver")) {
+        } else if (!solverType.compare("ThyraSolver")) {
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
 #ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
             return ThyraSolverPtr(new ThyraSolver<SC,LO,GO,NO>(k,parameterList,description));

@@ -80,10 +80,12 @@ namespace FROSch {
         FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverEpetra: !this->IsComputed_.");
 
         const EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const EpetraMultiVectorT<GO,NO> *>(&x);
+        FROSCH_ASSERT(xEpetraMultiVectorX,"FROSch::BelosSolverEpetra: dynamic_cast failed.");
         RCP<EMultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
 
         if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),y.getNumVectors());
         EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorY = dynamic_cast<EpetraMultiVectorT<GO,NO> *>(Y_.get());
+        FROSCH_ASSERT(xEpetraMultiVectorY,"FROSch::BelosSolverEpetra: dynamic_cast failed.");
         RCP<EMultiVector> epetraMultiVectorY = xEpetraMultiVectorY->getEpetra_MultiVector();
 
         BelosLinearProblem_->setProblem(epetraMultiVectorY,epetraMultiVectorX);

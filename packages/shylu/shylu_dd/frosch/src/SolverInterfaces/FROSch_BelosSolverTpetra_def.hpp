@@ -79,11 +79,13 @@ namespace FROSch {
         FROSCH_TIMER_START_SOLVER(applyTime,"BelosSolverTpetra::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverTpetra: !this->IsComputed_.");
 
-        const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x, true);
+        const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x);
+        FROSCH_ASSERT(xTpetraMultiVectorX,"FROSch::BelosSolverTpetra: dynamic_cast failed.");
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
 
         if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),y.getNumVectors());
         const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorY = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(Y_.get());
+        FROSCH_ASSERT(xTpetraMultiVectorY,"FROSch::BelosSolverTpetra: dynamic_cast failed.");
         TMultiVectorPtr tpetraMultiVectorY = xTpetraMultiVectorY->getTpetra_MultiVector();
 
         BelosLinearProblem_->setProblem(tpetraMultiVectorY,tpetraMultiVectorX);

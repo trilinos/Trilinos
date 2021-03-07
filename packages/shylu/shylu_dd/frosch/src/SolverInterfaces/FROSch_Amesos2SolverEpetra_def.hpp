@@ -88,10 +88,12 @@ namespace FROSch {
         FROSCH_ASSERT(this->IsComputed_,"FROSch::Amesos2SolverEpetra: !this->IsComputed_.");
 
         const EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorX = dynamic_cast<const EpetraMultiVectorT<GO,NO> *>(&x);
+        FROSCH_ASSERT(xEpetraMultiVectorX,"FROSch::Amesos2SolverEpetra: dynamic_cast failed.");
         RCP<EMultiVector> epetraMultiVectorX = xEpetraMultiVectorX->getEpetra_MultiVector();
 
         if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),x.getNumVectors());
         EpetraMultiVectorT<GO,NO> * xEpetraMultiVectorY = dynamic_cast<EpetraMultiVectorT<GO,NO> *>(Y_.get());
+        FROSCH_ASSERT(xEpetraMultiVectorY,"FROSch::Amesos2SolverEpetra: dynamic_cast failed.");
         RCP<EMultiVector> epetraMultiVectorY = xEpetraMultiVectorY->getEpetra_MultiVector();
 
         Amesos2Solver_->setX(epetraMultiVectorY);
@@ -112,7 +114,9 @@ namespace FROSch {
         FROSCH_ASSERT(!this->K_.is_null(),"FROSch::Amesos2SolverEpetra: K_ is null.");
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
+        FROSCH_ASSERT(crsOp,"FROSch::Amesos2SolverEpetra: dynamic_cast failed.");
         const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+        FROSCH_ASSERT(xEpetraMat,"FROSch::Amesos2SolverEpetra: dynamic_cast failed.");
         ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
         TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
 
@@ -135,7 +139,9 @@ namespace FROSch {
         FROSCH_ASSERT(this->K_->getRowMap()->lib()==UseEpetra,"FROSch::Amesos2SolverEpetra: Not compatible with Tpetra.")
 
         const CrsMatrixWrap<SC,LO,GO,NO>& crsOp = dynamic_cast<const CrsMatrixWrap<SC,LO,GO,NO>&>(*this->K_);
+        FROSCH_ASSERT(crsOp,"FROSch::Amesos2SolverEpetra: dynamic_cast failed.");
         const EpetraCrsMatrixT<GO,NO>& xEpetraMat = dynamic_cast<const EpetraCrsMatrixT<GO,NO>&>(*crsOp.getCrsMatrix());
+        FROSCH_ASSERT(xEpetraMat,"FROSch::Amesos2SolverEpetra: dynamic_cast failed.");
         ECrsMatrixPtr epetraMat = xEpetraMat.getEpetra_CrsMatrixNonConst();
         TEUCHOS_TEST_FOR_EXCEPT(epetraMat.is_null());
 
