@@ -79,7 +79,7 @@ namespace FROSch {
         FROSCH_TIMER_START_SOLVER(applyTime,"BelosSolverTpetra::apply");
         FROSCH_ASSERT(this->IsComputed_,"FROSch::BelosSolverTpetra: !this->IsComputed_.");
 
-        const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x);
+        const TpetraMultiVector<SC,LO,GO,NO> * xTpetraMultiVectorX = dynamic_cast<const TpetraMultiVector<SC,LO,GO,NO> *>(&x, true);
         TMultiVectorPtr tpetraMultiVectorX = xTpetraMultiVectorX->getTpetra_MultiVector();
 
         if (Y_.is_null()) Y_ = XMultiVectorFactory::Build(y.getMap(),y.getNumVectors());
