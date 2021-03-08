@@ -250,10 +250,8 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         paramList.set("verbosity", "interfacetest");
       else if (dirList[k] == prefix+"FactoryParameterListInterpreter/" || dirList[k] == prefix+"FactoryParameterListInterpreter-heavy/")
         paramList.sublist("Hierarchy").set("verbosity", "InterfaceTest");
-      else if (dirList[k] == prefix+"MLParameterListInterpreter/")
-        paramList.set("ML output",     43);
-      else if (dirList[k] == prefix+"MLParameterListInterpreter2/")
-        paramList.set("ML output",     10);
+      else if (dirList[k] == prefix+"MLParameterListInterpreter/" || dirList[k] == prefix+"MLParameterListInterpreter2/")
+        paramList.set("ML output",     666);
 
       try {
         timer.start();
