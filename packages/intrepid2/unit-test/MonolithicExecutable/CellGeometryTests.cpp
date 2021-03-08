@@ -118,7 +118,7 @@ namespace
     {
       std::vector<ViewType<PointScalar,DeviceType>> pointComponents {points};
       tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
-      Data<WeightScalar> weightData(weights);
+      Data<WeightScalar,DeviceType> weightData(weights);
       std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};
       tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
