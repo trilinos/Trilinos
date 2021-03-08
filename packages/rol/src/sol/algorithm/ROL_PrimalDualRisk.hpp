@@ -87,6 +87,7 @@ private:
   Ptr<Vector<Real>>                 pd_vector_;
   Ptr<BoundConstraint<Real>>        pd_bound_;
   Ptr<Constraint<Real>>             pd_constraint_;
+  Ptr<Constraint<Real>>             pd_linear_constraint_;
   Ptr<NewOptimizationProblem<Real>> pd_problem_;
 
   int iter_, nfval_, ngrad_, ncval_;
@@ -191,6 +192,10 @@ public:
     if (input_->getConstraint() != nullPtr) {
       pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
     }
+    pd_linear_constraint_ = nullPtr;
+    if (input_->getPolyhedralProjection() != nullPtr) {
+      pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
+    }
     // Build primal-dual subproblems
     pd_problem_ = makePtr<NewOptimizationProblem<Real>>(pd_objective_, pd_vector_);
     if (pd_bound_->isActivated()) {
@@ -198,6 +203,10 @@ public:
     }
     if (pd_constraint_ != nullPtr) {
       pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
+    }
+    if (pd_linear_constraint_ != nullPtr) {
+      pd_problem_->addLinearConstraint("PD Linear Constraint",pd_linear_constraint_,input_->getPolyhedralProjection()->getMultiplier());
+      pd_problem_->setProjectionAlgorithm(parlist);
     }
   }
 
