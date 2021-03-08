@@ -243,9 +243,15 @@ namespace
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
     num_points = 2;
-    Kokkos::resize(tensor_expected_host,num_fields, num_points,space_dim);
-    Kokkos::resize(view1_host,          num_fields1,num_points);
-    Kokkos::resize(view2_host,          num_fields2,num_points,space_dim);
+    
+    Kokkos::resize(tensor_expected,      num_fields,  num_points, space_dim);
+    Kokkos::resize(view1,                num_fields1, num_points);
+    Kokkos::resize(view2,                num_fields2, num_points, space_dim);
+    
+    Kokkos::resize(tensor_expected_host, num_fields,  num_points, space_dim);
+    Kokkos::resize(view1_host,           num_fields1, num_points);
+    Kokkos::resize(view2_host,           num_fields2, num_points, space_dim);
+    
     view1_host(0,0)   = 3.0;
     view1_host(1,0)   = 2.0;
     view2_host(0,0,0) = 1.0;
