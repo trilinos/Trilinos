@@ -1038,9 +1038,7 @@ public:
              the user does not define the dual() operation.
 
              @param[out]      w              is a dual constraint-space vector
-             @param[in]       v              is a simulation-space vector    u_lo->zero();
-    u_up->setScalar( height );
-
+             @param[in]       v              is a simulation-space vector
              @param[in]       u              is the constraint argument; a simulation-space vector
              @param[in]       z              is the constraint argument; an optimization-space vector
              @param[in]       dualw          is a constraint-space vector 
