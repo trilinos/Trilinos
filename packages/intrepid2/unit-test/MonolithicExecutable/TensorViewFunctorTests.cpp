@@ -122,6 +122,7 @@ namespace
     
     // TEST 1: simple contraction
     // we'll use trivial fields so as to factor out problems in the tensor product logic
+    out << "TEST 1: simple contraction.\n";
     int num_fields1 = 1;
     int num_fields2 = 1;
     int num_fields = num_fields1 * num_fields2;
@@ -156,6 +157,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 2: tensor product ordering
+    out << "TEST 2: tensor product ordering.\n";
     num_fields1 = 2;
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
@@ -187,6 +189,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 3: like TEST 2, but include non-trivial weight
+    out << "TEST 3: like TEST 2, but include non-trivial weight.\n";
     weight = 2.0;
     for (int i=0; i<num_fields; i++)
     {
@@ -195,6 +198,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 4: scalar times vector
+    out << "TEST 4: scalar times vector.\n";
     num_fields1 = 2;
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
@@ -233,6 +237,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 5: scalar times vector, nontrivial points, but still matching in point dimension
+    out << "TEST 5: scalar times vector, nontrivial points, but still matching in point dimension.\n";
     num_fields1 = 2;
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
@@ -277,6 +282,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 6: like TEST 2 above, but with different field counts
+    out << "TEST 6: like TEST 2 above, but with different field counts.\n";
     num_fields1 = 2;
     num_fields2 = 3;
     num_fields = num_fields1 * num_fields2;
