@@ -529,6 +529,18 @@ namespace Xpetra {
           Scalar beta) const
     { XPETRA_MONITOR("TpetraBlockCrsMatrix::apply"); mtx_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta); }
 
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void TpetraBlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+    apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
+          MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
+          Teuchos::ETransp mode,
+          Scalar alpha,
+          Scalar beta,
+          bool sumInterfaceValues,
+          const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+          const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const
+    { }
+
 
     template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  

@@ -46,6 +46,7 @@
 #ifndef XPETRA_TPETRACRSMATRIX_DEF_HPP
 #define XPETRA_TPETRACRSMATRIX_DEF_HPP
 
+#include <Xpetra_MultiVectorFactory.hpp>
 #include "Xpetra_TpetraCrsMatrix_decl.hpp"
 #include "Tpetra_Details_residual.hpp"
 
@@ -334,6 +335,30 @@ namespace Xpetra {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta) const { XPETRA_MONITOR("TpetraCrsMatrix::apply"); mtx_->apply(toTpetra(X), toTpetra(Y), mode, alpha, beta); }
+
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs ) const
+    {
+        RCP<const Map< LocalOrdinal, GlobalOrdinal, Node >> regionInterfaceMap = regionInterfaceImporter->getTargetMap();
+        XPETRA_MONITOR("TpetraCrsMatrix::apply(region)");
+        mtx_->localApply(toTpetra(X), toTpetra(Y), mode, alpha, beta);
+        if (sumInterfaceValues)
+        {
+          // Step 2: preform communication to propagate local interface
+          // values to all the processor that share interfaces.
+          RCP<MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >> matvecInterfaceTmp = MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(regionInterfaceMap, 1);
+          matvecInterfaceTmp->doImport(Y, *regionInterfaceImporter, INSERT);
+
+          // Step 3: sum all contributions to interface values
+          // on all ranks
+          //ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
+          ArrayRCP<Scalar> YData = Y.getDataNonConst(0);
+          ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
+          for(LocalOrdinal interfaceIdx = 0; interfaceIdx < static_cast<LocalOrdinal>(interfaceData.size()); ++interfaceIdx) {
+            YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
+          }
+        }
+    }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getDomainMap"); return toXpetra(mtx_->getDomainMap()); }
