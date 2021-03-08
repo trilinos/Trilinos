@@ -144,7 +144,7 @@ set (SEACASAprepro_aprepro_command_line_vars_test_DISABLE ON CACHE BOOL "Tempora
 set (SEACASAprepro_aprepro_command_line_include_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
 set (SEACASAprepro_aprepro_test_dump_reread_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
 
- (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
+set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 # set (CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "Kokkos turns off CXX extensions")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
