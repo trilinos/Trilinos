@@ -788,8 +788,9 @@ namespace
                              Teuchos::FancyOStream &out, bool &success)
   {
     using namespace Intrepid2;
-    using BasisPtr = typename DerivedNodalBasisFamily::BasisPtr;
+    using BasisPtr       = typename DerivedNodalBasisFamily::BasisPtr;
     using ExecutionSpace = typename DerivedNodalBasisFamily::ExecutionSpace;
+    using DeviceType     = typename DerivedNodalBasisFamily::DeviceType;
     using Teuchos::rcp;
     
     BasisPtr derivedBasis, standardBasis;
@@ -830,7 +831,6 @@ namespace
     
     using ValueType    = typename ScalarViewType::value_type;
     using ResultLayout = typename DeduceLayout< ScalarViewType >::result_layout;
-    using DeviceType = typename ScalarViewType::device_type;
     using AllocatableScalarViewType = Kokkos::DynRankView<ValueType, ResultLayout, DeviceType >;
     
     AllocatableScalarViewType dofCoordsStandard ("dofCoordsStandard", standardCardinality, spaceDim);
@@ -872,7 +872,6 @@ namespace
     // copy dofMapToDerived to host view
 //    Kokkos::deep_copy(dofMapToStandardHost, dofMapToStandard);
     
-    using DeviceType   = typename DerivedNodalBasisFamily::DeviceType;
     using PointScalar  = typename DerivedNodalBasisFamily::PointValueType;
     using OutputScalar = typename DerivedNodalBasisFamily::OutputValueType;
     
