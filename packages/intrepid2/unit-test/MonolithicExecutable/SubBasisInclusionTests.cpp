@@ -210,6 +210,10 @@ namespace
       Kokkos::fence();
       bool vectorValued = (outputValues.rank() == 3); // F,P,D -- if scalar-valued, F,P
       
+      auto inputPointsHost          = getHostCopy(inputPoints);
+      auto outputValuesHost         = getHostCopy(outputValues);
+      auto subBasisOutputValuesHost = getHostCopy(subBasisOutputValues);
+      
       for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
       {
         // by construction, the sub-basis should have fields in the same order as the original basis
@@ -219,8 +223,8 @@ namespace
         {
           if (!vectorValued)
           {
-            double originalValue = outputValues(fieldOrdinal,pointOrdinal);
-            double subBasisValue = subBasisOutputValues(subBasisFieldOrdinal,pointOrdinal);
+            double originalValue = outputValuesHost(fieldOrdinal,pointOrdinal);
+            double subBasisValue = subBasisOutputValuesHost(subBasisFieldOrdinal,pointOrdinal);
             
             bool valuesMatch = essentiallyEqual(originalValue, subBasisValue, tol);
             
@@ -236,9 +240,9 @@ namespace
                 // scalar values are the div values
                 out << "div ";
               }
-              double x = inputPoints(pointOrdinal,0);
-              double y = (spaceDim > 1) ? inputPoints(pointOrdinal,1) : -2.0;
-              double z = (spaceDim > 2) ? inputPoints(pointOrdinal,2) : -2.0;
+              double x = inputPointsHost(pointOrdinal,0);
+              double y = (spaceDim > 1) ? inputPointsHost(pointOrdinal,1) : -2.0;
+              double z = (spaceDim > 2) ? inputPointsHost(pointOrdinal,2) : -2.0;
               
               if (spaceDim == 1)
                 out << "values for "  << x  << " differ for field ordinal " << fieldOrdinal;
@@ -256,8 +260,8 @@ namespace
             bool valuesMatch = true;
             for (int d=0; d<spaceDim; d++)
             {
-              double originalValue = outputValues(fieldOrdinal,pointOrdinal,d);
-              double subBasisValue = subBasisOutputValues(subBasisFieldOrdinal,pointOrdinal,d);
+              double originalValue = outputValuesHost(fieldOrdinal,pointOrdinal,d);
+              double subBasisValue = subBasisOutputValuesHost(subBasisFieldOrdinal,pointOrdinal,d);
               
               if (!essentiallyEqual(originalValue, subBasisValue, tol))
               {
@@ -267,9 +271,9 @@ namespace
             
             if (!valuesMatch)
             {
-              double x = inputPoints(pointOrdinal,0);
-              double y = (spaceDim > 1) ? inputPoints(pointOrdinal,1) : -2.0;
-              double z = (spaceDim > 2) ? inputPoints(pointOrdinal,2) : -2.0;
+              double x = inputPointsHost(pointOrdinal,0);
+              double y = (spaceDim > 1) ? inputPointsHost(pointOrdinal,1) : -2.0;
+              double z = (spaceDim > 2) ? inputPointsHost(pointOrdinal,2) : -2.0;
               
               if (spaceDim == 1)
                 out << "values for "  << x  << " differ for field ordinal " << fieldOrdinal;
@@ -280,13 +284,13 @@ namespace
               out << ": expected value (lower-order basis fieldOrdinal " << subBasisFieldOrdinal << "): (";
               for (int d=0; d<spaceDim; d++)
               {
-                out << subBasisOutputValues(subBasisFieldOrdinal,pointOrdinal,d);
+                out << subBasisOutputValuesHost(subBasisFieldOrdinal,pointOrdinal,d);
                 if (d<spaceDim-1) out << ",";
               }
               out << "); actual (larger basis fieldOrdinal " << fieldOrdinal << ") was (";
               for (int d=0; d<spaceDim; d++)
               {
-                out << outputValues(fieldOrdinal,pointOrdinal,d);
+                out << outputValuesHost(fieldOrdinal,pointOrdinal,d);
                 if (d<spaceDim-1) out << ",";
               }
               out << ")" << std::endl;
