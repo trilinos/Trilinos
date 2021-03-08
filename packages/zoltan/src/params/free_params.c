@@ -123,13 +123,14 @@ int Zoltan_Deserialize_Params(struct Zoltan_Struct *to, char **buf)
 {
   /* Serialize the parameters */
   char *bufptr = *buf;
+  int i;
 
   /* Unpack number of parameters */
   int nParam = *((int *)bufptr);
   bufptr += sizeof(int);
 
   /* Unpack parameters' (name, value) pairs and set them */
-  for (int i = 0; i < nParam; i++) {
+  for (i = 0; i < nParam; i++) {
     char *pname = bufptr;
     char *pval = bufptr + MAX_PARAM_STRING_LEN;
     Zoltan_Set_Param(to, pname, pval);
