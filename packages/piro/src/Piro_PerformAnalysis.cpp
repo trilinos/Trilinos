@@ -509,7 +509,7 @@ Piro::PerformROLAnalysis(
   else
     step = ROL::makePtr<ROL::TrustRegionStep<double>>(rolParams.sublist("ROL Options"));
   ROL::Ptr<ROL::Algorithm<double> > algo;
-  algo = ROL::makePtr<ROL::Algorithm<double>>(step, status,false);
+  algo = ROL::makePtr<ROL::Algorithm<double>>(step, status, true);
 
 #ifdef HAVE_PIRO_TEKO
   Teko::LinearOp H, invH;
