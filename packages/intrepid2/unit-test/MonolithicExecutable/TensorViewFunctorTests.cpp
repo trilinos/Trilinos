@@ -193,8 +193,9 @@ namespace
     weight = 2.0;
     for (int i=0; i<num_fields; i++)
     {
-      tensor_expected(i,0) *= weight;
+      tensor_expected_host(i,0) *= weight;
     }
+    Kokkos::deep_copy(tensor_expected, tensor_expected_host);
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 4: scalar times vector
