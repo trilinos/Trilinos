@@ -1,7 +1,5 @@
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
-
-
 #
 # A) Define the package
 #
@@ -11,6 +9,10 @@ TRIBITS_PACKAGE(ROL)
 #
 # B) Set up package-specific options
 #
+IF( ROL_VERSION EQUAL 2 ) 
+ADD_SUBDIRECTORY("${CMAKE_CURRENT_SOURCE_DIR}/rol2")
+ELSE() 
+
 
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   HAVE_ROL_DEBUG
@@ -107,6 +109,8 @@ TRIBITS_ADD_TEST_DIRECTORIES(test)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(tutorial)
 
+ENDIF( ROL_VERSION EQUAL 2 ) 
+
 #
 # Exclude files for source package.
 #
@@ -118,3 +122,5 @@ TRIBITS_EXCLUDE_AUTOTOOLS_FILES()
 #
 
 TRIBITS_PACKAGE_POSTPROCESS()
+
+
