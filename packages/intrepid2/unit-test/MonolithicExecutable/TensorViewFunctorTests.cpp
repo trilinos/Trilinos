@@ -103,27 +103,15 @@ namespace
     FunctorType functor(tensor_actual, view1, view2, tensorPoints, weight);
     Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
     
-    auto tensor_actual_host   = getHostCopy(tensor_actual);
-    auto tensor_expected_host = getHostCopy(tensor_expected);
-    
-    using ViewIterator = ViewIterator<ScalarViewType, Scalar>;
-    ViewIterator it_actual(tensor_actual_host);
-    ViewIterator it_expected(tensor_expected_host);
-    
-    do
+    switch (tensor_expected.rank())
     {
-      auto actual_value   = it_actual.get();
-      auto expected_value = it_expected.get();
-      
-      if (!approximatelyEqual(actual_value, expected_value, tol))
-      {
-        success = false;
-        std::cout << "FAILURE: In entry " << it_actual.getEnumerationIndex() << ", ";
-        std::cout << "actual (" << actual_value << ") differs from expected (" << expected_value << ")";
-        std::cout << " by " << std::abs(actual_value-expected_value) << std::endl;
-      }
-      
-    } while ((it_actual.increment() >= 0) && (it_expected.increment() >= 0));
+      case 1: testFloatingEquality1(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      case 2: testFloatingEquality2(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      case 3: testFloatingEquality3(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      case 4: testFloatingEquality4(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Test does not yet support this output rank");
+    }
   }
   
   template<typename Scalar>
