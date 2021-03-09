@@ -139,7 +139,7 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVect
     }
   });
   
-  int approximateFlopCount = (spaceDim*2 + 2) * numPoints * numFieldsLeft * numFieldsRight * cellDataExtent;
+//  int approximateFlopCount = (spaceDim*2 + 2) * numPoints * numFieldsLeft * numFieldsRight * cellDataExtent;
 //  printView(integralView, std::cout, "stiffness in " + std::to_string(spaceDim) + "D");
 //  std::cout << "\n\nApproximate flop count (baseline): " << approximateFlopCount << std::endl;
 }
