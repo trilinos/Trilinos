@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SUBDOMAINSOLVER_DECL_hpp
-#define _FROSCH_SUBDOMAINSOLVER_DECL_hpp
+#ifndef _FROSCH_SUBDOMAINSOLVER_DECL_HPP
+#define _FROSCH_SUBDOMAINSOLVER_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
@@ -95,21 +95,21 @@ namespace FROSch {
     using namespace Xpetra;
 
     template <class SC,
-    class LO ,
-    class GO ,
-    class NO >
+              class LO,
+              class GO,
+              class NO>
     class OneLevelPreconditioner;
 
     template<class SC,
-    class LO,
-    class GO,
-    class NO>
+             class LO,
+             class GO,
+             class NO>
     class TwoLevelPreconditioner;
 
     template<class SC,
-    class LO,
-    class GO,
-    class NO>
+             class LO,
+             class GO,
+             class NO>
     class TwoLevelBlockPreconditioner;
 
     template <class SC = double,

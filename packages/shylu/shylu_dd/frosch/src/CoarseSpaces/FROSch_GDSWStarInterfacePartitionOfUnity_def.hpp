@@ -83,7 +83,7 @@ namespace FROSch {
             UseRoots_ = this->ParameterList_->sublist("Custom").get("Roots",false);
             UseLeafs_ = this->ParameterList_->sublist("Custom").get("Leafs",false);
         } else {
-            FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
+            FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity: Specify a valid Type.");
         }
 
         if (!this->ParameterList_->get("Distance Function","Constant").compare("Constant")) {
@@ -91,7 +91,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Distance Function","Constant").compare("Inverse Euclidean")) {
             DistanceFunction_ = InverseEuclideanDistanceFunction;
         } else {
-            FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
+            FROSCH_ASSERT(false,"FROSch::GDSWStarInterfacePartitionOfUnity: Specify a valid Distance Function.");
         }
         this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(2);
         this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(2);
@@ -169,7 +169,7 @@ namespace FROSch {
                         LO rootID = tmpEntity->getRootID();
                         UN numRoots = tmpEntity->getRoots()->getNumEntities();
                         if (rootID==-1) {
-                            FROSCH_ASSERT(numRoots!=0,"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: rootID==-1 but numRoots==0!");
+                            FROSCH_ASSERT(numRoots!=0,"FROSch::GDSWStarInterfacePartitionOfUnity: rootID==-1 but numRoots==0!");
                             for (UN m=0; m<numRoots; m++) {
                                 InterfaceEntityPtr tmpRoot = tmpEntity->getRoots()->getEntity(m);
                                 LO index = tmpRoot->getRootID();
@@ -201,7 +201,7 @@ namespace FROSch {
             for (UN i=0; i<Leafs_->getNumEntities(); i++) {
                 InterfaceEntityPtr tmpEntity = Leafs_->getEntity(i);
                 LO leafID = tmpEntity->getLeafID();
-                FROSCH_ASSERT(leafID==LO(i),"FROSch::GDSWStarInterfacePartitionOfUnity : ERROR: leafID!=i!");
+                FROSCH_ASSERT(leafID==LO(i),"FROSch::GDSWStarInterfacePartitionOfUnity: leafID!=i!");
                 for (UN j=0; j<Leafs_->getEntity(i)->getNumNodes(); j++) {
                     for (UN k=0; k<dofsPerNode; k++) {
                         tmpVector->replaceLocalValue(Leafs_->getEntity(i)->getGammaDofID(j,k),leafID,ScalarTraits<SC>::one());

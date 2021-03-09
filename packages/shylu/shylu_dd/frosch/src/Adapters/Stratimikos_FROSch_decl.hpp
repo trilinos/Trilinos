@@ -39,23 +39,28 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef THYRA_FROSCH_XPETRA_FACTORY_HPP
-#define THYRA_FROSCH_XPETRA_FACTORY_HPP
+#ifndef _STRATIMIKOS_FROSCH_DECL_HPP
+#define _STRATIMIKOS_FROSCH_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
 #ifdef HAVE_SHYLU_DDFROSCH_STRATIMIKOS
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
-#include "Thyra_FROSchFactory_def.hpp"
-
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_AbstractFactoryStd.hpp"
 
-#include <string>
 
+namespace Thyra {
+
+    template <class SC,
+              class LO,
+              class GO,
+              class NO>
+    class FROSchFactory;
+}
 
 namespace Stratimikos {
 
@@ -63,22 +68,11 @@ namespace Stratimikos {
     using namespace Teuchos;
     using namespace Thyra;
 
-    template <typename LO = int,typename GO = int,typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
-    void enableFROSch (DefaultLinearSolverBuilder& builder,
-                       const string& stratName = "FROSch")
-    {
-        const RCP<const ParameterList> precValidParams = sublist(builder.getValidParameters(), "Preconditioner Types");
-
-        TEUCHOS_TEST_FOR_EXCEPTION(precValidParams->isParameter(stratName), logic_error,
-                                   "Stratimikos::enableFROSch cannot add \"" + stratName +"\" because it is already included in builder!");
-
-        using Base  = PreconditionerFactoryBase<double>;
-        if (!stratName.compare("FROSch")) {
-            using Impl  = FROSchFactory<double, LO, GO, NO> ;
-            builder.setPreconditioningStrategyFactory(abstractFactoryStd<Base, Impl>(), stratName);
-        }
-    }
-
+    template <typename LO = int,
+              typename GO = int,
+              typename NO = KokkosClassic::DefaultNode::DefaultNodeType>
+    void enableFROSch(DefaultLinearSolverBuilder& builder,
+                      const string& stratName = "FROSch");
 } // namespace Stratimikos
 
 #endif

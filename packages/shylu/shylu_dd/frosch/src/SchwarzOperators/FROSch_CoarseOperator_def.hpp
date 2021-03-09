@@ -71,7 +71,7 @@ namespace FROSch {
     int CoarseOperator<SC,LO,GO,NO>::compute()
     {
         FROSCH_TIMER_START_LEVELID(computeTime,"CoarseOperator::compute");
-        FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator : ERROR: CoarseOperator has to be initialized before calling compute()");
+        FROSCH_ASSERT(this->IsInitialized_,"FROSch::CoarseOperator: CoarseOperator has to be initialized before calling compute()");
         // This is not optimal yet... Some work could be moved to Initialize
         //if (this->Verbose_) cout << "FROSch::CoarseOperator : WARNING: Some of the operations could probably be moved from initialize() to Compute().\n";
 
@@ -162,7 +162,7 @@ namespace FROSch {
 #ifdef FROSCH_COARSEOPERATOR_DETAIL_TIMERS
             FROSCH_DETAILTIMER_START_LEVELID(applyTime,"apply");
 #endif
-            Phi_->apply(x,*XCoarse_,TRANS);
+            Phi_->apply(x,*XCoarse_,Teuchos::TRANS);
         }
         for (UN j=0; j<GatheringMaps_.size(); j++) {
             XCoarseSolveTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(GatheringMaps_[j],x.getNumVectors()); // AH 08/22/2019 TODO: Can we get rid of this? If possible, we should remove the whole GatheringMaps idea and replace it by some smart all-to-all MPI communication
@@ -457,11 +457,11 @@ namespace FROSch {
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(41) << "Solver type" << right
-                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos")
+                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("SolverType","Amesos2")
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(41) << "Solver" << right
-                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("Solver","Mumps")
+                    << " | " << setw(41) << this->ParameterList_->sublist("CoarseSolver").get("Solver","Klu")
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << "| " << left << setw(41) << "Reuse symbolic factorization" << right
@@ -539,13 +539,13 @@ namespace FROSch {
                 }
                 if (!reuseCoarseMatrixSymbolicFactorization) {
                     if (this->IsComputed_ && this->Verbose_) cout << "FROSch::CoarseOperator : Recomputing the Symbolic Factorization of the coarse matrix" << endl;
-                    CoarseSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(CoarseMatrix_,
-                                                                         sublist(this->ParameterList_,"CoarseSolver"),
-                                                                         string("CoarseSolver (Level ") + to_string(this->LevelID_) + string(")")));
+                    CoarseSolver_ = SolverFactory<SC,LO,GO,NO>::Build(CoarseMatrix_,
+                                                                      sublist(this->ParameterList_,"CoarseSolver"),
+                                                                      string("CoarseSolver (Level ") + to_string(this->LevelID_) + string(")"));
                     CoarseSolver_->initialize();
                 } else {
-                    FROSCH_ASSERT(!CoarseSolver_.is_null(),"FROSch::CoarseOperator : ERROR: CoarseSolver_.is_null()");
-                    CoarseSolver_->resetMatrix(CoarseMatrix_.getConst(),true);
+                    FROSCH_ASSERT(!CoarseSolver_.is_null(),"FROSch::CoarseOperator: CoarseSolver_.is_null()");
+                    CoarseSolver_->updateMatrix(CoarseMatrix_.getConst(),true);
                 }
                 CoarseSolver_->compute();
             }
@@ -831,11 +831,11 @@ namespace FROSch {
                 dofsPerNodeVector[0] = CoarseDofsPerNode_;
                 CoarseDofsMaps[0] = DMapRep;
 
-                sublist(this->ParameterList_,"CoarseSolver")->set("Repeated Map Vector",RepMapVector);
-                sublist(this->ParameterList_,"CoarseSolver")->set("Dofs Maps Vector",CoarseDofsMaps);
-                sublist(this->ParameterList_,"CoarseSolver")->set("DofOrdering Vector",dofOrderings);
-                sublist(this->ParameterList_,"CoarseSolver")->set("DofsPerNode Vector",dofsPerNodeVector);
-                sublist(this->ParameterList_,"CoarseSolver")->set("Nodes Map Vector",NodesMapVector);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Repeated Map Vector",RepMapVector);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Dofs Maps Vector",CoarseDofsMaps);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("DofOrdering Vector",dofOrderings);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("DofsPerNode Vector",dofsPerNodeVector);
+                sublist(sublist(sublist(this->ParameterList_,"CoarseSolver"),"FROSchPreconditioner"),"TwoLevelPreconditioner")->set("Nodes Map Vector",NodesMapVector);
             }
 
             Teuchos::RCP<Xpetra::Map<LO,GO,NO> > tmpMap = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,uniEle,0,this->MpiComm_);
@@ -865,7 +865,7 @@ namespace FROSch {
             ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
 #endif
         } else {
-            FROSCH_ASSERT(false,"FROSch::CoarseOperator : ERROR: Distribution type unknown.");
+            FROSCH_ASSERT(false,"FROSch::CoarseOperator: Distribution type unknown.");
         }
 
         return 0;

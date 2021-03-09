@@ -67,11 +67,11 @@ namespace FROSch {
                                               ConstXMultiVectorPtr subspaceBasis,
                                               UN offset)
     {
-        FROSCH_ASSERT(!subspaceBasisMap.is_null(),"FROSch::CoarseSpace : ERROR: subspaceBasisMap.is_null()");
+        FROSCH_ASSERT(!subspaceBasisMap.is_null(),"FROSch::CoarseSpace: subspaceBasisMap.is_null()");
         if (!subspaceBasis.is_null()) {
-            FROSCH_ASSERT(subspaceBasis->getNumVectors()==subspaceBasisMap->getNodeNumElements(),"FROSch::CoarseSpace : ERROR: subspaceBasis->getNumVectors()!=subspaceBasisMap->getNodeNumElements()");
+            FROSCH_ASSERT(subspaceBasis->getNumVectors()==subspaceBasisMap->getNodeNumElements(),"FROSch::CoarseSpace: subspaceBasis->getNumVectors()!=subspaceBasisMap->getNodeNumElements()");
         } else {
-            FROSCH_ASSERT(subspaceBasisMap->getNodeNumElements()==0,"FROSch::CoarseSpace : ERROR: subspaceBasisMap->getNodeNumElements()!=0");
+            FROSCH_ASSERT(subspaceBasisMap->getNodeNumElements()==0,"FROSch::CoarseSpace: subspaceBasisMap->getNodeNumElements()!=0");
         }
 
         UnassembledBasesMaps_.push_back(subspaceBasisMap);
@@ -86,9 +86,9 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::assembleCoarseSpace()
     {
-        FROSCH_ASSERT(UnassembledBasesMaps_.size()>0,"FROSch::CoarseSpace : ERROR: UnassembledBasesMaps_.size()==0");
-        FROSCH_ASSERT(UnassembledBasesMapsUnique_.size()>0,"FROSch::CoarseSpace : ERROR: UnassembledBasesMapsUnique_.size()==0");
-        FROSCH_ASSERT(UnassembledSubspaceBases_.size()>0,"FROSch::CoarseSpace : ERROR: UnassembledSubspaceBases_.size()==0");
+        FROSCH_ASSERT(UnassembledBasesMaps_.size()>0,"FROSch::CoarseSpace: UnassembledBasesMaps_.size()==0");
+        FROSCH_ASSERT(UnassembledBasesMapsUnique_.size()>0,"FROSch::CoarseSpace: UnassembledBasesMapsUnique_.size()==0");
+        FROSCH_ASSERT(UnassembledSubspaceBases_.size()>0,"FROSch::CoarseSpace: UnassembledSubspaceBases_.size()==0");
 
         UN itmp = 0;
         LOVecPtr2D partMappings;
@@ -112,9 +112,9 @@ namespace FROSch {
         } else {
             AssembledBasisMapUnique_ = AssembleMaps(UnassembledBasesMapsUnique_(),partMappings);
         }
-        FROSCH_ASSERT(AssembledBasisMap_->getMaxAllGlobalIndex()==AssembledBasisMapUnique_->getMaxAllGlobalIndex(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_->getMaxAllGlobalIndex()!=AssembledBasisMapUnique_->getMaxAllGlobalIndex()");
-        FROSCH_ASSERT(AssembledBasisMap_->getMinAllGlobalIndex()==AssembledBasisMapUnique_->getMinAllGlobalIndex(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_->getMinAllGlobalIndex()!=AssembledBasisMapUnique_->getMinAllGlobalIndex()");
-        FROSCH_ASSERT(GO(AssembledBasisMapUnique_->getGlobalNumElements())==GO(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1),"FROSch::CoarseSpace : ERROR: AssembledBasisMapUnique_->getGlobalNumElements()!=(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1)");
+        FROSCH_ASSERT(AssembledBasisMap_->getMaxAllGlobalIndex()==AssembledBasisMapUnique_->getMaxAllGlobalIndex(),"FROSch::CoarseSpace: AssembledBasisMap_->getMaxAllGlobalIndex()!=AssembledBasisMapUnique_->getMaxAllGlobalIndex()");
+        FROSCH_ASSERT(AssembledBasisMap_->getMinAllGlobalIndex()==AssembledBasisMapUnique_->getMinAllGlobalIndex(),"FROSch::CoarseSpace: AssembledBasisMap_->getMinAllGlobalIndex()!=AssembledBasisMapUnique_->getMinAllGlobalIndex()");
+        FROSCH_ASSERT(GO(AssembledBasisMapUnique_->getGlobalNumElements())==GO(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1),"FROSch::CoarseSpace: AssembledBasisMapUnique_->getGlobalNumElements()!=(AssembledBasisMapUnique_->getMaxAllGlobalIndex()+1)");
 
         // Basis
         if (!AssembledBasisMap_.is_null()) {
@@ -131,8 +131,8 @@ namespace FROSch {
                         for (UN j=0; j<UnassembledSubspaceBases_[i]->getNumVectors(); j++) {
                             ConstSCVecPtr unassembledSubspaceBasesData = UnassembledSubspaceBases_[i]->getData(j);
                             for (UN k=0; k<UnassembledSubspaceBases_[i]->getLocalLength(); k++) {
-                                FROSCH_ASSERT(itmp<AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace : ERROR: itmp>=AssembledBasis_->getNumVectors()");
-                                FROSCH_ASSERT(k+Offsets_[i]<AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace : ERROR: k+Offsets_[i]>=AssembledBasis_->getLocalLength()");
+                                FROSCH_ASSERT(itmp<AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace: itmp>=AssembledBasis_->getNumVectors()");
+                                FROSCH_ASSERT(k+Offsets_[i]<AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace: k+Offsets_[i]>=AssembledBasis_->getLocalLength()");
                                 AssembledBasis_->replaceLocalValue(k+Offsets_[i],itmp,unassembledSubspaceBasesData[k]);
                             }
                             itmp++;
@@ -168,28 +168,48 @@ namespace FROSch {
                                                          ConstXMapPtr repeatedMap,
                                                          SC treshold)
     {
-        FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_.is_null().");
-        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasis_.is_null().");
+        FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace: AssembledBasisMap_.is_null().");
+        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
 
-        GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+        if (rowMap->lib()==UseEpetra) {
+            GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+            LO iD;
+            SC valueTmp;
+            for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
+                GOVec indices;
+                SCVec values;
+                for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
+                    valueTmp=AssembledBasis_->getData(j)[i];
+                    if (fabs(valueTmp)>treshold) {
+                        indices.push_back(AssembledBasisMap_->getGlobalElement(j));
+                        values.push_back(valueTmp);
+                    }
+                }
+                iD = repeatedMap->getGlobalElement(i);
 
-        LO iD;
-        SC valueTmp;
-
-        for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
-            GOVec indices;
-            SCVec values;
-            for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
-                valueTmp=AssembledBasis_->getData(j)[i];
-                if (fabs(valueTmp)>treshold) {
-                    indices.push_back(AssembledBasisMap_->getGlobalElement(j));
-                    values.push_back(valueTmp);
+                if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
+                    GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
                 }
             }
-            iD = repeatedMap->getGlobalElement(i);
+        } else {
+            GlobalBasisMatrix_ = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledBasisMap_,AssembledBasisMap_->getNodeNumElements()); // Nonzeroes abhängig von dim/dofs!!!
+            LO iD;
+            SC valueTmp;
+            for (UN i=0; i<AssembledBasis_->getLocalLength(); i++) {
+                LOVec indices;
+                SCVec values;
+                for (UN j=0; j<AssembledBasis_->getNumVectors(); j++) {
+                    valueTmp=AssembledBasis_->getData(j)[i];
+                    if (fabs(valueTmp)>treshold) {
+                        indices.push_back(j);
+                        values.push_back(valueTmp);
+                    }
+                }
+                iD = rowMap->getLocalElement(repeatedMap->getGlobalElement(i));
 
-            if (rowMap->getLocalElement(iD)!=-1) { // This should prevent duplicate entries on the interface
-                GlobalBasisMatrix_->insertGlobalValues(iD,indices(),values());
+                if (iD!=-1) { // This should prevent duplicate entries on the interface
+                    GlobalBasisMatrix_->insertLocalValues(iD,indices(),values());
+                }
             }
         }
         GlobalBasisMatrix_->fillComplete(AssembledBasisMapUnique_,rangeMap); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); GlobalBasisMatrix_->describe(*fancy,VERB_EXTREME);
@@ -223,7 +243,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int CoarseSpace<SC,LO,GO,NO>::zeroOutBasisVectors(ConstLOVecView zeros)
     {
-        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasis_.is_null().");
+        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
         for (UN j=0; j<zeros.size(); j++) {
             AssembledBasis_->getVectorNonConst(zeros[j])->scale(ScalarTraits<SC>::zero());
         }
@@ -245,7 +265,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename CoarseSpace<SC,LO,GO,NO>::ConstXMapPtr CoarseSpace<SC,LO,GO,NO>::getBasisMap() const
     {
-        FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasisMap_.is_null().");
+        FROSCH_ASSERT(!AssembledBasisMap_.is_null(),"FROSch::CoarseSpace: AssembledBasisMap_.is_null().");
         return AssembledBasisMap_;
     }
 
@@ -258,7 +278,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename CoarseSpace<SC,LO,GO,NO>::ConstXMapPtr CoarseSpace<SC,LO,GO,NO>::getBasisMapUnique() const
     {
-        FROSCH_ASSERT(!AssembledBasisMapUnique_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasisMapUnique_.is_null().");
+        FROSCH_ASSERT(!AssembledBasisMapUnique_.is_null(),"FROSch::CoarseSpace: AssembledBasisMapUnique_.is_null().");
         return AssembledBasisMapUnique_;
     }
 
@@ -271,7 +291,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename CoarseSpace<SC,LO,GO,NO>::ConstXMultiVectorPtr CoarseSpace<SC,LO,GO,NO>::getAssembledBasis() const
     {
-        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace : ERROR: AssembledBasis_.is_null().");
+        FROSCH_ASSERT(!AssembledBasis_.is_null(),"FROSch::CoarseSpace: AssembledBasis_.is_null().");
         return AssembledBasis_;
     }
 
@@ -290,7 +310,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     typename CoarseSpace<SC,LO,GO,NO>::XMatrixPtr CoarseSpace<SC,LO,GO,NO>::getGlobalBasisMatrix() const
     {
-        FROSCH_ASSERT(!GlobalBasisMatrix_.is_null(),"FROSch::CoarseSpace : ERROR: GlobalBasisMatrix_.is_null().");
+        FROSCH_ASSERT(!GlobalBasisMatrix_.is_null(),"FROSch::CoarseSpace: GlobalBasisMatrix_.is_null().");
         return GlobalBasisMatrix_;
     }
 }

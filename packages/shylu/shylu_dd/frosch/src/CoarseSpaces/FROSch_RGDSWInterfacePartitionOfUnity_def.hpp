@@ -77,7 +77,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Type","Full").compare("Custom")) {
             UseRoots_ = this->ParameterList_->sublist("Custom").get("Roots",false);
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
+            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity: Specify a valid Type.");
         }
 
         if (!this->ParameterList_->get("Distance Function","Constant").compare("Constant")) {
@@ -85,7 +85,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Distance Function","Constant").compare("Inverse Euclidean")) {
             DistanceFunction_ = InverseEuclideanDistanceFunction;
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
+            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity: Specify a valid Distance Function.");
         }
         this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(1);
         this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(1);
