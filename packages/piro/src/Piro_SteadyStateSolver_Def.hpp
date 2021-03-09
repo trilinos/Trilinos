@@ -349,7 +349,7 @@ template <typename Scalar>
 void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivities(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& modelInArgs,
     const Thyra::ModelEvaluatorBase::OutArgs<Scalar>& outArgs,
-    Teuchos::ParameterList& analysisParams) const
+    Teuchos::ParameterList& appParams) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -411,9 +411,9 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModelResponsesAndSensitivitie
 
     ROL::ThyraVector<Scalar> rol_p(p_prod);
 
-    RCP<Teuchos::ParameterList> opt_paramList = Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false);
-    if(analysisParams.isParameter("Enable Explicit Matrix Transpose")) {
-      opt_paramList->set("Enable Explicit Matrix Transpose", analysisParams.get<bool>("Enable Explicit Matrix Transpose"));
+    RCP<Teuchos::ParameterList> opt_paramList = Teuchos::rcp(&appParams.sublist("Optimization Status"),false);
+    if(appParams.isParameter("Enable Explicit Matrix Transpose")) {
+      opt_paramList->set("Enable Explicit Matrix Transpose", appParams.get<bool>("Enable Explicit Matrix Transpose"));
     }
 
     Teuchos::RCP<Thyra::VectorSpaceBase<Scalar> const> x_space = this->getModel().get_x_space();
