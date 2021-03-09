@@ -186,7 +186,9 @@ export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
 if [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] ; then
-  export ATDM_CONFIG_MPI_PRE_FLAGS="--smpiargs;-HCOLL -FCA -mca coll_hcoll_enable 1 -mca coll_hcoll_np 0 -mca coll ^basic -mca coll ^ibm -async"
+  export ATDM_CONFIG_MPI_PRE_FLAGS="-M;-HCOLL -FCA -mca coll_hcoll_enable 1 -mca coll_hcoll_np 0 -mca coll ^basic -mca coll ^ibm -async"
+  # NOTE: We have to use the '-M' option name and not '--smpiarg' since
+  # 'trilinos_jsrun' has special logic
 fi
 
 # NOTE: We used to check for the launch node but at one point that changed
