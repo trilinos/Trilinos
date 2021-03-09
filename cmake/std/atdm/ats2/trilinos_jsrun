@@ -42,9 +42,9 @@ function evaluate_jsrun_command {
   #out_file="$CTEST_TEST_NAME"."$out_file"
 
   if [ "$ECHO_CMD" == "1" ]; then
-    echo "BEFORE: jsrun " $(printf "'%s' " "${orig_args[@]}")
+    echo "BEFORE: jsrun " $(printf "\"%s\" " "${orig_args[@]}")
     echo "AFTER: export TPETRA_ASSUME_CUDA_AWARE_MPI=${TPETRA_ASSUME_CUDA_AWARE_MPI}; jsrun " \
-      $(printf "'%s' " "${args[@]}")
+      $(printf "\"%s\" " "${args[@]}")
   fi
 
   # Set retry, assume JSRUN_WRAPPER_NUM_RETRIES is valid if set
@@ -77,7 +77,7 @@ function evaluate_jsrun_command {
   #fi
   #cat $out_file
   #rm $out_file
-  eval jsrun $(printf "'%s' " "${args[@]}")
+  eval jsrun $(printf "\"%s\" " "${args[@]}")
   jsrun_ret=$?
   echo "jsrun return value: ${jsrun_ret}"
   return $jsrun_ret
