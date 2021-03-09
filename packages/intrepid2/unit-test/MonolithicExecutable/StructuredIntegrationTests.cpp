@@ -85,8 +85,6 @@ template<class Scalar, typename DeviceType>
 void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
                         const TensorData<Scalar,DeviceType> cellMeasures, const TransformedVectorData<Scalar,DeviceType> vectorDataRight)
 {
-  const int numFieldsLeft  = vectorDataLeft.numFields();
-  const int numFieldsRight = vectorDataRight.numFields();
   const int spaceDim       = vectorDataLeft.spaceDim();
   
   // use the CFPD operator() provided by the vector data objects; don't take advantage of tensor product structure at all
@@ -110,7 +108,7 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVect
   const int integralViewRank = integrals.getUnderlyingViewRank();
   
   using ExecutionSpace = typename DeviceType::execution_space;
-  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{integrals.getDataExtent(0),numFieldsLeft,numFieldsRight});
+  auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{integrals.getDataExtent(0),vectorDataLeft.numFields(),vectorDataRight.numFields()});
   Kokkos::parallel_for("fill expanded cell nodes", policy,
   KOKKOS_LAMBDA (const int &cellDataOrdinal, const int &fieldOrdinalLeft, const int &fieldOrdinalRight)
   {
@@ -137,7 +135,8 @@ void integrate_baseline(Data<Scalar,DeviceType> integrals, const TransformedVect
       integralView(fieldOrdinalLeft,fieldOrdinalRight) = integral;
     }
   });
-  
+//  const int numFieldsLeft  = vectorDataLeft.numFields();
+//  const int numFieldsRight = vectorDataRight.numFields();
 //  int approximateFlopCount = (spaceDim*2 + 2) * numPoints * numFieldsLeft * numFieldsRight * cellDataExtent;
 //  printView(integralView, std::cout, "stiffness in " + std::to_string(spaceDim) + "D");
 //  std::cout << "\n\nApproximate flop count (baseline): " << approximateFlopCount << std::endl;
