@@ -302,6 +302,7 @@ namespace {
     myOut << "Call Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     Y.blockWiseMultiply (one, D, X);
+    Kokkos::fence();
 
     myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
@@ -327,7 +328,7 @@ namespace {
           myOut << "frobNorm = " << frobNorm2 << endl;
           TEST_ASSERT( frobNorm2 <= maxVecNorm );
           if (! success) {
-            myOut << "Retuning early due to FAILURE." << endl;
+            myOut << "Returning early due to FAILURE." << endl;
             return;
           }
         }
@@ -340,6 +341,7 @@ namespace {
       "initial contents (the method should ignore those contents)" << endl;
     Y.putScalar (-five);
     Y.blockWiseMultiply (one, D, X);
+    Kokkos::fence();
 
     myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
