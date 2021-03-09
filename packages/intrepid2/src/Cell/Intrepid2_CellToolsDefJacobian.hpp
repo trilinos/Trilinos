@@ -795,7 +795,6 @@ namespace Intrepid2 {
                const BasisGradientsType gradients, const int startCell, const int endCell)
   {
     using JacobianViewType = Kokkos::DynRankView<jacobianValueType,jacobianProperties...>;
-    using ExecSpaceType    = typename DeviceType::execution_space;
     using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
     
     // resolve the -1 default argument for endCell into the true end cell index
