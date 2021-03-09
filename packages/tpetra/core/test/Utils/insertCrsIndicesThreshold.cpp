@@ -142,7 +142,7 @@ int main(int narg, char **arg)
   int nIter = 10;
 
   // Test various number of nonzeros per row to insert
-  for (int nnz = 1; nnz < 10000; nnz+=100) {
+  for (int nnz = 1; nnz < 4000; nnz+=100) {
     std::cout << "NNZ = " << nnz << std::endl;
 
     // Run each test for several iterations
