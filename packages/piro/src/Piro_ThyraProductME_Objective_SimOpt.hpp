@@ -114,6 +114,13 @@ public:
     computeValue = false;
     response_available = true;
 
+    if (print && response_available) {
+      const ROL::ThyraVector<Real>  & thyra_u = dynamic_cast<const ROL::ThyraVector<Real>&>(u);
+      observer->observeSolution(iteration, *(thyra_u.getVector()), Teuchos::null, Teuchos::null, Teuchos::null);
+      observer->observeResponse(iteration);
+      print = false;
+    }
+
     return value_;
   }
 
