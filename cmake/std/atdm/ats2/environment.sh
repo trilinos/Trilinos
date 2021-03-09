@@ -185,6 +185,10 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
+if [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] ; then
+  export ATDM_CONFIG_MPI_PRE_FLAGS="--smpiargs;-HCOLL -FCA -mca coll_hcoll_enable 1 -mca coll_hcoll_np 0 -mca coll ^basic -mca coll ^ibm -async"
+fi
+
 # NOTE: We used to check for the launch node but at one point that changed
 # from 'vortex59' to 'vortex5' without warning.  That caused all of the tests
 # run with 'trilinos_jsrun' to fail on 2020-08-11 so we got no test results.
