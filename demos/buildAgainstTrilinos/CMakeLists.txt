@@ -1,11 +1,9 @@
 # CMAKE File for "MyApp" application building against an installed Trilinos
 
-cmake_minimum_required(VERSION 2.7)
+cmake_minimum_required(VERSION 3.17.1)
 
-# Use Trilinos_PREFIX, if the user set it, to help find Trilinos.
-# The final location will actually be held in Trilinos_DIR which must
-# point at "<prefix>/lib/cmake/Trilinos", but this helps the search.
-SET(CMAKE_PREFIX_PATH ${Trilinos_PREFIX} ${CMAKE_PREFIX_PATH})
+# Disable Kokkos warning about not supporting C++ extensions
+set(CMAKE_CXX_EXTENSIONS OFF)
 
 # Get Trilinos as one entity
 FIND_PACKAGE(Trilinos REQUIRED)
@@ -72,4 +70,3 @@ ADD_SUBDIRECTORY(src)
 #Turn on test to be run by ctest
 ENABLE_TESTING()
 ADD_SUBDIRECTORY(test)
-
