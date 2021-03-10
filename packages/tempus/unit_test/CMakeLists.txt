@@ -2,6 +2,13 @@ INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING
                     ${CMAKE_CURRENT_SOURCE_DIR})
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  UnitTest_SolutionHistory
+  SOURCES Tempus_UnitTest_SolutionHistory.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  TESTONLYLIBS tempus_test_models
+  NUM_MPI_PROCS 1
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   UnitTest_TimeStepControl
   SOURCES Tempus_UnitTest_TimeStepControl.cpp ${TEUCHOS_STD_UNIT_TEST_MAIN}
   TESTONLYLIBS tempus_test_models

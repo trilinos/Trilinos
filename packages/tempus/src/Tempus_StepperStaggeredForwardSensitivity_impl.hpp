@@ -153,7 +153,7 @@ takeStep(
     state_state->setX(x);
     state_state->setXDot(xdot);
     state_state->setXDotDot(xdotdot);
-    stateSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+    stateSolutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
     stateSolutionHistory_->addState(state_state);
 
     const int num_param = X->getMultiVector()->domain()->dim()-1;
@@ -181,7 +181,7 @@ takeStep(
     sens_state->setX(dxdp_vec);
     sens_state->setXDot(dxdotdp_vec);
     sens_state->setXDotDot(dxdotdotdp_vec);
-    sensSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+    sensSolutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
     sensSolutionHistory_->addState(sens_state);
   }
 

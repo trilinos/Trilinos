@@ -361,7 +361,7 @@ buildSolutionHistory()
   RCP<ParameterList> shPL =
     Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
                      "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   RCP<const VectorSpaceBase<Scalar> > x_space =
     model_->get_x_space();
@@ -450,7 +450,7 @@ buildSolutionHistory()
     prod_state->setX(x_b);
     prod_state->setXDot(x_dot_b);
     prod_state->setXDotDot(x_dot_dot_b);
-    solutionHistory_->addState(prod_state);
+    solutionHistory_->addState(prod_state, false);
   }
 }
 
