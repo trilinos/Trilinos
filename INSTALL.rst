@@ -153,6 +153,6 @@ Building against installed Trilinos
 ===================================
 
 For information on how to build against an installation of Trilinos, see
-`demos/buildAgainstTrilinos`_
+`demos/simpleBuildAgainstTrilinos`_
 
-.. _demos/buildAgainstTrilinos: demos/buildAgainstTrilinos/README.md
+.. _demos/simpleBuildAgainstTrilinos: demos/simpleBuildAgainstTrilinos/README.md
