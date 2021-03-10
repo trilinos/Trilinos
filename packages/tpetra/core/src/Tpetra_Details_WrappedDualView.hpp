@@ -178,7 +178,7 @@ private:
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.name() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
           << "Cannot access data on device while a host view is alive";
       throw std::runtime_error(msg.str());
     }
@@ -187,7 +187,7 @@ private:
   void throwIfDeviceViewAlive() const {
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.name() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
           << "Cannot access data on host while a device view is alive";
       throw std::runtime_error(msg.str());
     }
