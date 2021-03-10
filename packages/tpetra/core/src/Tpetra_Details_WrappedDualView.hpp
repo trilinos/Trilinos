@@ -53,9 +53,12 @@ namespace Details {
 template <typename DualViewType>
 class WrappedDualView {
 public:
+
   WrappedDualView(DualViewType dv)
     : dualView(dv)
   { }
+
+  WrappedDualView() {}
 
   KOKKOS_INLINE_FUNCTION size_t extent(const int i) const
   {

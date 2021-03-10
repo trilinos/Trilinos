@@ -1172,7 +1172,7 @@ namespace Tpetra {
 
     const size_t lclNumRows = this->staticGraph_->getNodeNumRows ();
     typename Graph::local_graph_type::row_map_type k_ptrs =
-      this->staticGraph_->k_rowPtrs_;
+Graph::local_graph_type::row_map_type(); // KDD      this->staticGraph_->k_rowPtrs_;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (k_ptrs.extent (0) != lclNumRows+1, std::logic_error,
       "With StaticProfile, row offsets array has length "
@@ -1309,7 +1309,7 @@ namespace Tpetra {
     // StaticProfile also means that the graph's array of row
     // offsets must already be allocated.
     typename Graph::local_graph_type::row_map_type curRowOffsets =
-      myGraph_->k_rowPtrs_;
+Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtrs_;
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1491,12 +1491,12 @@ namespace Tpetra {
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: k_rowPtrs_: "
-           << myGraph_->k_rowPtrs_.extent(0) << ", k_lclInds1D_: "
+//KDD           << myGraph_->k_rowPtrs_.extent(0) << ", k_lclInds1D_: "
            << myGraph_->k_lclInds1D_.extent(0) << ", k_values1D_: "
            << k_values1D_.extent(0) << endl;
         std::cerr << os.str();
       }
-      k_ptrs_const = myGraph_->k_rowPtrs_;
+//KDD      k_ptrs_const = myGraph_->k_rowPtrs_;
       k_inds = myGraph_->k_lclInds1D_;
       k_vals = this->k_values1D_;
 
@@ -1583,11 +1583,11 @@ namespace Tpetra {
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Assign k_rowPtrs_: old="
-           << myGraph_->k_rowPtrs_.extent(0) << ", new="
+//KDD           << myGraph_->k_rowPtrs_.extent(0) << ", new="
            << k_ptrs_const.extent(0) << endl;
         std::cerr << os.str();
       }
-      myGraph_->k_rowPtrs_ = k_ptrs_const;
+//KDD      myGraph_->k_rowPtrs_ = k_ptrs_const;
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Assign k_lclInds1D_: old="
@@ -1674,7 +1674,7 @@ namespace Tpetra {
     // get data from staticGraph_
     size_t nodeNumEntries   = staticGraph_->getNodeNumEntries ();
     size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
-    row_map_type k_rowPtrs_ = staticGraph_->lclGraph_.row_map;
+    row_map_type k_rowPtrs = staticGraph_->lclGraph_.row_map;
 
     row_map_type k_ptrs; // "packed" row offsets array
     values_type k_vals; // "packed" values array
@@ -1768,7 +1768,7 @@ namespace Tpetra {
 
       // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
       pack_functor<values_type, row_map_type> valsPacker
-        (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs_);
+        (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs);
 
       using exec_space = typename decltype (k_vals)::execution_space;
       using range_type = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
@@ -5905,15 +5905,15 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate row_ptrs_beg: "
-         << myGraph_->k_rowPtrs_.extent(0) << endl;
+;//KDD         << myGraph_->k_rowPtrs_.extent(0) << endl;
       std::cerr << os.str();
     }
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
     row_ptrs_type row_ptr_beg(
       view_alloc("row_ptr_beg", WithoutInitializing),
-      myGraph_->k_rowPtrs_.extent(0));
-    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
+1);//KDD      myGraph_->k_rowPtrs_.extent(0));
+//KDD    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptr_beg.extent(0) - 1);
@@ -5984,13 +5984,13 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Assign myGraph_->k_rowPtrs_; "
-         << "old size: " << myGraph_->k_rowPtrs_.extent(0)
+//KDD         << "old size: " << myGraph_->k_rowPtrs_.extent(0)
          << ", new size: " << row_ptr_beg.extent(0) << endl;
       std::cerr << os.str();
-      TEUCHOS_ASSERT( myGraph_->k_rowPtrs_.extent(0) ==
-                      row_ptr_beg.extent(0) );
+//KDD      TEUCHOS_ASSERT( myGraph_->k_rowPtrs_.extent(0) ==
+//KDD                      row_ptr_beg.extent(0) );
     }
-    myGraph_->k_rowPtrs_ = row_ptr_beg;
+//KDD    myGraph_->k_rowPtrs_ = row_ptr_beg;
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

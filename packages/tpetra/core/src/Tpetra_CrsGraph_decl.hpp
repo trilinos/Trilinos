@@ -50,6 +50,7 @@
 #include "Tpetra_Exceptions.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Util.hpp" // need this here for sort2
+#include "Tpetra_Details_WrappedDualView.hpp"
 
 #include "KokkosSparse_findRelOffset.hpp"
 #include "Kokkos_DualView.hpp"
@@ -2162,23 +2163,28 @@ namespace Tpetra {
     // Should be const data after construction
 
     using row_ptrs_dualv_type = 
-          Kokkos::DualView<const typename local_graph_type::size_type *>;
-    using row_ptrs_wdv_type = WrappedDualView<row_ptrs_dualv_type>;
+          Kokkos::DualView<typename local_graph_type::size_type *>;
+    using row_ptrs_wdv_type =
+          Details::WrappedDualView<row_ptrs_dualv_type>;
 
     row_ptrs_wdv_type rowPtrs_wdv;
 
     // Valid when isLocallyIndexed is true
     // Device view takes place of k_lclInds1D_
-    using local_col_inds_dualv_type = Kokkos::DualView<const local_ordinal_type*>;
-    using local_col_inds_wdv_type = WrappedDualView<local_col_inds_dualv_type>;
+    using local_col_inds_dualv_type =
+          Kokkos::DualView<local_ordinal_type*>;
+    using local_col_inds_wdv_type = 
+          Details::WrappedDualView<local_col_inds_dualv_type>;
 
     local_col_inds_wdv_type lclColInds_wdv;
 
     // Valid when isGloballyIndexed is true
     // Free'd during fillComplete
     // Device view takes place of k_gblInds1D_
-    using global_col_inds_dualv_type = Kokkos::DualView<const global_ordinal_type*>;
-    using global_col_inds_wdv_type = WrappedDualView<global_col_inds_dualv_type>;
+    using global_col_inds_dualv_type =
+          Kokkos::DualView<global_ordinal_type*>;
+    using global_col_inds_wdv_type =
+          Details::WrappedDualView<global_col_inds_dualv_type>;
 
     global_col_inds_wdv_type gblColInds_wdv;
 
