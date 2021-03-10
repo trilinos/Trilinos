@@ -104,37 +104,20 @@ public:
   { 
      using h_view_type = typename DualViewType::t_host;
      h_view_type hostv = 
-       Kokkos::create_mirror_view_and_copy(h_view_type::memory_space(), devv);
+       Kokkos::create_mirror_view_and_copy(typename h_view_type::memory_space(),
+                                           devv);
      dualView = DualViewType(devv, hostv);
   }
-
-  WrappedDualView() {}
 
   KOKKOS_INLINE_FUNCTION size_t extent(const int i) const
   {
     return dualView.extent(i);
   }
 
-  template <typename =
-           std::enable_if_t<
-           ! std::is_same<typename DualViewType::value_type,
-                          typename DualViewType::const_value_type>::value >,
-           typename = void>
   typename DualViewType::t_host::const_type
   getHostView(Access::ReadOnlyStruct) const {
     throwIfDeviceViewAlive();
     impl::sync_host(dualView);
-    return dualView.view_host();
-  }
-
-  template <typename =
-           std::enable_if_t<
-             std::is_same<typename DualViewType::value_type,
-                          typename DualViewType::const_value_type>::value> >
-  typename DualViewType::t_host::const_type
-  getHostView(Access::ReadOnlyStruct) const {
-    // throwIfDeviceViewAlive();
-    // dualView.sync_host();
     return dualView.view_host();
   }
 
@@ -158,26 +141,10 @@ public:
     return dualView.view_host();
   }
 
-  template <typename =
-           std::enable_if_t<
-           ! std::is_same<typename DualViewType::value_type,
-                          typename DualViewType::const_value_type>::value>,
-           typename = void >
   typename DualViewType::t_dev::const_type
   getDeviceView(Access::ReadOnlyStruct) const {
     throwIfHostViewAlive();
     impl::sync_device(dualView);
-    return dualView.view_device();
-  }
-
-  template <typename =
-           std::enable_if_t<
-           ! std::is_same<typename DualViewType::value_type,
-                          typename DualViewType::const_value_type>::value> >
-  typename DualViewType::t_dev::const_type
-  getDeviceView(Access::ReadOnlyStruct) const {
-    //throwIfHostViewAlive();
-    //dualView.sync_device();
     return dualView.view_device();
   }
 

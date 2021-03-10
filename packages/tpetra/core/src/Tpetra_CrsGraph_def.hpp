@@ -4464,7 +4464,8 @@ namespace Tpetra {
           return std::make_pair (Tpetra::Details::OrdinalTraits<size_t>::invalid (),
                                  errStrm.str ());
         }
-        const auto numEnt = ::Tpetra::Details::getEntryOnHost (rowPtrs_wdv, lclNumRows);
+        const auto numEnt =
+                   rowPtrs_wdv.getHostView(Access::ReadOnly)(lclNumRows);
 
         // mfh 17 Dec 2016: We don't need initial zero-fill of
         // k_lclInds1D_, because we will fill it below anyway.
