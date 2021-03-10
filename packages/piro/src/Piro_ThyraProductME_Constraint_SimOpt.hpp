@@ -76,6 +76,9 @@ public:
     rol_z_ptr = Teuchos::null;
     jac1 = Teuchos::null;
     z_stored_ptr =  Teuchos::null;
+
+    if(params != Teuchos::null)
+      params->set<int>("Optimizer Iteration Number", -1);
   };
 
   void setExternalSolver(Teuchos::RCP<Thyra::ModelEvaluator<double>> thyra_solver_) {
@@ -1152,6 +1155,9 @@ public:
         rol_u_ptr = u.clone();
       rol_u_ptr->set(u);
     }
+
+    if(params != Teuchos::null)
+      params->set<int>("Optimizer Iteration Number", iter);
   }
 
   /** \brief Update constraint functions with respect to Opt variable.
@@ -1179,6 +1185,9 @@ public:
         z_stored_ptr = z.clone();
       z_stored_ptr->set(z);
     }
+
+    if(params != Teuchos::null)
+      params->set<int>("Optimizer Iteration Number", iter);
   }
 
   bool z_hasChanged(const ROL::Vector<Real> &rol_z) const {

@@ -70,8 +70,10 @@ public:
     value_ = 0;
     rol_u_ptr = rol_z_ptr = Teuchos::null;
     z_stored_ptr =  Teuchos::null;
-    if(params != Teuchos::null)
-      write_interval = params->get("Write Interval",1);
+    if(params != Teuchos::null) {
+      write_interval = params->get("Write Interval", 1);
+      params->set<int>("Optimizer Iteration Number", -1);
+    }
     else
       write_interval = 1;
   };
@@ -671,6 +673,9 @@ public:
       observer->observeResponse(iteration);
       print = false;
     }
+
+    if(params != Teuchos::null)
+      params->set<int>("Optimizer Iteration Number", iter);
   }
 
   bool z_hasChanged(const ROL::Vector<Real> &rol_z) const {
