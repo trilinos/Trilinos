@@ -177,21 +177,6 @@ TEUCHOS_UNIT_TEST(WrappedDualView, defaultConstructorAvailable) {
   const WrappedDualViewType wrappedView;
 }
 
-TEUCHOS_UNIT_TEST(WrappedDualView, hostViewConstructor) {
-  WrappedDualViewFixture fixture;
-  WrappedDualViewType wrappedView;
-
-  {
-    HostViewType hostView("host view", fixture.getViewSize());
-    fixture.fillViewOnHost(hostView);
-
-    wrappedView = WrappedDualViewType(hostView);
-  }
-
-  auto deviceView = wrappedView.getDeviceView(Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceView));
-}
-
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor) {
   WrappedDualViewFixture fixture;
   WrappedDualViewType wrappedView;

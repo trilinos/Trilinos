@@ -103,13 +103,6 @@ public:
     : dualView(dualV)
   { }
 
-  WrappedDualView(const HostViewType hostView)
-  {
-     DeviceViewType devView =
-       Kokkos::create_mirror_view_and_copy(typename DeviceViewType::memory_space(), hostView);
-     dualView = DualViewType(devView, hostView);
-  }
-
   WrappedDualView(const DeviceViewType devView)
   {
      HostViewType hostView =
