@@ -5,8 +5,8 @@ cmake_minimum_required(VERSION 3.17.1)
 # Disable Kokkos warning about not supporting C++ extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-# Get Trilinos as one entity
-find_package(Trilinos REQUIRED)
+# Get Trilinos as one entity but require the packages being used
+find_package(Trilinos REQUIRED COMPONENTS Teuchos Tpetra)
 
 # Echo trilinos build info just for fun
 MESSAGE("\nFound Trilinos!  Here are the details: ")
