@@ -91,16 +91,31 @@ template <typename DualViewType>
 class WrappedDualView {
 private:
   static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
+  using HostViewType = typename DualViewType::t_host;
+  using DeviceViewType = typename DualViewType::t_dev;
 
 public:
   WrappedDualView() {}
 
-  WrappedDualView(DualViewType dv)
-    : dualView(dv)
+  WrappedDualView(DualViewType dualV)
+    : dualView(dualV)
   { }
 
-  KOKKOS_INLINE_FUNCTION size_t extent(const int i) const
+  WrappedDualView(const HostViewType hostView)
   {
+     DeviceViewType devView =
+       Kokkos::create_mirror_view_and_copy(typename DeviceViewType::memory_space(), hostView);
+     dualView = DualViewType(devView, hostView);
+  }
+
+  WrappedDualView(const DeviceViewType devView)
+  {
+     HostViewType hostView =
+       Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), devView);
+     dualView = DualViewType(devView, hostView);
+  }
+
+  size_t extent(const int i) const {
     return dualView.extent(i);
   }
 

@@ -54,9 +54,14 @@
 namespace {
 
 using DeviceType = Tpetra::Map<>::device_type;
+
 using DualViewType = Kokkos::DualView<int*, DeviceType>;
-using ConstDualViewType = Kokkos::DualView<const int*, DeviceType>;
 using WrappedDualViewType = Tpetra::Details::WrappedDualView<DualViewType>;
+
+using HostViewType = typename DualViewType::t_host;
+using DeviceViewType = typename DualViewType::t_dev;
+
+using ConstDualViewType = Kokkos::DualView<const int*, DeviceType>;
 using WrappedConstDualViewType = Tpetra::Details::WrappedDualView<ConstDualViewType>;
 
 class WrappedDualViewFixture {
@@ -157,6 +162,10 @@ public:
     return (view.extent(0) == dualView.extent(0));
   }
 
+  int getViewSize() {
+    return viewSize;
+  }
+
 private:
   Teuchos::RCP<const Teuchos::Comm<int>> comm;
   int commSize;
@@ -166,6 +175,36 @@ private:
 
 TEUCHOS_UNIT_TEST(WrappedDualView, defaultConstructorAvailable) {
   const WrappedDualViewType wrappedView;
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, hostViewConstructor) {
+  WrappedDualViewFixture fixture;
+  WrappedDualViewType wrappedView;
+
+  {
+    HostViewType hostView("host view", fixture.getViewSize());
+    fixture.fillViewOnHost(hostView);
+
+    wrappedView = WrappedDualViewType(hostView);
+  }
+
+  auto deviceView = wrappedView.getDeviceView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceView));
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor) {
+  WrappedDualViewFixture fixture;
+  WrappedDualViewType wrappedView;
+
+  {
+    DeviceViewType deviceView("device view", fixture.getViewSize());
+    fixture.fillViewOnDevice(deviceView);
+
+    wrappedView = WrappedDualViewType(deviceView);
+  }
+
+  auto hostView = wrappedView.getHostView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, extent) {
