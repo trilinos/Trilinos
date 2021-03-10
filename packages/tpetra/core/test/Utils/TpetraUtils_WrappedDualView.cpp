@@ -55,7 +55,9 @@ namespace {
 
 using DeviceType = Tpetra::Map<>::device_type;
 using DualViewType = Kokkos::DualView<int*, DeviceType>;
+using ConstDualViewType = Kokkos::DualView<const int*, DeviceType>;
 using WrappedDualViewType = Tpetra::Details::WrappedDualView<DualViewType>;
+using WrappedConstDualViewType = Tpetra::Details::WrappedDualView<ConstDualViewType>;
 
 class WrappedDualViewFixture {
 public:
@@ -76,6 +78,10 @@ public:
     return dualView;
   }
 
+  ConstDualViewType getConstDualView() {
+    return dualView;
+  }
+
   void fillDualViewOnHost() {
     auto hostView = dualView.view_host();
     fillViewOnHost(hostView);
@@ -86,6 +92,11 @@ public:
     auto deviceView = dualView.view_device();
     fillViewOnDevice(deviceView);
     dualView.modify_device();
+  }
+
+  void fillDualViewOnHostDevice() {
+    fillDualViewOnHost();
+    dualView.sync_device();
   }
 
   bool valuesInitializedToZero() {
@@ -153,11 +164,35 @@ private:
   DualViewType dualView;
 };
 
+TEUCHOS_UNIT_TEST(WrappedDualView, defaultConstructorAvailable) {
+  const WrappedDualViewType wrappedView;
+}
+
 TEUCHOS_UNIT_TEST(WrappedDualView, extent) {
   WrappedDualViewFixture fixture;
   const WrappedDualViewType wrappedView(fixture.getDualView());
 
   TEST_ASSERT(fixture.extentCorrect(wrappedView));
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, accessHostReadOnly_constData) {
+  WrappedDualViewFixture fixture;
+  fixture.fillDualViewOnHostDevice();
+
+  const WrappedConstDualViewType wrappedView(fixture.getConstDualView());
+
+  auto hostView = wrappedView.getHostView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceReadOnly_constData) {
+  WrappedDualViewFixture fixture;
+  fixture.fillDualViewOnHostDevice();
+
+  const WrappedConstDualViewType wrappedView(fixture.getConstDualView());
+
+  auto deviceView = wrappedView.getDeviceView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceView));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessHostReadOnly) {
