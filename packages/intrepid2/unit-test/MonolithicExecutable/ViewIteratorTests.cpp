@@ -60,13 +60,16 @@ namespace
     using namespace Intrepid2;
     using Scalar = double;
     
-    using ViewIteratorScalar = ViewIterator<ViewType<Scalar>, Scalar>;
+    // note that this test does not involve any access of View data; therefore, it should work fine regardless of the memory space of the View
+    
+    using DeviceType = DefaultTestDeviceType;
+    using ViewIteratorScalar = ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
     
     // check that the increment operator works to give us the right number of entries
     // we'll use trivial fields so as to factor out problems in the tensor product logic
     int num_fields = 2;
     int num_points = 64;
-    ViewType<Scalar> view("view to iterate over",num_fields,num_points);
+    ViewType<Scalar,DeviceType> view("view to iterate over",num_fields,num_points);
     ViewIteratorScalar view_iterator(view);
     int entry_count = 0;
     do

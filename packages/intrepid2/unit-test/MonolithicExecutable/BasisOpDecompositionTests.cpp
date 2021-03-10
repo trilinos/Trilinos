@@ -100,7 +100,7 @@ namespace
   
 TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
 {
-  using Basis = HierarchicalBasisFamily<>::HGRAD_QUAD;
+  using Basis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_QUAD;
   
   auto GRAD  = OPERATOR_GRAD;
   auto VALUE = OPERATOR_VALUE;
@@ -120,7 +120,7 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
 
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_HEX )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_HEX;
+    using Basis = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_HEX;
     
     auto GRAD  = OPERATOR_GRAD;
     auto VALUE = OPERATOR_VALUE;
@@ -141,8 +141,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
 
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHDIV_HEX_Family1 )
   {
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HDIV_Family1_HEX<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 0;
@@ -188,8 +188,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHDIV_HEX_Family2 )
   {
     
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HDIV_Family2_HEX<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 1;
@@ -235,8 +235,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHDIV_HEX_Family3 )
   {
     
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HDIV_Family3_HEX<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 2;
@@ -281,8 +281,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
 
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHCURL_QUAD_Family1 )
   {
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HCURL_Family1_QUAD<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 0;
@@ -327,8 +327,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHCURL_QUAD_Family2 )
   {
     
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HCURL_Family2_QUAD<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 1;
@@ -373,8 +373,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
 
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHCURL_HEX_Family1 )
   {
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HCURL_Family1_HEX<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 0;
@@ -423,8 +423,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHCURL_HEX_Family2 )
   {
     
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HCURL_Family2_HEX<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 1;
@@ -473,8 +473,8 @@ TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHGRAD_QUAD )
   TEUCHOS_UNIT_TEST( BasisOpDecomposition, HierarchicalHCURL_HEX_Family3 )
   {
     
-    using BasisGRAD = HierarchicalBasisFamily<>::HGRAD_LINE;
-    using BasisVOL  = HierarchicalBasisFamily<>::HVOL_LINE;
+    using BasisGRAD = HierarchicalBasisFamily<DefaultTestDeviceType>::HGRAD_LINE;
+    using BasisVOL  = HierarchicalBasisFamily<DefaultTestDeviceType>::HVOL_LINE;
     
     using Basis = Basis_Derived_HCURL_Family3_HEX<BasisGRAD,BasisVOL>;
     const int familyOrdinal = 2;

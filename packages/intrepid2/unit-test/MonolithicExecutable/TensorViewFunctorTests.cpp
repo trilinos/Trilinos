@@ -59,15 +59,15 @@ namespace
 {
   using namespace Intrepid2;
 
-  template<typename Scalar>
-  void runTensorViewFunctorTest(ViewType<Scalar> tensor_expected, ViewType<Scalar> view1, ViewType<Scalar> view2, double weight, bool tensorPoints,
+  template<typename ScalarViewType>
+  void runTensorViewFunctorTest(ScalarViewType tensor_expected, ScalarViewType view1, ScalarViewType view2, double weight, bool tensorPoints,
                                 Teuchos::FancyOStream &out, bool &success)
   {
     double tol = 1e-15;
     using namespace Intrepid2;
     
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
-    using ScalarViewType = ViewType<Scalar>;
+    using ExecutionSpace = typename ScalarViewType::execution_space;
+    using Scalar         = typename ScalarViewType::value_type;
     
     const bool hasADType = false;
     const int vectorSize = hasADType ? FAD_VECTOR_SIZE : VECTOR_SIZE;
@@ -103,36 +103,26 @@ namespace
     FunctorType functor(tensor_actual, view1, view2, tensorPoints, weight);
     Kokkos::parallel_for( policy , functor, "TensorViewFunctor");
     
-    auto tensor_actual_host   = getHostCopy(tensor_actual);
-    auto tensor_expected_host = getHostCopy(tensor_expected);
-    
-    using ViewIterator = ViewIterator<ScalarViewType, Scalar>;
-    ViewIterator it_actual(tensor_actual_host);
-    ViewIterator it_expected(tensor_expected_host);
-    
-    do
+    switch (tensor_expected.rank())
     {
-      auto actual_value   = it_actual.get();
-      auto expected_value = it_expected.get();
-      
-      if (!approximatelyEqual(actual_value, expected_value, tol))
-      {
-        success = false;
-        std::cout << "FAILURE: In entry " << it_actual.getEnumerationIndex() << ", ";
-        std::cout << "actual (" << actual_value << ") differs from expected (" << expected_value << ")";
-        std::cout << " by " << std::abs(actual_value-expected_value) << std::endl;
-      }
-      
-    } while ((it_actual.increment() >= 0) && (it_expected.increment() >= 0));
+      case 1: testFloatingEquality1(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      case 2: testFloatingEquality2(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      case 3: testFloatingEquality3(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      case 4: testFloatingEquality4(tensor_actual,tensor_expected,tol,tol,out,success); break;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Test does not yet support this output rank");
+    }
   }
   
   template<typename Scalar>
   void runTensorViewFunctorTests(Teuchos::FancyOStream &out, bool &success)
   {
-    using ScalarViewType = ViewType<Scalar>;
+    using DeviceType = DefaultTestDeviceType;
+    using ScalarViewType = ViewType<Scalar,DeviceType>;
     
     // TEST 1: simple contraction
     // we'll use trivial fields so as to factor out problems in the tensor product logic
+    out << "TEST 1: simple contraction.\n";
     int num_fields1 = 1;
     int num_fields2 = 1;
     int num_fields = num_fields1 * num_fields2;
@@ -167,6 +157,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 2: tensor product ordering
+    out << "TEST 2: tensor product ordering.\n";
     num_fields1 = 2;
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
@@ -198,14 +189,17 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 3: like TEST 2, but include non-trivial weight
+    out << "TEST 3: like TEST 2, but include non-trivial weight.\n";
     weight = 2.0;
     for (int i=0; i<num_fields; i++)
     {
-      tensor_expected(i,0) *= weight;
+      tensor_expected_host(i,0) *= weight;
     }
+    Kokkos::deep_copy(tensor_expected, tensor_expected_host);
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 4: scalar times vector
+    out << "TEST 4: scalar times vector.\n";
     num_fields1 = 2;
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
@@ -244,13 +238,20 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 5: scalar times vector, nontrivial points, but still matching in point dimension
+    out << "TEST 5: scalar times vector, nontrivial points, but still matching in point dimension.\n";
     num_fields1 = 2;
     num_fields2 = 2;
     num_fields = num_fields1 * num_fields2;
     num_points = 2;
-    Kokkos::resize(tensor_expected_host,num_fields, num_points,space_dim);
-    Kokkos::resize(view1_host,          num_fields1,num_points);
-    Kokkos::resize(view2_host,          num_fields2,num_points,space_dim);
+    
+    Kokkos::resize(tensor_expected,      num_fields,  num_points, space_dim);
+    Kokkos::resize(view1,                num_fields1, num_points);
+    Kokkos::resize(view2,                num_fields2, num_points, space_dim);
+    
+    Kokkos::resize(tensor_expected_host, num_fields,  num_points, space_dim);
+    Kokkos::resize(view1_host,           num_fields1, num_points);
+    Kokkos::resize(view2_host,           num_fields2, num_points, space_dim);
+    
     view1_host(0,0)   = 3.0;
     view1_host(1,0)   = 2.0;
     view2_host(0,0,0) = 1.0;
@@ -288,6 +289,7 @@ namespace
     runTensorViewFunctorTest(tensor_expected, view1, view2, weight, tensor_points, out, success);
     
     // TEST 6: like TEST 2 above, but with different field counts
+    out << "TEST 6: like TEST 2 above, but with different field counts.\n";
     num_fields1 = 2;
     num_fields2 = 3;
     num_fields = num_fields1 * num_fields2;
