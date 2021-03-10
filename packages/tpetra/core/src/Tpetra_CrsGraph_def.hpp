@@ -645,11 +645,7 @@ namespace Tpetra {
     this->makeImportExport (remotePIDs, false);
 
     k_lclInds1D_ = lclGraph_.entries;
-    row_ptrs_dualv_type rowPtrs(lclGraph_.row_map,
-                        Kokkos::create_mirror_view_and_copy(
-                                typename local_graph_type::row_map_type::HostMirror::memory_space(),
-                                                            lclGraph_.row_map));
-    rowPtrs_wdv = row_ptrs_wdv_type(rowPtrs);
+    rowPtrs_wdv = row_ptrs_wdv_type(lclGraph_.row_map);  // KDD CONST
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -695,10 +691,7 @@ namespace Tpetra {
        "The input column Map must be nonnull.");
 
     k_lclInds1D_ = lclGraph_.entries;
-    row_ptrs_dualv_type rowPtrs(lclGraph_.row_map,
-                        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                            lclGraph_.row_map));
-    rowPtrs_wdv = row_ptrs_wdv_type(rowPtrs);
+    rowPtrs_wdv = row_ptrs_wdv_type(lclGraph_.row_map);  // KDD CONST
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -1213,10 +1206,7 @@ namespace Tpetra {
     }
 
     // "Commit" the resulting row offsets.
-    row_ptrs_dualv_type rowPtrs(k_rowPtrs,
-                        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                            k_rowPtrs));
-    rowPtrs_wdv = row_ptrs_wdv_type(rowPtrs);
+    rowPtrs_wdv = row_ptrs_wdv_type(k_rowPtrs);
 
     const size_type numInds = rowPtrs_wdv.getHostView(Access::ReadOnly)(numRows);
     if (lg == LocalIndices) {
@@ -2961,10 +2951,7 @@ namespace Tpetra {
     indicesAreSorted_    = true;
     noRedundancies_      = true;
     k_lclInds1D_         = columnIndices;
-    row_ptrs_dualv_type rowPtrs(rowPointers,
-                        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                            rowPointers));
-    rowPtrs_wdv = row_ptrs_wdv_type(rowPtrs);
+    rowPtrs_wdv = row_ptrs_wdv_type(rowPointers);
 
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
@@ -3938,7 +3925,7 @@ namespace Tpetra {
         typename local_graph_type::entries_type::non_const_type,
         row_map_type> inds_packer_type;
       inds_packer_type f (ind_d, k_lclInds1D_, ptr_d,
-                          rowPtrs_wdv.getDeviceView(Access::ReadWrite));
+                          rowPtrs_wdv.getDeviceView(Access::ReadOnly));
       {
         typedef typename decltype (ind_d)::execution_space exec_space;
         typedef Kokkos::RangePolicy<exec_space, LocalOrdinal> range_type;
@@ -4015,10 +4002,7 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      row_ptrs_dualv_type rowPtrs(ptr_d_const,
-                          Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                            ptr_d_const));
-      rowPtrs_wdv = row_ptrs_wdv_type(rowPtrs);
+      rowPtrs_wdv = row_ptrs_wdv_type(ptr_d_const);
       k_lclInds1D_ = ind_d;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -5200,10 +5184,7 @@ namespace Tpetra {
       std::cerr << os.str();
       TEUCHOS_ASSERT( rowPtrs_wdv.extent(0) == row_ptrs_beg.extent(0) );
     }
-    row_ptrs_dualv_type rowPtrs(row_ptrs_beg,
-                        Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                                            row_ptrs_beg));
-    this->rowPtrs_wdv = row_ptrs_wdv_type(rowPtrs);
+    this->rowPtrs_wdv = row_ptrs_wdv_type(row_ptrs_beg);
 
     set_need_sync_host_uvm_access(); // need fence before host UVM access of k_rowPtrs_
   }

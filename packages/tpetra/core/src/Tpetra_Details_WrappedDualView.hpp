@@ -54,9 +54,17 @@ template <typename DualViewType>
 class WrappedDualView {
 public:
 
-  WrappedDualView(DualViewType dv)
-    : dualView(dv)
+  WrappedDualView(DualViewType dualv)
+    : dualView(dualv)
   { }
+
+  WrappedDualView(const typename DualViewType::t_dev devv)
+  { 
+     using h_view_type = typename DualViewType::t_host;
+     h_view_type hostv = 
+       Kokkos::create_mirror_view_and_copy(h_view_type::memory_space(), devv);
+     dualView = DualViewType(devv, hostv);
+  }
 
   WrappedDualView() {}
 
@@ -65,6 +73,11 @@ public:
     return dualView.extent(i);
   }
 
+  template <typename =
+           std::enable_if_t<
+           ! std::is_same<typename DualViewType::value_type,
+                          typename DualViewType::const_value_type>::value >,
+           typename = void>
   typename DualViewType::t_host::const_type
   getHostView(Access::ReadOnlyStruct) const {
     throwIfDeviceViewAlive();
@@ -72,8 +85,23 @@ public:
     return dualView.view_host();
   }
 
+  template <typename =
+           std::enable_if_t<
+             std::is_same<typename DualViewType::value_type,
+                          typename DualViewType::const_value_type>::value> >
+  typename DualViewType::t_host::const_type
+  getHostView(Access::ReadOnlyStruct) const {
+    // throwIfDeviceViewAlive();
+    // dualView.sync_host();
+    return dualView.view_host();
+  }
+
   typename DualViewType::t_host
   getHostView(Access::ReadWriteStruct) {
+    static_assert(
+      std::is_same<typename DualViewType::value_type,
+      typename DualViewType::non_const_value_type>::value, 
+      "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.sync_host();
     dualView.modify_host();
@@ -82,12 +110,21 @@ public:
 
   typename DualViewType::t_host
   getHostView(Access::WriteOnlyStruct) {
+    static_assert(
+      std::is_same<typename DualViewType::value_type,
+      typename DualViewType::non_const_value_type>::value, 
+      "WriteOnly views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.clear_sync_state();
     dualView.modify_host();
     return dualView.view_host();
   }
 
+  template <typename =
+           std::enable_if_t<
+           ! std::is_same<typename DualViewType::value_type,
+                          typename DualViewType::const_value_type>::value>,
+           typename = void >
   typename DualViewType::t_dev::const_type
   getDeviceView(Access::ReadOnlyStruct) const {
     throwIfHostViewAlive();
@@ -95,8 +132,23 @@ public:
     return dualView.view_device();
   }
 
+  template <typename =
+           std::enable_if_t<
+           ! std::is_same<typename DualViewType::value_type,
+                          typename DualViewType::const_value_type>::value> >
+  typename DualViewType::t_dev::const_type
+  getDeviceView(Access::ReadOnlyStruct) const {
+    //throwIfHostViewAlive();
+    //dualView.sync_device();
+    return dualView.view_device();
+  }
+
   typename DualViewType::t_dev
   getDeviceView(Access::ReadWriteStruct) {
+    static_assert(
+      std::is_same<typename DualViewType::value_type,
+      typename DualViewType::non_const_value_type>::value, 
+      "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.sync_device();
     dualView.modify_device();
@@ -105,6 +157,10 @@ public:
 
   typename DualViewType::t_dev
   getDeviceView(Access::WriteOnlyStruct) {
+    static_assert(
+      std::is_same<typename DualViewType::value_type,
+      typename DualViewType::non_const_value_type>::value, 
+      "WriteOnly views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.clear_sync_state();
     dualView.modify_device();

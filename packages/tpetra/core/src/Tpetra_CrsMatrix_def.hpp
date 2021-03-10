@@ -1172,7 +1172,7 @@ namespace Tpetra {
 
     const size_t lclNumRows = this->staticGraph_->getNodeNumRows ();
     typename Graph::local_graph_type::row_map_type k_ptrs =
-Graph::local_graph_type::row_map_type(); // KDD      this->staticGraph_->k_rowPtrs_;
+typename Graph::local_graph_type::row_map_type(); // KDD      this->staticGraph_->k_rowPtrs_;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (k_ptrs.extent (0) != lclNumRows+1, std::logic_error,
       "With StaticProfile, row offsets array has length "
@@ -1309,7 +1309,7 @@ Graph::local_graph_type::row_map_type(); // KDD      this->staticGraph_->k_rowPt
     // StaticProfile also means that the graph's array of row
     // offsets must already be allocated.
     typename Graph::local_graph_type::row_map_type curRowOffsets =
-Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtrs_;
+typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtrs_;
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC

@@ -2163,7 +2163,7 @@ namespace Tpetra {
     // Should be const data after construction
 
     using row_ptrs_dualv_type = 
-          Kokkos::DualView<typename local_graph_type::size_type *>;
+          Kokkos::DualView<const typename local_graph_type::size_type *>;
     using row_ptrs_wdv_type =
           Details::WrappedDualView<row_ptrs_dualv_type>;
 
