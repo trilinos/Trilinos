@@ -282,12 +282,13 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      X.sync_host ();
-      X.modify_host ();
+      //X.sync_host ();
+      //X.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto X_cur = X.getLocalBlock (whichBlk, whichVec);
+          auto X_cur = X.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadWrite);
           // This doesn't actually assume UVM, since we're modifying
           // the current block of X on the host.  The sync below will
           // sync back to device memory.
@@ -295,12 +296,13 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X.sync_device ();
+      //X.sync_device ();
     }
 
     myOut << "Call Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     Y.blockWiseMultiply (one, D, X);
+    Kokkos::fence();
 
     myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
@@ -308,12 +310,13 @@ namespace {
     myOut << "maxVecNorm = " << maxVecNorm << endl;
 
     {
-      Y.sync_host ();
-      Y.modify_host ();
+      //Y.sync_host ();
+      //Y.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec);
+          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadOnly);
 
           // Compare Y_cur normwise to prototypeY.  This doesn't
           // actually assume UVM, since we're modifying the host
@@ -325,28 +328,30 @@ namespace {
           myOut << "frobNorm = " << frobNorm2 << endl;
           TEST_ASSERT( frobNorm2 <= maxVecNorm );
           if (! success) {
-            myOut << "Retuning early due to FAILURE." << endl;
+            myOut << "Returning early due to FAILURE." << endl;
             return;
           }
         }
         curScalingFactor += one;
       }
-      Y.sync_device ();
+      //Y.sync_device ();
     }
 
     myOut << "Call Y.blockWiseMultiply(alpha, D, X) again, where Y has nonzero "
       "initial contents (the method should ignore those contents)" << endl;
     Y.putScalar (-five);
     Y.blockWiseMultiply (one, D, X);
+    Kokkos::fence();
 
     myOut << "Check results of Y.blockWiseMultiply(alpha, D, X)" << endl;
 
     {
-      Y.sync_host ();
+      //Y.sync_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec);
+          auto Y_cur = Y.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadOnly);
 
           // Compare Y_cur normwise to prototypeY.  This doesn't
           // actually assume UVM, since we're modifying the host
@@ -509,12 +514,13 @@ namespace {
     X.putScalar (one);
     Y.putScalar (zero);
     {
-      X.sync_host ();
-      X.modify_host ();
+      //X.sync_host ();
+      //X.modify_host ();
       curScalingFactor = one;
       for (LO whichBlk = 0; whichBlk < numLocalMeshPoints; ++whichBlk) {
         for (LO whichVec = 0; whichVec < numVecs; ++whichVec) {
-          auto X_cur = X.getLocalBlock (whichBlk, whichVec);
+          auto X_cur = X.getLocalBlock (whichBlk, whichVec,
+                                        Tpetra::Access::ReadWrite);
           // This doesn't actually assume UVM, since we're modifying
           // the current block of X on the host.  The sync below will
           // sync back to device memory.
@@ -522,7 +528,7 @@ namespace {
         }
         curScalingFactor += one;
       }
-      X.sync_device ();
+      //X.sync_device ();
     }
 
     // Fill Y with some initial value, so that using beta != 0 gives a

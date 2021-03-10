@@ -81,7 +81,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     };
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int Integration_Test07(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -95,6 +95,7 @@ namespace Intrepid2 {
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
 
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -119,14 +120,15 @@ namespace Intrepid2 {
         << "| TEST 1: integrals of monomials in 3D                                        |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,Kokkos::HostSpace> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
-      typedef CubatureDirectLineGauss<DeviceSpaceType,pointValueType,weightValueType> CubatureLineType;
-      typedef CubatureDirectLineGaussJacobi20<DeviceSpaceType,pointValueType,weightValueType> CubatureLineJacobiType;
-      typedef CubatureTensorPyr<DeviceSpaceType,pointValueType,weightValueType> CubatureTensorPyrType;
+      typedef CubatureDirectLineGauss<DeviceType,pointValueType,weightValueType> CubatureLineType;
+      typedef CubatureDirectLineGaussJacobi20<DeviceType,pointValueType,weightValueType> CubatureLineJacobiType;
+      typedef CubatureTensorPyr<DeviceType,pointValueType,weightValueType> CubatureTensorPyrType;
       
       // tolerence is too tight to test upto order 20
       const auto tol = 1000.0 * tolerence();
@@ -145,17 +147,17 @@ namespace Intrepid2 {
       // compute and compare integrals
       try {
         // cannot test maxcubature degree edge (20) as max integration point is limited by 1001.
-        const auto maxDeg   = Parameters::MaxCubatureDegreePyr;
+        const auto maxDeg   = 10; //Parameters::MaxCubatureDegreePyr;
         const auto polySize = (maxDeg+1)*(maxDeg+2)*(maxDeg+3)/6;
 
         // test inegral values
-        DynRankView ConstructWithLabel(testInt, maxDeg+1, polySize);
+        DynRankViewHost ConstructWithLabel(testInt, maxDeg+1, polySize);
 
         // analytic integral values
         const auto analyticMaxDeg = 11;
         const auto analyticPolySize = (analyticMaxDeg+1)*(analyticMaxDeg+2)*(analyticMaxDeg+3)/6;
 
-        DynRankView ConstructWithLabel(analyticInt, analyticPolySize, 1);
+        DynRankViewHost ConstructWithLabel(analyticInt, analyticPolySize, 1);
 
         // storage for cubatrue points and weights
         DynRankView ConstructWithLabel(cubPoints,

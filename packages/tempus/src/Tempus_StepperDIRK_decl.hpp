@@ -216,6 +216,20 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
+  /// Set StepperDIRK member data from the ParameterList.
+  virtual void setStepperDIRKValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+  {
+    if (pl != Teuchos::null) {
+      // Can not validate because of optional Parameters, e.g., 'Solver Name'.
+      //pl->validateParametersAndSetDefaults(*this->getValidParameters());
+      this->setStepperValues(pl);
+      if ( pl->isParameter("Use Embedded") )
+        this->setUseEmbedded(pl->get<bool>("Use Embedded"));
+      if ( pl->isParameter("Zero Initial Guess") )
+        this->setZeroInitialGuess(pl->get<bool>("Zero Initial Guess"));
+    }
+  }
+
 
 protected:
 

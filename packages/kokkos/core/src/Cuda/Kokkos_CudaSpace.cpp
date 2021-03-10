@@ -242,14 +242,8 @@ void *CudaUVMSpace::impl_allocate(
     const char *arg_label, const size_t arg_alloc_size,
     const size_t arg_logical_size,
     const Kokkos::Tools::SpaceHandle arg_handle) const {
-  //void *ptr = nullptr;
+  void *ptr = nullptr;
 
-  std::ostringstream oss;
-  oss << "Tpetra team: UVM disabled, but attempted to allocate view \"" << arg_label << "\" of " << arg_alloc_size << " bytes.";
-
-  throw std::runtime_error(oss.str());
-
-  /*
   Cuda::impl_static_fence();
   if (arg_alloc_size > 0) {
     Kokkos::Impl::num_uvm_allocations++;
@@ -280,7 +274,6 @@ void *CudaUVMSpace::impl_allocate(
     Kokkos::Profiling::allocateData(arg_handle, arg_label, ptr, reported_size);
   }
   return ptr;
-  */
 }
 void *CudaHostPinnedSpace::allocate(const size_t arg_alloc_size) const {
   return allocate("[unlabeled]", arg_alloc_size);

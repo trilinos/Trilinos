@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperBDF2_decl_hpp
 #define Tempus_StepperBDF2_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperBDF2AppAction.hpp"
@@ -161,6 +162,7 @@ private:
   Scalar                                      order_ = Scalar(2.0);
 };
 
+
 /** \brief Time-derivative interface for BDF2.
  *
  *  Given the state \f$x_n\f$, compute the BDF2 time-derivative,
@@ -218,6 +220,15 @@ private:
   Scalar                                         dt_;    // = t_n - t_{n-1}
   Scalar                                         dtOld_; // = t_{n-1} - t_{n-2}
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperBDF2<Scalar> >
+createStepperBDF2(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

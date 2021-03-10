@@ -136,6 +136,7 @@ private:
   using typename Container<MatrixType>::HostView;
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostViewLocal;
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubviewLocal;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::ConstHostSubviewLocal;
 
   static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                 "Ifpack2::DenseContainer: Please use MatrixType = Tpetra::RowMatrix.");
@@ -236,9 +237,9 @@ private:
   /// linear system with the diagonal block.
   ///
   /// \param X [in] Subset permutation of the input X of apply().
-  /// \param Y [in] Subset permutation of the input/output Y of apply().
+  /// \param Y [in/out] Subset permutation of the input/output Y of apply().
   void
-  solveBlock(HostSubviewLocal X,
+  solveBlock(ConstHostSubviewLocal X,
              HostSubviewLocal Y,
              int blockIndex,
              Teuchos::ETransp mode,

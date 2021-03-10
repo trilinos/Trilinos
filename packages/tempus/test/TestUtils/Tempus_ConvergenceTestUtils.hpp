@@ -10,9 +10,14 @@
 #define TEMPUS_CONVERGENCE_TEST_UTILS_HPP
 
 #include <vector>
-#include "Teuchos_as.hpp"
-#include "Tempus_Stepper.hpp"
 #include <fstream>
+
+#include "Teuchos_as.hpp"
+
+#include "Thyra_VectorStdOps.hpp"
+
+#include "Tempus_String_Utilities.hpp"
+#include "Tempus_Stepper.hpp"
 
 
 namespace Tempus_Test {

@@ -13,6 +13,7 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperRKAppAction.hpp"
 
+#include "Teuchos_SerialDenseVector.hpp"
 
 namespace Tempus {
 

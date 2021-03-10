@@ -196,19 +196,13 @@ public:
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;
   //! The type used to access nonconst vector blocks.
-  typedef Kokkos::View<impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-          little_vec_type;
-  typedef typename little_vec_type::HostMirror
-          little_host_vec_type;
+  typedef typename BMV::little_vec_type little_vec_type;
+  typedef typename BMV::little_host_vec_type little_host_vec_type;
+
   //! The type used to access const vector blocks.
-  typedef Kokkos::View<const impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-          const_little_vec_type;
+  typedef typename BMV::const_little_vec_type const_little_vec_type;
+  typedef typename BMV::const_little_host_vec_type const_host_little_vec_type;
+
 
   //@}
   //! \name Constructors and destructor
@@ -350,58 +344,6 @@ public:
               Teuchos::ETransp mode = Teuchos::NO_TRANS,
               const Scalar alpha = Teuchos::ScalarTraits<Scalar>::one (),
               const Scalar beta = Teuchos::ScalarTraits<Scalar>::zero ());
-
-  /// \brief Version of gaussSeidel(), with fewer requirements on X.
-  ///
-  /// Not Implemented
-  void
-  gaussSeidelCopy (MultiVector<Scalar,LO,GO,Node> &X,
-                   const ::Tpetra::MultiVector<Scalar,LO,GO,Node> &B,
-                   const ::Tpetra::MultiVector<Scalar,LO,GO,Node> &D,
-                   const Scalar& dampingFactor,
-                   const ESweepDirection direction,
-                   const int numSweeps,
-                   const bool zeroInitialGuess) const;
-
-  /// \brief Version of reorderedGaussSeidel(), with fewer requirements on X.
-  ///
-  /// Not Implemented
-  void
-  reorderedGaussSeidelCopy (::Tpetra::MultiVector<Scalar,LO,GO,Node>& X,
-                            const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& B,
-                            const ::Tpetra::MultiVector<Scalar,LO,GO,Node>& D,
-                            const Teuchos::ArrayView<LO>& rowIndices,
-                            const Scalar& dampingFactor,
-                            const ESweepDirection direction,
-                            const int numSweeps,
-                            const bool zeroInitialGuess) const;
-
-  /// \brief Local Gauss-Seidel solve, given a factorized diagonal
-  ///
-  /// \param Residual [in] The "residual" (right-hand side) block
-  ///   (multi)vector
-  /// \param Solution [in/out] On input: the initial guess / current
-  ///   approximate solution.  On output: the new approximate
-  ///   solution.
-  /// \param D_inv [in] Block diagonal, the explicit inverse of this
-  ///   matrix's block diagonal (possibly modified for algorithmic
-  ///   reasons).
-  /// \param omega [in] (S)SOR relaxation coefficient
-  /// \param direction [in] Forward, Backward, or Symmetric.
-  ///
-  /// One may access block i in \c D_inv using the
-  /// following code:
-  /// \code
-  /// auto D_ii = Kokkos::subview(D_inv, i, Kokkos::ALL(), Kokkos::ALL());
-  /// \endcode
-  /// The resulting block is b x b, where <tt>b = this->getBlockSize()</tt>.
-  void
-  localGaussSeidel (const BlockMultiVector<Scalar, LO, GO, Node>& Residual,
-                          BlockMultiVector<Scalar, LO, GO, Node>& Solution,
-                    const Kokkos::View<impl_scalar_type***, device_type,
-                          Kokkos::MemoryUnmanaged>& D_inv,
-                    const Scalar& omega,
-                    const ESweepDirection direction) const;
 
   /// \brief Replace values at the given (mesh, i.e., block) column
   ///   indices, in the given (mesh, i.e., block) row.

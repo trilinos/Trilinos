@@ -114,15 +114,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Chebyshev, Test0, Scalar, LocalOrdinal,
 
   prec.applyMat(x, y);
 
-  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
-  //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
-  //y should be full of 2's now.
+    //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
+    //y should be full of 2's now.
 
-  Teuchos::ArrayRCP<Scalar> twos(num_rows_per_proc*2, 2);
+    Teuchos::ArrayRCP<Scalar> twos(num_rows_per_proc*2, 2);
 
-  y.sync_host();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+    TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 
   prec.apply(x, y);
 
@@ -133,8 +134,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Chebyshev, Test0, Scalar, LocalOrdinal,
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType trial_tol = 1.e-13;
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType tol = std::max(trial_tol, Teuchos::ScalarTraits<Scalar>::eps());
 
-  y.sync_host();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), tol);
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), tol);
+  }
 
   //If I now increase the degree of the polynomial to 4 the solve won't be
   //exact, but it should still be within a tol of 1.e-4 for this trivial data.
@@ -144,8 +147,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Chebyshev, Test0, Scalar, LocalOrdinal,
 
   tol = 1.e-4;
 
-  y.sync_host();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), tol);
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), tol);
+  }
 }
 
 #define UNIT_TEST_GROUP_SC_LO_GO(Scalar,LocalOrdinal,GlobalOrdinal) \

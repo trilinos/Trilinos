@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperHHTAlpha_decl_hpp
 #define Tempus_StepperHHTAlpha_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 #include "Tempus_StepperHHTAlphaAppAction.hpp"
@@ -172,6 +173,17 @@ private:
   Teuchos::RCP<Teuchos::FancyOStream> out_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperHHTAlpha<Scalar> >
+createStepperHHTAlpha(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperHHTAlpha_decl_hpp

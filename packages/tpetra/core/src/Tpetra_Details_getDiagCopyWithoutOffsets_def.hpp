@@ -129,7 +129,7 @@ public:
     }
 
     // Side effects start below this point.
-    D_lcl_ = diag.getLocalViewHost(Access::ReadWrite);
+    D_lcl_ = diag.getLocalViewHost(Access::WriteOnly);
     D_lcl_1d_ = Kokkos::subview (D_lcl_, Kokkos::ALL (), 0);
 
     Kokkos::RangePolicy<host_execution_space, LO> range (0, lclNumRows);
@@ -138,7 +138,7 @@ public:
 
     // sync changes back to device, since the user doesn't know that
     // we had to run on host.
-    diag.template sync<typename device_type::memory_space> ();
+    //diag.template sync<typename device_type::memory_space> ();
   }
 
   void operator () (const LO& lclRowInd, LO& errCount) const {

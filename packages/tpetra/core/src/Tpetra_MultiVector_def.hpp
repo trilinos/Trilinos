@@ -48,6 +48,7 @@
 /// installs for you).  If you only want the declaration of
 /// Tpetra::MultiVector, include "Tpetra_MultiVector_decl.hpp".
 
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_allReduceView.hpp"
@@ -331,13 +332,16 @@ namespace { // (anonymous)
 
   template <class impl_scalar_type, class buffer_device_type>
   bool
-  runKernelOnHost ( Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports )
+  runKernelOnHost ( 
+    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports 
+  )
   {
     if (! imports.need_sync_device ()) {
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
+      size_t localLengthThreshold = 
+             Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return imports.extent(0) <= localLengthThreshold;
     }
   }
@@ -351,7 +355,8 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
+      size_t localLengthThreshold = 
+             Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
     }
   }
@@ -558,7 +563,7 @@ namespace Tpetra {
     // The user gave us a device view.  In order to respect its
     // initial contents, we mark the DualView as "modified on device."
     // That way, the next sync will synchronize it with the host view.
-    this->modify_device ();
+    view_.modify_device ();
     origView_ = view_;
     owningView_ = view_;
   }
@@ -948,6 +953,20 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  aliases(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& other) const
+  {
+    //Don't actually get a view, just get pointers.
+    auto thisData = view_.h_view.data();
+    auto otherData = other.view_.h_view.data();
+    size_t thisSpan = view_.h_view.span();
+    size_t otherSpan = other.view_.h_view.span();
+    return (otherData <= thisData && thisData < otherData + otherSpan)
+      || (thisData <= otherData && otherData < thisData + thisSpan);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   checkSizes (const SrcDistObject& sourceObj)
   {
     // Check whether the source object is a MultiVector.  If not, then
@@ -1031,19 +1050,6 @@ namespace Tpetra {
       std::ostringstream os;
       os << *prefix << "copyOnHost=" << (copyOnHost ? "true" : "false") << endl;
       std::cerr << os.str ();
-    }
-
-    if (copyOnHost) {
-      sourceMV.sync_host();
-      this->sync_host ();
-      this->modify_host ();
-    }
-    else {
-      sourceMV.sync_device();
-      if (this->need_sync_device ()) {
-        this->sync_device ();
-      }
-      this->modify_device ();
     }
 
     if (verbose) {
@@ -1470,7 +1476,6 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_host ();
-      sourceMV.sync_host();
     }
     else {
       // nde 06 Feb 2020: If 'exports' does not require resize
@@ -1480,7 +1485,6 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_device ();
-      sourceMV.sync_device();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -1703,16 +1707,6 @@ namespace Tpetra {
 
     // We have to sync before modifying, because this method may read
     // as well as write (depending on the CombineMode).
-    if (unpackOnHost) {
-      imports.sync_host();
-      this->sync_host ();
-      this->modify_host ();
-    }
-    else {
-      imports.sync_device();
-      this->sync_device ();
-      this->modify_device ();
-    }
     auto imports_d = imports.view_device ();
     auto imports_h = imports.view_host ();
     auto importLIDs_d = importLIDs.view_device ();
@@ -2084,8 +2078,8 @@ namespace Tpetra {
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-        const_cast<MV&>(x).sync_device ();
-        const_cast<MV&>(y).sync_device ();
+        //const_cast<MV&>(x).sync_device ();
+        //const_cast<MV&>(y).sync_device ();
 
         auto x_2d = x.getLocalViewDevice(Access::ReadOnly);
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
@@ -2380,12 +2374,7 @@ namespace Tpetra {
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
-    // See #1510.  In case diag has already been marked modified on
-    // host or device, we need to clear those flags, since the code
-    // below works on device.
-    this->view_.clear_sync_state();
-    //Note BMK: if we knew this MV was not a subview of another, this could be WriteOnly
-    auto thisView = this->getLocalViewDevice(Access::ReadWrite);
+    auto thisView = this->getLocalViewDevice(Access::WriteOnly);
 
     if (isConstantStride ()) {
       Kokkos::fill_random (thisView, rand_pool, min, max);
@@ -2423,11 +2412,8 @@ namespace Tpetra {
     //
     // If we need sync to device, then host has the most recent version.
     const bool runOnHost = runKernelOnHost(*this);
-    //Note BMK: if we knew this MV was not a subview, the access below could be WriteOnly
-
-    this->clear_sync_state();
     if (! runOnHost) {
-      auto X = this->getLocalViewDevice(Access::ReadWrite);
+      auto X = this->getLocalViewDevice(Access::WriteOnly);
       if (this->isConstantStride ()) {
         fill (DES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2437,7 +2423,7 @@ namespace Tpetra {
       }
     }
     else { // last modified in host memory, so modify data there.
-      auto X = this->getLocalViewHost(Access::ReadWrite);
+      auto X = this->getLocalViewHost(Access::WriteOnly);
       if (this->isConstantStride ()) {
         fill (HES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -3696,12 +3682,19 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host::const_type
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Tpetra::Access::ReadOnlyStruct) const
+  getLocalViewHost(Access::ReadOnlyStruct) const
   {
     //returning dual_view_type::t_host::const_type
-    if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
-                               " host while a device view is alive");
+    if (owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " host while a device view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
     owningView_.sync_host();
     return view_.view_host();
   }
@@ -3709,12 +3702,19 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Tpetra::Access::ReadWriteStruct)
+  getLocalViewHost(Access::ReadWriteStruct)
   {
     //returning dual_view_type::t_host::type
-    if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
-                               "host while a device view is alive");
+    if (owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " host while a device view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
     owningView_.sync_host();
     owningView_.modify_host();
     return view_.view_host();
@@ -3723,12 +3723,24 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Tpetra::Access::WriteOnlyStruct)
+  getLocalViewHost(Access::WriteOnlyStruct)
   {
     //returning dual_view_type::t_host::type
-    if (owningView_.d_view.use_count() > owningView_.h_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
-                               "host while a device view is alive");
+    if (owningView_.h_view != view_.h_view) {
+      // view is a subview of owningView_; for safety, need to do ReadWrite
+      return getLocalViewHost(Access::ReadWrite);
+    }
+
+    if (owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " host while a device view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
     owningView_.clear_sync_state();
     owningView_.modify_host();
     return view_.view_host();
@@ -3737,12 +3749,19 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev::const_type
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Tpetra::Access::ReadOnlyStruct) const
+  getLocalViewDevice(Access::ReadOnlyStruct) const
   {
     //returning dual_view_type::t_dev::const_type
-    if (owningView_.h_view.use_count() > owningView_.d_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
-                               "device while a host view is alive");
+    if (owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " device while a host view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
     owningView_.sync_device();
     return view_.view_device();
   }
@@ -3750,12 +3769,19 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Tpetra::Access::ReadWriteStruct)
+  getLocalViewDevice(Access::ReadWriteStruct)
   {
     //returning dual_view_type::t_dev::type
-    if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
-                               "device while a host view is alive");
+    if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " device while a host view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
     owningView_.sync_device();
     owningView_.modify_device();
     return view_.view_device();
@@ -3764,12 +3790,24 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Tpetra::Access::WriteOnlyStruct)
+  getLocalViewDevice(Access::WriteOnlyStruct)
   {
     //returning dual_view_type::t_dev::type
-    if (owningView_.h_view.use_count() > owningView_.d_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on "
-                               "device while a host view is alive");
+    if (owningView_.h_view != view_.h_view) {
+      // view_ is a subview of owningView_; for safety, need to do ReadWrite
+      return getLocalViewDevice(Access::ReadWrite);
+    }
+
+    if (owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " device while a host view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
     owningView_.clear_sync_state();
     owningView_.modify_device();
     return view_.view_device();
@@ -4024,7 +4062,7 @@ namespace Tpetra {
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
 
-      this->modify_device ();
+      //this->modify_device ();
 
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
@@ -4157,11 +4195,9 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
-    this->sync_host();
-
+    auto view = this->getLocalViewHost(Access::ReadWrite);
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
-    view_.h_view (lclRow, colInd) = ScalarValue;
-    this->modify_host();
+    view (lclRow, colInd) = ScalarValue;
   }
 
 
@@ -4190,16 +4226,15 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
-    this->sync_host();
-
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+
+    auto view = this->getLocalViewHost(Access::ReadWrite);
     if (atomic) {
-      Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
+      Kokkos::atomic_add (& (view(lclRow, colInd)), value);
     }
     else {
-      view_.h_view (lclRow, colInd) += value;
+      view(lclRow, colInd) += value;
     }
-    this->modify_host();
   }
 
 
@@ -4275,6 +4310,7 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4295,6 +4331,7 @@ namespace Tpetra {
   sync_device () {
     owningView_.sync_device ();
   }
+#endif // TPETRA_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -4310,6 +4347,7 @@ namespace Tpetra {
     return owningView_.need_sync_device ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4323,30 +4361,13 @@ namespace Tpetra {
   modify_host () {
     owningView_.modify_host ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-
-#ifdef DISABLE_OLD_GETLOCALVIEW_FUNCTIONS
- template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDeviceUnsafe () const {
-    return view_.view_device ();
-  }
-
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
-  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHostUnsafe () const {
-    return view_.view_host ();
-  }
-
-#else
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewDevice () const {
-    if(owningView_.h_view.use_count() > owningView_.d_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on device while a host view is alive");
     return view_.view_device ();
   }
 
@@ -4354,11 +4375,9 @@ namespace Tpetra {
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewHost () const {
-    if(owningView_.d_view.use_count() > owningView_.h_view.use_count())
-      throw std::runtime_error("Tpetra::MultiVector: Cannot access data on host while a device view is alive");
     return view_.view_host ();
   }
-#endif
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
@@ -4613,7 +4632,10 @@ namespace Tpetra {
     // contents in either memory space, and we don't want
     // DualView::modify to complain about "concurrent modification" of
     // host and device Views.
-    this->clear_sync_state();
+
+    /// KJ: this is problematic. assign funtion is used to construct a subvector
+    ///     if the sync flag is reset here, it lose all our control over getLocalView interface
+    ///this->clear_sync_state();
 
     // If need sync to device, then host has most recent version.
     const bool src_last_updated_on_host = src.need_sync_device ();
@@ -4703,8 +4725,9 @@ namespace Tpetra {
     input_view_type src_view =
       Kokkos::subview (src_orig, pair_type (0, numRows), Kokkos::ALL ());
 
-    dst.clear_sync_state ();
-    dst.modify_device ();
+    /// KJ : this does not sound correct
+    //dst.clear_sync_state ();
+    //dst.modify_device ();
     constexpr bool src_isConstantStride = true;
     Teuchos::ArrayView<const size_t> srcWhichVectors (nullptr, 0);
     localDeepCopy (dst.getLocalViewDevice(Access::ReadWrite),

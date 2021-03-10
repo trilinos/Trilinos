@@ -106,20 +106,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test0, Scalar, LocalOrdinal
 
   prec.applyMat (x, y);
 
-  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
-  //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
-  //y should be full of 2's now.
+    //Since crsmatrix is a diagonal matrix with 2 on the diagonal,
+    //y should be full of 2's now.
 
-  Teuchos::ArrayRCP<Scalar> twos (num_rows_per_proc*2, 2);
-  TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+    Teuchos::ArrayRCP<Scalar> twos (num_rows_per_proc*2, 2);
+    TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 
   prec.apply(x, y);
-  //y should be full of 0.5's now.
-  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+  {
+    Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
-  y.sync_host();
-  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+    //y should be full of 0.5's now.
+    Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+
+    TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  }
 }
 
 // Test apply() with x == y.
@@ -194,8 +199,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, Test2, Scalar, LocalOrdinal
 
   TEST_INEQUALITY(&x, &y); // vector x and y are different
   // Vectors x and y point to the same data.
-  TEST_EQUALITY(x.getLocalViewHost ().data (),
-                y.getLocalViewHost ().data ());
+  TEST_EQUALITY(x.getLocalViewHost (Tpetra::Access::ReadOnly).data (),
+                y.getLocalViewHost (Tpetra::Access::ReadOnly).data ());
 
   prec.apply(x, y);
 
@@ -909,12 +914,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestDiagonalBlockCrsMatrix,
   using mag_type = typename STS::magnitudeType;
   const auto tol = mag_type(100.0) * STS::eps();
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j], exactSol, tol);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol, tol);
     }
   }
 }
@@ -1026,13 +1029,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestLowerTriangularBlockCrs
   exactSol[1] = -0.25;
   exactSol[2] = 0.625;
 
-  yBlock.sync_host();
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(lcl_row, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }
@@ -1079,12 +1080,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, TestUpperTriangularBlockCrs
   exactSol[1] = -0.25;
   exactSol[2] = 0.5;
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    auto yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }

@@ -159,6 +159,16 @@ protected:
 
 };
 
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> >
+createStepperSubcycling(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperSubcycling_decl_hpp

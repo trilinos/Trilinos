@@ -9,19 +9,16 @@
 #ifndef Tempus_TimeStepControl_decl_hpp
 #define Tempus_TimeStepControl_decl_hpp
 
-// Teuchos
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-// Tempus
-#include "Tempus_config.hpp"
-#include "Tempus_SolutionHistory.hpp"
-#include "Tempus_TimeStepControlStrategyBasicVS.hpp"
-#include "Tempus_Stepper.hpp"
-
 #include <iostream>
 #include <iterator>
 #include <sstream>
+
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
+
+#include "Tempus_config.hpp"
+#include "Tempus_SolutionHistory.hpp"
+#include "Tempus_TimeStepControlStrategy.hpp"
 
 
 namespace Tempus {

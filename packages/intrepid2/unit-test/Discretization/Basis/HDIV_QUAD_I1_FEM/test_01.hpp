@@ -71,7 +71,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int HDIV_QUAD_I1_FEM_Test01(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -84,7 +84,7 @@ namespace Intrepid2 {
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -109,7 +109,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = tolerence();
@@ -117,7 +117,7 @@ namespace Intrepid2 {
 
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HDIV_QUAD_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> quadBasis;
+      Basis_HDIV_QUAD_I1_FEM<DeviceType,outputValueType,pointValueType> quadBasis;
 
       *outStream
         << "\n"
@@ -326,7 +326,7 @@ namespace Intrepid2 {
         quadNodesHost(7,0) = -0.5;  quadNodesHost(7,1) =  0.0;
         quadNodesHost(8,0) =  0.5;  quadNodesHost(8,1) =  0.0;
 
-        const auto quadNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
+        const auto quadNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), quadNodesHost);
         Kokkos::deep_copy(quadNodes, quadNodesHost);
 
         // Dimensions for the output arrays:

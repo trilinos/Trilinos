@@ -415,7 +415,7 @@ factor ()
 template<class MatrixType, class LocalScalarType>
 void
 BandedContainer<MatrixType, LocalScalarType>::
-solveBlock(HostSubviewLocal X,
+solveBlock(ConstHostSubviewLocal X,
            HostSubviewLocal Y,
            int blockIndex,
            Teuchos::ETransp mode,

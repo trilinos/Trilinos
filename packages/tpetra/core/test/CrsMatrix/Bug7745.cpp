@@ -220,7 +220,7 @@ private:
   {
     int ierr = 0;
 
-    vec->sync_host();
+    //vec->sync_host();
     auto data = vec->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
@@ -246,7 +246,7 @@ private:
   {
     int ierr = 0;
 
-    vec->sync_host();
+    //vec->sync_host();
     auto data = vec->getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < vec->getLocalLength(); i++) {
@@ -286,7 +286,7 @@ private:
     int ierr = 0;
 
     for (size_t v = 0; v < vec.size(); v++) {
-      vec[v]->sync_host();
+      //vec[v]->sync_host();
       auto data = vec[v]->getLocalViewHost(Tpetra::Access::ReadOnly);
 
       for (size_t i = 0; i < vec[v]->getLocalLength(); i++) {

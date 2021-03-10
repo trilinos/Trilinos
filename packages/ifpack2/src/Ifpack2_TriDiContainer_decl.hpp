@@ -137,6 +137,7 @@ private:
   using local_mv_type = Tpetra::MultiVector<LSC, LO, GO, NO>;
   using HostViewLocal = typename Kokkos::View<LSC**, Kokkos::HostSpace>;
   using typename ContainerImpl<MatrixType, LocalScalarType>::HostSubviewLocal;
+  using typename ContainerImpl<MatrixType, LocalScalarType>::ConstHostSubviewLocal;
 
   static_assert (std::is_same<MatrixType, Tpetra::RowMatrix<SC, LO, GO, NO>>::value,
                  "Ifpack2::TriDiContainer: MatrixType must be a Tpetra::RowMatrix specialization.");
@@ -191,7 +192,7 @@ public:
 
   void clearBlocks();
 
-  void solveBlock(HostSubviewLocal X,
+  void solveBlock(ConstHostSubviewLocal X,
                   HostSubviewLocal Y,
                   int blockIndex,
                   Teuchos::ETransp mode,

@@ -168,7 +168,9 @@ namespace Ifpack2 {
     typedef typename Container<MatrixType>::import_type import_type;
 
     typedef typename Container<MatrixType>::HostView host_view_type;
+    typedef typename Container<MatrixType>::ConstHostView const_host_view_type;
     typedef host_view_type HostView;
+    typedef const_host_view_type ConstHostView;
     //typedef Tpetra::MultiVector<local_scalar_type, local_ordinal_type, global_ordinal_type, node_type> local_mv_type;
     //typedef typename Kokkos::View<local_scalar_type**, Kokkos::HostSpace> HostViewLocal;
 
@@ -336,7 +338,7 @@ namespace Ifpack2 {
     //! Compute <tt>Y := (1 - a) Y + a D^{-1} (X - R*Y)</tt>. Not supported. Call
     //! <tt>applyInverseJacobi</tt> instead.
     void
-    apply (host_view_type X,
+    apply (const_host_view_type X,
            host_view_type Y,
            int blockIndex,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -346,9 +348,9 @@ namespace Ifpack2 {
     //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>. Not
     //! supported.
     void
-    weightedApply (host_view_type X,
+    weightedApply (const_host_view_type X,
                    host_view_type Y,
-                   host_view_type W,
+                   const_host_view_type W,
                    int blockIndex,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),
@@ -418,6 +420,7 @@ namespace Ifpack2 {
     typedef typename Container<MatrixType>::import_type import_type;
 
     typedef typename Container<MatrixType>::HostView host_view_type;
+    typedef typename Container<MatrixType>::ConstHostView const_host_view_type;
     typedef typename Container<MatrixType>::row_matrix_type row_matrix_type;
 
     static_assert (std::is_same<MatrixType, row_matrix_type>::value,
@@ -443,7 +446,7 @@ namespace Ifpack2 {
                              int numSweeps = 1) const override {}
     
     void
-    apply (host_view_type X,
+    apply (const_host_view_type X,
            host_view_type Y,
            int blockIndex,
            Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -451,9 +454,9 @@ namespace Ifpack2 {
            scalar_type beta = Teuchos::ScalarTraits<scalar_type>::zero()) const override {}
 
     void
-    weightedApply (host_view_type X,
+    weightedApply (const_host_view_type X,
                    host_view_type Y,
-                   host_view_type W,
+                   const_host_view_type W,
                    int blockIndex,
                    Teuchos::ETransp mode = Teuchos::NO_TRANS,
                    scalar_type alpha = Teuchos::ScalarTraits<scalar_type>::one(),

@@ -270,15 +270,16 @@ namespace {
     FileInfo fi(file.File_Name());
     fmt::print("{0}  FILE {15}: {1}\n"
                "{0}   Title: {2}\n"
-               "{0}          Dim = {3}, Blocks = {4}, Nodes = {5}, Elements = {6}, Nodesets = {7}, "
-               "Sidesets = {8}, Edge Blocks = {9}, Face Blocks = {10}\n"
-               "{0}          Vars: Global = {11}, Nodal = {12}, Element = {13}, Nodeset = {14}, "
+               "{0}          Dim = {3}, Nodes = {5}, Elements = {6},\n"
+	       "{0}          Element Blocks = {4}, Face Blocks = {10}, Edge Blocks = {9}, Nodesets = {7}, "
+               "Sidesets = {8}\n"
+               "{0}    Vars: Global = {11}, Nodal = {12}, Element = {13}, Face = {17}, Edge = {18}, Nodeset = {14}, "
                "Sideset = {15}, Times = {16}\n\n",
                prefix, fi.realpath(), file.Title(), file.Dimension(), file.Num_Elmt_Blocks(),
                file.Num_Nodes(), file.Num_Elmts(), file.Num_Node_Sets(), file.Num_Side_Sets(),
-               file.Num_EB_Vars(), file.Num_FB_Vars(), file.Num_Global_Vars(),
+               file.Num_Edge_Blocks(), file.Num_Face_Blocks(), file.Num_Global_Vars(),
                file.Num_Nodal_Vars(), file.Num_Elmt_Vars(), file.Num_NS_Vars(), file.Num_SS_Vars(),
-               file.Num_Times(), count);
+               file.Num_Times(), file.Num_FB_Vars(), file.Num_EB_Vars());
   }
 
   std::string buf;
@@ -2266,7 +2267,7 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       Edge_Block<INT> *eblock1 = file1.Get_Edge_Block_by_Index(b);
       SMART_ASSERT(eblock1 != nullptr);
       if (eblock1->Size() == 0) {
-        std::cout << "eblock1->Size() == 0...continuing..." << std::endl;
+        std::cout << "eblock1->Size() == 0 ...continuing...\n";
         continue;
       }
       if (!eblock1->is_valid_var(vidx1)) {

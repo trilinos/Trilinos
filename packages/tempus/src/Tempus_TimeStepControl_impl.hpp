@@ -9,20 +9,13 @@
 #ifndef Tempus_TimeStepControl_impl_hpp
 #define Tempus_TimeStepControl_impl_hpp
 
-// Teuchos
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-//Step control strategy
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyComposite.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_TimeStepControlStrategyIntegralController.hpp"
 
-//Thyra
-#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 

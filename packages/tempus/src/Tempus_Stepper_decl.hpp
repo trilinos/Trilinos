@@ -9,14 +9,11 @@
 #ifndef Tempus_Stepper_decl_hpp
 #define Tempus_Stepper_decl_hpp
 
-//Teuchos
 #include "Teuchos_TimeMonitor.hpp"
-//
-// Thyra
+
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_NonlinearSolverBase.hpp"
 
-// Tempus
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
@@ -166,13 +163,10 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
-  /// \name Functions for Steppers with subSteppers (e.g., OperatorSplit)
-  //@{
-    virtual void createSubSteppers(
-      std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > /* models */){}
-  //@}
-
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const = 0;
+
+  /// Set Stepper member data from ParameterList.
+  void setStepperValues(const Teuchos::RCP<Teuchos::ParameterList> pl);
 
 private:
 

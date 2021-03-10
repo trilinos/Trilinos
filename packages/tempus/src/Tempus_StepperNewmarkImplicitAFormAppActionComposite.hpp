@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperNewmarkImplicitAFormAppActionComposite_hpp
 #define Tempus_StepperNewmarkImplicitAFormAppActionComposite_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperNewmarkImplicitAFormAppAction.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include <vector>

@@ -30,6 +30,7 @@ LWGraph_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 LeftoverAggregationAlgorithm
 LocalAggregationAlgorithm
 LocalLexicographicIndexManager
+LocalOrdinalTransferFactory
 OnePtAggregationAlgorithm
 OnePtAggregationAlgorithm_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
 PreserveDirichletAggregationAlgorithm

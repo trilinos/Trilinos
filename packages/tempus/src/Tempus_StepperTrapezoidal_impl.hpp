@@ -9,18 +9,11 @@
 #ifndef Tempus_StepperTrapezoidal_impl_hpp
 #define Tempus_StepperTrapezoidal_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperTrapezoidalModifierDefault.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "NOX_Thyra.H"
 
 
 namespace Tempus {
-
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
@@ -235,6 +228,26 @@ StepperTrapezoidal<Scalar>::getValidParameters() const
   pl->set("Default Solver", *solverPL);
 
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperTrapezoidal<Scalar> >
+createStepperTrapezoidal(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperTrapezoidal<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

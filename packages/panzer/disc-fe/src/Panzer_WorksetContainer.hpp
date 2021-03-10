@@ -208,6 +208,13 @@ private:
      */
    void setIdentifiers(const WorksetDescriptor & wd,std::map<unsigned,Workset> & wkstMap);
 
+   /** Check if WorksetNeeds have been registered
+    *
+    * \return True if there are element blocks with required needs objects
+    */
+   bool hasNeeds() const
+   {return ebToNeeds_.size() > 0;}
+
    Teuchos::RCP<const WorksetFactoryBase> wkstFactory_;      //! How to construct worksets
    std::map<std::string,WorksetNeeds> ebToNeeds_; //! Maps element blocks to input physics block objects
 
