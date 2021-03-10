@@ -2152,38 +2152,41 @@ namespace Tpetra {
     global_size_t globalMaxNumRowEntries_ =
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
-    /// JJJ NEW
+    /// WDV NEW
 
-    // Column indices should be const data after construction
-    using local_col_inds_JJJ_type = 
-          Kokkos::DualView<const local_ordinal_type*>;
-    using global_col_inds_JJJ_type = 
-          Kokkos::DualView<const global_ordinal_type*>;
-    
     // Host view takes place of copies, illegal accesses and use of 
     // getEntryOnHost
     // Device view takes place of k_rowPtrs (except where k_rowPtrs doesn't 
     // actually work in the code (e.g., insertCrsIndices); there, a host view
     // is needed.
     // Should be const data after construction
-    using row_ptrs_JJJ_type = 
+
+    using row_ptrs_dualv_type = 
           Kokkos::DualView<const typename local_graph_type::size_type *>;
-    row_ptrs_JJJ_type rowPtrs_JJJ;
+    using row_ptrs_wdv_type = WrappedDualView<row_ptrs_dualv_type>;
+
+    row_ptrs_wdv_type rowPtrs_wdv;
 
     // Valid when isLocallyIndexed is true
     // Device view takes place of k_lclInds1D_
-    local_col_inds_JJJ_type lclColInds_JJJ;
+    using local_col_inds_dualv_type = Kokkos::DualView<const local_ordinal_type*>;
+    using local_col_inds_wdv_type = WrappedDualView<local_col_inds_dualv_type>;
+
+    local_col_inds_wdv_type lclColInds_wdv;
 
     // Valid when isGloballyIndexed is true
     // Free'd during fillComplete
     // Device view takes place of k_gblInds1D_
-    global_col_inds_JJJ_type gblColInds_JJJ;
+    using global_col_inds_dualv_type = Kokkos::DualView<const global_ordinal_type*>;
+    using global_col_inds_wdv_type = WrappedDualView<global_col_inds_dualv_type>;
+
+    global_col_inds_wdv_type gblColInds_wdv;
 
     // FOR NOW...
     // KEEP k_numRowEntries_ (though switch from HostMirror to Host)
     // KEEP k_numAllocPerRow_ (though perhaps switch from HostMirror to Host)
 
-    /// JJJ NEW
+    /// WDV NEW
 
     /// \brief The maximum number of entries to allow in each locally
     ///   owned row, per row.
@@ -2267,7 +2270,8 @@ namespace Tpetra {
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
-    typename local_graph_type::row_map_type::const_type k_rowPtrs_;
+
+//WDV    typename local_graph_type::row_map_type::const_type k_rowPtrs_;
 
     /// \brief The type of k_numRowEntries_ (see below).
     ///
