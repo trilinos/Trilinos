@@ -42,6 +42,7 @@
 
 #include <Tpetra_Access.hpp>
 #include <Kokkos_DualView.hpp>
+#include <sstream>
 
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
@@ -176,17 +177,19 @@ public:
 private:
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
-      const char msg[] = "Tpetra::Details::WrappedDualView: Cannot access data on "
-                         "device while a host view is alive";
-      throw std::runtime_error(msg);
+      std::ostringstream msg;
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.name() << "): "
+          << "Cannot access data on device while a host view is alive";
+      throw std::runtime_error(msg.str());
     }
   }
 
   void throwIfDeviceViewAlive() const {
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
-      const char msg[] = "Tpetra::Details::WrappedDualView: Cannot access data on "
-                         "host while a device view is alive";
-      throw std::runtime_error(msg);
+      std::ostringstream msg;
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.name() << "): "
+          << "Cannot access data on host while a device view is alive";
+      throw std::runtime_error(msg.str());
     }
   }
 
