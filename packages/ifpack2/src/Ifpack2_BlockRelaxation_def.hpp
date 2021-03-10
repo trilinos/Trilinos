@@ -806,7 +806,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
 
   MV AY (Y.getMap (), NumVectors);
 
-  auto AYView = AY.getLocalViewHost ();
+  auto AYView = AY.getLocalViewHost (Tpetra::Access::WriteOnly);
 
   // Initial matvec not needed
   int starting_iteration = 0;
