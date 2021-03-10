@@ -50,12 +50,54 @@ namespace Tpetra {
 /// \warning Do NOT rely on the contents of this namespace.
 namespace Details {
 
+namespace impl {
+
+template <typename DualViewType>
+struct hasConstData {
+  using valueType = typename DualViewType::value_type;
+  using constValueType = typename DualViewType::const_value_type;
+  static constexpr bool value = std::is_same<valueType, constValueType>::value;
+};
+
+template <typename DualViewType>
+using enableIfConstData = std::enable_if_t<hasConstData<DualViewType>::value>;
+
+template <typename DualViewType>
+using enableIfNonConstData = std::enable_if_t<!hasConstData<DualViewType>::value>;
+
+template <typename DualViewType>
+enableIfNonConstData<DualViewType>
+sync_host(DualViewType dualView) {
+  dualView.sync_host();
+}
+
+template <typename DualViewType>
+enableIfConstData<DualViewType>
+sync_host(DualViewType dualView) { }
+
+template <typename DualViewType>
+enableIfNonConstData<DualViewType>
+sync_device(DualViewType dualView) {
+  dualView.sync_device();
+}
+
+template <typename DualViewType>
+enableIfConstData<DualViewType>
+sync_device(DualViewType dualView) { }
+
+}
+
 template <typename DualViewType>
 class WrappedDualView {
+private:
+  static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
+
 public:
 
-  WrappedDualView(DualViewType dualv)
-    : dualView(dualv)
+  WrappedDualView() {}
+
+  WrappedDualView(DualViewType dv)
+    : dualView(dv)
   { }
 
   WrappedDualView(const typename DualViewType::t_dev devv)
@@ -81,7 +123,7 @@ public:
   typename DualViewType::t_host::const_type
   getHostView(Access::ReadOnlyStruct) const {
     throwIfDeviceViewAlive();
-    dualView.sync_host();
+    impl::sync_host(dualView);
     return dualView.view_host();
   }
 
@@ -98,10 +140,8 @@ public:
 
   typename DualViewType::t_host
   getHostView(Access::ReadWriteStruct) {
-    static_assert(
-      std::is_same<typename DualViewType::value_type,
-      typename DualViewType::non_const_value_type>::value, 
-      "ReadWrite views are not available for DualView with const data");
+    static_assert(dualViewHasNonConstData,
+        "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.sync_host();
     dualView.modify_host();
@@ -110,10 +150,8 @@ public:
 
   typename DualViewType::t_host
   getHostView(Access::WriteOnlyStruct) {
-    static_assert(
-      std::is_same<typename DualViewType::value_type,
-      typename DualViewType::non_const_value_type>::value, 
-      "WriteOnly views are not available for DualView with const data");
+    static_assert(dualViewHasNonConstData,
+        "WriteOnly views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.clear_sync_state();
     dualView.modify_host();
@@ -128,7 +166,7 @@ public:
   typename DualViewType::t_dev::const_type
   getDeviceView(Access::ReadOnlyStruct) const {
     throwIfHostViewAlive();
-    dualView.sync_device();
+    impl::sync_device(dualView);
     return dualView.view_device();
   }
 
@@ -145,10 +183,8 @@ public:
 
   typename DualViewType::t_dev
   getDeviceView(Access::ReadWriteStruct) {
-    static_assert(
-      std::is_same<typename DualViewType::value_type,
-      typename DualViewType::non_const_value_type>::value, 
-      "ReadWrite views are not available for DualView with const data");
+    static_assert(dualViewHasNonConstData,
+        "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.sync_device();
     dualView.modify_device();
@@ -157,10 +193,8 @@ public:
 
   typename DualViewType::t_dev
   getDeviceView(Access::WriteOnlyStruct) {
-    static_assert(
-      std::is_same<typename DualViewType::value_type,
-      typename DualViewType::non_const_value_type>::value, 
-      "WriteOnly views are not available for DualView with const data");
+    static_assert(dualViewHasNonConstData,
+        "WriteOnly views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.clear_sync_state();
     dualView.modify_device();
