@@ -141,12 +141,24 @@ public:
     return (result == 0);
   }
 
+  template <typename ViewType>
+  bool extentCorrect(ViewType view) {
+    return (view.extent(0) == dualView.extent(0));
+  }
+
 private:
   Teuchos::RCP<const Teuchos::Comm<int>> comm;
   int commSize;
   int viewSize;
   DualViewType dualView;
 };
+
+TEUCHOS_UNIT_TEST(WrappedDualView, extent) {
+  WrappedDualViewFixture fixture;
+  const WrappedDualViewType wrappedView(fixture.getDualView());
+
+  TEST_ASSERT(fixture.extentCorrect(wrappedView));
+}
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessHostReadOnly) {
   WrappedDualViewFixture fixture;

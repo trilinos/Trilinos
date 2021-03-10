@@ -57,6 +57,11 @@ public:
     : dualView(dv)
   { }
 
+  KOKKOS_INLINE_FUNCTION size_t extent(const int i) const
+  {
+    return dualView.extent(i);
+  }
+
   typename DualViewType::t_host::const_type
   getHostView(Access::ReadOnlyStruct) const {
     throwIfDeviceViewAlive();
