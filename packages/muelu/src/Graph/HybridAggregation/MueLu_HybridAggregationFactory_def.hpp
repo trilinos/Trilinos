@@ -110,6 +110,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: allow user-specified singletons");
     SET_VALID_ENTRY("aggregation: error on nodes with no on-rank neighbors");
     SET_VALID_ENTRY("aggregation: phase2a include root");
+    SET_VALID_ENTRY("aggregation: phase2a agg factor");
     SET_VALID_ENTRY("aggregation: phase3 avoid singletons");
 
     // From StructuredAggregationFactory

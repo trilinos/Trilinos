@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef THYRA_FROSCH_LINEAR_OP_DEF_HPP
-#define THYRA_FROSCH_LINEAR_OP_DEF_HPP
+#ifndef _THYRA_FROSCH_LINEAR_OP_DEF_HPP
+#define _THYRA_FROSCH_LINEAR_OP_DEF_HPP
 
 #include "Thyra_FROSchLinearOp_decl.hpp"
 
