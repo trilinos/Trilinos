@@ -7,6 +7,15 @@
 #include "Tacho_Blas_External.hpp"
 #include "Tacho_Lapack_External.hpp"
 
+#include "Tacho_Chol.hpp"
+#include "Tacho_Chol_OnDevice.hpp"
+
+#include "Tacho_Trsv.hpp"
+#include "Tacho_Trsv_OnDevice.hpp"
+
+#include "Tacho_Gemv.hpp"
+#include "Tacho_Gemv_OnDevice.hpp"
+
 template<typename value_type>
 int driver_chol (const int m, const bool verbose) {
   int max_iter = 1;
@@ -43,6 +52,8 @@ int driver_chol (const int m, const bool verbose) {
         if (status) printf("Nonzero error from cusolverDnCreate %d\n", status);
       }
     }
+#else
+    int handle_blas, handle_lapack; // dummy
 #endif
 
     Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> Arand("Arand", m, m);
@@ -84,7 +95,7 @@ int driver_chol (const int m, const bool verbose) {
     {
       Kokkos::deep_copy(Aback, A);
       auto AA = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), Aback);
-      if (0) {
+      if (m < 20) {
         printf("AA  = \n");
         for (int i=0;i<m;++i) {
           for (int j=0;j<m;++j)
@@ -94,35 +105,24 @@ int driver_chol (const int m, const bool verbose) {
       }
     }
 
-    Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> x("x", m);
+    Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> x("x", m, 1);
     {
       Kokkos::parallel_for
         (Kokkos::RangePolicy<typename device_type::execution_space>(0,m),
          KOKKOS_LAMBDA(const int i) {
-          x(i) = i;
+          x(i,0) = i+1;
         });
+      Kokkos::fence();
     }
 
-    Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> b("b", m);
+    Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> b("b", m, 1);
     {
-#if defined (KOKKOS_ENABLE_CUDA) 
-      Tacho::Blas<value_type>::gemv(handle_blas,
-                                    CUBLAS_OP_N,
-                                    m, m,
-                                    one,
-                                    A.data(), m,
-                                    x.data(), 1,
-                                    zero,
-                                    b.data(), 1);
-#else
-      Tacho::Blas<value_type>::gemv('N',
-                                    m, m,
-                                    one,
-                                    A.data(), m,
-                                    x.data(), 1,
-                                    zero,
-                                    b.data(), 1);
-#endif
+      Tacho::Gemv<Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
+        ::invoke(handle_blas,
+                 one,
+                 A, x, 
+                 zero,
+                 b);
       Kokkos::fence();
     }
     
@@ -131,74 +131,53 @@ int driver_chol (const int m, const bool verbose) {
       Kokkos::deep_copy(A, Aback);
       Kokkos::fence();
 
-      value_type * A_ptr = A.data();
-      value_type * x_ptr = x.data();
       Kokkos::View<int,device_type> dev("dev");
       
       timer.reset();
-#if defined (KOKKOS_ENABLE_CUDA) 
       int lwork(0);
+#if defined (KOKKOS_ENABLE_CUDA) 
       Tacho::Lapack<value_type>::potrf_buffersize(handle_lapack, 
                                                   CUBLAS_FILL_MODE_UPPER,
                                                   m, 
                                                   A_ptr, m, 
                                                   &lwork);
       printf("Cholesky lwork %d\n", lwork);
-      Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> W("W", lwork);
-      value_type * W_ptr = W.data();
-      
-      Tacho::Lapack<value_type>::potrf(handle_lapack,
-                                       CUBLAS_FILL_MODE_UPPER,
-                                       m, 
-                                       A_ptr, m,
-                                       W_ptr, lwork,
-                                       dev.data());
-#else
-      Tacho::Lapack<value_type>::potrf('U',
-                                       m,
-                                       A_ptr, m,
-                                       dev.data());
 #endif
+      Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> W("W", lwork);
+      Tacho::Chol<Tacho::Uplo::Upper,Tacho::Algo::OnDevice>::invoke(handle_lapack, A, W);
       Kokkos::fence();
-      const double t = timer.seconds();
-      printf("Cholesky time %e\n", t);
+      {
+        const double t = timer.seconds();
+        printf("Cholesky factorization time %e\n", t);
+      }
       {
         const auto dev_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dev);
         if (dev_host()) printf("Cholesky returns non-zero dev info %d\n", dev_host());
       }
-
+      
       Kokkos::deep_copy(x, b);
       Kokkos::fence();
 
-#if defined (KOKKOS_ENABLE_CUDA) 
-      Tacho::Blas<value_type>::trsv(handle_blas,
-                                    CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_C, CUBLAS_DIAG_NON_UNIT,
-                                    m,
-                                    A_ptr, m,
-                                    x, 1);
-      Kokkos::fence();
-      Tacho::Blas<value_type>::trsv(handle_blas,
-                                    CUBLAS_FILL_MODE_UPPER, CUBLAS_OP_N, CUBLAS_DIAG_NON_UNIT,
-                                    m,
-                                    A_ptr, m,
-                                    x, 1);      
-#else
-      Tacho::Blas<value_type>::trsv('U', 'C', 'N',
-                                    m,
-                                    A_ptr, m,
-                                    x_ptr, 1);
-      Kokkos::fence();
-      Tacho::Blas<value_type>::trsv('U', 'N', 'N',
-                                    m,
-                                    A_ptr, m,
-                                    x_ptr, 1);            
-#endif
+      timer.reset();
+      {
+        Tacho::Trsv<Tacho::Uplo::Upper,Tacho::Trans::ConjTranspose,Tacho::Algo::OnDevice>
+          ::invoke(handle_blas, Tacho::Diag::NonUnit(), A, x);
+        Kokkos::fence();
+        Tacho::Trsv<Tacho::Uplo::Upper,Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
+          ::invoke(handle_blas, Tacho::Diag::NonUnit(), A, x);
+        Kokkos::fence();
+      }
+      {
+        const double t = timer.seconds();
+        printf("Cholesky solve time %e\n", t);
+      }
+      
       {
         const auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
-        if (0) {
+        if (m < 20) {
           printf("x = \n");
           for (int i=0;i<m;++i)
-            std::cout << x(i) << std::endl;
+            std::cout << x(i,0) << std::endl;
         }
       }
     }
