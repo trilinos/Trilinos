@@ -1993,28 +1993,6 @@ namespace Tpetra {
     Teuchos::ArrayView<const local_ordinal_type>
     getLocalView (const RowInfo& rowinfo) const;
 
-    /// \brief Get a nonconst, nonowned, locally indexed view of the
-    ///   locally owned row myRow, such that rowinfo =
-    ///   getRowInfo(myRow).
-    Teuchos::ArrayView<local_ordinal_type>
-    getLocalViewNonConst (const RowInfo& rowinfo);
-
-    /// \brief Get a pointer to the local column indices of a locally
-    ///   owned row, using the result of getRowInfo.
-    ///
-    /// \param lclInds [out] Pointer to the local column indices of
-    ///   the given row.
-    /// \param capacity [out] Capacity of (number of entries that can
-    ///   fit in) the given row.
-    /// \param rowInfo [in] Result of getRowInfo(lclRow) for the row
-    ///   \c lclRow to view.
-    ///
-    /// \return 0 if successful, else a nonzero error code.
-    local_ordinal_type
-    getLocalViewRawConst (const local_ordinal_type*& lclInds,
-                          local_ordinal_type& capacity,
-                          const RowInfo& rowInfo) const;
-
   private:
 
     /// \brief Get a const nonowned view of the local column indices
@@ -2051,12 +2029,6 @@ namespace Tpetra {
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const global_ordinal_type>
     getGlobalView (const RowInfo& rowinfo) const;
-
-    /// \brief Get a nonconst, nonowned, globally indexed view of the
-    ///   locally owned row myRow, such that rowinfo =
-    ///   getRowInfo(myRow).
-    Teuchos::ArrayView<global_ordinal_type>
-    getGlobalViewNonConst (const RowInfo& rowinfo);
 
     /// \brief Get a pointer to the global column indices of a locally
     ///   owned row, using the result of getRowInfoFromGlobalRowIndex.

@@ -3369,37 +3369,15 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
 
     if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
       if (staticGraph_->isLocallyIndexed ()) {
-        const LocalOrdinal* curLclInds;
         const impl_scalar_type* curVals;
-        LocalOrdinal numSpots; // includes both current entries and extra space
+        LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // If we got this far, rowinfo should be correct and should
-        // refer to a valid local row.  Thus, these error checks are
-        // superfluous, but we retain them in a debug build.
-#ifdef HAVE_TPETRA_DEBUG
-        int err =
-          staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "staticGraph_->getLocalViewRawConst returned nonzero error code "
-           << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
-           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
-           << ".");
-        const LocalOrdinal numSpotsBefore = numSpots;
-        err = getViewRawConst (curVals, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "getViewRaw returned nonzero error code " << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numSpotsBefore != numSpots, std::logic_error,
-           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
-           << numSpots << ".");
-#else
-        (void) staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
+        auto curLclIndsView = 
+             staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
+        const LocalOrdinal* curLclInds = curLclIndsView.data() 
+                                       + rowinfo.offset1D;
+
         (void) getViewRawConst (curVals, numSpots, rowinfo);
-#endif // HAVE_TPETRA_DEBUG
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
@@ -3409,37 +3387,14 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       else if (staticGraph_->isGloballyIndexed ()) {
         // Don't call getColMap(), because it touches RCP's reference count.
         const map_type& colMap = * (staticGraph_->colMap_);
-        const GlobalOrdinal* curGblInds;
         const impl_scalar_type* curVals;
-        LocalOrdinal numSpots; // includes both current entries and extra space
+        LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // If we got this far, rowinfo should be correct and should
-        // refer to a valid local row.  Thus, these error checks are
-        // superfluous, but we retain them in a debug build.
-#ifdef HAVE_TPETRA_DEBUG
-        int err =
-          staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "staticGraph_->getGlobalViewRawConst returned nonzero error code "
-           << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
-           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
-           << ".");
-        const LocalOrdinal numSpotsBefore = numSpots;
-        err = getViewRawConst (curVals, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "getViewRawConst returned nonzero error code " << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numSpotsBefore != numSpots, std::logic_error,
-           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
-           << numSpots << ".");
-#else
-        (void) staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
+        auto curGblIndsView = 
+             staticGraph_->gblInds_wdv.getHostView(Access::ReadOnly);
+        const GlobalOrdinal* curGblInds = curGblIndsView.data() 
+                                        + rowinfo.offset1D;
         (void) getViewRawConst (curVals, numSpots, rowinfo);
-#endif //HAVE_TPETRA_DEBUG
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
@@ -3475,37 +3430,15 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
       if (staticGraph_->isLocallyIndexed ()) {
         const map_type& colMap = * (staticGraph_->colMap_);
-        const LocalOrdinal* curLclInds;
         const impl_scalar_type* curVals;
-        LocalOrdinal numSpots; // includes both current entries and extra space
+        LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // If we got this far, rowinfo should be correct and should
-        // refer to a valid local row.  Thus, these error checks are
-        // superfluous, but we retain them in a debug build.
-#ifdef HAVE_TPETRA_DEBUG
-        int err =
-          staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "staticGraph_->getLocalViewRawConst returned nonzero error code "
-           << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
-           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
-           << ".");
-        const LocalOrdinal numSpotsBefore = numSpots;
-        err = getViewRawConst (curVals, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "getViewRaw returned nonzero error code " << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numSpotsBefore != numSpots, std::logic_error,
-           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
-           << numSpots << ".");
-#else
-        (void) staticGraph_->getLocalViewRawConst (curLclInds, numSpots, rowinfo);
+        auto curLclIndsView = 
+             staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
+        const LocalOrdinal* curLclInds = curLclIndsView.data()
+                                       + rowinfo.offset1D;
+     
         (void) getViewRawConst (curVals, numSpots, rowinfo);
-#endif //HAVE_TPETRA_DEBUG
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
@@ -3513,37 +3446,15 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         }
       }
       else if (staticGraph_->isGloballyIndexed ()) {
-        const GlobalOrdinal* curGblInds;
         const impl_scalar_type* curVals;
-        LocalOrdinal numSpots; // includes both current entries and extra space
+        LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // If we got this far, rowinfo should be correct and should
-        // refer to a valid local row.  Thus, these error checks are
-        // superfluous, but we retain them in a debug build.
-#ifdef HAVE_TPETRA_DEBUG
-        int err =
-          staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "staticGraph_->getGlobalViewRawConst returned nonzero error code "
-           << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (numSpots) < theNumEntries, std::logic_error,
-           "numSpots = " << numSpots << " < theNumEntries = " << theNumEntries
-           << ".");
-        const LocalOrdinal numSpotsBefore = numSpots;
-        err = getViewRawConst (curVals, numSpots, rowinfo);
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (err != static_cast<LocalOrdinal> (0), std::logic_error,
-           "getViewRawConst returned nonzero error code " << err << ".");
-        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numSpotsBefore != numSpots, std::logic_error,
-           "numSpotsBefore = " << numSpotsBefore << " != numSpots = "
-           << numSpots << ".");
-#else
-        (void) staticGraph_->getGlobalViewRawConst (curGblInds, numSpots, rowinfo);
+        auto curGblIndsView = 
+             staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
+        const GlobalOrdinal* curGblInds = curBglIndsView.data() 
+                                        + rowinfo.offset1D;
+
         (void) getViewRawConst (curVals, numSpots, rowinfo);
-#endif //HAVE_TPETRA_DEBUG
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
