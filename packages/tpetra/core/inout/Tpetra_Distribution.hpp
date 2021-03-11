@@ -67,6 +67,7 @@ enum DistributionType {
   TwoDVec,       // 2D distribution based on vector assignment in file
   OneDRandom,    // 1D randomly permuted distribution
   OneDLinear,    // 1D linear distribution
+  OneDRowMap,    // 1D linear distribution specified by Tpetra Row Map
   OneDVec,       // 1D distribution based on vector assignment in file
   LowerTriangularBlock, // Seher Acer's lower-triangular block distrib 
                         // for triangle counting

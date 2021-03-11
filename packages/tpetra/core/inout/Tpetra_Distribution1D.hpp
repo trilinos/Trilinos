@@ -134,6 +134,33 @@ private:
 friend class DistributionLowerTriangularBlock<gno_t,scalar_t>;  
   
 };
+/////////////////////////////////////////////////////////////////////////////
+template <typename gno_t, typename scalar_t>
+class Distribution1DRowMap: public Distribution1D<gno_t,scalar_t> {
+
+public:
+
+  Distribution1DRowMap(size_t nrows_,
+                       const Teuchos::RCP<const Tpetra::Map<> > &rowMap_,
+                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm_, 
+                       const Teuchos::ParameterList &params) :
+                       Distribution1D<gno_t,scalar_t>(nrows_, comm_, params),
+                       rowMap(rowMap_)
+  { }
+
+  inline enum DistributionType DistType() { return OneDRowMap; }
+
+  inline bool VecMine(gno_t i) { 
+    return 
+       (rowMap->getLocalElement(i) != 
+        Teuchos::OrdinalTraits<Tpetra::Map<>::local_ordinal_type>::invalid()); 
+  }
+
+private:
+
+  const Teuchos::RCP<const Tpetra::Map<> > rowMap;
+
+};
 
 /////////////////////////////////////////////////////////////////////////////
 template <typename gno_t, typename scalar_t>

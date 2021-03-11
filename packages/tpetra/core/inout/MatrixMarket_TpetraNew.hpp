@@ -30,8 +30,10 @@ buildDistribution(
   size_t nRow,                // Number of global matrix rows
   size_t nCol,                // Number of global matrix rows
   const Teuchos::ParameterList &params, // Parameters to the file reading
+  const Teuchos::RCP<const Tpetra::Map<> > &rowMap, 
+                              // Optional rowMap for 1DRowMap distribution
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm
-                            // communicator to be used in maps
+                              // communicator to be used in maps
 )
 {
   // Function to build the sets of GIDs for 1D or 2D matrix distribution.
@@ -56,7 +58,21 @@ buildDistribution(
     partitionFile = pe->getValue<std::string>(&partitionFile);
   }
 
-  if (distribution == "2D") {   // Generate 2D distribution
+  if (rowMap != Teuchos::null && distribution != "1DRowMap") {
+    std::cout << "readSparseFile Warning: rowMap provided but not used in "
+              << distribution << " distribution" << std::endl;
+  }
+
+  if (distribution == "1DRowMap") {
+    // Linear map using use-provided rowMap
+    TEUCHOS_TEST_FOR_EXCEPTION(rowMap == Teuchos::null, std::runtime_error,
+            "1DRowMap distribution requested but null RowMap provided");
+    Distribution1DRowMap<global_ordinal_type,scalar_type> *dist =
+            new Distribution1DRowMap<global_ordinal_type,scalar_type>(
+                                     nRow, rowMap, comm, params);
+    retval = dynamic_cast<basedist_t *>(dist);
+  }
+  else if (distribution == "2D") {   // Generate 2D distribution
     if (partitionFile != "") {
       // Generate 2D distribution with vector partition file
       TEUCHOS_TEST_FOR_EXCEPTION(randomize, std::logic_error,
@@ -140,6 +156,7 @@ static
 void 
 readMatrixMarket(  
   const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Tpetra::Map<> > &rowMap,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
   const Teuchos::ParameterList &params,
   size_t &nRow,
@@ -201,7 +218,8 @@ readMatrixMarket(
   bool ignoreDiagonal = (diagonal == "exclude");
   bool requireDiagonal = (diagonal == "require");
 
-  std::string distribution = "1D";  // Default distribution is 1D row-based
+  // Default distribution is 1D row-based, using rowMap if provided
+  std::string distribution = (rowMap != Teuchos::null ? "1DRowMap" : "1D"); 
   {
   const Teuchos::ParameterEntry *pe = params.getEntryPtr("distribution");
   if (pe != NULL) 
@@ -296,7 +314,7 @@ readMatrixMarket(
   // Create distribution based on nRow, nCol, npRow, npCol
   dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
 							    nRow, nCol, params,
-							    comm);
+							    rowMap, comm);
   if (useTimers) {
     timer = Teuchos::null;
     timer = rcp(new Teuchos::TimeMonitor(
@@ -507,6 +525,7 @@ static
 void 
 readBinary(  
   const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Tpetra::Map<> > &rowMap,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
   const Teuchos::ParameterList &params,
   size_t &nRow,
@@ -612,7 +631,7 @@ readBinary(
   // Create distribution based on nRow, nCol, npRow, npCol
   dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
 							    nRow, nCol, params,
-							    comm);
+							    rowMap, comm);
 
   std::set<global_ordinal_type> diagset;  
                             // If diagonal == require, this set keeps track of 
@@ -769,6 +788,7 @@ static
 void 
 readPerProcessBinary(
   const std::string &filename,
+  const Teuchos::RCP<const Tpetra::Map<> > &rowMap,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
   const Teuchos::ParameterList &params,
   size_t &nRow,
@@ -843,7 +863,7 @@ readPerProcessBinary(
   // Create distribution based on nRow, nCol, npRow, npCol
   dist = buildDistribution<global_ordinal_type,scalar_type>(distribution,
 							    nRow, nCol, params,
-							    comm);
+							    rowMap, comm);
 }
 
 public:
@@ -857,7 +877,21 @@ readSparseFile(
 )
 {
   Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist;
-  return readSparseFile(filename, comm, params, dist);
+  Teuchos::RCP<const Tpetra::Map<> > rowMap;
+  return readSparseFile(filename, rowMap, comm, params, dist);
+}
+
+// This interface accepts a row map as input to be used in 1DRowMap distribution
+static Teuchos::RCP<sparse_matrix_type>
+readSparseFile(
+  const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Tpetra::Map<> > &rowMap,
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params
+)
+{
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > dist;
+  return readSparseFile(filename, rowMap, comm, params, dist);
 }
 
 // This version has the Distribution object as an output parameter.
@@ -866,6 +900,20 @@ readSparseFile(
 static Teuchos::RCP<sparse_matrix_type>
 readSparseFile(
   const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
+  const Teuchos::ParameterList &params,
+  Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist 
+)
+{
+  Teuchos::RCP<const Tpetra::Map<> > rowMap;
+  return readSparseFile(filename, rowMap, comm, params, dist);
+}
+
+// This version accepts all the arguments and handles them accordingly
+static Teuchos::RCP<sparse_matrix_type>
+readSparseFile(
+  const std::string &filename,    // MatrixMarket file to read
+  const Teuchos::RCP<const Tpetra::Map<> > &rowMap,
   const Teuchos::RCP<const Teuchos::Comm<int> > &comm,  
   const Teuchos::ParameterList &params,
   Teuchos::RCP<Distribution<global_ordinal_type,scalar_type> > &dist 
@@ -939,12 +987,13 @@ readSparseFile(
   unsigned int *buffer; size_t nNz = 0;
   if(binary){
     if(readPerProcess)
-      readPerProcessBinary(filename, comm, params, nRow, nCol, localNZ, dist, buffer, nNz);
+      readPerProcessBinary(filename, rowMap, comm, params, 
+                           nRow, nCol, localNZ, dist, buffer, nNz);
     else 
-      readBinary(filename, comm, params, nRow, nCol, localNZ, dist);
+      readBinary(filename, rowMap, comm, params, nRow, nCol, localNZ, dist);
   }
   else
-    readMatrixMarket(filename, comm, params, nRow, nCol, localNZ, dist);
+    readMatrixMarket(filename, rowMap, comm, params, nRow, nCol, localNZ, dist);
 
   if(readPerProcess == false){
 
@@ -1024,13 +1073,14 @@ readSparseFile(
                    *Teuchos::TimeMonitor::getNewTimer("RSF insertNonzeros")));
   }
 
-  // Create a new RowMap with only rows having non-zero entries.
   size_t dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
-  Teuchos::RCP<const Tpetra::Map<> > rowMap = 
-       Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), 0, comm));
+
+  // Create a new RowMap with only rows having non-zero entries.
+  Teuchos::RCP<const Tpetra::Map<> > rowMapA = 
+           Teuchos::rcp(new Tpetra::Map<>(dummy, rowIdx(), 0, comm));
 
   Teuchos::RCP<sparse_matrix_type> A = 
-           rcp(new sparse_matrix_type(rowMap, nnzPerRow()));
+           rcp(new sparse_matrix_type(rowMapA, nnzPerRow()));
 
   //  Insert the global values into the matrix row-by-row.
   if (verbose && me == 0) 

@@ -174,6 +174,17 @@ public:
       ierr += runTest(testname, params);
     }
 
+    // 1D RowMap decomposition
+    {
+      Teuchos::ParameterList params;
+      const std::string testname = "1DRowMap";
+      params.set("diagonal", diagonal);
+      params.set("distribution", "1DRowMap");
+      params.set("randomize", false);
+      params.set("useTimers", true);
+      ierr += runTest(testname, params);
+    }
+
     // 1D Random
     {
       Teuchos::ParameterList params;
@@ -360,11 +371,33 @@ private:
   )
   {
     Teuchos::RCP<matrix_t> Amat;
+    std::string distribution = "1";
+    const Teuchos::ParameterEntry *pe = params.getEntryPtr("distribution");
+    if (pe != NULL)
+      distribution = pe->getValue<std::string>(&distribution);
+
     try {
       std::string tname = std::string("Read:  ") + testname;
       auto timer = Teuchos::TimeMonitor::getNewTimer(tname);
       Teuchos::TimeMonitor tt(*timer);
-      Amat = reader_t::readSparseFile(filename, comm, params, dist);
+      if (distribution[0] == '1') { // exercise rowMap interface
+        // build a crazy map
+        size_t nMyElements = yout_baseline->getMap()->getNodeNumElements();
+        size_t nElements = yout_baseline->getMap()->getGlobalNumElements();
+        gno_t shiftElement = nElements / 10;
+        Teuchos::Array<gno_t> myElements(nMyElements);
+        for (size_t i = 0; i < nMyElements; i++){
+          myElements[i] = (yout_baseline->getMap()->getGlobalElement(i) 
+                           + shiftElement) % nElements;
+        }
+        auto dummy = Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid();
+        Teuchos::RCP<const Tpetra::Map<> > shiftMap = 
+          rcp(new Tpetra::Map<>(dummy, myElements(), 0, comm));
+        Amat = reader_t::readSparseFile(filename, shiftMap,
+                                        comm, params, dist);
+      }
+      else
+        Amat = reader_t::readSparseFile(filename, comm, params, dist);
     }
     catch (std::exception &e) {
       if (comm->getRank() == 0) {
