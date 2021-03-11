@@ -21,7 +21,7 @@ unique design feature of Trilinos is its focus on packages.
 
 - [General Documentation](https://trilinos.github.io/documentation.html)
 
-- [Quick configure, build and install hints for Trilinos](https://github.com/trilinos/Trilinos/blob/master/INSTALL.rst)
+- [Quick configure, build and install hints for Trilinos](INSTALL.rst)
 
 - [Trilinos Configure, Build, Test, and Install Reference Guide](https://trilinos.org/docs/files/TrilinosBuildReference.html)
 
