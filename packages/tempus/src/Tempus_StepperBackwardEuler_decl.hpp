@@ -27,18 +27,23 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Backward Euler is
  *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Backward Euler}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Backward Euler \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf Compute the predictor} (e.g., apply stepper to $x_n$).
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_SOLVE)}
+ *      \item {\bf Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$}
+ *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
  *  \f}
  *
  *  The First-Same-As-Last (FSAL) principle is not needed with Backward Euler.

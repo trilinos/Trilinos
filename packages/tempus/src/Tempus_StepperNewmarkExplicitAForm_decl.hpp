@@ -36,34 +36,39 @@ namespace Tempus {
  *  where \f$\mathbf{v} = \dot{\mathbf{x}}\f$ and \f$\mathbf{d} = \mathbf{x}\f$.
  *
  *  <b> Algorithm </b>
- *  The algorithm for the Newmark explicit A-form is
-
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Forward Euler}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \If { Not ``Use FSAL'' or (previous step failed)}
- *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \State $\mathbf{a}^{n-1} =
- *          \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})$
- *    \EndIf
- *    \State $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
- *                            + \Delta t^2 \mathbf{a}^{n-1} / 2$
- *    \State $\mathbf{v}^{\ast} =
- *        \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
- *    \State $\mathbf{a}^{\ast} =
- *        \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})$
- *    \State $\mathbf{d}^n = \mathbf{d}^{\ast}$
- *    \State $\mathbf{v}^n =
- *        \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}$
- *    \If { ``Use FSAL'' }
- *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \State $\mathbf{a}^n =
- *          \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)$
- *    \EndIf
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *  The algorithm for the Newmark Explicit A-form is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Newmark Explicit A-form \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf if (Not ``Use FSAL'' or (previous step failed)) then}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $\mathbf{a}^{n-1} =
+ *                   \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})$
+ *      \item {\bf endif}
+ *      \item $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                               + \Delta t^2 \mathbf{a}^{n-1} / 2$
+ *      \item $\mathbf{v}^{\ast} =
+ *            \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
+ *      \item $\mathbf{a}^{\ast} =
+ *            \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})$
+ *      \item $\mathbf{d}^n = \mathbf{d}^{\ast}$
+ *      \item $\mathbf{v}^n =
+ *            \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}$
+ *      \item {\bf if (``Use FSAL'') then}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $\mathbf{a}^n =
+ *                   \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)$
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
  *  \f}
  *
  *  Note that with useFSAL=false \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not

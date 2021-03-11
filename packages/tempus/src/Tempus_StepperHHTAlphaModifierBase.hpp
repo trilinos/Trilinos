@@ -28,23 +28,6 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability.
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
- *
- *  Below is the HHTAlpha algorithm with the locations of the modify calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{HHTAlpha stepper with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State Solve for $x_{n+1}$ using the HHT one-step update.                                                                                       
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State Update $\dot x_{n+1}$.           
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
  */
 template<class Scalar>
 class StepperHHTAlphaModifierBase
