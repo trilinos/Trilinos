@@ -156,6 +156,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     const char * solverNames[4] = {"Augmentation", "MueLu-RefMaxwell", "ML-RefMaxwell", "CG"};
     solverType solver = MUELU_REFMAXWELL;
     int numTimeSteps = 1;
+    bool resetSolver = false;
     bool doSolveTimings = false;
     int numReps = 0;
     linearAlgebraType linAlgebraValues[2] = {linAlgTpetra, linAlgEpetra};
@@ -175,6 +176,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("solverFile",&xml,"XML file with the solver params");
     clp.setOption<solverType>("solver",&solver,4,solverValues,solverNames,"Solver that is used");
     clp.setOption("numTimeSteps",&numTimeSteps);
+    clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
 
@@ -637,7 +639,8 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     // compute the jacobian matrix only once
     Kokkos::fence();
     physics->evalModel(inArgs,outArgs);
-    outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<Scalar> >(NULL));
+    if (!resetSolver)
+      outArgs.set_W(RCP<Thyra::LinearOpWithSolveBase<Scalar> >(NULL));
 
     // take time-steps with Backward Euler
     if (exodus_output)
