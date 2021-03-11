@@ -307,6 +307,11 @@ namespace Tacho {
   /// Tag struct
   ///
   struct NullTag { enum : int { tag = 0 }; };
+  struct PivotBaseIndex {
+    enum : int { Zero = 0,
+                 One = 1 };
+  };
+
   struct Partition {
     enum : int { Top = 101,
                  Bottom,
@@ -465,6 +470,16 @@ namespace Tacho {
   template<>           struct conj_transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
   template<>           struct conj_transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
   template<>           struct conj_transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::ConjTranspose type; };
+
+  struct Direct {
+    enum : int { tag = 800 };
+    struct Forward {
+      enum : int { tag = 801 };
+    };
+    struct Backward {
+      enum : int { tag = 802 };
+    };
+  };
 
   ///
   /// helper functions

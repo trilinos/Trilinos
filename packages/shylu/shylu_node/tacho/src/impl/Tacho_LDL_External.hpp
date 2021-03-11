@@ -55,6 +55,7 @@ namespace Tacho {
             if (piv > 0) {
               /// 1x1 block 
               D(i,0) = A(i,i);
+              D(i,1) = zero;
               A(i,i) = one;
               ++i;
             } else if (piv < 0) {
@@ -62,6 +63,7 @@ namespace Tacho {
               D(i,  0) = A(i,  i  );
               D(i+1,1) = A(i+1,i+1);
 
+              /// this offdiag value should be non-zero
               const value_type offdiag = A(i+1,i);
               D(i,  1) = offdiag;
               D(i+1,0) = offdiag;
