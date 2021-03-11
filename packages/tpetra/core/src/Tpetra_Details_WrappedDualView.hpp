@@ -116,6 +116,7 @@ public:
 
   typename DualViewType::t_host::const_type
   getHostView(Access::ReadOnlyStruct) const {
+std::cout << " KDDKDD getHostView " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     throwIfDeviceViewAlive();
     impl::sync_host(dualView);
     return dualView.view_host();
@@ -143,6 +144,7 @@ public:
 
   typename DualViewType::t_dev::const_type
   getDeviceView(Access::ReadOnlyStruct) const {
+std::cout << " KDDKDD getDeviceView " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     throwIfHostViewAlive();
     impl::sync_device(dualView);
     return dualView.view_device();
@@ -171,6 +173,7 @@ public:
 private:
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
+std::cout << " KDDKDD throwIfHostViewAlive " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
           << "Cannot access data on device while a host view is alive";
@@ -180,6 +183,7 @@ private:
 
   void throwIfDeviceViewAlive() const {
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
+std::cout << " KDDKDD throwIfDeviceViewAlive " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
           << "Cannot access data on host while a device view is alive";

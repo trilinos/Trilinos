@@ -628,7 +628,7 @@ namespace Tpetra {
     //   "number of rows.  The row Map claims " << getNodeNumRows () << " row(s), "
     //   "but the local graph claims " << k_local_graph_.numRows () << " row(s).");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      k_lclInds1D_.extent (0) != 0 || k_gblInds1D_.extent (0) != 0, std::logic_error,
+      lclInds_wdv.extent (0) != 0 || k_gblInds1D_.extent (0) != 0, std::logic_error,
       ": cannot have 1D data structures allocated.");
 
     if(! params.is_null() && params->isParameter("sorted") &&
@@ -644,8 +644,8 @@ namespace Tpetra {
     Teuchos::Array<int> remotePIDs (0); // unused output argument
     this->makeImportExport (remotePIDs, false);
 
-    k_lclInds1D_ = lclGraph_.entries;
-    rowPtrs_wdv = row_ptrs_wdv_type(lclGraph_.row_map);  // KDD CONST
+    lclInds_wdv = lcl_inds_wdv_type(lclGraph_.entries);
+    rowPtrsAlloc_wdv = row_ptrs_wdv_type(lclGraph_.row_map); 
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -690,8 +690,8 @@ namespace Tpetra {
       (colMap.is_null (), std::runtime_error,
        "The input column Map must be nonnull.");
 
-    k_lclInds1D_ = lclGraph_.entries;
-    rowPtrs_wdv = row_ptrs_wdv_type(lclGraph_.row_map);  // KDD CONST
+    lclInds_wdv = lcl_inds_wdv_type(lclGraph_.entries);
+    rowPtrsAlloc_wdv = row_ptrs_wdv_type(lclGraph_.row_map);  // KDD CONST
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -1033,11 +1033,11 @@ namespace Tpetra {
         }
       }
       else if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
-        if (rowPtrs_wdv.extent (0) == 0) {
+        if (rowPtrsAlloc_wdv.extent (0) == 0) {
           return static_cast<size_t> (0);
         }
         else {
-          return rowPtrs_wdv.getHostView(Access::ReadOnly)(lclNumRows);
+          return rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(lclNumRows);
         }
       }
       else {
@@ -1160,6 +1160,7 @@ namespace Tpetra {
     //
     //  STATIC ALLOCATION PROFILE
     //
+  {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate k_rowPtrs: " << (numRows+1) << endl;
@@ -1206,17 +1207,18 @@ namespace Tpetra {
     }
 
     // "Commit" the resulting row offsets.
-    rowPtrs_wdv = row_ptrs_wdv_type(k_rowPtrs);
+    rowPtrsAlloc_wdv = row_ptrs_wdv_type(k_rowPtrs);
+  }
 
-    const size_type numInds = rowPtrs_wdv.getHostView(Access::ReadOnly)(numRows);
+    const size_type numInds = rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(numRows);
     if (lg == LocalIndices) {
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Allocate local column indices "
-          "k_lclInds1D_: " << numInds << endl;
+          "lclInds_wdv: " << numInds << endl;
         std::cerr << os.str();
       }
-      k_lclInds1D_ = lcl_col_inds_type ("Tpetra::CrsGraph::ind", numInds);
+      lclInds_wdv = lcl_inds_wdv_type ("Tpetra::CrsGraph::ind", numInds);
     }
     else {
       if (verbose) {
@@ -1295,12 +1297,12 @@ namespace Tpetra {
       return Teuchos::ArrayView<const LO> ();
     }
     else { // nothing in the row to view
-      if (k_lclInds1D_.extent (0) != 0) { // 1-D storage
+      if (lclInds_wdv.extent (0) != 0) { // 1-D storage
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
         const std::pair<size_t, size_t> rng (start, start + len);
         // mfh 23 Nov 2015: Don't just create a subview of
-        // k_lclInds1D_ directly, because that first creates a
+        // lclInds_wdv directly, because that first creates a
         // _managed_ subview, then returns an unmanaged version of
         // that.  That touches the reference count, which costs
         // performance in a measurable way.
@@ -1566,7 +1568,7 @@ namespace Tpetra {
     ret.localRow = static_cast<size_t> (myRow);
     if (this->indicesAreAllocated ()) {
       // Offsets tell us the allocation size in this case.
-      auto k_rowPtrs = rowPtrs_wdv.getHostView(Access::ReadOnly);
+      auto k_rowPtrs = rowPtrsAlloc_wdv.getHostView(Access::ReadOnly);
       if (k_rowPtrs.extent (0) == 0) {
         ret.offset1D  = 0;
         ret.allocSize = 0;
@@ -1623,7 +1625,7 @@ namespace Tpetra {
       // graph data structures have the info that we need
       //
       // if static graph, offsets tell us the allocation size
-      auto k_rowPtrs = rowPtrs_wdv.getHostView(Access::ReadOnly);
+      auto k_rowPtrs = rowPtrsAlloc_wdv.getHostView(Access::ReadOnly);
       if (k_rowPtrs.extent (0) == 0) {
         ret.offset1D  = 0;
         ret.allocSize = 0;
@@ -1832,7 +1834,7 @@ namespace Tpetra {
     using inp_view_type = View<const GO*, Kokkos::HostSpace, MemoryUnmanaged>;
     inp_view_type inputInds(inputGblColInds, numInputInds);
     size_t numInserted = Details::insertCrsIndices(lclRow, 
-      rowPtrs_wdv.getHostView(Access::ReadOnly), 
+      rowPtrsAlloc_wdv.getHostView(Access::ReadOnly), 
       this->k_gblInds1D_, numEntries, inputInds, fun);
 
     const bool insertFailed =
@@ -1896,7 +1898,7 @@ namespace Tpetra {
     using inp_view_type = View<const LO*, Kokkos::HostSpace, MemoryUnmanaged>;
     inp_view_type inputInds(indices.getRawPtr(), indices.size());
     auto numInserted = Details::insertCrsIndices(myRow, 
-      rowPtrs_wdv.getHostView(Access::ReadOnly),
+      rowPtrsAlloc_wdv.getHostView(Access::ReadOnly),
       this->k_lclInds1D_, numEntries, inputInds, fun);
 
     const bool insertFailed =
@@ -1950,7 +1952,7 @@ namespace Tpetra {
     if (this->isLocallyIndexed())
     {
       numFound = Details::findCrsIndices(lclRow,
-        rowPtrs_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
+        rowPtrsAlloc_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, fun);
     }
     else if (this->isGloballyIndexed())
@@ -1960,7 +1962,7 @@ namespace Tpetra {
       const auto& colMap = *(this->colMap_);
       auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
       numFound = Details::findCrsIndices(lclRow, 
-        rowPtrs_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
+        rowPtrsAlloc_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, map, fun);
     }
     return numFound;
@@ -1991,13 +1993,13 @@ namespace Tpetra {
       const auto& colMap = *(this->colMap_);
       auto map = [&](GO const gblInd){return colMap.getLocalElement(gblInd);};
       numFound = Details::findCrsIndices(lclRow, 
-        rowPtrs_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
+        rowPtrsAlloc_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
         this->k_lclInds1D_, inputInds, map, fun);
     }
     else if (this->isGloballyIndexed())
     {
       numFound = Details::findCrsIndices(lclRow, 
-        rowPtrs_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
+        rowPtrsAlloc_wdv.getHostView(Access::ReadOnly), rowInfo.numEntries,
         this->k_gblInds1D_, inputInds, fun);
     }
     return numFound;
@@ -2178,34 +2180,34 @@ namespace Tpetra {
          "nonzero, or k_numAllocPerRow_ has nonzero dimension.  In other words, "
          "the graph is supposed to release its \"allocation specifications\" "
          "when it allocates its indices." << suffix);
-      if (isGloballyIndexed() && rowPtrs_wdv.extent(0) != 0) {
+      if (isGloballyIndexed() && rowPtrsAlloc_wdv.extent(0) != 0) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (size_t(rowPtrs_wdv.extent(0)) != size_t(lclNumRows + 1),
+          (size_t(rowPtrsAlloc_wdv.extent(0)) != size_t(lclNumRows + 1),
            std::logic_error, "The graph is globally indexed and "
-           "rowPtrs_wdv has nonzero size " << rowPtrs_wdv.extent(0)
+           "rowPtrsAlloc_wdv has nonzero size " << rowPtrsAlloc_wdv.extent(0)
            << ", but that size does not equal lclNumRows+1 = "
            << (lclNumRows+1) << "." << suffix);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (rowPtrs_wdv.getHostView(Access::ReadOnly)(lclNumRows) != 
+          (rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(lclNumRows) != 
               size_t(k_gblInds1D_.extent(0)),
            std::logic_error, "The graph is globally indexed and "
-           "rowPtrs_wdv has nonzero size " << rowPtrs_wdv.extent(0)
-           << ", but rowPtrs_wdv(lclNumRows=" << lclNumRows << ")="
-           << rowPtrs_wdv.getHostView(Access::ReadOnly)(lclNumRows) 
+           "rowPtrsAlloc_wdv has nonzero size " << rowPtrsAlloc_wdv.extent(0)
+           << ", but rowPtrsAlloc_wdv(lclNumRows=" << lclNumRows << ")="
+           << rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(lclNumRows) 
            << " != k_gblInds1D_.extent(0)="
            << k_gblInds1D_.extent(0) << "." << suffix);
       }
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->isLocallyIndexed () &&
-         this->rowPtrs_wdv.extent (0) != 0 &&
-         (static_cast<size_t> (rowPtrs_wdv.extent (0)) != 
+         this->rowPtrsAlloc_wdv.extent (0) != 0 &&
+         (static_cast<size_t> (rowPtrsAlloc_wdv.extent (0)) != 
               static_cast<size_t> (lclNumRows + 1) ||
-          this->rowPtrs_wdv.getHostView(Access::ReadOnly)(lclNumRows) != 
+          this->rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(lclNumRows) != 
               static_cast<size_t> (this->k_lclInds1D_.extent (0))),
-         std::logic_error, "If rowPtrs_wdv has nonzero size and "
+         std::logic_error, "If rowPtrsAlloc_wdv has nonzero size and "
          "the graph is locally indexed, then "
-         "rowPtrs_wdv must have N+1 rows, and "
-         "rowPtrs_wdv(N) must equal k_lclInds1D_.extent(0)." << suffix);
+         "rowPtrsAlloc_wdv must have N+1 rows, and "
+         "rowPtrsAlloc_wdv(N) must equal k_lclInds1D_.extent(0)." << suffix);
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (this->indicesAreAllocated () &&
@@ -2217,7 +2219,7 @@ namespace Tpetra {
 
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (! this->indicesAreAllocated () &&
-         ((this->rowPtrs_wdv.extent (0) != 0 ||
+         ((this->rowPtrsAlloc_wdv.extent (0) != 0 ||
            this->k_numRowEntries_.extent (0) != 0) ||
           this->k_lclInds1D_.extent (0) != 0 ||
           this->k_gblInds1D_.extent (0) != 0),
@@ -2264,28 +2266,28 @@ namespace Tpetra {
          << getNodeNumRows () << " > 0." << suffix);
       // check the actual allocations
       if (this->indicesAreAllocated () &&
-          this->rowPtrs_wdv.extent (0) != 0) {
+          this->rowPtrsAlloc_wdv.extent (0) != 0) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (this->rowPtrs_wdv.extent (0)) !=
+          (static_cast<size_t> (this->rowPtrsAlloc_wdv.extent (0)) !=
            this->getNodeNumRows () + 1,
            std::logic_error, "Indices are allocated and "
-           "rowPtrs_wdv has nonzero length, but rowPtrs_wdv.extent(0) = "
-           << this->rowPtrs_wdv.extent (0) << " != getNodeNumRows()+1 = "
+           "rowPtrsAlloc_wdv has nonzero length, but rowPtrsAlloc_wdv.extent(0) = "
+           << this->rowPtrsAlloc_wdv.extent (0) << " != getNodeNumRows()+1 = "
            << (this->getNodeNumRows () + 1) << "." << suffix);
         const size_t actualNumAllocated = 
-              this->rowPtrs_wdv.getHostView(Access::ReadOnly)(this->getNodeNumRows());
+              this->rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(this->getNodeNumRows());
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (this->isLocallyIndexed () &&
            static_cast<size_t> (this->k_lclInds1D_.extent (0)) != actualNumAllocated,
            std::logic_error, "Graph is locally indexed, indices are "
-           "are allocated, and rowPtrs_wdv has nonzero length, but "
+           "are allocated, and rowPtrsAlloc_wdv has nonzero length, but "
            "k_lclInds1D_.extent(0) = " << this->k_lclInds1D_.extent (0)
            << " != actualNumAllocated = " << actualNumAllocated << suffix);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (this->isGloballyIndexed () &&
            static_cast<size_t> (this->k_gblInds1D_.extent (0)) != actualNumAllocated,
            std::logic_error, "Graph is globally indexed, indices "
-           "are allocated, and rowPtrs_wdv has nonzero length, but "
+           "are allocated, and rowPtrsAlloc_wdv has nonzero length, but "
            "k_gblInds1D_.extent(0) = " << this->k_gblInds1D_.extent (0)
            << " != actualNumAllocated = " << actualNumAllocated << suffix);
       }
@@ -2372,7 +2374,7 @@ namespace Tpetra {
     const char prefix[] = "Tpetra::CrsGraph::getNodeRowPtrs: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
 
-    const size_t size = rowPtrs_wdv.extent (0);
+    const size_t size = rowPtrsAlloc_wdv.extent (0);
     constexpr bool same = std::is_same<size_t, row_offset_type>::value;
 
     if (size == 0) {
@@ -2382,13 +2384,13 @@ namespace Tpetra {
     ArrayRCP<const row_offset_type> ptr_rot;
     ArrayRCP<const size_t> ptr_st;
     if (same) { // size_t == row_offset_type
-      auto ptr_h = rowPtrs_wdv.getHostView(Access::ReadOnly);
+      auto ptr_h = rowPtrsAlloc_wdv.getHostView(Access::ReadOnly);
       ptr_rot = Kokkos::Compat::persistingView (ptr_h);
     }
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, device_type> ret_view_type;
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
-      ::Tpetra::Details::copyOffsets (ptr_d, rowPtrs_wdv.getDeviceView(Access::ReadOnly));
+      ::Tpetra::Details::copyOffsets (ptr_d, rowPtrsAlloc_wdv.getDeviceView(Access::ReadOnly));
       typename ret_view_type::HostMirror ptr_h = create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h, ptr_d);
       ptr_st = Kokkos::Compat::persistingView (ptr_h);
@@ -2405,7 +2407,7 @@ namespace Tpetra {
     }
 
     // If size_t == row_offset_type, return a persisting host view of
-    // rowPtrs_wdv.  Otherwise, return a size_t host copy of rowPtrs_wdv.
+    // rowPtrsAlloc_wdv.  Otherwise, return a size_t host copy of rowPtrsAlloc_wdv.
     ArrayRCP<const size_t> retval =
       Kokkos::Impl::if_c<same,
         ArrayRCP<const row_offset_type>,
@@ -2951,7 +2953,7 @@ namespace Tpetra {
     indicesAreSorted_    = true;
     noRedundancies_      = true;
     k_lclInds1D_         = columnIndices;
-    rowPtrs_wdv = row_ptrs_wdv_type(rowPointers);
+    rowPtrsAlloc_wdv = row_ptrs_wdv_type(rowPointers);
 
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
@@ -3058,10 +3060,10 @@ namespace Tpetra {
         // left with the case that we have optimized storage. in this
         // case, we have to construct a list of row sizes.
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (numRows != 0 && rowPtrs_wdv.extent (0) == 0, std::logic_error,
+          (numRows != 0 && rowPtrsAlloc_wdv.extent (0) == 0, std::logic_error,
            "The graph has " << numRows << " (> 0) row"
            << (numRows != 1 ? "s" : "") << " on the calling process, "
-           "but the rowPtrs_wdv array has zero entries." << suffix);
+           "but the rowPtrsAlloc_wdv array has zero entries." << suffix);
         Teuchos::ArrayRCP<size_t> numEnt;
         if (numRows != 0) {
           numEnt = Teuchos::arcp<size_t> (numRows);
@@ -3070,7 +3072,7 @@ namespace Tpetra {
         // We have to iterate through the row offsets anyway, so we
         // might as well check whether all rows' bounds are the same.
         bool allRowsReallySame = false;
-        auto k_rowPtrs = rowPtrs_wdv.getHostView(Access::ReadOnly);
+        auto k_rowPtrs = rowPtrsAlloc_wdv.getHostView(Access::ReadOnly);
         for (ptrdiff_t i = 0; i < numRows; ++i) {
           numEnt[i] = k_rowPtrs(i+1) - k_rowPtrs(i);
           if (i != 0 && numEnt[i] != numEnt[i-1]) {
@@ -3649,14 +3651,14 @@ namespace Tpetra {
       isFillComplete () || ! hasColMap (), std::runtime_error, "You may not "
       "call this method unless the graph has a column Map.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      getNodeNumRows () > 0 && rowPtrs_wdv.extent (0) == 0,
+      getNodeNumRows () > 0 && rowPtrsAlloc_wdv.extent (0) == 0,
       std::runtime_error, "The calling process has getNodeNumRows() = "
       << getNodeNumRows () << " > 0 rows, but the row offsets array has not "
       "been set.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      static_cast<size_t> (rowPtrs_wdv.extent (0)) != getNodeNumRows () + 1,
+      static_cast<size_t> (rowPtrsAlloc_wdv.extent (0)) != getNodeNumRows () + 1,
       std::runtime_error, "The row offsets array has length " <<
-      rowPtrs_wdv.extent (0) << " != getNodeNumRows()+1 = " <<
+      rowPtrsAlloc_wdv.extent (0) << " != getNodeNumRows()+1 = " <<
       (getNodeNumRows () + 1) << ".");
 
     // Note: We don't need to do the following things which are normally done in fillComplete:
@@ -3793,28 +3795,28 @@ namespace Tpetra {
     }
 
     // The graph's column indices are currently stored in a 1-D
-    // format, with row offsets in rowPtrs_wdv and local column indices
+    // format, with row offsets in rowPtrsAlloc_wdv and local column indices
     // in k_lclInds1D_.
 
     if (debug_) {
       // The graph's array of row offsets must already be allocated.
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (rowPtrs_wdv.extent (0) == 0, std::logic_error,
-         "rowPtrs_wdv has size zero, but shouldn't");
+        (rowPtrsAlloc_wdv.extent (0) == 0, std::logic_error,
+         "rowPtrsAlloc_wdv has size zero, but shouldn't");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (rowPtrs_wdv.extent (0) != lclNumRows + 1, std::logic_error,
-         "rowPtrs_wdv.extent(0) = "
-         << rowPtrs_wdv.extent (0) << " != (lclNumRows + 1) = "
+        (rowPtrsAlloc_wdv.extent (0) != lclNumRows + 1, std::logic_error,
+         "rowPtrsAlloc_wdv.extent(0) = "
+         << rowPtrsAlloc_wdv.extent (0) << " != (lclNumRows + 1) = "
          << (lclNumRows + 1) << ".");
-      const size_t numOffsets = rowPtrs_wdv.extent (0);
+      const size_t numOffsets = rowPtrsAlloc_wdv.extent (0);
       const auto valToCheck = 
-        rowPtrs_wdv.getHostView(Access::ReadOnly)(numOffsets-1);
+        rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(numOffsets-1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numOffsets != 0 &&
          k_lclInds1D_.extent (0) != valToCheck,
          std::logic_error, "numOffsets=" << numOffsets << " != 0 "
          " and k_lclInds1D_.extent(0)=" << k_lclInds1D_.extent(0)
-         << " != rowPtrs_wdv(" << numOffsets << ")=" << valToCheck
+         << " != rowPtrsAlloc_wdv(" << numOffsets << ")=" << valToCheck
          << ".");
     }
 
@@ -3851,15 +3853,15 @@ namespace Tpetra {
       // didn't fill all those entries.
 
       if (debug_) {
-        if (rowPtrs_wdv.extent (0) != 0) {
+        if (rowPtrsAlloc_wdv.extent (0) != 0) {
           const size_t numOffsets =
-            static_cast<size_t> (rowPtrs_wdv.extent (0));
+            static_cast<size_t> (rowPtrsAlloc_wdv.extent (0));
           const auto valToCheck = 
-            rowPtrs_wdv.getHostView(Access::ReadOnly)(numOffsets - 1);
+            rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (valToCheck != size_t(k_lclInds1D_.extent(0)),
              std::logic_error, "(Unpacked branch) Before allocating "
-             "or packing, rowPtrs_wdv(" << (numOffsets-1) << ")="
+             "or packing, rowPtrsAlloc_wdv(" << (numOffsets-1) << ")="
              << valToCheck << " != k_lclInds1D_.extent(0)="
              << k_lclInds1D_.extent (0) << ".");
         }
@@ -3911,7 +3913,7 @@ namespace Tpetra {
       // Allocate the array of packed column indices.
       ind_d = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
 
-      // rowPtrs_wdv and k_lclInds1D_ are currently unpacked.  Pack
+      // rowPtrsAlloc_wdv and k_lclInds1D_ are currently unpacked.  Pack
       // them, using the packed row offsets array ptr_d that we
       // created above.
       //
@@ -3925,7 +3927,7 @@ namespace Tpetra {
         typename local_graph_type::entries_type::non_const_type,
         row_map_type> inds_packer_type;
       inds_packer_type f (ind_d, k_lclInds1D_, ptr_d,
-                          rowPtrs_wdv.getDeviceView(Access::ReadOnly));
+                          rowPtrsAlloc_wdv.getDeviceView(Access::ReadOnly));
       {
         typedef typename decltype (ind_d)::execution_space exec_space;
         typedef Kokkos::RangePolicy<exec_space, LocalOrdinal> range_type;
@@ -3936,7 +3938,7 @@ namespace Tpetra {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (ptr_d.extent (0) == 0, std::logic_error,
            "(\"Optimize Storage\"=true branch) After packing, "
-           "ptr_d.extent(0)=0.  This probably means rowPtrs_wdv was "
+           "ptr_d.extent(0)=0.  This probably means rowPtrsAlloc_wdv was "
            "never allocated.");
         if (ptr_d.extent (0) != 0) {
           const size_t numOffsets = static_cast<size_t> (ptr_d.extent (0));
@@ -3952,7 +3954,7 @@ namespace Tpetra {
       }
     }
     else { // We don't have to pack, so just set the pointers.
-      ptr_d_const = rowPtrs_wdv.getDeviceView(Access::ReadOnly);
+      ptr_d_const = rowPtrsAlloc_wdv.getDeviceView(Access::ReadOnly);
       ind_d = k_lclInds1D_;
 
       if (debug_) {
@@ -3960,7 +3962,7 @@ namespace Tpetra {
           (ptr_d_const.extent (0) == 0, std::logic_error,
            "(\"Optimize Storage\"=false branch) "
            "ptr_d_const.extent(0) = 0.  This probably means that "
-           "rowPtrs_wdv was never allocated.");
+           "rowPtrsAlloc_wdv was never allocated.");
         if (ptr_d_const.extent (0) != 0) {
           const size_t numOffsets =
             static_cast<size_t> (ptr_d_const.extent (0));
@@ -4002,7 +4004,7 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      rowPtrs_wdv = row_ptrs_wdv_type(ptr_d_const);
+      rowPtrsAlloc_wdv = row_ptrs_wdv_type(ptr_d_const);
       k_lclInds1D_ = ind_d;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -4456,8 +4458,8 @@ namespace Tpetra {
           lcl_col_inds_type>::select (k_gblInds1D_, k_lclInds1D_);
       }
       else {
-        if (rowPtrs_wdv.extent (0) == 0) {
-          errStrm << "rowPtrs_wdv.extent(0) == 0.  This should never "
+        if (rowPtrsAlloc_wdv.extent (0) == 0) {
+          errStrm << "rowPtrsAlloc_wdv.extent(0) == 0.  This should never "
             "happen here.  Please report this bug to the Tpetra developers."
             << endl;
           // Need to return early.
@@ -4465,7 +4467,7 @@ namespace Tpetra {
                                  errStrm.str ());
         }
         const auto numEnt =
-                   rowPtrs_wdv.getHostView(Access::ReadOnly)(lclNumRows);
+                   rowPtrsAlloc_wdv.getHostView(Access::ReadOnly)(lclNumRows);
 
         // mfh 17 Dec 2016: We don't need initial zero-fill of
         // k_lclInds1D_, because we will fill it below anyway.
@@ -4517,7 +4519,7 @@ namespace Tpetra {
         convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (
           k_lclInds1D_,
           k_gblInds1D_,
-          rowPtrs_wdv.getDeviceView(Access::ReadOnly),
+          rowPtrsAlloc_wdv.getDeviceView(Access::ReadOnly),
           lclColMap,
           k_numRowEnt);
       if (lclNumErrs != 0) {
@@ -4552,7 +4554,7 @@ namespace Tpetra {
     } // globallyIndexed() && lclNumRows > 0
 
     this->lclGraph_ = local_graph_type(this->k_lclInds1D_,
-                                       this->rowPtrs_wdv.getDeviceView(Access::ReadOnly));
+                                       this->rowPtrsAlloc_wdv.getDeviceView(Access::ReadOnly));
     this->indicesAreLocal_  = true;
     this->indicesAreGlobal_ = false;
     this->checkInternalState ();
@@ -5112,21 +5114,21 @@ namespace Tpetra {
     }
     TEUCHOS_ASSERT( indicesAreAllocated() );
 
-    // Making copies here because rowPtrs_wdv has a const type. Otherwise, we
+    // Making copies here because rowPtrsAlloc_wdv has a const type. Otherwise, we
     // would use it directly.
 
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate row_ptrs_beg: "
-         << rowPtrs_wdv.extent(0) << endl;
+         << rowPtrsAlloc_wdv.extent(0) << endl;
       std::cerr << os.str();
     }
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
     row_ptrs_type row_ptrs_beg(
       view_alloc("row_ptrs_beg", WithoutInitializing),
-      rowPtrs_wdv.extent(0));
-    Kokkos::deep_copy(row_ptrs_beg, rowPtrs_wdv.getDeviceView(Access::ReadOnly));
+      rowPtrsAlloc_wdv.extent(0));
+    Kokkos::deep_copy(row_ptrs_beg, rowPtrsAlloc_wdv.getDeviceView(Access::ReadOnly));
 
     const size_t N = row_ptrs_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptrs_beg.extent(0) - 1);
@@ -5179,13 +5181,13 @@ namespace Tpetra {
     }
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Reassign rowPtrs_wdv; old size: "
-         << rowPtrs_wdv.extent(0) << ", new size: "
+      os << *prefix << "Reassign rowPtrsAlloc_wdv; old size: "
+         << rowPtrsAlloc_wdv.extent(0) << ", new size: "
          << row_ptrs_beg.extent(0) << endl;
       std::cerr << os.str();
-      TEUCHOS_ASSERT( rowPtrs_wdv.extent(0) == row_ptrs_beg.extent(0) );
+      TEUCHOS_ASSERT( rowPtrsAlloc_wdv.extent(0) == row_ptrs_beg.extent(0) );
     }
-    this->rowPtrs_wdv = row_ptrs_wdv_type(row_ptrs_beg);
+    this->rowPtrsAlloc_wdv = row_ptrs_wdv_type(row_ptrs_beg);
 
     set_need_sync_host_uvm_access(); // need fence before host UVM access of k_rowPtrs_
   }
@@ -7517,7 +7519,7 @@ namespace Tpetra {
 
     std::swap(graph.numAllocForAllRows_, this->numAllocForAllRows_);
 
-    std::swap(graph.rowPtrs_wdv, this->rowPtrs_wdv);
+    std::swap(graph.rowPtrsAlloc_wdv, this->rowPtrsAlloc_wdv);
 
     std::swap(graph.k_lclInds1D_, this->k_lclInds1D_);
     std::swap(graph.k_gblInds1D_, this->k_gblInds1D_);
@@ -7618,12 +7620,12 @@ namespace Tpetra {
         output = this->k_numRowEntries_(i) == graph.k_numRowEntries_(i) ? output : false;
     }
 
-    // Compare this->rowPtrs_wdv isa Kokkos::View<LocalOrdinal*, ...>
-    output = this->rowPtrs_wdv.extent(0) == graph.rowPtrs_wdv.extent(0) ? output : false;
-    if(output && this->rowPtrs_wdv.extent(0) > 0)
+    // Compare this->rowPtrsAlloc_wdv isa Kokkos::View<LocalOrdinal*, ...>
+    output = this->rowPtrsAlloc_wdv.extent(0) == graph.rowPtrsAlloc_wdv.extent(0) ? output : false;
+    if(output && this->rowPtrsAlloc_wdv.extent(0) > 0)
     {
-      auto k_rowPtrs_host_this = this->rowPtrs_wdv.getHostView(Access::ReadOnly);
-      auto k_rowPtrs_host_graph = graph.rowPtrs_wdv.getHostView(Access::ReadOnly);
+      auto k_rowPtrs_host_this = this->rowPtrsAlloc_wdv.getHostView(Access::ReadOnly);
+      auto k_rowPtrs_host_graph = graph.rowPtrsAlloc_wdv.getHostView(Access::ReadOnly);
       for(size_t i=0; output && i<k_rowPtrs_host_this.extent(0); i++)
         output = k_rowPtrs_host_this(i) == k_rowPtrs_host_graph(i) ? output : false;
     }

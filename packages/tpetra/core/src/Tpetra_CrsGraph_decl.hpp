@@ -2167,7 +2167,7 @@ namespace Tpetra {
     using row_ptrs_wdv_type =
           Details::WrappedDualView<row_ptrs_dualv_type>;
 
-    row_ptrs_wdv_type rowPtrs_wdv;
+    row_ptrs_wdv_type rowPtrsAlloc_wdv;
 
     // Valid when isLocallyIndexed is true
     // Device view takes place of k_lclInds1D_
@@ -2176,7 +2176,7 @@ namespace Tpetra {
     using local_col_inds_wdv_type = 
           Details::WrappedDualView<local_col_inds_dualv_type>;
 
-    local_col_inds_wdv_type lclColInds_wdv;
+    local_col_inds_wdv_type lclInds_wdv;
 
     // Valid when isGloballyIndexed is true
     // Free'd during fillComplete
@@ -2186,7 +2186,7 @@ namespace Tpetra {
     using global_col_inds_wdv_type =
           Details::WrappedDualView<global_col_inds_dualv_type>;
 
-    global_col_inds_wdv_type gblColInds_wdv;
+    global_col_inds_wdv_type gblInds_wdv;
 
     // FOR NOW...
     // KEEP k_numRowEntries_ (though switch from HostMirror to Host)
@@ -2242,7 +2242,7 @@ namespace Tpetra {
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
-    typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
+//WDV    typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
