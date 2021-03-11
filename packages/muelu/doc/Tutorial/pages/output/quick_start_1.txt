@@ -1,0 +1,18 @@
+***************************   PROBLEM   ****************************
+Problem type:          Laplace 2D
+Mesh:                  50x50
+
+Solver xml parameters:              s2a.xml
+Number of processors:               2
+Number of Multigrid solving sweeps: 1
+***************************   PROBLEM   ****************************
+
+
+0. Laplace 2D (50x50)
+1. Laplace 2D
+2. Recirc 2D (50x50)
+3. Recirc 2D
+4. Challenge: Convection diffusion
+5. Challenge: Elasticity problem
+6. Exit
+your choice? 

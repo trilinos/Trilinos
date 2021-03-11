@@ -9,10 +9,4 @@ COMMENT "Generating ${PACKAGE_NAME} API documentation with Doxygen" VERBATIM
 )
 endif(DOXYGEN_FOUND)
 
-if (${PACKAGE_NAME}_ENABLE_Tutorial)
-  TRIBITS_ADD_EXAMPLE_DIRECTORIES(Tutorial)
-else()
-  MESSAGE(STATUS "disabling tutorial")
-endif()
-
 ADD_SUBDIRECTORY(UsersGuide)
