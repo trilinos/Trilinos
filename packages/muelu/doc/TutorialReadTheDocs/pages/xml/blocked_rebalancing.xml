@@ -1,0 +1,363 @@
+<ParameterList name="MueLu">
+
+  <!-- Factory collection -->
+  <ParameterList name="Factories">
+
+    <!-- Note that ParameterLists must be defined prior to being used -->
+
+    <!-- sub block factories -->
+
+
+    <!-- BLOCK 1 (for submatrix A_{00}) VELOCITY PART -->
+    <ParameterList name="mySubBlockAFactory1">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="block row"                 type="int"     value="0"/>
+      <Parameter name="block col"                 type="int"     value="0"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <!--<ParameterList name="myAggFact1">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: min agg size" type="int" value="5"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
+    </ParameterList>-->
+
+    <!-- tell the tentative prolongator that we have 2 DOFs per node on the coarse levels -->
+    <ParameterList name="myCoarseMap1">
+      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
+      <Parameter name="Striding info" type="string" value="{ 4 }"/>
+      <Parameter name="Strided block id" type="int" value="-1"/>
+    </ParameterList>
+
+    <ParameterList name="myAggFact1">
+      <Parameter name="factory" type="string" value="UncoupledAggregationFactory"/>
+      <Parameter name="aggregation: min agg size" type="int" value="5"/>
+      <Parameter name="aggregation: max selected neighbors" type="int" value="1"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact1">
+      <Parameter name="factory" type="string" value="TentativePFactory"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+    </ParameterList>
+
+    <ParameterList name="myRFact1">
+      <Parameter name="factory" type="string" value="TransPFactory"/>
+      <Parameter name="P" type="string" value="myTentativePFact1"/>
+    </ParameterList>
+
+    <!-- We have to use Nullspace1 here. If "Nullspace1" is not set the
+         Factory creates the default null space containing of constant
+         vectors -->
+    <ParameterList name="myNspFact1">
+      <Parameter name="factory" type="string" value="NullspaceFactory"/>
+      <Parameter name="Fine level nullspace" type="string" value="Nullspace1"/>
+      <Parameter name="Nullspace1" type="string" value="myTentativePFact1"/>
+    </ParameterList>
+
+    <!-- BLOCK 2 (for submatrix A_{22})-->
+    <ParameterList name="mySubBlockAFactory">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="block row"                 type="int"     value="1"/>
+      <Parameter name="block col"                 type="int"     value="1"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <!-- tell the tentative prolongator that we have 1 DOF per node on the coarse levels -->
+    <!-- We use the factory "CoarseMapFactory" which always creates a standard coarse
+         level map starting with GIDs at 0. This is ok as we use Thyra like numbering
+         for the block operators. To obtain unique GIDs one would use the
+         BlockedCoarseMapFactory (see below) -->
+    <ParameterList name="myCoarseMap2">
+      <Parameter name="factory" type="string" value="CoarseMapFactory"/>
+      <Parameter name="Striding info" type="string" value="{ 4 }"/>
+      <Parameter name="Strided block id" type="int" value="-1"/>
+    </ParameterList>
+
+    <ParameterList name="myTentativePFact2">
+      <Parameter name="factory" type="string" value="TentativePFactory"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/> <!-- use aggregates from velocity block! -->
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+    </ParameterList>
+
+    <!-- We have to use Nullspace2 here. If "Nullspace2" is not set the
+         Factory creates the default null space containing of constant
+         vectors (here only one constant vector) -->
+    <ParameterList name="myNspFact2">
+      <Parameter name="factory" type="string" value="NullspaceFactory"/>
+      <Parameter name="Fine level nullspace" type="string" value="Nullspace2"/>
+      <Parameter name="Nullspace2" type="string" value="myTentativePFact2"/>
+    </ParameterList>
+
+    <!-- FACTORY MANAGERS -->
+
+    <!-- Multigrid setup for velocity block (A_{00}) -->
+    <ParameterList name="myFirstGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+      <Parameter name="P" type="string" value="myTentativePFact1"/>
+      <Parameter name="R" type="string" value="myRFact1"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="Nullspace" type="string" value="myNspFact1"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+    </ParameterList>
+
+    <!-- Multigrid setup for pressure block (A_{22}) -->
+    <ParameterList name="mySecondGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+      <Parameter name="P" type="string" value="myTentativePFact2"/>
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/><!-- reuse aggs -->
+      <Parameter name="Nullspace" type="string" value="myNspFact2"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap2"/>
+    </ParameterList>
+
+    <!-- BLOCK TRANSFER operators -->
+
+    <!-- define block prolongation operator using above blocks -->
+    <ParameterList name="myBlockedPFact">
+      <Parameter name="factory" type="string" value="BlockedPFactory"/>
+      <!-- factory manager for block 1 -->
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myFirstGroup"/>
+      </ParameterList>
+      <!-- factory manager for block 2 -->
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="mySecondGroup"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- define block restriction operator using above blocks -->
+    <!-- The block restriction operator is usually always of type
+         GenericRFactory since we want to be able to combine, e.g.,
+         SmoothedAggregation for block A_{00} with e.g. tentative
+         prolongation for block A_{11} (or any other kind of transfer
+         strategy for the subblocks -->
+    <ParameterList name="myBlockedRFact">
+      <Parameter name="factory" type="string" value="GenericRFactory"/>
+      <Parameter name="P" type="string" value="myBlockedPFact"/>
+    </ParameterList>
+
+    <ParameterList name="myTransferCoordinatesFact">
+      <Parameter name="factory" type="string" value="CoordinatesTransferFactory"/>
+      <!-- we need the factories from the first group -->
+      <Parameter name="Aggregates" type="string" value="myAggFact1"/>
+      <Parameter name="CoarseMap" type="string" value="myCoarseMap1"/>
+
+    </ParameterList>
+
+    <ParameterList name="myBlockedRAPFact">
+      <Parameter name="factory" type="string" value="BlockedRAPFactory"/>
+      <Parameter name="P" type="string" value="myBlockedPFact"/>
+      <Parameter name="R" type="string" value="myBlockedRFact"/>
+      <ParameterList name="TransferFactories">
+        <Parameter name="For Coordinates" type="string" value="myTransferCoordinatesFact"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- REBALANCING -->
+
+    <ParameterList name="myRepartitionHeuristicFactory">
+      <Parameter name="factory" type="string" value="RepartitionHeuristicFactory"/>
+      <Parameter name="A"                               type="string"  value="myBlockedRAPFact"/>
+      <Parameter name="repartition: start level"        type="int"     value="2"/>
+      <Parameter name="repartition: min rows per proc"  type="int"     value="256"/>
+      <Parameter name="repartition: nonzeroImbalance"   type="double"  value="1.2"/>
+    </ParameterList>
+
+    <ParameterList name="myRebSubBlockAFactory1">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="A"                         type="string"  value="myBlockedRAPFact"/>
+      <Parameter name="block row"                 type="int"     value="0"/>
+      <Parameter name="block col"                 type="int"     value="0"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <ParameterList name="myInputCoordsFact">
+      <Parameter name="factory" type="string" value="FineLevelInputDataFactory"/>
+      <Parameter name="Variable" type="string" value="Coordinates"/>
+      <Parameter name="Variable type" type="string" value="MultiVector"/>
+      <Parameter name="Fine level factory" type="string" value="NoFactory"/>
+      <!--<Parameter name="Coarse level factory" type="string" value="myTransferCoordinatesFact"/>-->
+      <!--<Parameter name="Coarse level factory" type="string" value="NoFactory"/> TO BE DEFINED LATER -->
+    </ParameterList>
+
+    <ParameterList name="myZoltanInterface1">
+      <Parameter name="factory"                             type="string" value="ZoltanInterface"/>
+      <Parameter name="A"                                   type="string" value="myRebSubBlockAFactory1"/>
+      <Parameter name="number of partitions"                type="string" value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Coordinates"                         type="string" value="myInputCoordsFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionFactory1">
+      <Parameter name="factory" type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                         type="string"  value="myRebSubBlockAFactory1"/>
+      <Parameter name="Partition"                 type="string"  value="myZoltanInterface1"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
+      <Parameter name="repartition: remap parts" type="bool" value="true"/>
+    </ParameterList>
+
+    <ParameterList name="myRebSubBlockAFactory2">
+      <Parameter name="factory" type="string" value="SubBlockAFactory"/>
+      <Parameter name="A"                         type="string"  value="myBlockedRAPFact"/>
+      <Parameter name="block row"                 type="int"     value="1"/>
+      <Parameter name="block col"                 type="int"     value="1"/>
+      <Parameter name="Range map: Striding info"  type="string"  value="{ 4 }"/>
+      <Parameter name="Domain map: Striding info" type="string"  value="{ 4 }"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionInterface2">
+      <Parameter name="factory" type="string" value="CloneRepartitionInterface"/>
+      <Parameter name="A"                         type="string"  value="myRebSubBlockAFactory2"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Partition"                 type="string"  value="myZoltanInterface1"/>
+    </ParameterList>
+
+    <ParameterList name="myRepartitionFactory2">
+      <Parameter name="factory" type="string" value="RepartitionFactory"/>
+      <Parameter name="A"                         type="string"  value="myRebSubBlockAFactory2"/>
+      <Parameter name="Partition"                 type="string"  value="myRepartitionInterface2"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="repartition: print partition distribution" type="bool" value="true"/>
+      <Parameter name="repartition: remap parts" type="bool" value="false"/>
+    </ParameterList>
+
+    <!-- Rebalanced groups for velocity block (A_{00}) -->
+    <ParameterList name="myRebFirstGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory1"/> <!-- non-rebalanced A11! -->
+      <Parameter name="Importer" type="string" value="myRepartitionFactory1"/>
+      <Parameter name="Nullspace" type="string" value="myNspFact1"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Coordinates" type="string" value="myInputCoordsFact"/>
+    </ParameterList>
+
+    <!-- Rebalanced groups for magnetics block (A_{22}) -->
+    <ParameterList name="myRebSecondGroup">
+      <Parameter name="group" type="string" value="FactoryManager"/>
+      <Parameter name="A" type="string" value="mySubBlockAFactory2"/> <!-- non-rebalanced ! -->
+      <Parameter name="Importer" type="string" value="myRepartitionFactory2"/>
+      <Parameter name="number of partitions"      type="string"  value="myRepartitionHeuristicFactory"/>
+      <Parameter name="Nullspace" type="string" value="myNspFact2"/>
+      <Parameter name="Coordinates" type="string" value="myInputCoordsFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebBlockedPFact">
+      <Parameter name="factory" type="string" value="RebalanceBlockInterpolationFactory"/>
+      <Parameter name="A" type="string" value="myBlockedRAPFact"/>
+      <Parameter name="P" type="string" value="myBlockedPFact"/>
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myRebFirstGroup"/>
+      </ParameterList>
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="myRebSecondGroup"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myInputCoordsFactDeps">
+      <Parameter name="dependency for" type="string" value="myInputCoordsFact"/>
+      <Parameter name="Coarse level factory" type="string" value="myTransferCoordinatesFact"/>
+    </ParameterList>
+
+    <ParameterList name="myRebBlockedRFact">
+      <Parameter name="factory" type="string" value="RebalanceBlockRestrictionFactory"/>
+      <Parameter name="R" type="string" value="myBlockedRFact"/>
+      <Parameter name="repartition: use subcommunicators" type="bool" value="false"/>
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myRebFirstGroup"/>
+      </ParameterList>
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="myRebSecondGroup"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myRebBlockedAcFact">
+      <Parameter name="factory" type="string" value="RebalanceBlockAcFactory"/>
+      <Parameter name="A" type="string" value="myBlockedRAPFact"/>
+      <Parameter name="repartition: use subcommunicators" type="bool" value="false"/>
+      <ParameterList name="block1">
+         <Parameter name="group" type="string" value="myRebFirstGroup"/>
+      </ParameterList>
+      <ParameterList name="block2">
+        <Parameter name="group" type="string" value="myRebSecondGroup"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- BLOCK SMOOTHERS -->
+
+    <ParameterList name="mySmooFact1">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <Parameter name="overlap" type="int" value="0"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+      </ParameterList>
+    </ParameterList>
+
+
+    <!-- block smoother for block A_{00} -->
+
+    <ParameterList name="mySmooFact2">
+      <Parameter name="factory" type="string" value="TrilinosSmoother"/>
+      <Parameter name="type" type="string" value="RELAXATION"/>
+      <Parameter name="overlap" type="int" value="0"/>
+      <ParameterList name="ParameterList">
+        <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int"    value="1"/>
+        <Parameter name="relaxation: damping factor" type="double" value="0.9"/>
+      </ParameterList>
+    </ParameterList>
+
+    <!-- Use BGS -->
+    <ParameterList name="myBlockSmoother">
+      <Parameter name="factory" type="string" value="BlockedGaussSeidelSmoother"/>
+      <Parameter name="Sweeps" type="int" value="1"/>
+      <Parameter name="Damping factor" type="double" value="0.4"/>
+      <!-- factory manager for block 1 -->
+      <ParameterList name="block1">
+        <Parameter name="A" type="string" value="mySubBlockAFactory1"/>
+        <Parameter name="Smoother" type="string" value="mySmooFact1"/>
+      </ParameterList>
+      <!-- factory manager for block 3 -->
+      <ParameterList name="block2">
+        <Parameter name="A" type="string" value="mySubBlockAFactory2"/>
+        <Parameter name="Smoother" type="string" value="mySmooFact2"/>
+      </ParameterList>
+    </ParameterList>
+
+    <ParameterList name="myBlockDirectSolver">
+      <Parameter name="factory" type="string" value="BlockedDirectSolver"/>
+    </ParameterList>
+
+  </ParameterList>
+  <!-- end Factories -->
+
+  <!-- Definition of the multigrid preconditioner -->
+  <ParameterList name="Hierarchy">
+
+    <Parameter name="max levels"          type="int"      value="10"/>
+    <Parameter name="coarse: max size"    type="int"      value="2500"/>
+    <Parameter name="verbosity"           type="string"   value="High"/>
+
+    <ParameterList name="AllLevel">
+      <Parameter name="startLevel"        type="int"      value="0"/>
+      <Parameter name="Smoother"          type="string"   value="myBlockSmoother"/>
+      <Parameter name="CoarseSolver"      type="string"   value="myBlockDirectSolver"/>
+      <Parameter name="P"                 type="string"   value="myRebBlockedPFact"/>
+      <Parameter name="R"                 type="string"   value="myRebBlockedRFact"/>
+      <Parameter name="A"                 type="string"   value="myRebBlockedAcFact"/>
+      <Parameter name="Coordinates"       type="string"   value="myRebBlockedPFact"/>
+    </ParameterList>
+
+  </ParameterList>
+
+</ParameterList>
+<!-- end "MueLu" -->
