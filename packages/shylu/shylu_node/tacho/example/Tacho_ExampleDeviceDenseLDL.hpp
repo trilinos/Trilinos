@@ -11,8 +11,17 @@
 #include "Tacho_LDL_External.hpp"
 #include "Tacho_LDL_OnDevice.hpp"
 
+#include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
+#include "Tacho_Scale2x2_BlockInverseDiagonals_OnDevice.hpp"
+
 #include "Tacho_Gemv.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
+
+#include "Tacho_Trsv.hpp"
+#include "Tacho_Trsv_OnDevice.hpp"
+
+#include "Tacho_ApplyPermutation.hpp"
+#include "Tacho_ApplyPermutation_OnDevice.hpp"
 
 template<typename value_type>
 int driver_ldl (const int m, const bool verbose) {
@@ -36,11 +45,12 @@ int driver_ldl (const int m, const bool verbose) {
   int r_val = 0;  
   {
     const value_type one(1), zero(0);
-    
+
+    Kokkos::DefaultExecutionSpace exec_instance;
+
 #if defined (KOKKOS_ENABLE_CUDA) 
     cublasHandle_t handle_blas;
     cusolverDnHandle_t handle_lapack;
-    Kokkos::Cuda exec_instance;
     {
       {
         const int status = cublasCreate(&handle_blas); 
@@ -52,7 +62,7 @@ int driver_ldl (const int m, const bool verbose) {
       }
     }
 #else
-    int handle_blas(0), handle_lapack(0), exec_instance(0); // dummy
+    int handle_blas(0), handle_lapack(0); // dummy
 #endif
 
     Kokkos::View<value_type**,Kokkos::LayoutLeft,device_type> A("A", m, m);
@@ -115,7 +125,6 @@ int driver_ldl (const int m, const bool verbose) {
       value_type * A_ptr = A.data();
       value_type * x_ptr = x.data();
       int * p_ptr = p.data();
-      Kokkos::View<int,device_type> dev("dev");
         
       timer.reset();
       Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> W;
@@ -133,63 +142,37 @@ int driver_ldl (const int m, const bool verbose) {
       Kokkos::fence();
 
       const double t = timer.seconds();
-      {
-        const auto dev_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dev);
-        if (dev_host()) printf("LDL returns non-zero dev info %d\n", dev_host());
-      }
         
       auto AA = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A);
       auto pp = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), p);
-      {
-        printf("LDL  = \n");
-        for (int i=0;i<m;++i) {
-          for (int j=0;j<m;++j)
-            std::cout << AA(i,j) << " ";
-          printf("\n");
-        }
-        printf("lapack piv = \n");
-        for (int i=0;i<m;++i) {
-          printf("%d\n", pp(i));
-        }
-        printf("flame piv = \n");
-        for (int i=0;i<m;++i) {
-          printf("%d\n", pp(i+m));
-        }
-        printf("permutation vector = \n");
-        for (int i=0;i<m;++i) {
-          printf("%d\n", pp(i+2*m));
-        }
-      }
-      printf("LDLt time %e\n", t);
-
-      Kokkos::fence();
-        
-      /// compute diagonals
       auto DD = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), D);
       {
-        printf("D = \n");
-        for (int i=0;i<m;++i) {
-          printf("lapack %d, flame %d, perm %d, D %e %e\n", pp(i), pp(i+m), pp(i+2*m), DD(i,0), DD(i,1));
-        }
         printf("L  = \n");
         for (int i=0;i<m;++i) {
           for (int j=0;j<m;++j)
-            printf("%e ", AA(i,j));
+            printf("%e ", j<=i ? A(i,j) : zero);
           printf("\n");
         }
+        printf("D, lapack piv, flame piv, perm, peri = \n");
+        for (int i=0;i<m;++i) {
+          printf("% e % e ", DD(i,0), DD(i,1));
+          printf("%4d %4d %4d %4d\n", pp(i),pp(i+m),pp(i+2*m),pp(i+3*m));
+        }
+        
       }
+      printf("LDL time %e\n", t);
 
+      Kokkos::fence();
+        
       /// solve 
       {
         Kokkos::fence();
         auto perm = Kokkos::subview(p, Kokkos::pair<int,int>(2*m, 3*m));
         auto peri = Kokkos::subview(p, Kokkos::pair<int,int>(3*m, 4*m));
         /// copy and transpose
-        Kokkos::parallel_for
-          (Kokkos::RangePolicy<typename device_type::execution_space>(0,m),
-           KOKKOS_LAMBDA(const int i) {           
-            x(i,0) = b(perm(i),0);
-          });
+        Tacho::ApplyPermutation<Tacho::Side::Left,Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
+          ::invoke(exec_instance, b, x, perm);        
+
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
           printf("x (permuted b) = \n");
@@ -199,18 +182,8 @@ int driver_ldl (const int m, const bool verbose) {
         }
         
         /// trsv
-#if defined (KOKKOS_ENABLE_CUDA) 
-        Tacho::Blas<value_type>::trsv(handle_blas,
-                                      CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_N, CUBLAS_DIAG_UNIT,
-                                      m,
-                                      A_ptr, m,
-                                      x_ptr, 1);
-#else
-        Tacho::Blas<value_type>::trsv('L', 'N', 'U',
-                                      m,
-                                      A_ptr, m,
-                                      x_ptr, 1);
-#endif      
+        Tacho::Trsv<Tacho::Uplo::Lower,Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
+          ::invoke(handle_blas, Tacho::Diag::Unit(), A, x);
         Kokkos::fence();
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
@@ -220,31 +193,8 @@ int driver_ldl (const int m, const bool verbose) {
           }
         }
 
-        Kokkos::parallel_for
-          (Kokkos::RangePolicy<typename device_type::execution_space>(0,m),
-           KOKKOS_LAMBDA(const int i) {
-            if (p(i) == 0) { 
-              /// do nothing
-            } else if (p(i) < 0) {
-              /// take 2x2 block to D
-              const value_type 
-                a00 = D(i-1, 0), a01 = D(i-1, 1),
-                a10 = D(i  , 0), a11 = D(i  , 1);
-              const value_type 
-                det = a00*a11-a10*a01;
-              const value_type 
-                x0 = x(i-1,0),
-                x1 = x(i,0);
-              
-              printf("i %d; %e %e; %e %e\n", a11/det, -a10/det, -a10/det, a00/det);
-              x(i-1,0) = ( a11*x0 - a10*x1)/det;
-              x(i  ,0) = (-a10*x0 + a00*x1)/det;
-            } else {
-              const value_type
-                a00 = D(i,0);
-              x(i,0) /= a00;
-            }
-          });
+        Tacho::Scale2x2_BlockInverseDiagonals<Tacho::Side::Left,Tacho::Algo::OnDevice>
+          ::invoke(exec_instance, p, D, x);
         Kokkos::fence();
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
@@ -254,18 +204,8 @@ int driver_ldl (const int m, const bool verbose) {
           }
         }
 
-#if defined (KOKKOS_ENABLE_CUDA) 
-        Tacho::Blas<value_type>::trsv(handle_blas,
-          CUBLAS_FILL_MODE_LOWER, CUBLAS_OP_T, CUBLAS_DIAG_UNIT,
-          m,
-          A_ptr, m,
-          x, 1);      
-#else
-        Tacho::Blas<value_type>::trsv('L', 'T', 'U',
-          m,
-          A_ptr, m,
-          x_ptr, 1);            
-#endif
+        Tacho::Trsv<Tacho::Uplo::Lower,Tacho::Trans::Transpose,Tacho::Algo::OnDevice>
+          ::invoke(handle_blas, Tacho::Diag::Unit(), A, x);
         Kokkos::fence();
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
@@ -275,15 +215,11 @@ int driver_ldl (const int m, const bool verbose) {
           }
         }
         
-
         /// permute back to z
         Kokkos::View<value_type**,device_type> z("z",m,1);
-        Kokkos::parallel_for
-          (Kokkos::RangePolicy<typename device_type::execution_space>(0,m),
-           KOKKOS_LAMBDA(const int i) {           
-            z(i,0) = x(peri(i),0);
-          });
-        
+        Tacho::ApplyPermutation<Tacho::Side::Left,Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
+          ::invoke(exec_instance, x, z, peri);        
+
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), z);
           printf("x (permute) = \n");
@@ -294,8 +230,6 @@ int driver_ldl (const int m, const bool verbose) {
 
       }
     }
-
-
 
 #if defined (KOKKOS_ENABLE_CUDA) 
     {

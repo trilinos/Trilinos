@@ -12,11 +12,13 @@ namespace Tacho {
   template<>
   struct Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> {
     template<typename MemberType,
+             typename ViewTypeP,
              typename ViewTypeD,
              typename ViewTypeA>
     KOKKOS_INLINE_FUNCTION
     static int
     invoke(MemberType &member,
+           const ViewTypeP &P,
            const ViewTypeD &D,
            const ViewTypeA &A) {
       typedef typename ViewTypeA::non_const_value_type value_type;        
@@ -24,61 +26,119 @@ namespace Tacho {
       if (A.extent(0) == D.extent(0)) {
         if (A.span() > 0) {
           const ordinal_type m = A.extent(0), n = A.extent(1);
-          const value_type zero(0), one(1);
 #if defined(__CUDA_ARCH__)
-          Kokkos::parallel_for
-            (Kokkos::TeamThreadRange(member, n),
-             [&](const ordinal_type &j) {
-              Kokkos::parallel_for
-                (Kokkos::ThreadVectorRange(member, m),
-                 [&](const ordinal_type &i) {
-                  const value_type prev_offdiag = i > 0 ? D(i-1,1) : zero;
-                  const value_type offidag = D(i,1);
-                  if (offidag == zero) {
-                    /// 1x1 block
-                    const value_type inv_diag = one/D(i,0);
-                    A(i,j) *= inv_diag;
-                  } else if (prev_offdiag == zero) {
-                    /// 2x2 block
-                    const value_type a = D(i,0), b = D(i,1), c = D(i+1,0), d = D(i+1,1);
-                    const value_type det = a*d-b*c;
-                    const value_type ia = d/det, ib = -b/det, ic = -c/det, id = a/det;
-                    const value_type x0 = A(i,j), x1 = A(i+1,j);
-                    A(i,  j) = ia*x0 + ib*x1;
-                    A(i+1,j) = ic*x0 + id*x1;
-                  } else {
-                    /// this is taken care in other threads
-                  }
-                });
-            });
+          if (n == 1) {
+            Kokkos::parallel_for
+              (Kokkos::TeamVectorRange(member, m),
+               [&](const ordinal_type &i) {
+                const ordinal_type pval = P(i);
+                if (pval == 0) {
+                  /// do nothing
+                } else if (pval < 0) {
+                  /// take 2x2 block to D
+                  const value_type 
+                    a00 = D(i-1, 0), a01 = D(i-1, 1),
+                    a10 = D(i  , 0), a11 = D(i  , 1);
+                  const value_type 
+                    det = a00*a11-a10*a01;
+                  const value_type 
+                    x0 = A(i-1,0),
+                    x1 = A(i,0);
+                  
+                  A(i-1,0) = ( a11*x0 - a10*x1)/det;
+                  A(i  ,0) = (-a10*x0 + a00*x1)/det;
+                } else {
+                  const value_type
+                    a00 = D(i,0);
+                  A(i,0) /= a00;
+                }
+              });
+          } else {
+            Kokkos::parallel_for
+              (Kokkos::ThreadVectorRange(member, m),
+               [&](const ordinal_type &i) {
+                const ordinal_type pval = P(i);
+                if (pval == 0) {
+                  /// do nothing
+                } else if (pval < 0) {
+                  /// take 2x2 block to D
+                  const value_type 
+                    a00 = D(i-1, 0), a01 = D(i-1, 1),
+                    a10 = D(i  , 0), a11 = D(i  , 1);
+                  const value_type 
+                    det = a00*a11-a10*a01;
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member, n),
+                     [&](const ordinal_type &j) {
+                      const value_type 
+                        x0 = A(i-1,j),
+                        x1 = A(i,j);
+                      A(i-1,j) = ( a11*x0 - a10*x1)/det;
+                      A(i  ,j) = (-a10*x0 + a00*x1)/det;
+                    });
+                } else {
+                  const value_type
+                    a00 = D(i,0);
+                  Kokkos::parallel_for
+                    (Kokkos::TeamThreadRange(member, n),
+                     [&](const ordinal_type &j) {
+                      A(i,j) /= a00;
+                    });
+                }
+              });        
+          }
 #else
-          for (ordinal_type i=0;i<m;) {
-            const ordinal_type offidag = D(i,1);
-            if (offidag == zero) {
-              /// 1x1 block
-              const value_type diag = D(i,0);              
-              if (diag == zero) {
-                printf("Error: Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> Encounters zero diagonal\n");
+          if (n == 1) {
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type pval = P(i);
+              if (pval == 0) {
+                /// do nothing
+              } else if (pval < 0) {
+                /// take 2x2 block to D
+                const value_type 
+                  a00 = D(i-1, 0), a01 = D(i-1, 1),
+                  a10 = D(i  , 0), a11 = D(i  , 1);
+                const value_type 
+                  det = a00*a11-a10*a01;
+                const value_type 
+                  x0 = A(i-1,0),
+                  x1 = A(i,0);
+                
+                A(i-1,0) = ( a11*x0 - a10*x1)/det;
+                A(i  ,0) = (-a10*x0 + a00*x1)/det;
+              } else {
+                const value_type
+                  a00 = D(i,0);
+                A(i,0) /= a00;
               }
-              const value_type inv_diag = one/diag;
-              for (ordinal_type j=0;j<n;++j) {
-                A(i,j) *= inv_diag;
+            }
+          } else {
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type pval = P(i);
+              if (pval == 0) {
+                /// do nothing
+              } else if (pval < 0) {
+                /// take 2x2 block to D
+                const value_type 
+                  a00 = D(i-1, 0), a01 = D(i-1, 1),
+                  a10 = D(i  , 0), a11 = D(i  , 1);
+                const value_type 
+                  det = a00*a11-a10*a01;
+                for (ordinal_type j=0;j<n;++j) {
+                  const value_type 
+                    x0 = A(i-1,j),
+                    x1 = A(i,j);
+
+                  A(i-1,j) = ( a11*x0 - a10*x1)/det;
+                  A(i  ,j) = (-a10*x0 + a00*x1)/det;
+                }
+              } else {
+                const value_type
+                  a00 = D(i,0);
+                for (ordinal_type j=0;j<n;++j) {
+                  A(i,j) /= a00;
+                }
               }
-              ++i;
-            } else {
-              /// 2x2 block
-              const value_type a = D(i,0), b = D(i,1), c = D(i+1,0), d = D(i+1,1);
-              const value_type det = a*d-b*c;
-              if (det == zero) {
-                printf("Error: Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> Encounters zero determinant\n");
-              }
-              const value_type ia = d/det, ib = -b/det, ic = -c/det, id = a/det;
-              for (ordinal_type j=0;j<n;++j) {
-                const value_type x0 = A(i,j), x1 = A(i+1,j);
-                A(i,  j) = ia*x0 + ib*x1;
-                A(i+1,j) = ic*x0 + id*x1;
-              }   
-              i+=2;           
             }
           }
 #endif
@@ -89,7 +149,7 @@ namespace Tacho {
       return 0;
     }
   };
-
-
+  
+  
 }
 #endif
