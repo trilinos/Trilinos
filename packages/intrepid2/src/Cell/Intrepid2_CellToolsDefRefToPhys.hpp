@@ -174,11 +174,11 @@ namespace Intrepid2 {
     }
     }
     
-    using FunctorType   = FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,WorksetType,valViewType>;
-    using ExecSpaceType = typename Kokkos::DynRankView<physPointValueType,physPointProperties...>::execution_space;
+    using FunctorType    = FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,WorksetType,valViewType>;
+    using ExecutionSpace = typename Kokkos::DynRankView<physPointValueType,physPointProperties...>::execution_space;
 
     const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecutionSpace,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(physPoints, worksetCell, vals) );
   }
 

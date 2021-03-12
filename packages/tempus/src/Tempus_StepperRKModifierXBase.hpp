@@ -29,22 +29,11 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the RK algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Backward Euler with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State \quad {\it modifierX.modify(x, time, dt, XDOT\_END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperRKModifierXBase::MODIFIER_TYPE
+ *  which correspond to the RK AppActions
+ *  (StepperRKAppAction::ACTION_LOCATION)
+ *  in takeStep are documented in each of the RK Algorithm sections:
+ *  StepperExplicitRK, StepperDIRK and StepperIMEX_RK.
  */
 template<class Scalar>
 class StepperRKModifierXBase

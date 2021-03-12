@@ -122,7 +122,7 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
   // Construct from Integrator ParameterList
   RCP<ParameterList> shPL =
     Teuchos::sublist(integratorPL_, "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   if (state == Teuchos::null) {
     // Construct default IC from the application model
@@ -163,7 +163,7 @@ initializeSolutionHistory(Scalar t0,
   // Construct from Integrator ParameterList
   RCP<ParameterList> shPL =
     Teuchos::sublist(integratorPL_, "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   // Create and set xdot and xdotdot.
   RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
@@ -213,11 +213,6 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
          "Error - setSolutionHistory requires at least one SolutionState.\n"
       << "        Supplied SolutionHistory has only " << sh->getNumStates()
       << " SolutionStates.\n");
-
-    // Make integratorPL_ consistent with new SolutionHistory.
-    RCP<ParameterList> shPL = sh->getNonconstParameterList();
-    integratorPL_->set("Solution History", shPL->name());
-    integratorPL_->set(shPL->name(), *shPL);
 
     solutionHistory_ = sh;
   }

@@ -1,7 +1,6 @@
 <ParameterList>
   <ParameterList name="Application">
-    <Parameter name="Name" type="string" value="Room Temperature Superconductivity"/>
+    <Parameter name="my local vector size" type="int" value="10"/>
   </ParameterList>
 </ParameterList>
-
 

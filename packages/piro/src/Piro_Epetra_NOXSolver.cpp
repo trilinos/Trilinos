@@ -329,8 +329,8 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   }
   if(piroParams->isSublist("Analysis")){
   auto analysisParams = piroParams->sublist("Analysis");
-    if(analysisParams.isSublist("Optimization Status")){
-      auto optimizationParams = analysisParams.sublist("Optimization Status");
+    if(piroParams->isSublist("Optimization Status")){
+      auto optimizationParams = piroParams->sublist("Optimization Status");
       if(optimizationParams.isParameter("Optimizer Iteration Number")) {
         int iteration = optimizationParams.get<int>("Optimizer Iteration Number");
         int write_interval = analysisParams.get("Write Interval",1);

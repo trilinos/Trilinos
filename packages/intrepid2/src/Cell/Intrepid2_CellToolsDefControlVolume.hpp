@@ -421,10 +421,10 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoordViewType;
     typedef Kokkos::View<ordinal_type**,Kokkos::LayoutRight,SpT>             mapViewType;
 
-    typedef typename ExecSpace<typename subcvCoordViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+    typedef typename ExecSpace<typename subcvCoordViewType::execution_space,SpT>::ExecSpaceType ExecutionSpace;
 
     const auto loopSize = numCells;
-    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecutionSpace,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
     switch (primaryCell.getKey()) {
     case shards::Triangle<3>::key:

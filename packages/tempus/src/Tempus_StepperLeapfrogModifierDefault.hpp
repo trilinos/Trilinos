@@ -41,7 +41,6 @@ public:
   {
     switch(actLoc) {
       case StepperLeapfrogAppAction<Scalar>::BEGIN_STEP:
-      case StepperLeapfrogAppAction<Scalar>::BEFORE_XDOT_UPDATE_INITIALIZE:
       case StepperLeapfrogAppAction<Scalar>::BEFORE_X_UPDATE:
       case StepperLeapfrogAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
       case StepperLeapfrogAppAction<Scalar>::BEFORE_XDOT_UPDATE:

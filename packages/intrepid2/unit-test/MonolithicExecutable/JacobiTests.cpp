@@ -61,15 +61,18 @@ namespace
   std::vector<double> alpha_values = {{0.0, 0.2, 0.4, 0.6, 0.8, 1.0}};
   std::vector<double> x_values = {{-1.0,-0.5,-1.0/3.0,0.0,1.0/3.0,0.50,1.0}};
   std::vector<double> t_values = {{0.0, 0.2, 0.4, 0.6, 0.8, 1.0}};
+
+  using DeviceType = DefaultTestDeviceType;
+  using ExecutionSpace = typename DeviceType::execution_space;
   
   void testAgreementWithPolylib(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
     // Polylib Jacobi computes a single function at potentially multiple points
     const int numPoints = 1;
-    Kokkos::View<double*> inputPoints("x point", numPoints);
-    Kokkos::View<double*> jacobiValues("jacobi values from Intrepid2::Polynomials",polyOrder+1);
-    Kokkos::View<double*> polylibJacobiValues("jacobi values from Intrepid2::Polylib",polyOrder+1);
-    const Kokkos::View<double*> null; // placeholder View to indicate we don't want the derivatives from Polylib's Jacobi implementation
+    Kokkos::View<double*,DeviceType> inputPoints("x point", numPoints);
+    Kokkos::View<double*,DeviceType> jacobiValues("jacobi values from Intrepid2::Polynomials",polyOrder+1);
+    Kokkos::View<double*,DeviceType> polylibJacobiValues("jacobi values from Intrepid2::Polylib",polyOrder+1);
+    const Kokkos::View<double*,DeviceType> null; // placeholder View to indicate we don't want the derivatives from Polylib's Jacobi implementation
     
     const double t = 1.0; // this is a scaling value used by shiftedScaledJacobiValues; the 1.0 value corresponds to what's done in Polylib
     
@@ -83,18 +86,19 @@ namespace
 
         using Intrepid2::Polynomials::shiftedScaledJacobiValues;
 
+        auto singlePolicy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
         for (int p=0; p<polyOrder+1; p++)
         {
           auto polylibJacobiValue = Kokkos::subview(polylibJacobiValues, std::make_pair(p,p+1));
           // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
-          Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummyIndex)
+          Kokkos::parallel_for(singlePolicy, KOKKOS_LAMBDA(const int dummy_index)
           {
             Intrepid2::Polylib::Serial::JacobiPolynomial(numPoints, inputPoints, polylibJacobiValue, null, p, alpha, beta);
           });
         }
         
         // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
-        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummyIndex)
+        Kokkos::parallel_for(singlePolicy, KOKKOS_LAMBDA(const int dummy_index)
         {
           shiftedScaledJacobiValues(jacobiValues, alpha, polyOrder, x_shiftedScaled, t);
         });
@@ -126,7 +130,7 @@ namespace
   {
     const double alpha  = 0;
     const int polyOrder = 2;
-    Kokkos::View<double*> jacobiValues("jacobi values from Intrepid2::Polynomials",polyOrder+1);
+    Kokkos::View<double*,DeviceType> jacobiValues("jacobi values from Intrepid2::Polynomials",polyOrder+1);
     
     for (auto t : t_values)
     {
@@ -137,7 +141,8 @@ namespace
         using Intrepid2::Polynomials::shiftedScaledJacobiValues;
         
         // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
-        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummyIndex)
+        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
           shiftedScaledJacobiValues(jacobiValues, alpha, polyOrder, x, t);
         });

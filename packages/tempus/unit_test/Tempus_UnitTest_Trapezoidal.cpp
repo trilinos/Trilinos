@@ -111,9 +111,9 @@ public:
 
   /// Modify Trapezoidal Stepper at action location.
   virtual void modify(
-		      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-		      Teuchos::RCP<Tempus::StepperTrapezoidal<double> > stepper,
-		      const typename Tempus::StepperTrapezoidalAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<Tempus::StepperTrapezoidal<double> > stepper,
+    const typename Tempus::StepperTrapezoidalAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperTrapezoidalAppAction<double>::BEGIN_STEP:
@@ -146,7 +146,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
 
@@ -351,7 +351,7 @@ public:
     }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testX_BEGIN_STEP;
