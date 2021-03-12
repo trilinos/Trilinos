@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash --login
 
 echo
 echo "Starting nightly Trilinos development testing on `hostname`: `date`"
