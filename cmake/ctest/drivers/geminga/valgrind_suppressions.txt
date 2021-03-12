@@ -633,3 +633,20 @@
    fun:orterun
    fun:(below main)
 }
+
+{
+
+   Memcheck:Leak
+   ...
+   fun:orterun
+   ...
+}
+
+{
+
+   Memcheck:Param
+   write(buf)
+   ...
+   fun:orterun
+   ...
+}
