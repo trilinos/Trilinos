@@ -167,7 +167,42 @@ public:
     return dualView.view_device();
   }
 
+  typename DualViewType::t_host::const_type
+  getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct) const {
+    return getSubview(dualView.view_host(), offset, numEntries);
+  }
+
+  typename DualViewType::t_host
+  getHostSubview(int offset, int numEntries, Access::ReadWriteStruct) {
+    return getSubview(dualView.view_host(), offset, numEntries);
+  }
+
+  typename DualViewType::t_host
+  getHostSubview(int offset, int numEntries, Access::WriteOnlyStruct) {
+    return getSubview(dualView.view_host(), offset, numEntries);
+  }
+
+  typename DualViewType::t_dev::const_type
+  getDeviceSubview(int offset, int numEntries, Access::ReadOnlyStruct) const {
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
+  typename DualViewType::t_dev
+  getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct) {
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
+  typename DualViewType::t_dev
+  getDeviceSubview(int offset, int numEntries, Access::WriteOnlyStruct) {
+    return getSubview(dualView.view_device(), offset, numEntries);
+  }
+
 private:
+  template <typename ViewType>
+  ViewType getSubview(ViewType view, int offset, int numEntries) const {
+    return Kokkos::subview(view, Kokkos::pair<int, int>(offset, offset+numEntries));
+  }
+
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
       std::ostringstream msg;
