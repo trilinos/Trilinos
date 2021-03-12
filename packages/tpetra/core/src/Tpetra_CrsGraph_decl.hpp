@@ -1987,20 +1987,49 @@ namespace Tpetra {
     /// CrsMatrix::replaceGlobalValues().
     RowInfo getRowInfoFromGlobalRowIndex (const global_ordinal_type gblRow) const;
 
-    /// \brief Get a const, nonowned, locally indexed view of the
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Get a const,  locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const local_ordinal_type>
     getLocalView (const RowInfo& rowinfo) const;
+#endif
 
     /// \brief Get a const, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
+    typename local_col_inds_dualv_type::t_host_const
     getLocalIndsViewHost (const RowInfo& rowinfo) const;
+    {
+      if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
+        return typename local_col_inds_dualv_type::t_host_const ();
+      else
+        return lclInds_wdv.getHostSubview(rowinfo.offset1D, 
+                                          rowinfo.numEntries,
+                                          Access::ReadOnly);
+    }
 
+    /// \brief Get a const, locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    typename local_col_inds_dualv_type::t_dev_const
+    getLocalIndsViewDevice (const RowInfo& rowinfo) const;
+
+    /// \brief Get a const, globally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    typename global_col_inds_dualv_type::t_host_const
+    getGlobalIndsViewHost (const RowInfo& rowinfo) const;
+
+    /// \brief Get a const, globally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    typename global_col_inds_dualv_type::t_dev_const
+    getGlobalIndsViewDevice (const RowInfo& rowinfo) const;
 
   private:
 
+/// KDDKDD DELETE
     /// \brief Get a const nonowned view of the local column indices
     ///   indices of row rowinfo.localRow (only works if the matrix is
     ///   locally indexed on the calling process).
@@ -2027,14 +2056,17 @@ namespace Tpetra {
     ///   index of the local row to view.
     Kokkos::View<const global_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getGlobalKokkosRowView (const RowInfo& rowInfo) const;
+/// KDDKDD DELETE
 
   protected:
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
     Teuchos::ArrayView<const global_ordinal_type>
     getGlobalView (const RowInfo& rowinfo) const;
+#endif
 
   public:
 
@@ -2199,7 +2231,9 @@ namespace Tpetra {
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
-//WDV    typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
+// KDDKDD DELETE
+typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
+// KDDKDD DELETE
 
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
@@ -2210,7 +2244,9 @@ namespace Tpetra {
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is globally indexed
-    t_GlobalOrdinal_1D k_gblInds1D_;
+// KDDKDD DELETE
+t_GlobalOrdinal_1D k_gblInds1D_;
+// KDDKDD DELETE
 
     /// \brief Row offsets for "1-D" storage.
     ///
@@ -2234,7 +2270,9 @@ namespace Tpetra {
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
 
-//WDV    typename local_graph_type::row_map_type::const_type k_rowPtrs_;
+// KDDKDD DELETE
+typename local_graph_type::row_map_type::const_type k_rowPtrs_;
+// KDDKDD DELETE
 
     /// \brief The type of k_numRowEntries_ (see below).
     ///

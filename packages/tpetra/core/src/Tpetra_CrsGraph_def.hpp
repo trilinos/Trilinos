@@ -1284,6 +1284,63 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+                    local_col_inds_dualv_type::t_host_const
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndsViewHost (const RowInfo& rowinfo) const;
+  {
+    if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
+      return typename local_col_inds_dualv_type::t_host_const ();
+    else
+      return lclInds_wdv.getHostSubview(rowinfo.offset1D, 
+                                        rowinfo.numEntries,
+                                        Access::ReadOnly);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+                    global_col_inds_dualv_type::t_host_const
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalIndsViewHost (const RowInfo& rowinfo) const;
+  {
+    if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
+      return typename global_col_inds_dualv_type::t_host_const ();
+    else
+      return gblInds_wdv.getHostSubview(rowinfo.offset1D, 
+                                        rowinfo.numEntries,
+                                        Access::ReadOnly);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+                    local_col_inds_dualv_type::t_dev_const
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalIndsViewDevice (const RowInfo& rowinfo) const;
+  {
+    if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
+      return typename local_col_inds_dualv_type::t_dev_const ();
+    else
+      return lclInds_wdv.getDeviceSubview(rowinfo.offset1D, 
+                                          rowinfo.numEntries,
+                                          Access::ReadOnly);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+                    global_col_inds_dualv_type::t_dev_const
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalIndsViewDevice (const RowInfo& rowinfo) const;
+  {
+    if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
+      return typename global_col_inds_dualv_type::t_dev_const ();
+    else
+      return gblInds_wdv.getDeviceSubview(rowinfo.offset1D, 
+                                          rowinfo.numEntries,
+                                          Access::ReadOnly);
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const LocalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalView (const RowInfo& rowinfo) const
@@ -1296,7 +1353,7 @@ namespace Tpetra {
     if (rowinfo.allocSize == 0) {
       return Teuchos::ArrayView<const LO> ();
     }
-    else { // nothing in the row to view
+    else { 
       if (lclInds_wdv.extent (0) != 0) { // 1-D storage
         const size_t start = rowinfo.offset1D;
         const size_t len = rowinfo.allocSize;
@@ -1316,6 +1373,7 @@ namespace Tpetra {
     }
   }
 
+
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Kokkos::View<const LocalOrdinal*,
                typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::device_type,
@@ -1330,7 +1388,7 @@ namespace Tpetra {
     if (rowInfo.allocSize == 0) {
       return row_view_type ();
     }
-    else { // nothing in the row to view
+    else { 
       if (k_lclInds1D_.extent (0) != 0) { // 1-D storage
         const size_t start = rowInfo.offset1D;
         const size_t len = rowInfo.allocSize;
@@ -1412,7 +1470,6 @@ namespace Tpetra {
     }
   }
 
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayView<const GlobalOrdinal>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -1439,6 +1496,7 @@ namespace Tpetra {
     }
     return view;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RowInfo
@@ -2419,6 +2477,80 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowView (
+    const LocalOrdinal localRow, 
+    typename local_col_inds_dualv_type::t_host_const &indices) const
+  {
+    const char tfecfFuncName[] = "getLocalRowView: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isGloballyIndexed (), std::runtime_error, "The graph's indices are "
+       "currently stored as global indices, so we cannot return a view with "
+       "local column indices, whether or not the graph has a column Map.  If "
+       "the graph _does_ have a column Map, use getLocalRowCopy() instead.");
+
+    const RowInfo rowInfo = getRowInfo (localRow);
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = this->getLocalIndsViewHost (rowInfo);
+    }
+    else {
+      // This does the right thing (reports an empty row) if the input
+      // row is invalid.
+      indices = typename local_col_inds_dualv_type::t_host_const();
+    }
+
+    if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (indices.size ()) !=
+         getNumEntriesInLocalRow (localRow), std::logic_error, "indices.size() "
+         "= " << indices.extent(0) << " != getNumEntriesInLocalRow(localRow=" <<
+         localRow << ") = " << getNumEntriesInLocalRow(localRow) <<
+         ".  Please report this bug to the Tpetra developers.");
+    }
+  }
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalRowView (
+    const GlobalOrdinal globalRow,
+    typename global_col_inds_dualv_type::t_host_const &indices) const
+  {
+    const char tfecfFuncName[] = "getGlobalRowView: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (isLocallyIndexed (), std::runtime_error, "The graph's indices are "
+       "currently stored as local indices, so we cannot return a view with "
+       "global column indices.  Use getGlobalRowCopy() instead.");
+
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowInfo = getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = this->getGlobalIndsViewHost (rowInfo);
+    }
+    else {
+      indices = typename global_col_inds_dualv_type::t_host_const();
+    }
+    if (debug_) {
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (static_cast<size_t> (indices.size ()) !=
+         getNumEntriesInGlobalRow (globalRow),
+         std::logic_error, "indices.size() = " << indices.extent(0)
+         << " != getNumEntriesInGlobalRow(globalRow=" << globalRow << ") = "
+         << getNumEntriesInGlobalRow (globalRow)
+         << ".  Please report this bug to the Tpetra developers.");
+    }
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  TPETRA_DEPRECATED
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (const LocalOrdinal localRow,
                    Teuchos::ArrayView<const LocalOrdinal>& indices) const
   {
@@ -2454,12 +2586,14 @@ namespace Tpetra {
     }
   }
 
+#endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
+  TPETRA_DEPRECATED
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  TPETRA_DEPRECATED getGlobalRowView (const GlobalOrdinal globalRow,
+  getGlobalRowView (const GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices) const
   {
     const char tfecfFuncName[] = "getGlobalRowView: ";
@@ -4077,9 +4211,9 @@ namespace Tpetra {
         // column Map on the calling process.
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const RowInfo rowInfo = this->getRowInfo (lclRow);
-          Teuchos::ArrayView<const GO> oldGblRowView = getGlobalView (rowInfo);
+          auto oldGblRowView = getGlobalIndsViewHost (rowInfo);
           for (size_t k = 0; k < rowInfo.numEntries; ++k) {
-            const GO gblCol = oldGblRowView[k];
+            const GO gblCol = oldGblRowView(k);
             if (! newColMap->isNodeGlobalElement (gblCol)) {
               localSuffices = false;
               break; // Stop at the first invalid index

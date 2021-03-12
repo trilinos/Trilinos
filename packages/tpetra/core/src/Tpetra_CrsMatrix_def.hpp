@@ -3575,8 +3575,10 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     return errCode;
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
+  TPETRA_DEPRECATED
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices,
@@ -3612,6 +3614,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       indices = indTmp (0, rowinfo.numEntries);
       values = valTmp (0, rowinfo.numEntries);
     }
+#endif
 
 #ifdef HAVE_TPETRA_DEBUG
     const char suffix[] = ".  This should never happen.  Please report this "
