@@ -1993,6 +1993,12 @@ namespace Tpetra {
     Teuchos::ArrayView<const local_ordinal_type>
     getLocalView (const RowInfo& rowinfo) const;
 
+    /// \brief Get a const, locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    getLocalIndsViewHost (const RowInfo& rowinfo) const;
+
+
   private:
 
     /// \brief Get a const nonowned view of the local column indices
@@ -2030,26 +2036,7 @@ namespace Tpetra {
     Teuchos::ArrayView<const global_ordinal_type>
     getGlobalView (const RowInfo& rowinfo) const;
 
-    /// \brief Get a pointer to the global column indices of a locally
-    ///   owned row, using the result of getRowInfoFromGlobalRowIndex.
-    ///
-    /// \param gblInds [out] Pointer to the global column indices of
-    ///   the given row.
-    /// \param capacity [out] Capacity of (number of entries that can
-    ///   fit in) the given row.
-    /// \param rowInfo [in] Result of
-    ///   getRowInfoFromGlobalRowIndex(gblRow) for the row to view,
-    ///   whose global row index is \c gblRow.
-    ///
-    /// \return 0 if successful, else a nonzero error code.
-    local_ordinal_type
-    getGlobalViewRawConst (const global_ordinal_type*& gblInds,
-                           local_ordinal_type& capacity,
-                           const RowInfo& rowInfo) const;
-
-
   public:
-
 
     /// \brief Get the local graph.
     ///
@@ -2060,9 +2047,7 @@ namespace Tpetra {
     /// (global) graph is fill complete.
     local_graph_type getLocalGraph () const;
 
-
   protected:
-
 
     void fillLocalGraph (const Teuchos::RCP<Teuchos::ParameterList>& params);
 

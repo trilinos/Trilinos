@@ -1218,7 +1218,7 @@ namespace Tpetra {
           "lclInds_wdv: " << numInds << endl;
         std::cerr << os.str();
       }
-      lclInds_wdv = lcl_inds_wdv_type ("Tpetra::CrsGraph::ind", numInds);
+      lclInds_wdv = lcl_inds_wdv_type ("Tpetra::CrsGraph::lclind", numInds);
     }
     else {
       if (verbose) {
@@ -1439,31 +1439,6 @@ namespace Tpetra {
     }
     return view;
   }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  getGlobalViewRawConst (const GlobalOrdinal*& gblInds,
-                         LocalOrdinal& capacity,
-                         const RowInfo& rowInfo) const
-  {
-    gblInds = nullptr;
-    capacity = 0;
-
-    if (rowInfo.allocSize != 0 && k_gblInds1D_.extent (0) != 0) {
-      if (debug_) {
-        if (rowInfo.offset1D + rowInfo.allocSize >
-            static_cast<size_t> (k_gblInds1D_.extent (0))) {
-          return static_cast<LocalOrdinal> (-1);
-        }
-      }
-      gblInds = k_gblInds1D_.data () + rowInfo.offset1D;
-      capacity = rowInfo.allocSize;
-    }
-    return static_cast<LocalOrdinal> (0);
-  }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   RowInfo
@@ -2381,6 +2356,7 @@ namespace Tpetra {
 
     if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
       if (isLocallyIndexed ()) {
+        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto lclIndsView= lclInds_wdv.getHostView(Access::ReadOnly);
         const LO* lclInds = lclIndsView.data() + rowinfo.offset1D;
         for (size_t j = 0; j < theNumEntries; ++j) {
@@ -2388,6 +2364,7 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
+        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto gblIndsView = gblInds_wdv.getHostView(Access::ReadOnly);
         const GO *gblInds = gblIndsView.data() + rowinfor.offset1D;
         for (size_t j = 0; j < theNumEntries; ++j) {
@@ -2420,6 +2397,7 @@ namespace Tpetra {
 
     if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
       if (isLocallyIndexed ()) {
+        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto lclIndsView= lclInds_wdv.getHostView(Access::ReadOnly);
         const LO* lclInds = lclIndsView.data() + rowinfo.offset1D;
         for (size_t j = 0; j < theNumEntries; ++j) {
@@ -2427,6 +2405,7 @@ namespace Tpetra {
         }
       }
       else if (isGloballyIndexed ()) {
+        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto gblIndsView = gblInds_wdv.getHostView(Access::ReadOnly);
         const GO *gblInds = gblIndsView.data() + rowinfor.offset1D;
         for (size_t j = 0; j < theNumEntries; ++j) {
@@ -4823,12 +4802,18 @@ namespace Tpetra {
               if (vl == VERB_EXTREME) {
                 out << " ";
                 if (isGloballyIndexed()) {
-                  ArrayView<const GlobalOrdinal> rowview = getGlobalView(rowinfo);
-                  for (size_t j=0; j < rowinfo.numEntries; ++j) out << rowview[j] << " ";
+                  auto rowview = gblInds_wdv.getHostView(Access::ReadOnly);
+                  for (size_t j=0; j < rowinfo.numEntries; ++j){ 
+                    GlobalOrdinal gid = rowview[j] + rowinfo.offset1D;
+                    out << gid << " ";
+                  }
                 }
                 else if (isLocallyIndexed()) {
-                  ArrayView<const LocalOrdinal> rowview = getLocalView(rowinfo);
-                  for (size_t j=0; j < rowinfo.numEntries; ++j) out << colMap_->getGlobalElement(rowview[j]) << " ";
+                  auto rowview = lclInds_wdv.getHostView(Access::ReadOnly);
+                  for (size_t j=0; j < rowinfo.numEntries; ++j) {
+                    LocalOrdinal lid = rowview[j] + rowinfo.offset1D;
+                    out << colMap_->getGlobalElement(lid) << " ";
+                  }
                 }
               }
               out << std::endl;
@@ -5817,6 +5802,7 @@ namespace Tpetra {
         else {
           const LO numEnt = static_cast<LO> (rowInfo.numEntries);
           if (this->isLocallyIndexed ()) {
+        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
             auto lclColIndsView = lclInds_wdv.getDeviceView(Access::ReadOnly);
             const LO* lclColInds = lclColIndsView.data() + rowInfo.offset1D;
             if (final) {
@@ -5832,6 +5818,7 @@ namespace Tpetra {
             exportsOffset = curOffset + numEnt;
           }
           else if (this->isGloballyIndexed ()) {
+        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
             auto gblColIndsView = gblInds_wdv.getDeviceView(Access::ReadOnly);
             const GO* gblColInds = gblColIndsView.data() + rowInfo.offset1D;
             if (final) {
@@ -6048,6 +6035,7 @@ namespace Tpetra {
 
          const LO numEnt = static_cast<LO> (rowInfo.numEntries);
          if (this->isLocallyIndexed ()) {
+        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
            auto lclColIndsView = lclInds_wdv.getDeviceView(Access::ReadOnly);
            const LO* lclColInds = lclColIndsView.data() + rowInfo.offset1D;
            if (final) {
@@ -6063,6 +6051,7 @@ namespace Tpetra {
            exportsOffset = curOffset + numEnt;
          }
          else if (this->isGloballyIndexed ()) {
+        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
            auto gblColIndsView = gblInds_wdv.getDeviceView(Access::ReadOnly);
            const GO* gblColInds = gblColIndsView.data() + rowInfo.offset1D;
            if (final) {

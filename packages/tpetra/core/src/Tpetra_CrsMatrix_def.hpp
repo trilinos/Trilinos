@@ -3372,6 +3372,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
+        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
+
         auto curLclIndsView = 
              staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
         const LocalOrdinal* curLclInds = curLclIndsView.data() 
@@ -3390,6 +3392,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
+        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto curGblIndsView = 
              staticGraph_->gblInds_wdv.getHostView(Access::ReadOnly);
         const GlobalOrdinal* curGblInds = curGblIndsView.data() 
@@ -3433,6 +3436,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
+        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto curLclIndsView = 
              staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
         const LocalOrdinal* curLclInds = curLclIndsView.data()
@@ -3449,6 +3453,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
+        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
         auto curGblIndsView = 
              staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
         const GlobalOrdinal* curGblInds = curBglIndsView.data() 
