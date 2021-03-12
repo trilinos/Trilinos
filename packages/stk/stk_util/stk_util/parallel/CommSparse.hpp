@@ -235,21 +235,15 @@ void unpack_communications(COMM & comm, const UNPACK_ALGORITHM & algorithm)
 }
 
 template <typename T>
-void pack_vector_to_proc(stk::CommSparse& comm, const T& data, int otherProc)
+void pack_vector_to_proc(stk::CommSparse& comm, const std::vector<T>& data, int otherProc)
 {
-    comm.send_buffer(otherProc).pack<unsigned>(data.size());
-    for(size_t i=0; i<data.size(); ++i)
-        comm.send_buffer(otherProc).pack<typename T::value_type>(data[i]);
+  comm.send_buffer(otherProc).pack(data);
 }
 
 template <typename T>
-void unpack_vector_from_proc(stk::CommSparse& comm, T& data, int fromProc)
+void unpack_vector_from_proc(stk::CommSparse& comm, std::vector<T>& data, int fromProc)
 {
-    unsigned num_items = 0;
-    comm.recv_buffer(fromProc).unpack<unsigned>(num_items);
-    data.resize(num_items);
-    for(unsigned i=0;i<num_items;++i)
-        comm.recv_buffer(fromProc).unpack<typename T::value_type>(data[i]);
+  comm.recv_buffer(fromProc).unpack(data);
 }
 
 }

@@ -11,13 +11,58 @@
 #define STK_COUPLING_COMM_SPLITTING_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_coupling/impl_VersionUtils.hpp>
 #include <string>
+#include <vector>
 #include <utility>
+#include <map>
 
 namespace stk
 {
 namespace coupling
 {
+
+struct PairwiseRanks
+{
+  int localColorRoot;
+  int otherColorRoot;
+};
+
+class SplitComms
+{
+public:
+  SplitComms() = default;
+  SplitComms(MPI_Comm parentComm, int localColor);
+
+  MPI_Comm get_split_comm() const;
+
+  MPI_Comm get_parent_comm() const;
+
+  MPI_Comm get_pairwise_comm(int otherColor) const;
+
+  const std::vector<int>& get_other_colors() const;
+
+  PairwiseRanks get_pairwise_root_ranks(int otherColor) const;
+
+  bool is_coupling_version_deprecated() const;
+
+private:
+  void setup_pairwise_comms();
+  void fill_other_colors();
+  void compute_pairwise_root_ranks();
+  void initialize();
+
+  MPI_Comm m_parentComm;
+  MPI_Comm m_splitComm;
+
+  int m_localColor;
+
+  std::map<int, MPI_Comm> m_pairwiseComms;
+  std::vector<int> m_otherColors;
+  std::map<int, PairwiseRanks> m_rootRanks;
+  bool m_isInitialized = false;
+  impl::CouplingCompatibilityMode m_compatibilityMode;
+};
 
 std::pair<int, int> calc_my_root_and_other_root_ranks(MPI_Comm global, MPI_Comm local);
 

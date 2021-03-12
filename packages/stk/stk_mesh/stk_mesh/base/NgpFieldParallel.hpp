@@ -68,8 +68,18 @@ void parallel_sum(const stk::mesh::BulkData & bulk, const std::vector<stk::mesh:
 }
 
 template <typename T>
-void copy_owned_to_shared(const stk::mesh::BulkData & bulk, const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                          bool doFinalSyncBackToDevice = true)
+void do_final_sync_to_device(const std::vector<NgpField<T>*>& ngpFields)
+{
+  for(auto ngpField : ngpFields) {
+    ngpField->sync_to_device();
+  }
+}
+
+template <typename T>
+void copy_owned_to_shared(const stk::mesh::BulkData & bulk,
+                          const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
+                          bool doFinalSyncBackToDevice = true,
+                          bool syncOnlySharedOrGhosted = false)
 {
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -77,24 +87,20 @@ void copy_owned_to_shared(const stk::mesh::BulkData & bulk, const std::vector<st
   std::vector<const stk::mesh::FieldBase *> stkFields;
   for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
     stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
-    ngpField->sync_to_host();
   }
 
-  stk::mesh::copy_owned_to_shared(bulk, stkFields);
+  stk::mesh::copy_owned_to_shared(bulk, stkFields, syncOnlySharedOrGhosted );
 
-  for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
-    ngpField->modify_on_host();
-
-    if (doFinalSyncBackToDevice) {
-      ngpField->sync_to_device();
-    }
+  if(doFinalSyncBackToDevice) {
+    do_final_sync_to_device(ngpFields);
   }
 }
 
 template <typename T>
 void communicate_field_data(const stk::mesh::Ghosting & ghosting,
                             const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                            bool doFinalSyncBackToDevice = true)
+                            bool doFinalSyncBackToDevice = true,
+                            bool syncOnlySharedOrGhosted = false)
 {
   const stk::mesh::MetaData & meta = ghosting.mesh().mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -102,24 +108,20 @@ void communicate_field_data(const stk::mesh::Ghosting & ghosting,
   std::vector<const stk::mesh::FieldBase *> stkFields;
   for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
     stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
-    ngpField->sync_to_host();
   }
 
-  stk::mesh::communicate_field_data(ghosting, stkFields);
+  stk::mesh::communicate_field_data(ghosting, stkFields, syncOnlySharedOrGhosted);
 
-  for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
-    ngpField->modify_on_host();
-
-    if (doFinalSyncBackToDevice) {
-      ngpField->sync_to_device();
-    }
+  if(doFinalSyncBackToDevice) {
+    do_final_sync_to_device(ngpFields);
   }
 }
 
 template <typename T>
 void communicate_field_data(const stk::mesh::BulkData & bulk,
                             const std::vector<stk::mesh::NgpField<T> *> & ngpFields,
-                            bool doFinalSyncBackToDevice = true)
+                            bool doFinalSyncBackToDevice = true,
+                            bool syncOnlySharedOrGhosted = false)
 {
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   const std::vector<stk::mesh::FieldBase *> & allStkFields = meta.get_fields();
@@ -127,17 +129,12 @@ void communicate_field_data(const stk::mesh::BulkData & bulk,
   std::vector<const stk::mesh::FieldBase *> stkFields;
   for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
     stkFields.push_back(allStkFields[ngpField->get_ordinal()]);
-    ngpField->sync_to_host();
   }
 
-  stk::mesh::communicate_field_data(bulk, stkFields);
+  stk::mesh::communicate_field_data(bulk, stkFields, syncOnlySharedOrGhosted);
 
-  for (stk::mesh::NgpField<T> * ngpField : ngpFields) {
-    ngpField->modify_on_host();
-
-    if (doFinalSyncBackToDevice) {
-      ngpField->sync_to_device();
-    }
+  if(doFinalSyncBackToDevice) {
+    do_final_sync_to_device(ngpFields);
   }
 }
 

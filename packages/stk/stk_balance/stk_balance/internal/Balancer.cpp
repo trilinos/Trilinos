@@ -114,7 +114,7 @@ Balancer::Balancer(const BalanceSettings& settings)
 
 bool Balancer::balance(BalanceMesh& mesh) const
 {
-  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().locally_owned_part()};
+  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().universal_part()};
   return balance(mesh, selectors);
 }
 

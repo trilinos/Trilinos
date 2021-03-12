@@ -4,9 +4,12 @@
 #include <stk_coupling/Utils.hpp>
 #include <stk_coupling/CommSplitting.hpp>
 #include <stk_coupling/SyncInfo.hpp>
+#include <stk_coupling/Version.hpp>
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
 #include <stk_util/util/ReportHandler.hpp>
+#include <stk_util/Version.hpp>
+#include "MockUtils.hpp"
 #include "StkMesh.hpp"
 #include "StkRecvAdapter.hpp"
 #include "EmptySendAdapter.hpp"
@@ -23,7 +26,13 @@ public:
     : m_appName("Mock-Salinas"),
       m_mesh(),
       m_doneFlagName("time step status"),
+      m_splitComms(),
+      m_otherColor(),
       m_iAmRootRank(false),
+      m_myInfo(),
+      m_otherInfo(),
+      m_currentTime(),
+      m_finalTime(),
       m_doingRecvTransfer(false),
       m_recvFieldName()
   { }
@@ -35,9 +44,9 @@ public:
 
   void read_input_and_setup_split_comms(int argc, char** argv)
   {
-    m_commWorld = stk::parallel_machine_init(&argc, &argv);
-    int myWorldRank = stk::parallel_machine_rank(m_commWorld);
-    int numWorldRanks = stk::parallel_machine_size(m_commWorld);
+    MPI_Comm commWorld = stk::parallel_machine_init(&argc, &argv);
+    int myWorldRank = stk::parallel_machine_rank(commWorld);
+    int numWorldRanks = stk::parallel_machine_size(commWorld);
 
     {
       std::ostringstream os;
@@ -47,21 +56,31 @@ public:
 
     int defaultColor = stk::coupling::string_to_color(m_appName);
     int color = stk::get_command_line_option(argc, argv, "app-color", defaultColor);
-    m_commApp = stk::coupling::split_comm(m_commWorld, color);
+    m_splitComms = stk::coupling::SplitComms(commWorld, color);
+    const std::vector<int>& otherColors = m_splitComms.get_other_colors();
+    if (otherColors.size() > 1) {
+      mock_utils::exchange_and_print_info(m_splitComms, m_appName, color);
+      return;
+    }
+    m_otherColor = otherColors[0];
 
-    std::pair<int,int> rootRanks = stk::coupling::calc_my_root_and_other_root_ranks(m_commWorld, m_commApp);
-    int myAppRank = stk::parallel_machine_rank(m_commApp);
-    int numAppRanks = stk::parallel_machine_size(m_commApp);
-    m_iAmRootRank = myWorldRank == rootRanks.first;
+    MPI_Comm splitComm = m_splitComms.get_split_comm();
+    stk::coupling::PairwiseRanks rootRanks = m_splitComms.get_pairwise_root_ranks(otherColors[0]);
+    int myAppRank = stk::parallel_machine_rank(splitComm);
+    int numAppRanks = stk::parallel_machine_size(splitComm);
+    m_iAmRootRank = myAppRank == 0;
 
     {
       std::ostringstream os;
-      os << m_appName << ": color="<<color<<", my app rank is: " << myAppRank << " out of " << numAppRanks << std::endl;
-      os << m_appName << ": my root-rank: " << rootRanks.first << ", other app's root-rank: " << rootRanks.second;
+      os << m_appName << ": STK version: " << stk::version_string() 
+         << " (Coupling Version: " << stk::coupling::version() << ")" << std::endl;
+      os << m_appName << ": color="<<color<<", my world rank is: " << myWorldRank << " out of " << numWorldRanks
+         << ", my app rank is: " << myAppRank << " out of " << numAppRanks << std::endl;
+      os << m_appName << ": my root-rank: " << rootRanks.localColorRoot << ", other app's root-rank: " << rootRanks.otherColorRoot;
       std::cout << os.str() << std::endl;
     }
 
-    m_mesh.reset(new mock::StkMesh(m_commApp));
+    m_mesh.reset(new mock::StkMesh(splitComm));
     m_currentTime = 0.0;
     m_finalTime = 1.0;
   }
@@ -71,7 +90,7 @@ public:
     m_myInfo = create_sync_info();
     m_myInfo.set_value(stk::coupling::AppName, m_appName);
 
-    m_otherInfo = m_myInfo.exchange(m_commWorld, m_commApp);
+    m_otherInfo = m_myInfo.exchange(m_splitComms, m_otherColor);
 
     {
       std::ostringstream os;
@@ -108,7 +127,7 @@ public:
   void communicate_time_step_info()
   {
     m_myInfo = create_sync_info();
-    m_otherInfo = m_myInfo.exchange(m_commWorld, m_commApp);
+    m_otherInfo = m_myInfo.exchange(m_splitComms, m_otherColor);
   }
 
   bool other_app_is_done()
@@ -134,13 +153,43 @@ public:
     }
   }
 
+  void check_field_sizes(std::vector<std::pair<std::string,int>> sendFields,
+                         std::vector<std::pair<std::string,int>> recvFields)
+  {
+    ThrowRequireMsg(sendFields.size() == recvFields.size(), "Number of send-fields ("
+       <<sendFields.size()<<") doesn't match number of recv-fields ("<<recvFields.size()
+       <<")");
+    for (unsigned i=0; i<sendFields.size(); ++i) {
+      ThrowRequireMsg(sendFields[i].second == recvFields[i].second,
+        "Send-field size ("<<sendFields[i].first<<","<<sendFields[i].second<<") "
+        <<"doesn't match Recv-field size ("<<recvFields[i].first<<","<<recvFields[i].second<<")");
+    }   
+  }
+
   void setup_fields_and_transfers()
   {
     if (!m_doingRecvTransfer) { return; }
+
+    std::vector<std::pair<std::string,int>> mySendFields;
+    std::vector<std::pair<std::string,int>> myRecvFields;
+    myRecvFields.push_back(std::make_pair(m_recvFieldName, m_mesh->get_field_size()));
+
+    stk::coupling::SyncInfo info = create_sync_info();
+    info.set_value("SendFields", mySendFields);
+    info.set_value("RecvFields", myRecvFields);
+
+    stk::coupling::SyncInfo otherInfo = info.exchange(m_splitComms, m_otherColor);
+    std::vector<std::pair<std::string,int>> otherSendFields = otherInfo.get_value<std::vector<std::pair<std::string,int>>>("SendFields");
+    std::vector<std::pair<std::string,int>> otherRecvFields = otherInfo.get_value<std::vector<std::pair<std::string,int>>>("RecvFields");
+
+    check_field_sizes(mySendFields, otherRecvFields);
+    check_field_sizes(otherSendFields, myRecvFields);
+
+    MPI_Comm pairwiseComm = m_splitComms.get_pairwise_comm(m_otherColor);
     std::shared_ptr<mock::EmptySendAdapter> sendAdapter;
     std::shared_ptr<mock::StkRecvAdapter> recvAdapter =
-       std::make_shared<mock::StkRecvAdapter>(m_commWorld, *m_mesh, m_recvFieldName);
-    m_recvTransfer.reset(new RecvTransfer(sendAdapter, recvAdapter, "MockSalinasRecvTransfer", m_commWorld));
+       std::make_shared<mock::StkRecvAdapter>(pairwiseComm, *m_mesh, m_recvFieldName);
+    m_recvTransfer.reset(new RecvTransfer(sendAdapter, recvAdapter, "MockSalinasRecvTransfer", pairwiseComm));
 
     m_recvTransfer->coarse_search();
     m_recvTransfer->communication();
@@ -150,12 +199,13 @@ public:
   void perform_transfers()
   {
     if (m_doingRecvTransfer) {
-      if (stk::parallel_machine_rank(m_commApp) == m_mesh->owning_rank()) {
+      MPI_Comm splitComm = m_splitComms.get_split_comm();
+      if (stk::parallel_machine_rank(splitComm) == m_mesh->owning_rank()) {
         m_mesh->set_stk_field_value(m_mesh->get_stk_dest_entity_key(), m_recvFieldName, 0.0);
       }
       m_recvTransfer->apply();
       ThrowRequire(m_recvTransfer->meshb()->called_update_values);
-      if (stk::parallel_machine_rank(m_commApp) == m_mesh->owning_rank()) {
+      if (stk::parallel_machine_rank(splitComm) == m_mesh->owning_rank()) {
         std::ostringstream os;
         os << m_appName << " transfer: recvd '"<<m_recvFieldName<<"' value: "
           << m_mesh->get_stk_field_value(m_mesh->get_stk_dest_entity_key(), m_recvFieldName) << std::endl;
@@ -168,6 +218,11 @@ public:
   {
   }
 
+  unsigned get_number_of_other_coupled_apps() const
+  {
+    return m_splitComms.get_other_colors().size();
+  }
+
 private:
   stk::coupling::SyncInfo create_sync_info()
   {
@@ -178,8 +233,8 @@ private:
   std::shared_ptr<mock::StkMesh> m_mesh;
   const std::string m_doneFlagName;
 
-  stk::ParallelMachine m_commWorld;
-  stk::ParallelMachine m_commApp;
+  stk::coupling::SplitComms m_splitComms;
+  int m_otherColor;
   bool m_iAmRootRank;
 
   stk::coupling::SyncInfo m_myInfo;
@@ -197,6 +252,10 @@ int main(int argc, char** argv)
   MockSalinas app;
 
   app.read_input_and_setup_split_comms(argc, argv);
+  if (app.get_number_of_other_coupled_apps() > 1) {
+    return 0;
+  }
+
   app.communicate_initial_setup();
   app.setup_fields_and_transfers();
 
