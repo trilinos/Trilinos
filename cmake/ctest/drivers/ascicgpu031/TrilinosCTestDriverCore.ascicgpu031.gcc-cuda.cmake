@@ -120,7 +120,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DKokkos_ARCH_SKX:BOOL=ON"
       "-DKokkos_ARCH_VOLTA70:BOOL=ON"
       "-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=OFF"
+
       "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+      "-DTrilinos_ENABLE_Pamgen:BOOL=OFF"
       "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
 
       ### MISC ###
