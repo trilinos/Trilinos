@@ -45,7 +45,6 @@ MACHINENAME=`hostname -s`
 USER=`whoami`
 
 #who gets the email summary
-DEBUGMODE=1
 if [[ $DEBUGMODE == 1 ]]; then
   RECIPIENTS=(
     "${USER}@sandia.gov"
@@ -62,8 +61,7 @@ timeStamp="$(date +%F_%R)"
 INFILE=$1
 #root of file to be emailed.  The correct suffix must be appended whenever you use this.
 OUTFILE="test-summary-${timeStamp}"
-#MAILCOMMAND="/usr/sbin/sendmail"
-MAILCOMMAND="/bin/mail"
+MAILCOMMAND="/usr/sbin/sendmail"
 #########################################################################
 
 cd ${TESTLOCATION}
