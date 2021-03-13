@@ -117,8 +117,11 @@ public:
     virtual bool isIncrementalRebalance() const;
     virtual bool isMultiCriteriaRebalance() const;
 
-    virtual bool areVertexWeightsProvidedInAVector() const;
-    virtual std::vector<double> getVertexWeightsViaVector() const;
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 2021
+    STK_DEPRECATED virtual bool areVertexWeightsProvidedInAVector() const;
+    STK_DEPRECATED virtual std::vector<double> getVertexWeightsViaVector() const;
+#endif
+
     virtual bool areVertexWeightsProvidedViaFields() const;
 
     virtual double getImbalanceTolerance() const;
@@ -151,7 +154,7 @@ public:
     virtual std::string getSpiderVolumeConnectivityCountFieldName() const;
     virtual const stk::mesh::Field<int> * getSpiderBeamConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
     virtual const stk::mesh::Field<int> * getSpiderVolumeConnectivityCountField(const stk::mesh::BulkData & stkMeshBulkData) const;
-    virtual bool useLocalIds() const;
+    virtual bool usingColoring() const;
 
     virtual bool useNodeBalancer() const;
     virtual double getNodeBalancerTargetLoadBalance() const;
@@ -322,15 +325,17 @@ public:
 class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
 {
 public:
-    UserSpecifiedVertexWeightsSetting()
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 2021
+    STK_DEPRECATED UserSpecifiedVertexWeightsSetting()
     {
       method = "parmetis";
       m_includeSearchResultInGraph = false;
     }
+    STK_DEPRECATED virtual bool areVertexWeightsProvidedInAVector() const { return true; }
+    STK_DEPRECATED void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
+    STK_DEPRECATED virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
+#endif
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool areVertexWeightsProvidedInAVector() const { return true; }
-    void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
-    virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const { return 1.0; }
     //virtual double getImbalanceTolerance() const { return 1.05; }
@@ -367,7 +372,9 @@ public:
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool areVertexWeightsProvidedInAVector() const { return false; }
+#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 2021
+    STK_DEPRECATED virtual bool areVertexWeightsProvidedInAVector() const { return false; }
+#endif
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }

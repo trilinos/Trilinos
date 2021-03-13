@@ -45,7 +45,7 @@ void print_and_exit(const std::string &msg, MPI_Comm comm)
 {
     if(stk::parallel_machine_rank(comm) == 0)
         sierra::Env::outputP0() << msg << std::endl;
-    MPI_Finalize();
+    stk::parallel_machine_finalize();
     std::exit(0);
 }
 

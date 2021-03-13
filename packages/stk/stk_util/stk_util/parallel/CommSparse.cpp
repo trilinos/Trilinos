@@ -193,9 +193,7 @@ void CommSparse::allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsign
   for ( unsigned i = 0 ; i < bufs.size() ; ++i ) {
     CommBuffer & b = bufs[i] ;
     size_t sz = b.size();
-    b.m_beg = p_data ;
-    b.m_ptr = p_data ;
-    b.m_end = p_data + sz ;
+    b.set_buffer_ptrs(p_data, p_data, p_data + sz);
     p_data += align_quad( sz );
   }
 }

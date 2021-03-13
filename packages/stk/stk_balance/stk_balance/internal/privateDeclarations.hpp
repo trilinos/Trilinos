@@ -102,8 +102,7 @@ void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData);
 
 void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
-                               const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds,
-                               Zoltan2ParallelGraph& zoltan2Graph);
+                               const stk::mesh::Selector & selector, Zoltan2ParallelGraph& zoltan2Graph);
 
 void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element, int newOwningProc, stk::mesh::EntityRank rank, std::vector<std::pair<stk::mesh::Entity, int> > &entityProcPairs);
 
