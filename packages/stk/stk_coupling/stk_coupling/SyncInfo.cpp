@@ -20,24 +20,18 @@ void SyncInfo::pack(stk::CommBuffer & b) const
 {
   // pack and unpack calls must be in the same order
   b.pack(m_name);
-  b.pack(bvals);
-  b.pack(ivals);
-  b.pack(dvals);
-  b.pack(svals);
+  m_vals.pack(b);
 }
 
 void SyncInfo::unpack(stk::CommBuffer & b)
 {
   // pack and unpack calls must be in the same order
   b.unpack(m_name);
-  b.unpack(bvals);
-  b.unpack(ivals);
-  b.unpack(dvals);
-  b.unpack(svals);
+  m_vals.unpack(b);
 }
 
 SyncInfo
-SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
+SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local) const
 {
 
   int globalRank = -1;
@@ -97,6 +91,21 @@ SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
   }
 
   return recvInfo;
+}
+
+SyncInfo SyncInfo::exchange(const SplitComms & splitComms, int otherColor) const
+{
+  return exchange(splitComms.get_pairwise_comm(otherColor), splitComms.get_split_comm());
+}
+
+SyncInfo::ColorToSyncInfoMap SyncInfo::exchange(const SplitComms & splitComms) const
+{
+  ColorToSyncInfoMap otherInfos;
+  std::vector<int> otherColors = splitComms.get_other_colors();
+  for(int otherColor : otherColors) {
+    otherInfos[otherColor] = exchange(splitComms, otherColor);
+  }
+  return otherInfos;
 }
 
 }

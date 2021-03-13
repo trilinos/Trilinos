@@ -98,9 +98,6 @@ TEST(BalanceSettings, defaultContactSearchStatus)
   stk::balance::BasicZoltan2Settings basicZoltan2Settings;
   EXPECT_FALSE(basicZoltan2Settings.includeSearchResultsInGraph());
 
-  stk::balance::UserSpecifiedVertexWeightsSetting userSpecifiedVertexWeightsSetting;
-  EXPECT_FALSE(userSpecifiedVertexWeightsSetting.includeSearchResultsInGraph());
-
   stk::balance::GraphCreationSettingsForZoltan2 graphCreationSettingsForZoltan2;
   EXPECT_TRUE(graphCreationSettingsWithCustomTolerances.includeSearchResultsInGraph());
 
@@ -145,10 +142,6 @@ TEST(BalanceSettings, toggleContactSearchStatus)
   stk::balance::BasicZoltan2Settings basicZoltan2Settings;
   basicZoltan2Settings.setIncludeSearchResultsInGraph(true);
   EXPECT_TRUE(basicZoltan2Settings.includeSearchResultsInGraph());
-
-  stk::balance::UserSpecifiedVertexWeightsSetting userSpecifiedVertexWeightsSetting;
-  userSpecifiedVertexWeightsSetting.setIncludeSearchResultsInGraph(true);
-  EXPECT_TRUE(userSpecifiedVertexWeightsSetting.includeSearchResultsInGraph());
 
   stk::balance::GraphCreationSettingsForZoltan2 graphCreationSettingsForZoltan2;
   graphCreationSettingsForZoltan2.setIncludeSearchResultsInGraph(false);

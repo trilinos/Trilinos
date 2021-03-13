@@ -73,6 +73,33 @@ public:
     stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
   }
 
+  void setup_fields_five_hex_three_block_two_state_mesh(const int numComponent1, const int numComponent2)
+  {
+    const unsigned bucketCapacity = 2;
+    const unsigned numStates = 2;
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+
+    stk::mesh::Field<int>& stkField = get_meta().declare_field<stk::mesh::Field<int>>(
+                                        stk::topology::ELEM_RANK, "variableLengthField", numStates);
+
+    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
+    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+    get_meta().declare_part_with_topology("block_3", stk::topology::HEX_8);
+
+    const std::vector<int> init1(numComponent1, -1);
+    stk::mesh::put_field_on_mesh(stkField, block1, numComponent1, init1.data());
+
+    const std::vector<int> init2(numComponent2, -2);
+    stk::mesh::put_field_on_mesh(stkField, block2, numComponent2, init2.data());
+
+    const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                                 "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n"
+                                 "0,3,HEX_8,9,13,14,15,16,17,18,19,block_2\n"
+                                 "0,4,HEX_8,9,20,21,22,23,24,25,26,block_2\n"
+                                 "0,5,HEX_8,9,27,28,29,30,31,32,33,block_3";
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  }
+
   void setup_two_element_mesh_field_on_each_element(stk::mesh::Field<int>& intField, stk::mesh::Field<double>& doubleField)
   {
     stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::SHELL_QUAD_4);
@@ -117,6 +144,24 @@ public:
   {
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
     ngp_unit_test_utils::setup_mesh_2hex_2block(get_bulk(), bucketCapacity);
+  }
+
+  void copy_fields_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::FieldBase* inputField,
+                             stk::mesh::FieldBase* outputField, const stk::mesh::Selector& selector)
+  {
+    stk::mesh::NgpField<int> inputNgpField = stk::mesh::get_updated_ngp_field<int>(*inputField);
+    stk::mesh::NgpField<int> outputNgpField = stk::mesh::get_updated_ngp_field<int>(*outputField);
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+                                     const int numScalarsPerEntity = inputNgpField.get_num_components_per_entity(entityIndex);
+                                     
+                                     for (int component=0; component<numScalarsPerEntity; component++) {
+                                       outputNgpField(entityIndex, component) = inputNgpField(entityIndex, component);
+                                     }
+                                   });
+
+    outputNgpField.modify_on_device();
   }
 
   template<typename T>
@@ -1434,6 +1479,46 @@ TEST_F(NgpFieldFixture, noOverwriteInVariableLengthFields)
   variableLengthField.sync_to_host();
 
   test_field_values_on_host(get_bulk(), potentiallyOverwrittenField, 3);
+}
+
+TEST_F(NgpFieldFixture, FieldCopyVariableLengthField)
+{
+  if (get_parallel_size() != 1) return;
+
+  const int numComponent1 = 8;
+  const int numComponent2 = 3;
+  setup_fields_five_hex_three_block_two_state_mesh(numComponent1, numComponent2);
+
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  auto stkField = get_meta().get_field(stk::topology::ELEM_RANK, "variableLengthField");
+  auto elem2 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2);
+  auto elem4 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 4);
+
+  stk::mesh::FieldBase* oldState = stkField->field_state(stk::mesh::StateOld);
+  stk::mesh::FieldBase* newState = stkField->field_state(stk::mesh::StateNew);
+
+  int* inData2 = reinterpret_cast<int*>(stk::mesh::field_data(*oldState, elem2));
+  int* inData4 = reinterpret_cast<int*>(stk::mesh::field_data(*oldState, elem4));
+
+  for(int c = 0; c < numComponent1; ++c) {
+    inData2[c] = 2 + c;
+  }
+  for(int c = 0; c < numComponent2; ++c) {
+    inData4[c] = numComponent1 + 3 + c;
+  }
+
+  copy_fields_on_device(ngpMesh, oldState, newState, get_meta().universal_part());
+  newState->sync_to_host();
+
+  int* outData2 = reinterpret_cast<int*>(stk::mesh::field_data(*newState, elem2));
+  int* outData4 = reinterpret_cast<int*>(stk::mesh::field_data(*newState, elem4));
+
+  for(int c = 0; c < numComponent1; ++c) {
+    EXPECT_EQ(2 + c, outData2[c]);
+  }
+  for(int c = 0; c < numComponent2; ++c) {
+    EXPECT_EQ(numComponent1 + 3 + c, outData4[c]);
+  }
 }
 
 void check_expected_num_elements(const stk::mesh::BulkData & bulk, unsigned numElements)
