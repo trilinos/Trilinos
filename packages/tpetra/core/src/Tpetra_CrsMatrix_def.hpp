@@ -2357,14 +2357,10 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     size_t hint = 0; // Guess for the current index k into rowVals
     LO numValid = 0; // number of valid local column indices
 
-    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
-    // accurately, it assumes that the host execution space can
-    // access data in both InputMemorySpace and ValsMemorySpace.
-
     if (graph.isLocallyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const LO lclColInd = inds[j];
@@ -2386,7 +2382,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = colMap.getGlobalElement (inds[j]);
@@ -2612,7 +2608,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
       const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
 
       for (LO j = 0; j < numElts; ++j) {
@@ -2637,7 +2633,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     else if (graph.isGloballyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = inds[j];
@@ -2829,7 +2825,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     if (graph.isLocallyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const LO lclColInd = inds[j];
@@ -2871,7 +2867,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       const map_type& colMap = * (graph.colMap_);
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
 
       const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
       for (LO j = 0; j < numElts; ++j) {
@@ -2938,7 +2934,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     if (graph.isGloballyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = inds[j];
@@ -2979,7 +2975,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       const map_type& colMap = * (graph.colMap_);
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
 
       const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
       for (LO j = 0; j < numElts; ++j) {
@@ -3043,7 +3039,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     if (graph.isLocallyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalKokkosRowView (rowInfo);
+      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const LO lclColInd = inds[j];
@@ -3070,7 +3066,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalKokkosRowView (rowInfo);
+      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = colMap.getGlobalElement (inds[j]);
@@ -3372,18 +3368,12 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
-
-        auto curLclIndsView = 
-             staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
-        const LocalOrdinal* curLclInds = curLclIndsView.data() 
-                                       + rowinfo.offset1D;
-
+        auto curLclInds = staticGraph_->getLocalIndsViewHost(rowinfo);
         (void) getViewRawConst (curVals, numSpots, rowinfo);
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
-          indices[j] = curLclInds[j];
+          indices[j] = curLclInds(j);
         }
       }
       else if (staticGraph_->isGloballyIndexed ()) {
@@ -3392,16 +3382,12 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
-        auto curGblIndsView = 
-             staticGraph_->gblInds_wdv.getHostView(Access::ReadOnly);
-        const GlobalOrdinal* curGblInds = curGblIndsView.data() 
-                                        + rowinfo.offset1D;
+        auto curGblInds = staticGraph_->getGlobalIndsViewHost(rowinfo);
         (void) getViewRawConst (curVals, numSpots, rowinfo);
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
-          indices[j] = colMap.getLocalElement (curGblInds[j]);
+          indices[j] = colMap.getLocalElement (curGblInds(j));
         }
       }
     }
@@ -3436,39 +3422,30 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // KDDKDD would like lclInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
-        auto curLclIndsView = 
-             staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
-        const LocalOrdinal* curLclInds = curLclIndsView.data()
-                                       + rowinfo.offset1D;
-     
+        auto curLclInds = staticGraph_->getLocalIndsViewHost(rowinfo);
         (void) getViewRawConst (curVals, numSpots, rowinfo);
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
-          indices[j] = colMap.getGlobalElement (curLclInds[j]);
+          indices[j] = colMap.getGlobalElement (curLclInds(j));
         }
       }
       else if (staticGraph_->isGloballyIndexed ()) {
         const impl_scalar_type* curVals;
         LocalOrdinal numSpots = rowinfo.allocSize; // includes both current entries and extra space
 
-        // KDDKDD would like gblInds_wdv.getSubviewHost(Access::ReadOnly, rowinfo.offset1D, rowinfo.numEntries);
-        auto curGblIndsView = 
-             staticGraph_->lclInds_wdv.getHostView(Access::ReadOnly);
-        const GlobalOrdinal* curGblInds = curBglIndsView.data() 
-                                        + rowinfo.offset1D;
-
+        auto curGblInds = staticGraph_->getGlobalIndsViewHost(rowinfo);
         (void) getViewRawConst (curVals, numSpots, rowinfo);
 
         for (size_t j = 0; j < theNumEntries; ++j) {
           values[j] = curVals[j];
-          indices[j] = curGblInds[j];
+          indices[j] = curGblInds(j);
         }
       }
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -3552,7 +3529,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       }
       else {
         numEnt = static_cast<LO> (rowInfo.numEntries);
-        auto lclColInds = staticGraph_->getLocalKokkosRowView (rowInfo);
+        auto lclColInds = staticGraph_->getLocalIndsViewDevice (rowInfo);
+        // KDDKDD Breaks reference counting; unsafe
         ind = lclColInds.data (); // FIXME (mfh 18 Jul 2016) UVM
         const LO err = this->getViewRawConst (val, numEnt, rowInfo);
         return err;
@@ -3575,10 +3553,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     return errCode;
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
-  TPETRA_DEPRECATED
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (GlobalOrdinal globalRow,
                     Teuchos::ArrayView<const GlobalOrdinal>& indices,
@@ -3614,7 +3590,6 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       indices = indTmp (0, rowinfo.numEntries);
       values = valTmp (0, rowinfo.numEntries);
     }
-#endif
 
 #ifdef HAVE_TPETRA_DEBUG
     const char suffix[] = ".  This should never happen.  Please report this "
@@ -3639,6 +3614,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
        " " << expectedNumEntries << suffix);
 #endif // HAVE_TPETRA_DEBUG
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -4213,7 +4189,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         static_cast<LocalOrdinal> (theGraph.getNodeNumRows ());
       for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
         const RowInfo rowInfo = theGraph.getRowInfo (row);
-        auto lclColInds = theGraph.getLocalKokkosRowViewNonConst (rowInfo);
+        auto lclColInds = theGraph.getLocalIndsRowViewHostNonConst (rowInfo);
         auto vals = this->getRowViewNonConst (rowInfo);
         // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least for
         // lclColInds, if not also for values.
@@ -4885,7 +4861,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     auto rowValues = this->getRowViewNonConst (rowInfo);
     typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
     value_type* rowValueIter = rowValues.data ();
-    auto inds_view = graph.getLocalKokkosRowViewNonConst (rowInfo);
+    auto inds_view = graph.getLocalIndsViewHostNonConst (rowInfo);
 
     // beg,end define a half-exclusive interval over which to iterate.
     LocalOrdinal* beg = inds_view.data ();
@@ -4966,7 +4942,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         [this, &graph, sorted, merged] (const LO& lclRow, size_t& numDups) {
           const RowInfo rowInfo = graph.getRowInfo (lclRow);
           if (! sorted) {
-            auto lclColInds = graph.getLocalKokkosRowViewNonConst (rowInfo);
+            auto lclColInds = graph.getLocalIndsViewHostNonConst (rowInfo);
             auto vals = this->getRowViewNonConst (rowInfo);
             // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least
             // for lclColInds, if not also for values.
@@ -5772,7 +5748,6 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     using Details::padCrsArrays;
     using std::endl;
     using LO = local_ordinal_type;
-    using execution_space = typename device_type::execution_space;
     using row_ptrs_type =
       typename local_graph_type::row_map_type::non_const_type;
     using range_policy =
