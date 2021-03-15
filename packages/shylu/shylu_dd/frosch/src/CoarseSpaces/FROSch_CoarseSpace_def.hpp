@@ -243,9 +243,8 @@ namespace FROSch {
             Kokkos::fence();
 
             // make it into offsets
-            for (UN i=0; i<numLocalRows; i++) {
-                Rowptr[i+1] += Rowptr[i];
-            }
+            KokkosKernels::Impl::kk_inclusive_parallel_prefix_sum<rowptr_type, execution_space>
+              (1+numLocalRows, Rowptr);
 
             // fill into the local matrix
             UN nnz = Rowptr[numLocalRows];
