@@ -51,7 +51,7 @@ if [[ $DEBUGMODE == 1 ]]; then
   )
 else
   RECIPIENTS=(
-    "muelu-regression@software.sandia.gov"
+    "tpetra-regression@software.sandia.gov"
   )
 fi
 #suffix for all the log files
