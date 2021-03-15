@@ -139,7 +139,7 @@ namespace FROSch {
                             FROSCH_ASSERT(LocalLength_i+Offsets_[i] <= AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace : ERROR: k+Offsets_[i]>=AssembledBasis_->getLocalLength()");
 
                             for (UN j=0; j < NumVectors_i; j++) {
-                                auto unassembledSubspaceBasesData = UnassembledSubspaceBases_[i]->getData(j);
+                                auto unassembledSubspaceBasesData = UnassembledSubspaceBases_[i]->getData(j).getRawPtr();
                                 auto   assembledSubspaceBasesData = AssembledBasis_->getDataNonConst(itmp+j);
 
                                 using execution_space = typename XMap::local_map_type::execution_space;
