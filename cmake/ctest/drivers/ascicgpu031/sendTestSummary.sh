@@ -323,4 +323,5 @@ END_MESSAGE
 #clean up
 bzip2 --best $backupFile
 mv ${backupFile}.bz2 ${OUTFILE}.txt ${LOGBACKUPDIRECTORY}
-rm -f ${OUTFILE}.html
+#rm -f ${OUTFILE}.html
+mv ${OUTFILE}.html  ${LOGBACKUPDIRECTORY}
