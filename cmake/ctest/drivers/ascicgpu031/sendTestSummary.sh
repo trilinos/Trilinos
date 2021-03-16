@@ -317,10 +317,11 @@ cat ${OUTFILE}.txt | perl ${HTMLPERLSCRIPT} ${date2} ${cdashDate} ${MACHINENAME}
 
 ${MAILCOMMAND} -it <<END_MESSAGE
 To: ${RECIPIENTS[@]}
-$(cat ${OUTFILE}.html)
+$(cat ${OUTFILE}.html | grep -v UNMATCHED)
 END_MESSAGE
 
 #clean up
 bzip2 --best $backupFile
 mv ${backupFile}.bz2 ${OUTFILE}.txt ${LOGBACKUPDIRECTORY}
 rm -f ${OUTFILE}.html
+#mv ${OUTFILE}.html  ${LOGBACKUPDIRECTORY}
