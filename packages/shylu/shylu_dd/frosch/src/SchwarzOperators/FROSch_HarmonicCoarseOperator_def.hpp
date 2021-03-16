@@ -770,14 +770,34 @@ namespace FROSch {
                 }
             }
 
-            for (UN j=0; j<numLocalBlockColumns[i]; j++) {
-                ConstSCVecPtr mVPhiIData = mVPhiI->getData(itmp);
-                for (UN ii=0; ii<extensionBlocks.size(); ii++) {
-                    for (LO k=bound[extensionBlocks[ii]]; k<bound[extensionBlocks[ii]+1]; k++) {
-                        mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiIData[k]);
+            #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+            if (mVPhi->getMap()->lib() == UseTpetra) {
+                for (UN j=0; j<numLocalBlockColumns[i]; j++) {
+                    auto mVPhiIData = mVPhiI->getData(itmp);
+                    auto mVPhiData  = mVPhi->getDataNonConst(itmp);
+
+                    for (UN ii=0; ii<extensionBlocks.size(); ii++) {
+                        using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+                        using execution_space = typename XMap::local_map_type::execution_space;
+                        Kokkos::RangePolicy<execution_space> policy (bound[extensionBlocks[ii]], bound[extensionBlocks[ii]+1]);
+                        CopyPhiDataFunctor functor(mVPhiData, mVPhiIData, indicesIDofsAll);
+                        Kokkos::parallel_for(
+                            "FROSch_HarmonicCoarseOperator::computeExtensions", policy, functor);
                     }
+                    itmp++;
                 }
-                itmp++;
+            } else
+            #endif
+            {
+                for (UN j=0; j<numLocalBlockColumns[i]; j++) {
+                    ConstSCVecPtr mVPhiIData = mVPhiI->getData(itmp);
+                    for (UN ii=0; ii<extensionBlocks.size(); ii++) {
+                        for (LO k=bound[extensionBlocks[ii]]; k<bound[extensionBlocks[ii]+1]; k++) {
+                            mVPhi->replaceLocalValue(indicesIDofsAll[k],itmp,mVPhiIData[k]);
+                        }
+                    }
+                    itmp++;
+                }
             }
         }
         return mVPhi;
