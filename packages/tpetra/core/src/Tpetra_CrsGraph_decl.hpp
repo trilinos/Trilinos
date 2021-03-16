@@ -266,13 +266,13 @@ namespace Tpetra {
 protected:
     // Types used for CrsGraph's storage of local column indices
     using local_inds_dualv_type =
-          Kokkos::DualView<local_ordinal_type*>;
+          Kokkos::DualView<local_ordinal_type*, device_type>;
     using local_inds_wdv_type = 
           Details::WrappedDualView<local_inds_dualv_type>;
 
     // Types used for CrsGraph's storage of global column indices
     using global_inds_dualv_type =
-          Kokkos::DualView<global_ordinal_type*>;
+          Kokkos::DualView<global_ordinal_type*, device_type>;
     using global_inds_wdv_type =
           Details::WrappedDualView<global_inds_dualv_type>;
 

@@ -453,7 +453,7 @@ find_crs_indices(
   if (new_indices.size() == 0)
     return 0;
 
-  using ordinal = typename Indices1::value_type;
+  using ordinal = typename Indices1::non_const_value_type;
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
   const size_t start = static_cast<size_t> (row_ptrs[row]);
