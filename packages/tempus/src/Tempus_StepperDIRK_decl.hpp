@@ -235,6 +235,8 @@ public:
         this->setUseEmbedded(pl->get<bool>("Use Embedded"));
       if ( pl->isParameter("Zero Initial Guess") )
         this->setZeroInitialGuess(pl->get<bool>("Zero Initial Guess"));
+      if (pl->isParameter("Solver Name") )
+        this->setStepperSolverValues(pl);
     }
   }
 

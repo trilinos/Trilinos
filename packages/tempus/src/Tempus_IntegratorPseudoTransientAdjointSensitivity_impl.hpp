@@ -271,12 +271,13 @@ template<class Scalar>
 void
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  state_integrator_->describe(out, verbLevel);
-  sens_integrator_->describe(out, verbLevel);
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  *out << description() << "::describe" << std::endl;
+  state_integrator_->describe(*out, verbLevel);
+  sens_integrator_->describe(*out, verbLevel);
 }
 
 template<class Scalar>

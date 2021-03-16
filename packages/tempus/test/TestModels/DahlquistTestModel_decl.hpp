@@ -58,14 +58,14 @@ class DahlquistTestModel
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_x_space() const;
     Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_f_space() const;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> getNominalValues() const;
-    //Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
-    //Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
-    //Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
+    Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > create_W() const;
+    Teuchos::RCP<Thyra::LinearOpBase<Scalar> > create_W_op() const;
+    Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<Scalar> > get_W_factory() const;
     Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
 
-    //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
-    //Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
-    //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
+    Teuchos::RCP<const Teuchos::Array<std::string> > get_p_names(int l) const;
+    Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
   //@}
 
 private:
@@ -80,6 +80,13 @@ private:
   //@}
 
 private:
+  int dim_;
+  int Np_;
+  int np_;
+  int Ng_;
+  int ng_;
+  bool haveIC_;
+  bool acceptModelParams_;
   Scalar lambda_;
   bool   includeXDot_;
 
@@ -89,9 +96,9 @@ private:
   mutable Thyra::ModelEvaluatorBase::InArgs<Scalar>  nominalValues_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > x_space_;
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > f_space_;
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
-  //Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > DxDp_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > p_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > g_space_;
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > DxDp_space_;
 
   Scalar xIC_;    ///< Initial condition for x.
   Scalar xDotIC_; ///< Initial condition for xDot.
