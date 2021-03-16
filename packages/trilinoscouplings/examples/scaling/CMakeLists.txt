@@ -544,3 +544,30 @@ IF (${PACKAGE_NAME}_ENABLE_Pamgen AND
 
 
 ENDIF()
+
+
+# GBH Oct6 2020: No need to check  Xpetra_ENABLE_Experimental
+# since it is a required flag for MueLu_ENABLE_Experimental
+IF(${PACKAGE_NAME}_ENABLE_Belos AND 
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND 
+   ${PACKAGE_NAME}_ENABLE_MueLu AND 
+   MueLu_ENABLE_Experimental AND 
+   MueLu_ENABLE_Kokkos_Refactor AND 
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND 
+   ${PACKAGE_NAME}_ENABLE_STKIO AND 
+   ${PACKAGE_NAME}_ENABLE_STKMesh AND 
+   ${PACKAGE_NAME}_ENABLE_Tpetra)
+  TRIBITS_ADD_EXECUTABLE(
+    MueLu_Region_Poisson
+    SOURCES muelu_region_poisson.cpp
+    COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuRegionFiles
+    SOURCE_FILES muelu_region_poisson_input.xml
+                 unit_cube_10int_hex.exo
+    SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
+    DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
+    )
+
+ENDIF()
