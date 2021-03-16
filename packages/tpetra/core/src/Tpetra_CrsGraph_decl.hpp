@@ -279,11 +279,19 @@ protected:
 public:
     //! The Kokkos::View type for views of local ordinals on host
     using local_inds_host_view_type = 
-          typename local_inds_dualv_type::t_host_const;
+          typename local_inds_dualv_type::t_host::const_type;
 
     //! The Kokkos::View type for views of global ordinals on host
     using global_inds_host_view_type = 
-          typename global_inds_dualv_type::t_host_const;
+          typename global_inds_dualv_type::t_host::const_type;
+
+    //! The Kokkos::View type for views of local ordinals on device
+    using local_inds_device_view_type = 
+          typename local_inds_dualv_type::t_dev::const_type;
+
+    //! The Kokkos::View type for views of global ordinals on device
+    using global_inds_device_view_type = 
+          typename global_inds_dualv_type::t_dev::const_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -2179,25 +2187,25 @@ public:
     /// \brief Get a const, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
-    typename local_inds_dualv_type::t_host_const
+    typename local_inds_dualv_type::t_host::const_type
     getLocalIndsViewHost (const RowInfo& rowinfo) const;
 
     /// \brief Get a const, locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
-    typename local_inds_dualv_type::t_dev_const
+    typename local_inds_dualv_type::t_dev::const_type
     getLocalIndsViewDevice (const RowInfo& rowinfo) const;
 
     /// \brief Get a const, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
-    typename global_inds_dualv_type::t_host_const
+    typename global_inds_dualv_type::t_host::const_type
     getGlobalIndsViewHost (const RowInfo& rowinfo) const;
 
     /// \brief Get a const, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
-    typename global_inds_dualv_type::t_dev_const
+    typename global_inds_dualv_type::t_dev::const_type
     getGlobalIndsViewDevice (const RowInfo& rowinfo) const;
 
     /// \brief Get a ReadWrite locally indexed view of the

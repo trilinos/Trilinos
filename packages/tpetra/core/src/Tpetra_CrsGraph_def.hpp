@@ -1282,12 +1282,12 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-                    local_inds_dualv_type::t_host_const
+                    local_inds_dualv_type::t_host::const_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewHost (const RowInfo& rowinfo) const
   {
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
-      return typename local_inds_dualv_type::t_host_const ();
+      return typename local_inds_dualv_type::t_host::const_type ();
     else
       return lclInds_wdv.getHostSubview(rowinfo.offset1D, 
                                         rowinfo.numEntries,
@@ -1310,12 +1310,12 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-                    global_inds_dualv_type::t_host_const
+                    global_inds_dualv_type::t_host::const_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalIndsViewHost (const RowInfo& rowinfo) const
   {
     if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
-      return typename global_inds_dualv_type::t_host_const ();
+      return typename global_inds_dualv_type::t_host::const_type ();
     else
       return gblInds_wdv.getHostSubview(rowinfo.offset1D, 
                                         rowinfo.numEntries,
@@ -1324,12 +1324,12 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-                    local_inds_dualv_type::t_dev_const
+                    local_inds_dualv_type::t_dev::const_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewDevice (const RowInfo& rowinfo) const
   {
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
-      return typename local_inds_dualv_type::t_dev_const ();
+      return typename local_inds_dualv_type::t_dev::const_type ();
     else
       return lclInds_wdv.getDeviceSubview(rowinfo.offset1D, 
                                           rowinfo.numEntries,
@@ -1338,12 +1338,12 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-                    global_inds_dualv_type::t_dev_const
+                    global_inds_dualv_type::t_dev::const_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalIndsViewDevice (const RowInfo& rowinfo) const
   {
     if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
-      return typename global_inds_dualv_type::t_dev_const ();
+      return typename global_inds_dualv_type::t_dev::const_type ();
     else
       return gblInds_wdv.getDeviceSubview(rowinfo.offset1D, 
                                           rowinfo.numEntries,
@@ -2398,7 +2398,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (
     const LocalOrdinal localRow, 
-    typename local_inds_dualv_type::t_host_const &indices) const
+    typename local_inds_dualv_type::t_host::const_type &indices) const
   {
     const char tfecfFuncName[] = "getLocalRowView: ";
 
@@ -2416,7 +2416,7 @@ namespace Tpetra {
     else {
       // This does the right thing (reports an empty row) if the input
       // row is invalid.
-      indices = typename local_inds_dualv_type::t_host_const();
+      indices = typename local_inds_dualv_type::t_host::const_type();
     }
 
     if (debug_) {
@@ -2435,7 +2435,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (
     const GlobalOrdinal globalRow,
-    typename global_inds_dualv_type::t_host_const &indices) const
+    typename global_inds_dualv_type::t_host::const_type &indices) const
   {
     const char tfecfFuncName[] = "getGlobalRowView: ";
 
@@ -2452,7 +2452,7 @@ namespace Tpetra {
       indices = this->getGlobalIndsViewHost (rowInfo);
     }
     else {
-      indices = typename global_inds_dualv_type::t_host_const();
+      indices = typename global_inds_dualv_type::t_host::const_type();
     }
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -6483,7 +6483,7 @@ namespace Tpetra {
               // that it really does point to the diagonal entry.  Offsets
               // are _relative_ to each row, not absolute (for the whole
               // (local) graph).
-              typename local_inds_dualv_type::t_host_const lclColInds;
+              typename local_inds_dualv_type::t_host::const_type lclColInds;
               try {
                 lclColInds = this->getLocalIndsViewHost (rowInfo);
               }

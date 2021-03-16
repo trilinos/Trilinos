@@ -267,7 +267,7 @@ pad_crs_arrays(
     Kokkos::deep_copy(newAllocPerRow, newAllocPerRow_h);
   }
 
-  using inds_value_type = typename Indices::non_const_value_type;
+  using inds_value_type = typename Indices::t_dev::non_const_value_type;
   using vals_value_type = typename Values::non_const_value_type;
 
   auto indices = indices_wdv.getDeviceView(Access::ReadOnly);
@@ -290,7 +290,7 @@ pad_crs_arrays(
     os << *prefix << "Repack" << endl;
     std::cerr << os.str();
   }
-  using execution_space = typename Indices::execution_space;
+  using execution_space = typename Indices::t_dev::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, size_t>;
   Kokkos::parallel_scan(
     "Tpetra::CrsGraph or CrsMatrix repack",
@@ -313,15 +313,15 @@ pad_crs_arrays(
             row_beg, row_beg + numEnt);
           const Kokkos::pair<size_t, size_t> newRange(
             newRowBeg, newRowBeg + numEnt);
-          auto oldColInds = subview(indices, oldRange);
-          auto newColInds = subview(indices_new, newRange);
+          auto oldColInds = Kokkos::subview(indices, oldRange);
+          auto newColInds = Kokkos::subview(indices_new, newRange);
           // memcpy works fine on device; the next step is to
           // introduce two-level parallelism and use team copy.
           memcpy(newColInds.data(), oldColInds.data(),
                  numEnt * sizeof(inds_value_type));
           if (action == PadCrsAction::INDICES_AND_VALUES) {
-            auto oldVals = subview(values, oldRange);
-            auto newVals = subview(values_new, newRange);
+            auto oldVals = Kokkos::subview(values, oldRange);
+            auto newVals = Kokkos::subview(values_new, newRange);
             memcpy(newVals.data(), oldVals.data(),
                    numEnt * sizeof(vals_value_type));
           }
@@ -362,7 +362,7 @@ pad_crs_arrays(
                  verbose, prefix.get());
 
   if (verbose) {
-    auto indices_h = indices.getHostView(Access::ReadOnly);
+    auto indices_h = indices_wdv.getHostView(Access::ReadOnly);
     auto values_h = Kokkos::create_mirror_view(hostSpace, values);
     Kokkos::deep_copy(values_h, values);
     std::ostringstream os;
@@ -509,8 +509,8 @@ padCrsArrays(
 {
   using impl::pad_crs_arrays;
   // send empty values array
-  Indices values;
-  pad_crs_arrays<RowPtr, Indices, Indices, Padding>(
+  typename Indices::t_dev values; // KDDKDD TEMPORARY; will change when values is a dual view
+  pad_crs_arrays<RowPtr, Indices, typename Indices::t_dev, Padding>( // KDDKDD TEMPORARY; will change when values is a dual view
     impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
     indices_wdv, values, padding, my_rank, verbose);
 }

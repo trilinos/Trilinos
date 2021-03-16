@@ -1067,7 +1067,6 @@ public:
                                        Kokkos::MemoryUnmanaged>& offsets) const
   {
     using Kokkos::parallel_for;
-    typedef typename device_type::execution_space execution_space;
     const char prefix[] = "Tpetra::BlockCrsMatrix::getLocalDiagCopy (2-arg): ";
 
     const LO lclNumMeshRows = static_cast<LO> (rowMeshMap_.getNodeNumElements ());
