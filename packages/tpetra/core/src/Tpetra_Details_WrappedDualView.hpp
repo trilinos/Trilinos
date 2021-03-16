@@ -169,6 +169,7 @@ public:
 
   typename DualViewType::t_host::const_type
   getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct) const {
+    throwIfDeviceViewAlive();
     impl::sync_host(dualView);
     return getSubview(dualView.view_host(), offset, numEntries);
   }
@@ -177,6 +178,7 @@ public:
   getHostSubview(int offset, int numEntries, Access::ReadWriteStruct) {
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
+    throwIfDeviceViewAlive();
     dualView.sync_host();
     dualView.modify_host();
     return getSubview(dualView.view_host(), offset, numEntries);
@@ -191,6 +193,7 @@ public:
 
   typename DualViewType::t_dev::const_type
   getDeviceSubview(int offset, int numEntries, Access::ReadOnlyStruct) const {
+    throwIfHostViewAlive();
     impl::sync_device(dualView);
     return getSubview(dualView.view_device(), offset, numEntries);
   }
@@ -199,6 +202,7 @@ public:
   getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct) {
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
+    throwIfHostViewAlive();
     dualView.sync_device();
     dualView.modify_device();
     return getSubview(dualView.view_device(), offset, numEntries);
