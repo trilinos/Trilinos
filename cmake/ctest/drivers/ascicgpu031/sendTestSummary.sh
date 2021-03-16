@@ -317,7 +317,7 @@ cat ${OUTFILE}.txt | perl ${HTMLPERLSCRIPT} ${date2} ${cdashDate} ${MACHINENAME}
 
 ${MAILCOMMAND} -it <<END_MESSAGE
 To: ${RECIPIENTS[@]}
-$(cat ${OUTFILE}.html)
+$(cat ${OUTFILE}.html | grep -v UNMATCHED)
 END_MESSAGE
 
 #clean up
