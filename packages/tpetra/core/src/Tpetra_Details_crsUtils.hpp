@@ -150,7 +150,7 @@ pad_crs_arrays(
   const PadCrsAction action,
   const RowPtr& row_ptr_beg,
   const RowPtr& row_ptr_end,
-  Indices& indices,
+  Indices& indices_wdv,
   Values& values,
   const Padding& padding,
   const int my_rank,
@@ -186,7 +186,7 @@ pad_crs_arrays(
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
                       maxNumToPrint);
-    os << ", indices.extent(0): " << indices.extent(0)
+    os << ", indices.extent(0): " << indices_wdv.extent(0)
        << ", values.extent(0): " << values.extent(0)
        << ", padding: ";
     padding.print(os);
@@ -270,8 +270,9 @@ pad_crs_arrays(
   using inds_value_type = typename Indices::non_const_value_type;
   using vals_value_type = typename Values::non_const_value_type;
 
+  auto indices = indices_wdv.getDeviceView(Access::ReadOnly);
   const size_t newIndsSize = size_t(indices.size()) + increase;
-  auto indices_new = make_uninitialized_view<Indices>(
+  auto indices_new = make_uninitialized_view<typename Indices::t_dev>(
     "Tpetra::CrsGraph column indices", newIndsSize, verbose,
     prefix.get());
 
@@ -293,7 +294,7 @@ pad_crs_arrays(
   using range_type = Kokkos::RangePolicy<execution_space, size_t>;
   Kokkos::parallel_scan(
     "Tpetra::CrsGraph or CrsMatrix repack",
-    range_type(0, lclNumRows+1),
+    range_type(size_t(0), size_t(lclNumRows+1)),
     KOKKOS_LAMBDA (const size_t lclRow, size_t& newRowBeg,
                    const bool finalPass)
     {
@@ -356,16 +357,12 @@ pad_crs_arrays(
     std::cerr << os.str();
   }
 
-  assign_to_view(indices, indices_new,
-                 "Tpetra::CrsGraph column indices",
-                 verbose, prefix.get());
   assign_to_view(values, values_new,
                  "Tpetra::CrsMatrix values",
                  verbose, prefix.get());
 
   if (verbose) {
-    auto indices_h = Kokkos::create_mirror_view(hostSpace, indices);
-    Kokkos::deep_copy(indices_h, indices);
+    auto indices_h = indices.getHostView(Access::ReadOnly);
     auto values_h = Kokkos::create_mirror_view(hostSpace, values);
     Kokkos::deep_copy(values_h, values);
     std::ostringstream os;
@@ -505,7 +502,7 @@ void
 padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
-    Indices& indices,
+    Indices& indices_wdv,
     const Padding& padding,
     const int my_rank,
     const bool verbose)
@@ -515,7 +512,7 @@ padCrsArrays(
   Indices values;
   pad_crs_arrays<RowPtr, Indices, Indices, Padding>(
     impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
-    indices, values, padding, my_rank, verbose);
+    indices_wdv, values, padding, my_rank, verbose);
 }
 
 template<class RowPtr, class Indices, class Values, class Padding>
@@ -523,7 +520,7 @@ void
 padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
-    Indices& indices,
+    Indices& indices_wdv,
     Values& values,
     const Padding& padding,
     const int my_rank,
@@ -532,7 +529,7 @@ padCrsArrays(
   using impl::pad_crs_arrays;
   pad_crs_arrays<RowPtr, Indices, Values, Padding>(
     impl::PadCrsAction::INDICES_AND_VALUES, rowPtrBeg, rowPtrEnd,
-    indices, values, padding, my_rank, verbose);
+    indices_wdv, values, padding, my_rank, verbose);
 }
 
 /// \brief Insert new indices in to current list of indices

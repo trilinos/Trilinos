@@ -4189,7 +4189,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
         static_cast<LocalOrdinal> (theGraph.getNodeNumRows ());
       for (LocalOrdinal row = 0; row < lclNumRows; ++row) {
         const RowInfo rowInfo = theGraph.getRowInfo (row);
-        auto lclColInds = theGraph.getLocalIndsRowViewHostNonConst (rowInfo);
+        auto lclColInds = theGraph.getLocalIndsViewHostNonConst (rowInfo);
         auto vals = this->getRowViewNonConst (rowInfo);
         // FIXME (mfh 09 May 2017) This assumes CUDA UVM, at least for
         // lclColInds, if not also for values.
@@ -5844,7 +5844,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     }
 
     if (myGraph_->isGloballyIndexed()) {
-      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->k_gblInds1D_,
+      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->gblInds_wdv,
                    k_values1D_, padding, myRank, verbose);
       const auto newValuesLen = k_values1D_.extent(0);
       const auto newColIndsLen = myGraph_->k_gblInds1D_.extent(0);
@@ -5855,7 +5855,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
          << suffix);
     }
     else {
-      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->k_lclInds1D_,
+      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->lclInds_wdv,
                    k_values1D_, padding, myRank, verbose);
       const auto newValuesLen = k_values1D_.extent(0);
       const auto newColIndsLen = myGraph_->k_lclInds1D_.extent(0);

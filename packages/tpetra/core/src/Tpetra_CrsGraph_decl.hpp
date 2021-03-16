@@ -1104,7 +1104,7 @@ public:
     void
     getGlobalRowView (
       const global_ordinal_type gblRow,
-      typename global_inds_host_view_type &gblColInds) const override;
+      global_inds_host_view_type &gblColInds) const;
 
 
     /// \brief Whether this class implements getLocalRowView() and
@@ -1140,7 +1140,7 @@ public:
     void
     getLocalRowView (
       const LocalOrdinal lclRow,
-      typename local_inds_host_view_type &lclColInds) const override;
+      local_inds_host_view_type &lclColInds) const;
 
 
     //@}
@@ -1501,17 +1501,22 @@ public:
     removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap) override;
     //@}
 
-    template<class ViewType, class OffsetViewType >
+    template<class DestViewType, class SrcViewType, 
+             class DestOffsetViewType, class SrcOffsetViewType >
     struct pack_functor {
-      typedef typename ViewType::execution_space execution_space;
-      ViewType src;
-      ViewType dest;
-      OffsetViewType src_offset;
-      OffsetViewType dest_offset;
-      typedef typename OffsetViewType::non_const_value_type ScalarIndx;
+      typedef typename DestViewType::execution_space execution_space;
+      SrcViewType src;
+      DestViewType dest;
+      SrcOffsetViewType src_offset;
+      DestOffsetViewType dest_offset;
+      typedef typename DestOffsetViewType::non_const_value_type ScalarIndx;
 
-      pack_functor(ViewType dest_, ViewType src_, OffsetViewType dest_offset_, OffsetViewType src_offset_):
-        src(src_),dest(dest_),src_offset(src_offset_),dest_offset(dest_offset_) {};
+      pack_functor(DestViewType dest_, 
+                   const SrcViewType src_,
+                   DestOffsetViewType dest_offset_, 
+                   const SrcOffsetViewType src_offset_):
+        src(src_),dest(dest_),
+        src_offset(src_offset_),dest_offset(dest_offset_) {};
 
       KOKKOS_INLINE_FUNCTION
       void operator() (size_t row) const {
@@ -2194,6 +2199,12 @@ public:
     ///   getRowInfo(myRow).
     typename global_inds_dualv_type::t_dev_const
     getGlobalIndsViewDevice (const RowInfo& rowinfo) const;
+
+    /// \brief Get a ReadWrite locally indexed view of the
+    ///   locally owned row myRow, such that rowinfo =
+    ///   getRowInfo(myRow).
+    typename local_inds_dualv_type::t_host
+    getLocalIndsViewHostNonConst (const RowInfo& rowinfo);
 
     // FOR NOW...
     // KEEP k_numRowEntries_ (though switch from HostMirror to Host)
