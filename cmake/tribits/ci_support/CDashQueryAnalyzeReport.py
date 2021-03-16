@@ -78,7 +78,7 @@ def convertInputDateArgToYYYYMMDD(cdashProjectTestingDayStartTime, dateText,
 
 # Validate a date YYYY-MM-DD string and return a date object for the
 # 'datetime' module.
-# 
+#
 def validateAndConvertYYYYMMDD(dateText):
   try:
     return datetime.datetime.strptime(dateText, '%Y-%m-%d')
@@ -164,7 +164,7 @@ def getCompressedFileNameIfTooLong(inputFileName, prefix="", ext=""):
     if ext: newFileName += "." + ext
     return newFileName
   return inputFileName
-    
+
 
 # Filter and input list and return a list with elements where
 # matchFunctor(inputList[i])==True.
@@ -176,8 +176,8 @@ def getFilteredList(inputList, matchFunctor):
   return filteredList
 
 
-# Filter an input list return a two lists (matchList, nomatchList) where the
-# first list has elements where matchFunctor(inputList[i])==True and the
+# Filter an input list returning a two lists (matchList, nomatchList) where
+# the first list has elements where matchFunctor(inputList[i])==True and the
 # second list has elements where matchFunctor(inputList[i])==False.
 #
 def splitListOnMatch(inputList, matchFunctor):
@@ -269,7 +269,7 @@ def writeCsvFileStructureToStr(csvFileStruct):
 
 #
 # Reporting policy, data, and defaults
-# 
+#
 
 
 # Collecton of data used to create the final HTML CDash report that is
@@ -388,7 +388,7 @@ def getTestsetAcroFromTestDict(testDict):
     "Error, testDict = '"+str(testDict)+"' with fields"+\
     " status = '"+str(testDict.get('status', None))+"' and"+\
     " issue_tracker = '"+str(testDict.get('issue_tracker', None))+"'"+\
-    " is not a supported test-set type!") 
+    " is not a supported test-set type!")
 
 
 # Returns True if a test has 'status' 'Passed'
@@ -453,8 +453,8 @@ def extractCDashApiQueryData(cdashApiQueryUrl):
 # the returned list of dicts will be:
 #
 #  [
-#    { 'col_0':'val_00', 'col_1':'val_01', 'col_2':'val_02' }, 
-#    { 'col_0':'val_10', 'col_1':'val_11', 'col_2':'val_12' }, 
+#    { 'col_0':'val_00', 'col_1':'val_01', 'col_2':'val_02' },
+#    { 'col_0':'val_10', 'col_1':'val_11', 'col_2':'val_12' },
 #    ]
 #
 # This function can also allow the user to assert that the included columns
@@ -568,9 +568,48 @@ def stripWhiltespaceFromStrList(strListInOut):
   for i in range(len(strListInOut)): strListInOut[i] = strListInOut[i].strip()
 
 
-def getExpectedBuildsListfromCsvFile(expectedBuildsFileName):
+g_expectedBuildsCsvFileHeadersRequired = \
+  ('group', 'site', 'buildname')
+
+
+def getExpectedBuildsListOfDictsfromCsvFile(expectedBuildsFileName):
   return readCsvFileIntoListOfDicts(expectedBuildsFileName,
-    ['group', 'site', 'buildname'])
+    g_expectedBuildsCsvFileHeadersRequired)
+
+
+def getExpectedBuildsListOfDictsFromCsvFileArg(expectedBuildsFileArg):
+  expectedBuildsLOD = []
+  if expectedBuildsFileArg:
+    expectedBuildsFilenameList = expectedBuildsFileArg.split(",")
+    for expectedBuildsFilename in expectedBuildsFilenameList:
+      expectedBuildsLOD.extend(
+        getExpectedBuildsListOfDictsfromCsvFile(expectedBuildsFilename))
+  return expectedBuildsLOD
+
+
+# Write list of builds from a builds LOD to a CSV file structure meant to
+# match the expected builds CSV file.
+#
+def expectedBuildsListOfDictsToCsvFileStructure(buildsLOD):
+  csvFileHeadersList = copy.deepcopy(g_expectedBuildsCsvFileHeadersRequired)
+  csvFileRowsList = []
+  for buildDict in buildsLOD:
+    csvFileRow = (
+      buildDict['group'],
+      buildDict['site'],
+      buildDict['buildname'],
+      )
+    csvFileRowsList.append(csvFileRow)
+  return CsvFileStructure(csvFileHeadersList, csvFileRowsList)
+
+
+# Write list of builds from a builds LOD to a CSV file meant to match the
+# expected builds CSV file.
+#
+def writeExpectedBuildsListOfDictsToCsvFile(buildsLOD, csvFileName):
+  csvFileStruct = expectedBuildsListOfDictsToCsvFileStructure(buildsLOD)
+  with open(csvFileName, 'w') as csvFile:
+    csvFile.write(writeCsvFileStructureToStr(csvFileStruct))
 
 
 g_testsWithIssueTrackersCsvFileHeadersRequired = \
@@ -585,16 +624,18 @@ def getTestsWtihIssueTrackersListFromCsvFile(testsWithIssueTrackersFile):
 # Write list of tests from a Tests LOD to a CSV file structure meant to match
 # tests with issue trackers CSV file.
 #
-def writeTestsLODToCsvFileStructure(testsLOD):
+def writeTestsListOfDictsToCsvFileStructure(testsLOD,
+    issueTrackerUrl="", issueTracker="",
+  ):
   csvFileHeadersList = copy.deepcopy(g_testsWithIssueTrackersCsvFileHeadersRequired)
   csvFileRowsList = []
   for testDict in testsLOD:
     csvFileRow = (
-      testDict['site'], 
-      testDict['buildName'], 
+      testDict['site'],
+      testDict['buildName'],
       testDict['testname'],
-      "",  # issue_tracker_url
-      "",  # issue_tracker
+      issueTrackerUrl,  # issue_tracker_url
+      issueTracker,  # issue_tracker
       )
     csvFileRowsList.append(csvFileRow)
   return CsvFileStructure(csvFileHeadersList, csvFileRowsList)
@@ -603,8 +644,8 @@ def writeTestsLODToCsvFileStructure(testsLOD):
 # Write list of tests from a Tests LOD to a CSV file meant to match tests with
 # issue trackers CSV file.
 #
-def writeTestsLODToCsvFile(testsLOD, csvFileName):
-  csvFileStruct = writeTestsLODToCsvFileStructure(testsLOD)
+def writeTestsListOfDictsToCsvFile(testsLOD, csvFileName):
+  csvFileStruct = writeTestsListOfDictsToCsvFileStructure(testsLOD)
   with open(csvFileName, 'w') as csvFile:
     csvFile.write(writeCsvFileStructureToStr(csvFileStruct))
 
@@ -669,7 +710,7 @@ def getAndCacheCDashQueryDataOrReadFromCache(
       if verbose:
         print("  Caching data downloaded from CDash to file:\n    "+\
           cdashQueryDataCacheFile)
-      pprintPythonDataToFile(cdashQueryData, cdashQueryDataCacheFile) 
+      pprintPythonDataToFile(cdashQueryData, cdashQueryDataCacheFile)
   return cdashQueryData
 
 
@@ -677,7 +718,7 @@ def getAndCacheCDashQueryDataOrReadFromCache(
 # pieces
 def getCDashIndexQueryUrl(cdashUrl, projectName, date, filterFields):
   if date: dateArg = "&date="+date
-  else: dateArg = "" 
+  else: dateArg = ""
   return cdashUrl+"/api/v1/index.php?project="+projectName+dateArg \
     + "&"+filterFields
 
@@ -685,7 +726,7 @@ def getCDashIndexQueryUrl(cdashUrl, projectName, date, filterFields):
 # Construct full cdash/index.php browser URL given the pieces
 def getCDashIndexBrowserUrl(cdashUrl, projectName, date, filterFields):
   if date: dateArg = "&date="+date
-  else: dateArg = "" 
+  else: dateArg = ""
   return cdashUrl+"/index.php?project="+projectName+dateArg \
     + "&"+filterFields
 
@@ -693,14 +734,14 @@ def getCDashIndexBrowserUrl(cdashUrl, projectName, date, filterFields):
 # Construct full cdash/api/v1/queryTests.php query URL given the pieces
 def getCDashQueryTestsQueryUrl(cdashUrl, projectName, date, filterFields):
   if date: dateArg = "&date="+date
-  else: dateArg = "" 
+  else: dateArg = ""
   return cdashUrl+"/api/v1/queryTests.php?project="+projectName+dateArg+"&"+filterFields
 
 
 # Construct full cdash/queryTests.php browser URL given the pieces
 def getCDashQueryTestsBrowserUrl(cdashUrl, projectName, date, filterFields):
   if date: dateArg = "&date="+date
-  else: dateArg = "" 
+  else: dateArg = ""
   return cdashUrl+"/queryTests.php?project="+projectName+dateArg+"&"+filterFields
 
 
@@ -1077,7 +1118,7 @@ class SearchableListOfDicts(object):
     if keyMapList:
       if len(listOfKeys) != len(keyMapList):
         raise Exception("Error, listOfKeys="+str(listOfKeys)+\
-          " keyMapList="+str(listOfKeys)+" have different lenghts!" )  
+          " keyMapList="+str(listOfKeys)+" have different lenghts!" )
     self.__listOfDicts = listOfDicts
     self.__listOfKeys = listOfKeys
     self.__keyMapList = keyMapList
@@ -1093,7 +1134,7 @@ class SearchableListOfDicts(object):
       ", listOfKeys="+str(self.__listOfKeys)+", lookupDict="+str(self.__lookupDict)+"}"
     return myStr
 
-  # Return listOfDicts passed into Constructor 
+  # Return listOfDicts passed into Constructor
   def getListOfDicts(self):
     return self.__listOfDicts
 
@@ -1169,10 +1210,10 @@ def createTestToBuildSearchableListOfDicts(buildsLOD,
 
 
 # Match functor that returns true if the input dict has key/values that
-# matches one dicts in the input SearchableListOfDicts.
+# matches one of the dicts in the input SearchableListOfDicts.
 class MatchDictKeysValuesFunctor(object):
 
-  # Construct with a SearchableListOfDicts object 
+  # Construct with a SearchableListOfDicts object
   def __init__(self, searchableListOfDict):
     self.__searchableListOfDict = searchableListOfDict
 
@@ -1229,33 +1270,56 @@ class AddIssueTrackerInfoToTestDictFunctor(object):
     return testDict_inout
 
 
-# Assert that the list of tests with issue trackers matches the expected
-# builds.
+# Split a list of Test Dicts based on if they match the set of expected builds
+# or not.
 #
 # testsWithIssueTrackersLOD [in]: List of dicts of tests with issue trackers.
 #   Here, only the fields 'site', 'buildName', and 'testname' are significant.
 #
-# expectedBuildsLOD [in]: List of dicts of expected builds with fields 'site',
-# 'buildname'.  Here, the key/value pairs 'site' and 'buildname' must be
-# unique.  The 'group' field is ignored (because cdash/queryTests.php does not
-# give the 'group' of each test).
+# expectedBuildsLOD [in]: List of dicts of expected builds with fields 'site'
+#   and 'buildname'.  Here, the key/value pairs 'site' and 'buildname' must be
+#   unique.  The 'group' field is ignored (because cdash/queryTests.php does
+#   not give the 'group' of each test).
 #
-# This returns a tuple (matches, errMsg).  If all of the tests match, then
-# 'matches' will be True and errMsg=="".  If one or more of the tests don't
-# match then 'matches' will be False and 'errMsg' will give a message about
-# which tests are missing.
+# Returns the tuple (testsWithIssueTrackersMatchingExpectedBuildsLOD,
+# testsWithIssueTrackersNotMatchingExpectedBuildsLOD).
 #
-def testsWithIssueTrackersMatchExpectedBuilds( testsWithIssueTrackersLOD,
+def splitTestsOnMatchExpectedBuilds( testsWithIssueTrackersLOD,
     testToExpectedBuildsSLOD,
   ):
+  return splitListOnMatch(testsWithIssueTrackersLOD,
+    MatchDictKeysValuesFunctor(testToExpectedBuildsSLOD) )
+
+
+# Check if the list of tests with issue trackers matches the expected builds.
+#
+# testsWithIssueTrackersLOD [in]: List of dicts of tests with issue trackers.
+#   Here, only the fields 'site', 'buildName', and 'testname' are significant.
+#
+# expectedBuildsLOD [in]: List of dicts of expected builds with fields 'site'
+#   and 'buildname'.  Here, the key/value pairs 'site' and 'buildname' must be
+#   unique.  The 'group' field is ignored (because cdash/queryTests.php does
+#   not give the 'group' of each test).
+#
+# This returns a tuple (matches, errMsg).  If all of the tests match, then
+# 'matches' will be 'True' and errMsg=="".  If one or more of the tests don't
+# match the expected builds then 'matches' will be 'False' and 'errMsg' will
+# give a message about which tests are missing.
+#
+def doTestsWithIssueTrackersMatchExpectedBuilds( testsWithIssueTrackersLOD,
+    testToExpectedBuildsSLOD,
+  ):
+  # Get list of tests matching and non-matching expected builds (ignoring
+  # matching tests list)
+  (_, nomatchingTestsLOD) = \
+     splitTestsOnMatchExpectedBuilds(testsWithIssueTrackersLOD,
+        testToExpectedBuildsSLOD)
   # Gather up all of the tests that don't match one of the expected builds
   nonmatchingTestsWithIssueTrackersLOD = []
-  for testDict in testsWithIssueTrackersLOD:
-    expectedBuildDict = testToExpectedBuildsSLOD.lookupDictGivenKeyValueDict(testDict)
-    if not expectedBuildDict:
-      nonmatchingTestsWithIssueTrackersLOD.append(
-        {'site':testDict['site'], 'buildName':testDict['buildName'],
-         'testname':testDict['testname']} )
+  for testDict in nomatchingTestsLOD:
+    nonmatchingTestsWithIssueTrackersLOD.append(
+      {'site':testDict['site'], 'buildName':testDict['buildName'],
+       'testname':testDict['testname']} )
   # If all tests matched, return True
   if len(nonmatchingTestsWithIssueTrackersLOD) == 0:
     return (True, "")
@@ -1273,7 +1337,7 @@ def testsWithIssueTrackersMatchExpectedBuilds( testsWithIssueTrackersLOD,
 
 # Extract just the date from the testDict['buildstartdate'] field
 def dateFromBuildStartTime(buildStartTime):
-  return buildStartTime.split('T')[0]  
+  return buildStartTime.split('T')[0]
 
 
 # Sort list of test history dicts and get statistics
@@ -1363,8 +1427,8 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
   sortedTestHistoryLOD.sort(reverse=True, key=DictSortFunctor(['buildstarttime']))
 
   # Remove duplicate tests from list of dicts
-  sortedTestHistoryLOD = getUniqueSortedTestsHistoryLOD(sortedTestHistoryLOD)
- 
+  sortedTestHistoryLOD = getUniqueSortedTestsHistoryListOfDicts(sortedTestHistoryLOD)
+
   # Get testing day/time helper object
   testingDayTimeObj = CBTD.CDashProjectTestingDay(currentTestDate, testingDayStartTimeUtc)
   currentTestDateDT = testingDayTimeObj.getCurrentTestingDayDateDT()
@@ -1448,7 +1512,7 @@ def sortTestHistoryGetStatistics(testHistoryLOD,
 # The returned list is new and does not modify any of the entires in the input
 # sorted inputSortedTestHistoryLOD object.
 #
-def getUniqueSortedTestsHistoryLOD(inputSortedTestHistoryLOD):
+def getUniqueSortedTestsHistoryListOfDicts(inputSortedTestHistoryLOD):
 
   if len(inputSortedTestHistoryLOD) == 0:
     return inputSortedTestHistoryLOD
@@ -1461,7 +1525,7 @@ def getUniqueSortedTestsHistoryLOD(inputSortedTestHistoryLOD):
   idx = 1
   while idx < len(inputSortedTestHistoryLOD):
     candidateTestDict = inputSortedTestHistoryLOD[idx]
-    
+
     if not checkCDashTestDictsAreSame(candidateTestDict, "a", lastUniqueTestDict, "b")[0]:
       uniqueSortedTestHistoryLOD.append(candidateTestDict)
       lastUniqueTestDict = candidateTestDict
@@ -1483,7 +1547,7 @@ def extractTestIdAndBuildIdFromTestDetailsLink(testDetailsLink):
     testId = testidArgList[1]
     buildId = buildidArgList[1]
   else:
-    # Newer CDash implementations have 
+    # Newer CDash implementations have
     testDetailsLinkList = testDetailsLink.split('/')
     testId = testDetailsLinkList[1]
     buildId = ""
@@ -1633,7 +1697,7 @@ class AddTestHistoryToTestDictFunctor(object):
       "&field1=buildname&compare1=61&value1="+buildName+\
       "&field2=testname&compare2=61&value2="+testname+\
       "&field3=site&compare3=61&value3="+site
-    
+
     # URL used to get the history of the test in JSON form
     testHistoryQueryUrl = \
       getCDashQueryTestsQueryUrl(cdashUrl, projectName, None, testHistoryQueryFilters)
@@ -1689,7 +1753,7 @@ class AddTestHistoryToTestDictFunctor(object):
     (testHistoryLOD, testHistoryStats, testStatus) = sortTestHistoryGetStatistics(
       testHistoryLOD, self.__date, self.__testingDayStartTimeUtc, daysOfHistory)
 
-    # Assert and update the status 
+    # Assert and update the status
 
     #print("\ntestStatus = "+str(testStatus))
     #print("\ntestHistoryLOD[0] = "+str(testHistoryLOD[0]))
@@ -1807,7 +1871,7 @@ class AddCDashTestingDayFunctor(object):
 # Inputs:
 #
 #   buildLookupDict [in]: Lookup dict of build summary dicts gotten off CDash
-#   
+#
 #   expectedBuildsList [in]: List of expected builds dict with fields 'group',
 #   'site', and 'buildname'.
 #
@@ -1913,7 +1977,7 @@ def getMissingExpectedBuildsList(buildsSearchableListOfDicts, expectedBuildsList
 # If alwaysUseCacheFileIfExists==True, then if the file
 # cdashIndexBuildsQueryCacheFile already exists, it will always be read to get
 # data instead of communicating with CDash even if useCachedCDashData==False.
-# 
+#
 # The list of builds pulled off of CDash is flattended and extracted using the
 # function flattenCDashIndexBuildsToListOfDicts().
 #
@@ -1959,7 +2023,7 @@ def downloadBuildsOffCDashAndFlatten(
 # If alwaysUseCacheFileIfExists==True, then if the file
 # cdashIndexBuildsQueryCacheFile already exists, it will always be read to get
 # data instead of communicating with CDash even if useCachedCDashData==False.
-# 
+#
 # The list of tests pulled off CDash is flattended and returned by the
 # function flattenCDashQueryTestsToListOfDicts().
 #
@@ -2156,13 +2220,13 @@ class TableColumnData(object):
 def colorHtmlText(htmlText, color_in):
   if color_in == None or color_in == "":
     return htmlText
-  elif color_in == "red": 
+  elif color_in == "red":
     None # Okay!
-  elif color_in == "green": 
+  elif color_in == "green":
     None # Okay!
-  elif color_in == "gray": 
+  elif color_in == "gray":
     None # Okay!
-  elif color_in == "orange": 
+  elif color_in == "orange":
     None # Okay!
   else:
     raise Exception("Error, color='"+color_in+"' is invalid."+\
@@ -2182,7 +2246,7 @@ def addHtmlSoftWordBreaks(text_in):
 #
 # tableTitle [in]: String for the name of the table included at the top of the
 # table.
-# 
+#
 # colDataList [in]: List of TableColumnData objects where
 #   colDataList[j].dictKey gives the name of the key for that column of data,
 #   colDataList[j].colHeader is the text name for the column header and
@@ -2256,13 +2320,13 @@ def createHtmlTableStr(tableTitle, colDataList, rowDataList,
         raise Exception(
           "Error, column "+str(col_j)+" dict key='"+colData.dictKey+"'"+\
           " row "+str(row_i)+" entry is 'None' which is not allowed!\n\n"+\
-          "Row dict = "+str(rowData))  
+          "Row dict = "+str(rowData))
       # Add soft word breaks to allow line breaks for table compression
       entry = addHtmlSoftWordBreaks(str(entry).strip())
       # Add color if defined for this field
       entryColor = rowData.get(dictKey+"_color", None)
       if entryColor:
-        entry = colorHtmlText(entry, entryColor) 
+        entry = colorHtmlText(entry, entryColor)
       # See if the _url key also exists
       entry_url = rowData.get(dictKey+"_url", None)
       # Set the text for this row/column entry with or without the hyperlink
@@ -2273,7 +2337,7 @@ def createHtmlTableStr(tableTitle, colDataList, rowDataList,
       # Set the row entry in the HTML table
       htmlStr+=\
         "<td align=\""+colData.colAlign+"\">"+entryStr+"</td>\n"
-      col_j += 1  
+      col_j += 1
     htmlStr+="</tr>\n\n"
     row_i += 1
 
@@ -2344,7 +2408,7 @@ def getCDashDataSummaryHtmlTableTitleStr(dataTitle, dataCountAcronym, numItems,
 #
 def createCDashDataSummaryHtmlTableStr( dataTitle, dataCountAcronym,
     colDataList, rowDataList, sortKeyList=None, limitRowsToDisplay=None,
-    htmlStyle=None, htmlTableStyle=None,
+    htmlStyle=None, htmlTableStyle=None, titleColor=None,
   ):
   # If no rows, don't create a table
   if len(rowDataList) == 0:
@@ -2353,8 +2417,10 @@ def createCDashDataSummaryHtmlTableStr( dataTitle, dataCountAcronym,
   rowDataListDisplayed = sortAndLimitListOfDicts(
     rowDataList, sortKeyList, limitRowsToDisplay)
   # Table title
-  tableTitle = getCDashDataSummaryHtmlTableTitleStr(
-    dataTitle, dataCountAcronym, len(rowDataList), limitRowsToDisplay )
+  tableTitle = colorHtmlText(
+    getCDashDataSummaryHtmlTableTitleStr(
+      dataTitle, dataCountAcronym, len(rowDataList), limitRowsToDisplay ),
+    titleColor )
   # Create and return the table
   return createHtmlTableStr( tableTitle,
     colDataList, rowDataListDisplayed, htmlStyle, htmlTableStyle )
@@ -2574,6 +2640,105 @@ class IssueTrackerFieldError(Exception):
   pass
 
 
+# Class to report a single build-set.
+#
+# NOTE: The reason this is a class is that the cdashReportData and
+# addTestHistoryStrategy objects are set once and are used for multiple calls
+# to reportSingleBuildset().
+#
+class SingleBuildsetReporter(object):
+
+  # Constructor
+  #
+  def __init__(self, cdashReportData,
+      htmlStyle=None, htmlTableStyle=None,
+      verbose=True,
+    ):
+    self.cdashReportData = cdashReportData
+    self.htmlStyle = htmlStyle
+    self.htmlTableStyle = htmlTableStyle
+    self.verbose = verbose
+    self.groupSiteBuildNameSortOrder = ['group', 'site', 'buildname']
+
+  # Report on a given build-set and write info to self.cdashReportData
+  #
+  # Input arguments:
+  #
+  #   buildsetDescr [in] Description for the set of builds
+  #
+  #   buildsetAcro [in] Short acronym for the build set
+  #
+  #   buildsetLOD [in] List of builds in this build set
+  #
+  #   buildsetGlobalPass [in] If set to False and len(buildsetLOD) > 0, then
+  #   global pass is set to False (see below).
+  #
+  #   buildsetColor [in] Color used for the text (see cdashColorXXX() values).
+  #
+  #   buildsetColDataList [in] List of TableColumnData entries for each of the
+  #   columns to include in the table.  Default is 'None' which gives a
+  #   default set of entries.
+  #
+  #   verbose [in] If set to True then some more verbose info is printed to
+  #   STDOUT.  If False, then nothing is printed to STDOUT (which is useful
+  #   for unit testsing). The default is True.
+  #
+  # On output, self.cdashReportData data will be updated with the summary and
+  # table of this given build-set.  In particular, the following
+  # cdashReportData fields will be written to:
+  #
+  #   cdashReportData.summaryLineDataNumbersList: List will be appended with
+  #   lines for each build-set in order called.
+  #
+  #   cdashReportData.htmlEmailBodyTop: The name of the table 'buildsetDescr',
+  #   the acronym 'buildsetAcro' and the size will be written on one line
+  #   ending with ``<br>\n``.
+  #
+  #   cdashReportData.htmlEmailBodyBottom: Summary HTML table (with title)
+  #   will be written, along with formatting.
+  #
+  #   cdashReportData.globalPass: Set to False if buildsetGlobalPass==True and
+  #   len(buildsetLOD) > 0.
+  #
+  def reportSingleBuildset(self, buildsetDescr, buildsetAcro, buildsetLOD,
+      buildsetGlobalPass, buildsetColor, buildsetColDataList=None, verbose=True,
+    ):
+
+    buildsetNum = len(buildsetLOD)
+
+    buildsetSummaryStr = \
+      getCDashDataSummaryHtmlTableTitleStr(buildsetDescr,  buildsetAcro,
+        buildsetNum)
+
+    if self.verbose:
+      print(buildsetSummaryStr)
+
+    if buildsetNum > 0:
+
+      if not buildsetGlobalPass:
+        self.cdashReportData.globalPass = False
+
+      self.cdashReportData.summaryLineDataNumbersList.append(
+        buildsetAcro+"="+str(buildsetNum))
+
+      self.cdashReportData.htmlEmailBodyTop += \
+        colorHtmlText(buildsetSummaryStr,buildsetColor)+"<br>\n"
+
+      if not buildsetColDataList:
+        tcd = TableColumnData
+        buildsetColDataList = [
+          tcd("Group", 'group'),
+          tcd("Site", 'site'),
+          tcd("Build Name", 'buildname'),
+          ]
+
+      self.cdashReportData.htmlEmailBodyBottom += \
+        createCDashDataSummaryHtmlTableStr(
+          buildsetDescr,  buildsetAcro, buildsetColDataList, buildsetLOD,
+          sortKeyList=self.groupSiteBuildNameSortOrder,
+          titleColor=buildsetColor)
+
+
 # Class to optionally get test history and then analyze and report a single
 # test-set.
 #
@@ -2666,7 +2831,7 @@ class SingleTestsetReporter(object):
 
 # Class to generate the data for an HTML report for all test-sets represented
 # in a list of test dicts.
-# 
+#
 class TestsetsReporter(object):
 
   # Constructor
@@ -2685,7 +2850,7 @@ class TestsetsReporter(object):
 
   # Separate out and report on all of the test-sets in the input list of test
   # dicts.
-  # 
+  #
   def reportTestsets(self, testsLOD):
     testDictsByTestsetAcro = binTestDictsByTestsetAcro(testsLOD)
     for testsetAcro in self.testsetAcroList:
@@ -2834,13 +2999,15 @@ def binTestDictsByTestsetAcro(testsLOD):
 
 #
 # Create an HTML MIME Email
-#  
+#
 
 import smtplib
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.utils import formatdate
+from email.charset import Charset, QP
+import email.message
 
 
 # Create MINE formatted email object (but don't send it)
@@ -2853,10 +3020,18 @@ def createHtmlMimeEmail(fromAddress, toAddress, subject, textBody, htmlBody):
   msg['To'] = toAddress
   msg['Date'] = formatdate(localtime=True)
   msg['Subject'] = subject
+  msg['Content-Type'] = "text/html; charset=utf-8"
+
+  # RFC 821 states that the text line size including <CRLF> is 1000 characters.
+  # This text line size is causing spaces to be inserted into the email body and
+  # break long hyperlinks. Below, we use quoted-printable
+  # "Content-Transfer-Encoding" to ensure integrity of the data being sent
+  # through the gateway when html text lines are longer than 1000 characters.
+  msg['Content-Transfer-Encoding'] = "quoted-printable"
 
   # Record the MIME types of both parts - text/plain and text/html.
-  part1 = MIMEText(textBody, 'plain')
-  part2 = MIMEText(htmlBody, 'html')
+  part1 = MIMEText(textBody.encode('utf-8'), 'plain', 'utf-8')
+  part2 = MIMEText(htmlBody.encode('utf-8'), 'html', 'utf-8')
 
   # Attach parts into message container.  According to RFC 2046, the last part
   # of a multipart message, in this case the HTML message, is best and
