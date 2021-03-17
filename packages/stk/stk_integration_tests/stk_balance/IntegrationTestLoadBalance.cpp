@@ -1165,7 +1165,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
 
         }
@@ -1282,7 +1283,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
 
         }
@@ -1338,7 +1340,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
         }
     }

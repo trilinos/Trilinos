@@ -35,13 +35,21 @@
 #include <string>
 #include <iostream>
 
+#include <stk_util/Version.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
+#include <stk_util/environment/LogWithTimeAndMemory.hpp>
+#include <stk_util/environment/Env.hpp>
+#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/ParameterList.hpp>
+#include <stk_util/util/human_bytes.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_io/IossBridge.hpp>
@@ -50,7 +58,55 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
-namespace {
+class IoMeshDriver
+{
+public:
+  IoMeshDriver(MPI_Comm comm)
+  : m_comm(comm), m_hwmAvg_baseline(0)
+  {
+    set_output_streams();
+    size_t hwmMax = 0, hwmMin = 0, hwmAvg = 0;
+    stk::get_current_memory_usage_across_processors(m_comm, hwmMax, hwmMin, hwmAvg);
+    m_hwmAvg_baseline = hwmAvg;
+  }
+
+  void set_output_streams()
+  {
+    if (stk::parallel_machine_rank(m_comm) != 0) {
+      stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+    }
+    Ioss::Utils::set_output_stream(sierra::Env::outputP0());
+  }
+
+  void log_mesh_counts(const stk::mesh::BulkData& mesh)
+  {
+    std::vector<size_t> globalCounts;
+    std::vector<size_t> minGlobalCounts;
+    std::vector<size_t> maxGlobalCounts;
+    std::vector<size_t> auraGlobalCounts;
+    std::vector<size_t> sharedNotOwnedCounts;
+    stk::mesh::comm_mesh_counts(mesh, globalCounts, minGlobalCounts, maxGlobalCounts);
+    stk::mesh::Selector sharedNotOwned = mesh.mesh_meta_data().globally_shared_part() & !mesh.mesh_meta_data().locally_owned_part();
+    stk::mesh::count_entities(sharedNotOwned, mesh, sharedNotOwnedCounts);
+    constexpr unsigned numRanks = static_cast<unsigned>(stk::topology::ELEM_RANK+1);
+    stk::all_reduce(m_comm, stk::ReduceSum<numRanks>(sharedNotOwnedCounts.data()));
+    stk::mesh::Selector aura = mesh.mesh_meta_data().aura_part();
+    stk::mesh::count_entities(aura, mesh, auraGlobalCounts);
+    stk::all_reduce(m_comm, stk::ReduceSum<numRanks>(auraGlobalCounts.data()));
+
+    stk::log_with_time_and_memory(m_comm, " - Elements: "+std::to_string(globalCounts[stk::topology::ELEM_RANK])
+                                          +" total Aura: "+std::to_string(auraGlobalCounts[stk::topology::ELEM_RANK]));
+    stk::log_with_time_and_memory(m_comm, " - Nodes: "+std::to_string(globalCounts[stk::topology::NODE_RANK])
+                                          +", shared-not-owned: "+std::to_string(sharedNotOwnedCounts[stk::topology::NODE_RANK])
+                                          +", total Aura: "+std::to_string(auraGlobalCounts[stk::topology::NODE_RANK]));
+    size_t hwmMax = 0, hwmMin = 0, hwmAvg = 0;
+    stk::get_current_memory_usage_across_processors(m_comm, hwmMax, hwmMin, hwmAvg);
+    size_t totalBytes = mesh.parallel_size() * (hwmAvg - m_hwmAvg_baseline);
+    size_t bytesPerElem = totalBytes/globalCounts[stk::topology::ELEM_RANK];
+    stk::log_with_time_and_memory(m_comm, "Max HWM per proc: "+stk::human_bytes(hwmMax)
+                                         + ", bytes-per-element: " + std::to_string(bytesPerElem));
+  }
+
   // Do the actual reading and writing of the mesh database and
   // creation and population of the MetaData and BulkData.
   void mesh_read_write(const std::string &type,
@@ -80,6 +136,10 @@ namespace {
     mesh_data.add_all_mesh_fields_as_input_fields(tmo);
 
     mesh_data.populate_bulk_data();
+
+    stk::log_with_time_and_memory(m_comm, "Finished populating input mesh, aura is "
+          +std::string((mesh_data.bulk_data().is_automatic_aura_on() ? "on" : "off")));
+    log_mesh_counts(mesh_data.bulk_data());
 
     // ========================================================================
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
@@ -218,6 +278,8 @@ namespace {
 	mesh_data.flush_output();
       }
     }
+
+    stk::log_with_time_and_memory(m_comm, "Finished writing output mesh.");
   }
 
   void driver(const std::string &parallel_io,
@@ -233,6 +295,9 @@ namespace {
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
+    std::string readOrCreate = ((type=="generated" || type=="pamgen") ? "Creating" : "Reading");
+    stk::log_with_time_and_memory(m_comm, readOrCreate+" input mesh: "+filename);
+
     stk::io::StkMeshIoBroker mesh_data(MPI_COMM_WORLD);
 
     mesh_data.property_add(Ioss::Property("LOWER_CASE_VARIABLE_NAMES", lower_case_variable_names));
@@ -268,7 +333,11 @@ namespace {
     mesh_read_write(type, working_directory, filename, mesh_data, integer_size, hb_type,
 		    interpolation_intervals);
   }
-}
+
+private:
+  MPI_Comm m_comm;
+  size_t m_hwmAvg_baseline;
+};
 
 int main(int argc, const char** argv)
 {
@@ -285,11 +354,12 @@ int main(int argc, const char** argv)
   std::string parallel_io = "";
   std::string heartbeat_format = "none";
 
-  stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
+  MPI_Comm comm = stk::parallel_machine_init(&argc, const_cast<char***>(&argv));
+  int myRank = stk::parallel_machine_rank(comm);
 
   //----------------------------------
   // Process the command line arguments
-  stk::CommandLineParserParallel cmdLine(MPI_COMM_WORLD);
+  stk::CommandLineParserParallel cmdLine(comm);
 
   cmdLine.add_required<std::string>({"mesh", "m", "mesh file. Use name of form 'gen:NxMxL' to internally generate a hex mesh of size N by M by L intervals. See GeneratedMesh documentation for more options. Can also specify a filename. The generated mesh will be output to the file 'generated_mesh.out'"});
   cmdLine.add_optional<std::string>({"directory", "d", "working directory with trailing '/'"}, "./");
@@ -305,12 +375,27 @@ int main(int argc, const char** argv)
 
   stk::CommandLineParser::ParseState parseState = cmdLine.parse(argc, argv);
 
-  if (stk::CommandLineParser::ParseError == parseState ||
-      stk::CommandLineParser::ParseHelpOnly == parseState) {
-    std::cout << cmdLine.get_usage() << std::endl;
+  if (parseState != stk::CommandLineParser::ParseComplete) {
+    int returnCode = 0;
+    switch(parseState) {
+    case stk::CommandLineParser::ParseError:
+      returnCode = 1;
+      break;
+    case stk::CommandLineParser::ParseHelpOnly:
+      std::cout << cmdLine.get_usage() << std::endl;
+      break;
+    case stk::CommandLineParser::ParseVersionOnly:
+      if (myRank == 0) {
+        std::cout << "STK Version: " << stk::version_string() << std::endl;
+      }
+      break;
+    default: break;
+    }
     stk::parallel_machine_finalize();
-    return 0;
+    return returnCode;
   }
+
+  IoMeshDriver ioMeshDriver(comm);
 
   if (cmdLine.is_option_provided("directory")) {
     working_directory = cmdLine.get_option_value<std::string>("directory");
@@ -357,6 +442,10 @@ int main(int argc, const char** argv)
     mesh = mesh.substr(4, mesh.size());
     type = "generated";
   }
+  if (strncasecmp("generated:", mesh.c_str(), 10) == 0) {
+    mesh = mesh.substr(10, mesh.size());
+    type = "generated";
+  }
   else if (strncasecmp("dof:", mesh.c_str(), 4) == 0) {
     mesh = mesh.substr(4, mesh.size());
     type = "dof";
@@ -386,7 +475,7 @@ int main(int argc, const char** argv)
   else if (heartbeat_format == "spyhis")
     hb_type = stk::io::SPYHIS;
 
-  driver(parallel_io,
+  ioMeshDriver.driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
 	 compression_level, compression_shuffle, lc_names, integer_size, hb_type,
 	 interpolation_intervals);

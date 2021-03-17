@@ -2,7 +2,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_coupling/Constants.hpp>
 #include <stk_coupling/Utils.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
 #include <stk_coupling/Version.hpp>
 #include <stk_transfer/ReducedDependencyGeometricTransfer.hpp>
