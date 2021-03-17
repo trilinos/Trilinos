@@ -51,6 +51,7 @@
 #include <KokkosKernels_config.h>
 #include <Kokkos_ArithTraits.hpp>
 #include <KokkosSparse_spiluk_handle.hpp>
+#include <Kokkos_Sort.hpp>
 
 //#define SYMBOLIC_OUTPUT_INFO
 
@@ -357,6 +358,18 @@ void iluk_symbolic ( IlukHandle& thandle,
 
   thandle.set_nnzL(cntL);
   thandle.set_nnzU(cntU);
+
+  // Sort
+  for (size_type row_id = 0; row_id < L_row_map.extent(0)-1; row_id++) {
+    size_type row_start = L_row_map(row_id);
+    size_type row_end   = L_row_map(row_id + 1);
+    Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
+  }
+  for (size_type row_id = 0; row_id < U_row_map.extent(0)-1; row_id++) {
+    size_type row_start = U_row_map(row_id);
+    size_type row_end   = U_row_map(row_id + 1);
+    Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
+  }
 
   //Level scheduling on L
   level_sched (thandle, L_row_map, L_entries, nrows, level_list, level_ptr, level_idx, nlev);  
