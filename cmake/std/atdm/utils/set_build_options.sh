@@ -108,6 +108,8 @@ elif atdm_match_any_buildname_keyword cuda-10.1-gnu-7.2.0 cuda-10.1_gnu-7.2.0 \
   export ATDM_CONFIG_COMPILER=CUDA-10.1_GNU-7.2.0
 elif atdm_match_buildname_keyword cuda-10.1; then
   export ATDM_CONFIG_COMPILER=CUDA-10.1
+elif atdm_match_buildname_keyword cuda-10.2; then
+  export ATDM_CONFIG_COMPILER=CUDA-10.2
 elif atdm_match_buildname_keyword cuda-10; then
   export ATDM_CONFIG_COMPILER=CUDA-10
 elif atdm_match_buildname_keyword cuda; then
@@ -124,18 +126,22 @@ elif atdm_match_buildname_keyword gnu-7.4.0; then
   export ATDM_CONFIG_COMPILER=GNU-7.4.0
 elif atdm_match_buildname_keyword gnu; then
   export ATDM_CONFIG_COMPILER=GNU
-elif atdm_match_buildname_keyword intel-17.0.1; then
- export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+elif atdm_match_buildname_keyword oneapi-2021.1.1; then
+  export ATDM_CONFIG_COMPILER=ONEAPI-2021.1.1
+elif atdm_match_buildname_keyword oneapi-2021.2.0; then
+  export ATDM_CONFIG_COMPILER=ONEAPI-2021.2.0
+elif atdm_match_buildname_keyword oneapi; then
+  export ATDM_CONFIG_COMPILER=ONEAPI
 elif atdm_match_buildname_keyword intel-17; then
- export ATDM_CONFIG_COMPILER=INTEL-17.0.1
+  export ATDM_CONFIG_COMPILER=INTEL-17.0.1
 elif atdm_match_buildname_keyword intel-18.0.2; then
- export ATDM_CONFIG_COMPILER=INTEL-18.0.2
+  export ATDM_CONFIG_COMPILER=INTEL-18.0.2
 elif atdm_match_buildname_keyword intel-18.0.5; then
- export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
 elif atdm_match_buildname_keyword intel-18; then
- export ATDM_CONFIG_COMPILER=INTEL-18.0.5
+  export ATDM_CONFIG_COMPILER=INTEL-18.0.5
 elif atdm_match_buildname_keyword intel; then
- export ATDM_CONFIG_COMPILER=INTEL
+  export ATDM_CONFIG_COMPILER=INTEL
 elif atdm_match_buildname_keyword clang-3.9.0; then
   export ATDM_CONFIG_COMPILER=CLANG-3.9.0
 elif atdm_match_buildname_keyword clang-5.0.1; then

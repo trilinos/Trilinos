@@ -101,6 +101,9 @@ hostnameMatchSystemName=
 if [[ $realHostname == "hansen"* ]] ; then
   hostnameMatch=hansen
   hostnameMatchSystemName=shiller
+elif [[ $realHostname == *"blake"* ]] ; then
+  hostnameMatch=blake
+  hostnameMatchSystemName=blake
 elif [[ $realHostname == "shiller"* ]] ; then
   hostnameMatch=shiller
   hostnameMatchSystemName=shiller
