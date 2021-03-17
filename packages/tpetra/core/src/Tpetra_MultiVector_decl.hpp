@@ -1543,6 +1543,7 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
     getLocalView (Access::ReadOnlyStruct) const
     {
+      throw std::runtime_error("Don't use getLocalView<T>(tag)!");
       bool returnDevice = true;
       {
         auto tmp = view_.template view<TargetDeviceType>();
@@ -1585,6 +1586,7 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Access::ReadWriteStruct)
     {
+      throw std::runtime_error("Don't use getLocalView<T>(tag)!");
       bool returnDevice = true;
       {
         auto tmp = view_.template view<TargetDeviceType>();
@@ -1629,6 +1631,7 @@ namespace Tpetra {
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView (Access::OverwriteAllStruct)
     {
+      throw std::runtime_error("Don't use getLocalView<T>(tag)!");
       if (owningView_.h_view != view_.h_view) {
         // view_ is a subview of owningView_; for safety, need to use ReadWrite
         return getLocalView<TargetDeviceType>(Access::ReadWrite);
@@ -1709,6 +1712,7 @@ namespace Tpetra {
     TPETRA_DEPRECATED typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView () const
     {
+      throw std::runtime_error("Don't use getLocalView<T>()!");
       return view_.template view<TargetDeviceType>();
     }
 

@@ -1637,9 +1637,11 @@ public:
     auto X_mv = X.getMultiVectorView ();
     auto Y_mv = Y.getMultiVectorView ();
 
-    auto X_lcl = X_mv.template getLocalView<device_type> (Access::ReadOnly);
-    auto Y_lcl = Y_mv.template getLocalView<device_type> (Access::ReadWrite);
-    auto val = this->val_.template view<device_type> ();
+    //auto X_lcl = X_mv.template getLocalView<device_type> (Access::ReadOnly);
+    //auto Y_lcl = Y_mv.template getLocalView<device_type> (Access::ReadWrite);
+    auto X_lcl = X_mv.getLocalViewDevice (Access::ReadOnly);
+    auto Y_lcl = Y_mv.getLocalViewDevice (Access::ReadWrite);
+    auto val = this->val_.view_device ();
 
     bcrsLocalApplyNoTrans (alpha_impl, graph, val, blockSize, X_lcl,
                            beta_impl, Y_lcl);

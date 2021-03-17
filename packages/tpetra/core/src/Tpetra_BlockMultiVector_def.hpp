@@ -63,14 +63,10 @@ namespace { // anonymous
     typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
 
     static impl_scalar_type* getRawPtr (MultiVectorType& X) {
-      // NOTE (mfh 09 Jun 2016) This does NOT sync to host, or mark
-      // host as modified.  This is on purpose, because we don't want
-      // the BlockMultiVector sync'd to host unnecessarily.
-      // Otherwise, all the MultiVector and BlockMultiVector kernels
-      // would run on host instead of device.  See Github Issue #428.
-      auto X_view_host = X.template getLocalView<typename MultiVectorType::dual_view_type::t_host::device_type> ();
-      impl_scalar_type* X_raw = X_view_host.data ();
-      return X_raw;
+      return nullptr;
+      //auto X_view_host = X.getLocalViewHost ();
+      //impl_scalar_type* X_raw = X_view_host.data ();
+      //return X_raw;
     }
   };
 
@@ -804,9 +800,8 @@ blockWiseMultiply (const Scalar& alpha,
   else { // alpha != 0
     const LO blockSize = this->getBlockSize ();
     const impl_scalar_type alphaImpl = static_cast<impl_scalar_type> (alpha);
-    auto X_lcl = X.mv_.template getLocalView<memory_space> (Access::ReadOnly);
-    auto Y_lcl = 
-         this->mv_.template getLocalView<memory_space> (Access::ReadWrite);
+    auto X_lcl = X.mv_.getLocalViewDevice (Access::ReadOnly);
+    auto Y_lcl = this->mv_.getLocalViewDevice (Access::ReadWrite);
     auto bwm = Impl::createBlockWiseMultiply (blockSize, alphaImpl, Y_lcl, D, X_lcl);
 
     // Use an explicit RangePolicy with the desired execution space.
@@ -837,18 +832,14 @@ blockJacobiUpdate (const Scalar& alpha,
   const IST betaImpl = static_cast<IST> (beta);
   const LO numVecs = mv_.getNumVectors ();
 
-  // auto X_lcl = X.mv_.template getLocalView<memory_space> ();
-  auto Y_lcl = 
-       this->mv_.template getLocalView<memory_space> (Access::ReadWrite);
-  auto Z_lcl = Z.mv_.template getLocalView<memory_space> (Access::ReadWrite);
-
   if (alpha == STS::zero ()) { // Y := beta * Y
     this->scale (beta);
   }
   else { // alpha != 0
     Z.update (STS::one (), X, -STS::one ());
     for (LO j = 0; j < numVecs; ++j) {
-      //auto X_lcl_j = subview (X_lcl, ALL (), j);
+      auto Y_lcl = this->mv_.getLocalViewDevice (Access::ReadWrite);
+      auto Z_lcl = Z.mv_.getLocalViewDevice (Access::ReadWrite);
       auto Y_lcl_j = subview (Y_lcl, ALL (), j);
       auto Z_lcl_j = subview (Z_lcl, ALL (), j);
       Impl::blockJacobiUpdate (Y_lcl_j, alphaImpl, D, Z_lcl_j, betaImpl);

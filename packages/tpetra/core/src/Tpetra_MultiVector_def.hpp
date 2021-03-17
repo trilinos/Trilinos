@@ -4368,6 +4368,7 @@ namespace Tpetra {
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewDevice () const {
+    throw std::runtime_error("Don't use getLocalViewDevice()!");
     return view_.view_device ();
   }
 
@@ -4375,6 +4376,7 @@ namespace Tpetra {
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalViewHost () const {
+    throw std::runtime_error("Don't use getLocalViewHost()!");
     return view_.view_host ();
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
@@ -4641,7 +4643,7 @@ namespace Tpetra {
     const bool src_last_updated_on_host = src.need_sync_device ();
 
     if (src_last_updated_on_host) {
-      localDeepCopy (this->getLocalViewDevice(Access::ReadWrite),
+      localDeepCopy (this->getLocalViewHost(Access::ReadWrite),
                      src.getLocalViewHost(Access::ReadOnly),
                      this->isConstantStride (),
                      src.isConstantStride (),

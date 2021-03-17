@@ -3958,7 +3958,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (this->isFillComplete ()) {
-      const auto D_lcl = diag.template getLocalView<device_type> (Access::OverwriteAll);
+      const auto D_lcl = diag.getLocalViewDevice(Access::OverwriteAll);
       // 1-D subview of the first (and only) column of D_lcl.
       const auto D_lcl_1d =
         Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
@@ -4003,7 +4003,7 @@ namespace Tpetra {
     // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
     // we write a device kernel, it will not need to assume UVM.
 
-    auto D_lcl = diag.template getLocalView<device_type> (Access::OverwriteAll);
+    auto D_lcl = diag.getLocalViewDevice (Access::OverwriteAll);
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     // Get 1-D subview of the first (and only) column of D_lcl.
     auto D_lcl_1d =
@@ -4111,12 +4111,7 @@ namespace Tpetra {
     }
 
     if (this->isFillComplete()) {
-      using dev_memory_space = typename device_type::memory_space;
-      // if (xp->template need_sync<dev_memory_space> ()) {
-      //   using Teuchos::rcp_const_cast;
-      //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
-      // }
-      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
+      auto x_lcl = xp->getLocalViewDevice (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::leftScaleLocalCrsMatrix;
       leftScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
@@ -4170,12 +4165,7 @@ namespace Tpetra {
     }
 
     if (this->isFillComplete()) {
-      using dev_memory_space = typename device_type::memory_space;
-      // if (xp->template need_sync<dev_memory_space> ()) {
-      //   using Teuchos::rcp_const_cast;
-      //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
-      // }
-      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
+      auto x_lcl = xp->getLocalViewDevice (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::rightScaleLocalCrsMatrix;
       rightScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
