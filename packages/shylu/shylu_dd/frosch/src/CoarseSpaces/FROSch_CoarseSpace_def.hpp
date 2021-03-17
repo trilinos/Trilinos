@@ -135,8 +135,8 @@ namespace FROSch {
                             const UN NumVectors_i = UnassembledSubspaceBases_[i]->getNumVectors();
                             const UN LocalLength_i = UnassembledSubspaceBases_[i]->getLocalLength();
 
-                            FROSCH_ASSERT(NumVectors_i+itmp <= AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace : ERROR: itmp>=AssembledBasis_->getNumVectors()");
-                            FROSCH_ASSERT(LocalLength_i+Offsets_[i] <= AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace : ERROR: k+Offsets_[i]>=AssembledBasis_->getLocalLength()");
+                            FROSCH_ASSERT(NumVectors_i+itmp <= AssembledBasis_->getNumVectors(),"FROSch::CoarseSpace: NumVectors_i+itmp <= AssembledBasis_->getNumVectors()");
+                            FROSCH_ASSERT(LocalLength_i+Offsets_[i] <= AssembledBasis_->getLocalLength(),"FROSch::CoarseSpace: LocalLength_i+Offsets_[i] <= AssembledBasis_");
 
                             for (UN j=0; j < NumVectors_i; j++) {
                                 auto unassembledSubspaceBasesData = UnassembledSubspaceBases_[i]->getData(j).getRawPtr();
