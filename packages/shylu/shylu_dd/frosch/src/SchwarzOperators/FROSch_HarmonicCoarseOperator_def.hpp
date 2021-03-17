@@ -782,7 +782,7 @@ namespace FROSch {
                         Kokkos::RangePolicy<execution_space> policy (bound[extensionBlocks[ii]], bound[extensionBlocks[ii]+1]);
                         CopyPhiDataFunctor functor(mVPhiData, mVPhiIData, indicesIDofsAll);
                         Kokkos::parallel_for(
-                            "FROSch_HarmonicCoarseOperator::computeExtensions", policy, functor);
+                            "FROSch_HarmonicCoarseOperator::fillPhiData", policy, functor);
                     }
                     itmp++;
                 }

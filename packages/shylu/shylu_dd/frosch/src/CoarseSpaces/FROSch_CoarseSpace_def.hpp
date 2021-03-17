@@ -227,7 +227,7 @@ namespace FROSch {
             rowptr_type Rowptr ("Rowptr", numLocalRows+1);
             Kokkos::deep_copy(Rowptr, 0);
             Kokkos::parallel_for(
-                "FROSch_OverlappingOperator::applyLocalRestriction", policy_row,
+                "FROSch_CoarseSpace::countGlobalBasisMatrix", policy_row,
                 KOKKOS_LAMBDA(const UN i) {
                     LO iD = repeatedLocalMap.getGlobalElement(i);
                     LO lo = rowLocalMap.getLocalElement(iD);
@@ -252,7 +252,7 @@ namespace FROSch {
             values_type  Values  ("Values",  nnz);
             auto AssembledBasisLocalMap = AssembledBasisMap_->getLocalMap();
             Kokkos::parallel_for(
-                "FROSch_OverlappingOperator::applyLocalRestriction", policy_row,
+                "FROSch_CoarseSpace::fillGlobalBasisMatrix", policy_row,
                 KOKKOS_LAMBDA(const UN i) {
                     LO iD = repeatedLocalMap.getGlobalElement(i);
                     LO lo = rowLocalMap.getLocalElement(iD);
