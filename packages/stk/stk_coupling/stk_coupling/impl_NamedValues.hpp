@@ -11,7 +11,6 @@
 
 #include <stk_coupling/impl_Value.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_coupling/CommSplitting.hpp>
 #include <map>
 
 namespace stk
@@ -67,13 +66,6 @@ MapType::const_iterator end() const { return m_values.end(); }
 private:
   MapType m_values;
 };
-
-//template<>
-//inline void NamedValues::set_value<char*>(const std::string & name, const char*& value)
-//{
-//  m_values[name] = Value(std::string(value), STRING);
-//}
-
 
 } // namespace impl
 } // namespace coupling

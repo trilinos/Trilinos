@@ -7,8 +7,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef STK_COUPLING_COMM_SPLITTING_HPP
-#define STK_COUPLING_COMM_SPLITTING_HPP
+#ifndef STK_COUPLING_SPLITCOMMS_HPP
+#define STK_COUPLING_SPLITCOMMS_HPP
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_coupling/impl_VersionUtils.hpp>
@@ -49,8 +49,11 @@ public:
 private:
   void setup_pairwise_comms();
   void fill_other_colors();
-  void compute_pairwise_root_ranks();
+  void compute_all_pairwise_root_ranks();
   void initialize();
+
+  PairwiseRanks compute_pairwise_root_ranks(MPI_Comm pairwiseComm);
+  int compute_other_root_rank(const std::vector<int>& globalRanks);
 
   MPI_Comm m_parentComm;
   MPI_Comm m_splitComm;
@@ -64,13 +67,7 @@ private:
   impl::CouplingCompatibilityMode m_compatibilityMode;
 };
 
-std::pair<int, int> calc_my_root_and_other_root_ranks(MPI_Comm global, MPI_Comm local);
-
-bool has_split_comm(MPI_Comm global, MPI_Comm local);
-
-MPI_Comm split_comm(MPI_Comm parentCommunicator, int color);
-
 }
 }
 
-#endif /* STK_COUPLING_COMM_SPLITTING_HPP */
+#endif /* STK_COUPLING_SPLITCOMMS_HPP */

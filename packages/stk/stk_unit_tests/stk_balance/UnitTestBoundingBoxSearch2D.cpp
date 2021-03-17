@@ -279,7 +279,7 @@ protected:
       const auto foundEdge = std::find_if(graphEdges.begin(), graphEdges.end(),
           [&](const stk::balance::GraphEdge & curr){
               return ( (bulk.identifier(curr.vertex1()) == expected.first) &&
-                       (curr.vertex2() == expected.second) );
+                       (curr.vertex2_id() == expected.second) );
           });
 
       if (foundEdge == graphEdges.end()) {

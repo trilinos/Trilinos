@@ -92,8 +92,8 @@ BalanceGlobalNumber getAdjacencyId(const stk::mesh::BulkData &stkMeshBulkData,
 
 bool areElementsConnected(const stk::mesh::BulkData& stkMeshBulkData,
                           const size_t numNodesRequiredForConnection,
-                          const stk::mesh::Entity element1,
-                          const stk::mesh::Entity element2)
+                          const stk::mesh::Entity & element1,
+                          const stk::mesh::Entity & element2)
 {
     size_t nodesSharedBetweenElements = stk::balance::internal::get_num_common_nodes_between_elements(stkMeshBulkData, element1, element2);
     bool elementsAreConnected = (nodesSharedBetweenElements >= numNodesRequiredForConnection);
@@ -114,46 +114,102 @@ std::vector<stk::mesh::Entity> getAllPossiblyConnectedElements(const stk::mesh::
   return allElementsPossiblyConnected;
 }
 
-void createGraphEdgesForElement(stk::mesh::BulkData &stkMeshBulkData,
+bool is_valid_graph_connectivity(const stk::mesh::BulkData &stkMeshBulkData,
+                                 const stk::mesh::Selector& selector,
+                                 const stk::balance::BalanceSettings &balanceSettings,
+                                 const stk::mesh::Entity & elementOfConcern,
+                                 const stk::mesh::Entity & possiblyConnectedElement)
+{
+  stk::topology element1Topology = stkMeshBulkData.bucket(elementOfConcern).topology();
+  stk::topology element2Topology = stkMeshBulkData.bucket(possiblyConnectedElement).topology();
+  size_t numNodesRequiredForConnection = balanceSettings.getNumNodesRequiredForConnection(element1Topology, element2Topology);
+
+  return (areElementsConnected(stkMeshBulkData, numNodesRequiredForConnection, elementOfConcern, possiblyConnectedElement) &&
+          selector(stkMeshBulkData.bucket(elementOfConcern)) &&
+          selector(stkMeshBulkData.bucket(possiblyConnectedElement)));
+}
+
+stk::balance::GraphEdge create_graph_edge(const stk::mesh::BulkData &bulk,
+                                          const stk::balance::BalanceSettings &balanceSettings,
+                                          const stk::mesh::impl::LocalIdMapper& localIds,
+                                          const stk::mesh::Entity & element1,
+                                          const stk::mesh::Entity & element2)
+{
+  const stk::topology element1Topology = bulk.bucket(element1).topology();
+  const stk::topology element2Topology = bulk.bucket(element2).topology();
+  const stk::mesh::EntityId element2Id = stk::balance::internal::get_local_id(localIds, element2);
+  double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology);
+  int vertex2ParallelOwner = 0;
+
+  return stk::balance::GraphEdge(element1, element2Id, vertex2ParallelOwner, edgeWeight);
+}
+
+stk::balance::GraphEdge create_graph_edge(const stk::mesh::BulkData &bulk,
+                                          const stk::balance::BalanceSettings &balanceSettings,
+                                          const stk::mesh::Entity & element1,
+                                          const stk::mesh::Entity & element2)
+{
+  const stk::topology element1Topology = bulk.bucket(element1).topology();
+  const stk::topology element2Topology = bulk.bucket(element2).topology();
+  const stk::mesh::EntityId element2Id = bulk.identifier(element2);
+  double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology);
+  int vertex2ParallelOwner = bulk.parallel_owner_rank(element2);
+
+  return stk::balance::GraphEdge(element1, element2Id, vertex2ParallelOwner, edgeWeight);
+}
+
+bool should_create_graph_edge(const stk::mesh::BulkData &bulk,
+                              const stk::mesh::Selector& selector,
+                              const stk::balance::BalanceSettings &balanceSettings,
+                              const stk::mesh::Entity & element1,
+                              const stk::mesh::Entity & element2)
+{
+  const bool isValidGraphEdge = is_valid_graph_connectivity(bulk, selector, balanceSettings, element1, element2);
+  const bool notSpiderElement1 = !stk::balance::internal::shouldOmitSpiderElement(bulk, balanceSettings, element1);
+  const bool notSpiderElement2 = !stk::balance::internal::shouldOmitSpiderElement(bulk, balanceSettings, element2);
+
+  return isValidGraphEdge && notSpiderElement1 && notSpiderElement2;
+}
+
+void createGraphEdgesForElement(const stk::mesh::BulkData &bulk,
                                 const stk::mesh::Selector& selector,
                                 const stk::balance::BalanceSettings &balanceSettings,
-                                stk::mesh::Entity elementOfConcern,
+                                const stk::mesh::Entity & elementOfConcern,
                                 std::vector<stk::balance::GraphEdge> &graphEdges,
                                 const stk::mesh::impl::LocalIdMapper& localIds)
 {
-  std::vector<stk::mesh::Entity> allElementsPossiblyConnected = getAllPossiblyConnectedElements(stkMeshBulkData, elementOfConcern);
+  std::vector<stk::mesh::Entity> allElementsPossiblyConnected = getAllPossiblyConnectedElements(bulk, elementOfConcern);
   bool usingColoring = balanceSettings.usingColoring();
 
-  for (stk::mesh::Entity possiblyConnectedElement : allElementsPossiblyConnected) {
-    if (elementOfConcern != possiblyConnectedElement) {
-      bool doingLoadBalancingConsiderAnyElement = (balanceSettings.getGraphOption() == stk::balance::BalanceSettings::LOAD_BALANCE);
-      bool doingColoringConsiderOnlyOwnedElement = (usingColoring &&
-                                                    stkMeshBulkData.bucket(possiblyConnectedElement).owned() &&
-                                                    selector(stkMeshBulkData.bucket(possiblyConnectedElement)));
-      if (doingLoadBalancingConsiderAnyElement || doingColoringConsiderOnlyOwnedElement) {
-        stk::topology element1Topology = stkMeshBulkData.bucket(elementOfConcern).topology();
-        stk::topology element2Topology = stkMeshBulkData.bucket(possiblyConnectedElement).topology();
-        size_t numNodesRequiredForConnection = balanceSettings.getNumNodesRequiredForConnection(element1Topology, element2Topology);
-
-        const bool validGraphEdgeForSelector = areElementsConnected(stkMeshBulkData, numNodesRequiredForConnection,
-                                                                    elementOfConcern, possiblyConnectedElement) &&
-                                               selector(stkMeshBulkData.bucket(elementOfConcern)) &&
-                                               selector(stkMeshBulkData.bucket(possiblyConnectedElement));
-        const bool notSpiderElement = !stk::balance::internal::shouldOmitSpiderElement(stkMeshBulkData, balanceSettings,
-                                                                                       possiblyConnectedElement);
-        if (validGraphEdgeForSelector && notSpiderElement) {
-          double edgeWeight = balanceSettings.getGraphEdgeWeight(element1Topology, element2Topology);
-          int vertex2ParallelOwner = 0;
-          if (usingColoring) {
-            graphEdges.push_back(stk::balance::GraphEdge(elementOfConcern,
-                                                         stk::balance::internal::get_local_id(localIds, possiblyConnectedElement),
-                                                         vertex2ParallelOwner, edgeWeight));
+  if (usingColoring) {
+    for (stk::mesh::Entity possiblyConnectedElement : allElementsPossiblyConnected) {
+      if (elementOfConcern != possiblyConnectedElement) {
+        bool considerOnlySelectedOwnedElement = (bulk.bucket(possiblyConnectedElement).owned() &&
+                                                 selector(bulk.bucket(possiblyConnectedElement)));
+        if (considerOnlySelectedOwnedElement) {
+          if (should_create_graph_edge(bulk, selector, balanceSettings, elementOfConcern, possiblyConnectedElement)) {
+            graphEdges.push_back(create_graph_edge(bulk, balanceSettings, localIds, elementOfConcern, possiblyConnectedElement));
           }
-          else {
-            vertex2ParallelOwner = stkMeshBulkData.parallel_owner_rank(possiblyConnectedElement);
-            graphEdges.push_back(stk::balance::GraphEdge(elementOfConcern,
-                                                         stkMeshBulkData.identifier(possiblyConnectedElement),
-                                                         vertex2ParallelOwner, edgeWeight));
+        }
+      }
+    }
+  }
+  else {
+    for (stk::mesh::Entity possiblyConnectedElement : allElementsPossiblyConnected) {
+      if (elementOfConcern != possiblyConnectedElement) {
+        if (bulk.bucket(possiblyConnectedElement).owned()) {
+          const stk::mesh::EntityId elementOfConcernId = bulk.identifier(elementOfConcern);
+          const stk::mesh::EntityId possiblyConnectedElementId = bulk.identifier(possiblyConnectedElement);
+          if (elementOfConcernId < possiblyConnectedElementId) {
+            if (should_create_graph_edge(bulk, selector, balanceSettings, elementOfConcern, possiblyConnectedElement)) {
+              graphEdges.push_back(create_graph_edge(bulk, balanceSettings, elementOfConcern, possiblyConnectedElement));
+              graphEdges.push_back(create_graph_edge(bulk, balanceSettings, possiblyConnectedElement, elementOfConcern));
+            }
+          }
+        }
+        else {
+          if (should_create_graph_edge(bulk, selector, balanceSettings, elementOfConcern, possiblyConnectedElement)) {
+            graphEdges.push_back(create_graph_edge(bulk, balanceSettings, elementOfConcern, possiblyConnectedElement));
           }
         }
       }
@@ -207,10 +263,10 @@ void Zoltan2ParallelGraph::convertGraphEdgesToZoltanGraph(const stk::mesh::BulkD
         int index = mOffsets[localId] + offset;
 
         if (usingColoring) {
-            ThrowRequireMsg(graphEdges[i].vertex2() < numElements, "Adding invalid element to ZoltanII graph");
+            ThrowRequireMsg(graphEdges[i].vertex2_id() < numElements, "Adding invalid element to ZoltanII graph");
         }
-        mAdjacency[index] = graphEdges[i].vertex2();
-        adjacencyProcs[index] = graphEdges[i].vertex2OwningProc();
+        mAdjacency[index] = graphEdges[i].vertex2_id();
+        adjacencyProcs[index] = graphEdges[i].vertex2_owning_proc();
         mEdgeWeights[index] = graphEdges[i].weight();
         numElementsConnectedSoFar[localId]++;
     }
@@ -275,14 +331,10 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
 
     stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, balanceSettings, graphEdges, selector);
 
-    std::sort(graphEdges.begin(), graphEdges.end());
-    std::vector<stk::balance::GraphEdge>::iterator iter = std::unique(graphEdges.begin(), graphEdges.end());
-    graphEdges.erase(iter, graphEdges.end());
-
     std::vector<unsigned> localIdsSearch(graphEdges.size(),0);
     size_t counter = 0;
     for (size_t i = 0; i < graphEdges.size(); ++i) {
-      if (graphEdges[i].isEdgeFromSearch()) {
+      if (graphEdges[i].is_edge_from_search()) {
         localIdsSearch[counter] = stk::balance::internal::get_local_id(localIds, graphEdges[i].vertex1());
         counter++;
       }
@@ -296,6 +348,8 @@ void Zoltan2ParallelGraph::fillZoltan2AdapterDataFromStkMesh(stk::mesh::BulkData
       mVertexWeights[localIdsSearch[i]] *= balanceSettings.getVertexWeightMultiplierForVertexInSearch();
     }
   }
+
+  stk::util::sort_and_unique(graphEdges);
 
   stk::balance::internal::logMessage(stkMeshBulkData.parallel(), "Convert edges to a graph");
 

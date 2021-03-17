@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <stk_coupling/OldSyncInfo.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/OldCommSplitting.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 
 namespace stk
