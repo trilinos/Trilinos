@@ -75,8 +75,8 @@ namespace Tacho {
             UnmanagedViewType<value_type_matrix> STR(W.data(), m, n); 
 
             auto fpiv = ordinal_type_array(P.data()+m, m);
-            // ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
-            //   ::invoke(member, fpiv, ATR);
+            ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+              ::invoke(member, fpiv, ATR);
             Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
               ::invoke(member, Diag::Unit(), one, ATL, ATR);
             Copy<Algo::Internal>
@@ -133,10 +133,10 @@ namespace Tacho {
           const ordinal_type offm = s.row_begin;
           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
           const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
-          //const auto fpiv = ordinal_type_array(P.data()+m, m);
+          const auto fpiv = ordinal_type_array(P.data()+m, m);
 
-          // ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
-          //   ::invoke(member, fpiv, xT);
+          ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+            ::invoke(member, fpiv, xT);
           
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
             Trsm<Side::Left,Uplo::Upper,Trans::Transpose,TrsmAlgoType>
@@ -220,8 +220,8 @@ namespace Tacho {
           else
             Trsv<Uplo::Upper,Trans::NoTranspose,TrsvAlgoType>
               ::invoke(member, Diag::Unit(), AL, xT);
-          // ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
-          //   ::invoke(member, fpiv, xT);
+          ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
+            ::invoke(member, fpiv, xT);
         }
         return 0;
       }
