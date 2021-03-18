@@ -10,38 +10,62 @@ namespace Tacho {
 
   /// row exchange
   template<>
-  struct Applyermutation<Side::Left,Trans::NoTranspose,Algo::Internal> {
-    template<typename MemberType,
-             typename ViewTypeA,
-             typename ViewTypeB,
-             typename ViewTypeP>
+  struct ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal> {
+    template<typename ViewTypeA,
+             typename ViewTypeP,
+             typename ViewTypeB>
     KOKKOS_INLINE_FUNCTION
     static int
-    invoke(MemberType &member,
-           const ViewTypeA &A,
-           const ViewTypeB &B,
-           const ViewTypeP &P) {
-      typedef typename ViewTypeA::non_const_value_type value_type;        
-      
+    invoke(const ViewTypeA &A,
+           const ViewTypeP &P,
+           const ViewTypeB &B) {
+      typedef typename ViewTypeA::non_const_value_type value_type;              
       if (A.extent(0) == P.extent(0)) {
         if (A.span() > 0) {
           const ordinal_type m = A.extent(0), n = A.extent(1);
           if (n == 1) { /// vector
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type idx = P(i);
+              B(i,0) = A(idx,0);              
+            }
+          } else { /// matrix
+            for (ordinal_type i=0;i<m;++i) {
+              const ordinal_type idx = P(i);
+              for (ordinal_type j=0;j<n;++j) {
+                B(i,j) = A(idx,j);
+              }
+            }
+          }
+        }
+      } else {
+        printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
+      }
+      return 0;
+    }
+
+    template<typename MemberType,
+             typename ViewTypeA,
+             typename ViewTypeP,
+             typename ViewTypeB>
+    KOKKOS_INLINE_FUNCTION
+    static int
+    invoke(MemberType &member,
+           const ViewTypeA &A,
+           const ViewTypeP &P,
+           const ViewTypeB &B) {
 #if defined(__CUDA_ARCH__)
+      typedef typename ViewTypeA::non_const_value_type value_type;              
+      if (A.extent(0) == P.extent(0)) {
+        if (A.span() > 0) {
+          const ordinal_type m = A.extent(0), n = A.extent(1);
+          if (n == 1) { /// vector
             Kokkos::parallel_for
               (Kokkos::TeamVectorRange(member, m),
                [&](const ordinal_type &i) {
                 const ordinal_type idx = P(i);
-                B(i) = A(idx);
+                B(i,0) = A(idx,0);
               });
-#else
-            for (ordinal_type i=0;i<m;++i) {
-              const ordinal_type idx = P(i);
-              B(i) = A(idx);              
-            }
-#endif
           } else { /// matrix
-#if defined(__CUDA_ARCH__)
             Kokkos::parallel_for
               (Kokkos::TeamThreadRange(member, m),
                [&](const ordinal_type &i) {
@@ -52,21 +76,18 @@ namespace Tacho {
                     B(i,j) = A(idx,j);
                   });
               });
-#else
-            for (ordinal_type i=0;i<m;++i) {
-              const ordinal_type idx = P(i);
-              for (ordinal_type j=0;j<n;++j) {
-                B(i,j) = A(idx,j);
-              }
-            }
-#endif
           }
         }
       } else {
         printf("Error: ApplyPermutation<Algo::Internal> A extent(0) does not match to P extent(0)\n");
       }
+#else
+      invoke(A, B, P);
+#endif
       return 0;
     }
+
+
   };
   
 

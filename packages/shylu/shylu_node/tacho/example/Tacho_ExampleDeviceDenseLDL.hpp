@@ -171,7 +171,7 @@ int driver_ldl (const int m, const bool verbose) {
         auto peri = Kokkos::subview(p, Kokkos::pair<int,int>(3*m, 4*m));
         /// copy and transpose
         Tacho::ApplyPermutation<Tacho::Side::Left,Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
-          ::invoke(exec_instance, b, x, perm);        
+          ::invoke(exec_instance, b, perm, x);        
 
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), x);
@@ -218,7 +218,7 @@ int driver_ldl (const int m, const bool verbose) {
         /// permute back to z
         Kokkos::View<value_type**,device_type> z("z",m,1);
         Tacho::ApplyPermutation<Tacho::Side::Left,Tacho::Trans::NoTranspose,Tacho::Algo::OnDevice>
-          ::invoke(exec_instance, x, z, peri);        
+          ::invoke(exec_instance, x, peri, z);        
 
         {
           auto x_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), z);

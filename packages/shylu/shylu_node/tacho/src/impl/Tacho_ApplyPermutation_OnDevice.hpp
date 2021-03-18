@@ -12,14 +12,14 @@ namespace Tacho {
   struct ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::OnDevice> {
     template<typename MemberType,
              typename ViewTypeA,
-             typename ViewTypeB,
-             typename ViewTypeP>
+             typename ViewTypeP,
+             typename ViewTypeB>
     inline
     static int
     invoke(MemberType &member,
            const ViewTypeA &A,
-           const ViewTypeB &B,
-           const ViewTypeP &P) {
+           const ViewTypeP &P,
+           const ViewTypeB &B) {
       typedef typename ViewTypeA::non_const_value_type value_type;
 
       const ordinal_type

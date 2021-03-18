@@ -70,9 +70,9 @@ namespace Tacho {
 
   public:
     enum : int { Cholesky = 1,
-                 UtDU = 2,
-                 SymLU = 3,
-                 LU = 4 };
+                 LDL      = 2,
+                 SymLU    = 3,
+                 LU       = 4 };
 
     // ** solver mode
     bool _transpose;
@@ -134,7 +134,10 @@ namespace Tacho {
     levelset_tools_var2_type *_L2;
 
     // small dense matrix
-    value_type_matrix_host _U;
+    // - chol A is used
+    // - ldl A D P are used
+    value_type_matrix_host _A, _D;
+    ordinal_type_array_host _P;
 
     // ** options
     ordinal_type _verbose;              // print
@@ -310,7 +313,16 @@ namespace Tacho {
     }
 
     int initialize();
+    int factorize_chol(const value_type_array &ax);
+    int factorize_ldl(const value_type_array &ax);
     int factorize(const value_type_array &ax);
+
+    int solve_chol(const value_type_matrix &x,
+                   const value_type_matrix &b,
+                   const value_type_matrix &t);
+    int solve_ldl(const value_type_matrix &x,
+                  const value_type_matrix &b,
+                  const value_type_matrix &t);
     int solve(const value_type_matrix &x,
               const value_type_matrix &b,
               const value_type_matrix &t);

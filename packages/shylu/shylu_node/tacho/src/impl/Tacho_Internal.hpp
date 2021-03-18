@@ -43,10 +43,21 @@
 #include "Tacho_SetIdentity.hpp"
 #include "Tacho_SetIdentity_Internal.hpp"
 
+#include "Tacho_ApplyPermutation.hpp"
+#include "Tacho_ApplyPermutation_Internal.hpp"
+
+#include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
+#include "Tacho_Scale2x2_BlockInverseDiagonals_Internal.hpp"
+
 #include "Tacho_Chol.hpp"
 #include "Tacho_Chol_External.hpp"
 #include "Tacho_Chol_Internal.hpp"
 #include "Tacho_Chol_ByBlocks.hpp"
+
+#include "Tacho_LDL.hpp"
+#include "Tacho_LDL_External.hpp"
+//#include "Tacho_LDL_Internal.hpp"
+//#include "Tacho_LDL_ByBlocks.hpp"
 
 #include "Tacho_Trsm.hpp"
 #include "Tacho_Trsm_External.hpp"
