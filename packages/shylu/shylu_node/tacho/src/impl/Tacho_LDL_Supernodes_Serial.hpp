@@ -66,7 +66,7 @@ namespace Tacho {
           /// LDL factorize ATL, extract diag, symmetrize ATL with unit diagonals
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
           Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
-          Tacho::LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
+          LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
           LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
 
           if (n > 0) {
@@ -266,7 +266,7 @@ namespace Tacho {
                                "bufsize is smaller than required");
           value_type * bufptr = buf;
           UnmanagedViewType<value_type_matrix> ABR(bufptr, n, n); bufptr += ABR.span();
-          UnmanagedViewType<value_type_array> w(bufptr, n*mm); bufptr += w.span();
+          UnmanagedViewType<value_type_array> w(bufptr, m*mm); bufptr += w.span();
           
           LDL_Supernodes<Algo::Workflow::Serial>
             ::factorize(member, info, ipiv, dblk, w, ABR, sid);

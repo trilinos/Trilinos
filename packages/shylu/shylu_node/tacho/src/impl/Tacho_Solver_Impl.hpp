@@ -748,7 +748,6 @@ namespace Tacho {
         printf("\n");
       }
     } else {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
 #if !defined (KOKKOS_ENABLE_CUDA)
       const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
 #endif
