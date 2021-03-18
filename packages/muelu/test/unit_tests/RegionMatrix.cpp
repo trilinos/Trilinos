@@ -168,7 +168,7 @@ void createRegionMatrix(const Teuchos::ParameterList galeriList,
   RCP<Matrix> quasiRegionGrpMats = Teuchos::null;
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A),
                           regionsPerGIDWithGhosts, rowMap, colMap, rowImport,
-                          quasiRegionGrpMats);
+                          quasiRegionGrpMats, regionMatVecLIDs);
 
   MakeRegionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A), A->getRowMap(), rowMap,
                      revisedRowMap, revisedColMap,
