@@ -37,7 +37,6 @@ namespace Tacho {
                 const typename SupernodeInfoType::value_type_array &W,
                 const typename SupernodeInfoType::value_type_matrix &ABR,
                 const ordinal_type sid) {
-        printf("sid factorize begin %d\n", sid);
         using supernode_info_type = SupernodeInfoType;
         using value_type = typename supernode_info_type::value_type;
         using value_type_matrix = typename supernode_info_type::value_type_matrix;
@@ -68,20 +67,23 @@ namespace Tacho {
           Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
           LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
           LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
+          Symmetrize<Uplo::Lower,Algo::Internal>::invoke(member, ATL);
 
           if (n > 0) {
             const value_type one(1), zero(0);
             UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); ptr += m*n;
-            UnmanagedViewType<value_type_matrix> STR(ptr, m, n); ptr += m*n;
+            UnmanagedViewType<value_type_matrix> STR(W.data(), m, n); 
+
             auto fpiv = ordinal_type_array(P.data()+m, m);
-            ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
-              ::invoke(member, fpiv, ATR);
+            // ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+            //   ::invoke(member, fpiv, ATR);
             Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
               ::invoke(member, Diag::Unit(), one, ATL, ATR);
             Copy<Algo::Internal>
-              ::invoke(member, ATR, STR);
+              ::invoke(member, STR, ATR);
             Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> /// row scaling
               ::invoke(member, P, D, ATR);
+
             TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
                                  static_cast<ordinal_type>(ABR.extent(1)) != n,
                                  "ABR dimension does not match to supernodes");
@@ -131,17 +133,17 @@ namespace Tacho {
           const ordinal_type offm = s.row_begin;
           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
           const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
-          const auto fpiv = ordinal_type_array(P.data()+m, m);
+          //const auto fpiv = ordinal_type_array(P.data()+m, m);
 
-          ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, xT);
+          // ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+          //   ::invoke(member, fpiv, xT);
           
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-            Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
+            Trsm<Side::Left,Uplo::Upper,Trans::Transpose,TrsmAlgoType>
               ::invoke(member, Diag::Unit(), one, AL, xT);
           else
-            Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
-              ::invoke(member, Diag::NonUnit(), AL, xT);
+            Trsv<Uplo::Upper,Trans::Transpose,TrsvAlgoType>
+              ::invoke(member, Diag::Unit(), AL, xT);
             
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
@@ -200,6 +202,9 @@ namespace Tacho {
           const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
           const auto fpiv = ordinal_type_array(P.data()+m, m);
 
+          Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> /// row scaling
+            ::invoke(member, P, D, xT);
+
           if (n > 0) {
             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
             if (nrhs >= ThresholdSolvePhaseUsingBlas3)
@@ -209,16 +214,14 @@ namespace Tacho {
               Gemv<Trans::NoTranspose,GemvAlgoType>
                 ::invoke(member, -one, AR, xB, one, xT);
           }
-          Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> /// row scaling
-            ::invoke(member, P, D, xT);
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-            Trsm<Side::Left,Uplo::Lower,Trans::Transpose,TrsmAlgoType>
-              ::invoke(member, Diag::NonUnit(), one, AL, xT);
+            Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+              ::invoke(member, Diag::Unit(), one, AL, xT);
           else
-            Trsv<Uplo::Lower,Trans::Transpose,TrsvAlgoType>
-              ::invoke(member, Diag::NonUnit(), AL, xT);
-          ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
-            ::invoke(member, fpiv, xT);
+            Trsv<Uplo::Upper,Trans::NoTranspose,TrsvAlgoType>
+              ::invoke(member, Diag::Unit(), AL, xT);
+          // ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
+          //   ::invoke(member, fpiv, xT);
         }
         return 0;
       }
@@ -242,7 +245,6 @@ namespace Tacho {
         using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
 
         const auto &s = info.supernodes(sid);
-        printf("LDL recursion sid %d\n", sid);
         if (final) {
           // serial recursion
           for (ordinal_type i=0;i<s.nchildren;++i)
@@ -261,12 +263,14 @@ namespace Tacho {
           const ordinal_type n = s.n - s.m;
 
           const ordinal_type mm = m > 32 ? m : 32;
-          const size_type bufsize_required = (n*(n+1) + n*mm)*sizeof(value_type);
+          const ordinal_type mn = mm > n ? mm : n;
+
+          const size_type bufsize_required = (n*n + m*mn)*sizeof(value_type);
           TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
                                "bufsize is smaller than required");
           value_type * bufptr = buf;
           UnmanagedViewType<value_type_matrix> ABR(bufptr, n, n); bufptr += ABR.span();
-          UnmanagedViewType<value_type_array> w(bufptr, m*mm); bufptr += w.span();
+          UnmanagedViewType<value_type_array> w(bufptr, m*mn); bufptr += w.span();
           
           LDL_Supernodes<Algo::Workflow::Serial>
             ::factorize(member, info, ipiv, dblk, w, ABR, sid);
