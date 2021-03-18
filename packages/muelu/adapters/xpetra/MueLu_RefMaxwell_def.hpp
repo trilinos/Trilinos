@@ -1418,6 +1418,9 @@ namespace MueLu {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::allocateMemory(int numVectors) const {
+
+    RCP<Teuchos::TimeMonitor> tmAlloc = getTimer("MueLu RefMaxwell: Allocate MVs");
+
     if (!R11_.is_null())
       P11res_    = MultiVectorFactory::Build(R11_->getRangeMap(), numVectors);
     else
@@ -1426,7 +1429,6 @@ namespace MueLu {
       D0TR11Tmp_ = MultiVectorFactory::Build(R11_->getColMap(), numVectors);
     if (!ImporterH_.is_null()) {
       P11resTmp_ = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
-      P11xTmp_   = MultiVectorFactory::Build(ImporterH_->getSourceMap(), numVectors);
       P11x_      = MultiVectorFactory::Build(ImporterH_->getTargetMap(), numVectors);
     } else
       P11x_      = MultiVectorFactory::Build(P11_->getDomainMap(), numVectors);
@@ -1436,10 +1438,29 @@ namespace MueLu {
       D0res_     = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
     if (!Importer22_.is_null()) {
       D0resTmp_ = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
-      D0xTmp_   = MultiVectorFactory::Build(Importer22_->getSourceMap(), numVectors);
       D0x_      = MultiVectorFactory::Build(Importer22_->getTargetMap(), numVectors);
     } else
       D0x_      = MultiVectorFactory::Build(D0_Matrix_->getDomainMap(), numVectors);
+    if (!AH_.is_null()) {
+      if (!ImporterH_.is_null() && !implicitTranspose_)
+        P11resSubComm_ = MultiVectorFactory::Build(P11resTmp_, Teuchos::View);
+      else
+        P11resSubComm_ = MultiVectorFactory::Build(P11res_, Teuchos::View);
+      P11resSubComm_->replaceMap(AH_->getRangeMap());
+
+      P11xSubComm_ = MultiVectorFactory::Build(P11x_, Teuchos::View);
+      P11xSubComm_->replaceMap(AH_->getDomainMap());
+    }
+    if (!A22_.is_null()) {
+      if (!Importer22_.is_null() && !implicitTranspose_)
+        D0resSubComm_ = MultiVectorFactory::Build(D0resTmp_, Teuchos::View);
+      else
+        D0resSubComm_ = MultiVectorFactory::Build(D0res_, Teuchos::View);
+      D0resSubComm_->replaceMap(A22_->getRangeMap());
+
+      D0xSubComm_ = MultiVectorFactory::Build(D0x_, Teuchos::View);
+      D0xSubComm_->replaceMap(A22_->getDomainMap());
+    }
     residual_  = MultiVectorFactory::Build(SM_Matrix_->getDomainMap(), numVectors);
   }
 
@@ -2427,64 +2448,46 @@ namespace MueLu {
       if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
-        P11res_.swap(P11resTmp_);
       }
       if (!Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
-        D0res_.swap(D0resTmp_);
       }
 
       // iterate on coarse (1, 1) block
       if (!AH_.is_null()) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
 
-        RCP<const Map> origXMap = P11x_->getMap();
-        RCP<const Map> origRhsMap = P11res_->getMap();
-
-        // Replace maps with maps with a subcommunicator
-        P11res_->replaceMap(AH_->getRangeMap());
-        P11x_  ->replaceMap(AH_->getDomainMap());
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
         if (!thyraPrecH_.is_null()) {
           Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-          RCP<Thyra::MultiVectorBase<Scalar> >       thyraP11x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11x_));
-          RCP<const Thyra::MultiVectorBase<Scalar> > thyraP11res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11res_);
+          RCP<Thyra::MultiVectorBase<Scalar> >       thyraP11x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11xSubComm_));
+          RCP<const Thyra::MultiVectorBase<Scalar> > thyraP11res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(P11resSubComm_);
           thyraPrecH_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraP11res, thyraP11x.ptr(), one, zero);
           RCP<MultiVector> thyXpP11x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraP11x, P11x_->getMap()->getComm());
-          *P11x_ = *thyXpP11x;
+          *P11xSubComm_ = *thyXpP11x;
         }
         else
 #endif
-           HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
-        P11x_  ->replaceMap(origXMap);
-        P11res_->replaceMap(origRhsMap);
+           HierarchyH_->Iterate(*P11resSubComm_, *P11xSubComm_, numItersH_, true);
       }
 
       // iterate on (2, 2) block
       if (!A22_.is_null()) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
 
-        RCP<const Map> origXMap = D0x_->getMap();
-        RCP<const Map> origRhsMap = D0res_->getMap();
-
-        // Replace maps with maps with a subcommunicator
-        D0res_->replaceMap(A22_->getRangeMap());
-        D0x_  ->replaceMap(A22_->getDomainMap());
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
         if (!thyraPrec22_.is_null()) {
           Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-          RCP<Thyra::MultiVectorBase<Scalar> >       thyraD0x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0x_));
-          RCP<const Thyra::MultiVectorBase<Scalar> > thyraD0res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0res_);
+          RCP<Thyra::MultiVectorBase<Scalar> >       thyraD0x   = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<Scalar> >(Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0xSubComm_));
+          RCP<const Thyra::MultiVectorBase<Scalar> > thyraD0res = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyraMultiVector(D0resSubComm_);
           thyraPrec22_->getUnspecifiedPrecOp()->apply(Thyra::NOTRANS, *thyraD0res, thyraD0x.ptr(), one, zero);
           RCP<MultiVector> thyXpD0x = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toXpetra(thyraD0x, D0x_->getMap()->getComm());
-          *D0x_ = *thyXpD0x;
+          *D0xSubComm_ = *thyXpD0x;
         }
         else
 #endif
-          Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
-        D0x_  ->replaceMap(origXMap);
-        D0res_->replaceMap(origRhsMap);
+          Hierarchy22_->Iterate(*D0resSubComm_, *D0xSubComm_, numIters22_, true);
       }
 
     }
@@ -2516,13 +2519,6 @@ namespace MueLu {
       }
     }
 
-    if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
-    }
-    if (!Importer22_.is_null()) {
-      D0res_.swap(D0resTmp_);
-    }
-
   }
 
 
@@ -2544,20 +2540,10 @@ namespace MueLu {
       if (!ImporterH_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
-        P11res_.swap(P11resTmp_);
       }
       if (!AH_.is_null()) {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: solve coarse (1,1)", AH_->getRowMap()->getComm());
-
-        RCP<const Map> origXMap = P11x_->getMap();
-        RCP<const Map> origRhsMap = P11res_->getMap();
-
-        // Replace maps with maps with a subcommunicator
-        P11res_->replaceMap(AH_->getRangeMap());
-        P11x_  ->replaceMap(AH_->getDomainMap());
-        HierarchyH_->Iterate(*P11res_, *P11x_, numItersH_, true);
-        P11x_  ->replaceMap(origXMap);
-        P11res_->replaceMap(origRhsMap);
+        HierarchyH_->Iterate(*P11resSubComm_, *P11xSubComm_, numItersH_, true);
       }
     }
 
@@ -2565,9 +2551,6 @@ namespace MueLu {
       RCP<Teuchos::TimeMonitor> tmUp = getTimer("MueLu RefMaxwell: update");
       P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
       X.update(one, *residual_, one);
-    }
-    if (!ImporterH_.is_null()) {
-      P11res_.swap(P11resTmp_);
     }
 
   }
@@ -2591,20 +2574,10 @@ namespace MueLu {
       if (!Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
-        D0res_.swap(D0resTmp_);
       }
       if (!A22_.is_null()) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: solve (2,2)", A22_->getRowMap()->getComm());
-
-        RCP<const Map> origXMap = D0x_->getMap();
-        RCP<const Map> origRhsMap = D0res_->getMap();
-
-        // Replace maps with maps with a subcommunicator
-        D0res_->replaceMap(A22_->getRangeMap());
-        D0x_  ->replaceMap(A22_->getDomainMap());
-        Hierarchy22_->Iterate(*D0res_, *D0x_, numIters22_, true);
-        D0x_  ->replaceMap(origXMap);
-        D0res_->replaceMap(origRhsMap);
+        Hierarchy22_->Iterate(*D0resSubComm_, *D0xSubComm_, numIters22_, true);
       }
     }
 
@@ -2612,9 +2585,6 @@ namespace MueLu {
       RCP<Teuchos::TimeMonitor> tmUp = getTimer("MueLu RefMaxwell: update");
       D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS);
       X.update(one, *residual_, one);
-    }
-    if (!Importer22_.is_null()) {
-      D0res_.swap(D0resTmp_);
     }
 
   }
