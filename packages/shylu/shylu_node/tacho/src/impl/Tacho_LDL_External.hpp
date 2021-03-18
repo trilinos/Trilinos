@@ -41,8 +41,6 @@ namespace Tacho {
                                   P.data(),
                                   W.data(), W.extent(0),
                                   &r_val);          
-
-
         TACHO_TEST_FOR_EXCEPTION(r_val, std::runtime_error,
                                  "LAPACK (sytrf) returns non-zero error code.");
       }
@@ -50,6 +48,25 @@ namespace Tacho {
       TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
 #endif
       return r_val;
+    }
+
+    template<typename MemberType,
+             typename ViewTypeA,
+             typename ViewTypeP,
+             typename ViewTypeW>
+    inline
+    static int
+    invoke(MemberType &member,
+           const ViewTypeA &A,
+           const ViewTypeP &P,
+           const ViewTypeW &W) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      int r_val = 0;
+      r_val = invoke(A, P, W);
+      return r_val;
+#else
+      TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
+#endif
     }
 
     template<typename ViewTypeA,
@@ -140,6 +157,26 @@ namespace Tacho {
       TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
 #endif
       return r_val;
+    }
+
+
+    template<typename MemberType,
+             typename ViewTypeA,
+             typename ViewTypeP,
+             typename ViewTypeD>
+    inline
+    static int
+    modify(MemberType &member,
+           const ViewTypeA &A,
+           const ViewTypeP &P,
+           const ViewTypeD &D) {
+#if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
+      int r_val = 0;
+      r_val = modify(A, P, D);
+      return r_val;
+#else
+      TACHO_TEST_FOR_ABORT( true, ">> This function is only allowed in host space." );
+#endif
     }
 
   };

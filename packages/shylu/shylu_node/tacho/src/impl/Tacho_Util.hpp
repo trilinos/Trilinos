@@ -307,9 +307,9 @@ namespace Tacho {
   /// Tag struct
   ///
   struct NullTag { enum : int { tag = 0 }; };
-  struct PivotBaseIndex {
-    enum : int { Zero = 0,
-                 One = 1 };
+  struct PivotMode {
+    struct Flame {};  /// 0 base relative pivot index
+    struct Lapack {}; /// 1 base index
   };
 
   struct Partition {

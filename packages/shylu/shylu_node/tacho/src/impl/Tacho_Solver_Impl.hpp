@@ -749,27 +749,28 @@ namespace Tacho {
       }
     } else {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
-// #if !defined (KOKKOS_ENABLE_CUDA)
-//       const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
-// #endif
-//       TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
-//                                t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
-//       auto tt = Kokkos::subview(t, 
-//                                 Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
-//                                 Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
-//       if (_levelset) {
-//         if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
-//         else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
-//         else if (_variant == 2) _L2->solveCholesky(x, b, tt, _verbose);
-//       } 
-// #if !defined (KOKKOS_ENABLE_CUDA)
-//       else if (nthreads == 1) {
-//         _N->solveCholesky_Serial(x, b, tt, _verbose);
-//       }
-// #endif
-//       else {
-//         _N->solveCholesky_Parallel(x, b, tt, _verbose);
-//       }
+#if !defined (KOKKOS_ENABLE_CUDA)
+      const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+#endif
+      TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
+                               t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
+      auto tt = Kokkos::subview(t, 
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
+      if (_levelset) {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+        // if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
+        // else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
+        // else if (_variant == 2) _L2->solveCholesky(x, b, tt, _verbose);
+      } 
+#if !defined (KOKKOS_ENABLE_CUDA)
+      else if (nthreads == 1) {
+        _N->solveLDL_Serial(x, b, tt, _verbose);
+      }
+#endif
+      else {
+        //_N->solveCholesky_Parallel(x, b, tt, _verbose);
+      }
     }
     return 0;
   }

@@ -4,40 +4,23 @@
 /// \file Tacho_LDL_Supernodes.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Tacho_Util.hpp"
-
-#include "Tacho_Lapack_External.hpp"
-#include "Tacho_Lapack_Team.hpp"
-
-#include "Tacho_Blas_External.hpp"
-#include "Tacho_Blas_Team.hpp"
+#include "Tacho_CholSupernodes_Serial.hpp"
 
 #include "Tacho_Symmetrize.hpp"
 #include "Tacho_Symmetrize_Internal.hpp"
 
+#include "Tacho_ApplyPivots.hpp"
+#include "Tacho_ApplyPivots_Internal.hpp"
+
+#include "Tacho_Copy.hpp"
+#include "Tacho_Copy_Internal.hpp"
+
+#include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
+#include "Tacho_Scale2x2_BlockInverseDiagonals_Internal.hpp"
+
 #include "Tacho_LDL.hpp"
 #include "Tacho_LDL_External.hpp"
 #include "Tacho_LDL_Internal.hpp"
-
-#include "Tacho_Trsm.hpp"
-#include "Tacho_Trsm_External.hpp"
-#include "Tacho_Trsm_Internal.hpp"
-
-#include "Tacho_Herk.hpp"
-#include "Tacho_Herk_External.hpp"
-#include "Tacho_Herk_Internal.hpp"
-
-#include "Tacho_Gemm.hpp"
-#include "Tacho_Gemm_External.hpp"
-#include "Tacho_Gemm_Internal.hpp"
-
-#include "Tacho_Trsv.hpp"
-#include "Tacho_Trsv_External.hpp"
-#include "Tacho_Trsv_Internal.hpp"
-
-#include "Tacho_Gemv.hpp"
-#include "Tacho_Gemv_External.hpp"
-#include "Tacho_Gemv_Internal.hpp"
 
 namespace Tacho {
 
@@ -49,28 +32,25 @@ namespace Tacho {
       static int
       factorize(MemberType &member,
                 const SupernodeInfoType &info,
-                const typename SupernodeInfoType::ordinal_type_array &piv,
-                const typename SupernodeInfoType::value_type_matrix &diag,
-                const typename SupernodeInfoType::value_type_array &work,
+                const typename SupernodeInfoType::ordinal_type_array &P,
+                const typename SupernodeInfoType::value_type_matrix &D,
+                const typename SupernodeInfoType::value_type_array &W,
                 const typename SupernodeInfoType::value_type_matrix &ABR,
                 const ordinal_type sid) {
-        typedef SupernodeInfoType supernode_info_type;
-
-        typedef typename supernode_info_type::value_type value_type;
-        typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        printf("sid factorize begin %d\n", sid);
+        using supernode_info_type = SupernodeInfoType;
+        using value_type = typename supernode_info_type::value_type;
+        using value_type_matrix = typename supernode_info_type::value_type_matrix;
+        using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
 
         // algorithm choice
-        typedef typename std::conditional
+        using MainAlgoType = typename std::conditional
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type LDL_AlgoType;
+           Algo::External,Algo::Internal>::type;
 
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type TrsmAlgoType;
-
-        typedef typename std::conditional
-          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-           Algo::External,Algo::Internal>::type GemmAlgoType;
+        using LDL_AlgoType = MainAlgoType;
+        using TrsmAlgoType = MainAlgoType;
+        using GemmAlgoType = MainAlgoType;
 
         // get current supernode
         const auto &s = info.supernodes(sid);
@@ -86,412 +66,162 @@ namespace Tacho {
           /// LDL factorize ATL, extract diag, symmetrize ATL with unit diagonals
           UnmanagedViewType<value_type_matrix> ATL(ptr, m, m); ptr += m*m;
           Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
-          LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, piv, diag, work);
+          Tacho::LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
+          LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
 
-          // if (n > 0) {
-          //   const value_type one(1), zero(0);
-          //   UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); // ptr += m*n;
-          //   ApplyPivots<Side::Left,Trans::NoTranspose>
-          //     ::invoke(member, piv, ATR);
-          //   Trsm<Side::Left,Uplo::Upper,Trans::Transpose,TrsmAlgoType>
-          //     ::invoke(member, Diag::NonUnit(), one, ATL, ATR);
-          //   Copy<Trans::NoTranspose>
-          //     ::invoke(member, ATR, TMP);
-          //   ScaleInverse2x2Diagonals<Side::Left>
-          //     ::invoke(member, diag, ATR);
-          //   TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
-          //                        static_cast<ordinal_type>(ABR.extent(1)) != n,
-          //                        "ABR dimension does not match to supernodes");
-          //   Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
-          //     ::invoke(member, -one, ATR, TMP, zero, ABR);
-          // }
+          if (n > 0) {
+            const value_type one(1), zero(0);
+            UnmanagedViewType<value_type_matrix> ATR(ptr, m, n); ptr += m*n;
+            UnmanagedViewType<value_type_matrix> STR(ptr, m, n); ptr += m*n;
+            auto fpiv = ordinal_type_array(P.data()+m, m);
+            ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+              ::invoke(member, fpiv, ATR);
+            Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
+              ::invoke(member, Diag::Unit(), one, ATL, ATR);
+            Copy<Algo::Internal>
+              ::invoke(member, ATR, STR);
+            Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> /// row scaling
+              ::invoke(member, P, D, ATR);
+            TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
+                                 static_cast<ordinal_type>(ABR.extent(1)) != n,
+                                 "ABR dimension does not match to supernodes");
+            Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
+              ::invoke(member, -one, ATR, STR, zero, ABR);
+          }
         }
         return 0;
       }
 
-//       template<typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       update(MemberType &member,
-//              const SupernodeInfoType &info,
-//              const typename SupernodeInfoType::value_type_matrix &ABR,
-//              const ordinal_type sid,
-//              const size_type bufsize,
-//              /* */ void *buf) {
-
-//         typedef SupernodeInfoType supernode_info_type;
-
-//         typedef typename supernode_info_type::value_type value_type;
-//         typedef typename supernode_info_type::dense_block_type dense_block_type;
-
-//         const auto &cur = info.supernodes(sid);
-
-//         const ordinal_type 
-//           sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
-
-//         const ordinal_type 
-//           srcbeg  = info.sid_block_colidx(sbeg).second, 
-//           srcend  = info.sid_block_colidx(send).second, 
-//           srcsize = srcend - srcbeg;
+      template<typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_lower(MemberType &member,
+                  const SupernodeInfoType &info,
+                  const typename SupernodeInfoType::ordinal_type_array &P,
+                  const typename SupernodeInfoType::value_type_matrix &xB,
+                  const ordinal_type sid) {
+        using supernode_info_type = SupernodeInfoType;
+        using value_type = typename supernode_info_type::value_type;
+        using value_type_matrix = typename supernode_info_type::value_type_matrix;
+        using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
         
-//         // short cut to direct update
-//         if ((send - sbeg) == 1) {
-//           const auto &s = info.supernodes(info.sid_block_colidx(sbeg).first);
-//           const ordinal_type 
-//             tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
-//             tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
-//             tgtsize = tgtend - tgtbeg;
+        using range_type = Kokkos::pair<ordinal_type,ordinal_type>; 
+
+        const auto &s = info.supernodes(sid);
+
+        using MainAlgoType = typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type;
+
+        using TrsmAlgoType = MainAlgoType;
+        using TrsvAlgoType = MainAlgoType;
+        using GemmAlgoType = MainAlgoType;
+        using GemvAlgoType = MainAlgoType;
+
+        // get panel pointer
+        value_type *ptr = s.buf; 
+
+        // panel is divided into diagonal and interface block
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
+
+        // m and n are available, then factorize the supernode block
+        if (m > 0) {
+          const value_type one(1), zero(0);
+          const ordinal_type offm = s.row_begin;
+          UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
+          const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
+          const auto fpiv = ordinal_type_array(P.data()+m, m);
+
+          ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+            ::invoke(member, fpiv, xT);
           
-//           if (srcsize == tgtsize) {
-//             /* */ value_type *tgt = s.buf;
-//             const value_type *src = (value_type*)ABR.data();
-
-// #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-//             // lock
-//             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
-//             Kokkos::store_fence();
+          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+            Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
+              ::invoke(member, Diag::Unit(), one, AL, xT);
+          else
+            Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
+              ::invoke(member, Diag::NonUnit(), AL, xT);
             
-//             for (ordinal_type j=0;j<srcsize;++j) {
-//               const value_type *__restrict__ ss = src + j*srcsize;
-//               /* */ value_type *__restrict__ tt = tgt + j*srcsize;
-// #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-// #pragma unroll
-// #endif
-//               for (ordinal_type i=0;i<(j+1);++i)
-//                 tt[i] += ss[i];
-//             }
+          if (n > 0) {
+            UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+              Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
+                ::invoke(member, -one, AR, xT, zero, xB);
+            else
+              Gemv<Trans::Transpose,GemvAlgoType>
+                ::invoke(member, -one, AR, xT, zero, xB);
+          }
+        }
+        return 0;
+      }
 
-//             // unlock
-//             s.lock = 0;
-//             Kokkos::load_fence();
-// #else
-//             Kokkos::parallel_for
-//               (Kokkos::TeamThreadRange(member, srcsize), [&](const ordinal_type &j) {
-//                 const value_type *__restrict__ ss = src + j*srcsize;
-//                 /* */ value_type *__restrict__ tt = tgt + j*srcsize;
-//                 Kokkos::parallel_for
-//                   (Kokkos::ThreadVectorRange(member, j+1), [&](const ordinal_type &i) {
-//                     Kokkos::atomic_add(&tt[i], ss[i]);
-//                   });
-//               });
-// #endif
+      template<typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_upper(MemberType &member,
+                  const SupernodeInfoType &info,
+                  const typename SupernodeInfoType::ordinal_type_array &P,
+                  const typename SupernodeInfoType::value_type_matrix &D,
+                  const typename SupernodeInfoType::value_type_matrix &xB,
+                  const ordinal_type sid) {
+        using supernode_info_type = SupernodeInfoType;
 
-//             return 0;
-//           }
-//         } 
-        
-//         const ordinal_type *s_colidx = sbeg < send ? &info.gid_colidx(cur.gid_col_begin + srcbeg) : NULL;
+        using value_type = typename supernode_info_type::value_type; 
+        using value_type_matrix = typename supernode_info_type::value_type_matrix;
+        using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
 
-//         // loop over target
-// #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-//         ordinal_type *s2t = (ordinal_type*)buf;
-//         const size_type s2tsize = srcsize*sizeof(ordinal_type);
-//         TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");       
- 
-//         for (ordinal_type i=sbeg;i<send;++i) {
-//           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-//           {
-//             const ordinal_type 
-//               tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
-//               tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
-//               tgtsize = tgtend - tgtbeg;
-            
-//             const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-//             for (ordinal_type k=0,l=0;k<srcsize;++k) {
-//               s2t[k] = -1;
-//               for (;l<tgtsize && t_colidx[l] <= s_colidx[k];++l)
-//                 if (s_colidx[k] == t_colidx[l]) {
-//                   s2t[k] = l; 
-//                   break;
-//                 }
-//             }
-//           }
+        using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
 
-//           {
-//             dense_block_type A;
-//             A.set_view(s.m, s.n);
-//             A.attach_buffer(1, s.m, s.buf);
-            
-//             ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
+        using MainAlgoType = typename std::conditional
+          <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
+           Algo::External,Algo::Internal>::type;
+        using GemmAlgoType = MainAlgoType;
+        using GemvAlgoType = MainAlgoType;
+        using TrsmAlgoType = MainAlgoType;
+        using TrsvAlgoType = MainAlgoType;
 
-//             // lock
-//             while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
-//             Kokkos::store_fence();            
+        // get current supernode
+        const auto &s = info.supernodes(sid);
 
-//             for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
-// #if defined(KOKKOS_ENABLE_PRAGMA_UNROLL)
-// #pragma unroll
-// #endif
-//               for (ordinal_type ii=ijbeg;ii<srcsize;++ii) {
-//                 const ordinal_type row = s2t[ii];
-//                 if (row < s.m) A(row, s2t[jj]) += ABR(ii, jj);
-//                 else break;
-//               }
-            
-//             // unlock
-//             s.lock = 0;
-//             Kokkos::load_fence();
-//           }
-//         }
-// #else        
-//         // CUDA version
-//         const size_type s2tsize = srcsize*sizeof(ordinal_type)*member.team_size();
-//         TACHO_TEST_FOR_ABORT(bufsize < s2tsize, "bufsize is smaller than required s2t workspace");       
-//         Kokkos::parallel_for(Kokkos::TeamThreadRange(member, sbeg, send), [&](const ordinal_type &i) {
-//             ordinal_type *s2t = ((ordinal_type*)(buf)) + member.team_rank()*srcsize;
-//             const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-//             {
-//               const ordinal_type 
-//                 tgtbeg  = info.sid_block_colidx(s.sid_col_begin).second,
-//                 tgtend  = info.sid_block_colidx(s.sid_col_end-1).second,
-//                 tgtsize = tgtend - tgtbeg;
-              
-//               const ordinal_type *t_colidx = &info.gid_colidx(s.gid_col_begin + tgtbeg);
-//               Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, srcsize), [&](const ordinal_type &k) {
-//                   s2t[k] = -1;
-//                   auto found = lower_bound(&t_colidx[0], &t_colidx[tgtsize-1], s_colidx[k], 
-//                                            [](ordinal_type left, ordinal_type right) { 
-//                                              return left < right; 
-//                                            });
-//                   if (s_colidx[k] == *found) {
-//                     s2t[k] = found - t_colidx;
-//                   }
-//                 });
-//             }
-//             {
-//               dense_block_type A;
-//               A.set_view(s.m, s.n);
-//               A.attach_buffer(1, s.m, s.buf);
-              
-//               ordinal_type ijbeg = 0; for (;s2t[ijbeg] == -1; ++ijbeg) ;
-      
-//               Kokkos::parallel_for
-//                 (Kokkos::ThreadVectorRange(member, srcsize-ijbeg), [&](const ordinal_type &iii) {
-//                   const ordinal_type ii = ijbeg + iii;
-//                   const ordinal_type row = s2t[ii];
-//                   if (row < s.m) 
-//                     for (ordinal_type jj=ijbeg;jj<srcsize;++jj) 
-//                       Kokkos::atomic_add(&A(row, s2t[jj]), ABR(ii, jj));
-//                 });              
-//             }
-//           });
-// #endif
-//         return 0;
-//       }
+        // get supernode panel pointer
+        value_type *ptr = s.buf;
 
-//       template<typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       solve_lower(MemberType &member,
-//                   const SupernodeInfoType &info,
-//                   const typename SupernodeInfoType::value_type_matrix &xB,
-//                   const ordinal_type sid) {
-//         typedef SupernodeInfoType supernode_info_type;
+        // panel is divided into diagonal and interface block
+        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
 
-//         typedef typename supernode_info_type::value_type value_type;
-//         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        // m and n are available, then factorize the supernode block
+        if (m > 0) {
+          const value_type one(1);
+          const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
 
-//         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
+          const ordinal_type offm = s.row_begin;
+          const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
+          const auto fpiv = ordinal_type_array(P.data()+m, m);
 
-//         const auto &s = info.supernodes(sid);
-
-//         typedef typename std::conditional
-//           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-//            Algo::External,Algo::Internal>::type TrsmAlgoType;
-
-//         typedef typename std::conditional
-//           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-//            Algo::External,Algo::Internal>::type GemmAlgoType;
-
-//         // get panel pointer
-//         value_type *ptr = s.buf; 
-
-//         // panel is divided into diagonal and interface block
-//         const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
-
-//         // m and n are available, then factorize the supernode block
-//         if (m > 0) {
-//           const value_type one(1), zero(0);
-//           const ordinal_type offm = s.row_begin;
-//           UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
-//           auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
-
-//           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-//             Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
-//               ::invoke(member, Diag::NonUnit(), one, AL, xT);
-//           else
-//             Trsv<Uplo::Upper,Trans::ConjTranspose,TrsmAlgoType>
-//               ::invoke(member, Diag::NonUnit(), AL, xT);
-            
-//           if (n > 0) {
-//             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-//             if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-//               Gemm<Trans::ConjTranspose,Trans::NoTranspose,GemmAlgoType>
-//                 ::invoke(member, -one, AR, xT, zero, xB);
-//             else
-//               Gemv<Trans::ConjTranspose,GemmAlgoType>
-//                 ::invoke(member, -one, AR, xT, zero, xB);
-//           }
-//         }
-//         return 0;
-//       }
-
-//       template<typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       update_solve_lower(MemberType &member,
-//                          const SupernodeInfoType &info,
-//                          const typename SupernodeInfoType::value_type_matrix &xB,
-//                          const ordinal_type sid) {
-//         //typedef SupernodeInfoType supernode_info_type;
-//         //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-//         const auto &cur = info.supernodes(sid);
-//         const ordinal_type 
-//           sbeg = cur.sid_col_begin + 1, send = cur.sid_col_end - 1;
-
-//         const ordinal_type m = xB.extent(0), n = xB.extent(1);
-//         TACHO_TEST_FOR_ABORT(m != (cur.n-cur.m), "# of rows in xB does not match to super blocksize in sid");
-        
-// #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)        
-//         for (ordinal_type i=sbeg,is=0;i<send;++i) {
-//           const ordinal_type 
-//             tbeg = info.sid_block_colidx(i).second,
-//             tend = info.sid_block_colidx(i+1).second;
-          
-//           // lock
-//           const auto &s = info.supernodes(info.sid_block_colidx(i).first);
-//           while (Kokkos::atomic_compare_exchange(&s.lock, 0, 1)) KOKKOS_IMPL_PAUSE;
-//           Kokkos::store_fence();            
-          
-//           // both src and tgt increase index
-//           for (ordinal_type it=tbeg;it<tend;++it,++is) {
-//             const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
-//             for (ordinal_type j=0;j<n;++j) 
-//               info.x(row,j) += xB(is,j);
-//           }
-          
-//           // unlock
-//           s.lock = 0;
-//           Kokkos::load_fence();          
-//         }
-// #else
-//         Kokkos::single(Kokkos::PerTeam(member), [&]() {
-//             for (ordinal_type i=sbeg,is=0;i<send;++i) {
-//               const ordinal_type 
-//                 tbeg = info.sid_block_colidx(i).second,
-//                 tend = info.sid_block_colidx(i+1).second;
-              
-//               for (ordinal_type it=tbeg;it<tend;++it,++is) {
-//                 const ordinal_type row = info.gid_colidx(cur.gid_col_begin + it);
-//                 for (ordinal_type j=0;j<n;++j) 
-//                   Kokkos::atomic_add(&info.x(row,j), xB(is,j));
-//               }
-//             }
-//           });
-// #endif        
-//         return 0;
-//       }
-      
-//       template<typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       solve_upper(MemberType &member,
-//                   const SupernodeInfoType &info,
-//                   const typename SupernodeInfoType::value_type_matrix &xB,
-//                   const ordinal_type sid) {
-//         typedef SupernodeInfoType supernode_info_type;
-
-//         typedef typename supernode_info_type::value_type value_type;
-//         typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-//         typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-
-//         typedef typename std::conditional
-//           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-//            Algo::External,Algo::Internal>::type GemmAlgoType;
-
-//         typedef typename std::conditional
-//           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
-//            Algo::External,Algo::Internal>::type TrsmAlgoType;
-
-//         // get current supernode
-//         const auto &s = info.supernodes(sid);
-
-//         // get supernode panel pointer
-//         value_type *ptr = s.buf;
-
-//         // panel is divided into diagonal and interface block
-//         const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
-
-//         // m and n are available, then factorize the supernode block
-//         if (m > 0) {
-//           const value_type one(1);
-//           const UnmanagedViewType<value_type_matrix> AL(ptr, m, m); ptr += m*m;
-
-//           const ordinal_type offm = s.row_begin;
-//           const auto xT = Kokkos::subview(info.x, range_type(offm, offm+m), Kokkos::ALL());
-
-//           if (n > 0) {
-//             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-//             if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-//               Gemm<Trans::NoTranspose,Trans::NoTranspose,GemmAlgoType>
-//                 ::invoke(member, -one, AR, xB, one, xT);
-//             else
-//               Gemv<Trans::NoTranspose,GemmAlgoType>
-//                 ::invoke(member, -one, AR, xB, one, xT);
-//           }
-//           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-//             Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-//               ::invoke(member, Diag::NonUnit(), one, AL, xT);
-//           else
-//             Trsv<Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
-//               ::invoke(member, Diag::NonUnit(), AL, xT);
-//         }
-//         return 0;
-//       }
-
-//       template<typename MemberType,
-//                typename SupernodeInfoType>
-//       KOKKOS_INLINE_FUNCTION
-//       static int
-//       update_solve_upper(MemberType &member,
-//                          const SupernodeInfoType &info,
-//                          const typename SupernodeInfoType::value_type_matrix &xB,
-//                          const ordinal_type sid) {
-
-//         //typedef SupernodeInfoType supernode_info_type;
-//         //typedef typename supernode_info_type::value_type_matrix value_type_matrix;
-
-//         const auto &s = info.supernodes(sid);
-
-//         const ordinal_type m = xB.extent(0), n = xB.extent(1);
-//         TACHO_TEST_FOR_ABORT(m != (s.n-s.m), "# of rows in xB does not match to super blocksize in sid");
-
-//         const ordinal_type goffset = s.gid_col_begin + s.m;
-// #if defined (KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
-//         for (ordinal_type j=0;j<n;++j)
-//           for (ordinal_type i=0;i<m;++i) {
-//             const ordinal_type row = info.gid_colidx(i+goffset);
-//             xB(i,j) = info.x(row,j);
-//           }
-// #else
-//         Kokkos::parallel_for
-//           (Kokkos::TeamThreadRange(member, n), [&](const ordinal_type &j) {
-//             Kokkos::parallel_for
-//               (Kokkos::ThreadVectorRange(member, m), [&](const ordinal_type &i) {
-//                 const ordinal_type row = info.gid_colidx(i+goffset);
-//                 xB(i,j) = info.x(row,j);
-//               });
-//           });
-// #endif
-
-//         return 0;
-//       }
+          if (n > 0) {
+            const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
+            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+              Gemm<Trans::NoTranspose,Trans::NoTranspose,GemmAlgoType>
+                ::invoke(member, -one, AR, xB, one, xT);
+            else
+              Gemv<Trans::NoTranspose,GemvAlgoType>
+                ::invoke(member, -one, AR, xB, one, xT);
+          }
+          Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> /// row scaling
+            ::invoke(member, P, D, xT);
+          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
+            Trsm<Side::Left,Uplo::Lower,Trans::Transpose,TrsmAlgoType>
+              ::invoke(member, Diag::NonUnit(), one, AL, xT);
+          else
+            Trsv<Uplo::Lower,Trans::Transpose,TrsvAlgoType>
+              ::invoke(member, Diag::NonUnit(), AL, xT);
+          ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
+            ::invoke(member, fpiv, xT);
+        }
+        return 0;
+      }
 
       template<typename MemberType,
                typename SupernodeInfoType>
@@ -501,9 +231,9 @@ namespace Tacho {
                                  const SupernodeInfoType &info,
                                  const ordinal_type sid,
                                  const bool final,
-                                 typename SupernodeInfoType::ordinal_type *piv,                                 
-                                 typename SupernodeInfoType::value_type *diag,                                 
-                                 typename SupernodeInfoType::value_type *buf,
+                                 typename SupernodeInfoType::ordinal_type_array::pointer_type piv,
+                                 typename SupernodeInfoType::value_type_array::pointer_type diag,
+                                 typename SupernodeInfoType::value_type_array::pointer_type buf,
                                  const size_type bufsize) {
         using supernode_info_type = SupernodeInfoType;
         using value_type = typename supernode_info_type::value_type;
@@ -512,7 +242,7 @@ namespace Tacho {
         using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
 
         const auto &s = info.supernodes(sid);
-
+        printf("LDL recursion sid %d\n", sid);
         if (final) {
           // serial recursion
           for (ordinal_type i=0;i<s.nchildren;++i)
@@ -525,115 +255,130 @@ namespace Tacho {
         {
           const ordinal_type m = s.m;
           const ordinal_type rbeg = s.row_begin;
-          UnmanagedViewType<ordinal_type_array> ipiv(piv+rbeg, m); 
+          UnmanagedViewType<ordinal_type_array> ipiv(piv+rbeg*4, 4*m); 
           UnmanagedViewType<value_type_matrix> dblk(diag+rbeg*2, m, 2); 
           
           const ordinal_type n = s.n - s.m;
-          const size_type bufsize_required = (n*(n+1) + n*32)*sizeof(value_type);
+
+          const ordinal_type mm = m > 32 ? m : 32;
+          const size_type bufsize_required = (n*(n+1) + n*mm)*sizeof(value_type);
           TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
                                "bufsize is smaller than required");
           value_type * bufptr = buf;
           UnmanagedViewType<value_type_matrix> ABR(bufptr, n, n); bufptr += ABR.span();
-          UnmanagedViewType<value_type_array> w(bufptr, 32*n); bufptr += w.span();
+          UnmanagedViewType<value_type_array> w(bufptr, n*mm); bufptr += w.span();
           
           LDL_Supernodes<Algo::Workflow::Serial>
             ::factorize(member, info, ipiv, dblk, w, ABR, sid);
-
-          // LDL_Supernodes<Algo::Workflow::Serial>
-          //   ::update(member, info, ABR, sid,
-          //            bufsize - ABR.span()*sizeof(value_type),
-          //            (void*)(work));
+          
+          /// assembly is same
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update(member, info, ABR, sid,
+                     bufsize - ABR.span()*sizeof(value_type),
+                     (void*)(w.data()));
         }
         return 0;
       }
 
 
-      // template<typename MemberType,
-      //          typename SupernodeInfoType>
-      // KOKKOS_INLINE_FUNCTION
-      // static int
-      // solve_lower_recursive_serial(MemberType &member,
-      //                              const SupernodeInfoType &info,
-      //                              const ordinal_type sid,
-      //                              const bool final,
-      //                              typename SupernodeInfoType::value_type *buf,
-      //                              const size_type bufsize) {
-      //   typedef SupernodeInfoType supernode_info_type;
+      template<typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_lower_recursive_serial(MemberType &member,
+                                   const SupernodeInfoType &info,
+                                   const ordinal_type sid,
+                                   const bool final,
+                                   typename SupernodeInfoType::ordinal_type_array::pointer_type piv,
+                                   typename SupernodeInfoType::value_type_array::pointer_type buf,
+                                   const size_type bufsize) {
+        using supernode_info_type = SupernodeInfoType;
         
-      //   typedef typename supernode_info_type::value_type value_type;
-      //   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+        using value_type = typename supernode_info_type::value_type;
+        using value_type_matrix = typename supernode_info_type::value_type_matrix;
+        using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
         
-      //   const auto &s = info.supernodes(sid);
+        const auto &s = info.supernodes(sid);
         
-      //   if (final) {
-      //     // serial recursion
-      //     for (ordinal_type i=0;i<s.nchildren;++i)
-      //       solve_lower_recursive_serial(member, info, 
-      //                                    s.children[i], final, buf, bufsize);
-      //   }
+        if (final) {
+          // serial recursion
+          for (ordinal_type i=0;i<s.nchildren;++i)
+            solve_lower_recursive_serial(member, info, 
+                                         s.children[i], final, piv, buf, bufsize);
+        }
 
-      //   {
-      //     const ordinal_type n = s.n - s.m;
-      //     const ordinal_type nrhs = info.x.extent(1);
-      //     const size_type bufsize_required = n*nrhs*sizeof(value_type);
+        {
+          const ordinal_type m = s.m;
+          const ordinal_type rbeg = s.row_begin;
+          UnmanagedViewType<ordinal_type_array> ipiv(piv+rbeg*4, 4*m); 
 
-      //     TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
-      //                          "bufsize is smaller than required");
+          const ordinal_type n = s.n - s.m;
+          const ordinal_type nrhs = info.x.extent(1);
+          const size_type bufsize_required = n*nrhs*sizeof(value_type);
 
-      //     UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
+                               "bufsize is smaller than required");
 
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::solve_lower(member, info, xB, sid);
+          UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::update_solve_lower(member, info, xB, sid);
-      //   }
-      //   return 0;
-      // }
+          LDL_Supernodes<Algo::Workflow::Serial>
+            ::solve_lower(member, info, ipiv, xB, sid);
 
-
-      // template<typename MemberType,
-      //          typename SupernodeInfoType>
-      // KOKKOS_INLINE_FUNCTION
-      // static int
-      // solve_upper_recursive_serial(MemberType &member,
-      //                              const SupernodeInfoType &info,
-      //                              const ordinal_type sid,
-      //                              const bool final,
-      //                              typename SupernodeInfoType::value_type *buf,
-      //                              const ordinal_type bufsize) {
-      //   typedef SupernodeInfoType supernode_info_type;
-        
-      //   typedef typename supernode_info_type::value_type value_type;
-      //   typedef typename supernode_info_type::value_type_matrix value_type_matrix;
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update_solve_lower(member, info, xB, sid);
+        }
+        return 0;
+      }
 
 
-      //   const auto &s = info.supernodes(sid);        
-      //   {
-      //     const ordinal_type n = s.n - s.m;
-      //     const ordinal_type nrhs = info.x.extent(1);
-      //     const ordinal_type bufsize_required = n*nrhs*sizeof(value_type);
+      template<typename MemberType,
+               typename SupernodeInfoType>
+      KOKKOS_INLINE_FUNCTION
+      static int
+      solve_upper_recursive_serial(MemberType &member,
+                                   const SupernodeInfoType &info,
+                                   const ordinal_type sid,
+                                   const bool final,
+                                   typename SupernodeInfoType::ordinal_type_array::pointer_type piv,
+                                   typename SupernodeInfoType::value_type_array::pointer_type diag,
+                                   typename SupernodeInfoType::value_type_array::pointer_type buf,
+                                   const ordinal_type bufsize) {
+        using supernode_info_type = SupernodeInfoType;
+        using value_type = typename supernode_info_type::value_type;
+        using value_type_matrix = typename supernode_info_type::value_type_matrix;
+        using ordinal_type_array = typename supernode_info_type::ordinal_type_array;
+
+        const auto &s = info.supernodes(sid);        
+        {
+          const ordinal_type m = s.m;
+          const ordinal_type rbeg = s.row_begin;
+          UnmanagedViewType<ordinal_type_array> ipiv(piv+rbeg*4, 4*m); 
+          UnmanagedViewType<value_type_matrix> dblk(diag+rbeg*2, m, 2); 
+
+          const ordinal_type n = s.n - s.m;
+          const ordinal_type nrhs = info.x.extent(1);
+          const ordinal_type bufsize_required = n*nrhs*sizeof(value_type);
           
-      //     TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
-      //                          "bufsize is smaller than required");
+          TACHO_TEST_FOR_ABORT(bufsize < bufsize_required, 
+                               "bufsize is smaller than required");
 
-      //     UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
+          UnmanagedViewType<value_type_matrix> xB((value_type*)buf, n, nrhs);
 
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::update_solve_upper(member, info, xB, sid);
+          CholSupernodes<Algo::Workflow::Serial>
+            ::update_solve_upper(member, info, xB, sid);
 
-      //     CholSupernodes<Algo::Workflow::Serial>
-      //       ::solve_upper(member, info, xB, sid);
-      //   }
+          LDL_Supernodes<Algo::Workflow::Serial>
+            ::solve_upper(member, info, ipiv, dblk, xB, sid);
+        }
 
-      //   if (final) {
-      //     // serial recursion
-      //     for (ordinal_type i=0;i<s.nchildren;++i)
-      //       solve_upper_recursive_serial(member, info, 
-      //                                    s.children[i], final, buf, bufsize);
-      //   }
-      //   return 0;
-      // }
+        if (final) {
+          // serial recursion
+          for (ordinal_type i=0;i<s.nchildren;++i)
+            solve_upper_recursive_serial(member, info, 
+                                         s.children[i], final, piv, diag, buf, bufsize);
+        }
+        return 0;
+      }
 
     };
 }
