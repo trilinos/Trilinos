@@ -67,7 +67,6 @@ namespace Tacho {
           Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
           LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
           LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
-          Symmetrize<Uplo::Lower,Algo::Internal>::invoke(member, ATL);
 
           if (n > 0) {
             const value_type one(1), zero(0);
@@ -139,10 +138,10 @@ namespace Tacho {
             ::invoke(member, fpiv, xT);
           
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-            Trsm<Side::Left,Uplo::Upper,Trans::Transpose,TrsmAlgoType>
+            Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
               ::invoke(member, Diag::Unit(), one, AL, xT);
           else
-            Trsv<Uplo::Upper,Trans::Transpose,TrsvAlgoType>
+            Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
               ::invoke(member, Diag::Unit(), AL, xT);
             
           if (n > 0) {
@@ -215,10 +214,10 @@ namespace Tacho {
                 ::invoke(member, -one, AR, xB, one, xT);
           }
           if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-            Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,TrsmAlgoType>
+            Trsm<Side::Left,Uplo::Lower,Trans::Transpose,TrsmAlgoType>
               ::invoke(member, Diag::Unit(), one, AL, xT);
           else
-            Trsv<Uplo::Upper,Trans::NoTranspose,TrsvAlgoType>
+            Trsv<Uplo::Lower,Trans::Transpose,TrsvAlgoType>
               ::invoke(member, Diag::Unit(), AL, xT);
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, xT);
