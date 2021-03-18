@@ -9,10 +9,14 @@ namespace Teuchos {
 /* just some wrappers over std::vector to let us
    do all indexing with int */
 
+// This fixes a bug with nvcc-11, where it pulls in std::size(std::vector) and fails to compile
+// with an error that size(std::vector) is ambiguous.
+#if __cplusplus < 201703L
 template <typename T>
 inline int size(std::vector<T> const& v) {
   return int(v.size());
 }
+#endif
 
 template <typename T>
 inline typename std::vector<T>::reference at(std::vector<T>& v, int i) {
