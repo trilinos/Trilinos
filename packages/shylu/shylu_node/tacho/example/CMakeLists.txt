@@ -21,47 +21,24 @@ TRIBITS_ADD_EXECUTABLE(
   SOURCES Tacho_ExampleDeviceDenseSolver_double.cpp
   COMM serial mpi
 )
-# TRIBITS_ADD_EXECUTABLE(
-#   Tacho_ExampleDeviceDenseSolverDoubleComplex
-#   NOEXEPREFIX
-#   SOURCES Tacho_ExampleDeviceDenseSolver_dcomplex.cpp
-#   COMM serial mpi
-# )
+TRIBITS_ADD_EXECUTABLE(
+  Tacho_ExampleDeviceDenseSolverDoubleComplex
+  NOEXEPREFIX
+  SOURCES Tacho_ExampleDeviceDenseSolver_dcomplex.cpp
+  COMM serial mpi
+)
 
 
 IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes
   # 
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleCholSupernodesTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleCholSupernodes.cpp
-  #   COMM serial mpi
-  # )
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleCholSupernodesTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+    Tacho_ExampleCholSupernodes
     NOEXEPREFIX
     SOURCES Tacho_ExampleCholSupernodes.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleCholSupernodesChaseLevTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleCholSupernodes.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleLDL_SupernodesTaskSchedulerMultiple
-  #   TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleLDL_Supernodes.cpp
-  #   COMM serial mpi
-  # )
-
   TRIBITS_ADD_EXECUTABLE(
     Tacho_ExampleCholTriSolveVar0
     TARGET_DEFINES -DTACHO_USE_TRISOLVE_VARIANT=0
@@ -94,48 +71,18 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Solver
   #
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleSolverDoubleTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleSolver_double.cpp
-  #   COMM serial mpi
-  # )
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolverDoubleTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+    Tacho_ExampleSolverDouble
     NOEXEPREFIX
     SOURCES Tacho_ExampleSolver_double.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleSolverDoubleChaseLevTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleSolver_double.cpp
-  #   COMM serial mpi
-  # )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleSolverDoubleComplexTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleSolver_dcomplex.cpp
-  #   COMM serial mpi
-  # )
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleSolverDoubleComplexTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+    Tacho_ExampleSolverDoubleComplex
     NOEXEPREFIX
     SOURCES Tacho_ExampleSolver_dcomplex.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleSolverDoubleComplexChaseLevTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleSolver_dcomplex.cpp
-  #   COMM serial mpi
-  # )
 
   #
   # External Interface
@@ -150,27 +97,12 @@ IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # DenseByBlocks 
   #
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseByBlocksTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseByBlocks.cpp
-  #   COMM serial mpi
-  # )
   TRIBITS_ADD_EXECUTABLE(
-    Tacho_ExampleDenseByBlocksTaskSchedulerMultiple
-    TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+    Tacho_ExampleDenseByBlocks
     NOEXEPREFIX
     SOURCES Tacho_ExampleDenseByBlocks.cpp
     COMM serial mpi
   )
-  # TRIBITS_ADD_EXECUTABLE(
-  #   Tacho_ExampleDenseByBlocksChaseLevTaskScheduler
-  #   TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
-  #   NOEXEPREFIX
-  #   SOURCES Tacho_ExampleDenseByBlocks.cpp
-  #   COMM serial mpi
-  # )
 
   #
   # NVIDIA cuSolver
@@ -190,8 +122,6 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     )
   ENDIF()
 
-
-
   #
   # Intel MKL Pardiso and PerfTest
   #
@@ -204,27 +134,12 @@ IF (TACHO_HAVE_KOKKOS_TASK)
         COMM serial mpi
       )
     ENDIF()
-    # TRIBITS_ADD_EXECUTABLE(
-    #   Tacho_ExamplePerfTestTaskScheduler
-    #   TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER
-    #   NOEXEPREFIX
-    #   SOURCES Tacho_ExamplePerfTest.cpp
-    #   COMM serial mpi
-    # )
     TRIBITS_ADD_EXECUTABLE(
-      Tacho_ExamplePerfTestTaskSchedulerMultiple
-      TARGET_DEFINES -DTACHO_USE_TASKSCHEDULER_MULTIPLE
+      Tacho_ExamplePerfTest
       NOEXEPREFIX
       SOURCES Tacho_ExamplePerfTest.cpp
       COMM serial mpi
     )
-    # TRIBITS_ADD_EXECUTABLE(
-    #   Tacho_ExamplePerfTestChaseLevTaskScheduler
-    #   TARGET_DEFINES -DTACHO_USE_CHASELEV_TASKSCHEDULER
-    #   NOEXEPREFIX
-    #   SOURCES Tacho_ExamplePerfTest.cpp
-    #   COMM serial mpi
-    # )
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Tacho_SimpleSparseTest_File
