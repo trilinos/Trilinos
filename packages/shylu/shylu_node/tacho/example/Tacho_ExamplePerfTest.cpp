@@ -89,7 +89,7 @@ int main (int argc, char *argv[]) {
     typedef double value_type;
 
     /// device type
-    typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+    typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
     /// crs matrix format and dense multi vector
     typedef Tacho::CrsMatrixBase<value_type,host_device_type> CrsMatrixBaseType;

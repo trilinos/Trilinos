@@ -13,7 +13,7 @@ namespace Tacho {
       typedef SchedulerType scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;                                                                                                           
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;                                                                                                           
 
       typedef void* value_type; // functor return type
       typedef Kokkos::BasicFuture<void*,scheduler_type> future_type;
@@ -52,7 +52,7 @@ namespace Tacho {
       typedef SchedulerType scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;                                                                                                           
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;                                                                                                           
       
       typedef void value_type; // functor return type
       typedef Kokkos::BasicFuture<void,scheduler_type> future_type;
@@ -93,7 +93,7 @@ namespace Tacho {
       typedef SchedulerType scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;                                                                                                           
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;                                                                                                           
 
       typedef Kokkos::View<double**,Kokkos::LayoutLeft,device_type,Kokkos::MemoryUnmanaged> value_type;
       typedef Kokkos::BasicFuture<value_type,scheduler_type> future_type;
@@ -144,7 +144,7 @@ namespace Tacho {
       typedef SchedulerType scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;                                                                                                           
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;                                                                                                           
 
       typedef void value_type;
       typedef Kokkos::BasicFuture<scheduler_type> future_type;

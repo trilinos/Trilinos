@@ -17,7 +17,7 @@ namespace Tacho {
       typedef SchedulerType scheduler_type;
       typedef typename scheduler_type::member_type member_type;
 
-      typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;                                                                                                           
+      typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;                                                                                                           
       
       typedef Kokkos::MemoryPool<device_type> memory_pool_type;
       

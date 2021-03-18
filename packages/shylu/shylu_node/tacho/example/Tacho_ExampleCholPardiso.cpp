@@ -33,7 +33,7 @@ int main (int argc, char *argv[]) {
   
   Kokkos::initialize(argc, argv);
 
-  typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+  typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
   printExecSpaceConfiguration<typename host_device_type::execution_space>("HostDevice", false);
 
   int r_val = 0;

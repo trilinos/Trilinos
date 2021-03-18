@@ -10,7 +10,7 @@ namespace Tacho {
 
     class SymbolicTools {
     public:
-      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+      typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
       typedef typename host_device_type::execution_space host_space;
       typedef typename host_device_type::memory_space host_memory_space;
 

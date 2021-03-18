@@ -7,8 +7,8 @@
 
 using namespace Tacho;
 
-typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;
-typedef typename UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type DeviceType;
+typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type HostDeviceType;
+typedef typename UseThisDevice<Kokkos::DefaultExecutionSpace>::type DeviceType;
 
 #define TEST_BEGIN 
 #define TEST_END   

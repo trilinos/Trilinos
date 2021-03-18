@@ -30,8 +30,8 @@ int driver_ldl (const int m, const bool verbose) {
   Kokkos::Impl::Timer timer;
   const bool detail = false;
 
-  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
-  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
   Tacho::printExecSpaceConfiguration<typename device_type::execution_space>("DeviceSpace", detail);
   Tacho::printExecSpaceConfiguration<typename host_device_type::execution_space>("HostSpace",   detail);

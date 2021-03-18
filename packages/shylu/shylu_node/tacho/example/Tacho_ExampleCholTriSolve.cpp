@@ -63,8 +63,8 @@ int main (int argc, char *argv[]) {
   cudaProfilerStop();
 #endif
 
-  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type device_type;
-  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type device_type;
+  typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
 
   typedef TaskSchedulerType<typename device_type::execution_space> scheduler_type;
 

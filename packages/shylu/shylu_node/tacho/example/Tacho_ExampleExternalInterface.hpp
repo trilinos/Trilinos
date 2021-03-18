@@ -28,10 +28,10 @@ namespace tacho {
      INDEX_LENGTH
     };
 
-  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type;
+  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
   using exec_space = typename device_type::execution_space;
   
-  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type;
+  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
   using host_space = typename host_device_type::execution_space;
 
   using ViewVectorType = Kokkos::View<double*,device_type>; 
