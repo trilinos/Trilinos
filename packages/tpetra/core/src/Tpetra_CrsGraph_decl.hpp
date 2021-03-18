@@ -2150,22 +2150,28 @@ public:
     global_size_t globalMaxNumRowEntries_ =
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
-    /// WDV NEW
+    // Replacement for device view k_rowPtrs_
+    // Device view k_rowPtrs_dev_ takes place of k_rowPtrs_ 
+    // Host view k_rowPtrs_host_ takes place of copies and use of getEntryOnHost
+    // Wish this could be a WrappedDualView, but deep_copies in DualView
+    // don't work with const data views (e.g., StaticCrsGraph::row_map)
 
-    // Host view takes place of copies, illegal accesses and use of 
-    // getEntryOnHost
-    // Device view takes place of k_rowPtrs (except where k_rowPtrs doesn't 
-    // actually work in the code (e.g., insertCrsIndices); there, a host view
-    // is needed.
-    // Should be const data after construction
+    using row_ptrs_device_type = 
+          Kokkos::View<const typename local_graph_type::size_type *, 
+                       device_type> ;
+    using row_ptrs_host_type = 
+          Kokkos::View<const typename local_graph_type::size_type *, 
+                       Kokkos::HostSpace>;
+    row_ptrs_device_type k_rowPtrs_dev_;
+    row_ptrs_host_type k_rowPtrs_host_;
 
-    using row_ptrs_dualv_type = 
-          Kokkos::DualView<const typename local_graph_type::size_type *>;
-    using row_ptrs_wdv_type =
-          Details::WrappedDualView<row_ptrs_dualv_type>;
-
-    row_ptrs_wdv_type rowPtrsAlloc_wdv;
-
+    void setRowPtrs(const row_ptrs_device_type &dview) {
+      k_rowPtrs_dev_ = dview;
+      auto hview = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dview);
+      k_rowPtrs_host_ = hview;
+    }
+    
 //KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Local ordinals of colum indices
     /// Valid when isLocallyIndexed is true
