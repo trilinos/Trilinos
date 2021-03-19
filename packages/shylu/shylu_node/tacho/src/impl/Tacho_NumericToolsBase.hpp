@@ -87,8 +87,6 @@ namespace Tacho {
     struct {
       double t_factor, t_solve, t_copy, t_extra;
       double m_used, m_peak;
-      //size_t b_min_block_size, b_max_block_size, b_capacity, b_num_superblocks;
-      //size_t s_min_block_size, s_max_block_size, s_capacity, s_num_superblocks;
     } stat;
 
     inline
