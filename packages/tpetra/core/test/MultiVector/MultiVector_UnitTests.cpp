@@ -4182,7 +4182,7 @@ namespace {
     // entries to a different number than before.  (ONE and TWO differ
     // even in the finite field Z_2.)
     {
-      auto X_lcl_h = X->getLocalViewHost(Tpetra::Access::WriteOnly);
+      auto X_lcl_h = X->getLocalViewHost(Tpetra::Access::OverwriteAll);
       Kokkos::deep_copy (X_lcl_h, ONE);
     }
     // Now compute the inf-norms of the columns of X.  (We want a

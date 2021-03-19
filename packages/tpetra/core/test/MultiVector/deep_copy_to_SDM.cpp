@@ -322,10 +322,10 @@ namespace { // (anonymous)
         Y.putScalar (flagValue);
 
         if (modify_MV_on_host) {
-          Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::WriteOnly), flagValue);
+          Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::OverwriteAll), flagValue);
         }
         else {
-          Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::WriteOnly), flagValue);
+          Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::OverwriteAll), flagValue);
         }
 
         multiVectorIota (*X_sub, startValue, modify_MV_on_host);

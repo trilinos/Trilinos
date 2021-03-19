@@ -229,12 +229,12 @@ deep_copy (Tpetra::Vector<double, LO, GO, NT>& X_t,
 
   host_view_type X_e_lcl (X_e_lcl_raw, lclNumRows);
   if (X_t.need_sync_device ()) {
-    auto X_t_lcl_2d = X_t.getLocalViewHost (Tpetra::Access::WriteOnly);
+    auto X_t_lcl_2d = X_t.getLocalViewHost (Tpetra::Access::OverwriteAll);
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }
   else {
-    auto X_t_lcl_2d = X_t.getLocalViewDevice (Tpetra::Access::WriteOnly);
+    auto X_t_lcl_2d = X_t.getLocalViewDevice (Tpetra::Access::OverwriteAll);
     auto X_t_lcl = Kokkos::subview (X_t_lcl_2d, Kokkos::ALL (), 0);
     Kokkos::deep_copy (X_t_lcl, X_e_lcl);
   }

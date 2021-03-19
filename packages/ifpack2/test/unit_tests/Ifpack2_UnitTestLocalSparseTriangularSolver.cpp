@@ -127,7 +127,7 @@ localSolve (Tpetra::MultiVector<
   auto A_lcl = A.getLocalMatrix ();
 
   if (X.isConstantStride () && Y.isConstantStride ()) {
-    auto X_lcl = X.getLocalViewHost (Tpetra::Access::WriteOnly);
+    auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
     auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
     KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                         A_lcl, Y_lcl, X_lcl);
@@ -138,7 +138,7 @@ localSolve (Tpetra::MultiVector<
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVectorNonConst (j);
       auto Y_j = X.getVector (j);
-      auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::WriteOnly);
+      auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::OverwriteAll);
       auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                           diag.c_str (), A_lcl, Y_lcl, X_lcl);
@@ -1066,7 +1066,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   // Set up the right-hand side b.
   vec_type b (ranMap);
   {
-    auto b_lcl_2d = b.getLocalViewHost (Tpetra::Access::WriteOnly);
+    auto b_lcl_2d = b.getLocalViewHost (Tpetra::Access::OverwriteAll);
     auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i < lclNumRows; ++i) {

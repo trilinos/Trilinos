@@ -333,7 +333,7 @@ public:
   const_little_host_vec_type getLocalBlock (const LO localRowIndex,
                                             Access::ReadOnlyStruct) const;
   little_host_vec_type getLocalBlock (const LO localRowIndex,
-                                      Access::WriteOnlyStruct);
+                                      Access::OverwriteAllStruct);
   little_host_vec_type getLocalBlock (const LO localRowIndex,
                                       Access::ReadWriteStruct);
   //@}

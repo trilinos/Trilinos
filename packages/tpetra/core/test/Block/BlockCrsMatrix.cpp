@@ -433,7 +433,7 @@ namespace {
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
-        auto X_lcl = X.getLocalBlock (lclDomIdx, Tpetra::Access::WriteOnly);
+        auto X_lcl = X.getLocalBlock (lclDomIdx, Tpetra::Access::OverwriteAll);
         TEST_ASSERT( X_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
@@ -544,7 +544,7 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
-          auto X_lcl = X.getLocalBlock(lclDomIdx, j, Tpetra::Access::WriteOnly);
+          auto X_lcl = X.getLocalBlock(lclDomIdx, j, Tpetra::Access::OverwriteAll);
           TEST_ASSERT( X_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
@@ -656,7 +656,7 @@ namespace {
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
-        auto X_lcl = X.getLocalBlock (lclDomIdx, Tpetra::Access::WriteOnly);
+        auto X_lcl = X.getLocalBlock (lclDomIdx, Tpetra::Access::OverwriteAll);
         TEST_ASSERT( X_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
@@ -774,7 +774,7 @@ namespace {
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
-          auto X_lcl = X.getLocalBlock(lclDomIdx, j, Tpetra::Access::WriteOnly);
+          auto X_lcl = X.getLocalBlock(lclDomIdx, j, Tpetra::Access::OverwriteAll);
           TEST_ASSERT( X_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {

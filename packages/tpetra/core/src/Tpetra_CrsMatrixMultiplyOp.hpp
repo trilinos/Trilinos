@@ -762,7 +762,7 @@ namespace Tpetra {
       // We will compute solution into the to-be-exported MV; get a view
       if (importer != null) {
         // Beta is zero here, so we clobber Y_lcl
-        auto Y_lcl = importMV_->getLocalViewDevice(Access::WriteOnly);
+        auto Y_lcl = importMV_->getLocalViewDevice(Access::OverwriteAll);
 
         localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, STS::zero ());
         if (Y_is_overwritten) {
@@ -780,7 +780,7 @@ namespace Tpetra {
           // generate a strided copy of Y
           MV Y (Y_in, Teuchos::Copy);
           nonconst_view_type Y_lcl;
-          if(Y_is_overwritten) Y_lcl = Y.getLocalViewDevice(Access::WriteOnly);
+          if(Y_is_overwritten) Y_lcl = Y.getLocalViewDevice(Access::OverwriteAll);
           else                 Y_lcl = Y.getLocalViewDevice(Access::ReadWrite); 
 
           localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, beta);
@@ -788,7 +788,7 @@ namespace Tpetra {
         }
         else {
           nonconst_view_type Y_lcl;
-          if(Y_is_overwritten) Y_lcl = Y_in.getLocalViewDevice(Access::WriteOnly);
+          if(Y_is_overwritten) Y_lcl = Y_in.getLocalViewDevice(Access::OverwriteAll);
           else                 Y_lcl = Y_in.getLocalViewDevice(Access::ReadWrite); 
 
           localMultiply_.apply (X_lcl, Y_lcl, mode, alpha, beta);
@@ -910,7 +910,7 @@ namespace Tpetra {
       // constant-stride version of Y_in in this case, because we had to
       // make a constant stride Y_rowMap MV and do an Export anyway.
       if (! exporter.is_null ()) {
-        auto Y_lcl = Y_rowMap->getLocalViewDevice(Access::WriteOnly);
+        auto Y_lcl = Y_rowMap->getLocalViewDevice(Access::OverwriteAll);
 
         localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS,
                               alpha, STS::zero ());
@@ -956,7 +956,7 @@ namespace Tpetra {
             Tpetra::deep_copy (*Y_rowMap, Y_in);
           }
           nonconst_view_type Y_lcl;
-          if(Y_is_overwritten) Y_lcl = Y_rowMap->getLocalViewDevice(Access::WriteOnly);
+          if(Y_is_overwritten) Y_lcl = Y_rowMap->getLocalViewDevice(Access::OverwriteAll);
           else                 Y_lcl = Y_rowMap->getLocalViewDevice(Access::ReadWrite); 
 
           localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS, alpha, beta);
@@ -964,7 +964,7 @@ namespace Tpetra {
         }
         else {
           nonconst_view_type Y_lcl;
-          if(Y_is_overwritten) Y_lcl = Y_in.getLocalViewDevice(Access::WriteOnly);
+          if(Y_is_overwritten) Y_lcl = Y_in.getLocalViewDevice(Access::OverwriteAll);
           else                 Y_lcl = Y_in.getLocalViewDevice(Access::ReadWrite); 
 
           localMultiply_.apply (X_lcl, Y_lcl, NO_TRANS, alpha, beta);
