@@ -220,28 +220,21 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor) {
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
 }
 
-// TEUCHOS_UNIT_TEST(WrappedDualView, kscgConstructor) {
-// 
-//   using kscg_t = Kokkos::StaticCrsGraph<int, DeviceType>;
-//   kscg_t kscg;
-// 
-//   using dualv_t = Kokkos::DualView<const typename kscg_t::size_type*,
-//                                    typename kscg_t::device_type>;
-// 
-//  using dev_t = dualv_t::t_dev;
-//  dev_t deviceview = kscg.row_map;
-// 
-//   using host_t = dualv_t::t_host;
-//   auto hostview = 
-//        Kokkos::create_mirror_view_and_copy(typename host_t::memory_space(),
-//                                            kscg.row_map);
-//   using consthost_t = dualv_t::t_host::const_type;
-//   consthost_t hostviewconst = hostview;
-// 
-//   dualv_t dualView(kscg.row_map, hostviewconst);
-// 
-//   TEST_ASSERT(true);
-// }
+TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor_constData) {
+  WrappedDualViewFixture fixture;
+  WrappedConstDualViewType wrappedView;
+
+  {
+    DeviceViewType deviceView("device view", fixture.getViewSize());
+    fixture.fillViewOnDevice(deviceView);
+    typename DeviceViewType::const_type constDeviceView = deviceView;
+
+    wrappedView = WrappedConstDualViewType(constDeviceView);
+  }
+
+  auto hostView = wrappedView.getHostView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
+}
 
 TEUCHOS_UNIT_TEST(WrappedDualView, extent) {
   WrappedDualViewFixture fixture;
