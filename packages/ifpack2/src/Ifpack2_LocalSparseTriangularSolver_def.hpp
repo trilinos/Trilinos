@@ -740,7 +740,7 @@ localTriangularSolve (const MV& Y,
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVectorNonConst (j);
       auto Y_j = Y.getVector (j);
-      auto X_lcl = X_j->getLocalViewDevice (Tpetra::Access::WriteOnly);
+      auto X_lcl = X_j->getLocalViewDevice (Tpetra::Access::OverwriteAll);
       auto Y_lcl = Y_j->getLocalViewDevice (Tpetra::Access::ReadOnly);
       auto X_lcl_1d = Kokkos::subview (X_lcl, Kokkos::ALL (), 0);
       auto Y_lcl_1d = Kokkos::subview (Y_lcl, Kokkos::ALL (), 0);
@@ -755,7 +755,7 @@ localTriangularSolve (const MV& Y,
     auto A_lcl = this->A_crs_->getLocalMatrix ();
 
     if (X.isConstantStride () && Y.isConstantStride ()) {
-      auto X_lcl = X.getLocalViewHost (Tpetra::Access::WriteOnly);
+      auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
       auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
           A_lcl, Y_lcl, X_lcl);
@@ -766,7 +766,7 @@ localTriangularSolve (const MV& Y,
       for (size_t j = 0; j < numVecs; ++j) {
         auto X_j = X.getVectorNonConst (j);
         auto Y_j = X.getVector (j);
-        auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::WriteOnly);
+        auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::OverwriteAll);
         auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
             diag.c_str (), A_lcl, Y_lcl, X_lcl);

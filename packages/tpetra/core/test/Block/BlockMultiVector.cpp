@@ -428,7 +428,7 @@ namespace {
     {
       auto X_overlap =
         X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), 
-                         colToModify, Tpetra::Access::WriteOnly);
+                         colToModify, Tpetra::Access::OverwriteAll);
       TEST_ASSERT( X_overlap.data () != NULL );
       TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)),
                            static_cast<size_t> (blockSize) );

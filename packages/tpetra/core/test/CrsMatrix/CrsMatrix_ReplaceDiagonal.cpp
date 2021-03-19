@@ -351,7 +351,7 @@ namespace { // (anonymous)
 
       // Create vector with new diagonal values (row GO)
       RCP<vec_type> newDiag = rcp(new vec_type(matrix->getRowMap()));
-      auto newDiagData = newDiag->getLocalViewHost(Tpetra::Access::WriteOnly);
+      auto newDiagData = newDiag->getLocalViewHost(Tpetra::Access::OverwriteAll);
       for (size_t i = 0; i < newDiag->getLocalLength(); i++) 
         newDiagData(i,0) = newDiag->getMap()->getGlobalElement(i);
 

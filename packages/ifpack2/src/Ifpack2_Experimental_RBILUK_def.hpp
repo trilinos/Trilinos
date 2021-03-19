@@ -845,7 +845,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           {
             local_ordinal_type local_row = i;
             const_host_little_vec_type xval = xBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type cval = cBlock.getLocalBlock(local_row, imv, Tpetra::Access::WriteOnly);
+            little_host_vec_type cval = cBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
             //cval.assign(xval);
             Tpetra::COPY (xval, cval);
 
@@ -880,7 +880,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           {
             local_ordinal_type local_row = (numRows-1)-i;
             const_host_little_vec_type rval = rBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type yval = yBlock.getLocalBlock(local_row, imv, Tpetra::Access::WriteOnly);
+            little_host_vec_type yval = yBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
             //yval.assign(rval);
             Tpetra::COPY (rval, yval);
 
