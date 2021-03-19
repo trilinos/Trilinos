@@ -203,7 +203,7 @@ namespace {
 
       Kokkos::deep_copy (recvbuf_h, recvbuf);
       for (LO k = 0; k < lclNumPackets; ++k) {
-        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak(k) * np );
+        TEST_EQUALITY( recvbuf_h(k), sendbuf_bak_h(k) * np );
       }
     }
 
