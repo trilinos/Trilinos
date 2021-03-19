@@ -268,12 +268,13 @@ pad_crs_arrays(
     Kokkos::deep_copy(newAllocPerRow, newAllocPerRow_h);
   }
 
-  using inds_value_type = typename Indices::t_dev::non_const_value_type;
+  using inds_value_type = 
+        typename Indices::DeviceViewType::non_const_value_type;
   using vals_value_type = typename Values::non_const_value_type;
 
   auto indices = indices_wdv.getDeviceView(Access::ReadOnly);
   const size_t newIndsSize = size_t(indices.size()) + increase;
-  auto indices_new = make_uninitialized_view<typename Indices::t_dev>(
+  auto indices_new = make_uninitialized_view<typename Indices::DeviceViewType>(
     "Tpetra::CrsGraph column indices", newIndsSize, verbose,
     prefix.get());
 
@@ -291,7 +292,7 @@ pad_crs_arrays(
     os << *prefix << "Repack" << endl;
     std::cerr << os.str();
   }
-  using execution_space = typename Indices::t_dev::execution_space;
+  using execution_space = typename Indices::DeviceViewType::execution_space;
   using range_type = Kokkos::RangePolicy<execution_space, size_t>;
   Kokkos::parallel_scan(
     "Tpetra::CrsGraph or CrsMatrix repack",
@@ -513,8 +514,8 @@ padCrsArrays(
 {
   using impl::pad_crs_arrays;
   // send empty values array
-  typename Indices::t_dev values; // KDDKDD TEMPORARY; will change when values is a dual view
-  pad_crs_arrays<RowPtr, Indices, typename Indices::t_dev, Padding>( // KDDKDD TEMPORARY; will change when values is a dual view
+  typename Indices::DeviceViewType values; // KDDKDD TEMPORARY; will change when values is a dual view
+  pad_crs_arrays<RowPtr, Indices, typename Indices::DeviceViewType, Padding>( // KDDKDD TEMPORARY; will change when values is a dual view
     impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
     indices_wdv, values, padding, my_rank, verbose);
 }
