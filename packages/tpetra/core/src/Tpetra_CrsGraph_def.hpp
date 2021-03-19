@@ -4505,14 +4505,6 @@ namespace Tpetra {
       gblInds_wdv = global_inds_wdv_type ();
     } // globallyIndexed() && lclNumRows > 0
 
-                 
-    // KDDKDD Indices are not const in Kokkos::StaticCrsGraph,
-    // so need to provide a ReadWrite view.
-    this->lclGraph_ = 
-          local_graph_type(lclInds_wdv.getDeviceView(Access::ReadWrite),
-                           k_rowPtrs_dev_);
-    // KDDKDD Will this lclGraph throw off the count?  Need lclGraphHost_?
-
     this->indicesAreLocal_  = true;
     this->indicesAreGlobal_ = false;
     this->checkInternalState ();
