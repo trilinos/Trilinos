@@ -4078,7 +4078,8 @@ namespace Tpetra {
           const map_type& oldColMap = * (getColMap ());
           // Allocate storage for the new local indices.
           const size_t allocSize = this->getNodeAllocationSize ();
-          newLclInds1D = col_inds_type ("Tpetra::CrsGraph::ind", allocSize);
+          newLclInds1D = col_inds_type("Tpetra::CrsGraph::lclIndsReindexedHost",
+                                       allocSize);
           // Attempt to convert the new indices locally.
           for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
             const RowInfo rowInfo = this->getRowInfo (lclRow);
@@ -4179,12 +4180,11 @@ namespace Tpetra {
     // Commit the results.
     if (isLocallyIndexed ()) {
       typename local_inds_dualv_type::t_dev newLclInds1D_dev(
-               Kokkos::view_alloc("Tpetra::CrsGraph::lclInds",
+               Kokkos::view_alloc("Tpetra::CrsGraph::lclIndReindexed",
                                   Kokkos::WithoutInitializing),
                newLclInds1D.extent(0));
       Kokkos::deep_copy(newLclInds1D_dev, newLclInds1D);
-      local_inds_dualv_type lclInds_dualv(newLclInds1D_dev, newLclInds1D);
-      lclInds_wdv = local_inds_wdv_type(lclInds_dualv);
+      lclInds_wdv = local_inds_wdv_type(newLclInds1D_dev);
 
       // We've reindexed, so we don't know if the indices are sorted.
       //
