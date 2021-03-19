@@ -46,6 +46,7 @@
 #include "Kokkos_Core.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_CrsPadding.hpp"
+#include "Tpetra_Details_WrappedDualView.hpp"
 #include <iostream>
 #include <memory>
 
@@ -357,6 +358,8 @@ pad_crs_arrays(
     std::cerr << os.str();
   }
 
+  indices_wdv = Indices(indices_new);
+
   assign_to_view(values, values_new,
                  "Tpetra::CrsMatrix values",
                  verbose, prefix.get());
@@ -453,7 +456,8 @@ find_crs_indices(
   if (new_indices.size() == 0)
     return 0;
 
-  using ordinal = typename Indices1::non_const_value_type;
+  using ordinal = 
+        typename std::remove_const<typename Indices1::value_type>::type;
   auto invalid_ordinal = Teuchos::OrdinalTraits<ordinal>::invalid();
 
   const size_t start = static_cast<size_t> (row_ptrs[row]);

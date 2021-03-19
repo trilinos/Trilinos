@@ -5844,7 +5844,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     }
 
     if (myGraph_->isGloballyIndexed()) {
-      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->gblInds_wdv,
+      padCrsArrays(row_ptr_beg, row_ptr_end,
+                   myGraph_->gblInds_wdv,
                    k_values1D_, padding, myRank, verbose);
       const auto newValuesLen = k_values1D_.extent(0);
       const auto newColIndsLen = myGraph_->k_gblInds1D_.extent(0);
@@ -5855,7 +5856,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
          << suffix);
     }
     else {
-      padCrsArrays(row_ptr_beg, row_ptr_end, myGraph_->lclInds_wdv,
+      padCrsArrays(row_ptr_beg, row_ptr_end,
+                   myGraph_->lclInds_wdv,
                    k_values1D_, padding, myRank, verbose);
       const auto newValuesLen = k_values1D_.extent(0);
       const auto newColIndsLen = myGraph_->k_lclInds1D_.extent(0);

@@ -1358,8 +1358,6 @@ namespace Tpetra {
   {
     using Kokkos::subview;
     typedef LocalOrdinal LO;
-    typedef Kokkos::View<const LO*, device_type,
-      Kokkos::MemoryUnmanaged> row_view_type;
 
     if (rowinfo.allocSize == 0) {
       return Teuchos::ArrayView<const LO> ();
@@ -1374,9 +1372,11 @@ namespace Tpetra {
         // _managed_ subview, then returns an unmanaged version of
         // that.  That touches the reference count, which costs
         // performance in a measurable way.
+        // KDDKDD  Function is deprecated; we ignore the unmanaged bit above.
         // KDDKDD  Breaks the reference counting paradigm; reference to 
         // KDDKDD  host view is lost.
-        row_view_type rowView = subview (row_view_type (lclInds_wdv.getHostView(Access::ReadOnly)), rng);
+        auto rowViewHost = lclInds_wdv.getHostView(Access::ReadOnly);
+        auto rowView = subview(rowViewHost, rng);
         const LO* const rowViewRaw = (len == 0) ? nullptr : rowView.data ();
         return Teuchos::ArrayView<const LO> (rowViewRaw, len, Teuchos::RCP_DISABLE_NODE_LOOKUP);
       }
@@ -1404,14 +1404,13 @@ namespace Tpetra {
       // _managed_ subview, then returns an unmanaged version of
       // that.  That touches the reference count, which costs
       // performance in a measurable way.
-      using row_view_type = Kokkos::View<const GO*,
-        device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
+      // KDDKDD  This method is deprecated; we ignore the unmanaged bit above
       // KDDKDD  Breaks the reference counting paradigm; unmanaged
       // KDDKDD  memory does not do reference counting
-      row_view_type k_gblInds1D_unmanaged = gblInds_wdv.getHostView(Access::ReadOnly);
+      auto gblInds = gblInds_wdv.getHostView(Access::ReadOnly);
       using Kokkos::Compat::getConstArrayView;
       using Kokkos::subview;
-      view = getConstArrayView (subview (k_gblInds1D_unmanaged, rng));
+      view = getConstArrayView (subview (gblInds, rng));
     }
     return view;
   }
