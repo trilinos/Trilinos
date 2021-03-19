@@ -19,7 +19,6 @@ namespace Tacho {
     invoke(const ViewTypeA &A,
            const ViewTypeP &P,
            const ViewTypeB &B) {
-      typedef typename ViewTypeA::non_const_value_type value_type;              
       if (A.extent(0) == P.extent(0)) {
         if (A.span() > 0) {
           const ordinal_type m = A.extent(0), n = A.extent(1);
@@ -54,7 +53,6 @@ namespace Tacho {
            const ViewTypeP &P,
            const ViewTypeB &B) {
 #if defined(__CUDA_ARCH__)
-      typedef typename ViewTypeA::non_const_value_type value_type;              
       if (A.extent(0) == P.extent(0)) {
         if (A.span() > 0) {
           const ordinal_type m = A.extent(0), n = A.extent(1);

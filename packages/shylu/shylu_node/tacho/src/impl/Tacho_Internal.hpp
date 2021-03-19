@@ -98,6 +98,10 @@
 #include "Tacho_LevelSetTools.hpp"
 #include "Tacho_TriSolveTools.hpp"
 
+// refactoring
+#include "Tacho_NumericToolsBase.hpp"
+#include "Tacho_NumericTools_Serial.hpp"
+
 // Do not include this. 
 // In a gcc (4.9.x), this causes some multiple definition link error with gcc headers.
 // No idea yet why it happens as the code is guarded by Tacho::Experimental namespace.

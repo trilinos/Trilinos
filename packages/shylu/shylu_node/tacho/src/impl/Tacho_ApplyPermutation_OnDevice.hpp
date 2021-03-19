@@ -24,9 +24,10 @@ namespace Tacho {
 
       const ordinal_type
         m = A.extent(0),
-        n = A.extent(1);
+        n = A.extent(1),
+        plen = P.extent(0);
       
-      if (m == P.extent(0)) {
+      if (m == plen) {
         if (A.span() > 0) {
           using exec_space = MemberType;
           const auto exec_instance = member;

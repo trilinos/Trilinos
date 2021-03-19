@@ -16,8 +16,6 @@ namespace Tacho {
     static int
     invoke(MemberType &member,
            const ViewTypeA &A) {
-      typedef typename ViewTypeA::non_const_value_type value_type;        
-
       if (A.extent(0) == A.extent(1)) {
         if (A.span() > 0) {
 #if defined(__CUDA_ARCH__)
@@ -51,8 +49,6 @@ namespace Tacho {
     static int
     invoke(MemberType &member,
            const ViewTypeA &A) {
-      typedef typename ViewTypeA::non_const_value_type value_type;        
-
       if (A.extent(0) == A.extent(1)) {
         if (A.span() > 0) {
 #if defined(__CUDA_ARCH__)

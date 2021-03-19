@@ -28,7 +28,6 @@ TRIBITS_ADD_EXECUTABLE(
   COMM serial mpi
 )
 
-
 IF (TACHO_HAVE_KOKKOS_TASK)
   #
   # Supernodes
@@ -81,6 +80,22 @@ IF (TACHO_HAVE_KOKKOS_TASK)
     Tacho_ExampleSolverDoubleComplex
     NOEXEPREFIX
     SOURCES Tacho_ExampleSolver_dcomplex.cpp
+    COMM serial mpi
+  )
+
+  #
+  # Driver
+  #
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDriverDouble
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDriver_double.cpp
+    COMM serial mpi
+  )
+  TRIBITS_ADD_EXECUTABLE(
+    Tacho_ExampleDriverDoubleComplex
+    NOEXEPREFIX
+    SOURCES Tacho_ExampleDriver_dcomplex.cpp
     COMM serial mpi
   )
 

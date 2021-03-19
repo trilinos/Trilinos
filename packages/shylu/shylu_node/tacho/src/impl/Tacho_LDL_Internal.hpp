@@ -25,8 +25,8 @@ namespace Tacho {
            const ViewTypeP &P,
            const ViewTypeD &D,
            const ViewTypeW &W) {
-      typedef typename ViewTypeA::non_const_value_type value_type;
-      typedef typename ViewTypeP::non_const_value_type p_value_type;
+      //typedef typename ViewTypeA::non_const_value_type value_type;
+      //typedef typename ViewTypeP::non_const_value_type p_value_type;
         
       static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
