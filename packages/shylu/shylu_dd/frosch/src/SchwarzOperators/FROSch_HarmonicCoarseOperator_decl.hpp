@@ -132,9 +132,10 @@ namespace FROSch {
         XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
 
         #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+        template<class GOIndView>
         struct CopyPhiDataFunctor
         {
-            CopyPhiDataFunctor(SCVecPtr data_out_, ConstSCVecPtr data_in_, GOVecView indices_) :
+            CopyPhiDataFunctor(SCVecPtr data_out_, ConstSCVecPtr data_in_, GOIndView indices_) :
             data_out(data_out_),
             data_in (data_in_),
             indices (indices_)
@@ -147,7 +148,7 @@ namespace FROSch {
 
             SCVecPtr      data_out;
             ConstSCVecPtr data_in;
-            GOVecView     indices;
+            GOIndView     indices;
         };
         #endif
 

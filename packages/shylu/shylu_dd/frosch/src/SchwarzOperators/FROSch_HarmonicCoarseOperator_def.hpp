@@ -772,20 +772,30 @@ namespace FROSch {
 
             #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
             if (mVPhi->getMap()->lib() == UseTpetra) {
+                using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+                using execution_space = typename XMap::local_map_type::execution_space;
+
+                // explicitly copying indicesIDofsAll in Teuchos::Array to Kokkos::View on "device"
+                using GOIndViewHost = Kokkos::View<GO*, Kokkos::LayoutLeft, Kokkos::HostSpace, Kokkos::MemoryUnmanaged>;
+                using GOIndView     = Kokkos::View<GO*, execution_space>;
+                UN numIndices = indicesIDofsAll.size();
+                GOIndViewHost indicesIDofsAllHostData(indicesIDofsAll.getRawPtr(), numIndices);
+                GOIndView     indicesIDofsAllData ("indicesIDofsAllData", numIndices);
+                Kokkos::deep_copy(indicesIDofsAllData, indicesIDofsAllHostData);
+
                 for (UN j=0; j<numLocalBlockColumns[i]; j++) {
                     auto mVPhiIData = mVPhiI->getData(itmp);
                     auto mVPhiData  = mVPhi->getDataNonConst(itmp);
 
                     for (UN ii=0; ii<extensionBlocks.size(); ii++) {
-                        using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
-                        using execution_space = typename XMap::local_map_type::execution_space;
                         Kokkos::RangePolicy<execution_space> policy (bound[extensionBlocks[ii]], bound[extensionBlocks[ii]+1]);
-                        CopyPhiDataFunctor functor(mVPhiData, mVPhiIData, indicesIDofsAll);
+                        CopyPhiDataFunctor<GOIndView> functor(mVPhiData, mVPhiIData, indicesIDofsAllData);
                         Kokkos::parallel_for(
                             "FROSch_HarmonicCoarseOperator::fillPhiData", policy, functor);
                     }
                     itmp++;
                 }
+                Kokkos::fence();
             } else
             #endif
             {
