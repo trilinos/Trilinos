@@ -287,11 +287,12 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                    << " nvec " << nvec;
                 const std::string details = ss.str();
                 bool threw = false;
-                try {
+                //try {
                   ne = btdct::test_BR_BTDC(in.comm, sb, sbp, bs, nvec, nonuniform_lines,
                                            different_maps, jacobi, overlap_comm, seq_method,
                                            details);
                   nerr += ne;
+                  /*
                 } catch (const std::exception& e) {
                   threw = true;
                 }
@@ -299,6 +300,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                   printf("Exception threw from rank %d, %s\n", in.comm->getRank(), details.c_str());
 
                 TEUCHOS_TEST(ne == 0 && ! threw, details);
+                */
               }
             }
           }
