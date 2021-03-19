@@ -92,7 +92,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
       "-DBUILD_SHARED_LIBS:BOOL=ON"
       "-DTrilinos_ENABLE_TESTS:BOOL=ON"
-      "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
+      "-DTrilinos_ENABLE_EXAMPLES:BOOL=ON"
       "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
       "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
@@ -122,8 +122,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=OFF"
 
       "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+      "-DTrilinos_ENABLE_Gtest:BOOL=OFF"
       "-DTrilinos_ENABLE_Pamgen:BOOL=OFF"
+      "-DTrilinos_ENABLE_Shards:BOOL=OFF"
       "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
+      "-DTrilinos_ENABLE_ShyLU_NodeTacho:BOOL=OFF"            
+      "-DTrilinos_ENABLE_ShyLU:BOOL=OFF"
+      "-DTrilinos_ENABLE_ShyLU_DD:BOOL=OFF"
+      "-DAmesos2_ENABLE_ShyLU_NodeTacho:BOOL=OFF"
+      "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"

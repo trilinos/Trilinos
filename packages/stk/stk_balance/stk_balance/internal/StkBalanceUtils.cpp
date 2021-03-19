@@ -44,18 +44,19 @@ int get_num_common_nodes_between_elements(const ::stk::mesh::BulkData& stkMeshBu
   const stk::mesh::Entity* nodes2 = stkMeshBulkData.begin_nodes(element2);
   int numNodes2 = stkMeshBulkData.num_nodes(element2);
 
-  static std::set<stk::mesh::Entity> commonNodes;
+  static std::vector<stk::mesh::Entity> commonNodes;
   commonNodes.clear();
 
   for (int i1 = 0; i1 < numNodes1; ++i1) {
     for (int i2 = 0; i2 < numNodes2; ++i2) {
       if (nodes1[i1] == nodes2[i2]) {
-        commonNodes.insert(nodes1[i1]);
+        commonNodes.push_back(nodes1[i1]);
         break;
       }
     }
   }
 
+  stk::util::sort_and_unique(commonNodes);
   return commonNodes.size();
 }
 

@@ -32,7 +32,8 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT="/home/csiefer/Trilinos/ascicgpu-testing/Trilinos/packages/muelu/utils/misc/drakify-email.pl"
+HTMLPERLSCRIPT="/ascldap/users/csiefer/Trilinos/ascicgpu-testing/Trilinos/cmake/ctest/drivers/ascicgpu031/drakify-email.pl"
+
 #root of cdash testing directory
 TESTLOCATION="/home/csiefer/Trilinos/ascicgpu-testing"
 LOGBACKUPDIRECTORY="/home/csiefer/Trilinos/ascicgpu-testing/logs"
@@ -317,10 +318,11 @@ cat ${OUTFILE}.txt | perl ${HTMLPERLSCRIPT} ${date2} ${cdashDate} ${MACHINENAME}
 
 ${MAILCOMMAND} -it <<END_MESSAGE
 To: ${RECIPIENTS[@]}
-$(cat ${OUTFILE}.html)
+$(cat ${OUTFILE}.html | grep -v UNMATCHED)
 END_MESSAGE
 
 #clean up
 bzip2 --best $backupFile
 mv ${backupFile}.bz2 ${OUTFILE}.txt ${LOGBACKUPDIRECTORY}
 rm -f ${OUTFILE}.html
+#mv ${OUTFILE}.html  ${LOGBACKUPDIRECTORY}

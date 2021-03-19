@@ -50,7 +50,7 @@ MESSAGE("*******************************")
 MESSAGE("")
 
 
-CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
+CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
 
 SET(THIS_CMAKE_CURRENT_LIST_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
@@ -1200,16 +1200,9 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 # packages and therefore is more robust.  But the package-by-package mode is
 # more expensive in several respects for many projects.
 #
-# For versions of CMake 3.10.0 and above and newer versions of CDash, the
+# For versions of CMake 3.17.0 and above and newer versions of CDash, the
 # CDash server for the all-at-once mode will break down build and test results
 # on a package-by-package basis on CDash together.
-#
-# **NOTE:** It has been confirmed that older versions of CDash can accept and
-# display results from newer CMake/CTest versions when
-# ``${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES`` set to ``TRUE``.  It is just
-# that for older versions of CDash that it will not break down results on a
-# package-by-package basis on CDash and all of the build warnings and errors
-# and tests will be all globed together on CDash.
 #
 # .. _Mutiple ctest -S invocations (TRIBITS_CTEST_DRIVER()):
 #
@@ -1576,11 +1569,6 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
 
   # Flags used on update when doing a Git update
   SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
-
-  # If doing all-at-one approach, use new CMake/CTest/CDash features to allow
-  # it to split out results into different rows on CDash like the
-  # package-by-packages approach.
-  SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_CTEST_USE_NEW_AAO_FEATURES  FALSE )
  
   # Do all-at-once configure, build, test and submit (or package-by-package)
   IF ("${${PROJECT_NAME}_CTEST_DO_ALL_AT_ONCE_DEFAULT}" STREQUAL "")
