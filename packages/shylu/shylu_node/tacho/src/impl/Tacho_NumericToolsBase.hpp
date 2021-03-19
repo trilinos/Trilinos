@@ -40,6 +40,8 @@ namespace Tacho {
     using host_memory_space = typename host_device_type::memory_space;
 
     using ordinal_type_array_host = typename ordinal_type_array::HostMirror;
+    using size_type_array_host = typename size_type_array::HostMirror;
+    using supernode_type_array_host = typename supernode_type_array::HostMirror;
 
   protected:
 
@@ -85,7 +87,7 @@ namespace Tacho {
     /// statistics
     ///
     struct {
-      double t_factor, t_solve, t_copy, t_extra;
+      double t_init, t_mode_classification, t_copy, t_factor, t_solve, t_extra;
       double m_used, m_peak;
     } stat;
 
@@ -105,6 +107,8 @@ namespace Tacho {
     inline
     void
     reset_stat(){
+      stat.t_init = 0;
+      stat.t_mode_classification = 0;
       stat.t_factor = 0;
       stat.t_solve = 0;
       stat.t_copy = 0;

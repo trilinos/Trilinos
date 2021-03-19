@@ -24,7 +24,8 @@ namespace Tacho {
   template<typename ValueType, typename DeviceType> class CrsMatrixBase;
   template<typename ValueType, typename DeviceType> class NumericToolsBase;
   template<typename ValueType, typename DeviceType> class NumericToolsSerial;
-  
+  template<typename ValueType, typename DeviceType, int Var> class NumericToolsLevelSet;
+
   ///
   /// Tacho Solver interface
   ///
@@ -63,6 +64,9 @@ namespace Tacho {
     using symbolic_tools_type = SymbolicTools;
     using numeric_tools_base_type = NumericToolsBase<value_type,device_type>;
     using numeric_tools_serial_type = NumericToolsSerial<value_type,device_type>;
+    using numeric_tools_levelset_var0_type = NumericToolsLevelSet<value_type,device_type,0>;
+    using numeric_tools_levelset_var1_type = NumericToolsLevelSet<value_type,device_type,1>;
+    using numeric_tools_levelset_var2_type = NumericToolsLevelSet<value_type,device_type,2>;
 
   private:
     enum : int { Cholesky = 1,
@@ -123,11 +127,6 @@ namespace Tacho {
     // ** numeric factorization output
     numeric_tools_base_type *_N;
 
-    // ** level set interface
-    // levelset_tools_var0_type *_L0;
-    // levelset_tools_var1_type *_L1;
-    // levelset_tools_var2_type *_L2;
-
     // small dense matrix
     // - chol A is used
     // - ldl A D P are used
@@ -144,13 +143,13 @@ namespace Tacho {
     // ordinal_type _nb;                   // panel size for panel algorithms
     // ordinal_type _front_update_mode;    // front update mode 0 - lock, 1 - atomic
 
-    // // ** levelset options
-    // bool         _levelset;             // use level set code instead of tasking
-    // ordinal_type _device_level_cut;     // above this level, matrices are computed on device
-    // ordinal_type _device_factor_thres;  // bigger than this threshold, device function is used
-    // ordinal_type _device_solve_thres;   // bigger than this threshold, device function is used
-    // ordinal_type _variant;              // algorithmic variant in levelset 0: naive, 1: invert diagonals
-    // ordinal_type _nstreams;             // on cuda, multi streams are used
+    // ** levelset options
+    bool         _levelset;             // use level set code instead of tasking
+    ordinal_type _device_level_cut;     // above this level, matrices are computed on device
+    ordinal_type _device_factor_thres;  // bigger than this threshold, device function is used
+    ordinal_type _device_solve_thres;   // bigger than this threshold, device function is used
+    ordinal_type _variant;              // algorithmic variant in levelset 0: naive, 1: invert diagonals
+    ordinal_type _nstreams;             // on cuda, multi streams are used
 
     // // parallelism and memory constraint is made via this parameter
     // ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
@@ -187,12 +186,12 @@ namespace Tacho {
     ///
     /// Level set tools options
     ///
-    // void setLevelSetScheduling(const bool levelset);
-    // void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
-    // void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
-    //                                               const ordinal_type device_solve_thres);
-    // void setLevelSetOptionNumStreams(const ordinal_type nstreams);
-    // void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
+    void setLevelSetScheduling(const bool levelset);
+    void setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut);
+    void setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
+                                                  const ordinal_type device_solve_thres);
+    void setLevelSetOptionNumStreams(const ordinal_type nstreams);
+    void setLevelSetOptionAlgorithmVariant(const ordinal_type variant);
 
     ///
     /// get interface

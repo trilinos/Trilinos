@@ -37,6 +37,7 @@ namespace Tacho {
 
     using base_type::base_type;
 
+  private:
     using base_type::_m;
     using base_type::_ap;
     using base_type::_aj;

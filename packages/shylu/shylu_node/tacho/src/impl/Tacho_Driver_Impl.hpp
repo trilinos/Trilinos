@@ -21,21 +21,18 @@ namespace Tacho {
       _h_ap_graph(), _h_aj_graph(),
       _h_perm_graph(), _h_peri_graph(),
       _N(nullptr),
-      // _L0(nullptr),
-      // _L1(nullptr),
-      // _L2(nullptr),
       _verbose(0),
-      _small_problem_thres(1024) {}
+      _small_problem_thres(1024),
       // _serial_thres_size(-1),
       // _mb(-1),
       // _nb(-1),
       // _front_update_mode(-1),
-      // _levelset(0),
-      // _device_level_cut(0),
-      // _device_factor_thres(64),
-      // _device_solve_thres(128),
-      // _variant(2),
-      // _nstreams(16),
+      _levelset(0),
+      _device_level_cut(0),
+      _device_factor_thres(64),
+      _device_solve_thres(128),
+      _variant(2),
+    _nstreams(16) {}
       // _max_num_superblocks(-1) 
 
   ///
@@ -131,45 +128,45 @@ namespace Tacho {
   ///
   /// Level set tools options
   ///
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setLevelSetScheduling(const bool levelset) {
-  //   _levelset = levelset; 
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setLevelSetScheduling(const bool levelset) {
+    _levelset = levelset; 
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut) {
-  //   _device_level_cut = device_level_cut;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setLevelSetOptionDeviceLevelCut(const ordinal_type device_level_cut) {
+    _device_level_cut = device_level_cut;
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
-  //                                            const ordinal_type device_solve_thres) {
-  //   _device_factor_thres = device_factor_thres;
-  //   _device_solve_thres = device_solve_thres;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setLevelSetOptionDeviceFunctionThreshold(const ordinal_type device_factor_thres,
+                                             const ordinal_type device_solve_thres) {
+    _device_factor_thres = device_factor_thres;
+    _device_solve_thres = device_solve_thres;
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
-  //   if (variant > 2 || variant < 0) {
-  //     std::logic_error("levelset algorithm variants range from 0 to 2");
-  //   }
-  //   _variant = variant;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setLevelSetOptionAlgorithmVariant(const ordinal_type variant) {
+    if (variant > 2 || variant < 0) {
+      std::logic_error("levelset algorithm variants range from 0 to 2");
+    }
+    _variant = variant;
+  }
   
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
-  //   _nstreams = nstreams;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setLevelSetOptionNumStreams(const ordinal_type nstreams) {
+    _nstreams = nstreams;
+  }
 
   ///
   /// get interface
@@ -387,7 +384,35 @@ namespace Tacho {
                                              _stree_parent, _stree_ptr, _stree_children, 
                                              _stree_level, _stree_roots);
         } else {
-          /// multi threaded tasking
+          /// multi threaded case
+          if (_levelset || true) {
+            /// level schedule
+
+#define TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_name) \
+            do {                                                        \
+              if (_N == nullptr)                                        \
+                _N = (numeric_tools_base_type*) ::operator new (sizeof(numeric_tools_levelset_name)); \
+              new (_N) numeric_tools_levelset_name(_m, _ap, _aj,        \
+                                                   _perm, _peri,        \
+                                                   _nsupernodes, _supernodes, \
+                                                   _gid_super_panel_ptr, _gid_super_panel_colidx, \
+                                                   _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx, \
+                                                   _stree_parent, _stree_ptr, _stree_children, \
+                                                   _stree_level, _stree_roots); \
+              numeric_tools_levelset_name * N = dynamic_cast<numeric_tools_levelset_name*>(_N); \
+              N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose); \
+              N->createStream(_nstreams);                               \
+            } while (false)
+            
+            switch (_variant) {
+            case 0: { TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_var0_type); break;  }
+            case 1: { TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_var1_type); break;  } 
+            case 2: { TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_var2_type); break;  }
+            }
+#undef TACHO_CREATE_NUMERICTOOLS_LEVELSET
+          } else {
+            /// tasking 
+          }
         }
       } 
 #if defined(KOKKOS_ENABLE_CUDA)
