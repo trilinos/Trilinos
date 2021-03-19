@@ -3993,17 +3993,20 @@ namespace Tpetra {
     // public inner class of CrsMatrix?  It looks like it doesn't
     // depend on any implementation details of CrsMatrix at all.  It
     // should really be declared and defined outside of CrsMatrix.
-    template<class ViewType, class OffsetViewType>
+    template<class DestViewType, class SrcViewType,
+             class DestOffsetViewType, class SrcOffsetViewType>
     struct pack_functor {
-      typedef typename ViewType::execution_space execution_space;
-      ViewType src_;
-      ViewType dst_;
-      OffsetViewType src_offset_;
-      OffsetViewType dst_offset_;
-      typedef typename OffsetViewType::non_const_value_type scalar_index_type;
+      typedef typename DestViewType::execution_space execution_space;
+      SrcViewType src_;
+      DestViewType dst_;
+      SrcOffsetViewType src_offset_;
+      DestOffsetViewType dst_offset_;
+      typedef typename DestOffsetViewType::non_const_value_type scalar_index_type;
 
-      pack_functor (ViewType dst, ViewType src,
-                    OffsetViewType dst_offset, OffsetViewType src_offset) :
+      pack_functor (DestViewType dst, 
+                    const SrcViewType src,
+                    DestOffsetViewType dst_offset,
+                    const SrcOffsetViewType src_offset) :
         src_ (src),
         dst_ (dst),
         src_offset_ (src_offset),

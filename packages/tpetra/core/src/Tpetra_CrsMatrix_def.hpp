@@ -1172,7 +1172,7 @@ namespace Tpetra {
 
     const size_t lclNumRows = this->staticGraph_->getNodeNumRows ();
     typename Graph::local_graph_type::row_map_type k_ptrs =
-typename Graph::local_graph_type::row_map_type(); // KDD      this->staticGraph_->k_rowPtrs_;
+                                      this->staticGraph_->k_rowPtrs_dev_;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (k_ptrs.extent (0) != lclNumRows+1, std::logic_error,
       "With StaticProfile, row offsets array has length "
@@ -1298,18 +1298,17 @@ typename Graph::local_graph_type::row_map_type(); // KDD      this->staticGraph_
     // Get references to the data in myGraph_, so we can modify them
     // as well.  Note that we only call fillLocalGraphAndMatrix() if
     // the matrix owns the graph, which means myGraph_ is not null.
-    lclinds_1d_type k_lclInds1D_ = myGraph_->k_lclInds1D_;
 
     typedef decltype (myGraph_->k_numRowEntries_) row_entries_type;
 
     // StaticProfile means that the matrix's column indices and
     // values are currently stored in a 1-D format, with row offsets
-    // in k_rowPtrs_ and local column indices in k_lclInds1D_.
+    // in k_rowPtrs_ and local column indices in lclInds_wdv.
 
     // StaticProfile also means that the graph's array of row
     // offsets must already be allocated.
-    typename Graph::local_graph_type::row_map_type curRowOffsets =
-typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtrs_;
+    typename Graph::local_graph_type::row_map_type curRowOffsets = 
+                                                   myGraph_->k_rowPtrs_dev_;
 
     if (debug) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1321,14 +1320,13 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
          << curRowOffsets.extent (0) << " != lclNumRows + 1 = "
          << (lclNumRows + 1) << ".");
       const size_t numOffsets = curRowOffsets.extent (0);
-      const auto valToCheck =
-        getEntryOnHost (curRowOffsets, numOffsets - 1);
+      const auto valToCheck = myGraph_->k_rowPtrs_host_(numOffsets - 1);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (numOffsets != 0 &&
-         myGraph_->k_lclInds1D_.extent (0) != valToCheck,
+         myGraph_->lclInds_wdv.extent (0) != valToCheck,
          std::logic_error, "(StaticProfile branch) numOffsets = " <<
-         numOffsets << " != 0 and myGraph_->k_lclInds1D_.extent(0) = "
-         << myGraph_->k_lclInds1D_.extent (0) << " != curRowOffsets("
+         numOffsets << " != 0 and myGraph_->lclInds_wdv.extent(0) = "
+         << myGraph_->lclInds_wdv.extent (0) << " != curRowOffsets("
          << numOffsets << ") = " << valToCheck << ".");
     }
 
@@ -1351,8 +1349,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       if (debug && curRowOffsets.extent (0) != 0) {
         const size_t numOffsets =
           static_cast<size_t> (curRowOffsets.extent (0));
-        const auto valToCheck =
-          getEntryOnHost (curRowOffsets, numOffsets - 1);
+        const auto valToCheck = myGraph_->k_rowPtrs_host_(numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) !=
            static_cast<size_t> (k_values1D_.extent (0)),
@@ -1362,12 +1359,12 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
            " = " << k_values1D_.extent (0) << ".");
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) !=
-           static_cast<size_t> (myGraph_->k_lclInds1D_.extent (0)),
+           static_cast<size_t> (myGraph_->lclInds_wdv.extent (0)),
            std::logic_error, "(StaticProfile unpacked branch) Before "
            "allocating or packing, curRowOffsets(" << (numOffsets-1)
            << ") = " << valToCheck
-           << " != myGraph_->k_lclInds1D_.extent(0) = "
-           << myGraph_->k_lclInds1D_.extent (0) << ".");
+           << " != myGraph_->lclInds_wdv.extent(0) = "
+           << myGraph_->lclInds_wdv.extent (0) << ".");
       }
       // Pack the row offsets into k_ptrs, by doing a sum-scan of
       // the array of valid entry counts per row.
@@ -1376,8 +1373,6 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       // process.  We will compute this in the loop below.  It's
       // cheap to compute and useful as a sanity check.
       size_t lclTotalNumEntries = 0;
-      // This will be a host view of packed row offsets.
-      typename row_map_type::non_const_type::HostMirror h_ptrs;
       {
         // Allocate the packed row offsets array.  We use a nonconst
         // temporary (packedRowOffsets) here, because k_ptrs is
@@ -1434,7 +1429,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       }
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
-      // curRowOffsets (myGraph_->k_rowPtrs_) (???), k_lclInds1D_,
+      // curRowOffsets (myGraph_->k_rowPtrs_) (???), lclInds_wdv,
       // and k_values1D_ are currently unpacked.  Pack them, using
       // the packed row offsets array k_ptrs that we created above.
       //
@@ -1442,13 +1437,17 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       // need to keep around the unpacked row offsets, column
       // indices, and values arrays.
 
-      // Pack the column indices from unpacked k_lclInds1D_ into
-      // packed k_inds.  We will replace k_lclInds1D_ below.
+      // Pack the column indices from unpacked lclInds_wdv into
+      // packed k_inds.  We will replace lclInds_wdv below.
       using inds_packer_type = pack_functor<
         typename Graph::local_graph_type::entries_type::non_const_type,
+        typename Graph::local_inds_dualv_type::t_dev::const_type,
+        typename Graph::local_graph_type::row_map_type,
         typename Graph::local_graph_type::row_map_type>;
-      inds_packer_type indsPacker (k_inds, myGraph_->k_lclInds1D_,
-                                   k_ptrs, curRowOffsets);
+      inds_packer_type indsPacker (
+                          k_inds,
+                          myGraph_->lclInds_wdv.getDeviceView(Access::ReadOnly),
+                          k_ptrs, curRowOffsets);
       using exec_space = typename decltype (k_inds)::execution_space;
       using range_type = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
       Kokkos::parallel_for
@@ -1457,7 +1456,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
 
       // Pack the values from unpacked k_values1D_ into packed
       // k_vals.  We will replace k_values1D_ below.
-      using vals_packer_type = pack_functor<values_type, row_map_type>;
+      using vals_packer_type = pack_functor<values_type, values_type, 
+                                            row_map_type, row_map_type>;
       vals_packer_type valsPacker (k_vals, this->k_values1D_,
                                    k_ptrs, curRowOffsets);
       Kokkos::parallel_for ("Tpetra::CrsMatrix pack values",
@@ -1491,13 +1491,13 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: k_rowPtrs_: "
-//KDD           << myGraph_->k_rowPtrs_.extent(0) << ", k_lclInds1D_: "
-           << myGraph_->k_lclInds1D_.extent(0) << ", k_values1D_: "
+           << myGraph_->k_rowPtrs_host_.extent(0) << ", lclInds_wdv: "
+           << myGraph_->lclInds_wdv.extent(0) << ", k_values1D_: "
            << k_values1D_.extent(0) << endl;
         std::cerr << os.str();
       }
-//KDD      k_ptrs_const = myGraph_->k_rowPtrs_;
-      k_inds = myGraph_->k_lclInds1D_;
+      k_ptrs_const = myGraph_->k_rowPtrs_dev_;
+      k_inds = myGraph_->lclInds_wdv.getDeviceView(Access::ReadWrite);  // KDDKDD Need ReadWrite because k_inds is not const
       k_vals = this->k_values1D_;
 
       if (debug) {
@@ -1509,8 +1509,7 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
            "that k_rowPtrs_ was never allocated.");
         if (k_ptrs_const.extent (0) != 0) {
           const size_t numOffsets (k_ptrs_const.extent (0));
-          const auto valToCheck =
-            getEntryOnHost (k_ptrs_const, numOffsets - 1);
+          const auto valToCheck = myGraph_->k_rowPtrs_host_(numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
             (size_t (valToCheck) != k_vals.extent (0),
              std::logic_error, myPrefix <<
@@ -1583,19 +1582,20 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Assign k_rowPtrs_: old="
-//KDD           << myGraph_->k_rowPtrs_.extent(0) << ", new="
+           << myGraph_->k_rowPtrs_host_.extent(0) << ", new="
            << k_ptrs_const.extent(0) << endl;
         std::cerr << os.str();
       }
-//KDD      myGraph_->k_rowPtrs_ = k_ptrs_const;
+      myGraph_->setRowPtrs(k_ptrs_const);
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "Assign k_lclInds1D_: old="
-           << myGraph_->k_lclInds1D_.extent(0) << ", new="
+        os << *prefix << "Assign lclInds_wdv: old="
+           << myGraph_->lclInds_wdv.extent(0) << ", new="
            << k_inds.extent(0) << endl;
         std::cerr << os.str();
       }
-      myGraph_->k_lclInds1D_ = k_inds;
+      myGraph_->lclInds_wdv = 
+                typename Graph::local_inds_wdv_type(k_inds);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Assign k_values1D_: old="
@@ -1767,7 +1767,8 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
       // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
-      pack_functor<values_type, row_map_type> valsPacker
+      pack_functor<values_type, values_type, 
+                   row_map_type, row_map_type> valsPacker
         (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs);
 
       using exec_space = typename decltype (k_vals)::execution_space;
@@ -5799,15 +5800,15 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate row_ptrs_beg: "
-;//KDD         << myGraph_->k_rowPtrs_.extent(0) << endl;
+         << myGraph_->k_rowPtrs_host_.extent(0) << endl;
       std::cerr << os.str();
     }
     using Kokkos::view_alloc;
     using Kokkos::WithoutInitializing;
     row_ptrs_type row_ptr_beg(
       view_alloc("row_ptr_beg", WithoutInitializing),
-1);//KDD      myGraph_->k_rowPtrs_.extent(0));
-//KDD    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_);
+                 myGraph_->k_rowPtrs_host_.extent(0));
+    Kokkos::deep_copy(row_ptr_beg, myGraph_->k_rowPtrs_dev_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
       size_t(row_ptr_beg.extent(0) - 1);
@@ -5848,11 +5849,11 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
                    myGraph_->gblInds_wdv,
                    k_values1D_, padding, myRank, verbose);
       const auto newValuesLen = k_values1D_.extent(0);
-      const auto newColIndsLen = myGraph_->k_gblInds1D_.extent(0);
+      const auto newColIndsLen = myGraph_->gblInds_wdv.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (newValuesLen != newColIndsLen, std::logic_error,
          ": After padding, k_values1D_.extent(0)=" << newValuesLen
-         << " != myGraph_->k_gblInds1D_.extent(0)=" << newColIndsLen
+         << " != myGraph_->gblInds_wdv.extent(0)=" << newColIndsLen
          << suffix);
     }
     else {
@@ -5860,11 +5861,11 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
                    myGraph_->lclInds_wdv,
                    k_values1D_, padding, myRank, verbose);
       const auto newValuesLen = k_values1D_.extent(0);
-      const auto newColIndsLen = myGraph_->k_lclInds1D_.extent(0);
+      const auto newColIndsLen = myGraph_->lclInds_wdv.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (newValuesLen != newColIndsLen, std::logic_error,
          ": After padding, k_values1D_.extent(0)=" << newValuesLen
-         << " != myGraph_->k_lclInds1D_.extent(0)=" << newColIndsLen
+         << " != myGraph_->lclInds_wdv.extent(0)=" << newColIndsLen
          << suffix);
     }
 
@@ -5880,13 +5881,13 @@ typename Graph::local_graph_type::row_map_type(); // KDD      myGraph_->k_rowPtr
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Assign myGraph_->k_rowPtrs_; "
-//KDD         << "old size: " << myGraph_->k_rowPtrs_.extent(0)
+         << "old size: " << myGraph_->k_rowPtrs_host_.extent(0)
          << ", new size: " << row_ptr_beg.extent(0) << endl;
       std::cerr << os.str();
-//KDD      TEUCHOS_ASSERT( myGraph_->k_rowPtrs_.extent(0) ==
-//KDD                      row_ptr_beg.extent(0) );
+      TEUCHOS_ASSERT( myGraph_->k_rowPtrs_host_.extent(0) ==
+                      row_ptr_beg.extent(0) );
     }
-//KDD    myGraph_->k_rowPtrs_ = row_ptr_beg;
+    myGraph_->setRowPtrs(row_ptr_beg);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

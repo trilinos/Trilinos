@@ -2173,21 +2173,29 @@ public:
     }
     
 //KDDKDD Make private -- matrix shouldn't access directly
-    /// \brief Local ordinals of colum indices
+    /// \brief Local ordinals of colum indices for all rows
+    /// KDDKDD UVM Removal:   Device view takes place of k_lclInds1D_
     /// Valid when isLocallyIndexed is true
     /// If OptimizedStorage, storage is PACKED after fillComplete
     /// If not OptimizedStorate, storage is UNPACKED after fillComplete; 
     /// that is, the views have storage equal to sizes provided in CrsGraph
     /// constructor.
-    /// UVM Removal:  Device view takes place of k_lclInds1D_
+    ///
+    /// This is allocated only if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph is locally indexed
     local_inds_wdv_type lclInds_wdv;
 
-
 //KDDKDD Make private -- matrix shouldn't access directly
-    /// \brief Global ordinals of column indices
-    /// Valid when isGloballyIndexed is true
-    /// Free'd during fillComplete
-    /// UVM Removal:   Device view takes place of k_gblInds1D_
+    /// \brief Global ordinals of column indices for all rows
+    /// KDDKDD UVM Removal:   Device view takes place of k_gblInds1D_
+    ///
+    /// This is allocated only if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph is globally indexed
+
     global_inds_wdv_type gblInds_wdv;
 
     /// \brief Get a const, locally indexed view of the
@@ -2266,28 +2274,8 @@ public:
     //! \name Graph data structures (packed and unpacked storage).
     //@{
 
-    /// \brief Local column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph is locally indexed
-// KDDKDD DELETE
-typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
-// KDDKDD DELETE
-
     //! Type of the k_gblInds1D_ array of global column indices.
     typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
-
-    /// \brief Global column indices for all rows.
-    ///
-    /// This is only allocated if
-    ///
-    ///   - The calling process has a nonzero number of entries
-    ///   - The graph is globally indexed
-// KDDKDD DELETE
-t_GlobalOrdinal_1D k_gblInds1D_;
-// KDDKDD DELETE
 
     /// \brief Row offsets for "1-D" storage.
     ///
@@ -2310,10 +2298,6 @@ t_GlobalOrdinal_1D k_gblInds1D_;
     /// If it is allocated, k_rowPtrs_ has length getNodeNumRows()+1.
     /// The k_numRowEntries_ array has has length getNodeNumRows(),
     /// again if it is allocated.
-
-// KDDKDD DELETE
-typename local_graph_type::row_map_type::const_type k_rowPtrs_;
-// KDDKDD DELETE
 
     /// \brief The type of k_numRowEntries_ (see below).
     ///
