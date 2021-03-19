@@ -113,20 +113,19 @@ namespace Tacho {
       stat.t_extra = 0;
       stat.m_used = 0;
       stat.m_peak = 0;
-
-      // stat.b_min_block_size = 0;
-      // stat.b_max_block_size = 0;
-      // stat.b_capacity = 0;
-      // stat.b_num_superblocks = 0;
-
-      // stat.s_min_block_size = 0;
-      // stat.s_max_block_size = 0;
-      // stat.s_capacity = 0;
-      // stat.s_num_superblocks = 0;
     }
 
     virtual void
     print_stat_factor() {
+      double flop = 0;
+      auto h_supernodes = Kokkos::create_mirror_view_and_copy(host_memory_space(), _supernodes);
+      for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+        auto &s = h_supernodes(sid);
+        const ordinal_type m = s.m, n = s.n - s.m;
+        flop += DenseFlopCount<value_type>::Chol(m);
+        flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+        flop += DenseFlopCount<value_type>::Syrk(m, n);
+      }
       const double kilo(1024);
       printf("  Time\n");
       printf("             time for copying A into supernodes:              %10.6f s\n", stat.t_copy);
@@ -136,6 +135,10 @@ namespace Tacho {
       printf("  Memory\n");
       printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used/kilo/kilo);
       printf("             peak memory used in factorization:               %10.3f MB\n", stat.m_peak/kilo/kilo);
+      printf("\n");
+      printf("  FLOPs\n");
+      printf("             gflop   for numeric factorization wrt. Chol:     %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
       printf("\n");
     }
       
@@ -161,10 +164,6 @@ namespace Tacho {
       printf("             peak memory used:                                %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
     }
-      
-
-  private:
-
 
   public:
     NumericToolsBase() 
