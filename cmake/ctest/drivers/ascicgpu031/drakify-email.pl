@@ -329,7 +329,7 @@ sub printTableHeader
     for(my $k=0; $k<$num_packages; $k++) {
 print <<"EOF";
           <th class="grpth" colspan="4" style="text-align: center;">$packages[$k]</th>
-          <th class="grpth" colspan="2" style="text-align: center;">$packages[$k]</th>
+          <th class="grpth" colspan="2" style="text-align: center;">$packages[$k] libs</th>
 EOF
 
     }
