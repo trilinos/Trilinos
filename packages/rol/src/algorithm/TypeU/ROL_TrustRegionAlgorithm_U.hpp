@@ -102,6 +102,7 @@ public:
   TrustRegionAlgorithm_U( ParameterList &parlist,
     const Ptr<Secant<Real>> &secant = nullPtr );
 
+  using Algorithm_U<Real>::run;
   std::vector<std::string> run( Vector<Real>       &x,
                                 const Vector<Real> &g, 
                                 Objective<Real>    &obj,
