@@ -1290,7 +1290,7 @@ namespace Tpetra {
       return typename local_inds_dualv_type::t_host::const_type ();
     else
       return lclInds_wdv.getHostSubview(rowinfo.offset1D, 
-                                        rowinfo.numEntries,
+                                        rowinfo.allocSize,
                                         Access::ReadOnly);
   }
 
@@ -1304,7 +1304,7 @@ namespace Tpetra {
       return typename local_inds_dualv_type::t_host ();
     else
       return lclInds_wdv.getHostSubview(rowinfo.offset1D, 
-                                        rowinfo.numEntries,
+                                        rowinfo.allocSize,
                                         Access::ReadWrite);
   }
 
@@ -1318,7 +1318,7 @@ namespace Tpetra {
       return typename global_inds_dualv_type::t_host::const_type ();
     else
       return gblInds_wdv.getHostSubview(rowinfo.offset1D, 
-                                        rowinfo.numEntries,
+                                        rowinfo.allocSize,
                                         Access::ReadOnly);
   }
 
@@ -1332,7 +1332,7 @@ namespace Tpetra {
       return typename local_inds_dualv_type::t_dev::const_type ();
     else
       return lclInds_wdv.getDeviceSubview(rowinfo.offset1D, 
-                                          rowinfo.numEntries,
+                                          rowinfo.allocSize,
                                           Access::ReadOnly);
   }
 
@@ -1346,7 +1346,7 @@ namespace Tpetra {
       return typename global_inds_dualv_type::t_dev::const_type ();
     else
       return gblInds_wdv.getDeviceSubview(rowinfo.offset1D, 
-                                          rowinfo.numEntries,
+                                          rowinfo.allocSize,
                                           Access::ReadOnly);
   }
 
