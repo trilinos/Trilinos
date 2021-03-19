@@ -32,7 +32,8 @@ fi
 #########################################################################
 
 #Perl script to produce prettified HTML
-HTMLPERLSCRIPT="/home/csiefer/Trilinos/ascicgpu-testing/Trilinos/packages/muelu/utils/misc/drakify-email.pl"
+HTMLPERLSCRIPT="/ascldap/users/csiefer/Trilinos/ascicgpu-testing/Trilinos/cmake/ctest/drivers/ascicgpu031/drakify-email.pl"
+
 #root of cdash testing directory
 TESTLOCATION="/home/csiefer/Trilinos/ascicgpu-testing"
 LOGBACKUPDIRECTORY="/home/csiefer/Trilinos/ascicgpu-testing/logs"
