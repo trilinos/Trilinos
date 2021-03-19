@@ -94,8 +94,8 @@ private:
   static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
 
 public:
-  using t_host = typename DualViewType::t_host;
-  using t_dev = typename DualViewType::t_dev;
+  using HostViewType = typename DualViewType::t_host;
+  using DeviceViewType = typename DualViewType::t_dev;
 
   WrappedDualView() {}
 
@@ -103,10 +103,10 @@ public:
     : dualView(dualV)
   { }
 
-  WrappedDualView(const t_dev devView)
+  WrappedDualView(const DeviceViewType devView)
   {
      auto hostView =
-       Kokkos::create_mirror_view_and_copy(typename t_host::memory_space(), devView);
+       Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), devView);
      dualView = DualViewType(devView, hostView);
   }
 
