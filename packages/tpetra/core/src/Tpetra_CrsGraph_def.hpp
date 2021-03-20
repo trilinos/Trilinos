@@ -4203,12 +4203,14 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
 
     // Commit the results.
     if (isLocallyIndexed ()) {
-      typename local_inds_dualv_type::t_dev newLclInds1D_dev(
-               Kokkos::view_alloc("Tpetra::CrsGraph::lclIndReindexed",
-                                  Kokkos::WithoutInitializing),
-               newLclInds1D.extent(0));
-      Kokkos::deep_copy(newLclInds1D_dev, newLclInds1D);
-      lclInds_wdv = local_inds_wdv_type(newLclInds1D_dev);
+      { // scope the device view; sortAndMergeAllIndices needs host
+        typename local_inds_dualv_type::t_dev newLclInds1D_dev(
+                 Kokkos::view_alloc("Tpetra::CrsGraph::lclIndReindexed",
+                                    Kokkos::WithoutInitializing),
+                 newLclInds1D.extent(0));
+        Kokkos::deep_copy(newLclInds1D_dev, newLclInds1D);
+        lclInds_wdv = local_inds_wdv_type(newLclInds1D_dev);
+      }
 
       // We've reindexed, so we don't know if the indices are sorted.
       //
