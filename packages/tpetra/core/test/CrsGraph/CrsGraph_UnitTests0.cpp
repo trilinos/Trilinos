@@ -715,7 +715,8 @@ namespace { // (anonymous)
             grow = 0;
           }
           diaggraph.insertGlobalIndices (grow, tuple<GO> (grow));
-          // before globalAssemble(), there should be no local entries if numProcs > 1
+          // before globalAssemble(), there should be no local entries if 
+          // numProcs > 1
           {
             typename GRAPH::global_inds_host_view_type myrow_gbl;
             diaggraph.getGlobalRowView (myrowind, myrow_gbl);
@@ -731,12 +732,15 @@ namespace { // (anonymous)
           }
 
           if (pftype == StaticProfile) { // no room for more
-            out << "Attempt to insert global column index " << (myrowind+1) << " into"
-              " global row " << myrowind << "; it should throw, because the graph"
-              " is StaticProfile, has an upper bound of one entry per row, and "
-              "already has a different column index " << grow << " in this row."
+            out << "Attempt to insert global column index " << (myrowind+1) 
+                << " into global row " << myrowind 
+                << "; it should throw, because the graph"
+                << " is StaticProfile, has an upper bound of one entry "
+                << "per row, and already has a different column index " 
+                << grow << " in this row."
                 << endl;
-            TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind+1)),
+            TEST_THROW( diaggraph.insertGlobalIndices(myrowind,
+                                                      tuple<GO>(myrowind+1)),
                         std::runtime_error );
           }
 
@@ -749,12 +753,14 @@ namespace { // (anonymous)
             diaggraph.getLocalRowView (0, myrow_lcl);
             TEST_EQUALITY_CONST( myrow_lcl.size (), 1 );
             if (myrow_lcl.size() == 1) {
-              TEST_EQUALITY( diaggraph.getColMap ()->getGlobalElement (myrow_lcl[0]),
-                             myrowind );
+              TEST_EQUALITY( 
+                   diaggraph.getColMap()->getGlobalElement(myrow_lcl[0]),
+                   myrowind );
             }
           }
           // also, the row map and column map should be equivalent
-          TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
+          TEST_EQUALITY_CONST(
+               diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
 
           STD_TESTS(diaggraph);
         }
@@ -795,37 +801,36 @@ namespace { // (anonymous)
             // neighbors on my row
             typename GRAPH::local_inds_host_view_type myrow_lcl;
             ngraph.getLocalRowView (0, myrow_lcl);
-  //          out << "Returned view of column indices on Proc 0: "
-  //              << Teuchos::toString (myrow_lcl) << endl;
+            // check indices on my row
+            typename Array<GO>::iterator glast;
+            std::sort (grows.begin (), grows.end ());
+            glast = std::unique (grows.begin (), grows.end ());
+            size_t numunique = glast - grows.begin ();
+            // test the test: numunique == min(numProcs,3)
+            TEST_EQUALITY( numunique, (size_t)min(numProcs,3) );
+            TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
+            if ((size_t)myrow_lcl.size() == numunique) {
+              size_t numinds;
+              Array<GO> inds(numunique+1);
+              TEST_THROW(
+                   ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1),
+                                            numinds),
+                   std::runtime_error );
+              TEST_NOTHROW(
+                   ngraph.getGlobalRowCopy (myrowind, inds (0, numunique),
+                                            numinds) );
+              TEST_NOTHROW(
+                   ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
 
-            {
-              // check indices on my row
-              typename Array<GO>::iterator glast;
-              std::sort (grows.begin (), grows.end ());
-              glast = std::unique (grows.begin (), grows.end ());
-              size_t numunique = glast - grows.begin ();
-              // test the test: numunique == min(numProcs,3)
-              TEST_EQUALITY( numunique, (size_t)min(numProcs,3) );
-              TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
-              if ((size_t)myrow_lcl.size() == numunique) {
-                size_t numinds;
-                Array<GO> inds(numunique+1);
-                TEST_THROW(
-                           ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1), numinds),
-                           std::runtime_error );
-                TEST_NOTHROW(
-                             ngraph.getGlobalRowCopy (myrowind, inds (0, numunique), numinds) );
-                TEST_NOTHROW( ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
-                std::sort (inds.begin (), inds.begin () + numinds);
-                TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
-  
-                out << "On Proc 0:" << endl;
-                Teuchos::OSTab tab5 (out);
-                out << "numinds: " << numinds << endl
-                    << "inds(0,numinds): " << inds (0, numinds) << endl
-                    << "numunique: " << numunique << endl
-                    << "grows(0,numunique): " << grows (0, numunique) << endl;
-              }
+              std::sort (inds.begin (), inds.begin () + numinds);
+              TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
+
+              out << "On Proc 0:" << endl;
+              Teuchos::OSTab tab5 (out);
+              out << "numinds: " << numinds << endl
+                  << "inds(0,numinds): " << inds (0, numinds) << endl
+                  << "numunique: " << numunique << endl
+                  << "grows(0,numunique): " << grows (0, numunique) << endl;
             }
           }
           TEST_EQUALITY_CONST( ngraph.getRowMap ()->isSameAs (* (ngraph.getColMap ())),

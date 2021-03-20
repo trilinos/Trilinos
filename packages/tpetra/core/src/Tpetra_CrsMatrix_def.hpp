@@ -1751,11 +1751,11 @@ namespace Tpetra {
       size_t lclTotalNumEntries = 0;
       k_ptrs = tmpk_ptrs;
       {
-        typename row_entries_type::const_type numRowEnt_d =
+        typename row_entries_type::const_type numRowEnt_h =
           staticGraph_->k_numRowEntries_;
         // This function can handle the counts being a host View.
         lclTotalNumEntries =
-          Details::computeOffsetsFromCounts (tmpk_ptrs, numRowEnt_d);
+          Details::computeOffsetsFromCounts (tmpk_ptrs, numRowEnt_h);
       }
 
       // Allocate the "packed" values array.

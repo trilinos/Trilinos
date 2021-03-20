@@ -2418,7 +2418,9 @@ namespace Tpetra {
     const RowInfo rowInfo = getRowInfo (localRow);
     if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
         rowInfo.numEntries > 0) {
-      indices = this->getLocalIndsViewHost (rowInfo);
+      indices = lclInds_wdv.getHostSubview(rowInfo.offset1D, 
+                                           rowInfo.numEntries,
+                                           Access::ReadOnly);
     }
     else {
       // This does the right thing (reports an empty row) if the input
@@ -2456,7 +2458,9 @@ namespace Tpetra {
     const RowInfo rowInfo = getRowInfoFromGlobalRowIndex (globalRow);
     if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
         rowInfo.numEntries > 0) {
-      indices = this->getGlobalIndsViewHost (rowInfo);
+      indices = gblInds_wdv.getHostSubview(rowInfo.offset1D, 
+                                           rowInfo.numEntries,
+                                           Access::ReadOnly);
     }
     else {
       indices = typename global_inds_dualv_type::t_host::const_type();
@@ -5104,12 +5108,15 @@ namespace Tpetra {
     }
     row_ptrs_type row_ptrs_end(
       view_alloc("row_ptrs_end", WithoutInitializing), N);
+    row_ptrs_type num_row_entries;
 
     const bool refill_num_row_entries = k_numRowEntries_.extent(0) != 0;
     if (refill_num_row_entries) { // Case 1: Unpacked storage
       // We can't assume correct *this capture until C++17, and it's
       // likely more efficient just to capture what we need anyway.
-      auto num_row_entries = this->k_numRowEntries_;
+      num_row_entries = 
+          row_ptrs_type(view_alloc("num_row_entries", WithoutInitializing), N);
+      Kokkos::deep_copy(num_row_entries, this->k_numRowEntries_);
       Kokkos::parallel_for
         ("Fill end row pointers", range_policy(0, N),
          KOKKOS_LAMBDA (const size_t i) {
@@ -5137,12 +5144,12 @@ namespace Tpetra {
     }
 
     if (refill_num_row_entries) {
-      auto num_row_entries = this->k_numRowEntries_;
       Kokkos::parallel_for
         ("Fill num entries", range_policy(0, N),
          KOKKOS_LAMBDA (const size_t i) {
           num_row_entries(i) = row_ptrs_end(i) - row_ptrs_beg(i);
         });
+      Kokkos::deep_copy(this->k_numRowEntries_, num_row_entries);
     }
     if (verbose) {
       std::ostringstream os;
