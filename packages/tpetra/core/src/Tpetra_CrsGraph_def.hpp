@@ -7475,6 +7475,7 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " <
 
     std::swap(graph.lclInds_wdv, this->lclInds_wdv);
     std::swap(graph.gblInds_wdv, this->gblInds_wdv);
+    std::swap(graph.lclIndsCompressed_wdv, this->lclIndsCompressed_wdv);
 
     std::swap(graph.storageStatus_, this->storageStatus_);
 
@@ -7602,13 +7603,19 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " <
         output = indtThis(i) == indtGraph(i) ? output : false;
     }
 
-    // Check lclGraph_      // isa Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
+    // Check lclGraph_ isa
+    // Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
     // Kokkos::StaticCrsGraph has 3 data members in it:
-    //   Kokkos::View<size_type*, ...> row_map            (local_graph_type::row_map_type)
-    //   Kokkos::View<data_type*, ...> entries            (local_graph_type::entries_type)
-    //   Kokkos::View<size_type*, ...> row_block_offsets  (local_graph_type::row_block_type)
-    // There is currently no Kokkos::StaticCrsGraph comparison function that's built-in, so we will just compare
-    // the three data items here. This can be replaced if Kokkos ever puts in its own comparison routine.
+    //   Kokkos::View<size_type*, ...> row_map            
+    //           (local_graph_type::row_map_type)
+    //   Kokkos::View<data_type*, ...> entries            
+    //           (local_graph_type::entries_type)
+    //   Kokkos::View<size_type*, ...> row_block_offsets  
+    //           (local_graph_type::row_block_type)
+    // There is currently no Kokkos::StaticCrsGraph comparison function 
+    // that's built-in, so we will just compare
+    // the three data items here. This can be replaced if Kokkos ever 
+    // puts in its own comparison routine.
     local_graph_type thisLclGraph = this->getLocalGraphDevice();
     local_graph_type graphLclGraph = graph.getLocalGraphDevice();
     output = thisLclGraph.row_map.extent(0) == graphLclGraph.row_map.extent(0) 
