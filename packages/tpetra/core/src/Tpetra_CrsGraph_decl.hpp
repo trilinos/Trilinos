@@ -2085,7 +2085,11 @@ public:
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    // TPETRA_DEPRECATED
     local_graph_type getLocalGraph () const;
+#endif
+    local_graph_type getLocalGraphDevice () const;
 
   protected:
 
@@ -2127,9 +2131,6 @@ public:
     /// is necessary in that case for sparse matrix-vector multiply.
     Teuchos::RCP<const export_type> exporter_;
 
-    //! Local graph; only initialized after first fillComplete() call.
-    local_graph_type lclGraph_;
-
     /// \brief Local maximum of the number of entries in each row.
     ///
     /// Computed in computeLocalConstants; only valid when
@@ -2155,6 +2156,11 @@ public:
     // Host view k_rowPtrs_host_ takes place of copies and use of getEntryOnHost
     // Wish this could be a WrappedDualView, but deep_copies in DualView
     // don't work with const data views (e.g., StaticCrsGraph::row_map)
+    // k_rowPtrs_ is offsets wrt the ALLOCATED indices array, not necessarily
+    // the ACTUAL compressed indices array.
+    // When !OptimizedStorage, k_rowPtrs_ may differ from ACTUAL compressed
+    // indices array.  (Karen is skeptical that !OptimizedStorage works)
+    // When OptimizedStorage, k_rowPtrs_ = k_rowPtrsCompressed_
 
     using row_ptrs_device_type = 
           Kokkos::View<const typename local_graph_type::size_type *, 
@@ -2171,7 +2177,20 @@ public:
            Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dview);
       k_rowPtrs_host_ = hview;
     }
+
+    void setRowPtrsCompressed(const row_ptrs_device_type &dview) {
+      k_rowPtrsCompressed_dev_ = dview;
+      auto hview = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dview);
+      k_rowPtrsCompressed_host_ = hview;
+    }
     
+    // Row offsets into the actual graph local indices 
+    // Device view k_rowPtrs_dev_ takes place of lclGraph_.row_map
+
+    row_ptrs_device_type k_rowPtrsCompressed_dev_;
+    row_ptrs_host_type k_rowPtrsCompressed_host_;
+  
 //KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Local ordinals of colum indices for all rows
     /// KDDKDD UVM Removal:   Device view takes place of k_lclInds1D_
@@ -2186,6 +2205,20 @@ public:
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
     local_inds_wdv_type lclInds_wdv;
+
+    /// \brief Local ordinals of colum indices for all rows
+    /// KDDKDD UVM Removal:   Device view takes place of lclGraph_.entries
+    /// Valid when isLocallyIndexed is true
+    /// Built during fillComplete or non-fillComplete constructors
+    /// Storage is PACKED after fillComplete
+    /// that is, the views have storage equal to sizes provided in CrsGraph
+    /// constructor.
+    ///
+    /// This is allocated only if
+    ///
+    ///   - The calling process has a nonzero number of entries
+    ///   - The graph is locally indexed
+    mutable local_inds_wdv_type lclIndsCompressed_wdv;
 
 //KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Global ordinals of column indices for all rows

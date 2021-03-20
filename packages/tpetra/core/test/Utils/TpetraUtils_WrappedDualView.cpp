@@ -220,6 +220,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor) {
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
 }
 
+#if 0
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor_constData) {
   WrappedDualViewFixture fixture;
   WrappedConstDualViewType wrappedView;
@@ -235,6 +236,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor_constData) {
   auto hostView = wrappedView.getHostView(Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
 }
+#endif
 
 TEUCHOS_UNIT_TEST(WrappedDualView, extent) {
   WrappedDualViewFixture fixture;

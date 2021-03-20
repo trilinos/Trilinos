@@ -600,7 +600,6 @@ namespace Tpetra {
     : DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, node_type> (rowMap)
     , rowMap_ (rowMap)
     , colMap_ (colMap)
-    , lclGraph_ (k_local_graph_)
     , numAllocForAllRows_ (0)
     , storageStatus_ (Details::STORAGE_1D_PACKED)
     , indicesAreAllocated_ (true)
@@ -644,8 +643,10 @@ namespace Tpetra {
     Teuchos::Array<int> remotePIDs (0); // unused output argument
     this->makeImportExport (remotePIDs, false);
 
-    lclInds_wdv = local_inds_wdv_type(lclGraph_.entries);
-    this->setRowPtrs(lclGraph_.row_map);
+    lclIndsCompressed_wdv = local_inds_wdv_type(k_local_graph_.entries);
+    lclInds_wdv = lclIndsCompressed_wdv;
+    this->setRowPtrs(k_local_graph_.row_map);
+    this->setRowPtrsCompressed(k_local_graph_.row_map);
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -676,7 +677,6 @@ namespace Tpetra {
     domainMap_ (domainMap.is_null () ? rowMap : domainMap),
     importer_ (importer),
     exporter_ (exporter),
-    lclGraph_ (lclGraph),
     numAllocForAllRows_ (0),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     indicesAreAllocated_ (true),
@@ -690,8 +690,10 @@ namespace Tpetra {
       (colMap.is_null (), std::runtime_error,
        "The input column Map must be nonnull.");
 
-    lclInds_wdv = local_inds_wdv_type(lclGraph_.entries);
-    setRowPtrs(lclGraph_.row_map);
+    lclIndsCompressed_wdv = local_inds_wdv_type(lclGraph.entries);
+    lclInds_wdv = lclIndsCompressed_wdv;
+    setRowPtrs(lclGraph.row_map);
+    setRowPtrsCompressed(lclGraph.row_map);
 
     set_need_sync_host_uvm_access(); // lclGraph_ potentially still in a kernel
 
@@ -919,12 +921,12 @@ namespace Tpetra {
         auto numEntPerRow = this->k_numRowEntries_;
         const LO numNumEntPerRow = numEntPerRow.extent (0);
         if (numNumEntPerRow == 0) {
-          if (static_cast<LO> (this->lclGraph_.row_map.extent (0)) <
+          if (static_cast<LO> (this->k_rowPtrsCompressed_dev_.extent (0)) <
               static_cast<LO> (lclNumRows + 1)) {
             return static_cast<size_t> (0);
           }
           else {
-            return ::Tpetra::Details::getEntryOnHost (this->lclGraph_.row_map, lclNumRows);
+            return ::Tpetra::Details::getEntryOnHost (this->k_rowPtrsCompressed_dev_, lclNumRows);  // KDDKDDKDD REVISIT
           }
         }
         else { // k_numRowEntries_ is populated
@@ -1024,12 +1026,12 @@ namespace Tpetra {
         return static_cast<size_t> (0);
       }
       else if (storageStatus_ == Details::STORAGE_1D_PACKED) {
-        if (static_cast<LO> (this->lclGraph_.row_map.extent (0)) <
+        if (static_cast<LO> (this->k_rowPtrsCompressed_dev_.extent (0)) <
             static_cast<LO> (lclNumRows + 1)) {
           return static_cast<size_t> (0);
         }
         else {
-          return ::Tpetra::Details::getEntryOnHost (this->lclGraph_.row_map, lclNumRows);
+          return this->k_rowPtrsCompressed_host_(lclNumRows);   // KDDKDD REVISIT -- used to be getEntryOnHost
         }
       }
       else if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
@@ -2913,19 +2915,16 @@ namespace Tpetra {
     indicesAreLocal_     = true;
     indicesAreSorted_    = true;
     noRedundancies_      = true;
-    lclInds_wdv          = local_inds_wdv_type(columnIndices);
+    lclIndsCompressed_wdv= local_inds_wdv_type(columnIndices);
+    lclInds_wdv          = lclIndsCompressed_wdv;
     setRowPtrs(rowPointers);
+    setRowPtrsCompressed(rowPointers);
 
     set_need_sync_host_uvm_access(); // columnIndices and rowPointers potentially still in a kernel
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
     storageStatus_       = Details::STORAGE_1D_PACKED;
-
-    // Build the local graph.
-    lclGraph_ = local_graph_type (columnIndices, rowPointers);
-    // KDDKDD lclGraph_ may throw off the reference count;
-    // KDDKDD need lclGraphHost_ as well.
 
     // These normally get cleared out at the end of allocateIndices.
     // It makes sense to clear them out here, because at the end of
@@ -3744,12 +3743,6 @@ namespace Tpetra {
 
     // This method's goal is to fill in the two arrays (compressed
     // sparse row format) that define the sparse graph's structure.
-    //
-    // Use the nonconst version of row_map_type for ptr_d, because
-    // the latter is const and we need to modify ptr_d here.
-    non_const_row_map_type ptr_d;
-    row_map_type ptr_d_const;
-    lclinds_1d_type ind_d;
 
     bool requestOptimizedStorage = true;
     if (! params.is_null () && ! params->get ("Optimize Storage", true)) {
@@ -3807,6 +3800,11 @@ namespace Tpetra {
     }
 
     if (this->getNodeNumEntries () != allocSize) {
+      // Use the nonconst version of row_map_type for ptr_d, because
+      // the latter is const and we need to modify ptr_d here.
+      non_const_row_map_type ptr_d;
+      row_map_type ptr_d_const;
+
       // The graph's current 1-D storage is "unpacked."  This means
       // the row offsets may differ from what the final row offsets
       // should be.  This could happen, for example, if the user set
@@ -3836,7 +3834,8 @@ namespace Tpetra {
       size_t lclTotalNumEntries = 0;
       {
         // Allocate the packed row offsets array.
-        ptr_d = non_const_row_map_type ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
+        ptr_d = 
+          non_const_row_map_type ("Tpetra::CrsGraph::ptr", lclNumRows + 1);
         ptr_d_const = ptr_d;
 
         // It's ok that k_numRowEntries_ is a host View; the
@@ -3871,7 +3870,8 @@ namespace Tpetra {
       }
 
       // Allocate the array of packed column indices.
-      ind_d = lclinds_1d_type ("Tpetra::CrsGraph::lclInd", lclTotalNumEntries);
+      lclinds_1d_type ind_d =
+         lclinds_1d_type ("Tpetra::CrsGraph::lclInd", lclTotalNumEntries);
 
       // k_rowPtrs_ and lclInds_wdv are currently unpacked.  Pack
       // them, using the packed row offsets array ptr_d that we
@@ -3915,48 +3915,51 @@ namespace Tpetra {
              << ind_d.extent(0) << ".");
         }
       }
+      // Build the local graph.
+      setRowPtrsCompressed(ptr_d_const);
+      lclIndsCompressed_wdv = local_inds_wdv_type(ind_d);
     }
     else { // We don't have to pack, so just set the pointers.
-      ptr_d_const = k_rowPtrs_dev_;
-      ind_d = lclInds_wdv.getDeviceView(Access::ReadWrite);
-      // KDDKDD above could be ReadOnly, except that ReadOnly returns const
-      // KDDKDD and ind_d is not const
+      setRowPtrsCompressed(k_rowPtrs_dev_);
+      lclIndsCompressed_wdv = lclInds_wdv; 
 
       if (debug_) {
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (ptr_d_const.extent (0) == 0, std::logic_error,
+          (k_rowPtrsCompressed_dev_.extent (0) == 0, std::logic_error,
            "(\"Optimize Storage\"=false branch) "
-           "ptr_d_const.extent(0) = 0.  This probably means that "
+           "k_rowPtrsCompressed_dev_.extent(0) = 0.  "
+           "This probably means that "
            "k_rowPtrs_ was never allocated.");
-        if (ptr_d_const.extent (0) != 0) {
+        if (k_rowPtrsCompressed_dev_.extent (0) != 0) {
           const size_t numOffsets =
-            static_cast<size_t> (ptr_d_const.extent (0));
+            static_cast<size_t> (k_rowPtrsCompressed_dev_.extent (0));
           const size_t valToCheck =
-            ::Tpetra::Details::getEntryOnHost (ptr_d_const, numOffsets - 1);
+            k_rowPtrsCompressed_host_(numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (valToCheck != size_t(ind_d.extent (0)),
+            (valToCheck != size_t(lclIndsCompressed_wdv.extent (0)),
              std::logic_error, "(\"Optimize Storage\"=false branch) "
-             "ptr_d_const(" << (numOffsets-1) << ")=" << valToCheck
-             << " != ind_d.extent(0)=" << ind_d.extent (0) << ".");
+             "k_rowPtrsCompressed_dev_(" << (numOffsets-1) << ")=" 
+             << valToCheck
+             << " != lclIndsCompressed_wdv.extent(0)=" 
+             << lclIndsCompressed_wdv.extent (0) << ".");
         }
       }
     }
 
     if (debug_) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (static_cast<size_t> (ptr_d_const.extent (0)) != lclNumRows + 1,
-         std::logic_error, "After packing, ptr_d_const.extent(0) = " <<
-         ptr_d_const.extent (0) << " != lclNumRows+1 = " << (lclNumRows+1)
+        (static_cast<size_t> (k_rowPtrsCompressed_dev_.extent (0)) != lclNumRows + 1,
+         std::logic_error, "After packing, k_rowPtrsCompressed_dev_.extent(0) = " <<
+         k_rowPtrsCompressed_dev_.extent (0) << " != lclNumRows+1 = " << (lclNumRows+1)
          << ".");
-      if (ptr_d_const.extent (0) != 0) {
-        const size_t numOffsets = static_cast<size_t> (ptr_d_const.extent (0));
-        const auto valToCheck =
-          ::Tpetra::Details::getEntryOnHost (ptr_d_const, numOffsets - 1);
+      if (k_rowPtrsCompressed_dev_.extent (0) != 0) {
+        const size_t numOffsets = static_cast<size_t> (k_rowPtrsCompressed_dev_.extent (0));
+        const auto valToCheck = k_rowPtrsCompressed_host_(numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (static_cast<size_t> (valToCheck) != ind_d.extent (0),
-           std::logic_error, "After packing, ptr_d_const(" << (numOffsets-1)
-           << ") = " << valToCheck << " != ind_d.extent(0) = "
-           << ind_d.extent (0) << ".");
+          (static_cast<size_t> (valToCheck) != lclIndsCompressed_wdv.extent (0),
+           std::logic_error, "After packing, k_rowPtrsCompressed_dev_(" << (numOffsets-1)
+           << ") = " << valToCheck << " != lclIndsCompressed_wdv.extent(0) = "
+           << lclIndsCompressed_wdv.extent (0) << ".");
       }
     }
 
@@ -3969,16 +3972,11 @@ namespace Tpetra {
       k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      setRowPtrs(ptr_d_const);
-      lclInds_wdv = local_inds_wdv_type(ind_d);
+      setRowPtrs(k_rowPtrsCompressed_dev_);
+      lclInds_wdv = lclIndsCompressed_wdv;
 
       storageStatus_ = Details::STORAGE_1D_PACKED;
     }
-
-    // FIXME (mfh 28 Aug 2014) "Local Graph" sublist no longer used.
-
-    // Build the local graph.
-    lclGraph_ = local_graph_type (ind_d, ptr_d_const);
 
     set_need_sync_host_uvm_access(); // make sure kernel setup of indices is fenced before a host access
   }
@@ -4271,12 +4269,24 @@ namespace Tpetra {
     importer_ = Teuchos::rcp_const_cast<import_type> (newImporter);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraph () const
   {
-    return lclGraph_;
+    return getLocalGraphDevice();
+  }
+#endif
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalGraphDevice () const
+  {
+    return local_graph_type(
+                 lclIndsCompressed_wdv.getDeviceView(Access::ReadWrite),
+                 k_rowPtrsCompressed_dev_);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4343,7 +4353,7 @@ namespace Tpetra {
 
     using LO = local_ordinal_type;
 
-    auto ptr = this->lclGraph_.row_map;
+    auto ptr = this->k_rowPtrsCompressed_dev_;
     const LO lclNumRows = ptr.extent(0) == 0 ?
       static_cast<LO> (0) :
       (static_cast<LO> (ptr.extent(0)) - static_cast<LO> (1));
@@ -5651,9 +5661,9 @@ namespace Tpetra {
       exports.modify_host ();
       Kokkos::deep_copy (exports.view_host (), exports_a_h);
     }
-    // packCrsGraphNew requires a valid localGraph.
+    // packCrsGraphNew requires k_rowPtrsCompressed_ to be set
     else if (! getColMap ().is_null () &&
-        (lclGraph_.row_map.extent (0) != 0 ||
+        (k_rowPtrsCompressed_dev_.extent (0) != 0 ||
          getRowMap ()->getNodeNumElements () == 0)) {
       if (verbose) {
         std::ostringstream os;
@@ -5692,8 +5702,8 @@ namespace Tpetra {
         Distributor& distor) const
   {
     auto col_map = this->getColMap();
-    // packCrsGraph requires a valid localGraph.
-    if( !col_map.is_null() && (lclGraph_.row_map.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
+    // packCrsGraph requires k_rowPtrsCompressed_ to be set
+    if( !col_map.is_null() && (k_rowPtrsCompressed_dev_.extent(0) != 0  ||  getRowMap()->getNodeNumElements() ==0)) {
       using Tpetra::Details::packCrsGraph;
       packCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(*this, exports, numPacketsPerLID,
                                                     exportLIDs, constantNumPackets, distor);
@@ -7417,7 +7427,8 @@ namespace Tpetra {
     std::swap(graph.importer_, this->importer_);
     std::swap(graph.exporter_, this->exporter_);
 
-    std::swap(graph.lclGraph_, this->lclGraph_);
+    std::swap(graph.k_rowPtrsCompressed_dev_, this->k_rowPtrsCompressed_dev_);
+    std::swap(graph.k_rowPtrsCompressed_host_, this->k_rowPtrsCompressed_host_);
 
     std::swap(graph.nodeMaxNumRowEntries_, this->nodeMaxNumRowEntries_);
 
@@ -7565,35 +7576,37 @@ namespace Tpetra {
     //   Kokkos::View<size_type*, ...> row_block_offsets  (local_graph_type::row_block_type)
     // There is currently no Kokkos::StaticCrsGraph comparison function that's built-in, so we will just compare
     // the three data items here. This can be replaced if Kokkos ever puts in its own comparison routine.
-    output = this->lclGraph_.row_map.extent(0) == graph.lclGraph_.row_map.extent(0) ? output : false;
-    if(output && this->lclGraph_.row_map.extent(0) > 0)
+    local_graph_type thisLclGraph = this->getLocalGraphDevice();
+    local_graph_type graphLclGraph = graph.getLocalGraphDevice();
+    output = thisLclGraph.row_map.extent(0) == graphLclGraph.row_map.extent(0) ? output : false;
+    if(output && thisLclGraph.row_map.extent(0) > 0)
     {
-      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_this  = Kokkos::create_mirror_view(this->lclGraph_.row_map);
-      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.row_map);
-      Kokkos::deep_copy(lclGraph_rowmap_host_this, this->lclGraph_.row_map);
-      Kokkos::deep_copy(lclGraph_rowmap_host_graph, graph.lclGraph_.row_map);
+      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_this  = Kokkos::create_mirror_view(thisLclGraph.row_map);
+      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_graph = Kokkos::create_mirror_view(graphLclGraph.row_map);
+      Kokkos::deep_copy(lclGraph_rowmap_host_this, thisLclGraph.row_map);
+      Kokkos::deep_copy(lclGraph_rowmap_host_graph, graphLclGraph.row_map);
       for(size_t i=0; output && i<lclGraph_rowmap_host_this.extent(0); i++)
         output = lclGraph_rowmap_host_this(i) == lclGraph_rowmap_host_graph(i) ? output : false;
     }
 
-    output = this->lclGraph_.entries.extent(0) == graph.lclGraph_.entries.extent(0) ? output : false;
-    if(output && this->lclGraph_.entries.extent(0) > 0)
+    output = thisLclGraph.entries.extent(0) == graphLclGraph.entries.extent(0) ? output : false;
+    if(output && thisLclGraph.entries.extent(0) > 0)
     {
-      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_this = Kokkos::create_mirror_view(this->lclGraph_.entries);
-      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.entries);
-      Kokkos::deep_copy(lclGraph_entries_host_this, this->lclGraph_.entries);
-      Kokkos::deep_copy(lclGraph_entries_host_graph, graph.lclGraph_.entries);
+      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_this = Kokkos::create_mirror_view(thisLclGraph.entries);
+      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_graph = Kokkos::create_mirror_view(graphLclGraph.entries);
+      Kokkos::deep_copy(lclGraph_entries_host_this, thisLclGraph.entries);
+      Kokkos::deep_copy(lclGraph_entries_host_graph, graphLclGraph.entries);
       for(size_t i=0; output && i<lclGraph_entries_host_this.extent(0); i++)
         output = lclGraph_entries_host_this(i) == lclGraph_entries_host_graph(i) ? output : false;
     }
 
-    output = this->lclGraph_.row_block_offsets.extent(0) == graph.lclGraph_.row_block_offsets.extent(0) ? output : false;
-    if(output && this->lclGraph_.row_block_offsets.extent(0) > 0)
+    output = thisLclGraph.row_block_offsets.extent(0) == graphLclGraph.row_block_offsets.extent(0) ? output : false;
+    if(output && thisLclGraph.row_block_offsets.extent(0) > 0)
     {
-      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_this = Kokkos::create_mirror_view(this->lclGraph_.row_block_offsets);
-      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_graph = Kokkos::create_mirror_view(graph.lclGraph_.row_block_offsets);
-      Kokkos::deep_copy(lclGraph_rbo_host_this, this->lclGraph_.row_block_offsets);
-      Kokkos::deep_copy(lclGraph_rbo_host_graph, graph.lclGraph_.row_block_offsets);
+      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_this = Kokkos::create_mirror_view(thisLclGraph.row_block_offsets);
+      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_graph = Kokkos::create_mirror_view(graphLclGraph.row_block_offsets);
+      Kokkos::deep_copy(lclGraph_rbo_host_this, thisLclGraph.row_block_offsets);
+      Kokkos::deep_copy(lclGraph_rbo_host_graph, graphLclGraph.row_block_offsets);
       for(size_t i=0; output && i < lclGraph_rbo_host_this.extent(0); i++)
         output = lclGraph_rbo_host_this(i) == lclGraph_rbo_host_graph(i) ? output : false;
     }

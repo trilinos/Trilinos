@@ -1548,6 +1548,19 @@ namespace Tpetra {
       }
     }
 
+    // Make the local graph, using the arrays of row offsets and
+    // column indices that we built above.  The local graph should be
+    // null, but we delete it first so that any memory can be freed
+    // before we allocate the new one.
+    //
+    // FIXME (mfh 06,28 Aug 2014) It would make more sense for
+    // Tpetra::CrsGraph to have a protected method that accepts k_inds
+    // and k_ptrs, and creates the local graph lclGraph_.
+    // KDDKDD NO KIDDING!  See 3/19/21 Tpetra notes
+    myGraph_->setRowPtrsCompressed(k_ptrs_const);
+    myGraph_->lclIndsCompressed_wdv = 
+              typename Graph::local_inds_wdv_type(k_inds);
+
     // May we ditch the old allocations for the packed (and otherwise
     // "optimized") allocations, later in this routine?  Optimize
     // storage if the graph is not static, or if the graph already has
@@ -1594,8 +1607,7 @@ namespace Tpetra {
            << k_inds.extent(0) << endl;
         std::cerr << os.str();
       }
-      myGraph_->lclInds_wdv = 
-                typename Graph::local_inds_wdv_type(k_inds);
+      myGraph_->lclInds_wdv = myGraph_->lclIndsCompressed_wdv;
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Assign k_values1D_: old="
@@ -1617,22 +1629,12 @@ namespace Tpetra {
       }
     }
 
-    // Make the local graph, using the arrays of row offsets and
-    // column indices that we built above.  The local graph should be
-    // null, but we delete it first so that any memory can be freed
-    // before we allocate the new one.
-    //
-    // FIXME (mfh 06,28 Aug 2014) It would make more sense for
-    // Tpetra::CrsGraph to have a protected method that accepts k_inds
-    // and k_ptrs, and creates the local graph lclGraph_.
-    myGraph_->lclGraph_ =
-      typename Graph::local_graph_type (k_inds, k_ptrs_const);
-
     // Make the local matrix, using the local graph and vals array.
     auto lclMat = std::make_shared<local_matrix_type>
       ("Tpetra::CrsMatrix::lclMatrix_", getNodeNumCols (),
-       k_vals, myGraph_->lclGraph_);
+       k_vals, myGraph_->getLocalGraphDevice());
     lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    // KDDKDD Eventually make lclMatrix_ return on demand
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1674,7 +1676,7 @@ namespace Tpetra {
     // get data from staticGraph_
     size_t nodeNumEntries   = staticGraph_->getNodeNumEntries ();
     size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
-    row_map_type k_rowPtrs = staticGraph_->lclGraph_.row_map;
+    row_map_type k_rowPtrs = staticGraph_->k_rowPtrsCompressed_dev_; 
 
     row_map_type k_ptrs; // "packed" row offsets array
     values_type k_vals; // "packed" values array
@@ -4869,6 +4871,7 @@ namespace Tpetra {
     LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
 
 #ifdef HAVE_TPETRA_DEBUG
+std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (rowInfo.allocSize != static_cast<size_t> (inds_view.extent (0)) ||
        rowInfo.allocSize != static_cast<size_t> (rowValues.extent (0)),

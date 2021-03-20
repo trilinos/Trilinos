@@ -116,58 +116,74 @@ public:
 
   typename HostViewType::const_type
   getHostView(Access::ReadOnlyStruct) const {
-std::cout << " KDDKDD getHostView " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+std::cout << " KDDKDD getHostViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     throwIfDeviceViewAlive();
     impl::sync_host(dualView);
-    return dualView.view_host();
+    auto ret = dualView.view_host();
+std::cout << " KDDKDD After getHostViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+    return ret;
   }
 
   HostViewType
   getHostView(Access::ReadWriteStruct) {
+std::cout << " KDDKDD getHostViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.sync_host();
     dualView.modify_host();
-    return dualView.view_host();
+    auto ret = dualView.view_host();
+std::cout << " KDDKDD After getHostViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+    return ret;
   }
 
   HostViewType
   getHostView(Access::WriteOnlyStruct) {
+std::cout << " KDDKDD getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.clear_sync_state();
     dualView.modify_host();
-    return dualView.view_host();
+    auto ret = dualView.view_host();
+std::cout << " KDDKDD After getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+    return ret;
   }
 
   typename DeviceViewType::const_type
   getDeviceView(Access::ReadOnlyStruct) const {
-std::cout << " KDDKDD getDeviceView " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+std::cout << " KDDKDD getDeviceViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     throwIfHostViewAlive();
     impl::sync_device(dualView);
-    return dualView.view_device();
+    auto ret = dualView.view_device();
+std::cout << " KDDKDD After getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+    return ret;
   }
 
   DeviceViewType
   getDeviceView(Access::ReadWriteStruct) {
+std::cout << " KDDKDD getDeviceViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.sync_device();
     dualView.modify_device();
-    return dualView.view_device();
+    auto ret= dualView.view_device();
+std::cout << " KDDKDD After getDeviceViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+    return ret;
   }
 
   DeviceViewType
   getDeviceView(Access::WriteOnlyStruct) {
+std::cout << " KDDKDD getDeviceViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.clear_sync_state();
     dualView.modify_device();
-    return dualView.view_device();
+    auto ret = dualView.view_device();
+std::cout << " KDDKDD After getDeviceViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+    return ret;
   }
 
   typename HostViewType::const_type
@@ -244,6 +260,7 @@ std::cout << " KDDKDD throwIfDeviceViewAlive " << dualView.h_view.use_count() <<
     }
   }
 
+public:  //KDDKDD DO NOT COMMIT!!!!
   mutable DualViewType dualView;
 };
 
