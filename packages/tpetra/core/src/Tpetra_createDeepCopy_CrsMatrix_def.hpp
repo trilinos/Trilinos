@@ -24,14 +24,14 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
     typename crs_matrix_type::local_matrix_type;
   local_matrix_type A_lcl = A.getLocalMatrix ();
 
-  using local_graph_type = typename crs_matrix_type::local_graph_type;
-  using inds_type = typename local_graph_type::entries_type;
+  using local_graph_device_type = typename crs_matrix_type::local_graph_device_type;
+  using inds_type = typename local_graph_device_type::entries_type;
   inds_type ind (view_alloc ("ind", WithoutInitializing),
                  A_lcl.graph.entries.extent (0));
   Kokkos::deep_copy (ind, A_lcl.graph.entries);
 
   using offsets_type =
-    typename local_graph_type::row_map_type::non_const_type;
+    typename local_graph_device_type::row_map_type::non_const_type;
   offsets_type ptr (view_alloc ("ptr", WithoutInitializing),
                     A_lcl.graph.row_map.extent (0));
   Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
@@ -41,7 +41,7 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
                    A_lcl.values.extent (0));
   Kokkos::deep_copy (val, A_lcl.values);
 
-  local_graph_type lclGraph (ind, ptr);
+  local_graph_device_type lclGraph (ind, ptr);
   const size_t numCols = A.getColMap ()->getNodeNumElements ();
   return local_matrix_type (A.getObjectLabel (), numCols, val, lclGraph);
 }

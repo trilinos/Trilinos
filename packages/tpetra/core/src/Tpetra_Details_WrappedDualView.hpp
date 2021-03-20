@@ -115,8 +115,8 @@ public:
   }
 
   typename HostViewType::const_type
-  getHostView(Access::ReadOnlyStruct) const {
-std::cout << " KDDKDD getHostViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+  getHostView(Access::ReadOnlyStruct, const char* str = __builtin_FUNCTION()) const {
+std::cout << " KDDKDD getHostViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << " called from " << str << std::endl;
     throwIfDeviceViewAlive();
     impl::sync_host(dualView);
     auto ret = dualView.view_host();
@@ -125,8 +125,8 @@ std::cout << " KDDKDD After getHostViewReadOnly " << dualView.d_view.label() << 
   }
 
   HostViewType
-  getHostView(Access::ReadWriteStruct) {
-std::cout << " KDDKDD getHostViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+  getHostView(Access::ReadWriteStruct, const char* str = __builtin_FUNCTION()) {
+std::cout << " KDDKDD getHostViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << " called from " << str << std::endl;
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
@@ -138,8 +138,8 @@ std::cout << " KDDKDD After getHostViewReadWrite " << dualView.d_view.label() <<
   }
 
   HostViewType
-  getHostView(Access::WriteOnlyStruct) {
-std::cout << " KDDKDD getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+  getHostView(Access::WriteOnlyStruct, const char* str = __builtin_FUNCTION()) {
+std::cout << " KDDKDD getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << " called from " << str << std::endl;
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     throwIfDeviceViewAlive();

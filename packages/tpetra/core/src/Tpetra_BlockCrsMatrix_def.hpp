@@ -584,8 +584,8 @@ public:
   typedef Kokkos::View<const size_t*, device_type,
                        Kokkos::MemoryUnmanaged> diag_offsets_type;
   typedef typename ::Tpetra::CrsGraph<LO, GO, Node> global_graph_type;
-  typedef typename global_graph_type::local_graph_type local_graph_type;
-  typedef typename local_graph_type::row_map_type row_offsets_type;
+  typedef typename global_graph_type::local_graph_device_type local_graph_device_type;
+  typedef typename local_graph_device_type::row_map_type row_offsets_type;
   typedef typename ::Tpetra::BlockMultiVector<Scalar, LO, GO, Node>::impl_scalar_type IST;
   typedef Kokkos::View<IST***, device_type, Kokkos::MemoryUnmanaged> diag_type;
   typedef Kokkos::View<const IST*, device_type, Kokkos::MemoryUnmanaged> values_type;
@@ -710,19 +710,22 @@ public:
         (new typename crs_graph_type::import_type (domainPointMap, colPointMap));
     }
     {
-      typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
+      typedef typename crs_graph_type::local_graph_device_type::row_map_type row_map_type;
       typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
-
-      row_map_type ptr_d = graph.getLocalGraph ().row_map;
+      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+      // KDDUVM This will be bad news for our reference counting
+      row_map_type ptr_d = graph.getLocalGraphDevice ().row_map;
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
     {
-      typedef typename crs_graph_type::local_graph_type::entries_type entries_type;
+      typedef typename crs_graph_type::local_graph_device_type::entries_type entries_type;
       typedef typename entries_type::HostMirror::non_const_type nc_host_entries_type;
 
-      entries_type ind_d = graph.getLocalGraph ().entries;
+      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+      // KDDUVM This will be bad news for our reference counting
+      entries_type ind_d = graph.getLocalGraphDevice ().entries;
       nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
       Kokkos::deep_copy (ind_h_nc, ind_d);
       indHost_ = ind_h_nc;
@@ -776,19 +779,23 @@ public:
         (new typename crs_graph_type::import_type (rcpDomainPointMap, colPointMap));
     }
     {
-      typedef typename crs_graph_type::local_graph_type::row_map_type row_map_type;
+      typedef typename crs_graph_type::local_graph_device_type::row_map_type row_map_type;
       typedef typename row_map_type::HostMirror::non_const_type nc_host_row_map_type;
 
-      row_map_type ptr_d = graph.getLocalGraph ().row_map;
+      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+      // KDDUVM This will be bad news for our reference counting
+      row_map_type ptr_d = graph.getLocalGraphDevice ().row_map;
       nc_host_row_map_type ptr_h_nc = Kokkos::create_mirror_view (ptr_d);
       Kokkos::deep_copy (ptr_h_nc, ptr_d);
       ptrHost_ = ptr_h_nc;
     }
     {
-      typedef typename crs_graph_type::local_graph_type::entries_type entries_type;
+      typedef typename crs_graph_type::local_graph_device_type::entries_type entries_type;
       typedef typename entries_type::HostMirror::non_const_type nc_host_entries_type;
 
-      entries_type ind_d = graph.getLocalGraph ().entries;
+      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+      // KDDUVM This will be bad news for our reference counting
+      entries_type ind_d = graph.getLocalGraphDevice ().entries;
       nc_host_entries_type ind_h_nc = Kokkos::create_mirror_view (ind_d);
       Kokkos::deep_copy (ind_h_nc, ind_d);
       indHost_ = ind_h_nc;
@@ -1103,7 +1110,7 @@ public:
 
     parallel_for (policy_type (0, lclNumMeshRows),
                   functor_type (diag, vals_dev, offsets,
-                                graph_.getLocalGraph ().row_map, blockSize_));
+                                graph_.getLocalGraphDevice ().row_map, blockSize_));
   }
 
 
@@ -1629,7 +1636,7 @@ public:
     using ::Tpetra::Impl::bcrsLocalApplyNoTrans;
 
     const impl_scalar_type alpha_impl = alpha;
-    const auto graph = this->graph_.getLocalGraph ();
+    const auto graph = this->graph_.getLocalGraphDevice ();
     const impl_scalar_type beta_impl = beta;
     const LO blockSize = this->getBlockSize ();
 

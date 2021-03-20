@@ -56,13 +56,13 @@ namespace Details {
 template <class NT>
 struct LocalRowOffsetsResult {
 private:
-  using local_graph_type =
+  using local_graph_device_type =
     typename KokkosSparse::CrsMatrix<
       double, int, typename NT::device_type, void, size_t>::
         staticcrsgraph_type;
 public:
   using offsets_type =
-    typename local_graph_type::row_map_type::non_const_type;
+    typename local_graph_device_type::row_map_type::non_const_type;
   using offset_type = typename offsets_type::non_const_value_type;
 
   offsets_type ptr; //!< Local row offsets (Kokkos::View)

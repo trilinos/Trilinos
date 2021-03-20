@@ -91,9 +91,9 @@ localDeepCopyLocallyIndexedRowMatrix
   using IST = typename Kokkos::ArithTraits<SC>::val_type;
   using local_matrix_type = KokkosSparse::CrsMatrix<
     IST, LO, typename NT::device_type, void, size_t>;
-  using local_graph_type =
+  using local_graph_device_type =
     typename local_matrix_type::staticcrsgraph_type;
-  using inds_type = typename local_graph_type::entries_type;
+  using inds_type = typename local_graph_device_type::entries_type;
   inds_type ind (view_alloc ("ind", WithoutInitializing), nnz);
   auto ind_h = Kokkos::create_mirror_view (ind);
 
@@ -137,7 +137,7 @@ localDeepCopyLocallyIndexedRowMatrix
   Kokkos::deep_copy (ind, ind_h);
   Kokkos::deep_copy (val, val_h);
 
-  local_graph_type lclGraph (ind, ptr);
+  local_graph_device_type lclGraph (ind, ptr);
   const size_t numCols = A.getColMap ()->getNodeNumElements ();
   return local_matrix_type (label, numCols, val, lclGraph);
 }

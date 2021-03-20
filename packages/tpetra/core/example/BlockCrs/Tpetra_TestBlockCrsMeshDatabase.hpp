@@ -470,7 +470,7 @@ namespace BlockCrsTest {
     local_ordinal_range_type _remote_range_j;
     local_ordinal_range_type _remote_range_k;
 
-    typedef typename tpetra_crs_graph_type::local_graph_type::row_map_type::non_const_type rowptr_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_device_type::row_map_type::non_const_type rowptr_view_type;
     rowptr_view_type _rowptr;
 
     typedef typename rowptr_view_type::non_const_value_type scan_value_type;
@@ -536,8 +536,8 @@ namespace BlockCrsTest {
 
   struct LocalGraphFill {
   private:
-    typedef typename tpetra_crs_graph_type::local_graph_type::row_map_type::non_const_type rowptr_view_type;
-    typedef typename tpetra_crs_graph_type::local_graph_type::entries_type colidx_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_device_type::row_map_type::non_const_type rowptr_view_type;
+    typedef typename tpetra_crs_graph_type::local_graph_device_type::entries_type colidx_view_type;
 
     MeshDatabase::StructuredBlock _sb;
     MeshDatabase::global_ordinal_view_type _owned_gids;

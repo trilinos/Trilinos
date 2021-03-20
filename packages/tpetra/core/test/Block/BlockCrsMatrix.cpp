@@ -1112,7 +1112,7 @@ namespace {
     }
     else {
       TEST_ASSERT( diagMeshOffsets.extent (0) != 0 );
-      auto localGraph = graph.getLocalGraph ();
+      auto localGraph = graph.getLocalGraphDevice ();
       const auto& colMap = * (graph.getColMap ());
 
       TEST_EQUALITY( static_cast<size_t> (numLclMeshPoints + 1),

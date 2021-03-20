@@ -525,8 +525,8 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const typename local_graph_type::row_map_type& rowPointers,
-            const typename local_graph_type::entries_type::non_const_type& columnIndices,
+            const typename local_graph_device_type::row_map_type& rowPointers,
+            const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
             const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap)
     , rowMap_(rowMap)
@@ -579,7 +579,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
-            const local_graph_type& k_local_graph_,
+            const local_graph_device_type& k_local_graph_,
             const Teuchos::RCP<Teuchos::ParameterList>& params)
     : CrsGraph (k_local_graph_,
                 rowMap,
@@ -591,7 +591,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  CrsGraph (const local_graph_type& k_local_graph_,
+  CrsGraph (const local_graph_device_type& k_local_graph_,
             const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::RCP<const map_type>& domainMap,
@@ -662,7 +662,7 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  CrsGraph (const local_graph_type& lclGraph,
+  CrsGraph (const local_graph_device_type& lclGraph,
             const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const Teuchos::RCP<const map_type>& domainMap,
@@ -683,7 +683,7 @@ namespace Tpetra {
     indicesAreLocal_ (true)
   {
     staticAssertions();
-    const char tfecfFuncName[] = "Tpetra::CrsGraph(local_graph_type,"
+    const char tfecfFuncName[] = "Tpetra::CrsGraph(local_graph_device_type,"
       "Map,Map,Map,Map,Import,Export,params): ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1120,7 +1120,7 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using std::endl;
     typedef Teuchos::ArrayRCP<size_t>::size_type size_type;
-    typedef typename local_graph_type::row_map_type::non_const_type
+    typedef typename local_graph_device_type::row_map_type::non_const_type
       non_const_row_map_type;
     const char tfecfFuncName[] = "allocateIndices: ";
     const char suffix[] =
@@ -2266,7 +2266,7 @@ std::cout << " KDDKDD SAMRI END rowinfo " << rowInfo.offset1D << " " << rowInfo.
   {
     using Kokkos::ViewAllocateWithoutInitializing;
     using Teuchos::ArrayRCP;
-    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename local_graph_device_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
     const char prefix[] = "Tpetra::CrsGraph::getNodeRowPtrs: ";
     const char suffix[] = "  Please report this bug to the Tpetra developers.";
@@ -2869,8 +2869,8 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                 const typename local_graph_type::entries_type::non_const_type& columnIndices)
+  setAllIndices (const typename local_graph_device_type::row_map_type& rowPointers,
+                 const typename local_graph_device_type::entries_type::non_const_type& columnIndices)
   {
     const char tfecfFuncName[] = "setAllIndices: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2895,8 +2895,8 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
     if (debug_ && this->isSorted()) {
       // Verify that the local indices are actually sorted
       int notSorted = 0;
-      using exec_space = typename local_graph_type::execution_space;
-      using size_type = typename local_graph_type::size_type;
+      using exec_space = typename local_graph_device_type::execution_space;
+      using size_type = typename local_graph_device_type::size_type;
       Kokkos::parallel_reduce(Kokkos::RangePolicy<exec_space>(0, numLocalRows),
         KOKKOS_LAMBDA (const LocalOrdinal i, int& lNotSorted)
         {
@@ -2968,7 +2968,7 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
                  const Teuchos::ArrayRCP<LocalOrdinal>& columnIndices)
   {
     using Kokkos::View;
-    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename local_graph_device_type::row_map_type row_map_type;
     typedef typename row_map_type::array_layout layout_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
     typedef View<size_t*, layout_type , Kokkos::HostSpace,
@@ -3760,9 +3760,9 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
   {
     using ::Tpetra::Details::computeOffsetsFromCounts;
     typedef decltype (k_numRowEntries_) row_entries_type;
-    typedef typename local_graph_type::row_map_type row_map_type;
+    typedef typename local_graph_device_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_type non_const_row_map_type;
-    typedef typename local_graph_type::entries_type::non_const_type lclinds_1d_type;
+    typedef typename local_graph_device_type::entries_type::non_const_type lclinds_1d_type;
     const char tfecfFuncName[] = "fillLocalGraph (called from fillComplete or "
       "expertStaticFillComplete): ";
     const size_t lclNumRows = this->getNodeNumRows ();
@@ -3910,10 +3910,10 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
       // Pack the column indices from unpacked lclInds_wdv into
       // packed ind_d.  We will replace lclInds_wdv below.
       typedef pack_functor<
-        typename local_graph_type::entries_type::non_const_type,
+        typename local_graph_device_type::entries_type::non_const_type,
         typename local_inds_dualv_type::t_dev::const_type,
         row_map_type,
-        typename local_graph_type::row_map_type> inds_packer_type;
+        typename local_graph_device_type::row_map_type> inds_packer_type;
       inds_packer_type f (ind_d, 
                           lclInds_wdv.getDeviceView(Access::ReadOnly),
                           ptr_d, k_rowPtrs_dev_);
@@ -4299,7 +4299,7 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraph () const
   {
@@ -4308,13 +4308,23 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
 #endif
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalGraphDevice () const
   {
-    return local_graph_type(
+    return local_graph_device_type(
                  lclIndsCompressed_wdv.getDeviceView(Access::ReadWrite),
                  k_rowPtrsCompressed_dev_);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_host_type
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalGraphHost () const
+  {
+    return local_graph_host_type(
+                 lclIndsCompressed_wdv.getHostView(Access::ReadWrite),
+                 k_rowPtrsCompressed_host_);
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4406,7 +4416,7 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef device_type DT;
-    typedef typename local_graph_type::row_map_type::non_const_value_type offset_type;
+    typedef typename local_graph_device_type::row_map_type::non_const_value_type offset_type;
     typedef decltype (k_numRowEntries_) row_entries_type;
     typedef typename row_entries_type::non_const_value_type num_ent_type;
     const char tfecfFuncName[] = "makeIndicesLocal: ";
@@ -5063,7 +5073,7 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
     using std::endl;
     using LO = local_ordinal_type;
     using row_ptrs_type =
-      typename local_graph_type::row_map_type::non_const_type;
+      typename local_graph_device_type::row_map_type::non_const_type;
     using range_policy =
       Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
     const char tfecfFuncName[] = "applyCrsPadding";
@@ -6483,7 +6493,7 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " <
 
     const bool sorted = this->isSorted ();
     if (isFillComplete ()) {
-      auto lclGraph = this->getLocalGraph ();
+      auto lclGraph = this->getLocalGraphDevice ();
       ::Tpetra::Details::getGraphDiagOffsets (offsets, lclRowMap, lclColMap,
                                               lclGraph.row_map,
                                               lclGraph.entries, sorted);
@@ -7609,27 +7619,24 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " <
     // Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, execution_space>
     // Kokkos::StaticCrsGraph has 3 data members in it:
     //   Kokkos::View<size_type*, ...> row_map            
-    //           (local_graph_type::row_map_type)
+    //           (local_graph_device_type::row_map_type)
     //   Kokkos::View<data_type*, ...> entries            
-    //           (local_graph_type::entries_type)
+    //           (local_graph_device_type::entries_type)
     //   Kokkos::View<size_type*, ...> row_block_offsets  
-    //           (local_graph_type::row_block_type)
+    //           (local_graph_device_type::row_block_type)
     // There is currently no Kokkos::StaticCrsGraph comparison function 
     // that's built-in, so we will just compare
     // the three data items here. This can be replaced if Kokkos ever 
     // puts in its own comparison routine.
-    local_graph_type thisLclGraph = this->getLocalGraphDevice();
-    local_graph_type graphLclGraph = graph.getLocalGraphDevice();
+    local_graph_host_type thisLclGraph = this->getLocalGraphHost();
+    local_graph_host_type graphLclGraph = graph.getLocalGraphHost();
+
     output = thisLclGraph.row_map.extent(0) == graphLclGraph.row_map.extent(0) 
            ? output : false;
     if(output && thisLclGraph.row_map.extent(0) > 0)
     {
-      auto lclGraph_rowmap_host_this = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                               thisLclGraph.row_map);
-      auto lclGraph_rowmap_host_graph = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                               graphLclGraph.row_map);
+      auto lclGraph_rowmap_host_this = thisLclGraph.row_map;
+      auto lclGraph_rowmap_host_graph = graphLclGraph.row_map;
       for (size_t i=0; output && i < lclGraph_rowmap_host_this.extent(0); i++)
         output = lclGraph_rowmap_host_this(i) == lclGraph_rowmap_host_graph(i)
                ? output : false;
@@ -7639,12 +7646,8 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " <
            ? output : false;
     if(output && thisLclGraph.entries.extent(0) > 0)
     {
-      auto lclGraph_entries_host_this = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                               thisLclGraph.entries);
-      auto lclGraph_entries_host_graph = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                               graphLclGraph.entries);
+      auto lclGraph_entries_host_this = thisLclGraph.entries;
+      auto lclGraph_entries_host_graph = graphLclGraph.entries;
       for (size_t i=0; output && i < lclGraph_entries_host_this.extent(0); i++)
         output = lclGraph_entries_host_this(i) == lclGraph_entries_host_graph(i)
                ? output : false;
@@ -7655,12 +7658,8 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " <
       graphLclGraph.row_block_offsets.extent(0) ? output : false;
     if(output && thisLclGraph.row_block_offsets.extent(0) > 0)
     {
-      auto lclGraph_rbo_host_this = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                               thisLclGraph.row_block_offsets);
-      auto lclGraph_rbo_host_graph = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
-                                               graphLclGraph.row_block_offsets);
+      auto lclGraph_rbo_host_this = thisLclGraph.row_block_offsets;
+      auto lclGraph_rbo_host_graph = graphLclGraph.row_block_offsets;
       for (size_t i=0; output && i < lclGraph_rbo_host_this.extent(0); i++)
         output = lclGraph_rbo_host_this(i) == lclGraph_rbo_host_graph(i) 
                ? output : false;

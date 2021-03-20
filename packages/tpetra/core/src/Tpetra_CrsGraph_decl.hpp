@@ -250,11 +250,17 @@ namespace Tpetra {
     using node_type = Node;
 
     //! The type of the part of the sparse graph on each MPI process.
-    using local_graph_type = Kokkos::StaticCrsGraph<local_ordinal_type,
-                                                    Kokkos::LayoutLeft,
-                                                    device_type,
-                                                    void,
-                                                    size_t>;
+    using local_graph_device_type =
+           Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft,
+                                  device_type, void, size_t>;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    using local_graph_type = local_graph_device_type;
+#endif
+
+    //! The type of the part of the sparse graph on each MPI process.
+    using local_graph_host_type = 
+          Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft,
+                                 Kokkos::HostSpace, void, size_t>;
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -449,8 +455,8 @@ public:
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const typename local_graph_type::row_map_type& rowPointers,
-              const typename local_graph_type::entries_type::non_const_type& columnIndices,
+              const typename local_graph_device_type::row_map_type& rowPointers,
+              const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
@@ -504,7 +510,7 @@ public:
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const local_graph_type& lclGraph,
+              const local_graph_device_type& lclGraph,
               const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     /// \brief Constructor specifying column, domain and range maps, and a
@@ -533,7 +539,7 @@ public:
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsGraph (const local_graph_type& lclGraph,
+    CrsGraph (const local_graph_device_type& lclGraph,
               const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
@@ -544,7 +550,7 @@ public:
     /// \param lclGraph [in] The local graph.  In almost all cases the
     ///   local graph must be sorted on input,
     ///   but if it isn't sorted, "sorted" must be set to false in params.
-    CrsGraph (const local_graph_type& lclGraph,
+    CrsGraph (const local_graph_device_type& lclGraph,
               const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
               const Teuchos::RCP<const map_type>& domainMap,
@@ -1386,8 +1392,8 @@ public:
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    setAllIndices (const typename local_graph_type::row_map_type& rowPointers,
-                   const typename local_graph_type::entries_type::non_const_type& columnIndices);
+    setAllIndices (const typename local_graph_device_type::row_map_type& rowPointers,
+                   const typename local_graph_device_type::entries_type::non_const_type& columnIndices);
 
     /// \brief Set the graph's data directly, using 1-D storage.
     ///
@@ -2024,7 +2030,7 @@ public:
     /// \warning You MUST call fillLocalGraph (or
     ///   CrsMatrix::fillLocalGraphAndMatrix) before calling this
     ///   method!  This method depends on the Kokkos::StaticCrsGraph
-    ///   (local_graph_type) object being ready.
+    ///   (local_graph_device_type) object being ready.
     ///
     /// Local constants include:
     /// <ul>
@@ -2087,9 +2093,10 @@ public:
     /// (global) graph is fill complete.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     // TPETRA_DEPRECATED
-    local_graph_type getLocalGraph () const;
+    local_graph_device_type getLocalGraph () const;
 #endif
-    local_graph_type getLocalGraphDevice () const;
+    local_graph_device_type getLocalGraphDevice () const;
+    local_graph_host_type getLocalGraphHost () const;
 
   protected:
 
@@ -2163,10 +2170,10 @@ public:
     // When OptimizedStorage, k_rowPtrs_ = k_rowPtrsCompressed_
 
     using row_ptrs_device_type = 
-          Kokkos::View<const typename local_graph_type::size_type *, 
+          Kokkos::View<const typename local_graph_device_type::size_type *, 
                        device_type> ;
     using row_ptrs_host_type = 
-          Kokkos::View<const typename local_graph_type::size_type *, 
+          Kokkos::View<const typename local_graph_device_type::size_type *, 
                        Kokkos::HostSpace>;
     row_ptrs_device_type k_rowPtrs_dev_;
     row_ptrs_host_type k_rowPtrs_host_;

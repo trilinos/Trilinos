@@ -72,7 +72,7 @@ LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A)
   {
     A_ordinal_rowptrs = ordinal_view_type(Kokkos::ViewAllocateWithoutInitializing("A_ordinal_rowptrs"), A_->numRows() + 1);
     //This is just like a deep copy, but it implicitly converts each element
-    KokkosKernels::Impl::copy_view<typename local_graph_type::row_map_type, ordinal_view_type, exec_space>
+    KokkosKernels::Impl::copy_view<typename local_graph_device_type::row_map_type, ordinal_view_type, exec_space>
       (A_ordinal_rowptrs.extent(0), A_->graph.row_map, A_ordinal_rowptrs);
     A_cusparse = local_cusparse_matrix_type("A(cusparse)", A_->numRows(), A_->numCols(), A_->nnz(), A_->values, A_ordinal_rowptrs, A_->graph.entries);
   }

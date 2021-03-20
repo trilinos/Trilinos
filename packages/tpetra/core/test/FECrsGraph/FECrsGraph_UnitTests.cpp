@@ -88,11 +88,11 @@ bool compare_final_graph_structure(Teuchos::FancyOStream &out,Tpetra::CrsGraph<L
   if (!g1.getDomainMap()->isSameAs(*g2.getDomainMap())) {out<<"Compare: DomainMap failed"<<endl;return false;}
   if (!g1.getColMap()->isSameAs(*g2.getColMap())) {out<<"Compare: ColMap failed"<<endl;g1.describe(out,Teuchos::VERB_EXTREME);g2.describe(out,Teuchos::VERB_EXTREME);return false;}
 
-  auto rowptr1 = g1.getLocalGraph().row_map;
-  auto rowptr2 = g2.getLocalGraph().row_map;
+  auto rowptr1 = g1.getLocalGraphHost().row_map;
+  auto rowptr2 = g2.getLocalGraphHost().row_map;
 
-  auto colind1 = g1.getLocalGraph().entries;
-  auto colind2 = g2.getLocalGraph().entries;
+  auto colind1 = g1.getLocalGraphHost().entries;
+  auto colind2 = g2.getLocalGraphHost().entries;
 
   if (rowptr1.extent(0) != rowptr2.extent(0)) {out<<"Compare: rowptr extent failed"<<endl;return false;}      
   if (colind1.extent(0) != colind2.extent(0)) {out<<"Compare: colind extent failed: "<<colind1.extent(0)<<" vs "<<colind2.extent(0)<<endl;

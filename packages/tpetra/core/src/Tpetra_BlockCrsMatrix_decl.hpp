@@ -740,14 +740,18 @@ private:
   /// Kokkos::DualView has extra Views in it for the "modified" flags,
   /// and we don't want the (modest) overhead of creating and storing
   /// those.
-  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptrHost_;
+     // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+     // KDDUVM This will be bad news for our reference counting
+  typename crs_graph_type::local_graph_device_type::row_map_type::HostMirror ptrHost_;
 
   /// \brief Host version of the graph's array of column indices.
   ///
   /// The device version of this is already stored in the graph.  We
   /// need the host version here, because this class' interface needs
   /// to access it on host.  See notes on ptrHost_ above.
-  typename crs_graph_type::local_graph_type::entries_type::HostMirror indHost_;
+      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+      // KDDUVM This will be bad news for our reference counting
+  typename crs_graph_type::local_graph_device_type::entries_type::HostMirror indHost_;
 
   /// \brief The array of values in the matrix.
   ///

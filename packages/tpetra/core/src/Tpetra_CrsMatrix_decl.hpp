@@ -479,7 +479,7 @@ namespace Tpetra {
     using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
 
     //! The part of the sparse matrix's graph on each MPI process.
-    using local_graph_type = typename crs_graph_type::local_graph_type;
+    using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
@@ -488,7 +488,7 @@ namespace Tpetra {
                               local_ordinal_type,
                               device_type,
                               void,
-                              typename local_graph_type::size_type>;
+                              typename local_graph_device_type::size_type>;
 
     /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
     using local_multiply_op_type =
@@ -699,7 +699,7 @@ namespace Tpetra {
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const typename local_matrix_type::row_map_type& rowPointers,
-               const typename local_graph_type::entries_type::non_const_type& columnIndices,
+               const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
                const typename local_matrix_type::values_type& values,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -1781,7 +1781,7 @@ namespace Tpetra {
     ///   may then change this.
     void
     setAllValues (const typename local_matrix_type::row_map_type& ptr,
-                  const typename local_graph_type::entries_type::non_const_type& ind,
+                  const typename local_graph_device_type::entries_type::non_const_type& ind,
                   const typename local_matrix_type::values_type& val);
 
     /// \brief Set the local matrix using three (compressed sparse row) arrays.

@@ -86,8 +86,8 @@ namespace Tpetra {
                               device_type,
                               void,
                               local_ordinal_type>;
-    using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
-    using ordinal_view_type = typename local_graph_type::entries_type::non_const_type;
+    using local_graph_device_type = typename local_matrix_type::StaticCrsGraphType;
+    using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
 
   public:
     LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A);

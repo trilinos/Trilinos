@@ -319,7 +319,7 @@ namespace Tpetra {
     // the domain Map.
 
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraph ();
+    auto lclGraph = graph->getLocalGraphDevice ();
     const size_t numEnt = lclGraph.entries.extent (0);
     if (verbose) {
       std::ostringstream os;
@@ -382,7 +382,7 @@ namespace Tpetra {
     // the domain Map.
 
     const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraph ();
+    auto lclGraph = graph->getLocalGraphDevice ();
 
     auto lclMat = std::make_shared<local_matrix_type>
       ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
@@ -401,7 +401,7 @@ namespace Tpetra {
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
              const typename local_matrix_type::row_map_type& rowPointers,
-             const typename local_graph_type::entries_type::non_const_type& columnIndices,
+             const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
              const typename local_matrix_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
@@ -465,7 +465,7 @@ namespace Tpetra {
     // deep-copies or shallow-copies the input, but the dimensions
     // have to be right.  That's how we tell whether the CrsGraph has
     // a local graph.
-    auto lclGraph = graph->getLocalGraph ();
+    auto lclGraph = graph->getLocalGraphDevice ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclGraph.row_map.extent (0) != rowPointers.extent (0) ||
        lclGraph.entries.extent (0) != columnIndices.extent (0),
@@ -565,7 +565,7 @@ namespace Tpetra {
     // really care whether CrsGraph's constructor deep-copies or
     // shallow-copies the input, but the dimensions have to be right.
     // That's how we tell whether the CrsGraph has a local graph.
-    auto lclGraph = staticGraph_->getLocalGraph ();
+    auto lclGraph = staticGraph_->getLocalGraphDevice ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (size_t (lclGraph.row_map.extent (0)) != size_t (ptr.size ()) ||
        size_t (lclGraph.entries.extent (0)) != size_t (ind.size ()),
@@ -616,12 +616,12 @@ namespace Tpetra {
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "RCP<const Map>, local_graph_type[, RCP<ParameterList>]) threw an "
+         "RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) threw an "
          "exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (!graph->isFillComplete (), std::logic_error, "CrsGraph constructor (RCP"
-       "<const Map>, RCP<const Map>, local_graph_type[, RCP<ParameterList>]) "
+       "<const Map>, RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) "
        "did not produce a fill-complete graph.  Please report this bug to the "
        "Tpetra developers.");
     // myGraph_ not null means that the matrix owns the graph.  This
@@ -676,13 +676,13 @@ namespace Tpetra {
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor (RCP<const Map>, "
-         "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_type[, "
+         "RCP<const Map>, RCP<const Map>, RCP<const Map>, local_graph_device_type[, "
          "RCP<ParameterList>]) threw an exception: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (! graph->isFillComplete (), std::logic_error, "CrsGraph "
        "constructor (RCP<const Map>, RCP<const Map>, RCP<const Map>, "
-       "RCP<const Map>, local_graph_type[, RCP<ParameterList>]) did "
+       "RCP<const Map>, local_graph_device_type[, RCP<ParameterList>]) did "
        "not produce a fillComplete graph." << suffix);
     // myGraph_ not null means that the matrix owns the graph.  This
     // is true because the column indices come in as nonconst through
@@ -739,12 +739,12 @@ namespace Tpetra {
     catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (true, std::runtime_error, "CrsGraph constructor "
-         "(local_graph_type, Map, Map, Map, Map, Import, Export, "
+         "(local_graph_device_type, Map, Map, Map, Map, Import, Export, "
          "params) threw: " << e.what ());
     }
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (!graph->isFillComplete (), std::logic_error, "CrsGraph "
-       "constructor (local_graph_type, Map, Map, Map, Map, Import, "
+       "constructor (local_graph_device_type, Map, Map, Map, Map, Import, "
        "Export, params) did not produce a fill-complete graph.  "
        "Please report this bug to the Tpetra developers.");
     // myGraph_ not null means that the matrix owns the graph.  This
@@ -816,8 +816,8 @@ namespace Tpetra {
     std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(crs_matrix.lclMatrix_,     this->lclMatrix_);       // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>
-    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_type::size_type>::values_type
+    std::swap(crs_matrix.lclMatrix_,     this->lclMatrix_);       // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>
+    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>::values_type
     std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
     std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
     std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
@@ -1171,7 +1171,7 @@ namespace Tpetra {
     }
 
     const size_t lclNumRows = this->staticGraph_->getNodeNumRows ();
-    typename Graph::local_graph_type::row_map_type k_ptrs =
+    typename Graph::local_graph_device_type::row_map_type k_ptrs =
                                       this->staticGraph_->k_rowPtrs_dev_;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (k_ptrs.extent (0) != lclNumRows+1, std::logic_error,
@@ -1250,7 +1250,7 @@ namespace Tpetra {
     using Teuchos::rcp;
     using std::endl;
     using row_map_type = typename local_matrix_type::row_map_type;
-    using lclinds_1d_type = typename Graph::local_graph_type::entries_type::non_const_type;
+    using lclinds_1d_type = typename Graph::local_graph_device_type::entries_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
     Details::ProfilingRegion regionFLGAM
       ("Tpetra::CrsGraph::fillLocalGraphAndMatrix");
@@ -1306,7 +1306,7 @@ namespace Tpetra {
 
     // StaticProfile also means that the graph's array of row
     // offsets must already be allocated.
-    typename Graph::local_graph_type::row_map_type curRowOffsets = 
+    typename Graph::local_graph_device_type::row_map_type curRowOffsets = 
                                                    myGraph_->k_rowPtrs_dev_;
 
     if (debug) {
@@ -1439,10 +1439,10 @@ namespace Tpetra {
       // Pack the column indices from unpacked lclInds_wdv into
       // packed k_inds.  We will replace lclInds_wdv below.
       using inds_packer_type = pack_functor<
-        typename Graph::local_graph_type::entries_type::non_const_type,
+        typename Graph::local_graph_device_type::entries_type::non_const_type,
         typename Graph::local_inds_dualv_type::t_dev::const_type,
-        typename Graph::local_graph_type::row_map_type,
-        typename Graph::local_graph_type::row_map_type>;
+        typename Graph::local_graph_device_type::row_map_type,
+        typename Graph::local_graph_device_type::row_map_type>;
       inds_packer_type indsPacker (
                           k_inds,
                           myGraph_->lclInds_wdv.getDeviceView(Access::ReadOnly),
@@ -1648,7 +1648,7 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
-    using row_map_type = typename Graph::local_graph_type::row_map_type;
+    using row_map_type = typename Graph::local_graph_device_type::row_map_type;
     using non_const_row_map_type = typename row_map_type::non_const_type;
     using values_type = typename local_matrix_type::values_type;
     ProfilingRegion regionFLM("Tpetra::CrsMatrix::fillLocalMatrix");
@@ -1801,7 +1801,7 @@ namespace Tpetra {
     auto lclMat = std::make_shared<local_matrix_type>
       ("Tpetra::CrsMatrix::lclMatrix_",
        getColMap ()->getNodeNumElements (),
-       k_vals, staticGraph_->getLocalGraph ());
+       k_vals, staticGraph_->getLocalGraphDevice ());
     lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
   }
 
@@ -3683,7 +3683,7 @@ namespace Tpetra {
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
-                const typename local_graph_type::entries_type::non_const_type& columnIndices,
+                const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
                 const typename local_matrix_type::values_type& values)
   {
     const char tfecfFuncName[] = "setAllValues: ";
@@ -3706,7 +3706,7 @@ namespace Tpetra {
     // fillComplete yet, so it's important to check.  We don't care
     // whether setAllIndices() did a shallow copy or a deep copy, so a
     // good way to check is to compare dimensions.
-    auto lclGraph = myGraph_->getLocalGraph ();
+    auto lclGraph = myGraph_->getLocalGraphDevice ();
     const size_t numEnt = lclGraph.entries.extent (0);
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (lclGraph.row_map.extent (0) != rowPointers.extent (0) ||
@@ -5751,7 +5751,7 @@ std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries <<
     using std::endl;
     using LO = local_ordinal_type;
     using row_ptrs_type =
-      typename local_graph_type::row_map_type::non_const_type;
+      typename local_graph_device_type::row_map_type::non_const_type;
     using range_policy =
       Kokkos::RangePolicy<execution_space, Kokkos::IndexType<LO>>;
     const char tfecfFuncName[] = "applyCrsPadding";

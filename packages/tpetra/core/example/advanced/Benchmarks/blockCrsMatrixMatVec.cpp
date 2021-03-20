@@ -105,11 +105,9 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   auto val = A.getValuesHost ();
 
   auto gblGraph = A.getCrsGraph ();
-  auto lclGraph = G.getLocalGraph ();
-  auto ptrHost = Kokkos::create_mirror_view (lclGraph.row_map);
-  Kokkos::deep_copy (ptrHost, lclGraph.row_map);
-  auto indHost = Kokkos::create_mirror_view (lclGraph.entries);
-  Kokkos::deep_copy (indHost, lclGraph.entries);
+  auto lclGraph = G.getLocalGraphHost ();
+  auto ptrHost = lclGraph.row_map;
+  auto indHost = lclGraph.entries;
   Teuchos::Array<IST> localMem (blockSize);
   little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
 

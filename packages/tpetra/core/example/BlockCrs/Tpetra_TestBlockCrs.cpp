@@ -315,9 +315,9 @@ int main (int argc, char *argv[])
       // Graph Construction
       // ------------------
       // local graph is constructed on device space
-      typedef tpetra_crs_graph_type::local_graph_type local_graph_type;
-      typedef local_graph_type::row_map_type::non_const_type rowptr_view_type;
-      typedef typename local_graph_type::entries_type colidx_view_type;
+      typedef tpetra_crs_graph_type::local_graph_device_type local_graph_device_type;
+      typedef local_graph_device_type::row_map_type::non_const_type rowptr_view_type;
+      typedef typename local_graph_device_type::entries_type colidx_view_type;
 
       rowptr_view_type rowptr;
       colidx_view_type colidx;
@@ -370,7 +370,7 @@ int main (int argc, char *argv[])
       RCP<tpetra_crs_graph_type> bcrs_graph;
       {
         TimeMonitor timerGlobalGraphConstruction(*TimeMonitor::getNewTimer("1) GlobalGraphConstruction"));
-        bcrs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph_type(colidx, rowptr),
+        bcrs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph_device_type(colidx, rowptr),
                                                    Teuchos::null));
       } // end global graph timer
 
@@ -583,7 +583,7 @@ int main (int argc, char *argv[])
           local_matrix("local_crs_matrix",
                        num_owned_and_remote_elements*blocksize,
                        crs_values,
-                       local_graph_type(crs_colidx, crs_rowptr));
+                       local_graph_device_type(crs_colidx, crs_rowptr));
 
         A_crs = rcp(new tpetra_crs_matrix_type(row_crs_map,
                                                col_crs_map,

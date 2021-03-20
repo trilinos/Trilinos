@@ -61,7 +61,7 @@ namespace Impl {
   ///   number of diagonal entries in a sparse graph.
   ///
   /// \tparam LocalGraphType Kokkos::StaticCrsGraph specialization
-  /// \tparam LocalMapType Result of Tpetra::Map::getLocalGraph()
+  /// \tparam LocalMapType Result of Tpetra::CrsGraph::getLocalGraph*()
   template<class LocalGraphType, class LocalMapType>
   class CountLocalNumDiags {
   public:
@@ -116,8 +116,8 @@ namespace Impl {
   {
     using crs_graph_type = ::Tpetra::CrsGraph<LO, GO, NT>;
     using local_map_type = typename crs_graph_type::map_type::local_map_type;
-    using local_graph_type = typename crs_graph_type::local_graph_type;
-    using functor_type = CountLocalNumDiags<local_graph_type, local_map_type>;
+    using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
+    using functor_type = CountLocalNumDiags<local_graph_device_type, local_map_type>;
     using execution_space = typename crs_graph_type::device_type::execution_space;
     using policy_type = Kokkos::RangePolicy<execution_space, LO>;
 
@@ -128,7 +128,7 @@ namespace Impl {
     }
     else {
       LO lclNumDiags {0};
-      functor_type f (G.getLocalGraph (), rowMap->getLocalMap (), colMap->getLocalMap ());
+      functor_type f (G.getLocalGraphDevice (), rowMap->getLocalMap (), colMap->getLocalMap ());
       Kokkos::parallel_reduce (policy_type (0, G.getNodeNumRows ()), f, lclNumDiags);
       return lclNumDiags;
     }

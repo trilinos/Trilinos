@@ -117,7 +117,7 @@ public:
     typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::crs_graph_type crs_graph_type;
 
     //! The part of the sparse matrix's graph on each MPI process.
-    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_type local_graph_type;
+    typedef typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type local_graph_device_type;
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///        the part of the sparse matrix on each MPI process.
