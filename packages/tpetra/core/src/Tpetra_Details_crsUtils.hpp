@@ -342,8 +342,7 @@ std::cout << "KDDKDD NEWALLOCPERROW " << kdd << " " << newAllocPerRow_h[kdd] << 
       newRowBeg += newRowAllocSize;
     });
 
-//KDDKDDKDD DO NOT COMMIT  if (verbose) 
-  std::cout << "KDDKDD DUDE!" << std::endl;
+  if (verbose) 
   {
     std::ostringstream os;
 
