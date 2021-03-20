@@ -926,7 +926,7 @@ namespace Tpetra {
             return static_cast<size_t> (0);
           }
           else {
-            return ::Tpetra::Details::getEntryOnHost (this->k_rowPtrsCompressed_dev_, lclNumRows);  // KDDKDDKDD REVISIT
+            return this->k_rowPtrsCompressed_host_(lclNumRows);
           }
         }
         else { // k_numRowEntries_ is populated
@@ -1031,7 +1031,7 @@ namespace Tpetra {
           return static_cast<size_t> (0);
         }
         else {
-          return this->k_rowPtrsCompressed_host_(lclNumRows);   // KDDKDD REVISIT -- used to be getEntryOnHost
+          return this->k_rowPtrsCompressed_host_(lclNumRows);
         }
       }
       else if (storageStatus_ == Details::STORAGE_1D_UNPACKED) {
@@ -1288,6 +1288,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewHost (const RowInfo& rowinfo) const
   {
+std::cout << "     KDDKDD GLIVH " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
       return typename local_inds_dualv_type::t_host::const_type ();
     else
@@ -1302,6 +1303,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewHostNonConst (const RowInfo& rowinfo) 
   {
+std::cout << "     KDDKDD GLIVHNC " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
       return typename local_inds_dualv_type::t_host ();
     else
@@ -1316,6 +1318,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalIndsViewHost (const RowInfo& rowinfo) const
   {
+std::cout << "     KDDKDD GGIVH " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
       return typename global_inds_dualv_type::t_host::const_type ();
     else
@@ -1330,6 +1333,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewDevice (const RowInfo& rowinfo) const
   {
+std::cout << "     KDDKDD GLIVD " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
       return typename local_inds_dualv_type::t_dev::const_type ();
     else
@@ -1344,6 +1348,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalIndsViewDevice (const RowInfo& rowinfo) const
   {
+std::cout << "     KDDKDD GGIVD " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
       return typename global_inds_dualv_type::t_dev::const_type ();
     else
@@ -1361,6 +1366,7 @@ namespace Tpetra {
     using Kokkos::subview;
     typedef LocalOrdinal LO;
 
+std::cout << "     KDDKDD DEPGLV " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0) {
       return Teuchos::ArrayView<const LO> ();
     }
@@ -1394,6 +1400,7 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalView (const RowInfo& rowinfo) const
   {
+std::cout << "     KDDKDD DEPGGV " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     using GO = global_ordinal_type;
 
     Teuchos::ArrayView<const GO> view;
@@ -1708,6 +1715,10 @@ namespace Tpetra {
       numInserted = Details::insertCrsIndices(lclRow, this->k_rowPtrs_host_,
                                               gblIndsHostView,
                                               numEntries, inputInds, fun);
+
+std::cout << "KDDKDD INSERTGLOBALIND numInputInds " << numInputInds << " numInserted " << numInserted << std::endl;
+for (int kdd = 0; kdd < numInputInds; kdd++)
+std::cout << "KDDKDD INSERTGLOBALIND " << kdd << " " << inputInds[kdd] << std::endl;
     }
 
     const bool insertFailed =
@@ -1742,6 +1753,9 @@ namespace Tpetra {
     }
 
     this->k_numRowEntries_(lclRow) += numInserted;
+
+std::cout << "KDDKDD INSERTGLOBALIND k_numRowEntries[ "<< lclRow << "] is now " << k_numRowEntries_(lclRow) << std::endl;
+
     this->setLocallyModified();
     return numInserted;
   }
@@ -1891,7 +1905,10 @@ namespace Tpetra {
     const size_t origNumEnt = rowInfo.numEntries;
     if (origNumEnt != Tpetra::Details::OrdinalTraits<size_t>::invalid () &&
         origNumEnt != 0) {
+std::cout << " KDDKDD SAMRI BEGIN rowinfo " << rowInfo.offset1D << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
       auto lclColInds = this->getLocalIndsViewHostNonConst (rowInfo);
+for (size_t kdd = 0; kdd < rowInfo.numEntries; kdd++)
+std::cout << "       KDDKDD SAMRI " << kdd << " lclInds " << lclColInds[kdd] << std::endl;
 
       LocalOrdinal* const lclColIndsRaw = lclColInds.data ();
       if (! sorted) {
@@ -1906,6 +1923,7 @@ namespace Tpetra {
 
         // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
         this->k_numRowEntries_(rowInfo.localRow) = newNumEnt;
+std::cout << " KDDKDD SAMRI END rowinfo " << rowInfo.offset1D << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
         return origNumEnt - newNumEnt; // the number of duplicates in the row
       }
       else {
@@ -2247,7 +2265,6 @@ namespace Tpetra {
   getNodeRowPtrs () const
   {
     using Kokkos::ViewAllocateWithoutInitializing;
-    using Kokkos::create_mirror_view;
     using Teuchos::ArrayRCP;
     typedef typename local_graph_type::row_map_type row_map_type;
     typedef typename row_map_type::non_const_value_type row_offset_type;
@@ -2269,9 +2286,12 @@ namespace Tpetra {
     else { // size_t != row_offset_type
       typedef Kokkos::View<size_t*, device_type> ret_view_type;
       ret_view_type ptr_d (ViewAllocateWithoutInitializing ("ptr"), size);
+
       ::Tpetra::Details::copyOffsets (ptr_d, k_rowPtrs_dev_);
-      typename ret_view_type::HostMirror ptr_h = create_mirror_view (ptr_d);
-      Kokkos::deep_copy (ptr_h, ptr_d);
+
+      typename ret_view_type::HostMirror ptr_h = 
+                                         Kokkos::create_mirror_view (ptr_d);
+      Kokkos::deep_copy(ptr_h, ptr_d);
       ptr_st = Kokkos::Compat::persistingView (ptr_h);
     }
     if (debug_) {
@@ -2418,6 +2438,7 @@ namespace Tpetra {
     const RowInfo rowInfo = getRowInfo (localRow);
     if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
         rowInfo.numEntries > 0) {
+std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
       indices = lclInds_wdv.getHostSubview(rowInfo.offset1D, 
                                            rowInfo.numEntries,
                                            Access::ReadOnly);
@@ -3518,6 +3539,7 @@ namespace Tpetra {
     // The method doesn't do any work if the indices are already local.
     const std::pair<size_t, std::string> makeIndicesLocalResult =
       this->makeIndicesLocal(verbose);
+
     if (debug_) {
       using Details::gathervPrint;
       using Teuchos::RCP;
@@ -4478,7 +4500,8 @@ namespace Tpetra {
            << h_numRowEnt.extent(0) << endl;
         std::cerr << os.str();
       }
-      auto k_numRowEnt = Kokkos::create_mirror_view (device_type (), h_numRowEnt);
+      auto k_numRowEnt = 
+           Kokkos::create_mirror_view_and_copy (device_type (), h_numRowEnt);
 
       using ::Tpetra::Details::convertColumnIndicesFromGlobalToLocal;
       lclNumErrs =
@@ -4641,7 +4664,6 @@ namespace Tpetra {
       const LO lclNumRows(this->getNodeNumRows());
       auto range = range_type(0, lclNumRows);
 
-      // FIXME (mfh 08 May 2017) Loops below assume CUDA UVM.
       if (verbose_) {
         size_t totalNumDups = 0;
         Kokkos::parallel_reduce(range,
@@ -4656,7 +4678,6 @@ namespace Tpetra {
         std::cerr << os.str();
       }
       else {
-        // FIXME (mfh 08 May 2017) This may assume CUDA UVM.
         Kokkos::parallel_for(range,
           [this, sorted, merged] (const LO lclRow)
           {
@@ -5111,6 +5132,8 @@ namespace Tpetra {
     row_ptrs_type num_row_entries;
 
     const bool refill_num_row_entries = k_numRowEntries_.extent(0) != 0;
+for (int kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
+std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY BEFORE " << kdd << " " << k_numRowEntries_[kdd] << std::endl;
     if (refill_num_row_entries) { // Case 1: Unpacked storage
       // We can't assume correct *this capture until C++17, and it's
       // likely more efficient just to capture what we need anyway.
@@ -5159,6 +5182,9 @@ namespace Tpetra {
       std::cerr << os.str();
       TEUCHOS_ASSERT( k_rowPtrs_dev_.extent(0) == row_ptrs_beg.extent(0) );
     }
+for (int kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
+std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " << kdd << " " << k_numRowEntries_[kdd] << std::endl;
+
     setRowPtrs(row_ptrs_beg);
 
     set_need_sync_host_uvm_access(); // need fence before host UVM access of k_rowPtrs_
@@ -7585,40 +7611,53 @@ namespace Tpetra {
     // the three data items here. This can be replaced if Kokkos ever puts in its own comparison routine.
     local_graph_type thisLclGraph = this->getLocalGraphDevice();
     local_graph_type graphLclGraph = graph.getLocalGraphDevice();
-    output = thisLclGraph.row_map.extent(0) == graphLclGraph.row_map.extent(0) ? output : false;
+    output = thisLclGraph.row_map.extent(0) == graphLclGraph.row_map.extent(0) 
+           ? output : false;
     if(output && thisLclGraph.row_map.extent(0) > 0)
     {
-      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_this  = Kokkos::create_mirror_view(thisLclGraph.row_map);
-      typename local_graph_type::row_map_type::HostMirror lclGraph_rowmap_host_graph = Kokkos::create_mirror_view(graphLclGraph.row_map);
-      Kokkos::deep_copy(lclGraph_rowmap_host_this, thisLclGraph.row_map);
-      Kokkos::deep_copy(lclGraph_rowmap_host_graph, graphLclGraph.row_map);
-      for(size_t i=0; output && i<lclGraph_rowmap_host_this.extent(0); i++)
-        output = lclGraph_rowmap_host_this(i) == lclGraph_rowmap_host_graph(i) ? output : false;
+      auto lclGraph_rowmap_host_this = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                               thisLclGraph.row_map);
+      auto lclGraph_rowmap_host_graph = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                               graphLclGraph.row_map);
+      for (size_t i=0; output && i < lclGraph_rowmap_host_this.extent(0); i++)
+        output = lclGraph_rowmap_host_this(i) == lclGraph_rowmap_host_graph(i)
+               ? output : false;
     }
 
-    output = thisLclGraph.entries.extent(0) == graphLclGraph.entries.extent(0) ? output : false;
+    output = thisLclGraph.entries.extent(0) == graphLclGraph.entries.extent(0)
+           ? output : false;
     if(output && thisLclGraph.entries.extent(0) > 0)
     {
-      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_this = Kokkos::create_mirror_view(thisLclGraph.entries);
-      typename local_graph_type::entries_type::HostMirror lclGraph_entries_host_graph = Kokkos::create_mirror_view(graphLclGraph.entries);
-      Kokkos::deep_copy(lclGraph_entries_host_this, thisLclGraph.entries);
-      Kokkos::deep_copy(lclGraph_entries_host_graph, graphLclGraph.entries);
-      for(size_t i=0; output && i<lclGraph_entries_host_this.extent(0); i++)
-        output = lclGraph_entries_host_this(i) == lclGraph_entries_host_graph(i) ? output : false;
+      auto lclGraph_entries_host_this = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                               thisLclGraph.entries);
+      auto lclGraph_entries_host_graph = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                               graphLclGraph.entries);
+      for (size_t i=0; output && i < lclGraph_entries_host_this.extent(0); i++)
+        output = lclGraph_entries_host_this(i) == lclGraph_entries_host_graph(i)
+               ? output : false;
     }
 
-    output = thisLclGraph.row_block_offsets.extent(0) == graphLclGraph.row_block_offsets.extent(0) ? output : false;
+    output = 
+      thisLclGraph.row_block_offsets.extent(0) == 
+      graphLclGraph.row_block_offsets.extent(0) ? output : false;
     if(output && thisLclGraph.row_block_offsets.extent(0) > 0)
     {
-      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_this = Kokkos::create_mirror_view(thisLclGraph.row_block_offsets);
-      typename local_graph_type::row_block_type::HostMirror lclGraph_rbo_host_graph = Kokkos::create_mirror_view(graphLclGraph.row_block_offsets);
-      Kokkos::deep_copy(lclGraph_rbo_host_this, thisLclGraph.row_block_offsets);
-      Kokkos::deep_copy(lclGraph_rbo_host_graph, graphLclGraph.row_block_offsets);
-      for(size_t i=0; output && i < lclGraph_rbo_host_this.extent(0); i++)
-        output = lclGraph_rbo_host_this(i) == lclGraph_rbo_host_graph(i) ? output : false;
+      auto lclGraph_rbo_host_this = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                               thisLclGraph.row_block_offsets);
+      auto lclGraph_rbo_host_graph = 
+           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                               graphLclGraph.row_block_offsets);
+      for (size_t i=0; output && i < lclGraph_rbo_host_this.extent(0); i++)
+        output = lclGraph_rbo_host_this(i) == lclGraph_rbo_host_graph(i) 
+               ? output : false;
     }
 
-    // For the Importer and Exporter, we shouldn't need to explicitly check them since
+    // For Importer and Exporter, we don't need to explicitly check them since
     // they will be consistent with the maps.
     // Note: importer_  isa Teuchos::RCP<const import_type>
     //       exporter_  isa Teuchos::RCP<const export_type>

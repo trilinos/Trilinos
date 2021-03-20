@@ -215,6 +215,7 @@ pad_crs_arrays(
   }
   size_t increase = 0;
   {
+    // Must do on host because padding uses std::map
     auto row_ptr_end_h = create_mirror_view(
       hostSpace, row_ptr_end, verbose, prefix.get());
     Kokkos::deep_copy(row_ptr_end_h, row_ptr_end);
@@ -252,6 +253,10 @@ pad_crs_arrays(
            newAllocPerRow_h[lclRowInd] = oldAllocSize;
          }
        }, increase);
+
+std::cout << "KDDKDD INCREASE " << increase << std::endl;
+for (int kdd=0; kdd< newAllocPerRow_h.extent(0); kdd++)
+std::cout << "KDDKDD NEWALLOCPERROW " << kdd << " " << newAllocPerRow_h[kdd] << " " << row_ptr_beg_h[kdd+1]-row_ptr_beg_h[kdd] << std::endl;
 
     if (verbose) {
       std::ostringstream os;
@@ -337,7 +342,9 @@ pad_crs_arrays(
       newRowBeg += newRowAllocSize;
     });
 
-  if (verbose) {
+//KDDKDDKDD DO NOT COMMIT  if (verbose) 
+  std::cout << "KDDKDD DUDE!" << std::endl;
+  {
     std::ostringstream os;
 
     os << *prefix;
@@ -356,7 +363,7 @@ pad_crs_arrays(
                       maxNumToPrint);
     os << endl;
 
-    std::cerr << os.str();
+    std::cout << os.str();
   }
 
   indices_wdv = Indices(indices_new);

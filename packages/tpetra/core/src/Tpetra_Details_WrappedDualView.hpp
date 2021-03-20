@@ -156,7 +156,7 @@ std::cout << " KDDKDD getDeviceViewReadOnly " << dualView.d_view.label() << " " 
     throwIfHostViewAlive();
     impl::sync_device(dualView);
     auto ret = dualView.view_device();
-std::cout << " KDDKDD After getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+std::cout << " KDDKDD After getDeviceViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
     return ret;
   }
 

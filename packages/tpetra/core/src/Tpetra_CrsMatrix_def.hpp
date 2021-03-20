@@ -1242,7 +1242,6 @@ namespace Tpetra {
   {
     using ::Tpetra::Details::computeOffsetsFromCounts;
     using ::Tpetra::Details::getEntryOnHost;
-    using Kokkos::create_mirror_view;
     using Teuchos::arcp_const_cast;
     using Teuchos::Array;
     using Teuchos::ArrayRCP;
@@ -1643,7 +1642,6 @@ namespace Tpetra {
   fillLocalMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using ::Tpetra::Details::ProfilingRegion;
-    using Kokkos::create_mirror_view;
     using Teuchos::ArrayRCP;
     using Teuchos::Array;
     using Teuchos::null;
