@@ -784,11 +784,8 @@ namespace { // (anonymous)
 
           // Add me to the graph for my neighbors
           ngraph.insertGlobalIndices (grows[0], tuple<GO> (myRank));
-std::cout << comm->getRank() << " KDDKDD INSERT " << grows[0] << " " << myRank << std::endl;
           ngraph.insertGlobalIndices (grows[1], tuple<GO> (myRank));
-std::cout << comm->getRank() << " KDDKDD INSERT " << grows[1] << " " << myRank << std::endl;
           ngraph.insertGlobalIndices (grows[2], tuple<GO> (myRank));
-std::cout << comm->getRank() << " KDDKDD INSERT " << grows[2] << " " << myRank << std::endl;
 
           // after globalAssemble(), storage should be maxed out
           out << "Calling globalAssemble()" << endl;
@@ -811,9 +808,6 @@ std::cout << comm->getRank() << " KDDKDD INSERT " << grows[2] << " " << myRank <
             size_t numunique = glast - grows.begin ();
             // test the test: numunique == min(numProcs,3)
             TEST_EQUALITY( numunique, (size_t)min(numProcs,3) );
-std::cout << comm->getRank() << " KDDKDD myrow_lcl.size " << myrow_lcl.size() << std::endl;
-for (int kdd=0 ; kdd < myrow_lcl.size(); kdd++)
-std::cout << comm->getRank() << " KDDKDD myrow_lcl " << " " << kdd << " " << myrow_lcl[kdd] << std::endl;
             TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
             if ((size_t)myrow_lcl.size() == numunique) {
               size_t numinds;

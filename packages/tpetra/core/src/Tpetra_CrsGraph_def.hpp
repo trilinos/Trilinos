@@ -1288,7 +1288,6 @@ namespace Tpetra {
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewHost (const RowInfo& rowinfo) const
   {
-std::cout << "     KDDKDD GLIVH " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
       return typename local_inds_dualv_type::t_host::const_type ();
     else
@@ -1303,7 +1302,6 @@ std::cout << "     KDDKDD GLIVH " << rowinfo.offset1D << " " << rowinfo.numEntri
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewHostNonConst (const RowInfo& rowinfo) 
   {
-std::cout << "     KDDKDD GLIVHNC " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
       return typename local_inds_dualv_type::t_host ();
     else
@@ -1318,7 +1316,6 @@ std::cout << "     KDDKDD GLIVHNC " << rowinfo.offset1D << " " << rowinfo.numEnt
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalIndsViewHost (const RowInfo& rowinfo) const
   {
-std::cout << "     KDDKDD GGIVH " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
       return typename global_inds_dualv_type::t_host::const_type ();
     else
@@ -1333,7 +1330,6 @@ std::cout << "     KDDKDD GGIVH " << rowinfo.offset1D << " " << rowinfo.numEntri
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalIndsViewDevice (const RowInfo& rowinfo) const
   {
-std::cout << "     KDDKDD GLIVD " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || lclInds_wdv.extent(0) == 0) 
       return typename local_inds_dualv_type::t_dev::const_type ();
     else
@@ -1348,7 +1344,6 @@ std::cout << "     KDDKDD GLIVD " << rowinfo.offset1D << " " << rowinfo.numEntri
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalIndsViewDevice (const RowInfo& rowinfo) const
   {
-std::cout << "     KDDKDD GGIVD " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0 || gblInds_wdv.extent(0) == 0) 
       return typename global_inds_dualv_type::t_dev::const_type ();
     else
@@ -1366,7 +1361,6 @@ std::cout << "     KDDKDD GGIVD " << rowinfo.offset1D << " " << rowinfo.numEntri
     using Kokkos::subview;
     typedef LocalOrdinal LO;
 
-std::cout << "     KDDKDD DEPGLV " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     if (rowinfo.allocSize == 0) {
       return Teuchos::ArrayView<const LO> ();
     }
@@ -1400,7 +1394,6 @@ std::cout << "     KDDKDD DEPGLV " << rowinfo.offset1D << " " << rowinfo.numEntr
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalView (const RowInfo& rowinfo) const
   {
-std::cout << "     KDDKDD DEPGGV " << rowinfo.offset1D << " " << rowinfo.numEntries << " " << rowinfo.allocSize << std::endl;
     using GO = global_ordinal_type;
 
     Teuchos::ArrayView<const GO> view;
@@ -1715,10 +1708,6 @@ std::cout << "     KDDKDD DEPGGV " << rowinfo.offset1D << " " << rowinfo.numEntr
       numInserted = Details::insertCrsIndices(lclRow, this->k_rowPtrs_host_,
                                               gblIndsHostView,
                                               numEntries, inputInds, fun);
-
-std::cout << "KDDKDD INSERTGLOBALIND numInputInds " << numInputInds << " numInserted " << numInserted << std::endl;
-for (size_t kdd = 0; kdd < numInputInds; kdd++)
-std::cout << "KDDKDD INSERTGLOBALIND " << kdd << " " << inputInds[kdd] << std::endl;
     }
 
     const bool insertFailed =
@@ -1753,8 +1742,6 @@ std::cout << "KDDKDD INSERTGLOBALIND " << kdd << " " << inputInds[kdd] << std::e
     }
 
     this->k_numRowEntries_(lclRow) += numInserted;
-
-std::cout << "KDDKDD INSERTGLOBALIND k_numRowEntries[ "<< lclRow << "] is now " << k_numRowEntries_(lclRow) << std::endl;
 
     this->setLocallyModified();
     return numInserted;
@@ -1905,10 +1892,7 @@ std::cout << "KDDKDD INSERTGLOBALIND k_numRowEntries[ "<< lclRow << "] is now " 
     const size_t origNumEnt = rowInfo.numEntries;
     if (origNumEnt != Tpetra::Details::OrdinalTraits<size_t>::invalid () &&
         origNumEnt != 0) {
-std::cout << " KDDKDD SAMRI BEGIN rowinfo " << rowInfo.offset1D << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
       auto lclColInds = this->getLocalIndsViewHostNonConst (rowInfo);
-for (size_t kdd = 0; kdd < rowInfo.numEntries; kdd++)
-std::cout << "       KDDKDD SAMRI " << kdd << " lclInds " << lclColInds[kdd] << std::endl;
 
       LocalOrdinal* const lclColIndsRaw = lclColInds.data ();
       if (! sorted) {
@@ -1923,7 +1907,6 @@ std::cout << "       KDDKDD SAMRI " << kdd << " lclInds " << lclColInds[kdd] << 
 
         // NOTE (mfh 08 May 2017) This is a host View, so it does not assume UVM.
         this->k_numRowEntries_(rowInfo.localRow) = newNumEnt;
-std::cout << " KDDKDD SAMRI END rowinfo " << rowInfo.offset1D << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
         return origNumEnt - newNumEnt; // the number of duplicates in the row
       }
       else {
@@ -2438,7 +2421,6 @@ std::cout << " KDDKDD SAMRI END rowinfo " << rowInfo.offset1D << " " << rowInfo.
     const RowInfo rowInfo = getRowInfo (localRow);
     if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
         rowInfo.numEntries > 0) {
-std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
       indices = lclInds_wdv.getHostSubview(rowInfo.offset1D, 
                                            rowInfo.numEntries,
                                            Access::ReadOnly);
@@ -5144,8 +5126,6 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
     row_ptrs_type num_row_entries;
 
     const bool refill_num_row_entries = k_numRowEntries_.extent(0) != 0;
-for (size_t kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
-std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY BEFORE " << kdd << " " << k_numRowEntries_[kdd] << std::endl;
     if (refill_num_row_entries) { // Case 1: Unpacked storage
       // We can't assume correct *this capture until C++17, and it's
       // likely more efficient just to capture what we need anyway.
@@ -5194,8 +5174,6 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY BEFORE " 
       std::cerr << os.str();
       TEUCHOS_ASSERT( k_rowPtrs_dev_.extent(0) == row_ptrs_beg.extent(0) );
     }
-for (size_t kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
-std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " << kdd << " " << k_numRowEntries_[kdd] << std::endl;
 
     setRowPtrs(row_ptrs_beg);
 

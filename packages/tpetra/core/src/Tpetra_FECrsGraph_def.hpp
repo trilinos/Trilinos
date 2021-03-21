@@ -313,7 +313,6 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     }
 
     // Time to build an owned localGraph via subviews
-std::cout << "KDDKDD FECrsGraph doOwnedPlusSharedToOwned getLocalGraphDevice" << std::endl;
     local_graph_device_type ownedPlusSharedGraph = this->getLocalGraphDevice();
     size_t numOwnedRows = ownedRowMap->getNodeNumElements();
     size_t numOwnedNonZeros = Tpetra::Details::getEntryOnHost(ownedPlusSharedGraph.row_map,numOwnedRows);
@@ -321,9 +320,7 @@ std::cout << "KDDKDD FECrsGraph doOwnedPlusSharedToOwned getLocalGraphDevice" <<
     auto col_indices = Kokkos::subview(ownedPlusSharedGraph.entries,Kokkos::pair<size_t,size_t>(0,numOwnedNonZeros));
 
     inactiveCrsGraph_ = Teuchos::rcp(new crs_graph_type(ownedRowMap,this->getColMap(),row_ptrs,col_indices));
-std::cout << "KDDKDD FECrsGraph doOwnedPlusSharedToOwned makingNewCrsGraph" << std::endl;
     inactiveCrsGraph_->fillComplete(ownedDomainMap_,ownedRangeMap_);
-std::cout << "KDDKDD FECrsGraph doOwnedPlusSharedToOwned fillComplete" << std::endl;
   }
 }//end doOverlapToLocal
 
