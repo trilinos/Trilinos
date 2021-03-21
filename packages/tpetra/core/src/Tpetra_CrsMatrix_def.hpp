@@ -289,7 +289,7 @@ namespace Tpetra {
     storageStatus_ (Details::STORAGE_1D_PACKED)
   {
     using std::endl;
-    typedef typename local_matrix_type::values_type values_type;
+    typedef typename local_matrix_device_type::values_type values_type;
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>[, "
       "RCP<ParameterList>]): ";
     const bool verbose = Details::Behavior::verbose("CrsMatrix");
@@ -326,23 +326,15 @@ namespace Tpetra {
       os << *prefix << "Allocate values: " << numEnt << endl;
       std::cerr << os.str ();
     }
-    values_type val ("Tpetra::CrsMatrix::val", numEnt);
 
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, val, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    values_type val ("Tpetra::CrsMatrix::values", numEnt);
+    valuesCompressed_wdv = local_values_wdv_type(val);
+    values_wdv = valuesCompressed_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Assign k_values1D_: old="
-         << k_values1D_.extent(0) << ", new="
-         << lclMat->values.extent(0) << endl;
-      std::cerr << os.str ();
-    }
-    k_values1D_ = lclMat->values;
+    k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
 
@@ -356,14 +348,14 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-             const typename local_matrix_type::values_type& values,
+             const typename local_matrix_device_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
     dist_object_type (graph->getRowMap ()),
     staticGraph_ (graph),
     storageStatus_ (Details::STORAGE_1D_PACKED)
   {
     const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>, "
-      "local_matrix_type::values_type, "
+      "local_matrix_device_type::values_type, "
       "[,RCP<ParameterList>]): ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (graph.is_null (), std::runtime_error, "Input graph is null.");
@@ -381,17 +373,14 @@ namespace Tpetra {
     // local matrix's number of columns comes from the column Map, not
     // the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraphDevice ();
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    valuesCompressed_wdv = local_values_wdv_type(values);
+    values_wdv = valuesCompressed_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    k_values1D_ = lclMat->values;
+    // KDDKDD ALMOST THERE, MARK!
+    k_values1D_ = values_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
   }
@@ -400,9 +389,9 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const typename local_matrix_type::row_map_type& rowPointers,
+             const typename local_graph_device_type::row_map_type& rowPointers,
              const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
-             const typename local_matrix_type::values_type& values,
+             const typename local_matrix_device_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
     storageStatus_ (Details::STORAGE_1D_PACKED)
@@ -491,24 +480,13 @@ namespace Tpetra {
     // Note that the local matrix's number of columns comes from the
     // column Map, not the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
-
-    auto newValues = lclMat->values;
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (newValues.extent (0) != values.extent (0),
-       std::logic_error, "Local matrix's constructor did not set the "
-       "values correctly.  newValues.extent(0) = " <<
-       newValues.extent (0) << " != values.extent(0) = " <<
-       values.extent (0) << suffix);
+    valuesCompressed_wdv = local_values_wdv_type(values);
+    values_wdv = valuesCompressed_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = newValues;
+    this->k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
     if (verbose) {
@@ -532,7 +510,7 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Teuchos::av_reinterpret_cast;
     using Teuchos::RCP;
-    using values_type = typename local_matrix_type::values_type;
+    using values_type = typename local_matrix_device_type::values_type;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, ptr, ind, val[, params]): ";
@@ -573,19 +551,15 @@ namespace Tpetra {
        "ptr, ind[, params]) did not set the local graph correctly.  "
        "Please report this bug to the Tpetra developers.");
 
-    const size_t numCols =
-      staticGraph_->getColMap ()->getNodeNumElements ();
     values_type valIn =
       getKokkosViewDeepCopy<device_type> (av_reinterpret_cast<IST> (val ()));
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, valIn, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    valuesCompressed_wdv = local_values_wdv_type(valIn);
+    values_wdv = valuesCompressed_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = lclMat->values;
+    this->k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
   }
@@ -594,17 +568,14 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
-             const local_matrix_type& lclMatrix,
+             const local_matrix_device_type& lclMatrix,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    lclMatrix_ (std::make_shared<local_multiply_op_type>
-                (std::make_shared<local_matrix_type> (lclMatrix))),
-    k_values1D_ (lclMatrix.values),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
-      "RCP<const Map>, local_matrix_type[, RCP<ParameterList>]): ";
+      "RCP<const Map>, local_matrix_device_type[, RCP<ParameterList>]): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
@@ -630,6 +601,11 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
+    valuesCompressed_wdv = local_values_wdv_type(lclMatrix.values);
+    values_wdv = valuesCompressed_wdv;
+
+    k_values1D_ = values_wdv.getDeviceView(Access::ReadWrite);
+
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
     if (callComputeGlobalConstants) {
@@ -649,22 +625,19 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const local_matrix_type& lclMatrix,
+  CrsMatrix (const local_matrix_device_type& lclMatrix,
              const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
              const Teuchos::RCP<const map_type>& domainMap,
              const Teuchos::RCP<const map_type>& rangeMap,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    lclMatrix_ (std::make_shared<local_multiply_op_type>
-                (std::make_shared<local_matrix_type> (lclMatrix))),
-    k_values1D_ (lclMatrix.values),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (true)
   {
     const char tfecfFuncName[] = "Tpetra::CrsMatrix(RCP<const Map>, "
       "RCP<const Map>, RCP<const Map>, RCP<const Map>, "
-      "local_matrix_type[, RCP<ParameterList>]): ";
+      "local_matrix_device_type[, RCP<ParameterList>]): ";
     const char suffix[] =
       "  Please report this bug to the Tpetra developers.";
 
@@ -690,6 +663,10 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
+    valuesCompressed_wdv = local_values_wdv_type(lclMatrix.values);
+    values_wdv = valuesCompressed_wdv;
+    k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
+
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
     if (callComputeGlobalConstants) {
@@ -709,7 +686,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  CrsMatrix (const local_matrix_type& lclMatrix,
+  CrsMatrix (const local_matrix_device_type& lclMatrix,
              const Teuchos::RCP<const map_type>& rowMap,
              const Teuchos::RCP<const map_type>& colMap,
              const Teuchos::RCP<const map_type>& domainMap,
@@ -718,9 +695,6 @@ namespace Tpetra {
              const Teuchos::RCP<const export_type>& exporter,
              const Teuchos::RCP<Teuchos::ParameterList>& params) :
     dist_object_type (rowMap),
-    lclMatrix_ (std::make_shared<local_multiply_op_type>
-                (std::make_shared<local_matrix_type> (lclMatrix))),
-    k_values1D_ (lclMatrix.values),
     storageStatus_ (Details::STORAGE_1D_PACKED),
     fillComplete_ (true)
   {
@@ -753,6 +727,10 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
+    valuesCompressed_wdv = local_values_wdv_type(lclMatrix.values);
+    values_wdv = valuesCompressed_wdv;
+    k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
+
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
     if (callComputeGlobalConstants) {
@@ -783,7 +761,7 @@ namespace Tpetra {
        "Source graph must be fillComplete().");
 
     if (copyOrView == Teuchos::Copy) {
-      using values_type = typename local_matrix_type::values_type;
+      using values_type = typename local_matrix_device_type::values_type;
       values_type vals = source.getLocalValuesView ();
       using Kokkos::view_alloc;
       using Kokkos::WithoutInitializing;
@@ -816,7 +794,6 @@ namespace Tpetra {
     std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(crs_matrix.lclMatrix_,     this->lclMatrix_);       // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>
     std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>::values_type
     std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
     std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
@@ -1032,22 +1009,46 @@ namespace Tpetra {
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_type
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrix () const
   {
-    return lclMatrix_.get () == nullptr ?
-      local_matrix_type () :
-      lclMatrix_->getLocalMatrix ();
+    return getLocalMatrixDevice();
+  }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_device_type
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMatrixDevice () const
+  {
+    auto numCols = StaticGraph_->getColMap()->getNodeNumElements();
+    return local_matrix_device_type("Tpetra::CrsMatrix::lclMatrix", numCols,
+                                     values_wdv.getDeviceView(Access::ReadWrite), 
+                                     staticGraph_->getLocalGraphDevice());
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_matrix_host_type
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalMatrixHost () const
+  {
+    auto numCols = StaticGraph_->getColMap()->getNodeNumElements();
+    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrix", numCols,
+                                   values_wdv.getHostView(Access::ReadWrite), 
+                                   staticGraph_->getLocalGraphHost());
+  }
+
+// KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::shared_ptr<typename CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::local_multiply_op_type>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMultiplyOperator () const
   {
-    return lclMatrix_;
+// KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
+    return std::make_shared<local_multiply_operator>(getLocalMatrixDevice());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1183,7 +1184,7 @@ namespace Tpetra {
       ::Tpetra::Details::getEntryOnHost (k_ptrs, lclNumRows);
 
     // Allocate array of (packed???) matrix values.
-    using values_type = typename local_matrix_type::values_type;
+    using values_type = typename local_matrix_device_type::values_type;
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate k_values1D_: Pre "
@@ -1249,9 +1250,9 @@ namespace Tpetra {
     using Teuchos::RCP;
     using Teuchos::rcp;
     using std::endl;
-    using row_map_type = typename local_matrix_type::row_map_type;
+    using row_map_type = typename local_graph_device_type::row_map_type;
     using lclinds_1d_type = typename Graph::local_graph_device_type::entries_type::non_const_type;
-    using values_type = typename local_matrix_type::values_type;
+    using values_type = typename local_matrix_device_type::values_type;
     Details::ProfilingRegion regionFLGAM
       ("Tpetra::CrsGraph::fillLocalGraphAndMatrix");
 
@@ -1287,13 +1288,6 @@ namespace Tpetra {
     // sparse row format) that define the sparse graph's and matrix's
     // structure, and the sparse matrix's values.
     //
-    // Use the nonconst version of row_map_type for k_ptrs,
-    // because row_map_type is const and we need to modify k_ptrs here.
-    typename row_map_type::non_const_type k_ptrs;
-    row_map_type k_ptrs_const;
-    lclinds_1d_type k_inds;
-    values_type k_vals;
-
     // Get references to the data in myGraph_, so we can modify them
     // as well.  Note that we only call fillLocalGraphAndMatrix() if
     // the matrix owns the graph, which means myGraph_ is not null.
@@ -1331,6 +1325,14 @@ namespace Tpetra {
 
     if (myGraph_->getNodeNumEntries() !=
         myGraph_->getNodeAllocationSize()) {
+
+      // Use the nonconst version of row_map_type for k_ptrs,
+      // because row_map_type is const and we need to modify k_ptrs here.
+      typename row_map_type::non_const_type k_ptrs;
+      row_map_type k_ptrs_const;
+      lclinds_1d_type k_inds;
+      values_type k_vals;
+
       if (verbose) {
         std::ostringstream os;
         const auto numEnt = myGraph_->getNodeNumEntries();
@@ -1419,14 +1421,14 @@ namespace Tpetra {
            << lclTotalNumEntries << endl;
         std::cerr << os.str ();
       }
-      k_inds = lclinds_1d_type ("Tpetra::CrsGraph::ind", lclTotalNumEntries);
+      k_inds = lclinds_1d_type ("Tpetra::CrsGraph::lclInds", lclTotalNumEntries);
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Allocate packed values: "
            << lclTotalNumEntries << endl;
         std::cerr << os.str ();
       }
-      k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+      k_vals = values_type ("Tpetra::CrsMatrix::values", lclTotalNumEntries);
 
       // curRowOffsets (myGraph_->k_rowPtrs_) (???), lclInds_wdv,
       // and k_values1D_ are currently unpacked.  Pack them, using
@@ -1485,8 +1487,16 @@ namespace Tpetra {
              " != k_inds.extent(0) = " << k_inds.extent (0) << ".");
         }
       }
+      // Build the local graph.
+      myGraph_->setRowPtrsCompressed(k_ptrs_const);
+      myGraph_->lclIndsCompressed_wdv = local_inds_wdv_type(k_inds);
+      valuesCompressed_wdv = values_wdv(k_vals);
     }
     else { // We don't have to pack, so just set the pointers.
+      myGraph_->setRowPtrsCompressed(myGraph_->k_rowPtrs_dev_);
+      myGraph_->lclIndsCompressed_wdv = myGraph_->lclInds_wdv;
+      valuesCompressed_wdv = values_wdv;
+
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: k_rowPtrs_: "
@@ -1495,30 +1505,29 @@ namespace Tpetra {
            << k_values1D_.extent(0) << endl;
         std::cerr << os.str();
       }
-      k_ptrs_const = myGraph_->k_rowPtrs_dev_;
-      k_inds = myGraph_->lclInds_wdv.getDeviceView(Access::ReadWrite);  // KDDKDD Need ReadWrite because k_inds is not const
-      k_vals = this->k_values1D_;
 
       if (debug) {
         const char myPrefix[] =
           "(StaticProfile \"Optimize Storage\"=false branch) ";
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (k_ptrs_const.extent (0) == 0, std::logic_error, myPrefix
-           << "k_ptrs_const.extent(0) = 0.  This probably means "
+          (myGraph_->k_rowPtrs_dev_.extent (0) == 0, std::logic_error, myPrefix
+           << "myGraph->k_rowPtrs_dev_.extent(0) = 0.  This probably means "
            "that k_rowPtrs_ was never allocated.");
-        if (k_ptrs_const.extent (0) != 0) {
-          const size_t numOffsets (k_ptrs_const.extent (0));
+        if (myGraph_->k_rowPtrs_dev_.extent (0) != 0) {
+          const size_t numOffsets (myGraph_->k_rowPtrs_host_.extent (0));
           const auto valToCheck = myGraph_->k_rowPtrs_host_(numOffsets - 1);
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (size_t (valToCheck) != k_vals.extent (0),
+            (size_t (valToCheck) != valuesCompressed_wdv.extent (0),
              std::logic_error, myPrefix <<
              "k_ptrs_const(" << (numOffsets-1) << ") = " << valToCheck
-             << " != k_vals.extent(0) = " << k_vals.extent (0) << ".");
+             << " != valuesCompressed_wdv.extent(0) = " 
+             << valuesCompressed_wdv.extent (0) << ".");
           TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-            (size_t (valToCheck) != k_inds.extent (0),
+            (size_t (valToCheck) != myGraph_->lclIndsCompressed_wdv.extent (0),
              std::logic_error, myPrefix <<
              "k_ptrs_const(" << (numOffsets-1) << ") = " << valToCheck
-             << " != k_inds.extent(0) = " << k_inds.extent (0) << ".");
+             << " != myGraph_->lclIndsCompressed.extent(0) = " 
+             << myGraph_->lclIndsCompressed.extent (0) << ".");
         }
       }
     }
@@ -1526,39 +1535,27 @@ namespace Tpetra {
     if (debug) {
       const char myPrefix[] = "After packing, ";
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (size_t (k_ptrs_const.extent (0)) != size_t (lclNumRows + 1),
-         std::logic_error, myPrefix << "k_ptrs_const.extent(0) = "
-         << k_ptrs_const.extent (0) << " != lclNumRows+1 = " <<
+        (size_t (myGraph_->k_rowPtrs_host_.extent (0)) != size_t (lclNumRows + 1),
+         std::logic_error, myPrefix << "myGraph_->k_rowPtrs_host_.extent(0) = "
+         << myGraph_->k_rowPtrs_host_.extent (0) << " != lclNumRows+1 = " <<
          (lclNumRows+1) << ".");
-      if (k_ptrs_const.extent (0) != 0) {
-        const size_t numOffsets (k_ptrs_const.extent (0));
-        const size_t k_ptrs_const_numOffsetsMinus1 =
-          getEntryOnHost (k_ptrs_const, numOffsets - 1);
+      if (myGraph_->k_rowPtrs_host_.extent (0) != 0) {
+        const size_t numOffsets (myGraph_->k_rowPtrs_host_.extent (0));
+        const size_t valToCheck = myGraph_->k_rowPtrs_host_(numOffsets-1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (k_ptrs_const_numOffsetsMinus1 != size_t (k_vals.extent (0)),
+          (valToCheck != size_t (valuesCompressed_wdv.extent (0)),
            std::logic_error, myPrefix << "k_ptrs_const(" <<
-           (numOffsets-1) << ") = " << k_ptrs_const_numOffsetsMinus1
-           << " != k_vals.extent(0) = " << k_vals.extent (0) << ".");
+           (numOffsets-1) << ") = " << valToCheck
+           << " != valuesCompressed_wdv.extent(0) = " 
+           << valuesCompressed_wdv.extent (0) << ".");
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-          (k_ptrs_const_numOffsetsMinus1 != size_t (k_inds.extent (0)),
+          (valToCheck != size_t (myGraph_->lclIndsCompressed_wdv.extent (0)),
            std::logic_error, myPrefix << "k_ptrs_const(" <<
-           (numOffsets-1) << ") = " << k_ptrs_const_numOffsetsMinus1
-           << " != k_inds.extent(0) = " << k_inds.extent (0) << ".");
+           (numOffsets-1) << ") = " << valToCheck
+           << " != myGraph_->lclIndsCompressed_wdvk_inds.extent(0) = " 
+           << myGraph_->lclIndsCompressed_wdvk_inds.extent (0) << ".");
       }
     }
-
-    // Make the local graph, using the arrays of row offsets and
-    // column indices that we built above.  The local graph should be
-    // null, but we delete it first so that any memory can be freed
-    // before we allocate the new one.
-    //
-    // FIXME (mfh 06,28 Aug 2014) It would make more sense for
-    // Tpetra::CrsGraph to have a protected method that accepts k_inds
-    // and k_ptrs, and creates the local graph lclGraph_.
-    // KDDKDD NO KIDDING!  See 3/19/21 Tpetra notes
-    myGraph_->setRowPtrsCompressed(k_ptrs_const);
-    myGraph_->lclIndsCompressed_wdv = 
-              typename Graph::local_inds_wdv_type(k_inds);
 
     // May we ditch the old allocations for the packed (and otherwise
     // "optimized") allocations, later in this routine?  Optimize
@@ -1588,33 +1585,13 @@ namespace Tpetra {
            << myGraph_->k_numRowEntries_.extent(0) << endl;
         std::cerr << os.str();
       }
-      myGraph_->k_numRowEntries_ = row_entries_type ();
 
+      myGraph_->k_numRowEntries_ = row_entries_type ();
       // Keep the new 1-D packed allocations.
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Assign k_rowPtrs_: old="
-           << myGraph_->k_rowPtrs_host_.extent(0) << ", new="
-           << k_ptrs_const.extent(0) << endl;
-        std::cerr << os.str();
-      }
-      myGraph_->setRowPtrs(k_ptrs_const);
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Assign lclInds_wdv: old="
-           << myGraph_->lclInds_wdv.extent(0) << ", new="
-           << k_inds.extent(0) << endl;
-        std::cerr << os.str();
-      }
+      myGraph_->setRowPtrs(myGraph_->k_rowPtrsCompressed_dev_);
       myGraph_->lclInds_wdv = myGraph_->lclIndsCompressed_wdv;
-      if (verbose) {
-        std::ostringstream os;
-        os << *prefix << "Assign k_values1D_: old="
-           << k_values1D_.extent(0) << ", new="
-           << k_vals.extent(0) << endl;
-        std::cerr << os.str();
-      }
-      this->k_values1D_ = k_vals;
+      values_wdv = valuesCompressed_wdv;
+      k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
 
       myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -1622,18 +1599,11 @@ namespace Tpetra {
     else {
       if (verbose) {
         std::ostringstream os;
-        os << *prefix << "User requestetd NOT to optimize storage"
+        os << *prefix << "User requested NOT to optimize storage"
            << endl;
         std::cerr << os.str();
       }
     }
-
-    // Make the local matrix, using the local graph and vals array.
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", getNodeNumCols (),
-       k_vals, myGraph_->getLocalGraphDevice());
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
-    // KDDKDD Eventually make lclMatrix_ return on demand
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1650,7 +1620,7 @@ namespace Tpetra {
     using std::endl;
     using row_map_type = typename Graph::local_graph_device_type::row_map_type;
     using non_const_row_map_type = typename row_map_type::non_const_type;
-    using values_type = typename local_matrix_type::values_type;
+    using values_type = typename local_matrix_device_type::values_type;
     ProfilingRegion regionFLM("Tpetra::CrsMatrix::fillLocalMatrix");
     const size_t lclNumRows = getNodeNumRows();
 
@@ -1775,34 +1745,26 @@ namespace Tpetra {
       using range_type = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
       Kokkos::parallel_for ("Tpetra::CrsMatrix pack values",
                             range_type (0, lclNumRows), valsPacker);
+      valuesCompressed_wdv = values_wdv(k_vals);
     }
     else { // We don't have to pack, so just set the pointer.
+      valuesCompressed_wdv = values_wdv;
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: "
            << "k_values1D_: " << k_values1D_.extent(0) << endl;
         std::cerr << os.str();
       }
-      k_vals = k_values1D_;
     }
 
     // May we ditch the old allocations for the packed one?
     if (requestOptimizedStorage) {
       // The user requested optimized storage, so we can dump the
       // unpacked 1-D storage, and keep the packed storage.
-      k_values1D_ = k_vals;
+      values_wdv = valuesCompressed_wdv;
+      k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
-
-    // Build the local sparse matrix object.  At this point, the local
-    // matrix certainly has a column Map.  Remember that the local
-    // matrix's number of columns comes from the column Map, not the
-    // domain Map.
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_",
-       getColMap ()->getNodeNumElements (),
-       k_vals, staticGraph_->getLocalGraphDevice ());
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3446,7 +3408,6 @@ namespace Tpetra {
     }
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -3615,7 +3576,6 @@ namespace Tpetra {
        " " << expectedNumEntries << suffix);
 #endif // HAVE_TPETRA_DEBUG
   }
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -3682,9 +3642,9 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  setAllValues (const typename local_matrix_type::row_map_type& rowPointers,
+  setAllValues (const typename local_graph_device_type::row_map_type& rowPointers,
                 const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
-                const typename local_matrix_type::values_type& values)
+                const typename local_matrix_device_type::values_type& values)
   {
     const char tfecfFuncName[] = "setAllValues: ";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -3714,16 +3674,13 @@ namespace Tpetra {
        std::logic_error, "myGraph_->setAllIndices() did not correctly create "
        "local graph.  Please report this bug to the Tpetra developers.");
 
-    const size_t numCols = myGraph_->getColMap ()->getNodeNumElements ();
-
-    auto lclMat = std::make_shared<local_matrix_type>
-      ("Tpetra::CrsMatrix::lclMatrix_", numCols, values, lclGraph);
-    lclMatrix_ = std::make_shared<local_multiply_op_type> (lclMat);
+    valuesCompressed_wdv = values_wdv_type(values);
+    values_wdv = valuesCompressed_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    k_values1D_ = lclMat->values;
+    k_values1D_ = valuesCompressed_wdv.getDeviceView(Access::ReadWrite);
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
@@ -3744,7 +3701,7 @@ namespace Tpetra {
     using Teuchos::av_reinterpret_cast;
     typedef device_type DT;
     typedef impl_scalar_type IST;
-    typedef typename local_matrix_type::row_map_type row_map_type;
+    typedef typename local_graph_device_type::row_map_type row_map_type;
     //typedef typename row_map_type::non_const_value_type row_offset_type;
     const char tfecfFuncName[] = "setAllValues(ArrayRCP<size_t>, ArrayRCP<LO>, ArrayRCP<Scalar>): ";
 
@@ -3854,7 +3811,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (this->isFillComplete ()) {
-      const auto D_lcl = diag.template getLocalView<device_type> (Access::WriteOnly);
+      const auto D_lcl = diag.template getLocalViewDevice (Access::WriteOnly);
       // 1-D subview of the first (and only) column of D_lcl.
       const auto D_lcl_1d =
         Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
@@ -3864,7 +3821,7 @@ namespace Tpetra {
       using ::Tpetra::Details::getDiagCopyWithoutOffsets;
       (void) getDiagCopyWithoutOffsets (D_lcl_1d, lclRowMap,
                                         lclColMap,
-                                        lclMatrix_->getLocalMatrix ());
+                                        getLocalMatrixDevice ());
     }
     else {
       using ::Tpetra::Details::getLocalDiagCopyWithoutOffsetsNotFillComplete;
@@ -3899,14 +3856,14 @@ namespace Tpetra {
     // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
     // we write a device kernel, it will not need to assume UVM.
 
-    auto D_lcl = diag.template getLocalView<device_type> (Access::WriteOnly);
+    auto D_lcl = diag.template getLocalViewDevice (Access::WriteOnly);
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     // Get 1-D subview of the first (and only) column of D_lcl.
     auto D_lcl_1d =
       Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
 
     KokkosSparse::getDiagCopy (D_lcl_1d, offsets,
-                               lclMatrix_->getLocalMatrix ());
+                               getLocalMatrixDevice ());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -3951,7 +3908,7 @@ namespace Tpetra {
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
 
-    local_matrix_type lclMat = lclMatrix_->getLocalMatrix ();
+    local_matrix_host_type lclMat = getLocalMatrixHost ();
     Kokkos::parallel_for
       ("Tpetra::CrsMatrix::getLocalDiagCopy",
        range_type (0, myNumRows),
@@ -4012,10 +3969,10 @@ namespace Tpetra {
       //   using Teuchos::rcp_const_cast;
       //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       // }
-      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
+      auto x_lcl = xp->template getLocalViewDevice (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::leftScaleLocalCrsMatrix;
-      leftScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
+      leftScaleLocalCrsMatrix (getLocalMatrixDevice (),
                                x_lcl_1d, false, false);
     }
     else {
@@ -4071,10 +4028,10 @@ namespace Tpetra {
       //   using Teuchos::rcp_const_cast;
       //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       // }
-      auto x_lcl = xp->template getLocalView<dev_memory_space> (Access::ReadOnly);
+      auto x_lcl = xp->template getLocalViewDevice (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::rightScaleLocalCrsMatrix;
-      rightScaleLocalCrsMatrix (lclMatrix_->getLocalMatrix (),
+      rightScaleLocalCrsMatrix (getLocalMatrixDevice (),
                                 x_lcl_1d, false, false);
     }
     else {
@@ -5282,13 +5239,11 @@ std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries <<
 
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
     auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
+    auto matrix_lcl = getLocalMatrixDevice();
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {
       const char tfecfFuncName[] = "localApply: ";
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-        (lclMatrix_.get () == nullptr, std::logic_error,
-         "lclMatrix_ not created yet.");
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (X.getNumVectors () != Y.getNumVectors (), std::runtime_error,
          "X.getNumVectors() = " << X.getNumVectors () << " != "
@@ -5341,10 +5296,11 @@ std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries <<
     LocalOrdinal maxRowImbalance = 0;
     if(nrows != 0)
       maxRowImbalance = getNodeMaxNumRowEntries() - (getNodeNumEntries() / nrows);
+
     if(size_t(maxRowImbalance) >= Tpetra::Details::Behavior::rowImbalanceThreshold())
-      lclMatrix_->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
+      matrix_lcl->applyImbalancedRows (X_lcl, Y_lcl, mode, alpha, beta);
     else
-      lclMatrix_->apply (X_lcl, Y_lcl, mode, alpha, beta);
+      matrix_lcl->apply (X_lcl, Y_lcl, mode, alpha, beta);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5411,8 +5367,8 @@ std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries <<
     // Copy old values into new values.  impl_scalar_type and T may
     // differ, so we can't use Kokkos::deep_copy.
     using ::Tpetra::Details::copyConvert;
-    copyConvert (newMatrix->lclMatrix_->getLocalMatrix ().values,
-                 this->lclMatrix_->getLocalMatrix ().values);
+    copyConvert (newMatrix->getLocalMatrixDevice ().values,
+                 this->getLocalMatrixDevice ().values);
     // Since newmat has a static (const) graph, the graph already has
     // a column Map, and Import and Export objects already exist (if
     // applicable).  Thus, calling fillComplete is cheap.

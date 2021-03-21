@@ -483,12 +483,19 @@ namespace Tpetra {
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.
-    using local_matrix_type =
+    using local_matrix_device_type =
       KokkosSparse::CrsMatrix<impl_scalar_type,
                               local_ordinal_type,
                               device_type,
                               void,
                               typename local_graph_device_type::size_type>;
+    using local_matrix_host_type = 
+          typename local_matrix_device_type::host_mirror_type;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    using local_graph_type = local_graph_device_type;
+    using local_matrix_type = local_matrix_device_type;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief The type of the local matrix-vector operator (a wrapper of \c KokkosSparse::CrsMatrix )
     using local_multiply_op_type =
@@ -667,7 +674,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     explicit CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
-                        const typename local_matrix_type::values_type& values,
+                        const typename local_matrix_device_type::values_type& values,
                         const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
@@ -698,9 +705,9 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const typename local_matrix_type::row_map_type& rowPointers,
+               const typename local_graph_device_type::row_map_type& rowPointers,
                const typename local_graph_device_type::entries_type::non_const_type& columnIndices,
-               const typename local_matrix_type::values_type& values,
+               const typename local_matrix_device_type::values_type& values,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column Map and arrays containing
@@ -759,7 +766,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
-               const local_matrix_type& lclMatrix,
+               const local_matrix_device_type& lclMatrix,
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     /// \brief Constructor specifying column, domain and range Maps,
@@ -792,7 +799,7 @@ namespace Tpetra {
     /// \param params [in/out] Optional list of parameters.  If not
     ///   null, any missing parameters will be filled in with their
     ///   default values.
-    CrsMatrix (const local_matrix_type& lclMatrix,
+    CrsMatrix (const local_matrix_device_type& lclMatrix,
                const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
@@ -803,7 +810,7 @@ namespace Tpetra {
     ///   \param lclMatrix [in] In almost all cases the local matrix
     ///     must be sorted on input, but if it isn't sorted,
     ///     "sorted" must be set to false in params.
-    CrsMatrix (const local_matrix_type& lclMatrix,
+    CrsMatrix (const local_matrix_device_type& lclMatrix,
                const Teuchos::RCP<const map_type>& rowMap,
                const Teuchos::RCP<const map_type>& colMap,
                const Teuchos::RCP<const map_type>& domainMap,
@@ -1780,9 +1787,9 @@ namespace Tpetra {
     ///   shallow copy.  Any method that changes the matrix's values
     ///   may then change this.
     void
-    setAllValues (const typename local_matrix_type::row_map_type& ptr,
+    setAllValues (const typename local_graph_device_type::row_map_type& ptr,
                   const typename local_graph_device_type::entries_type::non_const_type& ind,
-                  const typename local_matrix_type::values_type& val);
+                  const typename local_matrix_device_type::values_type& val);
 
     /// \brief Set the local matrix using three (compressed sparse row) arrays.
     ///
@@ -2174,9 +2181,14 @@ namespace Tpetra {
     ///   least once.  This method will do no error checking, so you
     ///   are responsible for knowing when it is safe to call this
     ///   method.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     local_matrix_type getLocalMatrix () const;
+#endif
+    local_matrix_device_type getLocalMatrixDevice () const;
+    local_matrix_host_type getLocalMatrixHost () const;
 
-    /// \brief The local sparse matrix operator (a wrapper of \c getLocalMatrix()
+    /// \brief The local sparse matrix operator 
+    ///   (a wrapper of \c getLocalMatrixDevice()
     ///   that supports local matrix-vector multiply)
     ///
     /// \warning It is only valid to call this method if this->isFillComplete().
@@ -3212,7 +3224,7 @@ namespace Tpetra {
 
   public:
     //! Get the Kokkos local values
-    typename local_matrix_type::values_type getLocalValuesView () const {
+    typename local_matrix_device_type::values_type getLocalValuesView () const {
       return k_values1D_;
     }
 
@@ -3928,13 +3940,23 @@ namespace Tpetra {
     //@}
 
     //! The local sparse matrix, wrapped in a multiply operator.
-    std::shared_ptr<local_multiply_op_type> lclMatrix_;
+// KDDKDD DELETE
+//    std::shared_ptr<local_multiply_op_type> lclMatrix_;
+// KDDKDD DELETE
 
     /// \brief Sparse matrix values, as part of compressed sparse row
     ///   ("1-D") storage.
     ///
     /// Before allocation, this array is empty.
-    typename local_matrix_type::values_type k_values1D_;
+// KDDKDD DELETE
+    typename local_matrix_device_type::values_type k_values1D_;
+// KDDKDD DELETE
+    using values_dualv_type =
+          Kokkos::DualView<impl_scalar_type*, device_type>;
+    using values_wdv_type = 
+          Details::WrappedDualView<values_dualv_type>;
+    values_wdv_type values_wdv;
+    mutable values_wdv_type valuesCompressed_wdv;
 
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
