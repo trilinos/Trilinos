@@ -328,8 +328,8 @@ namespace Tpetra {
     }
 
     values_type val ("Tpetra::CrsMatrix::values", numEnt);
-    valuesPacked_wdv = local_values_wdv_type(val);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(val);
+    valuesUnpacked_wdv = valuesPacked_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
@@ -373,14 +373,14 @@ namespace Tpetra {
     // local matrix's number of columns comes from the column Map, not
     // the domain Map.
 
-    valuesPacked_wdv = local_values_wdv_type(values);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(values);
+    valuesUnpacked_wdv = valuesPacked_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
     // KDDKDD ALMOST THERE, MARK!
-    k_values1D_ = values_wdv.getDeviceView(Access::ReadWrite);
+    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
   }
@@ -480,8 +480,8 @@ namespace Tpetra {
     // Note that the local matrix's number of columns comes from the
     // column Map, not the domain Map.
 
-    valuesPacked_wdv = local_values_wdv_type(values);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(values);
+    valuesUnpacked_wdv = valuesPacked_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
@@ -553,8 +553,8 @@ namespace Tpetra {
 
     values_type valIn =
       getKokkosViewDeepCopy<device_type> (av_reinterpret_cast<IST> (val ()));
-    valuesPacked_wdv = local_values_wdv_type(valIn);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(valIn);
+    valuesUnpacked_wdv = valuesPacked_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
@@ -601,10 +601,10 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
-    valuesPacked_wdv = local_values_wdv_type(lclMatrix.values);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(lclMatrix.values);
+    valuesUnpacked_wdv = valuesPacked_wdv;
 
-    k_values1D_ = values_wdv.getDeviceView(Access::ReadWrite);
+    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
@@ -663,8 +663,8 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
-    valuesPacked_wdv = local_values_wdv_type(lclMatrix.values);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(lclMatrix.values);
+    valuesUnpacked_wdv = valuesPacked_wdv;
     k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
@@ -727,8 +727,8 @@ namespace Tpetra {
     myGraph_ = graph;
     staticGraph_ = graph;
 
-    valuesPacked_wdv = local_values_wdv_type(lclMatrix.values);
-    values_wdv = valuesPacked_wdv;
+    valuesPacked_wdv = values_wdv_type(lclMatrix.values);
+    valuesUnpacked_wdv = valuesPacked_wdv;
     k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
@@ -1024,10 +1024,11 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixDevice () const
   {
-    auto numCols = StaticGraph_->getColMap()->getNodeNumElements();
-    return local_matrix_device_type("Tpetra::CrsMatrix::lclMatrix", numCols,
-                                     values_wdv.getDeviceView(Access::ReadWrite), 
-                                     staticGraph_->getLocalGraphDevice());
+    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+    return local_matrix_device_type("Tpetra::CrsMatrix::lclMatrixDevice",
+                              numCols,
+                              valuesPacked_wdv.getDeviceView(Access::ReadWrite),
+                              staticGraph_->getLocalGraphDevice());
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1035,10 +1036,10 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixHost () const
   {
-    auto numCols = StaticGraph_->getColMap()->getNodeNumElements();
-    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrix", numCols,
-                                   values_wdv.getHostView(Access::ReadWrite), 
-                                   staticGraph_->getLocalGraphHost());
+    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
+                                valuesPacked_wdv.getHostView(Access::ReadWrite),
+                                staticGraph_->getLocalGraphHost());
   }
 
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
@@ -1048,7 +1049,9 @@ namespace Tpetra {
   getLocalMultiplyOperator () const
   {
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR
-    return std::make_shared<local_multiply_operator>(getLocalMatrixDevice());
+    return std::make_shared<local_multiply_op_type>(
+                           std::make_shared<local_matrix_device_type>(
+                                           getLocalMatrixDevice()));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1489,13 +1492,14 @@ namespace Tpetra {
       }
       // Build the local graph.
       myGraph_->setRowPtrsPacked(k_ptrs_const);
-      myGraph_->lclIndsPacked_wdv = local_inds_wdv_type(k_inds);
-      valuesPacked_wdv = values_wdv(k_vals);
+      myGraph_->lclIndsPacked_wdv = 
+                typename crs_graph_type::local_inds_wdv_type(k_inds);
+      valuesPacked_wdv = values_wdv_type(k_vals);
     }
     else { // We don't have to pack, so just set the pointers.
       myGraph_->setRowPtrsPacked(myGraph_->rowPtrsUnpacked_dev_);
       myGraph_->lclIndsPacked_wdv = myGraph_->lclIndsUnpacked_wdv;
-      valuesPacked_wdv = values_wdv;
+      valuesPacked_wdv = valuesUnpacked_wdv;
 
       if (verbose) {
         std::ostringstream os;
@@ -1527,7 +1531,7 @@ namespace Tpetra {
              std::logic_error, myPrefix <<
              "k_ptrs_const(" << (numOffsets-1) << ") = " << valToCheck
              << " != myGraph_->lclIndsPacked.extent(0) = " 
-             << myGraph_->lclIndsPacked.extent (0) << ".");
+             << myGraph_->lclIndsPacked_wdv.extent (0) << ".");
         }
       }
     }
@@ -1553,7 +1557,7 @@ namespace Tpetra {
            std::logic_error, myPrefix << "k_ptrs_const(" <<
            (numOffsets-1) << ") = " << valToCheck
            << " != myGraph_->lclIndsPacked_wdvk_inds.extent(0) = " 
-           << myGraph_->lclIndsPacked_wdvk_inds.extent (0) << ".");
+           << myGraph_->lclIndsPacked_wdv.extent (0) << ".");
       }
     }
 
@@ -1589,9 +1593,9 @@ namespace Tpetra {
       myGraph_->k_numRowEntries_ = row_entries_type ();
 
       // Keep the new 1-D packed allocations.
-      myGraph_->setRowPtrs(myGraph_->rowPtrsPacked_dev_);
+      myGraph_->setRowPtrsUnpacked(myGraph_->rowPtrsPacked_dev_);
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
-      values_wdv = valuesPacked_wdv;
+      valuesUnpacked_wdv = valuesPacked_wdv;
       k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
       myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -1645,7 +1649,7 @@ namespace Tpetra {
     // get data from staticGraph_
     size_t nodeNumEntries   = staticGraph_->getNodeNumEntries ();
     size_t nodeNumAllocated = staticGraph_->getNodeAllocationSize ();
-    row_map_type rowPtrsUnpacked = staticGraph_->rowPtrsPacked_dev_; 
+    row_map_type k_rowPtrs = staticGraph_->rowPtrsPacked_dev_; 
 
     row_map_type k_ptrs; // "packed" row offsets array
     values_type k_vals; // "packed" values array
@@ -1746,10 +1750,10 @@ namespace Tpetra {
       using range_type = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
       Kokkos::parallel_for ("Tpetra::CrsMatrix pack values",
                             range_type (0, lclNumRows), valsPacker);
-      valuesPacked_wdv = values_wdv(k_vals);
+      valuesPacked_wdv = values_wdv_type(k_vals);
     }
     else { // We don't have to pack, so just set the pointer.
-      valuesPacked_wdv = values_wdv;
+      valuesPacked_wdv = valuesUnpacked_wdv;
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: "
@@ -1762,7 +1766,7 @@ namespace Tpetra {
     if (requestOptimizedStorage) {
       // The user requested optimized storage, so we can dump the
       // unpacked 1-D storage, and keep the packed storage.
-      values_wdv = valuesPacked_wdv;
+      valuesUnpacked_wdv = valuesPacked_wdv;
       k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
@@ -3676,7 +3680,7 @@ namespace Tpetra {
        "local graph.  Please report this bug to the Tpetra developers.");
 
     valuesPacked_wdv = values_wdv_type(values);
-    values_wdv = valuesPacked_wdv;
+    valuesUnpacked_wdv = valuesPacked_wdv;
 
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
@@ -3812,7 +3816,7 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
     if (this->isFillComplete ()) {
-      const auto D_lcl = diag.template getLocalViewDevice (Access::WriteOnly);
+      const auto D_lcl = diag.getLocalViewDevice (Access::WriteOnly);
       // 1-D subview of the first (and only) column of D_lcl.
       const auto D_lcl_1d =
         Kokkos::subview (D_lcl, Kokkos::make_pair (LO (0), myNumRows), 0);
@@ -3857,7 +3861,7 @@ namespace Tpetra {
     // NOTE (mfh 21 Jan 2016): The host kernel here assumes UVM.  Once
     // we write a device kernel, it will not need to assume UVM.
 
-    auto D_lcl = diag.template getLocalViewDevice (Access::WriteOnly);
+    auto D_lcl = diag.getLocalViewDevice (Access::WriteOnly);
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     // Get 1-D subview of the first (and only) column of D_lcl.
     auto D_lcl_1d =
@@ -3970,7 +3974,7 @@ namespace Tpetra {
       //   using Teuchos::rcp_const_cast;
       //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       // }
-      auto x_lcl = xp->template getLocalViewDevice (Access::ReadOnly);
+      auto x_lcl = xp->getLocalViewDevice (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::leftScaleLocalCrsMatrix;
       leftScaleLocalCrsMatrix (getLocalMatrixDevice (),
@@ -4029,7 +4033,7 @@ namespace Tpetra {
       //   using Teuchos::rcp_const_cast;
       //   rcp_const_cast<vec_type> (xp)->template sync<dev_memory_space> ();
       // }
-      auto x_lcl = xp->template getLocalViewDevice (Access::ReadOnly);
+      auto x_lcl = xp->getLocalViewDevice (Access::ReadOnly);
       auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
       using ::Tpetra::Details::rightScaleLocalCrsMatrix;
       rightScaleLocalCrsMatrix (getLocalMatrixDevice (),
@@ -5240,7 +5244,7 @@ std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries <<
 
     auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
     auto Y_lcl = Y.getLocalViewDevice(Access::ReadWrite);
-    auto matrix_lcl = getLocalMatrixDevice();
+    auto matrix_lcl = getLocalMultiplyOperator();
 
     const bool debug = ::Tpetra::Details::Behavior::debug ();
     if (debug) {

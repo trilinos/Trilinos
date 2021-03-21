@@ -490,7 +490,7 @@ namespace Tpetra {
                               void,
                               typename local_graph_device_type::size_type>;
     using local_matrix_host_type = 
-          typename local_matrix_device_type::host_mirror_type;
+          typename local_matrix_device_type::HostMirror;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     using local_graph_type = local_graph_device_type;
@@ -3955,8 +3955,8 @@ namespace Tpetra {
           Kokkos::DualView<impl_scalar_type*, device_type>;
     using values_wdv_type = 
           Details::WrappedDualView<values_dualv_type>;
-    values_wdv_type values_wdv;
-    mutable values_wdv_type valuesCompressed_wdv;
+    values_wdv_type valuesUnpacked_wdv;
+    mutable values_wdv_type valuesPacked_wdv;
 
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
