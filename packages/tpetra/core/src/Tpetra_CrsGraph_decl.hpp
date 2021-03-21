@@ -2159,41 +2159,41 @@ public:
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     // Replacement for device view k_rowPtrs_
-    // Device view k_rowPtrs_dev_ takes place of k_rowPtrs_ 
-    // Host view k_rowPtrs_host_ takes place of copies and use of getEntryOnHost
+    // Device view rowPtrsUnpacked_dev_ takes place of k_rowPtrs_ 
+    // Host view rowPtrsUnpacked_host_ takes place of copies and use of getEntryOnHost
     // Wish this could be a WrappedDualView, but deep_copies in DualView
     // don't work with const data views (e.g., StaticCrsGraph::row_map)
     // k_rowPtrs_ is offsets wrt the ALLOCATED indices array, not necessarily
     // the ACTUAL compressed indices array.
     // When !OptimizedStorage, k_rowPtrs_ may differ from ACTUAL compressed
     // indices array.  (Karen is skeptical that !OptimizedStorage works)
-    // When OptimizedStorage, k_rowPtrs_ = k_rowPtrsCompressed_
+    // When OptimizedStorage, rowPtrsUnpacked_ = k_rowPtrsPacked_
 
     using row_ptrs_device_type = 
           Kokkos::View<const typename local_graph_device_type::size_type *, 
                        device_type> ;
     using row_ptrs_host_type = 
           typename row_ptrs_device_type::HostMirror::const_type;
-    row_ptrs_device_type k_rowPtrs_dev_;
-    row_ptrs_host_type k_rowPtrs_host_;
+    row_ptrs_device_type rowPtrsUnpacked_dev_;
+    row_ptrs_host_type rowPtrsUnpacked_host_;
 
-    void setRowPtrs(const row_ptrs_device_type &dview) {
-      k_rowPtrs_dev_ = dview;
-      k_rowPtrs_host_ = 
+    void setRowPtrsUnpacked(const row_ptrs_device_type &dview) {
+      rowPtrsUnpacked_dev_ = dview;
+      rowPtrsUnpacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
                           typename row_ptrs_device_type::host_mirror_space(),
                           dview);
     }
 
     // Row offsets into the actual graph local indices 
-    // Device view k_rowPtrs_dev_ takes place of lclGraph_.row_map
+    // Device view rowPtrsUnpacked_dev_ takes place of lclGraph_.row_map
 
-    row_ptrs_device_type k_rowPtrsCompressed_dev_;
-    row_ptrs_host_type k_rowPtrsCompressed_host_;
+    row_ptrs_device_type rowPtrsPacked_dev_;
+    row_ptrs_host_type rowPtrsPacked_host_;
 
-    void setRowPtrsCompressed(const row_ptrs_device_type &dview) {
-      k_rowPtrsCompressed_dev_ = dview;
-      k_rowPtrsCompressed_host_ = 
+    void setRowPtrsPacked(const row_ptrs_device_type &dview) {
+      rowPtrsPacked_dev_ = dview;
+      rowPtrsPacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
                           typename row_ptrs_device_type::host_mirror_space(),
                           dview);
@@ -2213,7 +2213,7 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
-    local_inds_wdv_type lclInds_wdv;
+    local_inds_wdv_type lclIndsUnpacked_wdv;
 
     /// \brief Local ordinals of colum indices for all rows
     /// KDDKDD UVM Removal:   Device view takes place of lclGraph_.entries
@@ -2227,7 +2227,7 @@ public:
     ///
     ///   - The calling process has a nonzero number of entries
     ///   - The graph is locally indexed
-    mutable local_inds_wdv_type lclIndsCompressed_wdv;
+    mutable local_inds_wdv_type lclIndsPacked_wdv;
 
 //KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Global ordinals of column indices for all rows
