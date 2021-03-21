@@ -2425,7 +2425,7 @@ std::cout << " KDDKDD SAMRI END rowinfo " << rowInfo.offset1D << " " << rowInfo.
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowView (
     const LocalOrdinal localRow, 
-    typename local_inds_dualv_type::t_host::const_type &indices) const
+    local_inds_host_view_type &indices) const
   {
     const char tfecfFuncName[] = "getLocalRowView: ";
 
@@ -2465,7 +2465,7 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getGlobalRowView (
     const GlobalOrdinal globalRow,
-    typename global_inds_dualv_type::t_host::const_type &indices) const
+    global_inds_host_view_type &indices) const
   {
     const char tfecfFuncName[] = "getGlobalRowView: ";
 
@@ -5023,9 +5023,9 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
       }
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
         const GO gid = srcRowMap.getGlobalElement (myid);
-        Teuchos::ArrayView<const GO> row;
+        global_inds_host_view_type row;
         srcCrsGraph->getGlobalRowView (gid, row);
-        this->insertGlobalIndices (gid, row);
+        this->insertGlobalIndices (gid, row.extent(0), row.data());
       }
     }
 
@@ -5049,9 +5049,9 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
       for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {
         const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
         const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
-        Teuchos::ArrayView<const GO> row;
+        global_inds_host_view_type row;
         srcCrsGraph->getGlobalRowView (srcgid, row);
-        this->insertGlobalIndices (mygid, row);
+        this->insertGlobalIndices (mygid, row.extent(0), row.data());
       }
     }
 

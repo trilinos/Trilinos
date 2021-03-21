@@ -191,7 +191,7 @@ namespace { // (anonymous)
     {
       bool sortingCheck = true;
       for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
-        ArrayView<const LO> inds;
+        typename GRAPH::local_inds_host_view_type inds;
         graph.getLocalRowView(i,inds);
         for (int j=1; j < (int)inds.size(); ++j) {
           if (inds[j-1] > inds[j]) {sortingCheck = false; break;}
@@ -205,7 +205,7 @@ namespace { // (anonymous)
     {
       bool sortingCheck = true;
       for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
-        ArrayView<const LO> inds;
+        typename GRAPH::local_inds_host_view_type inds;
         graph.getLocalRowView(i,inds);
         for (int j=1; j < (int)inds.size(); ++j) {
           if (inds[j-1] > inds[j]) {sortingCheck = false; break;}
@@ -222,7 +222,7 @@ namespace { // (anonymous)
     {
       bool sortingCheck = true;
       for (LO i=map->getMinLocalIndex(); i <= map->getMaxLocalIndex(); ++i) {
-        ArrayView<const LO> inds;
+        typename GRAPH::local_inds_host_view_type inds;
         graph.getLocalRowView(i,inds);
         for (int j=1; j < (int)inds.size(); ++j) {
           if (inds[j-1] > inds[j]) {sortingCheck = false; break;}

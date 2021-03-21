@@ -2066,6 +2066,7 @@ public:
     /// \brief Get a const,  locally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
+    //  Replaced by getLocalIndsViewHost
     Teuchos::ArrayView<const local_ordinal_type>
     getLocalView (const RowInfo& rowinfo) const;
 #endif
@@ -2076,6 +2077,7 @@ public:
     /// \brief Get a const, nonowned, globally indexed view of the
     ///   locally owned row myRow, such that rowinfo =
     ///   getRowInfo(myRow).
+    //  Replaced by getGlobalIndsViewHost
     Teuchos::ArrayView<const global_ordinal_type>
     getGlobalView (const RowInfo& rowinfo) const;
 #endif
