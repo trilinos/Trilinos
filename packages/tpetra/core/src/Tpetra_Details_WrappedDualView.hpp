@@ -44,6 +44,24 @@
 #include <Kokkos_DualView.hpp>
 #include <sstream>
 
+//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+
+#ifdef DEBUG_UVM_REMOVAL
+
+#define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION()
+#define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn) \
+  std::cout << (fn) << " called from " << callerstr \
+            << " host cnt " << dualView.h_view().use_count()  \
+            << " device cnt " << dualView.d_view().use_count()  \
+            << std::endl;
+
+#else
+
+#define DEBUG_UVM_REMOVAL_ARGUMENT
+#define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn)
+
+#endif
+
 //! Namespace for Tpetra classes and methods
 namespace Tpetra {
 
@@ -115,86 +133,100 @@ public:
   }
 
   typename HostViewType::const_type
-  getHostView(Access::ReadOnlyStruct, const char* str = __builtin_FUNCTION()) const {
-std::cout << " KDDKDD getHostViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << " called from " << str << std::endl;
+  getHostView(Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
     throwIfDeviceViewAlive();
     impl::sync_host(dualView);
-    auto ret = dualView.view_host();
-std::cout << " KDDKDD After getHostViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
-    return ret;
+    return dualView.view_host();
   }
 
   HostViewType
-  getHostView(Access::ReadWriteStruct, const char* str = __builtin_FUNCTION()) {
-std::cout << " KDDKDD getHostViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << " called from " << str << std::endl;
+  getHostView(Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.sync_host();
     dualView.modify_host();
-    auto ret = dualView.view_host();
-std::cout << " KDDKDD After getHostViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
-    return ret;
+    return dualView.view_host();
   }
 
   HostViewType
-  getHostView(Access::WriteOnlyStruct, const char* str = __builtin_FUNCTION()) {
-std::cout << " KDDKDD getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << " called from " << str << std::endl;
+  getHostView(Access::WriteOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewWriteOnly");
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     throwIfDeviceViewAlive();
     dualView.clear_sync_state();
     dualView.modify_host();
-    auto ret = dualView.view_host();
-std::cout << " KDDKDD After getHostViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
-    return ret;
+    return dualView.view_host();
   }
 
   typename DeviceViewType::const_type
-  getDeviceView(Access::ReadOnlyStruct) const {
-std::cout << " KDDKDD getDeviceViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+  getDeviceView(Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
     throwIfHostViewAlive();
     impl::sync_device(dualView);
-    auto ret = dualView.view_device();
-std::cout << " KDDKDD After getDeviceViewReadOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
-    return ret;
+    return dualView.view_device();
   }
 
   DeviceViewType
-  getDeviceView(Access::ReadWriteStruct) {
-std::cout << " KDDKDD getDeviceViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+  getDeviceView(Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.sync_device();
     dualView.modify_device();
-    auto ret= dualView.view_device();
-std::cout << " KDDKDD After getDeviceViewReadWrite " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
-    return ret;
+    return dualView.view_device();
   }
 
   DeviceViewType
-  getDeviceView(Access::WriteOnlyStruct) {
-std::cout << " KDDKDD getDeviceViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
+  getDeviceView(Access::WriteOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewWriteOnly");
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     throwIfHostViewAlive();
     dualView.clear_sync_state();
     dualView.modify_device();
-    auto ret = dualView.view_device();
-std::cout << " KDDKDD After getDeviceViewWriteOnly " << dualView.d_view.label() << " " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
-    return ret;
+    return dualView.view_device();
   }
 
   typename HostViewType::const_type
-  getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct) const {
+  getHostSubview(int offset, int numEntries, Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadOnly");
     throwIfDeviceViewAlive();
     impl::sync_host(dualView);
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
   HostViewType
-  getHostSubview(int offset, int numEntries, Access::ReadWriteStruct) {
+  getHostSubview(int offset, int numEntries, Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
@@ -204,21 +236,33 @@ std::cout << " KDDKDD After getDeviceViewWriteOnly " << dualView.d_view.label() 
   }
 
   HostViewType
-  getHostSubview(int offset, int numEntries, Access::WriteOnlyStruct) {
+  getHostSubview(int offset, int numEntries, Access::WriteOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewWriteOnly");
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     return getHostSubview(offset, numEntries, Access::ReadWrite);
   }
 
   typename DeviceViewType::const_type
-  getDeviceSubview(int offset, int numEntries, Access::ReadOnlyStruct) const {
+  getDeviceSubview(int offset, int numEntries, Access::ReadOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) const
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadOnly");
     throwIfHostViewAlive();
     impl::sync_device(dualView);
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
   DeviceViewType
-  getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct) {
+  getDeviceSubview(int offset, int numEntries, Access::ReadWriteStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadWrite");
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
@@ -228,7 +272,11 @@ std::cout << " KDDKDD After getDeviceViewWriteOnly " << dualView.d_view.label() 
   }
 
   DeviceViewType
-  getDeviceSubview(int offset, int numEntries, Access::WriteOnlyStruct) {
+  getDeviceSubview(int offset, int numEntries, Access::WriteOnlyStruct
+    DEBUG_UVM_REMOVAL_ARGUMENT
+  ) 
+  {
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewWriteOnly");
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);

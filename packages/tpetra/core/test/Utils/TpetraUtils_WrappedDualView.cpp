@@ -69,6 +69,8 @@ using WrappedConstDualViewType = Tpetra::Details::WrappedDualView<ConstDualViewT
 
 class WrappedDualViewFixture {
 public:
+  static constexpr bool deviceMemoryIsHostAccessible = Kokkos::SpaceAccessibility<Kokkos::Serial, typename DeviceType::memory_space>::accessible;
+
   WrappedDualViewFixture()
     : viewSize(16),
       dualView("dualView", viewSize)
@@ -220,24 +222,6 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor) {
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
 }
 
-#if 0
-TEUCHOS_UNIT_TEST(WrappedDualView, deviceViewConstructor_constData) {
-  WrappedDualViewFixture fixture;
-  WrappedConstDualViewType wrappedView;
-
-  {
-    DeviceViewType deviceView("device view", fixture.getViewSize());
-    fixture.fillViewOnDevice(deviceView);
-    typename DeviceViewType::const_type constDeviceView = deviceView;
-
-    wrappedView = WrappedConstDualViewType(constDeviceView);
-  }
-
-  auto hostView = wrappedView.getHostView(Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnHost(hostView));
-}
-#endif
-
 TEUCHOS_UNIT_TEST(WrappedDualView, extent) {
   WrappedDualViewFixture fixture;
   const WrappedDualViewType wrappedView(fixture.getDualView());
@@ -357,7 +341,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostThrowsIfDeviceViewAlive_ReadOnly) {
   const WrappedDualViewType wrappedView(fixture.getDualView());
 
   auto deviceView = wrappedView.getDeviceView(Tpetra::Access::ReadOnly);
-  TEST_THROW(wrappedView.getHostView(Tpetra::Access::ReadOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getHostView(Tpetra::Access::ReadOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getHostView(Tpetra::Access::ReadOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, hostThrowsIfDeviceViewAlive_ReadWrite) {
@@ -366,7 +355,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostThrowsIfDeviceViewAlive_ReadWrite) {
   WrappedDualViewType wrappedView(fixture.getDualView());
 
   auto deviceView = wrappedView.getDeviceView(Tpetra::Access::ReadWrite);
-  TEST_THROW(wrappedView.getHostView(Tpetra::Access::ReadWrite), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getHostView(Tpetra::Access::ReadWrite));
+  }
+  else {
+    TEST_THROW(wrappedView.getHostView(Tpetra::Access::ReadWrite), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, hostThrowsIfDeviceViewAlive_WriteOnly) {
@@ -375,7 +369,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostThrowsIfDeviceViewAlive_WriteOnly) {
   WrappedDualViewType wrappedView(fixture.getDualView());
 
   auto deviceView = wrappedView.getDeviceView(Tpetra::Access::WriteOnly);
-  TEST_THROW(wrappedView.getHostView(Tpetra::Access::WriteOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getHostView(Tpetra::Access::WriteOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getHostView(Tpetra::Access::WriteOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceThrowsIfHostViewAlive_ReadOnly) {
@@ -384,7 +383,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceThrowsIfHostViewAlive_ReadOnly) {
   const WrappedDualViewType wrappedView(fixture.getDualView());
 
   auto hostView = wrappedView.getHostView(Tpetra::Access::ReadOnly);
-  TEST_THROW(wrappedView.getDeviceView(Tpetra::Access::ReadOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getDeviceView(Tpetra::Access::ReadOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getDeviceView(Tpetra::Access::ReadOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceThrowsIfHostViewAlive_ReadWrite) {
@@ -393,7 +397,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceThrowsIfHostViewAlive_ReadWrite) {
   WrappedDualViewType wrappedView(fixture.getDualView());
 
   auto hostView = wrappedView.getHostView(Tpetra::Access::ReadWrite);
-  TEST_THROW(wrappedView.getDeviceView(Tpetra::Access::ReadWrite), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getDeviceView(Tpetra::Access::ReadWrite));
+  }
+  else {
+    TEST_THROW(wrappedView.getDeviceView(Tpetra::Access::ReadWrite), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceThrowsIfHostViewAlive_WriteOnly) {
@@ -402,7 +411,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceThrowsIfHostViewAlive_WriteOnly) {
   WrappedDualViewType wrappedView(fixture.getDualView());
 
   auto hostView = wrappedView.getHostView(Tpetra::Access::WriteOnly);
-  TEST_THROW(wrappedView.getDeviceView(Tpetra::Access::WriteOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getDeviceView(Tpetra::Access::WriteOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getDeviceView(Tpetra::Access::WriteOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessHostReadOnly_syncToHost) {
@@ -711,7 +725,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostSubviewThrowsIfNonOverlappingDeviceViewAl
   int lengthB = 4;
 
   auto deviceView = wrappedView.getDeviceSubview(startIndexA, lengthA, Tpetra::Access::ReadOnly);
-  TEST_THROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::ReadOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::ReadOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::ReadOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, hostSubviewThrowsIfNonOverlappingDeviceViewAlive_ReadWrite) {
@@ -726,7 +745,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostSubviewThrowsIfNonOverlappingDeviceViewAl
   int lengthB = 4;
 
   auto deviceView = wrappedView.getDeviceSubview(startIndexA, lengthA, Tpetra::Access::ReadWrite);
-  TEST_THROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::ReadWrite), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::ReadWrite));
+  }
+  else {
+    TEST_THROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::ReadWrite), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, hostSubviewThrowsIfNonOverlappingDeviceViewAlive_WriteOnly) {
@@ -741,7 +765,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, hostSubviewThrowsIfNonOverlappingDeviceViewAl
   int lengthB = 4;
 
   auto deviceView = wrappedView.getDeviceSubview(startIndexA, lengthA, Tpetra::Access::WriteOnly);
-  TEST_THROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::WriteOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::WriteOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getHostSubview(startIndexB, lengthB, Tpetra::Access::WriteOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceSubviewThrowsIfNonOverlappingHostViewAlive_ReadOnly) {
@@ -756,7 +785,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceSubviewThrowsIfNonOverlappingHostViewAl
   int lengthB = 4;
 
   auto hostView = wrappedView.getHostSubview(startIndexA, lengthA, Tpetra::Access::ReadOnly);
-  TEST_THROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::ReadOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::ReadOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::ReadOnly), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceSubviewThrowsIfNonOverlappingHostViewAlive_ReadWrite) {
@@ -771,7 +805,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceSubviewThrowsIfNonOverlappingHostViewAl
   int lengthB = 4;
 
   auto hostView = wrappedView.getHostSubview(startIndexA, lengthA, Tpetra::Access::ReadWrite);
-  TEST_THROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::ReadWrite), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::ReadWrite));
+  }
+  else {
+    TEST_THROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::ReadWrite), std::runtime_error);
+  }
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, deviceSubviewThrowsIfNonOverlappingHostViewAlive_WriteOnly) {
@@ -786,7 +825,12 @@ TEUCHOS_UNIT_TEST(WrappedDualView, deviceSubviewThrowsIfNonOverlappingHostViewAl
   int lengthB = 4;
 
   auto hostView = wrappedView.getHostSubview(startIndexA, lengthA, Tpetra::Access::WriteOnly);
-  TEST_THROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::WriteOnly), std::runtime_error);
+  if (fixture.deviceMemoryIsHostAccessible) {
+    TEST_NOTHROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::WriteOnly));
+  }
+  else {
+    TEST_THROW(wrappedView.getDeviceSubview(startIndexB, lengthB, Tpetra::Access::WriteOnly), std::runtime_error);
+  }
 }
 
 }
