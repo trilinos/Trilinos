@@ -255,7 +255,7 @@ pad_crs_arrays(
        }, increase);
 
 std::cout << "KDDKDD INCREASE " << increase << std::endl;
-for (int kdd=0; kdd< newAllocPerRow_h.extent(0); kdd++)
+for (size_t kdd=0; kdd< newAllocPerRow_h.extent(0); kdd++)
 std::cout << "KDDKDD NEWALLOCPERROW " << kdd << " " << newAllocPerRow_h[kdd] << " " << row_ptr_beg_h[kdd+1]-row_ptr_beg_h[kdd] << std::endl;
 
     if (verbose) {

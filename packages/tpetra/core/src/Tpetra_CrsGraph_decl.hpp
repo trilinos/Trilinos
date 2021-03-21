@@ -258,9 +258,7 @@ namespace Tpetra {
 #endif
 
     //! The type of the part of the sparse graph on each MPI process.
-    using local_graph_host_type = 
-          Kokkos::StaticCrsGraph<local_ordinal_type, Kokkos::LayoutLeft,
-                                 Kokkos::HostSpace, void, size_t>;
+    using local_graph_host_type = typename local_graph_device_type::HostMirror;
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -2173,30 +2171,32 @@ public:
           Kokkos::View<const typename local_graph_device_type::size_type *, 
                        device_type> ;
     using row_ptrs_host_type = 
-          Kokkos::View<const typename local_graph_device_type::size_type *, 
-                       Kokkos::HostSpace>;
+          typename row_ptrs_device_type::HostMirror::const_type;
     row_ptrs_device_type k_rowPtrs_dev_;
     row_ptrs_host_type k_rowPtrs_host_;
 
     void setRowPtrs(const row_ptrs_device_type &dview) {
       k_rowPtrs_dev_ = dview;
-      auto hview = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dview);
-      k_rowPtrs_host_ = hview;
+      k_rowPtrs_host_ = 
+           Kokkos::create_mirror_view_and_copy(
+                          typename row_ptrs_device_type::host_mirror_space(),
+                          dview);
     }
 
-    void setRowPtrsCompressed(const row_ptrs_device_type &dview) {
-      k_rowPtrsCompressed_dev_ = dview;
-      auto hview = 
-           Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), dview);
-      k_rowPtrsCompressed_host_ = hview;
-    }
-    
     // Row offsets into the actual graph local indices 
     // Device view k_rowPtrs_dev_ takes place of lclGraph_.row_map
 
     row_ptrs_device_type k_rowPtrsCompressed_dev_;
     row_ptrs_host_type k_rowPtrsCompressed_host_;
+
+    void setRowPtrsCompressed(const row_ptrs_device_type &dview) {
+      k_rowPtrsCompressed_dev_ = dview;
+      k_rowPtrsCompressed_host_ = 
+           Kokkos::create_mirror_view_and_copy(
+                          typename row_ptrs_device_type::host_mirror_space(),
+                          dview);
+    }
+    
   
 //KDDKDD Make private -- matrix shouldn't access directly
     /// \brief Local ordinals of colum indices for all rows

@@ -1717,7 +1717,7 @@ std::cout << "     KDDKDD DEPGGV " << rowinfo.offset1D << " " << rowinfo.numEntr
                                               numEntries, inputInds, fun);
 
 std::cout << "KDDKDD INSERTGLOBALIND numInputInds " << numInputInds << " numInserted " << numInserted << std::endl;
-for (int kdd = 0; kdd < numInputInds; kdd++)
+for (size_t kdd = 0; kdd < numInputInds; kdd++)
 std::cout << "KDDKDD INSERTGLOBALIND " << kdd << " " << inputInds[kdd] << std::endl;
     }
 
@@ -5144,7 +5144,7 @@ std::cout << "KDDKDD GLRV " << localRow << " " << rowInfo.offset1D << " " << row
     row_ptrs_type num_row_entries;
 
     const bool refill_num_row_entries = k_numRowEntries_.extent(0) != 0;
-for (int kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
+for (size_t kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
 std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY BEFORE " << kdd << " " << k_numRowEntries_[kdd] << std::endl;
     if (refill_num_row_entries) { // Case 1: Unpacked storage
       // We can't assume correct *this capture until C++17, and it's
@@ -5194,7 +5194,7 @@ std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY BEFORE " 
       std::cerr << os.str();
       TEUCHOS_ASSERT( k_rowPtrs_dev_.extent(0) == row_ptrs_beg.extent(0) );
     }
-for (int kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
+for (size_t kdd=0; kdd < k_numRowEntries_.extent(0); kdd++)
 std::cout << this->getRowMap()->getComm()->getRank() << " KDDKDD APPLY AFTER " << kdd << " " << k_numRowEntries_[kdd] << std::endl;
 
     setRowPtrs(row_ptrs_beg);
