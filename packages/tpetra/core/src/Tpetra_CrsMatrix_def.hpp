@@ -1037,9 +1037,11 @@ namespace Tpetra {
   getLocalMatrixHost () const
   {
     auto numCols = staticGraph_->getColMap()->getNodeNumElements();
-    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
-                                valuesPacked_wdv.getHostView(Access::ReadWrite),
-                                staticGraph_->getLocalGraphHost());
+//KDDKDD    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
+//KDDKDD                                valuesPacked_wdv.getHostView(Access::ReadWrite),
+//KDDKDD                                staticGraph_->getLocalGraphHost());
+std::cout << "KDDKDD getLocalMatrixHost not yet implemented." << std::endl;
+abort();
   }
 
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR

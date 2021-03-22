@@ -343,6 +343,7 @@ namespace Tpetra {
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
                      Teuchos::ArrayView<const Scalar>& values) const = 0;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix, using "raw" pointers instead of
     ///   Teuchos::ArrayView.
@@ -374,6 +375,7 @@ namespace Tpetra {
                         LocalOrdinal& numEnt,
                         const LocalOrdinal*& lclColInds,
                         const Scalar*& vals) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a copy of the diagonal entries, distributed by the row Map.
     ///

@@ -2428,7 +2428,7 @@ namespace Tpetra {
     else {
       // This does the right thing (reports an empty row) if the input
       // row is invalid.
-      indices = typename local_inds_dualv_type::t_host::const_type();
+      indices = local_inds_host_view_type();
     }
 
     if (debug_) {

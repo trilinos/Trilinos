@@ -2406,6 +2406,20 @@ namespace Tpetra {
     ///   getGlobalRowView() are valid for this object.
     virtual bool supportsRowViews () const override;
 
+protected:
+    using values_dualv_type =
+          Kokkos::DualView<impl_scalar_type*, device_type>;
+    using values_wdv_type = 
+          Details::WrappedDualView<values_dualv_type>;
+    values_wdv_type valuesUnpacked_wdv;
+    mutable values_wdv_type valuesPacked_wdv;
+
+public:
+    using values_host_view_type = 
+          typename values_dualv_type::t_host::const_type;
+    using values_device_view_type = 
+          typename values_dualv_type::t_dev::const_type;
+
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
     ///   indices.
@@ -2493,12 +2507,18 @@ namespace Tpetra {
     ///
     /// If \c GlobalRow is not a valid global row index on the calling
     /// process, then \c indices is set to null.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       Teuchos::ArrayView<const GlobalOrdinal>& indices,
                       Teuchos::ArrayView<const Scalar>& values) const override;
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
+    void
+    getGlobalRowView(LocalOrdinal LocalRow,
+                  typename crs_graph_type::global_inds_host_view_type &indices,
+                  values_host_view_type &values) const;
 
-    /// \brief Get a constant, nonpersisting view of a row of this
+    /// \brief Get a constant view of a row of this
     ///   matrix, using local row and column indices.
     ///
     /// \param LocalRow [in]  Local index of the row to view.
@@ -2510,11 +2530,19 @@ namespace Tpetra {
     ///
     /// If \c LocalRow is not a valid local row index on the calling
     /// process, then \c indices is set to null.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
                      Teuchos::ArrayView<const Scalar>& values) const override;
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
+    void
+    getLocalRowView(LocalOrdinal LocalRow,
+                    typename crs_graph_type::local_inds_host_view_type &indices,
+                    values_host_view_type &values) const;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix, using "raw" pointers instead of
     ///   Teuchos::ArrayView.
@@ -2597,6 +2625,7 @@ namespace Tpetra {
       val = reinterpret_cast<const OutputScalarType*> (valTmp);
       return err;
     }
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a copy of the diagonal entries of the matrix.
     ///
@@ -3951,13 +3980,8 @@ namespace Tpetra {
 // KDDKDD DELETE
     typename local_matrix_device_type::values_type k_values1D_;
 // KDDKDD DELETE
-    using values_dualv_type =
-          Kokkos::DualView<impl_scalar_type*, device_type>;
-    using values_wdv_type = 
-          Details::WrappedDualView<values_dualv_type>;
-    values_wdv_type valuesUnpacked_wdv;
-    mutable values_wdv_type valuesPacked_wdv;
 
+protected:
     /// \brief Status of the matrix's storage, when not in a
     ///   fill-complete state.
     ///
