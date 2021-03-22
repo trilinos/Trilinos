@@ -480,6 +480,10 @@ namespace Tpetra {
 
     //! The part of the sparse matrix's graph on each MPI process.
     using local_graph_device_type = typename crs_graph_type::local_graph_device_type;
+    using local_graph_host_type = typename crs_graph_type::local_graph_host_type;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    using local_graph_type = local_graph_device_type;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief The specialization of Kokkos::CrsMatrix that represents
     ///   the part of the sparse matrix on each MPI process.

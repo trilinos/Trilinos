@@ -4869,7 +4869,6 @@ namespace Tpetra {
     LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
 
 #ifdef HAVE_TPETRA_DEBUG
-std::cout << "KDDKDD MERGE " << rowInfo.localRow << " " << rowInfo.numEntries << " " << rowInfo.allocSize << std::endl;
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
       (rowInfo.allocSize != static_cast<size_t> (inds_view.extent (0)) ||
        rowInfo.allocSize != static_cast<size_t> (rowValues.extent (0)),
