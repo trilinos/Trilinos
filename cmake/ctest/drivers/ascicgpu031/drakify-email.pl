@@ -14,11 +14,11 @@ while (<STDIN>)
 
 $numLines = scalar @LINES;
 
-# Change this stuff
-@packages=("Amesos2","Ifpack2","Xpetra","MueLu","Tpetra","Zoltan2");
+# If you want to reuse this script somewhere else,
+# this should be the only line you need to change
+@packages=("Tpetra", "Amesos2","Ifpack2","Xpetra","MueLu","Zoltan2");
+
 $num_packages = scalar @packages;
-
-
 
 use Class::Struct;
 struct Entry => {
