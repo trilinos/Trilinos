@@ -497,10 +497,10 @@ namespace Xpetra {
     //! Returns the CrsGraph associated with this matrix.
     virtual RCP<const CrsGraph> getCrsGraph() const =0;
 
-    // keep normal apply virtual before overloading
+    // To keep the normal virtual matrix-multivector definition of apply before overloading with the region variant
     using Xpetra::Operator< Scalar, LocalOrdinal, GlobalOrdinal, Node >::apply;
 
-    // matrix vector apply for region matricies
+    //! Computes the matrix-multivector multiplication for region layout matrices
     virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
                       MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
                       Teuchos::ETransp mode,

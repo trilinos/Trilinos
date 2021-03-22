@@ -344,14 +344,13 @@ namespace Xpetra {
         mtx_->localApply(toTpetra(X), toTpetra(Y), mode, alpha, beta);
         if (sumInterfaceValues)
         {
-          // Step 2: preform communication to propagate local interface
+          // preform communication to propagate local interface
           // values to all the processor that share interfaces.
           RCP<MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >> matvecInterfaceTmp = MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(regionInterfaceMap, 1);
           matvecInterfaceTmp->doImport(Y, *regionInterfaceImporter, INSERT);
 
-          // Step 3: sum all contributions to interface values
+          // sum all contributions to interface values
           // on all ranks
-          //ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
           ArrayRCP<Scalar> YData = Y.getDataNonConst(0);
           ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
           for(LocalOrdinal interfaceIdx = 0; interfaceIdx < static_cast<LocalOrdinal>(interfaceData.size()); ++interfaceIdx) {

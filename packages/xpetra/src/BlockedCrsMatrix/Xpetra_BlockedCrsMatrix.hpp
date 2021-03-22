@@ -954,6 +954,7 @@ namespace Xpetra {
     //! @name Methods implementing Matrix
     //@{
 
+    //! sparse matrix-multivector multiplication for the region layout matrices (currently no blocked implementation)
     virtual void apply(const MultiVector &X, MultiVector &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues,
                  const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
                  const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const

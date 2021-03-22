@@ -389,6 +389,7 @@ public:
                    Scalar alpha = ScalarTraits<Scalar>::one(),
                    Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
+  //! Computes the matrix-multivector multiplication for region layout matrices
   virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
                     MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
                     Teuchos::ETransp mode,
