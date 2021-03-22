@@ -120,11 +120,14 @@ public:
     : dualView(dualV)
   { }
 
-  WrappedDualView(const DeviceViewType devView)
-  {
+  WrappedDualView(const DeviceViewType devView) {
      HostViewType hostView =
        Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), devView);
      dualView = DualViewType(devView, hostView);
+  }
+
+  WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
+    dualView = getSubview(parent.dualView, offset, numEntries);
   }
 
   size_t extent(const int i) const {
