@@ -117,16 +117,18 @@ public:
   WrappedDualView() {}
 
   WrappedDualView(DualViewType dualV)
-    : dualView(dualV)
+    : originalDualView(dualV),
+      dualView(originalDualView)
   { }
 
-  WrappedDualView(const DeviceViewType devView) {
-     HostViewType hostView =
-       Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), devView);
-     dualView = DualViewType(devView, hostView);
+  WrappedDualView(const DeviceViewType deviceView) {
+    auto hostView = Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), deviceView);
+    originalDualView = DualViewType(deviceView, hostView);
+    dualView = originalDualView;
   }
 
   WrappedDualView(const WrappedDualView parent, int offset, int numEntries) {
+    originalDualView = parent.originalDualView;
     dualView = getSubview(parent.dualView, offset, numEntries);
   }
 
@@ -141,7 +143,7 @@ public:
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewReadOnly");
     throwIfDeviceViewAlive();
-    impl::sync_host(dualView);
+    impl::sync_host(originalDualView);
     return dualView.view_host();
   }
 
@@ -154,8 +156,8 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
-    dualView.sync_host();
-    dualView.modify_host();
+    originalDualView.sync_host();
+    originalDualView.modify_host();
     return dualView.view_host();
   }
 
@@ -167,9 +169,12 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewWriteOnly");
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
+    if (iAmASubview()) {
+      return getHostView(Access::ReadWrite);
+    }
     throwIfDeviceViewAlive();
-    dualView.clear_sync_state();
-    dualView.modify_host();
+    originalDualView.clear_sync_state();
+    originalDualView.modify_host();
     return dualView.view_host();
   }
 
@@ -180,7 +185,7 @@ public:
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewReadOnly");
     throwIfHostViewAlive();
-    impl::sync_device(dualView);
+    impl::sync_device(originalDualView);
     return dualView.view_device();
   }
 
@@ -193,8 +198,8 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
-    dualView.sync_device();
-    dualView.modify_device();
+    originalDualView.sync_device();
+    originalDualView.modify_device();
     return dualView.view_device();
   }
 
@@ -206,9 +211,12 @@ public:
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewWriteOnly");
     static_assert(dualViewHasNonConstData,
         "WriteOnly views are not available for DualView with const data");
+    if (iAmASubview()) {
+      return getDeviceView(Access::ReadWrite);
+    }
     throwIfHostViewAlive();
-    dualView.clear_sync_state();
-    dualView.modify_device();
+    originalDualView.clear_sync_state();
+    originalDualView.modify_device();
     return dualView.view_device();
   }
 
@@ -219,7 +227,7 @@ public:
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewReadOnly");
     throwIfDeviceViewAlive();
-    impl::sync_host(dualView);
+    impl::sync_host(originalDualView);
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
@@ -232,8 +240,8 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
-    dualView.sync_host();
-    dualView.modify_host();
+    originalDualView.sync_host();
+    originalDualView.modify_host();
     return getSubview(dualView.view_host(), offset, numEntries);
   }
 
@@ -255,7 +263,7 @@ public:
   {
     DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewReadOnly");
     throwIfHostViewAlive();
-    impl::sync_device(dualView);
+    impl::sync_device(originalDualView);
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
@@ -268,8 +276,8 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
-    dualView.sync_device();
-    dualView.modify_device();
+    originalDualView.sync_device();
+    originalDualView.modify_device();
     return getSubview(dualView.view_device(), offset, numEntries);
   }
 
@@ -308,6 +316,11 @@ private:
     }
   }
 
+  bool iAmASubview() {
+    return originalDualView.h_view != dualView.h_view;
+  }
+
+  mutable DualViewType originalDualView;
   mutable DualViewType dualView;
 };
 

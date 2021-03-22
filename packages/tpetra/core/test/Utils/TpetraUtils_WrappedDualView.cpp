@@ -642,11 +642,16 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessHostSubviewWriteOnly_syncToHost_modifyO
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto deviceSubviewChanged = wrappedView.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+  {
+    auto hostSubviewFromDevice = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFromDevice, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto deviceSubviewUnchanged = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto deviceSubviewChanged = wrappedView.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceSubviewReadOnly_syncToDevice) {
@@ -703,11 +708,16 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceSubviewWriteOnly_syncToDevice_mod
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto hostSubviewChanged = wrappedView.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+  {
+    auto deviceSubviewFromHost = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFromHost, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto hostSubviewUnchanged = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto hostSubviewChanged = wrappedView.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, hostSubviewThrowsIfNonOverlappingDeviceViewAlive_ReadOnly) {
@@ -873,11 +883,19 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessHostViewWrappedSubviewWriteOnly_syncToH
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto deviceSubviewChanged = wrappedSubview.getDeviceView(Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+  {
+    auto hostSubviewFromDevice = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFromDevice, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto deviceSubviewUnchanged = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto deviceSubviewChanged = wrappedSubview.getDeviceView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+
+  auto deviceSubviewChangedOriginal = wrappedView.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChangedOriginal, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceViewWrappedSubviewWriteOnly_syncToDevice_modifyOnDevice) {
@@ -903,11 +921,19 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceViewWrappedSubviewWriteOnly_syncT
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto hostSubviewChanged = wrappedSubview.getHostView(Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+  {
+    auto deviceSubviewFromHost = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFromHost, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto hostSubviewUnchanged = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto hostSubviewChanged = wrappedSubview.getHostView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+
+  auto hostSubviewChangedOriginal = wrappedView.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChangedOriginal, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessHostViewIntermediateWrappedSubviewWriteOnly_syncToHost_modifyOnHost) {
@@ -935,11 +961,19 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessHostViewIntermediateWrappedSubviewWrite
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto deviceSubviewChanged = wrappedSubview.getDeviceView(Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+  {
+    auto hostSubviewFromDevice = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFromDevice, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto deviceSubviewUnchanged = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto deviceSubviewChanged = wrappedSubview.getDeviceView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+
+  auto deviceSubviewChangedOriginal = wrappedView.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChangedOriginal, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceViewIntermediateWrappedSubviewWriteOnly_syncToDevice_modifyOnDevice) {
@@ -967,11 +1001,19 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceViewIntermediateWrappedSubviewWri
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto hostSubviewChanged = wrappedSubview.getHostView(Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+  {
+    auto deviceSubviewFromHost = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFromHost, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto hostSubviewUnchanged = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto hostSubviewChanged = wrappedSubview.getHostView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+
+  auto hostSubviewChangedOriginal = wrappedView.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChangedOriginal, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessHostSubviewIntermediateWrappedSubviewWriteOnly_syncToHost_modifyOnHost) {
@@ -997,11 +1039,19 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessHostSubviewIntermediateWrappedSubviewWr
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto deviceSubviewChanged = intermediateWrappedSubview.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+  {
+    auto hostSubviewFromDevice = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFromDevice, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto deviceSubviewUnchanged = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto deviceSubviewChanged = intermediateWrappedSubview.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+
+  auto deviceSubviewChangedOriginal = wrappedView.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChangedOriginal, startIndex, length));
 }
 
 TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceSubviewIntermediateWrappedSubviewWriteOnly_syncToDevice_modifyOnDevice) {
@@ -1027,11 +1077,113 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceSubviewIntermediateWrappedSubview
   int startIndexUnchanged = length;
   int lengthUnchanged = fixture.getViewSize() - length;
 
-  auto hostSubviewChanged = intermediateWrappedSubview.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
-  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+  {
+    auto deviceSubviewFromHost = wrappedView.getDeviceSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFromHost, startIndexUnchanged, lengthUnchanged, 2));
+  }
 
   auto hostSubviewUnchanged = wrappedView.getHostSubview(startIndexUnchanged, lengthUnchanged, Tpetra::Access::ReadOnly);
   TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewUnchanged, startIndexUnchanged, lengthUnchanged, 2));
+
+  auto hostSubviewChanged = intermediateWrappedSubview.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+
+  auto hostSubviewChangedOriginal = wrappedView.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChangedOriginal, startIndex, length));
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceViewWrappedSubviewInMiddleWriteOnly_syncToDevice_modifyOnDevice) {
+  WrappedDualViewFixture fixture;
+  TEST_ASSERT(fixture.valuesInitializedToZero());
+
+  WrappedDualViewType wrappedView(fixture.getDualView());
+
+  {
+    auto deviceView = wrappedView.getDeviceView(Tpetra::Access::WriteOnly);
+    fixture.fillViewOnDevice(deviceView);
+    fixture.multiplyOnDevice(deviceView, 2);
+  }
+
+  int startIndex = 3;
+  int length = 3;
+  WrappedDualViewType wrappedSubview(wrappedView, startIndex, length);
+  {
+    auto hostSubview = wrappedSubview.getHostView(Tpetra::Access::WriteOnly);
+    fixture.fillViewOnHost(hostSubview, startIndex, length);
+  }
+
+  int startIndexFront = 0;
+  int lengthFront = startIndex;
+
+  int startIndexBack = startIndex + length;
+  int lengthBack = fixture.getViewSize() - startIndexBack;
+
+  {
+    auto hostSubviewFromDeviceFront = wrappedView.getHostSubview(startIndexFront, lengthFront, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFromDeviceFront, startIndexFront, lengthFront, 2));
+
+    auto hostSubviewFromDeviceBack = wrappedView.getHostSubview(startIndexBack, lengthBack, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFromDeviceBack, startIndexBack, lengthBack, 2));
+  }
+
+  auto deviceSubviewFront = wrappedView.getDeviceSubview(startIndexFront, lengthFront, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFront, startIndexFront, lengthFront, 2));
+
+  auto deviceSubviewBack = wrappedView.getDeviceSubview(startIndexBack, lengthBack, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewBack, startIndexBack, lengthBack, 2));
+
+  auto deviceSubviewChanged = wrappedSubview.getDeviceView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChanged, startIndex, length));
+
+  auto deviceSubviewChangedOriginal = wrappedView.getDeviceSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewChangedOriginal, startIndex, length));
+}
+
+TEUCHOS_UNIT_TEST(WrappedDualView, accessHostViewWrappedSubviewInMiddleWriteOnly_syncToHost_modifyOnHost) {
+  WrappedDualViewFixture fixture;
+  TEST_ASSERT(fixture.valuesInitializedToZero());
+
+  WrappedDualViewType wrappedView(fixture.getDualView());
+
+  {
+    auto hostView = wrappedView.getHostView(Tpetra::Access::WriteOnly);
+    fixture.fillViewOnHost(hostView);
+    fixture.multiplyOnHost(hostView, 2);
+  }
+
+  int startIndex = 3;
+  int length = 3;
+  WrappedDualViewType wrappedSubview(wrappedView, startIndex, length);
+  {
+    auto deviceSubview = wrappedSubview.getDeviceView(Tpetra::Access::WriteOnly);
+    fixture.fillViewOnDevice(deviceSubview, startIndex, length);
+  }
+
+  int startIndexFront = 0;
+  int lengthFront = startIndex;
+
+  int startIndexBack = startIndex + length;
+  int lengthBack = fixture.getViewSize() - startIndexBack;
+
+  {
+    auto deviceSubviewFromDeviceFront = wrappedView.getDeviceSubview(startIndexFront, lengthFront, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFromDeviceFront, startIndexFront, lengthFront, 2));
+
+    auto deviceSubviewFromDeviceBack = wrappedView.getDeviceSubview(startIndexBack, lengthBack, Tpetra::Access::ReadOnly);
+    TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewFromDeviceBack, startIndexBack, lengthBack, 2));
+  }
+
+  auto hostSubviewFront = wrappedView.getHostSubview(startIndexFront, lengthFront, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewFront, startIndexFront, lengthFront, 2));
+
+  auto hostSubviewBack = wrappedView.getHostSubview(startIndexBack, lengthBack, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewBack, startIndexBack, lengthBack, 2));
+
+  auto hostSubviewChanged = wrappedSubview.getHostView(Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChanged, startIndex, length));
+
+  auto hostSubviewChangedOriginal = wrappedView.getHostSubview(startIndex, length, Tpetra::Access::ReadOnly);
+  TEST_ASSERT(fixture.valuesCorrectOnHost(hostSubviewChangedOriginal, startIndex, length));
 }
 
 }
