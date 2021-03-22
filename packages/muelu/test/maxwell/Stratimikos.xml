@@ -1,0 +1,119 @@
+<ParameterList name="Linear Solver">
+  <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+  <ParameterList name="Linear Solver Types">
+    <ParameterList name="Belos">
+      <Parameter name="Solver Type" type="string" value="Block CG"/>
+      <ParameterList name="Solver Types">
+        <ParameterList name="Block CG">
+          <Parameter name="Output Frequency" type="int" value="1"/>
+          <Parameter name="Output Style" type="int" value="1"/>
+          <Parameter name="Verbosity" type="int" value="33"/>
+          <Parameter name="Maximum Iterations" type="int" value="200"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1e-10"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Test" type="bool" value="true"/>
+        </ParameterList>
+        <ParameterList name="Block GMRES">
+          <Parameter name="Output Frequency" type="int" value="1"/>
+          <Parameter name="Output Style" type="int" value="1"/>
+          <Parameter name="Verbosity" type="int" value="33"/>
+          <Parameter name="Maximum Iterations" type="int" value="200"/>
+          <Parameter name="Convergence Tolerance" type="double" value="1e-10"/>
+          <Parameter name="Implicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Scaling" type="string" value="None"/>
+          <Parameter name="Explicit Residual Test" type="bool" value="true"/>
+        </ParameterList>
+      </ParameterList>
+      <ParameterList name="VerboseObject">
+        <Parameter name="Verbosity Level" type="string" value="medium"/>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+  <Parameter name="Preconditioner Type" type="string" value="MueLuRefMaxwell"/>
+  <ParameterList name="Preconditioner Types">
+    <ParameterList name="MueLuRefMaxwell">
+
+      <Parameter name="use kokkos refactor" type="bool" value="false"/>
+      <Parameter name="refmaxwell: use as preconditioner" type="bool" value="true"/>
+      <Parameter name="refmaxwell: mode" type="string" value="additive"/>
+      <Parameter name="refmaxwell: disable addon" type="bool" value="false"/>
+      <Parameter name="refmaxwell: dump matrices" type="bool" value="false"/>
+      <Parameter name="refmaxwell: subsolves on subcommunicators" type="bool" value="false"/>
+      <Parameter name="refmaxwell: enable reuse" type="bool" value="true"/>
+
+      <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+      <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+
+      <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+      <ParameterList name="smoother: params">
+        <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+        <Parameter name="relaxation: sweeps" type="int" value="1"/>
+        <Parameter name="relaxation: use l1" type="bool" value="true"/>
+      </ParameterList>
+
+      <ParameterList name="refmaxwell: 11list">
+        <Parameter name="use kokkos refactor" type="bool" value="false"/>
+        <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
+        <Parameter name="number of equations" type="int" value="3"/>
+        <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+        <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: type" type="string" value="Klu"/>
+        <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+        <ParameterList name="smoother: params">
+          <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+          <Parameter name="relaxation: sweeps" type="int" value="1"/>
+          <Parameter name="relaxation: use l1" type="bool" value="true"/>
+        </ParameterList>
+
+        <Parameter name="repartition: enable" type="bool" value="true"/>
+        <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+        <Parameter name="repartition: start level" type="int" value="1"/>
+        <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+        <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+        <Parameter name="repartition: remap parts" type="bool" value="true"/>
+        <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
+        <ParameterList name="repartition: params">
+          <Parameter name="algorithm" type="string" value="multijagged"/>
+        </ParameterList>
+      </ParameterList>
+
+      <ParameterList name="refmaxwell: 22list">
+        <Parameter name="use kokkos refactor" type="bool" value="false"/>
+        <Parameter name="multigrid algorithm" type="string" value="unsmoothed"/>
+        <Parameter name="aggregation: type" type="string" value="uncoupled"/>
+        <Parameter name="aggregation: drop tol" type="double" value="0.01"/>
+        <Parameter name="coarse: max size" type="int" value="128"/>
+        <Parameter name="coarse: type" type="string" value="Klu"/>
+
+        <Parameter name="smoother: type" type="string" value="RELAXATION"/>
+        <ParameterList name="smoother: params">
+          <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
+          <Parameter name="relaxation: sweeps" type="int" value="1"/>
+          <Parameter name="relaxation: use l1" type="bool" value="true"/>
+        </ParameterList>
+
+        <Parameter name="repartition: enable" type="bool" value="true"/>
+        <Parameter name="repartition: partitioner" type="string" value="zoltan2"/>
+        <Parameter name="repartition: start level" type="int" value="1"/>
+        <Parameter name="repartition: min rows per proc" type="int" value="200"/>
+        <Parameter name="repartition: max imbalance" type="double" value="1.1"/>
+        <Parameter name="repartition: remap parts" type="bool" value="true"/>
+        <Parameter name="repartition: rebalance P and R" type="bool" value="false"/>
+        <ParameterList name="repartition: params">
+          <Parameter name="algorithm" type="string" value="multijagged"/>
+        </ParameterList>
+
+      </ParameterList>
+
+      <Parameter name="D0" type="string" value="substitute D0"/>
+      <Parameter name="M0inv" type="string" value="substitute M0inv"/>
+      <Parameter name="M1" type="string" value="substitute M1"/>
+      <Parameter name="Ms" type="string" value="substitute Ms"/>
+      <Parameter name="Coordinates" type="string" value="substitute Coordinates"/>
+
+
+    </ParameterList>
+  </ParameterList>
+</ParameterList>
