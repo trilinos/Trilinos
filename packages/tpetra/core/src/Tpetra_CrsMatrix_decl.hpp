@@ -1037,7 +1037,7 @@ namespace Tpetra {
                              const RowInfo& rowInfo,
                              const GlobalOrdinal inds[],
                              const impl_scalar_type newVals[],
-                             const LocalOrdinal numElts) const;
+                             const LocalOrdinal numElts);
 
   public:
     /// \brief Replace one or more entries' values, using global indices.
@@ -1080,14 +1080,14 @@ namespace Tpetra {
     replaceGlobalValues(
       const global_ordinal_type globalRow,
       const Kokkos::View<const global_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
-      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals) const;
+      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals);
 
     /// \brief Overload of replaceGlobalValues (see above), that takes
     ///   Teuchos::ArrayView (host pointers) instead of Kokkos::View.
     LocalOrdinal
     replaceGlobalValues (const GlobalOrdinal globalRow,
                          const Teuchos::ArrayView<const GlobalOrdinal>& cols,
-                         const Teuchos::ArrayView<const Scalar>& vals) const;
+                         const Teuchos::ArrayView<const Scalar>& vals);
 
     /// \brief Overload of replaceGlobalValues (see above), that takes
     ///   raw pointers instead of Kokkos::View.
@@ -1107,7 +1107,7 @@ namespace Tpetra {
     replaceGlobalValues (const GlobalOrdinal globalRow,
                          const LocalOrdinal numEnt,
                          const Scalar vals[],
-                         const GlobalOrdinal cols[]) const;
+                         const GlobalOrdinal cols[]);
 
   private:
     /// \brief Implementation detail of replaceLocalValues.
@@ -1126,7 +1126,7 @@ namespace Tpetra {
                             const RowInfo& rowInfo,
                             const LocalOrdinal inds[],
                             const impl_scalar_type newVals[],
-                            const LocalOrdinal numElts) const;
+                            const LocalOrdinal numElts);
 
   public:
     /// \brief Replace one or more entries' values, using local
@@ -1168,7 +1168,7 @@ namespace Tpetra {
     replaceLocalValues(
       const local_ordinal_type localRow,
       const Kokkos::View<const local_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
-      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals) const;
+      const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals);
 
     /// \brief Backwards compatibility version of replaceLocalValues
     ///   (see above), that takes Teuchos::ArrayView (host pointers)
@@ -1176,7 +1176,7 @@ namespace Tpetra {
     LocalOrdinal
     replaceLocalValues (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
-                        const Teuchos::ArrayView<const Scalar>& vals) const;
+                        const Teuchos::ArrayView<const Scalar>& vals);
 
     /// \brief Epetra compatibility version of replaceLocalValues,
     ///   that takes raw pointers instead of Kokkos::View.
@@ -1199,7 +1199,7 @@ namespace Tpetra {
     replaceLocalValues (const LocalOrdinal localRow,
                         const LocalOrdinal numEnt,
                         const Scalar inputVals[],
-                        const LocalOrdinal inputCols[]) const;
+                        const LocalOrdinal inputCols[]);
 
   private:
     /// \brief Whether sumIntoLocalValues and sumIntoGlobalValues
@@ -1243,7 +1243,7 @@ namespace Tpetra {
                              const GlobalOrdinal inds[],
                              const impl_scalar_type newVals[],
                              const LocalOrdinal numElts,
-                             const bool atomic = useAtomicUpdatesByDefault) const;
+                             const bool atomic = useAtomicUpdatesByDefault);
 
   public:
     /// \brief Sum into one or more sparse matrix entries, using
@@ -1337,7 +1337,7 @@ namespace Tpetra {
                             const LocalOrdinal inds[],
                             const impl_scalar_type newVals[],
                             const LocalOrdinal numElts,
-                            const bool atomic = useAtomicUpdatesByDefault) const;
+                            const bool atomic = useAtomicUpdatesByDefault);
 
   public:
     /// \brief Sum into one or more sparse matrix entries, using local
@@ -1381,7 +1381,7 @@ namespace Tpetra {
       const local_ordinal_type localRow,
       const Kokkos::View<const local_ordinal_type*, Kokkos::AnonymousSpace>& inputInds,
       const Kokkos::View<const impl_scalar_type*, Kokkos::AnonymousSpace>& inputVals,
-      const bool atomic = useAtomicUpdatesByDefault) const;
+      const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Sum into one or more sparse matrix entries, using local
     ///   row and column indices.
@@ -1416,7 +1416,7 @@ namespace Tpetra {
     sumIntoLocalValues (const LocalOrdinal localRow,
                         const Teuchos::ArrayView<const LocalOrdinal>& cols,
                         const Teuchos::ArrayView<const Scalar>& vals,
-                        const bool atomic = useAtomicUpdatesByDefault) const;
+                        const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Epetra compatibility version of sumIntoLocalValues (see
     ///   above) that takes raw pointers instead of Kokkos::View.
@@ -1444,7 +1444,7 @@ namespace Tpetra {
                         const LocalOrdinal numEnt,
                         const Scalar vals[],
                         const LocalOrdinal cols[],
-                        const bool atomic = useAtomicUpdatesByDefault) const;
+                        const bool atomic = useAtomicUpdatesByDefault);
 
   private:
     /// \brief Transform the given values using local indices.
@@ -1485,7 +1485,7 @@ namespace Tpetra {
                           const impl_scalar_type newVals[],
                           const LocalOrdinal numElts,
                           std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
-                          const bool atomic = useAtomicUpdatesByDefault) const;
+                          const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Transform the given values using global indices.
     ///
@@ -1525,7 +1525,7 @@ namespace Tpetra {
                            const impl_scalar_type newVals[],
                            const LocalOrdinal numElts,
                            std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
-                           const bool atomic = useAtomicUpdatesByDefault) const;
+                           const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Transform the given values using local indices.
     ///
@@ -1559,7 +1559,7 @@ namespace Tpetra {
                           const impl_scalar_type inputVals[],
                           const LocalOrdinal inputCols[],
                           std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
-                          const bool atomic = useAtomicUpdatesByDefault) const;
+                          const bool atomic = useAtomicUpdatesByDefault);
 
     /// \brief Transform the given values using global indices.
     ///
@@ -1593,7 +1593,7 @@ namespace Tpetra {
                            const impl_scalar_type inputVals[],
                            const GlobalOrdinal inputCols[],
                            std::function<impl_scalar_type (const impl_scalar_type&, const impl_scalar_type&) > f,
-                           const bool atomic = useAtomicUpdatesByDefault) const;
+                           const bool atomic = useAtomicUpdatesByDefault);
 
   public:
     /// \brief Transform CrsMatrix entries in place, using local
@@ -1647,7 +1647,7 @@ namespace Tpetra {
                           const typename UnmanagedView<LocalIndicesViewType>::type& inputInds,
                           const typename UnmanagedView<ImplScalarViewType>::type& inputVals,
                           BinaryFunction f,
-                          const bool atomic = useAtomicUpdatesByDefault) const
+                          const bool atomic = useAtomicUpdatesByDefault)
     {
       // We use static_assert here to check the template parameters,
       // rather than std::enable_if (e.g., on the return value, to
@@ -1741,7 +1741,7 @@ namespace Tpetra {
                              InputMemorySpace,
                              Kokkos::MemoryUnmanaged>& inputVals,
                            BinaryFunction f,
-                           const bool atomic = useAtomicUpdatesByDefault) const
+                           const bool atomic = useAtomicUpdatesByDefault)
     {
       typedef LocalOrdinal LO;
       const LO numInputEnt = inputInds.extent (0);
@@ -2420,6 +2420,16 @@ public:
     using values_device_view_type = 
           typename values_dualv_type::t_dev::const_type;
 
+    using local_inds_host_view_type =
+          typename crs_graph_type::local_inds_host_view_type;
+    using local_inds_device_view_type =
+          typename crs_graph_type::local_inds_device_view_type;
+
+    using global_inds_host_view_type =
+          typename crs_graph_type::global_inds_host_view_type;
+    using global_inds_device_view_type =
+          typename crs_graph_type::global_inds_device_view_type;
+
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
     ///   indices.
@@ -2515,7 +2525,7 @@ public:
 #endif  // TPETRA_ENABLE_DEPRECATED_CODE
     void
     getGlobalRowView(LocalOrdinal LocalRow,
-                  typename crs_graph_type::global_inds_host_view_type &indices,
+                  typename global_inds_host_view_type &indices,
                   values_host_view_type &values) const;
 
     /// \brief Get a constant view of a row of this
@@ -2539,7 +2549,7 @@ public:
 
     void
     getLocalRowView(LocalOrdinal LocalRow,
-                    typename crs_graph_type::local_inds_host_view_type &indices,
+                    typename local_inds_host_view_type &indices,
                     values_host_view_type &values) const;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
@@ -2572,7 +2582,9 @@ public:
                         LocalOrdinal& numEnt,
                         const LocalOrdinal*& lclColInds,
                         const Scalar*& vals) const override;
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices, with raw
     ///   pointers.
@@ -2601,6 +2613,7 @@ public:
                      LocalOrdinal& numEnt,
                      const impl_scalar_type*& val,
                      const LocalOrdinal*& ind) const;
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using local row and column indices, with raw
@@ -2609,6 +2622,7 @@ public:
     /// This overload exists only if Scalar differs from
     /// impl_scalar_type.  In that case, this overload takes a Scalar
     /// pointer.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class OutputScalarType>
     typename std::enable_if<! std::is_same<OutputScalarType, impl_scalar_type>::value &&
                             std::is_convertible<impl_scalar_type, OutputScalarType>::value,
@@ -3561,7 +3575,7 @@ public:
                            const Teuchos::ArrayView<const GlobalOrdinal>& indices,
                            const Teuchos::ArrayView<const Scalar>& values,
                            BinaryFunction f,
-                           const bool atomic = useAtomicUpdatesByDefault) const
+                           const bool atomic = useAtomicUpdatesByDefault)
     {
       typedef impl_scalar_type IST;
       typedef LocalOrdinal LO;
@@ -3827,52 +3841,27 @@ public:
 
     // matrix data accessors
 
-    /// \brief Const pointer to all entries (including extra space) in
-    ///   the given row.
-    ///
-    /// Unlike getGlobalRowView(), this method returns
-    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
-    /// this method is <i>not</i> part of the public interface of
-    /// CrsMatrix.
-    ///
-    /// \param vals [out] On output: Const pointer to all entries,
-    ///   including any extra space, in the given row.  \c numEnt
-    ///   includes the empty space, if any.
-    /// \param numEnt [out] Number of available entries in the row.
-    ///   "Available" includes extra empty space, if any.
-    /// \param rowinfo [in] Result of getRowInfo (for a local row
-    ///   index) or getRowInfoFromGlobalRowIndex (for a global row
-    ///   index) for the row.
-    ///
-    /// \return Zero if no error, else a nonzero error code.
-    LocalOrdinal
-    getViewRawConst (const impl_scalar_type*& vals,
-                     LocalOrdinal& numEnt,
-                     const RowInfo& rowinfo) const;
+    /// \brief Get a const Host view of the locally owned values
+    ///  row myRow, such that rowinfo = getRowInfo(myRow).
+    typename values_dualv_type::t_host::const_type
+    getValuesViewHost (const RowInfo& rowinfo) const;
 
-    /// \brief Nonconst pointer to all entries (including extra space)
-    ///   in the given row.
-    ///
-    /// Unlike getGlobalRowView(), this method returns
-    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
-    /// this method is <i>not</i> part of the public interface of
-    /// CrsMatrix.
-    ///
-    /// \param vals [out] On output: Const pointer to all entries,
-    ///   including any extra space, in the given row.  \c numEnt
-    ///   includes the empty space, if any.
-    /// \param numEnt [out] Number of available entries in the row.
-    ///   "Available" includes extra empty space, if any.
-    /// \param rowinfo [in] Result of getRowInfo (for a local row
-    ///   index) or getRowInfoFromGlobalRowIndex (for a global row
-    ///   index) for the row.
-    ///
-    /// \return Zero if no error, else a nonzero error code.
-    LocalOrdinal
-    getViewRaw (impl_scalar_type*& vals,
-                LocalOrdinal& numEnt,
-                const RowInfo& rowinfo) const;
+    /// \brief Get a const Device view of the locally owned values
+    ///  row myRow, such that rowinfo = getRowInfo(myRow).
+    typename values_dualv_type::t_dev::const_type
+    getValuesViewDevice (const RowInfo& rowinfo) const;
 
+    /// \brief Get a non-const Host view of the locally owned values
+    ///  row myRow, such that rowinfo = getRowInfo(myRow).
+    typename values_dualv_type::t_host
+    getValuesViewHostNonConst (const RowInfo& rowinfo);
+
+    /// \brief Get a non-const Device view of the locally owned values
+    ///  row myRow, such that rowinfo = getRowInfo(myRow).
+    typename values_dualv_type::t_dev
+    getValuesViewDeviceNonConst (const RowInfo& rowinfo);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Constant view of all entries (including extra space) in
     ///   the given row.
     ///
@@ -3881,46 +3870,7 @@ public:
     /// this method is <i>not</i> part of the public interface of
     /// CrsMatrix.
     Teuchos::ArrayView<const impl_scalar_type> getView (RowInfo rowinfo) const;
-
-    /// \brief Nonconst view of all entries (including extra space) in
-    ///   the given row.
-    ///
-    /// Unlike getGlobalRowView(), this method returns
-    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
-    /// this method is <i>not</i> part of the public interface of
-    /// CrsMatrix.
-    ///
-    /// This method is \c const because it doesn't change allocations
-    /// (and thus doesn't change pointers).  Consider the difference
-    /// between <tt>const double*</tt> and <tt>double* const</tt>.
-    Teuchos::ArrayView<impl_scalar_type>
-    getViewNonConst (const RowInfo& rowinfo) const;
-
-  private:
-    /// \brief Constant view of all entries (including extra space) in
-    ///   the given row.
-    ///
-    /// Unlike getGlobalRowView(), this method returns
-    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
-    /// this method is <i>not</i> part of the public interface of
-    /// CrsMatrix.
-    Kokkos::View<const impl_scalar_type*, device_type, Kokkos::MemoryUnmanaged>
-    getRowView (const RowInfo& rowInfo) const;
-
-    /// \brief Nonconst view of all entries (including extra space) in
-    ///   the given row.
-    ///
-    /// Unlike getGlobalRowView(), this method returns
-    /// <tt>impl_scalar_type</tt>, not \c Scalar.  This is because
-    /// this method is <i>not</i> part of the public interface of
-    /// CrsMatrix.
-    ///
-    /// This method is \c const because it doesn't change allocations
-    /// (and thus doesn't change pointers).  Consider the difference
-    /// between <tt>const double*</tt> and <tt>double* const</tt>.
-    Kokkos::View<impl_scalar_type*, device_type, Kokkos::MemoryUnmanaged>
-    getRowViewNonConst (const RowInfo& rowInfo) const;
-
+#endif
 
   protected:
 

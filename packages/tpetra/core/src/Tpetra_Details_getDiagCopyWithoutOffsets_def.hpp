@@ -152,10 +152,10 @@ public:
       errCount++;
     }
     else { // row index is also in the column Map on this process
-      LO numEnt;
-      const LO* lclColInds;
-      const SC* curVals;
-      const LO err = A_.getLocalRowViewRaw (lclRowInd, numEnt, lclColInds, curVals);
+      typename row_graph_type::local_inds_host_view_type lclColInds;
+      typename row_matrix_type::values_host_view_type curVals;
+      const LO err = A_.getLocalRowView(lclRowInd, lclColInds, curVals);
+      LO numEnt = lclColInds.extent(0);
       if (err != 0) {
         errCount++;
       }

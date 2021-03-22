@@ -562,10 +562,11 @@ namespace { // (anonymous)
         Teuchos::OSTab tab2 (out);
 
         const GO lclRow = rowMap.getLocalElement (gblRow);
-        LO numEnt = 0;
-        const LO* lclInds = NULL;
-        const ST* vals = NULL;
-        A.getLocalRowViewRaw (lclRow, numEnt, lclInds, vals);
+        typename CrsMatrixType::crs_graph_type::local_inds_host_view_type
+                 lclInds;
+        typename CrsMatrixType::values_host_view_type vals;
+        A.getLocalRowView(lclRow, lclInds, vals);
+        LO numEnt = lclInds.extent(0);
 
         TEST_EQUALITY( numEnt, numEnt_expected );
         if (numEnt == numEnt_expected) {
@@ -839,11 +840,11 @@ namespace { // (anonymous)
       const GO gblRow = (myRank == 0) ? GO (0) : GO (1);
       const LO lclRow =
         A_nonoverlapping.getRowMap ()->getLocalElement (gblRow);
-      LO numEnt = 0;
-      const LO* lclColInds = NULL;
-      const double* vals = NULL;
-      const LO errCode = A_nonoverlapping.getLocalRowViewRaw (lclRow, numEnt,
-                                                              lclColInds, vals);
+      typename CrsMatrixType::local_inds_host_view_type lclColInds;
+      typename CrsMatrixType::values_host_view_type vals;
+      const LO errCode = A_nonoverlapping.getLocalRowView(lclRow,
+                                                          lclColInds, vals);
+      LO numEnt = lclColInds.extent(0);
       TEST_EQUALITY_CONST( errCode, LO (0) );
       if (errCode == LO (0)) {
         // Sort the input matrix's row data, so that this test does

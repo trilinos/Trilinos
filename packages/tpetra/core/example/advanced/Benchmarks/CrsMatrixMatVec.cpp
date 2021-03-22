@@ -278,11 +278,13 @@ getTpetraCrsMatrix (Teuchos::FancyOStream& out,
   // Fill in the sparse matrix.
   out << "Fill the CrsMatrix" << endl;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
-    Teuchos::ArrayView<const LO> lclColInds;
+    matrix_type::local_inds_host_view_type lclColInds;
     graph->getLocalRowView (lclRow, lclColInds);
 
     // Put some entries in the matrix.
-    Teuchos::Array<SC> lclValues(lclColInds.size(), Teuchos::ScalarTraits<SC>::one());
+    matrix_type::values_host_view_type lclValues("testLclValues", SC*,
+                                                 lclColInds.size());
+    Kokkos::deep_copy(lclValues, Teuchos::ScalarTraits<SC>::one());
     const LO err = A->replaceLocalValues (lclRow, lclColInds, lclValues());
     TEUCHOS_TEST_FOR_EXCEPTION(err != lclColInds.size(), std::logic_error, "Bug");
   }
