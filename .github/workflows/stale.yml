@@ -63,6 +63,7 @@ jobs:
         close-pr-message: >
           This Pull Request has been automatically closed due to **395** days of inactivity.
 
-
+        # start-date : only consider issues/PR's created after this date.
+        start-date: '2001-01-01T00:00:00Z'
 
 
