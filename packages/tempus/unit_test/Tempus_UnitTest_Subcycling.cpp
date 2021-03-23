@@ -150,7 +150,7 @@ public:
   StepperSubcyclingModifierTest()
     : testBEGIN_STEP(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(1.5), testType("")
+      testDt(1.5), testName("")
   {}
   /// Destructor
   virtual ~StepperSubcyclingModifierTest(){}
@@ -167,8 +167,8 @@ public:
       testBEGIN_STEP = true;
       auto x = sh->getCurrentState()->getX();
       testCurrentValue = get_ele(*(x), 0);
-      testType = "Subcycling - Modifier";
-      stepper->setStepperType(testType);
+      testName = "Subcycling - Modifier";
+      stepper->setStepperName(testName);
       break;
     }
     case StepperSubcyclingAppAction<double>::END_STEP:
@@ -191,7 +191,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
@@ -261,7 +261,7 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
-  TEST_COMPARE(modifier->testType, ==, "Subcycling - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Subcycling - Modifier");
 }
 
 // ************************************************************
@@ -275,7 +275,7 @@ public:
   StepperSubcyclingObserverTest()
     : testBEGIN_STEP(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(15.0), testType("Subcyling")
+      testDt(15.0), testName("Subcyling")
   {}
 
   /// Destructor
@@ -313,7 +313,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
@@ -382,7 +382,7 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, 15.0, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "Subcyling");
+  TEST_COMPARE(observer->testName, ==, "Subcyling");
 }
 
   // ************************************************************

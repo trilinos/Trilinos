@@ -41,8 +41,8 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> >& stepperTrapAppAction)
 {
-  this->setStepperName(        "Trapezoidal");
-  this->setStepperType(        "Trapezoidal");
+  this->setStepperName(        "Trapezoidal Method");
+  this->setStepperType(        "Trapezoidal Method");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);

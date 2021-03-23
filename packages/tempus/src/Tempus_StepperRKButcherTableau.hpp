@@ -115,6 +115,23 @@ createStepperERK_ForwardEuler(
   Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperERK_ForwardEuler<Scalar>());
+
+  // Test for aliases.
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", stepper->getStepperType());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != stepper->getStepperType() &&
+      stepperType != "RK1", std::logic_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='" + stepper->getStepperType() +
+      "')\n  or one of its aliases ('RK1').\n");
+
+    // Reset default StepperType.
+    pl->set<std::string>("Stepper Type", stepper->getStepperType());
+  }
+
   stepper->setStepperRKValues(pl);
 
   if (model != Teuchos::null) {
@@ -1192,11 +1209,26 @@ template<class Scalar>
 Teuchos::RCP<StepperERK_3Stage3rdOrderTVD<Scalar> >
 createStepperERK_3Stage3rdOrderTVD(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl,
-  const std::string stepperType)
+  Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperERK_3Stage3rdOrderTVD<Scalar>());
-  stepper->setStepperType(stepperType);
+
+  // Test for aliases.
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", stepper->getStepperType());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != stepper->getStepperType() &&
+      stepperType != "SSPERK33" && stepperType != "SSPRK3", std::logic_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='" + stepper->getStepperType() +
+      "')\n  or one of its aliases ('SSPERK33' or 'SSPRK3').\n");
+
+    // Reset default StepperType.
+    pl->set<std::string>("Stepper Type", stepper->getStepperType());
+  }
+
   stepper->setStepperRKValues(pl);
 
   if (model != Teuchos::null) {
@@ -1562,11 +1594,26 @@ template<class Scalar>
 Teuchos::RCP<StepperERK_Ralston<Scalar> >
 createStepperERK_Ralston(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl,
-  std::string stepperType)
+  Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperERK_Ralston<Scalar>());
-  stepper->setStepperType(stepperType);
+
+  // Test for aliases.
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", stepper->getStepperType());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != stepper->getStepperType() &&
+      stepperType != "RK2", std::logic_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='" + stepper->getStepperType() +
+      "')\n  or one of its aliases ('RK2').\n");
+
+    // Reset default StepperType.
+    pl->set<std::string>("Stepper Type", stepper->getStepperType());
+  }
+
   stepper->setStepperRKValues(pl);
 
   if (model != Teuchos::null) {
@@ -1689,11 +1736,27 @@ template<class Scalar>
 Teuchos::RCP<StepperERK_Trapezoidal<Scalar> >
 createStepperERK_Trapezoidal(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
-  Teuchos::RCP<Teuchos::ParameterList> pl,
-  std::string stepperType)
+  Teuchos::RCP<Teuchos::ParameterList> pl)
 {
   auto stepper = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
-  stepper->setStepperType(stepperType);
+
+  // Test for aliases.
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", stepper->getStepperType());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != stepper->getStepperType() &&
+      stepperType != "Heuns Method" && stepperType != "SSPERK22" &&
+      stepperType != "SSPRK2", std::logic_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='" + stepper->getStepperType() +
+      "')\n  or one of its aliases ('Heuns Method' or 'SSPERK22' or 'SSPRK2').\n");
+
+    // Reset default StepperType.
+    pl->set<std::string>("Stepper Type", stepper->getStepperType());
+  }
+
   stepper->setStepperRKValues(pl);
 
   if (model != Teuchos::null) {
@@ -3296,12 +3359,24 @@ createStepperEDIRK_TrapezoidalRule(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
   Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  // This stepper goes by various names (e.g., 'RK Trapezoidal Rule'
-  // and 'RK Crank-Nicolson').  Make sure it is set to the default name.
-  if (pl != Teuchos::null)
-    pl->set("Stepper Type", "RK Trapezoidal Rule");
-
   auto stepper = Teuchos::rcp(new StepperEDIRK_TrapezoidalRule<Scalar>());
+
+  // Test for aliases.
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", stepper->getStepperType());
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != stepper->getStepperType() &&
+      stepperType != "RK Crank-Nicolson", std::logic_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='" + stepper->getStepperType() +
+      "')\n  or one of its aliases ('RK Crank-Nicolson').\n");
+
+    // Reset default StepperType.
+    pl->set<std::string>("Stepper Type", stepper->getStepperType());
+  }
+
   stepper->setStepperDIRKValues(pl);
 
   if (model != Teuchos::null) {

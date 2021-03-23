@@ -327,7 +327,7 @@ public:
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
   */
-  StepperIMEX_RK_Partition();
+  StepperIMEX_RK_Partition(std::string stepperType = "Partitioned IMEX RK SSP2");
 
   /// Constructor to for all member data.
   StepperIMEX_RK_Partition(

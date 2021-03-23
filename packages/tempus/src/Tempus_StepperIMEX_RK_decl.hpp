@@ -296,7 +296,7 @@ public:
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
   */
-  StepperIMEX_RK();
+  StepperIMEX_RK(std::string stepperType = "IMEX RK SSP2");
 
   /// Constructor for all member data.
   StepperIMEX_RK(

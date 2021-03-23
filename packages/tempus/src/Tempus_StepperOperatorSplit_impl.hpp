@@ -476,7 +476,7 @@ void StepperOperatorSplit<Scalar>::createSubSteppers(
     for (; aMI<appModels.end() || sLSI<stepperListStr.end(); aMI++, sLSI++) {
       RCP<ParameterList> subStepperPL = Teuchos::sublist(stepperPL,*sLSI,true);
       auto name = subStepperPL->name();
-      auto lastPos = name.rfind("->");
+      lastPos = name.rfind("->");
       std::string newName = name.substr(lastPos+2,name.length());
       subStepperPL->setName(newName);
       bool useFSAL = subStepperPL->template get<bool>("Use FSAL",false);

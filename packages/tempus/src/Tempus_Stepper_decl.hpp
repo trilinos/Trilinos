@@ -117,12 +117,32 @@ public:
     virtual bool isOneStepMethod() const = 0;
     virtual bool isMultiStepMethod() const = 0;
 
+    /// Set the stepper name.
     void setStepperName(std::string s) { stepperName_ = s;
       isInitialized_ = false; }
+
+    /** \brief Get the stepper name.
+     *
+     * The stepper name is just a name used to distinguish it during
+     * I/O and in ParameterLists, and can be anything the user would
+     * like.  One example is when two steppers of the same type
+     * (see getStepperType()) are being used during the same
+     * simulation.  The user can name one as "Stepper with settings 1"
+     * and the other as "Stepper with settings 2".  The default
+     * name is the stepper type (e.g., "BDF2" or "Bogacki-Shampine 3(2) Pair").
+     */
     std::string getStepperName() const { return stepperName_; }
 
+protected:
+    /// Set the stepper type.
     void setStepperType(std::string s) { stepperType_ = s;
       isInitialized_ = false; }
+
+public:
+    /** \brief Get the stepper type.
+     *  The stepper type is used as an identifier for the stepper,
+     *  and can only be set by the derived Stepper class.
+     */
     std::string getStepperType() const { return stepperType_; }
 
     virtual void setUseFSAL(bool a) { setUseFSALFalseOnly(a); }

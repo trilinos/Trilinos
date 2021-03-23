@@ -42,13 +42,13 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve a control problem governed by a semilinear 
+    \brief Shows how to solve a control problem governed by a semilinear
            parabolic equation,
            \f[
               \min_{u,z} \;\frac{1}{2} \int_0^T\int_0^1 (u(t,x)-\bar{u}(x))^2\,\mathrm{d}x\mathrm{d}t
                          \frac{\alpha}{2} \int_0^T z(t)^2\,\mathrm{d}t
            \f]
-           subject to 
+           subject to
            \f[
                u_t(t,x) - u_{xx}(t,x) + f(u(t,x),x) = z(t,x) \quad t\in (0,T], \; x\in (0,1)
            \f]
@@ -78,7 +78,7 @@
 #include <fenv.h>
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
   using uint  = std::vector<RealT>::size_type;
 

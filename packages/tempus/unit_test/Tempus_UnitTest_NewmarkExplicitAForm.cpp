@@ -54,7 +54,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testAFTER_EXPLICIT_EVAL(false), testEND_STEP(false),
       testCurrentValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -75,8 +75,8 @@ public:
       case StepperNewmarkExplicitAFormAppAction<double>::BEFORE_EXPLICIT_EVAL:
       {
         testBEFORE_EXPLICIT_EVAL = true;
-        testType = "Newmark Explicit A Form - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Newmark Explicit A Form - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
       case StepperNewmarkExplicitAFormAppAction<double>::AFTER_EXPLICIT_EVAL:
@@ -105,7 +105,7 @@ public:
   bool testEND_STEP;
   double testCurrentValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST(NewmarkExplicitAForm, AppAction_Modifier)
   auto Dt = integrator->getTime();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
   TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
-  TEST_COMPARE(modifier->testType, ==, stepper->getStepperType());
+  TEST_COMPARE(modifier->testName, ==, stepper->getStepperName());
 }
 
 

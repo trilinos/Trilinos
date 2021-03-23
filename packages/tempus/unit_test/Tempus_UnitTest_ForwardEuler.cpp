@@ -102,7 +102,7 @@ public:
   StepperForwardEulerModifierTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testEND_STEP(false), testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -127,8 +127,8 @@ public:
         testBEFORE_EXPLICIT_EVAL = true;
         testDt = sh->getWorkingState()->getTimeStep()/10.0;
         sh->getWorkingState()->setTimeStep(testDt);
-        testType = "Forward Euler - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Forward Euler - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperForwardEulerAppAction<double>::END_STEP:
@@ -149,7 +149,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
@@ -199,7 +199,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
-  TEST_COMPARE(modifier->testType, ==, "Forward Euler - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Forward Euler - Modifier");
 }
 
 
@@ -214,7 +214,7 @@ public:
   StepperForwardEulerObserverTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testEND_STEP(false), testCurrentValue(-0.99),
-      testWorkingValue(-0.99),testDt(-1.5), testType("")
+      testWorkingValue(-0.99),testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -238,7 +238,7 @@ public:
       {
         testBEFORE_EXPLICIT_EVAL = true;
         testDt = sh->getWorkingState()->getTimeStep();
-        testType = stepper->getStepperType();
+        testName = stepper->getStepperName();
         break;
       }
     case StepperForwardEulerAppAction<double>::END_STEP:
@@ -260,7 +260,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
@@ -309,7 +309,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "Forward Euler");
+  TEST_COMPARE(observer->testName, ==, "Forward Euler");
 }
 
 

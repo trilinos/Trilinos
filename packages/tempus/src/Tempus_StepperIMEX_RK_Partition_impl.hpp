@@ -19,8 +19,20 @@ namespace Tempus {
 
 
 template<class Scalar>
-StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
+StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(std::string stepperType)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stepperType != "Partitioned IMEX RK 1st order" &&
+    stepperType != "Partitioned IMEX RK SSP2"      &&
+    stepperType != "Partitioned IMEX RK ARS 233"   &&
+    stepperType != "General Partitioned IMEX RK",       std::logic_error,
+    "  'Stepper Type' (='" + stepperType +"')\n"
+    "  does not match one of the types for this Stepper:\n"
+    "    'Partitioned IMEX RK 1st order'\n"
+    "    'Partitioned IMEX RK SSP2'\n"
+    "    'Partitioned IMEX RK ARS 233'\n"
+    "    'General Partitioned IMEX RK'\n");
+
   this->setStepperName(        "Partitioned IMEX RK SSP2");
   this->setStepperType(        "Partitioned IMEX RK SSP2");
   this->setUseFSAL(            false);
@@ -30,7 +42,7 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition()
 
   this->setStageNumber(-1);
 
-  this->setTableaus("Partitioned IMEX RK SSP2");
+  this->setTableaus(stepperType);
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
@@ -50,6 +62,18 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
   Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
   Scalar order)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stepperType != "Partitioned IMEX RK 1st order" &&
+    stepperType != "Partitioned IMEX RK SSP2"      &&
+    stepperType != "Partitioned IMEX RK ARS 233"   &&
+    stepperType != "General Partitioned IMEX RK",       std::logic_error,
+    "  'Stepper Type' (='" + stepperType +"')\n"
+    "  does not match one of the types for this Stepper:\n"
+    "    'Partitioned IMEX RK 1st order'\n"
+    "    'Partitioned IMEX RK SSP2'\n"
+    "    'Partitioned IMEX RK ARS 233'\n"
+    "    'General Partitioned IMEX RK'\n");
+
   this->setStepperName(        stepperType);
   this->setStepperType(        stepperType);
   this->setUseFSAL(            useFSAL);
@@ -60,8 +84,12 @@ StepperIMEX_RK_Partition<Scalar>::StepperIMEX_RK_Partition(
 
   this->setStageNumber(-1);
 
-  this->setExplicitTableau(explicitTableau);
-  this->setImplicitTableau(implicitTableau);
+  if ( stepperType == "General Partitioned IMEX RK" ) {
+    this->setExplicitTableau(explicitTableau);
+    this->setImplicitTableau(implicitTableau);
+  } else {
+    this->setTableaus(stepperType);
+  }
   this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
 
@@ -217,8 +245,24 @@ void StepperIMEX_RK_Partition<Scalar>::setTableaus(
     this->setOrder(3);
 
   } else if (stepperType == "General Partitioned IMEX RK") {
-    this->setExplicitTableau(explicitTableau);
-    this->setImplicitTableau(implicitTableau);
+
+    if ( explicitTableau == Teuchos::null ) {
+      // Default Explicit Tableau (i.e., Partitioned IMEX RK SSP2)
+      auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
+      this->setExplicitTableau(stepperERK->getTableau());
+    } else {
+      this->setExplicitTableau(explicitTableau);
+    }
+
+    if ( implicitTableau == Teuchos::null ) {
+      // Default Implicit Tablea (i.e., Partitioned IMEX RK SSP2)
+      auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_2Stage3rdOrder<Scalar>());
+      stepperSDIRK->setGammaType("2nd Order L-stable");
+      this->setImplicitTableau(stepperSDIRK->getTableau());
+    } else {
+      this->setImplicitTableau(implicitTableau);
+    }
+
     this->setStepperName("General Partitioned IMEX RK");
     this->setStepperType("General Partitioned IMEX RK");
     this->setOrder(1);
@@ -854,8 +898,7 @@ createStepperIMEX_RK_Partition(
   std::string stepperType,
   Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  auto stepper = Teuchos::rcp(new StepperIMEX_RK_Partition<Scalar>());
-  stepper->setStepperType(stepperType);
+  auto stepper = Teuchos::rcp(new StepperIMEX_RK_Partition<Scalar>(stepperType));
   stepper->setStepperImplicitValues(pl);
   stepper->setTableausPartition(pl, stepperType);
 
