@@ -63,10 +63,10 @@ namespace Intrepid2 {
   //============================================================================================//
 
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename pointValueType, class ...pointProperties>
   bool 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   checkPointInclusion( const Kokkos::DynRankView<pointValueType,pointProperties...> point,
                        const shards::CellTopology cellTopo,
                        const double               threshold) {
@@ -222,11 +222,11 @@ namespace Intrepid2 {
 //   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inCellValueType, class ...inCellProperties,
            typename pointValueType, class ...pointProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
                            const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                            const shards::CellTopology cellTopo,
@@ -267,12 +267,12 @@ namespace Intrepid2 {
     }  
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename inCellValueType, class ...inCellProperties,
            typename pointValueType, class ...pointProperties,
            typename cellWorksetValueType, class ...cellWorksetProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   checkPointwiseInclusion(       Kokkos::DynRankView<inCellValueType,inCellProperties...> inCell,
                            const Kokkos::DynRankView<pointValueType,pointProperties...> points,
                            const Kokkos::DynRankView<cellWorksetValueType,cellWorksetProperties...> cellWorkset,

@@ -90,7 +90,7 @@ namespace Intrepid2 {
         \param  outStream       [in]  - output stream to write
     */
     template<typename ValueType,
-             typename DeviceSpaceType,
+             typename DeviceType,
              typename subcParamVertAType,
              typename subcParamVertBType,
              typename tolType,
@@ -102,8 +102,9 @@ namespace Intrepid2 {
                                       const int                   subcDim,
                                       const tolType               tol,
                                       const outStreamPtrType      outStreamPtr ) {
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      using ct = CellTools<DeviceType>;
+      using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
+      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
 
       // Get cell dimension and subcell count
       const auto cellDim   = parentCell.getDimension();
@@ -168,16 +169,25 @@ namespace Intrepid2 {
         }          
         }
         
+        //strided subviews from subviews cannot be directly copied to host into a non-strided views
+        DynRankView ConstructWithLabel(nonStridedParamNodes, mappedParamNodes.extent(0),mappedParamNodes.extent(1));
+        Kokkos::deep_copy(nonStridedParamNodes, mappedParamNodes);
+        auto hMappedParamNodes = Kokkos::create_mirror_view_and_copy(typename HostSpaceType::memory_space(), nonStridedParamNodes);
+
+        DynRankView ConstructWithLabel(nonStridedRefNodes, refSubcellNodes.extent(0),refSubcellNodes.extent(1));
+        Kokkos::deep_copy(nonStridedRefNodes, refSubcellNodes);
+        auto hRefSubcellNodes = Kokkos::create_mirror_view_and_copy(typename HostSpaceType::memory_space(), nonStridedRefNodes);
+
         // Compare the images of the parametrization domain vertices with the true vertices (test provide vertices only).
         for (size_type subcVertOrd=0;subcVertOrd<subcVertexCount;++subcVertOrd) 
           for (size_type i=0;i<cellDim;++i)
-            if (std::abs(mappedParamNodes(subcVertOrd, i) - refSubcellNodes(subcVertOrd, i)) > tol) {
+            if (std::abs(hMappedParamNodes(subcVertOrd, i) - hRefSubcellNodes(subcVertOrd, i)) > tol) {
               ++errorFlag; 
               *outStreamPtr 
                 << std::setw(70) << "^^^^----FAILURE!" << "\n"
                 << " Cell Topology = " << parentCell.getName() << "\n"
-                << " Mapped vertex = " << mappedParamNodes(subcVertOrd, i) 
-                << " Reference subcell vertex = " << refSubcellNodes(subcVertOrd, i) << "\n"
+                << " Mapped vertex = " << hMappedParamNodes(subcVertOrd, i)
+                << " Reference subcell vertex = " << hRefSubcellNodes(subcVertOrd, i) << "\n"
                 << " Parametrization of subcell " << subcOrd << " which is "
                 << parentCell.getName(subcDim,subcOrd) << " failed for vertex " << subcVertOrd << ":\n"
                 << " parametrization map fails to map correctly coordinate " << i << " of that vertex\n\n";
@@ -185,9 +195,10 @@ namespace Intrepid2 {
       }
     }
       
-      template<typename ValueType, typename DeviceSpaceType>
+      template<typename ValueType, typename DeviceType>
       int CellTools_Test01(const bool verbose) {
-        typedef ValueType value_type;
+        using value_type = ValueType;
+        using ExecSpaceType = typename DeviceType::execution_space;
 
         Teuchos::RCP<std::ostream> outStream;
         Teuchos::oblackholestream bhs; // outputs nothing
@@ -200,10 +211,9 @@ namespace Intrepid2 {
         Teuchos::oblackholestream oldFormatState;
         oldFormatState.copyfmt(std::cout);
 
-        typedef typename
-          Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
 
-        *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+        *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
         *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
         *outStream
@@ -226,8 +236,8 @@ namespace Intrepid2 {
           << "|                                                                             |\n"
           << "===============================================================================\n";
   
-        typedef CellTools<DeviceSpaceType> ct;
-        typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+        typedef CellTools<DeviceType> ct;
+        typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
         const value_type tol = tolerence()*100.0;
 
@@ -235,22 +245,27 @@ namespace Intrepid2 {
       
         // Vertices of the parametrization domain for 1-subcells: standard 1-cube [-1,1]
         DynRankView ConstructWithLabel(cube_1, 2, 1);
-        cube_1(0,0) = -1.0; 
-        cube_1(1,0) = 1.0;
+        auto hCube_1 = Kokkos::create_mirror_view(cube_1);
+        hCube_1(0,0) = -1.0;
+        hCube_1(1,0) = 1.0;
+        Kokkos::deep_copy(cube_1, hCube_1);
   
         // Vertices of the parametrization domain for triangular faces: the standard 2-simplex
         DynRankView ConstructWithLabel(simplex_2, 3, 2);
-        simplex_2(0, 0) = 0.0;   simplex_2(0, 1) = 0.0;
-        simplex_2(1, 0) = 1.0;   simplex_2(1, 1) = 0.0;
-        simplex_2(2, 0) = 0.0;   simplex_2(2, 1) = 1.0;
-      
+        auto hSimplex_2 = Kokkos::create_mirror_view(simplex_2);
+        hSimplex_2(0, 0) = 0.0;   hSimplex_2(0, 1) = 0.0;
+        hSimplex_2(1, 0) = 1.0;   hSimplex_2(1, 1) = 0.0;
+        hSimplex_2(2, 0) = 0.0;   hSimplex_2(2, 1) = 1.0;
+        Kokkos::deep_copy(simplex_2, hSimplex_2);
       
         // Vertices of the parametrization domain for quadrilateral faces: the standard 2-cube
         DynRankView ConstructWithLabel(cube_2, 4, 2);
-        cube_2(0, 0) =  -1.0;    cube_2(0, 1) =  -1.0;
-        cube_2(1, 0) =   1.0;    cube_2(1, 1) =  -1.0;
-        cube_2(2, 0) =   1.0;    cube_2(2, 1) =   1.0;
-        cube_2(3, 0) =  -1.0;    cube_2(3, 1) =   1.0;
+        auto hCube_2 = Kokkos::create_mirror_view(cube_2);
+        hCube_2(0, 0) =  -1.0;    hCube_2(0, 1) =  -1.0;
+        hCube_2(1, 0) =   1.0;    hCube_2(1, 1) =  -1.0;
+        hCube_2(2, 0) =   1.0;    hCube_2(2, 1) =   1.0;
+        hCube_2(3, 0) =  -1.0;    hCube_2(3, 1) =   1.0;
+        Kokkos::deep_copy(cube_2, hCube_2);
       
         try {
           // Pull all available topologies from Shards
@@ -273,7 +288,7 @@ namespace Intrepid2 {
               if ( allTopologies[topoOrd].getDimension() > 1 && 
                    ct::hasReferenceCell(allTopologies[topoOrd]) ) {
                 *outStream << " Testing edge parametrization for " <<  allTopologies[topoOrd].getName() <<"\n";
-                testSubcellParametrizations<value_type,DeviceSpaceType>( errorFlag,
+                testSubcellParametrizations<value_type,DeviceType>( errorFlag,
                                                                          allTopologies[topoOrd],
                                                                          cube_1,
                                                                          cube_1,
@@ -298,7 +313,7 @@ namespace Intrepid2 {
               if ( allTopologies[topoOrd].getDimension() > 2 && 
                    ct::hasReferenceCell(allTopologies[topoOrd]) ) {
                 *outStream << " Testing face parametrization for cell topology " <<  allTopologies[topoOrd].getName() <<"\n";
-                testSubcellParametrizations<value_type,DeviceSpaceType>( errorFlag,
+                testSubcellParametrizations<value_type,DeviceType>( errorFlag,
                                                                          allTopologies[topoOrd],
                                                                          simplex_2,
                                                                          cube_2,

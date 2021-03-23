@@ -192,7 +192,7 @@ struct ComputeBasisCoeffsOnFaces_L2 {
       const ViewType2 basisAtBasisEPoints, const ViewType3 basisEWeights,  const ViewType2 wBasisDofAtBasisEPoints,   const ViewType3 targetEWeights,
       const ViewType2 basisAtTargetEPoints, const ViewType2 wBasisDofAtTargetEPoints, const ViewType4 computedDofs, const ViewType5 tagToOrdinal,
       const ViewType6 orts, const ViewType7 targetAtTargetEPoints, const ViewType2 targetDofAtTargetEPoints, const ViewType2 faceCoeff,
-      const ViewType2 faceParametrization, ordinal_type fieldDim, ordinal_type faceCardinality, ordinal_type offsetBasis,
+      const ViewType8 faceParametrization, ordinal_type fieldDim, ordinal_type faceCardinality, ordinal_type offsetBasis,
       ordinal_type offsetTarget, ordinal_type numVertexEdgeDofs, ordinal_type numFaces, ordinal_type faceDim, ordinal_type faceDofDim,
       ordinal_type dim, ordinal_type iface, unsigned topoKey, bool isHCurlBasis, bool isHDivBasis) :
         basisCoeffs_(basisCoeffs), negPartialProj_(negPartialProj), faceBasisDofAtBasisEPoints_(faceBasisDofAtBasisEPoints),
@@ -346,15 +346,13 @@ ProjectionTools<SpT>::getL2EvaluationPoints(typename BasisType::ScalarViewType e
   ordinal_type numFaces = (cellBasis->getDofCount(faceDim, 0) > 0) ? cellTopo.getFaceCount() : 0;
   ordinal_type numVols = (cellBasis->getDofCount(dim, 0) > 0);
 
-  CellTools<SpT>::setSubcellParametrization();
-
   auto ePointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getPointsRange(ePointType));
 
-  typename CellTools<SpT>::subcellParamViewType subcellParamEdge,  subcellParamFace;
+  typename RefSubcellParametrization<SpT>::ConstViewType subcellParamEdge,  subcellParamFace;
   if(numEdges>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamEdge,  edgeDim, cellTopo);
+    subcellParamEdge = RefSubcellParametrization<SpT>::get(edgeDim, cellTopo.getKey());
   if(numFaces>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellTopo);
+    subcellParamFace = RefSubcellParametrization<SpT>::get(faceDim, cellTopo.getKey());
 
   auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
 
@@ -590,10 +588,9 @@ ProjectionTools<SpT>::getL2BasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,
     edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDof, edgeCardinality);
   }
 
-  CellTools<SpT>::setSubcellParametrization();
-  typename CellTools<SpT>::subcellParamViewType  subcellParamFace;
+  typename RefSubcellParametrization<SpT>::ConstViewType  subcellParamFace;
   if(numFaces>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellBasis->getBaseCellTopology());
+    subcellParamFace = RefSubcellParametrization<SpT>::get(faceDim, cellBasis->getBaseCellTopology().getKey());
 
   ScalarViewType faceCoeff("faceCoeff", numCells, fieldDim, faceDofDim);
   for(ordinal_type iface=0; iface<numFaces; ++iface) {

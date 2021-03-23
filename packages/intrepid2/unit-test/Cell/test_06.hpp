@@ -136,8 +136,10 @@ namespace Intrepid2 {
       }
     };
         
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int CellTools_Test06(const bool verbose) {
+
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -151,12 +153,12 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      typedef typename DeviceSpaceType::array_layout DeviceArrayLayout;
+      typedef typename ExecSpaceType::array_layout DeviceArrayLayout;
         
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
       *outStream
@@ -222,22 +224,22 @@ namespace Intrepid2 {
           workset_host(2, 2, 0) =  3.0;           workset_host(2, 2, 1) =  2.0; 
           workset_host(2, 3, 0) =  1.0;           workset_host(2, 3, 1) =  2.0; 
 
-          auto pts_on_ref = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), pts_on_ref_host);
+          auto pts_on_ref = Kokkos::create_mirror_view(typename DeviceType::memory_space(), pts_on_ref_host);
           Kokkos::deep_copy(pts_on_ref, pts_on_ref_host);
 
-          auto workset = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), workset_host);
+          auto workset = Kokkos::create_mirror_view(typename DeviceType::memory_space(), workset_host);
           Kokkos::deep_copy(workset, workset_host);
 
-          Kokkos::RangePolicy<DeviceSpaceType> policy(0, C);
+          Kokkos::RangePolicy<ExecSpaceType> policy(0, C);
           
           ///
           /// mapToPhysicalFrame 
           ///
 
           // ** compute via front interface
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceSpaceType> a_pts_on_phy("a_pts_on_phy", C, P, D);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceType> a_pts_on_phy("a_pts_on_phy", C, P, D);
           {
-            CellTools<DeviceSpaceType>
+            CellTools<DeviceType>
               ::mapToPhysicalFrame(a_pts_on_phy, pts_on_ref, workset, 
                                    shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
           }
@@ -245,7 +247,7 @@ namespace Intrepid2 {
           Kokkos::deep_copy(a_pts_on_phy_host, a_pts_on_phy);
           
           // ** compute via impl interface
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceSpaceType> b_pts_on_phy("b_pts_on_phy", C, P, D);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceType> b_pts_on_phy("b_pts_on_phy", C, P, D);
 
 
           {
@@ -289,9 +291,9 @@ namespace Intrepid2 {
           auto pts_on_phy = a_pts_on_phy;
 
           // ** compute via front interface
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceSpaceType> a_pts_on_ref("a_pts_on_ref", C, P, D);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceType> a_pts_on_ref("a_pts_on_ref", C, P, D);
           {
-            CellTools<DeviceSpaceType>
+            CellTools<DeviceType>
               ::mapToReferenceFrame(a_pts_on_ref, pts_on_phy, workset, 
                                    shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >()));
           }
@@ -314,7 +316,7 @@ namespace Intrepid2 {
           }
                     
           // ** compute via impl interface
-          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceSpaceType> b_pts_on_ref("b_pts_on_ref", C, P, D);
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceType> b_pts_on_ref("b_pts_on_ref", C, P, D);
 
           {
             typedef F_mapToReferenceFrame<decltype(b_pts_on_ref),

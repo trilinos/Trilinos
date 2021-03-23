@@ -334,7 +334,7 @@ namespace Intrepid2
       }
       else
       {
-        using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
+        using CellTools = Intrepid2::CellTools<DeviceType>;
         auto basisForNodes = this->basisForNodes();
         
         if (affine_)
@@ -740,7 +740,6 @@ namespace Intrepid2
       }
       else
       {
-        using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
         auto basisForNodes = this->basisForNodes();
         
         if (affine_)

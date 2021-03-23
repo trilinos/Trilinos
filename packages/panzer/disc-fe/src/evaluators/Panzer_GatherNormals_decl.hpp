@@ -53,6 +53,9 @@
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_PointValues2.hpp"
 
+
+#include "Intrepid2_CellTools.hpp"
+
 namespace panzer {
 
 /** \brief Gathers tangent vectors per field from the global indexer and
@@ -92,7 +95,7 @@ private:
   Teuchos::RCP<const PointRule> pointRule;
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> faceNormal; // face normals
   Kokkos::DynRankView<ScalarT,typename PHX::DevLayout<ScalarT>::type,PHX::Device> refFaceNormal; // reference face normals
-  Kokkos::DynRankView<double,PHX::Device> sideParam;
+  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType sideParam;
   PointValues2<double> pointValues;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;
 
