@@ -185,14 +185,28 @@ public:
 
   void
   getLocalRowView (const LO lclRow,
-                   Teuchos::ArrayView<const LO>& lclColInds) const override
+                   Teuchos::ArrayView<const LO> & lclColInds) const override
+  {
+    G_->getLocalRowView (lclRow, lclColInds);
+  }
+
+  void
+  getLocalRowView (const LO lclRow,
+                   typename base_type::local_inds_host_view_type & lclColInds) const override
   {
     G_->getLocalRowView (lclRow, lclColInds);
   }
 
   void
   getGlobalRowView (const GO gblRow,
-                    Teuchos::ArrayView<const GO>& gblColInds) const override
+                    Teuchos::ArrayView<const GO> & gblColInds) const override
+  {
+    G_->getGlobalRowView (gblRow, gblColInds);
+  }
+
+  void
+  getGlobalRowView (const GO gblRow,
+                    typename base_type::global_inds_host_view_type & gblColInds) const override
   {
     G_->getGlobalRowView (gblRow, gblColInds);
   }
@@ -339,16 +353,32 @@ public:
 
   void
   getGlobalRowView (const GO gblRow,
-                    Teuchos::ArrayView<const GO>& gblColInds,
-                    Teuchos::ArrayView<const SC>& values) const override
+                    Teuchos::ArrayView<const GO> & gblColInds,
+                    Teuchos::ArrayView<const SC> & values) const override
+  {
+    A_->getGlobalRowView (gblRow, gblColInds, values);
+  }
+
+  void
+  getGlobalRowView (const GO gblRow,
+                    typename base_type::global_inds_host_view_type & gblColInds,
+                    typename base_type::values_host_view_type & values) const override
   {
     A_->getGlobalRowView (gblRow, gblColInds, values);
   }
 
   void
   getLocalRowView (const LO lclRow,
-                   Teuchos::ArrayView<const LO>& lclColInds,
-                   Teuchos::ArrayView<const SC>& values) const override
+                   Teuchos::ArrayView<const LO> & lclColInds,
+                   Teuchos::ArrayView<const SC> &values) const override
+  {
+    A_->getLocalRowView (lclRow, lclColInds, values);
+  }
+
+  void
+  getLocalRowView (const LO lclRow,
+                   typename base_type::local_inds_host_view_type & lclColInds,
+                   typename base_type::values_host_view_type &values) const override
   {
     A_->getLocalRowView (lclRow, lclColInds, values);
   }

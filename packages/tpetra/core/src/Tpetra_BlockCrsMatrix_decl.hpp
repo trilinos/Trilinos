@@ -203,6 +203,21 @@ public:
   typedef typename BMV::const_little_vec_type const_little_vec_type;
   typedef typename BMV::const_little_host_vec_type const_host_little_vec_type;
 
+  using row_matrix_type = RowMatrix<Scalar, LO, GO, node_type>;
+  using local_inds_device_view_type =
+        typename row_matrix_type::local_inds_device_view_type;
+  using local_inds_host_view_type =
+        typename row_matrix_type::local_inds_host_view_type;
+
+  using global_inds_device_view_type =
+        typename row_matrix_type::global_inds_device_view_type;
+  using global_inds_host_view_type =
+        typename row_matrix_type::global_inds_host_view_type;
+
+  using values_device_view_type =
+        typename row_matrix_type::values_device_view_type;
+  using values_host_view_type =
+        typename row_matrix_type::values_host_view_type;
 
   //@}
   //! \name Constructors and destructor
@@ -444,11 +459,18 @@ public:
                    Scalar*& vals,
                    LO& numInds) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Not implemented.
   void
   getLocalRowView (LO LocalRow,
                    Teuchos::ArrayView<const LO> &indices,
                    Teuchos::ArrayView<const Scalar> &values) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  /// \brief Not yet implemented.
+  void
+  getLocalRowView (LO LocalRow,
+                   local_inds_host_view_type &indices,
+                   values_host_view_type &values) const override;
 
   /// \brief Not implemented.
   void
@@ -1191,10 +1213,16 @@ public:
   ///
   /// If \c GlobalRow does not belong to this node, then \c indices
   /// is set to \c null.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getGlobalRowView (GO GlobalRow,
                     Teuchos::ArrayView<const GO>& indices,
                     Teuchos::ArrayView<const Scalar>& values) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowView (GO GlobalRow,
+                    global_inds_host_view_type & indices,
+                    values_host_view_type & values) const;
 
   /// \brief Get a copy of the diagonal entries, distributed by the row Map.
   ///

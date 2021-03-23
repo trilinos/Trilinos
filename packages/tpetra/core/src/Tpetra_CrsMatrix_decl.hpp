@@ -475,6 +475,9 @@ namespace Tpetra {
     //! The Export specialization suitable for this CrsMatrix specialization.
     using export_type = Export<LocalOrdinal, GlobalOrdinal, Node>;
 
+    //! The RowMatrix representing the base class of CrsMatrix
+    using row_matrix_type = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
     using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -2415,20 +2418,46 @@ protected:
     mutable values_wdv_type valuesPacked_wdv;
 
 public:
-    using values_host_view_type = 
-          typename values_dualv_type::t_host::const_type;
+
+    using row_ptrs_device_view_type = 
+          typename row_matrix_type::row_ptrs_device_view_type;
+    using row_ptrs_host_view_type = 
+          typename row_matrix_type::row_ptrs_host_view_type;
+
+    using local_inds_device_view_type = 
+          typename row_matrix_type::local_inds_device_view_type;
+    using local_inds_host_view_type = 
+          typename row_matrix_type::local_inds_host_view_type;
+
+    using global_inds_device_view_type = 
+          typename row_matrix_type::global_inds_device_view_type;
+    using global_inds_host_view_type = 
+          typename row_matrix_type::global_inds_host_view_type;
+
     using values_device_view_type = 
-          typename values_dualv_type::t_dev::const_type;
+          typename row_matrix_type::values_device_view_type;
+    using values_host_view_type = 
+          typename row_matrix_type::values_host_view_type;
+//KDDKDD INROW    using values_host_view_type = 
+//KDDKDD INROW          typename values_dualv_type::t_host::const_type;
+//KDDKDD INROW    using values_device_view_type = 
+//KDDKDD INROW          typename values_dualv_type::t_dev::const_type;
 
-    using local_inds_host_view_type =
-          typename crs_graph_type::local_inds_host_view_type;
-    using local_inds_device_view_type =
-          typename crs_graph_type::local_inds_device_view_type;
+//KDDKDD INROW    using local_inds_host_view_type =
+//KDDKDD INROW          typename crs_graph_type::local_inds_host_view_type;
+//KDDKDD INROW    using local_inds_device_view_type =
+//KDDKDD INROW          typename crs_graph_type::local_inds_device_view_type;
 
-    using global_inds_host_view_type =
-          typename crs_graph_type::global_inds_host_view_type;
-    using global_inds_device_view_type =
-          typename crs_graph_type::global_inds_device_view_type;
+//KDDKDD INROW    using global_inds_host_view_type =
+//KDDKDD INROW          typename crs_graph_type::global_inds_host_view_type;
+//KDDKDD INROW    using global_inds_device_view_type =
+//KDDKDD INROW          typename crs_graph_type::global_inds_device_view_type;
+
+//KDDKDD INROW    using row_ptrs_host_view_type =
+//KDDKDD INROW          typename crs_graph_type::row_ptrs_host_view_type;
+//KDDKDD INROW    using row_ptrs_device_view_type =
+//KDDKDD INROW          typename crs_graph_type::row_ptrs_device_view_type;
+
 
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using global column
@@ -2524,9 +2553,9 @@ public:
                       Teuchos::ArrayView<const Scalar>& values) const override;
 #endif  // TPETRA_ENABLE_DEPRECATED_CODE
     void
-    getGlobalRowView(LocalOrdinal LocalRow,
-                  typename global_inds_host_view_type &indices,
-                  values_host_view_type &values) const;
+    getGlobalRowView (GlobalOrdinal GlobalRow,
+                      global_inds_host_view_type &indices,
+                      values_host_view_type &values) const override;
 
     /// \brief Get a constant view of a row of this
     ///   matrix, using local row and column indices.
@@ -2549,8 +2578,8 @@ public:
 
     void
     getLocalRowView(LocalOrdinal LocalRow,
-                    typename local_inds_host_view_type &indices,
-                    values_host_view_type &values) const;
+                    local_inds_host_view_type &indices,
+                    values_host_view_type &values) const override;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a constant, nonpersisting, locally indexed view of

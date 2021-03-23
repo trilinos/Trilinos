@@ -1224,13 +1224,14 @@ unpackCrsMatrixAndCombine(
   auto local_matrix = sourceMatrix.getLocalMatrix();
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
-  for (int i=0; i<importLIDs.size(); i++)
-  {
-    auto lclRow = importLIDs[i];
-    Teuchos::ArrayView<const LO> A_indices;
-    Teuchos::ArrayView<const ST> A_values;
-    sourceMatrix.getLocalRowView(lclRow, A_indices, A_values);
-  }
+//KDDKDD This loop doesn't appear to do anything; what is it?
+//KDDKDD  for (int i=0; i<importLIDs.size(); i++)
+//KDDKDD  {
+//KDDKDD    auto lclRow = importLIDs[i];
+//KDDKDD    Teuchos::ArrayView<const LO> A_indices;
+//KDDKDD    Teuchos::ArrayView<const ST> A_values;
+//KDDKDD    sourceMatrix.getLocalRowView(lclRow, A_indices, A_values);
+//KDDKDD  }
   // Now do the actual unpack!
   UnpackAndCombineCrsMatrixImpl::unpackAndCombineIntoCrsMatrix(
       local_matrix, local_col_map, imports_d, num_packets_per_lid_d,

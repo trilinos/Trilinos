@@ -100,22 +100,22 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
     const auto& rowMap = * (A.getRowMap ());
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap.getGlobalElement (lclRow);
-      Teuchos::ArrayView<const GO> inputInds_av;
-      Teuchos::ArrayView<const SC> inputVals_av;
-      size_t numEnt = 0;
       if (hasViews) {
-        A.getGlobalRowView (gblRow, inputInds_av, inputVals_av);
-        numEnt = static_cast<size_t> (inputInds_av.size ());
+        typename crs_matrix_type::global_inds_host_view_type inputInds;
+        typename crs_matrix_type::values_host_view_type inputVals;
+        A.getGlobalRowView (gblRow, inputInds, inputVals);
+        A_copy.insertGlobalValues (gblRow, inputInds.extent(0),
+                                   inputVals.data(), inputInds.data());
       }
       else {
         const size_t lclNumEnt = A.getNumEntriesInLocalRow (lclRow);
         TEUCHOS_ASSERT(lclNumEnt <= maxNumEnt);
+        size_t numEnt = 0;
         A.getGlobalRowCopy (gblRow, inputIndsBuf (),
                             inputValsBuf (), numEnt);
-        inputInds_av = inputIndsBuf.view (0, numEnt);
-        inputVals_av = inputValsBuf.view (0, numEnt);
+        A_copy.insertGlobalValues (gblRow, inputIndsBuf(0,numEnt), 
+                                           inputValsBuf(0,numEnt));
       }
-      A_copy.insertGlobalValues (gblRow, inputInds_av, inputVals_av);
     }
 
     if (A.isFillComplete ()) {

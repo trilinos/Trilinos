@@ -3563,6 +3563,7 @@ public:
 
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -3586,6 +3587,32 @@ public:
     TEUCHOS_TEST_FOR_EXCEPTION(
       true, std::logic_error, "Tpetra::BlockCrsMatrix::getLocalRowView: "
       "This class doesn't support local matrix indexing.");
+  }
+#endif
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalRowView (GO /* GlobalRow */,
+                    global_inds_host_view_type &/* indices */,
+                    values_host_view_type &/* values */) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowView: "
+      "This class doesn't support global matrix indexing.");
+
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowView (LO /* LocalRow */,
+                   local_inds_host_view_type & /* indices */,
+                   values_host_view_type & /* values */) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getLocalRowView: "
+      "Kokkos view interface is not yet implemented");
   }
 
   template<class Scalar, class LO, class GO, class Node>

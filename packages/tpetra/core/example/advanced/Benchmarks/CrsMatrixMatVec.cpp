@@ -282,10 +282,10 @@ getTpetraCrsMatrix (Teuchos::FancyOStream& out,
     graph->getLocalRowView (lclRow, lclColInds);
 
     // Put some entries in the matrix.
-    matrix_type::values_host_view_type lclValues("testLclValues", SC*,
-                                                 lclColInds.size());
+    matrix_type::values_host_view_type lclValues("testLclValues", 
+                                                 lclColInds.extent(0));
     Kokkos::deep_copy(lclValues, Teuchos::ScalarTraits<SC>::one());
-    const LO err = A->replaceLocalValues (lclRow, lclColInds, lclValues());
+    const LO err = A->replaceLocalValues (lclRow, lclColInds, lclValues);
     TEUCHOS_TEST_FOR_EXCEPTION(err != lclColInds.size(), std::logic_error, "Bug");
   }
   A->fillComplete();

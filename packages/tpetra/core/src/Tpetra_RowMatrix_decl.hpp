@@ -106,6 +106,32 @@ namespace Tpetra {
     /// certain <tt>Scalar</tt> types.
     using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
+    typedef typename 
+        Kokkos::View<Scalar*, typename Node::device_type>
+        values_device_view_type::const_type;
+    typedef typename values_device_view_type::HostMirror
+        values_host_view_type::const_type;
+
+    typedef typename
+        Kokkos::View<LocalOrdinal *, typename Node::device_type>::const_type
+        local_inds_device_view_type;
+    typedef typename local_inds_device_view_type::HostMirror::const_type
+        local_inds_host_view_type;
+
+    typedef typename
+        Kokkos::View<GlobalOrdinal *, typename Node::device_type>::const_type
+        global_inds_device_view_type;
+    typedef typename global_inds_device_view_type::HostMirror::const_type
+        global_inds_host_view_type;
+
+    typedef typename
+        Kokkos::View<const size_t*, typename Node::device_type>::const_type
+        row_ptrs_device_view_type;
+    typedef typename row_ptrs_device_view_type::HostMirror::const_type
+        row_ptrs_host_view_type;
+
+
+
     //@}
     //! @name Destructor
     //@{
@@ -311,8 +337,14 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getGlobalRowView (GlobalOrdinal GlobalRow,
+                      global_inds_host_view_type &indices,
+                      values_host_view_type &values) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getGlobalRowView (GlobalOrdinal GlobalRow,
                       Teuchos::ArrayView<const GlobalOrdinal> &indices,
                       Teuchos::ArrayView<const Scalar> &values) const = 0;
+#endif
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.
@@ -340,10 +372,14 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getLocalRowView (LocalOrdinal LocalRow,
+                     local_inds_host_view_type & indices,
+                     values_host_view_type & values) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
                      Teuchos::ArrayView<const Scalar>& values) const = 0;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix, using "raw" pointers instead of
     ///   Teuchos::ArrayView.

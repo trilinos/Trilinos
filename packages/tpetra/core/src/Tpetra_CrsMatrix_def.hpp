@@ -1967,7 +1967,7 @@ abort();
       if (this->supportsRowViews ()) {
         values_host_view_type vals2;
         if (this->isGloballyIndexed ()) {
-          typename global_inds_host_view_type gblColInds2;
+          global_inds_host_view_type gblColInds2;
           const GlobalOrdinal gblRow =
             graph.rowMap_->getGlobalElement (rowInfo.localRow);
           if (gblRow == 
@@ -1998,7 +1998,7 @@ abort();
           }
         }
         else if (this->isLocallyIndexed ()) {
-          typename local_inds_host_view_type lclColInds2;
+          local_inds_host_view_type lclColInds2;
           this->getLocalRowView (rowInfo.localRow, lclColInds2, vals2);
           os << "\tNew local column indices: ";
           for (size_t jjj = 0; jjj < lclColInds2.extent(0); jjj++)
@@ -3352,6 +3352,64 @@ abort();
     }
   }
 
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowView(LocalOrdinal localRow,
+                  local_inds_host_view_type &indices,
+                  values_host_view_type &values) const 
+  {
+    const char tfecfFuncName[] = "getLocalRowView: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isGloballyIndexed (), std::runtime_error, "The matrix currently stores "
+      "its indices as global indices, so you cannot get a view with local "
+      "column indices.  If the matrix has a column Map, you may call "
+      "getLocalRowCopy() to get local column indices; otherwise, you may get "
+      "a view with global column indices by calling getGlobalRowCopy().");
+
+    const RowInfo rowInfo = staticGraph_->getRowInfo (localRow);
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = staticGraph_->lclIndsUnpacked_wdv.getHostSubview(
+                                                         rowInfo.offset1D,
+                                                         rowInfo.numEntries,
+                                                         Access::ReadOnly);
+      values = valuesUnpacked_wdv.getHostSubview(rowInfo.offset1D,
+                                                 rowInfo.numEntries,
+                                                 Access::ReadOnly);
+    }
+    else {
+      // This does the right thing (reports an empty row) if the input
+      // row is invalid.
+      indices = local_inds_host_view_type();
+      values = values_host_view_type();
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    const char suffix[] = ".  This should never happen.  Please report this "
+      "bug to the Tpetra developers.";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (values.size ()), std::logic_error,
+       "At the end of this method, for local row " << localRow << ", "
+       "indices.size() = " << indices.size () << " != values.size () = "
+       << values.size () << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (rowInfo.numEntries), std::logic_error,
+       "At the end of this method, for local row " << localRow << ", "
+       "indices.size() = " << indices.size () << " != rowInfo.numEntries = "
+       << rowInfo.numEntries << suffix);
+    const size_t expectedNumEntries = getNumEntriesInLocalRow (localRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (rowInfo.numEntries != expectedNumEntries, std::logic_error, "At the end "
+       "of this method, for local row " << localRow << ", rowInfo.numEntries = "
+       << rowInfo.numEntries << " != getNumEntriesInLocalRow(localRow) = " <<
+       expectedNumEntries << suffix);
+#endif // HAVE_TPETRA_DEBUG
+  }
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -3467,6 +3525,62 @@ abort();
     return errCode;
   }
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalRowView (GlobalOrdinal globalRow,
+                    global_inds_host_view_type &indices,
+                    values_host_view_type &values) const
+  {
+    const char tfecfFuncName[] = "getGlobalRowView: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isLocallyIndexed (), std::runtime_error,
+      "The matrix is locally indexed, so we cannot return a view of the row "
+      "with global column indices.  Use getGlobalRowCopy() instead.");
+
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowInfo = 
+          staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+    if (rowInfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid () &&
+        rowInfo.numEntries > 0) {
+      indices = staticGraph_->gblInds_wdv.getHostSubview(rowInfo.offset1D,
+                                                         rowInfo.numEntries,
+                                                         Access::ReadOnly);
+      values = valuesUnpacked_wdv.getHostSubview(rowInfo.offset1D,
+                                                 rowInfo.numEntries,
+                                                 Access::ReadOnly);
+    }
+    else {
+      indices = global_inds_host_view_type();
+      values = values_host_view_type();
+    }
+
+#ifdef HAVE_TPETRA_DEBUG
+    const char suffix[] = ".  This should never happen.  Please report this "
+      "bug to the Tpetra developers.";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (values.size ()), std::logic_error,
+       "At the end of this method, for global row " << globalRow << ", "
+       "indices.size() = " << indices.size () << " != values.size () = "
+       << values.size () << suffix);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) !=
+       static_cast<size_t> (rowInfo.numEntries), std::logic_error,
+       "At the end of this method, for global row " << globalRow << ", "
+       "indices.size() = " << indices.size () << " != rowInfo.numEntries = "
+       << rowInfo.numEntries << suffix);
+    const size_t expectedNumEntries = getNumEntriesInGlobalRow (globalRow);
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (rowInfo.numEntries != expectedNumEntries, std::logic_error, "At the end "
+       "of this method, for global row " << globalRow << ", rowInfo.numEntries "
+       "= " << rowInfo.numEntries << " != getNumEntriesInGlobalRow(globalRow) ="
+       " " << expectedNumEntries << suffix);
+#endif // HAVE_TPETRA_DEBUG
+  }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5599,8 +5713,8 @@ abort();
               << std::setw(width) << nE;
           if (vl == VERB_EXTREME) {
             if (isGloballyIndexed()) {
-              ArrayView<const GlobalOrdinal> rowinds;
-              ArrayView<const Scalar> rowvals;
+              global_inds_host_view_type rowinds;
+              values_host_view_type rowvals;
               getGlobalRowView (gid, rowinds, rowvals);
               for (size_t j = 0; j < nE; ++j) {
                 out << " (" << rowinds[j]
@@ -5881,8 +5995,21 @@ abort();
         rowValsConstView = rowValsView.view (0, rowLength);
       }
       else { // source matrix is globally indexed.
-        srcMat.getGlobalRowView(sourceGID, rowIndsConstView,
-                                rowValsConstView);
+        global_inds_host_view_type rowIndsView;
+        values_host_view_type rowValsView;
+        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           rowValsView.data(), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
 
       // Applying a permutation to a matrix with a static graph
@@ -5934,8 +6061,21 @@ abort();
         rowValsConstView = rowValsView.view (0, rowLength);
       }
       else {
-        srcMat.getGlobalRowView(sourceGID, rowIndsConstView,
-                                rowValsConstView);
+        global_inds_host_view_type rowIndsView;
+        values_host_view_type rowValsView;
+        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           rowValsView.data(), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
 
       combineGlobalValues(targetGID, rowIndsConstView,
@@ -5996,9 +6136,9 @@ abort();
     // This involves copying rows corresponding to LIDs [0, numSame-1].
     //
     const map_type& srcRowMap = * (srcMat.getRowMap ());
+    const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
     Array<GO> rowInds;
     Array<Scalar> rowVals;
-    const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
     for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
       // Global ID for the current row index in the source matrix.
       // The first numSameIDs GIDs in the two input lists are the
@@ -6010,6 +6150,7 @@ abort();
       ArrayView<const Scalar> rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
+
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
         if (rowLength > static_cast<size_t> (rowInds.size())) {
           rowInds.resize (rowLength);
@@ -6038,8 +6179,22 @@ abort();
         rowValsConstView = rowValsView.view (0, rowLength);
       }
       else { // source matrix is globally indexed.
-        srcMat.getGlobalRowView(sourceGID, rowIndsConstView,
-                                rowValsConstView);
+        global_inds_host_view_type rowIndsView;
+        values_host_view_type rowValsView;
+        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
+
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           rowValsView.data(), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
 
       // Combine the data into the target matrix.
@@ -6091,8 +6246,22 @@ abort();
         rowValsConstView = rowValsView.view (0, rowLength);
       }
       else {
-        srcMat.getGlobalRowView(sourceGID, rowIndsConstView,
-                                rowValsConstView);
+        global_inds_host_view_type rowIndsView;
+        values_host_view_type rowValsView;
+        srcMat.getGlobalRowView(sourceGID, rowIndsView, rowValsView);
+
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           rowValsView.data(), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
 
       // Combine the data into the target matrix.
@@ -6752,6 +6921,20 @@ abort();
     // Compute the number of "packets" (in this case, bytes) per
     // export LID (in this case, local index of the row to send), and
     // actually pack the data.
+    auto maxRowNumEnt = this->getNodeMaxNumRowEntries();
+
+    global_inds_host_view_type gidsIn; 
+    values_host_view_type valsIn;
+
+    // Temporary buffer for global column indices.
+    Kokkos::View<GO*, HES> gidsIn_k;
+    if (this->isLocallyIndexed()) { // Need storage for Global IDs
+      gidsIn_k =
+         Details::ScalarViewTraits<GO, HES>::allocateArray (GO (0),
+                                                            maxRowNumEnt,
+                                                            "packGids");
+    }
+
     size_t offset = 0; // current index into 'exports' array.
     for (size_t i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs_h[i];
@@ -6768,23 +6951,17 @@ abort();
         continue;
       }
 
-      // Temporary buffer for global column indices.
-      using Details::ScalarViewTraits;
-      View<GO*, HES> gidsIn_k; 
-      values_host_view_type valsIn_k;
-
       if (this->isLocallyIndexed ()) {
         // If the matrix is locally indexed on the calling process, we
         // have to use its column Map (which it _must_ have in this
         // case) to convert to global indices.
         local_inds_host_view_type lidsIn;
-        this->getLocalRowView (lclRow, lidsIn, valsIn_k);
-        gidsIn_k = 
-            ScalarViewTraits<GO, HES>::allocateArray (GO (0), numEnt, "gids");
+        this->getLocalRowView (lclRow, lidsIn, valsIn);
         const map_type& colMap = * (this->getColMap ());
         for (size_t k = 0; k < numEnt; ++k) {
           gidsIn_k[k] = colMap.getGlobalElement (lidsIn[k]);
         }
+        gidsIn = Kokkos::subview(gidsIn_k, Kokkos::make_pair(GO(0),GO(numEnt)));
       }
       else if (this->isGloballyIndexed ()) {
         // If the matrix is globally indexed on the calling process,
@@ -6794,17 +6971,17 @@ abort();
         // in packing operations.
         const map_type& rowMap = * (this->getRowMap ());
         const GO gblRow = rowMap.getGlobalElement (lclRow);
-        this->getGlobalRowView (gblRow, gidsIn_k, valsIn_k);
+        this->getGlobalRowView (gblRow, gidsIn, valsIn);
       }
       // mfh 11 Sep 2017: Currently, if the matrix is neither globally
       // nor locally indexed, then it has no entries.  Therefore,
       // there is nothing to pack.  No worries!
 
       const size_t numBytesPerValue =
-        PackTraits<ST>::packValueCount (valsIn_k[0]);
+        PackTraits<ST>::packValueCount (valsIn[0]);
       const size_t numBytes =
-        this->packRow (exports_h.data (), offset, numEnt, gidsIn_k.data (),
-                       valsIn_k.data (), numBytesPerValue);
+        this->packRow (exports_h.data (), offset, numEnt, gidsIn.data (),
+                       valsIn.data (), numBytesPerValue);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (offset > bufSize || offset + numBytes > bufSize, std::logic_error,
          "First invalid offset into 'exports' pack buffer at index i = " << i
