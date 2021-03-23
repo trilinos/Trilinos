@@ -155,7 +155,7 @@ TRIBITS_ADD_TEST(
  TRIBITS_ADD_TEST(
    BlockPrec
    NAME "MiniEM-BlockPrec_RefMaxwell_Performance_16_reuse"
-   ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=20 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --resetSolver"
+   ARGS "--stacked-timer --solver=MueLu-RefMaxwell --numTimeSteps=20 --linAlgebra=Tpetra --inputFile=maxwell-large.xml --resetSolver --test-name=\"MiniEM 3D RefMaxwell Reuse\""
    COMM mpi
    NUM_MPI_PROCS 16
    CATEGORIES PERFORMANCE
