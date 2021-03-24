@@ -884,13 +884,14 @@ namespace Tpetra {
                                   MultiVector<S2,LO2,GO2,N2> & R);
 
     // This friend declaration allows for batching of apply calls
-    template <class MatrixArray, class MultiVectorArray> 
-    friend void batchedApply(const MatrixArray &Matrices, 
+    template <class MatrixArray, class MultiVectorArray>
+    friend void batchedApply(const MatrixArray &Matrices,
                              const typename std::remove_pointer<typename MultiVectorArray::value_type>::type & X,
                              MultiVectorArray &Y,
                              typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type alpha,
                              typename std::remove_pointer<typename MatrixArray::value_type>::type::scalar_type beta,
                              Teuchos::RCP<Teuchos::ParameterList> params);
+
   public:
     //@}
     //! @name Methods for inserting, modifying, or removing entries
@@ -1055,7 +1056,7 @@ namespace Tpetra {
                        const Scalar vals[],
                        const LocalOrdinal cols[]);
 
-  private:
+  protected:
     /// \brief Implementation detail of replaceGlobalValues.
     ///
     /// \param rowVals [in/out] On input: Values of the row of the
@@ -1066,7 +1067,7 @@ namespace Tpetra {
     /// \param inds [in] Global column indices of that row to modify.
     /// \param newVals [in] For each k, replace the value in rowVals
     ///   corresponding to local column index inds[k] with newVals[k].
-    LocalOrdinal
+    virtual LocalOrdinal
     replaceGlobalValuesImpl (impl_scalar_type rowVals[],
                              const crs_graph_type& graph,
                              const RowInfo& rowInfo,
@@ -1144,7 +1145,7 @@ namespace Tpetra {
                          const Scalar vals[],
                          const GlobalOrdinal cols[]);
 
-  private:
+  protected:
     /// \brief Implementation detail of replaceLocalValues.
     ///
     /// \param rowVals [in/out] On input: Values of the row of the
@@ -1155,7 +1156,7 @@ namespace Tpetra {
     /// \param inds [in] Local column indices of that row to modify.
     /// \param newVals [in] For each k, replace the value in rowVals
     ///   corresponding to local column index inds[k] with newVals[k].
-    LocalOrdinal
+    virtual LocalOrdinal
     replaceLocalValuesImpl (impl_scalar_type rowVals[],
                             const crs_graph_type& graph,
                             const RowInfo& rowInfo,
@@ -1271,7 +1272,8 @@ namespace Tpetra {
     ///   error other than one or more invalid column indices, this
     ///   method returns
     ///   Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
-    LocalOrdinal
+  protected:
+    virtual LocalOrdinal
     sumIntoGlobalValuesImpl (impl_scalar_type rowVals[],
                              const crs_graph_type& graph,
                              const RowInfo& rowInfo,
@@ -1352,7 +1354,7 @@ namespace Tpetra {
                          const GlobalOrdinal cols[],
                          const bool atomic = useAtomicUpdatesByDefault);
 
-  private:
+  protected:
     /// \brief Implementation detail of sumIntoLocalValues.
     ///
     /// \param rowVals [in/out] On input: Values of the row of the
@@ -1365,7 +1367,7 @@ namespace Tpetra {
     ///   corresponding to local column index inds[k] by newVals[k].
     /// \param atomic [in] Whether to use atomic updates (+=) when
     ///   incrementing values.
-    LocalOrdinal
+    virtual LocalOrdinal
     sumIntoLocalValuesImpl (impl_scalar_type rowVals[],
                             const crs_graph_type& graph,
                             const RowInfo& rowInfo,
@@ -3572,13 +3574,15 @@ public:
     ///      are in the column Map on the calling process.  That is, the
     ///      entries of gblColInds (and their corresponding vals entries)
     ///      are "prefiltered," if we needed to filter them.
-    void
+  protected:
+    virtual void
     insertGlobalValuesImpl (crs_graph_type& graph,
                             RowInfo& rowInfo,
                             const GlobalOrdinal gblColInds[],
                             const impl_scalar_type vals[],
                             const size_t numInputEnt);
 
+  private:
     /// \brief Like insertGlobalValues(), but with column filtering.
     ///
     /// "Column filtering" means that if the matrix has a column Map,

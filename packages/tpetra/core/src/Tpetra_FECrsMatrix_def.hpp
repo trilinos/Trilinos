@@ -49,7 +49,7 @@ namespace Tpetra {
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
-            const Teuchos::RCP<Teuchos::ParameterList>& params) : 
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
   // We want the OWNED_PLUS_SHARED graph here
   // NOTE: The casts below are terrible, but necesssary
   crs_matrix_type( graph->inactiveCrsGraph_.is_null() ? Teuchos::rcp_const_cast<crs_graph_type>(Teuchos::rcp_dynamic_cast<const crs_graph_type>(graph)) : graph->inactiveCrsGraph_,params),
@@ -75,10 +75,12 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
 
   // Make an "inactive" matrix, if we need to
   if(!graph->inactiveCrsGraph_.is_null() ) {
-    // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
+    // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the
     // guy for the Owned matrix.
     inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(*this,graph));
   }
+
+  fillState_ = Teuchos::rcp(new FillState(FillState::closed));
 }
 
 
@@ -107,7 +109,7 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::switchActiveCrsMatr
     *activeCrsMatrix_ = FE_ACTIVE_OWNED_PLUS_SHARED;
 
   if(inactiveCrsMatrix_.is_null()) return;
-  
+
   this->swap(*inactiveCrsMatrix_);
 
 }//end switchActiveCrsMatrix
@@ -134,8 +136,159 @@ void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginFill()  {
   this->resumeFill();
 }
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginAssembly() {
+  const char tfecfFuncName[] = "FECrsMatrix::beginAssembly: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::closed,
+    std::runtime_error,
+    "Cannot beginAssembly, matrix is not in a closed state"
+  );
+  *fillState_ = FillState::open;
+  this->beginFill();
+}
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endAssembly() {
+  const char tfecfFuncName[] = "FECrsMatrix::endAssembly: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot endAssembly, matrix is not open to fill."
+  );
+  *fillState_ = FillState::closed;
+  this->endFill();
+}
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::beginModify() {
+  const char tfecfFuncName[] = "FECrsMatrix::beginModify: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::closed,
+    std::runtime_error,
+    "Cannot beginModify, matrix is not in a closed state"
+  );
+  *fillState_ = FillState::modify;
+  this->resumeFill();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::endModify() {
+  const char tfecfFuncName[] = "FECrsMatrix::endModify: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::modify,
+    std::runtime_error,
+    "Cannot endModify, matrix is not open to modify."
+  );
+  *fillState_ = FillState::closed;
+  this->fillComplete();
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+LocalOrdinal
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
+  impl_scalar_type rowVals[],
+  const crs_graph_type& graph,
+  const RowInfo& rowInfo,
+  const GlobalOrdinal inds[],
+  const impl_scalar_type newVals[],
+  const LocalOrdinal numElts) const
+{
+  const char tfecfFuncName[] = "FECrsMatrix::replaceGlobalValues: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot replace global values, matrix is not open to fill."
+  );
+  return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceGlobalValuesImpl(
+    rowVals, graph, rowInfo, inds, newVals, numElts
+  );
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+LocalOrdinal
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValuesImpl(
+  impl_scalar_type rowVals[],
+  const crs_graph_type& graph,
+  const RowInfo& rowInfo,
+  const LocalOrdinal inds[],
+  const impl_scalar_type newVals[],
+  const LocalOrdinal numElts) const
+{
+  const char tfecfFuncName[] = "FECrsMatrix::replaceLocalValues: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open && *fillState_ != FillState::modify,
+    std::runtime_error,
+    "Cannot replace local values, matrix is not open to fill/modify."
+  );
+  return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::replaceLocalValuesImpl(
+    rowVals, graph, rowInfo, inds, newVals, numElts
+  );
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+LocalOrdinal
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
+  impl_scalar_type rowVals[],
+  const crs_graph_type& graph,
+  const RowInfo& rowInfo,
+  const GlobalOrdinal inds[],
+  const impl_scalar_type newVals[],
+  const LocalOrdinal numElts,
+  const bool atomic) const
+{
+  const char tfecfFuncName[] = "FECrsMatrix::sumIntoGlobalValues: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot sum in to global values, matrix is not open to fill."
+  );
+  return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValuesImpl(
+    rowVals, graph, rowInfo, inds, newVals, numElts, atomic
+  );
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+LocalOrdinal
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValuesImpl(
+  impl_scalar_type rowVals[],
+  const crs_graph_type& graph,
+  const RowInfo& rowInfo,
+  const LocalOrdinal inds[],
+  const impl_scalar_type newVals[],
+  const LocalOrdinal numElts,
+  const bool atomic) const
+{
+  const char tfecfFuncName[] = "FECrsMatrix::sumIntoLocalValues: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot sum in to local values, matrix is not open to fill."
+  );
+  return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoLocalValuesImpl(
+    rowVals, graph, rowInfo, inds, newVals, numElts, atomic
+  );
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+FECrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
+  crs_graph_type& graph,
+  RowInfo& rowInfo,
+  const GlobalOrdinal gblColInds[],
+  const impl_scalar_type vals[],
+  const size_t numInputEnt)
+{
+  const char tfecfFuncName[] = "FECrsMatrix::insertGlobalValues: ";
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    *fillState_ != FillState::open,
+    std::runtime_error,
+    "Cannot sum in to local values, matrix is not open to fill."
+  );
+  return CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValuesImpl(
+    graph, rowInfo, gblColInds, vals, numInputEnt
+  );
+}
 
 }  // end namespace Tpetra
 
