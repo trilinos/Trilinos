@@ -88,10 +88,7 @@ namespace Amesos2 {
 		      std::invalid_argument,
 		      "Amesos2_TpetraMultiVectorAdapter: getMVPointer_impl should only be called for case with a single vector and single MPI process" );
 
-    typedef typename multivec_t::dual_view_type dual_view_type;
-    typedef typename dual_view_type::host_mirror_space host_execution_space;
-    mv_->template sync<host_execution_space> ();
-    auto contig_local_view_2d = mv_->template getLocalView<host_execution_space>(Tpetra::Access::ReadWrite);
+    auto contig_local_view_2d = mv_->getLocalViewHost(Tpetra::Access::ReadWrite);
     auto contig_local_view_1d = Kokkos::subview (contig_local_view_2d, Kokkos::ALL (), 0);
     return contig_local_view_1d.data();
   }
@@ -187,11 +184,8 @@ namespace Amesos2 {
       else {
         // Do this if GIDs not contiguous...
         // sync is needed for example if mv was updated on device, but will be passed through Amesos2 to solver running on host
-        typedef typename multivec_t::dual_view_type dual_view_type;
-        typedef typename dual_view_type::host_mirror_space host_execution_space;
         //redist_mv.template sync < host_execution_space > ();
-
-        auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>(Tpetra::Access::ReadOnly);
+        auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
         if ( redist_mv.isConstantStride() ) {
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = av(lda*j, lda);
@@ -208,7 +202,7 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = av(lda*j, lclNumRows);
-            auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> (Tpetra::Access::ReadOnly);
+            auto X_lcl_j_2d = redist_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
 
             using val_type = typename std::remove_const<typename decltype( X_lcl_j_1d )::value_type>::type;
@@ -423,9 +417,8 @@ namespace Amesos2 {
 
     // Special case when number vectors == 1 and single MPI process
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
-      typedef typename multivec_t::dual_view_type::host_mirror_space host_execution_space;
       // num_vecs = 1; stride does not matter
-      auto mv_view_to_modify_2d = mv_->template getLocalView<host_execution_space>(Tpetra::Access::WriteOnly);
+      auto mv_view_to_modify_2d = mv_->getLocalViewHost(Tpetra::Access::WriteOnly);
       for ( size_t i = 0; i < lda; ++i ) {
         mv_view_to_modify_2d(i,0) = new_data[i]; // Only one vector
       }
@@ -459,11 +452,8 @@ namespace Amesos2 {
       }
       else {
         multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
-        typedef typename multivec_t::dual_view_type dual_view_type;
-        typedef typename dual_view_type::host_mirror_space host_execution_space;
-
         if ( redist_mv.isConstantStride() ) {
-          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>(Tpetra::Access::WriteOnly);
+          auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::WriteOnly);
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = new_data(lda*j, lda);
             for ( size_t i = 0; i < lda; ++i ) {
@@ -479,7 +469,7 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = new_data(lda*j, lclNumRows);
-            auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> (Tpetra::Access::ReadOnly);
+            auto X_lcl_j_2d = redist_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
 
             using val_type = typename std::remove_const<typename decltype( X_lcl_j_1d )::value_type>::type;
@@ -580,9 +570,6 @@ namespace Amesos2 {
       }
       else {
         multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
-        typedef typename multivec_t::dual_view_type dual_view_type;
-        typedef typename dual_view_type::host_mirror_space host_execution_space;
-
         // Cuda solvers won't currently use this path since they are just serial
         // right now, so this mirror should be harmless (and not strictly necessary).
         // Adding it for future possibilities though we may then refactor this
@@ -590,7 +577,7 @@ namespace Amesos2 {
         auto host_kokkos_new_data = Kokkos::create_mirror_view(kokkos_new_data);
         Kokkos::deep_copy(host_kokkos_new_data, kokkos_new_data);
         if ( redist_mv.isConstantStride() ) {
-          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>(Tpetra::Access::WriteOnly);
+          auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::WriteOnly);
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = Kokkos::subview(host_kokkos_new_data, Kokkos::ALL, j);
             for ( size_t i = 0; i < lda; ++i ) {
