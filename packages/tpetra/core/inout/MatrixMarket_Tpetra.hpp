@@ -3840,18 +3840,36 @@ namespace Tpetra {
           values = null;
         } // if myRank == rootRank
 
+        //FIXME this is no longer needed
         broadcast<int,size_t> (*pComm, 0, &maxNumEntriesPerRow);
 
         RCP<sparse_matrix_type> A;
-        if (colMap.is_null ()) {
-          A = rcp (new sparse_matrix_type (rowMap, maxNumEntriesPerRow));
-        } else {
-          A = rcp (new sparse_matrix_type (rowMap, colMap, maxNumEntriesPerRow));
-        }
         typedef Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
         export_type exp (gatherRowMap, rowMap);
-        A->doExport (*A_proc0, exp, INSERT);
 
+        // Communicate the precise number of nonzeros per row, which was already
+        // calculated above.
+        typedef local_ordinal_type LO;
+        typedef global_ordinal_type GO;
+        typedef Tpetra::MultiVector<GO, LO, GO, node_type> mv_type_go;
+        mv_type_go target_nnzPerRow(rowMap,1);
+        mv_type_go source_nnzPerRow(gatherRowMap,1);
+        Teuchos::ArrayRCP<GO> srcData = source_nnzPerRow.getDataNonConst(0);
+        for (int i=0; i<myNumRows; i++)
+          srcData[i] = gatherNumEntriesPerRow[i];
+        srcData = Teuchos::null;
+        target_nnzPerRow.doExport(source_nnzPerRow,exp,Tpetra::INSERT);
+        Teuchos::ArrayRCP<GO> targetData = target_nnzPerRow.getDataNonConst(0);
+        ArrayRCP<size_t> targetData_size_t = arcp<size_t>(targetData.size());
+        for (int i=0; i<targetData.size(); i++)
+          targetData_size_t[i] = targetData[i];
+
+        if (colMap.is_null ()) {
+          A = rcp (new sparse_matrix_type (rowMap, targetData_size_t()));
+        } else {
+          A = rcp (new sparse_matrix_type (rowMap, colMap, targetData_size_t()));
+        }
+        A->doExport (*A_proc0, exp, INSERT);
         if (callFillComplete) {
           A->fillComplete (domainMap, rangeMap);
         }
