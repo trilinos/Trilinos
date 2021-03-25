@@ -41,36 +41,72 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_TYPEU_DESCENTDIRECTION_H
-#define ROL2_TYPEU_DESCENTDIRECTION_H
+#ifndef ROL2_TYPEU_NEWTONKRYLOV_DECL_HPP
+#define ROL2_TYPEU_NEWTONKRYLOV_DECL_HPP
 
 /** @ingroup step_group
-    \class ROL2::TypeU::DescentDirection
-    \brief Provides the interface to compute unconstrained optimization steps
-           for line search.
+    \class ROL2::TypeU::NewtonKrylov
+    \brief Provides the interface to compute optimization steps 
+           with Krylov approximations to Newton's method using line search.
+
 */
 
 namespace ROL2 {
 namespace TypeU {
 
 template <class Real>
-class DescentDirection {
+class NewtonKrylov<Real> : public DescentDirection {
 public:
 
-  enum class Type : std::int16_t {
-    Steepest = 0,
-    NonlinearCG,
-    Secant,
-    Newton,
-    NewtonKrylov,
-    UserDefined,
-    Last
-  };
+  //------------------------------------------------------------
+  class HessianNK : public LinearOperator<Real> {
+  public:
+    HessianNK( const Ptr<Objective<Real>>&    obj,
+               const Ptr<const Vector<Real>>& x );
 
-  virtual ~DescentDirection() = default;
+    void apply(       Vector<Real>& Hv,
+                const Vector<Real>& v,
+                      Real&         tol ) const override;
+  private:
+    const Ptr<Objective<Real>>    obj_;
+    const Ptr<const Vector<Real>> x_;
+  }; // class HessianNK
 
-  virtual void initialize( const Vector<Real>& x, 
-                           const Vector<Real>& g ) {}
+  //------------------------------------------------------------
+  class PrecondNK : public LinearOperator<Real> {
+  public:
+    PrecondNK( const Ptr<Objective<Real>>&    obj,
+               const Ptr<const Vector<Real>>& x );
+
+    void apply(       Vector<Real>& Hv,
+                const Vector<Real>& v,
+                      Real&         tol ) const override;
+
+    void applyInverse(       Vector<Real>& Hv,
+                       const Vector<Real>& v,
+                             Real&         tol ) const override;
+  private:
+    const Ptr<Objective<Real>>    obj_;
+    const Ptr<const Vector<Real>> x_;
+  }; // class HessianNK
+  //------------------------------------------------------------
+
+
+  /** \brief Constructor.
+
+      Standard constructor to build a NewtonKrylovStep object.  Algorithmic
+      specifications are passed in through a ROL::ParameterList.
+
+      @param[in]     parlist    is a parameter list containing algorithmic specifications
+  */
+  NewtonKrylov( ParameterList& parlist );
+
+  NewtonKrylov(       ParameterList&     parlist, 
+                const Ptr<Krylov<Real>>& krylov,
+                      Ptr<Secant<Real>>& secant,
+                      bool               computeObj = true );
+                
+  virtual ~NewtonKrylov() = default;
 
   virtual void compute(       Vector<Real>&    s, 
                               Real&            snorm, 
@@ -79,45 +115,40 @@ public:
                               int&             flag,
                         const Vector<Real>&    x, 
                         const Vector<Real &    g, 
-                              Objective<Real>& obj) = 0;
+                              Objective<Real>& obj) override;
 
   virtual void update( const Vector<Real>& x, 
                        const Vector<Real>& s,
                        const Vector<Real>& gold, 
                        const Vector<Real>& gnew,
                              Real          snorm, 
-                             int           iter ) {}
+                             int           iter ) override;
 
-  virtual void writeName( std::ostream& os ) const { os << "Undefined"; }
+  virtual void writeName( std::ostream& os ) const { 
+    os << "Newton-Krylov Method using " << krylovName_; 
+    if( useSecantPrec_ ) {
+      << " with " << secantName_ << " preconditioning";
+    }
+  }
 
-  static EnumMap<Type> type_dict;
+private:
 
-}; // class DescentDirection
+  Ptr<Secant<Real>>         secant_;
+  Ptr<Krylov<Real>>         krylov_;
+  Ptr<LinearOperator<Real>> precond_;
 
-template<typename Real>
-inline std::string enumToString( DescentDirection<Real>::Type e ) {
-  return DescentDirection<Real>::type_dict[e];
-}
+  Krylov<Real>::Type krylovType_;
+  Secant<Real>::Type secantType_;
 
-template<typename Real>
-inline std::string stringToEnum( std::string s, const DescentDirection<Real>&  ) {
-  return DescentDirection<Real>::type_dict[e];
-}
+  std::string krylovName_;
+  std::string secantName_;
 
-template<typename Real>
-EnumMap<DescentDirection<Real>::Type>
-DescentDirection<Real>::type_dict = { "Steepest Descent",
-                                      "Nonlinear CG",
-                                      "Quasi-Newton Method",
-                                      "Newton's Method",
-                                      "Newton-Krylov",
-                                      "User Defined" };
+  bool useSecantPrecond_ = false;
+
+
+}; // class NewtonKrylov
+
 } // namespace TypeU
 } // namespace ROL2
 
-
-
-
-
-
-#endif
+#endif // ROL2_TYPEU_NEWTONKRYLOV_DECL_HPP

@@ -95,13 +95,13 @@ public:
              This general interface supports the use of dual optimization vector spaces,
              where the user does not define the dual() method.
   */
-  virtual voi run(       Vector<Real>&     x,
-                   const Vector<Real>&     g,
-                         Objective<Real>&  obj,
-                         Constraint<Real>& linear_con,
-                         Vector<Real>&     linear_mul,
-                   const Vector<Real>&     linear_c,
-                         std::ostream&     outStream = std::cout );
+  virtual void run(       Vector<Real>&     x,
+                    const Vector<Real>&     g,
+                          Objective<Real>&  obj,
+                          Constraint<Real>& linear_con,
+                          Vector<Real>&     linear_mul,
+                    const Vector<Real>&     linear_c,
+                          std::ostream&     outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This general interface supports the use of dual optimization vector spaces,

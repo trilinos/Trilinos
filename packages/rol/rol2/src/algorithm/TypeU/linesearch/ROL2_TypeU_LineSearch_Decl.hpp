@@ -164,7 +164,7 @@ inline std::string enumToString( LineSearch<Real>::Type e ) {
 }
 
 template<class Real>
-inline std::string enumToString( CurvatureCond e ) { 
+inline std::string enumToString( LineSearch<Real>::CurvatureCond e ) { 
   return LineSearch<Real>::curvature_dict[e]; 
 }
 

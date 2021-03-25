@@ -45,7 +45,7 @@
 #define ROL2_VECTOR_DECL_H
 
 /** @ingroup la_group
-    \class ROL::Vector
+    \class ROL2::Vector
     \brief Defines the linear algebra or vector space interface.
 
     The basic linear algebra interface, to be implemented by the user, includes:\n
@@ -120,7 +120,7 @@ public:
 
              ---             
   */
-  virtual ROL::Ptr<Vector> clone() const = 0;
+  virtual Ptr<Vector> clone() const = 0;
 
 
   /** \brief Compute \f$y \leftarrow \alpha x + y\f$ where \f$y = \mathtt{*this}\f$.

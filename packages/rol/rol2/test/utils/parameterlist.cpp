@@ -1,6 +1,5 @@
 #include "ROL2_Utilities.hpp"
 
-
 int main( int argc, char* argv[] ) {
 
   auto os_ptr = ROL2::makeStreamPtr(std::cout, argc);

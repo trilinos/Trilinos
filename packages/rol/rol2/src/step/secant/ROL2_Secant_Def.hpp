@@ -41,16 +41,13 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_SECANT_DEF_H
 #define ROL2_SECANT_DEF_H
 
 /** \class ROL2::Secant
     \brief Provides interface for and implements limited-memory secant operators.
 */
-
-#include "ROL2_ParameterList.hpp"
-#include "ROL2_LinearOperator.hpp"
-#include "ROL2_Types.hpp"
 
 namespace ROL2 {
 
@@ -59,9 +56,10 @@ Secant<Real>::Secant( int                M,
                       bool               useDefaultScaling, 
                       Real               Bscaling, 
                       Secant<Real>::Mode mode )
-    : state_( makePtr<State>(M,mode) ),
-      useDefaultScaling_(useDefaultScaling), 
-      Bscaling_(Bscaling) {}
+ : state_( makePtr<State>(M,mode) ),
+   useDefaultScaling_(useDefaultScaling), 
+   Bscaling_(Bscaling),
+   mode_(mode) {}
 
 template<class Real>
 void Secant<Real>::updateStorage( const Vector<Real>& x,  
@@ -129,7 +127,7 @@ void Secant<Real>::applyB0(       Vector<Real>& Bv,
 }
 
 template<class Real>
-void Secant<Real>::test(std::ostream &stream ) const {
+void Secant<Real>::test( std::ostream &os ) const {
   if (isInitialized_) {
     auto v  = state_->iterate->clone();
     auto Hv = state_->iterate->clone();
@@ -141,15 +139,55 @@ void Secant<Real>::test(std::ostream &stream ) const {
     applyH(*Hv,*v);
     applyB(*Bv,*Hv);
     v->axpy(-one,*Bv);
-    stream << " ||BHv-v|| = " << v->norm() << std::endl;
+    os << " ||BHv-v|| = " << v->norm() << std::endl;
 
     // Print HBv -> Should be v
     v->randomize(-one,one);
     applyB(*Bv,*v);
     applyH(*Hv,*Bv);
     v->axpy(-one,*Hv);
-    stream << " ||HBv-v|| = " << v->norm() << std::endl;
+    os << " ||HBv-v|| = " << v->norm() << std::endl;
   }
 }
+
+template<class Real>
+Ptr<Secant<Real>> 
+Secant<Real>::create( Secant<Real>::Type type,
+                      int                L,
+                      int                BBtype ) {
+  switch( type ) {
+    case Type::LBFGS:           return ROL::makePtr<lBFGS<Real>>(L,uds,s);
+    case Type::LDFP:            return ROL::makePtr<lDFP<Real>>(L,uds,s);
+    case Type::LSR1:            return ROL::makePtr<lSR1<Real>>(L,uds,s,mode);
+    case Type::BarzilaiBorwein: return ROL::makePtr<BarzilaiBorwein<Real>>(BBtype);
+    default:                    return ROL::nullPtr; // Should we throw an exception here?
+  }
+}
+
+
+template<class Real>
+Ptr<Secant<Real>> 
+Secant<Real>::create( ParameterList&     parlist,
+                      Secant<Real>::Mode mode ) {
+
+  auto& slist = parlist.sublist("General").sublist("Secant");
+  auto sstr = slist.get("Type","Limited-Memory BFGS");
+  int L    = slist.get("Maximum Storage",10);
+  int BB   = slist.get("Barzilai-Borwein",1);
+  bool uds = slist.get("Use Default Scaling",true);
+  Real s   = slist.get("Initial Hessian Scale",1.0);
+
+  switch( type_dict[sstr] ) {
+    case Type::LBFGS:           return ROL::makePtr<lBFGS<Real>>(L,uds,s);
+    case Type::LDFP:            return ROL::makePtr<lDFP<Real>>(L,uds,s);
+    case Type::LSR1:            return ROL::makePtr<lSR1<Real>>(L,uds,s,mode);
+    case Type::BarzilaiBorwein: return ROL::makePtr<BarzilaiBorwein<Real>>(BB);
+    default:                    return ROL::nullPtr; // Should we throw an exception here?
+  }
+}
+
+
+
+} // namespace ROL2
 
 #endif // ROL2_SECANT_DEF_H

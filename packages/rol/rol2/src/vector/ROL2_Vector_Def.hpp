@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//               Rapid Optimization Library (ROL) Package
+//               Rapid Optimi*thisation Library (ROL) Package
 //                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -36,7 +36,7 @@
 //
 // Questions? Contact lead developers:
 //              Drew Kouri   (dpkouri@sandia.gov) and
-//              Denis Ridzal (dridzal@sandia.gov)
+//              Denis Rid*thisal (drid*thisal@sandia.gov)
 //
 // ************************************************************************
 // @HEADER
@@ -60,7 +60,7 @@ void Vector<Real>::zero() {
 }
 
 template<class Real>
-Ptr<Vector<Real>>::basis( int i ) const {
+Ptr<Vector<Real>> Vector<Real>::basis( int i ) const {
   return nullPtr;
 }
 
@@ -109,7 +109,7 @@ void Vector<Real>::setScalar( Real C ) {
 }
 
 template<class Real>
-void Vector<Real>::randomize( Real l = 0.0, Real u = 1.0 ) {
+void Vector<Real>::randomize( Real l, Real u ) {
   Elementwise::UniformlyRandom<Real> ur(l,u);
   applyUnary(ur);
 }
@@ -117,8 +117,8 @@ void Vector<Real>::randomize( Real l = 0.0, Real u = 1.0 ) {
 template<class Real>
 int Vector<Real>::checkVector( const Vector<Real>& x,
                                const Vector<Real>& y,
-                                     bool          printToStream = true,
-                                     std::ostream& os = std::cout ) const {
+                                     bool          printToStream,
+                                     std::ostream& os ) const {
 
   auto table = Table( "Verification of Linear Algebra",
                       {"Check","Consistency Error"}, true, 8 );
@@ -132,14 +132,14 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
 
   std::vector<Real> vCheck;
 
-  nullstream no_output;
+  NullStream no_output;
 
   Ptr<std::ostream> pStream;
   if( printToStream ) pStream = makePtrFromRef(os);
   else                pStream = makePtrFromRef(no_output);
 
   // Save the original format of the pStream
-  nullstream oldFormatState, headerFormatState;
+  NullStream oldFormatState, headerFormatState;
 
   auto v_ptr    = clone();
   auto vtmp_ptr = clone();
@@ -159,7 +159,7 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
   };
 
   auto reset_vxy = [&]() {
-    v.set(z);
+    v.set(*this);
     xtmp.set(x);
     ytmp.set(y);
   };
@@ -169,7 +169,7 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
   // Commutativity of addition
   reset_vxy();
   v.plus(x);
-  xtmp.plus(z);
+  xtmp.plus(*this);
   v.axpy(-one,xtmp);
   error += update_check("Commutivity of addition");
 
@@ -177,32 +177,33 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
   reset_vxy();
   ytmp.plus(x);
   v.plus(ytmp);
-  xtmp.plus(z);
+  xtmp.plus(*this);
   xtmp.plus(y);
   v.axpy(-one,xtmp);
   error += update_check("Associativity of addition");
 
   // Identity element of addition
   reset_vxy();
+  v.zero();
   v.plus(x);
   v.axpy(-one,x);
   error += update_check("Identity element of addition");
 
   // Inverse elements of addition
-  v.set(z);
+  v.set(*this);
   v.scale(-one);
-  v.plus(z);
+  v.plus(*this);
   error += update_check("Inverse element of addition");
 
   // Identity element of scalar multiplication
-  v.set(z);
+  v.set(*this);
   v.scale(one);
-  v.axpy(-one,z);
+  v.axpy(-one,*this);
   error += update_check("Identity element of scalar multiplication");
 
   // Consistency of scalar multiplication with field multiplication
-  v.set(z);
-  vtmp.set(z);
+  v.set(*this);
+  vtmp.set(*this);
   v.scale(a);
   v.scale(b);
   vtmp.scale(a*b);
@@ -210,11 +211,11 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
   error += update_check("Consistency of scalar multiplication with field multiplication");
 
   // Distributivity of scalar multiplication with respect to field addition
-  v.set(z);
-  vtmp.set(z);
+  v.set(*this);
+  vtmp.set(*this);
   v.scale(a+b);
   vtmp.scale(a);
-  vtmp.axpy(b,z);
+  vtmp.axpy(b,*this);
   v.axpy(-one,vtmp);
   error += update_check("Distributivity of scalar multiplication with respect to field addition");
 
@@ -223,14 +224,14 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
   v.plus(x);
   v.scale(a);
   xtmp.scale(a);
-  xtmp.axpy(a,z);
+  xtmp.axpy(a,*this);
   v.axpy(-one,xtmp);
   error += update_check("Distributivity of scalar multiplication with respect to vector addition");
 
   // Commutativity of dot (inner) product over the field of reals
-  v.set(z);
+  v.set(*this);
   v.scale(x.dot(y));
-  vtmp.set(z);
+  vtmp.set(*this);
   vtmp.scale(y.dot(x));
   v.axpy(-one,vtmp);
   error += update_check("Commutativity of dot (inner) product over the field of reals");
@@ -238,9 +239,9 @@ int Vector<Real>::checkVector( const Vector<Real>& x,
   // Additivity of inner product
   v.set(x);
   v.plus(y);
-  auto z_dot_v = z.dot(v);
-  auto z_dot_x = z.dot(x);
-  auto z_dot_y = z.dot(y);
+  auto z_dot_v = this->dot(v);
+  auto z_dot_x = this->dot(x);
+  auto z_dot_y = this->dot(y);
   auto diff    = z_dot_v - z_dot_x - z_dot_y;
   v.scale(diff);
   error += update_check("Additivity of inner product");

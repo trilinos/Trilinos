@@ -2,10 +2,15 @@
 #ifndef ROL2_UTILITIES_HPP
 #define ROL2_UTILITIES_HPP
 
+// C++ Standard Library Includes
+
+#include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdint>
 #include <exception>
+#include <initializer_list>
+#include <iomanip>
 #include <iostream>
 #include <limits>
 #include <map>
@@ -26,15 +31,14 @@
 #include "ROL2_TestForException.hpp"
 #include "ROL2_Enumeration.hpp"
 #include "ROL2_EnumMap.hpp"
-
 #include "ROL2_Constants.hpp"
+#include "ROL2_Table.hpp"
 
 #include "ROL2_Ptr.hpp"
 #include "ROL2_Stream_Decl.hpp"
 #include "ROL2_ParameterList.hpp"
 #include "ROL2_UniformFiniteDifferences_Decl.hpp"
 #include "ROL2_ValidateFunction_Decl.hpp"
-
 
 
 #include "ROL2_Stream_Def.hpp"
@@ -46,5 +50,5 @@
 
 
 
-#endif //ROL2_UTILITIES_HPP
+#endif // ROL2_UTILITIES_HPP
 

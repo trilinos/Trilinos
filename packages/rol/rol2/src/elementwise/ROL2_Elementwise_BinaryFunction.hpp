@@ -84,7 +84,7 @@ struct _Set {
 } // namespace Binary
 
 template<typename Real>
-using BinaryFunction = Function<Real,Divide,
+using BinaryFunction = BFunction<Real,Divide,
                                      DivideAndInvert,
                                      Greater,
                                      Lesser,

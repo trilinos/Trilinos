@@ -41,8 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_SECANT_DECL_H
-#define ROL2_SECANT_DECL_H
+#pragma once 
+#ifndef ROL2_SECANT_DECL_HPP
+#define ROL2_SECANT_DECL_HPP
 
 /** \class ROL2::Secant
     \brief Provides interface for and implements limited-memory secant operators.
@@ -54,39 +55,39 @@ template<class Real>
 class Secant : public LinearOperator<Real> {
 public:
 
-   enum class Mode : std::int16_t {
-     Forward = 0,
-     Inverse,
-     Both
-   };
+  enum class Mode : std::int16_t {
+    Forward = 0,
+    Inverse,
+    Both
+  };
 
-   enum class Type : std::int16_t {
-     LBFGS = 0,
-     LDFP,
-     LSR1,
-     BarzilaiBorwein,
-     UserDefined,
-     Last
-   };
+  enum class Type : std::int16_t {
+    LBFGS = 0,
+    LDFP,
+    LSR1,
+    BarzilaiBorwein,
+    UserDefined,
+    Last
+  };
 
-   struct State {
-     Ptr<Vector<Real>>              iterate_;
-     std::vector<Ptr<Vector<Real>>> iterDiff_; // Step Storage
-     std::vector<Ptr<Vector<Real>>> gradDiff_; // Gradient Storage
-     std::vector<Real>              product_;  // Step-Gradient Inner Product Storage
-     std::vector<Real>              product2_; // Step-Gradient Inner Product Storage
-     int storage_;                             // Storage Size
-     int current_ = -1;                        // Current Storage Size
-     int iter_     = 0;                        // Current Optimization Iteration
-     Mode mode_;                               // Intended application mode
+  //----------------------------------------------------------
+  struct State {
+    Ptr<Vector<Real>>              iterate_;
+    std::vector<Ptr<Vector<Real>>> iterDiff_; // Step Storage
+    std::vector<Ptr<Vector<Real>>> gradDiff_; // Gradient Storage
+    std::vector<Real>              product_;  // Step-Gradient Inner Product Storage
+    std::vector<Real>              product2_; // Step-Gradient Inner Product Storage
+    int storage_;                             // Storage Size
+    int current_ = -1;                        // Current Storage Size
+    int iter_     = 0;                        // Current Optimization Iteration
+    Mode mode_;                               // Intended application mode
 
-     State(int M, Mode sm) : storage(M), current(-1), iter(0), mode(sm) {}
-   };
+    State(int M, Mode sm) : storage(M), current(-1), iter(0), mode(sm) {}
+  };  // struct Secant<Real>::State
+  //----------------------------------------------------------
 
-   static std::string typeToString( Type t );
-   static Type        stringToType( std::string s );
 
-   virtual ~Secant() = default;
+  virtual ~Secant() = default;
 
   // Constructor
   Secant( int  M = 10, 
@@ -135,20 +136,47 @@ public:
 
   const State& getState() const { return *state_; }
 
+  static Ptr<Secant> create( ParameterList& parlist, Mode mode = Mode::Both );
+  static Ptr<Secant> create( Type type, int L = 10, int BBtype = 1 );
+
+  static EnumMap<Type> type_dict;
+  static EnumMap<Mode> mode_dict;
+
 protected:
 
   State& getState() { return *state_; }
 
-private:
-
-  Ptr<State>        state_; 
   Ptr<Vector<Real>> y_;
   Real              Bscaling_;
+  Mode              mode_;
   bool              useDefaultScaling_;
   bool              isInitialized_ = false;
 
+private:
+  Ptr<State>        state_; 
+
 }; // Secant
+
+template<typename Real>
+inline std::string enumToStr( Secant<Real>::Type e ) {
+  return Secant<Real>::type_dict[e];
+}
+
+template<class Real> 
+EnumMap<Secant<Real>>::Mode>
+Secant<Real>::mode_dict = { "Forward",
+                            "Inverse",
+                            "Both" };
+
+template<class Real> 
+EnumMap<Secant<Real>>::Type>
+Secant<Real>::type_dict = { "Limited-Memory BFGS",
+                            "Limited-Memory DFP",
+                            "Limited-Memory SR1", 
+                            "Barzilai-Borwein",
+                            "User Defined" };
+
 
 } // namespace ROL2
 
-#endif // ROL2_SECANT_DECL_H
+#endif // ROL2_SECANT_DECL_HPP

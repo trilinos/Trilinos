@@ -46,6 +46,8 @@ struct UFD {
 
   static constexpr int w_denom[4] = { 1, 2, 6, 12 };
 
+  static constexpr int NUM_CHECKDERIV_STEPS = 13;
+
 };  // UFD
 
 //constexpr int UFD::shift[4][4];

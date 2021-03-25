@@ -117,7 +117,7 @@ struct _ThresholdUpper {
  */
 
 template<typename Real>
-using UnaryFunction = Function<Real,AbsoluteValue,
+using UnaryFunction = UFunction<Real,AbsoluteValue,
                                     Fill,
                                     Heaviside,
                                     Logarithm,
