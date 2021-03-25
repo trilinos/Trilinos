@@ -71,7 +71,11 @@ private:
   Real gtolmin_;
   Real ctolmin_;
   Real ltolmin_;
-  Real tolupdate_;
+  Real ltolupdate_;
+  Real tolupdate0_;
+  Real tolupdate1_;
+  Real lalpha_;
+  Real lbeta_;
   // Subproblem solver tolerances
   Real gtol_;
   Real ctol_;
@@ -87,6 +91,7 @@ private:
   Ptr<Vector<Real>>                 pd_vector_;
   Ptr<BoundConstraint<Real>>        pd_bound_;
   Ptr<Constraint<Real>>             pd_constraint_;
+  Ptr<Constraint<Real>>             pd_linear_constraint_;
   Ptr<NewOptimizationProblem<Real>> pd_problem_;
 
   int iter_, nfval_, ngrad_, ncval_;
@@ -110,13 +115,17 @@ public:
     ctolmin_   = (ctolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : ctolmin_);
     ltolmin_   = (ltolmin_ <= static_cast<Real>(0) ? 1e2*std::sqrt(ROL_EPSILON<Real>()) : ltolmin_);
     // Get solver tolerances
-    gtol_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Gradient Tolerance", 1e-4);
-    ctol_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Constraint Tolerance", 1e-4);
-    ltol_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Dual Tolerance", 1e-2);
-    tolupdate_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Solver Tolerance Update Scale", 1e-1);
-    gtol_      = std::max(gtol_, gtolmin_);
-    ctol_      = std::max(ctol_, ctolmin_);
-    ltol_      = std::max(ltol_, ltolmin_);
+    gtol_       = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Gradient Tolerance", 1e-4);
+    ctol_       = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Constraint Tolerance", 1e-4);
+    ltol_       = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Dual Tolerance", 1e-2);
+    ltolupdate_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Dual Tolerance Update Scale", 1e-1);
+    tolupdate0_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Solver Tolerance Decrease Scale", 9e-1);
+    tolupdate1_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Solver Tolerance Update Scale", 1e-1);
+    lalpha_     = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Dual Tolerance Decrease Exponent", 1e-1);
+    lbeta_      = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Dual Tolerance Update Exponent", 9e-1);
+    gtol_       = std::max(gtol_, gtolmin_);
+    ctol_       = std::max(ctol_, ctolmin_);
+    ltol_       = std::max(ltol_, ltolmin_);
     // Get penalty parameter
     penaltyParam_ = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Initial Penalty Parameter", 10.0);
     maxPen_       = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Maximum Penalty Parameter", -1.0);
@@ -191,6 +200,10 @@ public:
     if (input_->getConstraint() != nullPtr) {
       pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
     }
+    pd_linear_constraint_ = nullPtr;
+    if (input_->getPolyhedralProjection() != nullPtr) {
+      pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
+    }
     // Build primal-dual subproblems
     pd_problem_ = makePtr<NewOptimizationProblem<Real>>(pd_objective_, pd_vector_);
     if (pd_bound_->isActivated()) {
@@ -199,6 +212,10 @@ public:
     if (pd_constraint_ != nullPtr) {
       pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
     }
+    if (pd_linear_constraint_ != nullPtr) {
+      pd_problem_->addLinearConstraint("PD Linear Constraint",pd_linear_constraint_,input_->getPolyhedralProjection()->getMultiplier());
+      pd_problem_->setProjectionAlgorithm(parlist);
+    }
   }
 
   void check(std::ostream &outStream = std::cout) {
@@ -206,6 +223,8 @@ public:
   }
 
   void run(std::ostream &outStream = std::cout) {
+    const Real one(1);
+    Real theta(1);
     int spiter(0);
     iter_ = 0; converged_ = true; lnorm_ = ROL_INF<Real>();
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;
@@ -229,21 +248,24 @@ public:
       // Output
       print(*solver->getAlgorithmState(),outStream);
       // Check termination conditions
-      if (checkStatus(*solver->getAlgorithmState(),outStream)) {
-        break;
-      }
+      if (checkStatus(*solver->getAlgorithmState(),outStream)) break;
       // Update penalty parameter and solver tolerances
       rvf_->updateDual(*sampler_);
       if (converged_) {
-        if (lnorm_ > ltol_ || (freq_ > 0 && iter_%freq_ == 0)) {
+        if (lnorm_ > penaltyParam_*ltol_ || (freq_ > 0 && iter_%freq_ == 0)) {
           penaltyParam_  = std::min(update_*penaltyParam_, maxPen_);
           rvf_->updatePenalty(penaltyParam_);
+          theta = std::min(one/penaltyParam_,one);
+          ltol_ = std::max(ltolupdate_*std::pow(theta,lalpha_), ltolmin_);
+          gtol_ = std::max(tolupdate0_*gtol_, gtolmin_);
+          ctol_ = std::max(tolupdate0_*ctol_, ctolmin_);
         }
-        if (lnorm_ <= ltol_) {
-          ltol_ = std::max(tolupdate_*ltol_, ltolmin_);
+        else {
+          theta = std::min(one/penaltyParam_,one);
+          ltol_ = std::max(ltol_*std::pow(theta,lbeta_), ltolmin_);
+          gtol_ = std::max(tolupdate1_*gtol_, gtolmin_);
+          ctol_ = std::max(tolupdate1_*ctol_, ctolmin_);
         }
-        gtol_ = std::max(tolupdate_*gtol_, gtolmin_);
-        ctol_ = std::max(tolupdate_*ctol_, ctolmin_);
       }
     }
     input_->getPrimalOptimizationVector()->set(
@@ -323,7 +345,7 @@ private:
 //      flag = true;
 //    }
     if (pd_constraint_ == nullPtr) {
-      if (state.gnorm < gtolmin_ && lnorm_ < ltolmin_) {
+      if (state.gnorm < gtolmin_ && lnorm_/penaltyParam_ < ltolmin_) {
         outStream << "Solver tolerance met"
                   << " and the difference in the multipliers was less than "
                   << ltolmin_ << std::endl;
@@ -331,7 +353,7 @@ private:
       }
     }
     else {
-      if (state.gnorm < gtolmin_ && state.cnorm < ctolmin_ && lnorm_ < ltolmin_) {
+      if (state.gnorm < gtolmin_ && state.cnorm < ctolmin_ && lnorm_/penaltyParam_ < ltolmin_) {
         outStream << "Solver tolerance met"
                   << " and the difference in the multipliers was less than "
                   << ltolmin_ << std::endl;
