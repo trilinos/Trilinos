@@ -41,15 +41,12 @@
 // @HEADER
 */
 
-#include <Tpetra_Details_WrappedDualView.hpp>
-#include <Tpetra_Map.hpp>
-#include <Tpetra_Access.hpp>
-#include <Tpetra_Core.hpp>
-
-#include <Kokkos_DualView.hpp>
-
-#include <Teuchos_UnitTestHarness.hpp>
-#include <Teuchos_DefaultComm.hpp>
+#include "Tpetra_TestingUtilities.hpp"
+#include "Tpetra_Details_WrappedDualView.hpp"
+#include "Tpetra_Access.hpp"
+#include "Tpetra_Core.hpp"
+#include "Kokkos_DualView.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
 
 namespace {
 
@@ -84,7 +81,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
     size_t use_h = dvNull.h_view.use_count();
     size_t use_d = dvNull.d_view.use_count();
 
-    std::cout << "Null DualView:  "
+    std::cout << "Null DualView:     "
               << "host.use_count = " << dvNull.h_view.use_count() << "; "
               << "device.use_count = " << dvNull.d_view.use_count()
               << std::endl;
@@ -105,7 +102,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
               << wrapped.getDeviceView(Tpetra::Access::ReadOnly).label()
               << ":  host use_count = " << use_h
               << ";  device use_count = " << use_d << std::endl;
-    TEST_EQUALTIY(use_h, use_d);
+    TEST_EQUALITY(use_h, use_d);
   }
 
   {
@@ -121,7 +118,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
               << wrapped.getDeviceView(Tpetra::Access::ReadOnly).label()
               << ":  host use_count = " << use_h
               << ";  device use_count = " << use_d << std::endl;
-    TEST_EQUALTIY(use_h, use_d);
+    TEST_EQUALITY(use_h, use_d);
   }
 
   {
@@ -138,7 +135,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
               << wrapped.getDeviceView(Tpetra::Access::ReadOnly).label()
               << ":  host use_count = " << use_h
               << ";  device use_count = " << use_d << std::endl;
-    TEST_EQUALTIY(use_h, use_d);
+    TEST_EQUALITY(use_h, use_d);
   }
 }
 
