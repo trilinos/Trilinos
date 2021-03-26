@@ -624,6 +624,38 @@ namespace Tpetra {
                const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
+    /// \brief Constructor specifying a matrix and a previously
+    ///   constructed graph, presumably a subset of the matrix's graph.
+    ///   This matrix will alias the first N values of the passed-in
+    ///   matrix, where N is the number of entries in the graph.
+    ///
+    /// Calling this constructor fixes the graph structure of the
+    /// sparse matrix.  We say in this case that the matrix has a
+    /// "static graph."  If you create a CrsMatrix with this
+    /// constructor, you are not allowed to insert new entries into
+    /// the matrix, but you are allowed to change values in the
+    /// matrix.
+    ///
+    /// The given graph must be fill complete.  Note that calling
+    /// resumeFill() on the graph makes it not fill complete, even if
+    /// you had previously called fillComplete() on the graph.  In
+    /// that case, you must call fillComplete() on the graph again
+    /// before invoking this CrsMatrix constructor.
+    ///
+    /// This constructor is marked \c explicit so that you can't
+    /// create a CrsMatrix by accident when passing a CrsGraph into a
+    /// function that takes a CrsMatrix.
+    ///
+    /// \param matrix [in] The existing matrix whose values this one will alias.
+    /// \param graph [in] The graph structure of the sparse matrix.
+    ///   The graph <i>must</i> be fill complete.
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    explicit CrsMatrix (CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix,
+                        const Teuchos::RCP<const crs_graph_type>& graph,
+                        const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     /// \brief Constructor specifying a previously constructed graph.
     ///
     /// Calling this constructor fixes the graph structure of the

@@ -348,6 +348,37 @@ namespace Tpetra {
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  CrsMatrix(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& matrix,
+            const Teuchos::RCP<const crs_graph_type>& graph,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (graph->getRowMap ()),
+    staticGraph_ (graph),
+    storageStatus_ (matrix.storageStatus_)
+  {
+    const char tfecfFuncName[] = "CrsMatrix(RCP<const CrsGraph>, "
+      "local_matrix_device_type::values_type, "
+      "[,RCP<ParameterList>]): ";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (graph.is_null (), std::runtime_error, "Input graph is null.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! graph->isFillComplete (), std::runtime_error, "Input graph "
+       "is not fill complete. You must call fillComplete on the "
+       "graph before using it to construct a CrsMatrix.  Note that "
+       "calling resumeFill on the graph makes it not fill complete, "
+       "even if you had previously called fillComplete.  In that "
+       "case, you must call fillComplete on the graph again.");
+
+    size_t numValues = graph->getLocalGraphDevice().entries.extent(0);
+
+    valuesPacked_wdv = values_wdv_type(matrix.valuesPacked_wdv, 0, numValues);
+    valuesUnpacked_wdv = values_wdv_type(matrix.valuesUnpacked_wdv, 0, numValues);
+
+    checkInternalState();
+  }
+
+
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix (const Teuchos::RCP<const crs_graph_type>& graph,
              const typename local_matrix_device_type::values_type& values,
              const Teuchos::RCP<Teuchos::ParameterList>& /* params */) :
