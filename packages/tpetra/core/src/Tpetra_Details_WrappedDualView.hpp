@@ -173,8 +173,8 @@ public:
       return getHostView(Access::ReadWrite);
     }
     throwIfDeviceViewAlive();
-    originalDualView.clear_sync_state();
-    originalDualView.modify_host();
+    dualView.clear_sync_state();
+    dualView.modify_host();
     return dualView.view_host();
   }
 
@@ -215,8 +215,8 @@ public:
       return getDeviceView(Access::ReadWrite);
     }
     throwIfHostViewAlive();
-    originalDualView.clear_sync_state();
-    originalDualView.modify_device();
+    dualView.clear_sync_state();
+    dualView.modify_device();
     return dualView.view_device();
   }
 
