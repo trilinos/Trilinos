@@ -75,6 +75,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_DataAccess.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp" // unused here, could delete
+#include "KokkosBlas.hpp"
 
 #include <memory>
 #include <sstream>
@@ -2356,7 +2357,7 @@ abort();
     if (graph.isLocallyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
+      auto colInds = graph.getLocalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const LO lclColInd = inds[j];
@@ -2378,7 +2379,7 @@ abort();
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
+      auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = colMap.getGlobalElement (inds[j]);
@@ -2586,10 +2587,6 @@ abort();
     size_t hint = 0; // guess at the index's relative offset in the row
     LO numValid = 0; // number of valid input column indices
 
-    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
-    // accurately, it assumes that the host execution space can
-    // access data in both InputMemorySpace and ValsMemorySpace.
-
     if (graph.isLocallyIndexed ()) {
       // NOTE (mfh 04 Nov 2015) Dereferencing an RCP or reading its
       // pointer does NOT change its reference count.  Thus, this
@@ -2604,7 +2601,7 @@ abort();
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
+      auto colInds = graph.getLocalIndsViewHost (rowInfo);
       const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
 
       for (LO j = 0; j < numElts; ++j) {
@@ -2629,7 +2626,7 @@ abort();
     else if (graph.isGloballyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
+      auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = inds[j];
@@ -2821,7 +2818,7 @@ abort();
     if (graph.isLocallyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
+      auto colInds = graph.getLocalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const LO lclColInd = inds[j];
@@ -2863,7 +2860,7 @@ abort();
       const map_type& colMap = * (graph.colMap_);
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
+      auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
       const GO GINV = Teuchos::OrdinalTraits<GO>::invalid ();
       for (LO j = 0; j < numElts; ++j) {
@@ -2930,7 +2927,7 @@ abort();
     if (graph.isGloballyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
+      auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = inds[j];
@@ -2971,7 +2968,7 @@ abort();
       const map_type& colMap = * (graph.colMap_);
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
+      auto colInds = graph.getLocalIndsViewHost (rowInfo);
 
       const LO LINV = Teuchos::OrdinalTraits<LO>::invalid ();
       for (LO j = 0; j < numElts; ++j) {
@@ -3028,14 +3025,10 @@ abort();
     size_t hint = 0; // Guess for the current index k into rowVals
     LO numValid = 0; // number of valid local column indices
 
-    // NOTE (mfh 11 Oct 2015) This method assumes UVM.  More
-    // accurately, it assumes that the host execution space can
-    // access data in both InputMemorySpace and ValsMemorySpace.
-
     if (graph.isLocallyIndexed ()) {
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getLocalIndsViewDevice (rowInfo);
+      auto colInds = graph.getLocalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const LO lclColInd = inds[j];
@@ -3062,7 +3055,7 @@ abort();
 
       // Get a view of the column indices in the row.  This amortizes
       // the cost of getting the view over all the entries of inds.
-      auto colInds = graph.getGlobalIndsViewDevice (rowInfo);
+      auto colInds = graph.getGlobalIndsViewHost (rowInfo);
 
       for (LO j = 0; j < numElts; ++j) {
         const GO gblColInd = colMap.getGlobalElement (inds[j]);
@@ -3681,16 +3674,10 @@ abort();
       // do nothing
     }
     else {
-      auto lclMat = this->getLocalMatrix ();
 
-      const LO lclNumRows = lclMat.numRows ();
-      for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-        auto row_i = lclMat.row (lclRow);
-        for (LO k = 0; k < row_i.length; ++k) {
-          // FIXME (mfh 02 Jan 2015) This assumes CUDA UVM.
-          row_i.value (k) *= theAlpha;
-        }
-      }
+      auto vals = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+      KokkosBlas::scal(vals, theAlpha, vals);
+   
     }
   }
 
@@ -5843,7 +5830,7 @@ abort();
     using Kokkos::WithoutInitializing;
     row_ptrs_type row_ptr_beg(
       view_alloc("row_ptr_beg", WithoutInitializing),
-                 myGraph_->rowPtrsUnpacked_host_.extent(0));
+                 myGraph_->rowPtrsUnpacked_dev_.extent(0));
     Kokkos::deep_copy(row_ptr_beg, myGraph_->rowPtrsUnpacked_dev_);
 
     const size_t N = row_ptr_beg.extent(0) == 0 ? size_t(0) :
@@ -5856,17 +5843,20 @@ abort();
     row_ptrs_type row_ptr_end(
       view_alloc("row_ptr_end", WithoutInitializing), N);
 
+    row_ptrs_type num_row_entries_d;
+
     const bool refill_num_row_entries =
       myGraph_->k_numRowEntries_.extent(0) != 0;
-
+    
     if (refill_num_row_entries) { // unpacked storage
       // We can't assume correct *this capture until C++17, and it's
       // likely more efficient just to capture what we need anyway.
-      auto num_row_entries = myGraph_->k_numRowEntries_;
+      num_row_entries_d = create_mirror_view_and_copy(execution_space(),
+                                                 myGraph_->k_numRowEntries_);
       Kokkos::parallel_for
         ("Fill end row pointers", range_policy(0, N),
          KOKKOS_LAMBDA (const size_t i) {
-          row_ptr_end(i) = row_ptr_beg(i) + num_row_entries(i);
+          row_ptr_end(i) = row_ptr_beg(i) + num_row_entries_d(i);
         });
     }
     else {
@@ -5906,12 +5896,12 @@ abort();
     }
 
     if (refill_num_row_entries) {
-      auto num_row_entries = myGraph_->k_numRowEntries_;
       Kokkos::parallel_for
         ("Fill num entries", range_policy(0, N),
          KOKKOS_LAMBDA (const size_t i) {
-          num_row_entries(i) = row_ptr_end(i) - row_ptr_beg(i);
+          num_row_entries_d(i) = row_ptr_end(i) - row_ptr_beg(i);
         });
+      Kokkos::deep_copy(myGraph_->k_numRowEntries_, num_row_entries_d);
     }
 
     if (verbose) {

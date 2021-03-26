@@ -6536,7 +6536,7 @@ namespace Tpetra {
           if (static_cast<LO> (rowInfo.localRow) == lclRowInd &&
               rowInfo.numEntries > 0) {
 
-            auto colInds = this->getLocalIndsViewDevice (rowInfo);
+            auto colInds = this->getLocalIndsViewHost (rowInfo);
             const size_t hint = 0; // not needed for this algorithm
             const size_t offset =
               KokkosSparse::findRelOffset (colInds, rowInfo.numEntries,

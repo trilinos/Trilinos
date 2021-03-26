@@ -273,8 +273,8 @@ pad_crs_arrays(
         typename Indices::DeviceViewType::non_const_value_type;
   using vals_value_type = typename Values::DeviceViewType::non_const_value_type;
 
-  auto indices = indices_wdv.getDeviceView(Access::ReadOnly);
-  const size_t newIndsSize = size_t(indices.size()) + increase;
+  auto indices_old = indices_wdv.getDeviceView(Access::ReadOnly);
+  const size_t newIndsSize = size_t(indices_old.size()) + increase;
   auto indices_new = make_uninitialized_view<typename Indices::DeviceViewType>(
     "Tpetra::CrsGraph column indices", newIndsSize, verbose,
     prefix.get());
@@ -317,7 +317,7 @@ pad_crs_arrays(
             row_beg, row_beg + numEnt);
           const Kokkos::pair<size_t, size_t> newRange(
             newRowBeg, newRowBeg + numEnt);
-          auto oldColInds = Kokkos::subview(indices, oldRange);
+          auto oldColInds = Kokkos::subview(indices_old, oldRange);
           auto newColInds = Kokkos::subview(indices_new, newRange);
           // memcpy works fine on device; the next step is to
           // introduce two-level parallelism and use team copy.
@@ -514,10 +514,10 @@ padCrsArrays(
 {
   using impl::pad_crs_arrays;
   // send empty values array
-  Indices values; 
+  Indices values_null; 
   pad_crs_arrays<RowPtr, Indices, Indices, Padding>( 
     impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
-    indices_wdv, values, padding, my_rank, verbose);
+    indices_wdv, values_null, padding, my_rank, verbose);
 }
 
 template<class RowPtr, class Indices, class Values, class Padding>

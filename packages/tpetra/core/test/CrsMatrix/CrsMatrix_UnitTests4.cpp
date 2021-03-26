@@ -832,16 +832,18 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Make some vectors
     RCP<MV> toScale2 = rcp(new MV(map,1));
     RCP<MV> toScale4 = rcp(new MV(map,1)); 
-    auto v2 = toScale2->getDataNonConst(0);
-    auto v4 = toScale4->getDataNonConst(0);
-    for(size_t i=0; i<numLocal; i++){
-      if(i%2 == 0) {
-        v2[i] = SC_one;
-        v4[i] = SC_one;
-      }
-      else {        
-        v2[i] = SC_one+SC_one;
-        v4[i] = SC_one+SC_one;
+    {
+      auto v2 = toScale2->getDataNonConst(0);
+      auto v4 = toScale4->getDataNonConst(0);
+      for(size_t i=0; i<numLocal; i++){
+        if(i%2 == 0) {
+          v2[i] = SC_one;
+          v4[i] = SC_one;
+        }
+        else {        
+          v2[i] = SC_one+SC_one;
+          v4[i] = SC_one+SC_one;
+        }
       }
     }    
     
@@ -929,18 +931,20 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     // Make some vectors
     RCP<MV> toScale2 = rcp(new MV(map,1));
     RCP<MV> toScale4 = rcp(new MV(map,1)); 
-    auto v2 = toScale2->getDataNonConst(0);
-    auto v4 = toScale4->getDataNonConst(0);
-    for(size_t i=0; i<numLocal; i++){
-      if(i%2 == 0) {
-        v2[i] = SC_one;
-        v4[i] = SC_one;
-      }
-      else {        
-        v2[i] = SC_one+SC_one;
-        v4[i] = SC_one+SC_one;
-      }
-    }    
+    {
+      auto v2 = toScale2->getDataNonConst(0);
+      auto v4 = toScale4->getDataNonConst(0);
+      for(size_t i=0; i<numLocal; i++){
+        if(i%2 == 0) {
+          v2[i] = SC_one;
+          v4[i] = SC_one;
+        }
+        else {        
+          v2[i] = SC_one+SC_one;
+          v4[i] = SC_one+SC_one;
+        }
+      }    
+    }
 
     // Now, let's rescale some vectors
     Tpetra::Details::inverseScaleBlockDiagonal(*diag2,true,*toScale2);
