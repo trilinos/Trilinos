@@ -334,6 +334,7 @@ namespace MueLu {
     syncTimers_                = list.get("sync timers",                       false);
     numItersH_                 = list.get("refmaxwell: num iters H",           1);
     numIters22_                = list.get("refmaxwell: num iters 22",          1);
+    applyBCsToAnodal_          = list.get("refmaxwell: apply BCs to Anodal",   true);
     applyBCsToH_               = list.get("refmaxwell: apply BCs to H",        true);
     applyBCsTo22_              = list.get("refmaxwell: apply BCs to 22",       true);
 
@@ -462,7 +463,8 @@ namespace MueLu {
       GetOStream(Statistics2) << "MueLu::RefMaxwell::compute(): Detected " << BCedges_ << " BC rows and " << BCnodes_ << " BC columns." << std::endl;
     }
 
-    allBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements();
+    allEdgesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCedges_) >= D0_Matrix_->getRangeMap()->getGlobalNumElements();
+    allNodesBoundary_ = Teuchos::as<Xpetra::global_size_t>(BCnodes_) >= D0_Matrix_->getDomainMap()->getGlobalNumElements();
   }
 
 
@@ -573,7 +575,7 @@ namespace MueLu {
     if (!reuse)
        detectBoundaryConditionsSM();
 
-    if (allBoundary_) {
+    if (allEdgesBoundary_) {
       // All edges have been detected as boundary edges.
       // Do not attempt to construct sub-hierarchies, but just set up a single level preconditioner.
       GetOStream(Warnings0) << "All edges are detected as boundary edges!" << std::endl;
@@ -693,7 +695,7 @@ namespace MueLu {
 
         A_nodal_Matrix_ = coarseLevel.Get< RCP<Matrix> >("A", rapFact.get());
 
-        if (applyBCsToH_) {
+        if (applyBCsToAnodal_) {
           // Apply boundary conditions to A_nodal
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
           if (useKokkos_)
@@ -985,7 +987,7 @@ namespace MueLu {
 
     ////////////////////////////////////////////////////////////////////////////////
     // Build A22 = D0* SM D0 and hierarchy for A22
-    {
+    if (!allNodesBoundary_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): building MG for (2,2)-block" << std::endl;
 
       if (!reuse) { // build fine grid operator for (2,2)-block, D0* SM D0  (aka TMT)
@@ -1217,7 +1219,7 @@ namespace MueLu {
 
     }
 
-    if(!reuse) {
+    if(!reuse && !allNodesBoundary_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
@@ -2370,6 +2372,16 @@ namespace MueLu {
         Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }
 
+    if (!AH_.is_null() && precList11_.get<bool>("rap: fix zero diagonals", false)) {
+      magnitudeType threshold;
+      if (precList11_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
+        threshold = precList11_.get<magnitudeType>("rap: fix zero diagonals threshold");
+      else
+        threshold = Teuchos::as<magnitudeType>(precList11_.get<double>("rap: fix zero diagonals threshold", 1e-16));
+      Scalar replacement = Teuchos::as<Scalar>(precList11_.get<double>("rap: fix zero diagonals replacement", 1.0));
+      Xpetra::MatrixUtils<SC,LO,GO,NO>::CheckRepairMainDiagonal(AH_, true, GetOStream(Warnings1), threshold, replacement);
+    }
+
     if (!AH_.is_null()) {
       size_t dim = Nullspace_->getNumVectors();
       AH_->SetFixedBlockSize(dim);
@@ -2405,7 +2417,7 @@ namespace MueLu {
           RCP<Teuchos::TimeMonitor> tmRes = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (implicit)");
           P11_->apply(*residual_,*P11res_,Teuchos::TRANS);
         }
-        {
+        if (!allNodesBoundary_) {
           RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (implicit)");
           D0_Matrix_->apply(*residual_,*D0res_,Teuchos::TRANS);
         }
@@ -2417,7 +2429,7 @@ namespace MueLu {
             RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restrictions import");
             D0TR11Tmp_->doImport(*residual_, *rcp_dynamic_cast<CrsMatrixWrap>(R11_)->getCrsMatrix()->getCrsGraph()->getImporter(), Xpetra::INSERT);
           }
-          {
+          if (!allNodesBoundary_) {
             RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (explicit)");
             rcp_dynamic_cast<TpetraCrsMatrix>(rcp_dynamic_cast<CrsMatrixWrap>(D0_T_Matrix_)->getCrsMatrix())->getTpetra_CrsMatrix()->localApply(toTpetra(*D0TR11Tmp_),toTpetra(*D0res_),Teuchos::NO_TRANS);
           }
@@ -2432,7 +2444,7 @@ namespace MueLu {
             RCP<Teuchos::TimeMonitor> tmP11 = getTimer("MueLu RefMaxwell: restriction coarse (1,1) (explicit)");
             R11_->apply(*residual_,*P11res_,Teuchos::NO_TRANS);
           }
-          {
+          if (!allNodesBoundary_) {
             RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: restriction (2,2) (explicit)");
             D0_T_Matrix_->apply(*residual_,*D0res_,Teuchos::NO_TRANS);
           }
@@ -2449,7 +2461,7 @@ namespace MueLu {
         RCP<Teuchos::TimeMonitor> tmH = getTimer("MueLu RefMaxwell: import coarse (1,1)");
         P11resTmp_->doImport(*P11res_, *ImporterH_, Xpetra::INSERT);
       }
-      if (!Importer22_.is_null() && !implicitTranspose_) {
+      if (!allNodesBoundary_ && !Importer22_.is_null() && !implicitTranspose_) {
         RCP<Teuchos::TimeMonitor> tm22 = getTimer("MueLu RefMaxwell: import (2,2)");
         D0resTmp_->doImport(*D0res_, *Importer22_, Xpetra::INSERT);
       }
@@ -2498,7 +2510,7 @@ namespace MueLu {
         P11_->apply(*P11x_,X,Teuchos::NO_TRANS,one,one);
       }
 
-      { // prolongate (2,2) block
+      if (!allNodesBoundary_) { // prolongate (2,2) block
         RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: prolongation (2,2) (fused)");
         D0_Matrix_->apply(*D0x_,X,Teuchos::NO_TRANS,one,one);
       }
@@ -2508,7 +2520,7 @@ namespace MueLu {
         P11_->apply(*P11x_,*residual_,Teuchos::NO_TRANS);
       }
 
-      { // prolongate (2,2) block
+      if (!allNodesBoundary_) { // prolongate (2,2) block
         RCP<Teuchos::TimeMonitor> tmD0 = getTimer("MueLu RefMaxwell: prolongation (2,2) (unfused)");
         D0_Matrix_->apply(*D0x_,*residual_,Teuchos::NO_TRANS,one,one);
       }
@@ -2559,6 +2571,9 @@ namespace MueLu {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node>::solve22(const MultiVector& RHS, MultiVector& X) const {
 
+    if (allNodesBoundary_)
+      return;
+
     Scalar one = Teuchos::ScalarTraits<Scalar>::one();
 
     { // compute residual
@@ -2599,7 +2614,7 @@ namespace MueLu {
     RCP<Teuchos::TimeMonitor> tm = getTimer("MueLu RefMaxwell: solve");
 
     // make sure that we have enough temporary memory
-    if (!allBoundary_ && X.getNumVectors() != P11res_->getNumVectors())
+    if (!allEdgesBoundary_ && X.getNumVectors() != P11res_->getNumVectors())
       allocateMemory(X.getNumVectors());
 
     { // apply pre-smoothing
@@ -2796,7 +2811,7 @@ namespace MueLu {
 
 #ifdef HAVE_MPI
     int root;
-    if (!A22_.is_null())
+    if (!AH_.is_null())
       root = comm->getRank();
     else
       root = -1;
