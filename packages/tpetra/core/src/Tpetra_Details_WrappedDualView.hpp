@@ -44,16 +44,19 @@
 #include <Kokkos_DualView.hpp>
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
 #define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION()
 #define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn) \
-  std::cout << (fn) << " called from " << callerstr \
-            << " host cnt " << dualView.h_view.use_count()  \
-            << " device cnt " << dualView.d_view.use_count()  \
-            << std::endl;
+  { \
+  if (std::getenv ("TPETRA_UVM_REMOVAL")) \
+    std::cout << (fn) << " called from " << callerstr \
+              << " host cnt " << dualView.h_view.use_count()  \
+              << " device cnt " << dualView.d_view.use_count()  \
+              << std::endl; \
+  }
 
 #else
 
