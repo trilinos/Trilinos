@@ -281,21 +281,38 @@ protected:
           Details::WrappedDualView<global_inds_dualv_type>;
 
 public:
-    //! The Kokkos::View type for views of local ordinals on host
-    using local_inds_host_view_type = 
-          typename local_inds_dualv_type::t_host::const_type;
+    using row_graph_type = RowGraph<LocalOrdinal, GlobalOrdinal, Node>;
+    using row_ptrs_device_view_type =
+          typename row_graph_type::row_ptrs_device_view_type;
+    using row_ptrs_host_view_type =
+          typename row_graph_type::row_ptrs_host_view_type;
 
-    //! The Kokkos::View type for views of global ordinals on host
-    using global_inds_host_view_type = 
-          typename global_inds_dualv_type::t_host::const_type;
+    //! The Kokkos::View type for views of local ordinals on device and host
+    using local_inds_device_view_type =
+          typename row_graph_type::local_inds_device_view_type;
+    using local_inds_host_view_type =
+          typename row_graph_type::local_inds_host_view_type;
+
+    //! The Kokkos::View type for views of global ordinals on device and host
+    using global_inds_device_view_type =
+          typename row_graph_type::global_inds_device_view_type;
+    using global_inds_host_view_type =
+          typename row_graph_type::global_inds_host_view_type;
+
+
+//KDDKDD INROW    using local_inds_host_view_type = 
+//KDDKDD INROW          typename local_inds_dualv_type::t_host::const_type;
+
+//KDDKDD INROW    using global_inds_host_view_type = 
+//KDDKDD INROW          typename global_inds_dualv_type::t_host::const_type;
 
     //! The Kokkos::View type for views of local ordinals on device
-    using local_inds_device_view_type = 
-          typename local_inds_dualv_type::t_dev::const_type;
+//KDDKDD INROW    using local_inds_device_view_type = 
+//KDDKDD INROW          typename local_inds_dualv_type::t_dev::const_type;
 
     //! The Kokkos::View type for views of global ordinals on device
-    using global_inds_device_view_type = 
-          typename global_inds_dualv_type::t_dev::const_type;
+//KDDKDD INROW    using global_inds_device_view_type = 
+//KDDKDD INROW          typename global_inds_dualv_type::t_dev::const_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -1116,7 +1133,7 @@ public:
     void
     getGlobalRowView (
       const global_ordinal_type gblRow,
-      global_inds_host_view_type &gblColInds) const;
+      global_inds_host_view_type &gblColInds) const override;
 
 
     /// \brief Whether this class implements getLocalRowView() and
@@ -1152,7 +1169,7 @@ public:
     void
     getLocalRowView (
       const LocalOrdinal lclRow,
-      local_inds_host_view_type &lclColInds) const;
+      local_inds_host_view_type &lclColInds) const override;
 
 
     //@}
@@ -2169,33 +2186,33 @@ public:
     // indices array.  (Karen is skeptical that !OptimizedStorage works)
     // When OptimizedStorage, rowPtrsUnpacked_ = k_rowPtrsPacked_
 
-    using row_ptrs_device_type = 
-          Kokkos::View<const typename local_graph_device_type::size_type *, 
-                       device_type> ;
-    using row_ptrs_host_type = 
-          typename row_ptrs_device_type::HostMirror::const_type;
-    row_ptrs_device_type rowPtrsUnpacked_dev_;
-    row_ptrs_host_type rowPtrsUnpacked_host_;
+//KDDKDD INROW    using row_ptrs_device_view_type = 
+//KDDKDD INROW          Kokkos::View<const typename local_graph_device_type::size_type *, 
+//KDDKDD INROW                       device_type> ;
+//KDDKDD INROW    using row_ptrs_host_view_type = 
+//KDDKDD INROW          typename row_ptrs_device_view_type::HostMirror::const_type;
+    row_ptrs_device_view_type rowPtrsUnpacked_dev_;
+    row_ptrs_host_view_type rowPtrsUnpacked_host_;
 
-    void setRowPtrsUnpacked(const row_ptrs_device_type &dview) {
+    void setRowPtrsUnpacked(const row_ptrs_device_view_type &dview) {
       rowPtrsUnpacked_dev_ = dview;
       rowPtrsUnpacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
-                          typename row_ptrs_device_type::host_mirror_space(),
+                          typename row_ptrs_device_view_type::host_mirror_space(),
                           dview);
     }
 
     // Row offsets into the actual graph local indices 
     // Device view rowPtrsUnpacked_dev_ takes place of lclGraph_.row_map
 
-    row_ptrs_device_type rowPtrsPacked_dev_;
-    row_ptrs_host_type rowPtrsPacked_host_;
+    row_ptrs_device_view_type rowPtrsPacked_dev_;
+    row_ptrs_host_view_type rowPtrsPacked_host_;
 
-    void setRowPtrsPacked(const row_ptrs_device_type &dview) {
+    void setRowPtrsPacked(const row_ptrs_device_view_type &dview) {
       rowPtrsPacked_dev_ = dview;
       rowPtrsPacked_host_ = 
            Kokkos::create_mirror_view_and_copy(
-                          typename row_ptrs_device_type::host_mirror_space(),
+                          typename row_ptrs_device_view_type::host_mirror_space(),
                           dview);
     }
     

@@ -159,8 +159,8 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
     ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
-    ArrayView<const LO> loview; \
-    ArrayView<const Scalar> sview; \
+    typename MAT::local_inds_host_view_type loview; \
+    typename MAT::values_host_view_type sview; \
     size_t STMAX = 0; \
     for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
@@ -269,13 +269,19 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
       Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
-      ArrayView<const GO> CGView; ArrayView<const LO> CLView; ArrayView<const Scalar> CSView;
+
+      typename MAT::global_inds_host_view_type CGView; 
+      typename MAT::local_inds_host_view_type CLView; 
+      typename MAT::values_host_view_type CSView;
+
       size_t numentries;
       // at this point, the graph has not allocated data as global or local, so we can do views/copies for either local or global
       matrix.getLocalRowCopy(0,LCopy,SCopy,numentries);
       matrix.getLocalRowView(0,CLView,CSView);
+
       matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries);
       matrix.getGlobalRowView(myrowind,CGView,CSView);
+
       // use multiple inserts: this illustrated an overwrite bug for column-map-specified graphs
       for (size_t j=0; j<(size_t)ginds.size(); ++j) {
         matrix.insertGlobalValues(myrowind,ginds(j,1),tuple(ST::one()));
@@ -295,7 +301,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       matrix.fillComplete(params);
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
-      TEST_THROW( matrix.getLocalRowCopy(    0       ,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+      TEST_THROW( matrix.getLocalRowCopy(0,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
       TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
       //
       TEST_NOTHROW( matrix.getLocalRowView(0,CLView,CSView) );
