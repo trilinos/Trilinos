@@ -51,7 +51,7 @@
 #define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION()
 #define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn) \
   { \
-  if (std::getenv ("TPETRA_UVM_REMOVAL")) \
+  if (std::strcmp(std::getenv ("TPETRA_UVM_REMOVAL"),"1") == 0) \
     std::cout << (fn) << " called from " << callerstr \
               << " host cnt " << dualView.h_view.use_count()  \
               << " device cnt " << dualView.d_view.use_count()  \
