@@ -523,6 +523,43 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  CrsGraph (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
+            const Teuchos::RCP<const map_type>& rowMap,
+            const Teuchos::RCP<Teuchos::ParameterList>& params) :
+    dist_object_type (rowMap)
+    , rowMap_(rowMap)
+    , colMap_(originalGraph.colMap_)
+    , numAllocForAllRows_(originalGraph.numAllocForAllRows_)
+    , storageStatus_(originalGraph.storageStatus_)
+    , indicesAreAllocated_(originalGraph.indicesAreAllocated_)
+    , indicesAreLocal_(originalGraph.indicesAreLocal_)
+    , indicesAreSorted_(originalGraph.indicesAreSorted_)
+  {
+    staticAssertions();
+
+    int numRows = rowMap->getNodeNumElements();
+    size_t numNonZeros = originalGraph.rowPtrsPacked_host_(numRows);
+    auto rowsToUse = Kokkos::pair<size_t, size_t>(0, numRows+1);
+
+    rowPtrsUnpacked_dev_ = Kokkos::subview(originalGraph.rowPtrsUnpacked_dev_, rowsToUse);
+    rowPtrsUnpacked_host_ = Kokkos::subview(originalGraph.rowPtrsUnpacked_host_, rowsToUse);
+
+    rowPtrsPacked_dev_ = Kokkos::subview(originalGraph.rowPtrsPacked_dev_, rowsToUse);
+    rowPtrsPacked_host_ = Kokkos::subview(originalGraph.rowPtrsPacked_host_, rowsToUse);
+
+    if (indicesAreLocal_) {
+      lclIndsUnpacked_wdv = local_inds_wdv_type(originalGraph.lclIndsUnpacked_wdv, 0, numNonZeros);
+      lclIndsPacked_wdv = local_inds_wdv_type(originalGraph.lclIndsPacked_wdv, 0, numNonZeros);
+    }
+    else {
+      gblInds_wdv = global_inds_wdv_type(originalGraph.gblInds_wdv, 0, numNonZeros);
+    }
+
+    checkInternalState();
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
             const Teuchos::RCP<const map_type>& colMap,
             const typename local_graph_device_type::row_map_type& rowPointers,

@@ -446,6 +446,21 @@ public:
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
 
+    /// \brief Constructor specifying column Map and an existing graph to subview.
+    ///   The graph created will point to the views of the existing graph,
+    ///   but only have the rows contained in the passed-in rowMap.
+    ///   This constructor assumes it will alias the first N rows of the graph,
+    ///   where N is the number of rows in rowMap.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (CrsGraph<local_ordinal_type, global_ordinal_type, node_type>& originalGraph,
+              const Teuchos::RCP<const map_type>& rowMap,
+              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
+
     /// \brief Constructor specifying column Map and arrays containing
     ///   the graph. In almost all cases the indices must be sorted on input,
     ///   but if they aren't sorted, "sorted" must be set to false in params.
