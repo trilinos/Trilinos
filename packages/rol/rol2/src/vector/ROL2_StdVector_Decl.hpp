@@ -118,8 +118,6 @@ private:
 
   Ptr<std::vector<Real>> std_vec_;
 
-  
-
 }; // class StdVector
 
 } // namespace ROL2

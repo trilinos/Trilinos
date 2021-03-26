@@ -55,10 +55,10 @@ template<class Real>
 class lBFGS : public Secant<Real> {
 public:
 
-  lBFGS( int  M, 
-         bool useDefaultScaling = true, 
-         Real Bscaling = 1 )
-    : Secant<Real>(M,useDefaultScaling,Bscaling) {}
+  // Inherit Constructor
+  using Secant<Real>::Secant;
+
+  virtual ~lBFGS() = default;
 
   // Apply lBFGS Approximate Inverse Hessian
   void applyH(       Vector<Real>& Hv,

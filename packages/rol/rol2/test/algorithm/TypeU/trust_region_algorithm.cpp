@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//               Rapid Optimization Library (ROL2) Package
+//               Rapid Optimization Library (ROL) Package
 //                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -41,68 +41,60 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once 
-#ifndef ROL2_LSR1_DECL_HPP
-#define ROL2_LSR1_DECL_HPP
 
-/** \class ROL2::lSR1
-    \brief Provides interface for and implements limited-memory SR1 operators.
+/*! \file  trust_region_algorithm.cpp
+    \brief Test solving an unconstrained problem using a Trust Region Method
 */
 
-namespace ROL2 {
+#include "ROL2.hpp"
+#include "ROL2_TypeU_TestProblems.hpp"
 
-template<class Real>
-class lSR1 : public LinearOperator<Real> {
-public:
+int main( int argc, char *argv[] ) {
 
-  virtual ~lSR1() = default;
+  using RealT = double;
 
-  // Constructor
-  lSR1( int                         M = 10, 
-        bool                        useDefaultScaling = true, 
-        Real                        Bscaling = Real(1), 
-        typename Secant<Real>::Mode mode = Secant<Real>::Mode::Both ) {
-    if( useDefaultScaling_ ) Bscaling_ = 1;
-    non_inverse_ = Secant<Real>::mode_ != Secant<Real>::Mode::Inverse;
-    non_forward_ = Secant<Real>::mode_ != Secant<Real>::Mode::Forward;
+  auto os_ptr = ROL2::makeStreamPtr(std::cout, argc);
+  auto& os = *os_ptr;
+
+  int errorFlag  = 0;
+
+  auto errtol = ROL2::default_tolerance<RealT>();
+
+  try {
+
+    // Number of elements in StdVector objects
+    int dim = 10; 
+
+    // Create optimization vector and set initial guess to all 1's
+    ROL2::StdVector<RealT> x(dim);
+    x.setScalar(1.0);
+
+    // gradient vector
+    auto g_ptr = x.clone();
+    auto& g = *g_ptr;
+
+    // Create Zakharov objective
+    auto k_ptr = x.clone();
+    auto& k_data =  ROL2::StdVector<RealT>::getData(*k_ptr);
+    for( int i=0; i<10; ++i ) k_data[i] = 1+i;
+    auto obj = ROL2::TypeU::Objective_Zakharov<RealT>(k_ptr);
+
+    ROL2::ParameterList parlist;
+
+    auto algo = ROL2::TypeU::TrustRegionAlgorithm<RealT>( parlist ); 
+
+     
+
   }
+  catch (std::logic_error& err) {
+    os << err.what() << "\n";
+    errorFlag = -1000;
+  }; // end try
 
-  // Update lSR1 Approximation
-  void updateStorage( const Vector<Real>& x,  
-                      const Vector<Real>& grad,
-                      const Vector<Real>& gp, 
-                      const Vector<Real>& s,
-                            Real          snorm,      
-                            int           iter ) override;
+  if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
+  else                std::cout << "End Result: TEST PASSED\n";
 
-  // Apply lSR1 Approximate Inverse Hessian
-  void applyH(       Vector<Real>& Hv, 
-               const Vector<Real>& v ) const override;
+  return 0;
 
-  // Apply Initial lSR1 Approximate Inverse Hessian
-  void applyH0(       Vector<Real>& Hv, 
-                const Vector<Real>& v ) const override;
+}
 
-  // Apply lSR1 Approximate Hessian
-  void applyB(       Vector<Real>& Bv, 
-               const Vector<Real>& v ) const override;
-
-  // Apply Initial lSR1 Approximate Hessian 
-  void applyB0(       Vector<Real>& Bv, 
-                const Vector<Real>& v ) const override;
-
-private:
-
-  Ptr<Vector<Real>> Bs_, Hy_, prim_, dual_;
-  mutable bool H0called_, B0called_;
-  bool isInitialized_, non_inverse_, non_forward_;
-
-  using Secant<Real>::y_;
-  using Secant<Real>::useDefaultScaling_;
-  using Secant<Real>::Bscaling_;
-
-}; // lSR1
-
-} // namespace ROL2
-
-#endif // ROL2_LSR1_DECL_HPP

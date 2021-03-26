@@ -156,11 +156,11 @@ Secant<Real>::create( Secant<Real>::Type type,
                       int                L,
                       int                BBtype ) {
   switch( type ) {
-    case Type::LBFGS:           return ROL::makePtr<lBFGS<Real>>(L,uds,s);
-    case Type::LDFP:            return ROL::makePtr<lDFP<Real>>(L,uds,s);
-    case Type::LSR1:            return ROL::makePtr<lSR1<Real>>(L,uds,s,mode);
-    case Type::BarzilaiBorwein: return ROL::makePtr<BarzilaiBorwein<Real>>(BBtype);
-    default:                    return ROL::nullPtr; // Should we throw an exception here?
+    case Type::LBFGS:           return makePtr<lBFGS<Real>>(L);
+    case Type::LDFP:            return makePtr<lDFP<Real>>(L);
+    case Type::LSR1:            return makePtr<lSR1<Real>>(L);
+    case Type::BarzilaiBorwein: return makePtr<BarzilaiBorwein<Real>>(BBtype);
+    default:                    return nullPtr; // Should we throw an exception here?
   }
 }
 
@@ -178,11 +178,11 @@ Secant<Real>::create( ParameterList&     parlist,
   Real s   = slist.get("Initial Hessian Scale",1.0);
 
   switch( type_dict[sstr] ) {
-    case Type::LBFGS:           return ROL::makePtr<lBFGS<Real>>(L,uds,s);
-    case Type::LDFP:            return ROL::makePtr<lDFP<Real>>(L,uds,s);
-    case Type::LSR1:            return ROL::makePtr<lSR1<Real>>(L,uds,s,mode);
-    case Type::BarzilaiBorwein: return ROL::makePtr<BarzilaiBorwein<Real>>(BB);
-    default:                    return ROL::nullPtr; // Should we throw an exception here?
+    case Type::LBFGS:           return makePtr<lBFGS<Real>>(L,uds,s);
+    case Type::LDFP:            return makePtr<lDFP<Real>>(L,uds,s);
+    case Type::LSR1:            return makePtr<lSR1<Real>>(L,uds,s,mode);
+    case Type::BarzilaiBorwein: return makePtr<BarzilaiBorwein<Real>>(BB);
+    default:                    return nullPtr; // Should we throw an exception here?
   }
 }
 

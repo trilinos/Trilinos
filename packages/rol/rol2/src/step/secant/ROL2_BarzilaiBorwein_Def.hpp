@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//               Rapid Optimization Library (ROL2) Package
+//               Rapid Optimization Library (ROL) Package
 //                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -42,67 +42,54 @@
 // @HEADER
 
 #pragma once 
-#ifndef ROL2_LSR1_DECL_HPP
-#define ROL2_LSR1_DECL_HPP
+#ifndef ROL2_BARZILAIBORWEIN_DEF_HPP
+#define ROL2_BARZILAIBORWEIN_DEF_HPP
 
-/** \class ROL2::lSR1
-    \brief Provides interface for and implements limited-memory SR1 operators.
-*/
 
 namespace ROL2 {
 
 template<class Real>
-class lSR1 : public LinearOperator<Real> {
-public:
+void BarzilaiBorwein<Real>::applyH(       Vector<Real>& Hv,
+                                    const Vector<Real>& v ) const {
 
-  virtual ~lSR1() = default;
+  // Get Generic Secant State
+  auto& state = Secant<Real>::getState();
 
-  // Constructor
-  lSR1( int                         M = 10, 
-        bool                        useDefaultScaling = true, 
-        Real                        Bscaling = Real(1), 
-        typename Secant<Real>::Mode mode = Secant<Real>::Mode::Both ) {
-    if( useDefaultScaling_ ) Bscaling_ = 1;
-    non_inverse_ = Secant<Real>::mode_ != Secant<Real>::Mode::Inverse;
-    non_forward_ = Secant<Real>::mode_ != Secant<Real>::Mode::Forward;
+  Hv.set(v.dual());
+
+  if( state.iter != 0 && state.current != -1 ) {
+    if ( type_ == 1 ) {
+      Real yy = state.gradDiff[state.current]->dot(*(state.gradDiff[state.current]));
+      Hv.scale(state.product[state.current]/yy);
+    }
+    else if( type_ == 2 ) {
+      Real ss = state.iterDiff[state.current]->dot(*(state.iterDiff[state.current]));
+      Hv.scale(ss/state.product[state.current]);
+    }
   }
+} // BarzilaiBorwein<Real>::applyH
 
-  // Update lSR1 Approximation
-  void updateStorage( const Vector<Real>& x,  
-                      const Vector<Real>& grad,
-                      const Vector<Real>& gp, 
-                      const Vector<Real>& s,
-                            Real          snorm,      
-                            int           iter ) override;
 
-  // Apply lSR1 Approximate Inverse Hessian
-  void applyH(       Vector<Real>& Hv, 
-               const Vector<Real>& v ) const override;
+template<class Real>
+void BarzilaiBorwein<Real>::applyB(       Vector<Real>& Bv,
+                                    const Vector<Real>& v ) const {
+ // Get Generic Secant State
+ auto& state = Secant<Real>::getState();
 
-  // Apply Initial lSR1 Approximate Inverse Hessian
-  void applyH0(       Vector<Real>& Hv, 
-                const Vector<Real>& v ) const override;
+ Bv.set(v.dual());
 
-  // Apply lSR1 Approximate Hessian
-  void applyB(       Vector<Real>& Bv, 
-               const Vector<Real>& v ) const override;
-
-  // Apply Initial lSR1 Approximate Hessian 
-  void applyB0(       Vector<Real>& Bv, 
-                const Vector<Real>& v ) const override;
-
-private:
-
-  Ptr<Vector<Real>> Bs_, Hy_, prim_, dual_;
-  mutable bool H0called_, B0called_;
-  bool isInitialized_, non_inverse_, non_forward_;
-
-  using Secant<Real>::y_;
-  using Secant<Real>::useDefaultScaling_;
-  using Secant<Real>::Bscaling_;
-
-}; // lSR1
+ if ( state.iter != 0 && state.current != -1 ) {
+   if ( type_ == 1 ) {
+     Real yy = state.gradDiff[state.current]->dot(*(state.gradDiff[state.current]));
+     Bv.scale(yy/state.product[state.current]);
+   }
+   else if ( type_ == 2 ) {
+     Real ss = state.iterDiff[state.current]->dot(*(state.iterDiff[state.current]));
+     Bv.scale(state.product[state.current]/ss);
+   }
+ }
+} // BarzilaiBorwein<Real>::applyB
 
 } // namespace ROL2
 
-#endif // ROL2_LSR1_DECL_HPP
+#endif // ROL2_BARZILAIBORWEIN_DEF_HPP

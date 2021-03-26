@@ -11,49 +11,64 @@ set(ROL_OBJECTIVE ${ROL_FUNCTION}/objective )
 set(ROL_OPERATOR  ${ROL_FUNCTION}/operator  )
 
 
+set(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+yellow("ROL2 source directory: ${DIR}")
 
-
-set(ROL2_SRC   ${CMAKE_CURRENT_SOURCE_DIR})
-yellow("ROL2 source directory:  ${ROL2_SRC}")
-
-set(ROL2_VECTOR      ${ROL2_SRC}/vector      )
-set(ROL2_ALGORITHM   ${ROL2_SRC}/algorithm   )
-set(ROL2_ELEMENTWISE ${ROL2_SRC}/elementwise )
-set(ROL2_FUNCTION    ${ROL2_SRC}/function    )
-
-set(ROL2_OBJECTIVE   ${ROL2_FUNCTION}/objective )
-set(ROL2_OPERATIOR   ${ROL2_FUNCTION}/operator  )
-
-set(ROL2_UTILS       ${ROL2_SRC}/utils       )
 
 set(HEADERS "")
 set(SOURCES "")
 
-include_directories(${CMAKE_CURRENT_BINARY_DIR})
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories( ${DIR}
+                     ${DIR}/algorithm
+                     ${DIR}/algorithm/TypeU
+                     ${DIR}/algorithm/TypeU/linesearch
+                     ${DIR}/algorithm/TypeU/linesearch/descent
+                     ${DIR}/algorithm/TypeU/trustregion
+                     ${DIR}/elementwise
+                     ${DIR}/function
+                     ${DIR}/function/objective
+                     ${DIR}/function/operator
+                     ${DIR}/status
+                     ${DIR}/step
+                     ${DIR}/step/krylov
+                     ${DIR}/step/secant
+                     ${DIR}/utils
+                     ${DIR}/vector
+)
+
+APPEND_GLOB( HEADERS ${DIR}/ROL2.hpp )
+
+add_subdirectory( algorithm )
+add_subdirectory( elementwise )
+add_subdirectory( function )
+add_subdirectory( utils )
+add_subdirectory( vector )
 
 
-include_directories( ${ROL2_SRC}   )
-APPEND_GLOB( HEADERS ${ROL2_SRC}/ROL2.hpp )
-
-include_directories( ${ROL2_UTILS} )
-APPEND_GLOB( HEADERS ${ROL2_UTILS}/*.hpp )
-
-include_directories( ${ROL2_ELEMENTWISE} )
-APPEND_GLOB( HEADERS ${ROL2_ELEMENTWISE}/*.hpp )
-
-include_directories( ${ROL2_VECTOR} )
-APPEND_GLOB( HEADERS ${ROL2_VECTOR}/*.hpp )
 
 bold_blue("List of headers")
 foreach(H ${HEADERS})
   blue(${H})
 endforeach()
 
+
+#include_directories(${CMAKE_CURRENT_BINARY_DIR})
+#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
+
+#get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
+#foreach(dir ${dirs})
+#  message(STATUS "dir='${dir}'")
+#endforeach()
+
+
+#include_directories( ${DIR}   )
+
+
 #
 # All sources
 #
-APPEND_SET( SOURCES ${ROL2_UTILS}/ROL2_ParameterList.cpp )
+#APPEND_SET( SOURCES ${ROL2_SRC}/utils/ROL2_ParameterList.cpp )
 
 #APPEND_SET(HEADERS
 #  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h

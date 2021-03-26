@@ -32,7 +32,7 @@
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-G// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact lead developers:
 //              Drew Kouri   (dpkouri@sandia.gov) and
@@ -58,6 +58,10 @@ Ptr<Krylov<Real>> Krylov<Real>::create( ParameterList& parlist ) {
    auto& klist = glist.sublist("Krylov");
    auto kstr = klist.get("Type", "GMRES");
    bool inexact = glist.get("Inexact Hessian-Times-A-Vector",false);
+   auto absTol = klist.get("Absolute Tolerance",em4);
+   auto relTol = klist.get("Relative Tolerance",em4);
+   auto maxit  = klist.get("Maximum Iterations",20);
+
    switch(type_dict[kstr]) {
      case Type::CR:
        return makePtr<ConjugateResiduals<Real>>(absTol,relTol,maxit,inexact);

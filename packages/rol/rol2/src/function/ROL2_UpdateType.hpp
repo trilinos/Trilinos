@@ -41,10 +41,10 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_UPDATE_TYPE_H
-#define ROL2_UPDATE_TYPE_H
+#ifndef ROL2_UPDATE_TYPE_HPP
+#define ROL2_UPDATE_TYPE_HPP
 
-namespace ROL {
+namespace ROL2 {
 
 enum class UpdateType : std::uint16_t {
   Initial = 0, // Update has not been called before
@@ -56,4 +56,4 @@ enum class UpdateType : std::uint16_t {
 
 } // namespace ROL2
 
-#endif // ROL2_UPDATE_TYPE_H
+#endif // ROL2_UPDATE_TYPE_HPP

@@ -240,6 +240,21 @@ Real TrustRegion<Real>::interpolateRadius( const Vector<Real>& g,
   return std::min(gamma1*std::min(snorm,del),std::max(gamma0,theta)*del);
 }
 
+template<class Real>
+Ptr<TrustRegion<Real>> 
+TrustRegion<Real>::create( ParameterList& parlist ) {
+  auto& trlist = parlist.sublist("Step").sublist("Trust Region");
+  auto soltype = type_dict[trlist.get("Subproblem Solver","Dogleg")];
+  switch( soltype ) {
+    case: Type::CauchyPoint:  return makePtr<CauchyPoint<Real>>();
+    case: Type::Dogleg:       return makePtr<Dogleg<Real>>();
+    case: Type::DoubleDogleg: return makePtr<<Real>>();
+    case: Type::TruncateCG:   return makePtr<<Real>>(parlist);
+    case: Type::SPG:          return makePtr<<Real>>(parlist);
+    default: return nullPtr; // TODO: Should we not throw an exception?
+  }
+} // TrustRegion<Real>::create
+
 
 } // namespace TypeU
 } // namespace ROL2

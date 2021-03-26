@@ -46,10 +46,10 @@
 
 namespace ROL {
 
-template<typename Real>
-TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList&           parlist,
+template<Real>
+TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(       ParameterList&     parlist,
                                                   const Ptr<Secant<Real>>& secant )
-    : Algorithm<Real>(), esec_(Secant<Real>::Type::UserDefined ) {
+ : Algorithm<Real>(), secantType_( Secant<Real>::Type::UserDefined ) {
 
   auto& status = Algorithm<Real>::getStatus(); 
   
@@ -79,12 +79,12 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList&           parli
   useInexact_.push_back(glist.get("Inexact Hessian-Times-A-Vector", false));
 
   // Trust-Region Inexactness Parameters
-  auto& ilist = list.sublist("Inexact").sublist("Gradient");
+  auto& ilist = trlist.sublist("Inexact").sublist("Gradient");
   scale0_ = ilist.get("Tolerance Scaling",  static_cast<Real>(0.1));
   scale1_ = ilist.get("Relative Tolerance", static_cast<Real>(2)); 
 
   // Inexact Function Evaluation Information
-  auto& vlist = list.sublist("Inexact").sublist("Value");
+  auto& vlist = trlist.sublist("Inexact").sublist("Value");
   scale_       = vlist.get("Tolerance Scaling",                 static_cast<Real>(1.e-1));
   omega_       = vlist.get("Exponent",                          static_cast<Real>(0.9));
   force_       = vlist.get("Forcing Sequence Initial Value",    static_cast<Real>(1.0));
@@ -92,19 +92,20 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList&           parli
   forceFactor_ = vlist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
 
   // Initialize Trust Region Subproblem Solver Object
-  etr_       = StringToETrustRegionU(list.get("Subproblem Solver", "Dogleg"));  
+  etr_       = TrustRegion<Real>::type_dict[trlist.get("Subproblem Solver", "Dogleg")];  
   solver_    = TrustRegionUFactory<Real>(parlist);
   verbosity_ = glist.get("Output Level", 0);
 
   // Secant Information
-  useSecantPrecond_ = glist.sublist("Secant").get("Use as Preconditioner", false);
-  useSecantHessVec_ = glist.sublist("Secant").get("Use as Hessian",        false);
+  auto& slist = glist.sublist("Secant");
+  useSecantPrecond_ = slist.get("Use as Preconditioner", false);
+  useSecantHessVec_ = slist.sublist("Secant").get("Use as Hessian", false);
 
   if (secant == nullPtr) 
-    esec_ = StringToESecant(glist.sublist("Secant").get("Type","Limited-Memory BFGS"));
+    secantType_ = Secant<Real>::type_dict[slist.get("Type","Limited-Memory BFGS")];
 
   // Initialize trust region model
-  model_ = makePtr<TrustRegionModel_U<Real>>(parlist,secant);
+  model_ = makePtr<TrustRegionModel<Real>>(parlist,secant);
   printHeader_ = verbosity_ > 2;
 }
 
@@ -123,7 +124,7 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real>&    x,
 
   // Update approximate gradient and approximate objective function.
   Real ftol = static_cast<Real>(0.1)*ROL_MAX<Real>; 
-  obj.update(x,UPDATE_INITIAL,state.iter);    
+  obj.update(x,UpdateType::Initial,state.iter);    
   state.value = obj.value(x,ftol); 
   state.nfval++;
   state.snorm = ROL_INF<Real>;
@@ -136,20 +137,19 @@ void TrustRegionAlgorithm<Real>::initialize( const Vector<Real>&    x,
   // Compute initial trust region radius if desired.
   if ( state.searchSize <= static_cast<Real>(0) ) {
     int nfval = 0;
-    state.searchSize
-      = TRUtils::initialRadius<Real>(nfval,x,*state.gradientVec,Bg,
-          state.value,state.gnorm,obj,*model_,delMax_,
-          os,(verbosity_>1));
+    state.searchSize = TrustRegion<Real>::initialRadius(nfval,x,*state.gradientVec,Bg,
+                       state.value,state.gnorm,obj,*model_,delMax_,
+                       os,(verbosity_>1));
     state.nfval += nfval;
   }
 }
 
 template<typename Real>
-Real TrustRegionAlgorithm<Real>::computeValue(const Vector<Real>& x,
-                                                Objective<Real>&  obj,
-                                                Real              pRed) {
+Real TrustRegionAlgorithm<Real>::computeValue( const Vector<Real>&    x,
+                                                     Objective<Real>& obj,
+                                                     Real             pRed) {
   const Real one(1);
-  Real tol(std::sqrt(ROL_EPSILON<Real>())), fval(0);
+  Real tol(default_tolerance<Real>()),fval(0);
 
   if ( useInexact_[0] ) {
 
@@ -164,7 +164,7 @@ Real TrustRegionAlgorithm<Real>::computeValue(const Vector<Real>& x,
   }
 
   // Evaluate objective function at new iterate
-  obj.update(x,UPDATE_TRIAL);
+  obj.update(x,UpdateType::Trial);
   fval = obj.value(x,tol);
   state.nfval++;
   return fval;
@@ -204,7 +204,7 @@ void TrustRegionAlgorithm<Real>::run(       Vector<Real>& x,
   // Initialize trust-region data
   std::vector<std::string> output;
   Real ftrial(0), pRed(0), rho(0);
-  Ptr<Vector<Real>> gvec = g.clone();
+  auto gvec = g.clone();
   initialize(x,g,*gvec,obj,os);
 
   // Output
@@ -227,24 +227,24 @@ void TrustRegionAlgorithm<Real>::run(       Vector<Real>& x,
     ftrial = computeValue(x,obj,pRed);
 
     // Compute ratio of actual and predicted reduction
-    TRflag_ = TRUtils::SUCCESS;
-    TRUtils::analyzeRatio<Real>(rho,TRflag_,state.value,ftrial,pRed,eps_,os,verbosity_>1);
+    TRflag_ = TrustRegion<Real>::SUCCESS;
+    TrustRegion<Real>::analyzeRatio<Real>(rho,TRflag_,state.value,ftrial,pRed,eps_,os,verbosity_>1);
 
     // Update algorithm state
     state.iter++;
 
     // Accept/reject step and update trust region radius
-    if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) { // Step Rejected
+    if ((rho < eta0_ && TRflag_ == TrustRegion<Real>::Flag::Success) || (TRflag_ >= 2)) { // Step Rejected
 
       x.set(*state.iterateVec);
-      obj.update(x,UPDATE_REVERT,state.iter);
+      obj.update(x,UpdateType::Revert,state.iter);
 
-      if (rho < zero && TRflag_ != TRUtils::TRNAN) {
+      if (rho < zero && TRflag_ != TrustRegion<Real>::Flag::TRNaN) {
 
         // Negative reduction, interpolate to find new trust-region radius
-        state.searchSize = TRUtils::interpolateRadius<Real>(*state.gradientVec,*state.stepVec,
-          state.snorm,pRed,state.value,ftrial,state.searchSize,gamma0_,gamma1_,eta2_,
-          os,verbosity_>1);
+        state.searchSize = TrustRegion<Real>::interpolateRadius<Real>(*state.gradientVec,*state.stepVec,
+        state.snorm,pRed,state.value,ftrial,state.searchSize,gamma0_,gamma1_,eta2_,
+        os,verbosity_>1);
       }
       else { // Shrink trust-region radius
         state.searchSize = gamma1_*std::min(state.snorm,state.searchSize);
@@ -252,8 +252,8 @@ void TrustRegionAlgorithm<Real>::run(       Vector<Real>& x,
 
       if (useInexact_[1]) computeGradient(x,obj);
     }
-    else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
-             || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
+    else if ((rho >= eta0_ && TRflag_ != TrustRegion<Real>::NPOSPREDNEG)
+             || (TRflag_ == TrustRegion<Real>::POSPREDNEG)) { // Step Accepted
       state.iterateVec->set(x);
       state.value = ftrial;
       obj.update(x,UPDATE_ACCEPT,state.iter);
@@ -297,12 +297,13 @@ std::string TrustRegionAlgorithm<Real>::printHeader(void) const {
     os << std::endl;
     os << "  tr_flag - Trust-Region flag" << std::endl;
 
-    for( int flag = TRUtils::SUCCESS; flag != TRUtils::UNDEFINED; ++flag ) {
+    for( int flag = TrustRegion<Real>::Flag::Success; 
+         flag != TrustRegion<Real>::Flag::Undefined; ++flag ) {
       os << "    " << NumberToString(flag) << " - "
-           << TRUtils::ETRFlagToString(static_cast<TRUtils::ETRFlag>(flag)) << std::endl;
+           << TrustRegion<Real>::ETRFlagToString(static_cast<TrustRegion<Real>::ETRFlag>(flag)) << std::endl;
     }
 
-    if( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+    if( etr_ == TrustRegion<Real>::Type::TruncatedCG ) {
       os << std::endl;
       os << "  iterCG - Number of Truncated CG iterations" << std::endl << std::endl;
       os << "  flagGC - Trust-Region Truncated CG flag" << std::endl;
@@ -312,7 +313,7 @@ std::string TrustRegionAlgorithm<Real>::printHeader(void) const {
       }            
     }
 
-    else if( etr_ == TRUSTREGION_SPG ) {
+    else if( etr_ == TrustRegion<Real>::Type::SPG ) {
       os << std::endl;
       os << "  iterCG - Number of spectral projected gradient iterations" << std::endl << std::endl;
       os << "  flagGC - Trust-Region spectral projected gradient flag" << std::endl;
@@ -330,11 +331,11 @@ std::string TrustRegionAlgorithm<Real>::printHeader(void) const {
   os << std::setw(10) << std::left << "#grad";
   os << std::setw(10) << std::left << "tr_flag";
 
-  if ( etr_ == TRUSTREGION_TRUNCATEDCG ) {
+  if ( etr_ == TrustRegion<Real>::Type::TruncatedCG ) {
     os << std::setw(10) << std::left << "iterCG";
     os << std::setw(10) << std::left << "flagCG";
   }
-  else if (etr_ == TRUSTREGION_SPG) {
+  else if (etr_ == TrustRegion<Real>::Type::SPG) {
     os << std::setw(10) << std::left << "iterSPG";
     os << std::setw(10) << std::left << "flagSPG";
   }
@@ -348,13 +349,13 @@ void TrustRegionAlgorithm<Real>::writeName( std::ostream& os ) const {
 
   if ( useSecantPrecond_ || useSecantHessVec_ ) {
     if ( useSecantPrecond_ && !useSecantHessVec_ ) {
-      os << " with " << Secant<Real>::toString(esec_) << " Preconditioning" << std::endl;
+      os << " with " << Secant<Real>::toString(secantType_) << " Preconditioning" << std::endl;
     }
     else if ( !useSecantPrecond_ && useSecantHessVec_ ) {
-      os << " with " << Secant<Real>::toString(esec_) << " Hessian Approximation" << std::endl;
+      os << " with " << Secant<Real>::toString(secantType_) << " Hessian Approximation" << std::endl;
     }
     else {
-      os << " with " << Secant<Real>::toString(esec_) << " Preconditioning and Hessian Approximation" << std::endl;
+      os << " with " << Secant<Real>::toString(secantType_) << " Preconditioning and Hessian Approximation" << std::endl;
     }
   }
   else os << std::endl;
@@ -376,7 +377,7 @@ void TrustRegionAlgorithm<Real>::writeOutput( std::ostream& os, bool print_heade
     os << std::setw(10) << std::left << state.ngrad;
     os << std::setw(10) << std::left << "---";
 
-    if ( etr_ == TRUSTREGION_TRUNCATEDCG || etr_ == TRUSTREGION_SPG ) {
+    if ( etr_ == TrustRegion<Real>::Type::TruncatedCG || etr_ == TrustRegion<Real>::Type::SPG ) {
       os << std::setw(10) << std::left << "---";
       os << std::setw(10) << std::left << "---";
     }
@@ -393,7 +394,7 @@ void TrustRegionAlgorithm<Real>::writeOutput( std::ostream& os, bool print_heade
     os << std::setw(10) << std::left << state.ngrad;
     os << std::setw(10) << std::left << TRflag_;
 
-    if ( etr_ == TRUSTREGION_TRUNCATEDCG || etr_ == TRUSTREGION_SPG ) {
+    if ( etr_ == TrustRegion<Real>::Type::TruncatedCG || etr_ == TrustRegion<Real>::Type::SPG ) {
       os << std::setw(10) << std::left << SPiter_;
       os << std::setw(10) << std::left << SPflag_;
     }

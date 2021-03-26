@@ -59,7 +59,7 @@ public:
   virtual ~CauchyPoint() = default;
 
   void initialize( const Vector<Real>& x, 
-                   const Vector<Real>& g) override { dual_ = g.clone(); }
+                   const Vector<Real>& g ) override { dual_ = g.clone(); }
 
   void solve( Vector<Real>&           s, 
               Real&                   snorm, 

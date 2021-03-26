@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_TYPEU_LINESEARCHALGORITHM_DEF_H
-#define ROL2_TYPEU_LINESEARCHALGORITHM_DEF_H
+#ifndef ROL2_TYPEU_LINESEARCHALGORITHM_DEF_HPP
+#define ROL2_TYPEU_LINESEARCHALGORITHM_DEF_HPP
 
 namespace ROL2 {
 namespace TypeU {
@@ -268,4 +268,4 @@ std::string LineSearchAlgorithm<Real>::print( print_header ) const {
 } // namespace TypeU
 } // namespace ROL
 
-#endif
+#endif // ROL2_TYPEU_LINESEARCHALGORITHM_DEF_HPP

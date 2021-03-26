@@ -75,11 +75,12 @@ void TrustRegionModel<Real>::validate( Objective<Real>&    obj,
                  const Vector<Real>& g,
                 ETrustRegionU       etr) {
     if ( !useSecantHessVec_ &&
-        (etr == TRUSTREGION_U_DOGLEG || etr == TRUSTREGION_U_DOUBLEDOGLEG) ) {
+        (etr == TrustRegion<Real>::Type::DogLeg
+       || etr == TrustRegion<Real>::Type::DoubleDogLeg) {
       try {
-        Real htol = std::sqrt(ROL_EPSILON<Real>());
-        Ptr<Vector<Real>> v  = g.clone();
-        Ptr<Vector<Real>> hv = x.clone();
+        Real htol = default_tolerance<Real>();
+        auto v  = g.clone();
+        auto hv = x.clone();
         obj.invHessVec(*hv,*v,x,htol);
       }
       catch (std::exception &e) {

@@ -106,7 +106,7 @@ private:
   int                         SPiter_; ///< Subproblem solver iteration count.
 
   // SECANT INFORMATION
-  Secant<Real>::Type esec_;
+  Secant<Real>::Type secantType_;
   bool useSecantPrecond_;
   bool useSecantHessVec_;
 

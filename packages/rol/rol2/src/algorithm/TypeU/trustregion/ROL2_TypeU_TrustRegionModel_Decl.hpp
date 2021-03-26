@@ -64,10 +64,11 @@ class TrustRegionModel : public Objective<Real> {
 public:
 
   enum class Type : std::int16_t {
-  
+    ColemanLi = 0,
+    KelleySachs,
+    LineMore,
+    Last
   };
-
-
 
   virtual ~TrustRegionModel() = default;
 
@@ -159,6 +160,9 @@ protected:
   void applyPrecond(       Vector<Real>& Pv, 
                      const Vector<Real>& v, 
                            Real&         tol );
+
+  static EnumMap<Type> type_dict;
+
 private:
 
   Ptr<Objective<Real>> obj_;
@@ -169,6 +173,13 @@ private:
   bool useSecantHessVec_;
 
 }; // class TrustRegionModel
+
+template<class Real>
+EnumMap<TrustRegionModel<Real>::Type> 
+TrustRegionModel<Real>::type_dict = { "Coleman-Li", 
+                                      "Kelley-Sachs",
+                                      "Lin-More" };
+
 
 } // namespace TypeU
 } // namespace ROL2

@@ -26,8 +26,7 @@
 // EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
 // IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
 // PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
-// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
-// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+// CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
 // PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
@@ -74,7 +73,7 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
       Hy_ = x.clone();    prim_ = x.clone();
     }
     isInitialized_ = true;
-  }
+  } // endif( !isInitialized_ )
 
   // Update iterate
   state.iter = iter;
@@ -86,9 +85,7 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
 
   Real dotF(ROL_INF<Real>), tolF(0), dotI(ROL_INF<Real>), tolI(0);
 
-  bool not_inverse = Secant<Real>::mode_ != Secant<Real>::Mode::Inverse;
-
-  if( not_inverse ) {
+  if( non_inverse_ ) {
     // Compute y - Bs and <s, y - Bs>
     applyB(*Bs_,s);
     Bs_->scale(-one);
@@ -97,7 +94,7 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
     tolF = tol*snorm*Bs_->norm();
   }
 
-  if( not_inverse ) {
+  if( non_forward_ ) {
     // Compute s - Hy and <y, s - Hy>
     applyH(*Hy_,*y_);
     Hy_->scale(-one);
@@ -105,47 +102,47 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
     dotI = y_->apply(*Hy_);
     tolI = tol*y_->norm()*Hy_->norm();
   }
-  if (std::abs(dotF) > tolF && std::abs(dotI) > tolI) {
+
+  if( std::abs(dotF) > tolF && std::abs(dotI) > tolI ) {
+
     if (state.current < state.storage-1) {
       state.current++;
-      if( state.mode == Secant<Real>::Mode::Inverse || 
-          state.mode == Secant<Real>::Mode::Both) {
-        state.iterDiff.push_back(x.clone());            // Create new memory
-      }
-      if (state.mode == Secant<Real>::Mode::Forward || state.mode == Secant<Real>::Mode::Both) {
-        state.gradDiff.push_back(grad.clone());         // Create new memory
-      }
+      if( non_forward_ ) state.iterDiff.push_back(x.clone());     // Create new memory
+      if( non_inverse_ ) state.gradDiff.push_back(grad.clone());  // Create new memory
     }
     else {
-      if (state.mode == Secant<Real>::Mode::Inverse || state.mode == Secant<Real>::Mode::Both) {
+      if( non_forward_ ) {
         state.iterDiff.push_back(state.iterDiff[0]);  // Move first element to the last
         state.iterDiff.erase(state.iterDiff.begin()); // Remove first element of s list
         state.product2.erase(state.product2.begin()); // Remove first element of rho list
       }
-      if (state.mode == Secant<Real>::Mode::Forward || state.mode == Secant<Real>::Mode::Both) {
+      if( non_inverse_ ) { 
         state.gradDiff.push_back(state.gradDiff[0]);  // Move first element to the last
         state.gradDiff.erase(state.gradDiff.begin()); // Remove first element of y list
         state.product.erase(state.product.begin());   // Remove first element of rho list
       }
     }
-      if (state.mode == Secant<Real>::Mode::Inverse || state.mode == Secant<Real>::Mode::Both) {
-        state.iterDiff[state.current]->set(*Hy_);       // s_k - H_k y_k
-        state.product2.push_back(dotI);                   // (s_k - H_k y_k)' y_k
-      }
-      if (state.mode == Secant<Real>::Mode::Forward || state.mode == Secant<Real>::Mode::Both) {
-        state.gradDiff[state.current]->set(*Bs_);       // y_k - B_k s_k
-        state.product.push_back(dotF);                    // (y_k - B_k s_k)' s_k
-      }
-      //if (useDefaultScaling_) Bscaling_ = s.dot(y_->dual())/(snorm*snorm);
-      if (useDefaultScaling_) Bscaling_ = s.apply(*y_)/(snorm*snorm);
+
+    if( non_forward_ ) {
+      state.iterDiff[state.current]->set(*Hy_);       // s_k - H_k y_k
+      state.product2.push_back(dotI);                   // (s_k - H_k y_k)' y_k
+    } 
+
+    if( non_inverse_ ) {
+      state.gradDiff[state.current]->set(*Bs_);       // y_k - B_k s_k
+      state.product.push_back(dotF);                    // (y_k - B_k s_k)' s_k
     }
 
-}
+    if (useDefaultScaling_) Bscaling_ = s.apply(*y_)/(snorm*snorm);
+  }
+} // lSR1<Real>::updateStorage
+
 
 // Apply lSR1 Approximate Inverse Hessian
 template<class Real>
 void lSR1<Real>::applyH(       Vector<Real>& Hv, 
                          const Vector<Real>& v ) const {
+
   auto& state = Secant<Real>::getState();
 
   if (state.mode == Secant<Real>::Mode::Inverse || 
@@ -163,74 +160,45 @@ void lSR1<Real>::applyH(       Vector<Real>& Hv,
       }
     }
   }
-  else {
-    throw Exception::NotImplemented(">>> ROL::lSR1::applyH : Not supported in forward mode!");
-  }
+  else throw std::logic_error(">>> ROL::lSR1::applyH : Not supported in forward mode!");
+} // lSR1<Real>::applyH
 
 
-}
 
 // Apply Initial lSR1 Approximate Inverse Hessian
 template<class Real>
 void lSR1<Real>::applyH0(       Vector<Real>& Hv, 
                           const Vector<Real>& v ) const  { 
+
   auto& state = Secant<Real>::getState();
 
-    if (state.current > -1) {
-      prim_->set(v.dual());
-      Hv.set(*prim_);
-      H0called_ = true;
-    }
-    else {
-      Hv.set(v.dual());
-    }
-    Hv.scale(static_cast<Real>(1)/Bscaling_);
+  if (state.current > -1) {
+    prim_->set(v.dual());
+    Hv.set(*prim_);
+    H0called_ = true;
   }
-
-  // Apply lSR1 Approximate Inverse Hessian
-  void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
-  auto& state = Secant<Real>::getState();
-    if (state.mode == Secant<Real>::Mode::Inverse || state.mode == Secant<Real>::Mode::Both) {
-      // Apply initial Hessian approximation to v
-      H0called_ = false;
-      applyH0(Hv,v);
-      // Apply rank one updates
-      if (state.current > -1) {
-        Real prod(0);
-        if (!H0called_) prim_->set(v.dual());
-        for (int i = 0; i <= state.current; ++i) {
-          prod = state.iterDiff[i]->dot(*prim_);
-          Hv.axpy(prod/state.product2[i],*state.iterDiff[i]);
-        }
-      }
-    }
-    else {
-      throw Exception::NotImplemented(">>> ROL::lSR1::applyH : Not supported in forward mode!");
-    }
+  else Hv.set(v.dual());
+  Hv.scale(static_cast<Real>(1)/Bscaling_);
+} // lSR1<Real>::applyH0
 
 
 
-
-}
 
 // Apply lSR1 Approximate Hessian
 template<class Real>
 void lSR1<Real>::applyB(       Vector<Real>& Bv, 
                          const Vector<Real>& v ) const {
+
   auto& state = Secant<Real>::getState();
 
-    if (state.current > -1) {
-      dual_->set(v.dual());
-      Bv.set(*dual_);
-      B0called_ = true;
-    }
-    else {
-      Bv.set(v.dual());
-    }
-    Bv.scale(Bscaling_);
+  if (state.current > -1) {
+    dual_->set(v.dual());
+    Bv.set(*dual_);
+    B0called_ = true;
+  }
+  else Bv.set(v.dual());
 
-
-
+  Bv.scale(Bscaling_);
 }
 
 // Apply Initial lSR1 Approximate Hessian 
@@ -254,11 +222,8 @@ void lSR1<Real>::applyB0(       Vector<Real>& Bv,
       }
     }
   }
-  else {
-    throw Exception::NotImplemented(">>> ROL::lSR1::applyB : Not supported in inverse mode!");
-  }
-
-}
+  else throw std::logic_error(">>> ROL::lSR1::applyB : Not supported in inverse mode!");
+} // lSR1<Real>::applyB0
 
 } // namespace ROL2
 

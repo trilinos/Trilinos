@@ -42,52 +42,38 @@
 // @HEADER
 
 #pragma once 
-#ifndef ROL2_LSR1_DECL_HPP
-#define ROL2_LSR1_DECL_HPP
+#ifndef ROL2_LDFP_DECL_HPP
+#define ROL2_LDFP_DECL_HPP
 
-/** \class ROL2::lSR1
-    \brief Provides interface for and implements limited-memory SR1 operators.
+/** \class ROL2::lDFP
+    \brief Provides interface for and implements limited-memory DFP operators.
 */
 
 namespace ROL2 {
 
 template<class Real>
-class lSR1 : public LinearOperator<Real> {
+class lDFP : public LinearOperator<Real> {
 public:
 
-  virtual ~lSR1() = default;
+  // Inherit Constructor
+  using Secant<Real>::Secant;
 
-  // Constructor
-  lSR1( int                         M = 10, 
-        bool                        useDefaultScaling = true, 
-        Real                        Bscaling = Real(1), 
-        typename Secant<Real>::Mode mode = Secant<Real>::Mode::Both ) {
-    if( useDefaultScaling_ ) Bscaling_ = 1;
-    non_inverse_ = Secant<Real>::mode_ != Secant<Real>::Mode::Inverse;
-    non_forward_ = Secant<Real>::mode_ != Secant<Real>::Mode::Forward;
-  }
+  virtual ~lDFP() = default;
 
-  // Update lSR1 Approximation
-  void updateStorage( const Vector<Real>& x,  
-                      const Vector<Real>& grad,
-                      const Vector<Real>& gp, 
-                      const Vector<Real>& s,
-                            Real          snorm,      
-                            int           iter ) override;
 
-  // Apply lSR1 Approximate Inverse Hessian
+  // Apply lDFP Approximate Inverse Hessian
   void applyH(       Vector<Real>& Hv, 
                const Vector<Real>& v ) const override;
 
-  // Apply Initial lSR1 Approximate Inverse Hessian
+  // Apply Initial lDFP Approximate Inverse Hessian
   void applyH0(       Vector<Real>& Hv, 
                 const Vector<Real>& v ) const override;
 
-  // Apply lSR1 Approximate Hessian
+  // Apply lDFP Approximate Hessian
   void applyB(       Vector<Real>& Bv, 
                const Vector<Real>& v ) const override;
 
-  // Apply Initial lSR1 Approximate Hessian 
+  // Apply Initial lDFP Approximate Hessian 
   void applyB0(       Vector<Real>& Bv, 
                 const Vector<Real>& v ) const override;
 
@@ -101,8 +87,8 @@ private:
   using Secant<Real>::useDefaultScaling_;
   using Secant<Real>::Bscaling_;
 
-}; // lSR1
+}; // lDFP
 
 } // namespace ROL2
 
-#endif // ROL2_LSR1_DECL_HPP
+#endif // ROL2_LDFP_DECL_HPP

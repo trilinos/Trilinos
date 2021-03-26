@@ -31,7 +31,7 @@ public:
 
     State();
 
-    virtual State() = default;
+    virtual ~State() = default;
 
     virtual void reset() override;
 
@@ -57,7 +57,7 @@ public:
     int ngrad   = 0; ///< Number of gradient evaluations
     int nhvec   = 0; ///< Number of Hessian-vector product evaluations
     
-    ExitStatus exitStatus_ = ExitStatus::Last;
+    typename StatusTest<Real>::ExitStatus exitStatus_ = StatusTest<Real>::ExitStatus::Last;
 
     bool is_initialized_ = false;
 
@@ -66,7 +66,7 @@ public:
   Algorithm() = default;
   virtual ~Algorithm() = default;
 
-  virtual void setStatusTest( const Ptr<StatusTest<Real>& status,
+  virtual void setStatusTest( const Ptr<StatusTest<Real>>& status,
                               bool combineStatus = false ) override;
 
   virtual void run( OptimizationProblem<Real>& problem,

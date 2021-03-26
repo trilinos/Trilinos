@@ -89,7 +89,7 @@ class Objective_Zakharov : public Objective<Real> {
 public:
   
   // Create using a ROL::Vector containing 1,2,3,...,n
-  Objective_Zakharov( const ROL::Ptr<Vector<Real>> k ) : k_(k) {}
+  Objective_Zakharov( const Ptr<Vector<Real>>& k ) : k_(k) {}
 
   Real value( const Vector<Real>& x, 
                     Real&        tol ) {
@@ -148,41 +148,41 @@ public:
   }
 
 private:
-    ROL::Ptr<Vector<Real>> k_;  
+    Ptr<Vector<Real>> k_;  
 
 };
 
 
 
-template<class Real>
-class TestProblem_Zakharov : public TestProblem<Real> {
-public:
-
-  TestProblem_Zakharov( int dim=10 ) : dim_(dim) {}
-
-  Ptr<Objective<Real>> getObjective() const {
-    // Instantiate Objective Function
-    auto k_ptr = ROL::makePtr<std::vector<Real>>(dim_,0.0);
-    for ( int i = 0; i < dim_; i++ ) (*k_ptr)[i] = i+1.0;
-    auto k = makePtr<StdVector<Real>>(k_ptr);
-    return makePtr<Objective_Zakharov<Real>>(k);
-  }
-
-  Ptr<Vector<Real>> getInitialGuess() const {
-    // Get Initial Guess
-    auto x0p = makePtr<std::vector<Real>>(dim_,3.0);
-    return makePtr<StdVector<Real>>(x0p);
-  }
-
-  Ptr<Vector<Real>> getSolution( int i = 0) const {
-    // Get Solution
-    auto xp = makePtr<std::vector<Real>>(dim_,0.0);
-    return makePtr<StdVector<Real>>(xp);
-  }
-
-private:
-  int dim_;
-}; // class TestProblem_Zakharov
+//template<class Real>
+//class TestProblem_Zakharov : public TestProblem<Real> {
+//public:
+//
+//  TestProblem_Zakharov( int dim=10 ) : dim_(dim) {}
+//
+//  Ptr<Objective<Real>> getObjective() const {
+//    // Instantiate Objective Function
+//    auto k_ptr = ROL::makePtr<std::vector<Real>>(dim_,0.0);
+//    for ( int i = 0; i < dim_; i++ ) (*k_ptr)[i] = i+1.0;
+//    auto k = makePtr<StdVector<Real>>(k_ptr);
+//    return makePtr<Objective_Zakharov<Real>>(k);
+//  }
+//
+//  Ptr<Vector<Real>> getInitialGuess() const {
+//    // Get Initial Guess
+//    auto x0p = makePtr<std::vector<Real>>(dim_,3.0);
+//    return makePtr<StdVector<Real>>(x0p);
+//  }
+//
+//  Ptr<Vector<Real>> getSolution( int i = 0) const {
+//    // Get Solution
+//    auto xp = makePtr<std::vector<Real>>(dim_,0.0);
+//    return makePtr<StdVector<Real>>(xp);
+//  }
+//
+//private:
+//  int dim_;
+//}; // class TestProblem_Zakharov
 
 } // namespace TypeU
 } // namespace ROL2

@@ -69,11 +69,12 @@
 
 namespace ROL2 {
 
-template<Real>
+template<class Real>
 class Objective {
 public:
 
-  virtual ~Objective() {}
+  Objective() = default;
+  virtual ~Objective() = default;
 
   /** \brief Update objective function. 
 
@@ -202,7 +203,7 @@ public:
                  const Vector<Real>& d,
                  const bool    printToStream = true,
                  std::ostream& outStream = std::cout,
-                 const int     numSteps = ROL2_NUM_CHECKDERIV_STEPS,
+                 const int     numSteps = UFD::NUM_CHECKDERIV_STEPS,
                  const int     order = 1 );
 
   /** \brief Finite-difference gradient check.
@@ -379,7 +380,7 @@ public:
   virtual std::vector<std::vector<Real>> 
   checkHessVec( const Vector<Real>&      x,
                 const Vector<Real>&      v,
-                      std::vector<Real>& steps,
+                const std::vector<Real>& steps,
                       bool               printToStream = true,
                       std::ostream&      outStream = std::cout,
                       int                order = 1 );

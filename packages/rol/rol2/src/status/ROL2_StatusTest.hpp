@@ -1,7 +1,7 @@
 // @HEADER
 // ************************************************************************
 //
-//               Rapid Optimization Library (ROL2) Package
+//               Rapid Optimization Library (ROL) Package
 //                 Copyright (2014) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -41,68 +41,77 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once 
-#ifndef ROL2_LSR1_DECL_HPP
-#define ROL2_LSR1_DECL_HPP
+#ifndef ROL2_STATUSTEST_H
+#define ROL2_STATUSTEST_H
 
-/** \class ROL2::lSR1
-    \brief Provides interface for and implements limited-memory SR1 operators.
+/** \class ROL2::StatusTest
+    \brief Provides an interface to check status of optimization algorithms.
 */
+
 
 namespace ROL2 {
 
 template<class Real>
-class lSR1 : public LinearOperator<Real> {
+class StatusTest {
 public:
 
-  virtual ~lSR1() = default;
+  enum class ExitStatus : std::int16_t {
+    Converged = 0,
+    MaxIter,
+    StepTol,
+    NaN,
+    UserDefined,
+    Last
+  };
 
-  // Constructor
-  lSR1( int                         M = 10, 
-        bool                        useDefaultScaling = true, 
-        Real                        Bscaling = Real(1), 
-        typename Secant<Real>::Mode mode = Secant<Real>::Mode::Both ) {
-    if( useDefaultScaling_ ) Bscaling_ = 1;
-    non_inverse_ = Secant<Real>::mode_ != Secant<Real>::Mode::Inverse;
-    non_forward_ = Secant<Real>::mode_ != Secant<Real>::Mode::Forward;
+  virtual ~StatusTest() = default;
+
+  StatusTest( ParameterList& parlist ) {
+    Real em6(1e-6);
+    auto& stlist = parlist.sublist("Status Test");
+    gtol_     = stlist.get("Gradient Tolerance", em6);
+    stol_     = stlist.get("Step Tolerance", em6*gtol_);
+    max_iter_ = stlist.get("Iteration Limit", 100);
+    use_rel_  = stlist.get("Use Relative Tolerances", false);
   }
 
-  // Update lSR1 Approximation
-  void updateStorage( const Vector<Real>& x,  
-                      const Vector<Real>& grad,
-                      const Vector<Real>& gp, 
-                      const Vector<Real>& s,
-                            Real          snorm,      
-                            int           iter ) override;
+  StatusTest( Real gtol = 1.e-6, 
+              Real stol = 1.e-12, 
+              int  max_iter = 100, 
+              bool use_rel = false ) 
+  : gtol_(gtol), stol_(stol), max_iter_(max_iter), use_rel_(use_rel) {}
 
-  // Apply lSR1 Approximate Inverse Hessian
-  void applyH(       Vector<Real>& Hv, 
-               const Vector<Real>& v ) const override;
-
-  // Apply Initial lSR1 Approximate Inverse Hessian
-  void applyH0(       Vector<Real>& Hv, 
-                const Vector<Real>& v ) const override;
-
-  // Apply lSR1 Approximate Hessian
-  void applyB(       Vector<Real>& Bv, 
-               const Vector<Real>& v ) const override;
-
-  // Apply Initial lSR1 Approximate Hessian 
-  void applyB0(       Vector<Real>& Bv, 
-                const Vector<Real>& v ) const override;
+  /** \brief Check algorithm status.
+  */
+  virtual bool check( typename Algorithm<Real>::State& state ) {
+     if (state.iter==0 && use_rel_) {
+       gtol_ *= state.gnorm;
+       stol_ *= state.gnorm;
+     }
+     if ( (state.gnorm > gtol_)& & 
+          (state.snorm > stol_)& & 
+          (state.iter  < max_iter_) ) {
+       return true;
+     }
+     else {
+       state.statusFlag = (state.gnorm <= gtol_ ? ExitStatus::Converged
+                           : state.snorm <= stol_ ? ExitStatus::StepTol
+                           : state.iter >= max_iter_ ? ExitStatus::MaxIter
+                           : std::isnan(state.gnorm)||std::isnan(state.snorm) ? ExitStatus::NAN
+                           : ExitStatus::Last);
+       return false;
+     }
+  }
 
 private:
 
-  Ptr<Vector<Real>> Bs_, Hy_, prim_, dual_;
-  mutable bool H0called_, B0called_;
-  bool isInitialized_, non_inverse_, non_forward_;
+  Real gtol_;
+  Real stol_;
+  int  max_iter_;
+  bool use_rel_;
 
-  using Secant<Real>::y_;
-  using Secant<Real>::useDefaultScaling_;
-  using Secant<Real>::Bscaling_;
-
-}; // lSR1
+}; // class StatusTest
 
 } // namespace ROL2
 
-#endif // ROL2_LSR1_DECL_HPP
+#endif // ROL2_STATUSTEST_HPP

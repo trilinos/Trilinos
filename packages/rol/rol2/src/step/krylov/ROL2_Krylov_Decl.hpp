@@ -32,7 +32,7 @@
 // PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
 // LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-G// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact lead developers:
 //              Drew Kouri   (dpkouri@sandia.gov) and
@@ -72,7 +72,7 @@ public:
     : absTol_(absTol), relTol_(relTol), maxit_(maxit) {}
 
   Krylov( ParameterList& parlist ) {
-    ROL::ParameterList& krylovList = parlist.sublist("General").sublist("Krylov");
+    ParameterList& krylovList = parlist.sublist("General").sublist("Krylov");
     absTol_ = krylovList.get("Absolute Tolerance", 1.e-4);
     relTol_ = krylovList.get("Relative Tolerance", 1.e-2);
     maxit_  = krylovList.get("Iteration Limit", 100);
@@ -121,7 +121,7 @@ private:
 }; // class Krylov
 
 template<class Real>
-EnumMap<Krylov<Real>::Type>
+EnumMap<typename Krylov<Real>::Type>
 Krylov<Real>::type_dict = { "Conjugate Gradient",
                             "Conjugate Residuals",
                             "GMRES",

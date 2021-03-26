@@ -128,6 +128,8 @@ public:
                                        std::ostream& outStream = std::cout,
                                        bool          print = false);
 
+  static Ptr<TrustRegion<Real>> create( ParameterList& parlist );
+
 }; // TrustRegion
 
 template<class Real>
@@ -137,9 +139,18 @@ TrustRegion<Real>::type_dict = { "Cauchy Point",
                                  "SPG",
                                  "Dogleg",
                                  "Double Dogleg" };
-
+template<class Real>
+EnumMap<TrustRegion<Real>::Flag> 
+TrustRegion<Real>::flag_dict = { 
+  "Both actual and predicted reductions are positive (success)",
+  "Actual reduction is positive and predicted reduction is negative (impossible)",
+  "Actual reduction is nonpositive and predicted reduction is positive",
+  "Actual reduction is nonpositive and predicted reduction is negative (impossible)",
+  "Actual and/or predicted reduction is a NaN",
+  "Subproblem solution did not produce sufficient decrease" 
+};
 
 } // namespace TypeU
 } // namespace ROL2
 
-ROL2_TypeU_TrustRegion_Decl.hpp#endif // ROL2_TYPEU_TRUSTREGION_DECL_H
+#endif // ROL2_TYPEU_TRUSTREGION_DECL_H

@@ -55,7 +55,7 @@ class Algorithm {
 
   /** \brief Apply algorithm to an optimization problem
   */ 
-  virtual void run( OptimizationProblem<Real>&, std::ostream& ) = 0;             
+//  virtual void run( OptimizationProblem<Real>&, std::ostream& ) = 0;             
 
   virtual void writeHeader( std::ostream& ) const = 0;
 

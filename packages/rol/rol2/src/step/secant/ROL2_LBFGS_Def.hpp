@@ -51,8 +51,8 @@
 
 namespace ROL2 {
 
-template<class Real>
 // Apply lBFGS Approximate Inverse Hessian
+template<class Real>
 void lBFGS<Real>::applyH(       Vector<Real>& Hv,
                           const Vector<Real>& v ) const {
 
@@ -83,6 +83,7 @@ void lBFGS<Real>::applyH(       Vector<Real>& Hv,
 } // applyH
 
 // Apply lBFGS Approximate Hessian
+template<class Real>
 void lBFGS<Real>::applyB(       Vector<Real>& Bv,
                           const Vector<Real>& v ) const {
 

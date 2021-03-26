@@ -82,7 +82,7 @@ public:
     int iter_     = 0;                        // Current Optimization Iteration
     Mode mode_;                               // Intended application mode
 
-    State(int M, Mode sm) : storage(M), current(-1), iter(0), mode(sm) {}
+    State(int M, Mode sm) : storage_(M), current_(-1), iter_(0), mode_(sm) {}
   };  // struct Secant<Real>::State
   //----------------------------------------------------------
 
@@ -158,18 +158,18 @@ private:
 }; // Secant
 
 template<typename Real>
-inline std::string enumToStr( Secant<Real>::Type e ) {
+inline std::string enumToStr( typename Secant<Real>::Type e ) {
   return Secant<Real>::type_dict[e];
 }
 
 template<class Real> 
-EnumMap<Secant<Real>>::Mode>
+EnumMap<typename Secant<Real>::Mode>
 Secant<Real>::mode_dict = { "Forward",
                             "Inverse",
                             "Both" };
 
 template<class Real> 
-EnumMap<Secant<Real>>::Type>
+EnumMap<typename Secant<Real>::Type>
 Secant<Real>::type_dict = { "Limited-Memory BFGS",
                             "Limited-Memory DFP",
                             "Limited-Memory SR1", 

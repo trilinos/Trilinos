@@ -99,13 +99,13 @@ void Objective<Real>::hessVec(       Vector<Real>& hv,
 
 template<typename Real>
 std::vector<std::vector<Real>> 
-Objective<Real>::checkGradient( const Vector<Real>&         x,
-                                const dual_t<Vector<Real>>& g,
-                                const Vector<Real>&         d,
-                                      bool                  printToStream,
-                                      std::ostream&         outStream,
-                                      int                   numSteps,
-                                      int                   order ) {
+Objective<Real>::checkGradient( const Vector<Real>& x,
+                                const Vector<Real>& g,
+                                const Vector<Real>& d,
+                                      bool          printToStream,
+                                      std::ostream& outStream,
+                                      int           numSteps,
+                                      int           order ) {
   Real tol = default_tolerance<Real>();
 
   auto f_value    = [this,&tol] ( const auto& x ) { return this->value(x,tol);  };
@@ -121,13 +121,13 @@ Objective<Real>::checkGradient( const Vector<Real>&         x,
 
 template<typename Real>
 std::vector<std::vector<Real>> 
-Objective<Real>::checkGradient( const Vector<Real>&            x,
-                                const dual_t<Vector<Real>>&    g,
-                                const Vector<Real>&            d,
-                                const std::vector<Real>&       steps,
-                                      bool                     printToStream,
-                                      std::ostream&            outStream,
-                                      int                      order ) {
+Objective<Real>::checkGradient( const Vector<Real>&      x,
+                                const Vector<Real>&      g,
+                                const Vector<Real>&      d,
+                                const std::vector<Real>& steps,
+                                      bool               printToStream,
+                                      std::ostream&      outStream,
+                                      int                order ) {
  
   Real tol = default_tolerance<Real>();
 
@@ -174,13 +174,13 @@ Objective<Real>::checkGradient( const Vector<Real>&      x,
 
 template<typename Real>
 std::vector<std::vector<Real>> 
-Objective<Real>::checkHessVec( const Vector<Real>&         x,
-                               const dual_t<Vector<Real>>& hv,
-                               const Vector<Real>&         v,
-                                     bool                  printToStream,
-                                     std::ostream&         outStream,
-                                     int                   numSteps,
-                                     int                   order ) {
+Objective<Real>::checkHessVec( const Vector<Real>& x,
+                               const Vector<Real>& hv,
+                               const Vector<Real>& v,
+                                     bool          printToStream,
+                                     std::ostream& outStream,
+                                     int           numSteps,
+                                     int           order ) {
   std::vector<Real> steps(numSteps);
   for(int i=0;i<numSteps;++i)  steps[i] = pow(10,-i);
   return checkHessVec(x,hv,v,steps,printToStream,outStream,order);
@@ -261,7 +261,7 @@ Objective<Real>::checkHessSym( const Vector<Real>& x,
   hsymCheck[2] = std::abs(vHw-wHv);
 
   // Save the format state of the original outStream.
-  ROL::nullstream oldFormatState;
+  NullStream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   if (printToStream) {
