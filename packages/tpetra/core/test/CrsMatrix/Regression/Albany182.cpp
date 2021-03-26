@@ -201,7 +201,7 @@ namespace { // (anonymous)
     if (lclNumRows != 0) {
       if (A.isLocallyIndexed ()) {
         const map_type& colMap = * (A.getColMap ());
-        Teuchos::Array<GO> gblColInds;
+        typename CrsMatrixType::global_inds_host_view_type gblColInds;
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const GO gblRow = rowMap.getGlobalElement (lclRow);
           out << "gblRow: " << gblRow;
@@ -213,7 +213,7 @@ namespace { // (anonymous)
           if (gblColInds.size () < lclColInds.size ()) {
             gblColInds.resize (lclColInds.size ());
           }
-          for (ptrdiff_t k = 0; k < lclColInds.size (); ++k) {
+          for (size_t k = 0; k < lclColInds.size (); ++k) {
             gblColInds[k] = colMap.getGlobalElement (lclColInds[k]);
           }
           out << ", gblCols: ";

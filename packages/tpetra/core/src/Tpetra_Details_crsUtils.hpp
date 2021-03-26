@@ -152,7 +152,7 @@ pad_crs_arrays(
   const RowPtr& row_ptr_beg,
   const RowPtr& row_ptr_end,
   Indices& indices_wdv,
-  Values& values,
+  Values& values_wdv,
   const Padding& padding,
   const int my_rank,
   const bool verbose)
@@ -188,7 +188,7 @@ pad_crs_arrays(
     verbosePrintArray(os, row_ptr_end_h, "row_ptr_end before scan",
                       maxNumToPrint);
     os << ", indices.extent(0): " << indices_wdv.extent(0)
-       << ", values.extent(0): " << values.extent(0)
+       << ", values.extent(0): " << values_wdv.extent(0)
        << ", padding: ";
     padding.print(os);
     os << endl;
@@ -271,7 +271,7 @@ pad_crs_arrays(
 
   using inds_value_type = 
         typename Indices::DeviceViewType::non_const_value_type;
-  using vals_value_type = typename Values::non_const_value_type;
+  using vals_value_type = typename Values::DeviceViewType::non_const_value_type;
 
   auto indices = indices_wdv.getDeviceView(Access::ReadOnly);
   const size_t newIndsSize = size_t(indices.size()) + increase;
@@ -279,12 +279,13 @@ pad_crs_arrays(
     "Tpetra::CrsGraph column indices", newIndsSize, verbose,
     prefix.get());
 
-  Values values_new;
+  typename Values::DeviceViewType values_new;
+  auto values_old = values_wdv.getDeviceView(Access::ReadOnly);
   if (action == PadCrsAction::INDICES_AND_VALUES) {
     const size_t newValsSize = newIndsSize;
     // NOTE (mfh 10 Feb 2020) If we don't initialize values_new here,
     // then the CrsMatrix tests fail.
-    values_new = make_initialized_view<Values>(
+    values_new = make_initialized_view<typename Values::DeviceViewType>(
       "Tpetra::CrsMatrix values", newValsSize, verbose, prefix.get());
   }
 
@@ -323,7 +324,8 @@ pad_crs_arrays(
           memcpy(newColInds.data(), oldColInds.data(),
                  numEnt * sizeof(inds_value_type));
           if (action == PadCrsAction::INDICES_AND_VALUES) {
-            auto oldVals = Kokkos::subview(values, oldRange);
+            auto oldVals = 
+                 Kokkos::subview(values_old, oldRange);
             auto newVals = Kokkos::subview(values_new, newRange);
             memcpy(newVals.data(), oldVals.data(),
                    numEnt * sizeof(vals_value_type));
@@ -362,15 +364,11 @@ pad_crs_arrays(
   }
 
   indices_wdv = Indices(indices_new);
-
-  assign_to_view(values, values_new,
-                 "Tpetra::CrsMatrix values",
-                 verbose, prefix.get());
+  values_wdv = Values(values_new);
 
   if (verbose) {
     auto indices_h = indices_wdv.getHostView(Access::ReadOnly);
-    auto values_h = Kokkos::create_mirror_view(hostSpace, values);
-    Kokkos::deep_copy(values_h, values);
+    auto values_h = values_wdv.getHostView(Access::ReadOnly);
     std::ostringstream os;
     os << "On output: ";
     verbosePrintArray(os, indices_h, "indices", maxNumToPrint);
@@ -516,8 +514,8 @@ padCrsArrays(
 {
   using impl::pad_crs_arrays;
   // send empty values array
-  typename Indices::DeviceViewType values; // KDDKDD TEMPORARY; will change when values is a dual view
-  pad_crs_arrays<RowPtr, Indices, typename Indices::DeviceViewType, Padding>( // KDDKDD TEMPORARY; will change when values is a dual view
+  Indices values; 
+  pad_crs_arrays<RowPtr, Indices, Indices, Padding>( 
     impl::PadCrsAction::INDICES_ONLY, rowPtrBeg, rowPtrEnd,
     indices_wdv, values, padding, my_rank, verbose);
 }
@@ -528,7 +526,7 @@ padCrsArrays(
     const RowPtr& rowPtrBeg,
     const RowPtr& rowPtrEnd,
     Indices& indices_wdv,
-    Values& values,
+    Values& values_wdv,
     const Padding& padding,
     const int my_rank,
     const bool verbose)
@@ -536,7 +534,7 @@ padCrsArrays(
   using impl::pad_crs_arrays;
   pad_crs_arrays<RowPtr, Indices, Values, Padding>(
     impl::PadCrsAction::INDICES_AND_VALUES, rowPtrBeg, rowPtrEnd,
-    indices_wdv, values, padding, my_rank, verbose);
+    indices_wdv, values_wdv, padding, my_rank, verbose);
 }
 
 /// \brief Insert new indices in to current list of indices

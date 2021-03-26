@@ -334,7 +334,7 @@ namespace Tpetra {
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
 
@@ -380,7 +380,7 @@ namespace Tpetra {
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
     // KDDKDD ALMOST THERE, MARK!
-    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
+//    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
   }
@@ -486,7 +486,7 @@ namespace Tpetra {
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//    this->k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
     if (verbose) {
@@ -559,7 +559,7 @@ namespace Tpetra {
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    this->k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//    this->k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     checkInternalState ();
   }
@@ -604,7 +604,7 @@ namespace Tpetra {
     valuesPacked_wdv = values_wdv_type(lclMatrix.values);
     valuesUnpacked_wdv = valuesPacked_wdv;
 
-    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
+//    k_values1D_ = valuesUnpacked_wdv.getDeviceView(Access::ReadWrite);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
@@ -665,7 +665,7 @@ namespace Tpetra {
 
     valuesPacked_wdv = values_wdv_type(lclMatrix.values);
     valuesUnpacked_wdv = valuesPacked_wdv;
-    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
@@ -729,7 +729,7 @@ namespace Tpetra {
 
     valuesPacked_wdv = values_wdv_type(lclMatrix.values);
     valuesUnpacked_wdv = valuesPacked_wdv;
-    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     const bool callComputeGlobalConstants = params.get () == nullptr ||
       params->get ("compute global constants", true);
@@ -768,7 +768,9 @@ namespace Tpetra {
       values_type newvals (view_alloc ("val", WithoutInitializing),
                            vals.extent (0));
       Kokkos::deep_copy (newvals, vals);
-      k_values1D_ = newvals;
+      valuesPacked_wdv = values_wdv_type(newvals);
+      valuesUnpacked_wdv = valuesPacked_wdv;
+//      k_values1D_ = newvals;
       if (source.isFillComplete ()) {
         fillComplete (source.getDomainMap (), source.getRangeMap ());
       }
@@ -794,7 +796,7 @@ namespace Tpetra {
     std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
     std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>::values_type
+//    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>::values_type
     std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
     std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
     std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
@@ -1185,20 +1187,22 @@ abort();
       << k_ptrs.extent (0) << " != (lclNumRows+1) = "
       << (lclNumRows+1) << ".");
 
-    const size_t lclTotalNumEntries =
-      ::Tpetra::Details::getEntryOnHost (k_ptrs, lclNumRows);
+    const size_t lclTotalNumEntries = 
+                 this->staticGraph_->rowPtrsUnpacked_host_(lclNumRows);
 
     // Allocate array of (packed???) matrix values.
     using values_type = typename local_matrix_device_type::values_type;
     if (verbose) {
       std::ostringstream os;
-      os << *prefix << "Allocate k_values1D_: Pre "
-         << k_values1D_.extent(0) << ", post "
+      os << *prefix << "Allocate values_wdv: Pre "
+         << valuesUnpacked_wdv.extent(0) << ", post "
          << lclTotalNumEntries << endl;
       std::cerr << os.str();
     }
-    this->k_values1D_ =
-      values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
+//    this->k_values1D_ =
+    valuesUnpacked_wdv = values_wdv_type(
+                                    values_type("Tpetra::CrsMatrix::values",
+                                    lclTotalNumEntries));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1237,7 +1241,8 @@ abort();
         << e.what ());
     }
     Teuchos::ArrayRCP<const impl_scalar_type> vals =
-      Kokkos::Compat::persistingView (k_values1D_);
+//      Kokkos::Compat::persistingView (k_values1D_);
+      Kokkos::Compat::persistingView (valuesUnpacked_wdv.getHostView(Access::ReadOnly));
     values = Teuchos::arcp_reinterpret_cast<const Scalar> (vals);
   }
 
@@ -1358,11 +1363,11 @@ abort();
         const auto valToCheck = myGraph_->rowPtrsUnpacked_host_(numOffsets - 1);
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) !=
-           static_cast<size_t> (k_values1D_.extent (0)),
+           static_cast<size_t> (valuesUnpacked_wdv.extent (0)),
            std::logic_error, "(StaticProfile unpacked branch) Before "
            "allocating or packing, curRowOffsets(" << (numOffsets-1)
-           << ") = " << valToCheck << " != k_values1D_.extent(0)"
-           " = " << k_values1D_.extent (0) << ".");
+           << ") = " << valToCheck << " != valuesUnpacked_wdv.extent(0)"
+           " = " << valuesUnpacked_wdv.extent (0) << ".");
         TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
           (static_cast<size_t> (valToCheck) !=
            static_cast<size_t> (myGraph_->lclIndsUnpacked_wdv.extent (0)),
@@ -1436,7 +1441,7 @@ abort();
       k_vals = values_type ("Tpetra::CrsMatrix::values", lclTotalNumEntries);
 
       // curRowOffsets (myGraph_->rowPtrsUnpacked_) (???), lclIndsUnpacked_wdv,
-      // and k_values1D_ are currently unpacked.  Pack them, using
+      // and valuesUnpacked_wdv are currently unpacked.  Pack them, using
       // the packed row offsets array k_ptrs that we created above.
       //
       // FIXME (mfh 06 Aug 2014) If "Optimize Storage" is false, we
@@ -1448,24 +1453,29 @@ abort();
       using inds_packer_type = pack_functor<
         typename Graph::local_graph_device_type::entries_type::non_const_type,
         typename Graph::local_inds_dualv_type::t_dev::const_type,
-        typename Graph::local_graph_device_type::row_map_type,
+        typename Graph::local_graph_device_type::row_map_type::non_const_type,
         typename Graph::local_graph_device_type::row_map_type>;
       inds_packer_type indsPacker (
-                          k_inds,
-                          myGraph_->lclIndsUnpacked_wdv.getDeviceView(Access::ReadOnly),
-                          k_ptrs, curRowOffsets);
+                  k_inds,
+                  myGraph_->lclIndsUnpacked_wdv.getDeviceView(Access::ReadOnly),
+                  k_ptrs, curRowOffsets);
       using exec_space = typename decltype (k_inds)::execution_space;
       using range_type = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
       Kokkos::parallel_for
         ("Tpetra::CrsMatrix pack column indices",
          range_type (0, lclNumRows), indsPacker);
 
-      // Pack the values from unpacked k_values1D_ into packed
-      // k_vals.  We will replace k_values1D_ below.
-      using vals_packer_type = pack_functor<values_type, values_type, 
-                                            row_map_type, row_map_type>;
-      vals_packer_type valsPacker (k_vals, this->k_values1D_,
-                                   k_ptrs, curRowOffsets);
+      // Pack the values from unpacked valuesUnpacked_wdv into packed
+      // k_vals.  We will replace valuesPacked_wdv below.
+      using vals_packer_type = pack_functor<
+        typename values_type::non_const_type,
+        typename values_type::const_type, 
+        typename row_map_type::non_const_type, 
+        typename row_map_type::const_type>;
+      vals_packer_type valsPacker (
+                       k_vals,
+                       this->valuesUnpacked_wdv.getDeviceView(Access::ReadOnly),
+                       k_ptrs, curRowOffsets);
       Kokkos::parallel_for ("Tpetra::CrsMatrix pack values",
                             range_type (0, lclNumRows), valsPacker);
 
@@ -1507,8 +1517,8 @@ abort();
         std::ostringstream os;
         os << *prefix << "Storage already packed: rowPtrsUnpacked_: "
            << myGraph_->rowPtrsUnpacked_host_.extent(0) << ", lclIndsUnpacked_wdv: "
-           << myGraph_->lclIndsUnpacked_wdv.extent(0) << ", k_values1D_: "
-           << k_values1D_.extent(0) << endl;
+           << myGraph_->lclIndsUnpacked_wdv.extent(0) << ", valuesUnpacked_wdv: "
+           << valuesUnpacked_wdv.extent(0) << endl;
         std::cerr << os.str();
       }
 
@@ -1598,7 +1608,7 @@ abort();
       myGraph_->setRowPtrsUnpacked(myGraph_->rowPtrsPacked_dev_);
       myGraph_->lclIndsUnpacked_wdv = myGraph_->lclIndsPacked_wdv;
       valuesUnpacked_wdv = valuesPacked_wdv;
-      k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//      k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
       myGraph_->storageStatus_ = Details::STORAGE_1D_PACKED;
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
@@ -1743,10 +1753,14 @@ abort();
       }
       k_vals = values_type ("Tpetra::CrsMatrix::val", lclTotalNumEntries);
 
-      // Pack k_values1D_ into k_vals.  We will replace k_values1D_ below.
-      pack_functor<values_type, values_type, 
-                   row_map_type, row_map_type> valsPacker
-        (k_vals, k_values1D_, tmpk_ptrs, k_rowPtrs);
+      // Pack values_wdv into k_vals.  We will replace values_wdv below.
+      pack_functor<
+        typename values_type::non_const_type,
+        typename values_type::const_type, 
+        typename row_map_type::non_const_type, 
+        typename row_map_type::const_type> valsPacker
+        (k_vals, valuesUnpacked_wdv.getDeviceView(Access::ReadOnly),
+         tmpk_ptrs, k_rowPtrs);
 
       using exec_space = typename decltype (k_vals)::execution_space;
       using range_type = Kokkos::RangePolicy<exec_space, LocalOrdinal>;
@@ -1759,7 +1773,7 @@ abort();
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "Storage already packed: "
-           << "k_values1D_: " << k_values1D_.extent(0) << endl;
+           << "valuesUnpacked_wdv: " << valuesUnpacked_wdv.extent(0) << endl;
         std::cerr << os.str();
       }
     }
@@ -1769,7 +1783,7 @@ abort();
       // The user requested optimized storage, so we can dump the
       // unpacked 1-D storage, and keep the packed storage.
       valuesUnpacked_wdv = valuesPacked_wdv;
-      k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//      k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
       this->storageStatus_ = Details::STORAGE_1D_PACKED;
     }
   }
@@ -1926,7 +1940,7 @@ abort();
     }
 
     auto valsView = this->getValuesViewHostNonConst(rowInfo);
-    auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset) {
+    auto fun = [&](size_t const k, size_t const /*start*/, size_t const offset){
                  valsView[offset] += vals[k];
                  };
     std::function<void(size_t const, size_t const, size_t const)> cb(std::ref(fun));
@@ -3701,10 +3715,8 @@ abort();
       // do nothing
     }
     else {
-      // FIXME (mfh 24 Dec 2014) Once CrsMatrix implements DualView
-      // semantics, this would be the place to mark memory as
-      // modified.
-      Kokkos::deep_copy (k_values1D_, theAlpha);
+      Kokkos::deep_copy (valuesUnpacked_wdv.getDeviceView(Access::WriteOnly),
+                         theAlpha);
     }
   }
 
@@ -3749,7 +3761,7 @@ abort();
     // FIXME (22 Jun 2016) I would very much like to get rid of
     // k_values1D_ at some point.  I find it confusing to have all
     // these extra references lying around.
-    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
+//    k_values1D_ = valuesPacked_wdv.getDeviceView(Access::ReadWrite);
 
     // Storage MUST be packed, since the interface doesn't give any
     // way to indicate any extra space at the end of each row.
@@ -5477,7 +5489,7 @@ abort();
         (staticGraph_->indicesAreAllocated () &&
          staticGraph_->getNodeAllocationSize() > 0 &&
          staticGraph_->getNodeNumRows() > 0 &&
-         k_values1D_.extent (0) == 0,
+         valuesUnpacked_wdv.extent (0) == 0,
          std::logic_error, err);
     }
   }
@@ -5871,24 +5883,24 @@ abort();
     if (myGraph_->isGloballyIndexed()) {
       padCrsArrays(row_ptr_beg, row_ptr_end,
                    myGraph_->gblInds_wdv,
-                   k_values1D_, padding, myRank, verbose);
-      const auto newValuesLen = k_values1D_.extent(0);
+                   valuesUnpacked_wdv, padding, myRank, verbose);
+      const auto newValuesLen = valuesUnpacked_wdv.extent(0);
       const auto newColIndsLen = myGraph_->gblInds_wdv.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (newValuesLen != newColIndsLen, std::logic_error,
-         ": After padding, k_values1D_.extent(0)=" << newValuesLen
+         ": After padding, valuesUnpacked_wdv.extent(0)=" << newValuesLen
          << " != myGraph_->gblInds_wdv.extent(0)=" << newColIndsLen
          << suffix);
     }
     else {
       padCrsArrays(row_ptr_beg, row_ptr_end,
                    myGraph_->lclIndsUnpacked_wdv,
-                   k_values1D_, padding, myRank, verbose);
-      const auto newValuesLen = k_values1D_.extent(0);
+                   valuesUnpacked_wdv, padding, myRank, verbose);
+      const auto newValuesLen = valuesUnpacked_wdv.extent(0);
       const auto newColIndsLen = myGraph_->lclIndsUnpacked_wdv.extent(0);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (newValuesLen != newColIndsLen, std::logic_error,
-         ": After padding, k_values1D_.extent(0)=" << newValuesLen
+         ": After padding, valuesUnpacked_wdv.extent(0)=" << newValuesLen
          << " != myGraph_->lclIndsUnpacked_wdv.extent(0)=" << newColIndsLen
          << suffix);
     }

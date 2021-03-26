@@ -3297,7 +3297,8 @@ public:
   public:
     //! Get the Kokkos local values
     typename local_matrix_device_type::values_type getLocalValuesView () const {
-      return k_values1D_;
+// KDDKDD UVM SHOULD ADD ACCESS TAGS; SAFEST TO ASSUME ReadWrite FOR NOW
+      return valuesPacked_wdv.getDeviceView(Access::ReadWrite);
     }
 
   private:
