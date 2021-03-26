@@ -200,8 +200,8 @@ namespace { // (anonymous)
     const LO lclNumRows = static_cast<LO> (rowMap.getNodeNumElements ());
     if (lclNumRows != 0) {
       if (A.isLocallyIndexed ()) {
+        Teuchos::Array<GO> gblColInds;
         const map_type& colMap = * (A.getColMap ());
-        typename CrsMatrixType::global_inds_host_view_type gblColInds;
         for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
           const GO gblRow = rowMap.getGlobalElement (lclRow);
           out << "gblRow: " << gblRow;
@@ -210,7 +210,7 @@ namespace { // (anonymous)
           A.getLocalRowView (lclRow, lclColInds, vals);
           out << ": {lclCols: ";
           printArray (out, lclColInds);
-          if (gblColInds.size () < lclColInds.size ()) {
+          if (size_t(gblColInds.size ()) < lclColInds.size ()) {
             gblColInds.resize (lclColInds.size ());
           }
           for (size_t k = 0; k < lclColInds.size (); ++k) {

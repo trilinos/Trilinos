@@ -6935,22 +6935,20 @@ abort();
     // actually pack the data.
     auto maxRowNumEnt = this->getNodeMaxNumRowEntries();
 
-    global_inds_host_view_type gidsIn; 
-    values_host_view_type valsIn;
 
     // Temporary buffer for global column indices.
-    Kokkos::View<GO*, HES> gidsIn_k;
+    typename global_inds_host_view_type::non_const_type gidsIn_k;
     if (this->isLocallyIndexed()) { // Need storage for Global IDs
-      gidsIn_k =
-         Details::ScalarViewTraits<GO, HES>::allocateArray (GO (0),
-                                                            maxRowNumEnt,
-                                                            "packGids");
+      gidsIn_k = 
+        typename global_inds_host_view_type::non_const_type("packGids",
+                                                            maxRowNumEnt);
     }
 
     size_t offset = 0; // current index into 'exports' array.
     for (size_t i = 0; i < numExportLIDs; ++i) {
       const LO lclRow = exportLIDs_h[i];
 
+      size_t numBytes;
       size_t numEnt;
       numEnt = this->getNumEntriesInLocalRow (lclRow);
 
@@ -6964,6 +6962,8 @@ abort();
       }
 
       if (this->isLocallyIndexed ()) {
+        typename global_inds_host_view_type::non_const_type gidsIn; 
+        values_host_view_type valsIn;
         // If the matrix is locally indexed on the calling process, we
         // have to use its column Map (which it _must_ have in this
         // case) to convert to global indices.
@@ -6974,8 +6974,16 @@ abort();
           gidsIn_k[k] = colMap.getGlobalElement (lidsIn[k]);
         }
         gidsIn = Kokkos::subview(gidsIn_k, Kokkos::make_pair(GO(0),GO(numEnt)));
+
+        const size_t numBytesPerValue =
+          PackTraits<ST>::packValueCount (valsIn[0]);
+        numBytes = this->packRow (exports_h.data (), offset, numEnt,
+                                  gidsIn.data (), valsIn.data (), 
+                                  numBytesPerValue);
       }
       else if (this->isGloballyIndexed ()) {
+        global_inds_host_view_type gidsIn; 
+        values_host_view_type valsIn;
         // If the matrix is globally indexed on the calling process,
         // then we can use the column indices directly.  However, we
         // have to get the global row index.  The calling process must
@@ -6984,16 +6992,17 @@ abort();
         const map_type& rowMap = * (this->getRowMap ());
         const GO gblRow = rowMap.getGlobalElement (lclRow);
         this->getGlobalRowView (gblRow, gidsIn, valsIn);
+
+        const size_t numBytesPerValue =
+          PackTraits<ST>::packValueCount (valsIn[0]);
+        numBytes = this->packRow (exports_h.data (), offset, numEnt, 
+                                  gidsIn.data (), valsIn.data (),
+                                  numBytesPerValue);
       }
       // mfh 11 Sep 2017: Currently, if the matrix is neither globally
       // nor locally indexed, then it has no entries.  Therefore,
       // there is nothing to pack.  No worries!
 
-      const size_t numBytesPerValue =
-        PackTraits<ST>::packValueCount (valsIn[0]);
-      const size_t numBytes =
-        this->packRow (exports_h.data (), offset, numEnt, gidsIn.data (),
-                       valsIn.data (), numBytesPerValue);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
         (offset > bufSize || offset + numBytes > bufSize, std::logic_error,
          "First invalid offset into 'exports' pack buffer at index i = " << i
