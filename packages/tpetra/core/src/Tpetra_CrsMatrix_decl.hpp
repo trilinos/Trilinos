@@ -500,7 +500,6 @@ namespace Tpetra {
           typename local_matrix_device_type::HostMirror;
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-    using local_graph_type = local_graph_device_type;
     using local_matrix_type = local_matrix_device_type;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
