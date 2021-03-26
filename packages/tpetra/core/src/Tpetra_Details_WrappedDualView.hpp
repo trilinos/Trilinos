@@ -156,7 +156,7 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
-    originalDualView.sync_host();
+    impl::sync_host(originalDualView);
     originalDualView.modify_host();
     return dualView.view_host();
   }
@@ -198,7 +198,7 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
-    originalDualView.sync_device();
+    impl::sync_device(originalDualView);
     originalDualView.modify_device();
     return dualView.view_device();
   }
@@ -240,7 +240,7 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfDeviceViewAlive();
-    originalDualView.sync_host();
+    impl::sync_host(originalDualView);
     originalDualView.modify_host();
     return getSubview(dualView.view_host(), offset, numEntries);
   }
@@ -276,7 +276,7 @@ public:
     static_assert(dualViewHasNonConstData,
         "ReadWrite views are not available for DualView with const data");
     throwIfHostViewAlive();
-    originalDualView.sync_device();
+    impl::sync_device(originalDualView);
     originalDualView.modify_device();
     return getSubview(dualView.view_device(), offset, numEntries);
   }
