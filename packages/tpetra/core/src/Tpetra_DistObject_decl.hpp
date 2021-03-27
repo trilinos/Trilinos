@@ -67,7 +67,7 @@ namespace KokkosClassic {
   ///   compatibility.
   enum ReadWriteOption {
     ReadWrite = 0, /*!< Indicates that the view may be safely read and written. */
-    WriteOnly = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
+    OverwriteAll = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
   };
 } // namespace KokkosClassic
 

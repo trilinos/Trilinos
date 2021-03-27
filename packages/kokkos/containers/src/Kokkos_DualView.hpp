@@ -578,6 +578,11 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
       modified_flags(1) = modified_flags(0) = 0;
       impl_report_host_sync();
     }
+    if (std::is_same<typename t_host::memory_space,
+                     typename t_dev::memory_space>::value) {
+      typename t_dev::execution_space().fence();
+      typename t_host::execution_space().fence();
+    }
   }
 
   void sync_device() {
@@ -600,6 +605,11 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
       deep_copy(d_view, h_view);
       modified_flags(1) = modified_flags(0) = 0;
       impl_report_device_sync();
+    }
+    if (std::is_same<typename t_host::memory_space,
+                     typename t_dev::memory_space>::value) {
+      typename t_dev::execution_space().fence();
+      typename t_host::execution_space().fence();
     }
   }
 

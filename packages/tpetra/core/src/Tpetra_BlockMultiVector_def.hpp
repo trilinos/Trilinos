@@ -447,13 +447,13 @@ typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex,
-               Access::WriteOnlyStruct)
+               Access::OverwriteAllStruct)
 {
   if (!isValidLocalMeshIndex(localRowIndex)) {
     return little_host_vec_type();
   } else {
     const size_t blockSize = getBlockSize();
-    auto hostView = mv_.getLocalViewHost(Access::WriteOnly);
+    auto hostView = mv_.getLocalViewHost(Access::OverwriteAll);
     LO startRow = localRowIndex*blockSize;
     LO endRow = startRow + blockSize;
     return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow),

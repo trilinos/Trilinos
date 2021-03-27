@@ -183,10 +183,10 @@ namespace Tpetra {
   template<class Scalar, class LO, class GO, class Node>
   typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
   BlockVector<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowIndex, Access::WriteOnlyStruct)
+  getLocalBlock (const LO localRowIndex, Access::OverwriteAllStruct)
   {
     return ((base_type*) this)->getLocalBlock(localRowIndex, 0, 
-                                              Access::WriteOnly);
+                                              Access::OverwriteAll);
   }
 
 
