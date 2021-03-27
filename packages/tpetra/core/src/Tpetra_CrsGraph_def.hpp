@@ -4537,7 +4537,7 @@ namespace Tpetra {
       using ::Tpetra::Details::convertColumnIndicesFromGlobalToLocal;
       lclNumErrs =
         convertColumnIndicesFromGlobalToLocal<LO, GO, DT, offset_type, num_ent_type> (
-          lclIndsUnpacked_wdv.getDeviceView(Access::WriteOnly),
+          lclIndsUnpacked_wdv.getDeviceView(Access::OverwriteAll),
           gblInds_wdv.getDeviceView(Access::ReadOnly),
           rowPtrsUnpacked_dev_,
           lclColMap,

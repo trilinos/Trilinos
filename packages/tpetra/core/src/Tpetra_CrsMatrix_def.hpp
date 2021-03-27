@@ -3735,7 +3735,7 @@ abort();
       // do nothing
     }
     else {
-      Kokkos::deep_copy (valuesUnpacked_wdv.getDeviceView(Access::WriteOnly),
+      Kokkos::deep_copy (valuesUnpacked_wdv.getDeviceView(Access::OverwriteAll),
                          theAlpha);
     }
   }

@@ -173,13 +173,13 @@ public:
   }
 
   HostViewType
-  getHostView(Access::WriteOnlyStruct
+  getHostView(Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
   {
-    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewWriteOnly");
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostViewOverwriteAll");
     static_assert(dualViewHasNonConstData,
-        "WriteOnly views are not available for DualView with const data");
+        "OverwriteAll views are not available for DualView with const data");
     if (iAmASubview()) {
       return getHostView(Access::ReadWrite);
     }
@@ -215,13 +215,13 @@ public:
   }
 
   DeviceViewType
-  getDeviceView(Access::WriteOnlyStruct
+  getDeviceView(Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
   {
-    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewWriteOnly");
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceViewOverwriteAll");
     static_assert(dualViewHasNonConstData,
-        "WriteOnly views are not available for DualView with const data");
+        "OverwriteAll views are not available for DualView with const data");
     if (iAmASubview()) {
       return getDeviceView(Access::ReadWrite);
     }
@@ -257,13 +257,13 @@ public:
   }
 
   HostViewType
-  getHostSubview(int offset, int numEntries, Access::WriteOnlyStruct
+  getHostSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
   {
-    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewWriteOnly");
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getHostSubviewOverwriteAll");
     static_assert(dualViewHasNonConstData,
-        "WriteOnly views are not available for DualView with const data");
+        "OverwriteAll views are not available for DualView with const data");
     return getHostSubview(offset, numEntries, Access::ReadWrite);
   }
 
@@ -293,13 +293,13 @@ public:
   }
 
   DeviceViewType
-  getDeviceSubview(int offset, int numEntries, Access::WriteOnlyStruct
+  getDeviceSubview(int offset, int numEntries, Access::OverwriteAllStruct
     DEBUG_UVM_REMOVAL_ARGUMENT
   ) 
   {
-    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewWriteOnly");
+    DEBUG_UVM_REMOVAL_PRINT_CALLER("getDeviceSubviewOverwriteAll");
     static_assert(dualViewHasNonConstData,
-        "WriteOnly views are not available for DualView with const data");
+        "OverwriteAll views are not available for DualView with const data");
     return getDeviceSubview(offset, numEntries, Access::ReadWrite);
   }
 
