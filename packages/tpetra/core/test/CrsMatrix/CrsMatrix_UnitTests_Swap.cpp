@@ -701,14 +701,14 @@ class crsMatrix_Swap_Tester
         auto lclmtx1 = matrix1.getLocalMatrixHost();
         auto lclmtx2 = matrix2.getLocalMatrixHost();
 
-        auto rowptr1 = lclmtx1.row_map;
-        auto rowptr2 = lclmtx2.row_map;
+        auto rowptr1 = lclmtx1.graph.row_map;
+        auto rowptr2 = lclmtx2.graph.row_map;
 
-        auto colind1 = lclmtx1.entries;
-        auto colind2 = lclmtx2.entries;
+        auto colind1 = lclmtx1.graph.entries;
+        auto colind2 = lclmtx2.graph.entries;
 
-        auto rbo1 = lclmtx1.row_block_offsets;
-        auto rbo2 = lclmtx2.row_block_offsets;
+        auto rbo1 = lclmtx1.graph.row_block_offsets;
+        auto rbo2 = lclmtx2.graph.row_block_offsets;
 
         if(rowptr1.extent(0) != rowptr2.extent(0))
         {
