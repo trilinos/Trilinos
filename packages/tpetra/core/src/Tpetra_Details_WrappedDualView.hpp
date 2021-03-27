@@ -44,17 +44,21 @@
 #include <Kokkos_DualView.hpp>
 #include <sstream>
 
-#undef DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
 #define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION()
 
 #define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn) \
-  std::cout << (fn) << " called from " << callerstr \
-            << " host cnt " << dualView.h_view.use_count()  \
-            << " device cnt " << dualView.d_view.use_count()  \
-            << std::endl;
+  { \
+  auto envVarSet = std::getenv("TPETRA_UVM_REMOVAL"); \
+  if (envVarSet && (std::strcmp(envVarSet,"1") == 0)) \
+    std::cout << (fn) << " called from " << callerstr \
+              << " host cnt " << dualView.h_view.use_count()  \
+              << " device cnt " << dualView.d_view.use_count()  \
+              << std::endl; \
+  }
 
 #else
 
@@ -124,7 +128,12 @@ public:
   { }
 
   WrappedDualView(const DeviceViewType deviceView) {
-    auto hostView = Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), deviceView);
+    HostViewType hostView;
+    if (deviceView.data() != nullptr) {
+      hostView = Kokkos::create_mirror_view_and_copy(
+                                       typename HostViewType::memory_space(),
+                                       deviceView);
+    }
     originalDualView = DualViewType(deviceView, hostView);
     dualView = originalDualView;
   }
