@@ -368,10 +368,11 @@ namespace Tpetra {
        "even if you had previously called fillComplete.  In that "
        "case, you must call fillComplete on the graph again.");
 
-    size_t numValues = graph->getLocalGraphDevice().entries.extent(0);
+    size_t numValuesPacked = graph->lclIndsPacked_wdv.extent(0);
+    valuesPacked_wdv = values_wdv_type(matrix.valuesPacked_wdv, 0, numValuesPacked);
 
-    valuesPacked_wdv = values_wdv_type(matrix.valuesPacked_wdv, 0, numValues);
-    valuesUnpacked_wdv = values_wdv_type(matrix.valuesUnpacked_wdv, 0, numValues);
+    size_t numValuesUnpacked = graph->lclIndsUnpacked_wdv.extent(0);
+    valuesUnpacked_wdv = values_wdv_type(matrix.valuesUnpacked_wdv, 0, numValuesUnpacked);
 
     checkInternalState();
   }
@@ -824,15 +825,16 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   swap(CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & crs_matrix)
   {
-    std::swap(crs_matrix.importMV_,      this->importMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(crs_matrix.exportMV_,      this->exportMV_);        // mutable Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(crs_matrix.staticGraph_,   this->staticGraph_);     // Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-    std::swap(crs_matrix.myGraph_,       this->myGraph_);         // Teuchos::RCP<      CrsGraph<LocalOrdinal, GlobalOrdinal, Node>>
-//    std::swap(crs_matrix.k_values1D_,    this->k_values1D_);      // KokkosSparse::CrsMatrix<impl_scalar_type, LocalOrdinal, execution_space, void, typename local_graph_device_type::size_type>::values_type
-    std::swap(crs_matrix.storageStatus_, this->storageStatus_);   // ::Tpetra::Details::EStorageStatus (enum f/m Tpetra_CrsGraph_decl.hpp)
-    std::swap(crs_matrix.fillComplete_,  this->fillComplete_);    // bool
-    std::swap(crs_matrix.nonlocals_,     this->nonlocals_);       // std::map<GO, pair<Teuchos::Array<GO>,Teuchos::Array<Scalar>>
-    std::swap(crs_matrix.frobNorm_,      this->frobNorm_);        // mutable Kokkos::Details::ArithTraits<impl_scalar_type>::mag_type
+    std::swap(crs_matrix.importMV_,      this->importMV_);
+    std::swap(crs_matrix.exportMV_,      this->exportMV_);
+    std::swap(crs_matrix.staticGraph_,   this->staticGraph_);
+    std::swap(crs_matrix.myGraph_,       this->myGraph_);
+    std::swap(crs_matrix.valuesPacked_wdv, this->valuesPacked_wdv);
+    std::swap(crs_matrix.valuesUnpacked_wdv, this->valuesUnpacked_wdv);
+    std::swap(crs_matrix.storageStatus_, this->storageStatus_);
+    std::swap(crs_matrix.fillComplete_,  this->fillComplete_);
+    std::swap(crs_matrix.nonlocals_,     this->nonlocals_);
+    std::swap(crs_matrix.frobNorm_,      this->frobNorm_);
   }
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
