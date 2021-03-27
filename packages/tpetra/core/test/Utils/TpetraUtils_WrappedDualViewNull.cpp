@@ -85,8 +85,11 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
               << "host.use_count = " << dvNull.h_view.use_count() << ";  "
               << "device.use_count = " << dvNull.d_view.use_count()
               << std::endl;
-    TEST_EQUALITY(use_h, 2);
-    TEST_EQUALITY(use_d, 0); // This result is bad for WrappedDualView
+    // For UVM or serial builds, use_h == use_d == 0.
+    // But for non-UVM CUDA builds, use_h == 2 and use_d == 0.
+    // This difference is bad for WrappedDualView.
+    // Thus, WrappedDualView's constructor needs to check for a 
+    // null device view before creating the HostMirror.
   }
 
   {
