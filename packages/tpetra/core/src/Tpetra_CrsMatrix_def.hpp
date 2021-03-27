@@ -3534,12 +3534,12 @@ abort();
       }
       else {
         numEnt = static_cast<LO> (rowInfo.numEntries);
-        auto lclColInds = staticGraph_->getLocalIndsViewDevice (rowInfo);
-        // KDDKDD Breaks reference counting; unsafe
+        auto lclColInds = staticGraph_->getLocalIndsViewHost (rowInfo);
+        // KDDKDD UVM Breaks reference counting; unsafe
         ind = lclColInds.data (); 
 
-        auto values = getValuesViewDevice (rowInfo);
-        // KDDKDD Breaks reference counting; unsafe
+        auto values = getValuesViewHost (rowInfo);
+        // KDDKDD UVM Breaks reference counting; unsafe
         val = values.data();
         return values.extent(0);
       }
@@ -4007,15 +4007,17 @@ abort();
     const LO myNumRows = static_cast<LO> (this->getNodeNumRows ());
     const size_t INV = Tpetra::Details::OrdinalTraits<size_t>::invalid ();
 
-    local_matrix_host_type lclMat = getLocalMatrixHost ();
+    auto rowPtrsPackedHost = staticGraph_->rowPtrsPacked_host_;
+    auto valuesPackedHost = valuesPacked_wdv.getHostView(Access::ReadOnly);
     Kokkos::parallel_for
       ("Tpetra::CrsMatrix::getLocalDiagCopy",
        range_type (0, myNumRows),
        [&, INV, h_offsets] (const LO lclRow) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
         lclVecHost1d(lclRow) = STS::zero (); // default value if no diag entry
         if (h_offsets[lclRow] != INV) {
-          auto curRow = lclMat.rowConst (lclRow);
-          lclVecHost1d(lclRow) = static_cast<IST> (curRow.value(h_offsets[lclRow]));
+          auto curRowOffset = rowPtrsPackedHost (lclRow);
+          lclVecHost1d(lclRow) = 
+            static_cast<IST> (valuesPackedHost(curRowOffset+h_offsets[lclRow]));
         }
       });
     //diag.sync_device ();
