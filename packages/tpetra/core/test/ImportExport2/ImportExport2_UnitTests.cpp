@@ -2516,11 +2516,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
 
-    ArrayRCP<const size_t> rowptr;
-    ArrayRCP<const LO> colind;
-    ArrayRCP<const Scalar> vals;
-    R->getAllValues(rowptr,colind,vals);
-
     // Form AP
     AP = rcp (new CrsMatrixType(A->getRowMap(),0));
     Tpetra::MatrixMatrix::Multiply(*A,false,*P,false,*AP);
