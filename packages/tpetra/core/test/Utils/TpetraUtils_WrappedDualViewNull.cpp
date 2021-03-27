@@ -82,7 +82,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
     size_t use_d = dvNull.d_view.use_count();
 
     std::cout << "Null DualView:     "
-              << "host.use_count = " << dvNull.h_view.use_count() << "; "
+              << "host.use_count = " << dvNull.h_view.use_count() << ";  "
               << "device.use_count = " << dvNull.d_view.use_count()
               << std::endl;
     TEST_EQUALITY(use_h, 2);
@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
     }
     size_t use_h = wrapped.getHostView(Tpetra::Access::ReadOnly).use_count();
     size_t use_d = wrapped.getDeviceView(Tpetra::Access::ReadOnly).use_count();
-    std::cout << "Wrapped "
+    std::cout << "Wrapped nullview"
               << wrapped.getDeviceView(Tpetra::Access::ReadOnly).label()
               << ":  host use_count = " << use_h
               << ";  device use_count = " << use_d << std::endl;

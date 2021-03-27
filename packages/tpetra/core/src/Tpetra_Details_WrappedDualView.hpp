@@ -51,7 +51,8 @@
 #define DEBUG_UVM_REMOVAL_ARGUMENT ,const char* callerstr = __builtin_FUNCTION()
 #define DEBUG_UVM_REMOVAL_PRINT_CALLER(fn) \
   { \
-  if (std::strcmp(std::getenv ("TPETRA_UVM_REMOVAL"),"1") == 0) \
+  auto envVarSet = std::getenv("TPETRA_UVM_REMOVAL"); \
+  if (envVarSet && (std::strcmp(envVarSet,"1") == 0)) \
     std::cout << (fn) << " called from " << callerstr \
               << " host cnt " << dualView.h_view.use_count()  \
               << " device cnt " << dualView.d_view.use_count()  \
@@ -125,7 +126,12 @@ public:
   { }
 
   WrappedDualView(const DeviceViewType deviceView) {
-    auto hostView = Kokkos::create_mirror_view_and_copy(typename HostViewType::memory_space(), deviceView);
+    HostViewType hostView;
+    if (deviceView.data() != nullptr) {
+      hostView = Kokkos::create_mirror_view_and_copy(
+                                       typename HostViewType::memory_space(),
+                                       deviceView);
+    }
     originalDualView = DualViewType(deviceView, hostView);
     dualView = originalDualView;
   }
