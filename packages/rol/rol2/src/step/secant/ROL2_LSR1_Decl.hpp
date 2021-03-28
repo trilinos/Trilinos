@@ -52,7 +52,7 @@
 namespace ROL2 {
 
 template<class Real>
-class lSR1 : public LinearOperator<Real> {
+class lSR1 : public Secant<Real> {
 public:
 
   virtual ~lSR1() = default;

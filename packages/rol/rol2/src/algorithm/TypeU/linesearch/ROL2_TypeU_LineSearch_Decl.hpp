@@ -159,17 +159,7 @@ private:
 };
 
 template<class Real>
-inline std::string enumToString( LineSearch<Real>::Type e ) { 
-  return LineSearch<Real>::type_dict[e]; 
-}
-
-template<class Real>
-inline std::string enumToString( LineSearch<Real>::CurvatureCond e ) { 
-  return LineSearch<Real>::curvature_dict[e]; 
-}
-
-template<class Real>
-EnumMap<LineSearch<Real>::Type>
+EnumMap<typename LineSearch<Real>::Type>
 LineSearch<Real>::type_dict = { "Iteration Scaling",
                                 "Path-Based Target Level",
                                 "Backtracking",
@@ -179,7 +169,7 @@ LineSearch<Real>::type_dict = { "Iteration Scaling",
                                 "Brent's",    
                                 "User Defined" };
 template<class Real>
-EnumMap<LineSearch<Real>::DescentType>
+EnumMap<typename LineSearch<Real>::DescentType>
 LineSearch<Real>::curvature_dict = { "Wolfe Conditions",
                                      "Strong Wolfe Conditions",
                                      "Generalized Wolfe Conditions",

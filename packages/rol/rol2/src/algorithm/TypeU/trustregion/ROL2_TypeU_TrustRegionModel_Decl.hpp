@@ -72,9 +72,9 @@ public:
 
   virtual ~TrustRegionModel() = default;
 
-  TrustRegionModel( ParameterList&           list,
-                    const Ptr<Secant<Real>>& secant = nullPtr,
-                    Secant<Real>::Mode       mode   = Secant<Real>::Mode::Both );
+  TrustRegionModel( ParameterList&              parlist,
+                    const Ptr<Secant<Real>>&    secant = nullPtr,
+                    typename Secant<Real>::Mode mode   = Secant<Real>::Mode::Both );
 
   void initialize( const Vector<Real>& x, 
                    const Vector<Real>& g );
@@ -83,10 +83,10 @@ public:
   // overloaded virtual function without this using declaration
   using Objective<Real>::update;
 
-  void validate(       Objective<Real>&        obj,
-                 const Vector<Real>&           x,
-                 const Vector<Real>&           g,
-                       TrustRegion<Real>::Type etr );
+  void validate(       Objective<Real>&                 obj,
+                 const Vector<Real>&                    x,
+                 const Vector<Real>&                    g,
+                       typename TrustRegion<Real>::Type type );
         
   virtual void setData(      Objective<Real>& obj,
                        const Vector<Real>&    x,
@@ -142,6 +142,7 @@ public:
   const Objective<Real>& getObjective() const { return obj_;    }
   const Secant<Real>&    getSecant()    const { return secant_; }
 
+    
 protected:
 
   Vector<Real>&    getGradient()  { return g_;      }
@@ -165,9 +166,10 @@ protected:
 
 private:
 
-  Ptr<Objective<Real>> obj_;
-  Ptr<Vector<Real>>    x_, g_, dual_;
-  Ptr<Secant<Real>>    secant_;
+  Ptr<Objective<Real>>    obj_;
+  Ptr<const Vector<Real>> x_, g_;
+  Ptr<Vector<Real>>       dual_;
+  Ptr<Secant<Real>>       secant_;
 
   bool useSecantPrecond_;
   bool useSecantHessVec_;
@@ -175,7 +177,7 @@ private:
 }; // class TrustRegionModel
 
 template<class Real>
-EnumMap<TrustRegionModel<Real>::Type> 
+EnumMap<typename TrustRegionModel<Real>::Type> 
 TrustRegionModel<Real>::type_dict = { "Coleman-Li", 
                                       "Kelley-Sachs",
                                       "Lin-More" };

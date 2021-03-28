@@ -13,7 +13,7 @@ template<class Real>
 class Algorithm : public ROL2::Algorithm<Real> {
 public:
 
-  using ROL2::Algorithm<Real>::ExitStatus;
+  using typename ROL2::Algorithm<Real>::ExitStatus;
 
   enum class Type : std::int16_t {
     Bundle = 0,
@@ -22,14 +22,14 @@ public:
     Last
   };
 
-  EnumMap<Type> type_dict;
+  static EnumMap<Type> type_dict;
 
   /** \class ROL2::Algorithm_U::State 
       \brief Common container for quantities used by unconstrained algorithms.
   */
   struct State : public ROL2::Algorithm<Real>::State {
 
-    State();
+    State() = default;
 
     virtual ~State() = default;
 
@@ -37,40 +37,26 @@ public:
 
     virtual bool is_initialized() const override;
 
-    virtual void initialize( const Vector<Real>& );
-
-    Ptr<Vector<Real>> iterateVec_;     ///< Optimization vector
-    Ptr<Vector<Real>> minIterVec_;     ///< Optimization vector that has produced the minimal objective value
     Ptr<Vector<Real>> stepVec_;        ///< Step Vector
     Ptr<Vector<Real>> gradientVec_;    ///< Gradient vector
 
-    Real value_      = ROL_INF<Real>;  ///< Current objective value
-    Real minValue_   = ROL_INF<Real>;  ///< Current minimum objective value computed
-    Real gnorm_      = ROL_INF<Real>;  ///< Norm of the gradient vector
-    Real snorm_      = ROL_INF<Real>;  ///< Norm of the step vector
     Real searchSize_ = ROL_ONE<Real>;  /**< Characteristic size used in optimization algorithms. For example,
                                             the step length of a line search or the radius of a trust region. */
 
-    int iter    = 0; ///< Current iterate number
-    int minIter = 0; ///< Iterate number at which minimal objective value was found
-    int nfval   = 0; ///< Number of objective function evaluations
-    int ngrad   = 0; ///< Number of gradient evaluations
-    int nhvec   = 0; ///< Number of Hessian-vector product evaluations
-    
-    typename StatusTest<Real>::ExitStatus exitStatus_ = StatusTest<Real>::ExitStatus::Last;
-
-    bool is_initialized_ = false;
+    ExitStatus exitStatus_ = ExitStatus::Last;
 
   }; // State
 
-  Algorithm() = default;
+  Algorithm();
+
   virtual ~Algorithm() = default;
 
-  virtual void setStatusTest( const Ptr<StatusTest<Real>>& status,
-                              bool combineStatus = false ) override;
+  virtual void setState( const Ptr<State>& state ) {}// { state_ = state; }
 
-  virtual void run( OptimizationProblem<Real>& problem,
-                    std::ostream&              outStream = std::cout ) override;
+  virtual void setStatusTest( const Ptr<StatusTest<Real>>& status,
+                                    bool                   combineStatus = false ) override;
+//  virtual void run( OptimizationProblem<Real>& problem,
+//                    std::ostream&              outStream = std::cout ) override;
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This is the primary Type-U interface.
@@ -84,24 +70,24 @@ public:
              This is the primary Type-U with explicit linear equality
              constraints interface.
   */
-  virtual void run( Vector<Real>&     x,
-                    Objective<Real>&  obj,
-                    Constraint<Real>& linear_con,
-                    Vector<Real>&     linear_mul,
-                    std::ostream&     outStream = std::cout );
+//  virtual void run( Vector<Real>&     x,
+//                    Objective<Real>&  obj,
+//                    Constraint<Real>& linear_con,
+//                    Vector<Real>&     linear_mul,
+//                    std::ostream&     outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems with explicit
              linear equality constraints (Type-U).
              This general interface supports the use of dual optimization vector spaces,
              where the user does not define the dual() method.
   */
-  virtual void run(       Vector<Real>&     x,
-                    const Vector<Real>&     g,
-                          Objective<Real>&  obj,
-                          Constraint<Real>& linear_con,
-                          Vector<Real>&     linear_mul,
-                    const Vector<Real>&     linear_c,
-                          std::ostream&     outStream = std::cout );
+//  virtual void run(       Vector<Real>&     x,
+//                    const Vector<Real>&     g,
+//                          Objective<Real>&  obj,
+//                          Constraint<Real>& linear_con,
+//                          Vector<Real>&     linear_mul,
+//                    const Vector<Real>&     linear_c,
+//                          std::ostream&     outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This general interface supports the use of dual optimization vector spaces,
@@ -118,37 +104,28 @@ public:
 
   virtual void writeOutput( std::ostream&, bool ) const override;
 
-  virtual const State&            getState()  const override;
-  virtual const StatusTest<Real>& getStatus() const override;
+  virtual const State&                    getState()  const override { return *state_; }
+  virtual const CombinedStatusTest<Real>& getStatus() const override { return *status_; }
 
   virtual void reset() override;
 
 protected:
 
-  void initialize( const Vector<Real>& x );
+  void initialize( const Vector<Real>& x,
+                   const Vector<Real>& g );
 
-  virtual State&            getState()  override;
-  virtual StatusTest<Real>& getStatus() override;
+  virtual State&                    getState()  override { return *state_;  }
+  virtual CombinedStatusTest<Real>& getStatus() override { return *status_; }
 
 private:
 
-  const Ptr<State>                    state_;
-  const Ptr<CombinedStatusTest<Real>> status_;
+  Ptr<State>                    state_;
+  Ptr<CombinedStatusTest<Real>> status_;
 
-}; 
-
-template<class Real> 
-inline std::string enumToString( Algorithm<Real>::Type e ) {
-  return Algorithm<Real>::type_dict[e];
-}
+}; // class Algorithm
 
 template<class Real> 
-inline Algorithm<Real>::Type typeToString( std::string s, const Algorithm<Real>& ) {
-  return Algorithm<Real>::type_dict[s];
-}
-
-template<class Real> 
-ENumMap<Algorithm<Real>::Type>
+EnumMap<typename Algorithm<Real>::Type>
 Algorithm<Real>::type_dict = { "Bundle",
                                "Line Search",
                                "Trust Region" };

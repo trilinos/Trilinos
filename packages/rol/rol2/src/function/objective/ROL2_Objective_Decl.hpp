@@ -91,6 +91,23 @@ public:
     std::ignore = iter;
   }
 
+  /** \brief Update objective function using the new UpdateType 
+
+      This function updates the objective function at new iterations. 
+      @param[in]          x      is the new iterate. 
+      @param[in]          type   ROL2::UpdateType enum
+      @param[in]          iter   is the outer algorithm iterations count.
+  */
+  virtual void update( const Vector<Real>& x, 
+                             UpdateType    type,
+                             int           iter = -1 ) {
+    std::ignore = x;
+    std::ignore = type;
+    std::ignore = iter;
+  }
+
+
+
   /** \brief Compute value.
 
       This function returns the objective function value.

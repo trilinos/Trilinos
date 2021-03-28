@@ -108,7 +108,7 @@ NewtonKrylov<Real>::NewtonKrylov(       ParameterList&     parlist,
 
   // Initialize secant object
   if ( useSecantPrecond_ ) {
-    if( secant_.is_nullPtr() ) {
+    if( secant_ != nullPtr ) {
       secantName_ = slist.get("Type","Limited-Memory BFGS");
       secantType_ = Secant<Real>::type_dict[secantName_];
     }
@@ -119,7 +119,7 @@ NewtonKrylov<Real>::NewtonKrylov(       ParameterList&     parlist,
     precond_ = secant_;
   }
   // Initialize Krylov object
-  if ( krylov_.is_nullPtr() ) {
+  if ( krylov != nullPtr ) {
     krylovName_ = klist.get("Type","Conjugate Gradients");
     krylovType_ = Krylov<Real>::type_dict[krylovName_];
     krylov_ = KrylovFactory<Real>(parlist);

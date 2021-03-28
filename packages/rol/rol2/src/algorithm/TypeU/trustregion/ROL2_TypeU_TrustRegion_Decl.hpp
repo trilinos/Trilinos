@@ -41,6 +41,7 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_TRUSTREGION_DECL_H
 #define ROL2_TYPEU_TRUSTREGION_DECL_H
 
@@ -59,8 +60,8 @@ public:
     CauchyPoint = 0,
     TruncatedCG,
     SPG,
-    Dogleg,
-    DoubleDogleg,
+    DogLeg,
+    DoubleDogLeg,
     Last
   };
 
@@ -71,7 +72,8 @@ public:
     NPosPredNeg,
     TRNaN,
     QMinSufDec,
-    Undefined
+    Undefined,
+    Last
   };
 
   static EnumMap<Type> type_dict;
@@ -90,10 +92,6 @@ public:
                       Real                    del,        // Trust-region radius
                       TrustRegionModel<Real>& model) = 0; // Trust-region model
 
-//  static bool isValidType( Type tr ) { return type < Type::Last; }
-
-//  static Type stringToType( std::string s );
- 
   static Real initialRadius(       int&                    nfval,
                              const Vector<Real>&           x,
                              const Vector<Real>&           g,
@@ -103,8 +101,8 @@ public:
                                    Objective<Real>&        obj,
                                    TrustRegionModel<Real>& model,
                                    Real                    delMax,
-                                   std::ostream&           outStream,
-                                   bool                    print = false)
+                                   std::ostream&           os,
+                                   bool                    print = false);
 
   static void analyzeRatio( Real&         rho,
                             Flag&         flag,
@@ -112,8 +110,8 @@ public:
                             Real          ftrial,
                             Real          pRed,
                             Real          epsi,
-                            std::ostream& outStream = std::cout,
-                            bool          print = false) {
+                            std::ostream& os = std::cout,
+                            bool          print = false);
 
   static Real interpolateRadius( const Vector<Real>& g,
                                  const Vector<Real>& s,
@@ -125,7 +123,7 @@ public:
                                        Real          gamma0,
                                        Real          gamma1,
                                        Real          eta2,
-                                       std::ostream& outStream = std::cout,
+                                       std::ostream& os = std::cout,
                                        bool          print = false);
 
   static Ptr<TrustRegion<Real>> create( ParameterList& parlist );
@@ -133,21 +131,22 @@ public:
 }; // TrustRegion
 
 template<class Real>
-EnumMap<TrustRegion<Real>::Type> 
+EnumMap<typename TrustRegion<Real>::Type> 
 TrustRegion<Real>::type_dict = { "Cauchy Point",
                                  "Truncated CG",
                                  "SPG",
-                                 "Dogleg",
-                                 "Double Dogleg" };
+                                 "DogLeg",
+                                 "Double DogLeg" };
 template<class Real>
-EnumMap<TrustRegion<Real>::Flag> 
+EnumMap<typename TrustRegion<Real>::Flag> 
 TrustRegion<Real>::flag_dict = { 
   "Both actual and predicted reductions are positive (success)",
   "Actual reduction is positive and predicted reduction is negative (impossible)",
   "Actual reduction is nonpositive and predicted reduction is positive",
   "Actual reduction is nonpositive and predicted reduction is negative (impossible)",
   "Actual and/or predicted reduction is a NaN",
-  "Subproblem solution did not produce sufficient decrease" 
+  "Subproblem solution did not produce sufficient decrease",
+  "Undefined"
 };
 
 } // namespace TypeU

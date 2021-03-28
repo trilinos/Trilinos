@@ -24,8 +24,8 @@ public:
   }
  
   inline value_type get( std::string key, value_type value ) {
-    if( values_.count(key) ) values_[key] = value;
-    return values_[key];
+    if( !values_.count(key) ) values_[key] = value;
+    return values_.at(key);
   }
 
   virtual int get_level() = 0;// { return 0; }

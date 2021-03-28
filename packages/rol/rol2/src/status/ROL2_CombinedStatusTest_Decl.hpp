@@ -41,53 +41,32 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_TYPEU_CAUCHYPOINT_DEF_H
-#define ROL2_TYPEU_CAUCHYPOINT_DEF_H
+#ifndef ROL2_COMBINEDSTATUSTEST_DECL_HPP
+#define ROL2_COMBINEDSTATUSTEST_DECL_HPP
 
-/** \class ROL2::TypeU::CauchyPoint
-    \brief Provides interface for the Cauchy point trust-region subproblem solver.
+/** \class ROL2::CombinedStatusTest
+    \brief Provides an interface to check two status tests of optimization algorithms.
 */
 
 namespace ROL2 {
-namespace TypeU {
 
-template<class Real>
-void CauchyPoint<Real>::initialize( const Vector<Real>& x, 
-                                    const Vector<Real>& g ) { 
-  dual_ = g.clone(); 
-}
+template<typename Real>
+class CombinedStatusTest : public StatusTest<Real> {
+public:
 
-template<class Real>
-void CauchyPoint<Real>::solve( Vector<Real>&           s, 
-                               Real&                   snorm, 
-                               Real&                   pRed,
-                               int&                    iflag, 
-                               int&                    iter, 
-                               Real                    del,
-                               TrustRegionModel<Real>& model ) {
-  const Real zero(0), half(0.5);
-  Real tol = default_tolerance<Real>();
-  
-  // Set step to (projected) gradient
-  s.set(model.getGradient()->dual());
+  CombinedStatusTest();
 
-  // Apply (reduced) Hessian to (projected) gradient
-  model.hessVec(*dual_,s,s,tol);
-  Real gnorm  = s.norm();
-  Real gnorm2 = gnorm*gnorm;
-  Real gBg    = dual_->apply(s);
-  Real alpha  = gnorm2/gBg;
+  void reset();
 
-  if ( alpha*gnorm >= del || gBg <= zero )  alpha = del/gnorm;
+  void add( const Ptr<StatusTest<Real>>& status );
 
-  s.scale(-alpha);
-  snorm = alpha*gnorm;
-  iflag = 0;
-  iter  = 0;
-  pRed  = alpha*(gnorm2 - half*alpha*gBg);
-}
+  bool check( typename Algorithm<Real>::State& state );
 
-} // namespace TypeU
+private:
+  std::vector<Ptr<StatusTest<Real>>> status_;
+
+}; // class CombinedStatusTest
+
 } // namespace ROL2
 
-#endif // ROL2_TYPEU_CAUCHYPOINT_DEF_H
+#endif // ROL2_COMBINEDSTATUSTEST_DECL_HPP

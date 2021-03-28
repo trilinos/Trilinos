@@ -41,8 +41,9 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_STATUSTEST_H
-#define ROL2_STATUSTEST_H
+#pragma once
+#ifndef ROL2_STATUSTEST_DEF_H
+#define ROL2_STATUSTEST_DEF_H
 
 /** \class ROL2::StatusTest
     \brief Provides an interface to check status of optimization algorithms.
@@ -52,66 +53,44 @@
 namespace ROL2 {
 
 template<class Real>
-class StatusTest {
-public:
+StatusTest<Real>::StatusTest( ParameterList& parlist ) {
+  Real em6(1e-6);
+  auto& stlist = parlist.sublist("Status Test");
+  gtol_     = stlist.get("Gradient Tolerance", em6);
+  stol_     = stlist.get("Step Tolerance", em6*gtol_);
+  max_iter_ = stlist.get("Iteration Limit", 100);
+  use_rel_  = stlist.get("Use Relative Tolerances", false);
+}
 
-  enum class ExitStatus : std::int16_t {
-    Converged = 0,
-    MaxIter,
-    StepTol,
-    NaN,
-    UserDefined,
-    Last
-  };
-
-  virtual ~StatusTest() = default;
-
-  StatusTest( ParameterList& parlist ) {
-    Real em6(1e-6);
-    auto& stlist = parlist.sublist("Status Test");
-    gtol_     = stlist.get("Gradient Tolerance", em6);
-    stol_     = stlist.get("Step Tolerance", em6*gtol_);
-    max_iter_ = stlist.get("Iteration Limit", 100);
-    use_rel_  = stlist.get("Use Relative Tolerances", false);
-  }
-
-  StatusTest( Real gtol = 1.e-6, 
-              Real stol = 1.e-12, 
-              int  max_iter = 100, 
-              bool use_rel = false ) 
+template<class Real>
+StatusTest<Real>::StatusTest( Real gtol, 
+                              Real stol, 
+                              int  max_iter, 
+                              bool use_rel ) 
   : gtol_(gtol), stol_(stol), max_iter_(max_iter), use_rel_(use_rel) {}
 
-  /** \brief Check algorithm status.
-  */
-  virtual bool check( typename Algorithm<Real>::State& state ) {
-     if (state.iter==0 && use_rel_) {
-       gtol_ *= state.gnorm;
-       stol_ *= state.gnorm;
-     }
-     if ( (state.gnorm > gtol_)& & 
-          (state.snorm > stol_)& & 
-          (state.iter  < max_iter_) ) {
-       return true;
-     }
-     else {
-       state.statusFlag = (state.gnorm <= gtol_ ? ExitStatus::Converged
-                           : state.snorm <= stol_ ? ExitStatus::StepTol
-                           : state.iter >= max_iter_ ? ExitStatus::MaxIter
-                           : std::isnan(state.gnorm)||std::isnan(state.snorm) ? ExitStatus::NAN
-                           : ExitStatus::Last);
-       return false;
-     }
-  }
+template<class Real>
+bool StatusTest<Real>::check( typename Algorithm<Real>::State& state ) {
 
-private:
-
-  Real gtol_;
-  Real stol_;
-  int  max_iter_;
-  bool use_rel_;
-
-}; // class StatusTest
+   if (state.iter_ ==0 && use_rel_) {
+     gtol_ *= state.gnorm_;
+     stol_ *= state.gnorm_;
+   }
+   if ( (state.gnorm_ > gtol_) && 
+        (state.snorm_ > stol_) && 
+        (state.iter_  < max_iter_) ) {
+     return true;
+   }
+   else {
+     state.statusFlag_ = (state.gnorm_ <= gtol_ ? ExitStatus::Converged
+                         : state.snorm_ <= stol_ ? ExitStatus::StepTolMet
+                         : state.iter_ >= max_iter_ ? ExitStatus::MaxIter
+                         : std::isnan(state.gnorm_)||std::isnan(state.snorm_) ? ExitStatus::EncounteredNaN
+                         : ExitStatus::Last);
+     return false;
+   }
+} // StatusTest<Real>::check
 
 } // namespace ROL2
 
-#endif // ROL2_STATUSTEST_HPP
+#endif // ROL2_STATUSTEST_DEF_HPP

@@ -54,59 +54,55 @@ namespace ROL2 {
 namespace TypeU {
 
 template<typename Real>
-class TrustRegionAlgorithm : public Algorithm<Real> {
+class TrustRegionAlgorithm : public ROL2::TypeU::Algorithm<Real> {
 public:
 
-  using Algorithm<Real>::initialize;
-
-  TrustRegionAlgorithm( ParameterList&     parlist,
-                        Ptr<Secant<Real>>& secant = nullPtr );
+  TrustRegionAlgorithm(       ParameterList&     parlist,
+                        const Ptr<Secant<Real>>& secant = nullPtr );
 
   void run(       Vector<Real>&    x,
             const Vector<Real>&    g, 
                   Objective<Real>& obj,
-                  std::ostream&    outStream = std::cout);
+                  std::ostream&    outStream = std::cout) override;
 
   void writeHeader( std::ostream& = std::cout ) const override;
 
   void writeName( std::ostream& = std::cout ) const override;
   
-  void writeOutput( std::ostream& = std::cout, print_header = false ) const override;
+  void writeOutput( std::ostream& = std::cout, 
+                    bool print_header = false ) const override;
 
-  const void setModel(  const Ptr<TrustRegionModel<Real>>& );
-  const void setSecant( const Ptr<Secant<Real>>&           );
-  const void setSolver( const Ptr<TrustRegion<Real>>&      );
+  void setModel(  const Ptr<TrustRegionModel<Real>>& );
+  void setSolver( const Ptr<TrustRegion<Real>>&      );
    
   const TrustRegionModel<Real>& getModel()  const;
   const Secant<Real>&           getSecant() const;
   const TrustRegion<Real>&      getSolver() const;
    
 protected:
-
   TrustRegionModel<Real>& getModel();
-  Secant<Real>&           getSecant();
   TrustRegion<Real>&      getSolver();
 
 private:
   // TRUST REGION INFORMATION
-  Ptr<TrustRegion<Real>>      solver_; ///< Container for trust-region solver object.
-  Ptr<TrustRegionModel<Real>> model_;  ///< Container for trust-region model.
-  TrustRegion<Real>::Type     etr_;    ///< Trust-region subproblem solver type.
-  Real                        delMax_; ///< Maximum trust-region radius.
-  Real                        eta0_;   ///< Step acceptance threshold.
-  Real                        eta1_;   ///< Radius decrease threshold.
-  Real                        eta2_;   ///< Radius increase threshold.
-  Real                        gamma0_; ///< Radius decrease rate (negative rho).
-  Real                        gamma1_; ///< Radius decrease rate (positive rho).
-  Real                        gamma2_; ///< Radius increase rate.
-  Real                        TRsafe_; ///< Safeguard size for numerically evaluating ratio.
-  Real                        eps_;    ///< Safeguard for numerically evaluating ratio.
-  TrustRegion<Real>::Flag     TRflag_; ///< Trust-region exit flag.
-  int                         SPflag_; ///< Subproblem solver termination flag.
-  int                         SPiter_; ///< Subproblem solver iteration count.
+  Ptr<TrustRegion<Real>>            solver_; ///< Container for trust-region solver object.
+  Ptr<TrustRegionModel<Real>>       model_;  ///< Container for trust-region model.
+  typename TrustRegion<Real>::Type  type_;   ///< Trust-region subproblem solver type.
+  typename TrustRegion<Real>::Flag  flag_;   ///< Trust-region exit flag.
+  Real                              delMax_; ///< Maximum trust-region radius.
+  Real                              eta0_;   ///< Step acceptance threshold.
+  Real                              eta1_;   ///< Radius decrease threshold.
+  Real                              eta2_;   ///< Radius increase threshold.
+  Real                              gamma0_; ///< Radius decrease rate (negative rho).
+  Real                              gamma1_; ///< Radius decrease rate (positive rho).
+  Real                              gamma2_; ///< Radius increase rate.
+  Real                              TRsafe_; ///< Safeguard size for numerically evaluating ratio.
+  Real                              eps_;    ///< Safeguard for numerically evaluating ratio.
+  int                               SPflag_; ///< Subproblem solver termination flag.
+  int                               SPiter_; ///< Subproblem solver iteration count.
 
   // SECANT INFORMATION
-  Secant<Real>::Type secantType_;
+  typename Secant<Real>::Type secantType_;
   bool useSecantPrecond_;
   bool useSecantHessVec_;
 

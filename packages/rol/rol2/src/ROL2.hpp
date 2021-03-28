@@ -30,7 +30,12 @@
 
 
 // Forward Declarations
+namespace ROL2 {
 template<class> class StatusTest;
+namespace TypeU {
+template<class> class TrustRegionModel;
+} // namespace TypeU
+} // namespace ROL2
 
 // ROL2 Class Declarations
 
@@ -39,8 +44,11 @@ template<class> class StatusTest;
 #include "ROL2_StdVector_Decl.hpp"
 #include "ROL2_Objective_Decl.hpp"
 
-#include "ROL2_Algorithm.hpp"
-#include "ROL2_StatusTest.hpp"
+#include "ROL2_Algorithm_Decl.hpp"
+#include "ROL2_StatusTest_Decl.hpp"
+#include "ROL2_CombinedStatusTest_Decl.hpp"
+#include "ROL2_TypeU_Algorithm_Decl.hpp"
+
 #include "ROL2_LinearOperator.hpp"
 
 #include "ROL2_Secant_Decl.hpp"
@@ -53,16 +61,15 @@ template<class> class StatusTest;
 #include "ROL2_ConjugateGradients_Decl.hpp"
 #include "ROL2_ConjugateResiduals_Decl.hpp"
 
-#include "ROL2_TypeU_Algorithm_Decl.hpp"
-#include "ROL2_TypeU_TrustRegionAlgorithm_Decl.hpp"
 #include "ROL2_TypeU_TrustRegion_Decl.hpp"
-#include "ROL2_TypeU_TrustRegion_TruncatedCG_Decl.hpp"
-#include "ROL2_TypeU_TrustRegion_CauchyPoint_Decl.hpp"
-#include "ROL2_TypeU_TrustRegion_DogLeg_Decl.hpp"
-#include "ROL2_TypeU_TrustRegion_DoubleDogLeg_Decl.hpp"
+#include "ROL2_TypeU_TrustRegionModel_Decl.hpp"
+#include "ROL2_TypeU_TruncatedCG_Decl.hpp"
+#include "ROL2_TypeU_CauchyPoint_Decl.hpp"
+#include "ROL2_TypeU_DogLeg_Decl.hpp"
+#include "ROL2_TypeU_DoubleDogLeg_Decl.hpp"
 #include "ROL2_TypeU_SPGTrustRegion_Decl.hpp"
 
-#include "ROL2_TypeU_TrustRegionModel_Decl.hpp"
+#include "ROL2_TypeU_TrustRegionAlgorithm_Decl.hpp"
 
 
 
@@ -82,15 +89,21 @@ template<class> class StatusTest;
 #include "ROL2_ConjugateGradients_Def.hpp"
 #include "ROL2_ConjugateResiduals_Def.hpp"
 
-#include "ROL2_TypeU_TrustRegionAlgorithm_Def.hpp"
-#include "ROL2_TypeU_TrustRegion_Def.hpp"
-#include "ROL2_TypeU_TrustRegion_TruncatedCG_Def.hpp"
-#include "ROL2_TypeU_TrustRegion_CauchyPoint_Def.hpp"
-#include "ROL2_TypeU_TrustRegion_DogLeg_Def.hpp"
-#include "ROL2_TypeU_TrustRegion_DoubleDogLeg_Def.hpp"
-#include "ROL2_TypeU_SPGTrustRegion_Def.hpp"
+#include "ROL2_StatusTest_Def.hpp"
+#include "ROL2_CombinedStatusTest_Def.hpp"
+
+#include "ROL2_Algorithm_Def.hpp"
+#include "ROL2_TypeU_Algorithm_Def.hpp"
 
 #include "ROL2_TypeU_TrustRegionModel_Def.hpp"
+#include "ROL2_TypeU_TrustRegionAlgorithm_Def.hpp"
+#include "ROL2_TypeU_TruncatedCG_Def.hpp"
+#include "ROL2_TypeU_CauchyPoint_Def.hpp"
+#include "ROL2_TypeU_DogLeg_Def.hpp"
+#include "ROL2_TypeU_DoubleDogLeg_Def.hpp"
+#include "ROL2_TypeU_SPGTrustRegion_Def.hpp"
+#include "ROL2_TypeU_TrustRegion_Def.hpp"
+
 
 #endif // ROL2_HPP
 

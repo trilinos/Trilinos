@@ -9,6 +9,7 @@ namespace ROL2 {
 */
 template<class Real>
 class Algorithm {
+public:
 
   //-------------------------------------------------------------------
   /** \enum ROL2::Algorithm::ExitStatus
@@ -18,10 +19,12 @@ class Algorithm {
     Converged = 0,
     MaxIter,
     StepTolMet,
-    EncounteredNan,
+    EncounteredNaN,
     UserDefined,
     Last
   };
+
+  static EnumMap<ExitStatus> exitstatus_dict;
 
   //-------------------------------------------------------------------
   /** \class ROL2::Algorithm::State
@@ -31,18 +34,28 @@ class Algorithm {
   public:
 
     State() = default;
-
     virtual ~State() = default;
 
     virtual void reset() = 0;
 
-    virtual void initialize( const Vector<Real>& ) = 0;
-
     /** \brief Returns true if vector memory has been allocated
     */
-    virtual bool is_initialized() const = 0;
+    virtual bool is_initialized() const;
 
-  }; 
+    Ptr<Vector<Real>> iterateVec_;
+    Ptr<Vector<Real>> minIterVec_;
+    Real value_     = ROL_INF<Real>;
+    Real minValue_  = ROL_INF<Real>;
+    Real gnorm_     = ROL_INF<Real>;
+    Real snorm_     = ROL_INF<Real>;
+    int iter_;
+    int minIter_;
+    int nfval_;
+    int ngrad_;
+    bool flag_      = false;
+    ExitStatus statusFlag_ = ExitStatus::Last;
+
+  }; // ROL2::Algorithm<Real>::State
 
   //-------------------------------------------------------------------
   // Public Interface
@@ -51,7 +64,10 @@ class Algorithm {
 
   virtual ~Algorithm() = default;
 
-  virtual void setStatusTest( const std::shared_ptr<StatusTest<Real>>&, bool  ) = 0;
+  virtual void setState( const Ptr<State>& state ) {}
+
+  virtual void setStatusTest( const Ptr<StatusTest<Real>>& status, 
+                                    bool                   combineStatus = false ) = 0;
 
   /** \brief Apply algorithm to an optimization problem
   */ 
@@ -61,19 +77,31 @@ class Algorithm {
 
   virtual void writeName( std::ostream& os ) const { os << "ROL >> "; } 
 
-  virtual void writeOutput( std::ostream& ) const = 0;
+  virtual void writeOutput( std::ostream&, bool ) const = 0;
 
   virtual const State&            getState()  const = 0;
   virtual const StatusTest<Real>& getStatus() const = 0;
 
-  virtual void reset() = 0;
+  virtual void reset();
 
 protected:
+
+  void initialize( const Vector<Real>& );
 
   virtual State&            getState()  = 0;
   virtual StatusTest<Real>& getStatus() = 0;
   
 }; // Algorithm
+
+template<class Real>
+EnumMap<typename Algorithm<Real>::ExitStatus>
+Algorithm<Real>::exitstatus_dict = { "Converged",
+                                     "Iteration Limit Exceeded", 
+                                     "Step Tolerance Met", 
+                                     "Step and/or Gradient Returned NaN", 
+                                     "User Defined" };
+                                     
+
 
 } // namesapce ROL2
 

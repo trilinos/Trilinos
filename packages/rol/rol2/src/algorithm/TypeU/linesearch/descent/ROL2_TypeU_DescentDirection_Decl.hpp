@@ -96,15 +96,6 @@ public:
 
 }; // class DescentDirection
 
-template<typename Real>
-inline std::string enumToString( DescentDirection<Real>::Type e ) {
-  return DescentDirection<Real>::type_dict[e];
-}
-
-template<typename Real>
-inline std::string stringToEnum( std::string s, const DescentDirection<Real>&  ) {
-  return DescentDirection<Real>::type_dict[e];
-}
 
 template<typename Real>
 EnumMap<DescentDirection<Real>::Type>

@@ -41,6 +41,7 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_TRUNCATEDCG_DECL_H
 #define ROL2_TYPEU_TRUNCATEDCG_DECL_H
 
@@ -61,13 +62,23 @@ public:
 
   void initialize( const Vector<Real>& x, 
                    const Vector<Real>& g ) override;
-  void solve( Vector<Real>&             s,
-              Real&                     snorm,
-              Real&                     pRed,
-              int&                      iflag,
-              int&                      iter,
-              Real                      del,
-              TrustRegion<Real>::Model& model ) override;
+
+  void solve( Vector<Real>&           s,
+              Real&                   snorm,
+              Real&                   pRed,
+              int&                    iflag,
+              int&                    iter,
+              Real                    del,
+              TrustRegionModel<Real>& model ) override;
+
+private:
+  Ptr<Vector<Real>> s_, g_, v_, p_, Hp_;
+
+  int maxit_;
+  Real tol1_;
+  Real tol2_;
+
+}; // class TruncatedCG
 
 } // namespace TypeU
 } // namespace ROL2

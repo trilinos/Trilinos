@@ -41,53 +41,45 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_TYPEU_CAUCHYPOINT_DEF_H
-#define ROL2_TYPEU_CAUCHYPOINT_DEF_H
+#pragma once
+#ifndef ROL2_STATUSTEST_DECL_H
+#define ROL2_STATUSTEST_DECL_H
 
-/** \class ROL2::TypeU::CauchyPoint
-    \brief Provides interface for the Cauchy point trust-region subproblem solver.
+/** \class ROL2::StatusTest
+    \brief Provides an interface to check status of optimization algorithms.
 */
 
+
 namespace ROL2 {
-namespace TypeU {
 
 template<class Real>
-void CauchyPoint<Real>::initialize( const Vector<Real>& x, 
-                                    const Vector<Real>& g ) { 
-  dual_ = g.clone(); 
-}
+class StatusTest {
+public:
 
-template<class Real>
-void CauchyPoint<Real>::solve( Vector<Real>&           s, 
-                               Real&                   snorm, 
-                               Real&                   pRed,
-                               int&                    iflag, 
-                               int&                    iter, 
-                               Real                    del,
-                               TrustRegionModel<Real>& model ) {
-  const Real zero(0), half(0.5);
-  Real tol = default_tolerance<Real>();
-  
-  // Set step to (projected) gradient
-  s.set(model.getGradient()->dual());
+  using ExitStatus = typename ROL2::Algorithm<Real>::ExitStatus;
 
-  // Apply (reduced) Hessian to (projected) gradient
-  model.hessVec(*dual_,s,s,tol);
-  Real gnorm  = s.norm();
-  Real gnorm2 = gnorm*gnorm;
-  Real gBg    = dual_->apply(s);
-  Real alpha  = gnorm2/gBg;
+  virtual ~StatusTest() = default;
 
-  if ( alpha*gnorm >= del || gBg <= zero )  alpha = del/gnorm;
+  StatusTest( ParameterList& parlist );
 
-  s.scale(-alpha);
-  snorm = alpha*gnorm;
-  iflag = 0;
-  iter  = 0;
-  pRed  = alpha*(gnorm2 - half*alpha*gBg);
-}
+  StatusTest( Real gtol = 1.e-6, 
+              Real stol = 1.e-12, 
+              int  max_iter = 100, 
+              bool use_rel = false );
 
-} // namespace TypeU
+  /** \brief Check algorithm status.
+  */
+  virtual bool check( typename Algorithm<Real>::State& state );
+
+private:
+
+  Real gtol_;
+  Real stol_;
+  int  max_iter_;
+  bool use_rel_;
+
+}; // class StatusTest
+
 } // namespace ROL2
 
-#endif // ROL2_TYPEU_CAUCHYPOINT_DEF_H
+#endif // ROL2_STATUSTEST_DECL_HPP

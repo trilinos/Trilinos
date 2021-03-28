@@ -2,6 +2,8 @@
 #ifndef ROL2_ENUMMAP_HPP
 #define ROL2_ENUMMAP_HPP
 
+// #include <typeinfo>
+
 namespace ROL2 {
 
 /** \class ROL2::EnumMap
@@ -15,21 +17,40 @@ class EnumMap {
 public:
   EnumMap( std::initializer_list<std::string> ilist ) {
     using size_type = typename std::initializer_list<std::string>::size_type;
+//    std::cout << "EnumType = " << typeid(EType).name() << std::endl;
+//    std::cout << "EnumMap : size(ilist) == " << ilist.size() << ", Last = " << EType::Last << std::endl;
     assert( ilist.size() == static_cast<size_type>(EType::Last) );
     auto e = static_cast<EType>(0);
 
     for( const auto& s : ilist ) {
       s2e[remove_format(s)] = e;
       e2s[e] = s;
-      ++e;
+      e++;
     }
     e2s[EType::Last] = "Last Type";
     s2e["lasttype"]  = EType::Last;
   }
 
-  inline const std::string& operator[] ( EType e ) const { return e2s.at(e); }
+  inline const std::string& operator[] ( EType e ) const { 
+    if(!is_valid(e)) {
+      std::stringstream msg;
+      msg << "Enum Key " << e << " is invalid" << std::endl;
+      throw std::out_of_range(msg.str());
+    }
+    return e2s.at(e); 
+  }
 
-  inline EType operator[] ( std::string s ) const { return s2e.at(s); }
+  inline EType operator[] ( std::string s ) const { 
+    if(!is_valid(s)) {
+      std::stringstream msg;
+      msg << "String Key " << s << " is invalid" << std::endl;
+      msg << "Valid Keys are" << std::endl;
+      for( int i=0; i<=EType::Last; ++i ) 
+      msg << "  " << (*this)[static_cast<EType>(i)] << " : " << i << std::endl;
+      throw std::out_of_range(msg.str());
+    }
+    return s2e.at(s); 
+  }
 
   inline bool is_valid( EType e ) const { return e2s.count(e) == 1; }
 
@@ -48,19 +69,19 @@ private:
   std::map<std::string,EType> s2e;
 };
 
-template<typename object_type>
-inline
-enable_if_has_enum_Type_t<object_type,member_Type_t<object_type>>
-stringToEnum( std::string s, const object_type& ) {
-  return object_type::type_dict[s];
-}
-
-template<typename object_type>
-inline
-enable_if_has_enum_Flag_t<object_type,member_Flag_t<object_type>>
-stringToEnum( std::string s, const object_type& ) {
-  return object_type::flag_dict[s];
-}
+//template<typename object_type>
+//inline
+//enable_if_has_enum_Type_t<object_type,member_Type_t<object_type>>
+//stringToEnum( std::string s, const object_type& ) {
+//  return object_type::type_dict[s];
+//}
+//
+//template<typename object_type>
+//inline
+//enable_if_has_enum_Flag_t<object_type,member_Flag_t<object_type>>
+//stringToEnum( std::string s, const object_type& ) {
+//  return object_type::flag_dict[s];
+//}
 
 } // namespace ROL2
 #endif // ROL2_ENUMMAP_HPP

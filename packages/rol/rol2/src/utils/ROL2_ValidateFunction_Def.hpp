@@ -21,6 +21,16 @@ ValidateFunction<Real>::ValidateFunction( int  order,
 } 
 
 template<typename Real>
+ValidateFunction<Real>::ValidateFunction( const std::vector<Real>& steps, 
+                                                int                order,
+                                                int                precision,
+                                                bool               printToStream,
+                                                std::ostream&      os ) 
+  : steps_(steps), os_(os), order_(order), numSteps_(steps.size()), precision_(precision), 
+  printToStream_(printToStream) {
+}
+
+template<typename Real>
 ValidateFunction<Real>::ValidateFunction( ROL2::ParameterList& parlist, 
                                           std::ostream&        os ) 
   : os_(os) {

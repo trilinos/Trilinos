@@ -2,8 +2,6 @@
 #ifndef ROL2_CONSTANTS_HPP
 #define ROL2_CONSTANTS_HPP
 
-#include <limits>
-
 namespace ROL2 {
 
 template<typename Real>
@@ -14,6 +12,12 @@ constexpr Real ROL_MAX = std::numeric_limits<Real>::max();
 
 template<typename Real>
 constexpr Real ROL_MIN = std::numeric_limits<Real>::min();
+
+template<typename Real>
+constexpr Real ROL_OVERFLOW = 0.1*std::numeric_limits<Real>::max();
+
+template<typename Real>
+constexpr Real ROL_UNDERFLOW = 10*std::numeric_limits<Real>::min();
 
 template<typename Real>
 constexpr Real ROL_EPSILON = std::numeric_limits<Real>::epsilon();

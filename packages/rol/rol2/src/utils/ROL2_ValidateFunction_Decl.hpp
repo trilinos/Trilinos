@@ -24,6 +24,12 @@ public:
                     bool          printToStream = true,
                     std::ostream& os = std::cout );
 
+  ValidateFunction( const std::vector<Real>& steps,
+                          int                order = 1,
+                          int                precision = 11,
+                          bool               printToStream = true,
+                          std::ostream&      os = std::cout );
+
   ValidateFunction( ROL2::ParameterList& parlist, 
                     std::ostream&        os = std::cout );
 

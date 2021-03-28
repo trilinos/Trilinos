@@ -9,12 +9,12 @@ template<class Real>
 void TestProblem<Real>::get( Ptr<OptimizationProblem<Real>>& problem,
                              Ptr<Vector<Real>>&              x0,
                              std::vector<Ptr<Vector<Real>>>& xsols ) const {
-  if( x0.is_nullPtr() ) x0 = getInitialGuess();
+  if( is_nullPtr( x0 ) ) x0 = getInitialGuess();
   x0->set( *getInitialGuess() );
   
   xsols.resize(getNumSolutions());
   for( int i=0; i<getNumSolutions(); ++i ) {
-    if( x[i].is_nullPtr() ) x[i] = getSolution(i)->clone();
+    if( is_nullPtr(x[i]) ) x[i] = getSolution(i)->clone();
     x[i]->set(*getSolution(i));
   }
   

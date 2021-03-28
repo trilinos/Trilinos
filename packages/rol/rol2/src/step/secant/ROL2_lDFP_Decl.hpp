@@ -52,7 +52,7 @@
 namespace ROL2 {
 
 template<class Real>
-class lDFP : public LinearOperator<Real> {
+class lDFP : public Secant<Real> {
 public:
 
   // Inherit Constructor

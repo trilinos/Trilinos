@@ -12,7 +12,7 @@ QuasiNewton<Real>::QuasiNewton(       ParameterList&     parlist,
 
   auto& slist = parlist.sublist("General").sublist("Secant");
 
-  if( secant.is_nullPtr() ) {
+  if( secant != nullPtr ) {
     secantName_ = slist.get("Type", "Limited-Memory BFGS");
     secantType = Secant<Real>::type_dict[secantName];
   }

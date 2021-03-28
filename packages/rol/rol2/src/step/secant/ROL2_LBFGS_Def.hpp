@@ -19,7 +19,7 @@
 // documentation and/or other materials provided with the distribution.
 //
 // 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
+// contributors may be used to endorse or promote product_s derived from
 // this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
@@ -60,12 +60,12 @@ void lBFGS<Real>::applyH(       Vector<Real>& Hv,
   const Real zero(0);
 
   Hv.set(v.dual());
-  std::vector<Real> alpha(state.current+1,zero);
+  std::vector<Real> alpha(state.current_+1,zero);
 
-  for (int i = state.current; i>=0; i--) {
-    alpha[i]  = state.iterDiff[i]->dot(Hv);
-    alpha[i] /= state.product[i];
-    Hv.axpy(-alpha[i],(state.gradDiff[i])->dual());
+  for (int i = state.current_; i>=0; i--) {
+    alpha[i]  = state.iterDiff_[i]->dot(Hv);
+    alpha[i] /= state.product_[i];
+    Hv.axpy(-alpha[i],(state.gradDiff_[i])->dual());
   }
 
   // Apply initial inverse Hessian approximation to v
@@ -74,11 +74,11 @@ void lBFGS<Real>::applyH(       Vector<Real>& Hv,
   Hv.set(*tmp);
 
   Real beta(0);
-  for (int i = 0; i <= state.current; i++) {
-    //beta  = Hv.dot((state.gradDiff[i])->dual());
-    beta  = Hv.apply(*state.gradDiff[i]);
-    beta /= state.product[i];
-    Hv.axpy((alpha[i]-beta),*(state.iterDiff[i]));
+  for (int i = 0; i <= state.current_; i++) {
+    //beta  = Hv.dot((state.gradDiff_[i])->dual());
+    beta  = Hv.apply(*state.gradDiff_[i]);
+    beta /= state.product_[i];
+    Hv.axpy((alpha[i]-beta),*(state.iterDiff_[i]));
   }
 } // applyH
 
@@ -93,27 +93,27 @@ void lBFGS<Real>::applyB(       Vector<Real>& Bv,
   // Apply initial Hessian approximation to v
   Secant<Real>::applyB0(Bv,v);
 
-  std::vector<Ptr<Vector<Real>>> a(state.current+1), b(state.current+1);
+  std::vector<Ptr<Vector<Real>>> a(state.current_+1), b(state.current_+1);
 
   Real bv(0), av(0), bs(0), as(0);
 
-  for (int i = 0; i <= state.current; i++) {
+  for (int i = 0; i <= state.current_; i++) {
     b[i] = Bv.clone();
-    b[i]->set(*(state.gradDiff[i]));
-    b[i]->scale(one/sqrt(state.product[i]));
+    b[i]->set(*(state.gradDiff_[i]));
+    b[i]->scale(one/sqrt(state.product_[i]));
     bv = v.apply(*b[i]);
     Bv.axpy(bv,*b[i]);
 
     a[i] = Bv.clone();
-    Secant<Real>::applyB0(*a[i],*(state.iterDiff[i]));
+    Secant<Real>::applyB0(*a[i],*(state.iterDiff_[i]));
 
     for (int j = 0; j < i; j++) {
-      bs = (state.iterDiff[i])->apply(*b[j]);
+      bs = (state.iterDiff_[i])->apply(*b[j]);
       a[i]->axpy(bs,*b[j]);
-      as = (state.iterDiff[i])->apply(*a[j]);
+      as = (state.iterDiff_[i])->apply(*a[j]);
       a[i]->axpy(-as,*a[j]);
     }
-    as = (state.iterDiff[i])->apply(*a[i]);
+    as = (state.iterDiff_[i])->apply(*a[i]);
     a[i]->scale(one/sqrt(as));
     av = v.apply(*a[i]);
     Bv.axpy(-av,*a[i]);

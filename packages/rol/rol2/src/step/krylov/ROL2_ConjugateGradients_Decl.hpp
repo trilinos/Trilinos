@@ -54,6 +54,19 @@ namespace ROL2 {
 template<class Real>
 class ConjugateGradients : public Krylov<Real> {
 public:
+
+  enum class Flag : std::int16_t { 
+    Success = 0,
+    IterExceed,
+    NegCurve,
+    TRRadEx,
+    ZeroRHS,
+    Undefined,
+    Last
+  };
+
+  static EnumMap<Flag> flag_dict;
+
   ConjugateGradients( Real          absTol = 1.e-4, 
                       Real          relTol = 1.e-2, 
                       std::uint16_t maxit = 100,
@@ -76,6 +89,16 @@ private:
   bool              useInexact_;
 }; // class ConjugateGradients
 
+template<class Real>
+EnumMap<typename ConjugateGradients<Real>::Flag>
+ConjugateGradients<Real>::flag_dict = {
+  "Residual tolerance met",
+  "Iteration limit exceeded",
+  "Negative curvature detected",
+  "Trust-Region radius exceeded",
+  "Initial right hand side is zero",
+  "Undefined"
+};
 
 } // namespace ROL2 
 

@@ -12,10 +12,10 @@
 // met:
 //
 // 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
+// notice, this parlist of conditions and the following disclaimer.
 //
 // 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
+// notice, this parlist of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
 //
 // 3. Neither the name of the Corporation nor the names of the
@@ -49,45 +49,42 @@ namespace TypeU {
 
 
 template<typename Real>
-TrustRegionModel<Real>::TrustRegionModel(       ParameterList&     list,
-                                          const Ptr<Secant<Real>>& secant,
-                                                Secant<Real>::Mode mode ) : 
-    : obj_(nullPtr), x_(nullPtr), g_(nullPtr), secant_(secant) {
-    auto& slist = list.sublist("General").sublist("Secant");
-    useSecantPrecond_ = slist.get("Use as Preconditioner", false);
-    useSecantHessVec_ = slist.get("Use as Hessian",        false);
-    if (secant_ == nullPtr) secant_ = SecantFactory<Real>(list,mode);
-  }
+TrustRegionModel<Real>::TrustRegionModel(       ParameterList&              parlist,
+                                          const Ptr<Secant<Real>>&          secant,
+                                                typename Secant<Real>::Mode mode )  
+  : obj_(nullPtr), x_(nullPtr), g_(nullPtr), secant_(secant) {
+  auto& slist = parlist.sublist("General").sublist("Secant");
+  useSecantPrecond_ = slist.get("Use as Preconditioner", false);
+  useSecantHessVec_ = slist.get("Use as Hessian",        false);
+  if (secant_ == nullPtr) secant_ = Secant<Real>::create(parlist,mode);
+}
 
 template<typename Real>
 void TrustRegionModel<Real>::initialize( const Vector<Real>& x, 
-                   const Vector<Real>& g ) {
-    dual_ = g.clone();
-  }
+                                         const Vector<Real>& g ) {
+  dual_ = g.clone();
+}
 
-  // Some versions of Clang will issue a warning that update hides and 
-  // overloaded function without this using declaration
-  using Objective<Real>::update;
 
 template<typename Real>
-void TrustRegionModel<Real>::validate( Objective<Real>&    obj,
-                 const Vector<Real>& x,
-                 const Vector<Real>& g,
-                ETrustRegionU       etr) {
-    if ( !useSecantHessVec_ &&
-        (etr == TrustRegion<Real>::Type::DogLeg
-       || etr == TrustRegion<Real>::Type::DoubleDogLeg) {
-      try {
-        Real htol = default_tolerance<Real>();
-        auto v  = g.clone();
-        auto hv = x.clone();
-        obj.invHessVec(*hv,*v,x,htol);
-      }
-      catch (std::exception &e) {
-        useSecantHessVec_ = true;
-      }
+void TrustRegionModel<Real>::validate(       Objective<Real>&                 obj,
+                                       const Vector<Real>&                    x,
+                                       const Vector<Real>&                    g,
+                                             typename TrustRegion<Real>::Type etr ) {
+  if ( !useSecantHessVec_ &&
+      (etr == TrustRegion<Real>::Type::DogLeg
+     || etr == TrustRegion<Real>::Type::DoubleDogLeg ) ) {
+    try {
+      Real htol = default_tolerance<Real>();
+      auto v  = g.clone();
+      auto hv = x.clone();
+      obj.invHessVec(*hv,*v,x,htol);
+    }
+    catch( std::exception& e ) {
+      useSecantHessVec_ = true;
     }
   }
+}
 
 template<typename Real>
 void TrustRegionModel<Real>::setData(       Objective<Real>& obj,

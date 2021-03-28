@@ -41,38 +41,45 @@
 // ************************************************************************
 // @HEADER
 
-/** \file
-    \brief  Contains definitions of enums for trust region algorithms.
-    \author Created by D. Ridzal and D. Kouri.
- */
+#ifndef ROL2_COMBINEDSTATUSTEST_HPP
+#define ROL2_COMBINEDSTATUSTEST_HPP
 
-#ifndef ROL2_TYPEU_MAKETRUSTREGION_HPP
-#define ROL2_TYPEU_MAKETRUSTREGION_HPP
+/** \class ROL2::CombinedStatusTest
+    \brief Provides an interface to check two status tests of optimization algorithms.
+*/
 
 namespace ROL2 {
-namespace TypeU { 
 
 template<typename Real>
-inline Ptr<TrustRegion<Real>> 
-make_TrustRegion( ParameterList& parlist ) {
-  
-  auto& tr_list = parlist.sublist("Step").sublist("Trust Region");
-  auto tr_name = tr_list.get("Subproblem Solver","Dogleg");
-  auto tr_enum = stringToEnum( tr_name, TrustRegion<Real>{} );
-
-  using Type = TrustRegion<Real>::Type;
-
-  switch( tr_enum ) {
-    case Type::CauchyPoint:  return makePtr<CauchyPoint<Real>>();
-    case Type::Dogleg:       return makePtr<DogLeg<Real>>();
-    case Type::DoubleDogleg: return makePtr<DoubleDogLeg<Real>>();
-    case Type::TruncatedCG:  return makePtr<TruncatedCG<Real>>(parlist);
-    case Type::SPG:          return makePtr<SPGTrustRegion<Real>>(parlist);
-    default:                 return nullPtr;
-  }
+CombinedStatusTest<Real>::CombinedStatusTest() {
+  status_.clear();
 }
 
-} // namespace TypeU
+template<typename Real>
+void CombinedStatusTest<Real>::reset() {
+  status_.clear();
+}
+
+template<typename Real>
+void CombinedStatusTest<Real>::add( const Ptr<StatusTest<Real>>& status ) {
+  status_.push_back(status);
+}
+
+template<typename Real>
+bool CombinedStatusTest<Real>::check( typename Algorithm<Real>::State& state ) {
+  ROL_TEST_FOR_EXCEPTION(status_.empty(),std::logic_error,
+    ">>> ROL::CombinedStatusTest::check : No status test has been added!");
+
+  bool flag = true;
+
+  for ( const auto& status : status_) {
+    flag = status->check(state);
+    if (!flag) break;
+  }
+
+  return flag;
+}
+
 } // namespace ROL2
 
-#endif // ROL2_TYPEU_MAKETRUSTREGION_HPP
+#endif // ROL2_COMBINEDSTATUSTEST_HPP

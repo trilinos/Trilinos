@@ -19,7 +19,7 @@
 // documentation and/or other materials provided with the distribution.
 //
 // 3. Neither the name of the Corporation nor the names of the
-// contributors may be used to endorse or promote products derived from
+// contributors may be used to endorse or promote product_s derived from
 // this software without specific prior written permission.
 //
 // THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION "AS IS" AND ANY
@@ -57,14 +57,14 @@ void BarzilaiBorwein<Real>::applyH(       Vector<Real>& Hv,
 
   Hv.set(v.dual());
 
-  if( state.iter != 0 && state.current != -1 ) {
+  if( state.iter_ != 0 && state.current_ != -1 ) {
     if ( type_ == 1 ) {
-      Real yy = state.gradDiff[state.current]->dot(*(state.gradDiff[state.current]));
-      Hv.scale(state.product[state.current]/yy);
+      Real yy = state.gradDiff_[state.current_]->dot(*(state.gradDiff_[state.current_]));
+      Hv.scale(state.product_[state.current_]/yy);
     }
     else if( type_ == 2 ) {
-      Real ss = state.iterDiff[state.current]->dot(*(state.iterDiff[state.current]));
-      Hv.scale(ss/state.product[state.current]);
+      Real ss = state.iterDiff_[state.current_]->dot(*(state.iterDiff_[state.current_]));
+      Hv.scale(ss/state.product_[state.current_]);
     }
   }
 } // BarzilaiBorwein<Real>::applyH
@@ -78,14 +78,14 @@ void BarzilaiBorwein<Real>::applyB(       Vector<Real>& Bv,
 
  Bv.set(v.dual());
 
- if ( state.iter != 0 && state.current != -1 ) {
+ if ( state.iter_ != 0 && state.current_ != -1 ) {
    if ( type_ == 1 ) {
-     Real yy = state.gradDiff[state.current]->dot(*(state.gradDiff[state.current]));
-     Bv.scale(yy/state.product[state.current]);
+     Real yy = state.gradDiff_[state.current_]->dot(*(state.gradDiff_[state.current_]));
+     Bv.scale(yy/state.product_[state.current_]);
    }
    else if ( type_ == 2 ) {
-     Real ss = state.iterDiff[state.current]->dot(*(state.iterDiff[state.current]));
-     Bv.scale(state.product[state.current]/ss);
+     Real ss = state.iterDiff_[state.current_]->dot(*(state.iterDiff_[state.current_]));
+     Bv.scale(state.product_[state.current_]/ss);
    }
  }
 } // BarzilaiBorwein<Real>::applyB

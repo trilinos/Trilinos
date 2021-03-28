@@ -51,9 +51,10 @@ template<class Real>
 TruncatedCG<Real>::TruncatedCG( ParameterList& parlist ) {
   // Unravel Parameter List
   Real em4(1e-4), em2(1e-2);
-  maxit_ = parlist.sublist("General").sublist("Krylov").get("Iteration Limit",20);
-  tol1_  = parlist.sublist("General").sublist("Krylov").get("Absolute Tolerance",em4);
-  tol2_  = parlist.sublist("General").sublist("Krylov").get("Relative Tolerance",em2);
+  auto& klist = parlist.sublist("General").sublist("Krylov");
+  maxit_ = klist.get("Iteration Limit",20);
+  tol1_  = klist.get("Absolute Tolerance",em4);
+  tol2_  = klist.get("Relative Tolerance",em2);
 }
 
 template<class Real>
@@ -67,13 +68,13 @@ void TruncatedCG<Real>::initialize( const Vector<Real>& x,
 }
 
 template<class Real>
-void TruncatedCG<Real>::solve( Vector<Real>&             s,
-                               Real&                     snorm,
-                               Real&                     pRed,
-                               int&                      iflag,
-                               int&                      iter,
-                               Real                      del,
-                               TrustRegion<Real>::Model& model ) {
+void TruncatedCG<Real>::solve( Vector<Real>&           s,
+                               Real&                   snorm,
+                               Real&                   pRed,
+                               int&                    iflag,
+                               int&                    iter,
+                               Real                    del,
+                               TrustRegionModel<Real>& model ) {
   Real tol = std::sqrt(ROL_EPSILON<Real>);
   const Real zero(0), one(1), two(2), half(0.5);
 

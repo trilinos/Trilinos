@@ -70,33 +70,33 @@ void Secant<Real>::updateStorage( const Vector<Real>& x,
                                         int           iter ) {
   const Real one(1);
   if ( !isInitialized_ ) {
-    state_->iterate = x.clone();
+    state_->iterate_ = x.clone();
     y_              = grad.clone();
     isInitialized_  = true;
   }
-  state_->iterate->set(x);
-  state_->iter = iter;
+  state_->iterate_->set(x);
+  state_->iter_ = iter;
   y_->set(grad);
   y_->axpy(-one,gp);
 
   //Real sy = s.dot(y_->dual());
   Real sy = s.apply(*y_);
-  if (sy > ROL_EPSILON<Real>()*snorm*snorm) {
-    if (state_->current < state_->storage-1) {
-      state_->current++;                                // Increment Storage
-      state_->iterDiff.push_back(s.clone());            // Create new memory
-      state_->gradDiff.push_back(grad.clone());         // Create new memory
+  if (sy > ROL_EPSILON<Real>*snorm*snorm) {
+    if (state_->current_ < state_->storage_-1) {
+      state_->current_++;                                // Increment Storage
+      state_->iterDiff_.push_back(s.clone());            // Create new memory
+      state_->gradDiff_.push_back(grad.clone());         // Create new memory
     }
     else {
-      state_->iterDiff.push_back(state_->iterDiff[0]);  // Move first element to the last
-      state_->gradDiff.push_back(state_->gradDiff[0]);  // Move first element to the last
-      state_->iterDiff.erase(state_->iterDiff.begin()); // Remove first element of s list 
-      state_->gradDiff.erase(state_->gradDiff.begin()); // Remove first element of y list
-      state_->product.erase(state_->product.begin());   // Remove first element of rho list
+      state_->iterDiff_.push_back(state_->iterDiff_[0]);  // Move first element to the last
+      state_->gradDiff_.push_back(state_->gradDiff_[0]);  // Move first element to the last
+      state_->iterDiff_.erase(state_->iterDiff_.begin()); // Remove first element of s list 
+      state_->gradDiff_.erase(state_->gradDiff_.begin()); // Remove first element of y list
+      state_->product_.erase(state_->product_.begin());   // Remove first element of rho list
     }
-    state_->iterDiff[state_->current]->set(s);          // s=x_{k+1}-x_k
-    state_->gradDiff[state_->current]->set(*y_);        // y=g_{k+1}-g_k
-    state_->product.push_back(sy);                      // ys=1/rho  
+    state_->iterDiff_[state_->current_]->set(s);          // s=x_{k+1}-x_k
+    state_->gradDiff_[state_->current_]->set(*y_);        // y=g_{k+1}-g_k
+    state_->product_.push_back(sy);                      // ys=1/rho  
   }
 }
 
@@ -105,9 +105,9 @@ void Secant<Real>::applyH0(       Vector<Real>& Hv,
                             const Vector<Real>& v ) const {
   Hv.set(v.dual());
   if (useDefaultScaling_) {
-    if (state_->iter != 0 && state_->current != -1) {
-      Real yy = state_->gradDiff[state_->current]->dot(*(state_->gradDiff[state_->current]));
-      Hv.scale(state_->product[state_->current]/yy);
+    if (state_->iter_ != 0 && state_->current_ != -1) {
+      Real yy = state_->gradDiff_[state_->current_]->dot(*(state_->gradDiff_[state_->current_]));
+      Hv.scale(state_->product_[state_->current_]/yy);
     }
   }
   else Hv.scale(static_cast<Real>(1)/Bscaling_);
@@ -118,9 +118,9 @@ void Secant<Real>::applyB0(       Vector<Real>& Bv,
                             const Vector<Real>& v ) const {
   Bv.set(v.dual());
   if (useDefaultScaling_) {
-    if (state_->iter != 0 && state_->current != -1) {
-      Real yy = state_->gradDiff[state_->current]->dot(*(state_->gradDiff[state_->current]));
-      Bv.scale(yy/state_->product[state_->current]);
+    if (state_->iter_ != 0 && state_->current_ != -1) {
+      Real yy = state_->gradDiff_[state_->current_]->dot(*(state_->gradDiff_[state_->current_]));
+      Bv.scale(yy/state_->product_[state_->current_]);
     }
   }
   else Bv.scale(Bscaling_);
@@ -129,9 +129,9 @@ void Secant<Real>::applyB0(       Vector<Real>& Bv,
 template<class Real>
 void Secant<Real>::test( std::ostream &os ) const {
   if (isInitialized_) {
-    auto v  = state_->iterate->clone();
-    auto Hv = state_->iterate->clone();
-    auto Bv = state_->iterate->dual().clone();
+    auto v  = state_->iterate_->clone();
+    auto Hv = state_->iterate_->clone();
+    auto Bv = state_->iterate_->dual().clone();
     const Real one(1);
 
     // Print BHv -> Should be v

@@ -90,7 +90,7 @@ is_valid_enum_value( const ENumType& e ) {
 /** \brief Universal post-increment operator of ROL2 class enums
 */
 template<typename ENumType>
-enable_if_enum_t<ENumType,ENumType&&>
+enable_if_enum_t<ENumType,ENumType&>
 operator++ ( ENumType& e ) {
   using int_type = std::underlying_type_t<ENumType>;
   auto e_int = static_cast<int_type>(e);
@@ -104,7 +104,7 @@ operator++ ( ENumType& e ) {
 /** \brief Universal pre-increment operator of ROL2 class enums
 */
 template<typename ENumType>
-enable_if_enum_t<ENumType,ENumType&&>
+enable_if_enum_t<ENumType,ENumType&>
 operator++ ( ENumType& e, int ) {
   using int_type = std::underlying_type_t<ENumType>;
   auto e_int = static_cast<int_type>(e);
@@ -122,6 +122,78 @@ operator << ( std::ostream& os, ENumType e ) {
   os << static_cast<int_type>(e);
   return os;
 }
+
+template<class ENumType, class RHS>
+enable_if_enum_t<ENumType,bool>
+operator == ( ENumType e, RHS rhs ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return static_cast<int_type>(e) == rhs;
+}
+
+template<class LHS, class ENumType>
+enable_if_enum_t<ENumType,bool>
+operator == ( LHS lhs, ENumType e ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return static_cast<int_type>(e) == lhs;
+}
+
+template<class ENumType, class RHS>
+enable_if_enum_t<ENumType,bool>
+operator > ( ENumType e, RHS rhs ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return static_cast<int_type>(e) > rhs;
+}
+
+template<class LHS, class ENumType>
+enable_if_enum_t<ENumType,bool>
+operator > ( LHS lhs, ENumType e ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return lhs > static_cast<int_type>(e);
+}
+
+template<class ENumType, class RHS>
+enable_if_enum_t<ENumType,bool>
+operator < ( ENumType e, RHS rhs ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return static_cast<int_type>(e) < rhs;
+}
+
+template<class LHS, class ENumType>
+enable_if_enum_t<ENumType,bool>
+operator < ( LHS lhs, ENumType e ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return lhs < static_cast<int_type>(e);
+}
+
+template<class ENumType, class RHS>
+enable_if_enum_t<ENumType,bool>
+operator >= ( ENumType e, RHS rhs ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return static_cast<int_type>(e) >= rhs;
+}
+
+template<class LHS, class ENumType>
+enable_if_enum_t<ENumType,bool>
+operator >= ( LHS lhs, ENumType e ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return lhs >= static_cast<int_type>(e);
+}
+
+template<class ENumType, class RHS>
+enable_if_enum_t<ENumType,bool>
+operator <= ( ENumType e, RHS rhs ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return static_cast<int_type>(e) <= rhs;
+}
+
+template<class LHS, class ENumType>
+enable_if_enum_t<ENumType,bool>
+operator <= ( LHS lhs, ENumType e ) {
+  using int_type = std::underlying_type_t<ENumType>;
+  return lhs <= static_cast<int_type>(e);
+}
+
+
 
 } // namespace ROL2
 

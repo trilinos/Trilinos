@@ -41,8 +41,11 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_SPGTRUSTREGION_DEF_H
 #define ROL2_TYPEU_SPGTRUSTREGION_DEF_H
+
+#include <deque>
 
 /** \class ROL2::TypeU::SPGTrustRegion
     \brief Provides interface for truncated CG trust-region subproblem solver.
@@ -87,6 +90,7 @@ void SPGTrustRegion<Real>::solve( Vector<Real>&           s,
                                   int&                    iter,
                                   Real                    del,
                                   TrustRegionModel<Real>& model ) {
+  // TODO: Check if eps is really supposed to be sqrt of machine epsilon
   const Real zero(0), half(0.5), one(1), two(2), eps(std::sqrt(ROL_EPSILON<Real>));
   Real tol(eps), alpha(1), sHs(0), alphaTmp(1), mmax(0), qmin(0), q(0);
   Real gnorm(0), ss(0), gs(0);

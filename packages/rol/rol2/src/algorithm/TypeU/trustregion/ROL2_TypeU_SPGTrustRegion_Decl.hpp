@@ -41,6 +41,7 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_SPGTRUSTREGION_DECL_H
 #define ROL2_TYPEU_SPGTRUSTREGION_DECL_H
 
@@ -48,13 +49,11 @@
     \brief Provides interface for truncated CG trust-region subproblem solver.
 */
 
-#include <deque>
-
 namespace ROL2 { 
 namespace TypeU {
 
 template<typename Real>
-class SPGTrustRegion_U : public TrustRegion_U<Real> {
+class SPGTrustRegion : public TrustRegion<Real> {
 public:
 
   SPGTrustRegion( ParameterList& parlist );

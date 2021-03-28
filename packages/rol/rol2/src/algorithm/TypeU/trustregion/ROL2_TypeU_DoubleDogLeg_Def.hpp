@@ -58,6 +58,7 @@ void DoubleDogLeg<Real>:: initialize( const Vector<Real>& x,
   dual_   = g.clone();
 }
 
+template<class Real>
 void DoubleDogLeg<Real>:: solve( Vector<Real>&           s,
                                  Real&                   snorm,
                                  Real&                   pRed,
@@ -65,7 +66,7 @@ void DoubleDogLeg<Real>:: solve( Vector<Real>&           s,
                                  int&                    iter,
                                  Real                    del,
                                  TrustRegionModel<Real>& model ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>);
+  Real tol = default_tolerance<Real>();
   const Real one(1), zero(0), half(0.5), p2(0.2), p8(0.8), two(2);
 
   // Set s to be the (projected) gradient
@@ -113,7 +114,7 @@ void DoubleDogLeg<Real>:: solve( Vector<Real>&           s,
       Real gamma1 = gnorm/gBg;
       Real gamma2 = gnorm/gsN;
       Real eta    = p8*gamma1*gamma2 + p2;
-      if (eta*sNnorm <= del || gBg <= zero) { // Dogleg Point is inside trust region
+      if (eta*sNnorm <= del || gBg <= zero) { // DogLeg Point is inside trust region
         alpha = del/sNnorm;
         beta  = zero;
         s.set(*primal_);
@@ -129,7 +130,7 @@ void DoubleDogLeg<Real>:: solve( Vector<Real>&           s,
           snorm = del;
           iflag = 2;
         }
-        else {              // Find convex combination of Cauchy and Dogleg point
+        else {              // Find convex combination of Cauchy and DogLeg point
           s.scale(-gamma1*gnorm);
           primal_->scale(eta);
           primal_->plus(s);

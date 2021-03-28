@@ -41,6 +41,7 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_DOGLEG_DEF_H
 #define ROL2_TYPEU_DOGLEG_DEF_H
 
@@ -66,7 +67,7 @@ void DogLeg<Real>::solve( Vector<Real>&           s,
                           int&                    iter,
                           Real                    del,
                           TrustRegionModel<Real>& model ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>);
+  Real tol = default_tolerance<Real>();
   const Real zero(0), half(0.5), one(1), two(2);
   iter = 0;
 

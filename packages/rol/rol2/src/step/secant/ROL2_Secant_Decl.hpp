@@ -58,7 +58,8 @@ public:
   enum class Mode : std::int16_t {
     Forward = 0,
     Inverse,
-    Both
+    Both,
+    Last
   };
 
   enum class Type : std::int16_t {

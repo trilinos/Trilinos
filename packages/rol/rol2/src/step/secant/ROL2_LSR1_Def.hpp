@@ -60,12 +60,12 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
   Real tol = default_tolerance<Real>();
 
   if ( !isInitialized_ ) {
-    state.iterate = x.clone();
+    state.iterate_ = x.clone();
     y_              = grad.clone();
-    if (state.mode == Secant<Real>::Mode::Forward) {
+    if (state.mode_ == Secant<Real>::Mode::Forward) {
       Bs_ = grad.clone(); dual_ = grad.clone();
     }
-    else if (state.mode == Secant<Real>::Mode::Inverse) {
+    else if (state.mode_ == Secant<Real>::Mode::Inverse) {
       Hy_ = x.clone();    prim_ = x.clone();
     }
     else {
@@ -76,8 +76,8 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
   } // endif( !isInitialized_ )
 
   // Update iterate
-  state.iter = iter;
-  state.iterate->set(x);
+  state.iter_ = iter;
+  state.iterate_->set(x);
 
   // Compute gradient difference
   y_->set(grad);
@@ -105,32 +105,32 @@ void lSR1<Real>::updateStorage( const Vector<Real>& x,
 
   if( std::abs(dotF) > tolF && std::abs(dotI) > tolI ) {
 
-    if (state.current < state.storage-1) {
-      state.current++;
-      if( non_forward_ ) state.iterDiff.push_back(x.clone());     // Create new memory
-      if( non_inverse_ ) state.gradDiff.push_back(grad.clone());  // Create new memory
+    if (state.current_ < state.storage_-1) {
+      state.current_++;
+      if( non_forward_ ) state.iterDiff_.push_back(x.clone());     // Create new memory
+      if( non_inverse_ ) state.gradDiff_.push_back(grad.clone());  // Create new memory
     }
     else {
       if( non_forward_ ) {
-        state.iterDiff.push_back(state.iterDiff[0]);  // Move first element to the last
-        state.iterDiff.erase(state.iterDiff.begin()); // Remove first element of s list
-        state.product2.erase(state.product2.begin()); // Remove first element of rho list
+        state.iterDiff_.push_back(state.iterDiff_[0]);  // Move first element to the last
+        state.iterDiff_.erase(state.iterDiff_.begin()); // Remove first element of s list
+        state.product2_.erase(state.product2_.begin()); // Remove first element of rho list
       }
       if( non_inverse_ ) { 
-        state.gradDiff.push_back(state.gradDiff[0]);  // Move first element to the last
-        state.gradDiff.erase(state.gradDiff.begin()); // Remove first element of y list
-        state.product.erase(state.product.begin());   // Remove first element of rho list
+        state.gradDiff_.push_back(state.gradDiff_[0]);  // Move first element to the last
+        state.gradDiff_.erase(state.gradDiff_.begin()); // Remove first element of y list
+        state.product_.erase(state.product_.begin());   // Remove first element of rho list
       }
     }
 
     if( non_forward_ ) {
-      state.iterDiff[state.current]->set(*Hy_);       // s_k - H_k y_k
-      state.product2.push_back(dotI);                   // (s_k - H_k y_k)' y_k
+      state.iterDiff_[state.current_]->set(*Hy_);       // s_k - H_k y_k
+      state.product2_.push_back(dotI);                   // (s_k - H_k y_k)' y_k
     } 
 
     if( non_inverse_ ) {
-      state.gradDiff[state.current]->set(*Bs_);       // y_k - B_k s_k
-      state.product.push_back(dotF);                    // (y_k - B_k s_k)' s_k
+      state.gradDiff_[state.current_]->set(*Bs_);       // y_k - B_k s_k
+      state.product_.push_back(dotF);                    // (y_k - B_k s_k)' s_k
     }
 
     if (useDefaultScaling_) Bscaling_ = s.apply(*y_)/(snorm*snorm);
@@ -145,18 +145,18 @@ void lSR1<Real>::applyH(       Vector<Real>& Hv,
 
   auto& state = Secant<Real>::getState();
 
-  if (state.mode == Secant<Real>::Mode::Inverse || 
-      state.mode == Secant<Real>::Mode::Both) {
+  if (state.mode_ == Secant<Real>::Mode::Inverse || 
+      state.mode_ == Secant<Real>::Mode::Both) {
     // Apply initial Hessian approximation to v
     H0called_ = false;
     applyH0(Hv,v);
     // Apply rank one updates
-    if (state.current > -1) {
+    if (state.current_ > -1) {
       Real prod(0);
       if (!H0called_) prim_->set(v.dual());
-      for (int i = 0; i <= state.current; ++i) {
-        prod = state.iterDiff[i]->dot(*prim_);
-        Hv.axpy(prod/state.product2[i],*state.iterDiff[i]);
+      for (int i = 0; i <= state.current_; ++i) {
+        prod = state.iterDiff_[i]->dot(*prim_);
+        Hv.axpy(prod/state.product2_[i],*state.iterDiff_[i]);
       }
     }
   }
@@ -172,7 +172,7 @@ void lSR1<Real>::applyH0(       Vector<Real>& Hv,
 
   auto& state = Secant<Real>::getState();
 
-  if (state.current > -1) {
+  if (state.current_ > -1) {
     prim_->set(v.dual());
     Hv.set(*prim_);
     H0called_ = true;
@@ -191,7 +191,7 @@ void lSR1<Real>::applyB(       Vector<Real>& Bv,
 
   auto& state = Secant<Real>::getState();
 
-  if (state.current > -1) {
+  if (state.current_ > -1) {
     dual_->set(v.dual());
     Bv.set(*dual_);
     B0called_ = true;
@@ -207,18 +207,18 @@ void lSR1<Real>::applyB0(       Vector<Real>& Bv,
                           const Vector<Real>& v ) const {
   auto& state = Secant<Real>::getState();
 
-  if( state.mode == Secant<Real>::Mode::Forward || 
-      state.mode == Secant<Real>::Mode::Both) {
+  if( state.mode_ == Secant<Real>::Mode::Forward || 
+      state.mode_ == Secant<Real>::Mode::Both) {
     // Apply initial Hessian approximation to v
     B0called_ = false;
     applyB0(Bv,v);
     // Apply rank one updates
-    if (state.current > -1) {
+    if (state.current_ > -1) {
       Real prod(0);
       if (!B0called_) dual_->set(v.dual());
-      for (int i = 0; i <= state.current; ++i) {
-        prod = state.gradDiff[i]->dot(*dual_);
-        Bv.axpy(prod/state.product[i],*state.gradDiff[i]);
+      for (int i = 0; i <= state.current_; ++i) {
+        prod = state.gradDiff_[i]->dot(*dual_);
+        Bv.axpy(prod/state.product_[i],*state.gradDiff_[i]);
       }
     }
   }

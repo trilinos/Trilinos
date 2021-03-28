@@ -41,62 +41,13 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_TRUSTREGION_DEF_H
 #define ROL2_TYPEU_TRUSTREGION_DEF_H
 
 namespace ROL2 {
 namespace TypeU {
 
-template<class Real>
-std::string TrustRegion<Real>::typeToString( TrustRegion<Real>::Type tr ) {
-  std::string retString;
-  switch(tr) {
-    case Type::CauchyPoint:  retString = "Cauchy Point";        break;
-    case Type::TruncatedCG:  retString = "Truncated CG";        break;
-    case Type::SPG:          retString = "SPG";                 break;
-    case Type::DogLeg:       retString = "DogLeg";              break;
-    case Type::DoubleDogLeg: retString = "Double DogLeg";       break;
-    case Type::Last:         retString = "Last Type (Dummy)";   break;
-    default:                 retString = "INVALID TrustRegion";
-  }
-  return retString;
-}
-
-template<class Real>
-Type TrustRegion<Real>::stringToType( std::string s ) {
-  s = removeStringFormat(s);
-  for ( Type tr = Type::CauchyPoint; tr < Type::Last; tr++ )
-    if ( !s.compare(removeStringFormat(typeToString(tr))) ) return tr;
-  return Type::CauchyPoint;
-}
-
-template<class Real>
-std::string TrustRegion<Real>::flagToString( TrustRegion<Real>::Flag trf ) {
-  std::string retString;
-  switch(trf) {
-    case Flag::Success:  
-      retString = "Both actual and predicted reductions are positive (success)";
-      break;
-    case Flag::PosPredNeg: 
-      retString = "Actual reduction is positive and predicted reduction is negative (impossible)";
-      break;
-    case NPosPrefPos: 
-      retString = "Actual reduction is nonpositive and predicted reduction is positive";
-      break;
-    case NPosPredNeg:
-      retString = "Actual reduction is nonpositive and predicted reduction is negative (impossible)";
-      break;
-    case TRNaN:
-      retString = "Actual and/or predicted reduction is a NaN";
-      break;
-    case QMinSufDec:
-      retString = "Subproblem solution did not produce sufficient decrease";
-      break;
-    default:
-      retString = "INVALID TrustRegion::lag";       
-  }
-  return retString;
-}
 
 template<class Real>
 Real TrustRegion<Real>::initialRadius(       int&                    nfval,
@@ -108,7 +59,7 @@ Real TrustRegion<Real>::initialRadius(       int&                    nfval,
                                              Objective<Real>&        obj,
                                              TrustRegionModel<Real>& model,
                                              Real                    delMax,
-                                             std::ostream&           outStream,
+                                             std::ostream&           os,
                                              bool                    print ) {
   const Real zero{0}, half{0.5}, one{1}, two{2}, three{3}, six{6};
   const Real eps{ ROL_EPSILON<Real> };
@@ -128,8 +79,8 @@ Real TrustRegion<Real>::initialRadius(       int&                    nfval,
   //Real gs = xcp->dot(g.dual());
   Real gs = xcp->apply(g);
   xcp->plus(x);
-  obj.update(*xcp,UPDATE_TEMP);
-  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
+  obj.update(*xcp,UpdateType::Temp);
+  Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>; 
   Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
   nfval++;
 
@@ -160,10 +111,10 @@ Real TrustRegion<Real>::initialRadius(       int&                    nfval,
   }
   if (del <= eps*gnorm)  del = one;
 
-  obj.update(x,UPDATE_REVERT);
+  obj.update(x,UpdateType::Revert);
   if ( print ) {
-    outStream << "  In TrustRegionUtilities::initialRadius"      << std::endl;
-    outStream << "    Initial radius:                          " << del << std::endl;
+    os << "  In TrustRegionUtilities::initialRadius"      << std::endl;
+    os << "    Initial radius:                          " << del << std::endl;
   }
   return del;
 }
@@ -175,7 +126,7 @@ void TrustRegion<Real>::analyzeRatio( Real&                    rho,
                                       Real                     ftrial,
                                       Real                     pRed,
                                       Real                     epsi,
-                                      std::ostream&            outStream,
+                                      std::ostream&            os,
                                       bool                     print ) {
   const Real zero{0}, one{1};
   Real eps       = epsi*std::max(one,fold);
@@ -198,17 +149,17 @@ void TrustRegion<Real>::analyzeRatio( Real&                    rho,
   }
 
   if ( print ) {
-    outStream << "  In TrustRegionUtilities::analyzeRatio"       << std::endl;
-    outStream << "    Current objective function value:        " << fold      << std::endl;
-    outStream << "    New objective function value:            " << ftrial    << std::endl;
-    outStream << "    Actual reduction:                        " << aRed      << std::endl;
-    outStream << "    Predicted reduction:                     " << pRed      << std::endl;
-    outStream << "    Safeguard:                               " << epsi      << std::endl;
-    outStream << "    Actual reduction with safeguard:         " << aRed_safe << std::endl;
-    outStream << "    Predicted reduction with safeguard:      " << pRed_safe << std::endl;
-    outStream << "    Ratio of actual and predicted reduction: " << rho       << std::endl;
-    outStream << "    Trust-region flag:                       " << flag      << std::endl;
-    outStream << std::endl;
+    os << "  In TrustRegionUtilities::analyzeRatio"       << std::endl;
+    os << "    Current objective function value:        " << fold      << std::endl;
+    os << "    New objective function value:            " << ftrial    << std::endl;
+    os << "    Actual reduction:                        " << aRed      << std::endl;
+    os << "    Predicted reduction:                     " << pRed      << std::endl;
+    os << "    Safeguard:                               " << epsi      << std::endl;
+    os << "    Actual reduction with safeguard:         " << aRed_safe << std::endl;
+    os << "    Predicted reduction with safeguard:      " << pRed_safe << std::endl;
+    os << "    Ratio of actual and predicted reduction: " << rho       << std::endl;
+    os << "    Trust-region flag:                       " << flag      << std::endl;
+    os << std::endl;
   }
 }
 
@@ -223,7 +174,7 @@ Real TrustRegion<Real>::interpolateRadius( const Vector<Real>& g,
                                                  Real          gamma0,
                                                  Real          gamma1,
                                                  Real          eta2,
-                                                 std::ostream& outStream,
+                                                 std::ostream& os,
                                                  bool          print ) {
   const Real one(1);
 
@@ -232,10 +183,10 @@ Real TrustRegion<Real>::interpolateRadius( const Vector<Real>& g,
   Real theta = (one-eta2)*gs/((one-eta2)*(fold+gs)+eta2*modelVal-ftrial);
 
   if ( print ) {
-    outStream << "  In TrustRegionUtilities::interpolateRadius"  << std::endl;
-    outStream << "    Interpolation model value:               " << modelVal << std::endl;
-    outStream << "    Interpolation step length:               " << theta    << std::endl;
-    outStream << std::endl;
+    os << "  In TrustRegionUtilities::interpolateRadius"  << std::endl;
+    os << "    Interpolation model value:               " << modelVal << std::endl;
+    os << "    Interpolation step length:               " << theta    << std::endl;
+    os << std::endl;
   }
   return std::min(gamma1*std::min(snorm,del),std::max(gamma0,theta)*del);
 }
@@ -243,16 +194,17 @@ Real TrustRegion<Real>::interpolateRadius( const Vector<Real>& g,
 template<class Real>
 Ptr<TrustRegion<Real>> 
 TrustRegion<Real>::create( ParameterList& parlist ) {
-  auto& trlist = parlist.sublist("Step").sublist("Trust Region");
-  auto soltype = type_dict[trlist.get("Subproblem Solver","Dogleg")];
-  switch( soltype ) {
-    case: Type::CauchyPoint:  return makePtr<CauchyPoint<Real>>();
-    case: Type::Dogleg:       return makePtr<Dogleg<Real>>();
-    case: Type::DoubleDogleg: return makePtr<<Real>>();
-    case: Type::TruncateCG:   return makePtr<<Real>>(parlist);
-    case: Type::SPG:          return makePtr<<Real>>(parlist);
-    default: return nullPtr; // TODO: Should we not throw an exception?
-  }
+  return nullPtr;
+//  auto& trlist = parlist.sublist("Step").sublist("Trust Region");
+//  auto soltype = type_dict[trlist.get("Subproblem Solver","DogLeg")];
+//  switch( soltype ) {
+//    case: Type::CauchyPoint:  return makePtr<CauchyPoint<Real>>();
+//    case: Type::DogLeg:       return makePtr<DogLeg<Real>>();
+//    case: Type::DoubleDogLeg: return makePtr<<Real>>();
+//    case: Type::TruncateCG:   return makePtr<<Real>>(parlist);
+//    case: Type::SPG:          return makePtr<<Real>>(parlist);
+//    default: return nullPtr; // TODO: Should we not throw an exception?
+//  }
 } // TrustRegion<Real>::create
 
 

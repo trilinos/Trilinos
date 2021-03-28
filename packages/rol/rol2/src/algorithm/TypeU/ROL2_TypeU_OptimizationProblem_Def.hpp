@@ -28,7 +28,7 @@ checkObjective( OptimizationProblem<Real>::CheckData& data,
                 std::ostream&                         os,
                 int                                   numSteps,
                 int                                   fd_order ) {
-  if( !obj_.is_nullPtr() ) {
+  if( obj_ != nullPtr ) {
       os << std::endl << "Performing OptimizationProblem diagnostics."
                 << std::endl << std::endl;
       os << "Checking objective function." << std::endl;
@@ -60,7 +60,7 @@ checkSolutionVector( OptimizationProblem<Real>::CheckData& data,
                      Vector<Real>&                         y,
                      Vector<Real>&                         v,
                      std::ostream&                         os ) {
-  if( !obj_.is_nullPtr() ) {
+  if( obj_ != nullPtr ) {
     os << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
     os << "Checking vector operations in optimization vector space X." << std::endl;
     data.checkSolutionVector = x.checkVector(y,u,true,os);
@@ -74,7 +74,7 @@ checkSolutionVector( Vector<Real>& x,
                      Vector<Real>& v,
                      std::ostream& os ) {
   CheckData data;
-  if( !obj_.is_nullPtr() ) {
+  if( obj_ != nullPtr ) {
     os << "\nPerforming OptimizationProblem diagnostics." << std::endl << std::endl;
     os << "Checking vector operations in optimization vector space X." << std::endl;
     data.checkSolutionVector = x.checkVector(y,u,true,os);
