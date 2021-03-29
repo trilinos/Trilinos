@@ -188,6 +188,9 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.sublist("hypre: Solver functions").disableRecursiveValidation();
 
   params.sublist("hypre: Preconditioner functions").disableRecursiveValidation();
+  params.sublist("Operators").disableRecursiveValidation();
+  params.sublist("Coordinates").disableRecursiveValidation();
+  params.set("hypre: Dump", false);
   params.set("hypre: SetPreconditioner", false);
   params.set("hypre: NumFunctions", 0);
 }
