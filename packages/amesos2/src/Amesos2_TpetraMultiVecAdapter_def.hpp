@@ -535,7 +535,7 @@ namespace Amesos2 {
       // num_vecs = 1; stride does not matter
 
       // If this is the optimized path then kokkos_new_data will be the dst
-      auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::WriteOnly);
+      auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
       deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
