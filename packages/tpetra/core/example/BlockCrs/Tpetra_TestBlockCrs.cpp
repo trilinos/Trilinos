@@ -519,7 +519,7 @@ int main (int argc, char *argv[])
         // point-wise row map can be obtained from A_bcrs->getDomainMap().
         // A constructor exist for crs matrix with a local matrix and a row map.
         // see, Tpetra_CrsMatrix_decl.hpp, line 504
-        //     CrsMatrix (const local_matrix_type& lclMatrix,
+        //     CrsMatrix (const local_matrix_device_type& lclMatrix,
         //                const Teuchos::RCP<const map_type>& rowMap,
         //                const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
         //                const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
@@ -545,7 +545,7 @@ int main (int argc, char *argv[])
 
         rowptr_view_type crs_rowptr = rowptr_view_type("crs_rowptr", num_owned_elements*blocksize+1);
         colidx_view_type crs_colidx = colidx_view_type("crs_colidx", colidx.extent(0)*blocksize*blocksize);
-        typename tpetra_crs_matrix_type::local_matrix_type::values_type
+        typename tpetra_crs_matrix_type::local_matrix_device_type::values_type
           crs_values("crs_values", colidx.extent(0)*blocksize*blocksize);
 
         Kokkos::parallel_for
@@ -579,7 +579,7 @@ int main (int argc, char *argv[])
             }
           });
 
-        typename tpetra_crs_matrix_type::local_matrix_type
+        typename tpetra_crs_matrix_type::local_matrix_device_type
           local_matrix("local_crs_matrix",
                        num_owned_and_remote_elements*blocksize,
                        crs_values,

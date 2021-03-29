@@ -1,6 +1,8 @@
 #ifndef TPETRA_CREATEDEEPCOPY_CRSMATRIX_DEF_HPP
 #define TPETRA_CREATEDEEPCOPY_CRSMATRIX_DEF_HPP
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE 
+
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_RowMatrix.hpp"
@@ -9,12 +11,14 @@
 #include "Teuchos_ArrayView.hpp"
 #include <memory>
 
+
 namespace Tpetra {
 
 namespace { // (anonymous)
 
 template<class SC, class LO, class GO, class NT>
 typename CrsMatrix<SC, LO, GO, NT>::local_matrix_type
+TPETRA_DEPRECATED
 localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 {
   using Kokkos::view_alloc;
@@ -22,7 +26,7 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
   using local_matrix_type =
     typename crs_matrix_type::local_matrix_type;
-  local_matrix_type A_lcl = A.getLocalMatrix ();
+  local_matrix_type A_lcl = A.getLocalMatrixDevice ();
 
   using local_graph_device_type = typename crs_matrix_type::local_graph_device_type;
   using inds_type = typename local_graph_device_type::entries_type;
@@ -50,6 +54,7 @@ localDeepCopyFillCompleteCrsMatrix (const CrsMatrix<SC, LO, GO, NT>& A)
 
 template<class SC, class LO, class GO, class NT>
 CrsMatrix<SC, LO, GO, NT>
+TPETRA_DEPRECATED
 createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
 {
   using crs_matrix_type = CrsMatrix<SC, LO, GO, NT>;
@@ -162,4 +167,7 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
   template CrsMatrix< SC , LO , GO , NT > \
   createDeepCopy (const RowMatrix<SC, LO, GO, NT>& );
 
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 #endif // TPETRA_CREATEDEEPCOPY_CRSMATRIX_DEF_HPP
+

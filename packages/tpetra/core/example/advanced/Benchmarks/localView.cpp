@@ -727,7 +727,7 @@ main (int argc, char* argv[])
 
       auto timer = TimeMonitor::getNewCounter ("Kokkos sequential");
       auto A = getTpetraMatrix (comm, opts);
-      auto A_lcl = A->getLocalMatrix ();
+      auto A_lcl = A->getLocalMatrixDevice ();
       { // Start timing after matrix creation
 	TimeMonitor timeMon (*timer);
 
@@ -765,7 +765,7 @@ main (int argc, char* argv[])
 
       auto timer = TimeMonitor::getNewCounter ("Kokkos parallel");
       auto A = getTpetraMatrix (comm, opts);
-      auto A_lcl = A->getLocalMatrix ();
+      auto A_lcl = A->getLocalMatrixDevice ();
       { // Start timing after matrix creation
 	TimeMonitor timeMon (*timer);
 

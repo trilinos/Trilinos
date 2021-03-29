@@ -351,7 +351,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   mat1.beginFill();
   {
     auto k_e2n = pack.k_element2node;
-    auto localMat = mat1.getLocalMatrix();
+    auto localMat = mat1.getLocalMatrixDevice();
     auto localMap = pack.overlapMap->getLocalMap();
     //get local map too
 
@@ -491,7 +491,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
   mat1.beginFill();
   auto k_e2n = pack.k_element2node;
-  auto localMat = mat1.getLocalMatrix();
+  auto localMat = mat1.getLocalMatrixDevice();
   auto localMap = pack.overlapMap->getLocalMap();
 
   Kokkos::parallel_for("assemble_1d_local_index", 
@@ -577,7 +577,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos_Mul
     mat1.beginFill();
     mat1.setAllToScalar(SC_ZERO);
     auto k_e2n = pack.k_element2node;
-    auto localMat = mat1.getLocalMatrix();
+    auto localMat = mat1.getLocalMatrixDevice();
     auto localMap = pack.overlapMap->getLocalMap();
     
     Kokkos::parallel_for("assemble_1d_local_index", 

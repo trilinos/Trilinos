@@ -1527,7 +1527,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   size_t nrows = 1000;
   size_t nnzPerRow = 20;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using KCRS = typename crs_matrix_type::local_matrix_device_type;
   using ISC = typename crs_matrix_type::impl_scalar_type;
   using ValuesType = typename KCRS::values_type::non_const_type;
   using RowptrsType = typename KCRS::row_map_type::non_const_type;
@@ -1672,7 +1672,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   size_t nrows = 1000;
   size_t nnzPerRow = 20;
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
-  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::local_matrix_device_type KCRS;
   typedef typename crs_matrix_type::impl_scalar_type ISC;
   typedef typename KCRS::values_type::non_const_type ValuesType;
   typedef typename KCRS::row_map_type::non_const_type RowptrsType;
@@ -1682,10 +1682,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   RowptrsType rowptrsCRS[3];
   ColindsType colindsCRS[3];
   //Populate A and B
+  ValuesType::HostMirror vals[3];
+     vals[0] = ValuesType::HostMirror("vals0", nrows * nnzPerRow);
+     vals[1] = ValuesType::HostMirror("vals1", nrows * nnzPerRow);
+     vals[2] = ValuesType::HostMirror("vals2", nrows * nnzPerRow);
+  RowptrsType::HostMirror rowptrs[3];
+     rowptrs[0] = RowptrsType::HostMirror("rowptr0", nrows+1);
+     rowptrs[1] = RowptrsType::HostMirror("rowptr1", nrows+1);
+     rowptrs[2] = RowptrsType::HostMirror("rowptr2", nrows+1);
+  ColindsType::HostMirror colinds[3]; 
+     colinds[0] = ColindsType::HostMirror("colind0", nrows * nnzPerRow);
+     colinds[1] = ColindsType::HostMirror("colind1", nrows * nnzPerRow);
+     colinds[2] = ColindsType::HostMirror("colind2", nrows * nnzPerRow);
   {
-    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
-    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
-    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
     //want consistent test results
     srand(12);
     for(LO m = 0; m < 2; m++)
@@ -1722,29 +1731,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
       valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
       rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
       colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
-      for(size_t i = 0; i < nrows + 1; i++)
-      {
-        rowptrsCRS[m](i) = rowptrs[m][i];
-      }
-      for(size_t i = 0; i < nrows * nnzPerRow; i++)
-      {
-        valsCRS[m](i) = vals[m][i];
-        colindsCRS[m](i) = colinds[m][i];
-      }
-    }
-    for(int i = 0; i < 2; i++)
-    {
-      delete[] vals[i];
-      delete[] rowptrs[i];
-      delete[] colinds[i];
+      Kokkos::deep_copy(valsCRS[m], vals[m]);
+      Kokkos::deep_copy(rowptrsCRS[m], rowptrs[m]);
+      Kokkos::deep_copy(colindsCRS[m], colinds[m]);
     }
   }
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(
+          valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, 
+          valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, 
+          nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
   //now scan through C's rows and entries to check they are correct
   TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
+
+  Kokkos::deep_copy(vals[2], valsCRS[2]);
+  Kokkos::deep_copy(rowptrs[2], rowptrsCRS[2]);
+  Kokkos::deep_copy(colinds[2], colindsCRS[2]);
+
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1752,11 +1757,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
     std::vector<bool> correctEntries(nrows, false);
     for(size_t j = 0; j < nnzPerRow; j++)
     {
-      int col1 = colindsCRS[0][i * nnzPerRow + j];
-      int col2 = colindsCRS[1][i * nnzPerRow + j];
-      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      int col1 = colinds[0][i * nnzPerRow + j];
+      int col2 = colinds[1][i * nnzPerRow + j];
+      correctVals[col1] += vals[0](i * nnzPerRow + j);
       correctEntries[col1] = true;
-      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctVals[col2] += vals[1](i * nnzPerRow + j);
       correctEntries[col2] = true;
     }
     size_t actualNNZ = 0;
@@ -1765,8 +1770,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
       if(correctEntries[j])
         actualNNZ++;
     }
-    size_t Crowstart = rowptrsCRS[2](i);
-    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    size_t Crowstart = rowptrs[2](i);
+    size_t Crowlen = rowptrs[2](i + 1) - Crowstart;
     TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
@@ -1774,9 +1779,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
       if(j > 0)
       {
         //Check entries are sorted
-        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
+        TEST_ASSERT(colinds[2](Coffset - 1) <= colinds[2](Coffset));
       }
-      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
+      TEST_FLOATING_EQUALITY(vals[2](Coffset), correctVals[colinds[2](Coffset)], 1e-12);
     }
   }
 }
@@ -1792,7 +1797,7 @@ bool checkLocallySorted(const CrsMat& A)
   using LO = typename CrsMat::local_ordinal_type;
   using Teuchos::reduceAll;
   using Teuchos::outArg;
-  auto graph = A.getLocalMatrix().graph;
+  auto graph = A.getLocalMatrixHost().graph;
   LO numLocalRows = A.getNodeNumRows();
   int allSorted = 1;
   for(int i = 0; i < numLocalRows; i++)
@@ -1946,7 +1951,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getUnsortedTestMatrix(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using KCRS = typename crs_matrix_type::local_matrix_device_type;
   using size_type = typename KCRS::row_map_type::non_const_value_type;
   using lno_t =     typename KCRS::index_type::non_const_value_type;
   using kk_scalar_t =  typename KCRS::values_type::non_const_value_type;

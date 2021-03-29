@@ -103,6 +103,7 @@ namespace Tpetra {
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   RowGraph<LocalOrdinal,GlobalOrdinal,Node>::
@@ -144,6 +145,8 @@ namespace Tpetra {
        prefix << "This object claims to support row views, "
        "but this method is not implemented.");
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
 } // namespace Tpetra
 
 //

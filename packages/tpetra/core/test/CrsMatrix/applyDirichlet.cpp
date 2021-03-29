@@ -88,8 +88,10 @@ namespace { // (anonymous)
     using GST = Tpetra::global_size_t;
     using STS = Teuchos::ScalarTraits<SC>;
     using KAT = Kokkos::ArithTraits<IST>;    
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-    using local_graph_device_type = typename local_matrix_type::staticcrsgraph_type;
+    using local_matrix_device_type = 
+          typename crs_matrix_type::local_matrix_device_type;
+    using local_graph_device_type = 
+          typename local_matrix_device_type::staticcrsgraph_type;
     using device_type = typename crs_matrix_type::device_type;
     using execution_space = typename crs_matrix_type::execution_space;
     using range_type = Kokkos::RangePolicy<execution_space, LO>;
@@ -146,7 +148,7 @@ namespace { // (anonymous)
 	});
       
       local_graph_device_type G_lcl (lclColInds, rowOffsets);
-      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      local_matrix_device_type A_lcl ("A_lcl", G_lcl);
       crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
       TEST_ASSERT( eye.isFillComplete () );
 
@@ -170,7 +172,7 @@ namespace { // (anonymous)
 	});
       
       local_graph_device_type G_lcl (lclColInds, rowOffsets);
-      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      local_matrix_device_type A_lcl ("A_lcl", G_lcl);
       crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
       TEST_ASSERT( eye.isFillComplete () );
 
@@ -195,7 +197,7 @@ namespace { // (anonymous)
 	});
       
       local_graph_device_type G_lcl (lclColInds, rowOffsets);
-      local_matrix_type A_lcl ("A_lcl", G_lcl);
+      local_matrix_device_type A_lcl ("A_lcl", G_lcl);
       crs_matrix_type eye (A_lcl, rowMap, colMap, domMap, ranMap);
       TEST_ASSERT( eye.isFillComplete () );
 

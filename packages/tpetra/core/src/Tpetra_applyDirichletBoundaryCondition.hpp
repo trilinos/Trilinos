@@ -138,7 +138,7 @@ struct ApplyDirichletBoundaryConditionToLocalMatrixRows {
     TEUCHOS_TEST_FOR_EXCEPTION
       (colMap.get () == nullptr, std::invalid_argument,
        "The matrix must have a column Map.");
-    auto A_lcl = A.getLocalMatrix ();
+    auto A_lcl = A.getLocalMatrixDevice ();
 
     const LO lclNumRows = static_cast<LO> (rowMap->getNodeNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION

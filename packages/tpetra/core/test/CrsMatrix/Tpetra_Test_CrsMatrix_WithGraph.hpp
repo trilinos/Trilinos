@@ -362,7 +362,7 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
 
       out << "Create a CrsMatrix with the diagonal CrsGraph and Kokkos view" << endl;
       size_t numEnt = diaggraph.getLocalGraphDevice().entries.extent(0);
-      typename MAT::local_matrix_type::values_type val ("Tpetra::CrsMatrix::val", numEnt);
+      typename MAT::local_matrix_device_type::values_type val ("Tpetra::CrsMatrix::val", numEnt);
       MAT matrix(rcpFromRef(diaggraph),val);
 
       out << "Call setAllToScalar on the CrsMatrix; it should not throw" << endl;

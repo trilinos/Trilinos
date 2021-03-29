@@ -57,7 +57,7 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
 
 {
   const char tfecfFuncName[] = "FECrsMatrix(RCP<const FECrsGraph>[, RCP<ParameterList>]): ";
-  typedef typename local_matrix_type::values_type values_type;
+  typedef typename local_matrix_device_type::values_type values_type;
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (graph.is_null (), std::runtime_error, "Input graph is null.");
