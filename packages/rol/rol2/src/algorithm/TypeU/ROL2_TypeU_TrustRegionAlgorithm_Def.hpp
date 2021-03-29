@@ -218,6 +218,8 @@ void TrustRegionAlgorithm<Real>::run(       Vector<Real>&     x,
   // Output
 //  output.push_back(print(true));
 //  if (verbosity_ > 0) os << print(true);
+  writeName(os);
+  writeHeader(os);
 
   while (status.check(state)) {
 
@@ -281,9 +283,12 @@ void TrustRegionAlgorithm<Real>::run(       Vector<Real>&     x,
     // Update Output
 //    output.push_back(print(printHeader_));
 
-    if (verbosity_ > 0) writeOutput(os,printHeader_);
+  writeOutput(os);
+//    if (verbosity_ > 0) writeOutput(os,printHeader_);
+
   }
 
+//  writeOutput(os);
 //  output.push_back(Algorithm<Real>::printExitStatus());
 //  if (verbosity_ > 0) os << Algorithm<Real>::printExitStatus();
 //  return output;

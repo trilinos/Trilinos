@@ -52,9 +52,17 @@
 int main( int argc, char *argv[] ) {
 
   using RealT = double;
-  using ROL2::operator <<;
+  using TrustRegion = ROL2::TypeU::TrustRegion<RealT>;
+  using Type = typename TrustRegion::Type;
+  using ExitStatus = typename ROL2::Algorithm<RealT>::ExitStatus;
+  using ROL2::operator++;
 
-  auto os_ptr = ROL2::makeStreamPtr(std::cout, argc);
+  constexpr auto FirstTR = static_cast<Type>(0);
+  constexpr auto LastTR = Type::Last;
+
+  auto tol = ROL2::default_tolerance<RealT>();
+
+  auto os_ptr = ROL2::makeStreamPtr(std::cout, argc>1);
   auto& os = *os_ptr;
 
   int errorFlag  = 0;
@@ -68,7 +76,6 @@ int main( int argc, char *argv[] ) {
 
     // Create optimization vector and set initial guess to all 1's
     ROL2::StdVector<RealT> x(dim);
-    x.setScalar(1.0);
 
     // gradient vector
     auto g_ptr = x.clone();
@@ -81,16 +88,26 @@ int main( int argc, char *argv[] ) {
     auto obj = ROL2::TypeU::Objective_Zakharov<RealT>(k_ptr);
 
     ROL2::ParameterList parlist;
+    auto& trlist = parlist.sublist("Step").sublist("Trust Region");
 
-    auto algo = ROL2::TypeU::TrustRegionAlgorithm<RealT>( parlist ); 
+    auto trstr = []( auto type ) { return TrustRegion::type_dict[type]; };
 
-    auto tol = ROL2::default_tolerance<RealT>();
+   
+    os << "Testing all Trust-Region subproblem solvers\n\n";
+ 
+    for( auto type=FirstTR; type<LastTR; type++ ) {
+      os << "\n" << std::string(120,'-') << std::endl;
+      auto algo = ROL2::TypeU::TrustRegionAlgorithm<RealT>( parlist ); 
+      trlist.set("Subproblem Solver", trstr(type));
+      x.setScalar(1.0);
+      algo.run(x,g,obj,os);
+      const auto& state = algo.getState();
+      auto exitStatus = state.statusFlag_;
+      if( exitStatus != ExitStatus::Converged) errorFlag += 1;
+    }
 
-    os << "Initial objective: " << obj.value(x,tol) << std::endl;
-
-    algo.run(x,g,obj,os);
-
-    os << "Final objective: " << obj.value(x,tol) << std::endl;
+    //os << "Initial objective: " << obj.value(x,tol) << std::endl;
+    //os << "Final objective: " << obj.value(x,tol) << std::endl;
     
   }
   catch (std::logic_error& err) {

@@ -74,7 +74,10 @@ public:
 
   void setModel(  const Ptr<TrustRegionModel<Real>>& );
   void setSolver( const Ptr<TrustRegion<Real>>&      );
-   
+  
+  using Algorithm<Real>::getState;
+  using Algorithm<Real>::getStatus;
+ 
   const TrustRegionModel<Real>& getModel()  const;
   const Secant<Real>&           getSecant() const;
   const TrustRegion<Real>&      getSolver() const;
