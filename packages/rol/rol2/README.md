@@ -58,6 +58,15 @@ ROL 2.0 Design Changes
   - Use of C++14 variable templates for type-dependent constants instead of functions.
     For example ROL_EPSILON<Real>() is replaced by ROL_EPSILON<Real>;
 
+  - Factories are now static methods of their respective base class, for example
+    the free function 
+
+    Ptr<Secant<Real>> SecantFactory<Real>(ParameterList&);
+
+    is now replaced by the static member function 
+
+    static Ptr<Secant<Real>> Secant<Real>::create(ParameterList&);
+
   Minor things:
   - Deletion of void as a function argument
   - Deletion of const modifier on objects that are passed by value

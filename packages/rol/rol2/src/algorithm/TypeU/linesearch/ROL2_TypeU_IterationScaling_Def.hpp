@@ -54,7 +54,7 @@ IterationScaling<Real>::IterationScaling( ParameterList &parlist )
 
 template<typename Real>
 void IterationScaling<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g) {
-  LineSearch_U<Real>::initialize(x,g);
+  LineSearch<Real>::initialize(x,g);
   xnew_   = x.clone();
 }
 
@@ -67,7 +67,7 @@ void IterationScaling<Real>::run(       Real&            alpha,
                                   const Vector<Real>&    s,
                                   const Vector<Real>&    x,
                                         Objective<Real>& obj ) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>);
+  Real tol = default_tolerance<Real>();
   ls_neval = 0;
   ls_ngrad = 0;
 
@@ -79,7 +79,7 @@ void IterationScaling<Real>::run(       Real&            alpha,
   xnew_->set(x); xnew_->axpy(alpha,s);
 
   // Compute objective function value
-  obj.update(*xnew_,UPDATE_TRIAL);
+  obj.update(*xnew_,UpdateType::Trial);
   fval = obj.value(*xnew_,tol);
   ls_neval++;
 }

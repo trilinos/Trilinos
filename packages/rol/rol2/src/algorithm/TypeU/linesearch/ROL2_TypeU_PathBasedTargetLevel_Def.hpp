@@ -107,7 +107,7 @@ void PathBasedTargetLevel<Real>::run(       Real&            alpha,
   xnew_->set(x); xnew_->axpy(alpha,s);
 
   // Compute objective function value
-  obj.update(*xnew_,UPDATE_TRIAL);
+  obj.update(*xnew_,UpdateType::Trial);
   fval = obj.value(*xnew_,tol);
   ls_neval++;
 

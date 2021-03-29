@@ -12,13 +12,13 @@ public:
   Newton() = default;
   virtual ~Newton() = default;
 
-  void compute(       Vector<Real>&    s,
+  void compute(       Vector<Real>&            s,
                               Real&            snorm,
                               Real&            sdotg,
                               int&             iter,
                               int&             flag,
                         const Vector<Real>&    x,
-                        const Vector<Real &    g,
+                        const Vector<Real>&    g,
                               Objective<Real>& obj ) override;
 
   void writeName( std::ostream os ) const override { os << "Newton's Method"; } 

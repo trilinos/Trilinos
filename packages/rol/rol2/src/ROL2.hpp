@@ -71,6 +71,19 @@ template<class> class TrustRegionModel;
 
 #include "ROL2_TypeU_TrustRegionAlgorithm_Decl.hpp"
 
+#include "ROL2_TypeU_DescentDirection_Decl.hpp"
+#include "ROL2_TypeU_Gradient_Decl.hpp"
+#include "ROL2_TypeU_Newton_Decl.hpp"
+#include "ROL2_TypeU_QuasiNewton_Decl.hpp"
+#include "ROL2_TypeU_NewtonKrylov_Decl.hpp"
+// #include "ROL2_TypeU_NonlinearCG_Decl.hpp"
+
+#include "ROL2_TypeU_LineSearch_Decl.hpp"
+#include "ROL2_TypeU_BackTracking_Decl.hpp"
+#include "ROL2_TypeU_CubicInterp_Decl.hpp"
+#include "ROL2_TypeU_IterationScaling_Decl.hpp"
+#include "ROL2_TypeU_PathBasedTargetLevel_Decl.hpp"
+//#include "ROL2_TypeU_ScalarMinimizationLineSearch_Decl.hpp"
 
 
 // ROL2 Class Definitions
@@ -103,6 +116,27 @@ template<class> class TrustRegionModel;
 #include "ROL2_TypeU_DoubleDogLeg_Def.hpp"
 #include "ROL2_TypeU_SPGTrustRegion_Def.hpp"
 #include "ROL2_TypeU_TrustRegion_Def.hpp"
+
+#include "ROL2_TypeU_DescentDirection_Def.hpp"
+#include "ROL2_TypeU_Gradient_Def.hpp"
+#include "ROL2_TypeU_Newton_Def.hpp"
+#include "ROL2_TypeU_QuasiNewton_Def.hpp"
+#include "ROL2_TypeU_NewtonKrylov_Def.hpp"
+
+#include "ROL2_TypeU_DescentDirection_Def.hpp"
+#include "ROL2_TypeU_Gradient_Def.hpp"
+#include "ROL2_TypeU_Newton_Def.hpp"
+#include "ROL2_TypeU_QuasiNewton_Def.hpp"
+#include "ROL2_TypeU_NewtonKrylov_Def.hpp"
+// #include "ROL2_TypeU_NonlinearCG_Def.hpp"
+
+#include "ROL2_TypeU_LineSearch_Def.hpp"
+#include "ROL2_TypeU_BackTracking_Def.hpp"
+#include "ROL2_TypeU_CubicInterp_Def.hpp"
+#include "ROL2_TypeU_IterationScaling_Def.hpp"
+#include "ROL2_TypeU_PathBasedTargetLevel_Def.hpp"
+//#include "ROL2_TypeU_ScalarMinimizationLineSearch_Def.hpp"
+
 
 
 #endif // ROL2_HPP

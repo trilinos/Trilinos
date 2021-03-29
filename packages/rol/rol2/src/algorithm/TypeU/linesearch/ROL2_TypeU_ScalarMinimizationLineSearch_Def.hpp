@@ -161,7 +161,7 @@ ScalarMinimizationLineSearch(       ParameterList&                 parlist,
                               const Ptr<ScalarMinimization<Real>>& sm = nullPtr,
                               const Ptr<Bracketing<Real>>&         br = nullPtr,
                               const Ptr<ScalarFunction<Real>>&     sf = nullPtr )
-  : LineSearch_U<Real>(parlist) {
+  : LineSearch<Real>(parlist) {
   const Real zero(0), p4(0.4), p6(0.6), p9(0.9), oem4(1.e-4), oem10(1.e-10), one(1);
   ParameterList& lslist = parlist.sublist("Step").sublist("Line Search");
   FDdirDeriv_ = lslist.get("Finite Difference Directional Derivative",false);

@@ -17,7 +17,7 @@ public:
                       int&             iter,
                       int&             flag,
                 const Vector<Real>&    x,
-                const Vector<Real &    g,
+                const Vector<Real>&    g,
                       Objective<Real>& obj ) override; 
 
   void writeName( std::ostream& os ) const override { os << "Gradient Descent"; }

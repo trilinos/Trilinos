@@ -53,7 +53,7 @@ namespace TypeU {
 
 template<typename Real>
 CubicInterp<Real>::CubicInterp( ParameterList &parlist ) \
-  : LineSearch_U<Real>(parlist) { 
+  : LineSearch<Real>(parlist) { 
   const Real half(0.5);
   auto& lslist = parlist.sublist("Step").sublist("Line Search");
   rho_ = lslist.sublist("Line-Search Method").get("Backtracking Rate",half);
@@ -61,7 +61,7 @@ CubicInterp<Real>::CubicInterp( ParameterList &parlist ) \
 
 template<typename Real>
 void CubicInterp<Real>::initialize( const Vector<Real>& x, 
-                 const Vector<Real>& g ) override {
+                 const Vector<Real>& g ) {
   LineSearch<Real>::initialize(x,g);
   xnew_   = x.clone();
 }
@@ -74,7 +74,7 @@ void CubicInterp<Real>::run(       Real&            alpha,
                              const Real&            gs,
                              const Vector<Real>&    s,
                              const Vector<Real>&    x,
-                                   Objective<Real>& obj ) override {
+                                   Objective<Real>& obj ) {
 
   Real tol = std::sqrt(ROL_EPSILON<Real>);
   ls_neval = 0;
@@ -98,7 +98,7 @@ void CubicInterp<Real>::run(       Real&            alpha,
   const Real one(1), two(2), three(3), half(0.5), p1(0.1);
   bool first_iter = true;
 
-  using LineSearc<Real>::Type;
+  using Type = typename LineSearch<Real>::Type;
 
   // Perform cubic interpolation back tracking
   while( !LineSearch<Real>::status(Type::CubicInterp,ls_neval,ls_ngrad,alpha,fold,gs,fval,x,s,obj) ) {

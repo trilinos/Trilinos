@@ -59,7 +59,7 @@ public:
   enum class Type : std::int16_t {
      IterationScaling = 0,
      PathBasedTargetLevel,
-     Backtracking,
+     BackTracking,
      Bisection,
      GoldenSection,
      CubicInterp,
@@ -77,6 +77,8 @@ public:
     Null,
     Last  
   };
+
+  using DescentType = typename DescentDirection<Real>::Type;
 
   static EnumMap<Type>          type_dict;
   static EnumMap<CurvatureCond> curvature_dict;
@@ -105,14 +107,16 @@ public:
                        const Real& fold );
 
 
+  static Ptr<LineSearch> create( ParameterList& parlist );
+
 protected:
   virtual bool status( const Type             type, 
                              int&             ls_neval, 
                              int&             ls_ngrad, 
-                       const Real             alpha, 
-                       const Real             fold, 
-                       const Real             sgold, 
-                       const Real             fnew, 
+                             Real             alpha, 
+                             Real             fold, 
+                             Real             sgold, 
+                             Real             fnew, 
                        const Vector<Real>&    x, 
                        const Vector<Real>&    s, 
                              Objective<Real>& obj );
@@ -169,7 +173,7 @@ LineSearch<Real>::type_dict = { "Iteration Scaling",
                                 "Brent's",    
                                 "User Defined" };
 template<class Real>
-EnumMap<typename LineSearch<Real>::DescentType>
+EnumMap<typename LineSearch<Real>::CurvatureCond>
 LineSearch<Real>::curvature_dict = { "Wolfe Conditions",
                                      "Strong Wolfe Conditions",
                                      "Generalized Wolfe Conditions",

@@ -78,7 +78,7 @@ public:
                               int&             iter, 
                               int&             flag,
                         const Vector<Real>&    x, 
-                        const Vector<Real &    g, 
+                        const Vector<Real>&    g, 
                               Objective<Real>& obj ) = 0;
 
   virtual void update( const Vector<Real>& x, 
@@ -98,7 +98,7 @@ public:
 
 
 template<typename Real>
-EnumMap<DescentDirection<Real>::Type>
+EnumMap<typename DescentDirection<Real>::Type>
 DescentDirection<Real>::type_dict = { "Steepest Descent",
                                       "Nonlinear CG",
                                       "Quasi-Newton Method",

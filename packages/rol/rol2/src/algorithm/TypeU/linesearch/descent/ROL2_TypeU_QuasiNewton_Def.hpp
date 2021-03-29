@@ -8,14 +8,15 @@ namespace TypeU {
 template<class Real>
 QuasiNewton<Real>::QuasiNewton(       ParameterList&     parlist,
                                 const Ptr<Secant<Real>>& secant ) 
-  : secant_(secant) {}
+  : secant_(secant) {
 
   auto& slist = parlist.sublist("General").sublist("Secant");
 
   if( secant != nullPtr ) {
     secantName_ = slist.get("Type", "Limited-Memory BFGS");
-    secantType = Secant<Real>::type_dict[secantName];
+    secantType_ = Secant<Real>::type_dict[secantName_];
   }
+}
 
 template<class Real>
 void QuasiNewton<Real>::compute(       Vector<Real>&    s,
@@ -24,7 +25,7 @@ void QuasiNewton<Real>::compute(       Vector<Real>&    s,
                                        int&             iter,
                                        int&             flag,
                                  const Vector<Real>&    x,
-                                 const Vector<Real &    g
+                                 const Vector<Real>&    g,
                                        Objective<Real>& obj ) {
   secant_->applyH(s,g);
   sdotg = -s.apply(g);

@@ -13,8 +13,8 @@ void Gradient<Real>::compute(       Vector<Real>&    s,
                                     int&             iter,
                                     int&             flag,
                               const Vector<Real>&    x,
-                              const Vector<Real &    g,
-                                    Objective<Real>& obj ) override {
+                              const Vector<Real>&    g,
+                                    Objective<Real>& obj ) {
   s.set(g.dual());
   s.scale(static_cast<Real>(-1));
   snorm = s.norm();

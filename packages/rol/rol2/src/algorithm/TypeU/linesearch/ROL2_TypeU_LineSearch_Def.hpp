@@ -45,7 +45,7 @@
 #ifndef ROL2_TYPEU_LINESEARCH_DEF_H
 #define ROL2_TYPEU_LINESEARCH_DEF_H
 
-/** \class ROL::LineSearch_U
+/** \class ROL2::TypeU::LineSearch
     \brief Provides interface for and implements line searches.
 */
 
@@ -58,8 +58,8 @@ LineSearch<Real>::LineSearch( ParameterList& parlist ) {
   auto& ls = parlist.sublist("Step").sublist("Line Search");
   auto& dm = ls.sublist("Descent Method");
   auto& cc = ls.sublist("Curvature Condition");
-  edesc_ = stringToDescentType(ls.sublist(dm.get("Type","Quasi-Newton Method"));
-  econd_ = stringToCurvatureCond(cc.get("Type","Strong Wolfe Conditions"));
+  edesc_ = DescentDirection<Real>::type_dict[dm.get("Type","Quasi-Newton Method")];
+  econd_ = curvature_dict[cc.get("Type","Strong Wolfe Conditions")];
 
   // Linesearch Parameters
   alpha0_       = ls.get("Initial Step Size",one);
@@ -119,10 +119,10 @@ template<class Real>
 bool LineSearch<Real>::status( LineSearch<Real>::Type type, 
                                      int&             ls_neval, 
                                      int&             ls_ngrad, 
-                               const Real             alpha, 
-                               const Real             fold, 
-                               const Real             sgold, 
-                               const Real             fnew, 
+                                     Real             alpha, 
+                                     Real             fold, 
+                                     Real             sgold, 
+                                     Real             fnew, 
                                const Vector<Real>&    x, 
                                const Vector<Real>&    s, 
                                      Objective<Real>& obj ) { 
@@ -136,11 +136,8 @@ bool LineSearch<Real>::status( LineSearch<Real>::Type type,
 
   // Check Curvature Condition
   bool curvcond = false;
-
-  // Check Curvature Condition
-  bool curvcond = false;
   if ( armijo && ((type != Type::BackTracking && type != Type::CubicInterp) ||
-                  (edesc_ == DescentType::NonlinearCG ) {
+                  (edesc_ == DescentType::NonlinearCG )) ) {
     if ( econd_ == CurvatureCond::Goldstein )
       curvcond = fnew >= (fold + (one-c1_)*alpha*sgold);
     else if (econd_ == CurvatureCond::Null)
@@ -182,17 +179,17 @@ Real LineSearch<Real>::getInitialAlpha(       int&             ls_neval,
                                         const Vector<Real>&    s, 
                                               Objective<Real>& obj) {
   Real val(1);
-
+  
   if (useralpha_ || usePrevAlpha_ )  val = alpha0_;
   else {
     const Real one(1), half(0.5);
     if (edesc_ == DescentType::Steepest || edesc_ == DescentType::NonlinearCG ) {
-      Real tol = std::sqrt(ROL_EPSILON<Real>);
+      Real tol = default_tolerance<Real>();
     
       // Evaluate objective at x + s
       xtst_->set(x);
       xtst_->plus(s);
-      obj.update(*xtst_,UPDATE_TRIAL);
+      obj.update(*xtst_,UpdateType::Trial);
       Real fnew = obj.value(*xtst_,tol);
       ls_neval++;
     
@@ -229,7 +226,7 @@ Real LineSearch<Real>::dirDeriv( const Vector<Real>&    x,      // current itera
                                        Real             alpha,  // current step length
                                        Real             fnew,   // f(x+alpha*s)
                                        Objective<Real>& obj) {
-  Real tol = std::sqrt(ROL_EPSILON<Real>);
+  Real tol = default_tolerance<Real>();
   Real val(0);
   xtst_->set(x); 
   xtst_->axpy(alpha,s);
@@ -240,7 +237,7 @@ Real LineSearch<Real>::dirDeriv( const Vector<Real>&    x,      // current itera
       Real cbrteps = std::cbrt(ROL_EPSILON<Real>);
       Real h       = cbrteps*std::max(xnorm/snorm,1);
       xtst_->axpy(h,s);
-      obj.update(*xtst_,UPDATE_TRIAL);
+      obj.update(*xtst_,UpdateType::Trial);
       Real ftrial = obj.value(*xtst_,tol);
       val = (ftrial - fnew) / h;
     }
@@ -248,6 +245,25 @@ Real LineSearch<Real>::dirDeriv( const Vector<Real>&    x,      // current itera
   else val = obj.dirDeriv(*xtst_,s,tol);
   return val;
 }
+
+
+template<class Real>
+Ptr<LineSearch<Real>> 
+LineSearch<Real>::create( ParameterList& parlist ) {
+  auto lslist = parlist.sublist("Step").sublist("Line Search");
+  auto lsm = lslist.sublist("Line-Search Method").get("Type","Cubic Interpolation");
+  auto lstype = type_dict[lsm];
+  switch( lstype ) {
+    case Type::IterationScaling:     return makePtr<IterationScaling<Real>>(parlist);
+    case Type::PathBasedTargetLevel: return makePtr<PathBasedTargetLevel<Real>>(parlist);
+    case Type::Backtracking:         return makePtr<BackTracking<Real>>(parlist);
+    case Type::CubicInterp:          return makePtr<CubicInterp<Real>>(parlist);
+    case Type::Bisection:            
+    case Type::GoldenSection:
+    case Type::Brents:              // return makePtr<ScalarMinimizationLineSearch<Real>>(parlist); 
+    default:  return nullPtr; // TODO should we throw an exception here?
+  };
+} // LineSearch<Real>::create
 
 
 } // namespace TypeU

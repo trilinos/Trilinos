@@ -41,6 +41,7 @@
 // ************************************************************************
 // @HEADER
 
+#pragma once
 #ifndef ROL2_TYPEU_NEWTONKRYLOV_DECL_HPP
 #define ROL2_TYPEU_NEWTONKRYLOV_DECL_HPP
 
@@ -55,8 +56,11 @@ namespace ROL2 {
 namespace TypeU {
 
 template <class Real>
-class NewtonKrylov<Real> : public DescentDirection {
+class NewtonKrylov : public DescentDirection<Real>  {
 public:
+
+  using KrylovType = typename Krylov<Real>::Type;
+  using SecantType = typename Secant<Real>::Type;
 
   //------------------------------------------------------------
   class HessianNK : public LinearOperator<Real> {
@@ -114,7 +118,7 @@ public:
                               int&             iter, 
                               int&             flag,
                         const Vector<Real>&    x, 
-                        const Vector<Real &    g, 
+                        const Vector<Real>&    g, 
                               Objective<Real>& obj) override;
 
   virtual void update( const Vector<Real>& x, 
@@ -126,8 +130,8 @@ public:
 
   virtual void writeName( std::ostream& os ) const { 
     os << "Newton-Krylov Method using " << krylovName_; 
-    if( useSecantPrec_ ) {
-      << " with " << secantName_ << " preconditioning";
+    if( useSecantPrecond_ ) {
+      os << " with " << secantName_ << " preconditioning";
     }
   }
 
@@ -137,14 +141,13 @@ private:
   Ptr<Krylov<Real>>         krylov_;
   Ptr<LinearOperator<Real>> precond_;
 
-  Krylov<Real>::Type krylovType_;
-  Secant<Real>::Type secantType_;
+  KrylovType krylovType_;
+  SecantType secantType_;
 
   std::string krylovName_;
   std::string secantName_;
 
   bool useSecantPrecond_ = false;
-
 
 }; // class NewtonKrylov
 

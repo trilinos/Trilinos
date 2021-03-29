@@ -44,7 +44,7 @@
 #ifndef ROL2_TYPEU_BACKTRACKING_DEF_H
 #define ROL2_TYPEU_BACKTRACKING_DEF_H
 
-/** \class ROL::BackTracking_U
+/** \class ROL2::TypeU::BackTracking
     \brief Implements a simple back tracking line search.
 */
 
@@ -90,10 +90,10 @@ void BackTracking<Real>::run(       Real&            alpha,
   fval = obj.value(*xnew_,tol);
   ls_neval++;
 
-  using LineSearch<Real>::Type
+  using Type = typename LineSearch<Real>::Type;
 
   // Perform backtracking
-  while ( !LineSearch<Real>::status(Type::Backtracking,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew_,s,obj) ) {
+  while ( !LineSearch<Real>::status(Type::BackTracking,ls_neval,ls_ngrad,alpha,fold,gs,fval,*xnew_,s,obj) ) {
     alpha *= rho_;
 
     // Update iterate

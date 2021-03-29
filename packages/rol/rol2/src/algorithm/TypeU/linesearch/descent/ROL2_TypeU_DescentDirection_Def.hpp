@@ -55,11 +55,11 @@ DescentDirection<Real>::create( ParameterList& parlist ) {
   auto  dtype = type_dict[dlist.get("Type","Quasi-Newton Method")];
 
   switch(dtype) {
-    case Type::Steepest:     return makePtr<Gradient_U<Real>>();
-    case Type::NonlinearCG:  return makePtr<NonlinearCG_U<Real>>(parlist);
-    case Type::Secant:       return makePtr<QuasiNewton_U<Real>>(parlist);
-    case Type::Newton:       return makePtr<Newton_U<Real>>();
-    case Type::NewtonKrylov: return makePtr<NewtonKrylov_U<Real>>(parlist);
+    case Type::Steepest:     return makePtr<Gradient<Real>>();
+//    case Type::NonlinearCG:  return makePtr<NonlinearCG<Real>>(parlist); // TODO
+    case Type::Secant:       return makePtr<QuasiNewton<Real>>(parlist);
+    case Type::Newton:       return makePtr<Newton<Real>>();
+    case Type::NewtonKrylov: return makePtr<NewtonKrylov<Real>>(parlist);
     default:                 return nullPtr; // Should we not throw an exception here?
   }
 }

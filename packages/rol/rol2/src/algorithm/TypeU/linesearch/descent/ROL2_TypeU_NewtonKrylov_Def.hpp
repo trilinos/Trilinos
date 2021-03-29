@@ -54,26 +54,27 @@ namespace ROL2 {
 namespace TypeU {
 
 template <class Real>
-NewtonKrylov<Real>::HessianNK::HesianNK( const Ptr<Objective<Real>>&    obj,
+NewtonKrylov<Real>::HessianNK::HessianNK( const Ptr<Objective<Real>>&    obj,
                                          const Ptr<const Vector<Real>>& x ) 
   : obj_(obj), x_(x) {}
 
 template <class Real>
-NewtonKrylov<Real>::HessianNK::apply(       Vector<Real>& Hv,
-                                      const Vector<Real>& v,
-                                            Real&         tol ) const {
+void NewtonKrylov<Real>::HessianNK::apply(       Vector<Real>& Hv,
+                                           const Vector<Real>& v,
+                                                 Real&         tol ) const {
   obj_->hessVec(Hv,v,*x_,tol);
 }
 
 template <class Real>
 NewtonKrylov<Real>::PrecondNK::PrecondNK( const Ptr<Objective<Real>>&    obj,
                                           const Ptr<const Vector<Real>>& x ) 
-  : obj_(obj), x_(x) {}
+  : obj_(obj), x_(x) {
+}
 
 template <class Real>
-NewtonKrylov<Real>::PrecondNK::apply(       Vector<Real>& Hv,
-                                      const Vector<Real>& v,
-                                            Real&         tol ) const {
+void NewtonKrylov<Real>::PrecondNK::apply(       Vector<Real>& Hv,
+                                           const Vector<Real>& v,
+                                                 Real&         tol ) const {
   obj_->hessVec(Hv,v,*x_,tol);
 }
 
@@ -85,11 +86,11 @@ NewtonKrylov<Real>::NewtonKrylov( ParameterList& parlist ) {
   useSecantPrecond_ = slist.get("Use as Preconditioner", false);
   krylovName_ = klist.get("Type","Conjugate Gradients");
   krylovType_ = Krylov<Real>::type_dict[krylovName_];
-  krylov_ = KrylovFactory<Real>(parlist);
+  krylov_ = Krylov<Real>::create(parlist);
   secantName_ = slist.get("Type","Limited-Memory BFGS");
   secantType_ = Secant<Real>::type_dict[secantName_];
   if ( useSecantPrecond_ ) {
-    secant_  = SecantFactory<Real>(parlist);
+    secant_  = Secant<Real>::create(parlist);
     precond_ = secant_;
   }
 }
@@ -122,7 +123,7 @@ NewtonKrylov<Real>::NewtonKrylov(       ParameterList&     parlist,
   if ( krylov != nullPtr ) {
     krylovName_ = klist.get("Type","Conjugate Gradients");
     krylovType_ = Krylov<Real>::type_dict[krylovName_];
-    krylov_ = KrylovFactory<Real>(parlist);
+    krylov_ = Krylov<Real>::create(parlist);
   }
   else 
     krylovName_ = klist.get("User Defined Krylov Name",
@@ -137,7 +138,7 @@ void NewtonKrylov<Real>::compute(       Vector<Real>&    s,
                                         int&             iter, 
                                         int&             flag,
                                   const Vector<Real>&    x, 
-                                  const Vector<Real &    g, 
+                                  const Vector<Real>&    g, 
                                         Objective<Real>& obj) {
   // Build Hessian and Preconditioner object
   auto obj_ptr = makePtrFromRef(obj);
@@ -164,7 +165,7 @@ void NewtonKrylov<Real>::compute(       Vector<Real>&    s,
 
 
 template <class Real>
-void NewtonKrylov<Real>:update( const Vector<Real>& x, 
+void NewtonKrylov<Real>::update( const Vector<Real>& x, 
                                 const Vector<Real>& s,
                                 const Vector<Real>& gold, 
                                 const Vector<Real>& gnew,
@@ -173,8 +174,6 @@ void NewtonKrylov<Real>:update( const Vector<Real>& x,
   if( useSecantPrecond_ ) 
     secant_->updateStorage(x,gnew,gold,s,snorm,iter+1);
 }
-
-}; // class NewtonKrylov
 
 } // namespace TypeU
 } // namespace ROL2

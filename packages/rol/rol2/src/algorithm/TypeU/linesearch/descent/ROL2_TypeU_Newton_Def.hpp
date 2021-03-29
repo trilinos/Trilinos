@@ -12,7 +12,7 @@ void Newton<Real>::compute(       Vector<Real>&    s,
                                   int&             iter,
                                   int&             flag,
                             const Vector<Real>&    x,
-                            const Vector<Real &    g,
+                            const Vector<Real>&    g,
                                   Objective<Real>& obj ) {
 
   Real tol = default_tolerance<Real>();

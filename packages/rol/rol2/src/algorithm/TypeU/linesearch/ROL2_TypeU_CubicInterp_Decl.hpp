@@ -49,6 +49,7 @@
 */
 
 namespace ROL2 {
+namespace TypeU {
 
 template<typename Real>
 class CubicInterp : public LineSearch<Real> {

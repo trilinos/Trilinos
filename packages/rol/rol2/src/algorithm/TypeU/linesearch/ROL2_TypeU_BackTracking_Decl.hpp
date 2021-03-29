@@ -44,7 +44,7 @@
 #ifndef ROL2_TYPEU_BACKTRACKING_DECL_H
 #define ROL2_TYPEU_BACKTRACKING_DECL_H
 
-/** \class ROL::BackTracking_U
+/** \class ROL2::TypeU::BackTracking
     \brief Implements a simple back tracking line search.
 */
 

@@ -116,10 +116,10 @@ public:
                          Objective<Real>& obj, 
                          std::ostream& = std::cout );
 
-  void run( Vector<Real>&       x,
-            const Vector<Real>& g, 
-            Objective<Real>&    obj,
-            std::ostream& = std::cout);
+  void run(       Vector<Real>&    x,
+            const Vector<Real>&    g, 
+                  Objective<Real>& obj,
+                  std::ostream&    os = std::cout );
 
   writeHeader( std::ostream& = std::cout ) const override;
 
@@ -128,7 +128,6 @@ public:
   writeOutput( std::ostream& = std::cout, bool print_header = false ) const override;
 
   const DescentDirection<Real>& getDescentDirection() const
-
 
 private:
 

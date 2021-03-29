@@ -9,6 +9,8 @@ template<class Real>
 class QuasiNewton : public DescentDirection<Real> {
 public:
 
+  using SecantType = typename Secant<Real>::Type;
+
   QuasiNewton(       ParameterList&     parlist, 
                const Ptr<Secant<Real>>& secant = nullPtr );
 
@@ -18,7 +20,7 @@ public:
                       int&             iter,
                       int&             flag,
                 const Vector<Real>&    x,
-                const Vector<Real &    g
+                const Vector<Real>&    g,
                       Objective<Real>& obj) override;
 
   void update( const Vector<Real>& x,
@@ -34,9 +36,9 @@ public:
 
 private:
 
-  Ptr<Secant<Real>>  secant_;
-  Secant<Real>::Type secantType_ = Secant<Real>::Type::UserDefined;
-  std::string        secantName_;
+  Ptr<Secant<Real>> secant_;
+  SecantType        secantType_ = SecantType::UserDefined;
+  std::string       secantName_;
 
 }; // class QuasiNewton
 
