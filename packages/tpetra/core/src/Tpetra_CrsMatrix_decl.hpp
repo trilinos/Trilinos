@@ -434,16 +434,6 @@ namespace Tpetra {
 
     //! The type of each entry in the matrix.
     using scalar_type = Scalar;
-    /// \brief The type used internally in place of \c Scalar.
-    ///
-    /// Some \c Scalar types might not work with Kokkos on all
-    /// execution spaces, due to missing CUDA device macros or
-    /// volatile overloads.  The C++ standard type std::complex<T> has
-    /// this problem.  To fix this, we replace std::complex<T> values
-    /// internally with the (usually) bitwise identical type
-    /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
-    /// corresponding to \c Scalar = std::complex.
-    using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
     //! The type of each local index in the matrix.
     using local_ordinal_type = LocalOrdinal;
     //! The type of each global index in the matrix.
@@ -459,13 +449,6 @@ namespace Tpetra {
     /// See e.g., GitHub Issue #57.
     using node_type = Node;
 
-    /// \brief Type of a norm result.
-    ///
-    /// This is usually the same as the type of the magnitude
-    /// (absolute value) of <tt>Scalar</tt>, but may differ for
-    /// certain <tt>Scalar</tt> types.
-    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
-
     //! The Map specialization suitable for this CrsMatrix specialization.
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
@@ -477,6 +460,23 @@ namespace Tpetra {
 
     //! The RowMatrix representing the base class of CrsMatrix
     using row_matrix_type = RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
+
+    /// \brief The type used internally in place of \c Scalar.
+    ///
+    /// Some \c Scalar types might not work with Kokkos on all
+    /// execution spaces, due to missing CUDA device macros or
+    /// volatile overloads.  The C++ standard type std::complex<T> has
+    /// this problem.  To fix this, we replace std::complex<T> values
+    /// internally with the (usually) bitwise identical type
+    /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
+    /// corresponding to \c Scalar = std::complex.
+    using impl_scalar_type = typename row_matrix_type::impl_scalar_type;
+    /// \brief Type of a norm result.
+    ///
+    /// This is usually the same as the type of the magnitude
+    /// (absolute value) of <tt>Scalar</tt>, but may differ for
+    /// certain <tt>Scalar</tt> types.
+    using mag_type = typename Kokkos::ArithTraits<impl_scalar_type>::mag_type;
 
     //! The CrsGraph specialization suitable for this CrsMatrix specialization.
     using crs_graph_type = CrsGraph<LocalOrdinal, GlobalOrdinal, Node>;
