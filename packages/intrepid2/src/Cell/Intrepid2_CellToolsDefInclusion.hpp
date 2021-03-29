@@ -309,10 +309,9 @@ namespace Intrepid2 {
       spaceDim = cellTopo.getDimension();
 
     using result_layout = typename DeduceLayout< decltype(points) >::result_layout;
-    using device_type = typename decltype(points)::device_type;
     auto vcprop = Kokkos::common_view_alloc_prop(points);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, result_layout, device_type > refPoints ( Kokkos::view_alloc("CellTools::checkPointwiseInclusion::refPoints", vcprop), numCells, numPoints, spaceDim);
+    Kokkos::DynRankView< common_value_type, result_layout, DeviceType > refPoints ( Kokkos::view_alloc("CellTools::checkPointwiseInclusion::refPoints", vcprop), numCells, numPoints, spaceDim);
     
     // expect refPoints(CPD), points(CPD), cellWorkset(CND) 
     mapToReferenceFrame(refPoints, points, cellWorkset, cellTopo);

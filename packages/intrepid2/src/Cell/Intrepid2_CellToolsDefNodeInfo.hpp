@@ -78,12 +78,17 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCenter.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension at least as large as cell.getDimension()." );
 #endif
+
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellCenter)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceCellCenter(..): output view's memory space is not compatible with DeviceType");
+
     const ordinal_type dim = cell.getDimension();
 
-    using inputDeviceType = typename decltype(cellCenter)::device_type;
-    const auto refCellCenter = RefCellCenter<inputDeviceType>::get(cell.getKey());
+    const auto refCellCenter = RefCellCenter<DeviceType>::get(cell.getKey());
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<typename inputDeviceType::execution_space>(0,dim),
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,dim),
     KOKKOS_LAMBDA (const int &i) {cellCenter(i) = refCellCenter(i);}
     );
   }
@@ -110,11 +115,15 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension at least as large as cell.getDimension()." );
 #endif
 
-    using inputDeviceType = typename decltype(cellVertex)::device_type;
-    const auto refNodes = RefCellNodes<inputDeviceType>::get(cell.getKey());
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellVertex)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceVertex(..): output view's memory space is not compatible with DeviceType");
+
+    const auto refNodes = RefCellNodes<DeviceType>::get(cell.getKey());
 
     ordinal_type dim = cell.getDimension();
-    Kokkos::parallel_for(Kokkos::RangePolicy<typename inputDeviceType::execution_space>(0,dim),
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,dim),
     KOKKOS_LAMBDA (const int &i) {cellVertex(i) = refNodes(vertexOrd,i);}
     );
   }
@@ -173,10 +182,15 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellNode.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have dimension at least as large as cell.getDimension()." );
 #endif
-    using inputDeviceType = typename decltype(cellNode)::device_type;
-    const auto refNodes = RefCellNodes<inputDeviceType>::get(cell.getKey());
 
-    Kokkos::parallel_for(Kokkos::RangePolicy<typename inputDeviceType::execution_space>(0,cell.getDimension()),
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellNode)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceNode(..): output view's memory space is not compatible with DeviceType");
+
+    const auto refNodes = RefCellNodes<DeviceType>::get(cell.getKey());
+
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,cell.getDimension()),
     KOKKOS_LAMBDA (const int &i) {cellNode(i) = refNodes(nodeOrd,i);}
     );
   }
@@ -246,12 +260,16 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceEdgeTangent): edge ordinal out of bounds");
 
 #endif
-    using inputDeviceType = typename decltype(refEdgeTangent)::device_type;
-    const auto edgeMap = RefSubcellParametrization<inputDeviceType>::get(1, parentCell.getKey());
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refEdgeTangent)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceEdgeTangent(..): output view's memory space is not compatible with DeviceType");
+
+    const auto edgeMap = RefSubcellParametrization<DeviceType>::get(1, parentCell.getKey());
   
     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
     //                                     => edge Tangent: -> C_1(*)
-    Kokkos::parallel_for(Kokkos::RangePolicy<typename inputDeviceType::execution_space>(0,parentCell.getDimension()),
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,parentCell.getDimension()),
     KOKKOS_LAMBDA (const int &i) {refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);}
     );
   }
@@ -281,9 +299,13 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceTanV.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 #endif
-    using inputDeviceType = typename decltype(refFaceTanU)::device_type;
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refFaceTanU)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceFaceTangents(..): output views' memory spaces are not compatible with DeviceType");
 
-    const auto faceMap = RefSubcellParametrization<inputDeviceType>::get(2, parentCell.getKey());
+
+    const auto faceMap = RefSubcellParametrization<DeviceType>::get(2, parentCell.getKey());
   
     /*  All ref. face maps have affine coordinate functions:  f_dim(u,v) = C_0(dim) + C_1(dim)*u + C_2(dim)*v
      *                           `   => Tangent vectors are:  refFaceTanU -> C_1(*);    refFaceTanV -> C_2(*)
@@ -291,7 +313,7 @@ namespace Intrepid2 {
 
     // set refFaceTanU -> C_1(*)
     // set refFaceTanV -> C_2(*)
-    Kokkos::parallel_for(Kokkos::RangePolicy<typename inputDeviceType::execution_space>(0,parentCell.getDimension()),
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,parentCell.getDimension()),
         KOKKOS_LAMBDA (const int &i) {
       refFaceTanU(i) = faceMap(faceOrd, i, 1);
       refFaceTanV(i) = faceMap(faceOrd, i, 2);
@@ -314,7 +336,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
 #endif 
-    using executionSpace = typename decltype(refSideNormal)::execution_space;
+    constexpr bool is_accessible = Kokkos::Impl::MemorySpaceAccess<
+        MemSpaceType,
+        typename decltype(refSideNormal)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceSideNormal(..): output view's memory space is not compatible with DeviceType");
 
     const auto dim = parentCell.getDimension();
     if (dim == 2) {
@@ -322,7 +347,7 @@ namespace Intrepid2 {
       getReferenceEdgeTangent(refSideNormal, sideOrd, parentCell);
     
       // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
-      Kokkos::parallel_for(Kokkos::RangePolicy<executionSpace>(0,1),
+      Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,1),
               KOKKOS_LAMBDA (const int &) {
         refSideNormalValueType tmp = refSideNormal(0);
         refSideNormal(0) = refSideNormal(1);
@@ -355,17 +380,20 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
-    using deviceType = typename decltype(refFaceNormal)::device_type;
+    constexpr bool is_accessible = Kokkos::Impl::MemorySpaceAccess<
+        MemSpaceType,
+        typename decltype(refFaceNormal)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceFaceNormal(..): output view's memory space is not compatible with DeviceType");
 
     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(refFaceNormal);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, deviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanU", vcprop), dim );
-    Kokkos::DynRankView< common_value_type, deviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanV", vcprop), dim );
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanU", vcprop), dim );
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanV", vcprop), dim );
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
-    RealSpaceTools<deviceType>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
+    RealSpaceTools<DeviceType>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
   }
 
   template<typename DeviceType>
@@ -404,16 +432,22 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): edgeTangents dimension (i) does not match to worksetJacobians dimension(i)." );
     }
 #endif
-   using deviceType = typename decltype(edgeTangents)::device_type;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(edgeTangents)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalEdgeTangents(..): input/output views' memory spaces are not compatible with DeviceType");
+
   
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(edgeTangents);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, deviceType > refEdgeTan ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > refEdgeTan ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
-    RealSpaceTools<deviceType>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
+    RealSpaceTools<DeviceType>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
   }
 
 
@@ -461,20 +495,25 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians dimension(i) and faceTan dimension (i) must match." );  
     }      
 #endif
-    using deviceType = typename decltype(faceTanU)::device_type;
-    
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(faceTanU)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceTangents(..): input/output views' memory spaces are not compatible with DeviceType");
+
     // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceTanU);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, deviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcprop), dim);
-    Kokkos::DynRankView< common_value_type, deviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcprop), dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcprop), dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcprop), dim);
 
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
-    RealSpaceTools<deviceType>::matvec(faceTanU, worksetJacobians, refFaceTanU);
-    RealSpaceTools<deviceType>::matvec(faceTanV, worksetJacobians, refFaceTanV);
+    RealSpaceTools<DeviceType>::matvec(faceTanU, worksetJacobians, refFaceTanU);
+    RealSpaceTools<DeviceType>::matvec(faceTanV, worksetJacobians, refFaceTanV);
   }
 
   namespace FunctorCellTools {
@@ -519,8 +558,12 @@ namespace Intrepid2 {
                                   worksetSideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
-     
-    using deviceType = typename decltype(sideNormals)::device_type;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(sideNormals)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalSideNormals(..): input/output views' memory spaces are not compatible with DeviceType");
 
     const auto dim = parentCell.getDimension();
   
@@ -528,7 +571,7 @@ namespace Intrepid2 {
       // compute edge tangents and rotate it
       auto vcprop = Kokkos::common_view_alloc_prop(sideNormals);
       using common_value_type = typename decltype(vcprop)::value_type;
-      Kokkos::DynRankView< common_value_type, deviceType > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
+      Kokkos::DynRankView< common_value_type, DeviceType > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
                                                               sideNormals.extent(0),
                                                               sideNormals.extent(1),
                                                               sideNormals.extent(2));
@@ -537,7 +580,7 @@ namespace Intrepid2 {
       //Note: this function has several template parameters and the compiler gets confused if using a lambda function
       using FunctorType = FunctorCellTools::F_edgeNormalsFromTangents<decltype(sideNormals), decltype(edgeTangents)>;
       const auto loopSize = edgeTangents.extent(0)*edgeTangents.extent(1);
-          Kokkos::RangePolicy<typename deviceType::execution_space,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+          Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
           Kokkos::parallel_for( policy, FunctorType(sideNormals, edgeTangents) );
 
     } else {
@@ -579,7 +622,13 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): faceNormals dimension (i) must match to worksetJacobians dimension (i)." );
     }        
 #endif
-    using deviceType = typename decltype(faceNormals)::device_type;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(faceNormals)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceNormals(..): input/output views' memory spaces are not compatible with DeviceType");
+
   
     // this should be provided from users
     // Storage for physical face tangents: rank-3 (C,P,D) arrays
@@ -589,15 +638,15 @@ namespace Intrepid2 {
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceNormals);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, deviceType > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
-    Kokkos::DynRankView< common_value_type, deviceType > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 
                             worksetFaceOrd, 
                             parentCell);
   
-    RealSpaceTools<deviceType>::vecprod(faceNormals, faceTanU, faceTanV);
+    RealSpaceTools<DeviceType>::vecprod(faceNormals, faceTanU, faceTanV);
   }
 }
 

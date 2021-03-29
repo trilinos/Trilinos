@@ -106,6 +106,7 @@ namespace Intrepid2 {
   template<typename DeviceType>
   class CellTools {
     using ExecSpaceType = typename DeviceType::execution_space;
+    using MemSpaceType = typename DeviceType::memory_space;
   public:
 
     /** \brief  Checks if a cell topology has reference cell

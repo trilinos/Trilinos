@@ -73,6 +73,16 @@ namespace Intrepid2 {
                        const Kokkos::DynRankView<physPointValueType,physPointProperties...>     physPoints,
                        const Kokkos::DynRankView<worksetCellValueType,worksetCellProperties...> worksetCell,
                        const shards::CellTopology cellTopo ) {
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(physPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetCell)::memory_space>::accessible;
+
+    static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceFrame(..): input/output views' memory spaces are not compatible with DeviceType");
+
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_mapToReferenceFrameArgs(refPoints, physPoints, worksetCell, cellTopo);
 #endif  
@@ -120,6 +130,20 @@ namespace Intrepid2 {
                                                basis->getBaseCellTopology());
 
 #endif
+
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(initGuess)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(physPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetCell)::memory_space>::accessible;
+
+    static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceFrameInitGuess(..): input/output views' memory spaces are not compatible with DeviceType");
+
+
     const auto cellTopo = basis->getBaseCellTopology();
     const auto spaceDim = cellTopo.getDimension();
 
@@ -128,14 +152,12 @@ namespace Intrepid2 {
     const auto numCells = worksetCell.extent(0);
     const auto numPoints = physPoints.extent(1);
 
-    using deviceType = typename decltype(refPoints)::device_type;
-
-    typedef RealSpaceTools<deviceType> rst;
+    using rst = RealSpaceTools<DeviceType>;
     const auto tol = tolerence();
 
     using result_layout = typename DeduceLayout< decltype(refPoints) >::result_layout;
     auto vcprop = Kokkos::common_view_alloc_prop(refPoints);
-    typedef Kokkos::DynRankView<typename decltype(vcprop)::value_type, result_layout, deviceType > viewType;
+    using viewType = Kokkos::DynRankView<typename decltype(vcprop)::value_type, result_layout, DeviceType >;
 
     // Temp arrays for Newton iterates and Jacobians. Resize according to rank of ref. point array
     viewType xOld(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::xOld", vcprop), numCells, numPoints, spaceDim);
@@ -146,19 +168,16 @@ namespace Intrepid2 {
 
     // jacobian should select fad dimension between xOld and worksetCell as they are input; no front interface yet
     auto vcpropJ = Kokkos::common_view_alloc_prop(refPoints, worksetCell);
-    typedef Kokkos::DynRankView<typename decltype(vcpropJ)::value_type, result_layout, deviceType > viewTypeJ;
+    using viewTypeJ = Kokkos::DynRankView<typename decltype(vcpropJ)::value_type, result_layout, DeviceType >;
     viewTypeJ jacobian(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobian", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
     viewTypeJ jacobianInv(Kokkos::view_alloc("CellTools::mapToReferenceFrameInitGuess::jacobianInv", vcpropJ), numCells, numPoints, spaceDim, spaceDim);
     
-    typedef Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type,deviceType> errorViewType;
+    using errorViewType = Kokkos::DynRankView<typename ScalarTraits<refPointValueType>::scalar_type, DeviceType>;
     errorViewType
       xScalarTmp    ("CellTools::mapToReferenceFrameInitGuess::xScalarTmp",     numCells, numPoints, spaceDim),
       errorPointwise("CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints),
       errorCellwise ("CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells);
-    
-    //auto errorPointwise = Kokkos::createDynRankView(xTmp, "CellTools::mapToReferenceFrameInitGuess::errorPointwise", numCells, numPoints);
-    //auto errorCellwise  = Kokkos::createDynRankView(xTmp, "CellTools::mapToReferenceFrameInitGuess::errorCellwise",  numCells); 
-    
+
     // Newton method to solve the equation F(refPoints) - physPoints = 0:
     // refPoints = xOld - DF^{-1}(xOld)*(F(xOld) - physPoints) = xOld + DF^{-1}(xOld)*(physPoints - F(xOld))
     for (ordinal_type iter=0;iter<Parameters::MaxNewton;++iter) {

@@ -386,7 +386,13 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.extent(2) != primaryCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(2) does not match to the dimension of the cell." );
 #endif
-    using deviceType = typename decltype(subcvCoords)::device_type;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(subcvCoords)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellCoords)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getSubcvCoords(..): input/output views' memory spaces are not compatible with DeviceType");
+
 
     // get array dimensions
     const ordinal_type numCells = cellCoords.extent(0);
@@ -395,7 +401,7 @@ namespace Intrepid2 {
 
     // construct edge and face map for the cell type
     const ordinal_type numEdge = primaryCell.getSubcellCount(1);
-    Kokkos::View<ordinal_type**,deviceType> edgeMap("CellTools::getSubcvCoords::edgeMap", numEdge, 3);
+    Kokkos::View<ordinal_type**,DeviceType> edgeMap("CellTools::getSubcvCoords::edgeMap", numEdge, 3);
     auto edgeMapHost = Kokkos::create_mirror_view(edgeMap);
     for (ordinal_type i=0;i<numEdge;++i) {
       edgeMapHost(i,0) = primaryCell.getNodeCount(1, i);
@@ -404,7 +410,7 @@ namespace Intrepid2 {
     }
 
     const ordinal_type numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
-    Kokkos::View<ordinal_type**,deviceType> faceMap("CellTools::getSubcvCoords::faceMap", numFace, 5);
+    Kokkos::View<ordinal_type**,DeviceType> faceMap("CellTools::getSubcvCoords::faceMap", numFace, 5);
     auto faceMapHost = Kokkos::create_mirror_view(faceMap);
     for (ordinal_type i=0;i<numFace;++i) {
       faceMapHost(i,0) = primaryCell.getNodeCount(2, i);
@@ -421,7 +427,7 @@ namespace Intrepid2 {
     using mapViewType = decltype(edgeMap);
 
     const auto loopSize = numCells;
-    Kokkos::RangePolicy<typename deviceType::execution_space,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType, Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
     switch (primaryCell.getKey()) {
     case shards::Triangle<3>::key:

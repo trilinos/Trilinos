@@ -198,6 +198,14 @@ namespace Intrepid2 {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_mapToPhysicalFrameArgs( physPoints, refPoints, worksetCell, basis->getBaseCellTopology() );
 #endif
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(physPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refPoints)::memory_space>::accessible;
+
+    static_assert(are_accessible, "CellTools<DeviceType>::mapToPhysicalFrame(..): input/output views' memory spaces are not compatible with DeviceType");
+
     const auto cellTopo = basis->getBaseCellTopology();
     const auto numCells = worksetCell.extent(0);
 
@@ -209,7 +217,6 @@ namespace Intrepid2 {
 
     using physPointViewType =Kokkos::DynRankView<physPointValueType,physPointProperties...>;
     using valViewType = Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType>;
-    using executionSpace = typename physPointViewType::execution_space;
 
     valViewType vals;
 
@@ -237,7 +244,7 @@ namespace Intrepid2 {
     using FunctorType    = FunctorCellTools::F_mapToPhysicalFrame<physPointViewType,WorksetType,valViewType>;
 
     const auto loopSize = physPoints.extent(0)*physPoints.extent(1);
-    Kokkos::RangePolicy<executionSpace,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
     Kokkos::parallel_for( policy, FunctorType(physPoints, worksetCell, vals) );
   }
 
@@ -281,10 +288,16 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::mapToReferenceSubcell): refSubcellPoints dimension (0) does not match to paramPoints dimension(0).");
 #endif
 
-    using inputDeviceType = typename decltype(paramPoints)::device_type;
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refSubcellPoints)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(paramPoints)::memory_space>::accessible;
+
+    static_assert(are_accessible, "CellTools<DeviceType>::mapToReferenceSubcell(..): input/output views' memory spaces are not compatible with DeviceType");
 
     // Get the subcell map, i.e., the coefficients of the parametrization function for the subcell
-    const auto subcellMap = RefSubcellParametrization<inputDeviceType>::get(subcellDim, parentCell.getKey());
+    const auto subcellMap = RefSubcellParametrization<DeviceType>::get(subcellDim, parentCell.getKey());
     
     const ordinal_type numPts  = paramPoints.extent(0);
     
@@ -292,7 +305,7 @@ namespace Intrepid2 {
     using FunctorType1 = FunctorCellTools::F_mapReferenceSubcell1<decltype(refSubcellPoints), decltype(paramPoints), decltype(subcellMap)>;
     using FunctorType2 = FunctorCellTools::F_mapReferenceSubcell2<decltype(refSubcellPoints), decltype(paramPoints), decltype(subcellMap)>;
 
-    Kokkos::RangePolicy<typename inputDeviceType::execution_space> policy(0, numPts);
+    Kokkos::RangePolicy<ExecSpaceType> policy(0, numPts);
     // Apply the parametrization map to every point in parameter domain
     switch (subcellDim) {
     case 2: {
