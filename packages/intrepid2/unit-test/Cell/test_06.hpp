@@ -176,13 +176,13 @@ namespace Intrepid2 {
       
       try {
         
-        *outStream
-          << "\n"
-          << "===============================================================================\n" 
-          << "| Test 1: quad c1 element test :                                              |\n" 
-          << "===============================================================================\n\n";
-
         {
+          *outStream
+            << "\n"
+            << "===============================================================================\n"
+            << "| Test 1: reference quad c1 element mapped into 2D physical space:            |\n"
+            << "===============================================================================\n\n";
+
           const ordinal_type C = 3, P = 5, N = 4, D = 2;
           
           Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> pts_on_ref_host("pts_on_ref_host", P, D);
@@ -352,7 +352,87 @@ namespace Intrepid2 {
                 }
           }
 
-          
+
+          *outStream
+            << "\n"
+            << "===============================================================================\n"
+            << "| Test 2: reference quad c1 element mapped into 3D physical space:            |\n"
+            << "===============================================================================\n\n";
+
+
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,HostSpaceType> workset3d_host("workset3d_host", C, N, D+1);
+
+          //set x,y components
+          for(size_t i=0; i<workset_host.extent(0);++i)
+            for(size_t j=0; j<workset_host.extent(1);++j)
+            for(int d=0; d<D;++d)
+              workset3d_host(i,j,d) = workset_host(i,j,d);
+
+          //set z component
+          workset3d_host(0,0,2) = -1.0;
+          workset3d_host(0,1,2) =  1.0;
+          workset3d_host(0,2,2) =  4.0;
+          workset3d_host(0,3,2) =  2.0;
+
+          workset3d_host(1,0,2) =  1.0;
+          workset3d_host(1,1,2) =  0.0;
+          workset3d_host(1,2,2) =  0.0;
+          workset3d_host(1,3,2) =  0.0;
+
+          workset3d_host(2,0,2) =  0.0;
+          workset3d_host(2,1,2) =  0.0;
+          workset3d_host(2,2,2) =  5.0;
+          workset3d_host(2,3,2) =  0.0;
+
+          auto workset3d = Kokkos::create_mirror_view(typename DeviceType::memory_space(), workset3d_host);
+          Kokkos::deep_copy(workset3d, workset3d_host);
+
+          ///
+          /// mapToPhysicalFrame
+          ///
+
+          // ** compute via impl interface
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceType> b_pts3d_on_phy("b_pts_on_phy", C, P, D+1);
+
+
+          {
+            typedef F_mapToPhysicalFrame<decltype(b_pts3d_on_phy),
+                                         decltype(pts_on_ref),
+                                         decltype(workset3d)> FunctorType;
+            Kokkos::parallel_for(policy, FunctorType(b_pts3d_on_phy, pts_on_ref, workset3d));
+          }
+
+          ///
+          /// mapToReferenceFrame
+          ///
+
+          // ** compute via impl interface
+          Kokkos::DynRankView<ValueType,DeviceArrayLayout,DeviceType> b_pts3d_on_ref("b_pts3d_on_ref", C, P, D);
+
+          {
+            typedef F_mapToReferenceFrame<decltype(b_pts3d_on_ref),
+                                          decltype(b_pts3d_on_phy),
+                                          decltype(workset3d)> FunctorType;
+            Kokkos::parallel_for(policy, FunctorType(b_pts3d_on_ref, b_pts3d_on_phy, workset3d));
+          }
+
+          auto b_pts3d_on_ref_host = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), b_pts3d_on_ref);
+          Kokkos::deep_copy(b_pts3d_on_ref_host, b_pts3d_on_ref);
+
+          // ** compare
+          {
+            for (ordinal_type cl=0;cl<C;++cl)
+              for (ordinal_type i=0;i<P;++i)
+                for (ordinal_type j=0;j<D;++j) {
+                  const double diff = std::abs(pts_on_ref_host(i, j) - b_pts3d_on_ref_host(cl, i, j));
+                  if (diff > tol) {
+                    *outStream << "Error (3d physical space) : mapToReferenceFrame (impl version) at ("
+                               << cl << "," << i << "," << j
+                               << ") with diff = " << diff << "\n";
+                    errorFlag++;
+                  }
+                }
+          }
         }
       } catch (std::logic_error &err) {
         //============================================================================================//
