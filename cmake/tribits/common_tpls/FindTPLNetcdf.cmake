@@ -85,10 +85,19 @@ IF (Netcdf_ALLOW_PREFIND)
       "${DOCSTR} header files.")
   ENDIF()
 ELSE()
-  # Curl library is only required if DAP is enabled; should detect inside FindNetCDF.cmake,
-  # but that is not being called... SEMS has DAP enabled; many HPC systems don't, but they
-  # override these settings...
-  SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} curl)
+  # Curl library is only required if DAP is enabled; should detect inside
+  # FindNetCDF.cmake, but that is not being called... SEMS has DAP enabled;
+  # many HPC systems don't, but they override these settings...
+  FIND_PROGRAM(NC_CONFIG "nc-config")
+  IF (NC_CONFIG)
+    EXECUTE_PROCESS(COMMAND "nc-config --has-dap2"
+                    OUTPUT_VARIABLE NETCDF_HAS_DAP2)
+    EXECUTE_PROCESS(COMMAND "nc-config --has-dap4"
+                    OUTPUT_VARIABLE NETCDF_HAS_DAP4)
+  ENDIF()
+  IF ((NOT NC_CONFIG) OR NETCDF_HAS_DAP2 OR NETCDF_HAS_DAP4)
+    SET(REQUIRED_LIBS_NAMES ${REQUIRED_LIBS_NAMES} curl)
+  ENDIF()
 ENDIF()
 
 #

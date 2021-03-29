@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
-#define _FROSCH_PARTITIONOFUNITYBASIS_DECL_hpp
+#ifndef _FROSCH_PARTITIONOFUNITYBASIS_DECL_HPP
+#define _FROSCH_PARTITIONOFUNITYBASIS_DECL_HPP
 
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>

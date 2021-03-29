@@ -1042,9 +1042,11 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
   using lno_t = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
   bool useRadix = !kk_is_gpu_exec_space<execution_space>();
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if(numRows == 0)
+    return;
   SortCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t>
     funct(useRadix, rowmap, entries, values);
-  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if(useRadix)
   {
     Kokkos::parallel_for("sort_crs_matrix", Kokkos::RangePolicy<execution_space>(0, numRows), funct);
@@ -1054,16 +1056,15 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
     //Try to get teamsize to be largest power of 2 not greater than avg entries per row
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
-    int teamSize = 1;
-    lno_t avgDeg = 0;
-    if(numRows)
-      avgDeg = (entries.extent(0) + numRows - 1) / numRows;
-    while(teamSize * 2 * 2 <= avgDeg)
+    lno_t idealTeamSize = 1;
+    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    while(idealTeamSize < avgDeg / 2)
     {
-      teamSize *= 2;
+      idealTeamSize *= 2;
     }
-    team_pol temp(numRows, teamSize);
-    teamSize = std::min(teamSize, temp.team_size_max(funct, Kokkos::ParallelForTag()));
+    team_pol temp(numRows, 1);
+    lno_t maxTeamSize = temp.team_size_max(funct, Kokkos::ParallelForTag());
+    lno_t teamSize = std::min(idealTeamSize, maxTeamSize);
     Kokkos::parallel_for("sort_crs_matrix", team_pol(numRows, teamSize), funct);
   }
 }
@@ -1090,9 +1091,11 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
   using lno_t = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
   bool useRadix = !kk_is_gpu_exec_space<execution_space>();
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if(numRows == 0)
+    return;
   SortCrsGraphFunctor<execution_space, rowmap_t, entries_t>
     funct(useRadix, rowmap, entries);
-  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if(useRadix)
   {
     Kokkos::parallel_for("sort_crs_graph", Kokkos::RangePolicy<execution_space>(0, numRows), funct);
@@ -1103,16 +1106,15 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
     //half the entries per row. 0.5 * #entries is bitonic's parallelism within a row.
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
-    int teamSize = 1;
-    lno_t avgDeg = 0;
-    if(numRows)
-      avgDeg = (entries.extent(0) + numRows - 1) / numRows;
-    while(teamSize * 2 * 2 <= avgDeg)
+    lno_t idealTeamSize = 1;
+    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    while(idealTeamSize < avgDeg / 2)
     {
-      teamSize *= 2;
+      idealTeamSize *= 2;
     }
-    team_pol temp(numRows, teamSize);
-    teamSize = std::min(teamSize, temp.team_size_max(funct, Kokkos::ParallelForTag()));
+    team_pol temp(numRows, 1);
+    lno_t maxTeamSize = temp.team_size_max(funct, Kokkos::ParallelForTag());
+    lno_t teamSize = std::min(idealTeamSize, maxTeamSize);
     Kokkos::parallel_for("sort_crs_graph", team_pol(numRows, teamSize), funct);
   }
 }

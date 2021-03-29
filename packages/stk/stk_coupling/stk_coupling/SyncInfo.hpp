@@ -14,6 +14,8 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp> // for CommBuffer
 #include <stk_coupling/Constants.hpp>
+#include <stk_coupling/SplitComms.hpp>
+#include <stk_coupling/impl_NamedValues.hpp>
 
 namespace stk
 {
@@ -23,121 +25,72 @@ namespace coupling
 class SyncInfo
 {
 public:
-  template <typename ValueType>
-  ValueType get_value(const std::string & parameterName) const;
-
-  void set_value(const std::string & parameterName, const bool &value) { bvals[parameterName] = value; }
-  void set_value(const std::string & parameterName, const int &value) { ivals[parameterName] = value; }
-  void set_value(const std::string & parameterName, const double &value) { dvals[parameterName] = value; }
-  void set_value(const std::string & parameterName, const std::string &value) { svals[parameterName] = value; }
+  SyncInfo(const std::string& name = "")
+    : m_name(name)
+  { }
 
   template <typename ValueType>
-  bool has_value(const std::string & parameterName) const;
+  void set_value(const std::string & parameterName, const ValueType& value)
+  {
+    m_vals.set_value<ValueType>(parameterName, value);
+  }
 
-  SyncInfo exchange(stk::ParallelMachine global, stk::ParallelMachine local);
+  template <typename ValueType>
+  ValueType get_value(const std::string & parameterName) const
+  {
+    return m_vals.get_value<ValueType>(parameterName);
+  }
 
-private:
-  std::map<std::string, bool> bvals;
-  std::map<std::string, int> ivals;
-  std::map<std::string, double> dvals;
-  std::map<std::string, std::string> svals;
+  template <typename ValueType>
+  ValueType get_value(const std::string & parameterName, const ValueType& defaultValue) const
+  {
+    if (has_value<ValueType>(parameterName)) return get_value<ValueType>(parameterName);
+    else return defaultValue;
+  }
 
+  template <typename ValueType>
+  bool has_value(const std::string & parameterName) const
+  {
+    return m_vals.has_value<ValueType>(parameterName);
+  }
+
+  using ColorToSyncInfoMap = std::map<int, SyncInfo>;
+
+  SyncInfo exchange(const SplitComms & splitComms, int otherColor) const;
+  ColorToSyncInfoMap exchange(const SplitComms & splitComms) const;
+
+  const std::string& get_name() const { return m_name; }
+
+  const impl::NamedValues& get_values() const { return m_vals; }
+
+protected:
   void pack(stk::CommBuffer & b) const;
   void unpack(stk::CommBuffer & b);
+
+  impl::NamedValues m_vals;
+  std::string m_name;
 };
 
-namespace impl {
-  template<typename MapType>
-  typename MapType::mapped_type get_value_from_map(const MapType& vals, const std::string& parameterName)
-  {
-    typename MapType::const_iterator iter = vals.find(parameterName);
-    ThrowRequireMsg(iter != vals.end(), "get_value didn't find parameterName " << parameterName);
-    return iter->second;
-  }
+template <>
+inline void SyncInfo::set_value<SyncMode>(const std::string & parameterName, const SyncMode & value)
+{
+  set_value<int>(parameterName, static_cast<int>(value));
 }
 
 template <>
-inline bool SyncInfo::get_value<bool>(const std::string & parameterName) const
+inline SyncMode SyncInfo::get_value<SyncMode>(const std::string & parameterName) const
 {
-  return impl::get_value_from_map(bvals, parameterName);
+  return static_cast<SyncMode>(get_value<int>(parameterName));
 }
 
 template <>
-inline int SyncInfo::get_value<int>(const std::string & parameterName) const
+inline bool SyncInfo::has_value<SyncMode>(const std::string & parameterName) const
 {
-  return impl::get_value_from_map(ivals, parameterName);
+  return has_value<int>(parameterName);
 }
-
-template <>
-inline double SyncInfo::get_value<double>(const std::string & parameterName) const
-{
-  return impl::get_value_from_map(dvals, parameterName);
-}
-
-template <>
-inline std::string SyncInfo::get_value<std::string>(const std::string & parameterName) const
-{
-  return impl::get_value_from_map(svals, parameterName);
-}
-
-template <>
-inline bool SyncInfo::has_value<bool>(const std::string & parameterName) const
-{
-  return bvals.count(parameterName) != 0;
-}
-
-template <>
-inline bool SyncInfo::has_value<double>(const std::string & parameterName) const
-{
-  return dvals.count(parameterName) != 0;
-}
-
-template <>
-inline bool SyncInfo::has_value<int>(const std::string & parameterName) const
-{
-  return ivals.count(parameterName) != 0;
-}
-
-template <>
-inline bool SyncInfo::has_value<std::string>(const std::string & parameterName) const
-{
-  return svals.count(parameterName) != 0;
-}
-
-template<typename ValueType>
-bool check_consistency(const SyncInfo & localSyncInfo, 
-                       const SyncInfo & remoteSyncInfo, 
-                       const std::string & parameterName)
-{
-  return (localSyncInfo.has_value<ValueType>(parameterName) && remoteSyncInfo.has_value<ValueType>(parameterName)) 
-      && (localSyncInfo.get_value<ValueType>(parameterName) == remoteSyncInfo.get_value<ValueType>(parameterName));
-}
-
-template<typename ValueType>
-bool copy_value(const SyncInfo & source, 
-                const std::string & sourceParameterName,
-                SyncInfo & destination, 
-                const std::string & destinationParameterName)
-{
-  ThrowAssertMsg(source.has_value<ValueType>(sourceParameterName), "Parameter " << sourceParameterName << " is missing from source SyncInfo");
-  if(source.has_value<ValueType>(sourceParameterName)) {
-    std::cout<<source.get_value<std::string>(stk::coupling::AppName)<<": setting " << destinationParameterName << " from " << sourceParameterName << std::endl;
-    destination.set_value(destinationParameterName, source.get_value<ValueType>(sourceParameterName));
-    return true;
-  }
-
-  return false;
-}
-
-void check_sync_mode_consistency(const SyncInfo & myInfo,
-                                 const SyncInfo & otherInfo);
-
-double choose_value(const SyncInfo & myInfo,
-                    const SyncInfo & otherInfo,
-                    const std::string & parameterName,
-                    stk::coupling::SyncMode syncMode);
 
 } // namespace coupling
 } // namespace stk
 
-#endif /* STK_COUPLING_CONFIGURATION_INFO_HPP */
+#endif /* STK_COUPLING_SYNC_INFO_HPP */
+

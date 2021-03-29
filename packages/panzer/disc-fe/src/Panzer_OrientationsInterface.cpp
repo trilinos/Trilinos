@@ -46,6 +46,10 @@
 #include "Panzer_ConnManager.hpp"
 #include "PanzerDiscFE_config.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
+#include "Panzer_LocalPartitioningUtilities.hpp"
+#include "Panzer_NodeType.hpp"
+#include "Tpetra_Import.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 namespace panzer {
 
@@ -53,59 +57,103 @@ namespace
 {
 
 void
-buildIntrepidOrientation(std::vector<Intrepid2::Orientation> & orientation,
-                         panzer::ConnManager & connMgr) {
-  //const Teuchos::RCP<const panzer::UniqueGlobalIndexer<LocalOrdinal,GlobalOrdinal> > globalIndexer) {
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::RCP;
-  using Teuchos::rcp;
+buildIntrepidOrientation(const Teuchos::RCP<const Teuchos::Comm<int>> & comm,
+                         panzer::ConnManager & conn,
+                         std::vector<Intrepid2::Orientation> & orientations)
+{
 
-  orientation.clear();
+  using MVector = Tpetra::MultiVector<panzer::GlobalOrdinal, panzer::LocalOrdinal, panzer::GlobalOrdinal, panzer::TpetraNodeType>;
+  using Map = Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+  using Importer = Tpetra::Import<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType>;
+  using NodeView = Kokkos::View<panzer::GlobalOrdinal*, Kokkos::DefaultHostExecutionSpace>;
 
-  // Retrive element blocks and its meta data
-  const int numElementBlocks = connMgr.numElementBlocks();
+  // First we need to build the indexing scheme
+  PHX::View<panzer::GlobalOrdinal*> owned_cells, ghost_cells, virtual_cells;
+  fillLocalCellIDs(comm, conn, owned_cells, ghost_cells, virtual_cells);
 
-  std::vector<std::string> elementBlockIds;
-  std::vector<shards::CellTopology> elementBlockTopologies;
+  // Build a map and importer for syncing the nodal connectivity
+  auto owned_cell_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned_cells,0,comm));
+  auto ghost_cell_map = Teuchos::rcp(new Map(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghost_cells,0,comm));
 
-  connMgr.getElementBlockIds(elementBlockIds);
-  connMgr.getElementBlockTopologies(elementBlockTopologies);
+  // Build importer: imports from owned cells map to ghost cell map
+  auto importer = Teuchos::rcp(new Importer(owned_cell_map,ghost_cell_map));
 
-  TEUCHOS_TEST_FOR_EXCEPTION(numElementBlocks <= 0 &&
-                             numElementBlocks != static_cast<int>(elementBlockIds.size()) &&
-                             numElementBlocks != static_cast<int>(elementBlockTopologies.size()),
-                             std::logic_error,
-                             "panzer::buildIntrepidOrientation: Number of element blocks does not match to element block meta data");
+  // Grab the cell topology from the conn manager
+  shards::CellTopology topology;
+  {
+    // Retrive element blocks and its meta data
+    const int numElementBlocks = conn.numElementBlocks();
 
-  // Currently panzer support only one type of elements for whole mesh (use the first cell topology)
-  const auto cellTopo = elementBlockTopologies.at(0);
-  const int numVertexPerCell = cellTopo.getVertexCount();
+    std::vector<std::string> elementBlockIds;
+    std::vector<shards::CellTopology> elementBlockTopologies;
 
-  const auto fp = NodalFieldPattern(cellTopo);
-  connMgr.buildConnectivity(fp);
+    conn.getElementBlockIds(elementBlockIds);
+    conn.getElementBlockTopologies(elementBlockTopologies);
 
-  // Count and pre-alloc orientations
-  int total_elems = 0;
-  for (int i=0;i<numElementBlocks;++i) {
-    total_elems += connMgr.getElementBlock(elementBlockIds.at(i)).size();
+    TEUCHOS_TEST_FOR_EXCEPTION(numElementBlocks <= 0 &&
+                               numElementBlocks != static_cast<int>(elementBlockIds.size()) &&
+                               numElementBlocks != static_cast<int>(elementBlockTopologies.size()),
+                               std::logic_error,
+                               "panzer::buildIntrepidOrientation: Number of element blocks does not match to element block meta data");
+
+    topology = elementBlockTopologies.at(0);
+  }
+  const int num_nodes_per_cell = topology.getVertexCount();
+
+  // Create Tpetra multivectors for storing global node ids
+  auto owned_nodes_vector = Teuchos::rcp(new MVector(owned_cell_map,num_nodes_per_cell));
+  auto ghost_nodes_vector = Teuchos::rcp(new MVector(ghost_cell_map,num_nodes_per_cell));
+
+  // Make sure the conn is setup for a nodal connectivity
+  panzer::NodalFieldPattern pattern(topology);
+  conn.buildConnectivity(pattern);
+
+  const int num_owned_cells = owned_cells.extent(0);
+  const int num_ghost_cells = ghost_cells.extent(0);
+
+  // Initialize the orientations vector
+  orientations.clear();
+  orientations.resize(num_owned_cells+num_ghost_cells);
+
+  // Fill the owned vector with the nodal connectivity of the cells on this processor
+  {
+    auto vector_view = owned_nodes_vector->getLocalViewHost();
+    for(int cell=0; cell<owned_cells.extent_int(0); ++cell){
+      const GlobalOrdinal * nodes = conn.getConnectivity(cell);
+      for(int node=0; node<num_nodes_per_cell; ++node)
+        vector_view(cell,node) = nodes[node];
+    }
+    owned_nodes_vector->sync_device();
   }
 
-  orientation.resize(total_elems);
-  // Loop over element blocks
-  for (int i=0;i<numElementBlocks;++i) {
-    // get elements in a block
-    const auto &elementBlock = connMgr.getElementBlock(elementBlockIds.at(i));
+  // Import into the ghost vector
+  ghost_nodes_vector->doImport(*owned_nodes_vector,*importer,Tpetra::CombineMode::REPLACE);
 
-    const int numElementsPerBlock = elementBlock.size();
-
-    // construct orientation information
-    for (int c=0;c<numElementsPerBlock;++c) {
-      const int localCellId = elementBlock.at(c);
-      Kokkos::View<const panzer::GlobalOrdinal*, Kokkos::DefaultHostExecutionSpace>
-        nodes(connMgr.getConnectivity(localCellId), numVertexPerCell);
-      orientation[localCellId] = (Intrepid2::Orientation::getOrientation(cellTopo, nodes));
+  // Add owned orientations
+  {
+    owned_nodes_vector->sync_host();
+    auto vector_view = owned_nodes_vector->getLocalViewHost();
+    for(int cell=0; cell<num_owned_cells; ++cell){
+      NodeView nodes("nodes",num_nodes_per_cell);
+      for(int node=0; node<num_nodes_per_cell; ++node)
+        nodes(node) = vector_view(cell,node);
+      orientations[cell] = Intrepid2::Orientation::getOrientation(topology, nodes);
     }
   }
+
+  // Add ghost orientations
+  {
+    ghost_nodes_vector->sync_host();
+    auto vector_view = ghost_nodes_vector->getLocalViewHost();
+    for(int ghost_cell=0; ghost_cell<num_ghost_cells; ++ghost_cell){
+      const int cell = num_owned_cells + ghost_cell;
+      NodeView nodes("nodes",num_nodes_per_cell);
+      for(int node=0; node<num_nodes_per_cell; ++node)
+        nodes(node) = vector_view(ghost_cell,node);
+      orientations[cell] = Intrepid2::Orientation::getOrientation(topology, nodes);
+    }
+  }
+
 }
 
 Teuchos::RCP<std::vector<Intrepid2::Orientation> >
@@ -117,12 +165,13 @@ buildIntrepidOrientation(const Teuchos::RCP<const GlobalIndexer> globalIndexer)
 
   auto orientation = rcp(new std::vector<Intrepid2::Orientation>);
 
-  auto connMgr = globalIndexer->getConnManager()->noConnectivityClone();
+  auto comm = globalIndexer->getComm();
+  auto conn = globalIndexer->getConnManager()->noConnectivityClone();
 
-  TEUCHOS_TEST_FOR_EXCEPTION(connMgr == Teuchos::null,std::logic_error,
+  TEUCHOS_TEST_FOR_EXCEPTION(conn == Teuchos::null,std::logic_error,
                              "panzer::buildIntrepidOrientation: Could not cast ConnManagerBase");
 
-  buildIntrepidOrientation(*orientation, *connMgr);
+  buildIntrepidOrientation(comm, *conn, *orientation);
   return orientation;
 
 }

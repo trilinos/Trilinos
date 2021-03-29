@@ -26,23 +26,6 @@ namespace Tempus {
  *  expected that users will NOT modify any of that data.  If the user
  *  wishes to modify the solution and/or stepper data during the
  *  Stepper::takeStep, they should use the Modifier class (with care!).
- *
- *  Below is the HHTAlpha algorithm with the locations of the observe calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{HHTAlpha with observe calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State Solve for $x_{n+1}$ using the HHT one-step update.
- *    \State \quad {\it observer.observe(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State Update $\dot x_{n+1}$.
- *    \State \quad {\it observer.observe(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
  */
 template<class Scalar>
 class StepperHHTAlphaObserverBase

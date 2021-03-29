@@ -25,19 +25,29 @@ namespace Tempus {
  *  solver (e.g., a non-linear solver, like NOX).
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Forward Euler is
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Forward Euler}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State {Get $\dot{x}$ from SolutionHistory or from Stepper}
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *  The single-timestep algorithm for Trapezoidal is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Trapezoidal \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf Set ODE parameters.}
+ *      \item \quad {\bf Time derivative: }
+ *                  $\dot{x}_{n} = \frac{(x_{n} - x_{n-1})}{(\Delta t_n/2)} - \dot{x}_{n-1}.$
+ *      \item \quad {\bf Alpha: $\alpha = \frac{2}{\Delta t_n}$}
+ *      \item \quad {\bf Beta: $\beta = 1$}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item {\bf Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0$ for $x_n$}
+ *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item $\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}$
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
  *  \f}
  *
  *  The First-Same-As-Last (FSAL) principle is required for the Trapezoidal

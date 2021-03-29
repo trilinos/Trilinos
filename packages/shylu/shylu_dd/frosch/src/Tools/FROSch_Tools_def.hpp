@@ -69,7 +69,7 @@ namespace FROSch {
     template <typename LO,typename GO>
     int OverlappingData<LO,GO>::Merge(const RCP<OverlappingData<LO,GO> > od) const
     {
-        FROSCH_ASSERT(GID_ == od->GID_,"FROSch::OverlappingData : ERROR: GID_ != od->GID_");
+        FROSCH_ASSERT(GID_ == od->GID_,"FROSch::OverlappingData: GID_ != od->GID_");
         for (typename IntVec::iterator it = od->PIDs_.begin(); it != od->PIDs_.end(); it++) {
             PIDs_.push_back(*it);
         }
@@ -850,17 +850,17 @@ namespace FROSch {
                                              ArrayRCP<unsigned> dofsPerNode)
     {
         FROSCH_DETAILTIMER_START(assembleSubdomainMapTime,"AssembleSubdomainMap");
-        FROSCH_ASSERT(numberOfBlocks>0,"FROSch : ERROR: numberOfBlocks==0");
-        FROSCH_ASSERT(dofsMaps.size()==numberOfBlocks,"FROSch : ERROR: dofsMaps.size()!=NumberOfBlocks_");
-        FROSCH_ASSERT(dofsPerNode.size()==numberOfBlocks,"FROSch : ERROR: dofsPerNode.size()!=NumberOfBlocks_");
+        FROSCH_ASSERT(numberOfBlocks>0,"FROSch: numberOfBlocks==0");
+        FROSCH_ASSERT(dofsMaps.size()==numberOfBlocks,"FROSch: dofsMaps.size()!=NumberOfBlocks_");
+        FROSCH_ASSERT(dofsPerNode.size()==numberOfBlocks,"FROSch: dofsPerNode.size()!=NumberOfBlocks_");
 
         Array<GO> mapVector(0);
         for (unsigned i=0; i<numberOfBlocks; i++) {
-            FROSCH_ASSERT(!dofsMaps[i].is_null(),"FROSch : ERROR: dofsMaps[i].is_null()");
-            FROSCH_ASSERT(dofsMaps[i].size()==dofsPerNode[i],"FROSch : ERROR: dofsMaps[i].size()!=dofsPerNode[i]");
+            FROSCH_ASSERT(!dofsMaps[i].is_null(),"FROSch: dofsMaps[i].is_null()");
+            FROSCH_ASSERT(dofsMaps[i].size()==dofsPerNode[i],"FROSch: dofsMaps[i].size()!=dofsPerNode[i]");
             unsigned numMyElements = dofsMaps[i][0]->getNodeNumElements();
             for (unsigned j=1; j<dofsPerNode[i]; j++) {
-                FROSCH_ASSERT(dofsMaps[i][j]->getNodeNumElements()==(unsigned) numMyElements,"FROSch : ERROR: dofsMaps[i][j]->getNodeNumElements()==numMyElements");
+                FROSCH_ASSERT(dofsMaps[i][j]->getNodeNumElements()==(unsigned) numMyElements,"FROSch: dofsMaps[i][j]->getNodeNumElements()==numMyElements");
             }
             for (unsigned j=0; j<numMyElements; j++) {
                 for (unsigned k=0; k<dofsPerNode[i]; k++) {
@@ -868,7 +868,7 @@ namespace FROSch {
                 }
             }
         }
-        FROSCH_ASSERT(!dofsMaps[0].is_null(),"FROSch : ERROR: dofsMaps[0].is_null()");
+        FROSCH_ASSERT(!dofsMaps[0].is_null(),"FROSch: dofsMaps[0].is_null()");
         return MapFactory<LO,GO,NO>::Build(dofsMaps[0][0]->lib(),-1,mapVector(),0,dofsMaps[0][0]->getComm());
     }
 
@@ -1315,7 +1315,7 @@ namespace FROSch {
 
     template <class SC, class LO,class GO,class NO>
     RCP<const MultiVector<SC,LO,GO,NO> > BuildNullSpace(unsigned dimension,
-                                                        unsigned nullSpaceType,
+                                                        const NullSpaceType nullSpaceType,
                                                         RCP<const Map<LO,GO,NO> > repeatedMap,
                                                         unsigned dofsPerNode,
                                                         ArrayRCP<RCP<const Map<LO,GO,NO> > > dofsMaps,
@@ -1328,14 +1328,14 @@ namespace FROSch {
         FROSCH_ASSERT(dofsMaps.size()==dofsPerNode,"dofsMaps.size()!=dofsPerNode.");
 
         RCP<MultiVector<SC,LO,GO,NO> > nullSpaceBasis;
-        if (nullSpaceType==0) { // n-dimensional Laplace
+        if (nullSpaceType == NullSpaceType::Laplace) {
             nullSpaceBasis = MultiVectorFactory<SC,LO,GO,NO>::Build(repeatedMap,dofsPerNode);
             for (unsigned i=0; i<dofsPerNode; i++) {
                 for (unsigned j=0; j<dofsMaps[i]->getNodeNumElements(); j++) {
                     nullSpaceBasis->getDataNonConst(i)[repeatedMap->getLocalElement(dofsMaps[i]->getGlobalElement(j))] = ScalarTraits<SC>::one();
                 }
             }
-        } else if (nullSpaceType==1) { // linear elasticity
+        } else if (nullSpaceType == NullSpaceType::Elasticity) {
             FROSCH_ASSERT(!nodeList.is_null(),"nodeList.is_null()==true. Cannot build the null space for linear elasticity.");
             FROSCH_ASSERT(nodeList->getNumVectors()==dimension,"nodeList->getNumVectors()!=dimension.");
             FROSCH_ASSERT(dofsPerNode==dimension,"dofsPerNode==dimension.");
@@ -1388,7 +1388,7 @@ namespace FROSch {
                                                                  const Epetra_BlockMap &map,
                                                                  RCP<const Comm<int> > comm)
     {
-        FROSCH_ASSERT(false,"FROSch::ConvertToXpetra : ERROR: Needs specialization.");
+        FROSCH_ASSERT(false,"FROSch::ConvertToXpetra: Needs specialization.");
         return null;
     }
 
@@ -1397,7 +1397,7 @@ namespace FROSch {
                                                                           Epetra_CrsMatrix &matrix,
                                                                           RCP<const Comm<int> > comm)
     {
-        FROSCH_ASSERT(false,"FROSch::ConvertToXpetra : ERROR: Needs specialization.");
+        FROSCH_ASSERT(false,"FROSch::ConvertToXpetra: Needs specialization.");
         return null;
     }
 

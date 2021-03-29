@@ -259,7 +259,7 @@ namespace FROSch {
         } else if (!coarseSpaceList->get("Verbosity","All").compare("All")) {
             verbosity = All;
         } else {
-            FROSCH_ASSERT(false,"FROSch::IPOUHarmonicCoarseOperator : ERROR: Specify a valid verbosity level.");
+            FROSCH_ASSERT(false,"FROSch::IPOUHarmonicCoarseOperator: Specify a valid verbosity level.");
         }
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",true);

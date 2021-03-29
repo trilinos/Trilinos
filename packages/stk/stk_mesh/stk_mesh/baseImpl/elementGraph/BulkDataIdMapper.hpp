@@ -65,7 +65,7 @@ public:
     LocalIdMapperT(const stk::mesh::BulkData &bulk, stk::mesh::EntityRank rank, const stk::mesh::Selector& sel)
     : entityToLocalId()
     {
-        set_local_ids(bulk, rank, sel);
+        set_local_ids(bulk, rank, sel & bulk.mesh_meta_data().locally_owned_part());
     }
 
     const LocalIDType INVALID_LOCAL_ID = std::numeric_limits<LocalIDType>::max();

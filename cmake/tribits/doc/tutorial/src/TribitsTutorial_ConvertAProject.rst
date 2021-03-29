@@ -392,7 +392,7 @@ in this project level CMakeLists file:
 1. CMAKE_MINIMUM_VERSION() - set the minimum version of cmake required
    for this project o build.  If you try and run with a lower version
    then there wil be an error. You cannot specify a version lower than
-   3.10.0
+   3.17.0
 #. Include ProjectNmae.cmake and call PROJECT() with argument PROJECT_NAME
 #. specify the directory to tribits and include TriBITS.cmake
 #. specify which packages are turned on/off by default
@@ -401,20 +401,17 @@ in this project level CMakeLists file:
 Here is an examlpe of a project CMakeLists::
 
   # Deefine your minimum CMake version
-  CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0 FATAL_ERROR)
-
+  CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0 FATAL_ERROR)
 
   # Define your project name and set up major project options
   INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
   PROJECT(${PROJECT_NAME} NONE)
-
 
   # Pull in the TriBITS system and execute
   SET(${PROJECT_NAME}_TRIBITS_DIR
      "${CMAKE_CURRENT_LIST_DIR}/../.."  CACHE  STRING
     "TriBITS base directory (default assumes in TriBITS source tree)")
   INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
-
 
   # Do all of the processing for this Tribits project
   TRIBITS_PROJECT()

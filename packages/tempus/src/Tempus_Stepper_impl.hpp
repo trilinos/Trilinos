@@ -13,6 +13,174 @@
 namespace Tempus {
 
 
+template<class Scalar>
+void Stepper<Scalar>::initialize()
+{
+  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->setOutputToRootOnly(0);
+
+  bool isValidSetup = this->isValidSetup(*out);
+
+  if (isValidSetup)
+    this->isInitialized_ = true;   // Only place it is set to true.
+  else
+    this->describe(*out, Teuchos::VERB_MEDIUM);
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::checkInitialized()
+{
+  if ( !this->isInitialized() ) {
+    this->describe( *(this->getOStream()), Teuchos::VERB_MEDIUM);
+    TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
+      "Error - " << this->description() << " is not initialized!");
+  }
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::setUseFSALTrueOnly(bool a)
+{
+  if (a == false) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
+    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALTrueOnly()");
+    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
+         << "can only be set to true.  Leaving set to true." << std::endl;
+  }
+  useFSAL_ = true;
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::setUseFSALFalseOnly(bool a)
+{
+  if (a == true) {
+    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
+    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALFalseOnly()");
+    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
+         << "can only be set to false.  Leaving set to false." << std::endl;
+  }
+  useFSAL_ = false;
+}
+
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperX()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperX_ == Teuchos::null, std::logic_error,
+    "Error - stepperX_ has not been set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperX_;
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperXDot()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDot_ == Teuchos::null, std::logic_error,
+    "Error - stepperXDot_ has not been set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperXDot_;
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperXDotDot()
+{
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
+    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperXDotDot_;
+}
+
+// Need to deprecate.
+template<class Scalar>
+Teuchos::RCP<Thyra::VectorBase<Scalar> >
+Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
+{
+  if (state->getXDotDot() != Teuchos::null) stepperXDotDot_=state->getXDotDot();
+  // Else use temporary storage stepperXDotDot_ which should have been set in
+  // setInitialConditions().
+
+  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
+    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
+    "        can not be set from the state!\n");
+
+  return stepperXDotDot_;
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::describe(Teuchos::FancyOStream        & in_out,
+                               const Teuchos::EVerbosityLevel verbLevel) const
+{
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << "--- Stepper ---\n"
+       << "  isInitialized_      = " << Teuchos::toString(isInitialized_) << std::endl
+       << "  stepperType_        = " << stepperType_ << std::endl
+       << "  useFSAL_            = " << Teuchos::toString(useFSAL_) << std::endl
+       << "  ICConsistency_      = " << ICConsistency_ << std::endl
+       << "  ICConsistencyCheck_ = " << Teuchos::toString(ICConsistencyCheck_) << std::endl
+       << "  stepperX_           = " << stepperX_ << std::endl
+       << "  stepperXDot_        = " << stepperXDot_ << std::endl
+       << "  stepperXDotDot_     = " << stepperXDotDot_ << std::endl;
+}
+
+
+template<class Scalar>
+bool Stepper<Scalar>::isValidSetup(
+  Teuchos::FancyOStream & in_out) const
+{
+  bool isValidSetup = true;
+
+  if ( !(ICConsistency_ == "None" || ICConsistency_ == "Zero" ||
+         ICConsistency_ == "App"  || ICConsistency_ == "Consistent") ) {
+    isValidSetup = false;
+    auto out = Teuchos::fancyOStream( in_out.getOStream() );
+    out->setOutputToRootOnly(0);
+    *out << "The IC consistency does not have a valid value!\n"
+         << "('None', 'Zero', 'App' or 'Consistent')\n"
+         << "  ICConsistency  = " << ICConsistency_ << "\n";
+  }
+
+  return isValidSetup;
+}
+
+
+template<class Scalar>
+void Stepper<Scalar>::
+setStepperValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  if (pl != Teuchos::null) {
+    auto stepperType =
+      pl->get<std::string>("Stepper Type", this->getStepperType());
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      stepperType != this->getStepperType() ,std::runtime_error,
+      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
+      "  does not match type for this Stepper (='"
+      + this->getStepperType() + "').");
+    this->setStepperType(stepperType);
+
+    this->setUseFSAL(pl->get<bool>("Use FSAL", false));
+    this->setICConsistency(
+      pl->get<std::string>("Initial Condition Consistency", "None"));
+    this->setICConsistencyCheck(
+      pl->get<bool>("Initial Condition Consistency Check", false));
+  }
+}
+
+
+// Nonmember Helper Functions.
+// ------------------------------------------------------------------------
+
 void getValidParametersBasic(
   Teuchos::RCP<Teuchos::ParameterList> pl, std::string stepperType)
 {
@@ -72,6 +240,158 @@ void getValidParametersBasic(
     "In general for explicit and implicit steppers, the default is true,\n"
     "because it is fairly cheap with just one residual evaluation.\n"
     "Individual steppers may override this default.");
+}
+
+
+template<class Scalar>
+void validExplicitODE(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+  const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                        outArgs.supports(MEB::OUT_ARG_f);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+    model->description() << " can not support an explicit ODE with\n"
+    << "  IN_ARG_x  = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+    << "  OUT_ARG_f = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+    << "Explicit ODE requires:\n"
+    << "  IN_ARG_x  = true\n"
+    << "  OUT_ARG_f = true\n"
+    << "\n"
+    << "NOTE: Currently the convention to evaluate f(x,t) is to set\n"
+    << "xdot=null!  There is no InArgs support to test if xdot is null,\n"
+    << "so we set xdot=null and hope the ModelEvaluator can handle it.\n");
+
+  return;
+}
+
+
+template<class Scalar>
+void validSecondOrderExplicitODE(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+  const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                        inArgs.supports(MEB::IN_ARG_x_dot) and
+                        outArgs.supports(MEB::OUT_ARG_f);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+    model->description() << "can not support an explicit ODE with\n"
+    << "  IN_ARG_x  = " << inArgs.supports(MEB::IN_ARG_x) << "\n"
+    << "  IN_ARG_x_dot  = " << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+    << "  OUT_ARG_f = " << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+    << "Explicit ODE requires:\n"
+    << "  IN_ARG_x  = true\n"
+    << "  IN_ARG_x_dot  = true\n"
+    << "  OUT_ARG_f = true\n"
+    << "\n"
+    << "NOTE: Currently the convention to evaluate f(x, xdot, t) is to\n"
+    << "set xdotdot=null!  There is no InArgs support to test if xdotdot\n"
+    << "is null, so we set xdotdot=null and hope the ModelEvaluator can\n"
+    << "handle it.\n");
+
+  return;
+}
+
+
+template<class Scalar>
+void validImplicitODE_DAE(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+  const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                        inArgs.supports(MEB::IN_ARG_x_dot) and
+                        inArgs.supports(MEB::IN_ARG_alpha) and
+                        inArgs.supports(MEB::IN_ARG_beta) and
+                       !inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
+                        outArgs.supports(MEB::OUT_ARG_f) and
+                        outArgs.supports(MEB::OUT_ARG_W);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+    model->description() << " can not support an implicit ODE with\n"
+    << "  IN_ARG_x                 = "
+    << inArgs.supports(MEB::IN_ARG_x) << "\n"
+    << "  IN_ARG_x_dot             = "
+    << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+    << "  IN_ARG_alpha             = "
+    << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+    << "  IN_ARG_beta              = "
+    << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+    << "  IN_ARG_W_x_dot_dot_coeff = "
+    << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
+    << "  OUT_ARG_f                = "
+    << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+    << "  OUT_ARG_W                = "
+    << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+    << "Implicit ODE requires:\n"
+    << "  IN_ARG_x                 = true\n"
+    << "  IN_ARG_x_dot             = true\n"
+    << "  IN_ARG_alpha             = true\n"
+    << "  IN_ARG_beta              = true\n"
+    << "  IN_ARG_W_x_dot_dot_coeff = false\n"
+    << "  OUT_ARG_f                = true\n"
+    << "  OUT_ARG_W                = true\n");
+
+  return;
+}
+
+
+template<class Scalar>
+void validSecondOrderODE_DAE(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model)
+{
+  TEUCHOS_TEST_FOR_EXCEPT( is_null(model) );
+  typedef Thyra::ModelEvaluatorBase MEB;
+  const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
+  const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+                        inArgs.supports(MEB::IN_ARG_x_dot) and
+                        inArgs.supports(MEB::IN_ARG_x_dot_dot) and
+                        inArgs.supports(MEB::IN_ARG_alpha) and
+                        inArgs.supports(MEB::IN_ARG_beta) and
+                        inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
+                        outArgs.supports(MEB::OUT_ARG_f) and
+                        outArgs.supports(MEB::OUT_ARG_W);
+
+  TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
+    model->description() << " can not support an implicit ODE with\n"
+    << "  IN_ARG_x                 = "
+    << inArgs.supports(MEB::IN_ARG_x) << "\n"
+    << "  IN_ARG_x_dot             = "
+    << inArgs.supports(MEB::IN_ARG_x_dot) << "\n"
+    << "  IN_ARG_x_dot_dot         = "
+    << inArgs.supports(MEB::IN_ARG_x_dot_dot) << "\n"
+    << "  IN_ARG_alpha             = "
+    << inArgs.supports(MEB::IN_ARG_alpha) << "\n"
+    << "  IN_ARG_beta              = "
+    << inArgs.supports(MEB::IN_ARG_beta) << "\n"
+    << "  IN_ARG_W_x_dot_dot_coeff = "
+    << inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) << "\n"
+    << "  OUT_ARG_f                = "
+    << outArgs.supports(MEB::OUT_ARG_f) << "\n"
+    << "  OUT_ARG_W                = "
+    << outArgs.supports(MEB::OUT_ARG_W) << "\n"
+    << "Implicit Second Order ODE requires:\n"
+    << "  IN_ARG_x                 = true\n"
+    << "  IN_ARG_x_dot             = true\n"
+    << "  IN_ARG_x_dot_dot         = true\n"
+    << "  IN_ARG_alpha             = true\n"
+    << "  IN_ARG_beta              = true\n"
+    << "  IN_ARG_W_x_dot_dot_coeff = true\n"
+    << "  OUT_ARG_f                = true\n"
+    << "  OUT_ARG_W                = true\n");
+
+  return;
 }
 
 
@@ -144,164 +464,6 @@ Teuchos::RCP<Teuchos::ParameterList> defaultSolverParameters()
   solverPL->set("NOX", *noxPL);
 
   return solverPL;
-}
-
-
-template<class Scalar>
-void Stepper<Scalar>::initialize()
-{
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-
-  bool isValidSetup = this->isValidSetup(*out);
-
-  if (isValidSetup)
-    this->isInitialized_ = true;   // Only place it is set to true.
-  else
-    this->describe(*out, Teuchos::VERB_MEDIUM);
-}
-
-
-template<class Scalar>
-void Stepper<Scalar>::checkInitialized()
-{
-  if ( !this->isInitialized() ) {
-    this->describe( *(this->getOStream()), Teuchos::VERB_MEDIUM);
-    TEUCHOS_TEST_FOR_EXCEPTION( !this->isInitialized(), std::logic_error,
-      "Error - " << this->description() << " is not initialized!");
-  }
-}
-
-
-template<class Scalar>
-void Stepper<Scalar>::setUseFSALTrueOnly(bool a)
-{
-  if (a == false) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALTrueOnly()");
-    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
-         << "can only be set to true.  Leaving set to true." << std::endl;
-  }
-  useFSAL_ = true;
-}
-
-
-template<class Scalar>
-void Stepper<Scalar>::setUseFSALFalseOnly(bool a)
-{
-  if (a == true) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"Stepper::setUseFSALFalseOnly()");
-    *out << "Warning -- useFSAL for '" << this->getStepperType() << "'\n"
-         << "can only be set to false.  Leaving set to false." << std::endl;
-  }
-  useFSAL_ = false;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-Stepper<Scalar>::getStepperX()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperX_ == Teuchos::null, std::logic_error,
-    "Error - stepperX_ has not been set in setInitialConditions() or\n"
-    "        can not be set from the state!\n");
-
-  return stepperX_;
-}
-
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-Stepper<Scalar>::getStepperXDot()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDot_ == Teuchos::null, std::logic_error,
-    "Error - stepperXDot_ has not been set in setInitialConditions() or\n"
-    "        can not be set from the state!\n");
-
-  return stepperXDot_;
-}
-
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-Stepper<Scalar>::getStepperXDotDot()
-{
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
-    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
-    "        can not be set from the state!\n");
-
-  return stepperXDotDot_;
-}
-
-// Need to deprecate.
-template<class Scalar>
-Teuchos::RCP<Thyra::VectorBase<Scalar> >
-Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
-{
-  if (state->getXDotDot() != Teuchos::null) stepperXDotDot_=state->getXDotDot();
-  // Else use temporary storage stepperXDotDot_ which should have been set in
-  // setInitialConditions().
-
-  TEUCHOS_TEST_FOR_EXCEPTION( stepperXDotDot_==Teuchos::null, std::logic_error,
-    "Error - stepperXDotDot_ has not been set in setInitialConditions() or\n"
-    "        can not be set from the state!\n");
-
-  return stepperXDotDot_;
-}
-
-
-template<class Scalar>
-void Stepper<Scalar>::describe(Teuchos::FancyOStream        & out,
-                               const Teuchos::EVerbosityLevel verbLevel) const
-{
-  out << "--- Stepper ---\n"
-      << "  isInitialized_      = " << Teuchos::toString(isInitialized_) << std::endl
-      << "  stepperType_        = " << stepperType_ << std::endl
-      << "  useFSAL_            = " << Teuchos::toString(useFSAL_) << std::endl
-      << "  ICConsistency_      = " << ICConsistency_ << std::endl
-      << "  ICConsistencyCheck_ = " << Teuchos::toString(ICConsistencyCheck_) << std::endl
-      << "  stepperX_           = " << stepperX_ << std::endl
-      << "  stepperXDot_        = " << stepperXDot_ << std::endl
-      << "  stepperXDotDot_     = " << stepperXDotDot_ << std::endl;
-}
-
-
-template<class Scalar>
-bool Stepper<Scalar>::isValidSetup(
-  Teuchos::FancyOStream & out) const
-{
-  bool isValidSetup = true;
-
-  if ( !(ICConsistency_ == "None" || ICConsistency_ == "Zero" ||
-         ICConsistency_ == "App"  || ICConsistency_ == "Consistent") ) {
-    isValidSetup = false;
-    out << "The IC consistency does not have a valid value!\n"
-        << "('None', 'Zero', 'App' or 'Consistent')\n"
-        << "  ICConsistency  = " << ICConsistency_ << "\n";
-  }
-
-  return isValidSetup;
-}
-
-
-template<class Scalar>
-void Stepper<Scalar>::
-setStepperValues(Teuchos::RCP<Teuchos::ParameterList> pl)
-{
-  if (pl != Teuchos::null) {
-    auto stepperType =
-      pl->get<std::string>("Stepper Type", this->getStepperType());
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      stepperType != this->getStepperType() ,std::runtime_error,
-      "  ParameterList 'Stepper Type' (='" + stepperType +"')\n"
-      "  does not match type for this Stepper (='"
-      + this->getStepperType() + "').");
-    this->setStepperType(stepperType);
-
-    this->setUseFSAL(pl->get<bool>("Use FSAL", false));
-    this->setICConsistency(
-      pl->get<std::string>("Initial Condition Consistency", "None"));
-    this->setICConsistencyCheck(
-      pl->get<bool>("Initial Condition Consistency Check", false));
-  }
 }
 
 

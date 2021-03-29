@@ -50,7 +50,8 @@ void move_components(const Zoltan2ParallelGraph &zoltan2Graph,
                      const std::vector<stk::mesh::EntityVector>& elementsToMove,
                      const std::vector<int>& componentsToMove);
 
-void fill_zoltan2_parallel_graph(stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings& graphSettings, const stk::mesh::impl::LocalIdMapper& localIds, Zoltan2ParallelGraph &zoltan2Graph);
+void fill_zoltan2_parallel_graph(stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings& graphSettings,
+                                 Zoltan2ParallelGraph &zoltan2Graph);
 
 }}} // end of namespaces
 

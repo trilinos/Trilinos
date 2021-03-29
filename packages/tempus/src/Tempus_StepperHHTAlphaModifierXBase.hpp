@@ -27,23 +27,6 @@ namespace Tempus {
  *  It is expected that the user knows what changes are allowable without
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
- *
- *  Below is the HHTAlpha algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{HHTAlpha algorithm with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEFORE\_SOLVE)}
- *    \State Solve for $x_{n+1}$ using the HHT one-step update.       
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_AFTER\_SOLVE)}                                                           
- *    \State Update $\dot x_{n+1}$.   
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_END\_STEP)}
- *  \end{algorithmic}
- *  \f}
  */
 template<class Scalar>
 class StepperHHTAlphaModifierXBase

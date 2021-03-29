@@ -75,6 +75,11 @@ class Basis;
 template <typename DeviceType = void, typename OutputType = double, typename PointType = double>
 using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
 
+/** \brief Pointer to a Basis whose device type is on the host (Kokkos::HostSpace::device_type), allowing host access to input and output views, and ensuring host execution of basis evaluation.
+ */
+template <typename OutputType = double, typename PointType = double>
+using HostBasisPtr = BasisPtr<typename Kokkos::HostSpace::device_type, OutputType, PointType>;
+
   /** \class  Intrepid2::Basis
       \brief  An abstract base class that defines interface for concrete basis implementations for
               Finite Element (FEM) and Finite Volume/Finite Difference (FVD) discrete spaces.
@@ -111,14 +116,19 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
       \todo  restore test for inclusion of reference points in their resective reference cells in
              getValues_HGRAD_Args, getValues_CURL_Args, getValues_DIV_Args
   */
-  template<typename DeviceType,
+  template<typename Device,
            typename outputValueType,
            typename pointValueType>
   class Basis {
   public:
+    /**  \brief (Kokkos) Device type on which Basis is templated.  Does not necessarily return true for Kokkos::is_device (may be Kokkos::Serial, for example).
+     */
+    using DeviceType = Device;
+    
     /**  \brief (Kokkos) Execution space for basis.
      */
     using ExecutionSpace  = typename DeviceType::execution_space;
+    
     
     /**  \brief Output value type for basis; default is double.
      */
@@ -352,7 +362,7 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
      
         Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    Kokkos::DynRankView<OutputValueType,ExecutionSpace> allocateOutputView( const int numPoints, const EOperator operatorType = OPERATOR_VALUE) const
+    Kokkos::DynRankView<OutputValueType,DeviceType> allocateOutputView( const int numPoints, const EOperator operatorType = OPERATOR_VALUE) const
     {
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateOutputView()");
@@ -361,7 +371,7 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
       const int spaceDim  = basisCellTopology_.getDimension();
       
       // KK: this needs to be updated after nate works on tensorthings
-      using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,ExecutionSpace>;
+      using OutputViewAllocatable = Kokkos::DynRankView<outputValueType,DeviceType>;
       
       switch (functionSpace_)
       {
@@ -444,7 +454,7 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
         The default implementation employs a trivial tensor-product structure, for compatibility across all bases.  Subclasses that have tensor-product structure
         should override.  Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    virtual BasisValues<OutputValueType,ExecutionSpace> allocateBasisValues( TensorPoints<PointValueType,ExecutionSpace> points, const EOperator operatorType = OPERATOR_VALUE) const
+    virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const
     {
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
@@ -457,19 +467,19 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
       using Scalar = OutputValueType;
       
       auto dataView = allocateOutputView(numPoints, operatorType);
-      Data<Scalar,ExecutionSpace> data(dataView);
+      Data<Scalar,DeviceType> data(dataView);
       
       bool useVectorData = (dataView.rank() == 3);
       
       if (useVectorData)
       {
-        VectorData<Scalar,ExecutionSpace> vectorData(data);
-        return BasisValues<Scalar,ExecutionSpace>(vectorData);
+        VectorData<Scalar,DeviceType> vectorData(data);
+        return BasisValues<Scalar,DeviceType>(vectorData);
       }
       else
       {
-        TensorData<Scalar,ExecutionSpace> tensorData(data);
-        return BasisValues<Scalar,ExecutionSpace>(tensorData);
+        TensorData<Scalar,DeviceType> tensorData(data);
+        return BasisValues<Scalar,DeviceType>(tensorData);
       }
     }
 
@@ -513,14 +523,14 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
     */
     virtual
     void
-    getValues(       BasisValues<OutputValueType,ExecutionSpace> outputValues,
-               const TensorPoints<PointValueType,ExecutionSpace>  inputPoints,
+    getValues(       BasisValues<OutputValueType,DeviceType> outputValues,
+               const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const {
       // note the extra allocation/copy here (this is one reason, among several, to override this method):
       auto rawExpandedPoints = inputPoints.allocateAndFillExpandedRawPointView();
       
       OutputViewType rawOutputView;
-      Data<OutputValueType,ExecutionSpace> outputData;
+      Data<OutputValueType,DeviceType> outputData;
       if (outputValues.numTensorDataFamilies() > 0)
       {
         INTREPID2_TEST_FOR_EXCEPTION(outputValues.tensorData(0).numTensorComponents() != 1, std::invalid_argument, "default implementation of getValues() only supports outputValues with trivial tensor-product structure");
@@ -896,6 +906,16 @@ using BasisPtr = Teuchos::RCP<Basis<DeviceType,OutputType,PointType> >;
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const {
       INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
                                     ">>> ERROR (Basis::getSubCellRefBasis): this method is not supported or should be overridden accordingly by derived classes.");
+    }
+
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+    
+       \return Pointer to the new Basis object.
+    */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const {
+      INTREPID2_TEST_FOR_EXCEPTION( true, std::logic_error,
+                                    ">>> ERROR (Basis::getHostBasis): this method is not supported or should be overridden accordingly by derived classes.");
     }
 
   }; // class Basis

@@ -297,10 +297,10 @@ protected:
 //
 //      [4.0]             [3.0]   [13.0]    [6.0]             [8.1]            [10.1]
 //        O-----------------O========o========O-----------------O-----------------O
-//        |\                ║\\(14.0)|(13.0) /║\                |\                |
-//        |  \       2.0    ║  \\    | 4.0 /  ║  \       6.1    |  \       8.1    |
+//        |\                ║\\(14.1)|(13.1) /║\                |\                |
+//        |  \       2.0    ║  \\    | 4.1 /  ║  \       6.1    |  \       8.1    |
 //        |    \            ║    \\  |   /    ║    \            |    \            |
-//        |      \          ║      \\| /(12.0)║      \          |      \          |
+//        |      \          ║      \\| /(12.1)║      \          |      \          |
 //        |        \        ║(9.0)   o [12.0] ║        \        |        \        |
 //        |          \      ║      / |\\      ║          \      |          \      |
 //        |            \    ║    /   |  \\    ║            \    |            \    |
@@ -536,7 +536,7 @@ protected:
 
     void rebalance_parent_elements_with_manager(ParentChildManager &parentChildManager)
     {
-        stk::mesh::Selector selector = (*m_parentPart) & get_meta().locally_owned_part();
+        stk::mesh::Selector selector = (*m_parentPart);
         StkParentRebalance graphSettings(parentChildManager, selector, get_bulk(), *m_elementWeightField);
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
     }
@@ -668,7 +668,12 @@ protected:
     void check_expected_element_partitioning()
     {
         double totalElementWeight = get_total_element_weight_for_this_proc();
-        EXPECT_EQ(6.0, totalElementWeight);
+        if (get_bulk().parallel_rank() == 0) {
+          EXPECT_EQ(5.0, totalElementWeight);
+        }
+        if (get_bulk().parallel_rank() == 1) {
+          EXPECT_EQ(7.0, totalElementWeight);
+        }
         check_expected_parent_with_id_3();
         check_expected_parent_with_id_4();
     }

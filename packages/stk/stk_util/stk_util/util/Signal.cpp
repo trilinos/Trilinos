@@ -146,9 +146,19 @@ private:
 };
 
 
-  void
+#ifdef __SANITIZE_ADDRESS__
+#define STK_ASAN_IS_ON
+#endif
+#if !defined(STK_ASAN_IS_ON) && defined(__has_feature)
+# if __has_feature(address_sanitizer)
+#define STK_ASAN_IS_ON
+# endif
+#endif
+
+void
 EnvSignal::activateSignals()
 {
+#ifndef STK_ASAN_IS_ON
   SignalHandler::instance().add_handler(SIGSEGV, EnvSignal::segvCallback);
   SignalHandler::instance().add_handler(SIGILL, EnvSignal::illCallback);
   SignalHandler::instance().add_handler(SIGBUS, EnvSignal::busCallback);
@@ -163,12 +173,14 @@ EnvSignal::activateSignals()
 #if defined(SIERRA_MPI_ABORT_SIGNAL)
   SignalHandler::instance().add_handler(SIERRA_MPI_ABORT_SIGNAL, EnvSignal::termCallback);
 #endif
+#endif
 }
 
 
 void
 EnvSignal::deactivateSignals()
 {
+#ifndef STK_ASAN_IS_ON
   SignalHandler::instance().remove_handler(SIGSEGV, EnvSignal::segvCallback);
   SignalHandler::instance().remove_handler(SIGILL, EnvSignal::illCallback);
   SignalHandler::instance().remove_handler(SIGBUS, EnvSignal::busCallback);
@@ -182,6 +194,7 @@ EnvSignal::deactivateSignals()
 #endif
 #if defined(SIERRA_MPI_ABORT_SIGNAL)
   SignalHandler::instance().remove_handler(SIERRA_MPI_ABORT_SIGNAL, EnvSignal::termCallback);
+#endif
 #endif
 }
 

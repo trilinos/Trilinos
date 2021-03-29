@@ -134,10 +134,23 @@ namespace panzer {
       const int tmp_vector_size = this->template vectorSize<ScalarT>();
 
       if (use_auto_team_size_)
-	return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,Kokkos::AUTO(),
-							   tmp_vector_size);
+        return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,Kokkos::AUTO(),
+                                                           tmp_vector_size);
 
       return Kokkos::TeamPolicy<TeamPolicyProperties...>(league_size,team_size_,tmp_vector_size);
+    }
+
+    /// Returns a TeamPolicy for hierarchic parallelism using an exec_space instance (for cuda streams).
+    template<typename ScalarT, typename ... TeamPolicyProperties, typename ExecSpace>
+    Kokkos::TeamPolicy<ExecSpace, TeamPolicyProperties...> teamPolicy(ExecSpace exec_space, const int& league_size)
+    {
+      const int tmp_vector_size = this->template vectorSize<ScalarT>();
+
+      if (use_auto_team_size_)
+        return Kokkos::TeamPolicy<TeamPolicyProperties...>(exec_space,league_size,Kokkos::AUTO(),
+                                                           tmp_vector_size);
+
+      return Kokkos::TeamPolicy<TeamPolicyProperties...>(exec_space,league_size,team_size_,tmp_vector_size);
     }
   };
 

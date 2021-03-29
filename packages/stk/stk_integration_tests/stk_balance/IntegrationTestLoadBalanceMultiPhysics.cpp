@@ -86,8 +86,10 @@ protected:
 
 TEST_F(TestBalanceBalanceMultiPhysics, NoAura)
 {
-    if(stk::parallel_machine_size(get_comm()) == 3)
-        setup_and_test_balance_of_active_only(stk::mesh::BulkData::NO_AUTO_AURA);
+    if (stk::parallel_machine_size(get_comm()) == 3) {
+      setup_and_test_balance_of_active_only(stk::mesh::BulkData::NO_AUTO_AURA);
+      stk::io::write_mesh("final_mesh.g", get_bulk());
+    }
 }
 
 TEST_F(TestBalanceBalanceMultiPhysics, WithAura)

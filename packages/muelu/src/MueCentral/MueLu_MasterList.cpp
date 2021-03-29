@@ -227,6 +227,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: phase2a include root\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"aggregation: phase2a agg factor\" type=\"double\" value=\"0.5\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
@@ -257,6 +258,7 @@ namespace MueLu {
   "<Parameter name=\"aggregate qualities: algorithm\" type=\"string\" value=\"forward\"/>"
   "<Parameter name=\"aggregate qualities: zero threshold\" type=\"double\" value=\"1e-12\"/>"
   "<Parameter name=\"aggregate qualities: percentiles\" type=\"Array(double)\" value=\"{}\"/>"
+  "<Parameter name=\"aggregate qualities: mode\" type=\"string\" value=\"eigenvalue\"/>"
   "<ParameterList name=\"export data\"/>"
   "<Parameter name=\"print initial parameters\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"print unused parameters\" type=\"bool\" value=\"true\"/>"
@@ -561,7 +563,7 @@ namespace MueLu {
       
          ("parameterlist: syntax","parameterlist: syntax")
       
-         ("hierarchy label","hierarchy label")
+         ("ML label","hierarchy label")
       
          ("matvec params","matvec params")
       
@@ -651,6 +653,8 @@ namespace MueLu {
       
          ("aggregation: phase2a include root","aggregation: phase2a include root")
       
+         ("aggregation: phase2a agg factor","aggregation: phase2a agg factor")
+      
          ("aggregation: error on nodes with no on-rank neighbors","aggregation: error on nodes with no on-rank neighbors")
       
          ("aggregation: phase3 avoid singletons","aggregation: phase3 avoid singletons")
@@ -710,6 +714,8 @@ namespace MueLu {
          ("aggregate qualities: zero threshold","aggregate qualities: zero threshold")
       
          ("aggregate qualities: percentiles","aggregate qualities: percentiles")
+      
+         ("aggregate qualities: mode","aggregate qualities: mode")
       
          ("export data","export data")
       

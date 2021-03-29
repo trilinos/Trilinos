@@ -93,7 +93,8 @@ namespace FROSch {
         using InterfaceEntityPtrVec     = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtrVec;
         using InterfaceEntityPtrVecPtr  = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr;
 
-        using SubdomainSolverPtr        = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using SolverPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr          = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
 
         using UN                        = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVec                     = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
@@ -176,7 +177,7 @@ namespace FROSch {
         virtual int buildCoarseGraph();
 
 
-        SubdomainSolverPtr ExtensionSolver_;
+        SolverPtr ExtensionSolver_;
 
         CoarseSpacePtrVecPtr InterfaceCoarseSpaces_ = CoarseSpacePtrVecPtr(0);
         CoarseSpacePtr AssembledInterfaceCoarseSpace_;

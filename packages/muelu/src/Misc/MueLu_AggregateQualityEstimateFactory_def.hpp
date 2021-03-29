@@ -92,6 +92,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregate qualities: algorithm");
     SET_VALID_ENTRY("aggregate qualities: zero threshold");
     SET_VALID_ENTRY("aggregate qualities: percentiles");
+    SET_VALID_ENTRY("aggregate qualities: mode");
+
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
@@ -111,14 +113,27 @@ namespace MueLu {
     RCP<Aggregates> aggregates = Get<RCP<Aggregates>>(currentLevel, "Aggregates");
 
     RCP<const Map> map = Get< RCP<const Map> >(currentLevel, "CoarseMap");
-    RCP<Xpetra::MultiVector<magnitudeType,LO,GO,NO>> aggregate_qualities = Xpetra::MultiVectorFactory<magnitudeType,LO,GO,NO>::Build(map, 1);
+
 
     assert(!aggregates->AggregatesCrossProcessors());
-    ComputeAggregateQualities(A, aggregates, aggregate_qualities);
+    ParameterList pL = GetParameterList();
+    std::string mode = pL.get<std::string>("aggregate qualities: mode");
+    GetOStream(Statistics1) << "AggregateQuality: mode "<<mode << std::endl;
 
-    Set(currentLevel, "AggregateQualities", aggregate_qualities);
+    RCP<Xpetra::MultiVector<magnitudeType,LO,GO,NO>> aggregate_qualities;
+    if(mode == "eigenvalue" || mode == "both") {
+      aggregate_qualities = Xpetra::MultiVectorFactory<magnitudeType,LO,GO,NO>::Build(map, 1);
+      ComputeAggregateQualities(A, aggregates, aggregate_qualities);
+      OutputAggQualities(currentLevel, aggregate_qualities);
+    }
+    if(mode == "size" || mode =="both") {
+      RCP<LocalOrdinalVector> aggregate_sizes = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map);
+      ComputeAggregateSizes(A,aggregates,aggregate_sizes);      
+      Set(currentLevel, "AggregateSizes",aggregate_sizes);
+      OutputAggSizes(currentLevel, aggregate_sizes);
+    }
+      Set(currentLevel, "AggregateQualities", aggregate_qualities);
 
-    OutputAggQualities(currentLevel, aggregate_qualities);
 
   }
 
@@ -459,6 +474,70 @@ namespace MueLu {
 
     }
   }
+
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ComputeAggregateSizes(RCP<const Matrix> A, RCP<const Aggregates> aggs, RCP<LocalOrdinalVector> agg_sizes) const {
+
+    ArrayRCP<LO> aggSortedVertices, aggsToIndices, aggSizes;
+    ConvertAggregatesData(aggs, aggSortedVertices, aggsToIndices, aggSizes);
+
+    // Iterate over each node in the aggregate
+    auto data = agg_sizes->getDataNonConst(0);
+    for (LO i=0; i<(LO)aggSizes.size(); i++)
+      data[i] = aggSizes[i];      
+}
+
+
+
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void AggregateQualityEstimateFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::OutputAggSizes(const Level& level, RCP<const LocalOrdinalVector> agg_sizes) const {
+
+    ParameterList pL = GetParameterList();
+    using MT = magnitudeType;
+
+    ArrayRCP<const LO> data = agg_sizes->getData(0);
+
+
+    if (pL.get<bool>("aggregate qualities: file output")) {
+      std::string filename = pL.get<std::string>("aggregate qualities: file base")+".sizes."+std::to_string(level.GetLevelID());
+      Xpetra::IO<LO,LO,GO,Node>::Write(filename, *agg_sizes);
+    }
+
+    {
+      size_t n = (size_t)agg_sizes->getLocalLength();
+
+      std::vector<MT> tmp;
+      tmp.reserve(n);
+
+      for (size_t i=0; i<n; ++i) {
+        tmp.push_back(Teuchos::as<MT>(data[i]));
+      }
+
+      std::sort(tmp.begin(), tmp.end());
+
+      Teuchos::ArrayView<const double> percents = pL.get<Teuchos::Array<double> >("aggregate qualities: percentiles")();
+
+      GetOStream(Statistics1) << "AGG SIZE    HEADER     : | LEVEL |  TOTAL  |";
+      for (auto percent : percents) {
+        GetOStream(Statistics1) << std::fixed << std::setprecision(4) <<100.0*percent << "% |";
+      }
+      GetOStream(Statistics1) << std::endl;
+
+      GetOStream(Statistics1) << "AGG SIZE    PERCENTILES: | " << level.GetLevelID() << " | " << n << "|";
+      for (auto percent : percents) {
+        size_t i = size_t(n*percent);
+        i = i < n ? i : n-1u;
+        i = i > 0u ? i : 0u;
+        GetOStream(Statistics1) << std::fixed <<std::setprecision(4) << tmp[i] << " |";
+      }
+      GetOStream(Statistics1) << std::endl;
+
+    }
+  }
+
+
 
 } // namespace MueLu
 
