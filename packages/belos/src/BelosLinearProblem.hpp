@@ -697,8 +697,15 @@ namespace Belos {
       solutionUpdated_ = false;
     }
     else {
-      curX_ = MVT::CloneViewNonConst( *X_, rhsIndex_ );
-      curB_ = MVT::CloneView( *B_, rhsIndex_ );
+      bool trivialSubview = ((Teuchos::as<int>(blocksize_) == MVT::GetNumberVecs( *X_ )) &&
+                             (Teuchos::as<int>(blocksize_) == MVT::GetNumberVecs( *B_ )));
+      if (trivialSubview) {
+        curX_ = X_;
+        curB_ = B_;
+      } else {
+        curX_ = MVT::CloneViewNonConst( *X_, rhsIndex_ );
+        curB_ = MVT::CloneView( *B_, rhsIndex_ );
+      }
     }
     //
     // Increment the number of linear systems that have been loaded into this object.
