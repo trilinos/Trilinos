@@ -36,7 +36,7 @@ include_directories( ${DIR}
                      ${DIR}/vector
 )
 
-APPEND_GLOB( HEADERS ${DIR}/ROL2.hpp )
+APPEND_GLOBAL_SET( HEADERS ${DIR}/ROL2.hpp )
 
 add_subdirectory( algorithm )
 add_subdirectory( elementwise )
@@ -51,28 +51,11 @@ foreach(H ${HEADERS})
   blue(${H})
 endforeach()
 
+bold_green("List of sources")
+foreach(S ${SOURCES})
+  green(${S})
+endforeach()
 
-#include_directories(${CMAKE_CURRENT_BINARY_DIR})
-#include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
-
-#get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-#foreach(dir ${dirs})
-#  message(STATUS "dir='${dir}'")
-#endforeach()
-
-
-#include_directories( ${DIR}   )
-
-
-#
-# All sources
-#
-#APPEND_SET( SOURCES ${ROL2_SRC}/utils/ROL2_ParameterList.cpp )
-
-#APPEND_SET(HEADERS
-#  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_config.h
-#)
 
 TRIBITS_ADD_LIBRARY( rol
                      HEADERS ${HEADERS}

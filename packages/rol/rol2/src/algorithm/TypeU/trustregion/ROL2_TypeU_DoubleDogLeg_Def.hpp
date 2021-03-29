@@ -70,7 +70,7 @@ void DoubleDogLeg<Real>:: solve( Vector<Real>&           s,
   const Real one(1), zero(0), half(0.5), p2(0.2), p8(0.8), two(2);
 
   // Set s to be the (projected) gradient
-  s.set(model.getGradient()->dual());
+  s.set(model.getGradient().dual());
 
   // Compute (quasi-)Newton step
   model.invHessVec(*primal_,model.getGradient(),s,tol);

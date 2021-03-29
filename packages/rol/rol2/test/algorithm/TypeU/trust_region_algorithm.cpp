@@ -52,6 +52,7 @@
 int main( int argc, char *argv[] ) {
 
   using RealT = double;
+  using ROL2::operator <<;
 
   auto os_ptr = ROL2::makeStreamPtr(std::cout, argc);
   auto& os = *os_ptr;
@@ -83,8 +84,14 @@ int main( int argc, char *argv[] ) {
 
     auto algo = ROL2::TypeU::TrustRegionAlgorithm<RealT>( parlist ); 
 
-     
+    auto tol = ROL2::default_tolerance<RealT>();
 
+    os << "Initial objective: " << obj.value(x,tol) << std::endl;
+
+    algo.run(x,g,obj,os);
+
+    os << "Final objective: " << obj.value(x,tol) << std::endl;
+    
   }
   catch (std::logic_error& err) {
     os << err.what() << "\n";

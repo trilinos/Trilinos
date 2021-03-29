@@ -51,8 +51,8 @@ namespace TypeU {
 template<class Real>
 TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(       ParameterList&     parlist,
                                                   const Ptr<Secant<Real>>& secant )
- : Algorithm<Real>(), secantType_( Secant<Real>::Type::UserDefined ) {
-
+ : Algorithm<Real>(), secantType_( Secant<Real>::Type::UserDefined ),
+   solver_(TrustRegion<Real>::create(parlist)) {
   auto& state  = Algorithm<Real>::getState();
   auto& status = Algorithm<Real>::getStatus(); 
   
@@ -96,9 +96,8 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm(       ParameterList&     parli
 
   // Initialize Trust Region Subproblem Solver Object
   std::string solvertype = trlist.get("Subproblem Solver", "DogLeg");
-  std::cout << "Subproblem Solver = " << solvertype << std::endl;
   type_   = TrustRegion<Real>::type_dict[solvertype];  
-  solver_ = TrustRegion<Real>::create(parlist);
+  //std::cout <<  "solver = " << solver_ << std::endl;
   verbosity_ = glist.get("Output Level", 0);
 
   // Secant Information

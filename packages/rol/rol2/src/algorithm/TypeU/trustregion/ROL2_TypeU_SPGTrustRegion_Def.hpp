@@ -97,7 +97,7 @@ void SPGTrustRegion<Real>::solve( Vector<Real>&           s,
   std::deque<Real> mqueue; 
   mqueue.push_back(0);
 
-  gmod_->set(*model.getGradient());
+  gmod_->set(model.getGradient());
 
   // Compute Cauchy point
   pwa1_->set(gmod_->dual());

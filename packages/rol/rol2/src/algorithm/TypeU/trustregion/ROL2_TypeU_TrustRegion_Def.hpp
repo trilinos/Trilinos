@@ -194,17 +194,16 @@ Real TrustRegion<Real>::interpolateRadius( const Vector<Real>& g,
 template<class Real>
 Ptr<TrustRegion<Real>> 
 TrustRegion<Real>::create( ParameterList& parlist ) {
-  return nullPtr;
-//  auto& trlist = parlist.sublist("Step").sublist("Trust Region");
-//  auto soltype = type_dict[trlist.get("Subproblem Solver","DogLeg")];
-//  switch( soltype ) {
-//    case: Type::CauchyPoint:  return makePtr<CauchyPoint<Real>>();
-//    case: Type::DogLeg:       return makePtr<DogLeg<Real>>();
-//    case: Type::DoubleDogLeg: return makePtr<<Real>>();
-//    case: Type::TruncateCG:   return makePtr<<Real>>(parlist);
-//    case: Type::SPG:          return makePtr<<Real>>(parlist);
-//    default: return nullPtr; // TODO: Should we not throw an exception?
-//  }
+  auto& trlist = parlist.sublist("Step").sublist("Trust Region");
+  Type soltype = type_dict[trlist.get("Subproblem Solver","DogLeg")];
+  switch( soltype ) {
+    case Type::CauchyPoint:  return makePtr<CauchyPoint<Real>>();
+    case Type::DogLeg:       return makePtr<DogLeg<Real>>();
+    case Type::DoubleDogLeg: return makePtr<DoubleDogLeg<Real>>();
+    case Type::TruncatedCG:  return makePtr<TruncatedCG<Real>>(parlist);
+    case Type::SPG:          return makePtr<SPGTrustRegion<Real>>(parlist);
+    default: return nullPtr; // TODO: Should we not throw an exception?
+  }
 } // TrustRegion<Real>::create
 
 

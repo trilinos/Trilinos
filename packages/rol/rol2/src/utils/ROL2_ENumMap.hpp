@@ -17,8 +17,6 @@ class EnumMap {
 public:
   EnumMap( std::initializer_list<std::string> ilist ) {
     using size_type = typename std::initializer_list<std::string>::size_type;
-//    std::cout << "EnumType = " << typeid(EType).name() << std::endl;
-//    std::cout << "EnumMap : size(ilist) == " << ilist.size() << ", Last = " << EType::Last << std::endl;
     assert( ilist.size() == static_cast<size_type>(EType::Last) );
     auto e = static_cast<EType>(0);
 
@@ -49,7 +47,7 @@ public:
       msg << "  " << (*this)[static_cast<EType>(i)] << " : " << i << std::endl;
       throw std::out_of_range(msg.str());
     }
-    return s2e.at(s); 
+    return s2e.at(remove_format(s)); 
   }
 
   inline bool is_valid( EType e ) const { return e2s.count(e) == 1; }
@@ -68,6 +66,16 @@ private:
   std::map<EType,std::string> e2s;
   std::map<std::string,EType> s2e;
 };
+
+template<class EType>
+enable_if_enum_t<EType,std::ostream&>
+operator << ( std::ostream& os, const EnumMap<EType>& emap ) {
+  os << "EnumMap (key : value) pairs" << std::endl;
+  for( int i = 0; i<=EType::Last; ++i ) 
+    os << i << " : " << emap[static_cast<EType>(i)] << std::endl;
+  os << std::endl;
+  return os;
+}
 
 //template<typename object_type>
 //inline

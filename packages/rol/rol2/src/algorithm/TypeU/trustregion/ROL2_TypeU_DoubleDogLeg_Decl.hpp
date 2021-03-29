@@ -67,7 +67,7 @@ public:
               int&                    iflag,
               int&                    iter,
               Real                    del,
-              TrustRegionModel<Real>& model );
+              TrustRegionModel<Real>& model ) override;
 private:
   Ptr<Vector<Real>> primal_, dual_;
 };

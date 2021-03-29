@@ -137,18 +137,17 @@ public:
   void setObjective( const Ptr<Objective<Real>>& obj )    { obj_ = obj;       }
   void setSecant(    const Ptr<Secant<Real>>&    secant ) { secant_ = secant; }
 
-  const Vector<Real>&    getGradient()  const { return g_;      }
-  const Vector<Real>&    getIterate()   const { return x_;      }
-  const Objective<Real>& getObjective() const { return obj_;    }
-  const Secant<Real>&    getSecant()    const { return secant_; }
+  const Vector<Real>&    getGradient()  { return *g_;      }
+  const Vector<Real>&    getIterate()   { return *x_;      }
+  const Objective<Real>& getObjective() const { return *obj_;    }
+  const Secant<Real>&    getSecant()    const { return *secant_; }
 
-    
+  Objective<Real>& getObjective() { return *obj_;    }
+  Secant<Real>&    getSecant()    { return *secant_; }
+
+  static EnumMap<Type> type_dict;
+
 protected:
-
-  Vector<Real>&    getGradient()  { return g_;      }
-  Vector<Real>&    getIterate()   { return x_;      }
-  Objective<Real>& getObjective() { return obj_;    }
-  Secant<Real>&    getSecant()    { return secant_; }
  
   void applyHessian(       Vector<Real>& hv, 
                      const Vector<Real>& v, 
@@ -162,7 +161,6 @@ protected:
                      const Vector<Real>& v, 
                            Real&         tol );
 
-  static EnumMap<Type> type_dict;
 
 private:
 

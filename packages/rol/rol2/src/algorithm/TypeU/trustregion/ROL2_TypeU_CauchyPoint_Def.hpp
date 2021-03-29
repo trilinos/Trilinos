@@ -69,7 +69,7 @@ void CauchyPoint<Real>::solve( Vector<Real>&           s,
   Real tol = default_tolerance<Real>();
   
   // Set step to (projected) gradient
-  s.set(model.getGradient()->dual());
+  s.set(model.getGradient().dual());
 
   // Apply (reduced) Hessian to (projected) gradient
   model.hessVec(*dual_,s,s,tol);

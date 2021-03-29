@@ -86,7 +86,7 @@ void TruncatedCG<Real>::solve( Vector<Real>&           s,
   Real snorm2(0), s1norm2(0);
 
   // Compute (projected) gradient
-  g_->set(*model.getGradient());
+  g_->set(model.getGradient());
   Real gnorm = g_->norm(), normg = gnorm;
   Real gtol = std::min(tol1_,tol2_*gnorm);
 

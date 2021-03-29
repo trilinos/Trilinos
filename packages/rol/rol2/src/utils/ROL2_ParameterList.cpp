@@ -15,12 +15,11 @@ template class PList<std::vector<std::string>>;
 ParameterList& 
 ParameterList::sublist( std::string key, 
                         bool        mustAlreadyExist ) {
-  if( mustAlreadyExist ) return *(sublists_.at(key));
-  else {   
+  if( !mustAlreadyExist ) 
     if( !sublists_.count(key) ) 
       sublists_[key] = std::make_unique<ParameterList>(1+get_level());
-    return *(sublists_[key]);
-  }
+  
+  return *(sublists_.at(key));
 }
 
 //std::ostream& operator << ( std::ostream& os, ParameterList& parlist ) {
