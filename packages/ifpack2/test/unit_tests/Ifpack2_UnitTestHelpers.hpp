@@ -954,6 +954,12 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
   class NotCrsMatrix :
     public Ifpack2::Details::RowMatrix<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > {
   public:
+    typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Node> MatrixType;
+    typedef typename MatrixType::global_inds_host_view_type global_inds_host_view_type;
+    typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
+    typedef typename MatrixType::values_host_view_type values_host_view_type;
+
+
     NotCrsMatrix (Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) : A_(A){;}
     virtual ~NotCrsMatrix(){;}
     virtual Teuchos::RCP<const Teuchos::Comm<int> > getComm() const {return A_->getComm();}
