@@ -319,9 +319,7 @@ namespace Tpetra {
     // local matrix's number of columns comes from the column Map, not
     // the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraphDevice ();
-    const size_t numEnt = lclGraph.entries.extent (0);
+    const size_t numEnt = graph->lclIndsPacked_wdv.extent (0);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate values: " << numEnt << endl;
@@ -1072,7 +1070,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixHost () const
   {
-    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+//KDDKDD    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
 //KDDKDD    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
 //KDDKDD                                valuesPacked_wdv.getHostView(Access::ReadWrite),
 //KDDKDD                                staticGraph_->getLocalGraphHost());
@@ -6043,7 +6041,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
@@ -6109,7 +6107,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
@@ -6228,7 +6226,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
@@ -6295,7 +6293,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
