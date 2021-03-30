@@ -1375,6 +1375,7 @@ namespace MueLuTests {
 
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &coalesceDropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CoalesceDropFactory, BlockDiagonalDistanceLaplacian, Scalar, LocalOrdinal, GlobalOrdinal, Node) {
@@ -1419,6 +1420,7 @@ namespace MueLuTests {
 
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &coalesceDropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
   }
 
 
@@ -1470,6 +1472,7 @@ namespace MueLuTests {
 
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &coalesceDropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
   }
 
 
@@ -1516,6 +1519,7 @@ namespace MueLuTests {
 
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &coalesceDropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
   }
 
 
