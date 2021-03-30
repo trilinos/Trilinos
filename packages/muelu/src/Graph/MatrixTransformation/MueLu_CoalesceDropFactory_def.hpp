@@ -120,6 +120,8 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
+    SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
+
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
       validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","block diagonal","block diagonal classical","block diagonal distance laplacian"), "aggregation: drop scheme")));
@@ -172,6 +174,7 @@ namespace MueLu {
     if (predrop_ != Teuchos::null)
       GetOStream(Parameters0) << predrop_->description();
 
+
     RCP<Matrix> realA = Get< RCP<Matrix> >(currentLevel, "A");
     RCP<AmalgamationInfo> amalInfo = Get< RCP<AmalgamationInfo> >(currentLevel, "UnAmalgamationInfo");
     const ParameterList  & pL = GetParameterList();
@@ -181,8 +184,10 @@ namespace MueLu {
     std::string algo = pL.get<std::string>("aggregation: drop scheme");
     
     RCP<RealValuedMultiVector> Coords;
+    RCP<Matrix> A;
 
-    RCP<Matrix> A;    
+    bool use_block_algorithm=false;
+    LO interleaved_blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
     if(algo == "distance laplacian" ) { 
       // Grab the coordinates for distance laplacian
       Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
@@ -195,11 +200,11 @@ namespace MueLu {
     }
     else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian")  {
       // Handle the "block diagonal" filtering, and then continue onward
+      use_block_algorithm = true;
       RCP<Matrix> filteredMatrix = BlockDiagonalize(currentLevel,realA,true);
       if(algo == "block diagonal") return;
       else if(algo == "block diagonal distance laplacian") {  
         // We now need to expand the coordinates by the interleaved blocksize
-        LO blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
         RCP<RealValuedMultiVector> OldCoords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
         if (OldCoords->getLocalLength() != realA->getNodeNumRows()) {
            LO dim = (LO) OldCoords->getNumVectors();
@@ -209,7 +214,7 @@ namespace MueLu {
              ArrayRCP<real_type>       new_vec = Coords->getDataNonConst(k);
              for(LO i=0; i <(LO)OldCoords->getLocalLength(); i++) {   
                LO new_base = i*dim;
-               for(LO j=0; j<blocksize; j++) 
+               for(LO j=0; j<interleaved_blocksize; j++) 
                 new_vec[new_base + j] = old_vec[i];
              }
           }
@@ -229,6 +234,33 @@ namespace MueLu {
       A = realA;
     }
 
+    // Distance Laplacian weights
+    Array<double> dlap_weights = pL.get<Array<double> >("aggregation: distance laplacian directional weights");
+    enum {NO_WEIGHTS=0, SINGLE_WEIGHTS, BLOCK_WEIGHTS};
+    int use_dlap_weights = NO_WEIGHTS;
+    if(algo == "distance laplacian") {
+      LO dim = (LO) Coords->getNumVectors();
+      // If anything isn't 1.0 we need to turn on the weighting
+      bool non_unity = false;
+      for (LO i=0; !non_unity && i<(LO)dlap_weights.size(); i++) {
+        if(dlap_weights[i] != 1.0) {
+          non_unity = true;
+        }
+      }  
+      if(non_unity) {        
+        LO blocksize = use_block_algorithm ? as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize")) : 1;
+        if((LO)dlap_weights.size() == dim) 
+          use_dlap_weights = SINGLE_WEIGHTS;
+        else if((LO)dlap_weights.size() == blocksize * dim)
+          use_dlap_weights = BLOCK_WEIGHTS;
+        else  {
+          TEUCHOS_TEST_FOR_EXCEPTION(1, Exceptions::RuntimeError,
+                                     "length of 'aggregation: distance laplacian directional weights' must equal the coordinate dimension OR the coordinate dimension times the blocksize");
+        }        
+        if (GetVerbLevel() & Statistics1)
+          GetOStream(Statistics1) << "Using distance laplacian weights: "<<dlap_weights<<std::endl;
+      }
+    }
 
     // decide wether to use the fast-track code path for standard maps or the somewhat slower
     // code path for non-standard maps
@@ -895,7 +927,21 @@ namespace MueLu {
                 const LO col = indices[colID];
 
                 if (row != col) {
-                  localLaplDiagData[row] += STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  if(use_dlap_weights == SINGLE_WEIGHTS) {
+                    /*printf("[%d,%d] Unweighted Distance = %6.4e Weighted Distance = %6.4e\n",row,col,
+                           MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col),
+                           MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(),coordData, row, col));*/
+                    localLaplDiagData[row] += STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(),coordData, row, col);
+                  }
+                  else if(use_dlap_weights == BLOCK_WEIGHTS)  {
+                    int block_id = row % interleaved_blocksize;
+                    int block_start = block_id * interleaved_blocksize;
+                    localLaplDiagData[row] += STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(block_start,interleaved_blocksize),coordData, row, col);
+                  }
+                  else {
+                    //                    printf("[%d,%d] Unweighted Distance = %6.4e\n",row,col,MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col));
+                    localLaplDiagData[row] += STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  }
                   haveAddedToDiag = true;
                 }
               }
@@ -1003,8 +1049,18 @@ namespace MueLu {
 		  // We do not want the distance Laplacian aggregating boundary nodes
 		  if(isBoundary) continue;
 
-
-                  SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  SC laplVal;
+                  if(use_dlap_weights == SINGLE_WEIGHTS) {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(),coordData, row, col);
+                  }
+                  else if(use_dlap_weights == BLOCK_WEIGHTS)  {
+                    int block_id = row % interleaved_blocksize;
+                    int block_start = block_id * interleaved_blocksize;
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(block_start,interleaved_blocksize),coordData, row, col);
+                  }
+                  else {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  }
                   real_type aiiajj = STS::magnitude(realThreshold*realThreshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 
@@ -1035,7 +1091,19 @@ namespace MueLu {
 		  // We do not want the distance Laplacian aggregating boundary nodes
 		  if(isBoundary) continue;
 
-                  SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  SC laplVal;
+                  if(use_dlap_weights == SINGLE_WEIGHTS) {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(),coordData, row, col);
+                  }
+                  else if(use_dlap_weights == BLOCK_WEIGHTS)  {
+                    int block_id = row % interleaved_blocksize;
+                    int block_start = block_id * interleaved_blocksize;
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(block_start,interleaved_blocksize),coordData, row, col);
+                  }
+                  else {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  }
+
                   real_type aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 

@@ -611,6 +611,21 @@ tol = 0.;
       return Teuchos::ScalarTraits<Scalar>::magnitude(d);
     }
 
+    /*! @brief Weighted squared distance between two rows in a multivector
+
+       Used for coordinate vectors.
+    */
+    static typename Teuchos::ScalarTraits<Scalar>::magnitudeType Distance2(const Teuchos::ArrayView<double> & weight,const Teuchos::Array<Teuchos::ArrayRCP<const Scalar>> &v, LocalOrdinal i0, LocalOrdinal i1) {
+      const size_t numVectors = v.size();
+
+      Scalar d = Teuchos::ScalarTraits<Scalar>::zero();
+      for (size_t j = 0; j < numVectors; j++) {
+        d += weight[j]*(v[j][i0] - v[j][i1])*(v[j][i0] - v[j][i1]);
+      }
+      return Teuchos::ScalarTraits<Scalar>::magnitude(d);
+    }
+
+
     /*! @brief Detect Dirichlet rows
 
         The routine assumes, that if there is only one nonzero per row, it is on the diagonal and therefore a DBC.
