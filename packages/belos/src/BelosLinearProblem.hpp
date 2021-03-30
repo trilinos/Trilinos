@@ -46,6 +46,8 @@
 /// \file BelosLinearProblem.hpp 
 /// \brief Class which describes the linear problem to be solved by
 ///   the iterative solver.
+#include <fstream>
+#include <iostream>
 #include "BelosMultiVecTraits.hpp"
 #include "BelosOperatorTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -214,6 +216,16 @@ namespace Belos {
     /// created and this label is different than the current one, then
     /// this method will generate a new timer.
     void setLabel (const std::string& label);
+
+    /// \brief Set filenames for dumping LHS and RHS vectors.
+    ///
+    /// By default, these are "" and nothing is written out to file.
+    /// When the filenames are set to a non-empty string, each time \c
+    /// setProblem() is called, the vectors are written to
+    /// "filename.label.counter", and counter is incremented.
+
+    void setFilenameLHS (const std::string& filenameLHS);
+    void setFilenameRHS (const std::string& filenameRHS);
 
     /// \brief Compute the new solution to the linear system using the
     ///   given update vector.
@@ -572,6 +584,15 @@ namespace Belos {
     //! Linear problem label that prefixes the timer labels.
     std::string label_;
 
+    //! File name for dumping LHS
+    std::string filenameLHS_;
+
+    //! File name for dumping RHS
+    std::string filenameRHS_;
+
+    //! Counter for file dumps
+    int counter_;
+
   private:
  
     typedef MultiVecTraits<ScalarType,MV>  MVT;
@@ -591,7 +612,10 @@ namespace Belos {
     isSet_(false),
     isHermitian_(false),
     solutionUpdated_(false),
-    label_("Belos")
+    label_("Belos"),
+    filenameLHS_(""),
+    filenameRHS_(""),
+    counter_(0)
   {
   }
   
@@ -610,7 +634,10 @@ namespace Belos {
     isSet_(false),
     isHermitian_(false),
     solutionUpdated_(false),
-    label_("Belos")
+    label_("Belos"),
+    filenameLHS_(""),
+    filenameRHS_(""),
+    counter_(0)
   {
   }
   
@@ -636,7 +663,10 @@ namespace Belos {
     isSet_(Problem.isSet_),
     isHermitian_(Problem.isHermitian_),
     solutionUpdated_(Problem.solutionUpdated_),
-    label_(Problem.label_)
+    label_(Problem.label_),
+    filenameLHS_(Problem.filenameLHS_),
+    filenameRHS_(Problem.filenameRHS_),
+    counter_(Problem.counter_)
   {
   }
   
@@ -825,6 +855,18 @@ namespace Belos {
   }
 
   template <class ScalarType, class MV, class OP>
+  void LinearProblem<ScalarType,MV,OP>::setFilenameLHS(const std::string& filenameLHS)
+  {
+    filenameLHS_ = filenameLHS;
+  }
+
+  template <class ScalarType, class MV, class OP>
+  void LinearProblem<ScalarType,MV,OP>::setFilenameRHS(const std::string& filenameRHS)
+  {
+    filenameRHS_ = filenameRHS;
+  }
+
+  template <class ScalarType, class MV, class OP>
   bool 
   LinearProblem<ScalarType,MV,OP>::
   setProblem (const Teuchos::RCP<MV> &newX, 
@@ -849,6 +891,21 @@ namespace Belos {
       X_ = newX;
     if (newB != Teuchos::null)
       B_ = newB;
+
+    if (filenameLHS_ != "") {
+      std::ofstream X_file;
+      X_file.open(filenameLHS_ + "." + label_ + "." + std::to_string(counter_));
+      MVT::MvPrint( *X_, X_file);
+      X_file.close();
+    }
+    if (filenameRHS_ != "") {
+      std::ofstream B_file;
+      B_file.open(filenameRHS_ + "." + label_ + "." + std::to_string(counter_));
+      MVT::MvPrint( *B_, B_file);
+      B_file.close();
+    }
+
+    ++counter_;
 
     // Invalidate the current linear system indices and multivectors.
     rhsIndex_.resize(0);
