@@ -303,7 +303,7 @@ public:
                                     const crs_matrix_type& A) :
     rowScaledColNorms_ (rowScaledColNorms),
     rowNorms_ (rowNorms),
-    A_lcl_ (A.getLocalMatrix ())
+    A_lcl_ (A.getLocalMatrixDevice ())
   {}
 
   KOKKOS_INLINE_FUNCTION void operator () (const LO lclRow) const {
@@ -340,8 +340,8 @@ private:
   Kokkos::View<mag_type*, device_type> rowScaledColNorms_;
   Kokkos::View<const mag_type*, device_type> rowNorms_;
 
-  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-  local_matrix_type A_lcl_;
+  using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
+  local_matrix_device_type A_lcl_;
 };
 
 template<class SC, class LO, class GO, class NT>
@@ -393,12 +393,12 @@ class ComputeLocalRowOneNorms {
 public:
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
   using equib_info_type = EquilibrationInfo<val_type, typename NT::device_type>;
-  using local_matrix_type =
-    typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_type;
+  using local_matrix_device_type =
+    typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_device_type;
   using local_map_type = typename ::Tpetra::Map<LO, GO, NT>::local_map_type;
 
   ComputeLocalRowOneNorms (const equib_info_type& equib,   // in/out
-                           const local_matrix_type& A_lcl, // in
+                           const local_matrix_device_type& A_lcl, // in
                            const local_map_type& rowMap,   // in
                            const local_map_type& colMap) : // in
     equib_ (equib),
@@ -474,7 +474,7 @@ public:
 
 private:
   equib_info_type equib_;
-  local_matrix_type A_lcl_;
+  local_matrix_device_type A_lcl_;
   local_map_type rowMap_;
   local_map_type colMap_;
 };
@@ -486,12 +486,12 @@ class ComputeLocalRowAndColumnOneNorms {
 public:
   using val_type = typename Kokkos::ArithTraits<SC>::val_type;
   using equib_info_type = EquilibrationInfo<val_type, typename NT::device_type>;
-  using local_matrix_type = typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_type;
+  using local_matrix_device_type = typename ::Tpetra::CrsMatrix<SC, LO, GO, NT>::local_matrix_device_type;
   using local_map_type = typename ::Tpetra::Map<LO, GO, NT>::local_map_type;
 
 public:
   ComputeLocalRowAndColumnOneNorms (const equib_info_type& equib,   // in/out
-                                    const local_matrix_type& A_lcl, // in
+                                    const local_matrix_device_type& A_lcl, // in
                                     const local_map_type& rowMap,   // in
                                     const local_map_type& colMap) : // in
     equib_ (equib),
@@ -580,7 +580,7 @@ public:
 
 private:
   equib_info_type equib_;
-  local_matrix_type A_lcl_;
+  local_matrix_device_type A_lcl_;
   local_map_type rowMap_;
   local_map_type colMap_;
 };
@@ -603,7 +603,7 @@ computeLocalRowOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
   constexpr bool assumeSymmetric = false; // doesn't matter here
   equib_info_type equib (lclNumRows, lclNumCols, assumeSymmetric);
 
-  functor_type functor (equib, A.getLocalMatrix (),
+  functor_type functor (equib, A.getLocalMatrixDevice (),
                         A.getRowMap ()->getLocalMap (),
                         A.getColMap ()->getLocalMap ());
   int result = 0;
@@ -635,7 +635,7 @@ computeLocalRowAndColumnOneNorms_CrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, 
   const LO lclNumCols = static_cast<LO> (A.getColMap ()->getNodeNumElements ());
   equib_info_type equib (lclNumRows, lclNumCols, assumeSymmetric);
 
-  functor_type functor (equib, A.getLocalMatrix (),
+  functor_type functor (equib, A.getLocalMatrixDevice (),
                         A.getRowMap ()->getLocalMap (),
                         A.getColMap ()->getLocalMap ());
   int result = 0;

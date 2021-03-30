@@ -237,7 +237,7 @@ int main (int argc, char* argv[]) {
     // then construct a View of it.  (Note that a row offset needs to
     // have a type that can contain the sum of the row counts.)
     using row_offset_type =
-      Tpetra::CrsMatrix<double>::local_matrix_type::row_map_type::non_const_value_type;
+      Tpetra::CrsMatrix<double>::local_matrix_device_type::row_map_type::non_const_value_type;
 
     // Use a parallel scan (prefix sum) over the array of row counts, to
     // compute the array of row offsets for the sparse graph.

@@ -434,7 +434,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
       const LO lclNumRows = rowMap.getNodeNumElements ();
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         const GO gblRow = rowMap.getGlobalElement (lclRow);
-        Teuchos::ArrayView<const GO> rowGids;
+        typename RowGraph<LO,GO,NT>::global_inds_host_view_type rowGids;
         graph.getGlobalRowView (gblRow, rowGids);
 
         const LO numEnt = static_cast<LO> (rowGids.size ());

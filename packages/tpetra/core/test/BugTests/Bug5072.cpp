@@ -127,8 +127,8 @@ namespace {
     TEST_EQUALITY( testMatrix->getNodeNumCols(), readMatrix->getNodeNumCols() );
     TEST_EQUALITY( testMatrix->getNodeNumEntries(), readMatrix->getNodeNumEntries() );
     if (success) {
-      Teuchos::ArrayView<const LO>    rowinds1, rowinds2;
-      Teuchos::ArrayView<const SC> rowvals1, rowvals2;
+      typename crs_matrix_type::local_inds_host_view_type rowinds1, rowinds2;
+      typename crs_matrix_type::values_host_view_type rowvals1, rowvals2;
 
       const LO lclNumRows = testMatrix->getNodeNumRows ();
       for (LO r = 0; r < lclNumRows; ++r) {

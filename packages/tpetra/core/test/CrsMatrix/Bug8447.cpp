@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(CrsMatrix, Bug8447, SC, LO, GO, NT)
   typedef Tpetra::Import<LO,GO,NT> ImportType;
   typedef Tpetra::CrsMatrix<SC,LO,GO,NT> CrsMatrixType;
   typedef typename CrsMatrixType::impl_scalar_type implScalarType;
-  typedef typename CrsMatrixType::local_matrix_type lclMatrixType;
+  typedef typename CrsMatrixType::local_matrix_device_type lclMatrixType;
 
   RCP<const Comm<int> > comm = getDefaultComm();
   TEUCHOS_TEST_FOR_EXCEPTION(

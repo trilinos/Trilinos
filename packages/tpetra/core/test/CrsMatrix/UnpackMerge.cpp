@@ -189,8 +189,8 @@ namespace { // (anonymous)
 
       Kokkos::fence(); // since we're accessing data on host now
 
-      Teuchos::ArrayView<const LO> lclColInds;
-      Teuchos::ArrayView<const Scalar> vals;
+      typename crs_matrix_type::local_inds_host_view_type lclColInds;
+      typename crs_matrix_type::values_host_view_type vals;
       const LO lclRowToTest (0);
       A_tgt.getLocalRowView(lclRowToTest, lclColInds, vals);
 

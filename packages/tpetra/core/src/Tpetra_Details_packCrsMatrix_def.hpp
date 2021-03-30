@@ -484,12 +484,12 @@ packCrsMatrixRow (const ColumnMap& col_map,
 
 template<class LocalMatrix, class LocalMap, class BufferDeviceType>
 struct PackCrsMatrixFunctor {
-  typedef LocalMatrix local_matrix_type;
+  typedef LocalMatrix local_matrix_device_type;
   typedef LocalMap local_map_type;
-  typedef typename local_matrix_type::value_type ST;
+  typedef typename local_matrix_device_type::value_type ST;
   typedef typename local_map_type::local_ordinal_type LO;
   typedef typename local_map_type::global_ordinal_type GO;
-  typedef typename local_matrix_type::device_type DT;
+  typedef typename local_matrix_device_type::device_type DT;
 
   typedef Kokkos::View<const size_t*, BufferDeviceType>
     num_packets_per_lid_view_type;
@@ -504,11 +504,11 @@ struct PackCrsMatrixFunctor {
     offset_type;
   typedef Kokkos::pair<int, LO> value_type;
 
-  static_assert (std::is_same<LO, typename local_matrix_type::ordinal_type>::value,
+  static_assert (std::is_same<LO, typename local_matrix_device_type::ordinal_type>::value,
                  "local_map_type::local_ordinal_type and "
-                 "local_matrix_type::ordinal_type must be the same.");
+                 "local_matrix_device_type::ordinal_type must be the same.");
 
-  local_matrix_type local_matrix;
+  local_matrix_device_type local_matrix;
   local_map_type local_col_map;
   exports_view_type exports;
   num_packets_per_lid_view_type num_packets_per_lid;
@@ -518,7 +518,7 @@ struct PackCrsMatrixFunctor {
   size_t num_bytes_per_value;
   bool pack_pids;
 
-  PackCrsMatrixFunctor (const local_matrix_type& local_matrix_in,
+  PackCrsMatrixFunctor (const local_matrix_device_type& local_matrix_in,
                         const local_map_type& local_col_map_in,
                         const exports_view_type& exports_in,
                         const num_packets_per_lid_view_type& num_packets_per_lid_in,
@@ -744,7 +744,7 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
   const char prefix[] = "Tpetra::Details::PackCrsMatrixImpl::packCrsMatrix: ";
   constexpr bool debug = false;
 
-  auto local_matrix = sourceMatrix.getLocalMatrix ();
+  auto local_matrix = sourceMatrix.getLocalMatrixDevice ();
   auto local_col_map = sourceMatrix.getColMap ()->getLocalMap ();
 
   // Setting this to zero tells the caller to expect a possibly
@@ -843,13 +843,13 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
      "one matrix entry, but export_pids.extent(0) = 0.");
 
   typedef typename std::decay<decltype (local_matrix)>::type
-    local_matrix_type;
+    local_matrix_device_type;
   typedef typename std::decay<decltype (local_col_map)>::type
     local_map_type;
 
   exports.modify_device ();
   auto exports_d = exports.view_device ();
-  do_pack<local_matrix_type, local_map_type, DT>
+  do_pack<local_matrix_device_type, local_map_type, DT>
     (local_matrix, local_col_map, exports_d, num_packets_per_lid,
      export_lids, export_pids, offsets, num_bytes_per_value,
      pack_pids);
@@ -867,8 +867,8 @@ packCrsMatrix (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                size_t& constantNumPackets,
                Distributor& distor)
 {
-  using local_matrix_type = typename CrsMatrix<ST,LO,GO,NT>::local_matrix_type;
-  using device_type = typename local_matrix_type::device_type;
+  using local_matrix_device_type = typename CrsMatrix<ST,LO,GO,NT>::local_matrix_device_type;
+  using device_type = typename local_matrix_device_type::device_type;
   using buffer_device_type = typename DistObject<char, LO, GO, NT>::buffer_device_type;
   using host_exec_space = typename Kokkos::View<size_t*, device_type>::HostMirror::execution_space;
   using host_dev_type = Kokkos::Device<host_exec_space, Kokkos::HostSpace>;
@@ -969,12 +969,12 @@ packCrsMatrixWithOwningPIDs (const CrsMatrix<ST, LO, GO, NT>& sourceMatrix,
                              size_t& constantNumPackets,
                              Distributor& distor)
 {
-  typedef typename CrsMatrix<ST,LO,GO,NT>::local_matrix_type local_matrix_type;
+  typedef typename CrsMatrix<ST,LO,GO,NT>::local_matrix_device_type local_matrix_device_type;
   typedef typename DistObject<char, LO, GO, NT>::buffer_device_type buffer_device_type;
   typedef typename Kokkos::DualView<char*, buffer_device_type>::t_host::execution_space host_exec_space;
   typedef Kokkos::Device<host_exec_space, Kokkos::HostSpace> host_dev_type;
 
-  typename local_matrix_type::device_type outputDevice;
+  typename local_matrix_device_type::device_type outputDevice;
 
   const bool verbose = ::Tpetra::Details::Behavior::verbose ();
   std::unique_ptr<std::string> prefix;

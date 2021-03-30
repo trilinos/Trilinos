@@ -41,6 +41,8 @@
 // @HEADER
 */
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_Map.hpp"
@@ -774,3 +776,5 @@ main (int argc, char* argv[])
     Teuchos::UnitTestRepository::runUnitTestsFromMain (argc, argv);
   return errCode;
 }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE

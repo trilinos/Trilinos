@@ -548,7 +548,7 @@ executeTotalElementLoopSPKokkos_
   RCP<crs_matrix_type> crs_matrix = rcp(new crs_matrix_type(crs_graph));
   RCP<multivector_type> rhs = rcp(new multivector_type(crs_graph->getRowMap(), 1));
 
-  auto localMatrix  = crs_matrix->getLocalMatrix();
+  auto localMatrix  = crs_matrix->getLocalMatrixDevice();
   auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto localRowMap  = crs_matrix->getRowMap()->getLocalMap();
   auto localColMap  = crs_matrix->getColMap()->getLocalMap();

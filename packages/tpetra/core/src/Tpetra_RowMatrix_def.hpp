@@ -405,8 +405,8 @@ namespace Tpetra {
         // If the matrix is locally indexed on the calling process, we
         // have to use its column Map (which it _must_ have in this
         // case) to convert to global indices.
-        ArrayView<const LO> indIn;
-        ArrayView<const Scalar> valIn;
+        local_inds_host_view_type indIn;
+        values_host_view_type valIn;
         this->getLocalRowView (lclRow, indIn, valIn);
         const map_type& colMap = * (this->getColMap ());
         // Copy column indices one at a time, so that we don't need
@@ -415,7 +415,7 @@ namespace Tpetra {
           const GO gblIndIn = colMap.getGlobalElement (indIn[k]);
           memcpy (indOut + k * sizeof (GO), &gblIndIn, sizeof (GO));
         }
-        memcpy (valOut, valIn.getRawPtr (), numEnt * sizeof (Scalar));
+        memcpy (valOut, valIn.data (), numEnt * sizeof (Scalar));
       }
       else if (this->isGloballyIndexed ()) {
         // If the matrix is globally indexed on the calling process,
@@ -423,13 +423,13 @@ namespace Tpetra {
         // have to get the global row index.  The calling process must
         // have a row Map, since otherwise it shouldn't be participating
         // in packing operations.
-        ArrayView<const GO> indIn;
-        ArrayView<const Scalar> valIn;
+        global_inds_host_view_type indIn;
+        values_host_view_type valIn;
         const map_type& rowMap = * (this->getRowMap ());
         const GO gblRow = rowMap.getGlobalElement (lclRow);
         this->getGlobalRowView (gblRow, indIn, valIn);
-        memcpy (indOut, indIn.getRawPtr (), numEnt * sizeof (GO));
-        memcpy (valOut, valIn.getRawPtr (), numEnt * sizeof (Scalar));
+        memcpy (indOut, indIn.data (), numEnt * sizeof (GO));
+        memcpy (valOut, valIn.data (), numEnt * sizeof (Scalar));
       }
       else {
         if (numEnt != 0) {
@@ -590,6 +590,7 @@ namespace Tpetra {
       << ", numBytes: " << firstBadNumBytes << ".");
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
   RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -617,6 +618,7 @@ namespace Tpetra {
 
     return static_cast<LocalOrdinal> (0);
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 } // namespace Tpetra
 

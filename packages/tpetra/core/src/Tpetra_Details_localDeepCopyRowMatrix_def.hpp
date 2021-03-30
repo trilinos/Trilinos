@@ -40,6 +40,7 @@
 #ifndef TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
 #define TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 /// \file Tpetra_Details_localDeepCopyRowMatrix_def.hpp
 /// \brief Definition of function for making a deep copy of a
 ///   Tpetra::RowMatrix's local matrix.
@@ -63,6 +64,7 @@ KokkosSparse::CrsMatrix<
     typename NT::device_type,
     void,
     size_t>
+TPETRA_DEPRECATED
 localDeepCopyLocallyIndexedRowMatrix
 (const RowMatrix<SC, LO, GO, NT>& A,
  const char label[])
@@ -89,15 +91,15 @@ localDeepCopyLocallyIndexedRowMatrix
   using Kokkos::view_alloc;
   using Kokkos::WithoutInitializing;
   using IST = typename Kokkos::ArithTraits<SC>::val_type;
-  using local_matrix_type = KokkosSparse::CrsMatrix<
+  using local_matrix_device_type = KokkosSparse::CrsMatrix<
     IST, LO, typename NT::device_type, void, size_t>;
   using local_graph_device_type =
-    typename local_matrix_type::staticcrsgraph_type;
+    typename local_matrix_device_type::staticcrsgraph_type;
   using inds_type = typename local_graph_device_type::entries_type;
   inds_type ind (view_alloc ("ind", WithoutInitializing), nnz);
   auto ind_h = Kokkos::create_mirror_view (ind);
 
-  using values_type = typename local_matrix_type::values_type;
+  using values_type = typename local_matrix_device_type::values_type;
   values_type val (view_alloc ("val", WithoutInitializing), nnz);
   auto val_h = Kokkos::create_mirror_view (val);
 
@@ -139,11 +141,13 @@ localDeepCopyLocallyIndexedRowMatrix
 
   local_graph_device_type lclGraph (ind, ptr);
   const size_t numCols = A.getColMap ()->getNodeNumElements ();
-  return local_matrix_type (label, numCols, val, lclGraph);
+  return local_matrix_device_type (label, numCols, val, lclGraph);
 }
+
 
 } // namespace Details
 } // namespace Tpetra
+
 
 //
 // Explicit instantiation macros
@@ -159,5 +163,7 @@ namespace Details { \
     (const RowMatrix<SC, LO, GO, NT>& A, \
      const char label[]); \
 }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
 #endif // TPETRA_DETAILS_LOCALDEEPCOPYROWMATRIX_DEF_HPP
