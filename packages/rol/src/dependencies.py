@@ -25,21 +25,33 @@ def includes(pathfile):
     else:
         return list()
 
-def get_headers(cwd,filename,headers=list()):
-   new_headers = includes(get_pathfile(cwd,filename))
-   if all([ h in headers for h in new_headers ]):
-       return headers+new_headers
-   else:
-       x = list()
-       [x.append(get_headers(cwd,h,headers+new_headers)) for h in new_headers if h not in headers]
-       return x
-
 def flatten(l):
     for el in l:
         if isinstance(el, Iterable) and not isinstance(el, (str, bytes)):
             yield from flatten(el)
         else:
             yield el    
+
+
+def get_headers(cwd,filename,opened_headers=list()):
+
+    # Add the current file name to the list of files that have been opened
+    opened_headers.append(filename)
+
+    # Get the name of every file included in the current header provided it has not 
+    # previously been opened
+    new_headers = [h for h in includes(get_pathfile(cwd,filename)) if h not in opened_headers]
+
+    # If there are any new header files discovered recursively call this function and 
+    # flatten the lists 
+    if len(new_headers):
+        next_level = [get_headers(cwd,h,opened_headers) for h in new_headers]
+        return list(flatten(next_level))
+
+    # No new headers to open. Process completed
+    else:
+        return opened_headers
+
 
 if __name__ == '__main__':
 
@@ -51,7 +63,6 @@ if __name__ == '__main__':
     headers = get_headers(cwd,filename)
     headers = [ h for h in flatten(headers) ]
     counts = Counter(headers)
-
     msg = "Checking dependencies for file {0}\n\n".format(filename)
     print(msg)
     
