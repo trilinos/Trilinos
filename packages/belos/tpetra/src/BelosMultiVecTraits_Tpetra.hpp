@@ -47,6 +47,8 @@
 #include "BelosTypes.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include <MatrixMarket_Tpetra.hpp>
+#include <TpetraExt_MatrixMatrix.hpp>
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_StaticView.hpp"
 #include "Teuchos_Array.hpp"
@@ -696,8 +698,14 @@ namespace Belos {
     }
 
     static void MvPrint (const MV& mv, std::ostream& os) {
-      Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
-      mv.describe (fos, Teuchos::VERB_EXTREME);
+      try {
+        // test if we have an std::ofstream
+        dynamic_cast<std::ofstream&>(os);
+        Tpetra::MatrixMarket::Writer<::Tpetra::CrsMatrix<Scalar, LO, GO, Node> >::writeDense(os, mv, "", "");
+      } catch (const std::bad_cast&) {
+        Teuchos::FancyOStream fos (Teuchos::rcpFromRef (os));
+        mv.describe (fos, Teuchos::VERB_EXTREME);
+      }
     }
 
 #ifdef HAVE_BELOS_TSQR
