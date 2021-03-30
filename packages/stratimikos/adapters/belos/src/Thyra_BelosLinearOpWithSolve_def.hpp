@@ -229,6 +229,14 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
       label_ = solverPL_->get<std::string>("Timer Label");
       lp_->setLabel(label_);
     }
+    if (solverPL_->isParameter("Filename LHS") && solverPL_->isType<std::string>("Filename LHS")) {
+      std::string filenameLHS = solverPL_->get<std::string>("Filename LHS");
+      lp_->setFilenameLHS(filenameLHS);
+    }
+    if (solverPL_->isParameter("Filename RHS") && solverPL_->isType<std::string>("Filename RHS")) {
+      std::string filenameRHS = solverPL_->get<std::string>("Filename RHS");
+      lp_->setFilenameRHS(filenameRHS);
+    }
   }
   else {
     RCP<const Teuchos::ParameterList> defaultPL =

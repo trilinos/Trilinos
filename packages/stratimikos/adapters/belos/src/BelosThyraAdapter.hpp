@@ -62,6 +62,12 @@
 #ifdef HAVE_BELOS_TSQR
 #  include <Thyra_TsqrAdaptor.hpp>
 #endif // HAVE_BELOS_TSQR
+#include "Stratimikos_Config.h"
+#ifdef HAVE_STRATIMIKOS_THYRATPETRAADAPTERS
+#  include "Thyra_TpetraThyraWrappers.hpp"
+#  include <MatrixMarket_Tpetra.hpp>
+#  include <TpetraExt_MatrixMatrix.hpp>
+#endif
 
 #include <Teuchos_TimeMonitor.hpp>
 
@@ -525,7 +531,25 @@ namespace Belos {
     /*! \brief Print the \c mv multi-std::vector to the \c os output stream.
      */
     static void MvPrint( const TMVB& mv, std::ostream& os )
-      { os << describe(mv,Teuchos::VERB_EXTREME); }
+    {
+      try {
+#ifdef HAVE_STRATIMIKOS_THYRATPETRAADAPTERS
+        // test if we have an std::ofstream
+        dynamic_cast<std::ofstream&>(os);
+        try {
+          auto tmv = Thyra::TpetraOperatorVectorExtraction<ScalarType>::getConstTpetraMultiVector(Teuchos::rcpFromRef(mv));
+          Tpetra::MatrixMarket::Writer<::Tpetra::CrsMatrix<ScalarType> >::writeDense(os, *tmv, "", "");
+          return;
+        } catch (const std::logic_error&) {
+          throw std::bad_cast();
+        }
+#else
+        throw std::bad_cast();
+#endif
+      } catch (const std::bad_cast&) {
+        os << describe(mv,Teuchos::VERB_EXTREME);
+      }
+    }
 
     //@}
 
