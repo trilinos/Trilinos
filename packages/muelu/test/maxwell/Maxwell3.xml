@@ -15,6 +15,7 @@
   <ParameterList name="smoother: params">
     <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
     <Parameter name="relaxation: sweeps" type="int" value="1"/>
+    <Parameter name="relaxation: use l1" type="bool" value="true"/>
   </ParameterList>
 
   <ParameterList name="refmaxwell: 11list">
