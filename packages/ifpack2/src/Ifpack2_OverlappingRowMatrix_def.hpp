@@ -456,8 +456,8 @@ getGlobalRowView (global_ordinal_type GlobalRow,
                   values_host_view_type &values) const {
   const local_ordinal_type LocalRow = RowMap_->getLocalElement (GlobalRow);
   if (LocalRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())  {
-    indices = global_inds_host_view_type();
-    values = values_host_view_type();
+    Kokkos::resize(indices,0);
+    Kokkos::resize(values,0);
   } else {
     if (Teuchos::as<size_t> (LocalRow) < A_->getNodeNumRows ()) {
       A_->getGlobalRowView (GlobalRow, indices, values);
