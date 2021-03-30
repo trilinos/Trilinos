@@ -176,7 +176,7 @@ std::vector<std::string> KelleySachsAlgorithm_B<Real>::run(Vector<Real>         
     // Compute ratio of acutal and predicted reduction
     TRflag_ = TRUtils::SUCCESS;
     TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
-    TypeU::TrustRegion<Real>::analyzeRatio();
+
     // Check sufficient decrease
     if ( rho >= eta0_ ) {
       lambda = std::min(one, state_->searchSize/gfnorm);
