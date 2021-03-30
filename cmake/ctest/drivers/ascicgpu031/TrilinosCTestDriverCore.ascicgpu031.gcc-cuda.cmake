@@ -105,7 +105,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
       ### COMPILERS AND FLAGS ###
-      "-DTrilinos_ENABLE_CXX11:BOOL=ON"
       "-DCMAKE_CXX_FLAGS:STRING='-Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
