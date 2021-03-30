@@ -920,7 +920,7 @@ namespace Belos {
 #endif
       MVT::MvAddMv(pCoeff_(0,0), *AX, SCT::zero(), y, y); //y= coeff_i(A^ix)
     }
-    for( int i=1; i < dim_+1; i++)
+    for( int i=1; i < dim_; i++)
     {
       Teuchos::RCP<MV> X, Y;
       if ( i%2 )
