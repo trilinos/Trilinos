@@ -58,7 +58,7 @@ if __name__ == '__main__':
 
     width = max( len(k) for k in counts.keys() )
     row = "{0:<" + "{0}".format(width+2) + "} : {" + "1}"
-    row.format("File Name","Times Opened")
+    print(row.format("File Name","Times Opened"))
     rows = [row.format(k,v) for k,v in counts.items()]
     
     print('-' * max([len(r) for r in rows]))
