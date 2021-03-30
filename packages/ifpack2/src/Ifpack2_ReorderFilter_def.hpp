@@ -370,7 +370,15 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
+template<class MatrixType>
+void ReorderFilter<MatrixType>::getGlobalRowView(global_ordinal_type /* GlobalRow */,
+                                                  global_inds_host_view_type &/*indices*/,
+                                                  values_host_view_type &/*values*/) const
+{
+  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
+}
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getGlobalRowView (global_ordinal_type /* GlobalRow */,
@@ -379,8 +387,18 @@ getGlobalRowView (global_ordinal_type /* GlobalRow */,
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getGlobalRowView.");
 }
+#endif
 
 
+template<class MatrixType>
+void ReorderFilter<MatrixType>::getLocalRowView(loca_ordinal_type /* LocalRow */,
+    local_inds_host_view_type & /*indices*/,
+    values_host_view_type & /*values*/) const
+{
+  throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void ReorderFilter<MatrixType>::
 getLocalRowView (local_ordinal_type /* LocalRow */,
@@ -389,6 +407,7 @@ getLocalRowView (local_ordinal_type /* LocalRow */,
 {
   throw std::runtime_error("Ifpack2::ReorderFilter: does not support getLocalRowView.");
 }
+#endif
 
 
 template<class MatrixType>

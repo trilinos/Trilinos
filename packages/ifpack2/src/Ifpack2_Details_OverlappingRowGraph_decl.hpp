@@ -70,11 +70,16 @@ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
-
+  typedef typename GraphType::local_inds_host_view_type local_inds_host_view_type;  
+  typedef typename GraphType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;  
+  typedef typename GraphType::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename GraphType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  
   typedef Tpetra::Export<local_ordinal_type, global_ordinal_type, node_type> export_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::RowGraph<local_ordinal_type, global_ordinal_type, node_type> row_graph_type;
+  
   //@}
   //! \name Constructors and destructor
   //@{
@@ -227,8 +232,16 @@ public:
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
   virtual void
   getGlobalRowCopy (global_ordinal_type globalRow,
+                    nonconst_global_inds_host_view_type& gblColInds,
+                    size_t& numIndices) const;
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowCopy (global_ordinal_type globalRow,
                     const Teuchos::ArrayView<global_ordinal_type>& indices,
                     size_t& numIndices) const;
+#endif
+
 
   /// \brief Copy out a list of local column indices in the given
   ///   local row that are owned by the calling process.
@@ -249,8 +262,14 @@ public:
   /// Teuchos::OrdinalTraits<size_t>::invalid() on output.
   virtual void
   getLocalRowCopy (local_ordinal_type localRow,
+                   nonconst_local_inds_host_view_type& gblColInds,
+                   size_t& numIndices) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getLocalRowCopy (local_ordinal_type localRow,
                    const Teuchos::ArrayView<local_ordinal_type>& indices,
                    size_t& numIndices) const;
+#endif
   //@}
 private:
   //! \name Internal data

@@ -259,8 +259,27 @@ bool OverlappingRowGraph<GraphType>::isFillComplete () const
 {
   return true;
 }
-  
+ 
+template<class GraphType>
+void
+OverlappingRowGraph<GraphType>::
+  getGlobalRowCopy (global_ordinal_type globalRow,
+                    nonconst_global_inds_host_view_type& indices,
+                    size_t& numIndices) const
+{
+  const local_ordinal_type localRow = rowMap_->getLocalElement (globalRow);
+  if (localRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid ()) {
+    numIndices = Teuchos::OrdinalTraits<size_t>::invalid ();
+  } else {
+    if (Teuchos::as<size_t> (localRow) < nonoverlappingGraph_->getNodeNumRows ()) {
+      nonoverlappingGraph_->getGlobalRowCopy (globalRow, indices, numIndices);
+    } else {
+      overlappingGraph_->getGlobalRowCopy (globalRow, indices, numIndices);
+    }
+  }
+}
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class GraphType>
 void
 OverlappingRowGraph<GraphType>::
@@ -279,8 +298,27 @@ getGlobalRowCopy (global_ordinal_type globalRow,
     }
   }
 }
-  
+#endif
 
+template<class GraphType>
+void
+OverlappingRowGraph<GraphType>::
+getLocalRowCopy (local_ordinal_type localRow,
+                 nonconst_local_inds_host_view_type& indices,
+                 size_t& numIndices) const
+{
+  using Teuchos::as;
+  const size_t numMyRowsA = nonoverlappingGraph_->getNodeNumRows ();
+  if (as<size_t> (localRow) < numMyRowsA) {
+    nonoverlappingGraph_->getLocalRowCopy (localRow, indices, numIndices);
+  } else {
+    const local_ordinal_type localRowOffset = 
+      localRow - as<local_ordinal_type> (numMyRowsA);
+    overlappingGraph_->getLocalRowCopy (localRowOffset, indices, numIndices);
+  }
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class GraphType>
 void
 OverlappingRowGraph<GraphType>::
@@ -298,6 +336,7 @@ getLocalRowCopy (local_ordinal_type localRow,
     overlappingGraph_->getLocalRowCopy (localRowOffset, indices, numIndices);
   }
 }
+#endif
   
 } // namespace Details
 } // namespace Ifpack2
