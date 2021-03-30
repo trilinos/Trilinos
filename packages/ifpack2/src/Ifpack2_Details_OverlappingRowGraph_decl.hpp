@@ -270,6 +270,7 @@ public:
                    const Teuchos::ArrayView<local_ordinal_type>& indices,
                    size_t& numIndices) const;
 #endif
+
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the graph.
     ///
@@ -324,6 +325,7 @@ public:
     virtual void
     getGlobalRowView (const global_ordinal_type gblRow,
                       global_inds_host_view_type& gblColInds) const;
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getGlobalRowView (const global_ordinal_type gblRow,
