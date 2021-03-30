@@ -995,15 +995,28 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
                      const Teuchos::ArrayView<LocalOrdinal> &Indices,
                      const Teuchos::ArrayView<Scalar> &Values,
                      size_t &NumEntries) const {A_->getLocalRowCopy(LocalRow,Indices,Values,NumEntries);}
+
+
+  virtual void
+  getGlobalRowView (GlobalOrdinal GlobalRow,
+                    global_inds_host_view_type &indices,
+                    values_host_view_type &values) const {A_->getGlobalRowView(GlobalRow,indices,values);}
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getGlobalRowView (GlobalOrdinal GlobalRow,
                       Teuchos::ArrayView<const GlobalOrdinal> &indices,
                       Teuchos::ArrayView<const Scalar> &values) const {A_->getGlobalRowView(GlobalRow,indices,values);}
-
+#endif
+  virtual void
+  getLocalRowView (LocalOrdinal LocalRow,
+                   local_inds_host_view_type & indices,
+                   values_host_view_type & values) const {A_->getLocalRowView(LocalRow,indices,values);}
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal> &indices,
                      Teuchos::ArrayView<const Scalar> &values) const {A_->getLocalRowView(LocalRow,indices,values);}
+#endif
 
     virtual void getLocalDiagCopy (Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {A_->getLocalDiagCopy(diag);}
     virtual void leftScale (const Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) {A_->leftScale(x);}
