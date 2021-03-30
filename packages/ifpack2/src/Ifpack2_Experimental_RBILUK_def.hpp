@@ -341,6 +341,8 @@ initAllValues (const block_crs_matrix_type& A)
   // This is ok, as the *order* of the GIDs in the rowmap is a better
   // expression of the user's intent than the GIDs themselves.
 
+  //TODO BMK: Revisit this fence when BlockCrsMatrix is refactored.
+  Kokkos::fence();
   for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
     local_ordinal_type local_row = myRow;
 
