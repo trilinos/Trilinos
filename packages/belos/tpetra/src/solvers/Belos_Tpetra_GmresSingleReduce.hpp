@@ -226,18 +226,19 @@ if( n>0 ){
     }
     H(n,n-1) = sqrt( T(n,n) - tmp );
 
+    // Second correction step, correcting inner product 
     tmp=0.0e+00;
     for(int i = 0; i < n; i++){
         tmp = tmp + T(i,n) * T(i,n+1);
     }
     T(n,n+1) = ( T(n,n+1) - tmp ) / ( H(n,n-1) * H(n,n-1) );
 
+    // Third correction step, correcting using un-normalized vector
     for(int i = 0; i < n; i++){
         T(i,n+1) = T(i,n+1) / H(n,n-1);
     }
 
-
-
+    // Clean-up for constructing previous q_j-1 and w_j
     Teuchos::Range1D index_update (0, n-1);
     Teuchos::Range1D index_Wj (n+1, n+1);
     Teuchos::Range1D index_qj (n, n);
@@ -260,13 +261,14 @@ if( n>0 ){
                      
     MVT::MvAddMv( one, Wj, -T(n,n+1), qj, Wj );
 
-
+    // Getting the previous column of H correct and setting up a workspace
     for(int i = 0; i < n; i++ ){
         H(i,n-1) = T(i,n-1) + T(i,n);
         T(i,n-1) = H(i,n-1);
     }
     T(n,n-1) = H(n,n-1);
 
+    // Arnoldi repres trick
     dense_matrix_type Hnew (Teuchos::View, H,   n, n-1, 0, 0);
     dense_matrix_type Tcol (Teuchos::View, T,   n,   1, 0, n);
     dense_matrix_type work (Teuchos::View, H,   n,   1, 0, n);
@@ -278,14 +280,11 @@ if( n>0 ){
              zero, work.values(), work.stride() 
     );    	
 
+    // Step to update H correctly at the next iteration
     for(int i = 0; i < n+1; i++ ){
         T(i,n) = T(i,n+1) - ( H(i,n) / H(n,n-1) );
     }
 
-//    for(int i=0; i<n; i++ ){
-//        H(i,n) = 0.0e+00;
-//    }
-      
 }
 
 
