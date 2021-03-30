@@ -1440,8 +1440,8 @@ namespace MueLuTests {
     GO nx = 10*comm->getSize();
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
-    matrixList.set("ny",10);
-    matrixList.set("nz",10);
+    matrixList.set("ny",(GO)10);
+    matrixList.set("nz",(GO)10);
     matrixList.set("matrixType","Laplace3D");
     RCP<Matrix> A =TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixList,lib);
     A->SetFixedBlockSize(1);// So we can block diagonalize
@@ -1492,8 +1492,8 @@ namespace MueLuTests {
     GO nx = 10*comm->getSize();
     Teuchos::ParameterList matrixList;
     matrixList.set("nx",nx);
-    matrixList.set("ny",10);
-    matrixList.set("nz",10);
+    matrixList.set("ny",(GO)10);
+    matrixList.set("nz",(GO)10);
     matrixList.set("matrixType","Laplace3D");
     RCP<Matrix> A =TestHelpers::TestFactory<SC, LO, GO, NO>::BuildMatrix(matrixList,lib);
 
