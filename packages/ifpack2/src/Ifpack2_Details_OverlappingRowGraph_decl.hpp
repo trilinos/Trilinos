@@ -270,8 +270,7 @@ public:
                    const Teuchos::ArrayView<local_ordinal_type>& indices,
                    size_t& numIndices) const;
 #endif
-
-      /// \brief Get a constant, nonpersisting, locally indexed view of
+    /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the graph.
     ///
     /// The returned views of the column indices are not guaranteed to
