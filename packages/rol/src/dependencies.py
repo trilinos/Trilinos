@@ -62,6 +62,7 @@ if __name__ == '__main__':
 
     headers = get_headers(cwd,filename)
     headers = [ h for h in flatten(headers) ]
+    headers.sort()
     counts = Counter(headers)
     msg = "Checking dependencies for file {0}\n\n".format(filename)
     print(msg)
