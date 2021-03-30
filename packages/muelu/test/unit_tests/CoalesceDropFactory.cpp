@@ -1519,7 +1519,7 @@ namespace MueLuTests {
 
     RCP<GraphBase> graph = fineLevel.Get<RCP<GraphBase> >("Graph", &coalesceDropFact);
     LO myDofsPerNode = fineLevel.Get<LO>("DofsPerNode", &coalesceDropFact);
-    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 3, true);
+    TEST_EQUALITY(Teuchos::as<int>(myDofsPerNode) == 1, true);
   }
 
 
