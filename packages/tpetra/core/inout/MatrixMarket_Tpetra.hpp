@@ -6011,22 +6011,19 @@ namespace Tpetra {
             for (GO globalRowIndex = minAllGlobalIndex;
                  globalRowIndex <= maxAllGlobalIndex; // inclusive range
                  ++globalRowIndex) {
-              ArrayView<const GO> ind;
-              ArrayView<const ST> val;
+              typename sparse_matrix_type::global_inds_host_view_type ind;
+              typename sparse_matrix_type::values_host_view_type val;
               newMatrix->getGlobalRowView (globalRowIndex, ind, val);
-              auto indIter = ind.begin ();
-              auto valIter = val.begin ();
-              for (; indIter != ind.end() && valIter != val.end();
-                   ++indIter, ++valIter) {
-                const GO globalColIndex = *indIter;
+              for (size_t ii = 0; ii < ind.extent(0); ii++) {
+                const GO globalColIndex = ind(ii);
                 // Convert row and column indices to 1-based.
                 // This works because the global index type is signed.
                 out << (globalRowIndex + 1 - rowIndexBase) << " "
                     << (globalColIndex + 1 - colIndexBase) << " ";
                 if (STS::isComplex) {
-                  out << STS::real (*valIter) << " " << STS::imag (*valIter);
+                  out << STS::real (val(ii)) << " " << STS::imag (val(ii));
                 } else {
-                  out << *valIter;
+                  out << val(ii);
                 }
                 out << endl;
               } // For each entry in the current row
@@ -6045,30 +6042,27 @@ namespace Tpetra {
                 "Failed to convert the supposed local row index "
                 << localRowIndex << " into a global row index.  "
                 "Please report this bug to the Tpetra developers.");
-              ArrayView<const LO> ind;
-              ArrayView<const ST> val;
+              typename sparse_matrix_type::local_inds_host_view_type ind;
+              typename sparse_matrix_type::values_host_view_type val;
               newMatrix->getLocalRowView (localRowIndex, ind, val);
-              auto indIter = ind.begin ();
-              auto valIter = val.begin ();
-              for (; indIter != ind.end() && valIter != val.end();
-                   ++indIter, ++valIter) {
+              for (size_t ii = 0; ii < ind.extent(0); ii++) {
                 // Convert the column index from local to global.
                 const GO globalColIndex =
-                  newMatrix->getColMap()->getGlobalElement (*indIter);
+                  newMatrix->getColMap()->getGlobalElement (ind(ii));
                 TEUCHOS_TEST_FOR_EXCEPTION(
                   globalColIndex == OTG::invalid(), std::logic_error,
                   "On local row " << localRowIndex << " of the sparse matrix: "
                   "Failed to convert the supposed local column index "
-                  << *indIter << " into a global column index.  Please report "
+                  << ind(ii) << " into a global column index.  Please report "
                   "this bug to the Tpetra developers.");
                 // Convert row and column indices to 1-based.
                 // This works because the global index type is signed.
                 out << (globalRowIndex + 1 - rowIndexBase) << " "
                     << (globalColIndex + 1 - colIndexBase) << " ";
                 if (STS::isComplex) {
-                  out << STS::real (*valIter) << " " << STS::imag (*valIter);
+                  out << STS::real (val(ii)) << " " << STS::imag (val(ii));
                 } else {
-                  out << *valIter;
+                  out << val(ii);
                 }
                 out << endl;
               } // For each entry in the current row
@@ -6311,10 +6305,10 @@ namespace Tpetra {
             for (GO globalRowIndex = minAllGlobalIndex;
                  globalRowIndex <= maxAllGlobalIndex; // inclusive range
                  ++globalRowIndex) {
-              ArrayView<const GO> ind;
+              typename crs_graph_type::global_inds_host_view_type ind;
               newGraph.getGlobalRowView (globalRowIndex, ind);
-              for (auto indIter = ind.begin (); indIter != ind.end (); ++indIter) {
-                const GO globalColIndex = *indIter;
+              for (size_t ii = 0; ii < ind.extent(0); ii++) {
+                const GO globalColIndex = ind(ii);
                 // Convert row and column indices to 1-based.
                 // This works because the global index type is signed.
                 out << (globalRowIndex + 1 - rowIndexBase) << " "
@@ -6336,17 +6330,17 @@ namespace Tpetra {
                  "to convert the supposed local row index " << localRowIndex <<
                  " into a global row index.  Please report this bug to the "
                  "Tpetra developers.");
-              ArrayView<const LO> ind;
+              typename crs_graph_type::local_inds_host_view_type ind;
               newGraph.getLocalRowView (localRowIndex, ind);
-              for (auto indIter = ind.begin (); indIter != ind.end (); ++indIter) {
+              for (size_t ii = 0; ii < ind.extent(0); ii++) {
                 // Convert the column index from local to global.
                 const GO globalColIndex =
-                  newGraph.getColMap ()->getGlobalElement (*indIter);
+                  newGraph.getColMap ()->getGlobalElement (ind(ii));
                 TEUCHOS_TEST_FOR_EXCEPTION(
                   globalColIndex == OTG::invalid(), std::logic_error,
                   "On local row " << localRowIndex << " of the sparse graph: "
                   "Failed to convert the supposed local column index "
-                  << *indIter << " into a global column index.  Please report "
+                  << ind(ii) << " into a global column index.  Please report "
                   "this bug to the Tpetra developers.");
                 // Convert row and column indices to 1-based.
                 // This works because the global index type is signed.

@@ -285,7 +285,7 @@ namespace {
       }
       row = 0;
       for (size_t i = 0; i < tgt_map->getNodeNumElements (); ++i, ++row) {
-        ArrayView<const LO> rowview;
+        typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
         tgt_graph->getLocalRowView( row, rowview );
         TEST_EQUALITY(rowview.size(), 1);
         TEST_EQUALITY(rowview[0], row);
@@ -358,7 +358,7 @@ namespace {
              globalrow <= tgt_map->getMaxGlobalIndex ();
              ++globalrow) {
           LO localrow = tgt_map->getLocalElement (globalrow);
-          ArrayView<const LO> rowview;
+          typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
           tgt_graph->getLocalRowView (localrow, rowview);
           TEST_EQUALITY(rowview.size(), globalrow+1);
 
@@ -396,6 +396,7 @@ namespace {
   {
     typedef Tpetra::global_size_t GST;
     typedef Map<LO, GO> map_type;
+    typedef CrsMatrix<Scalar, LO, GO> crs_type;
 
     out << "(CrsMatrixImportExport,doImport) test" << endl;
     OSTab tab1 (out); // Add one tab level
@@ -475,8 +476,8 @@ namespace {
              ++gblRow) {
           const LO lclRow = tgt_map->getLocalElement (gblRow);
 
-          ArrayView<const LO> lclInds;
-          ArrayView<const Scalar> lclVals;
+          typename crs_type::local_inds_host_view_type lclInds;
+          typename crs_type::values_host_view_type lclVals;
           tgt_mat->getLocalRowView (lclRow, lclInds, lclVals);
           TEST_EQUALITY_CONST(lclInds.size(), 1);
           TEST_EQUALITY_CONST(lclVals.size(), 1);
@@ -494,7 +495,6 @@ namespace {
       // constructor.  The returned matrix should also be diagonal and
       // should equal tgt_mat.
       Teuchos::ParameterList dummy;
-      typedef CrsMatrix<Scalar, LO, GO> crs_type;
       RCP<crs_type> A_tgt2 =
         Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer,
                                                           Teuchos::null,
@@ -634,8 +634,8 @@ namespace {
         for (GO globalrow=tgt_map->getMinGlobalIndex();
              globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow) {
           LO localrow = tgt_map->getLocalElement(globalrow);
-          ArrayView<const LO> rowinds;
-          ArrayView<const Scalar> rowvals;
+          typename crs_type::local_inds_host_view_type rowinds;
+          typename crs_type::values_host_view_type rowvals;
           tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
           TEST_EQUALITY(rowinds.size(), globalrow);
           TEST_EQUALITY(rowvals.size(), globalrow);
@@ -721,7 +721,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
   if (errors != 0) return false;
 
   for (LO i=0; i<static_cast<LO>(G1->getNodeNumRows()); i++) {
-    ArrayView<const LO> V1, V2;
+    typename Graph::local_inds_host_view_type V1, V2;
     G1->getLocalRowView(i, V1);
     G2->getLocalRowView(i, V2);
     if (V1.size() != V2.size()) {

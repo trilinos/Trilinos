@@ -1682,18 +1682,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   RowptrsType rowptrsCRS[3];
   ColindsType colindsCRS[3];
   //Populate A and B
-  ValuesType::HostMirror vals[3];
-     vals[0] = ValuesType::HostMirror("vals0", nrows * nnzPerRow);
-     vals[1] = ValuesType::HostMirror("vals1", nrows * nnzPerRow);
-     vals[2] = ValuesType::HostMirror("vals2", nrows * nnzPerRow);
-  RowptrsType::HostMirror rowptrs[3];
-     rowptrs[0] = RowptrsType::HostMirror("rowptr0", nrows+1);
-     rowptrs[1] = RowptrsType::HostMirror("rowptr1", nrows+1);
-     rowptrs[2] = RowptrsType::HostMirror("rowptr2", nrows+1);
-  ColindsType::HostMirror colinds[3]; 
-     colinds[0] = ColindsType::HostMirror("colind0", nrows * nnzPerRow);
-     colinds[1] = ColindsType::HostMirror("colind1", nrows * nnzPerRow);
-     colinds[2] = ColindsType::HostMirror("colind2", nrows * nnzPerRow);
+  typename ValuesType::HostMirror vals[3];
+     vals[0] = typename ValuesType::HostMirror("vals0", nrows*nnzPerRow);
+     vals[1] = typename ValuesType::HostMirror("vals1", nrows*nnzPerRow);
+     vals[2] = typename ValuesType::HostMirror("vals2", nrows*nnzPerRow);
+  typename RowptrsType::HostMirror rowptrs[3];
+     rowptrs[0] = typename RowptrsType::HostMirror("rowptr0", nrows+1);
+     rowptrs[1] = typename RowptrsType::HostMirror("rowptr1", nrows+1);
+     rowptrs[2] = typename RowptrsType::HostMirror("rowptr2", nrows+1);
+  typename ColindsType::HostMirror colinds[3]; 
+     colinds[0] = typename ColindsType::HostMirror("colind0", nrows*nnzPerRow);
+     colinds[1] = typename ColindsType::HostMirror("colind1", nrows*nnzPerRow);
+     colinds[2] = typename ColindsType::HostMirror("colind2", nrows*nnzPerRow);
   {
     //want consistent test results
     srand(12);

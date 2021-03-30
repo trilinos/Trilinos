@@ -140,8 +140,8 @@ std::pair<int, std::string> check_matrix(CrsMatrixType& matrix)
 
   for (LO i=0; i<static_cast<LO>(my_num_rows); i++) {
     auto gbl_row = map->getGlobalElement(i);
-    ArrayView<const LO> cols;
-    ArrayView<const ST> vals;
+    typename CrsMatrixType::local_inds_host_view_type cols;
+    typename CrsMatrixType::values_host_view_type vals;
     matrix.getLocalRowView(i, cols, vals);
 
     std::map<GO,ST> expected;

@@ -148,12 +148,15 @@ bool compare_final_graph_structure_relaxed(Teuchos::FancyOStream &out,
     return false;
   }
 
-  auto hasLID = [](const Teuchos::ArrayView<const LO>& lids, const LO lid) -> bool {
-    auto it = std::find(lids.begin(),lids.end(),lid);
-    return it!=lids.end();
+  typedef typename Tpetra::CrsGraph<LO,GO,Node>::local_inds_host_view_type
+                   lcl_ind_type;
+
+  auto hasLID = [](const lcl_ind_type & lids, const LO lid) -> bool {
+    auto it = std::find(lids.data(),lids.data()+lids.extent(0),lid);
+    return it!=lids.data()+lids.extent(0);
   };
 
-  Teuchos::ArrayView<const LO> cols1, cols2;
+  lcl_ind_type cols1, cols2;
   const LO invLO = Teuchos::OrdinalTraits<LO>::invalid();
   const auto& colMap1 = *g1.getColMap();
   const auto& colMap2 = *g2.getColMap();

@@ -74,8 +74,8 @@ namespace { // (anonymous)
     using Teuchos::outArg; \
     RCP<const Comm<int> > STCOMM = matrix.getComm(); \
     ArrayView<const GO> STMYGIDS = matrix.getRowMap()->getNodeElementList(); \
-    ArrayView<const LO> loview; \
-    ArrayView<const Scalar> sview; \
+    typename MAT::local_inds_host_view_type loview; \
+    typename MAT::values_host_view_type sview; \
     size_t STMAX = 0; \
     for (size_t STR=0; STR < matrix.getNodeNumRows(); ++STR) { \
       const size_t numEntries = matrix.getNumEntriesInLocalRow(STR); \
