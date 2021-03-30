@@ -391,7 +391,7 @@ getGlobalRowView (global_ordinal_type /* GlobalRow */,
 
 
 template<class MatrixType>
-void ReorderFilter<MatrixType>::getLocalRowView(loca_ordinal_type /* LocalRow */,
+void ReorderFilter<MatrixType>::getLocalRowView(local_ordinal_type /* LocalRow */,
     local_inds_host_view_type & /*indices*/,
     values_host_view_type & /*values*/) const
 {

@@ -86,6 +86,10 @@ public:
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
   typedef typename MatrixType::node_type Node;
+  typedef typename MatrixType::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename MatrixType::values_host_view_type values_host_view_type;
+
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
   typedef typename row_matrix_type::mag_type mag_type;
@@ -223,10 +227,15 @@ public:
 
     Note: If \c GlobalRow does not belong to this node, then \c indices is set to null.
   */
+  virtual void
+  getGlobalRowView (GlobalOrdinal GlobalRow,
+                    global_inds_host_view_type &indices,
+                    values_host_view_type &values) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getGlobalRowView(GlobalOrdinal GlobalRow,
                                 Teuchos::ArrayView<const GlobalOrdinal> &indices,
                                 Teuchos::ArrayView<const Scalar> &values) const;
-
+#endif
   //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
   /*!
     \param DropRow - (In) Drop row number for which indices are desired.
@@ -237,9 +246,15 @@ public:
 
     Note: If \c DropRow does not belong to this node, then \c indices is set to null.
   */
+  virtual void
+  getLocalRowView (LocalOrdinal LocalRow,
+                   local_inds_host_view_type & indices,
+                   values_host_view_type & values) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getLocalRowView(LocalOrdinal DropRow,
                                Teuchos::ArrayView<const LocalOrdinal> &indices,
                                Teuchos::ArrayView<const Scalar> &values) const;
+#endif
 
   //! \brief Get a copy of the diagonal entries owned by this node, with local row indices.
   /*! Returns a distributed Vector object partitioned according to this matrix's row map, containing the
