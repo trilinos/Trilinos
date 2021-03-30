@@ -300,7 +300,7 @@ public:
     /// one major release after introducing this class.
     virtual void
     getLocalRowView (const local_ordinal_type lclRow,
-                     local_inds_host_view_type & lclColInds) const = 0;
+                     local_inds_host_view_type & lclColInds) const;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getLocalRowView (const local_ordinal_type lclRow,
@@ -324,7 +324,7 @@ public:
     /// one major release after introducing this class.
     virtual void
     getGlobalRowView (const global_ordinal_type gblRow,
-                      global_inds_host_view_type& gblColInds) const = 0;
+                      global_inds_host_view_type& gblColInds) const;
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getGlobalRowView (const global_ordinal_type gblRow,
