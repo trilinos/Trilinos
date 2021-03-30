@@ -490,22 +490,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   FEMAT mat1(graph); // Here we use graph as a FECrsGraph
   CMAT mat2(graph);  // Here we use graph as a CrsGraph in OWNED mode
   mat1.beginFill();
-  auto k_e2n = pack.k_element2node;
-  auto localMat = mat1.getLocalMatrixDevice();
-  auto localMap = pack.overlapMap->getLocalMap();
+  {
+    auto k_e2n = pack.k_element2node;
+    auto localMat = mat1.getLocalMatrixDevice();
+    auto localMap = pack.overlapMap->getLocalMap();
 
-  Kokkos::parallel_for("assemble_1d_local_index", 
-		       range_type (0, k_e2n.extent(0)),
-		       KOKKOS_LAMBDA(const size_t i) {
-    for(size_t j=0; j<k_e2n.extent(1); j++) {
-      LO lid_j = localMap.getLocalElement(k_e2n(i, j));
-      for(size_t k=0; k<k_e2n.extent(1); k++) {
-        LO lid_k = localMap.getLocalElement(k_e2n(i, k));
-	ImplScalarType tmp = kokkosValues(j, k);
-	localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+    Kokkos::parallel_for("assemble_1d_local_index", 
+		         range_type (0, k_e2n.extent(0)),
+		         KOKKOS_LAMBDA(const size_t i) {
+      for(size_t j=0; j<k_e2n.extent(1); j++) {
+        LO lid_j = localMap.getLocalElement(k_e2n(i, j));
+        for(size_t k=0; k<k_e2n.extent(1); k++) {
+          LO lid_k = localMap.getLocalElement(k_e2n(i, k));
+	  ImplScalarType tmp = kokkosValues(j, k);
+	  localMat.sumIntoValues(lid_j, &lid_k, 1, &tmp, true, true);
+        }
       }
-    }
-  });
+    });
+  }
   mat1.endFill();
 
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {

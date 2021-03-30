@@ -1070,12 +1070,10 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixHost () const
   {
-//KDDKDD    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
-//KDDKDD    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
-//KDDKDD                                valuesPacked_wdv.getHostView(Access::ReadWrite),
-//KDDKDD                                staticGraph_->getLocalGraphHost());
-std::cout << "KDDKDD getLocalMatrixHost not yet implemented." << std::endl;
-abort();
+    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
+                                valuesPacked_wdv.getHostView(Access::ReadWrite),
+                                staticGraph_->getLocalGraphHost());
   }
 
 // KDDKDD NOT SURE WHY THIS MUST RETURN A SHARED_PTR

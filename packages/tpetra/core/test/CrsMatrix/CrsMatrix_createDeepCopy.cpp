@@ -41,7 +41,6 @@
 // @HEADER
 */
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
 #include "Tpetra_TestingUtilities.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -777,4 +776,3 @@ main (int argc, char* argv[])
   return errCode;
 }
 
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
