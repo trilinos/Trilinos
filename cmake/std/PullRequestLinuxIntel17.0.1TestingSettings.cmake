@@ -68,9 +68,11 @@ set (MueLu_UnitTestsTpetra_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in 
 # (Temporarily) Disable randomly failing ROL test (#3103)
 set (ROL_example_poisson-inversion_example_01_MPI_1_DISABLE ON CACHE BOOL "Temporarily disabled in PR testing")
 
-SET(SuperLUDist_INCLUDE_DIRS "$ENV{SEMS_SUPERLU_DIST_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
-SET(SuperLUDist_LIBRARY_DIRS "$ENV{SEMS_SUPERLU_DIST_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
+set (SuperLUDist_INCLUDE_DIRS "$ENV{SEMS_SUPERLU_DIST_INCLUDE_PATH}" CACHE PATH "Set by default for PR testing")
+set (SuperLUDist_LIBRARY_DIRS "$ENV{SEMS_SUPERLU_DIST_LIBRARY_PATH}" CACHE PATH "Set by default for PR testing")
 set (TPL_ENABLE_SuperLUDist ON CACHE BOOL "Set by default for PR testing")
+
+set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
@@ -81,7 +83,7 @@ set (Trilinos_ENABLE_STKBalance OFF CACHE BOOL "Hard disabled since Tpetra_INST_
 
 set(CMAKE_CXX_FLAGS "-Wall -Warray-bounds -Wchar-subscripts -Wcomment -Wenum-compare -Wformat -Wuninitialized -Wmaybe-uninitialized -Wmain -Wnarrowing -Wnonnull -Wparentheses -Wpointer-sign -Wreorder -Wreturn-type -Wsign-compare -Wsequence-point -Wtrigraphs -Wunused-function -Wunused-but-set-variable -Wunused-variable -Wwrite-strings" CACHE STRING "Warning settings")
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lifcore" CACHE STRING "updated by Pull Request")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -lifcore -qopenmp" CACHE STRING "updated by Pull Request")
 
 #set (Anasazi_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" CACHE STRING "Warnings as errors setting")
 #set (Belos_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Werror" CACHE STRING "Warnings as errors setting")
