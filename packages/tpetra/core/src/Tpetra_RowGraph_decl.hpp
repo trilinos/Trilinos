@@ -85,12 +85,17 @@ namespace Tpetra {
         local_inds_device_view_type;
     typedef typename local_inds_device_view_type::HostMirror::const_type
         local_inds_host_view_type;
+    typedef typename local_inds_device_view_type::HostMirror
+        nonconst_local_inds_host_view_type;
+
 
     typedef typename
         Kokkos::View<GlobalOrdinal *, typename Node::device_type>::const_type
         global_inds_device_view_type;
     typedef typename global_inds_device_view_type::HostMirror::const_type
         global_inds_host_view_type;
+    typedef typename global_inds_device_view_type::HostMirror
+        nonconst_global_inds_host_view_type;
 
     typedef typename 
         Kokkos::View<const size_t*, typename Node::device_type>::const_type
@@ -200,11 +205,17 @@ namespace Tpetra {
     ///
     /// \pre <tt>getRowMap()->isNodeGlobalElement(gblRow)<tt> is <tt>true</tt>.
     /// \pre <tt>gblColInds.size() >= getNumEntriesInGlobalRow(gblRow)</tt> is <tt>true</tt>.
+
+    virtual void
+    getGlobalRowCopy (const GlobalOrdinal gblRow,
+                      nonconst_global_inds_host_view_type& gblColInds,
+                      size_t& numColInds) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getGlobalRowCopy (GlobalOrdinal gblRow,
                       const Teuchos::ArrayView<GlobalOrdinal>& gblColInds,
                       size_t& numColInds) const = 0;
-
+#endif
     /// \brief Get a copy of the local column indices in a given row
     ///   of the graph.
     ///
@@ -222,9 +233,15 @@ namespace Tpetra {
     /// \pre <tt>getRowMap()->isNodeLocalElement(lclRow)<tt> is <tt>true</tt>.
     /// \pre <tt>lclColInds.size() >= getNumEntriesInLocalRow(lclRow)</tt> is <tt>true</tt>.
     virtual void
+    getLocalRowCopy (const LocalOrdinal lclRow,
+                     nonconst_local_inds_host_view_type & lclColInds,
+                     size_t& numColInds) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
     getLocalRowCopy (LocalOrdinal lclRow,
                      const Teuchos::ArrayView<LocalOrdinal>& lclColInds,
                      size_t& numColInds) const = 0;
+#endif
 
     /// \brief Whether this class implements getLocalRowView() and
     ///   getGlobalRowView().
