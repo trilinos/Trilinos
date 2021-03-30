@@ -319,9 +319,7 @@ namespace Tpetra {
     // local matrix's number of columns comes from the column Map, not
     // the domain Map.
 
-    const size_t numCols = graph->getColMap ()->getNodeNumElements ();
-    auto lclGraph = graph->getLocalGraphDevice ();
-    const size_t numEnt = lclGraph.entries.extent (0);
+    const size_t numEnt = graph->lclIndsPacked_wdv.extent (0);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Allocate values: " << numEnt << endl;
@@ -1072,7 +1070,7 @@ namespace Tpetra {
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalMatrixHost () const
   {
-    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
+//KDDKDD    auto numCols = staticGraph_->getColMap()->getNodeNumElements();
 //KDDKDD    return local_matrix_host_type("Tpetra::CrsMatrix::lclMatrixHost", numCols,
 //KDDKDD                                valuesPacked_wdv.getHostView(Access::ReadWrite),
 //KDDKDD                                staticGraph_->getLocalGraphHost());
