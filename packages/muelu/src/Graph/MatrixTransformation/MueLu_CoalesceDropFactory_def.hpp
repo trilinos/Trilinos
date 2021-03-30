@@ -1049,8 +1049,18 @@ namespace MueLu {
 		  // We do not want the distance Laplacian aggregating boundary nodes
 		  if(isBoundary) continue;
 
-
-                  SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  SC laplVal;
+                  if(use_dlap_weights == SINGLE_WEIGHTS) {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(),coordData, row, col);
+                  }
+                  else if(use_dlap_weights == BLOCK_WEIGHTS)  {
+                    int block_id = row % interleaved_blocksize;
+                    int block_start = block_id * interleaved_blocksize;
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(block_start,interleaved_blocksize),coordData, row, col);
+                  }
+                  else {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  }
                   real_type aiiajj = STS::magnitude(realThreshold*realThreshold * ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 
@@ -1081,7 +1091,19 @@ namespace MueLu {
 		  // We do not want the distance Laplacian aggregating boundary nodes
 		  if(isBoundary) continue;
 
-                  SC laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  SC laplVal;
+                  if(use_dlap_weights == SINGLE_WEIGHTS) {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(),coordData, row, col);
+                  }
+                  else if(use_dlap_weights == BLOCK_WEIGHTS)  {
+                    int block_id = row % interleaved_blocksize;
+                    int block_start = block_id * interleaved_blocksize;
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(dlap_weights(block_start,interleaved_blocksize),coordData, row, col);
+                  }
+                  else {
+                    laplVal = STS::one() / MueLu::Utilities<real_type,LO,GO,NO>::Distance2(coordData, row, col);
+                  }
+
                   real_type aiiajj = STS::magnitude(ghostedLaplDiagData[row]*ghostedLaplDiagData[col]);
                   real_type aij    = STS::magnitude(laplVal*laplVal);
 
