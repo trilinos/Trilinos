@@ -6041,7 +6041,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
@@ -6107,7 +6107,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
@@ -6226,7 +6226,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
@@ -6293,7 +6293,7 @@ abort();
                            rowIndsView.data(), rowIndsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
-                           rowValsView.data(), rowValsView.extent(0),
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface

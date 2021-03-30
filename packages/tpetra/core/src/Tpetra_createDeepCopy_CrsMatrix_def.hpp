@@ -104,8 +104,11 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
         typename crs_matrix_type::global_inds_host_view_type inputInds;
         typename crs_matrix_type::values_host_view_type inputVals;
         A.getGlobalRowView (gblRow, inputInds, inputVals);
+        // BAD BAD BAD
+        // we want a better way than reinterpret casting back and forth between scalar_type and
+        // impl_scalar_type everywhere
         A_copy.insertGlobalValues (gblRow, inputInds.extent(0),
-                                   inputVals.data(), inputInds.data());
+                                   reinterpret_cast<const typename crs_matrix_type::scalar_type*>(inputVals.data()), inputInds.data());
       }
       else {
         const size_t lclNumEnt = A.getNumEntriesInLocalRow (lclRow);

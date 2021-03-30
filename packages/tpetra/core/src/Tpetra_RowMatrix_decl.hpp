@@ -99,6 +99,16 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node          node_type;
 
+    /// \brief The type used internally in place of \c Scalar.
+    ///
+    /// Some \c Scalar types might not work with Kokkos on all
+    /// execution spaces, due to missing CUDA device macros or
+    /// volatile overloads.  The C++ standard type std::complex<T> has
+    /// this problem.  To fix this, we replace std::complex<T> values
+    /// internally with the (usually) bitwise identical type
+    /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
+    /// corresponding to \c Scalar = std::complex.
+    using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
@@ -107,7 +117,7 @@ namespace Tpetra {
     using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
 
     typedef typename 
-        Kokkos::View<Scalar*, typename Node::device_type>::const_type
+        Kokkos::View<impl_scalar_type*, typename Node::device_type>::const_type
         values_device_view_type;
     typedef typename values_device_view_type::HostMirror::const_type
         values_host_view_type;
