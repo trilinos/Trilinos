@@ -174,6 +174,8 @@ private:
 
     int rank = 1;
 
+
+// Case for starting the delayed orthogonalization step
 if( n==0 ){
 
     Teuchos::Range1D index_prev (n, n);
@@ -196,7 +198,7 @@ if( n==0 ){
 
 }
 
-
+// The bulk of the algorithm
 if( n>0 ){
 
     // Getting columns n and n+1
@@ -258,38 +260,6 @@ if( n>0 ){
                      
     MVT::MvAddMv( one, Wj, -T(n,n+1), qj, Wj );
 
-//    Teuchos::Range1D index_update (0, n-1);
-//    Teuchos::Range1D index_Qj (n, n);
-//
-//    Teuchos::RCP< const MV > Qupdate = MVT::CloneView (Q, index_update);
-//    MV Qj = * (Q.subView (index_Qj));
-//    
-//    Teuchos::RCP< dense_matrix_type > tp
-//      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n, 1, 0, n));
-//
-//    // Correction to finalize second projection q = ( q - Q c ) / h
-//    {
-//    Teuchos::TimeMonitor LocalTimer (*projTimer);
-//    MVT::MvTimesMatAddMv( -one, *Qupdate, *tp, one, Qj );
-//    }
-//    MVT::MvScale( Qj, ( one / H(n,n-1) ) );
-//
-//    Teuchos::RCP< const MV > QNew = MVT::CloneView (Q, index);    
-//    Teuchos::Range1D index_Wj (n+1, n+1);
-//
-//    MV Wj = * (Q.subView (index_Wj));
-//    
-//    Teuchos::RCP< dense_matrix_type > tn
-//      = Teuchos::rcp (new dense_matrix_type (Teuchos::View, T, n+1, 1, 0, n+1));
-//
-//    {
-//    Teuchos::TimeMonitor LocalTimer (*projTimer);
-//    MVT::MvTimesMatAddMv( -one, *QNew, *tn, (one/H(n,n-1)), Wj );
-//    }
-
-
-
-
 
     for(int i = 0; i < n; i++ ){
         H(i,n-1) = T(i,n-1) + T(i,n);
@@ -310,8 +280,11 @@ if( n>0 ){
 
     for(int i = 0; i < n+1; i++ ){
         T(i,n) = T(i,n+1) - ( H(i,n) / H(n,n-1) );
-        H(i,n) = 0.0e+00;
     }
+
+//    for(int i=0; i<n; i++ ){
+//        H(i,n) = 0.0e+00;
+//    }
       
 }
 
