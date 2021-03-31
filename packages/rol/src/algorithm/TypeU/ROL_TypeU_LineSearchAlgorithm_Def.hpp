@@ -216,7 +216,7 @@ void LineSearchAlgorithm<Real>::writeName( std::ostream& os ) const {
 }
 
 template<typename Real>
-void LineSearchAlgorithm<Real>::write( std::ostream& os, bool print_header) const {
+void LineSearchAlgorithm<Real>::writeOutput( std::ostream& os, bool print_header) const {
   os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) {
     writeName(os);

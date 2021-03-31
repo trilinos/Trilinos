@@ -12,10 +12,10 @@
 // met:
 //
 // 1. Redistributions of source code must retain the above copyright
-// notice, this list of conditions and the following disclaimer.
+// notice, this parlist of conditions and the following disclaimer.
 //
 // 2. Redistributions in binary form must reproduce the above copyright
-// notice, this list of conditions and the following disclaimer in the
+// notice, this parlist of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
 //
 // 3. Neither the name of the Corporation nor the names of the
@@ -41,32 +41,34 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_BUNDLEALGORITHM_U_DEF_H
-#define ROL_BUNDLEALGORITHM_U_DEF_H
+#ifndef ROL_TYPEU_BUNDLEALGORITHM_DEF_H
+#define ROL_TYPEU_BUNDLEALGORITHM_DEF_H
 
 #include "ROL_BundleStatusTest.hpp"
 #include "ROL_Bundle_U_AS.hpp"
 #include "ROL_Bundle_U_TT.hpp"
-#include "ROL_LineSearch_U_Factory.hpp"
+#include "ROL_TypeU_LineSearch_Factory.hpp"
 
 namespace ROL {
+namespace TypeU {
+
 
 template<typename Real>
-BundleAlgorithm_U<Real>::BundleAlgorithm_U( ParameterList &list,
+BundleAlgorithm<Real>::BundleAlgorithm( ParameterList &parlist,
                       const Ptr<LineSearch_U<Real>> &lineSearch )
-  : Algorithm_U<Real>(),
+  : Algorithm<Real>(),
     bundle_(ROL::nullPtr), lineSearch_(ROL::nullPtr),
     QPiter_(0), QPmaxit_(0), QPtol_(0), step_flag_(0),
     T_(0), tol_(0), m1_(0), m2_(0), m3_(0), nu_(0),
     ls_maxit_(0), first_print_(true), isConvex_(false) {
   // Set bundle status test
   status_->reset();
-  status_->add(makePtr<BundleStatusTest<Real>>(list));
+  status_->add(makePtr<BundleStatusTest<Real>>(parlist));
 
-  // Parse parameter list
+  // Parse parameter parlist
   const Real zero(0), two(2), oem3(1.e-3), oem6(1.e-6), oem8(1.e-8);
   const Real p1(0.1), p2(0.2), p9(0.9), oe3(1.e3), oe8(1.e8);
-  ParameterList &blist = list.sublist("Step").sublist("Bundle");
+  ParameterList &blist = parlist.sublist("Step").sublist("Bundle");
   state_->searchSize = blist.get("Initial Trust-Region Parameter", oe3);
   T_   = blist.get("Maximum Trust-Region Parameter",       oe8); 
   tol_ = blist.get("Epsilon Solution Tolerance",           oem6);
@@ -93,24 +95,24 @@ BundleAlgorithm_U<Real>::BundleAlgorithm_U( ParameterList &list,
   QPmaxit_ = blist.get("Cutting Plane Iteration Limit", 1000);
 
   // Initialize Line Search
-  ParameterList &lslist = list.sublist("Step").sublist("Line Search");
+  ParameterList &lslist = parlist.sublist("Step").sublist("Line Search");
   ls_maxit_ = lslist.get("Maximum Number of Function Evaluations",20);
   if ( !isConvex_ && lineSearch_==nullPtr ) {
     lineSearch_ = LineSearchUFactory<Real>(list);
   }
 
   // Get verbosity level
-  verbosity_ = list.sublist("General").get("Output Level", 0);
+  verbosity_ = parlist.sublist("General").get("Output Level", 0);
   printHeader_ = verbosity_ > 2;
 }
 
 template<typename Real>
-void BundleAlgorithm_U<Real>::initialize(const Vector<Real> &x,
-                                         const Vector<Real> &g,
-                                         Objective<Real>    &obj,
-                                         std::ostream &outStream) {
+void BundleAlgorithm<Real>::initialize( const Vector<Real> &x,
+                                        const Vector<Real> &g,
+                                        Objective<Real>    &obj,
+                                        std::ostream &outStream) {
   // Initialize data
-  Algorithm_U<Real>::initialize(x,g);
+  Algorithm<Real>::initialize(x,g);
   if (!isConvex_) {
     lineSearch_->initialize(x,g);
   }
@@ -126,13 +128,12 @@ void BundleAlgorithm_U<Real>::initialize(const Vector<Real> &x,
 }
 
 template<typename Real>
-std::vector<std::string> BundleAlgorithm_U<Real>::run( Vector<Real>       &x,
-                                                       const Vector<Real> &g,
-                                                       Objective<Real>    &obj,
-                                                       std::ostream       &outStream ) {
+void BundleAlgorithm<Real>::run( Vector<Real>       &x,
+                                 const Vector<Real> &g,
+                                 Objective<Real>    &obj,
+                                 std::ostream       &outStream ) {
   const Real zero(0), two(2), half(0.5);
   // Initialize trust-region data
-  std::vector<std::string> output;
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   initialize(x,g,obj,outStream);
   Ptr<Vector<Real>> y = x.clone();
@@ -144,7 +145,6 @@ std::vector<std::string> BundleAlgorithm_U<Real>::run( Vector<Real>       &x,
   bool flag = true;
 
   // Output
-  output.push_back(print(true));
   if (verbosity_ > 0) outStream << print(true);
 
   while (status_->check(*state_)) {
@@ -377,83 +377,75 @@ std::vector<std::string> BundleAlgorithm_U<Real>::run( Vector<Real>       &x,
     }
 
     // Update Output
-    output.push_back(print(printHeader_));
-    if (verbosity_ > 0) outStream << print(printHeader_);
+    if (verbosity_ > 0) writeOutput(outStream,printHeader_);
   }
-  output.push_back(Algorithm_U<Real>::printExitStatus());
-  if (verbosity_ > 0) outStream << Algorithm_U<Real>::printExitStatus();
-  return output;
+  if (verbosity_ > 0) Algorithm<Real>::writeExitStatus(outStream);
 }
 
 template<typename Real>
-std::string BundleAlgorithm_U<Real>::printHeader(void) const {
-  std::stringstream hist;
-  hist << "  ";
-  hist << std::setw(6) << std::left << "iter";
-  hist << std::setw(15) << std::left << "value";
-  hist << std::setw(15) << std::left << "gnorm";
-  hist << std::setw(15) << std::left << "snorm";
-  hist << std::setw(10) << std::left << "#fval";
-  hist << std::setw(10) << std::left << "#grad";
-  hist << std::setw(15) << std::left << "znorm";
-  hist << std::setw(15) << std::left << "alpha";
-  hist << std::setw(15) << std::left << "TRparam";
-  hist << std::setw(10) << std::left << "QPiter";
-  hist << std::endl;
-  return hist.str();
+void BundleAlgorithm<Real>::writeHeader( std::ostream& os ) const {
+  os << "  ";
+  os << std::setw(6) << std::left << "iter";
+  os << std::setw(15) << std::left << "value";
+  os << std::setw(15) << std::left << "gnorm";
+  os << std::setw(15) << std::left << "snorm";
+  os << std::setw(10) << std::left << "#fval";
+  os << std::setw(10) << std::left << "#grad";
+  os << std::setw(15) << std::left << "znorm";
+  os << std::setw(15) << std::left << "alpha";
+  os << std::setw(15) << std::left << "TRparam";
+  os << std::setw(10) << std::left << "QPiter";
+  os << std::endl;
 }
 
 template<typename Real>
-std::string BundleAlgorithm_U<Real>::printName(void) const {
-  std::stringstream hist;
-  hist << std::endl << "Bundle Trust-Region Algorithm" << std::endl;
-  return hist.str();
+void BundleAlgorithm<Real>::writeName(std::ostream& os) const {
+  os << std::endl << "Bundle Trust-Region Algorithm" << std::endl;
 }
 
 template<typename Real>
-std::string BundleAlgorithm_U<Real>::print(const bool print_header) const {
-    std::stringstream hist;
-    hist << std::scientific << std::setprecision(6);
-    if ( state_->iter == 0 && first_print_ ) {
-      hist << printName();
-      if ( print_header ) {
-        hist << printHeader();
-      }
-      hist << "  ";
-      hist << std::setw(6) << std::left << state_->iter;
-      hist << std::setw(15) << std::left << state_->value;
-      hist << std::setw(15) << std::left << state_->gnorm;
-      hist << std::setw(15) << std::left << "---";
-      hist << std::setw(10) << std::left << state_->nfval;
-      hist << std::setw(10) << std::left << state_->ngrad;
-      hist << std::setw(15) << std::left << "---";
-      hist << std::setw(15) << std::left << "---";
-      hist << std::setw(15) << std::left << state_->searchSize;
-      hist << std::setw(10) << std::left << "---";
-      hist << std::endl;
+void BundleAlgorithm<Real>::writeOutput( std::ostream& os, bool print_header) const {
+  os << std::scientific << std::setprecision(6);
+  if ( state_->iter == 0 && first_print_ ) {
+    writeName(os);
+    if ( print_header ) {
+      writeHeader(os);
     }
-    if ( step_flag_==1 && state_->iter > 0 ) {
-      if ( print_header ) {
-        hist << printHeader();
-      }
-      else {
-        hist << "  ";
-        hist << std::setw(6) << std::left << state_->iter;
-        hist << std::setw(15) << std::left << state_->value;
-        hist << std::setw(15) << std::left << state_->gnorm;
-        hist << std::setw(15) << std::left << state_->snorm;
-        hist << std::setw(10) << std::left << state_->nfval;
-        hist << std::setw(10) << std::left << state_->ngrad;
-        hist << std::setw(15) << std::left << state_->aggregateGradientNorm;
-        hist << std::setw(15) << std::left << state_->aggregateModelError;
-        hist << std::setw(15) << std::left << state_->searchSize;
-        hist << std::setw(10) << std::left << QPiter_;
-        hist << std::endl;
-      }
+    os << "  ";
+    os << std::setw(6) << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << "---";
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << "---";
+    os << std::endl;
+  }
+  if ( step_flag_==1 && state_->iter > 0 ) {
+    if ( print_header ) {
+      writeHeader(os);
     }
-    return hist.str();
+    else {
+      os << "  ";
+      os << std::setw(6) << std::left << state_->iter;
+      os << std::setw(15) << std::left << state_->value;
+      os << std::setw(15) << std::left << state_->gnorm;
+      os << std::setw(15) << std::left << state_->snorm;
+      os << std::setw(10) << std::left << state_->nfval;
+      os << std::setw(10) << std::left << state_->ngrad;
+      os << std::setw(15) << std::left << state_->aggregateGradientNorm;
+      os << std::setw(15) << std::left << state_->aggregateModelError;
+      os << std::setw(15) << std::left << state_->searchSize;
+      os << std::setw(10) << std::left << QPiter_;
+      os << std::endl;
+    }
+  }
 }
 
+} // namespace TypeU
 } // namespace ROL
 
 #endif
