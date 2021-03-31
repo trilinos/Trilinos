@@ -129,13 +129,13 @@ public:
 
       ---
   */
-  void reset(void);
+  void reset();
 
 }; // class NewOptimizationSolver
 
 } // namespace ROL
 
-#include "ROL_NewOptimizationSolver_Def.hpp"
+#include "ROL_Solver_Def.hpp"
 
 #endif // ROL_SOLVER_HPP
 

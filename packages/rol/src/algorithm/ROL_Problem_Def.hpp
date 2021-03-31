@@ -50,8 +50,8 @@ namespace ROL {
 
 template<typename Real>
 Problem<Real>::Problem( const Ptr<Objective<Real>> &obj,
-                       const Ptr<Vector<Real>>    &x,
-                       const Ptr<Vector<Real>>    &g)
+                        const Ptr<Vector<Real>>    &x,
+                        const Ptr<Vector<Real>>    &g)
   : isFinalized_(false), hasBounds_(false),
     hasEquality_(false), hasInequality_(false),
     hasLinearEquality_(false), hasLinearInequality_(false),
@@ -87,11 +87,11 @@ void Problem<Real>::removeBoundConstraint() {
 }
 
 template<typename Real>
-void Problem<Real>::addConstraint(std::string                  name,
-                                                 const Ptr<Constraint<Real>> &econ,
-                                                 const Ptr<Vector<Real>>     &emul,
-                                                 const Ptr<Vector<Real>>     &eres,
-                                                 bool                         reset) {
+void Problem<Real>::addConstraint( std::string                  name,
+                                   const Ptr<Constraint<Real>> &econ,
+                                   const Ptr<Vector<Real>>     &emul,
+                                   const Ptr<Vector<Real>>     &eres,
+                                   bool                         reset) {
   ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
     ">>> ROL::Problem: Cannot add constraint after problem is finalized!");
 
@@ -107,12 +107,12 @@ void Problem<Real>::addConstraint(std::string                  name,
 }
 
 template<typename Real>
-void Problem<Real>::addConstraint(std::string                       name,
-                                                 const Ptr<Constraint<Real>>      &icon,
-                                                 const Ptr<Vector<Real>>          &imul,
-                                                 const Ptr<BoundConstraint<Real>> &ibnd,
-                                                 const Ptr<Vector<Real>>          &ires,
-                                                 bool                              reset) {
+void Problem<Real>::addConstraint( std::string                       name,
+                                   const Ptr<Constraint<Real>>      &icon,
+                                   const Ptr<Vector<Real>>          &imul,
+                                   const Ptr<BoundConstraint<Real>> &ibnd,
+                                   const Ptr<Vector<Real>>          &ires,
+                                   bool                              reset) {
   ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
     ">>> ROL::Problem: Cannot add constraint after problem is finalized!");
 
@@ -143,11 +143,11 @@ void Problem<Real>::removeConstraint(std::string name) {
 }
 
 template<typename Real>
-void Problem<Real>::addLinearConstraint(std::string                  name,
-                                                       const Ptr<Constraint<Real>> &linear_econ,
-                                                       const Ptr<Vector<Real>>     &linear_emul,
-                                                       const Ptr<Vector<Real>>     &linear_eres,
-                                                       bool                         reset) {
+void Problem<Real>::addLinearConstraint( std::string                  name,
+                                         const Ptr<Constraint<Real>> &linear_econ,
+                                         const Ptr<Vector<Real>>     &linear_emul,
+                                         const Ptr<Vector<Real>>     &linear_eres,
+                                         bool                         reset) {
   ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
     ">>> ROL::Problem: Cannot add linear constraint after problem is finalized!");
 
@@ -163,12 +163,12 @@ void Problem<Real>::addLinearConstraint(std::string                  name,
 }
 
 template<typename Real>
-void Problem<Real>::addLinearConstraint(std::string                       name,
-                                                       const Ptr<Constraint<Real>>      &linear_icon,
-                                                       const Ptr<Vector<Real>>          &linear_imul,
-                                                       const Ptr<BoundConstraint<Real>> &linear_ibnd,
-                                                       const Ptr<Vector<Real>>          &linear_ires,
-                                                       bool                              reset) {
+void Problem<Real>::addLinearConstraint( std::string                       name,
+                                         const Ptr<Constraint<Real>>      &linear_icon,
+                                         const Ptr<Vector<Real>>          &linear_imul,
+                                         const Ptr<BoundConstraint<Real>> &linear_ibnd,
+                                         const Ptr<Vector<Real>>          &linear_ires,
+                                         bool                              reset) {
   ROL_TEST_FOR_EXCEPTION(isFinalized_,std::invalid_argument,
     ">>> ROL::Problem: Cannot add linear constraint after problem is finalized!");
 
