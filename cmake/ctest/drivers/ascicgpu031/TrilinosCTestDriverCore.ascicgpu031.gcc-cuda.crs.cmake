@@ -71,7 +71,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ENDIF()
 
   SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "git@gitlab-ex.sandia.gov:trilinos-project/Trilinos.git")
-  SET(Trilinos_BRANCH "TpetraDualViewRefactor" )
+  SET(Trilinos_BRANCH "tpetraCrsRefactor" )
 
   SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
@@ -103,6 +103,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTrilinos_ENABLE_EXAMPLES:BOOL=ON"
       "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
       "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
+      "-DTrilinos_ENABLE_COMPLEX=ON"
+      "-DTeuchos_ENABLE_COMPLEX=ON"
+      "-DTpetra_INST_COMPLEX_DOUBLE=ON"
 
       ### COMPILERS AND FLAGS ###
       "-DCMAKE_CXX_FLAGS:STRING='-Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
