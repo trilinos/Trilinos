@@ -94,15 +94,14 @@ template<typename Real>
 void Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
                                                  std::ostream                 &outStream ) {
   if (problem.getProblemType() == TYPE_U) {
-    void output = run(*problem.getPrimalOptimizationVector(),
-                                          *problem.getDualOptimizationVector(),
-                                          *problem.getObjective(),
-                                          outStream);
+    run(*problem.getPrimalOptimizationVector(),
+        *problem.getDualOptimizationVector(),
+        *problem.getObjective(),
+        outStream);
     problem.finalizeIteration();
-    return output;
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::Algorithm::run : Optimization problem is not Type U!");
+    throw Exception::NotImplemented(">>> ROL::TypeU::Algorithm::run : Optimization problem is not Type U!");
   }
 }
 
@@ -153,7 +152,7 @@ void Algorithm<Real>::writeHeader( std::ostream& os ) const {
 
 template<typename Real>
 void Algorithm<Real>::writeName( std::ostream& os ) const {
-  throw Exception::NotImplemented(">>> ROL::Algorithm::printName() is not implemented!");
+  throw Exception::NotImplemented(">>> ROL::TypeU::Algorithm::writeName() is not implemented!");
 }
 
 template<typename Real>

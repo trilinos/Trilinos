@@ -191,14 +191,14 @@ void Algorithm<Real>::writeHeader( std::ostream& os ) const {
 
 template<typename Real>
 void Algorithm<Real>::writeName( std::ostream& os ) const {
-  throw Exception::NotImplemented(">>> ROL::Algorithm::printName() is not implemented!");
+  throw Exception::NotImplemented(">>> ROL::TypeE::Algorithm::writeName() is not implemented!");
 }
 
 template<typename Real>
 void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
   os << std::scientific << std::setprecision(6);
   if ( print_header ) {
-    os << printHeader();
+    writeHeader(os);
   }
   if ( state_->iter == 0 ) {
     os << "  ";

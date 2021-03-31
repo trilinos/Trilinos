@@ -145,7 +145,7 @@ void BundleAlgorithm<Real>::run( Vector<Real>       &x,
   bool flag = true;
 
   // Output
-  if (verbosity_ > 0) outStream << print(true);
+  if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     first_print_ = false; // Print header only on first serious step
