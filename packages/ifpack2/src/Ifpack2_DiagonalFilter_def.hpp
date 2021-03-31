@@ -269,6 +269,15 @@ getLocalRowCopy (LocalOrdinal LocalRow,
 }
 
 template<class MatrixType>
+void DiagonalFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
+                                                  global_inds_host_view_type &/*indices*/,
+                                                  values_host_view_type &/*values*/) const
+{
+  throw std::runtime_error("Ifpack2::DiagonalFilter: does not support getGlobalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
 void DiagonalFilter<MatrixType>::
 getGlobalRowView (GlobalOrdinal /* GlobalRow */,
                   Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
@@ -276,7 +285,17 @@ getGlobalRowView (GlobalOrdinal /* GlobalRow */,
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter: does not support getGlobalRowView.");
 }
+#endif
 
+template<class MatrixType>
+void DiagonalFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
+    local_inds_host_view_type & /*indices*/,
+    values_host_view_type & /*values*/) const
+{
+  throw std::runtime_error("Ifpack2::DiagonalFilter: does not support getLocalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::
 getLocalRowView (LocalOrdinal /* LocalRow */,
@@ -285,6 +304,7 @@ getLocalRowView (LocalOrdinal /* LocalRow */,
 {
   throw std::runtime_error("Ifpack2::DiagonalFilter: does not support getLocalRowView.");
 }
+#endif
 
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::getLocalDiagCopy(Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const

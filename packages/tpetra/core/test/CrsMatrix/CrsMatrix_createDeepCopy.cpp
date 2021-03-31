@@ -173,12 +173,29 @@ public:
   }
 
   void
+  getGlobalRowCopy (GO gblRow,
+                    typename base_type::nonconst_global_inds_host_view_type & gblColInds,
+                    size_t& numColInds) const override
+  {
+    G_->getGlobalRowCopy (gblRow, gblColInds,numColInds);
+  }
+
+  void
   getLocalRowCopy (LO lclRow,
                    const Teuchos::ArrayView<LO>& lclColInds,
                    size_t& numColInds) const override
   {
     G_->getLocalRowCopy (lclRow, lclColInds, numColInds);
   }
+
+  void
+  getLocalRowCopy (LO lclRow,
+                   typename base_type::nonconst_local_inds_host_view_type & lclColInds,
+                   size_t& numColInds) const override
+  {
+    G_->getLocalRowCopy (lclRow, lclColInds,numColInds);
+  }
+
 
   bool supportsRowViews () const override {
     return supportsRowViews_;
@@ -197,6 +214,7 @@ public:
   {
     G_->getLocalRowView (lclRow, lclColInds);
   }
+
 
   void
   getGlobalRowView (const GO gblRow,

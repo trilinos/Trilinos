@@ -448,7 +448,26 @@ getLocalRowCopy (local_ordinal_type LocalRow,
   }
 }
 
+template<class MatrixType>
+void
+OverlappingRowMatrix<MatrixType>::
+getGlobalRowView (global_ordinal_type GlobalRow,
+                  global_inds_host_view_type &indices,
+                  values_host_view_type &values) const {
+  const local_ordinal_type LocalRow = RowMap_->getLocalElement (GlobalRow);
+  if (LocalRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid())  {
+    indices = global_inds_host_view_type();
+    values = values_host_view_type();
+  } else {
+    if (Teuchos::as<size_t> (LocalRow) < A_->getNodeNumRows ()) {
+      A_->getGlobalRowView (GlobalRow, indices, values);
+    } else {
+      ExtMatrix_->getGlobalRowView (GlobalRow, indices, values);
+    }
+  }
+}
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void
 OverlappingRowMatrix<MatrixType>::
@@ -468,8 +487,26 @@ getGlobalRowView (global_ordinal_type GlobalRow,
     }
   }
 }
+#endif
 
+template<class MatrixType>
+void
+OverlappingRowMatrix<MatrixType>::
+  getLocalRowView (local_ordinal_type LocalRow,
+                   local_inds_host_view_type & indices,
+                   values_host_view_type & values) const {
+  using Teuchos::as;
+  const size_t numMyRowsA = A_->getNodeNumRows ();
+  if (as<size_t> (LocalRow) < numMyRowsA) {
+    A_->getLocalRowView (LocalRow, indices, values);
+  } else {
+    ExtMatrix_->getLocalRowView (LocalRow - as<local_ordinal_type> (numMyRowsA),
+                                 indices, values);
+  }
 
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void
 OverlappingRowMatrix<MatrixType>::
@@ -486,6 +523,7 @@ getLocalRowView (local_ordinal_type LocalRow,
                                  indices, values);
   }
 }
+#endif
 
 
 template<class MatrixType>

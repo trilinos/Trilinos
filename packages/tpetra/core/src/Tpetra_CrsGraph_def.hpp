@@ -2361,7 +2361,7 @@ namespace Tpetra {
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowCopy (LocalOrdinal localRow,
-                   const Teuchos::ArrayView<LocalOrdinal>&indices,
+                   nonconst_local_inds_host_view_type & indices,
                    size_t& numEntries) const
   {
     using Teuchos::ArrayView;
@@ -2402,7 +2402,92 @@ namespace Tpetra {
     }
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalRowCopy (LocalOrdinal localRow,
+                   const Teuchos::ArrayView<LocalOrdinal>&indices,
+                   size_t& numEntries) const
+  {
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "getLocalRowCopy: ";
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      isGloballyIndexed () && ! hasColMap (), std::runtime_error,
+      "Tpetra::CrsGraph::getLocalRowCopy: The graph is globally indexed and "
+      "does not have a column Map yet.  That means we don't have local indices "
+      "for columns yet, so it doesn't make sense to call this method.  If the "
+      "graph doesn't have a column Map yet, you should call fillComplete on "
+      "it first.");
+
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowinfo = this->getRowInfo (localRow);
+    // No side effects on error.
+    const size_t theNumEntries = rowinfo.numEntries;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) < theNumEntries,std::runtime_error,
+       "Specified storage (size==" << indices.size () << ") does not suffice "
+       "to hold all " << theNumEntries << " entry/ies for this row.");
+    numEntries = theNumEntries;
+
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (isLocallyIndexed ()) {
+        auto lclInds = getLocalIndsViewHost(rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = lclInds(j);
+        }
+      }
+      else if (isGloballyIndexed ()) {
+        auto gblInds = getGlobalIndsViewHost(rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = colMap_->getLocalElement (gblInds(j));
+        }
+      }
+    }
+  }
+#endif
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
+  getGlobalRowCopy (GlobalOrdinal globalRow,
+                    nonconst_global_inds_host_view_type &indices,
+                    size_t& numEntries) const
+  {
+    using Teuchos::ArrayView;
+    const char tfecfFuncName[] = "getGlobalRowCopy: ";
+
+    // This does the right thing (reports an empty row) if the input
+    // row is invalid.
+    const RowInfo rowinfo = getRowInfoFromGlobalRowIndex (globalRow);
+    const size_t theNumEntries = rowinfo.numEntries;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (indices.size ()) < theNumEntries, std::runtime_error,
+      "Specified storage (size==" << indices.size () << ") does not suffice "
+      "to hold all " << theNumEntries << " entry/ies for this row.");
+    numEntries = theNumEntries; // first side effect
+
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (isLocallyIndexed ()) {
+        auto lclInds = getLocalIndsViewHost(rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = colMap_->getGlobalElement (lclInds(j));
+        }
+      }
+      else if (isGloballyIndexed ()) {
+        auto gblInds = getGlobalIndsViewHost(rowinfo);
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          indices[j] = gblInds(j);
+        }
+      }
+    }
+  }
+
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
@@ -2438,6 +2523,7 @@ namespace Tpetra {
       }
     }
   }
+#endif
 
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

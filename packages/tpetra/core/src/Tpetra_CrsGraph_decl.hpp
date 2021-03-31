@@ -292,12 +292,16 @@ public:
           typename row_graph_type::local_inds_device_view_type;
     using local_inds_host_view_type =
           typename row_graph_type::local_inds_host_view_type;
+    using nonconst_local_inds_host_view_type =
+          typename row_graph_type::nonconst_local_inds_host_view_type;
 
     //! The Kokkos::View type for views of global ordinals on device and host
     using global_inds_device_view_type =
           typename row_graph_type::global_inds_device_view_type;
     using global_inds_host_view_type =
           typename row_graph_type::global_inds_host_view_type;
+    using nonconst_global_inds_host_view_type =
+          typename row_graph_type::nonconst_global_inds_host_view_type;
 
 
 //KDDKDD INROW    using local_inds_host_view_type = 
@@ -1104,9 +1108,14 @@ public:
     /// \param numColInds [out] Number of indices returned.
     void
     getGlobalRowCopy (global_ordinal_type gblRow,
+                      nonconst_global_inds_host_view_type &gblColInds,
+                      size_t& numColInds) const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    void
+    getGlobalRowCopy (global_ordinal_type gblRow,
                       const Teuchos::ArrayView<global_ordinal_type>& gblColInds,
                       size_t& numColInds) const override;
-
+#endif
     /// \brief Get a copy of the given row, using local indices.
     ///
     /// \param lclRow [in] Local index of the row.
@@ -1115,9 +1124,15 @@ public:
     ///
     /// \pre <tt>hasColMap()</tt>
     void
+    getLocalRowCopy (local_ordinal_type gblRow,
+                     nonconst_local_inds_host_view_type &gblColInds,
+                     size_t& numColInds) const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    void
     getLocalRowCopy (local_ordinal_type lclRow,
                      const Teuchos::ArrayView<local_ordinal_type>& lclColInds,
                      size_t& numColInds) const override;
+#endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Get a const, non-persisting view of the given global
