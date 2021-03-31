@@ -41,7 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-/** \class ROL2::TypeU::LineSearchAlgorithm
+#ifndef ROL_TYPEU_LINESEARCHALGORITHM_H
+#define ROL_TYPEU_LINESEARCHALGORITHM_H
+
+#include "ROL_TypeU_Algorithm.hpp"
+#include "ROL_LineSearch_U_Types.hpp"
+#include "ROL_DescentDirection_U.hpp"
+#include "ROL_LineSearch_U.hpp"
+
+/** \class ROL::TypeU::LineSearchAlgorithm
     \brief Provides an interface to run unconstrained line search algorithms.
 
     Suppose \f$\mathcal{X}\f$ is a Hilbert space of 
@@ -85,17 +93,36 @@
     Inexact Newton methods; Newton's method. These methods are chosen through the EDescent enum.
 */
 
-#pragma once 
-#ifndef ROL2_TYPEU_LINESEARCHALGORITHM_DECL_HPP
-#define ROL2_TYPEU_LINESEARCHALGORITHM_DECL_HPP
-
-namespace ROL2 {
+namespace ROL {
 namespace TypeU {
 
 template <class Real>
 class LineSearchAlgorithm : public Algorithm<Real> {
-public:
+private:
 
+  Ptr<DescentDirection_U<Real>> desc_;       ///< Unglobalized step object
+  Ptr<LineSearch_U<Real>>       lineSearch_; ///< Line-search object
+
+  EDescentU            edesc_; ///< enum determines type of descent direction
+  ELineSearchU         els_;   ///< enum determines type of line search
+  ECurvatureConditionU econd_; ///< enum determines type of curvature condition
+
+  bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
+
+  bool usePreviousAlpha_; ///< If true, use the previously accepted step length (if any) as the new initial step length
+
+  int verbosity_;
+  bool printHeader_;
+  int ls_nfval_, ls_ngrad_;
+  int SPflag_, SPiter_;
+
+  std::string lineSearchName_, descentName_;
+
+  using Algorithm<Real>::state_;
+  using Algorithm<Real>::status_;
+  using Algorithm<Real>::initialize;
+
+public:
   /** \brief Constructor.
 
       Standard constructor to build a LineSearchStep object.  Algorithmic 
@@ -107,54 +134,29 @@ public:
       @param[in]     lineSearch is a user-defined descent direction object
       @param[in]     lineSearch is a user-defined line search object
   */
-  LineSearchAlgorithm(       ParameterList&               parlist,
-                       const Ptr<DescentDirection<Real>>& descent = nullPtr,
-                       const Ptr<LineSearch<Real>>&       lineSearch = nullPtr );
+  LineSearchAlgorithm( ParameterList &parlist,
+                       const Ptr<DescentDirection_U<Real>> &descent = nullPtr,
+                       const Ptr<LineSearch_U<Real>> &lineSearch = nullPtr );
 
-  void initialize( const Vector<Real>&    x, 
-                   const Vector<Real>&    g,
-                         Objective<Real>& obj, 
-                         std::ostream& = std::cout );
+  void initialize(const Vector<Real> &x, const Vector<Real> &g,
+                  Objective<Real> &obj, std::ostream &outStream = std::cout);
 
-  void run(       Vector<Real>&    x,
-            const Vector<Real>&    g, 
-                  Objective<Real>& obj,
-                  std::ostream&    os = std::cout );
+  void run( Vector<Real>       &x,
+            const Vector<Real> &g, 
+            Objective<Real>    &obj,
+            std::ostream       &outStream = std::cout);
 
-  writeHeader( std::ostream& = std::cout ) const override;
+  void writeHeader( std::ostream& os ) const override;
 
-  writeName( std::ostream& = std::cout ) const override;
+  void writeName( std::ostream& os ) const override;
+  
+  void writeOutput( std::ostream& os, bool print_header = false ) const override;
 
-  writeOutput( std::ostream& = std::cout, bool print_header = false ) const override;
-
-  const DescentDirection<Real>& getDescentDirection() const
-
-private:
-
-  Ptr<DescentDirection<Real>> desc_;       ///< Unglobalized step object
-  Ptr<LineSearch<Real>>       lineSearch_; ///< Line-search object
-
-  LineSearch<Real>::Type          els_   = LineSearch<Real>::Type::UserDefined;        
-  DescentDirection<Real>::Type    edesc_ = DescentDirection<Real>::Type::UserDefined; 
-  LineSearch<Real>::CurvatureCond econd_ = LineSearch<Real>::CurvatureCond::Wolfe;     
-
-  std::string lineSearchName_, descentName_;
-
-  int verbosity_;
-  int ls_nfval_, ls_ngrad_;
-  int SPflag_, SPiter_;
-  bool printHeader_;
-
-  bool acceptLastAlpha_;  ///< For backwards compatibility. When max function evaluations are reached take last step
-
-  bool usePreviousAlpha_; ///< If true, use the previously accepted step length (if any) as the new initial step length
-
-  using Algorithm<Real>::initialize;
-
-}; // class LineSearchAlgorithm
+}; // class ROL::TypeU::LineSearchAlgorithm
 
 } // namespace TypeU
-} // namespace ROL2
+} // namespace ROL
 
-#endif // ROL2_TYPEU_LINESEARCHALGORITHM_DECL_HPP
+#include "ROL_TypeU_LineSearch_Def.hpp"
 
+#endif

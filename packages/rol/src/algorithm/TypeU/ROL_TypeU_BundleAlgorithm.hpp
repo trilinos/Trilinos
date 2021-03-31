@@ -41,89 +41,84 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_TYPEU_BUNDLEALGORITHM_H
+#define ROL_TYPEU_BUNDLEALGORITHM_H
 
-/*! \file  stdvector.cpp
-    \brief Test std::vector interface.
+#include "ROL_TypeU_Algorithm.hpp"
+#include "ROL_TypeU_Bundle.hpp"
+#include "ROL_TypeU_LineSearch.hpp"
+
+/** \class ROL::TypeU::BundleAlgorithm
+    \brief Provides an interface to run trust-bundle methods for unconstrained
+           optimization algorithms.
 */
 
-#include "ROL2.hpp"
+namespace ROL {
+namespace TypeU {
 
-int main(int argc, char *argv[]) {
+template<typename Real>
+class BundleAlgorithm : public Algorithm<Real> {
+private:
+  // Bundle
+  Ptr<Bundle<Real>>     bundle_;     // Bundle of subgradients and linearization errors
+  Ptr<LineSearch<Real>> lineSearch_; // Line-search object for nonconvex problems
 
-  using RealT = double;
+  // Dual cutting plane solution
+  unsigned QPiter_;  // Number of QP solver iterations
+  unsigned QPmaxit_; // Maximum number of QP iterations
+  Real QPtol_;       // QP subproblem tolerance
 
-  auto os_ptr = ROL2::makeStreamPtr(std::cout, argc);
-  auto& os = *os_ptr;
+  // Step flag
+  int step_flag_; // Whether serious or null step
 
-  int errorFlag  = 0;
+  // Aggregate subgradients, linearizations, and distance measures
 
-  auto errtol = ROL2::default_tolerance<RealT>();
+  // Algorithmic parameters
+  Real T_;
+  Real tol_;
+  Real m1_;
+  Real m2_;
+  Real m3_;
+  Real nu_;
 
-  try {
+  // Line-search parameters
+  int ls_maxit_;
 
-    // Number of elements in StdVector objects
-    int dim = 100; 
+  bool first_print_;
+  bool isConvex_;
 
-    ROL2::StdVector<RealT> x(dim), y(dim), z(dim);
+  int verbosity_;
+  bool printHeader_;
 
-    // Lower and upper bounds on randomized vector element values
-    RealT left = -1e0, right = 1e0;
+  using Algorithm<Real>::state_;
+  using Algorithm<Real>::status_;
+  using Algorithm<Real>::initialize;
 
-    // set x,y,z
-    x.randomize(left,right);
-    y.randomize(left,right);
-    z.randomize(left,right);
+public:
 
-    // Standard tests.
-    int consistencyError = x.checkVector(y, z, true, os);
+  BundleAlgorithm( ParameterList &parlist,
+     const Ptr<LineSearch<Real>> &lineSearch = nullPtr );
 
-    errorFlag += consistencyError;
+  void run( Vector<Real>       &x,
+            const Vector<Real> &g, 
+            Objective<Real>    &obj,
+            std::ostream       &outStream = std::cout);
 
-    // Basis tests.
-    // set x to first basis vector
-    auto zp = x.basis(0);
-    RealT znorm = zp->norm();
-    os << "\nNorm of ROL::Vector z (first basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
-      os << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
+  void writeHeader( std::ostream& os ) const override;
 
-    // set x to middle basis vector
-    zp = x.basis(dim/2);
-    znorm = zp->norm();
-    os << "\nNorm of ROL::Vector z ('middle' basis vector): " << znorm << "\n";
+  void writeName( std::ostream& os) const override;
+  
+  void write( std::ostream& os, bool print_header = false ) const override;
 
-    if ( std::abs(znorm-1.0) > errtol ) {
-      os << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
+private:
 
-    // set x to last basis vector
-    zp = x.basis(dim-1);
-    znorm = zp->norm();
-    os << "\nNorm of ROL::Vector z (last basis vector): " << znorm << "\n";
-    if ( std::abs(znorm-1.0) > errtol ) {
-      os << "---> POSSIBLE ERROR ABOVE!\n";
-      errorFlag++;
-    };
+  void initialize(const Vector<Real> &x, const Vector<Real> &g,
+                  Objective<Real> &obj, std::ostream &outStream = std::cout);
 
-    os << "\n";
+}; // class ROL::BundleAlgorithm
+} // namespace TypeU
+} // namespace ROL
 
-    // Repeat the checkVector tests with a zero vector.
-    x.scale(0.0);
-    consistencyError = x.checkVector(x, x, true, os);
-    errorFlag += consistencyError;
-  }
-  catch (std::logic_error& err) {
-    os << err.what() << "\n";
-    errorFlag = -1000;
-  }; // end try
+#include "ROL_TypeU_BundleAlgorithm_Def.hpp"
 
-  if (errorFlag != 0) std::cout << "End Result: TEST FAILED\n";
-  else                std::cout << "End Result: TEST PASSED\n";
-
-  return 0;
-
-}
-
+#endif

@@ -41,144 +41,135 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL2_TYPEU_LINESEARCHALGORITHM_DEF_HPP
-#define ROL2_TYPEU_LINESEARCHALGORITHM_DEF_HPP
+#ifndef ROL_TYPEU_LINESEARCHALGORITHM_DEF_H
+#define ROL_TYPEU_LINESEARCHALGORITHM_DEF_H
 
-namespace ROL2 {
+#include "ROL_LineSearch_U_Factory.hpp"
+#include "ROL_DescentDirection_U_Factory.hpp"
+
+namespace ROL {
 namespace TypeU {
 
 template<typename Real>
-LineSearchAlgorithm<Real>::LineSearchAlgorithm(       ParameterList&               parlist,
-                                                const Ptr<DescentDirection<Real>>& desc,
-                                                const Ptr<LineSearch<Real>>&       ls )
-  : Algorithm<Real>(), desc_(desc), lineSearch_(ls), verbosity_(0) {
-
+LineSearchAlgorithm<Real>::LineSearchAlgorithm( ParameterList &parlist,
+                              const Ptr<DescentDirection_U<Real>> &descent,
+                              const Ptr<LineSearch_U<Real>> &lineSearch )
+  : Algorithm<Real>(), desc_(descent), lineSearch_(lineSearch),
+    edesc_(DESCENT_U_USERDEFINED), els_(LINESEARCH_U_USERDEFINED),
+    econd_(CURVATURECONDITION_U_WOLFE), verbosity_(0) {
   // Set status test
-  auto& status = Algorithm<Real>::getStatus();
-  status.reset();
-  status.add(makePtr<StatusTest<Real>>(parlist));
+  status_->reset();
+  status_->add(makePtr<StatusTest<Real>>(parlist));
 
   // Parse parameter list
-  auto& Llist  = parlist.sublist("Step").sublist("Line Search");
-  auto& LMlist = Llist.sublist("Line-Search Method");
-  auto& Glist  = parlist.sublist("General");
-  auto& CClist = Llist.sublist("Curvature Condition");
-
-  econd_ = stringToEnum(CClist.get("Type","Strong Wolfe Conditions"), CurvatureCond{} );
+  ParameterList& Llist = parlist.sublist("Step").sublist("Line Search");
+  ParameterList& Glist = parlist.sublist("General");
+  econd_ = StringToECurvatureConditionU(Llist.sublist("Curvature Condition").get("Type","Strong Wolfe Conditions") );
   acceptLastAlpha_ = Llist.get("Accept Last Alpha", false); 
   verbosity_ = Glist.get("Output Level",0);
   printHeader_ = verbosity_ > 2;
-
   // Initialize Line Search
-  if( lineSearch_ == nullPtr) {
-    lineSearchName_ = LMlist.get("Type","Cubic Interpolation"); 
-    els_ = stringToEnum(lineSearchName_, Type{});
-    lineSearch_ = LineSearchUFactory<Real>(parlist); // TODO
+  if (lineSearch_ == nullPtr) {
+    lineSearchName_ = Llist.sublist("Line-Search Method").get("Type","Cubic Interpolation"); 
+    els_ = StringToELineSearchU(lineSearchName_);
+    lineSearch_ = LineSearchUFactory<Real>(parlist);
   } 
   else { // User-defined linesearch provided
-    lineSearchName_ = LMlist.get("User Defined Line Search Name","Unspecified User Defined Line Search");
+    lineSearchName_ = Llist.sublist("Line-Search Method").get("User Defined Line Search Name","Unspecified User Defined Line Search");
   }
   if (desc_ == nullPtr) {
-    auto& dlist = Llist.sublist("Descent Method");
+    ParameterList& dlist = Llist.sublist("Descent Method");
     descentName_ = dlist.get("Type","Quasi-Newton Method");
-    edesc_ = stringToEnum(descentName_,DescentType{});
-    desc_  = DescentDirectionUFactory<Real>(parlist); // TODO
+    edesc_ = StringToEDescentU(descentName_);
+    desc_  = DescentDirectionUFactory<Real>(parlist);
   }
   else {
-    descentName_ = LMlist.get("User Defined Descent Direction Name","Unspecified User Defined Descent Direction");
+    descentName_ = Llist.sublist("Descent Method").get("User Defined Descent Direction Name","Unspecified User Defined Descent Direction");
   }
 }
 
 template<typename Real>
-void LineSearchAlgorithm<Real>::initialize( const Vector<Real>&    x,
-                                            const Vector<Real>&    g,
-                                                  Objective<Real>& obj,
-                                                  std::ostream&    outStream ) {
-  auto& state = Algorithm<Real>::getState();
-
+void LineSearchAlgorithm<Real>::initialize(const Vector<Real> &x,
+                                           const Vector<Real> &g,
+                                           Objective<Real>    &obj,
+                                           std::ostream &outStream) {
   // Initialize data
   Algorithm<Real>::initialize(x,g);
   lineSearch_->initialize(x,g);
   desc_->initialize(x,g);
-
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  obj.update(x,UPDATE_INITIAL,state.iter);    
-  state.value = obj.value(x,ftol); 
-  state.nfval++;
-  obj.gradient(state.gradientVec,x,ftol);
-  state.ngrad++;
-  state.gnorm = state.gradientVec->norm();
-  state.snorm = ROL_INF<Real>;
+  obj.update(x,UPDATE_INITIAL,state_->iter);    
+  state_->value = obj.value(x,ftol); 
+  state_->nfval++;
+  obj.gradient(*state_->gradientVec,x,ftol);
+  state_->ngrad++;
+  state_->gnorm = state_->gradientVec->norm();
+  state_->snorm = ROL_INF<Real>();
 }
 
 template<typename Real>
-void LineSearchAlgorithm<Real>::run(       Vector<Real>&    x,
-                                     const Vector<Real>&    g,
-                                           Objective<Real>& obj,
-                                           std::ostream&    outStream ) {
-  auto& state = Algorithm<Real>::getState();
+void LineSearchAlgorithm<Real>::run( Vector<Real>       &x,
+                                     const Vector<Real> &g,
+                                     Objective<Real>    &obj,
+                                     std::ostream       &outStream ) {
   const Real one(1);
-
   // Initialize trust-region data
-  Real ftrial(0), gs(0), tol(std::sqrt(ROL_EPSILON<Real>));
+  Real ftrial(0), gs(0), tol(std::sqrt(ROL_EPSILON<Real>()));
   initialize(x,g,obj,outStream);
-  state.searchSize = one;
-  auto gprev = g.clone();
+  state_->searchSize = one;
+  Ptr<Vector<Real>> gprev = g.clone();
 
   // Output
-  output.push_back(print(true));
   if (verbosity_ > 0) outStream << print(true);
 
-  while( status.check(state) ) {
-
+  while (status_->check(*state_)) {
     // Compute descent direction
-    desc_->compute(state.stepVec,state.snorm,gs,SPiter_,SPflag_,x,
-                   state.gradientVec,obj);
+    desc_->compute(*state_->stepVec,state_->snorm,gs,SPiter_,SPflag_,x,
+                   *state_->gradientVec,obj);
 
     // Perform line search
-    ftrial = state.value;
-    ls_nfval_ = 0; 
-    ls_ngrad_ = 0;
-    lineSearch_->run(state.searchSize,ftrial,ls_nfval_,ls_ngrad_,gs,state.stepVec,x,obj);
+    ftrial = state_->value;
+    ls_nfval_ = 0; ls_ngrad_ = 0;
+    lineSearch_->run(state_->searchSize,ftrial,ls_nfval_,ls_ngrad_,gs,*state_->stepVec,x,obj);
 
     // Make correction if maximum function evaluations reached
     if(!acceptLastAlpha_) {
-      lineSearch_->setMaxitUpdate(state.searchSize,ftrial,state.value);
+      lineSearch_->setMaxitUpdate(state_->searchSize,ftrial,state_->value);
     }
 
     // Compute scaled descent direction
-    state.stepVec->scale(state.searchSize);
-    state.snorm *= state.searchSize;
+    state_->stepVec->scale(state_->searchSize);
+    state_->snorm *= state_->searchSize;
 
     // Update iterate
-    x.plus(state.stepVec);
+    x.plus(*state_->stepVec);
 
     // Compute new value and gradient
-    obj.update(x,UPDATE_ACCEPT,state.iter);
-    state.value = obj.value(x,tol);
-    state.nfval++;
-    gprev->set(state.gradientVec);
-    obj.gradient(state.gradientVec,x,tol);
-    state.ngrad++;
-    state.gnorm = state.gradientVec->norm();
+    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    state_->value = obj.value(x,tol);
+    state_->nfval++;
+    gprev->set(*state_->gradientVec);
+    obj.gradient(*state_->gradientVec,x,tol);
+    state_->ngrad++;
+    state_->gnorm = state_->gradientVec->norm();
 
     // Update algorithm state
-    state.iterateVec->set(x);
-    state.nfval += ls_nfval_;
-    state.ngrad += ls_ngrad_;
-    desc_->update(x,state.stepVec,*gprev,state.gradientVec,state.snorm,state.iter);
-    state.iter++;
+    state_->iterateVec->set(x);
+    state_->nfval += ls_nfval_;
+    state_->ngrad += ls_ngrad_;
+    desc_->update(x,*state_->stepVec,*gprev,*state_->gradientVec,state_->snorm,state_->iter);
+    state_->iter++;
 
     // Update Output
-    if (verbosity_ > 0) writeHeader(outStream);
+    if (verbosity_ > 0) writeOutput(outStream,printHeader_);
   }
-  if (verbosity_ > 0) writeOutput( Algorithm<Real>::printExitStatus() );
+  if (verbosity_ > 0) Algorithm<Real>::writeExitStatus(outStream);
 }
 
 template<typename Real>
 void LineSearchAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  if( verbosity_ > 1 ) {
+  if (verbosity_ > 1) {
     os << std::string(109,'-') << std::endl;
     os << descentName_;
     os << " status output definitions" << std::endl << std::endl;
@@ -191,7 +182,7 @@ void LineSearchAlgorithm<Real>::writeHeader( std::ostream& os ) const {
     os << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
     os << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
     os << "  ls_#grad - Number of the times the gradient was evaluated during the line search" << std::endl;
-    if( edesc_ == DescentType::NewtonKrylov ) {
+    if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
       os << "  iterCG   - Number of Krylov iterations used to compute search direction" << std::endl;
       os << "  flagCG   - Krylov solver flag" << std::endl;
     }
@@ -208,38 +199,43 @@ void LineSearchAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   os << std::setw(10) << std::left << "#grad";
   os << std::setw(10) << std::left << "ls_#fval";
   os << std::setw(10) << std::left << "ls_#grad";
-  if (edesc_ == DESCENT_NEWTONKRYLOV) {
+  if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
     os << std::setw(10) << std::left << "iterCG";
     os << std::setw(10) << std::left << "flagCG";
   }
   os << std::endl;
+  
 }
 
 template<typename Real>
 void LineSearchAlgorithm<Real>::writeName( std::ostream& os ) const {
   desc_->writeName(os);
-  os << "\n\n";
+  os << std::endl << std::endl;
   os << "Line Search: " << lineSearchName_;
-  os << " satisfying " << typeToString(econd_) << std::endl;
+  os << " satisfying " << ECurvatureConditionUToString(econd_) << std::endl;
 }
 
 template<typename Real>
-std::string LineSearchAlgorithm<Real>::print( print_header ) const {
+void LineSearchAlgorithm<Real>::write( std::ostream& os, bool print_header) const {
   os << std::scientific << std::setprecision(6);
-  if( state.iter == 0 ) writeName(os);
-  if( print_header )    writeHeader(os);
-  if( state.iter == 0 ) {
+  if ( state_->iter == 0 ) {
+    writeName(os);
+  }
+  if ( print_header ) {
+    writeHeader(os);
+  }
+  if ( state_->iter == 0 ) {
     os << "  ";
-    os << std::setw(6)  << std::left << state.iter;
-    os << std::setw(15) << std::left << state.value;
-    os << std::setw(15) << std::left << state.gnorm;
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
     os << std::setw(15) << std::left << "---";
     os << std::setw(15) << std::left << "---";
-    os << std::setw(10) << std::left << state.nfval;
-    os << std::setw(10) << std::left << state.ngrad;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
     os << std::setw(10) << std::left << "---";
     os << std::setw(10) << std::left << "---";
-    if( edesc_ == DescentType::Newton) {
+    if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
       os << std::setw(10) << std::left << "---";
       os << std::setw(10) << std::left << "---";
     }
@@ -247,25 +243,24 @@ std::string LineSearchAlgorithm<Real>::print( print_header ) const {
   }
   else {
     os << "  ";
-    os << std::setw(6)  << std::left << state.iter;
-    os << std::setw(15) << std::left << state.value;
-    os << std::setw(15) << std::left << state.gnorm;
-    os << std::setw(15) << std::left << state.snorm;
-    os << std::setw(15) << std::left << state.searchSize;
-    os << std::setw(10) << std::left << state.nfval;
-    os << std::setw(10) << std::left << state.ngrad;
+    os << std::setw(6)  << std::left << state_->iter;
+    os << std::setw(15) << std::left << state_->value;
+    os << std::setw(15) << std::left << state_->gnorm;
+    os << std::setw(15) << std::left << state_->snorm;
+    os << std::setw(15) << std::left << state_->searchSize;
+    os << std::setw(10) << std::left << state_->nfval;
+    os << std::setw(10) << std::left << state_->ngrad;
     os << std::setw(10) << std::left << ls_nfval_;
     os << std::setw(10) << std::left << ls_ngrad_;
-    if(edesc_ == DESCENT_NEWTONKRYLOV) {
+    if (edesc_ == DESCENT_U_NEWTONKRYLOV) {
       os << std::setw(10) << std::left << SPiter_;
       os << std::setw(10) << std::left << SPflag_;
     }
     os << std::endl;
   }
-  return os.str();
+  
 }
-
 } // namespace TypeU
 } // namespace ROL
 
-#endif // ROL2_TYPEU_LINESEARCHALGORITHM_DEF_HPP
+#endif
