@@ -417,7 +417,7 @@ namespace Belos {
   template <class ScalarType, class MV, class OP>
   void GmresPolyOp<ScalarType, MV, OP>::generateGmresPoly()
   {
-    Teuchos::RCP< MV > V = MVT::Clone( *problem_->getRHS(), maxDegree_+2 );   
+    Teuchos::RCP< MV > V = MVT::Clone( *problem_->getRHS(), maxDegree_+1 );   
 
     //Make power basis:
     std::vector<int> index(1,0);
@@ -436,7 +436,7 @@ namespace Belos {
       problem_->apply( *Vtemp, *V0);
     }
 
-    for(int i=0; i< maxDegree_+1; i++)
+    for(int i=0; i< maxDegree_; i++)
     {
       index[0] = i;
       Teuchos::RCP< const MV > Vi = MVT::CloneView(*V, index);
@@ -446,11 +446,11 @@ namespace Belos {
     }
 
     //Consider AV:
-    Teuchos::Range1D range( 1, maxDegree_+1);
+    Teuchos::Range1D range( 1, maxDegree_);
     Teuchos::RCP< const MV > AV = MVT::CloneView( *V, range);
    
     //Make lhs (AV)^T(AV)
-    Teuchos::SerialDenseMatrix< OT, ScalarType > AVtransAV( maxDegree_+1, maxDegree_+1);
+    Teuchos::SerialDenseMatrix< OT, ScalarType > AVtransAV( maxDegree_, maxDegree_);
     MVT::MvTransMv( SCT::one(), *AV, *AV, AVtransAV);
     //This process adds pDeg*pDeg + pDeg inner products that aren't in the final count.
 
@@ -462,8 +462,8 @@ namespace Belos {
     Teuchos::SerialDenseMatrix< OT, ScalarType > lhs;
     while( status && dim_ >= 1)
     {
-      Teuchos::SerialDenseMatrix< OT, ScalarType > lhstemp(Teuchos::Copy, AVtransAV,  dim_+1, dim_+1);
-      lapack.POTRF( 'U', dim_+1, lhstemp.values(), lhstemp.stride(), &infoInt);
+      Teuchos::SerialDenseMatrix< OT, ScalarType > lhstemp(Teuchos::Copy, AVtransAV,  dim_, dim_);
+      lapack.POTRF( 'U', dim_, lhstemp.values(), lhstemp.stride(), &infoInt);
       
       if(autoDeg == false)
       { 
@@ -498,14 +498,14 @@ namespace Belos {
     } 
     else
     {
-      pCoeff_.shape( dim_+1, 1);
+      pCoeff_.shape( dim_, 1);
       //Get correct submatrix of AV:
-      Teuchos::Range1D rangeSub( 1, dim_+1);
+      Teuchos::Range1D rangeSub( 1, dim_);
       Teuchos::RCP< const MV > AVsub = MVT::CloneView( *V, rangeSub);
       
       //Compute rhs (AV)^T V0
       MVT::MvTransMv( SCT::one(), *AVsub, *V0, pCoeff_);
-      lapack.POTRS( 'U', dim_+1, 1, lhs.values(), lhs.stride(), pCoeff_.values(), pCoeff_.stride(), &infoInt);
+      lapack.POTRS( 'U', dim_, 1, lhs.values(), lhs.stride(), pCoeff_.values(), pCoeff_.stride(), &infoInt);
       if(infoInt != 0) 
       {
         std::cout << "BelosGmresPolyOp.hpp: LAPACK POTRS was not successful!!" << std::endl;
@@ -920,7 +920,7 @@ namespace Belos {
 #endif
       MVT::MvAddMv(pCoeff_(0,0), *AX, SCT::zero(), y, y); //y= coeff_i(A^ix)
     }
-    for( int i=1; i < dim_+1; i++)
+    for( int i=1; i < dim_; i++)
     {
       Teuchos::RCP<MV> X, Y;
       if ( i%2 )

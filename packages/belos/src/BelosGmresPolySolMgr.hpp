@@ -111,7 +111,9 @@ class GmresPolySolMgrPolynomialFailure : public BelosError {public:
 ///   - "Polynomial Tolerance" (\c MagnitudeType): The level that
 ///     residual norms must reach to decide convergence. Default:
 ///     1e-8.
-///   - "Maximum Degree" (\c int): Requested maximum degree for the polynomial. Default: 25
+///   - "Maximum Degree" (\c int): Requested maximum degree for the polynomial. 
+///      The preconditioned problem Ap(A) will have this degree, while the polynomial
+///       p(A) will have degree deg-1.  Default: 25
 ///   - "Random RHS" (\c bool): to generate the polynomial using a random vector. Default: true
 ///   - "Add Roots" (\c bool): to add roots to the polynomial as needed for stability. Default: true
 ///   - "Damp Poly" (\c bool): to damp polynomial. Default: false
