@@ -41,16 +41,14 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
-#ifndef ROL2_TYPEU_ALGORITHM_DEF_HPP
-#define ROL2_TYPEU_ALGORITHM_DEF_HPP
+#ifndef ROL_TYPEU_ALGORITHM_DEF_H
+#define ROL_TYPEU_ALGORITHM_DEF_H
 
 #include "ROL_Types.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ValidParameters.hpp"
 
 namespace ROL {
-namespace ROL2 {
 namespace TypeU {
 
 template<typename Real>
@@ -93,10 +91,10 @@ void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
-std::vector<std::string> Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
+void Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
                                                  std::ostream                 &outStream ) {
   if (problem.getProblemType() == TYPE_U) {
-    std::vector<std::string> output = run(*problem.getPrimalOptimizationVector(),
+    void output = run(*problem.getPrimalOptimizationVector(),
                                           *problem.getDualOptimizationVector(),
                                           *problem.getObjective(),
                                           outStream);
@@ -109,37 +107,36 @@ std::vector<std::string> Algorithm<Real>::run( NewOptimizationProblem<Real> &pro
 }
 
 template<typename Real>
-std::vector<std::string> Algorithm<Real>::run( Vector<Real>    &x,
-                                                 Objective<Real> &obj,
-                                                 std::ostream    &outStream ) {
-  return run(x,x.dual(),obj,outStream);
+void Algorithm<Real>::run( Vector<Real>    &x,
+                           Objective<Real> &obj,
+                           std::ostream    &outStream ) {
+  run(x,x.dual(),obj,outStream);
 }
 
 template<typename Real>
-std::vector<std::string> Algorithm<Real>::run( Vector<Real>     &x,
-                                                 Objective<Real>  &obj,
-                                                 Constraint<Real> &linear_con,
-                                                 Vector<Real>     &linear_mul,
-                                                 std::ostream     &outStream ) {
-  return run(x,x.dual(),obj,linear_con,linear_mul,linear_mul.dual(),outStream);
+void Algorithm<Real>::run( Vector<Real>     &x,
+                           Objective<Real>  &obj,
+                           Constraint<Real> &linear_con,
+                           Vector<Real>     &linear_mul,
+                           std::ostream     &outStream ) {
+  run(x,x.dual(),obj,linear_con,linear_mul,linear_mul.dual(),outStream);
 }
 
 template<typename Real>
-std::vector<std::string> Algorithm<Real>::run( Vector<Real>       &x,
-                                                 const Vector<Real> &g,
-                                                 Objective<Real>    &obj,
-                                                 Constraint<Real>   &linear_con,
-                                                 Vector<Real>       &linear_mul,
-                                                 const Vector<Real> &linear_c,
-                                                 std::ostream       &outStream ) {
+void Algorithm<Real>::run( Vector<Real>       &x,
+                           const Vector<Real> &g,
+                           Objective<Real>    &obj,
+                           Constraint<Real>   &linear_con,
+                           Vector<Real>       &linear_mul,
+                           const Vector<Real> &linear_c,
+                           std::ostream       &outStream ) {
   Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
   ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_con),xfeas,makePtrFromRef(linear_c));
   Ptr<Vector<Real>> s = x.clone(); s->zero();
-  std::vector<std::string>
-    output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),outStream);
+  
+  run(*s,g,*rlc.transform(makePtrFromRef(obj)),outStream);
   rlc.project(x,*s);
   x.plus(*rlc.getFeasibleVector());
-  return output;
 }
 
 template<typename Real>
@@ -202,13 +199,6 @@ void Algorithm<Real>::reset() {
 }
 
 } // namespace TypeU
-} // namespace ROL2
 } // namespace ROL
 
-namespace ROL2 {
-namespace TypeU {
-using ROL::ROL2::TypeU::Algorithm;
-} // namespace TypeU
-} // namespace ROL2
-
-#endif // ROL2_TYPEU_ALGORITHM_DEF_HPP
+#endif

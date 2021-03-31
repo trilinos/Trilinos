@@ -41,23 +41,20 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
-#ifndef ROL2_TYPEU_ALGORITHM_HPP
-#define ROL2_TYPEU_ALGORITHM_HPP
+#ifndef ROL_TYPEU_ALGORITHM_H
+#define ROL_TYPEU_ALGORITHM_H
 
 #include "ROL_CombinedStatusTest.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
-#include "ROL2_OptimizationProblem.hpp"
-#include "ROL2_EnumMap.hpp"
+#include "ROL_Problem.hpp"
 
-/** \class ROL::ROL2::TypeU::Algorithm
+/** \class ROL::TypeU::Algorithm
     \brief Provides an interface to run unconstrained optimization algorithms.
 */
 
 namespace ROL {
-namespace ROL2 {
-namespace TypeU {
+namespace TypeU { 
 
 template<typename Real>
 struct AlgorithmState : public ROL::AlgorithmState<Real> {
@@ -65,7 +62,7 @@ struct AlgorithmState : public ROL::AlgorithmState<Real> {
   Ptr<Vector<Real>> stepVec;
   Ptr<Vector<Real>> gradientVec;
 
-  AlgorithmState_U()
+  AlgorithmState()
     : searchSize(1),
       stepVec(nullPtr),
       gradientVec(nullPtr) {}
@@ -84,6 +81,12 @@ struct AlgorithmState : public ROL::AlgorithmState<Real> {
 
 template<typename Real>
 class Algorithm {
+protected:
+  const Ptr<CombinedStatusTest<Real>> status_;
+  const Ptr<AlgorithmState<Real>>   state_;
+
+  void initialize(const Vector<Real> &x, const Vector<Real> &g); 
+
 public:
 
   virtual ~Algorithm() {}
@@ -98,8 +101,8 @@ public:
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This is the primary Type-U interface.
   */
-  virtual void run( OptimizationProblem<Real> &problem,
-                    std::ostream              &outStream = std::cout );
+  virtual void run( Problem<Real> &problem,
+                    std::ostream &outStream = std::cout );
 
   /** \brief Run algorithm on unconstrained problems (Type-U).
              This is the primary Type-U interface.
@@ -143,50 +146,26 @@ public:
 
   /** \brief Print iterate header.
   */
-  virtual void writeHeader( std::ostream &outStream = std::cout ) const;
+  virtual void writeHeader( std::ostream& os = std::cout ) const;
 
   /** \brief Print step name.
   */
-  virtual void writeName( std::ostream &outStream = std::cout ) const;
+  virtual void writeName(std::ostream& os = std::cout) const;
 
   /** \brief Print iterate status.
   */
-  virtual void writeOutput(  std::ostream &outStream = std::cout,
-                             bool write_header = false ) const;
+  virtual void writeOutput( std::ostream& os = std::cout, bool print_header = false ) const;
 
-  virtual void writeExitStatus( std::ostream &outStream = std::cout ) const;
+  virtual void writeExitStatus( std::ostream& os = std::cout ) const;
 
   Ptr<const AlgorithmState<Real>>& getState() const;
 
   void reset();
 
-  static EnumMap<Type> type_dict;
-
-protected:
-  const Ptr<CombinedStatusTest<Real>> status_;
-  const Ptr<AlgorithmState_U<Real>>   state_;
-
-  void initialize(const Vector<Real> &x, const Vector<Real> &g); 
-
-
-}; // class ROL::ROL2::Type::Algorithm
-
-template<class Real>
-EnumMap<typename Algorithm<Real>::Type> {
-  "Bundle", "Line Search", "Trust Region"
-};
-
-
+}; // class ROL::TypeU::Algorithm
 } // namespace TypeU
-} // namespace ROL2
 } // namespace ROL
 
-namespace ROL2 {
-namespace TypeU {
-using ROL::ROL2::TypeU::Algorithm;
-} // namespace TypeU
-} // namespace ROL2
+#include "ROL_Algorithm_Def.hpp"
 
-#include "ROL2_TypeU_Algorithm_Def.hpp"
-
-#endif // ROL2_TYPEU_ALGORITHM_HPP
+#endif
