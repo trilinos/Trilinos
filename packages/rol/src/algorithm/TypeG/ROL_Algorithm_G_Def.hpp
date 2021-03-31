@@ -46,7 +46,7 @@
 
 #include "ROL_SlacklessObjective.hpp"
 #include "ROL_SlacklessConstraint.hpp"
-#include "ROL_ConstraintManager.hpp"
+#include "ROL_ConstraintAssembler.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 
@@ -235,7 +235,7 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                         makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
   problem.finalize(false,false,outStream);
   return run(problem,outStream);
-  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
   //                           makePtrFromRef(ibnd),makePtrFromRef(x));
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
   //Ptr<Vector<Real>>          emul = cm.getMultiplier();
@@ -264,7 +264,7 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                         makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
   problem.finalize(false,false,outStream);
   return run(problem,outStream);
-  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
   //                           makePtrFromRef(ibnd),makePtrFromRef(x),
   //                           makePtrFromRef(bnd));
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
@@ -303,7 +303,7 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
   //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>>
   //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
+  //ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
   //Ptr<Constraint<Real>>       con = cm.getConstraint();
   //Ptr<Vector<Real>>           mul = cm.getMultiplier();
   //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
@@ -342,7 +342,7 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
   //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>>
   //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
+  //ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
   //Ptr<Constraint<Real>>       con = cm.getConstraint();
   //Ptr<Vector<Real>>           mul = cm.getMultiplier();
   //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
@@ -568,7 +568,7 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
                               lerp,false);
   problem.finalize(false,false,outStream);
   return run(problem,outStream);
-  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
+  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
   //                           makePtrFromRef(x), makePtrFromRef(bnd));
   //Ptr<Vector<Real>>          xvec = cm.getOptVector();
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
@@ -655,7 +655,7 @@ std::vector<std::string> Algorithm_G<Real>::run( Vector<Real>          &x,
   //std::vector<Ptr<Constraint<Real>>> cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
   //std::vector<Ptr<Vector<Real>>>     lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>> bvec = {        nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintManager<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
+  //ConstraintAssembler<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
   //Ptr<Vector<Real>>          xvec = cm.getOptVector();
   //Ptr<Constraint<Real>>      xcon = cm.getConstraint();
   //Ptr<Vector<Real>>          xmul = cm.getMultiplier();

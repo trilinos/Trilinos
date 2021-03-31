@@ -41,38 +41,30 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TYPE_ALGORITHM_DEF_H
-#define ROL_TYPE_ALGORITHM_DEF_H
+#ifndef ROL_TYPEU_ALGORITHM_DEF_H
+#define ROL_TYPEU_ALGORITHM_DEF_H
 
 #include "ROL_Types.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ValidParameters.hpp"
-#include "ROL_ConstraintStatusTest.hpp"
 
 namespace ROL {
-namespace TypeE {
+namespace TypeU {
 
 template<typename Real>
 Algorithm<Real>::Algorithm()
   : status_(makePtr<CombinedStatusTest<Real>>()),
-    state_(makePtr<AlgorithmState_E<Real>>()) {
+    state_(makePtr<AlgorithmState_U<Real>>()) {
   status_->reset();
-  status_->add(makePtr<ConstraintStatusTest<Real>>());
+  status_->add(makePtr<StatusTest<Real>>());
 }
 
 template<typename Real>
-void Algorithm<Real>::initialize(const Vector<Real> &x,
-                                 const Vector<Real> &g,
-                                 const Vector<Real> &mul,
-                                 const Vector<Real> &c) {
+void Algorithm<Real>::initialize(const Vector<Real> &x, const Vector<Real> &g) {
   if (state_->iterateVec == nullPtr) {
     state_->iterateVec = x.clone();
   }
   state_->iterateVec->set(x);
-  if (state_->lagmultVec == nullPtr) {
-    state_->lagmultVec = mul.clone();
-  }
-  state_->lagmultVec->set(mul);
   if (state_->stepVec == nullPtr) {
     state_->stepVec = x.clone();
   }
@@ -81,10 +73,6 @@ void Algorithm<Real>::initialize(const Vector<Real> &x,
     state_->gradientVec = g.clone();
   }
   state_->gradientVec->set(g);
-  if (state_->constraintVec == nullPtr) {
-    state_->constraintVec = c.clone();
-  }
-  state_->constraintVec->zero();
   if (state_->minIterVec == nullPtr) {
     state_->minIterVec = x.clone();
   }
@@ -95,7 +83,7 @@ void Algorithm<Real>::initialize(const Vector<Real> &x,
 
 template<typename Real>
 void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
-                                      const bool combineStatus) {
+                                      bool combineStatus) {
   if (!combineStatus) { // Do not combine status tests
     status_->reset();
   }
@@ -104,76 +92,50 @@ void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 
 template<typename Real>
 void Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
-                           std::ostream     &outStream ) {
-  if (problem.getProblemType() == TYPE_E) {
+                                                 std::ostream                 &outStream ) {
+  if (problem.getProblemType() == TYPE_U) {
     run(*problem.getPrimalOptimizationVector(),
         *problem.getDualOptimizationVector(),
         *problem.getObjective(),
-        *problem.getConstraint(),
-        *problem.getMultiplierVector(),
-        *problem.getResidualVector(),
         outStream);
-        problem.finalizeIteration();
+    problem.finalizeIteration();
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::Algorithm::run : Optimization problem is not Type E!");
+    throw Exception::NotImplemented(">>> ROL::TypeU::Algorithm::run : Optimization problem is not Type U!");
   }
 }
 
 template<typename Real>
-void Algorithm<Real>::run( Vector<Real>     &x,
-                           Objective<Real>  &obj,
-                           Constraint<Real> &econ,
-                           Vector<Real>     &emul,
-                           std::ostream     &outStream ) {
-  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
-  problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul));
-  problem.finalize(false,false,outStream);
-  run(problem,outStream);
-  //run(x,x.dual(),obj,econ,emul,emul.dual(),outStream);
+void Algorithm<Real>::run( Vector<Real>    &x,
+                           Objective<Real> &obj,
+                           std::ostream    &outStream ) {
+  run(x,x.dual(),obj,outStream);
 }
 
 template<typename Real>
 void Algorithm<Real>::run( Vector<Real>     &x,
                            Objective<Real>  &obj,
-                           Constraint<Real> &econ,
-                           Vector<Real>     &emul,
-                           Constraint<Real> &linear_econ,
-                           Vector<Real>     &linear_emul,
+                           Constraint<Real> &linear_con,
+                           Vector<Real>     &linear_mul,
                            std::ostream     &outStream ) {
-  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
-  problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul));
-  problem.addLinearConstraint("LEC",makePtrFromRef(linear_econ),makePtrFromRef(linear_emul));
-  problem.finalize(false,false,outStream);
-  run(problem,outStream);
-  //run(x,x.dual(),obj,econ,emul,emul.dual(),linear_econ,linear_emul,linear_emul.dual(),outStream);
+  run(x,x.dual(),obj,linear_con,linear_mul,linear_mul.dual(),outStream);
 }
 
 template<typename Real>
 void Algorithm<Real>::run( Vector<Real>       &x,
                            const Vector<Real> &g,
                            Objective<Real>    &obj,
-                           Constraint<Real>   &econ,
-                           Vector<Real>       &emul,
-                           const Vector<Real> &eres,
-                           Constraint<Real>   &linear_econ,
-                           Vector<Real>       &linear_emul,
-                           const Vector<Real> &linear_eres,
+                           Constraint<Real>   &linear_con,
+                           Vector<Real>       &linear_mul,
+                           const Vector<Real> &linear_c,
                            std::ostream       &outStream ) {
-  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), lerp = linear_eres.clone();
-  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x),gp);
-  problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul),erp,false);
-  problem.addLinearConstraint("LEC",makePtrFromRef(linear_econ),makePtrFromRef(linear_emul),lerp,false);
-  problem.finalize(false,false,outStream);
-  run(problem,outStream);
-  //Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
-  //ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_econ),xfeas,makePtrFromRef(linear_eres));
-  //Ptr<Vector<Real>> s = x.clone(); s->zero();
-  //void output = run(*s,g,*rlc.transform(makePtrFromRef(obj)),
-  //                                      *rlc.transform(makePtrFromRef(econ)),emul,eres,outStream);
-  //rlc.project(x,*s);
-  //x.plus(*rlc.getFeasibleVector());
-  //return output;
+  Ptr<Vector<Real>> xfeas = x.clone(); xfeas->set(x);
+  ReduceLinearConstraint<Real> rlc(makePtrFromRef(linear_con),xfeas,makePtrFromRef(linear_c));
+  Ptr<Vector<Real>> s = x.clone(); s->zero();
+  
+  run(*s,g,*rlc.transform(makePtrFromRef(obj)),outStream);
+  rlc.project(x,*s);
+  x.plus(*rlc.getFeasibleVector());
 }
 
 template<typename Real>
@@ -181,8 +143,7 @@ void Algorithm<Real>::writeHeader( std::ostream& os ) const {
   os << "  ";
   os << std::setw(6)  << std::left << "iter";
   os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "cnorm";
-  os << std::setw(15) << std::left << "gLnorm";
+  os << std::setw(15) << std::left << "gnorm";
   os << std::setw(15) << std::left << "snorm";
   os << std::setw(10) << std::left << "#fval";
   os << std::setw(10) << std::left << "#grad";
@@ -191,20 +152,19 @@ void Algorithm<Real>::writeHeader( std::ostream& os ) const {
 
 template<typename Real>
 void Algorithm<Real>::writeName( std::ostream& os ) const {
-  throw Exception::NotImplemented(">>> ROL::TypeE::Algorithm::writeName() is not implemented!");
+  throw Exception::NotImplemented(">>> ROL::TypeU::Algorithm::writeName() is not implemented!");
 }
 
 template<typename Real>
 void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
   os << std::scientific << std::setprecision(6);
   if ( print_header ) {
-    writeHeader(os);
+    os << printHeader();
   }
   if ( state_->iter == 0 ) {
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;
     os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->cnorm;
     os << std::setw(15) << std::left << state_->gnorm;
     os << std::endl;
   }
@@ -212,7 +172,6 @@ void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
     os << "  "; 
     os << std::setw(6)  << std::left << state_->iter;  
     os << std::setw(15) << std::left << state_->value; 
-    os << std::setw(15) << std::left << state_->cnorm;
     os << std::setw(15) << std::left << state_->gnorm; 
     os << std::setw(15) << std::left << state_->snorm; 
     os << std::setw(10) << std::left << state_->nfval;              
@@ -238,8 +197,7 @@ void Algorithm<Real>::reset() {
   state_->reset();
 }
 
-} // namespace TypeE
-
+} // namespace TypeU
 } // namespace ROL
 
 #endif

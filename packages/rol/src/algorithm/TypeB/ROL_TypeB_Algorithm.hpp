@@ -65,7 +65,7 @@ struct AlgorithmState : public ROL::AlgorithmState<Real> {
   Ptr<Vector<Real>> gradientVec;
   int nproj;
 
-  AlgorithmState_B()
+  AlgorithmState()
     : searchSize(1),
       stepVec(nullPtr),
       gradientVec(nullPtr),
@@ -84,7 +84,7 @@ template<typename Real>
 class Algorithm {
 protected:
   const Ptr<CombinedStatusTest<Real>> status_;
-  const Ptr<AlgorithmState_B<Real>>   state_;
+  const Ptr<AlgorithmState<Real>>   state_;
   Ptr<PolyhedralProjection<Real>>     proj_;
 
   void initialize(const Vector<Real> &x, const Vector<Real> &g); 

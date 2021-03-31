@@ -46,7 +46,7 @@
 
 #include "ROL_SlacklessObjective.hpp"
 #include "ROL_SlacklessConstraint.hpp"
-#include "ROL_ConstraintManager.hpp"
+#include "ROL_ConstraintAssembler.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 
@@ -56,7 +56,7 @@ namespace TypeG {
 template<typename Real>
 Algorithm<Real>::Algorithm()
   : status_(makePtr<CombinedStatusTest<Real>>()),
-    state_(makePtr<AlgorithmState_G<Real>>()),
+    state_(makePtr<AlgorithmState<Real>>()),
     proj_(nullPtr) {
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>());
@@ -109,7 +109,7 @@ void Algorithm<Real>::run( Problem<Real> &problem,
                            std::ostream  &outStream ) {
   if (problem.getProblemType() == TYPE_EB) {
     proj_ = problem.getPolyhedralProjection();
-    void output = run(*problem.getPrimalOptimizationVector(),
+    run(*problem.getPrimalOptimizationVector(),
                                           *problem.getDualOptimizationVector(),
                                           *problem.getObjective(),
                                           *problem.getBoundConstraint(),
@@ -118,7 +118,6 @@ void Algorithm<Real>::run( Problem<Real> &problem,
                                           *problem.getResidualVector(),
                                           outStream);
     problem.finalizeIteration();
-    return output;
   }
   else {
     throw Exception::NotImplemented(">>> ROL::Algorithm::run : Optimization problem is not Type G!");
@@ -236,7 +235,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                         makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
   problem.finalize(false,false,outStream);
   run(problem,outStream);
-  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
   //                           makePtrFromRef(ibnd),makePtrFromRef(x));
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
   //Ptr<Vector<Real>>          emul = cm.getMultiplier();
@@ -265,7 +264,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                         makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
   problem.finalize(false,false,outStream);
   run(problem,outStream);
-  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
   //                           makePtrFromRef(ibnd),makePtrFromRef(x),
   //                           makePtrFromRef(bnd));
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
@@ -304,7 +303,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>>
   //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
+  //ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
   //Ptr<Constraint<Real>>       con = cm.getConstraint();
   //Ptr<Vector<Real>>           mul = cm.getMultiplier();
   //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
@@ -343,7 +342,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>>
   //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
+  //ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
   //Ptr<Constraint<Real>>       con = cm.getConstraint();
   //Ptr<Vector<Real>>           mul = cm.getMultiplier();
   //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
@@ -569,7 +568,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                               lerp,false);
   problem.finalize(false,false,outStream);
   run(problem,outStream);
-  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
+  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
   //                           makePtrFromRef(x), makePtrFromRef(bnd));
   //Ptr<Vector<Real>>          xvec = cm.getOptVector();
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
@@ -656,7 +655,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   //std::vector<Ptr<Constraint<Real>>> cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
   //std::vector<Ptr<Vector<Real>>>     lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>> bvec = {        nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintManager<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
+  //ConstraintAssembler<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
   //Ptr<Vector<Real>>          xvec = cm.getOptVector();
   //Ptr<Constraint<Real>>      xcon = cm.getConstraint();
   //Ptr<Vector<Real>>          xmul = cm.getMultiplier();
@@ -683,14 +682,15 @@ void Algorithm<Real>::writeHeader( std::ostream& os ) const {
 
 template<typename Real>
 void Algorithm<Real>::writeName(std::ostream& os) const {
-  throw Exception::NotImplemented(">>> ROL::Algorithm_U::printName() is not implemented!");
+  throw Exception::NotImplemented(">>> ROL::TypeG::Algorithm::writeName() is not implemented!");
 }
 
 template<typename Real>
 void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
   os << std::scientific << std::setprecision(6);
   if ( print_header ) {
-    os << printHeader();
+    writeHeader(os);
+
   }
   if ( state_->iter == 0 ) {
     os << "  ";
