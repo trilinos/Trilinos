@@ -838,7 +838,7 @@ namespace MueLuTests {
     GO nx = 10*comm->getSize();
     Teuchos::ParameterList galeriList, ifpack2Params;
     galeriList.set("nx", nx);
-    RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);    
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);    
 
     ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
 

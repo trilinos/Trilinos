@@ -469,7 +469,7 @@ namespace MueLuTests {
       matrixParams.set("matrixType","Laplace1D");
       matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
 
-      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
       ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
       
       Ifpack2Smoother smoother("RELAXATION",ifpack2Params);
