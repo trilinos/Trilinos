@@ -250,7 +250,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
         res_         = nullPtr;
       }
       else if (hasEquality && !hasInequality && !hasBounds_) {
-        NewConstraintManager<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
+        ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_);
         problemType_ = TYPE_E;
         obj_         = INPUT_obj_;
         xprim_       = INPUT_xprim_;
@@ -261,7 +261,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
         res_         = cm.getResidual();
       }
       else {
-        NewConstraintManager<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+        ConstraintAssembler<Real> cm(con,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
         problemType_ = TYPE_EB;
         obj_         = INPUT_obj_;
         if (cm.hasInequality()) {
@@ -277,7 +277,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
     }
     else {
       if (!hasBounds_ && !hasLinearInequality) {
-        NewConstraintManager<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
+        ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_);
         xfeas_ = cm.getOptVector()->clone(); xfeas_->set(*cm.getOptVector());
         rlc_   = makePtr<ReduceLinearConstraint<Real>>(cm.getConstraint(),xfeas_,cm.getResidual());
         proj_  = nullPtr;
@@ -298,7 +298,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
                 it->second.multiplier,it->second.residual,it->second.bounds)));
           }
           Ptr<Vector<Real>> xtmp = xfeas_->clone(); xtmp->zero();
-          NewConstraintManager<Real> cm1(icon,xtmp,cm.getDualOptVector());
+          ConstraintAssembler<Real> cm1(icon,xtmp,cm.getDualOptVector());
           xprim_         = cm1.getOptVector();
           xdual_         = cm1.getDualOptVector();
           con_           = cm1.getConstraint();
@@ -317,7 +317,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
         }
       }
       else if ((hasBounds_ || hasLinearInequality) && !hasEquality && !hasInequality) {
-        NewConstraintManager<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+        ConstraintAssembler<Real> cm(lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
         problemType_ = TYPE_B;
         obj_         = INPUT_obj_;
         if (cm.hasInequality()) {
@@ -333,7 +333,7 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
                          cm.getConstraint(),*cm.getMultiplier(),*cm.getResidual(),ppa_list_);
       }
       else {
-        NewConstraintManager<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
+        ConstraintAssembler<Real> cm(con,lcon,INPUT_xprim_,INPUT_xdual_,INPUT_bnd_);
         problemType_ = TYPE_EB;
         obj_         = INPUT_obj_;
         if (cm.hasInequality()) {

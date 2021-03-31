@@ -45,7 +45,7 @@
 #define ROL_TYPEB_ALGORITHM_DEF_H
 
 #include "ROL_SlacklessObjective.hpp"
-#include "ROL_ConstraintManager.hpp"
+#include "ROL_ConstraintAssembler.hpp"
 
 namespace ROL {
 namespace TypeB {
@@ -173,7 +173,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            BoundConstraint<Real> &linear_ibnd,
                            const Vector<Real>    &linear_ires,
                            std::ostream          &outStream ) {
-  ConstraintManager<Real> cm(makePtrFromRef(linear_icon),makePtrFromRef(linear_imul),
+  ConstraintAssembler<Real> cm(makePtrFromRef(linear_icon),makePtrFromRef(linear_imul),
                              makePtrFromRef(linear_ibnd),makePtrFromRef(x),
                              makePtrFromRef(bnd));
   Ptr<Constraint<Real>>      linear_econ = cm.getConstraint();
@@ -222,7 +222,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   std::vector<Ptr<BoundConstraint<Real>>> bvec;
   bvec.push_back(nullPtr);
   bvec.push_back(makePtrFromRef(linear_ibnd));
-  ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
+  ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
   Ptr<Constraint<Real>>      linear_con = cm.getConstraint();
   Ptr<Vector<Real>>          linear_mul = cm.getMultiplier();
   Ptr<Vector<Real>>          xvec = cm.getOptVector();
