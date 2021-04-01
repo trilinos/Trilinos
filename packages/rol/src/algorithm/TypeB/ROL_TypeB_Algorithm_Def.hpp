@@ -53,7 +53,7 @@ namespace TypeB {
 template<typename Real>
 Algorithm<Real>::Algorithm()
   : status_(makePtr<CombinedStatusTest<Real>>()),
-    state_(makePtr<AlgorithmState_B<Real>>()),
+    state_(makePtr<AlgorithmState<Real>>()),
     proj_(nullPtr) {
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>());
@@ -108,7 +108,7 @@ void Algorithm<Real>::run( Problem<Real> &problem,
                            std::ostream  &outStream ) {
   if (problem.getProblemType() == TYPE_B) {
     proj_ = problem.getPolyhedralProjection();
-    void output = run(*problem.getPrimalOptimizationVector(),
+    run(*problem.getPrimalOptimizationVector(),
                       *problem.getDualOptimizationVector(),
                       *problem.getObjective(),
                       *problem.getBoundConstraint(),
@@ -116,7 +116,7 @@ void Algorithm<Real>::run( Problem<Real> &problem,
     problem.finalizeIteration();
   }
   else {
-    throw Exception::NotImplemented(">>> ROL::Algorithm::run : Optimization problem is not Type B!");
+    throw Exception::NotImplemented(">>> ROL::Algorithm::TypeB::run : Optimization problem is not Type B!");
   }
 }
 
