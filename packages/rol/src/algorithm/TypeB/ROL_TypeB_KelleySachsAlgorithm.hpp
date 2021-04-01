@@ -58,7 +58,7 @@ namespace ROL {
 namespace TypeB {
 
 template<typename Real>
-class KelleySBachsAlgorithm : public TypeB::Algorithm_B<Real> {
+class KelleySBachsAlgorithm : public TypeB::Algorithm<Real> {
 private:
   Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model
 
@@ -100,9 +100,9 @@ private:
   unsigned verbosity_; ///< Output level (default: 0)
   bool writeHeader_;   ///< Flag to write header at every iteration
 
-  using Algorithm_B<Real>::state_;
-  using Algorithm_B<Real>::status_;
-  using Algorithm_B<Real>::proj_;
+  using TypeB::Algorithm<Real>::state_;
+  using TypeB::Algorithm<Real>::status_;
+  using TypeB::Algorithm<Real>::proj_;
 
 public:
   KelleySachsAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
