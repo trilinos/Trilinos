@@ -440,49 +440,49 @@ void Problem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostr
 }
 
 template<typename Real>
-const Ptr<Objective<Real>> Problem<Real>::getObjective() {
+const Ptr<Objective<Real>>& Problem<Real>::getObjective() {
   finalize();
   return obj_;
 }
 
 template<typename Real>
-const Ptr<Vector<Real>> Problem<Real>::getPrimalOptimizationVector() {
+const Ptr<Vector<Real>>& Problem<Real>::getPrimalOptimizationVector() {
   finalize();
   return xprim_;
 }
 
 template<typename Real>
-const Ptr<Vector<Real>> Problem<Real>::getDualOptimizationVector() {
+const Ptr<Vector<Real>>& Problem<Real>::getDualOptimizationVector() {
   finalize();
   return xdual_;
 }
 
 template<typename Real>
-const Ptr<BoundConstraint<Real>> Problem<Real>::getBoundConstraint() {
+const Ptr<BoundConstraint<Real>>& Problem<Real>::getBoundConstraint() {
   finalize();
   return bnd_;
 }
 
 template<typename Real>
-const Ptr<Constraint<Real>> Problem<Real>::getConstraint() {
+const Ptr<Constraint<Real>>& Problem<Real>::getConstraint() {
   finalize();
   return con_;
 }
 
 template<typename Real>
-const Ptr<Vector<Real>> Problem<Real>::getMultiplierVector() {
+const Ptr<Vector<Real>>& Problem<Real>::getMultiplierVector() {
   finalize();
   return mul_;
 }
 
 template<typename Real>
-const Ptr<Vector<Real>> Problem<Real>::getResidualVector() {
+const Ptr<Vector<Real>>& Problem<Real>::getResidualVector() {
   finalize();
   return res_;
 }
 
 template<typename Real>
-const Ptr<PolyhedralProjection<Real>> Problem<Real>::getPolyhedralProjection() {
+const Ptr<PolyhedralProjection<Real>>& Problem<Real>::getPolyhedralProjection() {
   finalize();
   return proj_;
 }
