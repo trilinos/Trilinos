@@ -62,9 +62,9 @@ private:
   int verbosity_;
   bool writeHeader_;
 
-  using Algorithm_B<Real>::status_;
-  using Algorithm_B<Real>::state_;
-  using Algorithm_B<Real>::proj_;
+  using TypeB::Algorithm<Real>::status_;
+  using TypeB::Algorithm<Real>::state_;
+  using TypeB::Algorithm<Real>::proj_;
 
   void initialize(Vector<Real>          &x,
                   const Vector<Real>    &g,

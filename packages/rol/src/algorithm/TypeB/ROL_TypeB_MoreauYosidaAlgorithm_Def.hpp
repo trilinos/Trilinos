@@ -98,7 +98,7 @@ void MoreauYosidaAlgorithm<Real>::initialize(Vector<Real>                &x,
     hasEcon_ = false;
   }
   // Initialize data
-  Algorithm_B<Real>::initialize(x,g);
+  TypeB::Algorithm<Real>::initialize(x,g);
   // Initialize the algorithm state
   state_->nfval = 0;
   state_->ngrad = 0;
@@ -107,11 +107,11 @@ void MoreauYosidaAlgorithm<Real>::initialize(Vector<Real>                &x,
 
 
 template<typename Real>
-void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real>          &x,
-                                                MoreauYosidaObjective<Real> &myobj,
-                                                BoundConstraint<Real>       &bnd,
-                                                Vector<Real>                &pwa,
-                                                std::ostream                &outStream) {
+void MoreauYosidaAlgorithm<Real>::updateState(const Vector<Real>          &x,
+                                              MoreauYosidaObjective<Real> &myobj,
+                                              BoundConstraint<Real>       &bnd,
+                                              Vector<Real>                &pwa,
+                                              std::ostream                &outStream) {
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint.
