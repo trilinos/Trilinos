@@ -3,16 +3,8 @@
 #  xrol                   experimental    EX          OPTIONAL
 #)      
 
-SET( LIB_REQUIRED_DEP_PACKAGES )
-SET(LIB_OPTIONAL_DEP_PACKAGES Belos Epetra Tpetra Thyra Sacado Intrepid MiniTensor Shards Amesos Amesos2 Ifpack2 MueLu TriKota Tempus) 
-
-if( ROL_VERSION EQUAL 2 )
-SET( LIB_OPTIONAL_DEP_PACKAGES ${LIB_OPTIONAL_DEP_PACKAGES} Teuchos )
-else()
-SET( LIB_REQURED_DEP_PACKAGES ${LIB_REQUIRED_DEP_PACKAGES} Teuchos )
-endif()
-
-
+SET(LIB_REQUIRED_DEP_PACKAGES Teuchos)
+SET(LIB_OPTIONAL_DEP_PACKAGES Belos Epetra Tpetra Thyra Sacado Intrepid MiniTensor Shards Amesos Amesos2 Ifpack2 MueLu TriKota Tempus)
 SET(TEST_REQUIRED_DEP_PACKAGES)
 SET(TEST_OPTIONAL_DEP_PACKAGES Gtest)
 SET(LIB_REQUIRED_DEP_TPLS)
