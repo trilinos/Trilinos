@@ -115,7 +115,7 @@ namespace Intrepid2
       ViewType evaluationPoints    ("ProjectedGeometry evaluation points (value)",    numCells, numPoints,     spaceDim);
       ViewType evaluationGradPoints("ProjectedGeometry evaluation points (gradient)", numCells, numGradPoints, spaceDim);
   
-      using CellTools = CellTools<ExecutionSpace>; // TODO: when CellTools fully supports it, switch to DeviceType
+      using CellTools = CellTools<DeviceType>;
       BasisPtr hgradLinearBasisForFlatGeometry = flatCellGeometry.basisForNodes();
       if (numPoints > 0)
       {

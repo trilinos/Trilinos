@@ -75,8 +75,9 @@ namespace Intrepid2 {
     };
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int CellTools_Test04(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -90,9 +91,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
   
       *outStream                                                       
@@ -115,9 +116,8 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      using ct = CellTools<DeviceType>;
+      using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
 
       const ValueType tol = tolerence()*100.0;
 
@@ -164,18 +164,6 @@ namespace Intrepid2 {
           const auto numCells = 10;
           const auto testAccuracy = 4;
 
-          DynRankView ConstructWithLabel(cubPointsMax,  Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
-          DynRankView ConstructWithLabel(cubWeightsMax, Parameters::MaxIntegrationPoints);
-          // for arbitrary high order elements, this should be Parameters::MaxIntegrationPoints 
-          const auto maxNumNodes = 64; 
-          DynRankView ConstructWithLabel(refCellNodesMax,          maxNumNodes, Parameters::MaxDimension);
-          DynRankView ConstructWithLabel(worksetCellMax, numCells, maxNumNodes, Parameters::MaxDimension);
-
-          DynRankView ConstructWithLabel(physPointsMax,    numCells, Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
-          DynRankView ConstructWithLabel(controlPointsMax, numCells, Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
-
-          DynRankView ConstructWithLabel(initGuessMax, numCells, Parameters::MaxIntegrationPoints, Parameters::MaxDimension);
-
           // Loop over cell topologies, make cell workset for each one by perturbing the worksetCell & test methods
           for (size_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
             const auto cell = standardBaseTopologies[topoOrd];
@@ -184,46 +172,49 @@ namespace Intrepid2 {
               continue;
       
             // 1.   Define a single reference point set using cubature factory with order 4 cubature
-            const auto cellCubature = cubFactory.create<DeviceSpaceType>(cell, testAccuracy); 
+            const auto cellCubature = cubFactory.create<DeviceType>(cell, testAccuracy);
             const auto cubDim = cellCubature->getDimension();
             const auto cubNumPoints = cellCubature->getNumPoints();
             
-            typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-            range_type cubPointRange(0, cubNumPoints), cubDimRange(0, cubDim);            
-            auto cubPoints  = Kokkos::subdynrankview( cubPointsMax,  cubPointRange, cubDimRange );
-            auto cubWeights = Kokkos::subdynrankview( cubWeightsMax, cubPointRange );
-
+            DynRankView ConstructWithLabel(cubPoints,  cubNumPoints, cubDim );
+            DynRankView ConstructWithLabel(cubWeights, cubNumPoints );
             cellCubature->getCubature(cubPoints, cubWeights);
 
             // 2.   Define a cell workset by perturbing the worksetCell of the reference cell with the specified topology
             // 2.1  Resize dimensions of the rank-3 (C,N,D) cell workset array for the current topology
             const auto numNodes = cell.getNodeCount();
             const auto cellDim  = cell.getDimension();
-            
-            range_type nodeRange(0, numNodes), cellDimRange(0, cellDim);            
-            auto worksetCell = Kokkos::subdynrankview(worksetCellMax, Kokkos::ALL(), nodeRange, cellDimRange);
+
+            DynRankView ConstructWithLabel(worksetCell, numCells, numNodes, cellDim);
             
             // 2.2  Copy worksetCell of the reference cell with the same topology to temp rank-2 (N,D) array
-            auto refCellNodes = Kokkos::subdynrankview(refCellNodesMax, nodeRange, cellDimRange);
+            DynRankView ConstructWithLabel(refCellNodes, numNodes, cellDim);
             ct::getReferenceSubcellNodes(refCellNodes, cellDim, 0, cell);
             
+            // create mirror host views
+            auto hRefCellNodes = Kokkos::create_mirror_view_and_copy(
+                typename HostSpaceType:: memory_space(), refCellNodes);
+
+            auto hWorksetCell = Kokkos::create_mirror_view(worksetCell);
+
             // 2.3  Create randomly perturbed version of the reference cell and save in the cell workset array
             for (auto cellOrd=0;cellOrd<numCells;++cellOrd) {
               // Move vertices +/-0.125 along their axes. Gives nondegenerate cells for base and extended topologies 
               for (size_type nodeOrd=0;nodeOrd<numNodes;++nodeOrd) 
                 for(size_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<double>::random()/16.0;
-                  worksetCell(cellOrd, nodeOrd, d) = refCellNodes(nodeOrd, d) + delta;
+                  hWorksetCell(cellOrd, nodeOrd, d) = hRefCellNodes(nodeOrd, d) + delta;
                 } 
             }
+            Kokkos::deep_copy(worksetCell,hWorksetCell);
             
             /* 
              * 3.1 Test 1: single point set to single physical cell: map ref. point set in rank-2 (P,D) array
              *      to a physical point set in rank-2 (P,D) array for a specified cell ordinal. Use the cub.
              *      points array for this test. Resize physPoints and controlPoints to rank-2 (P,D) arrays.
              */
-            auto physPoints    = Kokkos::subdynrankview( physPointsMax,    Kokkos::ALL(), cubPointRange, cubDimRange );
-            auto controlPoints = Kokkos::subdynrankview( controlPointsMax, Kokkos::ALL(), cubPointRange, cubDimRange );
+            DynRankView ConstructWithLabel(physPoints,    numCells, cubNumPoints, cubDim );
+            DynRankView ConstructWithLabel(controlPoints, numCells, cubNumPoints, cubDim );
             
             *outStream 
               << " Mapping a set of " << cubNumPoints << " points to one cell in a workset of " << numCells << " " 
@@ -239,19 +230,26 @@ namespace Intrepid2 {
               break;
             }
             case 1: {
-              auto initGuess = Kokkos::subdynrankview( initGuessMax, Kokkos::ALL(), cubPointRange, cubDimRange );
+              DynRankView ConstructWithLabel(initGuess, numCells, cubNumPoints, cubDim );
               // cubPoints become the initial guess
-              rst::clone(initGuess, cubPoints);
+              RealSpaceTools<DeviceType>::clone(initGuess, cubPoints);
               ct::mapToReferenceFrameInitGuess(controlPoints, initGuess, physPoints, worksetCell, cell);
               break;
             }
             }
             
+            // copy to mirror host views
+            auto hControlPoints = Kokkos::create_mirror_view_and_copy(
+                typename HostSpaceType::memory_space(), controlPoints);
+
+            auto hCubPoints = Kokkos::create_mirror_view_and_copy(
+                typename HostSpaceType::memory_space(), cubPoints);
+
             // Points in controlPoints should match the originals in cubPoints up to a tolerance
             for (auto cellOrd=0;cellOrd<numCells;++cellOrd) 
               for (auto pt=0;pt<cubNumPoints;++pt) 
                 for (size_type d=0;d<cellDim;++d) 
-                  if( std::abs( controlPoints(cellOrd, pt, d) - cubPoints(pt, d) ) > tol ) {
+                  if( std::abs( hControlPoints(cellOrd, pt, d) - hCubPoints(pt, d) ) > tol ) {
                     errorFlag++;
                     *outStream
                       << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -260,8 +258,8 @@ namespace Intrepid2 {
                       << " Physical cell ordinal in workset = " << cellOrd << "\n"
                       << "          Reference point ordinal = " << std::setprecision(12) << pt << "\n"
                       << "    At reference point coordinate = " << std::setprecision(12) << d << "\n"
-                      << "                   Original value = " << cubPoints(pt, d) << "\n"
-                      << "                     F^{-1}F(P_d) = " << controlPoints(cellOrd, pt, d) <<"\n";
+                      << "                   Original value = " << hCubPoints(pt, d) << "\n"
+                      << "                     F^{-1}F(P_d) = " << hControlPoints(cellOrd, pt, d) <<"\n";
                   }
           }
         } catch (std::logic_error &err) {

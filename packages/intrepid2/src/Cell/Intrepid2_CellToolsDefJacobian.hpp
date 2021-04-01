@@ -794,6 +794,11 @@ namespace Intrepid2 {
                const WorksetType worksetCell,
                const BasisGradientsType gradients, const int startCell, const int endCell)
   {
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(jacobian)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::setJacobian(..): output view's memory space is not compatible with DeviceType");
+
     using JacobianViewType = Kokkos::DynRankView<jacobianValueType,jacobianProperties...>;
     using FunctorType      = FunctorCellTools::F_setJacobian<JacobianViewType,WorksetType,BasisGradientsType> ;
     
@@ -807,18 +812,25 @@ namespace Intrepid2 {
     Kokkos::parallel_for( policy, FunctorType(jacobian, worksetCell, gradients, startCell, endCellResolved) );
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename jacobianValueType,    class ...jacobianProperties,
            typename pointValueType,       class ...pointProperties,
            typename WorksetType,
            typename HGradBasisType>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   setJacobian(       Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian,
                const Kokkos::DynRankView<pointValueType,pointProperties...>             points,
                const WorksetType worksetCell,
                const Teuchos::RCP<HGradBasisType> basis,
                const int startCell, const int endCell) {
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(jacobian)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(points)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::setJacobian(..): input/output views' memory spaces are not compatible with DeviceType");
+
 #ifdef HAVE_INTREPID2_DEBUG    
     CellTools_setJacobianArgs(jacobian, points, worksetCell, basis->getBaseCellTopology(), startCell, endCell);
     //static_assert(std::is_same( pointValueType, decltype(basis->getDummyOutputValue()) ));
@@ -834,10 +846,10 @@ namespace Intrepid2 {
     
     // the following does not work for RCP; its * operator returns reference not the object
     //typedef typename decltype(*basis)::output_value_type gradValueType;
-    //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),SpT> gradViewType;
+    //typedef Kokkos::DynRankView<decltype(basis->getDummyOutputValue()),DeviceType> gradViewType;
 
     auto vcprop = Kokkos::common_view_alloc_prop(points);
-    using GradViewType = Kokkos::DynRankView<typename decltype(vcprop)::value_type,SpT>;
+    using GradViewType = Kokkos::DynRankView<typename decltype(vcprop)::value_type,DeviceType>;
 
     GradViewType grads;
 
@@ -864,30 +876,30 @@ namespace Intrepid2 {
     setJacobian(jacobian, worksetCell, grads, startCell, endCell);
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename jacobianInvValueType, class ...jacobianInvProperties,                                   
            typename jacobianValueType,    class ...jacobianProperties>                                      
   void                                                                                               
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   setJacobianInv(       Kokkos::DynRankView<jacobianInvValueType,jacobianInvProperties...> jacobianInv,     
                   const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>       jacobian ) {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_setJacobianInvArgs(jacobianInv, jacobian);
 #endif
-    RealSpaceTools<SpT>::inverse(jacobianInv, jacobian);
+    RealSpaceTools<DeviceType>::inverse(jacobianInv, jacobian);
   }
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename jacobianDetValueType, class ...jacobianDetProperties,                                   
            typename jacobianValueType,    class ...jacobianProperties>                                      
   void                                                                                               
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   setJacobianDet(       Kokkos::DynRankView<jacobianDetValueType,jacobianDetProperties...>  jacobianDet,    
                   const Kokkos::DynRankView<jacobianValueType,jacobianProperties...>        jacobian ) {
 #ifdef HAVE_INTREPID2_DEBUG
     CellTools_setJacobianDetArgs(jacobianDet, jacobian);
 #endif
-    RealSpaceTools<SpT>::det(jacobianDet, jacobian);
+    RealSpaceTools<DeviceType>::det(jacobianDet, jacobian);
   }
 
 }

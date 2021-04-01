@@ -260,7 +260,8 @@ private:
                                                      
   void assertInitialized() const;
 
-  std::string label_;
+  std::string label_, filenameLHS_, filenameRHS_;
+  mutable int counter_;
   
 };
 
