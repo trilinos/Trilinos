@@ -73,7 +73,7 @@ struct ConstraintData {
 };
 
 template<typename Real>
-class ConstraintManager {
+class ConstraintAssembler {
 private:
   Ptr<Constraint<Real>>      con_;
   Ptr<Vector<Real>>          mul_;
@@ -117,14 +117,14 @@ private:
                    const Ptr<BoundConstraint<Real>>                           &bnd);
 
 public:
-  virtual ~ConstraintManager() {}
+  virtual ~ConstraintAssembler() {}
 
-  ConstraintManager( const std::unordered_map<std::string,ConstraintData<Real>> &con,
+  ConstraintAssembler( const std::unordered_map<std::string,ConstraintData<Real>> &con,
                      const Ptr<Vector<Real>>                                    &xprim,
                      const Ptr<Vector<Real>>                                    &xdual,
                      const Ptr<BoundConstraint<Real>>                           &bnd = nullPtr);
 
-  ConstraintManager( const std::unordered_map<std::string,ConstraintData<Real>> &con,
+  ConstraintAssembler( const std::unordered_map<std::string,ConstraintData<Real>> &con,
                      const std::unordered_map<std::string,ConstraintData<Real>> &linear_con,
                      const Ptr<Vector<Real>>                                    &xprim,
                      const Ptr<Vector<Real>>                                    &xdual,
@@ -145,7 +145,7 @@ public:
 
   void resetSlackVariables();
 
-}; // class ConstraintManager
+}; // class ConstraintAssembler
 
 } // namespace ROL
 
