@@ -580,10 +580,22 @@ public:
     return gs2;
   }
   // ---------------------------------------- //
-  // Specify to use either Two-stage or Classical (i.e., inner Jacobi-Richardson or SpTrsv)
+  // Specify numer of outer sweeps for two-stage Gauss-Seidel
+  void set_gs_set_num_outer_sweeps (int num_outer_sweeps) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setNumOuterSweeps (num_outer_sweeps);
+  }
+  // ---------------------------------------- //
+  // Specify numer of inner sweeps for two-stage Gauss-Seidel
   void set_gs_set_num_inner_sweeps (int num_inner_sweeps) {
     auto gs2 = get_twostage_gs_handle();
     gs2->setNumInnerSweeps (num_inner_sweeps);
+  }
+  // ---------------------------------------- //
+  // Specify damping factor of inner sweeps for two-stage Gauss-Seidel
+  void set_gs_set_inner_damp_factor (nnz_scalar_t damp_factor) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setInnerDampFactor (damp_factor);
   }
   // ---------------------------------------- //
   // Specify to use either Two-stage or Classical (i.e., inner Jacobi-Richardson or SpTrsv)
@@ -608,6 +620,13 @@ public:
       }
     }
   }
+  // ---------------------------------------- //
+  // Specify to use either Compact or Classical form of recurrence
+  void set_gs_twostage_compact_form (bool compact_form) {
+    auto gs2 = get_twostage_gs_handle();
+    gs2->setCompactForm (compact_form);
+  }
+
 
   void create_gs_handle(KokkosSparse::ClusteringAlgorithm clusterAlgo, nnz_lno_t hint_verts_per_cluster) {
     this->destroy_gs_handle();
