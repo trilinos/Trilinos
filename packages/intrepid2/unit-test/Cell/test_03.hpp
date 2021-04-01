@@ -78,8 +78,9 @@ namespace Intrepid2 {
     };
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int CellTools_Test03(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -93,9 +94,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
       *outStream
@@ -118,9 +119,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      using ct = CellTools<DeviceType>;
+      using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
+      using DynRankViewHost = Kokkos::DynRankView<ValueType,HostSpaceType>;
 
       const ValueType tol = tolerence()*100.0;
 
@@ -154,9 +155,9 @@ namespace Intrepid2 {
         {
           // Define cubature on the edge parametrization domain:
           const ordinal_type testAccuracy = 6;
-          CubatureDirectLineGauss<DeviceSpaceType,ValueType,ValueType> edgeCubature(testAccuracy);
-          CubatureDirectTriDefault<DeviceSpaceType,ValueType,ValueType> triFaceCubature(testAccuracy);
-          CubatureTensor<DeviceSpaceType,ValueType,ValueType> quadFaceCubature( edgeCubature, edgeCubature );
+          CubatureDirectLineGauss<DeviceType,ValueType,ValueType> edgeCubature(testAccuracy);
+          CubatureDirectTriDefault<DeviceType,ValueType,ValueType> triFaceCubature(testAccuracy);
+          CubatureTensor<DeviceType,ValueType,ValueType> quadFaceCubature( edgeCubature, edgeCubature );
 
           const ordinal_type faceCubDim = 2;
           const ordinal_type numTriFaceCubPoints  = triFaceCubature.getNumPoints();
@@ -168,8 +169,11 @@ namespace Intrepid2 {
           DynRankView ConstructWithLabel(paramQuadFacePoints,  numQuadFaceCubPoints, faceCubDim);
           DynRankView ConstructWithLabel(paramQuadFaceWeights, numQuadFaceCubPoints);
 
-          //triFaceCubature.getCubature(paramTriFacePoints, paramTriFaceWeights);
+          triFaceCubature.getCubature(paramTriFacePoints, paramTriFaceWeights);
           quadFaceCubature.getCubature(paramQuadFacePoints, paramQuadFaceWeights);
+          // create mirror host view
+          auto hParamQuadFacePoints = Kokkos::create_mirror_view_and_copy(
+              typename HostSpaceType:: memory_space(), paramQuadFacePoints);
 
           // Loop over admissible topologies
           for (ordinal_type topoOrd=0;topoOrd<topoSize;++topoOrd) {
@@ -181,6 +185,8 @@ namespace Intrepid2 {
 
             // Exclude 2D and Pyramid<5> cells
             if ( cell.getDimension() == 3 ) { // && cell.getKey() != shards::Pyramid<5>::key ) {
+              *outStream << " Testing face/side normals for cell topology " <<  cell.getName() <<"\n";
+
               const ordinal_type cellDim  = cell.getDimension();
               const ordinal_type nCount   = cell.getNodeCount();
               const ordinal_type vCount   = cell.getVertexCount();
@@ -188,18 +194,22 @@ namespace Intrepid2 {
               DynRankView ConstructWithLabel(refCellVertices, nCount, cellDim);
               ct::getReferenceSubcellVertices(refCellVertices, cellDim, 0, cell);
 
-              *outStream << " Testing face/side normals for cell topology " <<  cell.getName() <<"\n";
+              // create mirror host view
+              auto hRefCellVertices = Kokkos::create_mirror_view_and_copy(
+                  typename HostSpaceType:: memory_space(), refCellVertices);
 
               // Array for physical cell vertices ( must have rank 3 for setJacobians)
               DynRankView ConstructWithLabel(physCellVertices, 1, vCount, cellDim);
+              auto hPhysCellVertices = Kokkos::create_mirror_view(physCellVertices);
 
               // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
               // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology
               for (ordinal_type v=0;v<vCount;++v)
                 for (ordinal_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<double>::random()/8.0;
-                  physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
+                  hPhysCellVertices(0, v, d) = hRefCellVertices(v, d) + delta;
                 }
+              Kokkos::deep_copy(physCellVertices,hPhysCellVertices);
 
               // Allocate storage for cub. points on a ref. face; Jacobians, phys. face normals and
               // benchmark normals.
@@ -207,11 +217,15 @@ namespace Intrepid2 {
               DynRankView ConstructWithLabel(triFacePointsJacobians, 1, numTriFaceCubPoints, cellDim, cellDim);
               DynRankView ConstructWithLabel(triFacePointNormals,    1, numTriFaceCubPoints, cellDim);
               DynRankView ConstructWithLabel(triSidePointNormals,    1, numTriFaceCubPoints, cellDim);
+              auto hTriFacePointNormals = Kokkos::create_mirror_view(triFacePointNormals);
+              auto hTriSidePointNormals = Kokkos::create_mirror_view(triSidePointNormals);
 
               DynRankView ConstructWithLabel(refQuadFacePoints,          numQuadFaceCubPoints, cellDim);
               DynRankView ConstructWithLabel(quadFacePointsJacobians, 1, numQuadFaceCubPoints, cellDim, cellDim);
               DynRankView ConstructWithLabel(quadFacePointNormals,    1, numQuadFaceCubPoints, cellDim);
               DynRankView ConstructWithLabel(quadSidePointNormals,    1, numQuadFaceCubPoints, cellDim);
+              auto hQuadFacePointNormals = Kokkos::create_mirror_view(quadFacePointNormals);
+              auto hQuadSidePointNormals = Kokkos::create_mirror_view(quadSidePointNormals);
               
               // Loop over faces:
               for (size_type faceOrd=0;faceOrd<cell.getSideCount();++faceOrd) {
@@ -225,7 +239,8 @@ namespace Intrepid2 {
                   ct::setJacobian(triFacePointsJacobians, refTriFacePoints, physCellVertices, cell);
                   ct::getPhysicalFaceNormals(triFacePointNormals, triFacePointsJacobians, faceOrd, cell);
                   ct::getPhysicalSideNormals(triSidePointNormals, triFacePointsJacobians, faceOrd, cell);
-                  
+                  Kokkos::deep_copy(hTriFacePointNormals,triFacePointNormals);
+                  Kokkos::deep_copy(hTriSidePointNormals,triSidePointNormals);
                   /*
                    * Compute face normals using direct linear parametrization of the face: the map from
                    * standard 2-simplex to physical Triangle<3> face in 3D is
@@ -239,23 +254,23 @@ namespace Intrepid2 {
                   // Loop over face points: redundant for affine faces, but CellTools gives one vector
                   // per point so need to check all points anyways.
                   for (ordinal_type pt=0;pt<numTriFaceCubPoints;++pt) {
-                    DynRankView ConstructWithLabel(tanX, 3);
-                    DynRankView ConstructWithLabel(tanY, 3);
-                    DynRankView ConstructWithLabel(faceNormal, 3);
+                    DynRankViewHost ConstructWithLabel(hTanX, 3);
+                    DynRankViewHost ConstructWithLabel(hTanY, 3);
+                    DynRankViewHost ConstructWithLabel(hFaceNormal, 3);
                     for (ordinal_type d=0;d<cellDim;++d) {
-                      tanX(d) = physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d);
-                      tanY(d) = physCellVertices(0, v2ord, d) - physCellVertices(0, v0ord, d);
+                      hTanX(d) = hPhysCellVertices(0, v1ord, d) - hPhysCellVertices(0, v0ord, d);
+                      hTanY(d) = hPhysCellVertices(0, v2ord, d) - hPhysCellVertices(0, v0ord, d);
                     }
                     
-                    rst::vecprod(faceNormal, tanX, tanY);
+                    RealSpaceTools<HostSpaceType>::vecprod(hFaceNormal, hTanX, hTanY);
 
-                    DeviceSpaceType().fence();
+                    ExecSpaceType().fence();
 
                     // Compare direct normal with d-component of the face/side normal by CellTools
                     for (ordinal_type d=0;d<cellDim;++d) {
                       
                       // face normal method
-                      if ( std::abs(faceNormal(d) - triFacePointNormals(0, pt, d)) > tol ){
+                      if ( std::abs(hFaceNormal(d) - hTriFacePointNormals(0, pt, d)) > tol ){
                         errorFlag++;
                         *outStream
                           << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -265,11 +280,11 @@ namespace Intrepid2 {
                           << "        Face ordinal = " << faceOrd << "\n"
                           << "   Face point number = " << pt << "\n"
                           << "   Normal coordinate = " << d  << "\n"
-                          << "     CellTools value = " <<  triFacePointNormals(0, pt, d)
-                          << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                          << "     CellTools value = " <<  hTriFacePointNormals(0, pt, d)
+                          << "     Benchmark value = " <<  hFaceNormal(d) << "\n\n";
                       }
                       //side normal method
-                      if( std::abs(faceNormal(d) - triSidePointNormals(0, pt, d)) > tol ){
+                      if( std::abs(hFaceNormal(d) - hTriSidePointNormals(0, pt, d)) > tol ){
                         errorFlag++;
                         *outStream
                           << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -279,8 +294,8 @@ namespace Intrepid2 {
                           << "        Side ordinal = " << faceOrd << "\n"
                           << "   Side point number = " << pt << "\n"
                           << "   Normal coordinate = " << d  << "\n"
-                          << "     CellTools value = " <<  triSidePointNormals(0, pt, d)
-                          << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                          << "     CellTools value = " <<  hTriSidePointNormals(0, pt, d)
+                          << "     Benchmark value = " <<  hFaceNormal(d) << "\n\n";
                       }
                     }
                   }
@@ -292,6 +307,8 @@ namespace Intrepid2 {
                   ct::setJacobian(quadFacePointsJacobians, refQuadFacePoints, physCellVertices, cell);
                   ct::getPhysicalFaceNormals(quadFacePointNormals, quadFacePointsJacobians, faceOrd, cell);
                   ct::getPhysicalSideNormals(quadSidePointNormals, quadFacePointsJacobians, faceOrd, cell);
+                  Kokkos::deep_copy(hQuadFacePointNormals,quadFacePointNormals);
+                  Kokkos::deep_copy(hQuadSidePointNormals,quadSidePointNormals);
                   /*
                    * Compute face normals using direct bilinear parametrization of the face: the map from
                    * [-1,1]^2 to physical Quadrilateral<4> face in 3D is
@@ -307,31 +324,31 @@ namespace Intrepid2 {
 
                   // Loop over face points (redundant for affine faces, but needed for later when we handle non-affine ones)
                   for (ordinal_type pt=0;pt<numQuadFaceCubPoints;++pt) {
-                    DynRankView ConstructWithLabel(tanX, 3);
-                    DynRankView ConstructWithLabel(tanY, 3);
-                    DynRankView ConstructWithLabel(faceNormal, 3);
+                    DynRankViewHost ConstructWithLabel(hTanX, 3);
+                    DynRankViewHost ConstructWithLabel(hTanY, 3);
+                    DynRankViewHost ConstructWithLabel(hFaceNormal, 3);
 
                     for (ordinal_type d=0;d<cellDim;++d) {
-                      tanX(d) = ( physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,1) )  +
-                                  physCellVertices(0, v1ord, d)*( 1.0 - paramQuadFacePoints(pt,1) ) +
-                                  physCellVertices(0, v2ord, d)*( 1.0 + paramQuadFacePoints(pt,1) ) +
-                                  physCellVertices(0, v3ord, d)*(-1.0 - paramQuadFacePoints(pt,1) ) )/4.0;
+                      hTanX(d) = ( hPhysCellVertices(0, v0ord, d)*(-1.0 + hParamQuadFacePoints(pt,1) )  +
+                                  hPhysCellVertices(0, v1ord, d)*( 1.0 - hParamQuadFacePoints(pt,1) ) +
+                                  hPhysCellVertices(0, v2ord, d)*( 1.0 + hParamQuadFacePoints(pt,1) ) +
+                                  hPhysCellVertices(0, v3ord, d)*(-1.0 - hParamQuadFacePoints(pt,1) ) )/4.0;
 
-                      tanY(d) = ( physCellVertices(0, v0ord, d)*(-1.0 + paramQuadFacePoints(pt,0) ) +
-                                  physCellVertices(0, v1ord, d)*(-1.0 - paramQuadFacePoints(pt,0) ) +
-                                  physCellVertices(0, v2ord, d)*( 1.0 + paramQuadFacePoints(pt,0) ) +
-                                  physCellVertices(0, v3ord, d)*( 1.0 - paramQuadFacePoints(pt,0) ) )/4.0;
+                      hTanY(d) = ( hPhysCellVertices(0, v0ord, d)*(-1.0 + hParamQuadFacePoints(pt,0) ) +
+                                  hPhysCellVertices(0, v1ord, d)*(-1.0 - hParamQuadFacePoints(pt,0) ) +
+                                  hPhysCellVertices(0, v2ord, d)*( 1.0 + hParamQuadFacePoints(pt,0) ) +
+                                  hPhysCellVertices(0, v3ord, d)*( 1.0 - hParamQuadFacePoints(pt,0) ) )/4.0;
                     }
 
-                    rst::vecprod(faceNormal, tanX, tanY);
+                    RealSpaceTools<HostSpaceType>::vecprod(hFaceNormal, hTanX, hTanY);
 
-                    DeviceSpaceType().fence();
+                    ExecSpaceType().fence();
 
                     // Compare direct normal with d-component of the face/side normal by CellTools
                     for (ordinal_type d=0;d<cellDim;++d) {
 
                       // face normal method
-                      if( std::abs(faceNormal(d) - quadFacePointNormals(0, pt, d)) > tol ) {
+                      if( std::abs(hFaceNormal(d) - hQuadFacePointNormals(0, pt, d)) > tol ) {
                         errorFlag++;
                         *outStream
                           << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -341,11 +358,11 @@ namespace Intrepid2 {
                           << "        Face ordinal = " << faceOrd << "\n"
                           << "   Face point number = " << pt << "\n"
                           << "   Normal coordinate = " << d  << "\n"
-                          << "     CellTools value = " <<  quadFacePointNormals(0, pt, d)
-                          << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                          << "     CellTools value = " <<  hQuadFacePointNormals(0, pt, d)
+                          << "     Benchmark value = " <<  hFaceNormal(d) << "\n\n";
                       }
                       //side normal method
-                      if ( std::abs(faceNormal(d) - quadSidePointNormals(0, pt, d)) > tol ) {
+                      if ( std::abs(hFaceNormal(d) - hQuadSidePointNormals(0, pt, d)) > tol ) {
                         errorFlag++;
                         *outStream
                           << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -355,8 +372,8 @@ namespace Intrepid2 {
                           << "        Side ordinal = " << faceOrd << "\n"
                           << "   Side point number = " << pt << "\n"
                           << "   Normal coordinate = " << d  << "\n"
-                          << "     CellTools value = " <<  quadSidePointNormals(0, pt, d)
-                          << "     Benchmark value = " <<  faceNormal(d) << "\n\n";
+                          << "     CellTools value = " <<  hQuadSidePointNormals(0, pt, d)
+                          << "     Benchmark value = " <<  hFaceNormal(d) << "\n\n";
                       }
                     }
                   }

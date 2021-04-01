@@ -122,10 +122,10 @@ postRegistrationSetup(
   const int edgeDim = 1;
   const int faceDim = 2;
   if(cellTopo.getDimension() > edgeDim)
-    Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(edgeParam, edgeDim, cellTopo);
+    edgeParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(edgeDim, cellTopo.getKey());
 
   if(cellTopo.getDimension() > faceDim)
-    Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(faceParam, faceDim, cellTopo);
+    faceParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(faceDim, cellTopo.getKey());
 }
 
 //**********************************************************************

@@ -301,9 +301,7 @@ ScalarView<Scalar,DeviceType> performStandardQuadratureHypercube(int meshWidth, 
     
     using namespace std;
     using DeviceType = DefaultTestDeviceType;
-    using ExecutionSpace = typename DeviceType::execution_space;
     
-    using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecutionSpace>; // TODO: once FunctionSpaceTools has proper DeviceType support, change the template argument here…
     using IntegrationTools   = Intrepid2::IntegrationTools<DeviceType>;
     // dimensions of the returned view are (C,F,F)
     auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;

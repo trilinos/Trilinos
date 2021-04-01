@@ -100,7 +100,6 @@ namespace Intrepid2 {
         << "===============================================================================\n";
 
       typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
-      typedef Kokkos::DynRankView<ValueType,typename HostSpaceType::device_type> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
       const ValueType tol = tolerence();
@@ -219,14 +218,12 @@ namespace Intrepid2 {
           const ordinal_type spaceDim  = basis.getBaseCellTopology().getDimension();
 
           
-          DynRankView cellCenter("cellCenter", 1, spaceDim), cellVert("cellVert", spaceDim);
+          DynRankView cellCenter("cellCenter", 1, spaceDim);
           auto cellCenter_host = Kokkos::create_mirror_view(cellCenter);
-          auto cellVert_host = Kokkos::create_mirror_view(cellVert);
           CellTools<typename HostSpaceType::device_type>
             ::getReferenceCellCenter(Kokkos::subview(cellCenter_host, 0, Kokkos::ALL()),
-                                     cellVert_host, cells[id]);
+                                     cells[id]);
           Kokkos::deep_copy(cellCenter, cellCenter_host);
-          Kokkos::deep_copy(cellVert, cellVert_host);
 
           // Check VALUE of basis functions: resize vals to rank-2 container:
           {
