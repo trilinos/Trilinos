@@ -55,11 +55,43 @@ static const int STK_COMMSPARSE_MPI_TAG_DATA        = 11011;
 
 namespace {
 
-void communicate_any( ParallelMachine p_comm ,
-                        const std::vector<CommBuffer > & send ,
-                        std::vector<CommBuffer > & recv,
-                        const std::vector<int>& send_procs,
-                        const std::vector<int>& recv_procs )
+void launch_ireceives(ParallelMachine p_comm,
+                      const std::vector<int>& recv_procs,
+                      std::vector<CommBuffer>& recv,
+                      std::vector<MPI_Request>& request,
+                      int mpi_tag)
+{
+  const unsigned num_recv = recv_procs.size();
+  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
+    int proc = recv_procs[i];
+    recv[proc].reset();
+    const unsigned recv_size = recv[proc].capacity();
+    void * const   recv_buf  = recv[proc].buffer();
+    if (MPI_SUCCESS != MPI_Irecv( recv_buf , recv_size , MPI_BYTE , proc , mpi_tag , p_comm , & request[i] )) {
+      std::cerr<<"stk::launch_ireceives ERROR in MPI_Irecv."<<std::endl;
+    }
+  }
+}
+
+void launch_sends(ParallelMachine p_comm,
+                  const std::vector<int>& send_procs,
+                  const std::vector<CommBuffer>& send,
+                  int mpi_tag)
+{
+  const unsigned num_send = send_procs.size();
+  for ( unsigned i = 0 ; i < num_send ; ++i ) {
+    int proc = send_procs[i];
+    const unsigned send_size = send[proc].capacity();
+    void * const   send_buf  = send[proc].buffer();
+    MPI_Send( send_buf , send_size , MPI_BYTE , proc , mpi_tag , p_comm );
+  }
+}
+
+void communicate_any(ParallelMachine p_comm ,
+                     const std::vector<CommBuffer > & send ,
+                     std::vector<CommBuffer > & recv,
+                     const std::vector<int>& send_procs,
+                     const std::vector<int>& recv_procs)
 {
   static const int mpi_tag = STK_COMMSPARSE_MPI_TAG_DATA ;
 
@@ -79,22 +111,8 @@ void communicate_any( ParallelMachine p_comm ,
   MPI_Request request_null = MPI_REQUEST_NULL ;
   std::vector<MPI_Request> request(num_recv, request_null);
 
-  for ( unsigned i = 0 ; i < num_recv ; ++i ) {
-    int proc = recv_procs[i];
-    recv[proc].reset();
-    const unsigned recv_size = recv[proc].capacity();
-    void * const   recv_buf  = recv[proc].buffer();
-    if (MPI_SUCCESS != MPI_Irecv( recv_buf , recv_size , MPI_BYTE , proc , mpi_tag , p_comm , & request[i] )) {
-      std::cerr<<"stk::communicate_any ERROR in MPI_Irecv."<<std::endl;
-    }
-  }
-
-  for ( unsigned i = 0 ; i < num_send ; ++i ) {
-    int proc = send_procs[i];
-    const unsigned send_size = send[proc].capacity();
-    void * const   send_buf  = send[proc].buffer();
-    MPI_Send( send_buf , send_size , MPI_BYTE , proc , mpi_tag , p_comm );
-  }
+  launch_ireceives(p_comm, recv_procs, recv, request, mpi_tag);
+  launch_sends(p_comm, send_procs, send, mpi_tag);
 
   std::vector<MPI_Status>  status(  num_recv );
   if (MPI_SUCCESS != MPI_Waitall( num_recv , request.data() , status.data() )) {
@@ -121,12 +139,48 @@ void communicate_any( ParallelMachine p_comm ,
 #endif
 }
 
+void communicate_unpack(ParallelMachine p_comm ,
+                        const std::vector<CommBuffer > & send ,
+                        std::vector<CommBuffer > & recv,
+                        const std::vector<int>& send_procs,
+                        const std::vector<int>& recv_procs,
+                        const std::function<void(int fromProc, CommBuffer& buf)>& functor)
+{
+  static const int mpi_tag = STK_COMMSPARSE_MPI_TAG_DATA ;
+
+  //------------------------------
+  // Receive count
+
+  const unsigned num_recv = recv_procs.size();
+  const unsigned num_send = send_procs.size();
+
+  if (num_recv==0 && num_send==0) {
+    return;
+  }
+
+  //------------------------------
+  // Post receives for specific processors with specific sizes
+
+  MPI_Request request_null = MPI_REQUEST_NULL ;
+  std::vector<MPI_Request> request(num_recv, request_null);
+
+  launch_ireceives(p_comm, recv_procs, recv, request, mpi_tag);
+  launch_sends(p_comm, send_procs, send, mpi_tag);
+
+  for (unsigned i=0; i<num_recv; ++i) {
+    int idx = 0;
+    MPI_Waitany(num_recv, request.data(), &idx, MPI_STATUS_IGNORE);
+    ThrowRequireMsg(idx != MPI_UNDEFINED, "MPI_Waitany produced idx == MPI_UNDEFINED");
+    const int fromProc = recv_procs[idx];
+    functor(fromProc, recv[fromProc]);
+  }
+}
+
 }
 
 #else
 
 // Not parallel
-
 
 #endif
 
@@ -240,11 +294,11 @@ void CommSparse::allocate_buffers(const std::vector<int>& send_procs, const std:
   }
 }
 
-void CommSparse::communicate()
+void CommSparse::verify_send_buffers_filled()
 {
 #ifndef NDEBUG
   for ( int i = 0 ; i < m_size ; ++i ) {
-    // Verify the send buffers have been filled, reset the buffer pointers
+    // Verify the send buffers have been filled
     if ( m_send[i].remaining() ) {
       std::ostringstream msg ;
       msg << "stk::CommSparse::communicate LOCAL[" << m_rank << "] ERROR: Send[" << i
@@ -253,10 +307,23 @@ void CommSparse::communicate()
     }
   }
 #endif
+}
+
+void CommSparse::communicate()
+{
+  verify_send_buffers_filled();
 
   if ( 1 < m_size ) {
-    // Do the communication to exchange the send/recv buffers
     communicate_any( m_comm , m_send , m_recv, m_send_procs, m_recv_procs );
+  }
+}
+
+void CommSparse::communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor)
+{
+  verify_send_buffers_filled();
+
+  if (1 < m_size) {
+    communicate_unpack(m_comm , m_send , m_recv, m_send_procs, m_recv_procs, functor);
   }
 }
 

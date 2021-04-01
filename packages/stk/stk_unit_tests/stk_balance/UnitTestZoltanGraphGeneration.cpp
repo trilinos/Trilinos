@@ -29,7 +29,7 @@ protected:
   void fill_zoltan_graph(const stk::mesh::Selector & selector, const stk::balance::BalanceSettings & balanceSettings)
   {
     testing::internal::CaptureStdout();
-    stk::balance::internal::createZoltanParallelGraph(balanceSettings, get_bulk(), selector, m_graph);
+    stk::balance::internal::createZoltanParallelGraph(get_bulk(), selector, get_comm(), balanceSettings, m_graph);
     testing::internal::GetCapturedStdout();
   }
 

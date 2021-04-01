@@ -36,6 +36,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_mesh/base/SkinMeshUtil.hpp>
 #include <stk_util/environment/Env.hpp>
+#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 namespace balance {
@@ -725,19 +726,40 @@ stk::mesh::EntityVector get_entities_to_balance(stk::mesh::Selector selector, st
     return entitiesToBalance;
 }
 
+size_t count_decomp_work_in_this_comm(const stk::mesh::BulkData & bulk,
+                                      const stk::ParallelMachine & comm,
+                                      const stk::mesh::Selector & selector)
+{
+  const stk::mesh::Selector locallyOwnedAndSelected = selector & bulk.mesh_meta_data().locally_owned_part();
+  const size_t numSelectedLocal = stk::mesh::count_entities(bulk, stk::topology::ELEM_RANK, locallyOwnedAndSelected);
+  size_t numSelectedGlobal = 0;
+  stk::all_reduce_sum(comm, &numSelectedLocal, &numSelectedGlobal, 1);
+  return numSelectedGlobal;
+}
 
-void get_multicriteria_decomp_using_selectors_as_segregation(const stk::mesh::BulkData& mesh, const std::vector<stk::mesh::Selector>& criterions, const BalanceSettings& balanceSettings,
+bool has_decomp_work_in_this_comm(const stk::mesh::BulkData & bulk,
+                                  const stk::ParallelMachine & comm,
+                                  const stk::mesh::Selector & selector)
+{
+  return (count_decomp_work_in_this_comm(bulk, comm, selector) > 0);
+}
+
+void get_multicriteria_decomp_using_selectors_as_segregation(const stk::mesh::BulkData& mesh, const std::vector<stk::mesh::Selector>& criterions,
+                                                             const stk::ParallelMachine & decompCommunicator, const BalanceSettings& balanceSettings,
                                                              const int numSubdomainsToCreate, stk::mesh::EntityProcVec& decomp, const stk::mesh::impl::LocalIdMapper& localIds)
 {
     stk::mesh::Selector unionSelector = stk::mesh::selectUnion(criterions);
-    stk::mesh::EntityVector entitiesToBalance = get_entities_to_balance(unionSelector, stk::topology::ELEM_RANK, mesh);
+    const stk::mesh::Selector locallyOwnedAndSelected = unionSelector & mesh.mesh_meta_data().locally_owned_part();
+
+    stk::mesh::EntityVector entitiesToBalance = get_entities_to_balance(locallyOwnedAndSelected, stk::topology::ELEM_RANK, mesh);
     size_t num_entities = entitiesToBalance.size();
     size_t num_entities_across_procs = 0;
-    stk::all_reduce_sum(mesh.parallel(), &num_entities, &num_entities_across_procs, 1);
+    stk::all_reduce_sum(decompCommunicator, &num_entities, &num_entities_across_procs, 1);
+
     if(num_entities_across_procs > 0)
     {
         stk::balance::internal::GeometricVertices vertexInfo(balanceSettings, mesh, entitiesToBalance, criterions);
-        std::vector<unsigned> processorOntoWhichEntityBelongs = stk::balance::get_decomposition(vertexInfo, balanceSettings, numSubdomainsToCreate, mesh.parallel());
+        std::vector<unsigned> processorOntoWhichEntityBelongs = stk::balance::get_decomposition(vertexInfo, balanceSettings, numSubdomainsToCreate, decompCommunicator);
         for(size_t i=0;i<entitiesToBalance.size();++i)
         {
             int local_id = get_local_id(localIds, entitiesToBalance[i]);
@@ -747,8 +769,10 @@ void get_multicriteria_decomp_using_selectors_as_segregation(const stk::mesh::Bu
 }
 
 
-void fill_decomp_using_geometric_method(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate, stk::mesh::EntityProcVec &decomp,
-                                        stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors, const stk::mesh::impl::LocalIdMapper& localIds)
+void fill_decomp_using_geometric_method(stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors,
+                                        const stk::ParallelMachine & decompCommunicator, const int numSubdomainsToCreate,
+                                        const BalanceSettings& balanceSettings, const stk::mesh::impl::LocalIdMapper& localIds,
+                                        stk::mesh::EntityProcVec &decomp)
 {
     logMessage(stkMeshBulkData.parallel(), "Using Zoltan2 version: " + Zoltan2::Zoltan2_Version());
     logMessage(stkMeshBulkData.parallel(), "Filling in vertex data for decomp method = " + balanceSettings.getDecompMethod());
@@ -760,35 +784,52 @@ void fill_decomp_using_geometric_method(const BalanceSettings& balanceSettings, 
 
 
     if (balanceSettings.isMultiCriteriaRebalance())
-        get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, selectors, balanceSettings, numSubdomainsToCreate, decomp, localIds);
+        get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, selectors, decompCommunicator, balanceSettings, numSubdomainsToCreate, decomp, localIds);
     else
         for(const stk::mesh::Selector& selector : selectors)
-            get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, std::vector<stk::mesh::Selector>{selector}, balanceSettings, numSubdomainsToCreate, decomp, localIds);
+            get_multicriteria_decomp_using_selectors_as_segregation(stkMeshBulkData, std::vector<stk::mesh::Selector>{selector}, decompCommunicator, balanceSettings, numSubdomainsToCreate, decomp, localIds);
 
     logMessage(stkMeshBulkData.parallel(), "Finished decomposition solve");
 }
 
-void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh, const BalanceSettings& balanceSettings,
-                                       Zoltan2ParallelGraph &zoltan2Graph, Teuchos::ParameterList &params,
-                                       stk::mesh::Selector selector, stk::mesh::EntityProcVec &decomp,
-                                       const stk::mesh::impl::LocalIdMapper& domainLocalIds)
+
+void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh,
+                                       stk::mesh::Selector selector,
+                                       const stk::ParallelMachine & decompCommunicator,
+                                       const BalanceSettings& balanceSettings,
+                                       const stk::mesh::impl::LocalIdMapper& domainLocalIds,
+                                       Zoltan2ParallelGraph &zoltan2Graph,
+                                       Teuchos::ParameterList &params,
+                                       stk::mesh::EntityProcVec &decomp)
+
 {
   StkMeshZoltanAdapter stkMeshAdapter(zoltan2Graph);
 
   logMessage(mesh.parallel(), "Setting up partitioning problem");
 
-  Zoltan2::PartitioningProblem<StkMeshZoltanAdapter> problem(&stkMeshAdapter, &params, mesh.parallel());
+  Zoltan2::PartitioningProblem<StkMeshZoltanAdapter> problem(&stkMeshAdapter, &params, decompCommunicator);
 
   logMessage(mesh.parallel(), "Solving");
 
-  if (balanceSettings.shouldPrintMetrics()) {
-    internal::print_statistics(stkMeshAdapter, mesh.parallel(), mesh.parallel_rank());
+  if (has_decomp_work_in_this_comm(mesh, decompCommunicator, selector)) {
+    std::srand(mesh.parallel_rank()); // KHP: Temporary until an API is added to Zoltan2 for random seeds.
+    problem.solve();
+
+    stk::mesh::impl::LocalIdMapper graphLocalIds(mesh, stk::topology::ELEM_RANK, selector);
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(mesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part() & selector, elements);
+
+    const StkMeshZoltanAdapter::part_t *processorOntoWhichEntityBelongs = problem.getSolution().getPartListView();
+    for (size_t j = 0; j < elements.size(); ++j) {
+      int domainLocalId = get_local_id(domainLocalIds, elements[j]);
+      int graphLocalId = get_local_id(graphLocalIds, elements[j]);
+      int dest_proc = processorOntoWhichEntityBelongs[graphLocalId];
+      decomp[domainLocalId] = std::make_pair(elements[j], dest_proc);
+    }
   }
 
-  std::srand(mesh.parallel_rank()); // KHP: Temporary until an API is added to Zoltan2 for random seeds.
-  problem.solve();
-
   if (balanceSettings.shouldPrintMetrics()) {
+    internal::print_statistics(stkMeshAdapter, mesh.parallel(), mesh.parallel_rank());
     internal::print_solution_statistics(stkMeshAdapter, problem.getSolution(), mesh.parallel(), mesh.parallel_rank());
   }
 
@@ -809,20 +850,6 @@ void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh, const Ba
   stkMeshAdapter.debuggingInfo(mesh.parallel_rank(), out);
   out.close();
 #endif
-
-  stk::mesh::impl::LocalIdMapper graphLocalIds(mesh, stk::topology::ELEM_RANK, selector);
-
-
-  stk::mesh::EntityVector elements;
-  stk::mesh::get_entities(mesh, stk::topology::ELEM_RANK, mesh.mesh_meta_data().locally_owned_part() & selector, elements);
-
-  const StkMeshZoltanAdapter::part_t *processorOntoWhichEntityBelongs = problem.getSolution().getPartListView();
-  for (size_t j = 0; j < elements.size(); ++j) {
-    int domainLocalId = get_local_id(domainLocalIds, elements[j]);
-    int graphLocalId = get_local_id(graphLocalIds, elements[j]);
-    int dest_proc = processorOntoWhichEntityBelongs[graphLocalId];
-    decomp[domainLocalId] = std::make_pair(elements[j], dest_proc);
-  }
 }
 
 Teuchos::ParameterList getGraphBasedParameters(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate)
@@ -1090,8 +1117,11 @@ void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance
     }
 }
 
-void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
-                               const stk::mesh::Selector & selector, Zoltan2ParallelGraph& zoltan2Graph)
+void createZoltanParallelGraph(stk::mesh::BulkData & stkMeshBulkData,
+                               const stk::mesh::Selector & selector,
+                               const stk::ParallelMachine & decompCommunicator,
+                               const BalanceSettings & balanceSettings,
+                               Zoltan2ParallelGraph & zoltan2Graph)
 {
   std::ostringstream os;
   os << "Using Zoltan2 version: " << Zoltan2::Zoltan2_Version();
@@ -1100,11 +1130,11 @@ void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh
 
   stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK, selector);
 
-  std::vector<size_t> counts;
-  stk::mesh::Selector countSelector = selector & stkMeshBulkData.mesh_meta_data().locally_owned_part();
+  const size_t numSelectedElements = count_decomp_work_in_this_comm(stkMeshBulkData, decompCommunicator, selector);
+  int numProcsInCommunicator = 0;
+  MPI_Comm_size(decompCommunicator, &numProcsInCommunicator);
 
-  stk::mesh::comm_mesh_counts(stkMeshBulkData, counts, &countSelector);
-  zoltan2Graph.set_num_global_elements(counts[stk::topology::ELEM_RANK]);
+  zoltan2Graph.set_num_global_elements(numSelectedElements);
   zoltan2Graph.set_spatial_dim(stkMeshBulkData.mesh_meta_data().spatial_dimension());
 
   if (balanceSettings.isMultiCriteriaRebalance()) {
@@ -1119,7 +1149,7 @@ void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh
 
   if (balanceSettings.allowModificationOfVertexWeightsForSmallMeshes())
   {
-    bool isSmallMesh = (counts[stk::topology::ELEM_RANK] / stkMeshBulkData.parallel_size()) <= 10;
+    bool isSmallMesh = (numSelectedElements / numProcsInCommunicator) <= 10;
     if (isSmallMesh) {
       logMessage(stkMeshBulkData.parallel(), "Changing weights since mesh is small");
       zoltan2Graph.adjust_weights_for_small_meshes();
@@ -1127,9 +1157,12 @@ void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh
   }
 }
 
-void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const int numSubdomainsToCreate,
-                                stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData,
-                                const std::vector<stk::mesh::Selector>& selectors)
+void fill_decomp_using_parmetis(stk::mesh::BulkData & stkMeshBulkData,
+                                const std::vector<stk::mesh::Selector> & selectors,
+                                const stk::ParallelMachine & decompCommunicator,
+                                const int numSubdomainsToCreate,
+                                const BalanceSettings & balanceSettings,
+                                stk::mesh::EntityProcVec & decomp)
 {
 #if defined(WRITE_OUT_DEBUGGING_INFO) || defined(WRITE_OUT_DECOMP_METRICS)
   static int step = 0;
@@ -1148,19 +1181,16 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
   if (balanceSettings.isMultiCriteriaRebalance()) {
     stk::mesh::Selector selectUnion = stk::mesh::selectUnion(selectors);
     Zoltan2ParallelGraph zoltan2Graph;
-    createZoltanParallelGraph(balanceSettings, stkMeshBulkData, selectUnion, zoltan2Graph);
-    get_multicriteria_parmetis_decomp(stkMeshBulkData, balanceSettings, zoltan2Graph, params, selectUnion, decomp, localIds);
+    createZoltanParallelGraph(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings, zoltan2Graph);
+    get_multicriteria_parmetis_decomp(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings,
+                                      localIds, zoltan2Graph, params, decomp);
   }
   else {
     for (const stk::mesh::Selector & selector : selectors) {
-      std::vector<size_t> meshCounts;
-      stk::mesh::comm_mesh_counts(stkMeshBulkData, meshCounts, &selector);
-
-      if (meshCounts[stk::topology::ELEM_RANK] > 0) {
-        Zoltan2ParallelGraph zoltan2Graph;
-        createZoltanParallelGraph(balanceSettings, stkMeshBulkData, selector, zoltan2Graph);
-        get_multicriteria_parmetis_decomp(stkMeshBulkData, balanceSettings, zoltan2Graph, params, selector, decomp, localIds);
-      }
+      Zoltan2ParallelGraph zoltan2Graph;
+      createZoltanParallelGraph(stkMeshBulkData, selector, decompCommunicator, balanceSettings, zoltan2Graph);
+      get_multicriteria_parmetis_decomp(stkMeshBulkData, selector, decompCommunicator, balanceSettings,
+                                        localIds, zoltan2Graph, params, decomp);
     }
   }
 
@@ -1207,6 +1237,29 @@ void fill_decomp_using_parmetis(const BalanceSettings& balanceSettings, const in
 #endif
 }
 
+void collapse_to_serial_partition(stk::mesh::BulkData & stkMeshBulkData,
+                                  const std::vector<stk::mesh::Selector> & decompSelectors,
+                                  stk::mesh::EntityProcVec & decomp)
+{
+  const stk::mesh::Selector locallyOwnedSelector = stkMeshBulkData.mesh_meta_data().locally_owned_part();
+  stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK, locallyOwnedSelector);
+
+  constexpr int RootPartition = 0;
+  const size_t numLocallyOwned = stk::mesh::count_entities(stkMeshBulkData, stk::topology::ELEM_RANK, locallyOwnedSelector);
+  decomp.clear();
+  decomp.resize(numLocallyOwned, std::make_pair(stk::mesh::Entity(), RootPartition));
+
+  for (const stk::mesh::Selector & decompSelector : decompSelectors) {
+    const stk::mesh::Selector localSelected = locallyOwnedSelector & decompSelector;
+    for (const stk::mesh::Bucket * bucket : stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, localSelected)) {
+      for (const stk::mesh::Entity & element : *bucket) {
+        unsigned localId = get_local_id(localIds, element);
+        decomp[localId].first = element;
+      }
+    }
+  }
+}
+
 bool is_geometric_method(const std::string& method)
 {
   return (method=="rcb" ||
@@ -1219,31 +1272,35 @@ bool is_graph_based_method(const std::string& method)
   return (method == "parmetis");
 }
 
-void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings,
-                                              const int numSubdomainsToCreate,
-                                              stk::mesh::EntityProcVec &decomp,
-                                              stk::mesh::BulkData& stkMeshBulkData,
-                                              const std::vector<stk::mesh::Selector>& selectors)
+void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
+                                          const std::vector<stk::mesh::Selector> & selectors,
+                                          const stk::ParallelMachine & decompCommunicator,
+                                          const int numSubdomainsToCreate,
+                                          const BalanceSettings & balanceSettings,
+                                          stk::mesh::EntityProcVec & decomp)
 {
-    ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
-    ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
-                                  is_graph_based_method(balanceSettings.getDecompMethod()));
+  ThrowRequireWithSierraHelpMsg(numSubdomainsToCreate > 0);
+  ThrowRequireWithSierraHelpMsg(is_geometric_method(balanceSettings.getDecompMethod()) ||
+                                is_graph_based_method(balanceSettings.getDecompMethod()));
 
-    if (is_geometric_method(balanceSettings.getDecompMethod()))
-    {
-        stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
-        fill_decomp_using_geometric_method(balanceSettings, numSubdomainsToCreate,
-                                           decomp, stkMeshBulkData, selectors, localIds);
+  if (numSubdomainsToCreate > 1) {
+    if (is_geometric_method(balanceSettings.getDecompMethod())) {
+      stk::mesh::impl::LocalIdMapper localIds(stkMeshBulkData, stk::topology::ELEM_RANK);
+      fill_decomp_using_geometric_method(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings,
+                                         localIds, decomp);
     }
-    else if (is_graph_based_method(balanceSettings.getDecompMethod()))
-    {
-        stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
-                                                                          stkMeshBulkData.mesh_meta_data().globally_shared_part(),
-                                                                          "customAura");
-        internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);
-        fill_decomp_using_parmetis(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors);
-        stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
+    else if (is_graph_based_method(balanceSettings.getDecompMethod())) {
+      stk::mesh::Ghosting * customAura = stk::tools::create_custom_aura(stkMeshBulkData,
+                                                                        stkMeshBulkData.mesh_meta_data().globally_shared_part(),
+                                                                        "customAura");
+      internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);
+      fill_decomp_using_parmetis(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings, decomp);
+      stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
     }
+  }
+  else {
+    collapse_to_serial_partition(stkMeshBulkData, selectors, decomp);
+  }
 }
 
 bool compareEntityEqualityOnly(const std::pair<stk::mesh::Entity,int> &a, const std::pair<stk::mesh::Entity,int> &b)

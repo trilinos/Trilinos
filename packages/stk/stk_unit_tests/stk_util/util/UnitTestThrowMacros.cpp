@@ -275,10 +275,12 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequireMsg)
   }
   catch (std::exception & ex) {
     std::cerr<<"ex.what(): "<<ex.what()<<std::endl;
-    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:252\n"
-                               "Error: Error testing whatever\n";
-    EXPECT_STREQ(ex.what(), expectedMsg);
+    std::string expectedMsg1 = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
+    std::string expectedMsg2 = "Error: Error testing whatever\n";
+    std::string message = ex.what();
+    EXPECT_NE(message.find(expectedMsg1), std::string::npos);
+    EXPECT_NE(message.find(expectedMsg2), std::string::npos);
   }
   catch (...) {
     std::cerr<<"Unexpected exception-type thrown."<<std::endl;
@@ -309,8 +311,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowRequire)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:294\n";
-    EXPECT_STREQ(ex.what(), expectedMsg);
+                               "Error occured at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
+    std::string message = ex.what();
+    EXPECT_NE(message.find(expectedMsg), std::string::npos);
   }
 #endif
 #endif
@@ -339,10 +342,12 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowAssertMsg_debug)
     testNGPThrowAssertMsg();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Requirement( test == true ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:325\n"
-                               "Error: Error testing whatever\n";
-    EXPECT_STREQ(ex.what(), expectedMsg);
+    const char * expectedMsg1 = "Requirement( test == true ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
+    const char * expectedMsg2 = "Error: Error testing whatever\n";
+    std::string message = ex.what();
+    EXPECT_NE(message.find(expectedMsg1), std::string::npos);
+    EXPECT_NE(message.find(expectedMsg2), std::string::npos);
   }
 #endif
 #endif
@@ -394,10 +399,12 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsgIf)
     testNGPThrowErrorMsgIf();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:380\n"
-                               "Error: Error testing whatever\n";
-    EXPECT_STREQ(ex.what(), expectedMsg);
+    const char * expectedMsg1 = "Requirement( !(test == true) ) FAILED\n"
+                               "Error occured at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
+    const char * expectedMsg2 = "Error: Error testing whatever\n";
+    std::string message = ex.what();
+    EXPECT_NE(message.find(expectedMsg1), std::string::npos);
+    EXPECT_NE(message.find(expectedMsg2), std::string::npos);
   }
 #endif
 #endif
@@ -425,8 +432,9 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorIf)
   }
   catch (std::exception & ex) {
     const char * expectedMsg = "Requirement( !(test == true) ) FAILED\n"
-                               "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:410\n";
-    EXPECT_STREQ(ex.what(), expectedMsg);
+                               "Error occured at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
+    std::string message = ex.what();
+    EXPECT_NE(message.find(expectedMsg), std::string::npos);
   }
 #endif
 #endif
@@ -452,9 +460,11 @@ TEST(UnitTestingOfThrowMacros, NGP_ThrowErrorMsg)
     testNGPThrowErrorMsg();
   }
   catch (std::exception & ex) {
-    const char * expectedMsg = "Error occured at: stk_unit_tests/stk_util/environment/UnitTestThrowMacros.cpp:438\n"
-                               "Error: Error testing whatever\n";
-    EXPECT_STREQ(ex.what(), expectedMsg);
+    const char * expectedMsg1 = "Error occured at: stk_unit_tests/stk_util/util/UnitTestThrowMacros.cpp:";
+    const char * expectedMsg2 = "Error: Error testing whatever\n";
+    std::string message = ex.what();
+    EXPECT_NE(message.find(expectedMsg1), std::string::npos);
+    EXPECT_NE(message.find(expectedMsg2), std::string::npos);
   }
 #endif
 #endif
