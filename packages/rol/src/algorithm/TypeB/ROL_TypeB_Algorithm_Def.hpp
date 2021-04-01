@@ -104,8 +104,8 @@ void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
-void Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
-                                                 std::ostream                 &outStream ) {
+void Algorithm<Real>::run( Problem<Real> &problem,
+                           std::ostream  &outStream ) {
   if (problem.getProblemType() == TYPE_B) {
     proj_ = problem.getPolyhedralProjection();
     void output = run(*problem.getPrimalOptimizationVector(),
@@ -251,11 +251,9 @@ void Algorithm<Real>::writeName( std::ostream& os ) const {
 }
 
 template<typename Real>
-void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
+void Algorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
   os << std::scientific << std::setprecision(6);
-  if ( print_header ) {
-    writeHeader(os);
-  }
+  if ( write_header ) writeHeader(os);
   if ( state_->iter == 0 ) {
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;

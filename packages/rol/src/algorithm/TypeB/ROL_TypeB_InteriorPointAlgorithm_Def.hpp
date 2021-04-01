@@ -41,8 +41,8 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_TYPEB_MOREAUYOSIDAALGORITHM_DEF_HPP
-#define ROL_TYPEB_MOREAUYOSIDAALGORITHM_DEF_HPP
+#ifndef ROL_TYPEB_PRIMALINTERIORPOINTALGORITHM_DEF_HPP
+#define ROL_TYPEB_PRIMALINTERIORPOINTALGORITHM_DEF_HPP
 
 #include "ROL_TypeU_AlgorithmFactory.hpp"
 
@@ -50,145 +50,148 @@ namespace ROL {
 namespace TypeB {
 
 template<typename Real>
-MoreauYosidaAlgorithm<Real>::MoreauYosidaAlgorithm(ParameterList &list)
+InteriorPointAlgorithm<Real>::InteriorPointAlgorithm(ParameterList &list)
   : TypeB::Algorithm<Real>::Algorithm(),
-    tau_(10), print_(false), list_(list), subproblemIter_(0) {
+    list_(list), subproblemIter_(0), print_(false) {
   // Set status test
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>(list));
 
   // Parse parameters
-  Real ten(10), oem6(1.e-6), oem8(1.e-8), oe8(1e8);
-  ParameterList& steplist = list.sublist("Step").sublist("Moreau-Yosida Penalty");
-  state_->searchSize = steplist.get("Initial Penalty Parameter",           ten);
-  maxPenalty_        = steplist.get("Maximum Penalty Parameter",           oe8);
-  tau_               = steplist.get("Penalty Parameter Growth Factor",     ten);
-  updatePenalty_     = steplist.get("Update Penalty",                      true);
-  updateMultiplier_  = steplist.get("Update Multiplier",                   true);
+  ParameterList& steplist = list.sublist("Step").sublist("Interior Point");
+  state_->searchSize = steplist.get("Initial Barrier Parameter",           1.0);
+  mumin_             = steplist.get("Minimum Barrier Parameter",           1e-4);
+  mumax_             = steplist.get("Maximum Barrier Parameter",           1e8);
+  rho_               = steplist.get("Barrier Penalty Reduction Factor",    0.5);
+  useLinearDamping_  = steplist.get("Use Linear Damping",                  true);
+  kappaD_            = steplist.get("Linear Damping Coefficient",          1.e-4);
   print_             = steplist.sublist("Subproblem").get("Print History", false);
   // Set parameters for step subproblem
-  Real gtol = steplist.sublist("Subproblem").get("Optimality Tolerance",  oem8);
-  Real ctol = steplist.sublist("Subproblem").get("Feasibility Tolerance", oem8);
+  gtol_ = steplist.sublist("Subproblem").get("Initial Optimality Tolerance",  1e-2);
+  stol_ = static_cast<Real>(1e-6)*gtol_;
   int maxit = steplist.sublist("Subproblem").get("Iteration Limit",       1000);
-  Real stol = oem6*std::min(gtol,ctol);
-  list_.sublist("Status Test").set("Gradient Tolerance",   gtol);
-  list_.sublist("Status Test").set("Constraint Tolerance", ctol);
-  list_.sublist("Status Test").set("Step Tolerance",       stol);
   list_.sublist("Status Test").set("Iteration Limit",      maxit);
+  // Subproblem tolerance update parameters
+  gtolrate_ = steplist.sublist("Subproblem").get("Optimality Tolerance Reduction Factor",     0.1);
+  mingtol_  = static_cast<Real>(1e-2)*list.sublist("Status Test").get("Gradient Tolerance",   1e-8);
   // Get step name from parameterlist
-  stepname_ = steplist.sublist("Subproblem").get("Step Type","Trust Region");
+  stepname_ = steplist.sublist("Subproblem").get("Step Type","Augmented Lagrangian");
 
   // Output settings
-  verbosity_    = list.sublist("General").get("Output Level", 0);
-  writeHeader_  = verbosity_ > 2;
-  print_              = (verbosity_ > 2 ? true : print_);
+  verbosity_   = list.sublist("General").get("Output Level", 0);
+  writeHeader_ = verbosity_ > 2;
+  print_       = (verbosity_ > 2 ? true : print_);
   list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
 }
 
 template<typename Real>
-void MoreauYosidaAlgorithm<Real>::initialize(Vector<Real>                &x,
-                                             const Vector<Real>          &g,
-                                             MoreauYosidaObjective<Real> &myobj,
-                                             BoundConstraint<Real>       &bnd,
-                                             Vector<Real>                &pwa,
-                                             std::ostream                &outStream) {
-  hasEcon_ = true;
+void InteriorPointAlgorithm<Real>::initialize(Vector<Real>                 &x,
+                                              const Vector<Real>           &g,
+                                              InteriorPointObjective<Real> &ipobj,
+                                              BoundConstraint<Real>        &bnd,
+                                              Vector<Real>                 &pwa,
+                                              std::ostream                 &outStream) {
+  hasPolyProj_ = true;
   if (proj_ == nullPtr) {
     proj_ = makePtr<PolyhedralProjection<Real>>(makePtrFromRef(bnd));
-    hasEcon_ = false;
+    hasPolyProj_ = false;
   }
+  proj_->project(x,outStream);
+  bnd.projectInterior(x);
   // Initialize data
-  Algorithm_B<Real>::initialize(x,g);
+  TypeB::Algorithm<Real>::initialize(x,g);
   // Initialize the algorithm state
   state_->nfval = 0;
   state_->ngrad = 0;
-  updateState(x,myobj,bnd,pwa,outStream);
+  updateState(x,ipobj,bnd,pwa);
 }
 
 
 template<typename Real>
-void MoreauYosidaAlgorithm_B<Real>::updateState(const Vector<Real>          &x,
-                                                MoreauYosidaObjective<Real> &myobj,
-                                                BoundConstraint<Real>       &bnd,
-                                                Vector<Real>                &pwa,
-                                                std::ostream                &outStream) {
+void InteriorPointAlgorithm<Real>::updateState(const Vector<Real>           &x,
+                                               InteriorPointObjective<Real> &ipobj,
+                                               BoundConstraint<Real>        &bnd,
+                                               Vector<Real>                 &pwa,
+                                               std::ostream                 &outStream) {
   const Real one(1);
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
-  // Update objective and constraint.
-  if (state_->iter == 0) {
-    myobj.update(x,UPDATE_INITIAL,state_->iter);
+  // Update objective and constraint
+  if (state_-> iter == 0) {
+    ipobj.update(x,UPDATE_INITIAL,state_->iter);
   }
   //else {
-  //  myobj.update(x,UPDATE_ACCEPT,state_->iter);
+  //  ipobj.update(x,UPDATE_ACCEPT,state_->iter);
   //}
   // Compute norm of the gradient of the Lagrangian
-  state_->value = myobj.getObjectiveValue(x, zerotol);
-  myobj.getObjectiveGradient(*state_->gradientVec, x, zerotol);
-  //myobj.gradient(*state_->gradientVec, x, zerotol);
-  //gnorm_ = state_->gradientVec->norm();
+  state_->value = ipobj.getObjectiveValue(x, zerotol);
+  //state_->gradientVec->set(*ipobj.getObjectiveGradient(x, zerotol));
+  ipobj.gradient(*state_->gradientVec, x, zerotol);
+  //state_->gnorm = state_->gradientVec->norm();
   pwa.set(x);
   pwa.axpy(-one,state_->gradientVec->dual());
   proj_->project(pwa,outStream);
   pwa.axpy(-one,x);
-  gnorm_ = pwa.norm();
-  // Compute constraint violation
-  compViolation_ = myobj.testComplementarity(x);
-  state_->gnorm = std::max(gnorm_,compViolation_);
+  state_->gnorm = pwa.norm();
   // Update state
   state_->nfval++;
   state_->ngrad++;
 }
 
 template<typename Real>
-std::vector<std::string> MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
-                                                           const Vector<Real>    &g, 
-                                                           Objective<Real>       &obj,
-                                                           BoundConstraint<Real> &bnd,
-                                                           std::ostream          &outStream ) {
+void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
+                                        const Vector<Real>    &g, 
+                                        Objective<Real>       &obj,
+                                        BoundConstraint<Real> &bnd,
+                                        std::ostream          &outStream ) {
   const Real one(1);
   Ptr<Vector<Real>> pwa = x.clone();
-  // Initialize Moreau-Yosida data
-  MoreauYosidaObjective<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
-                                  x,g,state_->searchSize,updateMultiplier_,
-                                  updatePenalty_);
-  initialize(x,g,myobj,bnd,*pwa,outStream);
+  // Initialize interior point data
+  InteriorPointObjective<Real> ipobj(makePtrFromRef(obj),makePtrFromRef(bnd),
+                                     x,g,useLinearDamping_,kappaD_,
+                                     state_->searchSize);
+  initialize(x,g,ipobj,bnd,*pwa,outStream);
   Ptr<Algorithm_U<Real>> algo;
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
-    // Solve augmented Lagrangian subproblem
+    // Solve interior point subproblem
+    list_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
+    list_.sublist("Status Test").set("Step Tolerance",       stol_);
     algo = TypeU::AlgorithmFactory<Real>(list_);
-    if (hasEcon_) algo->run(x,g,myobj,*proj_->getLinearConstraint(),
-                            *proj_->getMultiplier(),*proj_->getResidual(),
-                            outStream);
-    else          algo->run(x,g,myobj,outStream);
+    if (hasPolyProj_) algo->run(x,g,ipobj,
+                                *proj_->getLinearConstraint(),
+                                *proj_->getMultiplier(),
+                                *proj_->getResidual(),outStream);
+    else              algo->run(x,g,ipobj,outStream);
     subproblemIter_ = algo->getState()->iter;
+    state_->nfval += algo->getState()->nfval;
+    state_->ngrad += algo->getState()->ngrad;
 
     // Compute step
     state_->stepVec->set(x);
     state_->stepVec->axpy(-one,*state_->iterateVec);
     state_->snorm = state_->stepVec->norm();
 
-    // Update iterate and Lagrange multiplier
+    // Update iterate
     state_->iterateVec->set(x);
 
     // Update objective and constraint
     state_->iter++;
 
-    // Update state
-    updateState(x,myobj,bnd,*pwa,outStream);
-
-    // Update multipliers
-    if (updatePenalty_) {
-      state_->searchSize *= tau_;
-      state_->searchSize  = std::min(state_->searchSize,maxPenalty_);
+    // Update barrier parameter and subproblem tolerances
+    if (algo->getState()->statusFlag == EXITSTATUS_CONVERGED) {
+      if( (rho_< one && state_->searchSize > mumin_) || (rho_ > one && state_->searchSize < mumax_) ) {
+        state_->searchSize *= rho_;
+        ipobj.updatePenalty(state_->searchSize);
+      }
+      gtol_ *= gtolrate_; gtol_ = std::max(gtol_,mingtol_);
+      stol_  = static_cast<Real>(1e-6)*gtol_;
     }
-    myobj.updateMultipliers(state_->searchSize,x);
 
-    state_->nfval += myobj.getNumberFunctionEvaluations() + algo->getState()->nfval;
-    state_->ngrad += myobj.getNumberGradientEvaluations() + algo->getState()->ngrad;
+    // Update state
+    updateState(x,ipobj,bnd,*pwa,outStream);
 
     // Update Output
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
@@ -197,19 +200,19 @@ std::vector<std::string> MoreauYosidaAlgorithm<Real>::run( Vector<Real>         
 }
 
 template<typename Real>
-void MoreauYosidaAlgorithm<Real>::writeHeader( std::ostream& os ) const {
+void InteriorPointAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   if (verbosity_ > 1) {
     os << std::string(109,'-') << std::endl;
-    os << "Moreau-Yosida Penalty Solver";
+    os << "Interior Point Solver";
     os << " status output definitions" << std::endl << std::endl;
     os << "  iter     - Number of iterates (steps taken)" << std::endl;
     os << "  fval     - Objective function value" << std::endl;
     os << "  gnorm    - Norm of the gradient" << std::endl;
-    os << "  ifeas    - Infeasibility metric" << std::endl;
     os << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
     os << "  penalty  - Penalty parameter for bound constraints" << std::endl;
     os << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
     os << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    os << "  optTol   - Subproblem optimality tolerance" << std::endl;
     os << "  subiter  - Number of subproblem iterations" << std::endl;
     os << std::string(109,'-') << std::endl;
   }
@@ -218,23 +221,24 @@ void MoreauYosidaAlgorithm<Real>::writeHeader( std::ostream& os ) const {
   os << std::setw(6)  << std::left << "iter";
   os << std::setw(15) << std::left << "fval";
   os << std::setw(15) << std::left << "gnorm";
-  os << std::setw(15) << std::left << "ifeas";
   os << std::setw(15) << std::left << "snorm";
   os << std::setw(10) << std::left << "penalty";
   os << std::setw(8) << std::left << "#fval";
   os << std::setw(8) << std::left << "#grad";
+  os << std::setw(10) << std::left << "optTol";
   os << std::setw(8) << std::left << "subIter";
   os << std::endl;
 }
 
 template<typename Real>
-void MoreauYosidaAlgorithm<Real>::writeName( std::ostream& os ) const {
-  os << std::endl << " Moreau-Yosida Penalty Solver";
+void InteriorPointAlgorithm<Real>::writeName( std::ostream& os ) const {
+  os << std::endl << "Interior Point Solver (Type B, Bound Constraints)";
   os << std::endl;
+  os << "Subproblem Solver: " << stepname_ << std::endl;
 }
 
 template<typename Real>
-void MoreauYosidaAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
+void InteriorPointAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
   os << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
@@ -242,14 +246,13 @@ void MoreauYosidaAlgorithm<Real>::writeOutput( std::ostream& os, bool write_head
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;
     os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << gnorm_;
-    os << std::setw(15) << std::left << compViolation_;
+    os << std::setw(15) << std::left << state_->gnorm;
     os << std::setw(15) << std::left << "---";
     os << std::scientific << std::setprecision(2);
     os << std::setw(10) << std::left << state_->searchSize;
-    os << std::scientific << std::setprecision(6);
     os << std::setw(8) << std::left << state_->nfval;
     os << std::setw(8) << std::left << state_->ngrad;
+    os << std::setw(10) << std::left << "---";
     os << std::setw(8) << std::left << "---";
     os << std::endl;
   }
@@ -257,14 +260,16 @@ void MoreauYosidaAlgorithm<Real>::writeOutput( std::ostream& os, bool write_head
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;
     os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << gnorm_;
-    os << std::setw(15) << std::left << compViolation_;
+    os << std::setw(15) << std::left << state_->gnorm;
     os << std::setw(15) << std::left << state_->snorm;
     os << std::scientific << std::setprecision(2);
     os << std::setw(10) << std::left << state_->searchSize;
     os << std::scientific << std::setprecision(6);
     os << std::setw(8) << std::left << state_->nfval;
     os << std::setw(8) << std::left << state_->ngrad;
+    os << std::scientific << std::setprecision(2);
+    os << std::setw(10) << std::left << gtol_;
+    os << std::scientific << std::setprecision(6);
     os << std::setw(8) << std::left << subproblemIter_;
     os << std::endl;
   }

@@ -179,8 +179,8 @@ public:
             BoundConstraint<Real> &bnd,
             std::ostream          &outStream = std::cout);
 
-  void run( NewOptimizationProblem<Real> &problem,
-            std::ostream                 &outStream = std::cout ) override;
+  void run( Problem<Real> &problem,
+            std::ostream  &outStream = std::cout ) override;
 
   void run( Vector<Real>          &x,
             const Vector<Real>    &g,
@@ -195,7 +195,7 @@ public:
 
   void writeName( std::ostream& os ) const override;
 
-  void write( std::ostream& os, bool write_header = false ) const override;
+  void writeOutput( std::ostream& os, bool write_header = false ) const override;
 
 }; // class ROL::TypeB::NewtonKrylovAlgorithm
 

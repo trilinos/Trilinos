@@ -51,6 +51,7 @@
 */
 
 namespace ROL {
+namespace TypeB {
 
 template<typename Real>
 class SpectralGradientAlgorithm : public TypeB::Algorithm<Real> {

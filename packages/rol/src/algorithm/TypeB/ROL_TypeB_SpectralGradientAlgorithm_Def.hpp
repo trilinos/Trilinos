@@ -277,6 +277,7 @@ void SpectralGradientAlgorithm<Real>::writeOutput( std::ostream& os, bool write_
   }
 }
 
+} // namespace TypeB
 } // namespace ROL
 
 #endif

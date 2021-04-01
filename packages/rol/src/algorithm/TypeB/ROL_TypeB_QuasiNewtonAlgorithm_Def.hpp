@@ -136,8 +136,7 @@ void QuasiNewtonAlgorithm<Real>::run( Vector<Real>          &x,
 
   Ptr<TypeB::Algorithm<Real>> algo;
   Ptr<PQNObjective<Real>> qobj = makePtr<PQNObjective<Real>>(secant_,x,g);
-  Ptr<NewOptimizationProblem<Real>>
-    problem = makePtr<NewOptimizationProblem<Real>>(qobj,xs);
+  Ptr<Problem<Real>> problem = makePtr<Problem<Real>>(qobj,xs);
   problem->addBoundConstraint(makePtrFromRef(bnd));
   if (hasLEC_) {
     problem->addLinearConstraint("LEC",proj_->getLinearConstraint(),

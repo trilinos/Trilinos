@@ -45,6 +45,7 @@
 #define ROL_TYPEB_NEWTONKRYLOVALGORITHM_DEF_HPP
 
 namespace ROL {
+namespace TypeB {
 
 template<typename Real>
 NewtonKrylovAlgorithm<Real>::NewtonKrylovAlgorithm(ParameterList           &list,
@@ -244,8 +245,8 @@ void NewtonKrylovAlgorithm<Real>::run( Vector<Real>          &x,
 }
 
 template<typename Real>
-void NewtonKrylovAlgorithm<Real>::run( NewOptimizationProblem<Real> &problem,
-                                       std::ostream                 &outStream ) {
+void NewtonKrylovAlgorithm<Real>::run( Problem<Real> &problem,
+                                       std::ostream  &outStream ) {
   if (problem.getPolyhedralProjection() == nullPtr) {
     return TypeB::Algorithm<Real>::run(problem,outStream);
   }
