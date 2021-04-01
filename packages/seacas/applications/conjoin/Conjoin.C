@@ -35,6 +35,9 @@
 #include "add_to_log.h"
 #include "adler.h"
 #include "copy_string_cpp.h"
+#if !USE_STD_SORT
+#include "pdqsort.h"
+#endif
 #include "smart_assert.h"
 #include <exodusII.h>
 
@@ -325,7 +328,11 @@ namespace {
 
   template <typename T> void uniquify(std::vector<T> &vec)
   {
+#if USE_STD_SORT
     std::sort(vec.begin(), vec.end());
+#else
+    pdqsort(vec.begin(), vec.end());
+#endif
     vec.resize(unique(vec));
     vec.shrink_to_fit();
   }
@@ -1567,8 +1574,11 @@ namespace {
         id_pos[i].first  = global_element_map[i].first;
         id_pos[i].second = i;
       }
+#if USE_STD_SORT
       std::sort(id_pos.begin(), id_pos.end());
-
+#else
+      pdqsort(id_pos.begin(), id_pos.end());
+#endif
       max_id = id_pos.back().first;
       // Check again for contiguous ids since we now have a sorted list...
       is_contiguous = max_id == global_element_map.size();

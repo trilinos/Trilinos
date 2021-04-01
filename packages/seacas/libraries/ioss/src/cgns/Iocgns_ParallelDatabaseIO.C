@@ -12,6 +12,7 @@
 #include <cgns/Iocgns_Defines.h>
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <cassert>
 #include <cgns/Iocgns_ParallelDatabaseIO.h>
@@ -101,7 +102,7 @@ namespace {
                 recv_count.data(), recv_off.data(), MPI_INT, 0, util.communicator());
 
     if (processor == 0) {
-      std::sort(I_nodes_recv.begin(), I_nodes_recv.end());
+      Ioss::sort(I_nodes_recv.begin(), I_nodes_recv.end());
     }
     return I_nodes_recv;
   }
@@ -382,6 +383,7 @@ namespace Iocgns {
     }
 
     get_step_times__();
+
     if (open_create_behavior() == Ioss::DB_APPEND) {
       return;
     }
@@ -981,6 +983,9 @@ namespace Iocgns {
     case Ioss::STATE_DEFINE_MODEL:
       if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
         write_meta_data();
+      }
+      if (!is_input() && open_create_behavior() == Ioss::DB_APPEND) {
+        Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel, true);
       }
       break;
     case Ioss::STATE_MODEL:

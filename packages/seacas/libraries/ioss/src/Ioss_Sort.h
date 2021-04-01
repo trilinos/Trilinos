@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -7,20 +7,17 @@
 #ifndef IOSS_Ioss_Sort_h
 #define IOSS_Ioss_Sort_h
 
+#include <pdqsort.h>
+
 #include <cstddef>
 #include <vector>
+#if 0
 
 // This is used instead of the std::sort since we were having issues
 // with the std::sort on some compiler versions with certain options
 // enabled (-fopenmp).  If this shows up as a hotspot in performance
 // measurements, then we can use std::sort on most platforms and just
 // use this version where there are compiler issues.
-
-// Using Explicit Template Instantiation with the types:
-//
-// std::vector<int>, std::vector<int64_t>, std::vector<std::pair<int64_t,int64_t>>
-//
-// Update in Ioss_Sort.C if other types are needed.
 
 namespace {
   const int QSORT_CUTOFF = 12;
@@ -119,6 +116,7 @@ namespace {
     }
   }
 } // namespace
+#endif
 
 namespace Ioss {
   template <typename INT> void qsort(std::vector<INT> &v)
@@ -126,8 +124,30 @@ namespace Ioss {
     if (v.size() <= 1) {
       return;
     }
+#if 0
     qsort_int(v.data(), 0, v.size() - 1);
     isort_int(v.data(), v.size());
+#else
+    pdqsort(v.begin(), v.end());
+#endif
+  }
+
+  template <class Iter, class Comp> inline void sort(Iter begin, Iter end, Comp compare)
+  {
+#if USE_STD_SORT
+    std::sort(begin, end, compare);
+#else
+    pdqsort(begin, end, compare);
+#endif
+  }
+
+  template <class Iter> inline void sort(Iter begin, Iter end)
+  {
+#if USE_STD_SORT
+    std::sort(begin, end);
+#else
+    pdqsort(begin, end);
+#endif
   }
 } // namespace Ioss
 

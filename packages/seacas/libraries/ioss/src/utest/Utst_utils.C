@@ -32,7 +32,7 @@ TEST_CASE("number_width", "[number_width]")
 
   SECTION("triple digit")
   {
-    for (int i = 111; i < 1000; i += 111) {
+    for (int i = 111; i < 1'000; i += 111) {
       REQUIRE(3 == Ioss::Utils::number_width(i));
       REQUIRE(3 == Ioss::Utils::number_width(i, true));
     }
@@ -40,7 +40,7 @@ TEST_CASE("number_width", "[number_width]")
 
   SECTION("quad digit")
   {
-    for (int i = 1111; i < 10000; i += 1111) {
+    for (int i = 1111; i < 10'000; i += 1111) {
       REQUIRE(4 == Ioss::Utils::number_width(i));
       REQUIRE(5 == Ioss::Utils::number_width(i, true));
     }
@@ -48,12 +48,12 @@ TEST_CASE("number_width", "[number_width]")
 
   SECTION("larger")
   {
-    REQUIRE(6 == Ioss::Utils::number_width(999999));
-    REQUIRE(7 == Ioss::Utils::number_width(999999, true));
-    REQUIRE(7 == Ioss::Utils::number_width(1000000));
-    REQUIRE(9 == Ioss::Utils::number_width(1000000, true));
-    REQUIRE(10 == Ioss::Utils::number_width(1111111111));
-    REQUIRE(13 == Ioss::Utils::number_width(1111111111, true));
+    REQUIRE(6 == Ioss::Utils::number_width(999'999));
+    REQUIRE(7 == Ioss::Utils::number_width(999'999, true));
+    REQUIRE(7 == Ioss::Utils::number_width(1'000'000));
+    REQUIRE(9 == Ioss::Utils::number_width(1'000'000, true));
+    REQUIRE(10 == Ioss::Utils::number_width(1'111'111'111));
+    REQUIRE(13 == Ioss::Utils::number_width(1'111'111'111, true));
   }
 }
 
@@ -157,7 +157,7 @@ TEST_CASE("format_id_list", "[format_id_list]")
 
   SECTION("ids large range")
   {
-    std::vector<size_t> range(100000);
+    std::vector<size_t> range(100'000);
     std::iota(range.begin(), range.end(), 42);
     std::string ret = Ioss::Utils::format_id_list(range, "--");
     REQUIRE(ret == std::string("42--100041"));
@@ -165,7 +165,7 @@ TEST_CASE("format_id_list", "[format_id_list]")
 
   SECTION("ids large range with singles")
   {
-    std::vector<size_t> range(100000);
+    std::vector<size_t> range(100'000);
     std::iota(range.begin(), range.end(), 42);
     range[0] = 1;
     range[range.size() - 1]++;
@@ -175,7 +175,7 @@ TEST_CASE("format_id_list", "[format_id_list]")
 
   SECTION("ids large range with singles with to")
   {
-    std::vector<size_t> range(100000);
+    std::vector<size_t> range(100'000);
     std::iota(range.begin(), range.end(), 42);
     range[0] = 1;
     range[range.size() - 1]++;
@@ -185,7 +185,7 @@ TEST_CASE("format_id_list", "[format_id_list]")
 
   SECTION("ids large range with singles with colon")
   {
-    std::vector<size_t> range(100000);
+    std::vector<size_t> range(100'000);
     std::iota(range.begin(), range.end(), 42);
     range[0] = 1;
     range[range.size() - 1]++;
@@ -195,7 +195,7 @@ TEST_CASE("format_id_list", "[format_id_list]")
 
   SECTION("ids large range with singles with words")
   {
-    std::vector<size_t> range(100000);
+    std::vector<size_t> range(100'000);
     std::iota(range.begin(), range.end(), 42);
     range[0] = 1;
     range[range.size() - 1]++;

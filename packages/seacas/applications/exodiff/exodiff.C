@@ -268,18 +268,20 @@ namespace {
   template <typename INT> void output_init(ExoII_Read<INT> &file, int count, const char *prefix)
   {
     FileInfo fi(file.File_Name());
-    fmt::print("{0}  FILE {15}: {1}\n"
-               "{0}   Title: {2}\n"
-               "{0}          Dim = {3}, Nodes = {5}, Elements = {6},\n"
-	       "{0}          Element Blocks = {4}, Face Blocks = {10}, Edge Blocks = {9}, Nodesets = {7}, "
-               "Sidesets = {8}\n"
-               "{0}    Vars: Global = {11}, Nodal = {12}, Element = {13}, Face = {17}, Edge = {18}, Nodeset = {14}, "
-               "Sideset = {15}, Times = {16}\n\n",
-               prefix, fi.realpath(), file.Title(), file.Dimension(), file.Num_Elmt_Blocks(),
-               file.Num_Nodes(), file.Num_Elmts(), file.Num_Node_Sets(), file.Num_Side_Sets(),
-               file.Num_Edge_Blocks(), file.Num_Face_Blocks(), file.Num_Global_Vars(),
-               file.Num_Nodal_Vars(), file.Num_Elmt_Vars(), file.Num_NS_Vars(), file.Num_SS_Vars(),
-               file.Num_Times(), file.Num_FB_Vars(), file.Num_EB_Vars());
+    fmt::print(
+        "{0}  FILE {19}: {1}\n"
+        "{0}   Title: {2}\n"
+        "{0}          Dim = {3}, Nodes = {5}, Elements = {6},\n"
+        "{0}          Element Blocks = {4}, Face Blocks = {10}, Edge Blocks = {9}, Nodesets = {7}, "
+        "Sidesets = {8}\n"
+        "{0}    Vars: Global = {11}, Nodal = {12}, Element = {13}, Face = {17}, Edge = {18}, "
+        "Nodeset = {14}, "
+        "Sideset = {15}, Times = {16}\n\n",
+        prefix, fi.realpath(), file.Title(), file.Dimension(), file.Num_Elmt_Blocks(),
+        file.Num_Nodes(), file.Num_Elmts(), file.Num_Node_Sets(), file.Num_Side_Sets(),
+        file.Num_Edge_Blocks(), file.Num_Face_Blocks(), file.Num_Global_Vars(),
+        file.Num_Nodal_Vars(), file.Num_Elmt_Vars(), file.Num_NS_Vars(), file.Num_SS_Vars(),
+        file.Num_Times(), file.Num_FB_Vars(), file.Num_EB_Vars(), count);
   }
 
   std::string buf;
@@ -289,7 +291,6 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-  interFace.Set_Max_Names(DEFAULT_MAX_NUMBER_OF_NAMES);
   bool ok = interFace.parse_options(argc, argv);
 
   if (!ok) {
@@ -402,80 +403,6 @@ namespace {
       serr = file2.Open_File();
       if (!serr.empty()) {
         Error(fmt::format("{}\n", serr));
-        exit(1);
-      }
-    }
-
-    // Check that the maximum number of names has not been exceeded...
-    if (file1.Num_Global_Vars() > interFace.max_number_of_names ||
-        file1.Num_Nodal_Vars() > interFace.max_number_of_names ||
-        file1.Num_NS_Vars() > interFace.max_number_of_names ||
-        file1.Num_SS_Vars() > interFace.max_number_of_names ||
-        file1.Num_EB_Vars() > interFace.max_number_of_names ||
-        file1.Num_FB_Vars() > interFace.max_number_of_names ||
-        file1.Num_Elmt_Vars() > interFace.max_number_of_names) {
-      size_t max = file1.Num_Global_Vars();
-      if (file1.Num_Nodal_Vars() > max) {
-        max = file1.Num_Nodal_Vars();
-      }
-      if (file1.Num_NS_Vars() > max) {
-        max = file1.Num_NS_Vars();
-      }
-      if (file1.Num_SS_Vars() > max) {
-        max = file1.Num_SS_Vars();
-      }
-      if (file1.Num_EB_Vars() > max) {
-        max = file1.Num_EB_Vars();
-      }
-      if (file1.Num_FB_Vars() > max) {
-        max = file1.Num_FB_Vars();
-      }
-      if (file1.Num_Elmt_Vars() > max) {
-        max = file1.Num_Elmt_Vars();
-      }
-
-      fmt::print("exodiff: Number of names in file 1 ({}) is larger than "
-                 "current limit of {}.  To increase, use \"-maxnames <int>\" on the command "
-                 "line or \"MAX NAMES <int>\" in the command file.  "
-                 "Aborting...\n",
-                 max, interFace.max_number_of_names);
-      exit(1);
-    }
-
-    // Check that the maximum number of names has not been exceeded...
-    if (!interFace.summary_flag) {
-      if (file2.Num_Global_Vars() > interFace.max_number_of_names ||
-          file2.Num_Nodal_Vars() > interFace.max_number_of_names ||
-          file2.Num_NS_Vars() > interFace.max_number_of_names ||
-          file2.Num_SS_Vars() > interFace.max_number_of_names ||
-          file1.Num_EB_Vars() > interFace.max_number_of_names ||
-          file1.Num_FB_Vars() > interFace.max_number_of_names ||
-          file2.Num_Elmt_Vars() > interFace.max_number_of_names) {
-        size_t max = file2.Num_Global_Vars();
-        if (file2.Num_Nodal_Vars() > max) {
-          max = file2.Num_Nodal_Vars();
-        }
-        if (file2.Num_NS_Vars() > max) {
-          max = file2.Num_NS_Vars();
-        }
-        if (file2.Num_SS_Vars() > max) {
-          max = file2.Num_SS_Vars();
-        }
-        if (file2.Num_EB_Vars() > max) {
-          max = file2.Num_EB_Vars();
-        }
-        if (file2.Num_FB_Vars() > max) {
-          max = file2.Num_FB_Vars();
-        }
-        if (file2.Num_Elmt_Vars() > max) {
-          max = file2.Num_Elmt_Vars();
-        }
-
-        fmt::print("exodiff: Number of names in file 2 ({}) is larger than "
-                   "current limit of {}.  To increase, use \"-maxnames <int>\" on the command "
-                   "line or \"MAX NAMES <int>\" in the command file.  "
-                   "Aborting...\n",
-                   max, interFace.max_number_of_names);
         exit(1);
       }
     }
@@ -2256,7 +2183,7 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       vidx2 = find_string(file2.EB_Var_Names(), name, interFace.nocase_var_names);
     }
     if (vidx1 < 0 || vidx2 < 0) {
-      Error(fmt::format("Unable to find edgeblock variable named '{}' on database.\n", name));
+      Error(fmt::format("Unable to find edge block variable named '{}' on database.\n", name));
       exit(1);
     }
 
@@ -2291,15 +2218,15 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       const double *vals1 = eblock1->Get_Results(vidx1);
 
       if (vals1 == nullptr) {
-        Error(fmt::format("Could not find variable '{}' in edgeblock {}, file 1.\n", name,
+        Error(fmt::format("Could not find variable '{}' in edge block {}, file 1.\n", name,
                           eblock1->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, eblock1->Size())) {
-        Error(fmt::format("NaN found for edgeblock variable '{}' in edgeblock {}, file 1.\n", name,
-                          eblock1->Id()));
+        Error(fmt::format("NaN found for edge block variable '{}' in edge block {}, file 1.\n",
+                          name, eblock1->Id()));
         diff_flag = true;
       }
 
@@ -2310,14 +2237,14 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
         vals2 = eblock2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
-          Error(fmt::format("Could not find variable '{}' in edgeblock {}, file 2.\n", name,
+          Error(fmt::format("Could not find variable '{}' in edge block {}, file 2.\n", name,
                             eblock2->Id()));
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, eblock2->Size())) {
-          Error(fmt::format("NaN found for edgeblock variable '{}' in edgeblock {}, file 2.\n",
+          Error(fmt::format("NaN found for edge block variable '{}' in edge block {}, file 2.\n",
                             name, eblock2->Id()));
           diff_flag = true;
         }
@@ -2347,9 +2274,9 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
             if (d > interFace.eb_var[e_idx].value) {
               diff_flag = true;
               buf       = fmt::format(
-                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, edge {})", name,
+                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (edge block {}, edge {})", name,
                   name_length, interFace.eb_var[e_idx].abrstr(), vals1[ind1], v2, d, eblock1->Id(),
-                  id_map[eblock1->Edge_Index(e)]);
+                  eblock1->Edge_Index(e));
               DIFF_OUT(buf);
             }
           }
@@ -2365,8 +2292,8 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
         }
       }
       else {
-        buf = fmt::format("   {:<{}}     diff: edgeblock edge counts differ for edgeblock {}", name,
-                          name_length, eblock1->Id());
+        buf = fmt::format("   {:<{}}     diff: edge block edge counts differ for edge block {}",
+                          name, name_length, eblock1->Id());
         DIFF_OUT(buf);
         diff_flag = true;
       }
@@ -2395,10 +2322,10 @@ bool diff_edgeblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
 
       if (!interFace.quiet_flag) {
         Edge_Block<INT> *eblock = file1.Get_Edge_Block_by_Id(max_diff.blk);
-        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, edge {})",
-                          name, name_length, interFace.eb_var[e_idx].abrstr(), max_diff.val1,
-                          max_diff.val2, max_diff.diff, max_diff.blk,
-                          id_map[eblock->Edge_Index(max_diff.id)]);
+        buf                     = fmt::format(
+            "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (edge block {}, edge {})", name,
+            name_length, interFace.eb_var[e_idx].abrstr(), max_diff.val1, max_diff.val2,
+            max_diff.diff, max_diff.blk, eblock->Edge_Index(max_diff.id));
         DIFF_OUT(buf);
       }
       else {
@@ -2436,7 +2363,7 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       vidx2 = find_string(file2.FB_Var_Names(), name, interFace.nocase_var_names);
     }
     if (vidx1 < 0 || vidx2 < 0) {
-      Error(fmt::format("Unable to find faceblock variable named '{}' on database.\n", name));
+      Error(fmt::format("Unable to find face block variable named '{}' on database.\n", name));
       exit(1);
     }
 
@@ -2470,15 +2397,15 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       const double *vals1 = fblock1->Get_Results(vidx1);
 
       if (vals1 == nullptr) {
-        Error(fmt::format("Could not find variable '{}' in faceblock {}, file 1.\n", name,
+        Error(fmt::format("Could not find variable '{}' in face block {}, file 1.\n", name,
                           fblock1->Id()));
         diff_flag = true;
         continue;
       }
 
       if (Invalid_Values(vals1, fblock1->Size())) {
-        Error(fmt::format("NaN found for faceblock variable '{}' in faceblock {}, file 1.\n", name,
-                          fblock1->Id()));
+        Error(fmt::format("NaN found for face block variable '{}' in face block {}, file 1.\n",
+                          name, fblock1->Id()));
         diff_flag = true;
       }
 
@@ -2489,14 +2416,14 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
         vals2 = fblock2->Get_Results(vidx2);
 
         if (vals2 == nullptr) {
-          Error(fmt::format("Could not find variable '{}' in faceblock {}, file 2.\n", name,
+          Error(fmt::format("Could not find variable '{}' in face block {}, file 2.\n", name,
                             fblock2->Id()));
           diff_flag = true;
           continue;
         }
 
         if (Invalid_Values(vals2, fblock2->Size())) {
-          Error(fmt::format("NaN found for faceblock variable '{}' in faceblock {}, file 2.\n",
+          Error(fmt::format("NaN found for face block variable '{}' in face block {}, file 2.\n",
                             name, fblock2->Id()));
           diff_flag = true;
         }
@@ -2526,9 +2453,9 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
             if (d > interFace.fb_var[f_idx].value) {
               diff_flag = true;
               buf       = fmt::format(
-                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, face {})", name,
+                  "   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (face block {}, face {})", name,
                   name_length, interFace.fb_var[f_idx].abrstr(), vals1[ind1], v2, d, fblock1->Id(),
-                  id_map[fblock1->Face_Index(f)]);
+                  fblock1->Face_Index(f));
               DIFF_OUT(buf);
             }
           }
@@ -2544,8 +2471,8 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
         }
       }
       else {
-        buf = fmt::format("   {:<{}}     diff: faceblock face counts differ for faceblock {}", name,
-                          name_length, fblock1->Id());
+        buf = fmt::format("   {:<{}}     diff: face block face counts differ for face block {}",
+                          name, name_length, fblock1->Id());
         DIFF_OUT(buf);
         diff_flag = true;
       }
@@ -2573,9 +2500,10 @@ bool diff_faceblock(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, int step1, c
       }
 
       if (!interFace.quiet_flag) {
-        buf = fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (block {}, face {})",
-                          name, name_length, interFace.fb_var[f_idx].abrstr(), max_diff.val1,
-                          max_diff.val2, max_diff.diff, max_diff.blk, id_map[max_diff.id]);
+        buf =
+            fmt::format("   {:<{}} {} diff: {:14.7e} ~ {:14.7e} ={:12.5e} (face block {}, face {})",
+                        name, name_length, interFace.fb_var[f_idx].abrstr(), max_diff.val1,
+                        max_diff.val2, max_diff.diff, max_diff.blk, max_diff.id);
         DIFF_OUT(buf);
       }
       else {
