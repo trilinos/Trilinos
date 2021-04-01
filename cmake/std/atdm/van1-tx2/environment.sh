@@ -75,8 +75,8 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.0_OPENMPI-4.0.2" ]]; then
   export BINUTILS_ROOT=${BINUTILS_DIR}
 
   module load git/2.19.2
-elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
-  module load sparc-dev/arm-20.1_openmpi-4.0.3
+elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
+  module load sparc-dev/arm-20.1_openmpi-4.0.5
   module unload yaml-cpp
 
   if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
