@@ -86,7 +86,8 @@ public:
         if(bulk.mesh_meta_data().entity_rank_count() >= rank)
         {
             stk::mesh::EntityVector entities;
-            stk::mesh::get_selected_entities(selector, bulk.buckets(rank), entities);
+            const bool sortByGlobalID = true;
+            stk::mesh::get_entities(bulk, rank, selector, entities, sortByGlobalID);
             for(size_t i=0; i<entities.size(); ++i)
             {
                 add_new_entity_with_local_id(entities[i], i);

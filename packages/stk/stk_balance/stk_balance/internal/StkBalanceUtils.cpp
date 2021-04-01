@@ -103,22 +103,23 @@ void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSet
                           const stk::mesh::FieldBase* coord, stk::balance::internal::SearchBoxIdentProcs &faceBoxes,
                           const stk::mesh::Selector& searchSelector)
 {
-    std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData,
-                                                                                                                        searchSelector,
-                                                                                                                        !searchSelector);
-    stk::mesh::EntityVector sideNodes;
-    for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
-    {
-        stk::mesh::Entity sidesetElement = sidesetEntry.element;
-        stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
-        stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement,
-                                     stkMeshBulkData.mesh_meta_data().side_rank(),
-                                     sidesetSide, sideNodes);
-        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
-                                                                     sideNodes.data(), sideNodes.size());
-        addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
-                       stkMeshBulkData.identifier(sidesetElement), faceBoxes);
+  std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData,
+                                                                                                                      searchSelector,
+                                                                                                                      !searchSelector);
+  stk::mesh::EntityVector sideNodes;
+  for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet) {
+    stk::mesh::Entity sidesetElement = sidesetEntry.element;
+    if (searchSelector(stkMeshBulkData.bucket(sidesetElement))) {
+      stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
+      stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement,
+                                   stkMeshBulkData.mesh_meta_data().side_rank(),
+                                   sidesetSide, sideNodes);
+      const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
+                                                                   sideNodes.data(), sideNodes.size());
+      addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
+                     stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
+  }
 }
 
 void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,

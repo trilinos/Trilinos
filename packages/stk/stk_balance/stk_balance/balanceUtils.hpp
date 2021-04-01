@@ -117,11 +117,6 @@ public:
     virtual bool isIncrementalRebalance() const;
     virtual bool isMultiCriteriaRebalance() const;
 
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 2021
-    STK_DEPRECATED virtual bool areVertexWeightsProvidedInAVector() const;
-    STK_DEPRECATED virtual std::vector<double> getVertexWeightsViaVector() const;
-#endif
-
     virtual bool areVertexWeightsProvidedViaFields() const;
 
     virtual double getImbalanceTolerance() const;
@@ -322,34 +317,6 @@ public:
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
 };
 
-class UserSpecifiedVertexWeightsSetting : public GraphCreationSettings
-{
-public:
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 2021
-    STK_DEPRECATED UserSpecifiedVertexWeightsSetting()
-    {
-      method = "parmetis";
-      m_includeSearchResultInGraph = false;
-    }
-    STK_DEPRECATED virtual bool areVertexWeightsProvidedInAVector() const { return true; }
-    STK_DEPRECATED void setVertexWeights(const std::vector<double>& weights) { vertex_weights = weights; }
-    STK_DEPRECATED virtual std::vector<double> getVertexWeightsViaVector() const { return vertex_weights; }
-#endif
-    virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
-    virtual double getGraphVertexWeight(stk::mesh::Entity entity, int criteria_index) const { return 1.0; }
-    //virtual double getImbalanceTolerance() const { return 1.05; }
-    virtual void setDecompMethod(const std::string& input_method) { method = input_method;}
-    virtual std::string getDecompMethod() const { return method; }
-    void setCoordinateFieldName(const std::string& field_name) { m_field_name = field_name; }
-    virtual std::string getCoordinateFieldName() const { return m_field_name; }
-    virtual bool shouldFixMechanisms() const { return false; }
-
-private:
-    std::vector<double> vertex_weights;
-    std::string m_field_name = std::string("coordinates");
-};
-
 class GraphCreationSettingsForZoltan2 : public GraphCreationSettingsWithCustomTolerances
 {
 public:
@@ -372,9 +339,6 @@ public:
     virtual ~FieldVertexWeightSettings() = default;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-#ifndef STK_HIDE_DEPRECATED_CODE  // Delete after April 2021
-    STK_DEPRECATED virtual bool areVertexWeightsProvidedInAVector() const { return false; }
-#endif
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }
     virtual double getImbalanceTolerance() const { return 1.05; }
