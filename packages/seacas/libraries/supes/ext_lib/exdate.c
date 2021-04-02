@@ -39,5 +39,5 @@ void exdate(char *string, long int len)
 {
   time_t     tim = time((time_t *)0);
   struct tm *t   = localtime(&tim);
-  strftime(string, STRLEN + 1, "%y/%m/%d", t);
+  strftime(string, STRLEN + 1, "%Y%m%d", t);
 }
