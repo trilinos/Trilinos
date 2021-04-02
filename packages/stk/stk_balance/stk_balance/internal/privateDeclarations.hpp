@@ -81,7 +81,12 @@ void addGraphEdgesUsingBBSearch(stk::mesh::BulkData& stkMeshBulkData,
                                 std::vector<GraphEdge>& graphEdges,
                                 const stk::mesh::Selector& searchSelector);
 
-void calculateGeometricOrGraphBasedDecomp(const BalanceSettings& balanceSettings, const int num_procs_decomp, stk::mesh::EntityProcVec &decomp, stk::mesh::BulkData& stkMeshBulkData, const std::vector<stk::mesh::Selector>& selectors);
+void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
+                                          const std::vector<stk::mesh::Selector> & selectors,
+                                          const stk::ParallelMachine & decompCommunicator,
+                                          const int numSubdomainsToCreate,
+                                          const BalanceSettings & balanceSettings,
+                                          stk::mesh::EntityProcVec & decomp);
 
 void rebalance(stk::mesh::BulkData& stkMeshBulkData, const stk::mesh::EntityProcVec& mockDecomposition);
 void rebalance(stk::mesh::BulkData& stkMeshBulkData, const std::vector<unsigned>& mappings, const stk::mesh::EntityProcVec& mockDecomposition);
@@ -101,8 +106,11 @@ void fill_spider_connectivity_count_fields(stk::mesh::BulkData & bulk, const Bal
 void keep_spiders_on_original_proc(stk::mesh::BulkData &bulk, const stk::balance::BalanceSettings & balanceSettings, DecompositionChangeList &changeList);
 void fix_spider_elements(const BalanceSettings & balanceSettings, stk::mesh::BulkData & stkMeshBulkData);
 
-void createZoltanParallelGraph(const BalanceSettings& balanceSettings, stk::mesh::BulkData& stkMeshBulkData,
-                               const stk::mesh::Selector & selector, Zoltan2ParallelGraph& zoltan2Graph);
+void createZoltanParallelGraph(stk::mesh::BulkData & stkMeshBulkData,
+                               const stk::mesh::Selector & selector,
+                               const stk::ParallelMachine & decompCommunicator,
+                               const BalanceSettings & balanceSettings,
+                               Zoltan2ParallelGraph & zoltan2Graph);
 
 void add_connected_entities_of_rank(stk::mesh::BulkData& stkMeshBulkData, stk::mesh::Entity element, int newOwningProc, stk::mesh::EntityRank rank, std::vector<std::pair<stk::mesh::Entity, int> > &entityProcPairs);
 

@@ -55,6 +55,8 @@ public:
   virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const = 0;
   virtual unsigned num_fields() const = 0;
   virtual ParallelMachine comm() const = 0;
+  virtual void begin_transfer() const {}
+  virtual void end_transfer() const {}
 
   virtual DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const = 0;
 

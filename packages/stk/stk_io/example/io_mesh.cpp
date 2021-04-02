@@ -400,7 +400,7 @@ int main(int argc, const char** argv)
   if (cmdLine.is_option_provided("directory")) {
     working_directory = cmdLine.get_option_value<std::string>("directory");
   }
-  if (cmdLine.is_option_provided("decomposition")) {
+  if (cmdLine.is_option_parsed("decomposition")) {
     decomp_method = cmdLine.get_option_value<std::string>("decomposition");
   }
   if (cmdLine.is_option_provided("shuffle")) {

@@ -66,7 +66,9 @@ protected:
 
     stk::mesh::EntityProcVec decomp;
     testing::internal::CaptureStdout();
-    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(balanceSettings, numProcs, decomp, get_bulk(), selectors);
+    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(get_bulk(), selectors,
+                                                                 get_bulk().parallel(), numProcs,
+                                                                 balanceSettings, decomp);
     testing::internal::GetCapturedStdout();
 
     check_decomposition(decomp, expectedElemsOnEachProc);
