@@ -46,7 +46,7 @@
 
 #include "ROL_SlacklessObjective.hpp"
 #include "ROL_SlacklessConstraint.hpp"
-#include "ROL_ConstraintAssembler.hpp"
+//#include "ROL_ConstraintManager.hpp"
 #include "ROL_ReduceLinearConstraint.hpp"
 #include "ROL_ConstraintStatusTest.hpp"
 
@@ -110,13 +110,13 @@ void Algorithm<Real>::run( Problem<Real> &problem,
   if (problem.getProblemType() == TYPE_EB) {
     proj_ = problem.getPolyhedralProjection();
     run(*problem.getPrimalOptimizationVector(),
-                                          *problem.getDualOptimizationVector(),
-                                          *problem.getObjective(),
-                                          *problem.getBoundConstraint(),
-                                          *problem.getConstraint(),
-                                          *problem.getMultiplierVector(),
-                                          *problem.getResidualVector(),
-                                          outStream);
+        *problem.getDualOptimizationVector(),
+        *problem.getObjective(),
+        *problem.getBoundConstraint(),
+        *problem.getConstraint(),
+        *problem.getMultiplierVector(),
+        *problem.getResidualVector(),
+        outStream);
     problem.finalizeIteration();
   }
   else {
@@ -149,7 +149,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            BoundConstraint<Real> &ibnd,
                            std::ostream          &outStream ) {
   Problem<Real> problem(makePtrFromRef(obj),
-                                       makePtrFromRef(x));
+                        makePtrFromRef(x));
   problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
                         makePtrFromRef(imul),makePtrFromRef(ibnd));
   problem.finalize(false,false,outStream);
@@ -185,7 +185,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            BoundConstraint<Real> &ibnd,
                            std::ostream          &outStream ) {
   Problem<Real> problem(makePtrFromRef(obj),
-                                       makePtrFromRef(x));
+                        makePtrFromRef(x));
   problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
                         makePtrFromRef(emul));
   problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
@@ -206,7 +206,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                                                  BoundConstraint<Real> &ibnd,
                                                  std::ostream          &outStream ) {
   Problem<Real> problem(makePtrFromRef(obj),
-                                       makePtrFromRef(x));
+                        makePtrFromRef(x));
   problem.addBoundConstraint(makePtrFromRef(bnd));
   problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
                         makePtrFromRef(emul));
@@ -235,7 +235,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                         makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
   problem.finalize(false,false,outStream);
   run(problem,outStream);
-  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
   //                           makePtrFromRef(ibnd),makePtrFromRef(x));
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
   //Ptr<Vector<Real>>          emul = cm.getMultiplier();
@@ -264,7 +264,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                         makePtrFromRef(imul),makePtrFromRef(ibnd),irp,false);
   problem.finalize(false,false,outStream);
   run(problem,outStream);
-  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
+  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),
   //                           makePtrFromRef(ibnd),makePtrFromRef(x),
   //                           makePtrFromRef(bnd));
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
@@ -303,7 +303,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>>
   //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
+  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x));
   //Ptr<Constraint<Real>>       con = cm.getConstraint();
   //Ptr<Vector<Real>>           mul = cm.getMultiplier();
   //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
@@ -342,7 +342,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   //  lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>>
   //  bvec = {             nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintAssembler<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
+  //ConstraintManager<Real> cm(cvec,lvec,bvec,makePtrFromRef(x),makePtrFromRef(bnd));
   //Ptr<Constraint<Real>>       con = cm.getConstraint();
   //Ptr<Vector<Real>>           mul = cm.getMultiplier();
   //Ptr<BoundConstraint<Real>> xbnd = cm.getBoundConstraint();
@@ -557,7 +557,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            std::ostream          &outStream ) {
   Ptr<Vector<Real>> gp = g.clone(), irp = ires.clone(), lerp = linear_eres.clone();
   Problem<Real> problem(makePtrFromRef(obj),
-                                       makePtrFromRef(x),gp);
+                        makePtrFromRef(x),gp);
   problem.addBoundConstraint(makePtrFromRef(bnd));
   problem.addConstraint("InequalityConstraint",makePtrFromRef(icon),
                         makePtrFromRef(imul),makePtrFromRef(ibnd),
@@ -568,7 +568,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                               lerp,false);
   problem.finalize(false,false,outStream);
   run(problem,outStream);
-  //ConstraintAssembler<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
+  //ConstraintManager<Real> cm(makePtrFromRef(icon),makePtrFromRef(imul),makePtrFromRef(ibnd),
   //                           makePtrFromRef(x), makePtrFromRef(bnd));
   //Ptr<Vector<Real>>          xvec = cm.getOptVector();
   //Ptr<Constraint<Real>>      econ = cm.getConstraint();
@@ -639,7 +639,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            std::ostream          &outStream ) {
   Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), irp = ires.clone(), lerp = linear_eres.clone();
   Problem<Real> problem(makePtrFromRef(obj),
-                                       makePtrFromRef(x),gp);
+                        makePtrFromRef(x),gp);
   problem.addBoundConstraint(makePtrFromRef(bnd));
   problem.addConstraint("EqualityConstraint",makePtrFromRef(econ),
                         makePtrFromRef(emul),erp,false);
@@ -655,7 +655,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
   //std::vector<Ptr<Constraint<Real>>> cvec = {makePtrFromRef(econ), makePtrFromRef(icon)};
   //std::vector<Ptr<Vector<Real>>>     lvec = {makePtrFromRef(emul), makePtrFromRef(imul)};
   //std::vector<Ptr<BoundConstraint<Real>>> bvec = {        nullPtr, makePtrFromRef(ibnd)};
-  //ConstraintAssembler<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
+  //ConstraintManager<Real> cm(cvec, lvec, bvec, makePtrFromRef(x), makePtrFromRef(bnd));
   //Ptr<Vector<Real>>          xvec = cm.getOptVector();
   //Ptr<Constraint<Real>>      xcon = cm.getConstraint();
   //Ptr<Vector<Real>>          xmul = cm.getMultiplier();
@@ -670,52 +670,55 @@ void Algorithm<Real>::run( Vector<Real>          &x,
 
 template<typename Real>
 void Algorithm<Real>::writeHeader( std::ostream& os ) const {
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "gnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "#fval";
-  os << std::setw(10) << std::left << "#grad";
-  os << std::endl;
+  std::stringstream hist;
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "value";
+  hist << std::setw(15) << std::left << "gnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#grad";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
-void Algorithm<Real>::writeName(std::ostream& os) const {
+void Algorithm<Real>::writeName( std::ostream& os ) const {
   throw Exception::NotImplemented(">>> ROL::TypeG::Algorithm::writeName() is not implemented!");
 }
 
 template<typename Real>
-void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
-  os << std::scientific << std::setprecision(6);
-  if ( print_header ) {
-    writeHeader(os);
-
-  }
+void Algorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
+  if ( write_header ) writeHeader(os);
   if ( state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::endl;
   }
   else {
-    os << "  "; 
-    os << std::setw(6)  << std::left << state_->iter;  
-    os << std::setw(15) << std::left << state_->value; 
-    os << std::setw(15) << std::left << state_->gnorm; 
-    os << std::setw(15) << std::left << state_->snorm; 
-    os << std::setw(10) << std::left << state_->nfval;              
-    os << std::setw(10) << std::left << state_->ngrad;              
-    os << std::endl;
+    hist << "  "; 
+    hist << std::setw(6)  << std::left << state_->iter;  
+    hist << std::setw(15) << std::left << state_->value; 
+    hist << std::setw(15) << std::left << state_->gnorm; 
+    hist << std::setw(15) << std::left << state_->snorm; 
+    hist << std::setw(10) << std::left << state_->nfval;              
+    hist << std::setw(10) << std::left << state_->ngrad;              
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 template<typename Real>
 void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
-  os << "Optimization Terminated with Status: ";
-  os << EExitStatusToString(state_->statusFlag);
-  os << std::endl;
+  std::stringstream hist;
+  hist << "Optimization Terminated with Status: ";
+  hist << EExitStatusToString(state_->statusFlag);
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>

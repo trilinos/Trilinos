@@ -47,7 +47,6 @@
 #include "ROL_CombinedStatusTest.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_Constraint.hpp"
-//#include "ROL_NewOptimizationProblem.hpp"
 #include "ROL_Problem.hpp"
 
 /** \class ROL::Algorithm
@@ -89,7 +88,7 @@ template<typename Real>
 class Algorithm {
 protected:
   const Ptr<CombinedStatusTest<Real>> status_;
-  const Ptr<AlgorithmState_E<Real>>   state_;
+  const Ptr<AlgorithmState<Real>>     state_;
 
   void initialize(const Vector<Real> &x,
                   const Vector<Real> &g,
@@ -173,7 +172,7 @@ public:
 
   /** \brief Print iterate status.
   */
-  virtual void writeOutput( std::ostream& os, bool print_header = false ) const;
+  virtual void writeOutput( std::ostream& os, bool write_header = false ) const;
 
   virtual void writeExitStatus( std::ostream& os ) const;
 

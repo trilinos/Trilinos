@@ -55,7 +55,7 @@ namespace TypeE {
 template<typename Real>
 Algorithm<Real>::Algorithm()
   : status_(makePtr<CombinedStatusTest<Real>>()),
-    state_(makePtr<AlgorithmState_E<Real>>()) {
+    state_(makePtr<AlgorithmState<Real>>()) {
   status_->reset();
   status_->add(makePtr<ConstraintStatusTest<Real>>());
 }
@@ -103,7 +103,7 @@ void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
-void Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
+void Algorithm<Real>::run( Problem<Real> &problem,
                            std::ostream     &outStream ) {
   if (problem.getProblemType() == TYPE_E) {
     run(*problem.getPrimalOptimizationVector(),
@@ -126,7 +126,7 @@ void Algorithm<Real>::run( Vector<Real>     &x,
                            Constraint<Real> &econ,
                            Vector<Real>     &emul,
                            std::ostream     &outStream ) {
-  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
+  Problem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
   problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul));
   problem.finalize(false,false,outStream);
   run(problem,outStream);
@@ -141,7 +141,7 @@ void Algorithm<Real>::run( Vector<Real>     &x,
                            Constraint<Real> &linear_econ,
                            Vector<Real>     &linear_emul,
                            std::ostream     &outStream ) {
-  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
+  Problem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x));
   problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul));
   problem.addLinearConstraint("LEC",makePtrFromRef(linear_econ),makePtrFromRef(linear_emul));
   problem.finalize(false,false,outStream);
@@ -161,7 +161,7 @@ void Algorithm<Real>::run( Vector<Real>       &x,
                            const Vector<Real> &linear_eres,
                            std::ostream       &outStream ) {
   Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), lerp = linear_eres.clone();
-  NewOptimizationProblem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x),gp);
+  Problem<Real> problem(makePtrFromRef(obj), makePtrFromRef(x), gp);
   problem.addConstraint("NEC",makePtrFromRef(econ),makePtrFromRef(emul),erp,false);
   problem.addLinearConstraint("LEC",makePtrFromRef(linear_econ),makePtrFromRef(linear_emul),lerp,false);
   problem.finalize(false,false,outStream);
@@ -178,15 +178,17 @@ void Algorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void Algorithm<Real>::writeHeader( std::ostream& os ) const {
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "cnorm";
-  os << std::setw(15) << std::left << "gLnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "#fval";
-  os << std::setw(10) << std::left << "#grad";
-  os << std::endl;
+  std::stringstream hist;
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "value";
+  hist << std::setw(15) << std::left << "cnorm";
+  hist << std::setw(15) << std::left << "gLnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#grad";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
@@ -195,37 +197,39 @@ void Algorithm<Real>::writeName( std::ostream& os ) const {
 }
 
 template<typename Real>
-void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
-  os << std::scientific << std::setprecision(6);
-  if ( print_header ) {
-    writeHeader(os);
-  }
+void Algorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
+  if ( write_header ) writeHeader(os);
   if ( state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->cnorm;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->cnorm;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::endl;
   }
   else {
-    os << "  "; 
-    os << std::setw(6)  << std::left << state_->iter;  
-    os << std::setw(15) << std::left << state_->value; 
-    os << std::setw(15) << std::left << state_->cnorm;
-    os << std::setw(15) << std::left << state_->gnorm; 
-    os << std::setw(15) << std::left << state_->snorm; 
-    os << std::setw(10) << std::left << state_->nfval;              
-    os << std::setw(10) << std::left << state_->ngrad;              
-    os << std::endl;
+    hist << "  "; 
+    hist << std::setw(6)  << std::left << state_->iter;  
+    hist << std::setw(15) << std::left << state_->value; 
+    hist << std::setw(15) << std::left << state_->cnorm;
+    hist << std::setw(15) << std::left << state_->gnorm; 
+    hist << std::setw(15) << std::left << state_->snorm; 
+    hist << std::setw(10) << std::left << state_->nfval;              
+    hist << std::setw(10) << std::left << state_->ngrad;              
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 template<typename Real>
 void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
-  os << "Optimization Terminated with Status: ";
-  os << EExitStatusToString(state_->statusFlag);
-  os << std::endl;
+  std::stringstream hist;
+  hist << "Optimization Terminated with Status: ";
+  hist << EExitStatusToString(state_->statusFlag);
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>

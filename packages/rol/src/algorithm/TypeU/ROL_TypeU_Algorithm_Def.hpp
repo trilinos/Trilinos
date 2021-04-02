@@ -54,7 +54,7 @@ namespace TypeU {
 template<typename Real>
 Algorithm<Real>::Algorithm()
   : status_(makePtr<CombinedStatusTest<Real>>()),
-    state_(makePtr<AlgorithmState_U<Real>>()) {
+    state_(makePtr<AlgorithmState<Real>>()) {
   status_->reset();
   status_->add(makePtr<StatusTest<Real>>());
 }
@@ -91,8 +91,8 @@ void Algorithm<Real>::setStatusTest(const Ptr<StatusTest<Real>> &status,
 }
 
 template<typename Real>
-void Algorithm<Real>::run( NewOptimizationProblem<Real> &problem,
-                                                 std::ostream                 &outStream ) {
+void Algorithm<Real>::run( Problem<Real> &problem,
+                           std::ostream  &outStream ) {
   if (problem.getProblemType() == TYPE_U) {
     run(*problem.getPrimalOptimizationVector(),
         *problem.getDualOptimizationVector(),
@@ -140,14 +140,16 @@ void Algorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void Algorithm<Real>::writeHeader( std::ostream& os ) const {
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "gnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "#fval";
-  os << std::setw(10) << std::left << "#grad";
-  os << std::endl;
+  std::stringstream hist;
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "value";
+  hist << std::setw(15) << std::left << "gnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#grad";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
@@ -156,35 +158,37 @@ void Algorithm<Real>::writeName( std::ostream& os ) const {
 }
 
 template<typename Real>
-void Algorithm<Real>::writeOutput( std::ostream& os, bool print_header ) const {
-  os << std::scientific << std::setprecision(6);
-  if ( print_header ) {
-    os << printHeader();
-  }
+void Algorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
+  if ( write_header ) writeHeader(os);
   if ( state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::endl;
   }
   else {
-    os << "  "; 
-    os << std::setw(6)  << std::left << state_->iter;  
-    os << std::setw(15) << std::left << state_->value; 
-    os << std::setw(15) << std::left << state_->gnorm; 
-    os << std::setw(15) << std::left << state_->snorm; 
-    os << std::setw(10) << std::left << state_->nfval;              
-    os << std::setw(10) << std::left << state_->ngrad;              
-    os << std::endl;
+    hist << "  "; 
+    hist << std::setw(6)  << std::left << state_->iter;  
+    hist << std::setw(15) << std::left << state_->value; 
+    hist << std::setw(15) << std::left << state_->gnorm; 
+    hist << std::setw(15) << std::left << state_->snorm; 
+    hist << std::setw(10) << std::left << state_->nfval;              
+    hist << std::setw(10) << std::left << state_->ngrad;              
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 template<typename Real>
 void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
-  os << "Optimization Terminated with Status: ";
-  os << EExitStatusToString(state_->statusFlag);
-  os << std::endl;
+  std::stringstream hist;
+  hist << "Optimization Terminated with Status: ";
+  hist << EExitStatusToString(state_->statusFlag);
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>

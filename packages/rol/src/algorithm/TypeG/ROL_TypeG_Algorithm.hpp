@@ -90,7 +90,7 @@ template<typename Real>
 class Algorithm {
 protected:
   const Ptr<CombinedStatusTest<Real>> status_;
-  const Ptr<AlgorithmState<Real>>   state_;
+  const Ptr<AlgorithmState<Real>>     state_;
   Ptr<PolyhedralProjection<Real>>     proj_;
 
   void initialize( const Vector<Real> &x,
@@ -405,9 +405,9 @@ public:
 
   /** \brief Print iterate status.
   */
-  virtual void writeOutput( std::ostream& os, bool print_header = false ) const;
+  virtual void writeOutput( std::ostream& os, bool write_header = false ) const;
 
-  virtual void writeExitStatus(std::ostream& os) const;
+  virtual void writeExitStatus( std::ostream& os ) const;
 
   Ptr<const AlgorithmState<Real>>& getState() const;
 

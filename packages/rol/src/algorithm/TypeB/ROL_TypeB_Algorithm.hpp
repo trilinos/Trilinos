@@ -220,13 +220,13 @@ public:
 
   /** \brief Print step name.
   */
-  virtual void writeName(std::ostream& os ) const;
+  virtual void writeName( std::ostream& os ) const;
 
   /** \brief Print iterate status.
   */
   virtual void writeOutput( std::ostream& os, bool write_header = false ) const;
 
-  virtual void writeExitStatus(std::ostream& os ) const;
+  virtual void writeExitStatus( std::ostream& os ) const;
 
   Ptr<const AlgorithmState<Real>>& getState() const;
 
