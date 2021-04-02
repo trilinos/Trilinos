@@ -233,7 +233,8 @@ void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
 }
 
 template<typename Real>
-Ptr<const AlgorithmState<Real>>& Algorithm<Real>::getState() const {
+Ptr<const AlgorithmState<Real>> Algorithm<Real>::getState() const {
+//Ptr<const AlgorithmState<Real>>& Algorithm<Real>::getState() const {
   return state_;
 }
 
