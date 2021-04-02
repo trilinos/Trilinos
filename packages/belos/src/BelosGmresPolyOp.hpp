@@ -711,12 +711,12 @@ namespace Belos {
 
     // Set index for sort function, verify roots are non-zero,
     // and sort Harmonic Ritz Values:
-    const MagnitudeType tol = (MagnitudeType) 10 * Teuchos::ScalarTraits<ScalarType>::eps();
+    const MagnitudeType tol = 10.0 * Teuchos::ScalarTraits<MagnitudeType>::eps();
     std::vector<int> index(dim_);
     for(int i=0; i<dim_; ++i){ 
       index[i] = i; 
       // Check if real + imag parts of roots < tol. 
-      TEUCHOS_TEST_FOR_EXCEPTION(hypot(theta_(i,0),theta_(i,1)) < tol, std::runtime_error, "Error: One of the computed polynomial roots is approximately zero.  This will cause a divide by zero error!  Your matrix may be close to singular.  Please select a lower polynomial degree or give a shifted matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(hypot(theta_(i,0),theta_(i,1)) < tol, std::runtime_error, "BelosGmresPolyOp Error: One of the computed polynomial roots is approximately zero.  This will cause a divide by zero error!  Your matrix may be close to singular.  Please select a lower polynomial degree or give a shifted matrix.");
     }
     SortModLeja(theta_,index);
 
