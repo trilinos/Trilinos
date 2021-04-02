@@ -44,7 +44,7 @@
 #ifndef ROL_PRIMALDUALRISK_H
 #define ROL_PRIMALDUALRISK_H
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_StochasticObjective.hpp"
 #include "ROL_PD_MeanSemiDeviation.hpp"
 #include "ROL_PD_MeanSemiDeviationFromTarget.hpp"
@@ -61,7 +61,7 @@ namespace ROL {
 template <class Real>
 class PrimalDualRisk {
 private:
-  const Ptr<NewOptimizationProblem<Real>> input_;
+  const Ptr<Problem<Real>> input_;
   const Ptr<SampleGenerator<Real>> sampler_;
   Ptr<PD_RandVarFunctional<Real>> rvf_;
   ParameterList parlist_;
@@ -87,12 +87,12 @@ private:
   Real update_;
   int  freq_;
 
-  Ptr<StochasticObjective<Real>>    pd_objective_;
-  Ptr<Vector<Real>>                 pd_vector_;
-  Ptr<BoundConstraint<Real>>        pd_bound_;
-  Ptr<Constraint<Real>>             pd_constraint_;
-  Ptr<Constraint<Real>>             pd_linear_constraint_;
-  Ptr<NewOptimizationProblem<Real>> pd_problem_;
+  Ptr<StochasticObjective<Real>> pd_objective_;
+  Ptr<Vector<Real>>              pd_vector_;
+  Ptr<BoundConstraint<Real>>     pd_bound_;
+  Ptr<Constraint<Real>>          pd_constraint_;
+  Ptr<Constraint<Real>>          pd_linear_constraint_;
+  Ptr<Problem<Real>>             pd_problem_;
 
   int iter_, nfval_, ngrad_, ncval_;
   bool converged_;
@@ -100,7 +100,7 @@ private:
   std::string name_;
 
 public:
-  PrimalDualRisk(const Ptr<NewOptimizationProblem<Real>> &input,
+  PrimalDualRisk(const Ptr<Problem<Real>> &input,
                  const Ptr<SampleGenerator<Real>> &sampler,
                  ParameterList &parlist)
     : input_(input), sampler_(sampler), parlist_(parlist),
@@ -205,7 +205,7 @@ public:
       pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
     }
     // Build primal-dual subproblems
-    pd_problem_ = makePtr<NewOptimizationProblem<Real>>(pd_objective_, pd_vector_);
+    pd_problem_ = makePtr<Problem<Real>>(pd_objective_, pd_vector_);
     if (pd_bound_->isActivated()) {
       pd_problem_->addBoundConstraint(pd_bound_);
     }
@@ -230,11 +230,11 @@ public:
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;
     // Output
     printHeader(outStream);
-    Ptr<NewOptimizationSolver<Real>> solver;
+    Ptr<Solver<Real>> solver;
     for (iter_ = 0; iter_ < maxit_; ++iter_) {
       parlist_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
       parlist_.sublist("Status Test").set("Constraint Tolerance", ctol_);
-      solver = makePtr<NewOptimizationSolver<Real>>(pd_problem_, parlist_);
+      solver = makePtr<Solver<Real>>(pd_problem_, parlist_);
       if (print_) solver->solve(outStream);
       else        solver->solve();
       converged_ = (solver->getAlgorithmState()->statusFlag == EXITSTATUS_CONVERGED

@@ -50,7 +50,7 @@ template<typename Real>
 StochasticProblem<Real>::StochasticProblem(const Ptr<Objective<Real>> &obj,
                                            const Ptr<Vector<Real>>    &x,
                                            const Ptr<Vector<Real>>    &g)
-  : NewOptimizationProblem<Real>(obj,x,g), needRiskLessObj_(true) {}
+  : Problem<Real>(obj,x,g), needRiskLessObj_(true) {}
 
 template<typename Real>
 void StochasticProblem<Real>::makeObjectiveStochastic(ParameterList                    &list,
@@ -156,9 +156,9 @@ void StochasticProblem<Real>::makeConstraintStochastic(std::string              
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeConstraintStochastic: Invalid stochastic optimization type!");
   }
-  NewOptimizationProblem<Real>::removeConstraint(name);
-  if(bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(name,con,mul,bnd,res);
-  else               NewOptimizationProblem<Real>::addConstraint(name,con,mul,res);
+  Problem<Real>::removeConstraint(name);
+  if(bnd != nullPtr) Problem<Real>::addConstraint(name,con,mul,bnd,res);
+  else               Problem<Real>::addConstraint(name,con,mul,res);
 }
 
 template<typename Real>
@@ -210,9 +210,9 @@ void StochasticProblem<Real>::makeLinearConstraintStochastic(std::string        
     ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
       ">>> ROL::StochasticProblem::makeLinearConstraintStochastic: Invalid stochastic optimization type!");
   }
-  NewOptimizationProblem<Real>::removeLinearConstraint(name);
-  if(bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,bnd,res);
-  else               NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,res);
+  Problem<Real>::removeLinearConstraint(name);
+  if(bnd != nullPtr) Problem<Real>::addLinearConstraint(name,con,mul,bnd,res);
+  else               Problem<Real>::addLinearConstraint(name,con,mul,res);
 }
 
 template<typename Real>
@@ -237,9 +237,9 @@ void StochasticProblem<Real>::resetStochasticConstraint(std::string name) {
     Ptr<Vector<Real>>          mul = it->second.multiplier;
     Ptr<Vector<Real>>          res = it->second.residual;
     Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-    NewOptimizationProblem<Real>::removeConstraint(name);
-    if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(name,con,mul,bnd,res);
-    else                NewOptimizationProblem<Real>::addConstraint(name,con,mul,res);
+    Problem<Real>::removeConstraint(name);
+    if (bnd != nullPtr) Problem<Real>::addConstraint(name,con,mul,bnd,res);
+    else                Problem<Real>::addConstraint(name,con,mul,res);
     conList_.erase(conList_.find(name));
     ORIGINAL_con_.erase(it);
   }
@@ -255,9 +255,9 @@ void StochasticProblem<Real>::resetStochasticLinearConstraint(std::string name) 
     Ptr<Vector<Real>>          mul = it->second.multiplier;
     Ptr<Vector<Real>>          res = it->second.residual;
     Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-    NewOptimizationProblem<Real>::removeLinearConstraint(name);
-    if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,bnd,res);
-    else                NewOptimizationProblem<Real>::addLinearConstraint(name,con,mul,res);
+    Problem<Real>::removeLinearConstraint(name);
+    if (bnd != nullPtr) Problem<Real>::addLinearConstraint(name,con,mul,bnd,res);
+    else                Problem<Real>::addLinearConstraint(name,con,mul,res);
     ORIGINAL_linear_con_.erase(it);
   }
 }
@@ -368,7 +368,7 @@ Real StochasticProblem<Real>::getSolutionStatistic(int comp, std::string name) c
 
 template<typename Real>
 void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream, std::ostream &outStream) {
-  if (!NewOptimizationProblem<Real>::isFinalized()) {
+  if (!Problem<Real>::isFinalized()) {
     std::vector<Ptr<ParameterList>> conList;
     bool flag(true);
     risk_ = !needRiskLessObj_;
@@ -439,9 +439,9 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
         Ptr<Vector<Real>>          mul = it->second.multiplier;
         Ptr<Vector<Real>>          res = it->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-        NewOptimizationProblem<Real>::removeConstraint(it->first);
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
-        else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+        Problem<Real>::removeConstraint(it->first);
+        if (bnd != nullPtr) Problem<Real>::addConstraint(it->first,con,mul,bnd,res);
+        else                Problem<Real>::addConstraint(it->first,con,mul,res);
       }
       // Set all linear constraints to be risk less
       riskless_con.clear();
@@ -459,19 +459,19 @@ void StochasticProblem<Real>::finalize(bool lumpConstraints, bool printToStream,
         Ptr<Vector<Real>>          mul = it->second.multiplier;
         Ptr<Vector<Real>>          res = it->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-        NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
-        else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
+        Problem<Real>::removeLinearConstraint(it->first);
+        if (bnd != nullPtr) Problem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
+        else                Problem<Real>::addLinearConstraint(it->first,con,mul,res);
       }
     }
     // Call default finalize
-    NewOptimizationProblem<Real>::finalize(lumpConstraints,printToStream,outStream);
+    Problem<Real>::finalize(lumpConstraints,printToStream,outStream);
   }
 }
 
 template<typename Real>
 void StochasticProblem<Real>::edit(void) {
-  NewOptimizationProblem<Real>::edit();
+  Problem<Real>::edit();
 
   if (risk_) {
     if (needRiskLessObj_ && ORIGINAL_obj_ != nullPtr) {
@@ -504,9 +504,9 @@ void StochasticProblem<Real>::edit(void) {
         Ptr<Vector<Real>>          mul = it2->second.multiplier;
         Ptr<Vector<Real>>          res = it2->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it2->second.bounds;
-        NewOptimizationProblem<Real>::removeConstraint(it2->first);
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it2->first,con,mul,bnd,res);
-        else                NewOptimizationProblem<Real>::addConstraint(it2->first,con,mul,res);
+        Problem<Real>::removeConstraint(it2->first);
+        if (bnd != nullPtr) Problem<Real>::addConstraint(it2->first,con,mul,bnd,res);
+        else                Problem<Real>::addConstraint(it2->first,con,mul,res);
         ORIGINAL_con_.erase(it2);
       }
     }
@@ -526,9 +526,9 @@ void StochasticProblem<Real>::edit(void) {
         Ptr<Vector<Real>>          mul = it2->second.multiplier;
         Ptr<Vector<Real>>          res = it2->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it2->second.bounds;
-        NewOptimizationProblem<Real>::removeLinearConstraint(it2->first);
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it2->first,con,mul,bnd,res);
-        else                NewOptimizationProblem<Real>::addLinearConstraint(it2->first,con,mul,res);
+        Problem<Real>::removeLinearConstraint(it2->first);
+        if (bnd != nullPtr) Problem<Real>::addLinearConstraint(it2->first,con,mul,bnd,res);
+        else                Problem<Real>::addLinearConstraint(it2->first,con,mul,res);
         ORIGINAL_linear_con_.erase(it2);
       }
     }

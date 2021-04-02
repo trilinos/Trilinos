@@ -52,7 +52,7 @@
 
 #include "ROL_OptimizationSolver.hpp"
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_RiskMeasureFactory.hpp"
 #include "ROL_DeviationMeasureFactory.hpp"
 #include "ROL_RegretMeasureFactory.hpp"
@@ -121,7 +121,7 @@ bool setUpAndSolve(ROL::ParameterList &list,
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
   newprob->finalize(false,true,outStream);
   newprob->check(true,outStream);
-  ROL::NewOptimizationSolver<RealT> solver(newprob,list);
+  ROL::Solver<RealT> solver(newprob,list);
   solver.solve(outStream);
   return solver.getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED;
 }

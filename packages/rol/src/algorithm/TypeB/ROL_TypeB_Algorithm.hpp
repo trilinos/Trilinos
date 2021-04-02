@@ -72,7 +72,7 @@ struct AlgorithmState : public ROL::AlgorithmState<Real> {
       nproj(0) {}
 
   void reset() {
-    AlgorithmState<Real>::reset();
+    ROL::AlgorithmState<Real>::reset();
     searchSize = static_cast<Real>(1);
     if (stepVec != nullPtr) stepVec->zero();
     if (gradientVec != nullPtr) gradientVec->zero();

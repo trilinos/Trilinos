@@ -49,7 +49,7 @@
 #include "ROL_StochasticObjective.hpp"
 #include "ROL_ErrorMeasureFactory.hpp"
 #include "ROL_OptimizationProblem.hpp"
-#include "ROL_NewOptimizationProblem.hpp"
+#include "ROL_Problem.hpp"
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_RiskBoundConstraint.hpp"
 
@@ -132,12 +132,12 @@ public:
     return makePtr<OptimizationProblem<Real>>(obj_,c_);
   }
 
-  const Ptr<NewOptimizationProblem<Real>> getNewOptimizationProblem(void) {
+  const Ptr<Problem<Real>> getProblem(void) {
     if (!initialized_) {
-      throw Exception::NotImplemented("ROL::LinearRegression::getNewOptimizationProblem : setErrorMeasure was not called!");
+      throw Exception::NotImplemented("ROL::LinearRegression::getProblem : setErrorMeasure was not called!");
     }
-    Ptr<NewOptimizationProblem<Real>> prob
-      = makePtr<NewOptimizationProblem<Real>>(obj_,c_);
+    Ptr<Problem<Real>> prob
+      = makePtr<Problem<Real>>(obj_,c_);
     if (lower_ != nullPtr && upper_ == nullPtr) {
       bnd_ = makePtr<StdBoundConstraint<Real>>(*lower_,true);
     }
