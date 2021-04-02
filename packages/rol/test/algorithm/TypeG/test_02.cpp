@@ -48,7 +48,7 @@
 #include "ROL_HS14.hpp"
 #include "ROL_HS32.hpp"
 #include "ROL_HS63.hpp"
-#include "ROL_MoreauYosidaAlgorithm_G.hpp"
+#include "ROL_TypeG_MoreauYosidaAlgorithm.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT>>  obj;
     ROL::Ptr<ROL::Constraint<RealT>> econ, icon;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd, ibnd;
-    ROL::Ptr<ROL::MoreauYosidaAlgorithm_G<RealT>> algo;
+    ROL::Ptr<ROL::TypeG::MoreauYosidaAlgorithm<RealT>> algo;
     std::vector<RealT> data;
     RealT e1, e2, err;
 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
     imul = HS14.getInequalityMultiplier();
     ibnd = HS14.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeG::MoreauYosidaAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*icon,*imul,*ibnd,*econ,*emul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     imul = HS32.getInequalityMultiplier();
     ibnd = HS32.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeG::MoreauYosidaAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*icon,*imul,*ibnd,*econ,*emul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
     imul = HS32a.getInequalityMultiplier();
     ibnd = HS32a.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeG::MoreauYosidaAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*icon,*imul,*ibnd,*econ,*emul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
     icon = ROL::makePtr<ROL::ZOO::Constraint_HS63a<RealT>>();
     imul = ROL::makePtr<ROL::StdVector<RealT>>(1);
 
-    algo = ROL::makePtr<ROL::MoreauYosidaAlgorithm_G<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeG::MoreauYosidaAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*econ,*emul,*icon,*imul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
     *outStream << "  Max-Error = " << err << std::endl;
     errorFlag += (err > 1e3*tol ? 1 : 0);
   }
-  
+
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";
     errorFlag = -1000;
