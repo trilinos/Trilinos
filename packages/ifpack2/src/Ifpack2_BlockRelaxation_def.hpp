@@ -801,12 +801,8 @@ BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseJacobi (const MV& X, MV& Y) const
 {
   const size_t NumVectors = X.getNumVectors ();
-  auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
-  auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
 
   MV AY (Y.getMap (), NumVectors);
-
-  auto AYView = AY.getLocalViewHost (Tpetra::Access::OverwriteAll);
 
   // Initial matvec not needed
   int starting_iteration = 0;
@@ -815,6 +811,8 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     //Overlapping jacobi, with view of W_
     auto WView = W_->getLocalViewHost (Tpetra::Access::ReadOnly);
     if(ZeroStartingSolution_) {
+      auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+      auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
       Container_->DoOverlappingJacobi(XView, YView, WView, DampingFactor_);
       starting_iteration = 1;
     }
@@ -823,7 +821,11 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     {
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
-      Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
+      {
+        auto AYView = AY.getLocalViewHost (Tpetra::Access::OverwriteAll);
+        auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
+        Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
+      }
     }
   }
   else
@@ -831,6 +833,8 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     //Non-overlapping
     if(ZeroStartingSolution_)
     {
+      auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+      auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
       Container_->DoJacobi (XView, YView, DampingFactor_);
       starting_iteration = 1;
     }
@@ -839,7 +843,11 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     {
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
-      Container_->DoJacobi (AYView, YView, DampingFactor_);
+      {
+        auto AYView = AY.getLocalViewHost (Tpetra::Access::OverwriteAll);
+        auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
+        Container_->DoJacobi (AYView, YView, DampingFactor_);
+      }
     }
   }
 }

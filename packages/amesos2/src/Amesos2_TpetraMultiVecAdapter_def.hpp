@@ -270,7 +270,7 @@ namespace Amesos2 {
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
       if(mv_->isConstantStride()) {
         bool bAssigned;
-        deep_copy_or_assign_view(bInitialize, kokkos_view, mv_->getLocalViewDevice(), bAssigned);
+        deep_copy_or_assign_view(bInitialize, kokkos_view, mv_->getLocalViewDevice(Tpetra::Access::ReadOnly), bAssigned);
         return bAssigned; // if bAssigned is true we are accessing the mv data directly without a copy
       }
       else {
@@ -308,13 +308,13 @@ namespace Amesos2 {
         // Do this if GIDs contiguous - existing functionality
         // Copy the imported (multi)vector's data into the Kokkos View.
         bool bAssigned;
-        deep_copy_or_assign_view(bInitialize, kokkos_view, redist_mv.getLocalViewDevice(), bAssigned);
+        deep_copy_or_assign_view(bInitialize, kokkos_view, redist_mv.getLocalViewDevice(Tpetra::Access::ReadOnly), bAssigned);
         return false; // do not return bAssigned because redist_mv was already copied so always return false
       }
       else {
         if(redist_mv.isConstantStride()) {
           bool bAssigned; // deep_copy_or_assign_view sets true if assigned (no deep copy)
-          deep_copy_or_assign_view(bInitialize, kokkos_view, redist_mv.getLocalViewDevice(), bAssigned);
+          deep_copy_or_assign_view(bInitialize, kokkos_view, redist_mv.getLocalViewDevice(Tpetra::Access::ReadOnly), bAssigned);
           return false; // do not return bAssigned because redist_mv was already copied so always return false
         }
         else {
@@ -535,7 +535,7 @@ namespace Amesos2 {
       // num_vecs = 1; stride does not matter
 
       // If this is the optimized path then kokkos_new_data will be the dst
-      auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
+      auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
       deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {

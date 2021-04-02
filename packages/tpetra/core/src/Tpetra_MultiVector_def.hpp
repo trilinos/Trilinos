@@ -2562,7 +2562,7 @@ namespace Tpetra {
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = isConstantStride () ? k : whichVectors_[k];
+          const size_t Y_col = whichVectors_[k];
           auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
@@ -4629,7 +4629,7 @@ namespace Tpetra {
     const bool src_last_updated_on_host = src.need_sync_device ();
 
     if (src_last_updated_on_host) {
-      localDeepCopy (this->getLocalViewDevice(Access::ReadWrite),
+      localDeepCopy (this->getLocalViewHost(Access::ReadWrite),
                      src.getLocalViewHost(Access::ReadOnly),
                      this->isConstantStride (),
                      src.isConstantStride (),

@@ -142,9 +142,8 @@ void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
                                      Ln_rowmap, Ln_entries, Ln_values));
   Un = Teuchos::rcp (new MatrixType (U.getRowMap(), U.getColMap(), 
                                      Un_rowmap, Un_entries, Un_values));
-  auto Dn_view = Dn->getLocalViewDevice();
+  auto Dn_view = Dn->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   Kokkos::deep_copy(subview(Dn_view,Kokkos::ALL(), 0),Dn_values);
-  Dn->sync_host();
 
   Ln->fillComplete();
   Un->fillComplete();
