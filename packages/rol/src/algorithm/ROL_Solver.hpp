@@ -72,8 +72,6 @@ private:
   Ptr<TypeE::Algorithm<Real>> algoE_;
   Ptr<TypeG::Algorithm<Real>> algoG_;
 
-  std::vector<std::string>  output_;
-
 public:
 
   /** \brief Constructor.
@@ -85,12 +83,6 @@ public:
   */
   Solver( const Ptr<Problem<Real>> &opt,
           ParameterList            &list );
-
-  /** \brief Returns iteration history as a vector of strings.
-
-      ---
-  */
-  std::vector<std::string> getOutput(void) const;
 
   /** \brief Solve optimization problem with no iteration output.
 

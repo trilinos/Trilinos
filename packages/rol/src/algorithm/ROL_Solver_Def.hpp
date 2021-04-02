@@ -62,11 +62,6 @@ Solver<Real>::Solver( const Ptr<Problem<Real>> &opt,
 }
 
 template<typename Real>
-std::vector<std::string> Solver<Real>::getOutput() const {
-  return output_;
-}
-
-template<typename Real>
 int Solver<Real>::solve( const Ptr<StatusTest<Real>> &status,
                          bool combineStatus) {
   nullstream bhs;
@@ -80,19 +75,19 @@ int Solver<Real>::solve( std::ostream &outStream,
   switch (problemType_) {
     case TYPE_U:
       if (status != nullPtr) algoU_->setStatusTest(status,combineStatus);
-      output_ = algoU_->run(*opt_,outStream);
+      algoU_->run(*opt_,outStream);
       break;
     case TYPE_B:
       if (status != nullPtr) algoB_->setStatusTest(status,combineStatus);
-      output_ = algoB_->run(*opt_,outStream);
+      algoB_->run(*opt_,outStream);
       break;
     case TYPE_E:
       if (status != nullPtr) algoE_->setStatusTest(status,combineStatus);
-      output_ = algoE_->run(*opt_,outStream);
+      algoE_->run(*opt_,outStream);
       break;
     case TYPE_EB:
       if (status != nullPtr) algoG_->setStatusTest(status,combineStatus);
-      output_ = algoG_->run(*opt_,outStream);
+      algoG_->run(*opt_,outStream);
       break;
     case TYPE_LAST:
       ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,

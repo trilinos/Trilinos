@@ -127,7 +127,7 @@ inline EAlgorithmG StringToEAlgorithmG(std::string s) {
 }
 
 template<typename Real>
-inline Ptr<TypeG::Algorithm<Real>> AlgorithmGFactory(ParameterList &parlist) {
+inline Ptr<TypeG::Algorithm<Real>> AlgorithmFactory(ParameterList &parlist) {
   EAlgorithmG ealg = StringToEAlgorithmG(parlist.sublist("Step").get("Type","Augmented Lagrangian"));
   switch(ealg) {
     case ALGORITHM_G_AUGMENTEDLAGRANGIAN: return makePtr<TypeG::AugmentedLagrangianAlgorithm<Real>>(parlist);
