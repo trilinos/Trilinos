@@ -134,7 +134,7 @@ void FletcherAlgorithm<Real>::run( Vector<Real>       &x,
   while (status_->check(*state_)) {
     // Minimize Fletcher penalty
     algo = TypeU::AlgorithmFactory<Real>(list_);
-    output = algo->run(x,g,fobj,outStream);
+    algo->run(x,g,fobj,outStream);
     subproblemIter_ = algo->getState()->iter;
 
     // Compute step
