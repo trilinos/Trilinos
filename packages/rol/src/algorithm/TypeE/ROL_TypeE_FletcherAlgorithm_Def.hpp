@@ -44,7 +44,7 @@
 #ifndef ROL_TYPEE_FLETCHERALGORITHM_DEF_H
 #define ROL_TYPEE_FLETCHERALGORITHM_DEF_H
 
-#include "ROL_TypeU_Algorithm_Factory.hpp"
+#include "ROL_TypeU_AlgorithmFactory.hpp"
 
 namespace ROL {
 namespace TypeE {
@@ -129,7 +129,7 @@ void FletcherAlgorithm<Real>::run( Vector<Real>       &x,
   initialize(x,g,emul,eres,fobj,econ,outStream);
   Ptr<TypeU::Algorithm<Real>> algo;
 
-  if (verbosity_ > 0) outStream << writeOutput(true);
+  if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     // Minimize Fletcher penalty
@@ -193,10 +193,10 @@ void FletcherAlgorithm<Real>::run( Vector<Real>       &x,
     }
 
     // Update Output
-    if (verbosity_ > 0) outStream << writeOutput(printHeader_);
+    if (verbosity_ > 0) writeOutput(outStream,printHeader_);
   }
 
-  if (verbosity_ > 0) outStream << TypeE::Algorithm<Real>::writeExitStatus();
+  if (verbosity_ > 0) TypeE::Algorithm<Real>::writeExitStatus(outStream);
 }
 
 template<typename Real>
@@ -246,12 +246,8 @@ void FletcherAlgorithm<Real>::writeName( std::ostream& os ) const {
 template<typename Real>
 void FletcherAlgorithm<Real>::writeOutput( std::ostream& os, const bool print_header ) const {
   os << std::scientific << std::setprecision(6);
-  if ( state_->iter == 0 ) {
-    os << writeName();
-  }
-  if ( print_header ) {
-    os << writeHeader();
-  }
+  if ( state_->iter == 0 ) writeName(os);
+  if ( print_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;

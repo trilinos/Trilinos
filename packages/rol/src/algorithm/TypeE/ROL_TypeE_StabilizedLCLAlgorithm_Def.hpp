@@ -178,8 +178,8 @@ void StabilizedLCLAlgorithm<Real>::initialize( Vector<Real>           &x,
 }
 
 template<typename Real>
-void StabilizedLCLAlgorithm<Real>::run( NewOptimizationProblem<Real> &problem,
-                                        std::ostream                 &outStream ) {
+void StabilizedLCLAlgorithm<Real>::run( Problem<Real> &problem,
+                                        std::ostream  &outStream ) {
   if (problem.getProblemType() == TYPE_E) {
     problem.edit();
     problem.finalize(true,verbosity_>3,outStream); // Lump linear and nonlinear constraints
@@ -235,7 +235,7 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
     ppa_list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
   else
     ppa_list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
-  NewOptimizationProblem<Real> elc(makePtrFromRef(alobj),xp,gxp);
+  Problem<Real> elc(makePtrFromRef(alobj),xp,gxp);
   elc.addBoundConstraint(xbnd);
   elc.addLinearConstraint("ElasticLinearConstraint",lcon,l,c);
   elc.finalize(false,verbosity_>2,outStream);
@@ -246,7 +246,7 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
   Ptr<Algorithm_B<Real>> algo;
   
   // Output
-  if (verbosity_ > 0) outStream << writeOutput(true);
+  if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     lcon->setAnchor(state_->iterateVec);
@@ -317,9 +317,9 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
     alobj.reset(emul,state_->searchSize,sigma_);
 
     // Update Output
-    if (verbosity_ > 0) outStream << writeOutput(printHeader_);
+    if (verbosity_ > 0) writeOutput(outStream,printHeader_);
   }
-  if (verbosity_ > 0) outStream << TypeE::Algorithm<Real>::writeExitStatus();
+  if (verbosity_ > 0) TypeE::Algorithm<Real>::writeExitStatus(outStream);
 }
 
 template<typename Real>
@@ -369,8 +369,8 @@ void StabilizedLCLAlgorithm<Real>::writeName( std::ostream& os ) const {
 template<typename Real>
 void StabilizedLCLAlgorithm<Real>::writeOutput( std::ostream& os, const bool print_header ) const {
   os << std::scientific << std::setprecision(6);
-  if ( state_->iter == 0 ) os << writeName();
-  if ( print_header )      os << writeHeader();
+  if ( state_->iter == 0 ) writeName(os);
+  if ( print_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;

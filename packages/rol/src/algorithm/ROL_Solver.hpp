@@ -44,10 +44,10 @@
 #ifndef ROL_SOLVER_HPP
 #define ROL_SOLVER_HPP
 
-#include "ROL_TypeU_Algorithm_Factory.hpp"
-#include "ROL_TypeB_Algorithm_Factory.hpp"
-#include "ROL_TypeE_Algorithm_Factory.hpp"
-#include "ROL_TypeG_Algorithm_Factory.hpp"
+#include "ROL_TypeU_AlgorithmFactory.hpp"
+#include "ROL_TypeB_AlgorithmFactory.hpp"
+#include "ROL_TypeE_AlgorithmFactory.hpp"
+#include "ROL_TypeG_AlgorithmFactory.hpp"
 #include "ROL_Problem.hpp"
 
 #include "ROL_ParameterList.hpp"
