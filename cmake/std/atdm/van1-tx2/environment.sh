@@ -39,7 +39,11 @@ fi
 # Load the modules
 #
 
-module purge
+if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+  module purge
+else
+  echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
+fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.0_OPENMPI-4.0.2" ]]; then
   module load devpack-arm
@@ -76,7 +80,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.0_OPENMPI-4.0.2" ]]; then
 
   module load git/2.19.2
 elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
-  module load sparc-dev/arm-20.1_openmpi-4.0.3
+  atdm_config_load_sparc_dev_module sparc-dev/arm-20.1_openmpi-4.0.3
   module unload yaml-cpp
 
   if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -96,6 +100,7 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
   export PARMETIS_ROOT=${PARMETIS_DIR}
   export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
   export BINUTILS_ROOT=${BINUTILS_DIR}
+
 else
   echo
   echo "***"
