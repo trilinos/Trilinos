@@ -108,13 +108,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* SOLVE **************************************************************/
     /**********************************************************************************************/
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
     problem->addBoundConstraint(bnd);
     problem->addLinearConstraint("Linear",econ,emul);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Solver<RealT> solver(problem,*parlist);
     *outStream << "Solve problem with no fixed binary variables"
                << std::endl << std::endl;
     clock_t start = clock();
@@ -149,7 +149,7 @@ int main(int argc, char* argv[]) {
     problem->addLinearConstraint("Integer",econ_bin,emul_bin);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver_bin(problem,*parlist);
+    ROL::Solver<RealT> solver_bin(problem,*parlist);
     *outStream << "Solve problem with {2,5} set to 0 and {3,9} set to 1"
                << std::endl << std::endl;
     clock_t start_bin = clock();

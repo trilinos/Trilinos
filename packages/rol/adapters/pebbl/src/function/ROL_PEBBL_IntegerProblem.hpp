@@ -45,7 +45,7 @@
 #define ROL_PEBBL_INTEGEROPTIMIZATIONPROBLEM_H
 
 #include "ROL_Ptr.hpp"
-#include "ROL_NewOptimizationProblem.hpp"
+#include "ROL_Problem.hpp"
 #include "ROL_PEBBL_BuildTransformation.hpp"
 
 
@@ -53,7 +53,7 @@ namespace ROL {
 namespace PEBBL {
 
 template <class Real>
-class IntegerProblem : public NewOptimizationProblem<Real> {
+class IntegerProblem : public Problem<Real> {
 private:
   Ptr<IntegerTransformation<Real>> trans_;
   Ptr<BuildTransformation<Real>>   build_;
@@ -62,11 +62,11 @@ private:
   std::unordered_map<std::string,ConstraintData<Real>> ORIGINAL_con_;
   std::unordered_map<std::string,ConstraintData<Real>> ORIGINAL_linear_con_;
 
-  using NewOptimizationProblem<Real>::INPUT_xprim_;
-  using NewOptimizationProblem<Real>::INPUT_obj_;
-  using NewOptimizationProblem<Real>::INPUT_con_;
-  using NewOptimizationProblem<Real>::INPUT_linear_con_;
-  using NewOptimizationProblem<Real>::isFinalized;
+  using Problem<Real>::INPUT_xprim_;
+  using Problem<Real>::INPUT_obj_;
+  using Problem<Real>::INPUT_con_;
+  using Problem<Real>::INPUT_linear_con_;
+  using Problem<Real>::isFinalized;
 
 public:
   /** \brief Default constructor for StochasticProblem.
@@ -78,7 +78,7 @@ public:
   IntegerProblem(const Ptr<Objective<Real>> &obj,
                  const Ptr<Vector<Real>>    &x,
                  const Ptr<Vector<Real>>    &g = nullPtr)
-    : NewOptimizationProblem<Real>(obj,x,g) {}
+    : Problem<Real>(obj,x,g) {}
 
   void setTransformation(const Ptr<IntegerTransformation<Real>> trans) {
     // Throw an exception if problem has been finalized
@@ -147,9 +147,9 @@ public:
           Ptr<Vector<Real>>          mul = it->second.multiplier;
           Ptr<Vector<Real>>          res = it->second.residual;
           Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-          NewOptimizationProblem<Real>::removeConstraint(it->first);
-          if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
-          else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+          Problem<Real>::removeConstraint(it->first);
+          if (bnd != nullPtr) Problem<Real>::addConstraint(it->first,con,mul,bnd,res);
+          else                Problem<Real>::addConstraint(it->first,con,mul,res);
         }
         // Transform linear constraints
         ORIGINAL_linear_con_.clear();
@@ -159,19 +159,19 @@ public:
           Ptr<Vector<Real>>          mul = it->second.multiplier;
           Ptr<Vector<Real>>          res = it->second.residual;
           Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-          NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
-          if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
-          else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
+          Problem<Real>::removeLinearConstraint(it->first);
+          if (bnd != nullPtr) Problem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
+          else                Problem<Real>::addLinearConstraint(it->first,con,mul,res);
         }
       }
 
       // Call default finalize
-      NewOptimizationProblem<Real>::finalize(lumpConstraints,printToStream,outStream);
+      Problem<Real>::finalize(lumpConstraints,printToStream,outStream);
     }
   }
 
   void edit(void) override {
-    NewOptimizationProblem<Real>::edit();
+    Problem<Real>::edit();
     if (trans_ != nullPtr) {
       INPUT_obj_    = ORIGINAL_obj_;
       ORIGINAL_obj_ = nullPtr;
@@ -181,9 +181,9 @@ public:
         Ptr<Vector<Real>>          mul = it->second.multiplier;
         Ptr<Vector<Real>>          res = it->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-        NewOptimizationProblem<Real>::removeConstraint(it->first);
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,bnd,res);
-        else                NewOptimizationProblem<Real>::addConstraint(it->first,con,mul,res);
+        Problem<Real>::removeConstraint(it->first);
+        if (bnd != nullPtr) Problem<Real>::addConstraint(it->first,con,mul,bnd,res);
+        else                Problem<Real>::addConstraint(it->first,con,mul,res);
       }
       // Transform linear constraints
       for (auto it = ORIGINAL_linear_con_.begin(); it != ORIGINAL_linear_con_.end(); ++it) {
@@ -191,9 +191,9 @@ public:
         Ptr<Vector<Real>>          mul = it->second.multiplier;
         Ptr<Vector<Real>>          res = it->second.residual;
         Ptr<BoundConstraint<Real>> bnd = it->second.bounds;
-        NewOptimizationProblem<Real>::removeLinearConstraint(it->first);
-        if (bnd != nullPtr) NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
-        else                NewOptimizationProblem<Real>::addLinearConstraint(it->first,con,mul,res);
+        Problem<Real>::removeLinearConstraint(it->first);
+        if (bnd != nullPtr) Problem<Real>::addLinearConstraint(it->first,con,mul,bnd,res);
+        else                Problem<Real>::addLinearConstraint(it->first,con,mul,res);
       }
     }
   }

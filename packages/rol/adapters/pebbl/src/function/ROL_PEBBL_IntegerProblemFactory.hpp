@@ -57,7 +57,6 @@
     ---
 */
 
-
 namespace ROL {
 namespace PEBBL {
 
@@ -69,7 +68,7 @@ public:
   virtual Ptr<IntegerProblem<Real>> build(void) = 0;
 
 #ifdef HAVE_MPI
-  virtual void setCommunicator(const Ptr<const MPI_Comm> &comm) {};
+  virtual void setCommunicator(MPI_Comm comm = MPI_COMM_WORLD) {};
 #endif
 
 }; // class IntegerProblemFactory
