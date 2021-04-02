@@ -279,87 +279,93 @@ void AugmentedLagrangianAlgorithm<Real>::run( Vector<Real>          &x,
 
 template<typename Real>
 void AugmentedLagrangianAlgorithm<Real>::writeHeader( std::ostream& os ) const {
+  std::stringstream hist;
   if(verbosity_>1) {
-    os << std::string(114,'-') << std::endl;
-    os << "Augmented Lagrangian status output definitions" << std::endl << std::endl;
-    os << "  iter    - Number of iterates (steps taken)"            << std::endl;
-    os << "  fval    - Objective function value"                    << std::endl;
-    os << "  cnorm   - Norm of the constraint violation"            << std::endl;
-    os << "  gLnorm  - Norm of the gradient of the Lagrangian"      << std::endl;
-    os << "  snorm   - Norm of the step"                            << std::endl;
-    os << "  penalty - Penalty parameter"                           << std::endl;
-    os << "  feasTol - Feasibility tolerance"                       << std::endl;
-    os << "  optTol  - Optimality tolerance"                        << std::endl;
-    os << "  #fval   - Number of times the objective was computed"  << std::endl;
-    os << "  #grad   - Number of times the gradient was computed"   << std::endl;
-    os << "  #cval   - Number of times the constraint was computed" << std::endl;
-    os << "  subIter - Number of iterations to solve subproblem"    << std::endl;
-    os << std::string(114,'-') << std::endl;
+    hist << std::string(114,'-') << std::endl;
+    hist << "Augmented Lagrangian status output definitions" << std::endl << std::endl;
+    hist << "  iter    - Number of iterates (steps taken)"            << std::endl;
+    hist << "  fval    - Objective function value"                    << std::endl;
+    hist << "  cnorm   - Norm of the constraint violation"            << std::endl;
+    hist << "  gLnorm  - Norm of the gradient of the Lagrangian"      << std::endl;
+    hist << "  snorm   - Norm of the step"                            << std::endl;
+    hist << "  penalty - Penalty parameter"                           << std::endl;
+    hist << "  feasTol - Feasibility tolerance"                       << std::endl;
+    hist << "  optTol  - Optimality tolerance"                        << std::endl;
+    hist << "  #fval   - Number of times the objective was computed"  << std::endl;
+    hist << "  #grad   - Number of times the gradient was computed"   << std::endl;
+    hist << "  #cval   - Number of times the constraint was computed" << std::endl;
+    hist << "  subIter - Number of iterations to solve subproblem"    << std::endl;
+    hist << std::string(114,'-') << std::endl;
   }
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "fval";
-  os << std::setw(15) << std::left << "cnorm";
-  os << std::setw(15) << std::left << "gLnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "penalty";
-  os << std::setw(10) << std::left << "feasTol";
-  os << std::setw(10) << std::left << "optTol";
-  os << std::setw(8)  << std::left << "#fval";
-  os << std::setw(8)  << std::left << "#grad";
-  os << std::setw(8)  << std::left << "#cval";
-  os << std::setw(8)  << std::left << "subIter";
-  os << std::endl;
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "fval";
+  hist << std::setw(15) << std::left << "cnorm";
+  hist << std::setw(15) << std::left << "gLnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "penalty";
+  hist << std::setw(10) << std::left << "feasTol";
+  hist << std::setw(10) << std::left << "optTol";
+  hist << std::setw(8)  << std::left << "#fval";
+  hist << std::setw(8)  << std::left << "#grad";
+  hist << std::setw(8)  << std::left << "#cval";
+  hist << std::setw(8)  << std::left << "subIter";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
 void AugmentedLagrangianAlgorithm<Real>::writeName( std::ostream& os ) const {
-  os << std::endl << "Augmented Lagrangian Solver (Type G, General Constraints)";
-  os << std::endl;
-  os << "Subproblem Solver: " << subStep_ << std::endl;
+  std::stringstream hist;
+  hist << std::endl << "Augmented Lagrangian Solver (Type G, General Constraints)";
+  hist << std::endl;
+  hist << "Subproblem Solver: " << subStep_ << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
 void AugmentedLagrangianAlgorithm<Real>::writeOutput( std::ostream& os, const bool print_header ) const {
-  os << std::scientific << std::setprecision(6);
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( print_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->cnorm;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << "---";
-    os << std::scientific << std::setprecision(2);
-    os << std::setw(10) << std::left << state_->searchSize;
-    os << std::setw(10) << std::left << std::max(feasTolerance_,outerFeasTolerance_);
-    os << std::setw(10) << std::left << std::max(optTolerance_,outerOptTolerance_);
-    os << std::scientific << std::setprecision(6);
-    os << std::setw(8) << std::left << state_->nfval;
-    os << std::setw(8) << std::left << state_->ngrad;
-    os << std::setw(8) << std::left << state_->ncval;
-    os << std::setw(8) << std::left << "---";
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->cnorm;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::scientific << std::setprecision(2);
+    hist << std::setw(10) << std::left << state_->searchSize;
+    hist << std::setw(10) << std::left << std::max(feasTolerance_,outerFeasTolerance_);
+    hist << std::setw(10) << std::left << std::max(optTolerance_,outerOptTolerance_);
+    hist << std::scientific << std::setprecision(6);
+    hist << std::setw(8) << std::left << state_->nfval;
+    hist << std::setw(8) << std::left << state_->ngrad;
+    hist << std::setw(8) << std::left << state_->ncval;
+    hist << std::setw(8) << std::left << "---";
+    hist << std::endl;
   }
   else {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->cnorm;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << state_->snorm;
-    os << std::scientific << std::setprecision(2);
-    os << std::setw(10) << std::left << state_->searchSize;
-    os << std::setw(10) << std::left << feasTolerance_;
-    os << std::setw(10) << std::left << optTolerance_;
-    os << std::scientific << std::setprecision(6);
-    os << std::setw(8) << std::left << state_->nfval;
-    os << std::setw(8) << std::left << state_->ngrad;
-    os << std::setw(8) << std::left << state_->ncval;
-    os << std::setw(8) << std::left << subproblemIter_;
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->cnorm;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << state_->snorm;
+    hist << std::scientific << std::setprecision(2);
+    hist << std::setw(10) << std::left << state_->searchSize;
+    hist << std::setw(10) << std::left << feasTolerance_;
+    hist << std::setw(10) << std::left << optTolerance_;
+    hist << std::scientific << std::setprecision(6);
+    hist << std::setw(8) << std::left << state_->nfval;
+    hist << std::setw(8) << std::left << state_->ngrad;
+    hist << std::setw(8) << std::left << state_->ncval;
+    hist << std::setw(8) << std::left << subproblemIter_;
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 } // namespace TypeG

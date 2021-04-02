@@ -1085,94 +1085,100 @@ void CompositeStepAlgorithm<Real>::run(Vector<Real>       &x,
 
 template<typename Real>
 void CompositeStepAlgorithm<Real>::writeHeader(std::ostream& os) const {
+  std::stringstream hist;
   if (verbosity_>1) {
-    os << std::string(144,'-') << std::endl;
-    os << "Composite Step status output definitions" << std::endl << std::endl;
-    os << "  iter    - Number of iterates (steps taken)"            << std::endl;
-    os << "  fval    - Objective function value"                    << std::endl;
-    os << "  cnorm   - Norm of the constraint violation"            << std::endl;
-    os << "  gLnorm  - Norm of the gradient of the Lagrangian"      << std::endl;
-    os << "  snorm   - Norm of the step"                            << std::endl;
-    os << "  delta   - Trust-region radius"                         << std::endl;
-    os << "  nnorm   - Norm of the quasinormal step"                << std::endl;
-    os << "  tnorm   - Norm of the tangential step"                 << std::endl;
-    os << "  #fval   - Number of times the objective was computed"  << std::endl;
-    os << "  #grad   - Number of times the gradient was computed"   << std::endl;
-    os << "  iterCG  - Number of projected CG iterations"           << std::endl;
-    os << "  flagCG  - Flag returned by projected CG"               << std::endl;
-    os << "  accept  - Acceptance flag for the trial step"          << std::endl;
-    os << "  linsys  - Number of augmented solver calls/iterations" << std::endl;
-    os << std::string(144,'-') << std::endl;
+    hist << std::string(144,'-') << std::endl;
+    hist << "Composite Step status output definitions" << std::endl << std::endl;
+    hist << "  iter    - Number of iterates (steps taken)"            << std::endl;
+    hist << "  fval    - Objective function value"                    << std::endl;
+    hist << "  cnorm   - Norm of the constraint violation"            << std::endl;
+    hist << "  gLnorm  - Norm of the gradient of the Lagrangian"      << std::endl;
+    hist << "  snorm   - Norm of the step"                            << std::endl;
+    hist << "  delta   - Trust-region radius"                         << std::endl;
+    hist << "  nnorm   - Norm of the quasinormal step"                << std::endl;
+    hist << "  tnorm   - Norm of the tangential step"                 << std::endl;
+    hist << "  #fval   - Number of times the objective was computed"  << std::endl;
+    hist << "  #grad   - Number of times the gradient was computed"   << std::endl;
+    hist << "  iterCG  - Number of projected CG iterations"           << std::endl;
+    hist << "  flagCG  - Flag returned by projected CG"               << std::endl;
+    hist << "  accept  - Acceptance flag for the trial step"          << std::endl;
+    hist << "  linsys  - Number of augmented solver calls/iterations" << std::endl;
+    hist << std::string(144,'-') << std::endl;
   }
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "fval";
-  os << std::setw(15) << std::left << "cnorm";
-  os << std::setw(15) << std::left << "gLnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "delta";
-  os << std::setw(10) << std::left << "nnorm";
-  os << std::setw(10) << std::left << "tnorm";
-  os << std::setw(8)  << std::left << "#fval";
-  os << std::setw(8)  << std::left << "#grad";
-  os << std::setw(8)  << std::left << "iterCG";
-  os << std::setw(8)  << std::left << "flagCG";
-  os << std::setw(8)  << std::left << "accept";
-  os << std::setw(8)  << std::left << "linsys";
-  os << "\n";
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "fval";
+  hist << std::setw(15) << std::left << "cnorm";
+  hist << std::setw(15) << std::left << "gLnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "delta";
+  hist << std::setw(10) << std::left << "nnorm";
+  hist << std::setw(10) << std::left << "tnorm";
+  hist << std::setw(8)  << std::left << "#fval";
+  hist << std::setw(8)  << std::left << "#grad";
+  hist << std::setw(8)  << std::left << "iterCG";
+  hist << std::setw(8)  << std::left << "flagCG";
+  hist << std::setw(8)  << std::left << "accept";
+  hist << std::setw(8)  << std::left << "linsys";
+  hist << std::endl;
+  os << hist.str();
 }
 
 
 template<typename Real>
 void CompositeStepAlgorithm<Real>::writeName(std::ostream& os) const {
-  os << "\n" << "Composite-Step Trust-Region Solver (Type E, Equality Constraints)";
-  os << "\n";
+  std::stringstream hist;
+  hist << std::endl << "Composite-Step Trust-Region Solver (Type E, Equality Constraints)";
+  hist << std::endl;
+  os << hist.str();
 }
 
 
 template<typename Real>
 void CompositeStepAlgorithm<Real>::writeOutput(std::ostream& os, const bool print_header) const {
-  os << std::scientific << std::setprecision(6);
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
   if (state_->iter == 0) writeName(os);
   if (print_header)      writeHeader(os);
   if (state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->cnorm;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(10) << std::left << "---";
-    os << std::setw(10) << std::left << "---";
-    os << std::setw(10) << std::left << "---";
-    os << std::setw(8)  << std::left << "---";
-    os << std::setw(8)  << std::left << "---";
-    os << std::setw(8)  << std::left << "---";
-    os << std::setw(8)  << std::left << "---";
-    os << std::setw(8)  << std::left << "---";
-    os << std::setw(8)  << std::left << "---";
-    os << "\n";
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->cnorm;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(8)  << std::left << "---";
+    hist << std::setw(8)  << std::left << "---";
+    hist << std::setw(8)  << std::left << "---";
+    hist << std::setw(8)  << std::left << "---";
+    hist << std::setw(8)  << std::left << "---";
+    hist << std::setw(8)  << std::left << "---";
+    hist << std::endl;
   }
   else {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->cnorm;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << state_->snorm;
-    os << std::scientific << std::setprecision(2);
-    os << std::setw(10) << std::left << Delta_;
-    os << std::setw(10) << std::left << nnorm_;
-    os << std::setw(10) << std::left << tnorm_;
-    os << std::scientific << std::setprecision(6);
-    os << std::setw(8) << std::left << state_->nfval;
-    os << std::setw(8) << std::left << state_->ngrad;
-    os << std::setw(8) << std::left << iterCG_;
-    os << std::setw(8) << std::left << flagCG_;
-    os << std::setw(8) << std::left << flagAC_;
-    os << std::left << totalCallLS_ << "/" << totalIterLS_;
-    os << "\n";
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->cnorm;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << state_->snorm;
+    hist << std::scientific << std::setprecision(2);
+    hist << std::setw(10) << std::left << Delta_;
+    hist << std::setw(10) << std::left << nnorm_;
+    hist << std::setw(10) << std::left << tnorm_;
+    hist << std::scientific << std::setprecision(6);
+    hist << std::setw(8) << std::left << state_->nfval;
+    hist << std::setw(8) << std::left << state_->ngrad;
+    hist << std::setw(8) << std::left << iterCG_;
+    hist << std::setw(8) << std::left << flagCG_;
+    hist << std::setw(8) << std::left << flagAC_;
+    hist << std::left << totalCallLS_ << "/" << totalIterLS_;
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 
@@ -1188,12 +1194,12 @@ void CompositeStepAlgorithm<Real>::printInfoLS(const std::vector<Real> &res) con
   if (infoLS_) {
     std::stringstream hist;
     hist << std::scientific << std::setprecision(8);
-    hist << "\n    Augmented System Solver:\n";
-    hist << "    True Residual\n";
+    hist << std::endl << "    Augmented System Solver:" << std::endl;
+    hist << "    True Residual" << std::endl;
     for (unsigned j=0; j<res.size(); j++) {
-      hist << "    " << std::left << std::setw(14) << res[j] << "\n";
+      hist << "    " << std::left << std::setw(14) << res[j] << std::endl;
     }
-    hist << "\n";
+    hist << std::endl;
     std::cout << hist.str();
   }
 }

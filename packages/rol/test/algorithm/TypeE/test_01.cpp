@@ -49,7 +49,7 @@
 #include "ROL_SimpleEqConstrained.hpp"
 #include "ROL_HS42.hpp"
 #include "ROL_OptimizationProblem.hpp"
-#include "ROL_AugmentedLagrangianAlgorithm_E.hpp"
+#include "ROL_TypeE_AugmentedLagrangianAlgorithm.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Gradient Tolerance",1e-8);
     parlist->sublist("Status Test").set("Step Tolerance",1e-12);
     parlist->sublist("Status Test").set("Constraint Tolerance",1e-8);
-    ROL::AugmentedLagrangianAlgorithm_E<RealT> algo(*parlist);
+    ROL::TypeE::AugmentedLagrangianAlgorithm<RealT> algo(*parlist);
     algo.run(*optProb->getSolutionVector(),*optProb->getObjective(),
              *optProb->getConstraint(),*optProb->getMultiplierVector(),
              *outStream);
@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>>     linear_mul = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
     ROL::Ptr<ROL::Constraint<RealT>> con        = ROL::makePtr<ROL::ZOO::Constraint_HS42b<RealT>>();
     ROL::Ptr<ROL::Vector<RealT>>     mul        = ROL::makePtr<ROL::StdVector<RealT>>(1,0.0);
-    ROL::AugmentedLagrangianAlgorithm_E<RealT> algo1(*parlist);
+    ROL::TypeE::AugmentedLagrangianAlgorithm<RealT> algo1(*parlist);
     algo1.run(*xvec,*obj,*con,*mul,*linear_con,*linear_mul,*outStream);
 
     error = HS42.getSolution();
