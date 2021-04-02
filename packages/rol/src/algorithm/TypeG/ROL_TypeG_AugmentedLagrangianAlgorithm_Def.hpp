@@ -205,7 +205,7 @@ void AugmentedLagrangianAlgorithm<Real>::run( Vector<Real>          &x,
                                            state_->searchSize,g,eres,emul,
                                            scaleLagrangian_,HessianApprox_);
   initialize(x,g,emul,eres,alobj,bnd,econ,outStream);
-  Ptr<Algorithm_B<Real>> algo;
+  Ptr<TypeB::Algorithm<Real>> algo;
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
@@ -214,7 +214,7 @@ void AugmentedLagrangianAlgorithm<Real>::run( Vector<Real>          &x,
     // Solve unconstrained augmented Lagrangian subproblem
     list_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     list_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo = AlgorithmBFactory<Real>(list_);
+    algo = TypeB::AlgorithmFactory<Real>(list_);
     if (hasPolyProj_) algo->run(x,g,alobj,bnd,*proj_->getLinearConstraint(),
                                 *proj_->getMultiplier(),*proj_->getResidual(),
                                 outStream);
