@@ -384,65 +384,71 @@ void BundleAlgorithm<Real>::run( Vector<Real>       &x,
 
 template<typename Real>
 void BundleAlgorithm<Real>::writeHeader( std::ostream& os ) const {
-  os << "  ";
-  os << std::setw(6) << std::left << "iter";
-  os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "gnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "#fval";
-  os << std::setw(10) << std::left << "#grad";
-  os << std::setw(15) << std::left << "znorm";
-  os << std::setw(15) << std::left << "alpha";
-  os << std::setw(15) << std::left << "TRparam";
-  os << std::setw(10) << std::left << "QPiter";
-  os << std::endl;
+  std::stringstream hist;
+  hist << "  ";
+  hist << std::setw(6) << std::left << "iter";
+  hist << std::setw(15) << std::left << "value";
+  hist << std::setw(15) << std::left << "gnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#grad";
+  hist << std::setw(15) << std::left << "znorm";
+  hist << std::setw(15) << std::left << "alpha";
+  hist << std::setw(15) << std::left << "TRparam";
+  hist << std::setw(10) << std::left << "QPiter";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
 void BundleAlgorithm<Real>::writeName(std::ostream& os) const {
-  os << std::endl << "Bundle Trust-Region Algorithm" << std::endl;
+  std::stringstream hist;
+  hist << std::endl << "Bundle Trust-Region Algorithm" << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
 void BundleAlgorithm<Real>::writeOutput( std::ostream& os, bool print_header) const {
-  os << std::scientific << std::setprecision(6);
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 && first_print_ ) {
     writeName(os);
     if ( print_header ) {
       writeHeader(os);
     }
-    os << "  ";
-    os << std::setw(6) << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(10) << std::left << state_->nfval;
-    os << std::setw(10) << std::left << state_->ngrad;
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(15) << std::left << state_->searchSize;
-    os << std::setw(10) << std::left << "---";
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6) << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(15) << std::left << state_->searchSize;
+    hist << std::setw(10) << std::left << "---";
+    hist << std::endl;
   }
   if ( step_flag_==1 && state_->iter > 0 ) {
     if ( print_header ) {
       writeHeader(os);
     }
     else {
-      os << "  ";
-      os << std::setw(6) << std::left << state_->iter;
-      os << std::setw(15) << std::left << state_->value;
-      os << std::setw(15) << std::left << state_->gnorm;
-      os << std::setw(15) << std::left << state_->snorm;
-      os << std::setw(10) << std::left << state_->nfval;
-      os << std::setw(10) << std::left << state_->ngrad;
-      os << std::setw(15) << std::left << state_->aggregateGradientNorm;
-      os << std::setw(15) << std::left << state_->aggregateModelError;
-      os << std::setw(15) << std::left << state_->searchSize;
-      os << std::setw(10) << std::left << QPiter_;
-      os << std::endl;
+      hist << "  ";
+      hist << std::setw(6) << std::left << state_->iter;
+      hist << std::setw(15) << std::left << state_->value;
+      hist << std::setw(15) << std::left << state_->gnorm;
+      hist << std::setw(15) << std::left << state_->snorm;
+      hist << std::setw(10) << std::left << state_->nfval;
+      hist << std::setw(10) << std::left << state_->ngrad;
+      hist << std::setw(15) << std::left << state_->aggregateGradientNorm;
+      hist << std::setw(15) << std::left << state_->aggregateModelError;
+      hist << std::setw(15) << std::left << state_->searchSize;
+      hist << std::setw(10) << std::left << QPiter_;
+      hist << std::endl;
     }
   }
+  os << hist.str();
 }
 
 } // namespace TypeU

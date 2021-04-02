@@ -48,7 +48,7 @@
 #define USE_HESSVEC 1
 
 #include "ROL_GetTestProblems.hpp"
-#include "ROL_TrustRegionAlgorithm_U.hpp"
+#include "ROL_TypeU_TrustRegionAlgorithm.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
     
     auto parlist = ROL::getParametersFromXmlFile( filename );
     parlist->sublist("General").set("Output Level", iprint);
-    ROL::Ptr<ROL::Algorithm_U<RealT>> algo;
+    ROL::Ptr<ROL::TypeU::Algorithm<RealT>> algo;
     ROL::Ptr<ROL::Vector<RealT>> e, x, x0;
 
     for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK;
@@ -113,12 +113,12 @@ int main(int argc, char *argv[]) {
                      << std::endl << std::endl
                      << ROL::ETrustRegionUToString(desc)
                      << std::endl << std::endl;
-          
+
           // Define Line Search Solver
-          algo = ROL::makePtr<ROL::TrustRegionAlgorithm_U<RealT>>(*parlist);
+          algo = ROL::makePtr<ROL::TypeU::TrustRegionAlgorithm<RealT>>(*parlist);
 
           // Run Solver
-	  x->set(*x0);
+          x->set(*x0);
           algo->run(*x,
                     *problem->getObjective(),
                     *outStream);

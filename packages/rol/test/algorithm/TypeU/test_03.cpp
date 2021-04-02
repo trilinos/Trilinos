@@ -48,7 +48,7 @@
 #define USE_HESSVEC 1
 
 #include "ROL_GetTestProblems.hpp"
-#include "ROL_BundleAlgorithm_U.hpp"
+#include "ROL_TypeU_BundleAlgorithm.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").sublist("Bundle").set("Epsilon Solution Tolerance",1e-4);
     parlist->sublist("General").set("Output Level", iprint);
 
-    ROL::Ptr<ROL::Algorithm_U<RealT>> algo;
+    ROL::Ptr<ROL::TypeU::Algorithm<RealT>> algo;
     ROL::Ptr<ROL::Vector<RealT>> e, x, x0;
 
     for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
                      << ROL::ETestOptProblemToString(objFunc)
                      << std::endl << std::endl;
           // Define Line Search Solver
-          algo = ROL::makePtr<ROL::BundleAlgorithm_U<RealT>>(*parlist);
+          algo = ROL::makePtr<ROL::TypeU::BundleAlgorithm<RealT>>(*parlist);
 
           // Run Solver
           x->set(*x0);
@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
             }
           }
           *outStream << std::endl << "Norm of Error: " << err << std::endl;
-          //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
-	}
+          //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>()));
+        }
       }
     }
   }

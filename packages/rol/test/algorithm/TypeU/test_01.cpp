@@ -48,7 +48,7 @@
 #define USE_HESSVEC 0
 
 #include "ROL_GetTestProblems.hpp"
-#include "ROL_LineSearchAlgorithm_U.hpp"
+#include "ROL_TypeU_LineSearchAlgorithm.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 #if USE_HESSVEC
     parlist->sublist("General").set("Inexact Hessian-Times-A-Vector",false);
 #endif
-    ROL::Ptr<ROL::Algorithm_U<RealT>> algo;
+    ROL::Ptr<ROL::TypeU::Algorithm<RealT>> algo;
     ROL::Ptr<ROL::Vector<RealT>> e, x, x0;
 
     for ( ROL::ETestOptProblem objFunc = ROL::TESTOPTPROBLEM_ROSENBROCK;
@@ -119,10 +119,10 @@ int main(int argc, char *argv[]) {
           *outStream << std::endl << std::endl
                      << ROL::EDescentUToString(desc)
                      << std::endl << std::endl;
-          
+
           // Line Search Solver
-          algo = ROL::makePtr<ROL::LineSearchAlgorithm_U<RealT>>(*parlist);
-	  x->set(*x0);
+          algo = ROL::makePtr<ROL::TypeU::LineSearchAlgorithm<RealT>>(*parlist);
+          x->set(*x0);
           algo->run(*x,
                     *problem->getObjective(),
                     *outStream);
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
           }
           *outStream << std::endl << "Norm of Error: " << err << std::endl;
           //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON<RealT>())); 
-          
+
         }
       }
     }
