@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   using LO = Tpetra::Map<>::local_ordinal_type;
   using map_type = Tpetra::Map<LO, GO>;
 
-  // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
+  // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+6, 3B+8] (6 GIDs).
   // Proc 1 gets [3B+12, 3B+14, 3B+16, 3B+18, 3B+20] (5 GIDs).
   //
   // The GIDs are not contiguous in order to prevent Map from
@@ -164,7 +164,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   }
 
   cerr << myRank << ": Querying the Map for remote elements" << endl;
-  // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
+  // Proc 0 gets [1, 3B, 3B+2, 3B+4, 3B+6, 3B+8] (6 GIDs).
   // Proc 1 gets [3B+12, 3B+14, 3B+16, 3B+18, 3B+20] (5 GIDs).
   {
     TEUCHOS_FUNC_TIME_MONITOR("Querying the Map for remote elements");
@@ -217,12 +217,12 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
         expectedRemoteLids[3] = 3;
         expectedRemoteLids[4] = 4;
         expectedRemoteLids[5] = 5;
-        remoteGids[0] = 0;
+        remoteGids[0] = globalFirstGid;
         remoteGids[1] = threeBillion;
         remoteGids[2] = threeBillion + 2;
         remoteGids[3] = threeBillion + 4;
-        remoteGids[4] = threeBillion + 8;
-        remoteGids[5] = threeBillion + 10;
+        remoteGids[4] = threeBillion + 6;
+        remoteGids[5] = threeBillion + 8;
 
         comm->barrier ();
         cerr << myRank << ": Calling getRemoteIndexList" << endl;
