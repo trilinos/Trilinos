@@ -81,7 +81,7 @@ public:
             const Vector<Real>    &g, 
             Objective<Real>       &obj,
             BoundConstraint<Real> &bnd,
-            std::ostream          &outStream = std::cout);
+            std::ostream          &outStream = std::cout) override;
 
   void writeHeader( std::ostream& os ) const override;
 

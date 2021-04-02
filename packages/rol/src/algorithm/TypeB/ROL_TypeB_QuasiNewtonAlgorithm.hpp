@@ -93,11 +93,12 @@ public:
   QuasiNewtonAlgorithm(ParameterList &list, const Ptr<Secant<Real>> &secant = nullPtr);
 
   using TypeB::Algorithm<Real>::run;
+
   void run( Vector<Real>          &x,
             const Vector<Real>    &g, 
             Objective<Real>       &obj,
             BoundConstraint<Real> &bnd,
-            std::ostream          &outStream = std::cout);
+            std::ostream          &outStream = std::cout) override;
 
   void writeHeader( std::ostream& os ) const override;
 

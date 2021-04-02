@@ -112,7 +112,7 @@ public:
             const Vector<Real>    &g, 
             Objective<Real>       &obj,
             BoundConstraint<Real> &bnd,
-            std::ostream          &outStream = std::cout);
+            std::ostream          &outStream = std::cout) override;
 
   void run( Problem<Real> &problem,
             std::ostream  &outStream = std::cout ) override;
@@ -126,11 +126,11 @@ public:
             const Vector<Real>    &linear_eres,
             std::ostream          &outStream = std::cout ) override;
 
-  void writeHeader( std::ostream& os ) const;
+  void writeHeader( std::ostream& os ) const override;
 
-  void writeName( std::ostream& os ) const;
+  void writeName( std::ostream& os ) const override;
 
-  void writeOutput( std::ostream& os, bool write_header = false ) const;
+  void writeOutput( std::ostream& os, bool write_header = false ) const override;
 
 private:
   void initialize(Vector<Real>          &x,

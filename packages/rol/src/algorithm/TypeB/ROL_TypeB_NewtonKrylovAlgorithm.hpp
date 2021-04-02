@@ -177,7 +177,7 @@ public:
             const Vector<Real>    &g, 
             Objective<Real>       &obj,
             BoundConstraint<Real> &bnd,
-            std::ostream          &outStream = std::cout);
+            std::ostream          &outStream = std::cout) override;
 
   void run( Problem<Real> &problem,
             std::ostream  &outStream = std::cout ) override;
