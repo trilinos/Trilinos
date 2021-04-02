@@ -53,7 +53,7 @@
 // ROL_Types contains predefined constants and objects
 #include "ROL_StdVector.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_PEBBL_IntegerConstraint.hpp"
 
 template<class Real>

@@ -83,13 +83,29 @@ public:
 
   bool solve(int &argc, char** &argv,
              std::ostream &outStream = std::cout) {
+    bool flag = true;
+#ifdef HAVE_MPI
+    utilib::CommonIO::begin();
+    utilib::CommonIO::setIOFlush(1);
+  
     utilib::exception_mngr::set_stack_trace(false);
-    bool flag = branching_->setup(argc,argv);
+    flag = branching_->setup(argc,argv);
+    if (flag) {
+      utilib::exception_mngr::set_stack_trace(true);
+      branching_->reset();
+      branching_->printConfiguration();
+      branching_->solve();
+    }
+    utilib::CommonIO::end();
+#else
+    utilib::exception_mngr::set_stack_trace(false);
+    flag = branching_->setup(argc,argv);
     if (flag) {
       utilib::exception_mngr::set_stack_trace(true);
       branching_->reset();
       branching_->solve();
     }
+#endif
     return flag;
   }
 

@@ -45,7 +45,7 @@
 #define ROL_PROGRESSIVEHEDGING_H
 
 #include "ROL_OptimizationSolver.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_PH_Objective.hpp"
 #include "ROL_PH_StatusTest.hpp"
 #include "ROL_RiskVector.hpp"
@@ -106,8 +106,8 @@ private:
   Ptr<BoundConstraint<Real>>        ph_bound_;
   Ptr<Constraint<Real>>             ph_constraint_;
   Ptr<OptimizationProblem<Real>>    ph_problem_;
-  Ptr<NewOptimizationProblem<Real>> ph_problem_new_;
-  Ptr<NewOptimizationSolver<Real>>  ph_solver_;
+  Ptr<Problem<Real>>                ph_problem_new_;
+  Ptr<Solver<Real>>                 ph_solver_;
   Ptr<PH_StatusTest<Real>>          ph_status_;
   Ptr<Vector<Real>> z_psum_, z_gsum_;
   std::vector<Ptr<Vector<Real>>> wvec_;
@@ -189,8 +189,8 @@ public:
                                                       ph_bound_,
                                                       ph_constraint_,
                                                       input_->getMultiplierVector());
-    ph_problem_new_ = makePtr<NewOptimizationProblem<Real>>(ph_problem_->getObjective(),
-                                                            ph_problem_->getSolutionVector());
+    ph_problem_new_ = makePtr<Problem<Real>>(ph_problem_->getObjective(),
+                                             ph_problem_->getSolutionVector());
     if (ph_problem_->getBoundConstraint() != nullPtr) {
       if (ph_problem_->getBoundConstraint()->isActivated()) {
         ph_problem_new_->addBoundConstraint(ph_problem_->getBoundConstraint());
@@ -201,7 +201,7 @@ public:
                                      ph_problem_->getMultiplierVector());
     }
     // Build progressive hedging subproblem solver
-    ph_solver_    = makePtr<NewOptimizationSolver<Real>>(ph_problem_new_, parlist);
+    ph_solver_    = makePtr<Solver<Real>>(ph_problem_new_, parlist);
     // Build progressive hedging status test for inexact solves
     if (useInexact_) {
       ph_status_  = makePtr<PH_StatusTest<Real>>(parlist,
@@ -273,7 +273,7 @@ public:
         }
         wvec_[j]->axpy(penaltyParam_,*ph_problem_->getSolutionVector());
         vec_p[0] += sampler_->getMyWeight(j)
-                  * ph_problem_->getSolutionVector()->dot(
+                   *ph_problem_->getSolutionVector()->dot(
                    *ph_problem_->getSolutionVector());
         vec_p[1] += static_cast<Real>(ph_solver_->getAlgorithmState()->iter);
         z_psum_->axpy(sampler_->getMyWeight(j),*ph_problem_->getSolutionVector());

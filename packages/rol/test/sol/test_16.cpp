@@ -45,7 +45,7 @@
 
 #include "ROL_ParameterList.hpp"
 #include "ROL_Stream.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_StdObjective.hpp"
@@ -206,8 +206,8 @@ int main(int argc, char* argv[]) {
     problem->makeLinearConstraintStochastic("Loss",conlist,sampler,bman);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>>
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,*parlist);
+    ROL::Ptr<ROL::Solver<RealT>>
+      solver = ROL::makePtr<ROL::Solver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);
@@ -221,7 +221,7 @@ int main(int argc, char* argv[]) {
     problem->makeLinearConstraintStochastic("Loss",conlist,sampler);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);
@@ -244,7 +244,7 @@ int main(int argc, char* argv[]) {
     problem->makeConstraintStochastic("Loss",conlist,sampler);
     problem->finalize(false,true,*outStream);
     problem->check(true,*outStream);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(problem,*parlist);
     solver->solve(*outStream);
     errorFlag += (solver->getAlgorithmState()->statusFlag == ROL::EXITSTATUS_CONVERGED ? 0 : 1);
     printSolution(*x->getVector(),*outStream);

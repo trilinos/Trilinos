@@ -47,7 +47,7 @@
 
 #include "ROL_ParameterList.hpp"
 #include "ROL_LinearRegression.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 
 typedef double RealT;
@@ -102,8 +102,8 @@ int main(int argc, char* argv[]) {
     ROL::LinearRegression<RealT> linReg(data);
     // Set up linear regression solver
     ROL::ParameterList parlist;
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>>  solver;
+    ROL::Ptr<ROL::Problem<RealT>> problem;
+    ROL::Ptr<ROL::Solver<RealT>>  solver;
     parlist.sublist("Status Test").set("Gradient Tolerance",1e-8);
     parlist.sublist("Status Test").set("Step Tolerance",    1e-12);
     parlist.sublist("Status Test").set("Iteration Limit",   100);
@@ -174,9 +174,9 @@ int main(int argc, char* argv[]) {
         parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       }
       linReg.setErrorMeasure(parlist,true);
-      problem = linReg.getNewOptimizationProblem();
+      problem = linReg.getProblem();
       problem->check(true,*outStream);
-      solver  = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,parlist);
+      solver  = ROL::makePtr<ROL::Solver<RealT>>(problem,parlist);
       solver->solve(*outStream);
       coeff.push_back(*linReg.getCoefficients());
       linReg.print(*outStream);

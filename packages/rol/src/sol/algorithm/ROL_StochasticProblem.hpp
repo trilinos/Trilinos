@@ -44,7 +44,7 @@
 #ifndef ROL_STOCHASTICPROBLEM_HPP
 #define ROL_STOCHASTICPROBLEM_HPP
 
-#include "ROL_NewOptimizationProblem.hpp"
+#include "ROL_Problem.hpp"
 
 #include "ROL_MeanValueObjective.hpp"
 #include "ROL_RiskNeutralObjective.hpp"
@@ -64,7 +64,7 @@
 namespace ROL {
 
 template<typename Real>
-class StochasticProblem : public NewOptimizationProblem<Real> {
+class StochasticProblem : public Problem<Real> {
 private:
   Ptr<Objective<Real>>                                 ORIGINAL_obj_;
   Ptr<Vector<Real>>                                    ORIGINAL_xprim_;
@@ -79,13 +79,13 @@ private:
   std::unordered_map<std::string,std::pair<Ptr<ParameterList>,bool>> conList_;
   std::unordered_map<std::string,size_t> statMap_;
 
-  using NewOptimizationProblem<Real>::INPUT_obj_;
-  using NewOptimizationProblem<Real>::INPUT_xprim_;
-  using NewOptimizationProblem<Real>::INPUT_xdual_;
-  using NewOptimizationProblem<Real>::INPUT_bnd_;
-  using NewOptimizationProblem<Real>::INPUT_con_;
-  using NewOptimizationProblem<Real>::INPUT_linear_con_;
-  using NewOptimizationProblem<Real>::isFinalized;
+  using Problem<Real>::INPUT_obj_;
+  using Problem<Real>::INPUT_xprim_;
+  using Problem<Real>::INPUT_xdual_;
+  using Problem<Real>::INPUT_bnd_;
+  using Problem<Real>::INPUT_con_;
+  using Problem<Real>::INPUT_linear_con_;
+  using Problem<Real>::isFinalized;
 
 public:
   /** \brief Default constructor for StochasticProblem.
