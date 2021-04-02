@@ -44,7 +44,7 @@
 #ifndef ROL_AUGMENTEDLAGRANGIANALGORITHM_E_DEF_H
 #define ROL_AUGMENTEDLAGRANGIANALGORITHM_E_DEF_H
 
-#include "ROL_TypeU_AlgorithmFactory.hpp"
+#include "ROL_Algorithm_U_Factory.hpp"
 
 namespace ROL {
 
@@ -191,7 +191,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
                                            state_->searchSize,g,eres,emul,
                                            scaleLagrangian_,HessianApprox_);
   initialize(x,g,emul,eres,alobj,econ,outStream);
-  Ptr<TypeU::Algorithm<Real>> algo;
+  Ptr<Algorithm_U<Real>> algo;
 
   // Output
   output.push_back(print(true));
@@ -201,7 +201,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_E<Real>::run( Vector<Real>
     // Solve unconstrained augmented Lagrangian subproblem
     list_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     list_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo = TypeU::AlgorithmFactory<Real>(list_);
+    algo = AlgorithmUFactory<Real>(list_);
     algo->run(x,g,alobj,outStream);
     subproblemIter_ = algo->getState()->iter;
 
