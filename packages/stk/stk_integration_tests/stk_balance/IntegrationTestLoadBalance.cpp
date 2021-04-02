@@ -774,7 +774,9 @@ TEST(LoadBalance, MxN_decomposition)
         unsigned num_procs_decomp = static_cast<unsigned>(options.numSubdomains());
         stk::mesh::EntityProcVec decomp;
         std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().universal_part()};
-        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(loadBalanceSettings, num_procs_decomp, decomp, stkMeshBulkData, selectors);
+        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
+                                                                     stkMeshBulkData.parallel(), num_procs_decomp,
+                                                                     loadBalanceSettings, decomp);
 
         std::string output_file_name = "output.exo";
         balance_utils::putEntityProcOnMeshField(stkMeshBulkData, decomp);

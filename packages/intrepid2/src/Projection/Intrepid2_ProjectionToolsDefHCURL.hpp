@@ -410,12 +410,11 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
   ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
   ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
-  CellTools<SpT>::setSubcellParametrization();
-  typename CellTools<SpT>::subcellParamViewType subcellParamEdge,  subcellParamFace;
+  typename RefSubcellParametrization<SpT>::ConstViewType subcellParamEdge,  subcellParamFace;
   if(numEdges>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamEdge,  edgeDim, cellTopo);
+    subcellParamEdge = RefSubcellParametrization<SpT>::get(edgeDim, cellTopo.getKey());
   if(numFaces>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellTopo);
+    subcellParamFace = RefSubcellParametrization<SpT>::get(faceDim, cellTopo.getKey());
 
   auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
 
@@ -642,10 +641,9 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
   }
 
-  CellTools<SpT>::setSubcellParametrization();
-  typename CellTools<SpT>::subcellParamViewType  subcellParamFace;
+  typename RefSubcellParametrization<SpT>::ConstViewType  subcellParamFace;
   if(numFaces>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellBasis->getBaseCellTopology());
+    subcellParamFace = RefSubcellParametrization<SpT>::get(faceDim, cellBasis->getBaseCellTopology().getKey());
 
   Basis<SpT,scalarType,scalarType> *hgradBasis = NULL;
   for(ordinal_type iface=0; iface<numFaces; ++iface) {

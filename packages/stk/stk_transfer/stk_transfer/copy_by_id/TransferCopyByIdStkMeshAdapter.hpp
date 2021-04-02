@@ -92,7 +92,7 @@ public :
     }
   }
 
-  virtual ~TransferCopyByIdStkMeshAdapter() {}
+  virtual ~TransferCopyByIdStkMeshAdapter() override = default;
 
   stk::mesh::Entity get_cached_entity(stk::mesh::EntityKey key) const
   {
@@ -103,7 +103,7 @@ public :
     return m_lastEntity;
   }
 
-  const void* field_data(const Mesh_ID & id, const unsigned field_index) const
+  const void* field_data(const Mesh_ID & id, const unsigned field_index) const override
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(id));
     const mesh::Entity entity = get_cached_entity(key);
@@ -111,7 +111,7 @@ public :
     return reinterpret_cast<const void*>(stk::mesh::field_data(*field, entity));
   }
 
-  void* field_data(const Mesh_ID & id, const unsigned field_index)
+  void* field_data(const Mesh_ID & id, const unsigned field_index) override
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(id));
     const mesh::Entity entity = get_cached_entity(key);
@@ -119,7 +119,7 @@ public :
     return reinterpret_cast<void*>(stk::mesh::field_data(*field, entity));
   }
 
-  std::string field_name(const unsigned field_index) const
+  std::string field_name(const unsigned field_index) const override
   {
     ThrowRequireMsg(field_index < m_transfer_fields.size(),
                     "P" << m_mesh.parallel_rank() <<
@@ -141,7 +141,7 @@ public :
     return field;
   }
 
-  unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const
+  unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const override
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(id));
     const mesh::Entity entity = get_cached_entity(key);
@@ -150,29 +150,29 @@ public :
     return stk::mesh::field_bytes_per_entity(field, entity);
   }
 
-  unsigned num_fields() const
+  unsigned num_fields() const override
   {
     return m_transfer_fields.size();
   }
 
-  ParallelMachine comm() const
+  ParallelMachine comm() const override
   {
     return m_comm;
   }
 
-  const MeshIDVector & get_mesh_ids() const
+  const MeshIDVector & get_mesh_ids() const override
   {
     return m_ids;
   }
 
-  bool is_locally_owned(const Mesh_ID & k) const
+  bool is_locally_owned(const Mesh_ID & k) const override
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(k));
     const mesh::Entity entity = get_cached_entity(key);
     return m_mesh.is_valid(entity) && m_mesh.bucket(entity).owned();
   }
 
-  std::string print_mesh_id(const Mesh_ID& k) const
+  std::string print_mesh_id(const Mesh_ID& k) const override
   {
     EntityKey key(static_cast<EntityKey::entity_key_t>(k));
     std::ostringstream oss;
@@ -180,7 +180,7 @@ public :
     return oss.str();
   }
 
-  void centroid(const Mesh_ID& k, double coords[3]) const
+  void centroid(const Mesh_ID& k, double coords[3]) const override
   {
     for (int i=0 ; i<3 ; ++i) { coords[i] = 0.0; }
     const unsigned dimension = m_mesh.mesh_meta_data().spatial_dimension();
@@ -209,7 +209,7 @@ public :
     }
   }
 
-  DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const
+  DataTypeKey::data_t get_field_type(const unsigned fieldIndex) const override
   { 
     ThrowRequireMsg(fieldIndex < m_transfer_fields.size(),
                     "P" << m_mesh.parallel_rank() <<
@@ -245,7 +245,7 @@ public :
   }
    
 
-private:
+protected:
   stk::mesh::BulkData & m_mesh;
   stk::ParallelMachine m_comm;
   const stk::mesh::FieldBase* m_coordinates_field;

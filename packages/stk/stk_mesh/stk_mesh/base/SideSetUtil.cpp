@@ -439,10 +439,12 @@ std::pair<bool,bool> is_positive_sideset_polarity(const stk::mesh::BulkData &bul
     const stk::mesh::SideSet* ssetPtr = inputSidesetPtr;
     if (ssetPtr == nullptr) {
       const stk::mesh::Part &parentPart = stk::mesh::get_sideset_parent(sideSetPart);
-      try {
+      if(bulk.does_sideset_exist(parentPart))
+      {
           ssetPtr = &bulk.get_sideset(parentPart);
       }
-      catch(std::exception& excpt) {
+      else
+      {
           return std::make_pair(false,false);
       }
     }
