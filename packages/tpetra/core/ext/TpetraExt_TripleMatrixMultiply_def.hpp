@@ -890,10 +890,10 @@ namespace Tpetra {
     void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_R_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                                                                                           const LocalOrdinalViewType & Acol2Prow,
-                                                                                                                           const LocalOrdinalViewType & Acol2PIrow,
-                                                                                                                           const LocalOrdinalViewType & Pcol2Accol,
-                                                                                                                           const LocalOrdinalViewType & PIcol2Accol,
+                                                                                                                           const LocalOrdinalViewType & Acol2Prow_dev,
+                                                                                                                           const LocalOrdinalViewType & Acol2PIrow_dev,
+                                                                                                                           const LocalOrdinalViewType & Pcol2Accol_dev,
+                                                                                                                           const LocalOrdinalViewType & PIcol2Accol_dev,
                                                                                                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
                                                                                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
                                                                                                                            const std::string& label,
@@ -932,6 +932,16 @@ namespace Tpetra {
       size_t m = Rview.origMatrix->getNodeNumRows();
       size_t n = Accolmap->getNodeNumElements();
       size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+
+      // Routine runs on host; have to put arguments on host, too
+      auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                           Acol2Prow_dev);
+      auto Acol2PIrow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Acol2PIrow_dev);
+      auto Pcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Pcol2Accol_dev);
+      auto PIcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                             PIcol2Accol_dev);
 
       // Grab the  Kokkos::SparseCrsMatrices & inner stuff
       const auto Amat = Aview.origMatrix->getLocalMatrixHost();
@@ -1142,10 +1152,10 @@ namespace Tpetra {
     void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                                                                                           const LocalOrdinalViewType & Acol2Prow,
-                                                                                                                           const LocalOrdinalViewType & Acol2PIrow,
-                                                                                                                           const LocalOrdinalViewType & Pcol2Accol,
-                                                                                                                           const LocalOrdinalViewType & PIcol2Accol,
+                                                                                                                           const LocalOrdinalViewType & Acol2Prow_dev,
+                                                                                                                           const LocalOrdinalViewType & Acol2PIrow_dev,
+                                                                                                                           const LocalOrdinalViewType & Pcol2Accol_dev,
+                                                                                                                           const LocalOrdinalViewType & PIcol2Accol_dev,
                                                                                                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
                                                                                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
                                                                                                                            const std::string& label,
@@ -1183,6 +1193,16 @@ namespace Tpetra {
       size_t m = Rview.origMatrix->getNodeNumRows();
       size_t n = Accolmap->getNodeNumElements();
       size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
+
+      // Routine runs on host; have to put arguments on host, too
+      auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                           Acol2Prow_dev);
+      auto Acol2PIrow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Acol2PIrow_dev);
+      auto Pcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Pcol2Accol_dev);
+      auto PIcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                             PIcol2Accol_dev);
 
       // Grab the  Kokkos::SparseCrsMatrices & inner stuff
       const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
