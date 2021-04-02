@@ -62,11 +62,11 @@ namespace
   bool testSubBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs, const double tol, Teuchos::FancyOStream &out, bool &success,
                     int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1, bool defineVertexFunctions = true)
   {
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using OutputScalar = double;
     using PointScalar  = double;
     using namespace Intrepid2;
-    using Basis = Basis<ExecSpace,OutputScalar,PointScalar>;
+    using Basis = Basis<DeviceType,OutputScalar,PointScalar>;
     
     auto vectorsMatch = [](std::vector<int> lhs,std::vector<int> rhs)
     {
@@ -117,11 +117,11 @@ namespace
     if (polyOrderDim > 2) degrees[2] = polyOrder_z;
     
     int numPoints_1D = 5;
-    auto inputPoints = getInputPointsView<PointScalar>(cellTopo, numPoints_1D);
+    auto inputPoints = getInputPointsView<PointScalar,DeviceType>(cellTopo, numPoints_1D);
     int numPoints = inputPoints.extent_int(0);
     
     auto op = Intrepid2::OPERATOR_VALUE;
-    auto outputValues = getOutputView<OutputScalar>(fs, op, basis->getCardinality(), numPoints, spaceDim);
+    auto outputValues = getOutputView<OutputScalar,DeviceType>(fs, op, basis->getCardinality(), numPoints, spaceDim);
     
     basis->getValues(outputValues, inputPoints, op);
     out << "Testing sub-basis inclusion in degree ";
@@ -205,10 +205,14 @@ namespace
         continue; // next test case
       }
       
-      auto subBasisOutputValues = getOutputView<OutputScalar>(fs, op, subBasis->getCardinality(), numPoints, spaceDim);
+      auto subBasisOutputValues = getOutputView<OutputScalar,DeviceType>(fs, op, subBasis->getCardinality(), numPoints, spaceDim);
       subBasis->getValues(subBasisOutputValues, inputPoints, op);
       Kokkos::fence();
       bool vectorValued = (outputValues.rank() == 3); // F,P,D -- if scalar-valued, F,P
+      
+      auto inputPointsHost          = getHostCopy(inputPoints);
+      auto outputValuesHost         = getHostCopy(outputValues);
+      auto subBasisOutputValuesHost = getHostCopy(subBasisOutputValues);
       
       for (int pointOrdinal=0; pointOrdinal<numPoints; pointOrdinal++)
       {
@@ -219,8 +223,8 @@ namespace
         {
           if (!vectorValued)
           {
-            double originalValue = outputValues(fieldOrdinal,pointOrdinal);
-            double subBasisValue = subBasisOutputValues(subBasisFieldOrdinal,pointOrdinal);
+            double originalValue = outputValuesHost(fieldOrdinal,pointOrdinal);
+            double subBasisValue = subBasisOutputValuesHost(subBasisFieldOrdinal,pointOrdinal);
             
             bool valuesMatch = essentiallyEqual(originalValue, subBasisValue, tol);
             
@@ -236,9 +240,9 @@ namespace
                 // scalar values are the div values
                 out << "div ";
               }
-              double x = inputPoints(pointOrdinal,0);
-              double y = (spaceDim > 1) ? inputPoints(pointOrdinal,1) : -2.0;
-              double z = (spaceDim > 2) ? inputPoints(pointOrdinal,2) : -2.0;
+              double x = inputPointsHost(pointOrdinal,0);
+              double y = (spaceDim > 1) ? inputPointsHost(pointOrdinal,1) : -2.0;
+              double z = (spaceDim > 2) ? inputPointsHost(pointOrdinal,2) : -2.0;
               
               if (spaceDim == 1)
                 out << "values for "  << x  << " differ for field ordinal " << fieldOrdinal;
@@ -256,8 +260,8 @@ namespace
             bool valuesMatch = true;
             for (int d=0; d<spaceDim; d++)
             {
-              double originalValue = outputValues(fieldOrdinal,pointOrdinal,d);
-              double subBasisValue = subBasisOutputValues(subBasisFieldOrdinal,pointOrdinal,d);
+              double originalValue = outputValuesHost(fieldOrdinal,pointOrdinal,d);
+              double subBasisValue = subBasisOutputValuesHost(subBasisFieldOrdinal,pointOrdinal,d);
               
               if (!essentiallyEqual(originalValue, subBasisValue, tol))
               {
@@ -267,9 +271,9 @@ namespace
             
             if (!valuesMatch)
             {
-              double x = inputPoints(pointOrdinal,0);
-              double y = (spaceDim > 1) ? inputPoints(pointOrdinal,1) : -2.0;
-              double z = (spaceDim > 2) ? inputPoints(pointOrdinal,2) : -2.0;
+              double x = inputPointsHost(pointOrdinal,0);
+              double y = (spaceDim > 1) ? inputPointsHost(pointOrdinal,1) : -2.0;
+              double z = (spaceDim > 2) ? inputPointsHost(pointOrdinal,2) : -2.0;
               
               if (spaceDim == 1)
                 out << "values for "  << x  << " differ for field ordinal " << fieldOrdinal;
@@ -280,13 +284,13 @@ namespace
               out << ": expected value (lower-order basis fieldOrdinal " << subBasisFieldOrdinal << "): (";
               for (int d=0; d<spaceDim; d++)
               {
-                out << subBasisOutputValues(subBasisFieldOrdinal,pointOrdinal,d);
+                out << subBasisOutputValuesHost(subBasisFieldOrdinal,pointOrdinal,d);
                 if (d<spaceDim-1) out << ",";
               }
               out << "); actual (larger basis fieldOrdinal " << fieldOrdinal << ") was (";
               for (int d=0; d<spaceDim; d++)
               {
-                out << outputValues(fieldOrdinal,pointOrdinal,d);
+                out << outputValuesHost(fieldOrdinal,pointOrdinal,d);
                 if (d<spaceDim-1) out << ",";
               }
               out << ")" << std::endl;

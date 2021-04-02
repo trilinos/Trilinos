@@ -93,7 +93,8 @@ namespace FROSch {
         using InterfaceEntityPtrVec     = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtrVec;
         using InterfaceEntityPtrVecPtr  = typename SchwarzOperator<SC,LO,GO,NO>::InterfaceEntityPtrVecPtr;
 
-        using SubdomainSolverPtr        = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using SolverPtr                 = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr          = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
 
         using UN                        = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVec                     = typename SchwarzOperator<SC,LO,GO,NO>::UNVec;
@@ -129,6 +130,27 @@ namespace FROSch {
         XMapPtr assembleCoarseMap();
 
         XMapPtr computeCoarseSpace(CoarseSpacePtr coarseSpace);
+
+        #if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+        template<class GOIndView>
+        struct CopyPhiDataFunctor
+        {
+            CopyPhiDataFunctor(SCVecPtr data_out_, ConstSCVecPtr data_in_, GOIndView indices_) :
+            data_out(data_out_),
+            data_in (data_in_),
+            indices (indices_)
+            {}
+
+            KOKKOS_INLINE_FUNCTION
+            void operator()(const int k) const {
+                data_out[indices[k]] = data_in[k];
+            }
+
+            SCVecPtr      data_out;
+            ConstSCVecPtr data_in;
+            GOIndView     indices;
+        };
+        #endif
 
     protected:
 
@@ -176,7 +198,7 @@ namespace FROSch {
         virtual int buildCoarseGraph();
 
 
-        SubdomainSolverPtr ExtensionSolver_;
+        SolverPtr ExtensionSolver_;
 
         CoarseSpacePtrVecPtr InterfaceCoarseSpaces_ = CoarseSpacePtrVecPtr(0);
         CoarseSpacePtr AssembledInterfaceCoarseSpace_;

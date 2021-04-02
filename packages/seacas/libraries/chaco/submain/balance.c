@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -76,7 +76,7 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
 
   int  make_maps(), divide_procs();
   void merge_goals();
-  void divide(), make_subgraph(), make_term_props();
+  void chaco_divide(), make_subgraph(), make_term_props();
   void make_subvector(), make_subgeom(), remake_graph();
   void merge_assignments(), make_setlists();
 
@@ -313,7 +313,7 @@ void balance(struct vtx_data **graph,         /* data structure for graph */
     }
 
     /* Perform a single division step. */
-    divide(subgraph, subnvtxs, subnedges, using_vwgts, using_ewgts, subvwsqrt, igeom, subcoords,
+    chaco_divide(subgraph, subnvtxs, subnedges, using_vwgts, using_ewgts, subvwsqrt, igeom, subcoords,
            subassign, merged_goal, architecture, all_term_wgts, global_method, local_method,
            rqi_flag, vmax, ndims_real, eigtol, (hops_flag ? hops_special : hops), nsets_real,
            striping);

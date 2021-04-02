@@ -37,9 +37,9 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #define SEACAS_HAVE_MPI
 /* #undef IOSS_THREADSAFE */
 /* #undef SEACAS_HAVE_KOKKOS */
-/* #undef SEACAS_HAVE_DATAWAREHOUSE */
 #define SEACAS_HAVE_EXODUS
 #define SEACAS_HAVE_CGNS
+/* #undef SEACAS_HAVE_FAODEL */
 #define SEACAS_HAVE_PAMGEN
 #else
 #include <SEACASIoss_config.h>
@@ -63,7 +63,7 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #endif
 #ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 0
-using MPI_Comm = int;
+using MPI_Comm       = int;
 #endif
 #endif
 
@@ -82,7 +82,7 @@ using Complex = std::complex<float>;
 using Kokkos_Complex = Kokkos::complex<float>;
 #endif
 #else
-using Complex = std::complex<double>;
+using Complex        = std::complex<double>;
 #ifdef SEACAS_HAVE_KOKKOS
 using Kokkos_Complex = Kokkos::complex<double>;
 #endif

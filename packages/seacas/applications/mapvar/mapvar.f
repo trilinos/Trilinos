@@ -1591,6 +1591,7 @@ C     CLOSE FILES AND STOP
 
       call addlog (qainfo(1))
       call wrapup(qainfo(1))
+      call mdfree()
       STOP
 
   270 FORMAT (3X,/'DATA FROM MESH "A" (MESH & SOLUTION) FILE - ',A,

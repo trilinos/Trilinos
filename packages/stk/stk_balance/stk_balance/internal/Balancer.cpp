@@ -65,7 +65,9 @@ bool loadBalance(const BalanceSettings& balanceSettings, stk::mesh::BulkData& st
     }
 
     stk::mesh::EntityProcVec decomp;
-    internal::calculateGeometricOrGraphBasedDecomp(balanceSettings, numSubdomainsToCreate, decomp, stkMeshBulkData, selectors);
+    internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
+                                                   stkMeshBulkData.parallel(), numSubdomainsToCreate,
+                                                   balanceSettings, decomp);
 
     DecompositionChangeList changeList(stkMeshBulkData, decomp);
     balanceSettings.modifyDecomposition(changeList);
@@ -114,7 +116,7 @@ Balancer::Balancer(const BalanceSettings& settings)
 
 bool Balancer::balance(BalanceMesh& mesh) const
 {
-  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().locally_owned_part()};
+  std::vector<stk::mesh::Selector> selectors = {mesh.get_bulk().mesh_meta_data().universal_part()};
   return balance(mesh, selectors);
 }
 

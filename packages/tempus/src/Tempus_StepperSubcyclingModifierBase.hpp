@@ -27,16 +27,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability.
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
- * 
- *  \f{algorithm}{                                                                             
- *  \renewcommand{\thealgorithm}{}                                                             
- *  \caption{Subcycling with the locations of the application actions indicated.}           
- *  \begin{algorithmic}[1]                                                                     
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}                    
- *    \State Compute $x_{n}$ from $x_{n-1}$, applying appActions from sub-steppers                       
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)} 
- *  \end{algorithmic}                                                                         
- *  \f}                                                                                       
+ *
+ *  The locations for these AppAction calls
+ *  (StepperSubcyclingAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperSubcycling.
  */
 
 template<class Scalar>

@@ -60,14 +60,18 @@ namespace
 {
   using namespace Intrepid2;
   
+  using DeviceType = DefaultTestDeviceType;
+  using ExecutionSpace = typename DeviceType::execution_space;
+
   void testLegendreDerivatives(const double x, const int maxPolyOrder, const int derivativeOrder, const double tol,
                                Teuchos::FancyOStream &out, bool &success)
   {
-    Kokkos::View<double*> legendreDerivatives("legendre derivatives",maxPolyOrder+1);
+    Kokkos::View<double*,DeviceType> legendreDerivatives("legendre derivatives",maxPolyOrder+1);
     
     using Intrepid2::Polynomials::legendreDerivativeValues;
     // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
-    Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+    auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
+    Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
     {
       legendreDerivativeValues(legendreDerivatives, maxPolyOrder, x, derivativeOrder);
     });
@@ -76,10 +80,10 @@ namespace
     
     // Polylib Jacobi computes a single function at potentially multiple points
     const int numPoints = 1;
-    Kokkos::View<double*> inputPoints("x point", numPoints);
+    Kokkos::View<double*,DeviceType> inputPoints("x point", numPoints);
     Kokkos::deep_copy(inputPoints,x);
     
-    Kokkos::View<double*> jacobiValue("jacobi value from Polynomials::JacobiPolynomial",numPoints);
+    Kokkos::View<double*,DeviceType> jacobiValue("jacobi value from Polynomials::JacobiPolynomial",numPoints);
     for (int i=0; i<=maxPolyOrder; i++)
     {
       double expectedValue;
@@ -89,7 +93,7 @@ namespace
       }
       else
       {
-        const Kokkos::View<double*> null;
+        const Kokkos::View<double*,DeviceType> null;
         const double alpha = 0;
         const double beta = 0;
         double scaleFactor = 1.0;
@@ -99,7 +103,8 @@ namespace
         }
         
         // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
-        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
           Intrepid2::Polylib::Serial::JacobiPolynomial(numPoints, inputPoints, jacobiValue, null, i-derivativeOrder, alpha+derivativeOrder, beta+derivativeOrder);
         });

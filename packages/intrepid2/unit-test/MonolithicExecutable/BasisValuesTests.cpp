@@ -78,22 +78,32 @@ namespace
   {
     // get quadrature points for integrating up to polyOrder
     const int quadratureDegree = 2*basis.getDegree();
-    using ExecutionSpace = typename Basis::ExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using PointScalar = typename Basis::PointValueType;
     using WeightScalar = typename Basis::OutputValueType;
+    using CubatureType = Cubature<DeviceType,PointScalar,WeightScalar>;
+    using PointView  = typename CubatureType::PointViewTypeAllocatable;
+    using WeightView = typename CubatureType::WeightViewTypeAllocatable;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis.getBaseCellTopology().getDimension();
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
+    PointView points("quadrature points ref cell", numRefPoints, spaceDim);
+    WeightView weights("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
-    TensorPoints<PointScalar> tensorPoints;
-    TensorData<WeightScalar>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using HostPointViewType = Kokkos::DynRankView<PointScalar,Kokkos::HostSpace>;
+    using HostWeightViewType = Kokkos::DynRankView<WeightScalar,Kokkos::HostSpace>;
+    auto hostQuadrature = cub_factory.create<Kokkos::HostSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    HostPointViewType hostPoints("quadrature points ref cell - host", numRefPoints, spaceDim);
+    HostWeightViewType hostWeights("quadrature weights ref cell - host", numRefPoints);
+    hostQuadrature->getCubature(hostPoints, hostWeights);
+    
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)
@@ -104,36 +114,33 @@ namespace
     }
     else
     {
-      std::vector<ViewType<PointScalar>> pointComponents {points};
-      tensorPoints = TensorPoints<PointScalar>(pointComponents);
-      Data<WeightScalar> weightData(weights);
-      std::vector<Data<WeightScalar>> weightComponents {weightData};
-      tensorWeights = TensorData<WeightScalar>(weightComponents);
+      std::vector<ViewType<PointScalar,DeviceType>> pointComponents {points};
+      tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
+      Data<WeightScalar,DeviceType> weightData(weights);
+      std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};
+      tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
     
-    out << "Points being tested:\n";
-    for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
-    {
-      out << pointOrdinal << ": " << "(";
-      for (int d=0; d<spaceDim; d++)
-      {
-        out << points(pointOrdinal,d);
-        if (d < spaceDim-1) out << ",";
-      }
-      out << ")\n";
-    }
-    
+    printFunctor2(points, out, "points being tested");
     printFunctor2(tensorPoints, out, "tensorPoints");
     
-    testFloatingEquality2(points,tensorPoints,  relTol, absTol, out, success, "points", "tensorPoints");
+    testFloatingEquality2(points, tensorPoints, relTol, absTol, out, success, "points", "tensorPoints");
+        
+    auto hostBasisPtr = basis.getHostBasis();
         
     for (const auto &op : opsToTest)
     {
       auto basisValuesView = basis.allocateOutputView(numRefPoints, op);
       auto basisValues     = basis.allocateBasisValues(tensorPoints, op);
       
+      auto hostBasisView   = hostBasisPtr->allocateOutputView(numRefPoints, op);
+      
       basis.getValues(basisValuesView, points, op);
       basis.getValues(basisValues, tensorPoints, op);
+      
+      // copy basisValuesView to host for hostBasis comparison
+      auto basisValuesViewHostMirror = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), basisValuesView);
+      hostBasisPtr->getValues(hostBasisView, hostPoints, op);
       
       out << "Comparing getValues() results for " << EOperatorToString(op) << std::endl;
       
@@ -152,6 +159,16 @@ namespace
             printFunctor2(basisValues,     out, "basisValues");
             printFunctor2(basisValuesView, out, "basisValuesView");
           }
+          
+          localSuccess = true;
+          testFloatingEquality2(basisValuesView, basisValues, relTol, absTol, out, localSuccess, "DynRankView path - device", "DynRankView path - host");
+          success = success && localSuccess;
+          
+          if (!localSuccess)
+          {
+            printFunctor2(hostBasisView,             out, "hostBasisView");
+            printFunctor2(basisValuesViewHostMirror, out, "basisValuesViewHostMirror");
+          }
         }
         else if (basisValuesView.rank() == 3)
         {
@@ -163,6 +180,16 @@ namespace
           {
             printFunctor3(basisValues,     out, "basisValues");
             printFunctor3(basisValuesView, out, "basisValuesView");
+          }
+          
+          localSuccess = true;
+          testFloatingEquality3(basisValuesView, basisValues, relTol, absTol, out, localSuccess, "DynRankView path - device", "DynRankView path - host");
+          success = success && localSuccess;
+          
+          if (!localSuccess)
+          {
+            printFunctor3(hostBasisView,             out, "hostBasisView");
+            printFunctor3(basisValuesViewHostMirror, out, "basisValuesViewHostMirror");
           }
         }
         else
@@ -188,7 +215,7 @@ namespace
   TEUCHOS_UNIT_TEST( BasisValues, DefaultConstructor )
   {
     // test of default-constructed basis values object.
-    BasisValues<double> emptyBasisValues;
+    BasisValues<double,DefaultTestDeviceType> emptyBasisValues;
     TEST_EQUALITY(0, emptyBasisValues.rank());
     for (int d=0; d<8; d++)
     {
@@ -201,7 +228,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_LINE )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_LINE;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_LINE;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
@@ -218,7 +246,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_QUAD )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_QUAD;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_QUAD;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
@@ -235,7 +264,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_TRI )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_TRI;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_TRI;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
@@ -252,7 +282,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_HEX )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_HEX;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_HEX;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
@@ -269,7 +300,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHGRAD_TET )
   {
-    using Basis = HierarchicalBasisFamily<>::HGRAD_TET;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HGRAD_TET;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};
@@ -286,7 +318,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHDIV_QUAD )
   {
-    using Basis = HierarchicalBasisFamily<>::HDIV_QUAD;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HDIV_QUAD;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
@@ -303,7 +336,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHDIV_TRI )
   {
-    using Basis = NodalBasisFamily<>::HDIV_TRI; // Hierarchical basis family does not yet support HDIV_TRI
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = NodalBasisFamily<DeviceType>::HDIV_TRI; // Hierarchical basis family does not yet support HDIV_TRI
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
@@ -320,7 +354,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHDIV_HEX )
   {
-    using Basis = HierarchicalBasisFamily<>::HDIV_HEX;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HDIV_HEX;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
@@ -337,7 +372,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHDIV_TET )
   {
-    using Basis = NodalBasisFamily<>::HDIV_TET;  // Hierarchical basis family does not yet support HDIV_TET
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = NodalBasisFamily<DeviceType>::HDIV_TET;  // Hierarchical basis family does not yet support HDIV_TET
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_DIV};
@@ -354,7 +390,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHCURL_QUAD )
   {
-    using Basis = HierarchicalBasisFamily<>::HCURL_QUAD;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HCURL_QUAD;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
@@ -371,7 +408,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TRI )
   {
-    using Basis = NodalBasisFamily<>::HCURL_TRI;  // Hierarchical basis family does not yet support HCURL_TRI
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = NodalBasisFamily<DeviceType>::HCURL_TRI;  // Hierarchical basis family does not yet support HCURL_TRI
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
@@ -388,7 +426,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHCURL_HEX )
   {
-    using Basis = HierarchicalBasisFamily<>::HCURL_HEX;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HCURL_HEX;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
@@ -403,9 +442,46 @@ namespace
     }
   }
 
+  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHVOL_QUAD )
+  {
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HVOL_QUAD;
+    
+    // for now, the BasisValues path only supports the standard exact-sequence operators
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      Basis basis(polyOrder);
+      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( BasisValues, HierarchicalHVOL_HEX )
+  {
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = HierarchicalBasisFamily<DeviceType>::HVOL_HEX;
+    
+    // for now, the BasisValues path only supports the standard exact-sequence operators
+    std::vector<EOperator> opsToTest {OPERATOR_VALUE};
+    
+    const double relTol=1e-13;
+    const double absTol=1e-13;
+    
+    for (int polyOrder=1; polyOrder<5; polyOrder++)
+    {
+      Basis basis(polyOrder);
+      testGetValuesEquality(basis, opsToTest, relTol, absTol, out, success);
+    }
+  }
+
   TEUCHOS_UNIT_TEST( BasisValues, NodalHCURL_TET )
   {
-    using Basis = NodalBasisFamily<>::HCURL_TET;  // Hierarchical basis family does not yet support HCURL_TET
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = NodalBasisFamily<DeviceType>::HCURL_TET;  // Hierarchical basis family does not yet support HCURL_TET
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_CURL};
@@ -422,7 +498,8 @@ namespace
 
   TEUCHOS_UNIT_TEST( BasisValues, NodalHGRAD_LINE )
   {
-    using Basis = NodalBasisFamily<>::HGRAD_LINE;
+    using DeviceType = Intrepid2::DefaultTestDeviceType;
+    using Basis = NodalBasisFamily<DeviceType>::HGRAD_LINE;
     
     // for now, the BasisValues path only supports the standard exact-sequence operators
     std::vector<EOperator> opsToTest {OPERATOR_VALUE, OPERATOR_GRAD};

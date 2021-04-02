@@ -5,7 +5,7 @@ sierra_code=/scratch/$USER/code
 
 #depending on the system, you may need sierra-devel or sierra-devel/nvidia
 module load sierra-devel/nvidia
-module swap sierra-cmake/3.12.2 cde/cmake/3.17.1
+module swap sierra-cmake/3.12.2 sierra-cmake/3.17.5
 
 #now the magic currently necessary for CUDA:
 

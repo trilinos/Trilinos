@@ -29,19 +29,7 @@ C     STRING    CHARACTER       String to receive the time
 */
 
 #define STRLEN 8
-#include <stdio.h>
-#include <string.h>
 #include <time.h>
-
-static char *copy_string(char *dest, char const *source, long int elements)
-{
-  char *d;
-  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
-    *d = *source;
-  }
-  *d = '\0';
-  return d;
-}
 
 #if defined(ADDC_)
 void extime_(char *string, long int len)
@@ -49,14 +37,7 @@ void extime_(char *string, long int len)
 void extime(char *string, long int len)
 #endif
 {
-  struct tm *t;
-  time_t     tim;
-
-  char Temp[STRLEN + 1]; /* My temporary string storage slot. */
-
-  tim = time(0);
-  t   = localtime(&tim);
-
-  sprintf(Temp, "%02d:%02d:%02d", t->tm_hour, t->tm_min, t->tm_sec);
-  copy_string(string, Temp, STRLEN + 1);
+  time_t     tim = time(0);
+  struct tm *t   = localtime(&tim);
+  strftime(string, 9, "%H:%M:%S", t);
 }

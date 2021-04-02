@@ -143,7 +143,8 @@ void copy_relations(const stk::mesh::BulkData& oldBulk,
                     stk::mesh::Entity newEntity,
                     stk::mesh::BulkData& outputBulk)
 {
-    for(stk::mesh::EntityRank relationRank = stk::topology::NODE_RANK; relationRank < outputBulk.mesh_meta_data().entity_rank_count(); relationRank++)
+    stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(outputBulk.mesh_meta_data().entity_rank_count());
+    for(stk::mesh::EntityRank relationRank = stk::topology::NODE_RANK; relationRank < endRank; relationRank++)
     {
         unsigned numConnected = oldBulk.num_connectivity(oldEntity, relationRank);
         const stk::mesh::Entity* connected = oldBulk.begin(oldEntity, relationRank);

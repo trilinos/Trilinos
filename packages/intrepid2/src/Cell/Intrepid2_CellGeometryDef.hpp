@@ -57,11 +57,11 @@ namespace Intrepid2
   {
     /** \brief Store host-only "members" of CellGeometry using a static map indexed on the CellGeometry pointer.  This allows us to avoid issues related to non-CUDA-aware members with a lambda capture of a CellGeometry object.
      */
-    template<class PointScalar, int spaceDim, typename ExecSpaceType>
+    template<class PointScalar, int spaceDim, typename DeviceType>
     class CellGeometryHostMembers
     {
-      using BasisPtr = Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> >;
-      using CellGeometryType = CellGeometry<PointScalar,spaceDim,ExecSpaceType>;
+      using BasisPtr = Teuchos::RCP<Intrepid2::Basis<DeviceType,PointScalar,PointScalar> >;
+      using CellGeometryType = CellGeometry<PointScalar,spaceDim,DeviceType>;
     public:
       // conceptually, these should be private members, but for the definition of these, we need them to be externally accessible.
       static std::map<const CellGeometryType *, shards::CellTopology> cellTopology_;
@@ -92,14 +92,14 @@ namespace Intrepid2
     };
   
     // member lookup map definitions for CellGeometryHostMembers:
-    template< class PointScalar, int spaceDim, typename ExecSpaceType > typename std::map<const CellGeometry<PointScalar,spaceDim,ExecSpaceType> *, shards::CellTopology> CellGeometryHostMembers< PointScalar,spaceDim,ExecSpaceType>::cellTopology_;
+    template< class PointScalar, int spaceDim, typename DeviceType > typename std::map<const CellGeometry<PointScalar,spaceDim,DeviceType> *, shards::CellTopology> CellGeometryHostMembers< PointScalar,spaceDim,DeviceType>::cellTopology_;
   
-    template< class PointScalar, int spaceDim, typename ExecSpaceType > typename std::map<const CellGeometry<PointScalar,spaceDim,ExecSpaceType> *, Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> >> CellGeometryHostMembers< PointScalar,spaceDim,ExecSpaceType>::basisForNodes_;
+    template< class PointScalar, int spaceDim, typename DeviceType > typename std::map<const CellGeometry<PointScalar,spaceDim,DeviceType> *, Teuchos::RCP<Intrepid2::Basis<DeviceType,PointScalar,PointScalar> >> CellGeometryHostMembers< PointScalar,spaceDim,DeviceType>::basisForNodes_;
   }
 
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::CellGeometry(const CellGeometry<PointScalar,spaceDim,ExecSpaceType> &cellGeometry)
+  CellGeometry<PointScalar,spaceDim,DeviceType>::CellGeometry(const CellGeometry<PointScalar,spaceDim,DeviceType> &cellGeometry)
 :
   nodeOrdering_(cellGeometry.nodeOrdering_),
   cellGeometryType_(cellGeometry.cellGeometryType_),
@@ -119,25 +119,25 @@ namespace Intrepid2
 #ifndef __CUDA_ARCH__
     shards::CellTopology cellTopo = cellGeometry.cellTopology();
     BasisPtr basisForNodes = cellGeometry.basisForNodes();
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
 #endif
   }
 
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::~CellGeometry()
+  CellGeometry<PointScalar,spaceDim,DeviceType>::~CellGeometry()
   {
     // host-only deregistration with HostMemberLookup:
 #ifndef __CUDA_ARCH__
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::destructorCalled(this);
 #endif
   }
 
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::numCellsPerGridCell(SubdivisionStrategy subdivisionStrategy) const
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::numCellsPerGridCell(SubdivisionStrategy subdivisionStrategy) const
   {
     switch (subdivisionStrategy) {
       case NO_SUBDIVISION:
@@ -155,11 +155,11 @@ namespace Intrepid2
     return -1;
   }
 
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  Data<PointScalar,ExecSpaceType>
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::allocateJacobianDataPrivate(const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  Data<PointScalar,DeviceType>
+  CellGeometry<PointScalar,spaceDim,DeviceType>::allocateJacobianDataPrivate(const TensorPoints<PointScalar,DeviceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const
   {
-    ScalarView<PointScalar,ExecSpaceType> data;
+    ScalarView<PointScalar,DeviceType> data;
     const int rank = 4; // C,P,D,D
     const int CELL_DIM  = 0;
     const int POINT_DIM = 1;
@@ -244,12 +244,14 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "support for this CellGeometryType is not yet implemented");
     }
     
-    Data<PointScalar,ExecSpaceType> jacobianData(data,rank,extents,variationType,blockPlusDiagonalLastNonDiagonal);
+    Data<PointScalar,DeviceType> jacobianData(data,rank,extents,variationType,blockPlusDiagonalLastNonDiagonal);
     return jacobianData;
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobianDataPrivate(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int &pointsPerCell, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::setJacobianDataPrivate(Data<PointScalar,DeviceType> &jacobianData, const TensorPoints<PointScalar,DeviceType> &points,
+                                                                                const int &pointsPerCell, const Data<PointScalar,DeviceType> &refData,
+                                                                                const int startCell, const int endCell) const
   {
     const int numCellsWorkset = (endCell == -1) ? (numCells_ - startCell) : (endCell - startCell);
     
@@ -291,14 +293,15 @@ namespace Intrepid2
         const auto domainExtents = domainExtents_;
         const auto gridCellCounts = gridCellCounts_;
         
-        auto policy = Kokkos::RangePolicy<>(ExecSpaceType(),0,spaceDim);
+        using ExecutionSpace = typename DeviceType::execution_space;
+        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,spaceDim);
         Kokkos::parallel_for("fill jacobian", policy, KOKKOS_LAMBDA(const int d1)
         {
           // diagonal jacobian
           const double REF_SPACE_EXTENT = 2.0;
           dataView1(d1) = (domainExtents[d1] / REF_SPACE_EXTENT) / gridCellCounts[d1];
         });
-        ExecSpaceType().fence();
+        ExecutionSpace().fence();
       }
     }
     else if (cellGeometryType_ == TENSOR_GRID)
@@ -316,7 +319,8 @@ namespace Intrepid2
         auto cellToNodes = cellToNodes_;
         auto nodes       = nodes_;
         
-        auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({startCell,0,0},{numCellsWorkset,spaceDim,spaceDim});
+        using ExecutionSpace = typename DeviceType::execution_space;
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({startCell,0,0},{numCellsWorkset,spaceDim,spaceDim});
         
         Kokkos::parallel_for("compute first-order simplex Jacobians", policy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &d1, const int &d2) {
@@ -330,7 +334,7 @@ namespace Intrepid2
       }
       else
       {
-        using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
+        using CellTools = Intrepid2::CellTools<DeviceType>;
         auto basisForNodes = this->basisForNodes();
         
         if (affine_)
@@ -354,28 +358,14 @@ namespace Intrepid2
         {
           auto dataView = jacobianData.getUnderlyingView(); // (numCellsWorkset, pointsPerCell, spaceDim, spaceDim) allocated in allocateJacobianDataPrivate()
           
-          // it would be nice if we could avoid allocating and computing this reference space data every time a Jacobian is required.
-          // Once we have data IDs set up, we could verify that the point set matches the point set we previously computed at.
-          // At that point, we could make basisGradients a member variable, lazily filled during setJacobian().
-          auto basisGradients = basisForNodes->allocateBasisValues(points, OPERATOR_GRAD);
-          basisForNodes->getValues(basisGradients, points, OPERATOR_GRAD);
+          // refData should contain the basis gradients; shape is (F,P,D)
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!refData.isValid(), std::invalid_argument, "refData should be a valid container for cases with non-affine geometry");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.rank() != 3, std::invalid_argument, "refData should have shape (F,P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.extent_int(0) != basisForNodes->getCardinality(), std::invalid_argument, "refData should have shape (F,P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.extent_int(1) != points.extent_int(0), std::invalid_argument, "refData should have shape (F,P,D)");
+          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(refData.extent_int(2) != spaceDim, std::invalid_argument, "refData should have shape (F,P,D)");
           
-          // as an optimization here, we allocate a Kokkos View to store explicit, full gradients at each point.
-          // this worthwhile (if it in fact is) mainly due to operator() in BasisView being more expensive than that in DynRankView, and also
-          // due to the fact that tensor-product bases are stored unmultiplied, so accesses cascade, and end up involving extra multiplies.
-          int numPoints = points.extent_int(0);
-          int numFields = basisForNodes->getCardinality();
-          auto basisGradientsView = getMatchingViewWithLabel(dataView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
-          
-          auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numFields,numPoints,spaceDim});
-          
-          Kokkos::parallel_for("copy basis gradients", policy,
-          KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal, const int &d) {
-            basisGradientsView(fieldOrdinal,pointOrdinal,d) = basisGradients(fieldOrdinal,pointOrdinal,d);
-          });
-          ExecSpaceType().fence();
-          
-          CellTools::setJacobian(dataView, *this, basisGradientsView, startCell, endCell);
+          CellTools::setJacobian(dataView, *this, refData, startCell, endCell);
         }
       }
     }
@@ -387,12 +377,12 @@ namespace Intrepid2
   }
 
   // Uniform grid constructor, with optional subdivision into simplices
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::CellGeometry(const Kokkos::Array<PointScalar,spaceDim> &origin,
-                                                                 const Kokkos::Array<PointScalar,spaceDim> &domainExtents,
-                                                                 const Kokkos::Array<int,spaceDim> &gridCellCounts,
-                                                                 SubdivisionStrategy subdivisionStrategy,
-                                                                 HypercubeNodeOrdering nodeOrdering)
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  CellGeometry<PointScalar,spaceDim,DeviceType>::CellGeometry(const Kokkos::Array<PointScalar,spaceDim> &origin,
+                                                              const Kokkos::Array<PointScalar,spaceDim> &domainExtents,
+                                                              const Kokkos::Array<int,spaceDim> &gridCellCounts,
+                                                              SubdivisionStrategy subdivisionStrategy,
+                                                              HypercubeNodeOrdering nodeOrdering)
   :
   nodeOrdering_(nodeOrdering),
   cellGeometryType_(UNIFORM_GRID),
@@ -450,7 +440,7 @@ namespace Intrepid2
       }
     }
     
-    using BasisFamily = DerivedNodalBasisFamily<ExecSpaceType,PointScalar,PointScalar>;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
     const int linearPolyOrder = 1;
     BasisPtr basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
     
@@ -460,27 +450,27 @@ namespace Intrepid2
       // arbitrary-polynomial-order counterparts; the latter do not match the order of the shards::CellTopology nodes.
       if (cellTopo.getKey() == shards::Quadrilateral<>::key)
       {
-        basisForNodes = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<DeviceType,PointScalar,PointScalar>() );
       }
       else if (cellTopo.getKey() == shards::Hexahedron<>::key)
       {
-        basisForNodes = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<DeviceType,PointScalar,PointScalar>() );
       }
     }
     
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
   }
     
   // Node-based constructor for straight-edged cell geometry.
   // If claimAffine is true, we assume (without checking) that the mapping from reference space is affine.
   // (If claimAffine is false, we check whether the topology is simplicial; if so, we conclude that the mapping must be affine.)
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::CellGeometry(const shards::CellTopology &cellTopo,
-                                                                 ScalarView<int,ExecSpaceType> cellToNodes,
-                                                                 ScalarView<PointScalar,ExecSpaceType> nodes,
-                                                                 const bool claimAffine,
-                                                                 const HypercubeNodeOrdering nodeOrdering)
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  CellGeometry<PointScalar,spaceDim,DeviceType>::CellGeometry(const shards::CellTopology &cellTopo,
+                                                              ScalarView<int,DeviceType> cellToNodes,
+                                                              ScalarView<PointScalar,DeviceType> nodes,
+                                                              const bool claimAffine,
+                                                              const HypercubeNodeOrdering nodeOrdering)
   :
   nodeOrdering_(nodeOrdering),
   cellGeometryType_(FIRST_ORDER),
@@ -502,7 +492,7 @@ namespace Intrepid2
       affine_ = true;
     }
     
-    using BasisFamily = DerivedNodalBasisFamily<ExecSpaceType,PointScalar,PointScalar>;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
     const int linearPolyOrder = 1;
     BasisPtr basisForNodes = getBasis<BasisFamily>(cellTopo, FUNCTION_SPACE_HGRAD, linearPolyOrder);
     
@@ -512,22 +502,22 @@ namespace Intrepid2
       // arbitrary-polynomial-order counterparts; the latter do not match the order of the shards::CellTopology nodes.
       if (cellTopo.getKey() == shards::Quadrilateral<>::key)
       {
-        basisForNodes = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_QUAD_C1_FEM<DeviceType,PointScalar,PointScalar>() );
       }
       else if (cellTopo.getKey() == shards::Hexahedron<>::key)
       {
-        basisForNodes = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<ExecSpaceType,PointScalar,PointScalar>() );
+        basisForNodes = Teuchos::rcp( new Basis_HGRAD_HEX_C1_FEM<DeviceType,PointScalar,PointScalar>() );
       }
     }
     
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
   }
 
   // Constructor for higher-order geometry
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::CellGeometry(Teuchos::RCP<Intrepid2::Basis<ExecSpaceType,PointScalar,PointScalar> > basisForNodes,
-                                                                 ScalarView<PointScalar,ExecSpaceType> cellNodes)
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  CellGeometry<PointScalar,spaceDim,DeviceType>::CellGeometry(Teuchos::RCP<Intrepid2::Basis<DeviceType,PointScalar,PointScalar> > basisForNodes,
+                                                              ScalarView<PointScalar,DeviceType> cellNodes)
   :
   nodeOrdering_(HYPERCUBE_NODE_ORDER_TENSOR),
   cellGeometryType_(HIGHER_ORDER),
@@ -550,21 +540,21 @@ namespace Intrepid2
     {
       affine_ = false;
     }
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     HostMemberLookup::constructorCalled(this, cellTopo, basisForNodes);
   }
     
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  bool CellGeometry<PointScalar,spaceDim,ExecSpaceType>::affine() const
+  bool CellGeometry<PointScalar,spaceDim,DeviceType>::affine() const
   {
     return affine_;
   }
     
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  TensorData<PointScalar,ExecSpaceType>
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::allocateCellMeasure( const Data<PointScalar,ExecSpaceType> & jacobianDet,
-                                                                        const TensorData<PointScalar,ExecSpaceType> & cubatureWeights ) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  TensorData<PointScalar,DeviceType>
+  CellGeometry<PointScalar,spaceDim,DeviceType>::allocateCellMeasure( const Data<PointScalar,DeviceType> & jacobianDet,
+                                                                      const TensorData<PointScalar,DeviceType> & cubatureWeights ) const
   {
     // Output possibilities for a cubatureWeights with N components:
     // 1. For AFFINE elements (jacobianDet cell-wise constant), returns a container with N+1 tensorial components; the first component corresponds to cells
@@ -573,7 +563,7 @@ namespace Intrepid2
     INTREPID2_TEST_FOR_EXCEPTION(cubatureWeights.rank() != 1, std::invalid_argument, "cubatureWeights container must have shape (P)");
     
     const int numTensorComponents = affine_ ? cubatureWeights.numTensorComponents() + 1 : 1;
-    std::vector< Data<PointScalar,ExecSpaceType> > tensorComponents(numTensorComponents);
+    std::vector< Data<PointScalar,DeviceType> > tensorComponents(numTensorComponents);
     
     if (affine_)
     {
@@ -582,8 +572,8 @@ namespace Intrepid2
       const int cellDataDim = jacobianDet.getDataExtent(0);
       Kokkos::Array<int,7> cellExtents{cellExtent,1,1,1,1,1,1};
       
-      ScalarView<PointScalar,ExecSpaceType> detDataView ("cell relative volumes", cellDataDim);
-      tensorComponents[0] = Data<PointScalar,ExecSpaceType>(detDataView,1,cellExtents,cellVariationTypes);
+      ScalarView<PointScalar,DeviceType> detDataView ("cell relative volumes", cellDataDim);
+      tensorComponents[0] = Data<PointScalar,DeviceType>(detDataView,1,cellExtents,cellVariationTypes);
       
       for (int cubTensorComponent=0; cubTensorComponent<numTensorComponents-1; cubTensorComponent++)
       {
@@ -591,9 +581,9 @@ namespace Intrepid2
         const auto cubatureExtents        = cubatureComponent.getExtents();
         const auto cubatureVariationTypes = cubatureComponent.getVariationTypes();
         const int numPoints               = cubatureComponent.getDataExtent(0);
-        ScalarView<PointScalar,ExecSpaceType> cubatureWeightView ("cubature component weights", numPoints);
+        ScalarView<PointScalar,DeviceType> cubatureWeightView ("cubature component weights", numPoints);
         const int pointComponentRank = 1;
-        tensorComponents[cubTensorComponent+1] = Data<PointScalar,ExecSpaceType>(cubatureWeightView,pointComponentRank,cubatureExtents,cubatureVariationTypes);
+        tensorComponents[cubTensorComponent+1] = Data<PointScalar,DeviceType>(cubatureWeightView,pointComponentRank,cubatureExtents,cubatureVariationTypes);
       }
     }
     else
@@ -605,26 +595,26 @@ namespace Intrepid2
       const int numPoints = cubatureWeights.extent_int(0);
       Kokkos::Array<int,7> extents{cellExtent,numPoints,1,1,1,1,1};
       
-      ScalarView<PointScalar,ExecSpaceType> cubatureWeightView;
+      ScalarView<PointScalar,DeviceType> cubatureWeightView;
       if (variationTypes[0] != CONSTANT)
       {
-        cubatureWeightView = ScalarView<PointScalar,ExecSpaceType>("cell measure", cellDataDim, numPoints);
+        cubatureWeightView = ScalarView<PointScalar,DeviceType>("cell measure", cellDataDim, numPoints);
       }
       else
       {
-        cubatureWeightView = ScalarView<PointScalar,ExecSpaceType>("cell measure", numPoints);
+        cubatureWeightView = ScalarView<PointScalar,DeviceType>("cell measure", numPoints);
       }
       const int cellMeasureRank = 2;
-      tensorComponents[0] = Data<PointScalar,ExecSpaceType>(cubatureWeightView,cellMeasureRank,extents,variationTypes);
+      tensorComponents[0] = Data<PointScalar,DeviceType>(cubatureWeightView,cellMeasureRank,extents,variationTypes);
     }
     const bool separateFirstComponent = (numTensorComponents > 1);
-    return TensorData<PointScalar,ExecSpaceType>(tensorComponents, separateFirstComponent);
+    return TensorData<PointScalar,DeviceType>(tensorComponents, separateFirstComponent);
   }
     
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::computeCellMeasure( TensorData<PointScalar,ExecSpaceType> &cellMeasure,
-                                                                            const Data<PointScalar,ExecSpaceType> & jacobianDet,
-                                                                            const TensorData<PointScalar,ExecSpaceType> & cubatureWeights ) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::computeCellMeasure( TensorData<PointScalar,DeviceType> &cellMeasure,
+                                                                          const Data<PointScalar,DeviceType> & jacobianDet,
+                                                                          const TensorData<PointScalar,DeviceType> & cubatureWeights ) const
   {
     // Output possibilities for a cubatureWeights with N components:
     // 1. For AFFINE elements (jacobianDet constant on each cell), returns a container with N+1 tensorial components; the first component corresponds to cells
@@ -656,9 +646,13 @@ namespace Intrepid2
       {
         auto cellMeasureData = cellMeasure.getTensorComponent(0).getUnderlyingView2();
         auto detData = jacobianDet.getUnderlyingView2();
-        Kokkos::parallel_for(
-        Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{detData.extent_int(0),detData.extent_int(1)}),
-        KOKKOS_LAMBDA (int cellOrdinal, int pointOrdinal) {
+        const int numCells = detData.extent_int(0);
+        const int numPoints = detData.extent_int(1);
+        // This lambda rewritten using single-dimension RangePolicy instead of MDRangePolicy to work around an apparent CUDA 10.1.243 compiler bug
+        Kokkos::parallel_for( numCells * numPoints,
+        KOKKOS_LAMBDA (const int &cellPointOrdinal) {
+          const int cellOrdinal  = cellPointOrdinal / numPoints;
+          const int pointOrdinal = cellPointOrdinal % numPoints;
           cellMeasureData(cellOrdinal,pointOrdinal) = detData(cellOrdinal,pointOrdinal) * cubatureWeights(pointOrdinal);
         });
       }
@@ -666,8 +660,9 @@ namespace Intrepid2
       {
         auto cellMeasureData = cellMeasure.getTensorComponent(0).getUnderlyingView2();
         auto detData = jacobianDet.getUnderlyingView1();
+        using ExecutionSpace = typename DeviceType::execution_space;
         Kokkos::parallel_for(
-        Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{detData.extent_int(0),cubatureWeights.extent_int(0)}),
+        Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{detData.extent_int(0),cubatureWeights.extent_int(0)}),
         KOKKOS_LAMBDA (int cellOrdinal, int pointOrdinal) {
           cellMeasureData(cellOrdinal,pointOrdinal) = detData(cellOrdinal) * cubatureWeights(pointOrdinal);
         });
@@ -678,7 +673,8 @@ namespace Intrepid2
         // cell measure data has shape (P)
         auto cellMeasureData = cellMeasure.getTensorComponent(0).getUnderlyingView1();
         auto detData = jacobianDet.getUnderlyingView1();
-        Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,cellMeasureData.extent_int(0)),
+        using ExecutionSpace = typename DeviceType::execution_space;
+        Kokkos::parallel_for(Kokkos::RangePolicy<ExecutionSpace>(0,cellMeasureData.extent_int(0)),
         KOKKOS_LAMBDA (const int &pointOrdinal) {
           cellMeasureData(pointOrdinal) = detData(0) * cubatureWeights(pointOrdinal);
         });
@@ -686,24 +682,24 @@ namespace Intrepid2
     }
   }
     
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  typename CellGeometry<PointScalar,spaceDim,ExecSpaceType>::BasisPtr
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::basisForNodes() const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  typename CellGeometry<PointScalar,spaceDim,DeviceType>::BasisPtr
+  CellGeometry<PointScalar,spaceDim,DeviceType>::basisForNodes() const
   {
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     return HostMemberLookup::getBasis(this);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  const shards::CellTopology & CellGeometry<PointScalar,spaceDim,ExecSpaceType>::cellTopology() const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  const shards::CellTopology & CellGeometry<PointScalar,spaceDim,DeviceType>::cellTopology() const
   {
-    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, ExecSpaceType>;
+    using HostMemberLookup = ::Intrepid2::Impl::CellGeometryHostMembers<PointScalar, spaceDim, DeviceType>;
     return HostMemberLookup::getCellTopology(this);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  DataVariationType CellGeometry<PointScalar,spaceDim,ExecSpaceType>::cellVariationType() const
+  DataVariationType CellGeometry<PointScalar,spaceDim,DeviceType>::cellVariationType() const
   {
     if (cellGeometryType_ == UNIFORM_GRID)
     {
@@ -719,10 +715,79 @@ namespace Intrepid2
     }
     else return GENERAL;
   }
+
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  Data<PointScalar,DeviceType> CellGeometry<PointScalar,spaceDim,DeviceType>::getJacobianRefData(const TensorPoints<PointScalar,DeviceType> &points) const
+  {
+    Data<PointScalar,DeviceType> emptyRefData;
+    if (cellGeometryType_ == UNIFORM_GRID)
+    {
+      // no need for basis computations
+      return emptyRefData;
+    }
+    else if (cellGeometryType_ == TENSOR_GRID)
+    {
+      // no need for basis values
+      return emptyRefData;
+    }
+    else if ((cellGeometryType_ == FIRST_ORDER) || (cellGeometryType_ == HIGHER_ORDER))
+    {
+      const bool simplex = (spaceDim + 1 == cellToNodes_.extent_int(1));
+      if (simplex)
+      {
+        // no need for precomputed basis values
+        return emptyRefData;
+      }
+      else
+      {
+        auto basisForNodes = this->basisForNodes();
+        
+        if (affine_)
+        {
+          // no need for precomputed basis values
+          return emptyRefData;
+        }
+        else
+        {
+          auto basisGradients = basisForNodes->allocateBasisValues(points, OPERATOR_GRAD);
+          basisForNodes->getValues(basisGradients, points, OPERATOR_GRAD);
+          
+          int numPoints = points.extent_int(0);
+          int numFields = basisForNodes->getCardinality();
+          
+          // At some (likely relatively small) memory cost, we copy the BasisGradients into an explicit (F,P,D) container.
+          // Given that we expect to reuse this for a non-trivial number of cell in the common use case, the extra memory
+          // cost is likely worth the increased flop count, etc.  (One might want to revisit this in cases of high spaceDim
+          // and/or very high polynomial order.)
+          
+          auto firstPointComponentView = points.getTensorComponent(0); // (P,D0)
+          auto basisGradientsView = getMatchingViewWithLabel(firstPointComponentView, "CellGeometryProvider: temporary basisGradients", numFields, numPoints, spaceDim);
+          
+          using ExecutionSpace = typename DeviceType::execution_space;
+          auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numFields,numPoints,spaceDim});
+          
+          Kokkos::parallel_for("copy basis gradients", policy,
+          KOKKOS_LAMBDA (const int &fieldOrdinal, const int &pointOrdinal, const int &d) {
+            basisGradientsView(fieldOrdinal,pointOrdinal,d) = basisGradients(fieldOrdinal,pointOrdinal,d);
+          });
+          ExecutionSpace().fence();
+          
+          Data<PointScalar,DeviceType> basisRefData(basisGradientsView);
+          return basisRefData;
+        }
+      }
+    }
+    else
+    {
+      // TODO: handle the other cases
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "support for this CellGeometryType is not yet implemented");
+    }
+    return emptyRefData;
+  }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::hypercubeComponentNodeNumber(int hypercubeNodeNumber, int d) const
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::hypercubeComponentNodeNumber(int hypercubeNodeNumber, int d) const
   {
     if (nodeOrdering_ == HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS)
     {
@@ -751,17 +816,17 @@ namespace Intrepid2
       return 0;
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::initializeOrientations()
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::initializeOrientations()
   {
-    using HostExecSpace = typename Kokkos::Impl::is_space<ExecSpaceType>::host_mirror_space::execution_space ;
+    using HostExecSpace = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space ;
     
     const bool isGridType = (cellGeometryType_ == TENSOR_GRID) || (cellGeometryType_ == UNIFORM_GRID);
     const int numOrientations = isGridType ? numCellsPerGridCell(subdivisionStrategy_) : numCells();
     
     const int nodesPerCell = numNodesPerCell();
     
-    ScalarView<Orientation, ExecSpaceType> orientationsView("orientations", numOrientations);
+    ScalarView<Orientation, DeviceType> orientationsView("orientations", numOrientations);
     auto orientationsHost = Kokkos::create_mirror_view(typename HostExecSpace::memory_space(), orientationsView);
     
     ScalarView<PointScalar, HostExecSpace> cellNodesHost("cellNodesHost",numOrientations,nodesPerCell); // (C,N) -- where C = numOrientations
@@ -796,12 +861,12 @@ namespace Intrepid2
     const int orientationsRank = 1; // shape (C)
     const Kokkos::Array<int,7>               orientationExtents {static_cast<int>(numCells_),1,1,1,1,1,1};
     const Kokkos::Array<DataVariationType,7> orientationVariationTypes { cellVariationType, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT};
-    orientations_ = Data<Orientation,ExecSpaceType>(orientationsView, orientationsRank, orientationExtents, orientationVariationTypes);
+    orientations_ = Data<Orientation,DeviceType>(orientationsView, orientationsRank, orientationExtents, orientationVariationTypes);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  size_t CellGeometry<PointScalar,spaceDim,ExecSpaceType>::extent(const int& r) const {
+  size_t CellGeometry<PointScalar,spaceDim,DeviceType>::extent(const int& r) const {
     if (r == 0)
     {
       return numCells_;
@@ -820,33 +885,33 @@ namespace Intrepid2
     }
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   template <typename iType>
   KOKKOS_INLINE_FUNCTION
   typename std::enable_if<std::is_integral<iType>::value, int>::type
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::extent_int(const iType& r) const
+  CellGeometry<PointScalar,spaceDim,DeviceType>::extent_int(const iType& r) const
   {
     return static_cast<int>(extent(r));
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  typename CellGeometry<PointScalar,spaceDim,ExecSpaceType>::HypercubeNodeOrdering
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::nodeOrderingForHypercubes() const
+  typename CellGeometry<PointScalar,spaceDim,DeviceType>::HypercubeNodeOrdering
+  CellGeometry<PointScalar,spaceDim,DeviceType>::nodeOrderingForHypercubes() const
   {
     return nodeOrdering_;
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::numCells() const
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::numCells() const
   {
     return numCells_;
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::numCellsInDimension(const int &dim) const
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::numCellsInDimension(const int &dim) const
   {
     if (cellGeometryType_ == UNIFORM_GRID)
     {
@@ -862,23 +927,23 @@ namespace Intrepid2
     }
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::numNodesPerCell() const
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::numNodesPerCell() const
   {
     return numNodesPerCell_;
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  Orientation CellGeometry<PointScalar,spaceDim,ExecSpaceType>::getOrientation(int &cellNumber) const
+  Orientation CellGeometry<PointScalar,spaceDim,DeviceType>::getOrientation(int &cellNumber) const
   {
     INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!orientations_.isValid(), std::invalid_argument, "orientations_ not initialized; call initializeOrientations() first");
     return orientations_(cellNumber);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  Data<Orientation,ExecSpaceType> CellGeometry<PointScalar,spaceDim,ExecSpaceType>::getOrientations()
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  Data<Orientation,DeviceType> CellGeometry<PointScalar,spaceDim,DeviceType>::getOrientations()
   {
     if (!orientations_.isValid())
     {
@@ -887,9 +952,9 @@ namespace Intrepid2
     return orientations_;
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  PointScalar CellGeometry<PointScalar,spaceDim,ExecSpaceType>::gridCellCoordinate(const int &gridCellOrdinal, const int &localNodeNumber, const int &dim) const
+  PointScalar CellGeometry<PointScalar,spaceDim,DeviceType>::gridCellCoordinate(const int &gridCellOrdinal, const int &localNodeNumber, const int &dim) const
   {
     const int componentNode = hypercubeComponentNodeNumber(localNodeNumber, dim);
     int cellCountForPriorDimensions = 1;
@@ -920,16 +985,16 @@ namespace Intrepid2
     }
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  unsigned CellGeometry<PointScalar,spaceDim,ExecSpaceType>::rank() const
+  unsigned CellGeometry<PointScalar,spaceDim,DeviceType>::rank() const
   {
     return 3; // (C,N,D)
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::gridCellNodeForSubdivisionNode(const int &gridCellOrdinal, const int &subdivisionOrdinal,
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::gridCellNodeForSubdivisionNode(const int &gridCellOrdinal, const int &subdivisionOrdinal,
                                                                                        const int &subdivisionNodeNumber) const
   {
     // TODO: do something to reuse the nodeLookup containers
@@ -1074,9 +1139,9 @@ namespace Intrepid2
     }
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  PointScalar CellGeometry<PointScalar,spaceDim,ExecSpaceType>::subdivisionCoordinate(const int &gridCellOrdinal, const int &subdivisionOrdinal,
+  PointScalar CellGeometry<PointScalar,spaceDim,DeviceType>::subdivisionCoordinate(const int &gridCellOrdinal, const int &subdivisionOrdinal,
                                                                                       const int &subdivisionNodeNumber, const int &d) const
   {
     int gridCellNode = gridCellNodeForSubdivisionNode(gridCellOrdinal, subdivisionOrdinal, subdivisionNodeNumber);
@@ -1096,10 +1161,10 @@ namespace Intrepid2
     return gridCellCoordinate(gridCellOrdinal, gridCellNode, d);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
   PointScalar
-  CellGeometry<PointScalar,spaceDim,ExecSpaceType>::operator()(const int& cell, const int& node, const int& dim) const {
+  CellGeometry<PointScalar,spaceDim,DeviceType>::operator()(const int& cell, const int& node, const int& dim) const {
     if ((cellGeometryType_ == UNIFORM_GRID) || (cellGeometryType_ == TENSOR_GRID))
     {
       const int numSubdivisions = numCellsPerGridCell(subdivisionStrategy_);
@@ -1137,9 +1202,9 @@ namespace Intrepid2
     }
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   KOKKOS_INLINE_FUNCTION
-  int CellGeometry<PointScalar,spaceDim,ExecSpaceType>::uniformJacobianModulus() const
+  int CellGeometry<PointScalar,spaceDim,DeviceType>::uniformJacobianModulus() const
   {
     if (cellGeometryType_ == UNIFORM_GRID)
     {
@@ -1151,56 +1216,59 @@ namespace Intrepid2
     }
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  Data<PointScalar,ExecSpaceType> CellGeometry<PointScalar,spaceDim,ExecSpaceType>::allocateJacobianData(const TensorPoints<PointScalar,ExecSpaceType> &points, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  Data<PointScalar,DeviceType> CellGeometry<PointScalar,spaceDim,DeviceType>::allocateJacobianData(const TensorPoints<PointScalar,DeviceType> &points, const int startCell, const int endCell) const
   {
     const int pointsPerCell = points.extent_int(0);
     return allocateJacobianDataPrivate(points,pointsPerCell,startCell,endCell);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  Data<PointScalar,ExecSpaceType> CellGeometry<PointScalar,spaceDim,ExecSpaceType>::allocateJacobianData(const ScalarView<PointScalar,ExecSpaceType> &points, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  Data<PointScalar,DeviceType> CellGeometry<PointScalar,spaceDim,DeviceType>::allocateJacobianData(const ScalarView<PointScalar,DeviceType> &points, const int startCell, const int endCell) const
   {
     // if points is rank 3, it has shape (C,P,D).  If it's rank 2, (P,D).
     const int pointDimension = (points.rank() == 3) ? 1 : 0;
     const int pointsPerCell = points.extent_int(pointDimension);
-    TensorPoints<PointScalar,ExecSpaceType> tensorPoints(points);
+    TensorPoints<PointScalar,DeviceType> tensorPoints(points);
     return allocateJacobianDataPrivate(tensorPoints,pointsPerCell,startCell,endCell);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  Data<PointScalar,ExecSpaceType> CellGeometry<PointScalar,spaceDim,ExecSpaceType>::allocateJacobianData(const int &numPoints, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  Data<PointScalar,DeviceType> CellGeometry<PointScalar,spaceDim,DeviceType>::allocateJacobianData(const int &numPoints, const int startCell, const int endCell) const
   {
     INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!affine_, std::invalid_argument, "this version of allocateJacobianData() is only supported for affine CellGeometry");
     
-    TensorPoints<PointScalar,ExecSpaceType> emptyPoints;
+    TensorPoints<PointScalar,DeviceType> emptyPoints;
     return allocateJacobianDataPrivate(emptyPoints,numPoints,startCell,endCell);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const TensorPoints<PointScalar,ExecSpaceType> &points, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::setJacobian(Data<PointScalar,DeviceType> &jacobianData, const TensorPoints<PointScalar,DeviceType> &points,
+                                                                  const Data<PointScalar,DeviceType> &refData, const int startCell, const int endCell) const
   {
     const int pointsPerCell = points.extent_int(0);
-    setJacobianDataPrivate(jacobianData,points,pointsPerCell,startCell,endCell);
+    setJacobianDataPrivate(jacobianData,points,pointsPerCell,refData,startCell,endCell);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const ScalarView<PointScalar,ExecSpaceType> &points, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::setJacobian(Data<PointScalar,DeviceType> &jacobianData, const ScalarView<PointScalar,DeviceType> &points,
+                                                                  const Data<PointScalar,DeviceType> &refData, const int startCell, const int endCell) const
   {
     // if points is rank 3, it has shape (C,P,D).  If it's rank 2, (P,D).
     const int pointDimension = (points.rank() == 3) ? 1 : 0;
     const int pointsPerCell = points.extent_int(pointDimension);
-    TensorPoints<PointScalar,ExecSpaceType> tensorPoints(points);
-    setJacobianDataPrivate(jacobianData,tensorPoints,pointsPerCell,startCell,endCell);
+    TensorPoints<PointScalar,DeviceType> tensorPoints(points);
+    setJacobianDataPrivate(jacobianData,tensorPoints,pointsPerCell,refData,startCell,endCell);
   }
   
-  template<class PointScalar, int spaceDim, typename ExecSpaceType>
-  void CellGeometry<PointScalar,spaceDim,ExecSpaceType>::setJacobian(Data<PointScalar,ExecSpaceType> &jacobianData, const int &numPoints, const int startCell, const int endCell) const
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  void CellGeometry<PointScalar,spaceDim,DeviceType>::setJacobian(Data<PointScalar,DeviceType> &jacobianData, const int &numPoints, const int startCell, const int endCell) const
   {
     INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!affine_, std::invalid_argument, "this version of setJacobian() is only supported for affine CellGeometry");
     
-    TensorPoints<PointScalar,ExecSpaceType> emptyPoints;
-    setJacobianDataPrivate(jacobianData,emptyPoints,numPoints,startCell,endCell);
+    TensorPoints<PointScalar,DeviceType> emptyPoints;
+    Data<PointScalar,DeviceType> emptyRefData;
+    setJacobianDataPrivate(jacobianData,emptyPoints,numPoints,emptyRefData,startCell,endCell);
   }
 } // namespace Intrepid2
 

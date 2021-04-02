@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -14,10 +14,10 @@
 #include <cstring>    // for strlen
 #include <exodusII.h> // for ex_close, ex_open, EX_READ
 
-template int NemSpread<double, int>::check_inp(void);
-template int NemSpread<float, int>::check_inp(void);
-template int NemSpread<double, int64_t>::check_inp(void);
-template int NemSpread<float, int64_t>::check_inp(void);
+template int NemSpread<double, int>::check_inp();
+template int NemSpread<float, int>::check_inp();
+template int NemSpread<double, int64_t>::check_inp();
+template int NemSpread<float, int64_t>::check_inp();
 
 template <typename T, typename INT> int NemSpread<T, INT>::check_inp()
 {

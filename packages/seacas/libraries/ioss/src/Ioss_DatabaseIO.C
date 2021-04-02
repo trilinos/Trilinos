@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -21,6 +21,7 @@
 #include <Ioss_SerializeIO.h>
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
+#include <Ioss_Sort.h>
 #include <Ioss_State.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_SurfaceSplit.h>
@@ -51,8 +52,8 @@ namespace {
   auto initial_time = std::chrono::steady_clock::now();
 
   void log_time(std::chrono::time_point<std::chrono::steady_clock> &start,
-                std::chrono::time_point<std::chrono::steady_clock> &finish,
-                int current_state, double state_time, bool is_input, bool single_proc_only,
+                std::chrono::time_point<std::chrono::steady_clock> &finish, int current_state,
+                double state_time, bool is_input, bool single_proc_only,
                 const Ioss::ParallelUtils &util);
 
   void log_field(const char *symbol, const Ioss::GroupingEntity *entity, const Ioss::Field &field,
@@ -659,11 +660,11 @@ namespace Ioss {
   {
     if (!omissions.empty()) {
       blockOmissions.assign(omissions.cbegin(), omissions.cend());
-      std::sort(blockOmissions.begin(), blockOmissions.end());
+      Ioss::sort(blockOmissions.begin(), blockOmissions.end());
     }
     if (!inclusions.empty()) {
       blockInclusions.assign(inclusions.cbegin(), inclusions.cend());
-      std::sort(blockInclusions.begin(), blockInclusions.end());
+      Ioss::sort(blockInclusions.begin(), blockInclusions.end());
     }
   }
 
@@ -850,7 +851,7 @@ namespace Ioss {
       }
 
       // Now sort by increasing processor number.
-      std::sort(proc_node.begin(), proc_node.end());
+      Ioss::sort(proc_node.begin(), proc_node.end());
 
       // Pack the data: global_node_id, bits for each block, ...
       // Use 'int' as basic type...
@@ -1119,8 +1120,8 @@ namespace Ioss {
 
 namespace {
   void log_time(std::chrono::time_point<std::chrono::steady_clock> &start,
-                std::chrono::time_point<std::chrono::steady_clock> &finish,
-                int current_state, double state_time, bool is_input, bool single_proc_only,
+                std::chrono::time_point<std::chrono::steady_clock> &finish, int current_state,
+                double state_time, bool is_input, bool single_proc_only,
                 const Ioss::ParallelUtils &util)
   {
     std::vector<double> all_times;
@@ -1147,7 +1148,7 @@ namespace {
         fmt::print(strm, "{} (ms)\n", total);
       }
       else if (util.parallel_size() > 4) {
-        std::sort(all_times.begin(), all_times.end());
+        Ioss::sort(all_times.begin(), all_times.end());
         fmt::print(strm, " Min: {}\tMax: {}\tMed: {}", all_times.front(), all_times.back(),
                    all_times[all_times.size() / 2]);
       }

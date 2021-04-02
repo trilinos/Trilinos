@@ -43,7 +43,7 @@
 #define TPETRA_REPLACEDIAGONALCRSMATRIX_DECL_HPP
 
 /// \file Tpetra_replaceDiagonalCrsMatrix_decl.hpp
-/// \brief Declaration of Tpetra::repalceDiagonalCrsMatrix
+/// \brief Declaration of Tpetra::replaceDiagonalCrsMatrix
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"

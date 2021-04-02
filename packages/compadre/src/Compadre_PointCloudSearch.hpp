@@ -155,8 +155,8 @@ class PointCloudSearch {
 
         //! source site coordinates
         view_type _src_pts_view;
-        const local_index_type _dim;
-        const local_index_type _max_leaf;
+        local_index_type _dim;
+        local_index_type _max_leaf;
 
         std::shared_ptr<tree_type_1d> _tree_1d;
         std::shared_ptr<tree_type_2d> _tree_2d;
@@ -181,7 +181,7 @@ class PointCloudSearch {
         static inline int getEstimatedNumberNeighborsUpperBound(int unisolvency_size, const int dimension, const double epsilon_multiplier) {
             int multiplier = 1;
             if (dimension==1) multiplier = 2;
-            return multiplier * 2.0 * unisolvency_size * pow(epsilon_multiplier, dimension) + 1; // +1 is for the number of neighbors entry needed in the first entry of each row
+            return multiplier * 2.0 * unisolvency_size * std::pow(epsilon_multiplier, dimension) + 1; // +1 is for the number of neighbors entry needed in the first entry of each row
         }
     
         //! Bounding box query method required by Nanoflann.
@@ -390,12 +390,15 @@ class PointCloudSearch {
                         && "number_of_neighbors_list or neighbor lists View does not have large enough dimensions");
             compadre_assert_release((neighbor_lists_view_type::rank==1) && "neighbor_lists must be a 1D Kokkos view.");
 
-            neighbor_lists_view_type row_offsets;
+            typedef Kokkos::View<global_index_type*, typename neighbor_lists_view_type::array_layout,
+                    typename neighbor_lists_view_type::memory_space, typename neighbor_lists_view_type::memory_traits> row_offsets_view_type;
+            row_offsets_view_type row_offsets;
             int max_neighbor_list_row_storage_size = 1;
             if (!is_dry_run) {
                 auto nla(CreateNeighborLists(neighbor_lists, number_of_neighbors_list));
                 max_neighbor_list_row_storage_size = nla.getMaxNumNeighbors();
                 Kokkos::resize(row_offsets, num_target_sites);
+                Kokkos::fence();
                 Kokkos::parallel_for(Kokkos::RangePolicy<host_execution_space>(0,num_target_sites), [&](const int i) {
                     row_offsets(i) = nla.getRowOffsetHost(i); 
                 });
@@ -462,8 +465,9 @@ class PointCloudSearch {
                         neighbors_found = _tree_3d->template radiusSearchCustomCallback<Compadre::RadiusResultSet<double> >(this_target_coord.data(), rrs, sp) ;
                     }
             
-                    // the number of neighbors is stored in column zero of the neighbor lists 2D array
-                    if (is_dry_run) {
+                    // we check that neighbors found doesn't differ from dry-run or we store neighbors_found
+                    // no check that neighbors found stay the same if uniform_radius specified (!=0)
+                    if (is_dry_run || uniform_radius!=0.0) {
                         number_of_neighbors_list(i) = neighbors_found;
                     } else {
                         compadre_kernel_assert_debug((neighbors_found==(size_t)number_of_neighbors_list(i)) 
@@ -487,17 +491,8 @@ class PointCloudSearch {
 
             });
             Kokkos::fence();
-            if (is_dry_run) {
-                int total_storage_size = 0;
-                Kokkos::parallel_reduce("total number of neighbors over all lists", Kokkos::RangePolicy<host_execution_space>(0, number_of_neighbors_list.extent(0)), 
-                        KOKKOS_LAMBDA(const int i, int& t_total_num_neighbors) {
-                    t_total_num_neighbors += number_of_neighbors_list(i);
-                }, Kokkos::Sum<int>(total_storage_size));
-                Kokkos::fence();
-                return (size_t)(total_storage_size);
-            } else {
-                return (size_t)(number_of_neighbors_list(num_target_sites-1)+row_offsets(num_target_sites-1));
-            }
+            auto nla(CreateNeighborLists(number_of_neighbors_list));
+            return nla.getTotalNeighborsOverAllListsHost();
         }
 
 
@@ -610,7 +605,7 @@ class PointCloudSearch {
             
                     // scale by epsilon_multiplier to window from location where the last neighbor was found
                     epsilons(i) = (neighbor_distances(neighbors_found-1) > 0) ?
-                        std::sqrt(neighbor_distances(neighbors_found-1))*(epsilon_multiplier+1e-14) : 1e-14*epsilon_multiplier;
+                        std::sqrt(neighbor_distances(neighbors_found-1))*epsilon_multiplier : 1e-14*epsilon_multiplier;
                     // the only time the second case using 1e-14 is used is when either zero neighbors or exactly one 
                     // neighbor (neighbor is target site) is found.  when the follow on radius search is conducted, the one
                     // neighbor (target site) will not be found if left at 0, so any positive amount will do, however 1e-14 
@@ -683,13 +678,11 @@ class PointCloudSearch {
                         && "number_of_neighbors_list or neighbor lists View does not have large enough dimensions");
             compadre_assert_release((neighbor_lists_view_type::rank==1) && "neighbor_lists must be a 1D Kokkos view.");
 
-            int last_row_offset = 0;
             // if dry-run, neighbors_needed, else max over previous dry-run
             int max_neighbor_list_row_storage_size = neighbors_needed;
             if (!is_dry_run) {
                 auto nla(CreateNeighborLists(neighbor_lists, number_of_neighbors_list));
                 max_neighbor_list_row_storage_size = nla.getMaxNumNeighbors();
-                last_row_offset = nla.getRowOffsetHost(num_target_sites-1);
             }
 
             compadre_assert_release((epsilons.extent(0)==(size_t)num_target_sites)
@@ -759,7 +752,7 @@ class PointCloudSearch {
             
                     // scale by epsilon_multiplier to window from location where the last neighbor was found
                     epsilons(i) = (neighbor_distances(neighbors_found-1) > 0) ?
-                        std::sqrt(neighbor_distances(neighbors_found-1))*(epsilon_multiplier+1e-14) : 1e-14*epsilon_multiplier;
+                        std::sqrt(neighbor_distances(neighbors_found-1))*epsilon_multiplier : 1e-14*epsilon_multiplier;
                     // the only time the second case using 1e-14 is used is when either zero neighbors or exactly one 
                     // neighbor (neighbor is target site) is found.  when the follow on radius search is conducted, the one
                     // neighbor (target site) will not be found if left at 0, so any positive amount will do, however 1e-14 
@@ -785,17 +778,8 @@ class PointCloudSearch {
             generateCRNeighborListsFromRadiusSearch(is_dry_run, trg_pts_view, neighbor_lists, 
                     number_of_neighbors_list, epsilons, 0.0 /*don't set uniform radius*/, max_search_radius);
 
-            if (is_dry_run) {
-                int total_storage_size = 0;
-                Kokkos::parallel_reduce("total number of neighbors over all lists", Kokkos::RangePolicy<host_execution_space>(0, number_of_neighbors_list.extent(0)), 
-                        KOKKOS_LAMBDA(const int i, int& t_total_num_neighbors) {
-                    t_total_num_neighbors += number_of_neighbors_list(i);
-                }, Kokkos::Sum<int>(total_storage_size));
-                Kokkos::fence();
-                return (size_t)(total_storage_size);
-            } else {
-                return (size_t)(number_of_neighbors_list(num_target_sites-1)+last_row_offset);
-            }
+            auto nla(CreateNeighborLists(number_of_neighbors_list));
+            return nla.getTotalNeighborsOverAllListsHost();
         }
 }; // PointCloudSearch
 

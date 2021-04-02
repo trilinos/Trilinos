@@ -188,8 +188,8 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
 
 template<class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  & solver,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -278,7 +278,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     auto thisStepper = Teuchos::rcpFromRef(*this);
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar>> workingState =solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar>> currentState =solutionHistory->getCurrentState();
@@ -375,7 +375,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     }
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
 
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
@@ -385,7 +385,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
@@ -422,7 +422,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     workingState->computeNorms(currentState);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }

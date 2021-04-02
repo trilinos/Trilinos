@@ -80,7 +80,7 @@ namespace MueLu {
     LO numLocalNodes      = procWinner.size();
     LO numLocalAggregated = numLocalNodes - numNonAggregatedNodes;
 
-    const double aggFactor = 0.5;
+    const double aggFactor = params.get<double>("aggregation: phase2a agg factor");
     double       factor    = as<double>(numLocalAggregated)/(numLocalNodes+1);
     factor = pow(factor, aggFactor);
 

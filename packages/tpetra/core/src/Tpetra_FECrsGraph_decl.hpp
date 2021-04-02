@@ -44,11 +44,6 @@
 
 /// \file Tpetra_FECrsGraph_decl.hpp
 /// \brief Declaration of the Tpetra::FECrsGraph class
-///
-/// If you want to use Tpetra::FECrsGraph, include "Tpetra_FECrsGraph.hpp"
-/// (a file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::FECrsGraph, include this file
-/// (Tpetra_FECrsGraph_decl.hpp).
 
 #include "Tpetra_FECrsGraph_fwd.hpp"
 #include "Tpetra_CrsGraph_decl.hpp"

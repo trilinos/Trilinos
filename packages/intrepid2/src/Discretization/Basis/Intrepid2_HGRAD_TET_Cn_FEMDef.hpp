@@ -310,7 +310,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
   // these are tangents scaled by the appropriate edge lengths.
   for (ordinal_type i=0;i<numEdges;i++) {  // loop over edges
-    CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
+    CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( edgePts ,
         linePts ,
         1 ,
         i ,
@@ -338,7 +338,7 @@ Basis_HGRAD_TET_Cn_FEM( const ordinal_type order,
 
     for (ordinal_type i=0;i<numFaces;i++) {  // loop over faces
 
-      CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( facePts ,
+      CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( facePts ,
           triPts ,
           2 ,
           i ,

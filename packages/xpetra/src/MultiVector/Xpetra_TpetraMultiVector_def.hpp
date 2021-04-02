@@ -70,8 +70,8 @@ namespace Xpetra {
   //! Copy constructor (performs a deep copy).
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::  
-  TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source)
-      : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(Tpetra::createCopy(toTpetra(source))))) {  }
+  TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView)
+    : vec_(Teuchos::rcp(new Tpetra::MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >(toTpetra(source), copyOrView))) {  }
 
   //! Create multivector by copying two-dimensional array of local data.
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -481,7 +481,7 @@ namespace Xpetra {
     }
 
     //! Copy constructor (performs a deep copy).
-    TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
+    TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "int", typeid(EpetraNode).name() );
     }
 
@@ -752,7 +752,7 @@ namespace Xpetra {
     }
 
     //! Copy constructor (performs a deep copy).
-    TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
+    TpetraMultiVector(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView) {
       XPETRA_TPETRA_ETI_EXCEPTION( typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name() , typeid(TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,EpetraNode>).name(), "long long", typeid(EpetraNode).name() );
     }
 

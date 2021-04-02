@@ -22,10 +22,10 @@ namespace mock {
 class StkSendAdapter
 {
 public:
-  using EntityKey = MockMesh::EntityKey;
-  using EntityProc = MockMesh::EntityProc;
-  using EntityProcVec = MockMesh::EntityProcVec;
-  using BoundingBox = MockMesh::BoundingBox;
+  using EntityKey = StkMesh::EntityKey;
+  using EntityProc = StkMesh::EntityProc;
+  using EntityProcVec = StkMesh::EntityProcVec;
+  using BoundingBox = StkMesh::BoundingBox;
 
   StkSendAdapter(MPI_Comm mpiComm, StkMesh& mockMesh, const std::string& fieldName)
    : m_comm(mpiComm),

@@ -67,9 +67,7 @@ namespace Intrepid2
 {
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family1_HEX
-  : public Basis_TensorBasis3<HVOL_LINE,
-                              HGRAD_LINE,
-                              HGRAD_LINE>
+  : public Basis_TensorBasis3<typename HGRAD_LINE::BasisBase>
   {
   public:
     using OutputViewType = typename HGRAD_LINE::OutputViewType;
@@ -79,7 +77,7 @@ namespace Intrepid2
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
     
-    using TensorBasis3 = Basis_TensorBasis3<LineVolBasis, LineGradBasis, LineGradBasis>;
+    using TensorBasis3 = Basis_TensorBasis3<typename HGRAD_LINE::BasisBase>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -224,9 +222,7 @@ namespace Intrepid2
 
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family2_HEX
-  : public Basis_TensorBasis3<HGRAD_LINE,
-                              HVOL_LINE,
-                              HGRAD_LINE>
+  : public Basis_TensorBasis3<typename HGRAD_LINE::BasisBase>
   {
   public:
     using OutputViewType = typename HGRAD_LINE::OutputViewType;
@@ -236,7 +232,7 @@ namespace Intrepid2
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
     
-    using TensorBasis3 = Basis_TensorBasis3<LineGradBasis, LineVolBasis, LineGradBasis>;
+    using TensorBasis3 = Basis_TensorBasis3<typename HGRAD_LINE::BasisBase>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -388,9 +384,7 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family3_HEX
-  : public Basis_TensorBasis3<HGRAD_LINE,
-                              HGRAD_LINE,
-                              HVOL_LINE>
+  : public Basis_TensorBasis3<typename HGRAD_LINE::BasisBase>
   {
     using OutputViewType = typename HGRAD_LINE::OutputViewType;
     using PointViewType  = typename HGRAD_LINE::PointViewType ;
@@ -399,7 +393,7 @@ namespace Intrepid2
     using LineGradBasis = HGRAD_LINE;
     using LineVolBasis  = HVOL_LINE;
     
-    using TensorBasis3 = Basis_TensorBasis3<LineGradBasis, LineGradBasis, LineVolBasis>;
+    using TensorBasis3 = Basis_TensorBasis3<typename HGRAD_LINE::BasisBase>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -540,11 +534,11 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_Family1_Family2_HEX
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>
   {
     using Family1 = Basis_Derived_HCURL_Family1_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family2 = Basis_Derived_HCURL_Family2_HEX<HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis  <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis  <typename HGRAD_LINE::BasisBase>;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -560,11 +554,11 @@ namespace Intrepid2
   
   template<class HGRAD_LINE, class HVOL_LINE>
   class Basis_Derived_HCURL_HEX
-  : public Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>
+  : public Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>
   {
     using Family12 = Basis_Derived_HCURL_Family1_Family2_HEX<HGRAD_LINE, HVOL_LINE>;
     using Family3  = Basis_Derived_HCURL_Family3_HEX        <HGRAD_LINE, HVOL_LINE>;
-    using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::ExecutionSpace, typename HGRAD_LINE::OutputValueType, typename HGRAD_LINE::PointValueType>;
+    using DirectSumBasis = Basis_DirectSumBasis <typename HGRAD_LINE::BasisBase>;
 
     std::string name_;
     ordinal_type order_x_;
@@ -577,6 +571,8 @@ namespace Intrepid2
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
     using PointValueType  = typename HGRAD_LINE::PointValueType;
+    
+    using BasisBase = typename HGRAD_LINE::BasisBase;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
@@ -631,7 +627,7 @@ namespace Intrepid2
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecutionSpace, OutputValueType, PointValueType>
+    Teuchos::RCP<BasisBase>
       getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
 
       using LineBasis = HVOL_LINE;
@@ -674,7 +670,18 @@ namespace Intrepid2
 
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
-
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      using HostBasis  = Basis_Derived_HCURL_HEX<typename HGRAD_LINE::HostBasis, typename HVOL_LINE::HostBasis>;
+      
+      auto hostBasis = Teuchos::rcp(new HostBasis(order_x_, order_y_, order_z_, pointType_));
+      
+      return hostBasis;
+    }
   };
 } // end namespace Intrepid2
 

@@ -111,7 +111,6 @@ int main(int argc, char *argv[]) {
       Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(&appParams));
 
       Teuchos::ParameterList piroParams = appParams.sublist("Piro");
-      Teuchos::ParameterList& analysisParams = piroParams.sublist("Analysis");
 
 #ifdef HAVE_PIRO_NOX
       solverFactory.setSource<NOX::Epetra::Observer>(
@@ -126,7 +125,7 @@ int main(int argc, char *argv[]) {
 
       // Call the analysis routine
       RCP<Epetra_Vector> p;
-      status = Piro::Epetra::PerformAnalysis(*piro, analysisParams, p);
+      status = Piro::Epetra::PerformAnalysis(*piro, piroParams, p);
 
       if (Teuchos::nonnull(p)) {
       double p_exact[2] = {1,3};

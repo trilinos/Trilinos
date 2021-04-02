@@ -42,6 +42,9 @@ public:
   // Misc:
   int Check_State() const;
 
+  int64_t offset() const { return offset_; }
+  void    offset(int64_t off) { offset_ = off; }
+
 private:
   void entity_load_params() override;
 
@@ -51,8 +54,8 @@ private:
 
   std::string elmt_type;
   int         num_nodes_per_elmt{-1};
-
-  INT *conn{nullptr}; // Array; holds a matrix, num_elmts by num_nodes_per_elmt.
+  int64_t     offset_{0};
+  INT *       conn{nullptr}; // Array; holds a matrix, num_elmts by num_nodes_per_elmt.
 
   friend class ExoII_Read<INT>;
 };

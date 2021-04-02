@@ -115,7 +115,8 @@ TEST_F(EntityIndexSpace, accessingLocalData_useLocalOffset)
   setup_mesh(1, 1, 1);
   std::vector<unsigned> entityToLocalOffset(get_bulk().get_size_of_entity_index_space(), 0);
 
-  for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<get_meta().entity_rank_count(); ++rank)
+  stk::mesh::EntityRank endRank = static_cast<stk::mesh::EntityRank>(get_meta().entity_rank_count());
+  for(stk::mesh::EntityRank rank=stk::topology::NODE_RANK; rank<endRank; ++rank)
   {
     unsigned localOffset = 0;
     const stk::mesh::BucketVector &buckets = get_bulk().buckets(stk::topology::NODE_RANK);

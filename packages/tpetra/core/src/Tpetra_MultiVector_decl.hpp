@@ -44,12 +44,6 @@
 
 /// \file Tpetra_MultiVector_decl.hpp
 /// \brief Declaration of the Tpetra::MultiVector class
-///
-/// If you want to use Tpetra::MultiVector, include
-/// "Tpetra_MultiVector.hpp" (a file which CMake generates and
-/// installs for you).  If you only want the declaration of
-/// Tpetra::MultiVector, include this file
-/// (Tpetra_MultiVector_decl.hpp).
 
 #include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"

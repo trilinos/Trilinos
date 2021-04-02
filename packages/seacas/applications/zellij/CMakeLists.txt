@@ -1,0 +1,26 @@
+
+TRIBITS_SUBPACKAGE(Zellij)
+
+INCLUDE_DIRECTORIES(
+  "${CMAKE_CURRENT_SOURCE_DIR}"
+)
+
+SET(HEADERS "")
+SET(SOURCES Grid.C
+	    Cell.C
+	    UnitCell.C
+	    Decompose.C
+	    ZE_SystemInterface.C
+	    Zellij.C)
+
+TRIBITS_ADD_EXECUTABLE(
+  zellij
+  NOEXEPREFIX
+  NOEXESUFFIX
+  SOURCES ${SOURCES}
+  COMM serial mpi
+  INSTALLABLE
+  )
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()
+

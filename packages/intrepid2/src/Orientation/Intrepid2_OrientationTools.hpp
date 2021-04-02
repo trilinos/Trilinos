@@ -109,7 +109,7 @@ namespace Intrepid2 {
   namespace Impl {
 
     /**
-     \brief Tools to compute orientations for degrees-of-freedom
+       \brief Tools to compute orientations for degrees-of-freedom
     */ 
     class OrientationTools {
     public:
@@ -240,8 +240,8 @@ namespace Intrepid2 {
       inline
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
-                             const shards::CellTopology cellTopo,
-                             const ordinal_type cellOrt);
+                                  const shards::CellTopology cellTopo,
+                                  const ordinal_type cellOrt);
 
       /** \brief  Computes jacobian of the parameterization maps of 1- and 2-subcells with orientation.
 
@@ -253,8 +253,8 @@ namespace Intrepid2 {
       KOKKOS_INLINE_FUNCTION
       static void
       getJacobianOfOrientationMap(JacobianViewType jacobian,
-                             const unsigned cellTopoKey,
-                             const ordinal_type cellOrt);
+                                  const unsigned cellTopoKey,
+                                  const ordinal_type cellOrt);
 
 
       /** \brief  Computes the (oriented) subCell tangents
@@ -286,10 +286,10 @@ namespace Intrepid2 {
       template<typename TanNormViewType, typename ParamViewType>
       KOKKOS_INLINE_FUNCTION
       static void getRefSideTangentsAndNormal(TanNormViewType tangentsAndNormal,
-                                        const ParamViewType subCellParametrization,
-                                        const unsigned subcellTopoKey,
-                                        const ordinal_type subCellOrd,
-                                        const ordinal_type ort);
+                                              const ParamViewType subCellParametrization,
+                                              const unsigned subcellTopoKey,
+                                              const ordinal_type subCellOrd,
+                                              const ordinal_type ort);
 
 
       /** \brief  Maps points defined on the subCell manifold into the parent Cell
@@ -304,11 +304,11 @@ namespace Intrepid2 {
       template<typename coordsViewType, typename subcellCoordsViewType, typename ParamViewType>
       KOKKOS_INLINE_FUNCTION
       static void mapSubcellCoordsToRefCell(coordsViewType cellCoords,
-                                        const subcellCoordsViewType subCellCoords,
-                                        const ParamViewType subcellParametrization,
-                                        const unsigned subcellTopoKey,
-                                        const ordinal_type subCellOrd,
-                                        const ordinal_type ort);
+                                            const subcellCoordsViewType subCellCoords,
+                                            const ParamViewType subcellParametrization,
+                                            const unsigned subcellTopoKey,
+                                            const ordinal_type subCellOrd,
+                                            const ordinal_type ort);
 
       // -----------------------------------------------------------------------------
       // Coefficient Matrix
@@ -326,13 +326,13 @@ namespace Intrepid2 {
 
       */
       template<typename OutputViewType,
-               typename subcellBasisType,
-               typename cellBasisType>
+               typename subcellBasisHostType,
+               typename cellBasisHostType>
       inline
       static void
       getCoeffMatrix_HGRAD(OutputViewType &output,
-                           const subcellBasisType& subcellBasis,
-                           const cellBasisType& cellBasis,
+                           const subcellBasisHostType& subcellBasis,
+                           const cellBasisHostType& cellBasis,
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
 
@@ -347,13 +347,13 @@ namespace Intrepid2 {
 
       */
       template<typename OutputViewType,
-               typename subcellBasisType,
-               typename cellBasisType>
+               typename subcellBasisHostType,
+               typename cellBasisHostType>
       inline
       static void
       getCoeffMatrix_HCURL(OutputViewType &output,
-                           const subcellBasisType& subcellBasis,
-                           const cellBasisType& cellBasis,
+                           const subcellBasisHostType& subcellBasis,
+                           const cellBasisHostType& cellBasis,
                            const ordinal_type subcellId,
                            const ordinal_type subcellOrt);
 
@@ -369,93 +369,94 @@ namespace Intrepid2 {
 
       */
       template<typename OutputViewType,
-               typename subcellBasisType,
-               typename cellBasisType>
+               typename subcellBasisHostType,
+               typename cellBasisHostType>
       inline
       static void
       getCoeffMatrix_HDIV(OutputViewType &output,
-                          const subcellBasisType& subcellBasis,
-                          const cellBasisType& cellBasis,
+                          const subcellBasisHostType& subcellBasis,
+                          const cellBasisHostType& cellBasis,
                           const ordinal_type subcellId,
                           const ordinal_type subcellOrt);
     };
   }
 
   /**
-    \brief Tools to compute orientations for degrees-of-freedom
+     \brief Tools to compute orientations for degrees-of-freedom
   */ 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   class OrientationTools {
   public:
+
     /** \brief  subcell ordinal, orientation, matrix m x n
-    */
-    typedef Kokkos::View<double****,ExecSpaceType> CoeffMatrixDataViewType;
+     */
+    typedef Kokkos::View<double****,DeviceType> CoeffMatrixDataViewType;
 
     // 
     /** \brief  key :: basis name, order, value :: matrix data view type 
-    */
+     */
     static std::map<std::pair<std::string,ordinal_type>,CoeffMatrixDataViewType> ortCoeffData;
     
   private:
 
-    template<typename BasisType>
+    template<typename BasisHostType>
     inline 
-    static CoeffMatrixDataViewType createCoeffMatrixInternal(const BasisType* basis);
+    static CoeffMatrixDataViewType createCoeffMatrixInternal(const BasisHostType* basis);
     
 
     /** \brief  Compute orientation matrix for HGRAD basis
-        */
-    template<typename BasisType>
+     */
+    template<typename BasisHostType>
     inline
     static void init_HGRAD(CoeffMatrixDataViewType matData,
-                               BasisType const *cellBasis);
+                           BasisHostType const *cellBasis);
 
     /** \brief  Compute orientation matrix for HCURL basis
-        */
-    template<typename BasisType>
+     */
+    template<typename BasisHostType>
     inline
     static void init_HCURL(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
+                           BasisHostType const *cellBasis);
 
     /** \brief  Compute orientation matrix for HDIV basis
-        */
-    template<typename BasisType>
+     */
+    template<typename BasisHostType>
     inline
     static void init_HDIV(CoeffMatrixDataViewType matData,
-        BasisType const *cellBasis);
+                          BasisHostType const *cellBasis);
     
   public:
 
     /** \brief  Create coefficient matrix.
-          \param  basis      [in]  - basis type
+        \param  basis      [in]  - basis type
     */
     template<typename BasisType>
     inline 
     static CoeffMatrixDataViewType createCoeffMatrix(const BasisType* basis);
 
     /** \brief  Clear coefficient matrix
-    */
+     */
     inline 
     static void clearCoeffMatrix();
 
     /** \brief  Compute orientations of cells in a workset
-          \param  elemOrts      [out]  - cell orientations
-          \param  elemNodes      [in]  - node coordinates
-          \param  cellTopo       [in]  - shards cell topology
+        \param  elemOrts      [out]  - cell orientations
+        \param  elemNodes      [in]  - node coordinates
+        \param  cellTopo       [in]  - shards cell topology
     */
     template<typename elemOrtValueType, class ...elemOrtProperties,
              typename elemNodeValueType, class ...elemNodeProperties>
     inline 
     static void
-    getOrientation(      Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
+    getOrientation(Kokkos::DynRankView<elemOrtValueType,elemOrtProperties...> elemOrts,
                    const Kokkos::DynRankView<elemNodeValueType,elemNodeProperties...> elemNodes,
                    const shards::CellTopology cellTopo);
 
     /** \brief  Modify basis due to orientation
-          \param  output        [out]  - output array
-          \param  input          [in]  - input array
-          \param  orts           [in]  - orientations
-          \param  basis          [in]  - basis type
+        \param  output        [out]  - output array
+        \param  input          [in]  - input array
+        \param  orts           [in]  - orientations
+        \param  basis          [in]  - basis type
     */
     template<typename outputValueType, class ...outputProperties,
              typename inputValueType,  class ...inputProperties,
@@ -463,10 +464,10 @@ namespace Intrepid2 {
              typename BasisType>
     inline
     static void
-    modifyBasisByOrientation(      Kokkos::DynRankView<outputValueType,outputProperties...> output,
+    modifyBasisByOrientation(Kokkos::DynRankView<outputValueType,outputProperties...> output,
                              const Kokkos::DynRankView<inputValueType, inputProperties...>  input,
                              const OrientationViewType orts,
-                             const BasisType*  basis);
+                             const BasisType * basis);
   };
   
   template<typename T> 

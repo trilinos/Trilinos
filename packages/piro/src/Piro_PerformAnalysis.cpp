@@ -66,8 +66,8 @@
 #include "ROL_Thyra_BoundConstraint.hpp"
 #include "ROL_ThyraME_Objective.hpp"
 #include "ROL_ThyraProductME_Objective.hpp"
-#include "ROL_ThyraProductME_Objective_SimOpt.hpp"
-#include "ROL_ThyraProductME_Constraint_SimOpt.hpp"
+#include "Piro_ThyraProductME_Objective_SimOpt.hpp"
+#include "Piro_ThyraProductME_Constraint_SimOpt.hpp"
 #include "ROL_LineSearchStep.hpp"
 #include "ROL_TrustRegionStep.hpp"
 #include "ROL_Algorithm.hpp"
@@ -96,10 +96,12 @@ using Teuchos::null; using Teuchos::outArg;
 int
 Piro::PerformAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& analysisParams,
-    RCP< Thyra::VectorBase<double> >& result)
+    Teuchos::ParameterList& appParams,
+    RCP< Thyra::VectorBase<double> >& result,
+    RCP< Piro::ROL_ObserverBase<double> > observer)
 {
 
+  auto analysisParams = appParams.sublist("Analysis");
   analysisParams.validateParameters(*Piro::getValidPiroAnalysisParameters(),0);
 
   int status;
@@ -127,7 +129,7 @@ Piro::PerformAnalysis(
   else if (analysis == "ROL") {
     *out << "Piro PerformAnalysis: ROL Optimization Being Performed " << endl;
     status = Piro::PerformROLAnalysis(piroModel,
-                          analysisParams, result);
+                          appParams, result, observer);
 
   }
 #endif
@@ -215,9 +217,11 @@ Piro::PerformDakotaAnalysis(
 int
 Piro::PerformROLAnalysis(
     Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& analysisParams,
-    RCP< Thyra::VectorBase<double> >& p)
+    Teuchos::ParameterList& appParams,
+    RCP< Thyra::VectorBase<double> >& p,
+    RCP< Piro::ROL_ObserverBase<double> > observer)
 {
+  auto analysisParams = appParams.sublist("Analysis");
   auto rolParams = analysisParams.sublist("ROL");
 
 #ifdef HAVE_PIRO_ROL
@@ -264,9 +268,9 @@ Piro::PerformROLAnalysis(
     }
   }
 
-  auto opt_paramList = Teuchos::rcp(&analysisParams.sublist("Optimization Status"),false);
-  if(analysisParams.isParameter("Enable Explicit Matrix Transpose")) {
-    opt_paramList->set("Enable Explicit Matrix Transpose", analysisParams.get<bool>("Enable Explicit Matrix Transpose"));
+  RCP<Teuchos::ParameterList> opt_paramList = Teuchos::rcp(&appParams.sublist("Optimization Status"),false);
+  if(appParams.isParameter("Enable Explicit Matrix Transpose")) {
+    opt_paramList->set("Enable Explicit Matrix Transpose", appParams.get<bool>("Enable Explicit Matrix Transpose"));
   }
   opt_paramList->set("Parameter Names", Teuchos::rcpFromRef(p_names));
 
@@ -298,8 +302,8 @@ Piro::PerformROLAnalysis(
   Teuchos::RCP<Thyra::VectorBase<double>> lambda_vec = Thyra::createMember(x_space);
   ROL::ThyraVector<double> rol_lambda(lambda_vec);
 
-  ROL::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel);
-  ROL::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel);
+  Piro::ThyraProductME_Objective_SimOpt<double> obj(*model, g_index, p_indices, opt_paramList, verbosityLevel, observer);
+  Piro::ThyraProductME_Constraint_SimOpt<double> constr(*model, g_index, p_indices, opt_paramList, verbosityLevel, observer);
 
   constr.setSolveParameters(rolParams.sublist("ROL Options"));
 
@@ -507,7 +511,7 @@ Piro::PerformROLAnalysis(
   else
     step = ROL::makePtr<ROL::TrustRegionStep<double>>(rolParams.sublist("ROL Options"));
   ROL::Ptr<ROL::Algorithm<double> > algo;
-  algo = ROL::makePtr<ROL::Algorithm<double>>(step, status,false);
+  algo = ROL::makePtr<ROL::Algorithm<double>>(step, status, true);
 
 #ifdef HAVE_PIRO_TEKO
   Teko::LinearOp H, invH;

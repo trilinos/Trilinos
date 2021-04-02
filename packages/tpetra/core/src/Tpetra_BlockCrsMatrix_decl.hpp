@@ -834,7 +834,13 @@ private:
     static constexpr bool value =
       std::is_same<typename Device::execution_space, Kokkos::Cuda>::value;
 #else
+    // Gonna badly fake this here for other execspaces
+    #if defined(KOKKOS_ENABLE_HIP)
+    static constexpr bool value =
+      std::is_same<typename Device::execution_space, Kokkos::Experimental::HIP>::value;
+    #else
     static constexpr bool value = false;
+    #endif
 #endif // defined(KOKKOS_ENABLE_CUDA)
   };
 

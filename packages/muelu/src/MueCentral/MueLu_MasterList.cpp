@@ -206,6 +206,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: number of random vectors\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"aggregation: number of times to pre or post smooth\" type=\"int\" value=\"10\"/>"
   "<Parameter name=\"aggregation: penalty parameters\" type=\"Array(double)\" value=\"{12.,-.2,0,0,0} \"/>"
+  "<Parameter name=\"aggregation: distance laplacian directional weights\" type=\"Array(double)\" value=\"{1,1,1}\"/>"
   "<Parameter name=\"aggregation: distance laplacian algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: classical algo\" type=\"string\" value=\"default\"/>"
   "<Parameter name=\"aggregation: drop tol\" type=\"double\" value=\"0.0\"/>"
@@ -227,6 +228,7 @@ namespace MueLu {
   "<Parameter name=\"aggregation: enable phase 2b\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: enable phase 3\" type=\"bool\" value=\"true\"/>"
   "<Parameter name=\"aggregation: phase2a include root\" type=\"bool\" value=\"true\"/>"
+  "<Parameter name=\"aggregation: phase2a agg factor\" type=\"double\" value=\"0.5\"/>"
   "<Parameter name=\"aggregation: error on nodes with no on-rank neighbors\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: phase3 avoid singletons\" type=\"bool\" value=\"false\"/>"
   "<Parameter name=\"aggregation: allow empty prolongator columns\" type=\"bool\" value=\"false\"/>"
@@ -562,7 +564,7 @@ namespace MueLu {
       
          ("parameterlist: syntax","parameterlist: syntax")
       
-         ("hierarchy label","hierarchy label")
+         ("ML label","hierarchy label")
       
          ("matvec params","matvec params")
       
@@ -610,6 +612,8 @@ namespace MueLu {
       
          ("aggregation: penalty parameters","aggregation: penalty parameters")
       
+         ("aggregation: distance laplacian directional weights","aggregation: distance laplacian directional weights")
+      
          ("aggregation: distance laplacian algo","aggregation: distance laplacian algo")
       
          ("aggregation: classical algo","aggregation: classical algo")
@@ -651,6 +655,8 @@ namespace MueLu {
          ("aggregation: enable phase 3","aggregation: enable phase 3")
       
          ("aggregation: phase2a include root","aggregation: phase2a include root")
+      
+         ("aggregation: phase2a agg factor","aggregation: phase2a agg factor")
       
          ("aggregation: error on nodes with no on-rank neighbors","aggregation: error on nodes with no on-rank neighbors")
       

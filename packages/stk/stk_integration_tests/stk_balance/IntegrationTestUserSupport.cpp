@@ -376,7 +376,7 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
                 stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEMENT_RANK, searchResults[i].second.id());
                 int anyIntersections = 0;
                 if (bulk.is_valid(elem1) && bulk.is_valid(elem2)) {
-                    anyIntersections = stk::balance::internal::getNumSharedNodesBetweenElements(bulk, elem1, elem2);
+                    anyIntersections = stk::balance::internal::get_num_common_nodes_between_elements(bulk, elem1, elem2);
                 }
                 if (anyIntersections == 0) {
                     if (bulk.is_valid(elem1)) {

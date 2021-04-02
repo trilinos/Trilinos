@@ -1,0 +1,3 @@
+<ParameterList name="Solver Factory Example">
+    <Parameter name="SolverType"    type="string"   value="MueLu"/>
+</ParameterList>

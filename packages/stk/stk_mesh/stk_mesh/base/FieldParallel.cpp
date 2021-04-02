@@ -42,9 +42,11 @@
 #include <stk_util/util/SortAndUnique.hpp>   // for PairIter
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
 #include <stk_mesh/base/Types.hpp>      // for PairIterEntityComm, etc
+#include <stk_mesh/base/Selector.hpp>
 
 #include <utility>                      // for pair
 #include <sstream>                      // for basic_ostream::operator<<, etc
@@ -84,11 +86,23 @@ void compute_field_entity_ranges(const EntityCommListInfoVector& commListInfo,
   }
 }
 
+void do_initial_sync_to_host(const std::vector<const FieldBase*>& fields, Selector& selector, bool syncOnlySharedOrGhosted)
+{
+  for(const FieldBase* fptr : fields) {
+    fptr->sync_to_host();
+    if(syncOnlySharedOrGhosted) {
+      fptr->modify_on_host(selector);
+    } else {
+      fptr->modify_on_host();
+    }
+  }
+}
 
 //----------------------------------------------------------------------
 void communicate_field_data(
   const Ghosting                        & ghosts ,
-  const std::vector< const FieldBase *> & fields )
+  const std::vector< const FieldBase *> & fields ,
+  bool syncOnlySharedOrGhosted)
 {
   if ( fields.empty() ) { return; }
 
@@ -97,10 +111,8 @@ void communicate_field_data(
   const int parallel_rank = mesh.parallel_rank();
   const unsigned ghost_id = ghosts.ordinal();
 
-  for ( const FieldBase* fptr : fields) {
-    fptr->sync_to_host();
-    fptr->modify_on_host();
-  }
+  Selector ghostSelector = !mesh.mesh_meta_data().locally_owned_part();
+  do_initial_sync_to_host(fields, ghostSelector, syncOnlySharedOrGhosted);
 
   // Sizing for send and receive
 
@@ -215,7 +227,8 @@ void communicate_field_data(
 }
 
 void communicate_field_data(const BulkData& mesh ,
-                            const std::vector< const FieldBase *> & fields)
+                            const std::vector< const FieldBase *> & fields,
+                            bool syncOnlySharedOrGhosted)
 {
   const int parallel_size = mesh.parallel_size();
   if ( fields.empty() || parallel_size == 1) {
@@ -227,6 +240,9 @@ void communicate_field_data(const BulkData& mesh ,
   static std::vector<unsigned char> send_and_recv_data;
 
   const EntityCommListInfoVector &comm_info_vec = mesh.internal_comm_list();
+
+  Selector ghostSelector = !mesh.mesh_meta_data().locally_owned_part();
+  do_initial_sync_to_host(fields, ghostSelector, syncOnlySharedOrGhosted);
 
   static std::vector<int> int_buffer;
   int_buffer.resize(4*parallel_size+2);
@@ -241,12 +257,6 @@ void communicate_field_data(const BulkData& mesh ,
 
   std::vector<std::pair<int,int> > fieldRange(fields.size(), std::make_pair(-1,-1));
   compute_field_entity_ranges(comm_info_vec, fields, fieldRange);
-
-  for(int fi=0; fi<numFields; ++fi)
-  {
-      fields[fi]->sync_to_host();
-      fields[fi]->modify_on_host();
-  }
 
   //this first loop calculates send_sizes and recv_sizes.
   for(int fi=0; fi<numFields; ++fi)
