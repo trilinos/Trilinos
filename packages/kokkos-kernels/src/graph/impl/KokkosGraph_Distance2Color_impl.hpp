@@ -191,7 +191,13 @@ class GraphColorDistance2
     {
         //Delegate to different coloring functions, depending on algorithm
         using_edge_filtering = false;
-        color_view_type colors_out("Graph Colors", this->nr);
+        //color_view_type colors_out("Graph Colors", this->nr);
+	color_view_type colors_out;
+	if(gc_handle->get_vertex_colors().use_count() > 0){
+	  colors_out = gc_handle->get_vertex_colors();
+	} else {
+	  colors_out = color_view_type("Graph Colors", this->nr);
+	}
         switch(this->gc_handle->get_coloring_algo_type())
         {
           case COLORING_D2_VB_BIT_EF:
@@ -244,8 +250,15 @@ class GraphColorDistance2
         lno_view_t current_vertexList(
             Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nr);
 
+        lno_t current_vertexListLength = this->nr;
+
         // init conflictlist sequentially.
-        Kokkos::parallel_for("InitList", range_policy_type(0, this->nr), functorInitList<lno_view_t>(current_vertexList));
+        if(this->gc_handle->get_use_vtx_list()){
+	  current_vertexList = this->gc_handle->get_vertex_list();
+	  current_vertexListLength = this->gc_handle->get_vertex_list_size();
+	} else {
+	  Kokkos::parallel_for("InitList", range_policy_type(0, this->nr), functorInitList<lno_view_t>(current_vertexList));
+	}
 
         // Next iteratons's conflictList
         lno_view_t next_iteration_recolorList(Kokkos::ViewAllocateWithoutInitializing("recolorList"), this->nr);
@@ -255,7 +268,6 @@ class GraphColorDistance2
 
         lno_t numUncolored             = this->nr;
         lno_t numUncoloredPreviousIter = this->nr + 1;
-        lno_t current_vertexListLength = this->nr;
 
         double              time;
         double              total_time = 0.0;
@@ -445,7 +457,8 @@ class GraphColorDistance2
               break;
             }
           }
-          if(color)
+	  //make sure vertices with a valid color do not get recolored
+          if(color && (colors(v) == 0 || colors(v) == CONFLICTED || colors(v) == UNCOLORABLE))
           {
             //Color v
             colors(v) = color;
@@ -466,7 +479,7 @@ class GraphColorDistance2
               }
             }
           }
-          else
+          else if (colors(v) == 0 || colors(v) == CONFLICTED || colors(v) == UNCOLORABLE)
           {
             colors(v) = UNCOLORABLE;
           }
@@ -719,8 +732,32 @@ class GraphColorDistance2
       }
       const lno_t numVerts = this->nr;
       const lno_t numCols = this->nc;
-      //note: relying on forbidden and colors_out being initialized to 0
+      color_type max_color = 0;
+      for(int i = 0; i < numCols; i++) if(colors_out(i) > max_color) max_color = colors_out(i);
+      //note: initializing forbidden to account for previously-colored vertices
       forbidden_view forbidden("Forbidden", batch * numCols);
+      for(color_type colorBase = 1; colorBase < max_color; colorBase += 32 * batch){
+        switch(batch)
+        {
+          case 1:
+            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                NB_RefreshForbidden<1>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+            break;
+          case 2:
+            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                NB_RefreshForbidden<2>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+            break;
+          case 4:
+            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                NB_RefreshForbidden<4>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+            break;
+          case 8:
+            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                NB_RefreshForbidden<8>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+            break;
+          default:;
+        }
+      }
       int iter = 0;
       Kokkos::Impl::Timer timer;
       lno_t currentWork = this->nr;
@@ -737,6 +774,29 @@ class GraphColorDistance2
           lno_t vertsPerThread = 1;
           lno_t workBatches = (currentWork + vertsPerThread - 1) / vertsPerThread;
           timer.reset();
+	  //refresh forbidden before coloring, to ensure previously-colored vertices do not get recolored unnecessarily.
+          switch(batch)
+          {
+            case 1:
+              Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                  NB_RefreshForbidden<1>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+              break;
+            case 2:
+              Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                  NB_RefreshForbidden<2>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+              break;
+            case 4:
+              Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                  NB_RefreshForbidden<4>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+              break;
+            case 8:
+              Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
+                  NB_RefreshForbidden<8>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
+              break;
+            default:;
+          }
+	  forbiddenTime += timer.seconds();
+	  timer.reset();
           switch(batch)
           {
             case 1:
@@ -790,7 +850,7 @@ class GraphColorDistance2
           timer.reset();
           //if still using this color set, refresh forbidden.
           //This avoids using too many colors, by relying on forbidden from before conflict resolution (which is now stale).
-          if(currentWork)
+          /*if(currentWork)
           {
             switch(batch)
             {
@@ -814,7 +874,7 @@ class GraphColorDistance2
             }
             forbiddenTime += timer.seconds();
             timer.reset();
-          }
+          }*/
           iter++;
         }
         //Will need to run with a different color base, so rebuild the work list
