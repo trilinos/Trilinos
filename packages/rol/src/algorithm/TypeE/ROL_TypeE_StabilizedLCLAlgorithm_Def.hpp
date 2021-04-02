@@ -243,7 +243,7 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
   b2->zero();
  
   // Initialize subproblem algorithm
-  Ptr<Algorithm_B<Real>> algo;
+  Ptr<TypeB::Algorithm<Real>> algo;
   
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
@@ -255,7 +255,7 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
     // Solve linearly constrained augmented Lagrangian subproblem
     list_.sublist("Status Test").set("Gradient Tolerance",optTolerance_);
     list_.sublist("Status Test").set("Step Tolerance",1.e-6*optTolerance_);
-    algo = AlgorithmBFactory<Real>(list_);
+    algo = TypeB::AlgorithmFactory<Real>(list_);
     algo->run(elc,outStream);
     x.set(*xp->get(0));
 
