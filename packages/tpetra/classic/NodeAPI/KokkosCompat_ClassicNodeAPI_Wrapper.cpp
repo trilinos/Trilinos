@@ -33,6 +33,13 @@ namespace Kokkos {
     }
 #endif // KOKKOS_ENABLE_CUDA
 
+#ifdef KOKKOS_ENABLE_HIP
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>::name() {
+      return std::string("HIP/Wrapper");
+    }
+#endif // KOKKOS_ENABLE_HIP
+
   } // namespace Compat
 } // namespace Kokkos
 
