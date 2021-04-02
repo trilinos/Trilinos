@@ -83,8 +83,8 @@ public:
 
       ---
   */
-  NewOptimizationSolver( const Ptr<NewOptimizationProblem<Real>> &opt,
-                         ParameterList                           &list );
+  Solver( const Ptr<Problem<Real>> &opt,
+          ParameterList            &list );
 
   /** \brief Returns iteration history as a vector of strings.
 
@@ -131,7 +131,7 @@ public:
   */
   void reset();
 
-}; // class NewOptimizationSolver
+}; // class Solver
 
 } // namespace ROL
 
