@@ -171,14 +171,14 @@ void MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
                                   x,g,state_->searchSize,updateMultiplier_,
                                   updatePenalty_);
   initialize(x,g,emul,eres,myobj,bnd,econ,*pwa,*dwa,outStream);
-  Ptr<Algorithm_E<Real>> algo;
+  Ptr<TypeE::Algorithm<Real>> algo;
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     // Solve augmented Lagrangian subproblem
-    algo = AlgorithmEFactory<Real>(list_);
+    algo = TypeE::AlgorithmFactory<Real>(list_);
     emul.zero();
     if (hasPolyProj_) algo->run(x,g,myobj,econ,emul,eres,
                                 *proj_->getLinearConstraint(),
