@@ -110,7 +110,8 @@ public:
 
       ---
   */
-  Ptr<const AlgorithmState<Real>>& getAlgorithmState() const;
+  //Ptr<const AlgorithmState<Real>>& getAlgorithmState() const;
+  Ptr<const AlgorithmState<Real>> getAlgorithmState() const;
 
   /** \brief Reset both Algorithm and Step.
 

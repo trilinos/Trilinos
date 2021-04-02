@@ -101,7 +101,8 @@ int Solver<Real>::solve( std::ostream &outStream,
 }
 
 template<typename Real>
-Ptr<const AlgorithmState<Real>>& Solver<Real>::getAlgorithmState() const {
+Ptr<const AlgorithmState<Real>> Solver<Real>::getAlgorithmState() const {
+//Ptr<const AlgorithmState<Real>>& Solver<Real>::getAlgorithmState() const {
   switch (problemType_) {
     case TYPE_U:  return algoU_->getState();
     case TYPE_B:  return algoB_->getState();
