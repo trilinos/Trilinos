@@ -311,7 +311,7 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
       dwa1->set(*state_->gradientVec);
       obj.gradient(*state_->gradientVec,x,tol0);
       state_->ngrad++;
-      state_->gnorm = TypB::Algorithm<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
+      state_->gnorm = TypeB::Algorithm<Real>::optimalityCriterion(x,*state_->gradientVec,*pwa1,outStream);
       state_->iterateVec->set(x);
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
@@ -711,7 +711,6 @@ void LinMoreAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) 
     }
     os << std::endl;
   }
-  return os.str();
 }
 
 } // namespace TypeB
