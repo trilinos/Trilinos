@@ -175,7 +175,7 @@ void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
   Ptr<Algorithm_E<Real>> algo;
 
   // Output
-  if (verbosity_ > 0) outStream << writeOutput(true);
+  if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     // Solve interior point subproblem
@@ -222,9 +222,9 @@ void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
     updateState(x,emul,ipobj,bnd,econ,*pwa,*dwa);
 
     // Update Output
-    if (verbosity_ > 0) outStream << writeOutput(printHeader_);
+    if (verbosity_ > 0) writeOutput(outStream,printHeader_);
   }
-  if (verbosity_ > 0) outStream << TypeG::Algorithm<Real>::writeExitStatus();
+  if (verbosity_ > 0) TypeG::Algorithm<Real>::writeExitStatus(outStream);
 }
 
 template<typename Real>
@@ -274,12 +274,8 @@ void InteriorPointAlgorithm<Real>::writeName( std::ostream& os ) const {
 template<typename Real>
 void InteriorPointAlgorithm<Real>::writeOutput( std::ostream& os, const bool print_header ) const {
   os << std::scientific << std::setprecision(6);
-  if ( state_->iter == 0 ) {
-    os << writeName();
-  }
-  if ( print_header ) {
-    os << writeHeader();
-  }
+  if ( state_->iter == 0 ) writeName(os);
+  if ( print_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
     os << "  ";
     os << std::setw(6)  << std::left << state_->iter;
