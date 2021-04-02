@@ -409,7 +409,8 @@ public:
 
   virtual void writeExitStatus( std::ostream& os ) const;
 
-  Ptr<const AlgorithmState<Real>>& getState() const;
+  //Ptr<const AlgorithmState<Real>>& getState() const;
+  Ptr<const AlgorithmState<Real>> getState() const;
 
   void reset();
 
@@ -418,6 +419,6 @@ public:
 } // namespace TypeG
 } // namespace ROL
 
-#include "ROL_TypeG_Algorithm.hpp"
+#include "ROL_TypeG_Algorithm_Def.hpp"
 
 #endif
