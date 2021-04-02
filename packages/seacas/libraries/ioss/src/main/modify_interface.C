@@ -44,15 +44,6 @@ void Modify::Interface::enroll_options()
 
   options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
-  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
-
-  options_.enroll("allow_modifications", Ioss::GetLongOption::NoValue,
-                  "By default, io_modify will only allow creation of new assemblies.\n"
-                  "\t\tIf this option is specified, then can modify assemblies that already exist "
-                  "in database.\n"
-                  "\t\tThis will cause the database to be rewritten. Without this option, it is "
-                  "updated in place.",
-                  nullptr);
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
                   "Database Type: generated"
 #if defined(SEACAS_HAVE_PAMGEN)
@@ -69,7 +60,18 @@ void Modify::Interface::enroll_options()
 #endif
                   ".",
                   "unknown");
-  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr);
+  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr,
+                  nullptr, true);
+
+  options_.enroll("allow_modifications", Ioss::GetLongOption::NoValue,
+                  "By default, io_modify will only allow creation of new assemblies.\n"
+                  "\t\tIf this option is specified, then can modify assemblies that already exist "
+                  "in database.\n"
+                  "\t\tThis will cause the database to be rewritten. Without this option, it is "
+                  "updated in place.",
+                  nullptr, nullptr, true);
+  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
+
   options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
                   nullptr);
 }
@@ -105,20 +107,12 @@ bool Modify::Interface::parse_options(int argc, char **argv)
     exit(0);
   }
 
-  if (options_.retrieve("allow_modifications") != nullptr) {
-    allowModification_ = true;
-  }
-
-  {
-    const char *temp = options_.retrieve("db_type");
-    if (temp != nullptr) {
-      filetype_ = temp;
-    }
-  }
+  allowModification_ = options_.retrieve("allow_modifications") != nullptr;
+  filetype_          = options_.get_option_value("db_type", filetype_);
 
   if (options_.retrieve("copyright") != nullptr) {
     fmt::print(stderr, "\n"
-                       "Copyright(C) 2020 National Technology & Engineering Solutions\n"
+                       "Copyright(C) 2020-2021 National Technology & Engineering Solutions\n"
                        "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
                        "NTESS, the U.S. Government retains certain rights in this software.\n\n"
                        "Redistribution and use in source and binary forms, with or without\n"

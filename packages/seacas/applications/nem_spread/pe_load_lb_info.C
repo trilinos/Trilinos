@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -40,10 +40,10 @@ int    num_inf_rec = 0, num_qa_rec = 0, length_qa = 0;
  ****************************************************************************
  ****************************************************************************
  ****************************************************************************/
-template void NemSpread<float, int>::load_lb_info(void);
-template void NemSpread<double, int>::load_lb_info(void);
-template void NemSpread<float, int64_t>::load_lb_info(void);
-template void NemSpread<double, int64_t>::load_lb_info(void);
+template void NemSpread<float, int>::load_lb_info();
+template void NemSpread<double, int>::load_lb_info();
+template void NemSpread<float, int64_t>::load_lb_info();
+template void NemSpread<double, int64_t>::load_lb_info();
 
 template <typename T, typename INT> void NemSpread<T, INT>::load_lb_info()
 

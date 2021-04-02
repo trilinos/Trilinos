@@ -25,7 +25,8 @@ namespace {
   bool Check_Nodal(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
                    const INT *id_map, bool check_only);
   template <typename INT>
-  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map);
+  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map,
+                        const INT *node_map);
   template <typename INT>
   bool Check_Nodeset(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
                      bool check_only);
@@ -37,7 +38,7 @@ namespace {
   bool Check_Elmt_Block_Params(const Exo_Block<INT> *block1, const Exo_Block<INT> *block2);
   template <typename INT>
   bool Check_Elmt_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
-                                     const INT *elmt_map, size_t element_offset);
+                                     const INT *elmt_map, const INT *node_map);
   bool close_compare(const std::string &st1, const std::string &st2);
 } // namespace
 
@@ -84,7 +85,7 @@ void Check_Compatible_Meshes(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, boo
     is_diff = true;
   }
 
-  if (!Check_Elmt_Block(file1, file2, elmt_map)) {
+  if (!Check_Elmt_Block(file1, file2, elmt_map, node_map)) {
     Error(".. Differences found in element block metadata or connectivity.\n");
     is_diff = true;
   }
@@ -187,10 +188,10 @@ namespace {
   }
 
   template <typename INT>
-  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map)
+  bool Check_Elmt_Block(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *elmt_map,
+                        const INT *node_map)
   {
-    bool   is_same        = true;
-    size_t element_offset = 0; // Basically file-local to block-local mapping...
+    bool is_same = true;
     // Verify that element blocks match in the two files...
     for (size_t b = 0; b < file1.Num_Elmt_Blocks(); ++b) {
       Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
@@ -216,21 +217,20 @@ namespace {
             else {
               // Only do this check if Check_Elmt_Block_Params does not fail.
               // TODO(gdsjaar): Pass in node_map and node_id_map...
-              if (!Check_Elmt_Block_Connectivity(block1, block2, elmt_map, element_offset)) {
+              if (!Check_Elmt_Block_Connectivity(block1, block2, elmt_map, node_map)) {
                 is_same = false;
               }
             }
           }
         }
       }
-      element_offset += block1->Size();
     }
     return is_same;
   }
 
   template <typename INT>
   bool Check_Elmt_Block_Connectivity(Exo_Block<INT> *block1, Exo_Block<INT> *block2,
-                                     const INT *elmt_map, size_t element_offset)
+                                     const INT *elmt_map, const INT *node_map)
   {
 
     bool is_same = true;
@@ -248,29 +248,48 @@ namespace {
       size_t node_count = block1->Size() * block1->Num_Nodes_per_Elmt();
       SMART_ASSERT(node_count == block2->Size() * block2->Num_Nodes_per_Elmt());
 
-      for (size_t e = 0; e < node_count; ++e) {
-        if (conn1[e] != conn2[e]) {
-          size_t elem = e / block2->Num_Nodes_per_Elmt();
-          size_t node = e % block2->Num_Nodes_per_Elmt();
-          Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
-                            "                  First difference is node {} of local element {}\n",
-                            block1->Id(), node + 1, elem + 1));
-          is_same = false;
-          break;
+      if (interFace.map_flag != MapType::FILE_ORDER && node_map != nullptr) {
+        for (size_t e = 0; e < node_count; ++e) {
+          if (node_map[conn1[e] - 1] + 1 != conn2[e]) {
+            size_t elem = e / block2->Num_Nodes_per_Elmt();
+            size_t node = e % block2->Num_Nodes_per_Elmt();
+            Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
+                              "                  First difference is node {} of local element {}\n",
+                              block1->Id(), node + 1, elem + 1));
+            is_same = false;
+            break;
+          }
+        }
+      }
+      else {
+        for (size_t e = 0; e < node_count; ++e) {
+          if (conn1[e] != conn2[e]) {
+            size_t elem = e / block2->Num_Nodes_per_Elmt();
+            size_t node = e % block2->Num_Nodes_per_Elmt();
+            Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
+                              "                  First difference is node {} of local element {}\n",
+                              block1->Id(), node + 1, elem + 1));
+            is_same = false;
+            break;
+          }
         }
       }
     }
     else if (elmt_map != nullptr) {
+      auto   offset1     = block1->offset();
+      auto   offset2     = block2->offset();
       size_t num_element = block1->Size();
       size_t nnpe        = block1->Num_Nodes_per_Elmt();
       for (size_t e1 = 0; is_same && e1 < num_element; e1++) {
         for (size_t n = 0; is_same && n < nnpe; ++n) {
           size_t off1 = e1 * nnpe + n;
-          auto   e2   = elmt_map[element_offset + e1];
+          auto   e2   = elmt_map[offset1 + e1];
           if (e2 >= 0) { // If doing partial map, not all elements have a match
-            e2 -= element_offset;
-            size_t off2 = e2 * nnpe + n;
-            if (conn1[off1] != conn2[off2]) {
+            e2 -= offset2;
+            size_t off2   = e2 * nnpe + n;
+            auto   n1     = conn1[off1];
+            auto   map_n1 = node_map != nullptr ? node_map[n1 - 1] + 1 : n1;
+            if (map_n1 != conn2[off2]) {
               Error(fmt::format(".. Connectivities in block id {} are not the same.\n"
                                 "                  First difference is node {} of local element {} "
                                 "(file1) {} (file2)\n",

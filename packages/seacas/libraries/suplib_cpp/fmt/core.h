@@ -1073,9 +1073,9 @@ template <typename Context> class value {
     custom_value<Context> custom;
     named_arg_value<char_type> named_args;
   };
-
-  constexpr FMT_INLINE value(int val = 0) : int_value(val) {}
-  constexpr FMT_INLINE value(unsigned val) : uint_value(val) {}
+  
+  FMT_INLINE value(int val = 0) : int_value(val) {}
+  FMT_INLINE value(unsigned val) : uint_value(val) {}
   FMT_INLINE value(long long val) : long_long_value(val) {}
   FMT_INLINE value(unsigned long long val) : ulong_long_value(val) {}
   FMT_INLINE value(int128_t val) : int128_value(val) {}

@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -64,7 +64,7 @@ C... String containing name of common element topology in model
 C    or 'MULTIPLE_TOPOLOGIES' if not common topology.
       character*(MXSTLN) comtop
 
-      LOGICAL EXODUS, NONQUD, ALLONE
+      LOGICAL EXODUS, NONQUD, ALLONE, ORDER
       LOGICAL SMOOTH, SWPSS, USRSUB, CENTRD
 
       LOGICAL ISATRB, EXECUT, L64BIT
@@ -1018,8 +1018,15 @@ C     --Write the coordinates
       call expcor (ndbout, a(kxn), a(kyn), a(kzn), ierr)
 
 C     --Write the node/element order maps
-      call expenm (ndbout, ia(kmapel), ierr)
-      call expnnm (ndbout, ia(kmapnn), ierr)
+C ... If the maps are 1..num, then don't write them...
+      call check_map(ia(kmapel), numel, order)
+      if (.not. order) then
+         call expenm (ndbout, ia(kmapel), ierr)
+      end if
+      call check_map(ia(kmapnn), numnp, order)
+      if (.not. order) then
+         call expnnm (ndbout, ia(kmapnn), ierr)
+      end if
 
 C     --Write the element block
       CALL DBOELB (NDBOUT, 1, NELBLK,
@@ -1249,18 +1256,13 @@ C     number element blocks, and truth table.
 10010 FORMAT (/, 4X, A,
      &     ' time steps have been written to the output database')
 
-      CALL MDDEL ('VARGL')
-      CALL MDDEL ('VARNP')
-      CALL MDDEL ('VAREL')
-      CALL MDDEL ('VARNS')
-      CALL MDDEL ('VARSS')
-
       GO TO 50
  40   CONTINUE
       CALL MEMERR
       GOTO 50
 
  50   CONTINUE
+      call mdfree()
       call exclos(ndbin, ierr)
       call exclos(ndbout, ierr)
 
@@ -1431,5 +1433,20 @@ C   This is currently used in the sideset mirroring code
       do i=1, nelblk
         idout(i) = idin(i)
       end do
+      return
+      end
+
+      subroutine check_map(map, length, order)
+      integer map(*)
+      integer length
+      logical order
+
+      do i = 1, length
+         if (map(i) .ne. i) then
+            order = .false.
+            return
+         end if
+      end do
+      order = .true.
       return
       end
