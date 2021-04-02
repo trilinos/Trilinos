@@ -256,7 +256,7 @@ void StabilizedLCLAlgorithm<Real>::run( Vector<Real>          &x,
   elc.finalize(false,verbosity_>2,outStream);
  
   // Initialize subproblem algorithm
-  Ptr<Algorithm_B<Real>> algo;
+  Ptr<TypeB::Algorithm<Real>> algo;
   
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
