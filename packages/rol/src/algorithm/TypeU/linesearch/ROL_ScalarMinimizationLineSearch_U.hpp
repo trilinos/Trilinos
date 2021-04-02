@@ -254,7 +254,7 @@ public:
     }
   }
 
-  void initialize(const Vector<Real> &x, const Vector<Real> &g) {
+  void initialize(const Vector<Real> &x, const Vector<Real> &g) override {
     LineSearch_U<Real>::initialize(x,g);
     xnew_ = x.clone();
     g_    = g.clone();

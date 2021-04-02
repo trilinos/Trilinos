@@ -107,7 +107,7 @@ public:
   void run( Vector<Real>       &x,
             const Vector<Real> &g, 
             Objective<Real>    &obj,
-            std::ostream       &outStream = std::cout);
+            std::ostream       &outStream = std::cout) override;
 
   void writeHeader( std::ostream& os ) const override;
 

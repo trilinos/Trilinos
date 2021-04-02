@@ -68,7 +68,7 @@ public:
     rho_ = parlist.sublist("Step").sublist("Line Search").sublist("Line-Search Method").get("Backtracking Rate",half);
   }
 
-  void initialize(const Vector<Real> &x, const Vector<Real> &g) {
+  void initialize(const Vector<Real> &x, const Vector<Real> &g) override {
     LineSearch_U<Real>::initialize(x,g);
     xnew_ = x.clone();
   }

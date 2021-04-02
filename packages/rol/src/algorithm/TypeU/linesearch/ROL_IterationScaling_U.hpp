@@ -64,7 +64,7 @@ public:
 
   IterationScaling_U( ParameterList &parlist ) : LineSearch_U<Real>(parlist), algo_iter_(0) {}
 
-  void initialize(const Vector<Real> &x, const Vector<Real> &g) {
+  void initialize(const Vector<Real> &x, const Vector<Real> &g) override {
     LineSearch_U<Real>::initialize(x,g);
     xnew_   = x.clone();
   }

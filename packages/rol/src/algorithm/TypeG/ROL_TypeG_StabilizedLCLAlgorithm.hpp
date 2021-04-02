@@ -124,7 +124,7 @@ public:
                     Constraint<Real>      &econ,
                     Vector<Real>          &emul,
                     const Vector<Real>    &eres,
-                    std::ostream          &outStream = std::cout);
+                    std::ostream          &outStream = std::cout) override;
 
   virtual void writeHeader( std::ostream& os ) const override;
 
