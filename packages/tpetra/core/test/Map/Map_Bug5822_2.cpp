@@ -247,5 +247,9 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
 
   cout << endl; // make TimeMonitor output neat on test line
   Teuchos::TimeMonitor::summarize();
+
+  int globalSuccess_int = -1;
+  Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+  TEST_EQUALITY_CONST( globalSuccess_int, 0 );
 }
 } // (anonymous)
