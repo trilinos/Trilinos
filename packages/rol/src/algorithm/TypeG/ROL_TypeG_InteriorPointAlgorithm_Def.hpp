@@ -172,7 +172,7 @@ void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
                                            x,g,useLinearDamping_,kappaD_,
                                            state_->searchSize);
   initialize(x,g,emul,eres,ipobj,bnd,econ,*pwa,*dwa,outStream);
-  Ptr<Algorithm_E<Real>> algo;
+  Ptr<TypeE::Algorithm<Real>> algo;
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
@@ -182,7 +182,7 @@ void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
     list_.sublist("Status Test").set("Gradient Tolerance",   gtol_);
     list_.sublist("Status Test").set("Constraint Tolerance", ctol_);
     list_.sublist("Status Test").set("Step Tolerance",       stol_);
-    algo = AlgorithmEFactory<Real>(list_);
+    algo = TypeE::AlgorithmFactory<Real>(list_);
     if (hasPolyProj_) algo->run(x,g,ipobj,econ,emul,eres,
                                 *proj_->getLinearConstraint(),
                                 *proj_->getMultiplier(),
