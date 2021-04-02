@@ -32,14 +32,17 @@ namespace LOCA {
       const auto pNames = pVec_.getNamesVector();
       for (size_t i=0; i < pNames.size(); ++i) {
         const auto& p_name = pNames[i];
+        bool found = false;
         for (int j=0; j < model_->Np(); ++j) {
           const auto& names_vec = model_->get_p_names(j);
           const auto search = std::find(names_vec->begin(),names_vec->end(),p_name);
           if (search != names_vec->end()) {
             meParameterIndices_.push_back(j);
+            found = true;
             break;
           }
         }
+        TEUCHOS_TEST_FOR_EXCEPTION(!found,std::runtime_error,"ERROR LOCA::TpetraConstraintModelEvaluator::CTOR - could not find parameter named \"" << p_name << "\" in the model evaluator!");
       }
       TEUCHOS_ASSERT(pNames.size() == meParameterIndices_.size());
 
@@ -47,14 +50,17 @@ namespace LOCA {
       meResponseIndices_.clear();
       for (size_t i=0; i < gNames_.size(); ++i) {
         const auto& g_name = gNames_[i];
+        bool found = false;
         for (int j=0; j < model_->Ng(); ++j) {
           const auto& names_vec = model_->get_g_names(j);
           const auto search = std::find(names_vec.begin(),names_vec.end(),g_name);
           if (search != names_vec.end()) {
             meResponseIndices_.push_back(j);
+            found = true;
             break;
           }
         }
+        TEUCHOS_TEST_FOR_EXCEPTION(!found,std::runtime_error,"ERROR LOCA::TpetraConstraintModelEvaluator::CTOR - could not find response named \"" << g_name << "\" in the model evaluator!");
       }
       TEUCHOS_ASSERT(gNames_.size() == meResponseIndices_.size());
 
