@@ -268,90 +268,96 @@ void NewtonKrylovAlgorithm<Real>::run( Vector<Real>          &x,
 
 template<typename Real>
 void NewtonKrylovAlgorithm<Real>::writeHeader( std::ostream& os ) const {
+  std::stringstream hist;
   if (verbosity_ > 1) {
-    os << std::string(114,'-') << std::endl;
+    hist << std::string(114,'-') << std::endl;
     if (!useSecantHessVec_) {
-      os << "Line-Search Projected Newton";
+      hist << "Line-Search Projected Newton";
     }
     else {
-      os << "Line-Search Projected Quasi-Newton with " << secantName_ << " Hessian approximation";
+      hist << "Line-Search Projected Quasi-Newton with " << secantName_ << " Hessian approximation";
     }
-    os << " status output definitions" << std::endl << std::endl;
-    os << "  iter     - Number of iterates (steps taken)" << std::endl;
-    os << "  value    - Objective function value" << std::endl;
-    os << "  gnorm    - Norm of the gradient" << std::endl;
-    os << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
-    os << "  alpha    - Line search step length" << std::endl;
-    os << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
-    os << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
-    os << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
-    os << "  iterCG   - Number of Krylov iterations" << std::endl << std::endl;
-    os << "  flagGC   - Krylov flag" << std::endl;
+    hist << " status output definitions" << std::endl << std::endl;
+    hist << "  iter     - Number of iterates (steps taken)" << std::endl;
+    hist << "  value    - Objective function value" << std::endl;
+    hist << "  gnorm    - Norm of the gradient" << std::endl;
+    hist << "  snorm    - Norm of the step (update to optimization vector)" << std::endl;
+    hist << "  alpha    - Line search step length" << std::endl;
+    hist << "  #fval    - Cumulative number of times the objective function was evaluated" << std::endl;
+    hist << "  #grad    - Cumulative number of times the gradient was computed" << std::endl;
+    hist << "  ls_#fval - Number of the times the objective function was evaluated during the line search" << std::endl;
+    hist << "  iterCG   - Number of Krylov iterations" << std::endl << std::endl;
+    hist << "  flagGC   - Krylov flag" << std::endl;
     for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-      os << "    " << NumberToString(flag) << " - "
+      hist << "    " << NumberToString(flag) << " - "
            << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
     }            
-    os << std::string(114,'-') << std::endl;
+    hist << std::string(114,'-') << std::endl;
   }
 
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "gnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(15) << std::left << "alpha";
-  os << std::setw(10) << std::left << "#fval";
-  os << std::setw(10) << std::left << "#grad";
-  os << std::setw(10) << std::left << "#ls_fval";
-  os << std::setw(10) << std::left << "iterCG";
-  os << std::setw(10) << std::left << "flagCG";
-  os << std::endl;
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "value";
+  hist << std::setw(15) << std::left << "gnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(15) << std::left << "alpha";
+  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#grad";
+  hist << std::setw(10) << std::left << "#ls_fval";
+  hist << std::setw(10) << std::left << "iterCG";
+  hist << std::setw(10) << std::left << "flagCG";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
 void NewtonKrylovAlgorithm<Real>::writeName( std::ostream& os ) const {
+  std::stringstream hist;
   if (!useSecantHessVec_) {
-    os << std::endl << "Line-Search Projected Newton (Type B, Bound Constraints)" << std::endl;
+    hist << std::endl << "Line-Search Projected Newton (Type B, Bound Constraints)" << std::endl;
   }
   else {
-    os << std::endl << "Line-Search Projected Quasi-Newton with "
+    hist << std::endl << "Line-Search Projected Quasi-Newton with "
          << secantName_ << " Hessian approximation" << std::endl;
   }
+  os << hist.str();
 }
 
 template<typename Real>
 void NewtonKrylovAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  os << std::scientific << std::setprecision(6);
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(10) << std::left << state_->nfval;
-    os << std::setw(10) << std::left << state_->ngrad;
-    os << std::setw(10) << std::left << "---";
-    os << std::setw(10) << std::left << "---";
-    os << std::setw(10) << std::left << "---";
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
+    hist << std::endl;
   }
   else {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << state_->snorm;
-    os << std::setw(15) << std::left << state_->searchSize;
-    os << std::setw(10) << std::left << state_->nfval;
-    os << std::setw(10) << std::left << state_->ngrad;
-    os << std::setw(10) << std::left << ls_nfval_;
-    os << std::setw(10) << std::left << iterKrylov_;
-    os << std::setw(10) << std::left << flagKrylov_;
-    os << std::endl;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << state_->snorm;
+    hist << std::setw(15) << std::left << state_->searchSize;
+    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << ls_nfval_;
+    hist << std::setw(10) << std::left << iterKrylov_;
+    hist << std::setw(10) << std::left << flagKrylov_;
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 } // namespace TypeB

@@ -302,120 +302,126 @@ void PrimalDualActiveSetAlgorithm<Real>::run( Vector<Real>          &x,
 
 template<typename Real>
 void PrimalDualActiveSetAlgorithm<Real>::writeHeader( std::ostream& os ) const {
+  std::stringstream hist;
   if (verbosity_ > 1) {
-    os << std::string(114,'-') << std::endl;
+    hist << std::string(114,'-') << std::endl;
     if (!useSecantHessVec_) {
-      os << "Primal Dual Active Set Newton's Method";
+      hist << "Primal Dual Active Set Newton's Method";
     }
     else {
-      os << "Primal Dual Active Set Quasi-Newton Method with " << secantName_ << " Hessian approximation";
+      hist << "Primal Dual Active Set Quasi-Newton Method with " << secantName_ << " Hessian approximation";
     }
-    os << " status output definitions" << std::endl << std::endl;
-    os << "  iter       - Number of iterates (steps taken)" << std::endl;
-    os << "  value      - Objective function value" << std::endl;
-    os << "  gnorm      - Norm of the gradient" << std::endl;
-    os << "  snorm      - Norm of the step (update to optimization vector)" << std::endl;
-    os << "  #fval      - Cumulative number of times the objective function was evaluated" << std::endl;
-    os << "  #grad      - Cumulative number of times the gradient was computed" << std::endl;
+    hist << " status output definitions" << std::endl << std::endl;
+    hist << "  iter       - Number of iterates (steps taken)" << std::endl;
+    hist << "  value      - Objective function value" << std::endl;
+    hist << "  gnorm      - Norm of the gradient" << std::endl;
+    hist << "  snorm      - Norm of the step (update to optimization vector)" << std::endl;
+    hist << "  #fval      - Cumulative number of times the objective function was evaluated" << std::endl;
+    hist << "  #grad      - Cumulative number of times the gradient was computed" << std::endl;
     if (maxit_ > 1) {
-      os << "  iterPDAS   - Number of Primal Dual Active Set iterations" << std::endl << std::endl;
-      os << "  flagPDAS   - Primal Dual Active Set flag" << std::endl;
-      os << "  iterK      - Number of Krylov iterations" << std::endl << std::endl;
+      hist << "  iterPDAS   - Number of Primal Dual Active Set iterations" << std::endl << std::endl;
+      hist << "  flagPDAS   - Primal Dual Active Set flag" << std::endl;
+      hist << "  iterK      - Number of Krylov iterations" << std::endl << std::endl;
     }
     else {
-      os << "  iterK      - Number of Krylov iterations" << std::endl << std::endl;
-      os << "  flagK      - Krylov flag" << std::endl;
+      hist << "  iterK      - Number of Krylov iterations" << std::endl << std::endl;
+      hist << "  flagK      - Krylov flag" << std::endl;
       for( int flag = CG_FLAG_SUCCESS; flag != CG_FLAG_UNDEFINED; ++flag ) {
-        os << "    " << NumberToString(flag) << " - "
+        hist << "    " << NumberToString(flag) << " - "
              << ECGFlagToString(static_cast<ECGFlag>(flag)) << std::endl;
       }            
     }
-    os << "  feasible - Is iterate feasible?" << std::endl;
-    os << std::string(114,'-') << std::endl;
+    hist << "  feasible - Is iterate feasible?" << std::endl;
+    hist << std::string(114,'-') << std::endl;
   }
 
-  os << "  ";
-  os << std::setw(6)  << std::left << "iter";
-  os << std::setw(15) << std::left << "value";
-  os << std::setw(15) << std::left << "gnorm";
-  os << std::setw(15) << std::left << "snorm";
-  os << std::setw(10) << std::left << "#fval";
-  os << std::setw(10) << std::left << "#grad";
+  hist << "  ";
+  hist << std::setw(6)  << std::left << "iter";
+  hist << std::setw(15) << std::left << "value";
+  hist << std::setw(15) << std::left << "gnorm";
+  hist << std::setw(15) << std::left << "snorm";
+  hist << std::setw(10) << std::left << "#fval";
+  hist << std::setw(10) << std::left << "#grad";
   if (maxit_ > 1) {
-    os << std::setw(10) << std::left << "iterPDAS";
-    os << std::setw(10) << std::left << "flagPDAS";
-    os << std::setw(10) << std::left << "iterK";
+    hist << std::setw(10) << std::left << "iterPDAS";
+    hist << std::setw(10) << std::left << "flagPDAS";
+    hist << std::setw(10) << std::left << "iterK";
   }
   else {
-    os << std::setw(10) << std::left << "iterK";
-    os << std::setw(10) << std::left << "flagK";
+    hist << std::setw(10) << std::left << "iterK";
+    hist << std::setw(10) << std::left << "flagK";
   }
-  os << std::setw(10) << std::left << "feasible";
-  os << std::endl;
+  hist << std::setw(10) << std::left << "feasible";
+  hist << std::endl;
+  os << hist.str();
 }
 
 template<typename Real>
 void PrimalDualActiveSetAlgorithm<Real>::writeName( std::ostream& os ) const {
+  std::stringstream hist;
   if (!useSecantHessVec_) {
-    os << std::endl << "Primal Dual Active Set Newton's Method (Type B, Bound Constraints)" << std::endl;
+    hist << std::endl << "Primal Dual Active Set Newton's Method (Type B, Bound Constraints)" << std::endl;
   }
   else {
-    os << std::endl << "Primal Dual Active Set Quasi-Newton Method with "
+    hist << std::endl << "Primal Dual Active Set Quasi-Newton Method with "
          << secantName_ << " Hessian approximation" << std::endl;
   }
+  os << hist.str();
 }
 
 template<typename Real>
 void PrimalDualActiveSetAlgorithm<Real>::writeOutput( std::ostream& os, bool write_header ) const {
-  os << std::scientific << std::setprecision(6);
+  std::stringstream hist;
+  hist << std::scientific << std::setprecision(6);
   if ( state_->iter == 0 ) writeName(os);
   if ( write_header )      writeHeader(os);
   if ( state_->iter == 0 ) {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << "---";
-    os << std::setw(10) << std::left << state_->nfval;
-    os << std::setw(10) << std::left << state_->ngrad;
-    os << std::setw(10) << std::left << "---";
-    os << std::setw(10) << std::left << "---";
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << "---";
+    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->ngrad;
+    hist << std::setw(10) << std::left << "---";
+    hist << std::setw(10) << std::left << "---";
     if (maxit_ > 1) {
-      os << std::setw(10) << std::left << "---";
+      hist << std::setw(10) << std::left << "---";
     }
     if ( feasible_ ) {
-      os << std::setw(10) << std::left << "YES";
+      hist << std::setw(10) << std::left << "YES";
     }
     else {
-      os << std::setw(10) << std::left << "NO";
+      hist << std::setw(10) << std::left << "NO";
     }
-    os << std::endl;
+    hist << std::endl;
   }
   else {
-    os << "  ";
-    os << std::setw(6)  << std::left << state_->iter;
-    os << std::setw(15) << std::left << state_->value;
-    os << std::setw(15) << std::left << state_->gnorm;
-    os << std::setw(15) << std::left << state_->snorm;
-    os << std::setw(10) << std::left << state_->nfval;
-    os << std::setw(10) << std::left << state_->ngrad;
+    hist << "  ";
+    hist << std::setw(6)  << std::left << state_->iter;
+    hist << std::setw(15) << std::left << state_->value;
+    hist << std::setw(15) << std::left << state_->gnorm;
+    hist << std::setw(15) << std::left << state_->snorm;
+    hist << std::setw(10) << std::left << state_->nfval;
+    hist << std::setw(10) << std::left << state_->ngrad;
     if (maxit_ > 1) {
-      os << std::setw(10) << std::left << iter_;
-      os << std::setw(10) << std::left << flag_;
-      os << std::setw(10) << std::left << totalKrylov_;
+      hist << std::setw(10) << std::left << iter_;
+      hist << std::setw(10) << std::left << flag_;
+      hist << std::setw(10) << std::left << totalKrylov_;
     }
     else {
-      os << std::setw(10) << std::left << iterKrylov_;
-      os << std::setw(10) << std::left << flagKrylov_;
+      hist << std::setw(10) << std::left << iterKrylov_;
+      hist << std::setw(10) << std::left << flagKrylov_;
     }
     if ( feasible_ ) {
-      os << std::setw(10) << std::left << "YES";
+      hist << std::setw(10) << std::left << "YES";
     }
     else {
-      os << std::setw(10) << std::left << "NO";
+      hist << std::setw(10) << std::left << "NO";
     }
-    os << std::endl;
+    hist << std::endl;
   }
+  os << hist.str();
 }
 
 } // namespace TypeB
