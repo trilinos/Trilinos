@@ -48,7 +48,7 @@
 #include "ROL_HS21.hpp"
 #include "ROL_HS41.hpp"
 #include "ROL_HS53.hpp"
-#include "ROL_PrimalDualActiveSetAlgorithm_B.hpp"
+#include "ROL_TypeB_PrimalDualActiveSetAlgorithm.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT>>  obj;
     ROL::Ptr<ROL::Constraint<RealT>> con;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
-    ROL::Ptr<ROL::PrimalDualActiveSetAlgorithm_B<RealT>> algo;
+    ROL::Ptr<ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT>> algo;
     std::vector<RealT> data;
     RealT e1, e2, e3, e4, e5, err;
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
     mul = HS41.getEqualityMultiplier();
     bnd = HS41.getBoundConstraint();
 
-    algo = ROL::makePtr<ROL::PrimalDualActiveSetAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
     mul = HS53.getEqualityMultiplier();
     bnd = HS53.getBoundConstraint();
 
-    algo = ROL::makePtr<ROL::PrimalDualActiveSetAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
     imul = HS21.getInequalityMultiplier();
     ibnd = HS21.getSlackBoundConstraint();
 
-    algo = ROL::makePtr<ROL::PrimalDualActiveSetAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT>>(list);
     algo->run(*sol,*obj,*bnd,*icon,*imul,*ibnd,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();

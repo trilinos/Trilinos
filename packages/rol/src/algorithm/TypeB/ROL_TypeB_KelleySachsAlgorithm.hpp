@@ -58,7 +58,7 @@ namespace ROL {
 namespace TypeB {
 
 template<typename Real>
-class KelleySBachsAlgorithm : public TypeB::Algorithm<Real> {
+class KelleySachsAlgorithm : public TypeB::Algorithm<Real> {
 private:
   Ptr<TrustRegionModel_U<Real>> model_;  ///< Container for trust-region model
 

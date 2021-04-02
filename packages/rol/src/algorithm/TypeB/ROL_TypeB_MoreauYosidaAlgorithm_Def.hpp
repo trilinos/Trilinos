@@ -140,19 +140,19 @@ void MoreauYosidaAlgorithm<Real>::updateState(const Vector<Real>          &x,
 }
 
 template<typename Real>
-std::vector<std::string> MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
-                                                           const Vector<Real>    &g, 
-                                                           Objective<Real>       &obj,
-                                                           BoundConstraint<Real> &bnd,
-                                                           std::ostream          &outStream ) {
+void MoreauYosidaAlgorithm<Real>::run( Vector<Real>          &x,
+                                       const Vector<Real>    &g,
+                                       Objective<Real>       &obj,
+                                       BoundConstraint<Real> &bnd,
+                                       std::ostream          &outStream ) {
   const Real one(1);
   Ptr<Vector<Real>> pwa = x.clone();
   // Initialize Moreau-Yosida data
   MoreauYosidaObjective<Real> myobj(makePtrFromRef(obj),makePtrFromRef(bnd),
-                                  x,g,state_->searchSize,updateMultiplier_,
-                                  updatePenalty_);
+                                    x,g,state_->searchSize,updateMultiplier_,
+                                    updatePenalty_);
   initialize(x,g,myobj,bnd,*pwa,outStream);
-  Ptr<Algorithm_U<Real>> algo;
+  Ptr<TypeU::Algorithm<Real>> algo;
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);

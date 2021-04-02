@@ -157,6 +157,6 @@ public:
 } // namespace TypeU
 } // namespace ROL
 
-#include "ROL_TypeU_LineSearch_Def.hpp"
+#include "ROL_TypeU_LineSearchAlgorithm_Def.hpp"
 
 #endif

@@ -173,7 +173,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            BoundConstraint<Real> &linear_ibnd,
                            const Vector<Real>    &linear_ires,
                            std::ostream          &outStream ) {
-  Ptr<Vector<Real>> gp = g.clone(), irp = ires.clone();
+  Ptr<Vector<Real>> gp = g.clone(), irp = linear_ires.clone();
   Problem<Real> problem(makePtrFromRef(obj),
                         makePtrFromRef(x),gp);
   problem.addBoundConstraint(makePtrFromRef(bnd));
@@ -223,7 +223,7 @@ void Algorithm<Real>::run( Vector<Real>          &x,
                            BoundConstraint<Real> &linear_ibnd,
                            const Vector<Real>    &linear_ires,
                            std::ostream          &outStream ) {
-  Ptr<Vector<Real>> gp = g.clone(), erp = eres.clone(), irp = ires.clone();
+  Ptr<Vector<Real>> gp = g.clone(), erp = linear_eres.clone(), irp = linear_ires.clone();
   Problem<Real> problem(makePtrFromRef(obj),
                         makePtrFromRef(x),gp);
   problem.addBoundConstraint(makePtrFromRef(bnd));
@@ -310,7 +310,8 @@ void Algorithm<Real>::writeExitStatus( std::ostream& os ) const {
 }
 
 template<typename Real>
-Ptr<const AlgorithmState<Real>>& Algorithm<Real>::getState() const {
+//Ptr<const AlgorithmState<Real>>& Algorithm<Real>::getState() const {
+Ptr<const AlgorithmState<Real>> Algorithm<Real>::getState() const {
   return state_;
 }
 

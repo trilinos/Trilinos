@@ -12,10 +12,10 @@
 // met:
 //
 // 1. Redistributions of source code must retain the above copyright
-// notice, this trlist of conditions and the following disclaimer.
+// notice, this list of conditions and the following disclaimer.
 //
 // 2. Redistributions in binary form must reproduce the above copyright
-// notice, this trlist of conditions and the following disclaimer in the
+// notice, this list of conditions and the following disclaimer in the
 // documentation and/or other materials provided with the distribution.
 //
 // 3. Neither the name of the Corporation nor the names of the
@@ -88,7 +88,7 @@ TrustRegionAlgorithm<Real>::TrustRegionAlgorithm( ParameterList &parlist,
   updateIter_  = vlist.get("Forcing Sequence Update Frequency", static_cast<int>(10));
   forceFactor_ = vlist.get("Forcing Sequence Reduction Factor", static_cast<Real>(0.1));
   // Initialize Trust Region Subproblem Solver Object
-  etr_       = StringToETrustRegionU(list.get("Subproblem Solver", "Dogleg"));  
+  etr_       = StringToETrustRegionU(trlist.get("Subproblem Solver", "Dogleg"));  
   solver_    = TrustRegionUFactory<Real>(parlist);
   verbosity_ = glist.get("Output Level", 0);
   // Secant Information
@@ -189,7 +189,7 @@ void TrustRegionAlgorithm<Real>::run( Vector<Real>       &x,
   initialize(x,g,*gvec,obj,outStream);
 
   // Output
-  if (verbosity_ > 0) writeOutput(outstream,true);
+  if (verbosity_ > 0) writeOutput(outStream,true);
 
   while (status_->check(*state_)) {
     // Build trust-region model

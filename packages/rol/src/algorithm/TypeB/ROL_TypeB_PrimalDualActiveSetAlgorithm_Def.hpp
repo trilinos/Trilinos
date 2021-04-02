@@ -45,6 +45,7 @@
 #define ROL_TYPEB_PRIMALDUALACTIVESETALGORITHM_DEF_HPP
 
 namespace ROL {
+namespace TypeB {
 
 template<typename Real>
 PrimalDualActiveSetAlgorithm<Real>::PrimalDualActiveSetAlgorithm(ParameterList           &list,

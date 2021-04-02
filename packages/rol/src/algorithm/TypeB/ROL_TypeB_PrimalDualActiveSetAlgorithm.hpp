@@ -53,6 +53,7 @@
 */
 
 namespace ROL {
+namespace TypeB {
 
 template<typename Real>
 class PrimalDualActiveSetAlgorithm : public TypeB::Algorithm<Real> {

@@ -121,7 +121,7 @@ void LineSearchAlgorithm<Real>::run( Vector<Real>       &x,
   Ptr<Vector<Real>> gprev = g.clone();
 
   // Output
-  if (verbosity_ > 0) outStream << print(true);
+  if (verbosity_ > 0) writeOutput(outStream, true);
 
   while (status_->check(*state_)) {
     // Compute descent direction
@@ -209,7 +209,7 @@ void LineSearchAlgorithm<Real>::writeHeader( std::ostream& os ) const {
 
 template<typename Real>
 void LineSearchAlgorithm<Real>::writeName( std::ostream& os ) const {
-  desc_->writeName(os);
+  os << desc_->printName();
   os << std::endl << std::endl;
   os << "Line Search: " << lineSearchName_;
   os << " satisfying " << ECurvatureConditionUToString(econd_) << std::endl;

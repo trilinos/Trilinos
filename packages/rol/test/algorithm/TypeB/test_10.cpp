@@ -48,8 +48,8 @@
 #define USE_HESSVEC 1
 
 #include "ROL_GetTestProblems.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_KelleySachsAlgorithm_B.hpp"
+//#include "ROL_OptimizationSolver.hpp"
+#include "ROL_TypeB_KelleySachsAlgorithm.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
           e->zero();
 
           // Define Solver
-          ROL::KelleySachsAlgorithm_B<RealT> algo(*parlist);
+          ROL::TypeB::KelleySachsAlgorithm<RealT> algo(*parlist);
           algo.run(*problem->getSolutionVector(),
                    *problem->getObjective(),
                    *problem->getBoundConstraint());

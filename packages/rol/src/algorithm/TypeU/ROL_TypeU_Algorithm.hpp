@@ -158,7 +158,8 @@ public:
 
   virtual void writeExitStatus( std::ostream& os ) const;
 
-  Ptr<const AlgorithmState<Real>>& getState() const;
+  //Ptr<const AlgorithmState<Real>>& getState() const;
+  Ptr<const AlgorithmState<Real>> getState() const;
 
   void reset();
 
@@ -166,6 +167,6 @@ public:
 } // namespace TypeU
 } // namespace ROL
 
-#include "ROL_Algorithm_Def.hpp"
+#include "ROL_TypeU_Algorithm_Def.hpp"
 
 #endif

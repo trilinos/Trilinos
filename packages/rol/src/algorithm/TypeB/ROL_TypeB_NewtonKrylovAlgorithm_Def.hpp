@@ -241,7 +241,6 @@ void NewtonKrylovAlgorithm<Real>::run( Vector<Real>          &x,
     if (verbosity_ > 0) writeOutput(outStream,writeHeader_);
   }
   if (verbosity_ > 0) TypeB::Algorithm<Real>::writeExitStatus(outStream);
-  return output;
 }
 
 template<typename Real>

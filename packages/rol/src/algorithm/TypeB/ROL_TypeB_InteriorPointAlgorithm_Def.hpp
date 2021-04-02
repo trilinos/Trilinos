@@ -150,7 +150,7 @@ void InteriorPointAlgorithm<Real>::run( Vector<Real>          &x,
                                      x,g,useLinearDamping_,kappaD_,
                                      state_->searchSize);
   initialize(x,g,ipobj,bnd,*pwa,outStream);
-  Ptr<Algorithm_U<Real>> algo;
+  Ptr<TypeU::Algorithm<Real>> algo;
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);

@@ -47,7 +47,7 @@
 #include "ROL_BundleStatusTest.hpp"
 #include "ROL_Bundle_U_AS.hpp"
 #include "ROL_Bundle_U_TT.hpp"
-#include "ROL_TypeU_LineSearch_Factory.hpp"
+#include "ROL_LineSearch_U_Factory.hpp"
 
 namespace ROL {
 namespace TypeU {
@@ -55,7 +55,7 @@ namespace TypeU {
 
 template<typename Real>
 BundleAlgorithm<Real>::BundleAlgorithm( ParameterList &parlist,
-                      const Ptr<LineSearch_U<Real>> &lineSearch )
+                                        const Ptr<LineSearch_U<Real>> &lineSearch )
   : Algorithm<Real>(),
     bundle_(ROL::nullPtr), lineSearch_(ROL::nullPtr),
     QPiter_(0), QPmaxit_(0), QPtol_(0), step_flag_(0),
@@ -98,7 +98,7 @@ BundleAlgorithm<Real>::BundleAlgorithm( ParameterList &parlist,
   ParameterList &lslist = parlist.sublist("Step").sublist("Line Search");
   ls_maxit_ = lslist.get("Maximum Number of Function Evaluations",20);
   if ( !isConvex_ && lineSearch_==nullPtr ) {
-    lineSearch_ = LineSearchUFactory<Real>(list);
+    lineSearch_ = LineSearchUFactory<Real>(parlist);
   }
 
   // Get verbosity level

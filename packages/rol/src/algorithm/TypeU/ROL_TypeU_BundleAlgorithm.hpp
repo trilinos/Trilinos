@@ -45,8 +45,8 @@
 #define ROL_TYPEU_BUNDLEALGORITHM_H
 
 #include "ROL_TypeU_Algorithm.hpp"
-#include "ROL_TypeU_Bundle.hpp"
-#include "ROL_TypeU_LineSearch.hpp"
+#include "ROL_Bundle_U.hpp"
+#include "ROL_LineSearch_U.hpp"
 
 /** \class ROL::TypeU::BundleAlgorithm
     \brief Provides an interface to run trust-bundle methods for unconstrained
@@ -60,8 +60,8 @@ template<typename Real>
 class BundleAlgorithm : public Algorithm<Real> {
 private:
   // Bundle
-  Ptr<Bundle<Real>>     bundle_;     // Bundle of subgradients and linearization errors
-  Ptr<LineSearch<Real>> lineSearch_; // Line-search object for nonconvex problems
+  Ptr<Bundle_U<Real>>     bundle_;     // Bundle of subgradients and linearization errors
+  Ptr<LineSearch_U<Real>> lineSearch_; // Line-search object for nonconvex problems
 
   // Dual cutting plane solution
   unsigned QPiter_;  // Number of QP solver iterations
@@ -97,7 +97,7 @@ private:
 public:
 
   BundleAlgorithm( ParameterList &parlist,
-     const Ptr<LineSearch<Real>> &lineSearch = nullPtr );
+                   const Ptr<LineSearch_U<Real>> &lineSearch = nullPtr );
 
   void run( Vector<Real>       &x,
             const Vector<Real> &g, 
@@ -107,7 +107,7 @@ public:
   void writeHeader( std::ostream& os ) const override;
 
   void writeName( std::ostream& os) const override;
-  
+
   void writeOutput( std::ostream& os, bool print_header = false ) const override;
 
 private:

@@ -48,7 +48,7 @@
 #include "ROL_HS21.hpp"
 #include "ROL_HS41.hpp"
 #include "ROL_HS53.hpp"
-#include "ROL_LinMoreAlgorithm_B.hpp"
+#include "ROL_TypeB_LinMoreAlgorithm.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -86,8 +86,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT>>  obj;
     ROL::Ptr<ROL::Constraint<RealT>> con;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
-    ROL::Ptr<ROL::LinMoreAlgorithm_B<RealT>> algo;
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> prob;
+    ROL::Ptr<ROL::TypeB::LinMoreAlgorithm<RealT>> algo;
+    ROL::Ptr<ROL::Problem<RealT>> prob;
     std::vector<RealT> data;
     RealT e1, e2, e3, e4, e5, err;
 
@@ -100,12 +100,12 @@ int main(int argc, char *argv[]) {
     bnd = HS41.getBoundConstraint();
 
     list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
-    prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    prob = ROL::makePtr<ROL::Problem<RealT>>(obj,sol);
     prob->addBoundConstraint(bnd);
     prob->addLinearConstraint("con1",con,mul);
     prob->setProjectionAlgorithm(list);
     prob->finalize(false,true,*outStream);
-    algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::LinMoreAlgorithm<RealT>>(list);
     algo->run(*prob,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -128,12 +128,12 @@ int main(int argc, char *argv[]) {
     bnd = HS53.getBoundConstraint();
 
     list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
-    prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    prob = ROL::makePtr<ROL::Problem<RealT>>(obj,sol);
     prob->addBoundConstraint(bnd);
     prob->addLinearConstraint("con1",con,mul);
     prob->setProjectionAlgorithm(list);
     prob->finalize(false,true,*outStream);
-    algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::LinMoreAlgorithm<RealT>>(list);
     algo->run(*prob,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -163,12 +163,12 @@ int main(int argc, char *argv[]) {
     imul = HS21.getInequalityMultiplier();
     ibnd = HS21.getSlackBoundConstraint();
 
-    prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    prob = ROL::makePtr<ROL::Problem<RealT>>(obj,sol);
     prob->addBoundConstraint(bnd);
     prob->addLinearConstraint("con1",icon,imul,ibnd);
     prob->setProjectionAlgorithm(list);
     prob->finalize(false,true,*outStream);
-    algo = ROL::makePtr<ROL::LinMoreAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::LinMoreAlgorithm<RealT>>(list);
     algo->run(*prob,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();

@@ -49,7 +49,7 @@
 
 #include "ROL_GetTestProblems.hpp"
 #include "ROL_OptimizationSolver.hpp"
-#include "ROL_PrimalDualActiveSetAlgorithm_B.hpp"
+#include "ROL_TypeB_PrimalDualActiveSetAlgorithm.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -142,7 +142,7 @@ int main(int argc, char *argv[]) {
           e->zero();
 
           // Define Solver
-          ROL::PrimalDualActiveSetAlgorithm_B<RealT> algo(*parlist);
+          ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT> algo(*parlist);
           algo.run(*problem->getSolutionVector(),
                    *problem->getObjective(),
                    *problem->getBoundConstraint());

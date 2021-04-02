@@ -116,7 +116,7 @@ void SpectralGradientAlgorithm<Real>::run( Vector<Real>          &x,
   xmin->set(x);
 
   // Output
-  if (verbosity_ > 0) outStream << writeOutput(true);
+  if (verbosity_ > 0) writeOutput(outStream, true);
 
   // Iterate spectral projected gradient
   state_->stepVec->set(state_->gradientVec->dual());

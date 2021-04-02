@@ -49,7 +49,7 @@
 
 #include "ROL_GetTestProblems.hpp"
 #include "ROL_OptimizationSolver.hpp"
-#include "ROL_NewtonKrylovAlgorithm_B.hpp"
+#include "ROL_TypeB_NewtonKrylovAlgorithm.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
         e->zero();
 
         // Define Solver
-        ROL::NewtonKrylovAlgorithm_B<RealT> algo(*parlist);
+        ROL::TypeB::NewtonKrylovAlgorithm<RealT> algo(*parlist);
         algo.run(*problem->getSolutionVector(),
                  *problem->getObjective(),
                  *problem->getBoundConstraint());
@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
         e->zero();
 
         // Define Solver
-        ROL::NewtonKrylovAlgorithm_B<RealT> algo(*parlist);
+        ROL::TypeB::NewtonKrylovAlgorithm<RealT> algo(*parlist);
         algo.run(*problem->getSolutionVector(),
                  *problem->getObjective(),
                  *problem->getBoundConstraint());

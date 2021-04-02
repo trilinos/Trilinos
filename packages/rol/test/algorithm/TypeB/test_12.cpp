@@ -47,8 +47,8 @@
 
 #include "ROL_HS41.hpp"
 #include "ROL_HS53.hpp"
-#include "ROL_QuasiNewtonAlgorithm_B.hpp"
-#include "ROL_NewOptimizationProblem.hpp"
+#include "ROL_TypeB_QuasiNewtonAlgorithm.hpp"
+#include "ROL_Problem.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Objective<RealT>>  obj;
     ROL::Ptr<ROL::Constraint<RealT>> con;
     ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::QuasiNewtonAlgorithm_B<RealT>> algo;
+    ROL::Ptr<ROL::Problem<RealT>> problem;
+    ROL::Ptr<ROL::TypeB::QuasiNewtonAlgorithm<RealT>> algo;
     std::vector<RealT> data;
     RealT e1, e2, e3, e4, e5, err;
 
@@ -105,11 +105,11 @@ int main(int argc, char *argv[]) {
       list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     else
       list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
-    problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    problem = ROL::makePtr<ROL::Problem<RealT>>(obj,sol);
     problem->addBoundConstraint(bnd);
     problem->addLinearConstraint("LEC",con,mul);
     problem->setProjectionAlgorithm(list);
-    algo = ROL::makePtr<ROL::QuasiNewtonAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::QuasiNewtonAlgorithm<RealT>>(list);
     algo->run(*problem,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
@@ -136,11 +136,11 @@ int main(int argc, char *argv[]) {
       list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
     else
       list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
-    problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,sol);
+    problem = ROL::makePtr<ROL::Problem<RealT>>(obj,sol);
     problem->addBoundConstraint(bnd);
     problem->addLinearConstraint("LEC",con,mul);
     problem->setProjectionAlgorithm(list);
-    algo = ROL::makePtr<ROL::QuasiNewtonAlgorithm_B<RealT>>(list);
+    algo = ROL::makePtr<ROL::TypeB::QuasiNewtonAlgorithm<RealT>>(list);
     algo->run(*problem,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
