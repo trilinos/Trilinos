@@ -63,8 +63,8 @@ public:
   using Constraint<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
   virtual void update( const std::vector<Real> &x, bool flag = true, int iter = -1 ) {}  
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
-  virtual void update( const std::vector<Real> &x, EUpdateType type, int iter = -1 ) {}
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  virtual void update( const std::vector<Real> &x, UpdateType type, int iter = -1 ) {}
 
   using Constraint<Real>::value;
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;

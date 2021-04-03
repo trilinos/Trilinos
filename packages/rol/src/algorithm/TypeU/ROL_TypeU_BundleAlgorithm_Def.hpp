@@ -118,7 +118,7 @@ void BundleAlgorithm<Real>::initialize( const Vector<Real> &x,
   }
   // Update objective function, get value and gradient
   Real tol = std::sqrt(ROL_EPSILON<Real>());
-  obj.update(x,UPDATE_INITIAL,state_->iter);
+  obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,tol);
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,tol);
@@ -202,7 +202,7 @@ void BundleAlgorithm<Real>::run( Vector<Real>       &x,
       else {
         // Current iterate is not epsilon optimal.
         y->set(x); y->plus(*state_->stepVec);      // y is the candidate iterate
-        obj.update(*y,UPDATE_ACCEPT,state_->iter); // Update objective at y
+        obj.update(*y,UpdateType::Accept,state_->iter); // Update objective at y
         valueNew = obj.value(*y,tol);              // Compute objective value at y
         state_->nfval++;
         obj.gradient(*state_->gradientVec,*y,tol); // Compute objective (sub)gradient at y

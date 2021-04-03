@@ -100,7 +100,7 @@ FletcherObjectiveBase<Real>::FletcherObjectiveBase(const Ptr<Objective<Real>> &o
 }
 
 template<typename Real>
-void FletcherObjectiveBase<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void FletcherObjectiveBase<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   obj_->update(x,type,iter);
   con_->update(x,type,iter);
   fPhi_->objectiveUpdate(type);

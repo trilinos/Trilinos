@@ -51,7 +51,7 @@ LinearConstraint<Real>::LinearConstraint(const Ptr<const LinearOperator<Real>> &
                                          const Ptr<const Vector<Real>> &b) : A_(A), b_(b) {}
 
 template<typename Real>
-void LinearConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {}
+void LinearConstraint<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {}
 
 template<typename Real>
 void LinearConstraint<Real>::update( const Vector<Real> &x, bool flag, int iter ) {}

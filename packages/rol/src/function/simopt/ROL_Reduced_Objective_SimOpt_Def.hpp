@@ -57,7 +57,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const bool useFDhessVec) 
   : obj_(obj), con_(con),
     storage_(storage), useFDhessVec_(useFDhessVec),
-    updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
+    updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   stateStore_   = makePtr<VectorController<Real>>();
   adjointStore_ = makePtr<VectorController<Real>>();
@@ -85,7 +85,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const bool useFDhessVec)
   : obj_(obj), con_(con),
     storage_(storage), useFDhessVec_(useFDhessVec),
-    updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
+    updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   stateStore_   = makePtr<VectorController<Real>>();
   adjointStore_ = makePtr<VectorController<Real>>();
@@ -111,7 +111,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const bool useFDhessVec) 
   : obj_(obj), con_(con), stateStore_(stateStore),
     storage_(storage), useFDhessVec_(useFDhessVec),
-    updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
+    updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone(); state_->set(*state);
@@ -139,7 +139,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const bool useFDhessVec)
   : obj_(obj), con_(con), stateStore_(stateStore),
     storage_(storage), useFDhessVec_(useFDhessVec),
-    updateFlag_(true), updateIter_(0), updateType_(UPDATE_INITIAL),
+    updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   adjointStore_ = makePtr<VectorController<Real>>();
   state_        = state->clone(); state_->set(*state);
@@ -162,7 +162,7 @@ void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, bool flag, i
 }
 
 template<typename Real>
-void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, EUpdateType type, int iter ) {
+void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, UpdateType type, int iter ) {
   newUpdate_  = true;
   updateType_ = type;
   updateIter_ = iter;

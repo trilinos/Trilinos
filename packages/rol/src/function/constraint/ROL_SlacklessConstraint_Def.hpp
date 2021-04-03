@@ -50,7 +50,7 @@ template<typename Real>
 SlacklessConstraint<Real>::SlacklessConstraint( const Ptr<Constraint<Real>> &con ) : con_(con) {}
  
 template<typename Real> 
-void SlacklessConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void SlacklessConstraint<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   con_->update( *getOpt(x), type, iter );
 }
  

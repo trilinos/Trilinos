@@ -82,7 +82,7 @@ AffineTransformConstraint<Real>::AffineTransformConstraint(const Ptr<Constraint<
 }
 
 template<typename Real>
-void AffineTransformConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void AffineTransformConstraint<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   storage_->constraintUpdate(type);
   acon_->update(x,type,iter);
   con_->update(*transform(x),type,iter);

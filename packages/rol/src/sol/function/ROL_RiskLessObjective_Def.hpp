@@ -50,7 +50,7 @@ template<typename Real>
 RiskLessObjective<Real>::RiskLessObjective(const Ptr<Objective<Real>> &obj) : obj_(obj) {}
 
 template<typename Real>
-void RiskLessObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void RiskLessObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   Ptr<const Vector<Real>> x0
     = dynamic_cast<const RiskVector<Real>&>(x).getVector();
   obj_->update(*x0,type,iter);

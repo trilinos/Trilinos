@@ -75,7 +75,7 @@ public:
     binCost_ = list.sublist("Problem").get("Integrality Cost", 1.0);
   }
 
-  void update(const ROL::Vector<Real> &x, ROL::EUpdateType type, int iter = -1) {
+  void update(const ROL::Vector<Real> &x, ROL::UpdateType type, int iter = -1) {
     misfit_->update(x,type,iter);
     penalty_->update(x,type,iter);
     binary_->update(x,type,iter);

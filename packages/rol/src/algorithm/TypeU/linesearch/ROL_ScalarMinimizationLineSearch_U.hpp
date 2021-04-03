@@ -96,7 +96,7 @@ private:
       if (alpha_ != alpha) {
         alpha_ = alpha;
         xnew_->set(*x_); xnew_->axpy(alpha,*s_);
-        obj_->update(*xnew_,UPDATE_TRIAL);
+        obj_->update(*xnew_,UpdateType::Trial);
         val_ = obj_->value(*xnew_,ftol_);
       }
       return val_;
@@ -113,7 +113,7 @@ private:
           Real h       = cbrteps*std::max(xnorm/snorm,static_cast<Real>(1));
           Real fnew    = value(alpha);
           xnew_->axpy(h,*s_);
-          obj_->update(*xnew_,UPDATE_TRIAL);
+          obj_->update(*xnew_,UpdateType::Trial);
           Real ftrial = obj_->value(*xnew_,tol);
           val = (ftrial - fnew) / h;
         }

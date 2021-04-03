@@ -51,7 +51,7 @@ RiskLessConstraint<Real>::RiskLessConstraint(const Ptr<Constraint<Real>> &con)
   : con_(con) {}
 
 template<typename Real>
-void RiskLessConstraint<Real>::update(const Vector<Real> &x, EUpdateType type, int iter) {
+void RiskLessConstraint<Real>::update(const Vector<Real> &x, UpdateType type, int iter) {
   Ptr<const Vector<Real>> x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
   con_->update(*x0,type,iter);
 }

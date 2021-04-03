@@ -74,7 +74,7 @@ RiddersProjection<Real>::RiddersProjection(const Vector<Real>               &xpr
   // con.value(x) = xprim_->dot(x) + b_
   Real tol(std::sqrt(ROL_EPSILON<Real>()));
   xprim_->zero();
-  con_->update(*xprim_,UPDATE_TEMP);
+  con_->update(*xprim_,UpdateType::Temp);
   con_->value(*res_,*xprim_,tol);
   b_ = res_->dot(*res_->basis(0));
   mul_->setScalar(static_cast<Real>(1));

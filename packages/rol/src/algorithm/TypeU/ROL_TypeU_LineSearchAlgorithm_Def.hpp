@@ -99,7 +99,7 @@ void LineSearchAlgorithm<Real>::initialize(const Vector<Real> &x,
   desc_->initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
-  obj.update(x,UPDATE_INITIAL,state_->iter);    
+  obj.update(x,UpdateType::Initial,state_->iter);    
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol);
@@ -146,7 +146,7 @@ void LineSearchAlgorithm<Real>::run( Vector<Real>       &x,
     x.plus(*state_->stepVec);
 
     // Compute new value and gradient
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    obj.update(x,UpdateType::Accept,state_->iter);
     state_->value = obj.value(x,tol);
     state_->nfval++;
     gprev->set(*state_->gradientVec);

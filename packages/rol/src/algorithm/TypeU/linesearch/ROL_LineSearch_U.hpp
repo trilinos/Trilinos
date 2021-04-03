@@ -96,7 +96,7 @@ private:
         Real cbrteps = std::cbrt(ROL_EPSILON<Real>());
         Real h       = cbrteps*std::max(xnorm/snorm,static_cast<Real>(1));
         xtst_->axpy(h,s);
-        obj.update(*xtst_,UPDATE_TRIAL);
+        obj.update(*xtst_,UpdateType::Trial);
         Real ftrial = obj.value(*xtst_,tol);
         val = (ftrial - fnew) / h;
       }
@@ -247,7 +247,7 @@ protected:
         Real tol = std::sqrt(ROL_EPSILON<Real>());
         // Evaluate objective at x + s
         xtst_->set(x); xtst_->plus(s);
-        obj.update(*xtst_,UPDATE_TRIAL);
+        obj.update(*xtst_,UpdateType::Trial);
         Real fnew = obj.value(*xtst_,tol);
         ls_neval++;
         // Minimize quadratic interpolate to compute new alpha

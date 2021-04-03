@@ -164,7 +164,7 @@ public:
     update_1(u,flag,iter);
     update_2(z,flag,iter);  
   }
-  virtual void update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1 ) {
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1 ) {
     update_1(u,type,iter);
     update_2(z,type,iter);  
   }
@@ -175,7 +175,7 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
-  virtual void update_1( const Vector<Real> &u, EUpdateType type, int iter = -1 ) {}
+  virtual void update_1( const Vector<Real> &u, UpdateType type, int iter = -1 ) {}
 
   /** \brief Update constraint functions with respect to Opt variable.
                 x is the optimization variable, 
@@ -183,7 +183,7 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
-  virtual void update_2( const Vector<Real> &z, EUpdateType type, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, UpdateType type, int iter = -1 ) {}
 
   /** \brief Update SimOpt constraint during solve (disconnected from optimization updates).
   
@@ -191,7 +191,7 @@ public:
                 @param[in] type is the update type
                 @param[in] iter is the solver iteration count
   */
-  virtual void solve_update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1) {}
+  virtual void solve_update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) {}
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
              at \f$(u,z)\f$.
@@ -228,7 +228,7 @@ public:
                      Real &tol) {
     if ( zero_ ) u.zero();
     Ptr<std::ostream> stream = makeStreamPtr(std::cout, print_);
-    solve_update(u,z,UPDATE_INITIAL,0);
+    solve_update(u,z,UpdateType::Initial,0);
     value(c,u,z,tol);
     Real cnorm = c.norm();
     const Real ctol = std::min(atol_, rtol_*cnorm);
@@ -253,7 +253,7 @@ public:
         applyInverseJacobian_1(*jv_,c,u,z,tol);
         unew_->set(u);
         unew_->axpy(-alpha, *jv_);
-        solve_update(*unew_,z,UPDATE_TRIAL);
+        solve_update(*unew_,z,UpdateType::Trial);
         value(c,*unew_,z,tol);
         tmp = c.norm();
         // Perform backtracking line search
@@ -262,7 +262,7 @@ public:
           alpha *= factor_;
           unew_->set(u);
           unew_->axpy(-alpha,*jv_);
-          solve_update(*unew_,z,UPDATE_TRIAL);
+          solve_update(*unew_,z,UpdateType::Trial);
           value(c,*unew_,z,tol);
           tmp = c.norm();
         }
@@ -276,7 +276,7 @@ public:
         // Update iterate
         cnorm = tmp;
         u.set(*unew_);
-        solve_update(u,z,UPDATE_ACCEPT,cnt);
+        solve_update(u,z,UpdateType::Accept,cnt);
         if (cnorm <= ctol) break; // = covers the case of identically zero residual
         alpha = one;
       }
@@ -905,7 +905,7 @@ public:
       dynamic_cast<const Vector<Real>&>(x));
     update(*(xs.get_1()),*(xs.get_2()),flag,iter);
   }
-  virtual void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+  virtual void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
     const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
       dynamic_cast<const Vector<Real>&>(x));
     update(*(xs.get_1()),*(xs.get_2()),type,iter);

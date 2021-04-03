@@ -238,7 +238,7 @@ public:
     mqq_->resetStorage(flag);
   }
 
-  void resetStorage(EUpdateType type) {
+  void resetStorage(UpdateType type) {
     RandVarFunctional<Real>::resetStorage(type);
     mqq_->resetStorage(type);
   }

@@ -75,7 +75,7 @@ private:
   
   bool updateFlag_;
   int  updateIter_;
-  EUpdateType updateType_;
+  UpdateType updateType_;
   bool newUpdate_;
 
 public:
@@ -174,7 +174,7 @@ public:
   /** \brief Update the SimOpt objective function and equality constraint.
   */
   void update( const Vector<Real> &z, bool flag = true, int iter = -1 ) override;
-  void update( const Vector<Real> &z, EUpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &z, UpdateType type, int iter = -1 ) override;
 
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the objective function 
              \f$\widehat{J}(z) = J(u(z),z)\f$ where 

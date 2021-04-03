@@ -113,7 +113,7 @@ void TrustRegionAlgorithm_U<Real>::initialize(const Vector<Real> &x,
   model_->initialize(x,g);
   // Update approximate gradient and approximate objective function.
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
-  obj.update(x,UPDATE_INITIAL,state_->iter);    
+  obj.update(x,UpdateType::Initial,state_->iter);    
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   state_->snorm = ROL_INF<Real>();
@@ -148,7 +148,7 @@ Real TrustRegionAlgorithm_U<Real>::computeValue(const Vector<Real> &x,
     state_->nfval++;
   }
   // Evaluate objective function at new iterate
-  obj.update(x,UPDATE_TRIAL);
+  obj.update(x,UpdateType::Trial);
   fval = obj.value(x,tol);
   state_->nfval++;
   return fval;
@@ -212,7 +212,7 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
     if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS)
         || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
-      obj.update(x,UPDATE_REVERT,state_->iter);
+      obj.update(x,UpdateType::Revert,state_->iter);
       if (rho < zero && TRflag_ != TRUtils::TRNAN) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
@@ -228,7 +228,7 @@ std::vector<std::string> TrustRegionAlgorithm_U<Real>::run( Vector<Real>       &
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->iterateVec->set(x);
       state_->value = ftrial;
-      obj.update(x,UPDATE_ACCEPT,state_->iter);
+      obj.update(x,UpdateType::Accept,state_->iter);
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate

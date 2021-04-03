@@ -107,7 +107,7 @@ public:
                    const bool scaleLagrangian,
                    const int HessianApprox);
 
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
   Real value( const Vector<Real> &x, Real &tol ) override;
   void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;

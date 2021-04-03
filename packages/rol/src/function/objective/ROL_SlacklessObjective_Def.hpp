@@ -55,7 +55,7 @@ Ptr<Objective<Real>> SlacklessObjective<Real>::getObjective(void) const {
 }
 
 template<typename Real> 
-void SlacklessObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void SlacklessObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   obj_->update( *getOpt(x), type, iter );
 }
 

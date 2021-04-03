@@ -120,7 +120,7 @@ void LinMoreAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   proj_->project(x,outStream); state_->nproj++;
   state_->iterateVec->set(x);
-  obj.update(x,UPDATE_INITIAL,state_->iter);
+  obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol);
@@ -278,7 +278,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     state_->snorm = state_->stepVec->norm();
 
     // Compute trial objective value
-    obj.update(x,UPDATE_TRIAL);
+    obj.update(x,UpdateType::Trial);
     ftrial = obj.value(x,tol0);
     state_->nfval++;
 
@@ -291,7 +291,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     // Accept/reject step and update trust region radius
     if ((rho < eta0_ && TRflag_ == TRUtils::SUCCESS) || (TRflag_ >= 2)) { // Step Rejected
       x.set(*state_->iterateVec);
-      obj.update(x,UPDATE_REVERT,state_->iter);
+      obj.update(x,UpdateType::Revert,state_->iter);
       if (interpRad_ && (rho < zero && TRflag_ != TRUtils::TRNAN)) {
         // Negative reduction, interpolate to find new trust-region radius
         state_->searchSize = TRUtils::interpolateRadius<Real>(*state_->gradientVec,*state_->stepVec,
@@ -305,7 +305,7 @@ std::vector<std::string> LinMoreAlgorithm_B<Real>::run(Vector<Real>          &x,
     else if ((rho >= eta0_ && TRflag_ != TRUtils::NPOSPREDNEG)
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
-      obj.update(x,UPDATE_ACCEPT,state_->iter);
+      obj.update(x,UpdateType::Accept,state_->iter);
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate

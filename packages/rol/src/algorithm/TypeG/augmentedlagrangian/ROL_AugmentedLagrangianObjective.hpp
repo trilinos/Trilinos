@@ -163,7 +163,7 @@ public:
     primConVector_ = primConVec.clone();
   }
 
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
     obj_->update(x,type,iter);
     con_->update(x,type,iter);
     fval_->objectiveUpdate(type);

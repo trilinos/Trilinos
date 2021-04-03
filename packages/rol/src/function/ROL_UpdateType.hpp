@@ -41,17 +41,19 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_UPDATE_TYPES_H
-#define ROL_UPDATE_TYPES_H
+#ifndef ROL_UPDATE_TYPE_HPP
+#define ROL_UPDATE_TYPE_HPP
+
+#include <cstdint>
 
 namespace ROL {
 
-enum EUpdateType {
-  UPDATE_INITIAL = 0, // Update has not been called before
-  UPDATE_ACCEPT,      // This is the new iterate, trial must be called before
-  UPDATE_REVERT,      // Revert to the previous iterate, trial must be called before
-  UPDATE_TRIAL,       // This is a candidate for the next iterate
-  UPDATE_TEMP         // For temporary uses including finite difference computations
+enum class UpdateType : std::uint8_t {
+  Initial = 0, // Update has not been called before
+  Accept,      // This is the new iterate, trial must be called before
+  Revert,      // Revert to the previous iterate, trial must be called before
+  Trial,       // This is a candidate for the next iterate
+  Temp         // For temporary uses including finite difference computations
 };
 
 } // namespace ROL

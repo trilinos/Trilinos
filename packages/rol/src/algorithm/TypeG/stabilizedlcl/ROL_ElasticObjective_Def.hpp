@@ -79,7 +79,7 @@ ElasticObjective<Real>::ElasticObjective(const Ptr<Objective<Real>> &obj,
 }
 
 template<typename Real>
-void ElasticObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void ElasticObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   Ptr<const Vector<Real>> xs = dynamic_cast<const PartitionedVector<Real>&>(x).get(0);
   alobj_->update(*xs,type,iter);
 }

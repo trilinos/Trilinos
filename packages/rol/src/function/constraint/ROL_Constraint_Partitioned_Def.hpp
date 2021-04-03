@@ -73,7 +73,7 @@ Ptr<Constraint<Real>> Constraint_Partitioned<Real>::get(int ind) const {
 }
 
 template<typename Real>
-void Constraint_Partitioned<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void Constraint_Partitioned<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   const int ncon = static_cast<int>(cvec_.size());
   for (int i = 0; i < ncon; ++i) {
     cvec_[i]->update(getOpt(x),type,iter);

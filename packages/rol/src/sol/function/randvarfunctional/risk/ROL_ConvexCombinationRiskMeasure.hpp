@@ -168,7 +168,7 @@ public:
       risk_[i]->resetStorage(flag);
     }
   }
-  void resetStorage(EUpdateType type) {
+  void resetStorage(UpdateType type) {
     RandVarFunctional<Real>::resetStorage(type);
     for (uint i = 0; i < size_; ++i) {
       risk_[i]->resetStorage(type);

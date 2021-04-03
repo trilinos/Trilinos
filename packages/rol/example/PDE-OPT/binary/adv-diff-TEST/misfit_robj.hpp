@@ -44,14 +44,14 @@ public:
     return fem_->getAssembler();
   }
 
-  void update( const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1 ) {
+  void update( const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1 ) {
     nupda_++;
     stateStore_->objectiveUpdate(type);
     adjointStore_->objectiveUpdate(type);
   }
 
   void solvePDE(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
-    update(z,ROL::UPDATE_TEMP);
+    update(z,ROL::UpdateType::Temp);
     solve_state_equation(u,z);
   }
 

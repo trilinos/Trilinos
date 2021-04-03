@@ -94,7 +94,7 @@ void FletcherAlgorithm_E<Real>::initialize( Vector<Real>             &x,
 
   // Compute objective value
   fobj.reset(sigma_,delta_);
-  fobj.update(x,UPDATE_INITIAL,state_->iter);
+  fobj.update(x,UpdateType::Initial,state_->iter);
   merit_ = fobj.value(x,tol);
   state_->value = fobj.getObjectiveValue(x);
   fobj.gradient(*state_->gradientVec,x,tol);

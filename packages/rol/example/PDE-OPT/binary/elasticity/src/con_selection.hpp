@@ -89,7 +89,7 @@ public:
     return pde_;
   }
 
-  void update( const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1 ) {
+  void update( const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1 ) {
     nupda_++;
   }
 

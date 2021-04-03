@@ -604,7 +604,7 @@ public:
     Real tol(std::sqrt(ROL_EPSILON<Real>()));
     rndSolution_->set(*solution_);
     getIntegerVector(rndSolution_)->applyUnary(rnd);
-    problem0_->getObjective()->update(*rndSolution_,UPDATE_TEMP);
+    problem0_->getObjective()->update(*rndSolution_,UpdateType::Temp);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new IntegerSolution<Real>(*rndSolution_,val));
   }

@@ -115,7 +115,7 @@ void PrimalDualActiveSetAlgorithm<Real>::initialize(Vector<Real>          &x,
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   proj_->project(x,outStream);
   state_->iterateVec->set(x);
-  obj.update(x,UPDATE_INITIAL,state_->iter);
+  obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
@@ -279,7 +279,7 @@ void PrimalDualActiveSetAlgorithm<Real>::run( Vector<Real>          &x,
     state_->iterateVec->set(x);
     feasible_ = bnd.isFeasible(x);
     state_->snorm = snorm;
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    obj.update(x,UpdateType::Accept,state_->iter);
     state_->value = obj.value(x,tol); state_->nfval++;
     
     if ( secant_ != nullPtr ) {

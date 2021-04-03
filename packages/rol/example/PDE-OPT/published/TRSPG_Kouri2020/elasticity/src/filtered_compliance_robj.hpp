@@ -79,18 +79,18 @@ public:
     return assembler_filter_;
   }
 
-  void update(const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+  void update(const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     nupda_++;
     if (nuke_) {
       update_temp(z,iter);
     }
     else {
       switch (type) {
-        case ROL::UPDATE_INITIAL: update_initial(z,iter); break;
-        case ROL::UPDATE_ACCEPT:  update_accept(z,iter);  break;
-        case ROL::UPDATE_REVERT:  update_revert(z,iter);  break;
-        case ROL::UPDATE_TRIAL:   update_trial(z,iter);   break;
-        case ROL::UPDATE_TEMP:    update_temp(z,iter);   break;
+        case ROL::UpdateType::Initial: update_initial(z,iter); break;
+        case ROL::UpdateType::Accept:  update_accept(z,iter);  break;
+        case ROL::UpdateType::Revert:  update_revert(z,iter);  break;
+        case ROL::UpdateType::Trial:   update_trial(z,iter);   break;
+        case ROL::UpdateType::Temp:    update_temp(z,iter);   break;
       }
     }
     comp_->update(*Fz_,type,iter);
@@ -141,14 +141,14 @@ public:
   void printToFile(const ROL::Vector<Real> &z, std::ostream &stream = std::cout,
                    std::string ufile = "state.txt", std::string dfile = "density.txt",
                    std::string ffile = "filtered_density.txt") {
-    update(z,ROL::UPDATE_TEMP);
+    update(z,ROL::UpdateType::Temp);
     ROL::Ptr<const Tpetra::MultiVector<>> dens_data = getConstField(z);
     assembler_filter_->outputTpetraVector(dens_data,  dfile);
     comp_->printToFile(*Fz_, stream, ufile, ffile);
   }
 
   void solveState(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
-    update(z,ROL::UPDATE_TEMP);
+    update(z,ROL::UpdateType::Temp);
     comp_->solveState(u,*Fz_);
   }
 

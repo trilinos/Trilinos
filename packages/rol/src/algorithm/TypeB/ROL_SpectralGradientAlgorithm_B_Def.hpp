@@ -83,7 +83,7 @@ void SpectralGradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   proj_->project(x,outStream); state_->nproj++;
-  obj.update(x,UPDATE_INITIAL,state_->iter);
+  obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
@@ -131,7 +131,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
 
     // Nonmonotone Linesearch
     ls_nfval = 0;
-    obj.update(*state_->iterateVec,UPDATE_TRIAL);
+    obj.update(*state_->iterateVec,UpdateType::Trial);
     ftrial = obj.value(*state_->iterateVec,tol); ls_nfval++;
     alpha  = one;
     fmax   = *std::max_element(fqueue.begin(),fqueue.end());
@@ -151,7 +151,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
       alpha    = (sigma1_*alpha <= alphaTmp && alphaTmp <= sigma2_*alpha) ? alphaTmp : rhodec_*alpha;
       state_->iterateVec->set(x);
       state_->iterateVec->axpy(alpha,*s);
-      obj.update(*state_->iterateVec,UPDATE_TRIAL);
+      obj.update(*state_->iterateVec,UpdateType::Trial);
       ftrial = obj.value(*state_->iterateVec,tol); ls_nfval++;
       if (verbosity_ > 1) {
         outStream << "  In SpectralGradientAlgorithm_B: Line Search"  << std::endl;
@@ -173,7 +173,7 @@ std::vector<std::string> SpectralGradientAlgorithm_B<Real>::run( Vector<Real>   
     state_->value = ftrial;
     state_->searchSize = alpha;
     x.set(*state_->iterateVec);
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    obj.update(x,UpdateType::Accept,state_->iter);
 
     // Store the best iterate
     if (state_->value <= fmin) {

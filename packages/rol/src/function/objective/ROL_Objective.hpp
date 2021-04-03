@@ -45,7 +45,7 @@
 #define ROL_OBJECTIVE_H
 
 #include "ROL_Vector.hpp"
-#include "ROL_UpdateTypes.hpp"
+#include "ROL_UpdateType.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -93,7 +93,7 @@ public:
       @param[in]          type   is the type of update requested.
       @param[in]          iter   is the outer algorithm iterations count.
   */
-  virtual void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+  virtual void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
     ROL_UNUSED(x);
     ROL_UNUSED(type);
     ROL_UNUSED(iter);

@@ -92,7 +92,7 @@ public:
     robj_->setIndex(ind);
   }
 
-  void update(const Vector<Real> &x, EUpdateType type, int iter = -1) {
+  void update(const Vector<Real> &x, UpdateType type, int iter = -1) {
     con_->update(x,type,iter);
   }
 

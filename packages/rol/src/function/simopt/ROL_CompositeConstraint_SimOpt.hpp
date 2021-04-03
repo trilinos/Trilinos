@@ -82,7 +82,7 @@ private:
   // Update information
   bool updateFlag_, newUpdate_;
   int updateIter_;
-  EUpdateType updateType_;
+  UpdateType updateType_;
   // Boolean variables
   const bool storage_, isConRedParametrized_;
 
@@ -100,10 +100,10 @@ public:
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1) override;
   void update_1(const Vector<Real> &u, bool flag = true, int iter = -1) override;
   void update_2(const Vector<Real> &z, bool flag = true, int iter = -1) override;
-  void update(const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1) override;
-  void update_1(const Vector<Real> &u, EUpdateType type, int iter = -1) override;
-  void update_2(const Vector<Real> &z, EUpdateType type, int iter = -1) override;
-  void solve_update(const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1) override;
+  void update(const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) override;
+  void update_1(const Vector<Real> &u, UpdateType type, int iter = -1) override;
+  void update_2(const Vector<Real> &z, UpdateType type, int iter = -1) override;
+  void solve_update(const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) override;
   void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
   void solve(Vector<Real> &c, Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
   void applyJacobian_1(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &u,

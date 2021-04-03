@@ -61,7 +61,7 @@ LinearCombinationObjective<Real>::LinearCombinationObjective(const std::vector<R
     xdual_(nullPtr), initialized_(false) {}
 
 template<typename Real>
-void LinearCombinationObjective<Real>::update(const Vector<Real> &x, EUpdateType type, int iter) {
+void LinearCombinationObjective<Real>::update(const Vector<Real> &x, UpdateType type, int iter) {
   for (size_t i=0; i<size_; ++i) {
     obj_[i]->update(x,type,iter);
   }

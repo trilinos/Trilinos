@@ -46,7 +46,7 @@
 #define ROL_SIMCONTROLLER_H
 
 #include "ROL_Vector.hpp"
-#include "ROL_UpdateTypes.hpp"
+#include "ROL_UpdateType.hpp"
 
 namespace ROL {
 
@@ -80,11 +80,11 @@ public:
 
   /** \brief Objective function update for VectorController storage.
   */
-  void objectiveUpdate(EUpdateType type);
+  void objectiveUpdate(UpdateType type);
 
   /** \brief Constraint update for VectorController storage.
   */
-  void constraintUpdate(EUpdateType type);
+  void constraintUpdate(UpdateType type);
 
   /** \brief Check if vector associated with provided key is allocated.
   */

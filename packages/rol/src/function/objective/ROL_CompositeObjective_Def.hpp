@@ -62,13 +62,13 @@ CompositeObjective<Real>::CompositeObjective(const std::vector<Ptr<Objective<Rea
 }
 
 template<typename Real>
-void CompositeObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void CompositeObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   int size = obj_vec_.size();
   for (int i = 0; i < size; ++i) {
     obj_vec_[i]->update(x,type,iter);
   }
   isValueComputed_ = false;
-  isGradientComputed_ = (type==UPDATE_TRIAL || type==UPDATE_REVERT ? isGradientComputed_ : false);
+  isGradientComputed_ = (type==UpdateType::Trial || type==UpdateType::Revert ? isGradientComputed_ : false);
 }
 
 template<typename Real>

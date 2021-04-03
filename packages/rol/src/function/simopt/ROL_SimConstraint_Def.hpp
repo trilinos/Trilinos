@@ -58,7 +58,7 @@ void SimConstraint<Real>::update( const Vector<Real> &u, bool flag, int iter ) {
 }
 
 template<typename Real>
-void SimConstraint<Real>::update( const Vector<Real> &u, EUpdateType type, int iter ) {
+void SimConstraint<Real>::update( const Vector<Real> &u, UpdateType type, int iter ) {
   if (inSolve_) con_->solve_update(u,*z_,type,iter);
   else          con_->update_1(u,type,iter);
 }

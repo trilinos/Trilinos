@@ -234,7 +234,7 @@ public:
       }
     }
   }
-  virtual void resetStorage(EUpdateType type) {
+  virtual void resetStorage(UpdateType type) {
     if (storage_) {
       value_storage_->objectiveUpdate(type);
       gradient_storage_->objectiveUpdate(type);

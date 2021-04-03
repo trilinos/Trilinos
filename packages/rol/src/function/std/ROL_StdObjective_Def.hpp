@@ -53,7 +53,7 @@ void StdObjective<Real>::update( const Vector<Real> &x, bool flag, int iter ) {
 }
 
 template<typename Real>
-void StdObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void StdObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   const StdVector<Real> xs = dynamic_cast<const StdVector<Real>&>(x);
   update(*(xs.getVector()),type,iter);
 }

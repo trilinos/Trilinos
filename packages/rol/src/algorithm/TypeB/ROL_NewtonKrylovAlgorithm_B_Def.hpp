@@ -126,7 +126,7 @@ void NewtonKrylovAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   proj_->project(x,outStream);
   state_->iterateVec->set(x);
-  obj.update(x,UPDATE_INITIAL,state_->iter);    
+  obj.update(x,UpdateType::Initial,state_->iter);    
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
@@ -181,7 +181,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
     x.set(*state_->iterateVec);
     x.axpy(-state_->searchSize,*s);
     proj_->project(x,outStream);
-    obj.update(x,UPDATE_TRIAL);
+    obj.update(x,UpdateType::Trial);
     ftrial = obj.value(x,tol); ls_nfval_ = 1;
     state_->stepVec->set(x);
     state_->stepVec->axpy(-one,*state_->iterateVec);
@@ -200,7 +200,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
       x.set(*state_->iterateVec);
       x.axpy(-state_->searchSize,*s);
       proj_->project(x,outStream);
-      obj.update(x,UPDATE_TRIAL);
+      obj.update(x,UpdateType::Trial);
       ftrial = obj.value(x,tol); ls_nfval_++;
       state_->stepVec->set(x);
       state_->stepVec->axpy(-one,*state_->iterateVec);
@@ -226,7 +226,7 @@ std::vector<std::string> NewtonKrylovAlgorithm_B<Real>::run( Vector<Real>       
     // Compute new value and gradient
     state_->iter++;
     state_->value = ftrial;
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    obj.update(x,UpdateType::Accept,state_->iter);
     gold->set(*state_->gradientVec);
     obj.gradient(*state_->gradientVec,x,tol); state_->ngrad++;
     gp->set(state_->gradientVec->dual());

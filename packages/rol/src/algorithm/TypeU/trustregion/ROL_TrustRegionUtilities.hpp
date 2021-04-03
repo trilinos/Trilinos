@@ -126,7 +126,7 @@ inline Real initialRadius(int &nfval,
   //Real gs = xcp->dot(g.dual());
   Real gs = xcp->apply(g);
   xcp->plus(x);
-  obj.update(*xcp,UPDATE_TEMP);
+  obj.update(*xcp,UpdateType::Temp);
   Real ftol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(); 
   Real fnew = obj.value(*xcp,ftol); // MUST DO SOMETHING HERE WITH FTOL
   nfval++;
@@ -159,7 +159,7 @@ inline Real initialRadius(int &nfval,
   if (del <= eps*gnorm) {
     del = one;
   }
-  obj.update(x,UPDATE_REVERT);
+  obj.update(x,UpdateType::Revert);
   if ( print ) {
     outStream << "  In TrustRegionUtilities::initialRadius"      << std::endl;
     outStream << "    Initial radius:                          " << del << std::endl;

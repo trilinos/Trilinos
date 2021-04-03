@@ -54,7 +54,7 @@ MeanValueObjective<Real>::MeanValueObjective( const Ptr<Objective<Real>> &obj,
 }
 
 template<typename Real>
-void MeanValueObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void MeanValueObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   obj_->update(x,type,iter);
 }
 

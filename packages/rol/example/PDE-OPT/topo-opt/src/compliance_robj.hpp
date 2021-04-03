@@ -103,7 +103,7 @@ public:
     return assembler_;
   }
 
-  void update(const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+  void update(const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     nupda_++;
     stateStore_->objectiveUpdate(type);
     if (nuke_) {
@@ -111,11 +111,11 @@ public:
     }
     else {
       switch (type) {
-        case ROL::UPDATE_INITIAL: update_initial(z,iter); break;
-        case ROL::UPDATE_ACCEPT:  update_accept(z,iter);  break;
-        case ROL::UPDATE_REVERT:  update_revert(z,iter);  break;
-        case ROL::UPDATE_TRIAL:   update_trial(z,iter);   break;
-        case ROL::UPDATE_TEMP:    update_temp(z,iter);    break;
+        case ROL::UpdateType::Initial: update_initial(z,iter); break;
+        case ROL::UpdateType::Accept:  update_accept(z,iter);  break;
+        case ROL::UpdateType::Revert:  update_revert(z,iter);  break;
+        case ROL::UpdateType::Trial:   update_trial(z,iter);   break;
+        case ROL::UpdateType::Temp:    update_temp(z,iter);    break;
       }
     }
     // Print
@@ -161,7 +161,7 @@ public:
   }
 
   Real normalize(const ROL::Vector<Real> &z, Real &tol) {
-    update(z,ROL::UPDATE_TEMP);
+    update(z,ROL::UpdateType::Temp);
     Real val = value(z,tol);
     cmpScale_ /= val;
     return cmpScale_;
@@ -169,7 +169,7 @@ public:
 
   void printToFile(const ROL::Vector<Real> &z, std::ostream &stream = std::cout,
                    const std::string ufile = "state.txt", const std::string dfile = "density.txt") {
-    update(z,ROL::UPDATE_TEMP);
+    update(z,ROL::UpdateType::Temp);
     ROL::Ptr<const Tpetra::MultiVector<>> z_data = getConstField(z);
     ROL::Ptr<Tpetra::MultiVector<>>       u_data = getField(*state_);
     solve_state_equation(u_data, z_data);
@@ -179,7 +179,7 @@ public:
   }
 
   void solveState(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
-    update(z,ROL::UPDATE_TEMP);
+    update(z,ROL::UpdateType::Temp);
     ROL::Ptr<const Tpetra::MultiVector<>> z_data = getConstField(z);
     ROL::Ptr<Tpetra::MultiVector<>>       u_data = getField(u);
     solve_state_equation(u_data, z_data);

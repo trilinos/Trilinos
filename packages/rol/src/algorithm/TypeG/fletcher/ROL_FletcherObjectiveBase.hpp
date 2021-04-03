@@ -103,7 +103,7 @@ public:
                         const Vector<Real> &cdual,
                         ParameterList &parlist);
 
-  virtual void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
+  virtual void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
 
   // Accessors
   Ptr<const Vector<Real>> getLagrangianGradient(const Vector<Real>& x);

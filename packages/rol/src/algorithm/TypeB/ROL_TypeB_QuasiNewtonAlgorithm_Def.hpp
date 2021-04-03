@@ -111,7 +111,7 @@ void QuasiNewtonAlgorithm<Real>::initialize(Vector<Real>          &x,
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   proj_->project(x,outStream); state_->nproj++;
   state_->iterateVec->set(x);
-  obj.update(x,UPDATE_INITIAL,state_->iter);    
+  obj.update(x,UpdateType::Initial,state_->iter);    
   state_->value = obj.value(x,ftol); state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol); state_->ngrad++;
   state_->stepVec->set(x);
@@ -172,7 +172,7 @@ void QuasiNewtonAlgorithm<Real>::run( Vector<Real>          &x,
     state_->searchSize = one;
     x.set(*state_->iterateVec);
     x.axpy(state_->searchSize,*s);
-    obj.update(x,UPDATE_TRIAL);
+    obj.update(x,UpdateType::Trial);
     ftrial = obj.value(x,tol); ls_nfval_ = 1;
     gs = state_->gradientVec->apply(*s);
     if (verbosity_ > 1) {
@@ -192,7 +192,7 @@ void QuasiNewtonAlgorithm<Real>::run( Vector<Real>          &x,
       //state_->searchSize *= rhodec_;
       x.set(*state_->iterateVec);
       x.axpy(state_->searchSize,*s);
-      obj.update(x,UPDATE_TRIAL);
+      obj.update(x,UpdateType::Trial);
       ftrial = obj.value(x,tol); ls_nfval_++;
       if (verbosity_ > 1) {
         outStream << std::endl;
@@ -217,7 +217,7 @@ void QuasiNewtonAlgorithm<Real>::run( Vector<Real>          &x,
     // Compute new value and gradient
     state_->iter++;
     state_->value = ftrial;
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
+    obj.update(x,UpdateType::Accept,state_->iter);
     gold->set(*state_->gradientVec);
     obj.gradient(*state_->gradientVec,x,tol); state_->ngrad++;
     gp->set(state_->gradientVec->dual());

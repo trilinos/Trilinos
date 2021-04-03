@@ -784,8 +784,8 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
       // Compute objective, constraint, etc. values at the trial point.
       xtrial->set(x);
       xtrial->plus(s);
-      obj.update(*xtrial,UPDATE_TRIAL,state_->iter);
-      con.update(*xtrial,UPDATE_TRIAL,state_->iter);
+      obj.update(*xtrial,UpdateType::Trial,state_->iter);
+      con.update(*xtrial,UpdateType::Trial,state_->iter);
       f_new = obj.value(*xtrial, zerotol);
       obj.gradient(gf_new, *xtrial, zerotol);
       con.value(c_new, *xtrial, zerotol);
@@ -857,8 +857,8 @@ void CompositeStepAlgorithm<Real>::accept(Vector<Real> &s, Vector<Real> &n, Vect
         }
         totalRef_++;
         // Reset global quantities.
-        obj.update(x, UPDATE_TRIAL, state_->iter);
-        con.update(x, UPDATE_TRIAL, state_->iter);
+        obj.update(x, UpdateType::Trial, state_->iter);
+        con.update(x, UpdateType::Trial, state_->iter);
         /*lmhtol  = tol_red_all*lmhtol;
         qntol   = tol_red_all*qntol;
         pgtol   = tol_red_all*pgtol;
@@ -977,14 +977,14 @@ void CompositeStepAlgorithm<Real>::updateRadius(Vector<Real> &x,
     else if (ratio >= zp8) {
         Delta_ = std::max(two*snorm_, Delta_);
     }
-    obj.update(x,UPDATE_ACCEPT,state_->iter);
-    con.update(x,UPDATE_ACCEPT,state_->iter);
+    obj.update(x,UpdateType::Accept,state_->iter);
+    con.update(x,UpdateType::Accept,state_->iter);
     flagAC_ = 1;
   }
   else {
     Delta_ = half*std::max(nnorm_, tnorm_);
-    obj.update(x,UPDATE_REVERT,state_->iter);
-    con.update(x,UPDATE_REVERT,state_->iter);
+    obj.update(x,UpdateType::Revert,state_->iter);
+    con.update(x,UpdateType::Revert,state_->iter);
     flagAC_ = 0;
   } // if (ratio >= eta)
 
@@ -1036,10 +1036,10 @@ void CompositeStepAlgorithm<Real>::initialize(Vector<Real>        &x,
   Ptr<Vector<Real> > gl  = gvec_->clone();
 
   // Update objective and constraint.
-  obj.update(x,UPDATE_INITIAL,state_->iter);
+  obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x, zerotol);
   state_->nfval++;
-  con.update(x,UPDATE_INITIAL,state_->iter);
+  con.update(x,UpdateType::Initial,state_->iter);
   con.value(*cvec_, x, zerotol);
   state_->cnorm = cvec_->norm();
   state_->ncval++;

@@ -121,7 +121,7 @@ void AugmentedLagrangianAlgorithm_G<Real>::initialize( Vector<Real>             
   state_->ngrad = 0;
 
   // Compute objective value
-  alobj.update(x,UPDATE_INITIAL,state_->iter);
+  alobj.update(x,UpdateType::Initial,state_->iter);
   state_->value = alobj.getObjectiveValue(x,tol);
   alobj.gradient(*state_->gradientVec,x,tol);
 
@@ -242,7 +242,7 @@ std::vector<std::string> AugmentedLagrangianAlgorithm_G<Real>::run( Vector<Real>
     x.axpy(-one,*state_->iterateVec);
     state_->gnorm = x.norm();
     x.set(*state_->iterateVec);
-    //alobj.update(x,UPDATE_ACCEPT,state_->iter);
+    //alobj.update(x,UpdateType::Accept,state_->iter);
 
     // Update evaluation counters
     state_->nfval += alobj.getNumberFunctionEvaluations();

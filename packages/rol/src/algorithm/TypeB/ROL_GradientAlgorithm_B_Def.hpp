@@ -84,7 +84,7 @@ void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   // Update approximate gradient and approximate objective function.
   Real ftol = std::sqrt(ROL_EPSILON<Real>());
   proj_->project(x,outStream);
-  obj.update(x,UPDATE_INITIAL,state_->iter);
+  obj.update(x,UpdateType::Initial,state_->iter);
   state_->value = obj.value(x,ftol); 
   state_->nfval++;
   obj.gradient(*state_->gradientVec,x,ftol);
@@ -95,9 +95,9 @@ void GradientAlgorithm_B<Real>::initialize(Vector<Real>          &x,
   Real fnew = state_->value;
   if (!useralpha_) {
     // Evaluate objective at P(x - g)
-    obj.update(*state_->stepVec,UPDATE_TRIAL);
+    obj.update(*state_->stepVec,UpdateType::Trial);
     fnew = obj.value(*state_->stepVec,ftol);
-    obj.update(x,UPDATE_REVERT);
+    obj.update(x,UpdateType::Revert);
     state_->nfval++;
   }
   state_->stepVec->axpy(-one,x);
@@ -149,7 +149,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
     state_->iterateVec->set(x);
     state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
     proj_->project(*state_->iterateVec,outStream);
-    obj.update(*state_->iterateVec,UPDATE_TRIAL);
+    obj.update(*state_->iterateVec,UpdateType::Trial);
     ftrial = obj.value(*state_->iterateVec,tol);
     ls_nfval = 1;
     s->set(*state_->iterateVec);
@@ -173,7 +173,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
            && state_->searchSize < maxAlpha_
            && ls_nfval < maxit_ ) {
         // Previous value was acceptable
-        obj.update(*state_->iterateVec,UPDATE_ACCEPT);
+        obj.update(*state_->iterateVec,UpdateType::Accept);
         alphaP  = state_->searchSize;
         ftrialP = ftrial;
         state_->searchSize *= rhoinc_;
@@ -181,7 +181,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
         proj_->project(*state_->iterateVec,outStream);
-        obj.update(*state_->iterateVec,UPDATE_TRIAL);
+        obj.update(*state_->iterateVec,UpdateType::Trial);
         ftrial = obj.value(*state_->iterateVec,tol);
         ls_nfval++;
         s->set(*state_->iterateVec);
@@ -214,7 +214,7 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
         state_->iterateVec->set(x);
         state_->iterateVec->axpy(-state_->searchSize,*state_->stepVec);
         proj_->project(*state_->iterateVec,outStream);
-        obj.update(*state_->iterateVec,UPDATE_TRIAL);
+        obj.update(*state_->iterateVec,UpdateType::Trial);
         ftrial = obj.value(*state_->iterateVec,tol);
         ls_nfval++;
         s->set(*state_->iterateVec);
@@ -243,8 +243,8 @@ std::vector<std::string> GradientAlgorithm_B<Real>::run( Vector<Real>          &
     // Compute new value and gradient
     state_->iter++;
     state_->value = ftrial;
-    if (accept) obj.update(x,UPDATE_ACCEPT,state_->iter);
-    else        obj.update(x,UPDATE_REVERT,state_->iter);
+    if (accept) obj.update(x,UpdateType::Accept,state_->iter);
+    else        obj.update(x,UpdateType::Revert,state_->iter);
     obj.gradient(*state_->gradientVec,x,tol);
     state_->ngrad++;
 

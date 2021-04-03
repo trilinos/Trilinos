@@ -760,24 +760,24 @@ public:
   }
 
   // Do something smarter here
-  void update_1(const ROL::Vector<Real> &u, ROL::EUpdateType type, int iter = -1) {
+  void update_1(const ROL::Vector<Real> &u, ROL::UpdateType type, int iter = -1) {
     computeJ1_ = true;
     computeJ2_ = true;
     computeJ3_ = true;
   }
 
-  void update_2(const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+  void update_2(const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     computeJ1_ = true;
     computeJ2_ = true;
     computeJ3_ = true;
   }
 
-  void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+  void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     update_1(u,type,iter);
     update_2(z,type,iter);
   }
 
-  void solve_update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::EUpdateType type, int iter = -1) {
+  void solve_update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
     update(u,z,type,iter);
   }
 

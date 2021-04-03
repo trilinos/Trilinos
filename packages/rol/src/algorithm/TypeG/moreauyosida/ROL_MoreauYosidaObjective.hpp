@@ -290,7 +290,7 @@ public:
       @param[in]          flag   is true if the iterate has changed.
       @param[in]          iter   is the outer algorithm iterations count.
   */
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
     obj_->update(x,type,iter);
     fval_->objectiveUpdate(type);
     gradient_->objectiveUpdate(type);

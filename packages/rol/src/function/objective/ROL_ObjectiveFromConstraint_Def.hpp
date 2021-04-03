@@ -54,7 +54,7 @@ ObjectiveFromConstraint<Real>::ObjectiveFromConstraint( const Ptr<Constraint<Rea
 }
 
 template<typename Real>
-void ObjectiveFromConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void ObjectiveFromConstraint<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   con_->update(x,type,iter);
 }
 

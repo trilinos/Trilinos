@@ -153,7 +153,7 @@ public:
     gradient_storage_ = makePtr<VectorController<Real>>();
   }
 
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
     initialize(x);
 //    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
     ParametrizedObjective_->update(x,type,iter);
@@ -163,7 +163,7 @@ public:
       value_storage_->objectiveUpdate(type);
       gradient_storage_->objectiveUpdate(type);
     }
-    if ( type != UPDATE_TRIAL && type != UPDATE_REVERT ) { //&& iter>=0 ) {
+    if ( type != UpdateType::Trial && type != UpdateType::Revert ) { //&& iter>=0 ) {
       GradientSampler_->update(x);
       HessianSampler_->update(x);
       gradient_->zero();

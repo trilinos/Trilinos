@@ -122,7 +122,7 @@ void StabilizedLCLAlgorithm_G<Real>::initialize( Vector<Real>           &x,
   state_->ngrad = 0;
 
   // Compute objective value
-  alobj.getAugmentedLagrangian()->update(x,UPDATE_INITIAL,state_->iter);
+  alobj.getAugmentedLagrangian()->update(x,UpdateType::Initial,state_->iter);
   state_->value = alobj.getObjectiveValue(x,tol);
   alobj.getAugmentedLagrangian()->gradient(*state_->gradientVec,x,tol);
 

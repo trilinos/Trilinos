@@ -64,9 +64,9 @@ Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Re
   //Real xnorm = x.norm(), h = cbrteps * std::max(xnorm/dnorm,one);
   //v0 = value(x,tol);
   //prim_->set(x); prim_->axpy(h, d);
-  //update(*prim_,UPDATE_TEMP);
+  //update(*prim_,UpdateType::Temp);
   //v1 = value(*prim_,tol);
-  //update(x,UPDATE_REVERT);
+  //update(x,UpdateType::Revert);
   //return (v1 - v0) / h;
 }
 
@@ -84,11 +84,11 @@ void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &to
     h  = cbrteps * std::max(std::abs(xi),one) * (xi < zero ? -one : one);
     prim_->set(x); prim_->axpy(h,*basis_);
     h  = prim_->dot(*basis_) - xi;
-    update(*prim_,UPDATE_TEMP);
+    update(*prim_,UpdateType::Temp);
     gi = (value(*prim_,tol) - f0) / h;
     g.axpy(gi,*g.basis(i));
   }
-  update(x,UPDATE_REVERT);
+  update(x,UpdateType::Revert);
 }
 
 template<typename Real>
@@ -107,11 +107,11 @@ void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Ve
 
     gradient(*dual_,x,tol);           // Compute gradient at x
     prim_->set(x); prim_->axpy(h,v);  // Set prim = x + hv
-    update(*prim_,UPDATE_TEMP);       // Temporarily update objective at x + hv
+    update(*prim_,UpdateType::Temp);       // Temporarily update objective at x + hv
     gradient(hv,*prim_,tol);          // Compute gradient at x + hv
     hv.axpy(-one,*dual_);             // Compute difference (f'(x+hv)-f'(x))
     hv.scale(one/h);                  // Compute Newton quotient (f'(x+hv)-f'(x))/h
-    update(x,UPDATE_REVERT);          // Reset objective to x
+    update(x,UpdateType::Revert);          // Reset objective to x
   }
 }
 
@@ -161,7 +161,7 @@ std::vector<std::vector<Real>> Objective<Real>::checkGradient( const Vector<Real
   oldFormatState.copyfmt(outStream);
 
   // Evaluate objective value at x.
-  update(x,UPDATE_TEMP);
+  update(x,UpdateType::Temp);
   Real val = value(x,tol);
 
   // Compute gradient at x.
@@ -191,7 +191,7 @@ std::vector<std::vector<Real>> Objective<Real>::checkGradient( const Vector<Real
 
       // Only evaluate at shifts where the weight is nonzero  
       if( weights[order-1][j+1] != 0 ) {
-        update(*xnew,UPDATE_TEMP);
+        update(*xnew,UpdateType::Temp);
         gCheck[i][2] += weights[order-1][j+1] * this->value(*xnew,tol);
       }
     }
@@ -278,7 +278,7 @@ std::vector<std::vector<Real>> Objective<Real>::checkHessVec( const Vector<Real>
 
   // Compute gradient at x.
   Ptr<Vector<Real>> g = hv.clone();
-  update(x,UPDATE_TEMP);
+  update(x,UpdateType::Temp);
   gradient(*g, x, tol);
 
   // Compute (Hessian at x) times (vector v).
@@ -302,7 +302,7 @@ std::vector<std::vector<Real>> Objective<Real>::checkHessVec( const Vector<Real>
       xnew->axpy(eta*shifts[order-1][j], v);
       // Only evaluate at shifts where the weight is nonzero  
       if ( weights[order-1][j+1] != 0 ) {
-        update(*xnew,UPDATE_TEMP);
+        update(*xnew,UpdateType::Temp);
         gradient(*gnew, *xnew, tol); 
         gdif->axpy(weights[order-1][j+1],*gnew);
       }
@@ -358,7 +358,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   
   // Compute (Hessian at x) times (vector v).
   Ptr<Vector<Real>> h = hv.clone();
-  update(x,UPDATE_TEMP);
+  update(x,UpdateType::Temp);
   hessVec(*h, v, x, tol);
   //Real wHv = w.dot(h->dual());
   Real wHv = w.apply(*h);

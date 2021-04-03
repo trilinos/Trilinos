@@ -128,12 +128,12 @@ void InteriorPointAlgorithm<Real>::updateState(const Vector<Real>           &x,
   Real zerotol = std::sqrt(ROL_EPSILON<Real>());
   // Update objective and constraint
   if (state_->iter == 0) {
-    ipobj.update(x,UPDATE_INITIAL,state_->iter);
-    con.update(x,UPDATE_INITIAL,state_->iter);
+    ipobj.update(x,UpdateType::Initial,state_->iter);
+    con.update(x,UpdateType::Initial,state_->iter);
   }
   //else {
-  //  ipobj.update(x,UPDATE_ACCEPT,state_->iter);
-  //  con.update(x,UPDATE_ACCEPT,state_->iter);
+  //  ipobj.update(x,UpdateType::Accept,state_->iter);
+  //  con.update(x,UpdateType::Accept,state_->iter);
   //}
   // Compute norm of the gradient of the Lagrangian
   state_->value = ipobj.getObjectiveValue(x, zerotol);

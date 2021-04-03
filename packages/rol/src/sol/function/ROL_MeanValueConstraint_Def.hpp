@@ -60,7 +60,7 @@ void MeanValueConstraint<Real>::update( const Vector<Real> &x, bool flag, int it
 }
 
 template<typename Real>
-void MeanValueConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void MeanValueConstraint<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   con_->update(x,type,iter);
 }
 

@@ -157,7 +157,7 @@ private:
   Real infeasibility(ROL::Vector<Real> &x) {
     Real tol = std::sqrt(ROL::ROL_EPSILON<Real>());
     zeroSlack(x);
-    con_->update(x,ROL::UPDATE_TEMP);
+    con_->update(x,ROL::UpdateType::Temp);
     con_->value(*c_,x,tol);
     setSlack(x,*c_);
     Real infeas(0);
@@ -168,7 +168,7 @@ private:
       infeas = x_->norm();
     }
     else {
-      con_->update(x,ROL::UPDATE_TEMP);
+      con_->update(x,ROL::UpdateType::Temp);
       con_->value(*c_,x,tol);
       infeas = c_->norm();
     }
@@ -608,7 +608,7 @@ public:
         }
       }
     }
-    problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
+    problem0_->getObjective()->update(*rndSolution_,ROL::UpdateType::Temp);
     Real val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
     // Print incumbent

@@ -58,7 +58,7 @@ CompositeConstraint_SimOpt<Real>::CompositeConstraint_SimOpt(
                                   bool storage,
                                   bool isConRedParametrized)
   : Constraint_SimOpt<Real>(), conVal_(conVal), conRed_(conRed),
-    updateFlag_(true), newUpdate_(false), updateIter_(0), updateType_(UPDATE_INITIAL),
+    updateFlag_(true), newUpdate_(false), updateIter_(0), updateType_(UpdateType::Initial),
     storage_(storage), isConRedParametrized_(isConRedParametrized) {
   Sz_      = Sz.clone();
   primRed_ = cRed.clone();
@@ -97,21 +97,21 @@ void CompositeConstraint_SimOpt<Real>::update_2(const Vector<Real> &z,
 template<typename Real>
 void CompositeConstraint_SimOpt<Real>::update(const Vector<Real> &u,
                                               const Vector<Real> &z,
-                                              EUpdateType type, int iter) {
+                                              UpdateType type, int iter) {
   update_1(u,type,iter);
   update_2(z,type,iter);
 }
 
 template<typename Real>
 void CompositeConstraint_SimOpt<Real>::update_1(const Vector<Real> &u,
-                                                EUpdateType type, int iter) {
+                                                UpdateType type, int iter) {
   primU_->set(u);
   conVal_->update_1(u,type,iter);
 }
 
 template<typename Real>
 void CompositeConstraint_SimOpt<Real>::update_2(const Vector<Real> &z,
-                                                EUpdateType type, int iter) {
+                                                UpdateType type, int iter) {
   conRed_->update_2(z,type,iter);
   updateType_ = type;
   updateIter_ = iter;
@@ -121,7 +121,7 @@ void CompositeConstraint_SimOpt<Real>::update_2(const Vector<Real> &z,
 template<typename Real>
 void CompositeConstraint_SimOpt<Real>::solve_update(const Vector<Real> &u,
                                                     const Vector<Real> &z,
-                                                    EUpdateType type, int iter) {
+                                                    UpdateType type, int iter) {
   Real ctol(std::sqrt(ROL_EPSILON<Real>()));
   solveConRed(*Sz_, z, ctol);
   conVal_->solve_update(u,*Sz_,type,iter);

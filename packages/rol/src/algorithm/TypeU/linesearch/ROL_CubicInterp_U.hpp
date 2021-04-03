@@ -85,7 +85,7 @@ public:
     xnew_->set(x); xnew_->axpy(alpha,s);
     // Get objective value at xnew
     Real fold = fval;
-    obj.update(*xnew_,UPDATE_TRIAL);
+    obj.update(*xnew_,UpdateType::Trial);
     fval = obj.value(*xnew_,tol);
     ls_neval++;
     // Initialize
@@ -128,7 +128,7 @@ public:
       // Update iterate
       xnew_->set(x); xnew_->axpy(alpha,s);
       // Get objective value at xnew
-      obj.update(*xnew_,UPDATE_TRIAL);
+      obj.update(*xnew_,UpdateType::Trial);
       fval = obj.value(*xnew_,tol);
       ls_neval++;
     }

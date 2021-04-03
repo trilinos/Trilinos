@@ -82,7 +82,7 @@ AffineTransformObjective<Real>::AffineTransformObjective(const Ptr<Objective<Rea
 }
 
 template<typename Real>
-void AffineTransformObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter) {
+void AffineTransformObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter) {
   storage_->objectiveUpdate(type);
   acon_->update(x,type,iter);
   obj_->update(*transform(x),type,iter);

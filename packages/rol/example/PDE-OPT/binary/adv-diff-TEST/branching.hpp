@@ -176,12 +176,12 @@ public:
       // Evaluate at c
       c = a + invphi2 * h;
       round(*rndSolution_,*solution_,c);
-      problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
+      problem0_->getObjective()->update(*rndSolution_,ROL::UpdateType::Temp);
       fc = problem0_->getObjective()->value(*rndSolution_,tol);
       // Evaluate at d
       d = a + invphi * h;
       round(*rndSolution_,*solution_,d);
-      problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
+      problem0_->getObjective()->update(*rndSolution_,ROL::UpdateType::Temp);
       fd = problem0_->getObjective()->value(*rndSolution_,tol);
       while (std::abs(c-d) > itol) {
         h *= invphi;
@@ -191,7 +191,7 @@ public:
           fd = fc;
           c  = a + invphi2 * h;
           round(*rndSolution_,*solution_,c);
-          problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
+          problem0_->getObjective()->update(*rndSolution_,ROL::UpdateType::Temp);
           fc = problem0_->getObjective()->value(*rndSolution_,tol);
         }
         else {
@@ -200,7 +200,7 @@ public:
           fc = fd;
           d  = a + invphi * h;
           round(*rndSolution_,*solution_,d);
-          problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
+          problem0_->getObjective()->update(*rndSolution_,ROL::UpdateType::Temp);
           fd = problem0_->getObjective()->value(*rndSolution_,tol);
         }
       }
@@ -255,7 +255,7 @@ public:
       t = static_cast<Real>(0.5);
       round(*rndSolution_,*solution_,t);
     }
-    problem0_->getObjective()->update(*rndSolution_,ROL::UPDATE_TEMP);
+    problem0_->getObjective()->update(*rndSolution_,ROL::UpdateType::Temp);
     val = problem0_->getObjective()->value(*rndSolution_,tol);
     branching_->foundSolution(new ROL::PEBBL::IntegerSolution<Real>(*rndSolution_,val));
     if (verbosity_ > 0) {

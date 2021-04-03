@@ -66,7 +66,7 @@ public:
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     pobj_->update(x,flag,iter);
   }
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) {
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
     pobj_->update(x,type,iter);
   }
 

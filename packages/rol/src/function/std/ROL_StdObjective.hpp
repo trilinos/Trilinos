@@ -64,9 +64,9 @@ public:
   using Objective<Real>::update;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
 
-  virtual void update( const std::vector<Real> &x, EUpdateType type, int iter = -1 ) {}
+  virtual void update( const std::vector<Real> &x, UpdateType type, int iter = -1 ) {}
 
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
 
   virtual Real value( const std::vector<Real> &x, Real &tol ) = 0;
 

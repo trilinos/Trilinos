@@ -60,7 +60,7 @@ void ConstraintFromObjective<Real>::setParameter( const std::vector<Real> &param
 }
 
 template<typename Real> 
-void ConstraintFromObjective<Real>::update( const Vector<Real>& x, EUpdateType type, int iter ) {
+void ConstraintFromObjective<Real>::update( const Vector<Real>& x, UpdateType type, int iter ) {
   obj_->update(x,type,iter);
 }
 

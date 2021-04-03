@@ -208,7 +208,7 @@ public:
     isGradient2Computed_ = (flag ? false : isGradient2Computed_);
   }
 
-  void update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1 ) {
+  void update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1 ) {
     int size = obj_vec_.size();
     for (int i = 0; i < size; ++i) {
       obj_vec_[i]->update(u,z,type,iter);

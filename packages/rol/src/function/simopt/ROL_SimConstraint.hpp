@@ -63,7 +63,7 @@ public:
                 bool inSolve = false);
 
   void update( const Vector<Real> &u, bool flag = true, int iter = -1 ) override;
-  void update( const Vector<Real> &u, EUpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &u, UpdateType type, int iter = -1 ) override;
   void value(Vector<Real> &c,const Vector<Real> &u,Real &tol) override;
   void applyJacobian(Vector<Real> &jv,const Vector<Real> &v,const Vector<Real> &u,Real &tol) override;
   using Constraint<Real>::applyAdjointJacobian;

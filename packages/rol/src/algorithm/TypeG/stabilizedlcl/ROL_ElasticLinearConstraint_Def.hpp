@@ -55,7 +55,7 @@ ElasticLinearConstraint<Real>::ElasticLinearConstraint(const Ptr<const Vector<Re
 }
 
 template<typename Real>
-void ElasticLinearConstraint<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {}
+void ElasticLinearConstraint<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {}
 
 template<typename Real>
 void ElasticLinearConstraint<Real>::update( const Vector<Real> &x, bool flag, int iter ) {}

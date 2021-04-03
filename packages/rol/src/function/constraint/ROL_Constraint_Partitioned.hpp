@@ -73,7 +73,7 @@ public:
   int getNumberConstraintEvaluations(void) const;
   Ptr<Constraint<Real>> get(int ind = 0) const;
 
-  void update( const Vector<Real> &x, EUpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
   void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) override;
   void applyJacobian( Vector<Real> &jv,

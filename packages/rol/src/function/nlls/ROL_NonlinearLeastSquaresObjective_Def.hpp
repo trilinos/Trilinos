@@ -58,7 +58,7 @@ NonlinearLeastSquaresObjective<Real>::NonlinearLeastSquaresObjective(const Ptr<C
 }
 
 template<typename Real>
-void NonlinearLeastSquaresObjective<Real>::update( const Vector<Real> &x, EUpdateType type, int iter ) {
+void NonlinearLeastSquaresObjective<Real>::update( const Vector<Real> &x, UpdateType type, int iter ) {
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   con_->update(x,type,iter);
   con_->value(*c1_,x,tol);
