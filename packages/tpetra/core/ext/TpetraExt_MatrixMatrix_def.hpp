@@ -508,8 +508,8 @@ void Add(
   }
 
   size_t a_numEntries;
-  Array<GO> a_inds(A.getNodeMaxNumRowEntries());
-  Array<SC> a_vals(A.getNodeMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_global_inds_host_view_type a_inds("a_inds",A.getNodeMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_values_host_view_type a_vals("a_vals",A.getNodeMaxNumRowEntries());
   GO row;
 
   if (scalarB != Teuchos::ScalarTraits<SC>::one())
@@ -520,16 +520,16 @@ void Add(
   if (scalarA != Teuchos::ScalarTraits<SC>::zero()) {
     for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
-      Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
+      Aprime->getGlobalRowCopy(row, a_inds, a_vals, a_numEntries);
 
       if (scalarA != Teuchos::ScalarTraits<SC>::one())
         for (size_t j = 0; j < a_numEntries; ++j)
           a_vals[j] *= scalarA;
 
       if (bFilled)
-        B.sumIntoGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+        B.sumIntoGlobalValues(row, a_numEntries, a_vals.data(), a_inds.data());
       else
-        B.insertGlobalValues(row,  a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+        B.insertGlobalValues(row,  a_numEntries, a_vals.data(), a_inds.data());
     }
   }
 }
@@ -1017,8 +1017,8 @@ void Add(
 
   // do a loop over each matrix to add: A reordering might be more efficient
   for (int k = 0; k < 2; ++k) {
-    Array<GlobalOrdinal> Indices;
-    Array<Scalar> Values;
+    typename crs_matrix_type::nonconst_global_inds_host_view_type Indices;
+    typename crs_matrix_type::nonconst_values_host_view_type Values;
 
     // Loop over each locally owned row of the current matrix (either
     // Aprime or Bprime), and sum its entries into the corresponding
@@ -1041,9 +1041,9 @@ void Add(
       const GlobalOrdinal globalRow = curRowMap->getGlobalElement (i);
       size_t numEntries = Mat[k]->getNumEntriesInGlobalRow (globalRow);
       if (numEntries > 0) {
-        Indices.resize (numEntries);
-        Values.resize (numEntries);
-        Mat[k]->getGlobalRowCopy (globalRow, Indices (), Values (), numEntries);
+        Kokkos::resize(Indices,numEntries);
+        Kokkos::resize(Values,numEntries);
+        Mat[k]->getGlobalRowCopy (globalRow, Indices, Values, numEntries);
 
         if (scalar[k] != STS::one ()) {
           for (size_t j = 0; j < numEntries; ++j) {
@@ -1052,9 +1052,9 @@ void Add(
         }
 
         if (C->isFillComplete ()) {
-          C->sumIntoGlobalValues (globalRow, Indices, Values);
+          C->sumIntoGlobalValues (globalRow, numEntries, Values.data(), Indices.data());
         } else {
-          C->insertGlobalValues (globalRow, Indices, Values);
+          C->insertGlobalValues (globalRow,  numEntries, Values.data(), Indices.data());
         }
       }
     }

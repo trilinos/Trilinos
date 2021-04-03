@@ -282,12 +282,13 @@ namespace Impl {
   typename ::Tpetra::RowGraph<LO, GO, NT>::local_ordinal_type
   countLocalNumDiagsInNonFillCompleteGloballyIndexedGraphWithoutRowViews (const ::Tpetra::RowGraph<LO, GO, NT>& G)
   {
+    using gids_type = ::Tpetra::RowGraph<LO,GO,NT>::nonconst_global_inds_host_view_type ;
     const auto rowMap = G.getRowMap ();
     if (rowMap.get () == nullptr) {
       return 0; // this process does not participate
     }
     else {
-      Teuchos::Array<GO> gblColIndsBuf;
+      gids_type gblColIndsBuf;
       const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
 
       LO diagCount = 0;
@@ -295,9 +296,10 @@ namespace Impl {
         size_t numEntSizeT = G.getNumEntriesInLocalRow (lclRow);
         const LO numEnt = static_cast<LO> (numEntSizeT);
         if (static_cast<LO> (gblColIndsBuf.size ()) < numEnt) {
-          gblColIndsBuf.resize (numEnt);
+          Kokkos::resize(gblColIndsBuf,numEnt);
         }
-        Teuchos::ArrayView<GO> gblColInds = gblColIndsBuf (0, numEnt);
+
+        gids_type gblColInds = Kokkos::subview(gblColIndsBuf,std::make_pair((LO)0, numEnt));
         const GO gblRow = rowMap->getGlobalElement (lclRow);
         G.getGlobalRowCopy (gblRow, gblColInds, numEntSizeT);
 

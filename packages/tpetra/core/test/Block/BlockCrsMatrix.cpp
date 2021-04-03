@@ -157,7 +157,13 @@ namespace {
     typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
     typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
+
     typedef Tpetra::Map<LO, GO, Node> map_type;
+
+    using lids_type = typename graph_type::nonconst_local_inds_host_view_type;
+    using gids_type = typename graph_type::nonconst_global_inds_host_view_type;
+    using vals_type = typename Tpetra::CrsGraph<LO, GO, Node>::nonconst_values_host_view_type;
+
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
@@ -200,7 +206,7 @@ namespace {
     graph_type graph (meshRowMapPtr, maxNumEntPerRow, Tpetra::StaticProfile);
 
     // Fill the graph.
-    Teuchos::Array<GO> gblColInds (maxNumEntPerRow);
+    gids_type gblColInds ("gblColIds",maxNumEntPerRow);
     const GO globalNumRows = meshRowMap.getGlobalNumElements ();
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
@@ -211,7 +217,7 @@ namespace {
           static_cast<GO> (globalNumRows);
         gblColInds[k] = gblColInd;
       }
-      graph.insertGlobalIndices (gblRowInd, gblColInds ());
+      graph.insertGlobalIndices (gblRowInd, gblColInds.extent(0),gblColInds.data());
     }
     graph.fillComplete ();
 
@@ -282,10 +288,11 @@ namespace {
     Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
 
     // Test that getLocalRowView returns the right column indices.
-    Array<LO> lclColInds (maxNumEntPerRow);
-    Array<LO> myLclColIndsCopy (maxNumEntPerRow);
-    Array<Scalar> myValsCopy (maxNumEntPerRow*entriesPerBlock);
-    Array<LO> myLclColIndsSorted (maxNumEntPerRow);
+
+    lids_type lclColInds ("lclColInds",maxNumEntPerRow);
+    lids_type myLclColIndsCopy ("myLclColIndsCopy",maxNumEntPerRow);
+    vals_type myValsCopy ("myValsCopy",maxNumEntPerRow*entriesPerBlock);
+    lids_type myLclColIndsSorted ("myLclColIndsSorted",maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       const LO* myLclColInds = NULL;
@@ -307,27 +314,29 @@ namespace {
       }
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
-      std::sort (lclColInds.begin (), lclColInds.end ());
-      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsSorted.begin ());
-      std::sort (myLclColIndsSorted.begin (), myLclColIndsSorted.end ());
+      Tpetra::sort (lclColInds, lclColInds.extent(0));
+      Kokkos::deep_copy(myLclColIndsSorted,Kokkos::subview(myLclColInds,std::make_pair(0,2)));
+      //      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsSorted.begin ());
+      Tpetra::sort (myLclColIndsSorted, myLclColIndsSorted.extent(0));
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
       // Test that getLocalRowCopy works.
       size_t numEntries;
-      blockMat.getLocalRowCopy (lclRowInd, myLclColIndsCopy(), myValsCopy(), numEntries);
+      blockMat.getLocalRowCopy (lclRowInd, myLclColIndsCopy, myValsCopy, numEntries);
       numEnt = static_cast<LO>(numEntries);
       TEST_ASSERT( err == 0 );
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
 
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
-      std::copy (myLclColIndsCopy.getRawPtr(), myLclColIndsCopy.getRawPtr() + 2, myLclColIndsSorted.begin ());
-      std::sort (myLclColIndsSorted.begin (), myLclColIndsSorted.end ());
+      Kokkos::deep_copy(myLclColIndsSorted,Kokkos::subview(myLclColIndsCopy,std::make_pair(0,2)));
+      //      std::copy (myLclColIndsCopy.getRawPtr(), myLclColIndsCopy.getRawPtr() + 2, myLclColIndsSorted.begin ());
+      Tpetra::sort (myLclColIndsSorted, myLclColIndsSorted.extent(0));
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
       // Fill the entries in the row with zeros.
       std::fill (tempBlockSpace.begin (), tempBlockSpace.end (), STS::zero ());
-      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.data(),
                                          tempBlockSpace.getRawPtr (), numEnt);
       TEST_ASSERT( err == numEnt );
       // Make sure that the input Scalar values didn't change (are
@@ -355,7 +364,7 @@ namespace {
           }
         }
       } // for each entry in the row
-      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.data(),
                                          tempBlockSpace.getRawPtr (), numEnt);
       TEST_ASSERT( err == numEnt );
 
