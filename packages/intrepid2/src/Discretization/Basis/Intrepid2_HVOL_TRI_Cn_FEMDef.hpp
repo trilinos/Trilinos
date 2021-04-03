@@ -226,6 +226,7 @@ Basis_HVOL_TRI_Cn_FEM( const ordinal_type order,
 
   constexpr ordinal_type spaceDim = 2;
 
+  this->pointType_         = pointType;
   this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Triangle<3> >() );
