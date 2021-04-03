@@ -97,11 +97,13 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename ValueType, typename DeviceSpaceType>
+template<typename ValueType, typename DeviceType>
 int ConvergenceTet(const bool verbose) {
 
-  typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-  typedef Kokkos::DynRankView<ordinal_type,DeviceSpaceType> DynRankViewInt;
+  using ExecSpaceType = typename DeviceType::execution_space;
+
+  typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+  typedef Kokkos::DynRankView<ordinal_type,DeviceType> DynRankViewInt;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
   Teuchos::RCP<std::ostream> outStream;
@@ -115,10 +117,9 @@ int ConvergenceTet(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
-  typedef typename
-      Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
 
-  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
   *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
   *outStream << "\n";
 
@@ -126,16 +127,16 @@ int ConvergenceTet(const bool verbose) {
   const ValueType relTol = 1e-4;
 
   struct Fun {
-    ValueType
     KOKKOS_INLINE_FUNCTION
+    ValueType
     operator()(const ValueType& x, const ValueType& y, const ValueType& z) {
       return sin(x*2)*sin(y*2)*sin(z*2)+sin(x*y*z*8);
     }
   };
 
   struct GradFun {
-    ValueType
     KOKKOS_INLINE_FUNCTION
+    ValueType
     operator()(const ValueType& x, const ValueType& y, const ValueType& z, const int comp=0) {
       switch (comp) {
       case 0:
@@ -151,8 +152,8 @@ int ConvergenceTet(const bool verbose) {
   };
 
   struct FunCurl {
-    ValueType
     KOKKOS_INLINE_FUNCTION
+    ValueType
     operator()(const ValueType& x, const ValueType& y, const ValueType& z, const int comp=0) {
       ValueType f0 = sin(x*2)*sin(y*2)*sin(z*2)+sin(x*y*z*8);
       ValueType f1 = cos(x*2)*cos(y*2)*cos(z*2);
@@ -172,8 +173,8 @@ int ConvergenceTet(const bool verbose) {
   };
 
   struct CurlFunCurl {
-    ValueType
     KOKKOS_INLINE_FUNCTION
+    ValueType
     operator()(const ValueType& x, const ValueType& y, const ValueType& z, const int comp=0) {
       ValueType gf0[3] = {cos(x*2)*sin(y*2)*sin(z*2)*2+cos(x*y*z*8)*y*z*8, sin(x*2)*cos(y*2)*sin(z*2)*2+cos(x*y*z*8)*x*z*8, sin(x*2)*sin(y*2)*cos(z*2)*2+cos(x*y*z*8)*x*y*8};
       ValueType gf1[3] = {-sin(x*2)*cos(y*2)*cos(z*2)*2, -cos(x*2)*sin(y*2)*cos(z*2)*2, -cos(x*2)*cos(y*2)*sin(z*2)*2};
@@ -193,8 +194,8 @@ int ConvergenceTet(const bool verbose) {
 
 
   struct FunDiv {
-    ValueType
     KOKKOS_INLINE_FUNCTION
+    ValueType
     operator()(const ValueType& x, const ValueType& y, const ValueType& z, const int comp=0) {
       ValueType f0 = sin(x*2)*sin(y*2)*sin(z*2)+sin(x*y*z*8);
       ValueType f1 = cos(x*2)*cos(y*2)*cos(z*2);
@@ -214,8 +215,8 @@ int ConvergenceTet(const bool verbose) {
   };
 
   struct DivFunDiv {
-    ValueType
     KOKKOS_INLINE_FUNCTION
+    ValueType
     operator()(const ValueType& x, const ValueType& y, const ValueType& z) {
       ValueType gxf0 = cos(x*2)*sin(y*2)*sin(z*2)*2+cos(x*y*z*8)*y*z*8;
       ValueType gyf1 = -cos(x*2)*sin(y*2)*cos(z*2)*2;
@@ -224,14 +225,14 @@ int ConvergenceTet(const bool verbose) {
     }
   };
 
-  typedef CellTools<DeviceSpaceType> ct;
-  typedef OrientationTools<DeviceSpaceType> ots;
-  typedef Experimental::ProjectionTools<DeviceSpaceType> pts;
-  typedef RealSpaceTools<DeviceSpaceType> rst;
-  typedef FunctionSpaceTools<DeviceSpaceType> fst;
+  typedef CellTools<DeviceType> ct;
+  typedef OrientationTools<DeviceType> ots;
+  typedef Experimental::ProjectionTools<DeviceType> pts;
+  typedef RealSpaceTools<DeviceType> rst;
+  typedef FunctionSpaceTools<DeviceType> fst;
 
   constexpr ordinal_type dim = 3;
-  const ordinal_type order = 3;
+  const ordinal_type basisDegree = 3;
   ordinal_type cub_degree = 7;
 
 
@@ -254,6 +255,11 @@ int ConvergenceTet(const bool verbose) {
   ValueType hdiv_errors[4] = {4.68569, 1.22549, 0.196687, 0.0262624};
   ValueType hvol_errors[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
 
+  ValueType hgrad_errors_L2[4] = {7.23725, 2.20317, 0.362514, 0.049889};
+  ValueType hcurl_errors_L2[4] = {6.32367, 2.04776, 0.428591, 0.090222};
+  ValueType hdiv_errors_L2[4] = {4.60503, 1.2758, 0.260201, 0.0561971};
+  ValueType hvol_errors_L2[4] = {0.424385, 0.150827, 0.0231164, 0.00301102};
+
   for(int iter= 0; iter<numRefinements; iter++, NX *= 2) {
     int NY            = NX;
     int NZ            = NX;
@@ -263,10 +269,10 @@ int ConvergenceTet(const bool verbose) {
 
     // Get cell topology for base tetrahedron
     typedef shards::CellTopology    CellTopology;
-    CellTopology tet(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
+    CellTopology cellTopo(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
 
     // Get dimensions
-    int numNodesPerElem = tet.getNodeCount();
+    ordinal_type numNodesPerElem = cellTopo.getNodeCount();
 
     // *********************************** GENERATE MESH ************************************
 
@@ -299,18 +305,18 @@ int ConvergenceTet(const bool verbose) {
 
     // Get nodal coordinates
     DynRankView ConstructWithLabel(nodeCoord, numNodes, dim);
+    auto hNodeCoord = Kokkos::create_mirror_view(nodeCoord);
     int inode = 0;
     for (int k=0; k<NZ+1; k++) {
       for (int j=0; j<NY+1; j++) {
         for (int i=0; i<NX+1; i++) {
-          nodeCoord(inode,0) = leftX + (double)i*hx;
-          nodeCoord(inode,1) = leftY + (double)j*hy;
-          nodeCoord(inode,2) = leftZ + (double)k*hz;
+          hNodeCoord(inode,0) = leftX + (double)i*hx;
+          hNodeCoord(inode,1) = leftY + (double)j*hy;
+          hNodeCoord(inode,2) = leftZ + (double)k*hz;
           inode++;
         }
       }
     }
-
 
     // Perturb mesh coordinates (only interior nodes)
     if (randomMesh){
@@ -323,16 +329,18 @@ int ConvergenceTet(const bool verbose) {
             double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
             double rz = 2.0 * (double)rand()/RAND_MAX - 1.0;
             // limit variation to 1/4 edge length
-            nodeCoord(inode,0) = nodeCoord(inode,0) + 0.125 * hx * rx;
-            nodeCoord(inode,1) = nodeCoord(inode,1) + 0.125 * hy * ry;
-            nodeCoord(inode,2) = nodeCoord(inode,2) + 0.125 * hz * rz;
+            hNodeCoord(inode,0) = hNodeCoord(inode,0) + 0.125 * hx * rx;
+            hNodeCoord(inode,1) = hNodeCoord(inode,1) + 0.125 * hy * ry;
+            hNodeCoord(inode,2) = hNodeCoord(inode,2) + 0.125 * hz * rz;
           }
         }
       }
     }
+    deep_copy(nodeCoord,hNodeCoord);
 
     // Element to Node map
     DynRankViewInt ConstructWithLabel(elemNodes, numElems, numNodesPerElem);
+    auto hElemNodes = Kokkos::create_mirror_view(elemNodes);
     int ielem = 0;
     for (int k=0; k<NZ; k++) {
       for (int j=0; j<NY; j++) {
@@ -346,60 +354,67 @@ int ConvergenceTet(const bool verbose) {
           auto v6 = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i + 1;
           auto v7 = (NY + 1)*(NX + 1)*(k + 1) + (NX + 1)*(j + 1) + i;
 
-          elemNodes(ielem,0) = v0;
-          elemNodes(ielem,1) = v1;
-          elemNodes(ielem,2) = v2;
-          elemNodes(ielem,3) = v5;
+          hElemNodes(ielem,0) = v0;
+          hElemNodes(ielem,1) = v1;
+          hElemNodes(ielem,2) = v2;
+          hElemNodes(ielem,3) = v5;
           ielem++;
 
-          elemNodes(ielem,0) = v0;
-          elemNodes(ielem,1) = v2;
-          elemNodes(ielem,2) = v7;
-          elemNodes(ielem,3) = v5;
+          hElemNodes(ielem,0) = v0;
+          hElemNodes(ielem,1) = v2;
+          hElemNodes(ielem,2) = v7;
+          hElemNodes(ielem,3) = v5;
           ielem++;
 
-          elemNodes(ielem,0) = v0;
-          elemNodes(ielem,1) = v2;
-          elemNodes(ielem,2) = v3;
-          elemNodes(ielem,3) = v7;
+          hElemNodes(ielem,0) = v0;
+          hElemNodes(ielem,1) = v2;
+          hElemNodes(ielem,2) = v3;
+          hElemNodes(ielem,3) = v7;
           ielem++;
 
-          elemNodes(ielem,0) = v0;
-          elemNodes(ielem,1) = v5;
-          elemNodes(ielem,2) = v7;
-          elemNodes(ielem,3) = v4;
+          hElemNodes(ielem,0) = v0;
+          hElemNodes(ielem,1) = v5;
+          hElemNodes(ielem,2) = v7;
+          hElemNodes(ielem,3) = v4;
           ielem++;
 
-          elemNodes(ielem,0) = v2;
-          elemNodes(ielem,1) = v7;
-          elemNodes(ielem,2) = v5;
-          elemNodes(ielem,3) = v6;
+          hElemNodes(ielem,0) = v2;
+          hElemNodes(ielem,1) = v7;
+          hElemNodes(ielem,2) = v5;
+          hElemNodes(ielem,3) = v6;
           ielem++;
         }
       }
     }
+    deep_copy(elemNodes,hElemNodes);
 
 
     //computing vertices coords
-    DynRankView ConstructWithLabel(physVertexes, numElems, tet.getNodeCount(), dim);
-    for(ordinal_type i=0; i<numElems; ++i)
-      for(std::size_t j=0; j<tet.getNodeCount(); ++j)
+    DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+    KOKKOS_LAMBDA (const int &i) {
+      for(ordinal_type j=0; j<numNodesPerElem; ++j)
         for(ordinal_type k=0; k<dim; ++k)
           physVertexes(i,j,k) = nodeCoord(elemNodes(i,j),k);
-
+    });
+    ExecSpaceType().fence();
 
     DefaultCubatureFactory cub_factory;
-    auto cell_cub = cub_factory.create<DeviceSpaceType, ValueType, ValueType>(tet.getBaseKey(), cub_degree);
+    auto cell_cub = cub_factory.create<DeviceType, ValueType, ValueType>(cellTopo.getBaseKey(), cub_degree);
     ordinal_type numRefCoords = cell_cub->getNumPoints();
     DynRankView ConstructWithLabel(refPoints, numRefCoords, dim);
     DynRankView ConstructWithLabel(weights, numRefCoords);
     cell_cub->getCubature(refPoints, weights);
 
-    using basisType = Basis<DeviceSpaceType,ValueType,ValueType>;
-    //using CG_NBasis = NodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    using CG_HBasis = HierarchicalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
-    using CG_DNBasis = DerivedNodalBasisFamily<DeviceSpaceType,ValueType,ValueType>;
+    using basisType = Basis<DeviceType,ValueType,ValueType>;
+    //using CG_NBasis = NodalBasisFamily<DeviceType,ValueType,ValueType>;
+    using CG_HBasis = HierarchicalBasisFamily<DeviceType,ValueType,ValueType>;
+    using CG_DNBasis = DerivedNodalBasisFamily<DeviceType,ValueType,ValueType>;
 
+
+    std::vector<bool> useL2Proj;
+    useL2Proj.push_back(false);
+    useL2Proj.push_back(true); // use L2 projection for all the bases
 
     *outStream
     << "===============================================================================\n"
@@ -408,70 +423,87 @@ int ConvergenceTet(const bool verbose) {
     << "|                                                                             |\n"
     << "===============================================================================\n";
 
-
     try {
       //compute reference points
-      Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,ValueType,ValueType> warpBasis(order,POINTTYPE_WARPBLEND); //used only for computing reference points
+      Basis_HGRAD_TET_Cn_FEM<DeviceType,ValueType,ValueType> warpBasis(basisDegree,POINTTYPE_WARPBLEND); //used only for computing reference points
 
       // compute orientations for cells (one time computation)
-      Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
-      ots::getOrientation(elemOrts, elemNodes, tet);
+      Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numElems);
+      ots::getOrientation(elemOrts, elemNodes, cellTopo);
+
+      for (auto useL2Projection:useL2Proj) { //
 
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(order));
-      basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(order));
-      basis_set.push_back(new typename  CG_HBasis::HGRAD_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HGRAD_TET(basisDegree));
+      basis_set.push_back(new typename  CG_DNBasis::HGRAD_TET(basisDegree));
+      basis_set.push_back(new typename  CG_HBasis::HGRAD_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
-        *outStream << " " << basis.getName() << " " << basis.requireOrientation() << std::endl;
+        *outStream << " " << basis.getName() << std::endl;
         ordinal_type basisCardinality = basis.getCardinality();
 
         //Compute Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-          DeviceSpaceType().fence();
-          for(ordinal_type i=0; i<numElems; ++i)
+          Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> linearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
+          linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
+          ExecSpaceType().fence();
+          DynRankView ConstructWithLabel(physVertexes, numElems, numNodesPerElem, dim);
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*tetLinearBasisValuesAtRefCoords(k,j);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*linearBasisValuesAtRefCoords(k,j);
+          });
+          ExecSpaceType().fence();
         }
 
-        Fun fun;
-        GradFun gradFun;
         DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords);
         DynRankView ConstructWithLabel(funGradAtPhysRefCoords, numElems, numRefCoords, dim);
-        for(ordinal_type i=0; i<numElems; ++i) {
+
+        Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i) {
+          Fun fun;
+          GradFun gradFun;
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             funAtRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
             for(ordinal_type d=0; d<dim; ++d)
               funGradAtPhysRefCoords(i,j,d) = gradFun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2),d);
           }
-        }
+        });
+        ExecSpaceType().fence();
 
         // compute projection-based interpolation of fun into HGRAD
         DynRankView ConstructWithLabel(basisCoeffsHGrad, numElems, basisCardinality);
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-          projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
-
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          if(useL2Projection) {
+            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+          } else {
+            projStruct.createHGradProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+          }
           ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numGradPoints = projStruct.getNumTargetDerivEvalPoints();
 
           DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(evaluationGradPoints, numElems, numGradPoints, dim);
 
-
+          if(useL2Projection) {
+            pts::getL2EvaluationPoints(evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
           pts::getHGradEvaluationPoints(evaluationPoints,
               evaluationGradPoints,
               elemOrts,
               &basis,
               &projStruct);
+          }
 
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
@@ -480,34 +512,42 @@ int ConvergenceTet(const bool verbose) {
           DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalGradPoints, numElems, numGradPoints, dim);
           {
-            Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, tet.getNodeCount(), numPoints);
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalGradPoints, tet.getNodeCount(), numGradPoints);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoint, numElems, numNodesPerElem);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalGradPoint, numElems, numNodesPerElem);
 
-            for(ordinal_type i=0; i<numElems; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              if(numGradPoints>0)
-                hexLinearBasis.getValues(hexLinearBasisValuesAtEvalGradPoints, Kokkos::subview(evaluationGradPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              DeviceSpaceType().fence();
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                  for(ordinal_type j=0; j<numGradPoints; ++j)
-                    physEvalGradPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalGradPoints(k,j);
-                }
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+            KOKKOS_LAMBDA (const int &i) {
+              auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numPoints; ++j){
+                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
               }
-            }
+
+              auto basisValuesAtEvalGradPoint = Kokkos::subview(linearBasisValuesAtEvalGradPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numGradPoints; ++j) {
+                auto evalGradPoint = Kokkos::subview(evaluationGradPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalGradPoint, evalGradPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalGradPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalGradPoint(k);
+              }
+            });
+            ExecSpaceType().fence();
           }
 
           //transform the target function and its derivative to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numElems, numGradPoints, dim, dim);
           if(numGradPoints>0)
-            ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, tet);
+            ct::setJacobian(jacobian, evaluationGradPoints, physVertexes, cellTopo);
 
-          GradFun gradFun;
           Kokkos::deep_copy(targetGradAtEvalPoints,0.);
-          for(int ic=0; ic<numElems; ic++) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &ic) {
+            Fun fun;
+            GradFun gradFun;
             for(int i=0;i<numPoints;i++) {
               targetAtEvalPoints(ic,i) = fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
             }
@@ -516,17 +556,26 @@ int ConvergenceTet(const bool verbose) {
                 for(int j=0;j<dim;j++)
                   targetGradAtEvalPoints(ic,i,j) += jacobian(ic,i,d,j)*gradFun(physEvalGradPoints(ic,i,0), physEvalGradPoints(ic,i,1), physEvalGradPoints(ic,i,2), d);//funHGradCoeffs(k)
             }
+          });
+          ExecSpaceType().fence();
 
+          if(useL2Projection) {
+            pts::getL2BasisCoeffs(basisCoeffsHGrad,
+                targetAtEvalPoints,
+                evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHGradBasisCoeffs(basisCoeffsHGrad,
+                targetAtEvalPoints,
+                targetGradAtEvalPoints,
+                evaluationPoints,
+                evaluationGradPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
           }
-
-          pts::getHGradBasisCoeffs(basisCoeffsHGrad,
-              targetAtEvalPoints,
-              targetGradAtEvalPoints,
-              evaluationPoints,
-              evaluationGradPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
         }
 
         //check that fun values at reference points coincide with those computed using basis functions
@@ -566,7 +615,7 @@ int ConvergenceTet(const bool verbose) {
         DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, cellTopo);
         ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
         ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
         fst::HCURLtransformVALUE(transformedBasisGradsAtRefCoordsOriented,
@@ -578,20 +627,28 @@ int ConvergenceTet(const bool verbose) {
 
         //compute error of projection in H1 norm
         ValueType norm2(0);
-        for(ordinal_type i=0; i<numElems; ++i) {
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i, double &norm2Update) {
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             for(ordinal_type k=0; k<basisCardinality; ++k) {
               projectedFunAtRefCoords(i,j) += basisCoeffsHGrad(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
               for (ordinal_type d=0; d<dim; ++d)
                 funGradAtRefCoordsOriented(i,j,d) += basisCoeffsHGrad(i,k)*transformedBasisGradsAtRefCoordsOriented(i,k,j,d);
             }
-            norm2 += std::pow(funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+            norm2Update += (funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j))*
+                (funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j))*
+                weights(j)*jacobianAtRefCoords_det(i,j);
             for (ordinal_type d=0; d<dim; ++d)
-              norm2 += std::pow(funGradAtPhysRefCoords(i,j,d) - funGradAtRefCoordsOriented(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+              norm2Update += (funGradAtPhysRefCoords(i,j,d) - funGradAtRefCoordsOriented(i,j,d))*
+                (funGradAtPhysRefCoords(i,j,d) - funGradAtRefCoordsOriented(i,j,d))*
+                weights(j)*jacobianAtRefCoords_det(i,j);
           }
-        }
+        }, norm2);
+
+        ExecSpaceType().fence();
+
         hgradNorm[iter] =  std::sqrt(norm2);
-        auto expected_error = hgrad_errors[iter];
+        auto expected_error = useL2Projection ? hgrad_errors_L2[iter] : hgrad_errors[iter];
         if(std::abs(hgradNorm[iter]-expected_error)/expected_error > relTol){
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -600,15 +657,16 @@ int ConvergenceTet(const bool verbose) {
         }
         delete basisPtr;
       }
-      *outStream << "HGRAD Error: " << hgradNorm[iter] <<std::endl;
+      if(useL2Projection)
+        *outStream << "HGRAD Error (L2 Projection): " << hgradNorm[iter] <<std::endl;
+      else
+        *outStream << "HGRAD Error (HGrad Projection): " << hgradNorm[iter] <<std::endl;
+      }
     } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;
     }
-
-
-
 
     *outStream
     << "===============================================================================\n"
@@ -620,13 +678,15 @@ int ConvergenceTet(const bool verbose) {
 
     try {
       // compute orientations for cells (one time computation)
-      Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
-      ots::getOrientation(elemOrts, elemNodes, tet);
+      Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numElems);
+      ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
+      for (auto useL2Projection:useL2Proj) { 
+      
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(order));
-      basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(order));
-      //basis_set.push_back(new typename  CG_HBasis::HCURL_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HCURL_TET(basisDegree));
+      basis_set.push_back(new typename  CG_DNBasis::HCURL_TET(basisDegree));
+      //basis_set.push_back(new typename  CG_HBasis::HCURL_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -636,48 +696,62 @@ int ConvergenceTet(const bool verbose) {
         //Compute physical Dof Coordinates and Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-          DeviceSpaceType().fence();
-          for(ordinal_type i=0; i<numElems; ++i)
+          Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> linearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
+          linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
+          ExecSpaceType().fence();
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*tetLinearBasisValuesAtRefCoords(k,j);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*linearBasisValuesAtRefCoords(k,j);
+          });
+          ExecSpaceType().fence();
         }
-
         //check function reproducibility
-        FunCurl fun;
-        CurlFunCurl curlFun;
+
         DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords, dim);
         DynRankView ConstructWithLabel(funCurlAtPhysRefCoords, numElems, numRefCoords, dim);
-        for(ordinal_type i=0; i<numElems; ++i) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i) {
+          FunCurl fun;
+          CurlFunCurl curlFun;
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             for(ordinal_type k=0; k<dim; ++k) {
               funAtRefCoords(i,j,k) =         fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
               funCurlAtPhysRefCoords(i,j,k) = curlFun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
             }
           }
-        }
+        });
+        ExecSpaceType().fence();
 
         // compute projection-based interpolation of fun into HCURL
         DynRankView ConstructWithLabel(basisCoeffsHCurl, numElems, basisCardinality);
         {
           ordinal_type targetCubDegree(cub_degree),targetDerivCubDegree(cub_degree-1);
 
-          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-          projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
-
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          if(useL2Projection) {
+            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+          } else {
+            projStruct.createHCurlProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+          }
           ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numCurlPoints = projStruct.getNumTargetDerivEvalPoints();
           DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(evaluationCurlPoints, numElems, numCurlPoints, dim);
-          pts::getHCurlEvaluationPoints(evaluationPoints,
-              evaluationCurlPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
-
+          if(useL2Projection) {
+            pts::getL2EvaluationPoints(evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHCurlEvaluationPoints(evaluationPoints,
+                evaluationCurlPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          }
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(targetCurlAtEvalPoints, numElems, numCurlPoints, dim);
@@ -686,40 +760,52 @@ int ConvergenceTet(const bool verbose) {
           DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalCurlPoints, numElems, numCurlPoints, dim);
           {
-            Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, tet.getNodeCount(), numPoints);
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalCurlPoints, tet.getNodeCount(), numCurlPoints);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoint, numElems, numNodesPerElem);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalCurlPoint, numElems, numNodesPerElem);
 
-            for(ordinal_type i=0; i<numElems; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalCurlPoints, Kokkos::subview(evaluationCurlPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              DeviceSpaceType().fence();
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                  for(ordinal_type j=0; j<numCurlPoints; ++j)
-                    physEvalCurlPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalCurlPoints(k,j);
-                }
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+            KOKKOS_LAMBDA (const int &i) {
+              auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numPoints; ++j){
+                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
               }
-            }
+
+              auto basisValuesAtEvalCurlPoint = Kokkos::subview(linearBasisValuesAtEvalCurlPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numCurlPoints; ++j) {
+                auto evalGradPoint = Kokkos::subview(evaluationCurlPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalCurlPoint, evalGradPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalCurlPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalCurlPoint(k);
+              }
+            });
+            ExecSpaceType().fence();
           }
 
           //transform the target function and its derivative to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, tet);
+          ct::setJacobian(jacobian, evaluationPoints, physVertexes, cellTopo);
 
-          DynRankView ConstructWithLabel(jacobianCurl, numElems, numCurlPoints, dim, dim);
+
           DynRankView ConstructWithLabel(jacobianCurl_inv, numElems, numCurlPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobianCurl_det, numElems, numCurlPoints);
-          ct::setJacobian(jacobianCurl, evaluationCurlPoints, physVertexes, tet);
-          ct::setJacobianInv (jacobianCurl_inv, jacobianCurl);
-          ct::setJacobianDet (jacobianCurl_det, jacobianCurl);
+          if(numCurlPoints>0){
+            DynRankView ConstructWithLabel(jacobianCurl, numElems, numCurlPoints, dim, dim);
+            ct::setJacobian(jacobianCurl, evaluationCurlPoints, physVertexes, cellTopo);
+            ct::setJacobianInv (jacobianCurl_inv, jacobianCurl);
+            ct::setJacobianDet (jacobianCurl_det, jacobianCurl);
+          }
 
-          CurlFunCurl curlFun;
           Kokkos::deep_copy(targetCurlAtEvalPoints,0.);
           Kokkos::deep_copy(targetAtEvalPoints,0.);
-          for(int ic=0; ic<numElems; ic++) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &ic) {
+            FunCurl fun;
+            CurlFunCurl curlFun;
             for(int i=0;i<numPoints;i++) {
               for(int j=0;j<dim;j++)
                 for(int d=0;d<dim;d++)
@@ -730,17 +816,26 @@ int ConvergenceTet(const bool verbose) {
                 for(int j=0;j<dim;j++)
                   targetCurlAtEvalPoints(ic,i,j) += jacobianCurl_det(ic,i)*jacobianCurl_inv(ic,i,j,d)*curlFun(physEvalCurlPoints(ic,i,0), physEvalCurlPoints(ic,i,1), physEvalCurlPoints(ic,i,2), d);//funHGradCoeffs(k)
             }
+          });
+          ExecSpaceType().fence();
 
+          if(useL2Projection) {
+            pts::getL2BasisCoeffs(basisCoeffsHCurl,
+                targetAtEvalPoints,
+                evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
+                targetAtEvalPoints,
+                targetCurlAtEvalPoints,
+                evaluationPoints,
+                evaluationCurlPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
           }
-
-          pts::getHCurlBasisCoeffs(basisCoeffsHCurl,
-              targetAtEvalPoints,
-              targetCurlAtEvalPoints,
-              evaluationPoints,
-              evaluationCurlPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
         }
 
         //check that fun values at reference points coincide with those computed using basis functions
@@ -763,7 +858,7 @@ int ConvergenceTet(const bool verbose) {
         DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_inv, numElems, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, cellTopo);
         ct::setJacobianInv (jacobianAtRefCoords_inv, jacobianAtRefCoords);
         ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
         fst::HCURLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
@@ -785,20 +880,18 @@ int ConvergenceTet(const bool verbose) {
             elemOrts,
             &basis);
 
-
         fst::HCURLtransformCURL(transformedBasisCurlsAtRefCoordsOriented,
             jacobianAtRefCoords,
             jacobianAtRefCoords_det,
             basisCurlsAtRefCoordsOriented);
-
 
         DynRankView ConstructWithLabel(projectedFunAtRefCoords, numElems, numRefCoords, dim);
         DynRankView ConstructWithLabel(funCurlAtRefCoordsOriented, numElems, numRefCoords,dim);
 
         //compute error of projection in HCURL norm
         ValueType norm2(0);
-        for(ordinal_type i=0; i<numElems; ++i) {
-          ValueType error=0;
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i, double &norm2Update) {
           for(ordinal_type j=0; j<numRefCoords; ++j)
             for(ordinal_type d=0; d<dim; ++d) {
               for(ordinal_type k=0; k<basisCardinality; ++k) {
@@ -806,13 +899,18 @@ int ConvergenceTet(const bool verbose) {
                 funCurlAtRefCoordsOriented(i,j,d) += basisCoeffsHCurl(i,k)*transformedBasisCurlsAtRefCoordsOriented(i,k,j,d);
               }
 
-              norm2 += std::pow(funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
-              norm2 += std::pow(funCurlAtPhysRefCoords(i,j,d) - funCurlAtRefCoordsOriented(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
-              error = std::max(std::abs( funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d)), error);
+              norm2Update += (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
+                  (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
+                  weights(j)*jacobianAtRefCoords_det(i,j);
+              norm2Update += (funCurlAtPhysRefCoords(i,j,d) - funCurlAtRefCoordsOriented(i,j,d))*
+                  (funCurlAtPhysRefCoords(i,j,d) - funCurlAtRefCoordsOriented(i,j,d))*
+                  weights(j)*jacobianAtRefCoords_det(i,j);
             }
-        }
+        },norm2);
+        ExecSpaceType().fence();
+
         hcurlNorm[iter] =  std::sqrt(norm2);
-        auto expected_error = hcurl_errors[iter];
+        auto expected_error = useL2Projection ? hcurl_errors_L2[iter] : hcurl_errors[iter];
         if(std::abs(hcurlNorm[iter]-expected_error)/expected_error > relTol){
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -821,7 +919,11 @@ int ConvergenceTet(const bool verbose) {
         }
         delete basisPtr;
       }
-      *outStream << "HCURL Error: " << hcurlNorm[iter] <<std::endl;
+      if(useL2Projection)
+        *outStream << "HCURL Error (L2 Projection): " << hcurlNorm[iter] <<std::endl;
+      else
+        *outStream << "HCURL Error (HCurl Projection): " << hcurlNorm[iter] <<std::endl;
+      }
     } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
@@ -839,63 +941,81 @@ int ConvergenceTet(const bool verbose) {
 
     try {
       // compute orientations for cells (one time computation)
-      Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
-      ots::getOrientation(elemOrts, elemNodes, tet);
+      Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numElems);
+      ots::getOrientation(elemOrts, elemNodes, cellTopo);
+
+      for (auto useL2Projection:useL2Proj) { //
 
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(order));
-      basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(order));
-      //basis_set.push_back(new typename  CG_HBasis::HDIV_TET(order));
+      //basis_set.push_back(new typename  CG_NBasis::HDIV_TET(basisDegree));
+      basis_set.push_back(new typename  CG_DNBasis::HDIV_TET(basisDegree));
+      //basis_set.push_back(new typename  CG_HBasis::HDIV_TET(basisDegree));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
-        *outStream << " " << basis.getName() << std::endl;      ordinal_type basisCardinality = basis.getCardinality();
+        *outStream << " " << basis.getName() << std::endl;
+        ordinal_type basisCardinality = basis.getCardinality();
 
         //Compute physical Dof Coordinates and Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
         DynRankView ConstructWithLabel(physDofCoords, numElems, basisCardinality, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-          DeviceSpaceType().fence();
-          for(ordinal_type i=0; i<numElems; ++i)
+          Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> linearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
+          linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
+          ExecSpaceType().fence();
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*tetLinearBasisValuesAtRefCoords(k,j);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*linearBasisValuesAtRefCoords(k,j);
+          });
+          ExecSpaceType().fence();
         }
 
-        FunDiv fun;
-        DivFunDiv funDiv;
         DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords, dim);
         DynRankView ConstructWithLabel(funDivAtPhysRefCoords, numElems, numRefCoords);
-        for(ordinal_type i=0; i<numElems; ++i) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i) {
+          FunDiv fun;
+          DivFunDiv funDiv;
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             funDivAtPhysRefCoords(i,j) = funDiv(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
             for(ordinal_type k=0; k<dim; ++k)
               funAtRefCoords(i,j,k) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2), k);
           }
-        }
+        });
+        ExecSpaceType().fence();
 
         // compute projection-based interpolation of fun into HDIV
         DynRankView ConstructWithLabel(basisCoeffsHDiv, numElems, basisCardinality);
         {
           ordinal_type targetCubDegree(basis.getDegree()),targetDerivCubDegree(basis.getDegree()-1);
 
-          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-          projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          if(useL2Projection) {
+            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+          } else {
+            projStruct.createHDivProjectionStruct(&basis, targetCubDegree, targetDerivCubDegree);
+          }
 
           ordinal_type numPoints = projStruct.getNumTargetEvalPoints(), numDivPoints = projStruct.getNumTargetDerivEvalPoints();
 
           DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(evaluationDivPoints, numElems, numDivPoints, dim);
-
-          pts::getHDivEvaluationPoints(evaluationPoints,
-              evaluationDivPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
+          if(useL2Projection) {
+            pts::getL2EvaluationPoints(evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHDivEvaluationPoints(evaluationPoints,
+                evaluationDivPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          }
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(targetDivAtEvalPoints, numElems, numDivPoints);
@@ -904,43 +1024,53 @@ int ConvergenceTet(const bool verbose) {
           DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
           DynRankView ConstructWithLabel(physEvalDivPoints, numElems, numDivPoints, dim);
           {
-            Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, tet.getNodeCount(), numPoints);
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalDivPoints, tet.getNodeCount(), numDivPoints);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoint, numElems, numNodesPerElem);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalDivPoint, numElems, numNodesPerElem);
 
-            for(ordinal_type i=0; i<numElems; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalDivPoints, Kokkos::subview(evaluationDivPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              DeviceSpaceType().fence();
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                  for(ordinal_type j=0; j<numDivPoints; ++j)
-                    physEvalDivPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalDivPoints(k,j);
-                }
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+            KOKKOS_LAMBDA (const int &i) {
+              auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numPoints; ++j){
+                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
               }
-            }
+
+              auto basisValuesAtEvalDivPoint = Kokkos::subview(linearBasisValuesAtEvalDivPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numDivPoints; ++j) {
+                auto evalGradPoint = Kokkos::subview(evaluationDivPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalDivPoint, evalGradPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalDivPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalDivPoint(k);
+              }
+            });
+            ExecSpaceType().fence();
           }
 
           //transform the target function and its derivative to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
           DynRankView ConstructWithLabel(jacobian_inv, numElems, numPoints, dim, dim);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, tet);
+          ct::setJacobian(jacobian, evaluationPoints, physVertexes, cellTopo);
           ct::setJacobianDet (jacobian_det, jacobian);
           ct::setJacobianInv (jacobian_inv, jacobian);
 
-          DynRankView ConstructWithLabel(jacobianDiv, numElems, numDivPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobianDiv_det, numElems, numDivPoints);
-          ct::setJacobian(jacobianDiv, evaluationDivPoints, physVertexes, tet);
-          ct::setJacobianDet (jacobianDiv_det, jacobianDiv);
+          if(numDivPoints>0){
+            DynRankView ConstructWithLabel(jacobianDiv, numElems, numDivPoints, dim, dim);
+            ct::setJacobian(jacobianDiv, evaluationDivPoints, physVertexes, cellTopo);
+            ct::setJacobianDet (jacobianDiv_det, jacobianDiv);
+          }
 
-
-          DivFunDiv divFun;
           Kokkos::deep_copy(targetDivAtEvalPoints,0.);
           Kokkos::deep_copy(targetAtEvalPoints,0.);
-          for(int ic=0; ic<numElems; ic++) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &ic) {
+            FunDiv fun;
+            DivFunDiv divFun;
             for(int i=0;i<numPoints;i++) {
               for(int j=0;j<dim;j++)
                 for(int d=0;d<dim;d++)
@@ -949,16 +1079,26 @@ int ConvergenceTet(const bool verbose) {
             for(int i=0;i<numDivPoints;i++) {
               targetDivAtEvalPoints(ic,i) += jacobianDiv_det(ic,i)*divFun(physEvalDivPoints(ic,i,0), physEvalDivPoints(ic,i,1), physEvalDivPoints(ic,i,2));//funHGradCoeffs(k)
             }
-          }
+          });
+          ExecSpaceType().fence();
 
-          pts::getHDivBasisCoeffs(basisCoeffsHDiv,
-              targetAtEvalPoints,
-              targetDivAtEvalPoints,
-              evaluationPoints,
-              evaluationDivPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
+          if(useL2Projection) {
+            pts::getL2BasisCoeffs(basisCoeffsHDiv,
+                targetAtEvalPoints,
+                evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHDivBasisCoeffs(basisCoeffsHDiv,
+                targetAtEvalPoints,
+                targetDivAtEvalPoints,
+                evaluationPoints,
+                evaluationDivPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          }
         }
 
         //check that fun values at reference points coincide with those computed using basis functions
@@ -979,7 +1119,7 @@ int ConvergenceTet(const bool verbose) {
         // transform basis values to the reference element (pullback)
         DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, cellTopo);
         ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
         fst::HDIVtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
             jacobianAtRefCoords,
@@ -1011,7 +1151,8 @@ int ConvergenceTet(const bool verbose) {
 
         //compute error of projection in HDIV norm
         ValueType norm2(0);
-        for(ordinal_type i=0; i<numElems; ++i) {
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i, double &norm2Update) {
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             for(ordinal_type k=0; k<basisCardinality; ++k) {
               for(ordinal_type d=0; d<dim; ++d)
@@ -1020,13 +1161,18 @@ int ConvergenceTet(const bool verbose) {
             }
 
             for(ordinal_type d=0; d<dim; ++d) {
-              norm2 += std::pow(funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+              norm2Update += (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
+                  (funAtRefCoords(i,j,d) - projectedFunAtRefCoords(i,j,d))*
+                  weights(j)*jacobianAtRefCoords_det(i,j);
             }
-            norm2 += std::pow(funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+            norm2Update += (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
+                (funDivAtPhysRefCoords(i,j) - funDivAtRefCoordsOriented(i,j))*
+                weights(j)*jacobianAtRefCoords_det(i,j);
           }
-        }
+        },norm2);
+        ExecSpaceType().fence();
         hdivNorm[iter] = std::sqrt(norm2);
-        auto expected_error = hdiv_errors[iter];
+        auto expected_error = useL2Projection ? hdiv_errors_L2[iter] : hdiv_errors[iter];
         if(std::abs(hdivNorm[iter]-expected_error)/expected_error > relTol){
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -1035,7 +1181,11 @@ int ConvergenceTet(const bool verbose) {
         }
         delete basisPtr;
       }
-      *outStream << "HDIV Error: " << hdivNorm[iter] <<std::endl;
+      if(useL2Projection)
+        *outStream << "HDIV Error (L2 Projection): " << hdivNorm[iter] <<std::endl;
+      else
+        *outStream << "HDIV Error (HDiv Projection): " << hdivNorm[iter] <<std::endl;
+      }
     } catch (std::exception &err) {
       std::cout << " Exeption\n";
       *outStream << err.what() << "\n\n";
@@ -1054,13 +1204,14 @@ int ConvergenceTet(const bool verbose) {
 
     try {
       // compute orientations for cells (one time computation)
-      Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numElems);
-      ots::getOrientation(elemOrts, elemNodes, tet);
+      Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numElems);
+      ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
+      for (auto useL2Projection:useL2Proj) { //
       std::vector<basisType*> basis_set;
-      //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(order-1));
-      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(order-1));
-      //basis_set.push_back(new typename  CG_HBasis::HVOL_TET(order-1));
+      //basis_set.push_back(new typename  CG_NBasis::HVOL_TET(basisDegree-1));
+      basis_set.push_back(new typename  CG_DNBasis::HVOL_TET(basisDegree-1));
+      //basis_set.push_back(new typename  CG_HBasis::HVOL_TET(basisDegree-1));
 
       for (auto basisPtr:basis_set) {
         auto& basis = *basisPtr;
@@ -1070,80 +1221,107 @@ int ConvergenceTet(const bool verbose) {
         //Compute physical Dof Coordinates and Reference coordinates
         DynRankView ConstructWithLabel(physRefCoords, numElems, numRefCoords, dim);
         {
-          Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> tetLinearBasis; //used for computing physical coordinates
-          DynRankView ConstructWithLabel(tetLinearBasisValuesAtRefCoords, tet.getNodeCount(), numRefCoords);
-          tetLinearBasis.getValues(tetLinearBasisValuesAtRefCoords, refPoints);
-          DeviceSpaceType().fence();
-          for(ordinal_type i=0; i<numElems; ++i)
+          Basis_HGRAD_TET_C1_FEM<DeviceType,ValueType,ValueType> linearBasis; //used for computing physical coordinates
+          DynRankView ConstructWithLabel(linearBasisValuesAtRefCoords, numNodesPerElem, numRefCoords);
+          linearBasis.getValues(linearBasisValuesAtRefCoords, refPoints);
+          ExecSpaceType().fence();
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &i) {
             for(ordinal_type d=0; d<dim; ++d)
               for(ordinal_type j=0; j<numRefCoords; ++j)
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k)
-                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*tetLinearBasisValuesAtRefCoords(k,j);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  physRefCoords(i,j,d) += nodeCoord(elemNodes(i,k),d)*linearBasisValuesAtRefCoords(k,j);
+          });
+          ExecSpaceType().fence();
         }
 
         //check function reproducibility
-        Fun fun;
         DynRankView ConstructWithLabel(funAtRefCoords, numElems, numRefCoords);
-        for(ordinal_type i=0; i<numElems; ++i) {
+        Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i) {
+          Fun fun;
           for(ordinal_type j=0; j<numRefCoords; ++j)
             funAtRefCoords(i,j) = fun(physRefCoords(i,j,0), physRefCoords(i,j,1), physRefCoords(i,j,2));
-        }
+        });
+        ExecSpaceType().fence();
 
         // compute projection-based interpolation of fun into HVOL
         DynRankView ConstructWithLabel(basisCoeffsHVol, numElems, basisCardinality);
         {
           ordinal_type targetCubDegree(basis.getDegree());
 
-          Experimental::ProjectionStruct<DeviceSpaceType,ValueType> projStruct;
-          projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
+          Experimental::ProjectionStruct<DeviceType,ValueType> projStruct;
+          if(useL2Projection) {
+            projStruct.createL2ProjectionStruct(&basis, targetCubDegree);
+          } else {
+            projStruct.createHVolProjectionStruct(&basis, targetCubDegree);
+          }
 
           ordinal_type numPoints = projStruct.getNumTargetEvalPoints();
 
           DynRankView ConstructWithLabel(evaluationPoints, numElems, numPoints, dim);
-
-          pts::getHVolEvaluationPoints(evaluationPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
+          if(useL2Projection) {
+            pts::getL2EvaluationPoints(evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHVolEvaluationPoints(evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          }
 
           DynRankView ConstructWithLabel(targetAtEvalPoints, numElems, numPoints);
 
 
           DynRankView ConstructWithLabel(physEvalPoints, numElems, numPoints, dim);
           {
-            Basis_HGRAD_TET_C1_FEM<DeviceSpaceType,ValueType,ValueType> hexLinearBasis; //used for computing physical coordinates
-            DynRankView ConstructWithLabel(hexLinearBasisValuesAtEvalPoints, tet.getNodeCount(), numPoints);
+            DynRankView ConstructWithLabel(linearBasisValuesAtEvalPoint, numElems, numNodesPerElem);
 
-            for(ordinal_type i=0; i<numElems; ++i) {
-              hexLinearBasis.getValues(hexLinearBasisValuesAtEvalPoints, Kokkos::subview(evaluationPoints,i,Kokkos::ALL(),Kokkos::ALL()));
-              DeviceSpaceType().fence();
-              for(ordinal_type d=0; d<dim; ++d) {
-                for(std::size_t k=0; k<tet.getNodeCount(); ++k) {
-                  for(ordinal_type j=0; j<numPoints; ++j)
-                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*hexLinearBasisValuesAtEvalPoints(k,j);
-                }
+            Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+            KOKKOS_LAMBDA (const int &i) {
+              auto basisValuesAtEvalPoint = Kokkos::subview(linearBasisValuesAtEvalPoint,i,Kokkos::ALL());
+              for(ordinal_type j=0; j<numPoints; ++j){
+                auto evalPoint = Kokkos::subview(evaluationPoints,i,j,Kokkos::ALL());
+                Impl::Basis_HGRAD_TET_C1_FEM::template Serial<OPERATOR_VALUE>::getValues(basisValuesAtEvalPoint, evalPoint);
+                for(ordinal_type k=0; k<numNodesPerElem; ++k)
+                  for(ordinal_type d=0; d<dim; ++d)
+                    physEvalPoints(i,j,d) += nodeCoord(elemNodes(i,k),d)*basisValuesAtEvalPoint(k);
               }
-            }
+            });
+            ExecSpaceType().fence();
           }
 
           //transform the target function to the reference element (inverse of pullback operator)
           DynRankView ConstructWithLabel(jacobian, numElems, numPoints, dim, dim);
           DynRankView ConstructWithLabel(jacobian_det, numElems, numPoints);
-          ct::setJacobian(jacobian, evaluationPoints, physVertexes, tet);
+          ct::setJacobian(jacobian, evaluationPoints, physVertexes, cellTopo);
           ct::setJacobianDet (jacobian_det, jacobian);
 
           Kokkos::deep_copy(targetAtEvalPoints,0.);
-          for(int ic=0; ic<numElems; ic++) {
+          Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+          KOKKOS_LAMBDA (const int &ic) {
+            Fun fun;
             for(int i=0;i<numPoints;i++)
               targetAtEvalPoints(ic,i) += jacobian_det(ic,i)*fun(physEvalPoints(ic,i,0), physEvalPoints(ic,i,1), physEvalPoints(ic,i,2));
+          });
+          ExecSpaceType().fence();
+          if(useL2Projection) {
+            pts::getL2BasisCoeffs(basisCoeffsHVol,
+                targetAtEvalPoints,
+                evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
+          } else {
+            pts::getHVolBasisCoeffs(basisCoeffsHVol,
+                targetAtEvalPoints,
+                evaluationPoints,
+                elemOrts,
+                &basis,
+                &projStruct);
           }
-
-          pts::getHVolBasisCoeffs(basisCoeffsHVol,
-              targetAtEvalPoints,
-              evaluationPoints,
-              elemOrts,
-              &basis,
-              &projStruct);
         }
 
 
@@ -1165,7 +1343,7 @@ int ConvergenceTet(const bool verbose) {
         // transform basis values to the reference element (pullback)
         DynRankView ConstructWithLabel(jacobianAtRefCoords, numElems, numRefCoords, dim, dim);
         DynRankView ConstructWithLabel(jacobianAtRefCoords_det, numElems, numRefCoords);
-        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, tet);
+        ct::setJacobian(jacobianAtRefCoords, refPoints, physVertexes, cellTopo);
         ct::setJacobianDet (jacobianAtRefCoords_det, jacobianAtRefCoords);
         fst::HVOLtransformVALUE(transformedBasisValuesAtRefCoordsOriented,
             jacobianAtRefCoords_det,
@@ -1175,15 +1353,20 @@ int ConvergenceTet(const bool verbose) {
 
         //compute error of projection in L2 norm
         ValueType norm2(0);
-        for(ordinal_type i=0; i<numElems; ++i) {
+        Kokkos::parallel_reduce(Kokkos::RangePolicy<ExecSpaceType>(0,numElems),
+        KOKKOS_LAMBDA (const int &i, double &norm2Update) {
           for(ordinal_type j=0; j<numRefCoords; ++j) {
             for(ordinal_type k=0; k<basisCardinality; ++k)
               projectedFunAtRefCoords(i,j) += basisCoeffsHVol(i,k)*transformedBasisValuesAtRefCoordsOriented(i,k,j);
-            norm2 += std::pow(funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j),2)*weights(j)*jacobianAtRefCoords_det(i,j);
+            norm2Update += (funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j))*
+                (funAtRefCoords(i,j) - projectedFunAtRefCoords(i,j))*
+                weights(j)*jacobianAtRefCoords_det(i,j);
           }
-        }
+        },norm2);
+        ExecSpaceType().fence();
+
         hvolNorm[iter] =  std::sqrt(norm2);
-        auto expected_error = hvol_errors[iter];
+        auto expected_error = useL2Projection ? hvol_errors_L2[iter] : hvol_errors[iter];
         if(std::abs(hvolNorm[iter]-expected_error)/expected_error > relTol){
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
@@ -1192,27 +1375,32 @@ int ConvergenceTet(const bool verbose) {
         }
         delete basisPtr;
       }
-      *outStream << "HVOL Error: " << hvolNorm[iter] <<std::endl;
+      if(useL2Projection)
+        *outStream << "HVOL Error (L2 Projection): " << hvolNorm[iter] <<std::endl;
+      else
+        *outStream << "HVOL Error (HVol Projection): " << hvolNorm[iter] <<std::endl;
+      }
     } catch (std::exception &err) {
       std::cout << " Exception\n";
       *outStream << err.what() << "\n\n";
       errorFlag = -1000;
     }
   }
-
-  std::cout<< "\nHGRAD ERROR:";
+/*
+  *outStream << "\nHGRAD ERROR:";
   for(int iter = 0; iter<numRefinements; iter++)
-    std::cout << " " << hgradNorm[iter];
-  std::cout<< "\nHCURL ERROR:";
+    *outStream << " " << hgradNorm[iter];
+  *outStream << "\nHCURL ERROR:";
   for(int iter = 0; iter<numRefinements; iter++)
-    std::cout << " " << hcurlNorm[iter];
-  std::cout<< "\nHDIV ERROR:";
+    *outStream << " " << hcurlNorm[iter];
+  *outStream << "\nHDIV ERROR:";
   for(int iter = 0; iter<numRefinements; iter++)
-    std::cout << " " << hdivNorm[iter];
-  std::cout<< "\nHVOL ERROR:";
+    *outStream << " " << hdivNorm[iter];
+  *outStream << "\nHVOL ERROR:";
   for(int iter = 0; iter<numRefinements; iter++)
-    std::cout << " " << hvolNorm[iter];
-  std::cout<<std::endl;
+    *outStream << " " << hvolNorm[iter];
+  *outStream << std::endl;
+*/
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED = " << errorFlag << "\n";
@@ -1221,7 +1409,6 @@ int ConvergenceTet(const bool verbose) {
 
   // reset format state of std::cout
   std::cout.copyfmt(oldFormatState);
-
   return errorFlag;
 }
 }
