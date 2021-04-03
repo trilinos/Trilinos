@@ -50,6 +50,100 @@ namespace Ioss { class Region; }
 namespace stk {
 namespace transfer_utils {
 
+class RepeatedTransferCopyByIdStkMeshAdapter : public stk::transfer::TransferCopyByIdStkMeshAdapter
+{
+public:
+  RepeatedTransferCopyByIdStkMeshAdapter(stk::mesh::BulkData & mesh,
+                                         const EntityVector & entities,
+                                         const FieldVector & fields)
+    : RepeatedTransferCopyByIdStkMeshAdapter(mesh, entities, fields, mesh.parallel())
+  {}
+
+  RepeatedTransferCopyByIdStkMeshAdapter(stk::mesh::BulkData & mesh,
+                                         const EntityVector & entities,
+                                         const FieldVector & fields,
+                                         stk::ParallelMachine global_comm)
+    : TransferCopyByIdStkMeshAdapter(mesh, entities, fields, global_comm),
+      m_areValuesCached(false)
+  {
+    m_cachedFieldValues.resize(fields.size());
+    m_cachedFieldValueIndex.resize(fields.size(), 0);
+    m_cachedFieldValueSizes.resize(fields.size());
+    m_cachedFieldValueSizeIndex.resize(fields.size(), 0);
+  }
+
+  virtual ~RepeatedTransferCopyByIdStkMeshAdapter() override = default;
+
+  virtual void begin_transfer() const override
+  {
+    if (!m_areValuesCached) {
+      for (auto & fieldValues : m_cachedFieldValues) {
+        fieldValues.clear();
+      }
+      for (auto & fieldValueSizes : m_cachedFieldValueSizes) {
+        fieldValueSizes.clear();
+      }
+    }
+    std::fill(m_cachedFieldValueIndex.begin(), m_cachedFieldValueIndex.end(), 0);
+    std::fill(m_cachedFieldValueSizeIndex.begin(), m_cachedFieldValueSizeIndex.end(), 0);
+  }
+
+  virtual void end_transfer() const override
+  {
+    m_areValuesCached = true;
+  }
+
+  void* get_cached_field_data_value(const stk::mesh::EntityKey & key, unsigned field_index) const
+  {
+    if (m_areValuesCached) {
+      return m_cachedFieldValues[field_index][m_cachedFieldValueIndex[field_index]++];
+    }
+    else {
+      const mesh::Entity entity = m_mesh.get_entity(key);
+      stk::mesh::FieldBase* field = m_transfer_fields[field_index];
+      void* fieldData = stk::mesh::field_data(*field, entity);
+      m_cachedFieldValues[field_index].push_back(fieldData);
+      return fieldData;
+    }
+  }
+
+  virtual const void* field_data(const Mesh_ID & id, const unsigned field_index) const override
+  {
+    return get_cached_field_data_value(static_cast<EntityKey::entity_key_t>(id), field_index);
+  }
+
+  virtual void* field_data(const Mesh_ID & id, const unsigned field_index) override
+  {
+    return get_cached_field_data_value(static_cast<EntityKey::entity_key_t>(id), field_index);
+  }
+
+  unsigned get_cached_field_data_size(const stk::mesh::EntityKey & key, unsigned field_index) const
+  {
+    if (m_areValuesCached) {
+      return m_cachedFieldValueSizes[field_index][m_cachedFieldValueSizeIndex[field_index]++];
+    }
+    else {
+      const mesh::Entity entity = m_mesh.get_entity(key);
+      stk::mesh::FieldBase* field = m_transfer_fields[field_index];
+      unsigned fieldValueSize = stk::mesh::field_bytes_per_entity(*field, entity);
+      m_cachedFieldValueSizes[field_index].push_back(fieldValueSize);
+      return fieldValueSize;
+    }
+  }
+
+  virtual unsigned field_data_size(const Mesh_ID & id, const unsigned field_index) const override
+  {
+    return get_cached_field_data_size(static_cast<stk::mesh::EntityKey::entity_key_t>(id), field_index);
+  }
+
+private:
+  mutable bool m_areValuesCached;
+  mutable std::vector<std::vector<void*>> m_cachedFieldValues;
+  mutable std::vector<unsigned> m_cachedFieldValueIndex;
+  mutable std::vector<std::vector<unsigned short>> m_cachedFieldValueSizes;
+  mutable std::vector<unsigned> m_cachedFieldValueSizeIndex;
+};
+
 class TransientTransferByIdForRank
 {
 public:
@@ -70,8 +164,8 @@ protected:
     stk::mesh::MetaData   &mMetaB;
     stk::mesh::EntityRank  mRank;
 
-    stk::transfer::TransferCopyByIdStkMeshAdapter *mTransferMeshA = nullptr;
-    stk::transfer::TransferCopyByIdStkMeshAdapter *mTransferMeshB = nullptr;
+    RepeatedTransferCopyByIdStkMeshAdapter *mTransferMeshA = nullptr;
+    RepeatedTransferCopyByIdStkMeshAdapter *mTransferMeshB = nullptr;
 
     stk::transfer::SearchByIdGeometric  mSearch;
     stk::transfer::TransferCopyById    *mTransfer = nullptr;
@@ -80,7 +174,7 @@ private:
     TransientTransferByIdForRank();
 
 private:
-    stk::transfer::TransferCopyByIdStkMeshAdapter *create_transfer_mesh(stk::mesh::MetaData &meta);
+    RepeatedTransferCopyByIdStkMeshAdapter *create_transfer_mesh(stk::mesh::MetaData &meta);
 };
 
 class TransientFieldTransferById

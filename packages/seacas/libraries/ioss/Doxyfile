@@ -264,7 +264,9 @@ ALIASES                = func{1}=<b>\1</b> \
                          file{1}=<tt>\1</tt> \
                          "comment{1}=/* \1 */" \
                          "co{1}=/* \1 */" \
-                         "undoc=\xrefitem undoc \"Undocumented\" \"Undocumented\""
+                         "undoc=\xrefitem undoc \"Undocumented\" \"Undocumented\"" \
+			 rst="\code" \
+			 endrst="\endcode"
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For

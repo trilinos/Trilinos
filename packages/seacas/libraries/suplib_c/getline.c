@@ -1,7 +1,7 @@
 /*      $NetBSD: getline.c,v 1.1.1.1 2011/05/12 20:46:50 christos Exp $ */
 
 /*-
- * Copyright (c) 2011 The NetBSD Foundation, Inc.
+ * Copyright (c) 2011, 2021 The NetBSD Foundation, Inc.
  * All rights reserved.
  *
  * This code is derived from software contributed to The NetBSD Foundation
@@ -90,8 +90,9 @@ int main(int argc, char *argv[])
   ssize_t len;
   size_t  n = 0;
 
-  while ((len = getline(&p, &n, stdin)) != -1)
-    (void)printf("%zd %s", len, p);
+  while ((len = getline(&p, &n, stdin)) != -1) {
+    printf("%zd %s", len, p);
+  }
   free(p);
   return 0;
 }

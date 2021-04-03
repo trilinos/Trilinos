@@ -13,6 +13,7 @@
 #include <cgns/Iocgns_Defines.h>
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <bitset>
 #include <cgns/Iocgns_DatabaseIO.h>
@@ -833,7 +834,7 @@ namespace Iocgns {
       all_adj.shrink_to_fit();
 
       // Sort blocks to get similar zones adjacent -- will have same name, but different proc
-      std::sort(blocks.begin(), blocks.end(), [](const SBlock &b1, const SBlock &b2) {
+      Ioss::sort(blocks.begin(), blocks.end(), [](const SBlock &b1, const SBlock &b2) {
         return (b1.name == b2.name ? b1.proc < b2.proc : b1.name < b2.name);
       });
 
@@ -1066,10 +1067,10 @@ namespace Iocgns {
         }
       }
 
-      std::sort(block->m_boundaryConditions.begin(), block->m_boundaryConditions.end(),
-                [](const Ioss::BoundaryCondition &b1, const Ioss::BoundaryCondition &b2) {
-                  return (b1.m_bcName < b2.m_bcName);
-                });
+      Ioss::sort(block->m_boundaryConditions.begin(), block->m_boundaryConditions.end(),
+                 [](const Ioss::BoundaryCondition &b1, const Ioss::BoundaryCondition &b2) {
+                   return (b1.m_bcName < b2.m_bcName);
+                 });
     }
 
     // Need to iterate the blocks again and make the assembly information consistent
@@ -1481,6 +1482,7 @@ namespace Iocgns {
     }
 
     get_step_times__();
+
     if (open_create_behavior() == Ioss::DB_APPEND) {
       return;
     }
@@ -1682,6 +1684,10 @@ namespace Iocgns {
       if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
         write_meta_data();
       }
+      if (!is_input() && open_create_behavior() == Ioss::DB_APPEND) {
+        Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel, false);
+      }
+
       break;
     case Ioss::STATE_MODEL:
       if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {

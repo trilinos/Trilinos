@@ -6,8 +6,8 @@ C    See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
       QAINFO(1) = 'GJoin2  '
-      QAINFO(2) = '2016/09/06                      '
-      QAINFO(3) = ' 1.34                           '
+      QAINFO(2) = '2021/03/31                      '
+      QAINFO(3) = ' 1.35                           '
 
 C - Added EXPXYZ - By material matching
 C - Fixes in expxyz, matxyz, comand, irennp
@@ -71,3 +71,4 @@ c - fix shell sset mirroring -- since connectivity is fixed up, the shell side r
 c - optimize nodeset combining since locint was taking lots of time on some compilers
 c - fixing sideset node count information for large models
 c - fixing sideset df copy if no sideset df
+c - call mdfree()

@@ -106,6 +106,34 @@ public:
 };
 #endif // KOKKOS_ENABLE_CUDA
 
+#ifdef KOKKOS_ENABLE_HIP
+template<>
+class StaticKokkosAllocation<Kokkos::Experimental::HIPSpace> {
+public:
+  StaticKokkosAllocation () = delete;
+  ~StaticKokkosAllocation () = delete;
+  StaticKokkosAllocation (const StaticKokkosAllocation&) = delete;
+  StaticKokkosAllocation& operator= (const StaticKokkosAllocation&) = delete;
+  StaticKokkosAllocation (StaticKokkosAllocation&&) = delete;
+  StaticKokkosAllocation& operator= (StaticKokkosAllocation&&) = delete;
+
+  static void* resize (Kokkos::Experimental::HIPSpace space, const size_t size);
+};
+
+template<>
+class StaticKokkosAllocation<Kokkos::Experimental::HIPHostPinnedSpace> {
+public:
+  StaticKokkosAllocation () = delete;
+  ~StaticKokkosAllocation () = delete;
+  StaticKokkosAllocation (const StaticKokkosAllocation&) = delete;
+  StaticKokkosAllocation& operator= (const StaticKokkosAllocation&) = delete;
+  StaticKokkosAllocation (StaticKokkosAllocation&&) = delete;
+  StaticKokkosAllocation& operator= (StaticKokkosAllocation&&) = delete;
+
+  static void* resize (Kokkos::Experimental::HIPHostPinnedSpace space, const size_t size);
+};
+#endif // KOKKOS_ENABLE_HIP
+
 template<>
 class StaticKokkosAllocation<Kokkos::HostSpace> {
 public:

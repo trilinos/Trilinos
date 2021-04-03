@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -10,10 +10,10 @@
 #include <cstddef>      // for size_t
 #include <nem_spread.h> // for NemSpread
 
-template void NemSpread<double, int>::create_elem_types(void);
-template void NemSpread<float, int>::create_elem_types(void);
-template void NemSpread<double, int64_t>::create_elem_types(void);
-template void NemSpread<float, int64_t>::create_elem_types(void);
+template void NemSpread<double, int>::create_elem_types();
+template void NemSpread<float, int>::create_elem_types();
+template void NemSpread<double, int64_t>::create_elem_types();
+template void NemSpread<float, int64_t>::create_elem_types();
 
 template <typename T, typename INT> void NemSpread<T, INT>::create_elem_types()
 /*
