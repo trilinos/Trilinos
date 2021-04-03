@@ -1870,7 +1870,7 @@ SerialBlock::reinit_numeric_dense (const CrsMatrix& A) {
          j < irip1; ++j) {
       const Int lcol = A.jc[j] - c0_;
       if (lcol >= nc_) break;
-      const Int k = nc_*lrow + lcol;
+      const Size k = nc_*lrow + lcol;
       d_[k] = A.d[j];
     }
   }
@@ -3800,7 +3800,8 @@ inline void SerialBlock_n1Axpy_dense (
   const Int nrhs, Sclr* y, const Int ldy)
 {
   for (Int g = 0; ; ) {
-    for (Int i = 0, k = 0; i < nr; ++i) {
+    size_t k = 0;
+    for (Int i = 0; i < nr; ++i) {
       Sclr a = 0;
       for (Int j = 0; j < nc; ++j, ++k) a += d[k]*x[j];
       y[i] -= a;
@@ -4044,41 +4045,47 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
   const Int nthreads = t.nthreads();
   if (nthreads == 1) {
     t.solve(x, ldx, x, ldx, nrhs);
+#ifdef _OPENMP
+#   pragma omp flush
+#endif
     *t_barrier = step;
   } else {
     // Solve T wrk_ = x.
     t.solve(x, ldx, wrk_.data(), t.get_n(), nrhs);
-    { // Wait for the block row MVPs to finish.
-      const Int done = (step << 1);
-      inv_tri_done[tid] = done;
 #ifdef _OPENMP
 #   pragma omp flush
 #endif
+    { // Wait for the block row MVPs to finish.
+      const Int done = (step << 1);
+      inv_tri_done[tid] = done;
       for (Int i = 0; i < nthreads; ++i)
         while (inv_tri_done[i] < done) ;
     }
+#ifdef _OPENMP
+#   pragma omp flush
+#endif
     // Copy wrk_ to x.
     const Int row_start = t.block_row_start(tid), nr = t.block_nr(tid);
     for (Int irhs = 0; irhs < nrhs; ++irhs)
       memcpy(x + irhs*ldx + row_start,
              wrk_.data() + irhs*t.get_n() + row_start,
              nr*sizeof(Sclr));
+#ifdef _OPENMP
+#   pragma omp flush
+#endif
     { // Wait for the memcpy's to finish.
       const Int done = (step << 1) + 1;
       inv_tri_done[tid] = done;
-#ifdef _OPENMP
-#     pragma omp flush
-#endif
       //todo Not every thread necessarily needs this on-diag tri's solution, but
       // our dep graph doesn't encode that yet.
       for (Int i = 0; i < nthreads; ++i)
         while (inv_tri_done[i] < done) ;
     }
-    if (tid == 0)
-      *t_barrier = step;
 #ifdef _OPENMP
 #   pragma omp flush
 #endif
+    if (tid == 0)
+      *t_barrier = step;
   }
 }
 
@@ -4103,7 +4110,8 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
   const p2p_Done done_symbol = nd_.done_symbol;
   { const OnDiagTri& t = nd_.t[0];
     if (tid < t.nthreads())
-      ondiag_solve(t, x, ldx, nrhs, tid, 0, t_barrier, inv_tri_done); }
+      ondiag_solve(t, x, ldx, nrhs, tid, 0, t_barrier, inv_tri_done);
+    }
   if ( ! nd_.os.empty()) {
     os += nd_.t[0].get_n();
     x_osi = x + nd_.os[0];
@@ -4119,17 +4127,14 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
     if ( ! s.empty() && (s.parallel() || tid == 0)) {
       rbwait(s_done, s_ids, s_idx, i, done_symbol);
       s.n1Axpy(x_osi, ldx, nrhs, x_os, ldx, tid);
-      s_done[rb_p2p_sub2ind(i, tid)] = done_symbol;
 #ifdef _OPENMP
 #     pragma omp flush
 #endif
+      s_done[rb_p2p_sub2ind(i, tid)] = done_symbol;
     }
     if (tid < t.nthreads()) {
       rbwait(s_done, t_ids, t_idx, i, done_symbol);
       ondiag_solve(t, x_os, ldx, nrhs, tid, i+1, t_barrier, inv_tri_done);
-#ifdef _OPENMP
-#     pragma omp flush
-#endif
     }
     os += t.get_n();
     x_osi = x + nd_.os[i+1];
