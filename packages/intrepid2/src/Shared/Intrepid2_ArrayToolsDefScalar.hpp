@@ -122,12 +122,12 @@ namespace Intrepid2 {
     };
   } 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
-  ArrayTools<SpT>::
+  ArrayTools<DeviceType>::
   scalarMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                            const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                            const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...>  inputFields,
@@ -174,8 +174,6 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFieldViewType;
     typedef Kokkos::DynRankView<inputDataValueType,inputDataProperties...> inputDataViewType;
     typedef Kokkos::DynRankView<inputFieldValueType,inputFieldProperties...> inputFieldViewType;
-
-    typedef typename SpT::execution_space ExecSpaceType;
     
     using range_policy_type = Kokkos::MDRangePolicy
         < ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
@@ -203,12 +201,12 @@ namespace Intrepid2 {
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
-  ArrayTools<SpT>::
+  ArrayTools<DeviceType>::
   scalarMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                           const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                           const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight,
@@ -255,8 +253,6 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<inputDataLeftValueType,inputDataLeftProperties...> inputDataLeftViewType;
     typedef Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRightViewType;
 
-    typedef typename SpT::execution_space ExecSpaceType;
-    
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
 
