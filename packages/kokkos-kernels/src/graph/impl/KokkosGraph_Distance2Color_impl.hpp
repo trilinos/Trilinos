@@ -732,11 +732,11 @@ class GraphColorDistance2
       }
       const lno_t numVerts = this->nr;
       const lno_t numCols = this->nc;
-      color_type max_color = 0;
-      for(int i = 0; i < numCols; i++) if(colors_out(i) > max_color) max_color = colors_out(i);
+      //color_type max_color = 0;
+      //for(int i = 0; i < numCols; i++) if(colors_out(i) > max_color) max_color = colors_out(i);
       //note: initializing forbidden to account for previously-colored vertices
       forbidden_view forbidden("Forbidden", batch * numCols);
-      for(color_type colorBase = 1; colorBase < max_color; colorBase += 32 * batch){
+      /*for(color_type colorBase = 1; colorBase < max_color; colorBase += 32 * batch){
         switch(batch)
         {
           case 1:
@@ -757,7 +757,7 @@ class GraphColorDistance2
             break;
           default:;
         }
-      }
+      }*/
       int iter = 0;
       Kokkos::Impl::Timer timer;
       lno_t currentWork = this->nr;

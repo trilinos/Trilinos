@@ -430,7 +430,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       for(int i = 0; i < adjs.size(); i++) dist_adjs_host(i) = adjs[i];
       if(comm->getSize() > 1){
         for(size_t i = 0; i < nVtx; i++){
-          for(size_t j = offsets[i]; j < offsets[i+1]; j++){
+          for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
             //if the adjacency is a ghost
             if( (size_t)adjs[j] >= nVtx){
               //add the symmetric edge to its adjacency list (already accounted for by offsets)
@@ -473,7 +473,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
       if(verbose)std::cout<<comm->getRank()<<": done creating recoloring datastructures\n";
       //count boundary size to allocate list of vertices to recolor.
       offset_t boundary_size = 0;
-      for(offset_t i = 0; i < nVtx; i++){
+      for(size_t i = 0; i < nVtx; i++){
         for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
           if((size_t)adjs[j] >= nVtx) {
             boundary_size++;

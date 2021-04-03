@@ -696,7 +696,7 @@ class AlgPDistance2 : public Algorithm<Adapter> {
 
       if(verbose) std::cout<<comm->getRank()<<": counting boundary\n";
       offset_t boundary_size = 0;
-      for(offset_t i = 0; i < n_local; i++){
+      for(size_t i = 0; i < n_local; i++){
         for(offset_t j = dist_offsets_host(i); j < dist_offsets_host(i+1); j++){
           if((size_t)dist_adjs_host(j) >= n_local){
             boundary_size++;
@@ -1156,7 +1156,7 @@ class AlgPDistance2 : public Algorithm<Adapter> {
         std::cout<<comm->getRank()<<": done recoloring loop, computing statistics\n";
         uint64_t localBoundaryVertices = 0;
         for(size_t i = 0; i < n_local; i++){
-          for(size_t j = offsets[i]; j < offsets[i+1]; j++){
+          for(offset_t j = offsets[i]; j < offsets[i+1]; j++){
             if((size_t)adjs[j] >= n_local){
               localBoundaryVertices++;
               break;
