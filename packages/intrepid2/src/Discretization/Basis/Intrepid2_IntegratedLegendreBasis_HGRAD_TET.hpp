@@ -603,7 +603,7 @@ namespace Intrepid2
                is true, then the first basis function will instead be 1.0-x-y, and the basis will be suitable for
                continuous discretizations.
   */
-  template<typename DeviceType=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>  // if defineVertexFunctions is true, first four basis functions are 1-x-y-z, x, y, and z.  Otherwise, they are 1, x, y, and z.
