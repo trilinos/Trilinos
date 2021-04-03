@@ -6286,8 +6286,10 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     //
     const map_type& srcRowMap = * (srcMat.getRowMap ());
     const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
-    Array<GO> rowInds;
-    Array<Scalar> rowVals;
+    using gids_type = nonconst_global_inds_host_view_type;
+    using vals_type = nonconst_values_host_view_type;
+    gids_type rowInds;
+    vals_type rowVals;
     for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
       // Global ID for the current row index in the source matrix.
       // The first numSameIDs GIDs in the two input lists are the
@@ -6301,14 +6303,15 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       if (sourceIsLocallyIndexed) {
 
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
-        if (rowLength > static_cast<size_t> (rowInds.size())) {
-          rowInds.resize (rowLength);
-          rowVals.resize (rowLength);
+        if (rowLength > static_cast<size_t> (rowInds.extent(0))) {
+          Kokkos::resize(rowInds,rowLength);
+          Kokkos::resize(rowVals,rowLength);
         }
         // Resizing invalidates an Array's views, so we must make new
         // ones, even if rowLength hasn't changed.
-        ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
-        ArrayView<Scalar> rowValsView = rowVals.view (0, rowLength);
+
+        gids_type rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
+        vals_type rowValsView = Kokkos::subview(rowVals,std::make_pair((size_t)0, rowLength));
 
         // The source matrix is locally indexed, so we have to get a
         // copy.  Really it's the GIDs that have to be copied (because
@@ -6324,8 +6327,8 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              "of " << rowLength << ", but getGlobalRowCopy reports "
              "a row length of " << checkRowLength << "." << suffix);
         }
-        rowIndsConstView = rowIndsView.view (0, rowLength);
-        rowValsConstView = rowValsView.view (0, rowLength);
+        rowIndsConstView = Teuchos::ArrayView<const GO>(rowIndsView.data(), rowLength);
+        rowValsConstView = Teuchos::ArrayView<const SC>(rowValsView.data(), rowLength);
       }
       else { // source matrix is globally indexed.
         global_inds_host_view_type rowIndsView;
@@ -8019,7 +8022,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       std::cerr << os.str ();
     }
     using gids_type = nonconst_global_inds_host_view_type;
-    using vals_type = nonconst_val_host_view_type;
+    using vals_type = nonconst_values_host_view_type;
     gids_type ind;
     vals_type val;
 
