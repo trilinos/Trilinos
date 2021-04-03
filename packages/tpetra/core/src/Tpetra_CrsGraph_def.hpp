@@ -125,10 +125,11 @@ namespace Tpetra {
         if (gblColIndsStorage.size() < origNumEnt) {
           gblColIndsStorage.resize(origNumEnt);
         }
-        Teuchos::ArrayView<GO> gblColInds(gblColIndsStorage.data(),
-                                          origNumEnt);
+        typename CrsGraph<LO,GO,Node>::nonconst_global_inds_host_view_type gblColInds(gblColIndsStorage.data(),
+                                                       origNumEnt);
         graph.getGlobalRowCopy(gblRowInd, gblColInds, origNumEnt);
-        return gblColInds;
+        Teuchos::ArrayView<GO> retval(gblColIndsStorage.data(),origNumEnt);
+        return retval;
       }
 
       template<class LO, class GO, class DT, class OffsetType, class NumEntType>
@@ -5095,7 +5096,7 @@ namespace Tpetra {
     const map_type& srcRowMap = *(srcRowGraph.getRowMap());
     const map_type& tgtRowMap = *(getRowMap());
     const bool src_filled = srcRowGraph.isFillComplete();
-    Teuchos::Array<GO> row_copy;
+    nonconst_global_inds_host_view_type row_copy;
     LO myid = 0;
 
     //
@@ -5115,10 +5116,10 @@ namespace Tpetra {
       for (size_t i = 0; i < numSameIDs; ++i, ++myid) {
         const GO gid = srcRowMap.getGlobalElement (myid);
         size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (gid);
-        row_copy.resize (row_length);
+        Kokkos::resize(row_copy,row_length);
         size_t check_row_length = 0;
-        srcRowGraph.getGlobalRowCopy (gid, row_copy (), check_row_length);
-        this->insertGlobalIndices (gid, row_copy ());
+        srcRowGraph.getGlobalRowCopy (gid, row_copy, check_row_length);
+        this->insertGlobalIndices (gid, row_length, row_copy.data());
       }
     } else {
       if (verbose) {
@@ -5145,10 +5146,10 @@ namespace Tpetra {
         const GO mygid = tgtRowMap.getGlobalElement (permuteToLIDs_h[i]);
         const GO srcgid = srcRowMap.getGlobalElement (permuteFromLIDs_h[i]);
         size_t row_length = srcRowGraph.getNumEntriesInGlobalRow (srcgid);
-        row_copy.resize (row_length);
+        Kokkos::resize(row_copy,row_length);
         size_t check_row_length = 0;
-        srcRowGraph.getGlobalRowCopy (srcgid, row_copy (), check_row_length);
-        this->insertGlobalIndices (mygid, row_copy ());
+        srcRowGraph.getGlobalRowCopy (srcgid, row_copy, check_row_length);
+        this->insertGlobalIndices (mygid, row_length, row_copy.data());
       }
     } else {
       for (LO i = 0; i < static_cast<LO> (permuteToLIDs_h.extent (0)); ++i) {

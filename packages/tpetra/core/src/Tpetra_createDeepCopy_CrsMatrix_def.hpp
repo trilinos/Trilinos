@@ -94,12 +94,12 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
       crs_matrix_type (A.getRowMap (), entPerRow_av);
 
     const bool hasViews = A.supportsRowViews ();
-
-    Teuchos::Array<GO> inputIndsBuf;
-    Teuchos::Array<SC> inputValsBuf;
+    
+    typename crs_matrix_type::nonconst_global_inds_host_view_type inputIndsBuf;
+    typename crs_matrix_type::nonconst_values_host_view_type inputValsBuf;
     if (! hasViews) {
-      inputIndsBuf.resize (maxNumEnt);
-      inputValsBuf.resize (maxNumEnt);
+      Kokkos::resize(inputIndsBuf,maxNumEnt);
+      Kokkos::resize(inputValsBuf,maxNumEnt);
     }
 
     const auto& rowMap = * (A.getRowMap ());
@@ -119,10 +119,10 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
         const size_t lclNumEnt = A.getNumEntriesInLocalRow (lclRow);
         TEUCHOS_ASSERT(lclNumEnt <= maxNumEnt);
         size_t numEnt = 0;
-        A.getGlobalRowCopy (gblRow, inputIndsBuf (),
-                            inputValsBuf (), numEnt);
-        A_copy.insertGlobalValues (gblRow, inputIndsBuf(0,numEnt), 
-                                           inputValsBuf(0,numEnt));
+        A.getGlobalRowCopy (gblRow, inputIndsBuf,
+                            inputValsBuf, numEnt);
+        A_copy.insertGlobalValues (gblRow, numEnt, inputValsBuf.data(), inputIndsBuf.data());
+
       }
     }
 

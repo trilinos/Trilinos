@@ -209,17 +209,16 @@ namespace Impl {
       return 0; // this process does not participate
     }
     else {
-      Teuchos::Array<LO> lclColIndsBuf;
+      using inds_type = typename ::Tpetra::RowGraph<LO,GO,NT>::nonconst_local_inds_host_view_type;
+      inds_type lclColIndsBuf("lclColIndsBuf",G.getNodeMaxNumRowEntries());
       const LO lclNumRows = static_cast<LO> (G.getNodeNumRows ());
 
       LO diagCount = 0;
       for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
         size_t numEntSizeT = G.getNumEntriesInLocalRow (lclRow);
         const LO numEnt = static_cast<LO> (numEntSizeT);
-        if (static_cast<LO> (lclColIndsBuf.size ()) < numEnt) {
-          lclColIndsBuf.resize (numEnt);
-        }
-        Teuchos::ArrayView<LO> lclColInds = lclColIndsBuf (0, numEnt);
+
+        inds_type lclColInds = Kokkos::subview(lclColIndsBuf,std::make_pair(0,numEnt));
         G.getLocalRowCopy (lclRow, lclColInds, numEntSizeT);
 
         if (numEnt != 0) {

@@ -495,6 +495,7 @@ namespace {
       // constructor.  The returned matrix should also be diagonal and
       // should equal tgt_mat.
       Teuchos::ParameterList dummy;
+      typedef CrsMatrix<Scalar, LO, GO> crs_type;
       RCP<crs_type> A_tgt2 =
         Tpetra::importAndFillCompleteCrsMatrix<crs_type> (src_mat, importer,
                                                           Teuchos::null,
@@ -524,10 +525,10 @@ namespace {
       const magnitude_type tol =
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
 
-      Array<LO> tgtRowInds;
-      Array<Scalar>  tgtRowVals;
-      Array<LO> tgt2RowInds;
-      Array<Scalar>  tgt2RowVals;
+      lids_type tgtRowInds;
+      vals_type tgtRowVals;
+      lids_type tgt2RowInds;
+      vals_type tgt2RowVals;
       for (LO localrow = tgt_map->getMinLocalIndex();
            localrow <= tgt_map->getMaxLocalIndex();
            ++localrow)
@@ -539,21 +540,21 @@ namespace {
         TEST_EQUALITY(tgtNumEntries, tgt2NumEntries);
 
         if (tgtNumEntries > as<size_t> (tgtRowInds.size ())) {
-          tgtRowInds.resize (tgtNumEntries);
-          tgtRowVals.resize (tgtNumEntries);
+          Kokkos::resize(tgtRowInds,tgtNumEntries);
+          Kokkos::resize(tgtRowVals,tgtNumEntries);
         }
         if (tgt2NumEntries > as<size_t> (tgt2RowInds.size ())) {
-          tgt2RowInds.resize (tgt2NumEntries);
-          tgt2RowVals.resize (tgt2NumEntries);
+          Kokkos::resize(tgt2RowInds,tgt2NumEntries);
+          Kokkos::resize(tgt2RowVals,tgt2NumEntries);
         }
-        tgt_mat->getLocalRowCopy (localrow, tgtRowInds(), tgtRowVals(), tgtNumEntries);
-        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds(), tgt2RowVals(), tgt2NumEntries);
+        tgt_mat->getLocalRowCopy (localrow, tgtRowInds, tgtRowVals, tgtNumEntries);
+        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds, tgt2RowVals, tgt2NumEntries);
 
         // Entries should be sorted, but let's sort them by column
         // index just in case.  This is why we got a row copy instead
         // of a row view.
-        Tpetra::sort2 (tgtRowInds.begin(), tgtRowInds.end(), tgtRowVals.begin());
-        Tpetra::sort2 (tgt2RowInds.begin(), tgt2RowInds.end(), tgt2RowVals.begin());
+        Tpetra::sort2 (tgtRowInds, tgtRowInds.extent(0), tgtRowVals);
+        Tpetra::sort2 (tgt2RowInds, tgt2RowInds.extent(0), tgt2RowVals);
 
         // Now that the entries are sorted, compare to make sure they
         // have the same column indices and values.  In the fully
@@ -634,11 +635,12 @@ namespace {
         for (GO globalrow=tgt_map->getMinGlobalIndex();
              globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow) {
           LO localrow = tgt_map->getLocalElement(globalrow);
-          typename crs_type::local_inds_host_view_type rowinds;
-          typename crs_type::values_host_view_type rowvals;
+          typename CrsMatrix<Scalar,LO,GO>::local_inds_host_view_type rowinds;
+          typename CrsMatrix<Scalar,LO,GO>::values_host_view_type rowvals;
+
           tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
-          TEST_EQUALITY(rowinds.size(), globalrow);
-          TEST_EQUALITY(rowvals.size(), globalrow);
+          TEST_EQUALITY(rowinds.extent(0), (size_t)globalrow);
+          TEST_EQUALITY(rowvals.extent(0), (size_t)globalrow);
 
           // The target graph doesn't necessarily promise sorted
           // order.  Thus, we copy out the local row view, convert to

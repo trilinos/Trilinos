@@ -47,6 +47,7 @@ namespace { // (anonymous)
 
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
+  using Tpetra::TestingUtilities::arcp_from_view;
   using Teuchos::arcp;
   using Teuchos::arcpClone;
   using Teuchos::Array;
@@ -362,9 +363,11 @@ namespace { // (anonymous)
       GRAPH trigraph(rmap,cmap, ginds.size(),pftype);   // only allocate as much room as necessary
       size_t numindices;
       {
-        Array<GO> GCopy(4); Array<LO> LCopy(4);
+
         typename GRAPH::global_inds_host_view_type GView;
         typename GRAPH::local_inds_host_view_type LView;
+        typename GRAPH::nonconst_global_inds_host_view_type GCopy("gcopy",4);
+        typename GRAPH::nonconst_local_inds_host_view_type LCopy("lcopy",4);
         // at this point, there are no global or local indices, but views and copies should succeed
         TEST_NOTHROW(trigraph.getLocalRowCopy(0,LCopy,numindices));
         TEST_NOTHROW(trigraph.getLocalRowView(0,LView));
@@ -391,18 +394,19 @@ namespace { // (anonymous)
       }
       {
         // check for throws and no-throws/values
-        Array<GO> GCopy(4); Array<LO> LCopy(4);
         typename GRAPH::global_inds_host_view_type GView;
         typename GRAPH::local_inds_host_view_type LView;
+        typename GRAPH::nonconst_global_inds_host_view_type GCopy_short("gshort",1), GCopy("gcopy",4);
+        typename GRAPH::nonconst_local_inds_host_view_type LCopy_short("lshort",1), LCopy("lcopy",4);
         TEST_THROW( trigraph.getGlobalRowView(myrowind,GView), std::runtime_error );
-        TEST_THROW( trigraph.getLocalRowCopy(0, LCopy(0,1),numindices), std::runtime_error );
-        TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy(0,1),numindices), std::runtime_error );
+        TEST_THROW( trigraph.getLocalRowCopy(0, LCopy_short,numindices), std::runtime_error );
+        TEST_THROW( trigraph.getGlobalRowCopy(myrowind,GCopy_short,numindices), std::runtime_error );
         TEST_NOTHROW( trigraph.getLocalRowView(0,LView) );
         TEST_COMPARE_ARRAYS( LView, linds );
         TEST_NOTHROW( trigraph.getLocalRowCopy(0,LCopy,numindices) );
-        TEST_COMPARE_ARRAYS( LCopy(0,numindices), linds );
+        TEST_COMPARE_ARRAYS( arcp_from_view(LCopy,numindices), linds );
         TEST_NOTHROW( trigraph.getGlobalRowCopy(myrowind,GCopy,numindices) );
-        TEST_COMPARE_ARRAYS( GCopy(0,numindices), ginds );
+        TEST_COMPARE_ARRAYS( arcp_from_view(GCopy,numindices), ginds );
       }
       STD_TESTS(trigraph);
       
@@ -811,24 +815,23 @@ namespace { // (anonymous)
             TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
             if ((size_t)myrow_lcl.size() == numunique) {
               size_t numinds;
-              Array<GO> inds(numunique+1);
+              typename GRAPH::nonconst_global_inds_host_view_type inds("right",numunique),inds_short("short",numunique-1),inds_long("long",numunique+1);
               TEST_THROW(
-                   ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1),
+                   ngraph.getGlobalRowCopy (myrowind, inds_short,
                                             numinds),
                    std::runtime_error );
               TEST_NOTHROW(
-                   ngraph.getGlobalRowCopy (myrowind, inds (0, numunique),
+                   ngraph.getGlobalRowCopy (myrowind, inds_long,
                                             numinds) );
               TEST_NOTHROW(
-                   ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
-
-              std::sort (inds.begin (), inds.begin () + numinds);
-              TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
+                   ngraph.getGlobalRowCopy (myrowind,inds, numinds) );
+              Tpetra::sort(inds, numinds);
+              TEST_COMPARE_ARRAYS( arcp_from_view(inds,numinds), grows (0, numunique) );
 
               out << "On Proc 0:" << endl;
               Teuchos::OSTab tab5 (out);
               out << "numinds: " << numinds << endl
-                  << "inds(0,numinds): " << inds (0, numinds) << endl
+                  << "inds(0,numinds): " << arcp_from_view(inds, numinds) << endl
                   << "numunique: " << numunique << endl
                   << "grows(0,numunique): " << grows (0, numunique) << endl;
             }

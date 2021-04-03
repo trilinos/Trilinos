@@ -208,16 +208,22 @@ public:
         typename row_matrix_type::local_inds_device_view_type;
   using local_inds_host_view_type =
         typename row_matrix_type::local_inds_host_view_type;
+  using nonconst_local_inds_host_view_type =
+        typename row_matrix_type::nonconst_local_inds_host_view_type;
 
   using global_inds_device_view_type =
         typename row_matrix_type::global_inds_device_view_type;
   using global_inds_host_view_type =
         typename row_matrix_type::global_inds_host_view_type;
+  using nonconst_global_inds_host_view_type =
+        typename row_matrix_type::nonconst_global_inds_host_view_type;
 
   using values_device_view_type =
         typename row_matrix_type::values_device_view_type;
   using values_host_view_type =
         typename row_matrix_type::values_host_view_type;
+  using nonconst_values_host_view_type =
+        typename row_matrix_type::nonconst_values_host_view_type;
 
   //@}
   //! \name Constructors and destructor
@@ -473,11 +479,18 @@ public:
                    values_host_view_type &values) const override;
 
   /// \brief Not implemented.
-  void
+  virtual void
+  getLocalRowCopy (LO LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
   getLocalRowCopy (LO LocalRow,
                    const Teuchos::ArrayView<LO> &Indices,
                    const Teuchos::ArrayView<Scalar> &Values,
                    size_t &NumEntries) const;
+#endif
 
   little_block_type
   getLocalBlock (const LO localRowInd, const LO localColInd) const;
@@ -1185,9 +1198,16 @@ public:
   /// not modify Indices or Values.
   virtual void
   getGlobalRowCopy (GO GlobalRow,
+                    nonconst_global_inds_host_view_type &Indices,
+                    nonconst_values_host_view_type &Values,
+                    size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowCopy (GO GlobalRow,
                     const Teuchos::ArrayView<GO> &Indices,
                     const Teuchos::ArrayView<Scalar> &Values,
                     size_t& NumEntries) const;
+#endif
 
   /// \brief Get a constant, nonpersisting, globally indexed view of
   ///   the given row of the matrix.

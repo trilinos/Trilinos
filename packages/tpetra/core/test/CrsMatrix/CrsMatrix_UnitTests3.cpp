@@ -143,6 +143,7 @@ namespace {
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
+  using namespace Tpetra::TestingUtilities;
 
 
   double errorTolSlack = 1e+1;
@@ -268,7 +269,14 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       params->set("Optimize Storage",((T & 2) == 2));
       MAT matrix(rmap,cmap, ginds.size(), pftype);   // only allocate as much room as necessary
       RowMatrix<Scalar,LO,GO,Node> &rowmatrix = matrix;
-      Array<GO> GCopy(4); Array<LO> LCopy(4); Array<Scalar> SCopy(4);
+
+      typename MAT::nonconst_global_inds_host_view_type GCopy("gids",4);
+      typename MAT::nonconst_local_inds_host_view_type LCopy("lids",4);
+      typename MAT::nonconst_values_host_view_type SCopy("vals",4);
+
+      typename MAT::nonconst_global_inds_host_view_type GCopy_toshort("gids",1);
+      typename MAT::nonconst_local_inds_host_view_type LCopy_toshort("lids",1);
+      typename MAT::nonconst_values_host_view_type SCopy_toshort("vals",1);
 
       typename MAT::global_inds_host_view_type CGView; 
       typename MAT::local_inds_host_view_type CLView; 
@@ -301,20 +309,21 @@ inline void tupleToArray(Array<T> &arr, const tuple &tup)
       matrix.fillComplete(params);
       // check for throws and no-throws/values
       TEST_THROW( matrix.getGlobalRowView(myrowind,CGView,CSView), std::runtime_error );
-      TEST_THROW( matrix.getLocalRowCopy(0,LCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
-      TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy(0,1),SCopy(0,1),numentries), std::runtime_error );
+      TEST_THROW( matrix.getLocalRowCopy(0,LCopy_toshort,SCopy_toshort,numentries), std::runtime_error );
+      TEST_THROW( matrix.getGlobalRowCopy(myrowind,GCopy_toshort,SCopy_toshort,numentries), std::runtime_error );
+
       //
       TEST_NOTHROW( matrix.getLocalRowView(0,CLView,CSView) );
       TEST_COMPARE_ARRAYS( CLView, linds );
       TEST_COMPARE_ARRAYS( CSView, vals  );
       //
       TEST_NOTHROW( matrix.getLocalRowCopy(0,LCopy,SCopy,numentries) );
-      TEST_COMPARE_ARRAYS( LCopy(0,numentries), linds );
-      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+      TEST_COMPARE_ARRAYS( arcp_from_view(LCopy,numentries), linds );
+      TEST_COMPARE_ARRAYS( arcp_from_view(SCopy,numentries), vals );
       //
       TEST_NOTHROW( matrix.getGlobalRowCopy(myrowind,GCopy,SCopy,numentries) );
-      TEST_COMPARE_ARRAYS( GCopy(0,numentries), ginds );
-      TEST_COMPARE_ARRAYS( SCopy(0,numentries), vals  );
+      TEST_COMPARE_ARRAYS( arcp_from_view(GCopy,numentries), ginds );
+      TEST_COMPARE_ARRAYS( arcp_from_view(SCopy,numentries), vals  );
       //
       STD_TESTS(rowmatrix);
     }

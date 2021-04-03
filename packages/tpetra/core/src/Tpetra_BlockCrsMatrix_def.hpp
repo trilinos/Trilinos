@@ -1314,6 +1314,33 @@ public:
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalRowCopy (LO LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const 
+  {
+    const LO *colInds;
+    Scalar *vals;
+    LO numInds;
+    getLocalRowView(LocalRow,colInds,vals,numInds);
+    if (numInds > (LO)Indices.size() || numInds*blockSize_*blockSize_ > (LO)Values.size()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+                  "Tpetra::BlockCrsMatrix::getLocalRowCopy : Column and/or values array is not large enough to hold "
+                  << numInds << " row entries");
+    }
+    for (LO i=0; i<numInds; ++i) {
+      Indices[i] = colInds[i];
+    }
+    for (LO i=0; i<numInds*blockSize_*blockSize_; ++i) {
+      Values[i] = vals[i];
+    }
+    NumEntries = numInds;
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowCopy (LO LocalRow,
                    const Teuchos::ArrayView<LO>& Indices,
                    const Teuchos::ArrayView<Scalar>& Values,
                    size_t &NumEntries) const
@@ -1335,6 +1362,7 @@ public:
     }
     NumEntries = numInds;
   }
+#endif
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -3550,7 +3578,21 @@ public:
     return false;
   }
 
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getGlobalRowCopy (GO /*GlobalRow*/,
+                    nonconst_global_inds_host_view_type &/*Indices*/,
+                    nonconst_values_host_view_type &/*Values*/,
+                    size_t& /*NumEntries*/) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "Tpetra::BlockCrsMatrix::getGlobalRowCopy: "
+      "This class doesn't support global matrix indexing.");
 
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -3564,6 +3606,7 @@ public:
       "This class doesn't support global matrix indexing.");
 
   }
+#endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>

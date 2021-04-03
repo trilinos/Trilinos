@@ -3292,6 +3292,60 @@ namespace Tpetra {
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    getLocalRowCopy (local_ordinal_type localRow,
+                     nonconst_local_inds_host_view_type &indices,
+                     nonconst_values_host_view_type &values,
+                     size_t& numEntries) const 
+ {
+    using Teuchos::ArrayView;
+    using Teuchos::av_reinterpret_cast;
+    const char tfecfFuncName[] = "getLocalRowCopy: ";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (! this->hasColMap (), std::runtime_error,
+       "The matrix does not have a column Map yet.  This means we don't have "
+       "local indices for columns yet, so it doesn't make sense to call this "
+       "method.  If the matrix doesn't have a column Map yet, you should call "
+       "fillComplete on it first.");
+
+    const RowInfo rowinfo = staticGraph_->getRowInfo (localRow);
+    const size_t theNumEntries = rowinfo.numEntries;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+      (static_cast<size_t> (indices.size ()) < theNumEntries ||
+       static_cast<size_t> (values.size ()) < theNumEntries,
+       std::runtime_error, "Row with local index " << localRow << " has " <<
+       theNumEntries << " entry/ies, but indices.size() = " <<
+       indices.size () << " and values.size() = " << values.size () << ".");
+    numEntries = theNumEntries; // first side effect
+
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (staticGraph_->isLocallyIndexed ()) {
+        auto curLclInds = staticGraph_->getLocalIndsViewHost(rowinfo);
+        auto curVals = getValuesViewHost(rowinfo);
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = curLclInds(j);
+        }
+      }
+      else if (staticGraph_->isGloballyIndexed ()) {
+        // Don't call getColMap(), because it touches RCP's reference count.
+        const map_type& colMap = * (staticGraph_->colMap_);
+        auto curGblInds = staticGraph_->getGlobalIndsViewHost(rowinfo);
+        auto curVals = getValuesViewHost(rowinfo);
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = colMap.getLocalElement (curGblInds(j));
+        }
+      }
+    }
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   getLocalRowCopy (LocalOrdinal localRow,
                    const Teuchos::ArrayView<LocalOrdinal>& indices,
                    const Teuchos::ArrayView<Scalar>& values,
@@ -3341,7 +3395,55 @@ namespace Tpetra {
       }
     }
   }
+#endif
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void
+CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    getGlobalRowCopy (global_ordinal_type globalRow,
+                      nonconst_global_inds_host_view_type &indices,
+                      nonconst_values_host_view_type &values,
+                      size_t& numEntries) const
+  {
+    using Teuchos::ArrayView;
+    using Teuchos::av_reinterpret_cast;
+    const char tfecfFuncName[] = "getGlobalRowCopy: ";
+
+    const RowInfo rowinfo =
+      staticGraph_->getRowInfoFromGlobalRowIndex (globalRow);
+    const size_t theNumEntries = rowinfo.numEntries;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      static_cast<size_t> (indices.size ()) < theNumEntries ||
+      static_cast<size_t> (values.size ()) < theNumEntries,
+      std::runtime_error, "Row with global index " << globalRow << " has "
+      << theNumEntries << " entry/ies, but indices.size() = " <<
+      indices.size () << " and values.size() = " << values.size () << ".");
+    numEntries = theNumEntries; // first side effect
+
+    if (rowinfo.localRow != Teuchos::OrdinalTraits<size_t>::invalid ()) {
+      if (staticGraph_->isLocallyIndexed ()) {
+        const map_type& colMap = * (staticGraph_->colMap_);
+        auto curLclInds = staticGraph_->getLocalIndsViewHost(rowinfo);
+        auto curVals = getValuesViewHost(rowinfo);
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = colMap.getGlobalElement (curLclInds(j));
+        }
+      }
+      else if (staticGraph_->isGloballyIndexed ()) {
+        auto curGblInds = staticGraph_->getGlobalIndsViewHost(rowinfo);
+        auto curVals = getValuesViewHost(rowinfo);
+
+        for (size_t j = 0; j < theNumEntries; ++j) {
+          values[j] = curVals[j];
+          indices[j] = curGblInds(j);
+        }
+      }
+    }
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -3387,6 +3489,7 @@ namespace Tpetra {
       }
     }
   }
+#endif
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
@@ -5976,8 +6079,8 @@ namespace Tpetra {
     // This involves copying rows corresponding to LIDs [0, numSame-1].
     //
     const map_type& srcRowMap = * (srcMat.getRowMap ());
-    Array<GO> rowInds;
-    Array<Scalar> rowVals;
+    nonconst_global_inds_host_view_type rowInds;
+    nonconst_values_host_view_type rowVals;
     const LO numSameIDs_as_LID = static_cast<LO> (numSameIDs);
     for (LO sourceLID = 0; sourceLID < numSameIDs_as_LID; ++sourceLID) {
       // Global ID for the current row index in the source matrix.
@@ -5986,19 +6089,19 @@ namespace Tpetra {
       const GO sourceGID = srcRowMap.getGlobalElement (sourceLID);
       const GO targetGID = sourceGID;
 
-      ArrayView<const GO> rowIndsConstView;
+      ArrayView<const GO>rowIndsConstView;
       ArrayView<const Scalar> rowValsConstView;
 
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
         if (rowLength > static_cast<size_t> (rowInds.size())) {
-          rowInds.resize (rowLength);
-          rowVals.resize (rowLength);
+          Kokkos::resize(rowInds,rowLength);
+          Kokkos::resize(rowVals,rowLength);
         }
         // Resizing invalidates an Array's views, so we must make new
         // ones, even if rowLength hasn't changed.
-        ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
-        ArrayView<Scalar> rowValsView = rowVals.view (0, rowLength);
+        nonconst_global_inds_host_view_type rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
+        nonconst_values_host_view_type rowValsView = Kokkos::subview(rowVals,std::make_pair((size_t)0, rowLength));
 
         // The source matrix is locally indexed, so we have to get a
         // copy.  Really it's the GIDs that have to be copied (because
@@ -6014,8 +6117,19 @@ namespace Tpetra {
              "of " << rowLength << ", but getGlobalRowCopy reports "
              "a row length of " << checkRowLength << "." << suffix);
         }
-        rowIndsConstView = rowIndsView.view (0, rowLength);
-        rowValsConstView = rowValsView.view (0, rowLength);
+
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
       else { // source matrix is globally indexed.
         global_inds_host_view_type rowIndsView;
@@ -6033,6 +6147,7 @@ namespace Tpetra {
                            Teuchos::RCP_DISABLE_NODE_LOOKUP);
         // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
         // KDDKDD UVM TEMPORARY:  KokkosView interface
+
       }
 
       // Applying a permutation to a matrix with a static graph
@@ -6058,13 +6173,13 @@ namespace Tpetra {
       if (sourceIsLocallyIndexed) {
         const size_t rowLength = srcMat.getNumEntriesInGlobalRow (sourceGID);
         if (rowLength > static_cast<size_t> (rowInds.size ())) {
-          rowInds.resize (rowLength);
-          rowVals.resize (rowLength);
+          Kokkos::resize(rowInds,rowLength);
+          Kokkos::resize(rowVals,rowLength);
         }
         // Resizing invalidates an Array's views, so we must make new
         // ones, even if rowLength hasn't changed.
-        ArrayView<GO> rowIndsView = rowInds.view (0, rowLength);
-        ArrayView<Scalar> rowValsView = rowVals.view (0, rowLength);
+        nonconst_global_inds_host_view_type rowIndsView = Kokkos::subview(rowInds,std::make_pair((size_t)0, rowLength));
+        nonconst_values_host_view_type rowValsView = Kokkos::subview(rowVals,std::make_pair((size_t)0, rowLength));
 
         // The source matrix is locally indexed, so we have to get a
         // copy.  Really it's the GIDs that have to be copied (because
@@ -6080,8 +6195,19 @@ namespace Tpetra {
              rowLength << ", but getGlobalRowCopy a row length of "
              << checkRowLength << "." << suffix);
         }
-        rowIndsConstView = rowIndsView.view (0, rowLength);
-        rowValsConstView = rowValsView.view (0, rowLength);
+
+        // KDDKDD UVM TEMPORARY:  refactor combineGlobalValues to take
+        // KDDKDD UVM TEMPORARY:  Kokkos::View instead of ArrayView
+        // KDDKDD UVM TEMPORARY:  For now, wrap the view in ArrayViews
+        // KDDKDD UVM TEMPORARY:  Should be safe because we hold the KokkosViews
+        rowIndsConstView = Teuchos::ArrayView<const GO> (  // BAD BAD BAD
+                           rowIndsView.data(), rowIndsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        rowValsConstView = Teuchos::ArrayView<const Scalar> (  // BAD BAD BAD
+                           reinterpret_cast<const Scalar*>(rowValsView.data()), rowValsView.extent(0),
+                           Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        // KDDKDD UVM TEMPORARY:  Add replace, sum, transform methods with
+        // KDDKDD UVM TEMPORARY:  KokkosView interface
       }
       else {
         global_inds_host_view_type rowIndsView;

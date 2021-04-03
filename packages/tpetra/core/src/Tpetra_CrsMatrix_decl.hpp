@@ -2459,20 +2459,28 @@ public:
     using row_ptrs_host_view_type = 
           typename row_matrix_type::row_ptrs_host_view_type;
 
+
     using local_inds_device_view_type = 
           typename row_matrix_type::local_inds_device_view_type;
     using local_inds_host_view_type = 
           typename row_matrix_type::local_inds_host_view_type;
+    using nonconst_local_inds_host_view_type = 
+          typename row_matrix_type::nonconst_local_inds_host_view_type;
 
     using global_inds_device_view_type = 
           typename row_matrix_type::global_inds_device_view_type;
     using global_inds_host_view_type = 
           typename row_matrix_type::global_inds_host_view_type;
+    using nonconst_global_inds_host_view_type = 
+          typename row_matrix_type::nonconst_global_inds_host_view_type;
 
     using values_device_view_type = 
           typename row_matrix_type::values_device_view_type;
     using values_host_view_type = 
           typename row_matrix_type::values_host_view_type;
+    using nonconst_values_host_view_type = 
+          typename row_matrix_type::nonconst_values_host_view_type;
+
 //KDDKDD INROW    using values_host_view_type = 
 //KDDKDD INROW          typename values_dualv_type::t_host::const_type;
 //KDDKDD INROW    using values_device_view_type = 
@@ -2544,18 +2552,24 @@ public:
     /// returned as Teuchos::OrdinalTraits<size_t>::invalid().
     void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                      nonconst_global_inds_host_view_type &Indices,
+                      nonconst_values_host_view_type &Values,
+                      size_t& NumEntries) const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    void
+    getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal>& Indices,
                       const Teuchos::ArrayView<Scalar>& Values,
                       size_t& NumEntries) const override;
-
+#endif
     /// \brief Fill given arrays with a deep copy of the locally owned
     ///   entries of the matrix in a given row, using local column
     ///   indices.
     ///
-    /// \param localRow   [in]  Local index of the row for which to return entries.
-    /// \param colInds    [out] Local column indices corresponding to values.
-    /// \param vals       [out] Matrix values.
-    /// \param numEntries [out] Number of entries returned.
+    /// \param LocalRow   [in]  Local index of the row for which to return entries.
+    /// \param Indices    [out] Local column indices corresponding to values.
+    /// \param Values       [out] Matrix values.
+    /// \param NumEntries [out] Number of entries returned.
     ///
     /// Note: A std::runtime_error exception is thrown if either
     /// <tt>colInds</tt> or \c vals is not large enough to hold the
@@ -2564,11 +2578,17 @@ public:
     /// <tt>vals</tt> are unchanged and <tt>numEntries</tt> is
     /// returned as Teuchos::OrdinalTraits<size_t>::invalid().
     void
+    getLocalRowCopy (LocalOrdinal LocalRow,
+                     nonconst_local_inds_host_view_type &Indices,
+                     nonconst_values_host_view_type &Values,
+                     size_t& NumEntries) const override;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    void
     getLocalRowCopy (LocalOrdinal localRow,
                      const Teuchos::ArrayView<LocalOrdinal>& colInds,
                      const Teuchos::ArrayView<Scalar>& vals,
-                     size_t& numEntries) const override;
-
+                     size_t& NumEntries) const override;
+#endif
     /// \brief Get a constant, nonpersisting view of a row of this
     ///   matrix, using global row and column indices.
     ///

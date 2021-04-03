@@ -121,18 +121,25 @@ namespace Tpetra {
         values_device_view_type;
     typedef typename values_device_view_type::HostMirror::const_type
         values_host_view_type;
+    typedef typename values_device_view_type::HostMirror
+        nonconst_values_host_view_type;
 
     typedef typename
         Kokkos::View<LocalOrdinal *, typename Node::device_type>::const_type
         local_inds_device_view_type;
     typedef typename local_inds_device_view_type::HostMirror::const_type
         local_inds_host_view_type;
+    typedef typename local_inds_device_view_type::HostMirror
+        nonconst_local_inds_host_view_type;
 
     typedef typename
         Kokkos::View<GlobalOrdinal *, typename Node::device_type>::const_type
         global_inds_device_view_type;
     typedef typename global_inds_device_view_type::HostMirror::const_type
         global_inds_host_view_type;
+    typedef typename global_inds_device_view_type::HostMirror
+        nonconst_global_inds_host_view_type;
+
 
     typedef typename
         Kokkos::View<const size_t*, typename Node::device_type>::const_type
@@ -291,10 +298,16 @@ namespace Tpetra {
     /// not modify Indices or Values.
     virtual void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                      nonconst_global_inds_host_view_type &Indices,
+                      nonconst_values_host_view_type &Values,
+                      size_t& NumEntries) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                       const Teuchos::ArrayView<Scalar> &Values,
                       size_t &NumEntries) const = 0;
-
+#endif
     /// \brief Get a copy of the given local row's entries.
     ///
     /// This method only gets the entries in the given row that are
@@ -317,10 +330,16 @@ namespace Tpetra {
     /// not modify Indices or Values.
     virtual void
     getLocalRowCopy (LocalOrdinal LocalRow,
+                     nonconst_local_inds_host_view_type &Indices,
+                     nonconst_values_host_view_type &Values,
+                     size_t& NumEntries) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getLocalRowCopy (LocalOrdinal LocalRow,
                      const Teuchos::ArrayView<LocalOrdinal> &Indices,
                      const Teuchos::ArrayView<Scalar> &Values,
                      size_t &NumEntries) const = 0;
-
+#endif
     /// \brief Get a constant, nonpersisting, globally indexed view of
     ///   the given row of the matrix.
     ///

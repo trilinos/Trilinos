@@ -49,8 +49,35 @@
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_createDeepCopy_CrsMatrix.hpp"
 #include "Tpetra_Util.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+
 
 namespace { // (anonymous)
+
+template<class Array1, class Array2>
+bool array_equal(  const Array1 &a1,  const Array2 &a2 ) 
+
+{
+  using Teuchos::as;
+  bool success = true;
+  const int n = a1.size();
+
+  // Compare sizes
+  if (as<int>(a2.size()) != n) {
+    return false;
+  }
+
+  // Compare elements
+  for( int i = 0; i < n; ++i ) {
+    const bool result = ( a1[i] == a2[i] ); // Tests C::operator[](i) const
+    if (!result) {
+      success = false;
+    }
+  }
+
+  return success;
+
+}
 
 // Test interfaces that need a RowGraph which is not just a CrsGraph.
 template <class LO, class GO, class NT>
@@ -163,7 +190,7 @@ public:
     return G_->isFillComplete ();
   }
 
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getGlobalRowCopy (GO gblRow,
                     const Teuchos::ArrayView<GO>& gblColInds,
@@ -171,6 +198,7 @@ public:
   {
     G_->getGlobalRowCopy (gblRow, gblColInds, numColInds);
   }
+#endif
 
   void
   getGlobalRowCopy (GO gblRow,
@@ -180,6 +208,7 @@ public:
     G_->getGlobalRowCopy (gblRow, gblColInds,numColInds);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getLocalRowCopy (LO lclRow,
                    const Teuchos::ArrayView<LO>& lclColInds,
@@ -187,6 +216,7 @@ public:
   {
     G_->getLocalRowCopy (lclRow, lclColInds, numColInds);
   }
+#endif
 
   void
   getLocalRowCopy (LO lclRow,
@@ -351,7 +381,15 @@ public:
     return supportsRowViews_;
   }
 
-
+  void
+  getGlobalRowCopy (GO gblRow,
+                    typename base_type::nonconst_global_inds_host_view_type &gblColInds,
+                    typename base_type::nonconst_values_host_view_type &values,
+                    size_t& numColInds) const override
+  {
+    A_->getGlobalRowCopy (gblRow, gblColInds, values, numColInds);
+  }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getGlobalRowCopy (GO gblRow,
                     const Teuchos::ArrayView<GO>& gblColInds,
@@ -360,7 +398,18 @@ public:
   {
     A_->getGlobalRowCopy (gblRow, gblColInds, values, numColInds);
   }
+#endif
 
+  void
+  getLocalRowCopy (LO lclRow,
+                   typename base_type::nonconst_local_inds_host_view_type &lclColInds,
+                   typename base_type::nonconst_values_host_view_type &values,
+                   size_t& numColInds) const override
+  {
+    A_->getLocalRowCopy (lclRow, lclColInds, values, numColInds);
+  }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getLocalRowCopy (LO lclRow,
                    const Teuchos::ArrayView<LO>& lclColInds,
@@ -369,7 +418,9 @@ public:
   {
     A_->getLocalRowCopy (lclRow, lclColInds, values, numColInds);
   }
+#endif
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getGlobalRowView (const GO gblRow,
                     Teuchos::ArrayView<const GO> & gblColInds,
@@ -377,6 +428,7 @@ public:
   {
     A_->getGlobalRowView (gblRow, gblColInds, values);
   }
+#endif
 
   void
   getGlobalRowView (const GO gblRow,
@@ -386,6 +438,7 @@ public:
     A_->getGlobalRowView (gblRow, gblColInds, values);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getLocalRowView (const LO lclRow,
                    Teuchos::ArrayView<const LO> & lclColInds,
@@ -393,6 +446,7 @@ public:
   {
     A_->getLocalRowView (lclRow, lclColInds, values);
   }
+#endif
 
   void
   getLocalRowView (const LO lclRow,
@@ -471,6 +525,8 @@ private:
   bool supportsRowViews_ = false;
 };
 
+
+
 template<class SC, class LO, class GO, class NT>
 bool
 crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
@@ -479,6 +535,9 @@ crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   using Teuchos::outArg;
   using Teuchos::REDUCE_MIN;
   using Teuchos::reduceAll;
+  using values_view  = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type;
+  using l_indices_view = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type;
+  using g_indices_view = typename Tpetra::CrsMatrix<SC, LO, GO, NT>::nonconst_global_inds_host_view_type;                      
 
   const Teuchos::Comm<int>& comm = * (A.getMap ()->getComm ());
   int lclSuccess = 1;
@@ -539,63 +598,52 @@ crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
   const auto& rowMap = * (A.getRowMap ());
   const LO lclNumRows = A.getNodeNumRows ();
 
-  Teuchos::Array<SC> A_valsBuf;
-  Teuchos::Array<SC> B_valsBuf;
+  values_view A_vals;
+  values_view B_vals;
 
   if (A.isLocallyIndexed ()) {
-    Teuchos::Array<LO> A_lclColIndsBuf;
-    Teuchos::Array<LO> B_lclColIndsBuf;
+    l_indices_view A_lclColInds;
+    l_indices_view B_lclColInds;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       size_t A_numEnt = 0;
       size_t B_numEnt = 0;
 
       const size_t A_numEnt2 = A.getNumEntriesInLocalRow (lclRow);
-      if (A_numEnt2 > size_t (A_valsBuf.size ())) {
-        A_valsBuf.resize (A_numEnt2);
+      if (A_numEnt2 > size_t (A_vals.size ())) {
+        Kokkos::resize(A_vals,A_numEnt2);
       }
-      if (A_numEnt2 > size_t (A_lclColIndsBuf.size ())) {
-        A_lclColIndsBuf.resize (A_numEnt2);
+      if (A_numEnt2 > size_t (A_lclColInds.size ())) {
+        Kokkos::resize(A_lclColInds,A_numEnt2);
       }
-      A.getLocalRowCopy (lclRow, A_lclColIndsBuf (), A_valsBuf (), A_numEnt);
+      A.getLocalRowCopy (lclRow, A_lclColInds , A_vals, A_numEnt);
 
       const size_t B_numEnt2 = B.getNumEntriesInLocalRow (lclRow);
-      if (B_numEnt2 > size_t (B_valsBuf.size ())) {
-        B_valsBuf.resize (B_numEnt2);
+      if (B_numEnt2 > size_t (B_vals.size ())) {
+        Kokkos::resize(B_vals,B_numEnt2);
       }
-      if (B_numEnt2 > size_t (B_lclColIndsBuf.size ())) {
-        B_lclColIndsBuf.resize (B_numEnt2);
+      if (B_numEnt2 > size_t (B_lclColInds.size ())) {
+        Kokkos::resize(B_lclColInds,B_numEnt2);
       }
-      B.getLocalRowCopy (lclRow, B_lclColIndsBuf (), B_valsBuf (), B_numEnt);
+      B.getLocalRowCopy (lclRow, B_lclColInds, B_vals, B_numEnt);
 
       if (A_numEnt != B_numEnt) {
         lclSuccess = 0;
         break;
       }
 
-      Teuchos::ArrayView<LO> A_lclColInds = A_lclColIndsBuf.view (0, A_numEnt);
-      Teuchos::ArrayView<SC> A_vals = A_valsBuf.view (0, A_numEnt);
-      Tpetra::sort2 (A_lclColInds.begin (), A_lclColInds.end (), A_vals.begin ());
-
-      Teuchos::ArrayView<LO> B_lclColInds = B_lclColIndsBuf.view (0, B_numEnt);
-      Teuchos::ArrayView<SC> B_vals = B_valsBuf.view (0, B_numEnt);
-      Tpetra::sort2 (B_lclColInds.begin (), B_lclColInds.end (), B_vals.begin ());
-
-      if (! std::equal (A_lclColInds.begin (), A_lclColInds.end (),
-                        B_lclColInds.begin ())) {
-        lclSuccess = 0;
-        break;
-      }
-      if (! std::equal (A_vals.begin (), A_vals.end (),
-                        B_vals.begin ())) {
-        lclSuccess = 0;
-        break;
-      }
+      Tpetra::sort2 (A_lclColInds, A_lclColInds.size(), A_vals);
+      Tpetra::sort2 (B_lclColInds, B_lclColInds.size(), B_vals);
+      
+      lclSuccess=array_equal(A_lclColInds, B_lclColInds);
+      if(!lclSuccess) break;
+      lclSuccess=array_equal(A_vals, B_vals);
+      if(!lclSuccess) break;
     }
   }
   else if (A.isGloballyIndexed ()) {
-    Teuchos::Array<GO> A_gblColIndsBuf;
-    Teuchos::Array<GO> B_gblColIndsBuf;
+    g_indices_view A_gblColInds;
+    g_indices_view B_gblColInds;
 
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       const GO gblRow = rowMap.getGlobalElement (lclRow);
@@ -603,46 +651,24 @@ crsMatrixInstancesEqual (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
       size_t B_numEnt = 0;
 
       const size_t A_numEnt2 = A.getNumEntriesInGlobalRow (gblRow);
-      if (A_numEnt2 > size_t (A_valsBuf.size ())) {
-        A_valsBuf.resize (A_numEnt2);
+      if (A_numEnt2 > size_t (A_vals.size ())) {
+        Kokkos::resize(A_vals,A_numEnt2);
       }
-      if (A_numEnt2 > size_t (A_gblColIndsBuf.size ())) {
-        A_gblColIndsBuf.resize (A_numEnt2);
+      if (A_numEnt2 > size_t (A_gblColInds.size ())) {
+        Kokkos::resize(A_gblColInds,A_numEnt2);
       }
-      A.getGlobalRowCopy (gblRow, A_gblColIndsBuf (), A_valsBuf (), A_numEnt);
+      A.getGlobalRowCopy (gblRow, A_gblColInds , A_vals , A_numEnt);
 
       const size_t B_numEnt2 = B.getNumEntriesInGlobalRow (gblRow);
-      if (B_numEnt2 > size_t (B_valsBuf.size ())) {
-        B_valsBuf.resize (B_numEnt2);
+      if (B_numEnt2 > size_t (B_vals.size ())) {
+        Kokkos::resize(B_vals,B_numEnt2);
       }
-      if (B_numEnt2 > size_t (B_gblColIndsBuf.size ())) {
-        B_gblColIndsBuf.resize (B_numEnt2);
+      if (B_numEnt2 > size_t (B_gblColInds.size ())) {
+        Kokkos::resize(B_gblColInds,B_numEnt2);
       }
-      B.getGlobalRowCopy (gblRow, B_gblColIndsBuf (), B_valsBuf (), B_numEnt);
+      B.getGlobalRowCopy (gblRow, B_gblColInds, B_vals, B_numEnt);
 
-      if (A_numEnt != B_numEnt) {
-        lclSuccess = 0;
-        break;
-      }
-
-      Teuchos::ArrayView<GO> A_gblColInds = A_gblColIndsBuf.view (0, A_numEnt);
-      Teuchos::ArrayView<SC> A_vals = A_valsBuf.view (0, A_numEnt);
-      Tpetra::sort2 (A_gblColInds.begin (), A_gblColInds.end (), A_vals.begin ());
-
-      Teuchos::ArrayView<GO> B_gblColInds = B_gblColIndsBuf.view (0, B_numEnt);
-      Teuchos::ArrayView<SC> B_vals = B_valsBuf.view (0, B_numEnt);
-      Tpetra::sort2 (B_gblColInds.begin (), B_gblColInds.end (), B_vals.begin ());
-
-      if (! std::equal (A_gblColInds.begin (), A_gblColInds.end (),
-                        B_gblColInds.begin ())) {
-        gblSuccess = 0;
-        break;
-      }
-      if (! std::equal (A_vals.begin (), A_vals.end (),
-                        B_vals.begin ())) {
-        gblSuccess = 0;
-        break;
-      }
+      
     }
   }
 

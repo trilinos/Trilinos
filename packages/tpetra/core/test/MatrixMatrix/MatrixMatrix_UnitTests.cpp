@@ -1827,29 +1827,32 @@ bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C)
   using GO = typename CrsMat::global_ordinal_type;
   using KAT = Kokkos::Details::ArithTraits<SC>;
   using Teuchos::Array;
+  typedef typename CrsMat::nonconst_global_inds_host_view_type gids_type;
+  typedef typename CrsMat::nonconst_values_host_view_type vals_type;
+
   auto rowMap = A.getRowMap();
   LO numLocalRows = rowMap->getNodeNumElements();
   GO Amax = A.getGlobalMaxNumRowEntries();
   GO Bmax = B.getGlobalMaxNumRowEntries();
   GO Cmax = C.getGlobalMaxNumRowEntries();
-  Array<GO> Ainds(Amax);
-  Array<SC> Avals(Amax);
-  Array<GO> Binds(Bmax);
-  Array<SC> Bvals(Bmax);
-  Array<GO> Cinds(Cmax);
-  Array<SC> Cvals(Cmax);
+  gids_type Ainds("Ainds",Amax);
+  vals_type Avals("Avals",Amax);
+  gids_type Binds("Binds",Bmax);
+  vals_type Bvals("Bvals",Bmax);
+  gids_type Cinds("Cinds",Cmax);
+  vals_type Cvals("Cvals",Cmax);
   for(LO i = 0; i < numLocalRows; i++)
   {
     GO gid = rowMap->getGlobalElement(i);
     size_t Aentries;
     size_t Bentries;
     size_t Centries;
-    A.getGlobalRowCopy(gid, Ainds(), Avals(), Aentries);
-    B.getGlobalRowCopy(gid, Binds(), Bvals(), Bentries);
-    C.getGlobalRowCopy(gid, Cinds(), Cvals(), Centries);
-    Tpetra::sort2(Ainds.begin(), Ainds.begin() + Aentries, Avals.begin());
-    Tpetra::sort2(Binds.begin(), Binds.begin() + Bentries, Bvals.begin());
-    Tpetra::sort2(Cinds.begin(), Cinds.begin() + Centries, Cvals.begin());
+    A.getGlobalRowCopy(gid, Ainds, Avals, Aentries);
+    B.getGlobalRowCopy(gid, Binds, Bvals, Bentries);
+    C.getGlobalRowCopy(gid, Cinds, Cvals, Centries);
+    Tpetra::sort2(Ainds, Aentries, Avals);
+    Tpetra::sort2(Binds, Bentries, Bvals);
+    Tpetra::sort2(Cinds, Centries, Cvals);
     //Now, scan through the row to make sure C's entries match
     size_t Ait = 0;
     size_t Bit = 0;

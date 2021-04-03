@@ -104,19 +104,25 @@ localDeepCopyLocallyIndexedRowMatrix
   auto val_h = Kokkos::create_mirror_view (val);
 
   const bool hasViews = A.supportsRowViews ();
+  using row_matrix_type = RowMatrix<SC, LO, GO, NT>;
+  using h_lids_type = typename row_matrix_type::nonconst_local_inds_host_view_type;
+  using h_vals_type = typename row_matrix_type::nonconst_values_host_view_type;
+  using h_lids_type_const = typename row_matrix_type::local_inds_host_view_type;
+  using h_vals_type_const = typename row_matrix_type::values_host_view_type;
 
-  Teuchos::Array<LO> inputIndsBuf;
-  Teuchos::Array<SC> inputValsBuf;
+
+  h_lids_type inputIndsBuf;
+  h_vals_type inputValsBuf;
   if (! hasViews) {
-    inputIndsBuf.resize (maxNumEnt);
-    inputValsBuf.resize (maxNumEnt);
+    Kokkos::resize(inputIndsBuf,maxNumEnt);
+    Kokkos::resize(inputValsBuf,maxNumEnt);
   }
 
   const LO lclNumRows (A.getNodeNumRows ());
   offset_type curPos = 0;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
-    Teuchos::ArrayView<const LO> inputInds_av;
-    Teuchos::ArrayView<const SC> inputVals_av;
+    h_lids_type_const inputInds_av;
+    h_vals_type_const inputVals_av;
     size_t numEnt = 0;
     if (hasViews) {
       A.getLocalRowView (lclRow, inputInds_av,
@@ -124,14 +130,14 @@ localDeepCopyLocallyIndexedRowMatrix
       numEnt = static_cast<size_t> (inputInds_av.size ());
     }
     else {
-      A.getLocalRowCopy (lclRow, inputIndsBuf (),
-                         inputValsBuf (), numEnt);
-      inputInds_av = inputIndsBuf.view (0, numEnt);
-      inputVals_av = inputValsBuf.view (0, numEnt);
+      A.getLocalRowCopy (lclRow, inputIndsBuf,
+                         inputValsBuf, numEnt);
+      inputInds_av = Kokkos::subview(inputIndsBuf,std::make_pair((size_t)0,numEnt));
+      inputVals_av = Kokkos::subview(inputValsBuf,std::make_pair((size_t)0,numEnt));
     }
     const IST* inVals =
-      reinterpret_cast<const IST*> (inputVals_av.getRawPtr ());
-    const LO* inInds = inputInds_av.getRawPtr ();
+      reinterpret_cast<const IST*> (inputVals_av.data());
+    const LO* inInds = inputInds_av.data();
     std::copy (inInds, inInds + numEnt, ind_h.data () + curPos);
     std::copy (inVals, inVals + numEnt, val_h.data () + curPos);
     curPos += offset_type (numEnt);
