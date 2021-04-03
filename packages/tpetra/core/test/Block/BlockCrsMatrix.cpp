@@ -52,6 +52,7 @@
 
 namespace {
   using Tpetra::TestingUtilities::getDefaultComm;
+  using Tpetra::TestingUtilities::arcp_from_view;
   using Tpetra::Details::gathervPrint;
   using Teuchos::Array;
   using Teuchos::Comm;
@@ -162,7 +163,7 @@ namespace {
 
     using lids_type = typename graph_type::nonconst_local_inds_host_view_type;
     using gids_type = typename graph_type::nonconst_global_inds_host_view_type;
-    using vals_type = typename Tpetra::CrsGraph<LO, GO, Node>::nonconst_values_host_view_type;
+    using vals_type = typename BCM::nonconst_values_host_view_type;
 
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
@@ -315,8 +316,7 @@ namespace {
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
       Tpetra::sort (lclColInds, lclColInds.extent(0));
-      Kokkos::deep_copy(myLclColIndsSorted,Kokkos::subview(myLclColInds,std::make_pair(0,2)));
-      //      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsSorted.begin ());
+      std::copy (myLclColInds, myLclColInds + 2, arcp_from_view(myLclColIndsSorted).begin());
       Tpetra::sort (myLclColIndsSorted, myLclColIndsSorted.extent(0));
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
