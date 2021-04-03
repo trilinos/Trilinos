@@ -355,6 +355,7 @@ C ... CALCULATE ELEMENT CENTROIDS FOR LATER USE
       if (ndb .gt. 0) then
         call exclos(ndb, ierr)
       end if
+      call mdfree()
       STOP
       END
 

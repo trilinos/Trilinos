@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -110,14 +110,17 @@ C     problems with some analysis codes
         do j = 0, nel-1
           iel = lteess(indx+j)
           ifa = ltsess(indx+j)
-          if (btest(icheck(iel), ifa)) then
-            write (stra, 10000) iel, ifa, idess(iess)
-10000       FORMAT('SIDESET ERROR: The element face pair ',I12,'.',I1,
-     $        ' is duplicated in sideset ', I12,'.')
-            call sqzstr(stra, lstra)
-            CALL PRTERR ('WARNING', STRA(:lstra))
-          else
-            icheck(iel) = ibset(icheck(iel), ifa)
+          if (iel .gt. 0 .and. iel .le. numel) then
+             if (btest(icheck(iel), ifa)) then
+                write (stra, 10000) iel, ifa, idess(iess)
+10000           FORMAT('SIDESET ERROR: The element face pair ',
+     $               I12,'.',I1,
+     $               ' is duplicated in sideset ', I12,'.')
+                call sqzstr(stra, lstra)
+                CALL PRTERR ('WARNING', STRA(:lstra))
+             else
+                icheck(iel) = ibset(icheck(iel), ifa)
+             end if
           end if
         end do
       end do

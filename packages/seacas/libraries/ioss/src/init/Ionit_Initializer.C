@@ -23,8 +23,8 @@
 #include <pamgen/Iopg_DatabaseIO.h>
 #endif
 
-#if defined(SEACAS_HAVE_DATAWAREHOUSE)
-#include <data_warehouse/Iodw_DatabaseIO.h>
+#if defined(SEACAS_HAVE_FAODEL)
+#include <faodel/Iofaodel_DatabaseIO.h>
 #endif
 
 #if defined(SEACAS_HAVE_CGNS)
@@ -35,7 +35,8 @@
 #include <Ioss_Initializer.h>
 #include <transform/Iotr_Initializer.h>
 #ifndef _MSC_VER
-#include <visualization/Iovs_IOFactory.h>
+#include <visualization/exodus/Iovs_exodus_IOFactory.h>
+#include <visualization/cgns/Iovs_cgns_IOFactory.h>
 #endif
 
 namespace {
@@ -68,15 +69,16 @@ namespace Ioss {
 #if defined(SEACAS_HAVE_PAMGEN)
       Iopg::IOFactory::factory(); // Pamgen
 #endif
-#if defined(SEACAS_HAVE_DATAWAREHOUSE)
-      Iodw::IOFactory::factory(); // DataWarehouse
+#if defined(SEACAS_HAVE_FAODEL)
+      Iofaodel::IOFactory::factory();
 #endif
 #if defined(SEACAS_HAVE_CGNS)
       Iocgns::IOFactory::factory();
 #endif
 
 #ifndef _MSC_VER
-      Iovs::IOFactory::factory(); // Visualization
+      Iovs_cgns::IOFactory::factory(); // Visualization Catalyst CGNS
+      Iovs_exodus::IOFactory::factory(); // Visualization Catalyst Exodus
 #endif
       Iohb::IOFactory::factory(); // HeartBeat
       Iogn::IOFactory::factory(); // Generated

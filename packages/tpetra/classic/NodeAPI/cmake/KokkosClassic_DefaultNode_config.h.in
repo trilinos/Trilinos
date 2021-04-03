@@ -6,6 +6,13 @@
 // For backwards compatibility ONLY.
 #define KOKKOSCLASSIC_DEFAULTNODE TPETRA_DEFAULTNODE
 
+// Defined if and only if Tpetra's default execution space is Kokkos::HIP.
+#cmakedefine HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
+// For backwards compatibility ONLY.
+#ifdef HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
+#  define HAVE_KOKKOSCLASSIC_DEFAULTNODE_HIPWRAPPERNODE 1
+#endif // HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE
+
 // Defined if and only if Tpetra's default execution space is Kokkos::Cuda.
 #cmakedefine HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE
 // For backwards compatibility ONLY.
