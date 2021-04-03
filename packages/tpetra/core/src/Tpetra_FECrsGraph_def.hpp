@@ -279,7 +279,8 @@ void FECrsGraph<LocalOrdinal, GlobalOrdinal, Node>::doOwnedPlusSharedToOwned(con
     if (debug && checkColGIDsInAtLeastOneOwnedRow) {
       Teuchos::RCP<const map_type> colmap = this->getColMap();
       Teuchos::Array<bool> flag(colmap->getNodeNumElements(),false);
-      Teuchos::Array<LocalOrdinal> indices(this->getNodeMaxNumRowEntries());
+      typename crs_graph_type::nonconst_local_inds_host_view_type indices("indices",this->getNodeMaxNumRowEntries());
+
       for(size_t i=0; i<ownedRowMap->getNodeNumElements(); i++)  {
         size_t NumEntries=0;
         this->getLocalRowCopy(i,indices,NumEntries);

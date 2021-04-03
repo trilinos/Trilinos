@@ -87,15 +87,20 @@ forEachLocalRowMatrixRow (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
                                               const Teuchos::ArrayView<SC>& /* val */,
                                               std::size_t /* numEnt */ )> doForEachRow)
 {
-  Teuchos::Array<LO> indBuf (maxNumEnt);
-  Teuchos::Array<SC> valBuf (maxNumEnt);
+  using lids_type = typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type;
+  using vals_type = typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type;
+  lids_type indBuf("indices",maxNumEnt);
+  vals_type valBuf("values",maxNumEnt);
 
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
     std::size_t numEnt = A.getNumEntriesInLocalRow (lclRow);
-    Teuchos::ArrayView<LO> ind = indBuf.view (0, numEnt);
-    Teuchos::ArrayView<SC> val = valBuf.view (0, numEnt);
+    lids_type ind = Kokkos::subview(indBuf,std::make_pair((size_t)0, numEnt));
+    vals_type val = Kokkos::subview(valBuf,std::make_pair((size_t)0, numEnt));
     A.getLocalRowCopy (lclRow, ind, val, numEnt);
-    doForEachRow (lclRow, ind, val, numEnt);
+    // NOTE: Because we'll let this descope, this is safe
+    Teuchos::ArrayView<LO> ind_a(ind.data(),numEnt);
+    Teuchos::ArrayView<SC> val_a(val.data(),numEnt);
+    doForEachRow (lclRow, ind_a, val_a, numEnt);
   }
 }
 
