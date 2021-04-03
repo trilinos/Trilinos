@@ -59,8 +59,8 @@ class Constraint_SimOpt;
 #include "ROL_NonlinearLeastSquaresObjective.hpp"
 #include "ROL_SimConstraint.hpp"
 #include "ROL_Objective_FSsolver.hpp"
-#include "ROL_TrustRegionAlgorithm_U.hpp"
-#include "ROL_AugmentedLagrangianAlgorithm_E.hpp"
+#include "ROL_TypeU_TrustRegionAlgorithm.hpp"
+#include "ROL_TypeE_AugmentedLagrangianAlgorithm.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_SimOpt
@@ -291,7 +291,7 @@ public:
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      Ptr<Algorithm_U<Real>> algo = makePtr<TrustRegionAlgorithm_U<Real>>(parlist);
+      Ptr<TypeU::Algorithm<Real>> algo = makePtr<TypeU::TrustRegionAlgorithm<Real>>(parlist);
       algo->run(u,*obj,*stream);
       value(c,u,z,tol);
     }
@@ -304,7 +304,7 @@ public:
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      Ptr<Algorithm_E<Real>> algo = makePtr<AugmentedLagrangianAlgorithm_E<Real>>(parlist);
+      Ptr<TypeE::Algorithm<Real>> algo = makePtr<TypeE::AugmentedLagrangianAlgorithm<Real>>(parlist);
       algo->run(u,*obj,*con,*l,*stream);
       value(c,u,z,tol);
     }
