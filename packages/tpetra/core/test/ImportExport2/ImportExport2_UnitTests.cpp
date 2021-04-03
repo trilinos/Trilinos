@@ -360,7 +360,7 @@ namespace {
           LO localrow = tgt_map->getLocalElement (globalrow);
           typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
           tgt_graph->getLocalRowView (localrow, rowview);
-          TEST_EQUALITY(rowview.size(), globalrow+1);
+          TEST_EQUALITY((size_t)rowview.size(), (size_t)globalrow+1);
 
           // The target graph doesn't necessarily promise sorted
           // order.  Thus, we copy out the local row view, convert to
@@ -524,8 +524,8 @@ namespace {
       // together, so we make a rough guess.
       const magnitude_type tol =
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
-      typedef typename CrsMatrix<Scalar, LO, GO>::local_inds_host_view_type lids_type;
-      typedef typename CrsMatrix<Scalar,LO,GO>::values_host_view_type vals_type;
+      typedef typename CrsMatrix<Scalar, LO, GO>::nonconst_local_inds_host_view_type lids_type;
+      typedef typename CrsMatrix<Scalar,LO,GO>::nonconst_values_host_view_type vals_type;
  
       lids_type tgtRowInds;
       vals_type tgtRowVals;
@@ -735,7 +735,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
       continue;
     }
     int jerr = 0;
-    for (LO j=0; static_cast<LO>(j<V1.size()); j++) {
+    for (LO j=0; j<static_cast<LO>(V1.size()); j++) {
       if (V1[j] != V2[j])
         jerr++;
     }
