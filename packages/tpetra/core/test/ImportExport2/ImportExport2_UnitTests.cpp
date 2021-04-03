@@ -524,7 +524,9 @@ namespace {
       // together, so we make a rough guess.
       const magnitude_type tol =
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
-
+      typedef typename CrsMatrix<Scalar, LO, GO>::local_inds_host_view_type lids_type;
+      typedef typename CrsMatrix<Scalar,LO,GO>::values_host_view_type vals_type;
+ 
       lids_type tgtRowInds;
       vals_type tgtRowVals;
       lids_type tgt2RowInds;
