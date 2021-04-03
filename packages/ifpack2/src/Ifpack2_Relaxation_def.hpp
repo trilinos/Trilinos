@@ -270,27 +270,27 @@ Relaxation<MatrixType>::getValidParameters () const
     pl->set ("relaxation: sweeps", numSweeps, "Number of relaxation sweeps",
              rcp_const_cast<const PEV> (numSweepsValidator));
 
-    // number of outer sweeps for two-stage GS
+    // number of 'local' outer sweeps for two-stage GS
     const int numOuterSweeps = 1;
     RCP<PEV> numOuterSweepsValidator =
       rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
-    pl->set ("relaxation: outer sweeps", numOuterSweeps, "Number of outer relaxation sweeps",
+    pl->set ("relaxation: outer sweeps", numOuterSweeps, "Number of outer local relaxation sweeps for two-stage GS",
              rcp_const_cast<const PEV> (numOuterSweepsValidator));
-    // number of inner sweeps for two-stage GS
+    // number of 'local' inner sweeps for two-stage GS
     const int numInnerSweeps = 1;
     RCP<PEV> numInnerSweepsValidator =
       rcp_implicit_cast<PEV> (rcp (new NonnegativeIntValidator));
-    pl->set ("relaxation: inner sweeps", numInnerSweeps, "Number of inner relaxation sweeps",
+    pl->set ("relaxation: inner sweeps", numInnerSweeps, "Number of inner local relaxation sweeps for two-stage GS",
              rcp_const_cast<const PEV> (numInnerSweepsValidator));
     // specify damping factor for the inner sweeps of two-stage GS
     const scalar_type innerDampingFactor = STS::one ();
-    pl->set ("relaxation: inner damping factor", innerDampingFactor);
-    // specify if using sptrsv instead of inner-iterations for two-stage GS
+    pl->set ("relaxation: inner damping factor", innerDampingFactor, "Damping factor for the inner sweep of two-stage GS");
+    // specify whether to use sptrsv instead of inner-iterations for two-stage GS
     const bool innerSpTrsv = false;
-    pl->set ("relaxation: inner sparse-triangular solve", innerSpTrsv);
-    // specify if using compact form of recurrence for two-stage GS
+    pl->set ("relaxation: inner sparse-triangular solve", innerSpTrsv, "Specify whether to use sptrsv instead of JR iterations for two-stage GS");
+    // specify whether to use compact form of recurrence for two-stage GS
     const bool compactForm = false;
-    pl->set ("relaxation: compact form", compactForm);
+    pl->set ("relaxation: compact form", compactForm, "Specify whether to use compact form of recurrence for two-stage GS");
 
     const scalar_type dampingFactor = STS::one ();
     pl->set ("relaxation: damping factor", dampingFactor);
@@ -2328,13 +2328,13 @@ std::string Relaxation<MatrixType>::description () const
     os<<", BlockCrs";
 
   os  << ", " << "sweeps: " << NumSweeps_ << ", "
-      << "outer sweeps: " << NumOuterSweeps_ << ", "
       << "damping factor: " << DampingFactor_ << ", ";
 
   if (PrecType_ == Ifpack2::Details::GS2 ||
       PrecType_ == Ifpack2::Details::SGS2) {
-    os  << "inner sweeps: " << NumInnerSweeps_ << ", "
-        << "inner damping factor: " << InnerDampingFactor_ << ", ";
+    os << "outer sweeps: " << NumOuterSweeps_ << ", "
+       << "inner sweeps: " << NumInnerSweeps_ << ", "
+       << "inner damping factor: " << InnerDampingFactor_ << ", ";
   }
 
   if (DoL1Method_) {
