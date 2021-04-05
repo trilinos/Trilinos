@@ -282,7 +282,7 @@ namespace Impl {
   typename ::Tpetra::RowGraph<LO, GO, NT>::local_ordinal_type
   countLocalNumDiagsInNonFillCompleteGloballyIndexedGraphWithoutRowViews (const ::Tpetra::RowGraph<LO, GO, NT>& G)
   {
-    using gids_type = ::Tpetra::RowGraph<LO,GO,NT>::nonconst_global_inds_host_view_type ;
+    using gids_type = typename ::Tpetra::RowGraph<LO,GO,NT>::nonconst_global_inds_host_view_type ;
     const auto rowMap = G.getRowMap ();
     if (rowMap.get () == nullptr) {
       return 0; // this process does not participate
