@@ -86,7 +86,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   set (Trilinos_ENABLE_Gtest OFF CACHE BOOL "Gtest just does not build" FORCE)
   set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL "Can't test Tacho with CUDA without RDC" FORCE)
   set (Trilinos_ENABLE_Shards OFF CACHE BOOL "Shards does not build" FORCE)
-  set (Trilinos_ENABLE_Zoltan OFF CACHE BOOL "Zoltan does not build" FORCE)
+  #set (Trilinos_ENABLE_Zoltan OFF CACHE BOOL "Zoltan does not build" FORCE)
   set (Trilinos_ENABLE_Epetra OFF CACHE BOOL "We do not want Epetra" FORCE)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
@@ -142,7 +142,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DAmesos2_ENABLE_ShyLU_NodeTacho:BOOL=OFF"
       "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=OFF"
 
-      "-DTrilinos_ENABLE_Zoltan:BOOL=OFF"
+      #"-DTrilinos_ENABLE_Zoltan:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"
