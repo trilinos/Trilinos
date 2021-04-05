@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.crs.cmake")
 
 #
 # Set the options specific to this build case
@@ -64,8 +64,8 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.
 # Tribits creates the variable listed under "Build Name" by prepending the OS type and compiler
 # details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
-SET(BUILD_TYPE RELEASE)
-SET(BUILD_NAME_DETAILS UVM_NODEPRECATED_DUALVIEW)
+SET(BUILD_TYPE DEBUG)
+SET(BUILD_NAME_DETAILS UVM_DEPRECATED_CRS)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
@@ -84,7 +84,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
   "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
 
-  "-D Kokkos_ENABLE_CUDA_UVM=ON"
+  "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
 
   "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF" 
 
