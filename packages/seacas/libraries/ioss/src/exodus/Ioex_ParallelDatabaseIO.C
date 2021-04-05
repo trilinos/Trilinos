@@ -5,7 +5,7 @@
 //    strange cases
 //
 //
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -348,8 +348,6 @@ namespace Ioex {
     }
   }
 
-  ParallelDatabaseIO::~ParallelDatabaseIO() = default;
-
   void ParallelDatabaseIO::release_memory__()
   {
     free_file_pointer();
@@ -454,7 +452,7 @@ namespace Ioex {
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
-    char *current_cwd = getcwd(nullptr, 0);
+    char *current_cwd   = getcwd(nullptr, 0);
     chdir(path.c_str());
 #endif
 
@@ -549,7 +547,7 @@ namespace Ioex {
     Ioss::FileInfo file(filename);
     std::string    path = file.pathname();
     filename            = file.tailname();
-    char *current_cwd = getcwd(nullptr, 0);
+    char *current_cwd   = getcwd(nullptr, 0);
     chdir(path.c_str());
 #endif
 
@@ -2356,11 +2354,14 @@ int64_t ParallelDatabaseIO::get_field_internal(const Ioss::ElementSet *ns, const
 }
 
 int64_t ParallelDatabaseIO::get_field_internal(const Ioss::SideSet *fs, const Ioss::Field &field,
-                                               void * /* data */, size_t data_size) const
+                                               void *data, size_t data_size) const
 {
   size_t num_to_get = field.verify(data_size);
   if (field.get_name() == "ids") {
     // Do nothing, just handles an idiosyncrasy of the GroupingEntity
+    // However, make sure that the caller gets a consistent answer, i.e., don't leave the buffer
+    // full of junk
+    memset(data, 0x00, data_size);
   }
   else {
     num_to_get = Ioss::Utils::field_warning(fs, field, "input");
@@ -4599,7 +4600,7 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const 
 void ParallelDatabaseIO::write_meta_data(bool appending)
 {
   Ioss::Region *region = get_region();
-  common_write_meta_data();
+  common_write_meta_data(appending);
 
   char the_title[max_line_length + 1];
 

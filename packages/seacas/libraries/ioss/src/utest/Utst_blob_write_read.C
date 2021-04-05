@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,6 +10,7 @@
 #include <Ioss_Property.h>
 #include <Ioss_Region.h>
 #include <Ioss_ScopeGuard.h>
+#include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 
 #include <Ionit_Initializer.h>
@@ -186,7 +187,7 @@ void write_blob()
       // Get the fields that are defined on this blob...
       Ioss::NameList fields;
       blob->field_describe(Ioss::Field::RoleType::TRANSIENT, &fields);
-      std::sort(fields.begin(), fields.end()); // Just done for testing; not needed
+      Ioss::sort(fields.begin(), fields.end()); // Just done for testing; not needed
       for (const auto &field : fields) {
         std::vector<double> data = generate_data(time, gl_size, idx++, size, p_offset);
         blob->put_field_data(field, data);
@@ -244,7 +245,7 @@ bool read_blob()
     // Get the names of the fields that are defined on this blob...
     Ioss::NameList fields;
     blob->field_describe(Ioss::Field::RoleType::TRANSIENT, &fields);
-    std::sort(fields.begin(), fields.end()); // Just done for testing; not needed
+    Ioss::sort(fields.begin(), fields.end()); // Just done for testing; not needed
     all_fields.push_back(fields);
 
     // Reduction fields...

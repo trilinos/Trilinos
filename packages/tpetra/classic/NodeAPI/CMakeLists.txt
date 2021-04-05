@@ -71,7 +71,15 @@ ENDIF()
 # performance of users' own threads -- OpenMP doesn't have
 # that problem).
 
-IF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
+IF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosHIPWrapperNode")
+  IF (NOT Kokkos_ENABLE_HIP)
+    MESSAGE (FATAL_ERROR "Kokkos_ENABLE_HIP is OFF, but you set Tpetra's default Node type to Kokkos::Compat::KokkosHIPWrapperNode.")
+  ENDIF ()
+  IF (NOT Tpetra_INST_HIP)
+    MESSAGE (FATAL_ERROR "Tpetra_INST_HIP is OFF, but you set Tpetra's default Node type to Kokkos::Compat::KokkosHIPWrapperNode.")
+  ENDIF ()
+  SET (HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE ON CACHE BOOL "")
+ELSEIF (Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode")
   IF (NOT Kokkos_ENABLE_CUDA)
     MESSAGE (FATAL_ERROR "Kokkos_ENABLE_CUDA is OFF, but you set Tpetra's default Node type to Kokkos::Compat::KokkosCudaWrapperNode.")
   ENDIF ()
@@ -107,7 +115,14 @@ ELSEIF (Tpetra_DefaultNode STREQUAL "")
   #
   # The user didn't set Tpetra_DefaultNode, so we need to pick it.
   #
-  IF (Tpetra_INST_CUDA)
+  IF (Tpetra_INST_HIP)
+    IF(NOT Kokkos_ENABLE_HIP)
+      MESSAGE(FATAL_ERROR "Tpetra_INST_HIP is ON, but Kokkos_ENABLE_HIP is OFF.")
+    ENDIF()
+    MESSAGE(STATUS "Setting default Node to Kokkos::Compat::KokkosHIPWrapperNode.")
+    SET(Tpetra_DefaultNode "Kokkos::Compat::KokkosHIPWrapperNode")
+    SET(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE ON CACHE BOOL "")  
+  ELSEIF (Tpetra_INST_CUDA)
     IF(NOT Kokkos_ENABLE_CUDA)
       MESSAGE(FATAL_ERROR "Tpetra_INST_CUDA is ON, but Kokkos_ENABLE_CUDA is OFF.")
     ENDIF()

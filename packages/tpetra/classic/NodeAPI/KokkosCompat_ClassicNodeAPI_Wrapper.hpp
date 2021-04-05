@@ -49,6 +49,10 @@ public:
   static std::string name ();
 };
 
+#ifdef KOKKOS_ENABLE_HIP
+  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace> KokkosHIPWrapperNode;
+#endif
+
 #ifdef KOKKOS_ENABLE_CUDA
   typedef KokkosDeviceWrapperNode<Kokkos::Cuda> KokkosCudaWrapperNode;
 #endif

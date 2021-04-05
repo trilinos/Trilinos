@@ -97,6 +97,9 @@ namespace Ioss {
      */
     BasicType get_type() const { return type_; }
 
+    bool operator!=(const Ioss::Property rhs) const;
+    bool operator==(const Ioss::Property rhs) const;
+
   private:
     std::string name_{};
     BasicType   type_{INVALID};

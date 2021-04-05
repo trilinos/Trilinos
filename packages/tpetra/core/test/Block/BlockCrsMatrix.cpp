@@ -262,9 +262,12 @@ namespace {
     blockMat.modify_host ();
     {
       if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
+        // This is messed up with HIP using HIPHostPinnedSpace as its memory space
+        #ifndef KOKKOS_ENABLE_HIP
         TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
-        TEST_ASSERT( blockMat.need_sync_device () );
         TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
+        #endif
+        TEST_ASSERT( blockMat.need_sync_device () );
         TEST_ASSERT( ! blockMat.need_sync_host () );
       }
       auto val = blockMat.template getValues<Kokkos::HostSpace> ();
