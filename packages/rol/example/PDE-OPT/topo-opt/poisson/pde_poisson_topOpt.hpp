@@ -173,7 +173,7 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ((i==2)) {
+        if (i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -227,7 +227,7 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ((i==2)) {
+        if (i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -292,7 +292,7 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ((i==2)) {
+        if (i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -353,7 +353,7 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ((i==2)) {
+        if (i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -417,7 +417,7 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ((i==2)) {
+        if (i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();
@@ -483,7 +483,7 @@ public:
     int numSideSets = bdryCellLocIds_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        if ((i==2)) {
+        if (i==2) {
           int numLocalSideIds = bdryCellLocIds_[i].size();
           for (int j = 0; j < numLocalSideIds; ++j) {
             int numCellsSide = bdryCellLocIds_[i][j].size();

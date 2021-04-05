@@ -276,7 +276,7 @@ public:
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
                 const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                 const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -397,7 +397,7 @@ public:
   void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -548,7 +548,7 @@ public:
   void Jacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -626,7 +626,7 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -712,7 +712,7 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -788,7 +788,7 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -865,7 +865,7 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fc = feCtrl_->gradN()->dimension(1);
@@ -940,7 +940,7 @@ public:
     FieldUtils::combineFieldCoeff<Real>(hess, H, fieldInfoCtrl_, fieldInfoCtrl_);
   }
 
-  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
+  void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fv = feVel_->gradN()->dimension(1);
@@ -968,7 +968,7 @@ public:
     FieldUtils::combineFieldCoeff<Real>(riesz, J, fieldInfo_, fieldInfo_);
   }
 
-  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
+  void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) override {
     // Retrieve dimensions.
     const int c  = feVel_->gradN()->dimension(0);
     const int fc = feCtrl_->gradN()->dimension(1);
@@ -981,7 +981,7 @@ public:
     FieldUtils::combineFieldCoeff<Real>(riesz, J, fieldInfoCtrl_, fieldInfoCtrl_);
   }
 
-  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() {
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() override {
     return basisPtrs_;
   }
 
@@ -991,7 +991,7 @@ public:
 
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
                     const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
-                    const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
+                    const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) override {
     volCellNodes_ = volCellNodes;
     bdryCellNodes_ = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
@@ -1018,7 +1018,7 @@ public:
   }
 
   void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern,
-                       const std::vector<std::vector<int>> &fieldPattern2) {
+                       const std::vector<std::vector<int>> &fieldPattern2) override {
     fieldPattern_ = fieldPattern;
     fieldInfo_    = ROL::makePtr<FieldUtils::FieldInfo>(numFields_,numDofs_,numFieldDofs_,fieldPattern_);
     fieldPatternCtrl_ = fieldPattern2;

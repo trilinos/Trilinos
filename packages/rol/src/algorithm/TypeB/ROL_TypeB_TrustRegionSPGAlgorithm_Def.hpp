@@ -557,7 +557,7 @@ void TrustRegionSPGAlgorithm<Real>::dproj(Vector<Real> &x,
       f0 = f1; f1 = fc; fc = f0;
       y0.set(y1); y1.set(yc); yc.set(y0);
     }
-    tol = two*eps*abs(t1) + half*tol0;
+    tol = two*eps*std::abs(t1) + half*tol0;
     m   = half*(tc - t1);
     if (std::abs(m) <= tol) { code = 1; break; }
     if ((f1 >= fudge*del && f1 <= del)) break;
