@@ -113,13 +113,16 @@ sync_device(DualViewType dualView) { }
 
 template <typename DualViewType>
 class WrappedDualView {
-private:
-  static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
-
 public:
   using HostViewType = typename DualViewType::t_host;
   using DeviceViewType = typename DualViewType::t_dev;
 
+private:
+  static constexpr bool dualViewHasNonConstData = !impl::hasConstData<DualViewType>::value;
+  static constexpr bool deviceMemoryIsHostAccessible =
+    Kokkos::SpaceAccessibility<Kokkos::Serial, typename DeviceViewType::memory_space>::accessible;
+
+public:
   WrappedDualView() {}
 
   WrappedDualView(DualViewType dualV)
@@ -184,6 +187,7 @@ public:
       return getHostView(Access::ReadWrite);
     }
     throwIfDeviceViewAlive();
+    if (deviceMemoryIsHostAccessible) Kokkos::fence();
     dualView.clear_sync_state();
     dualView.modify_host();
     return dualView.view_host();
