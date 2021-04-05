@@ -265,10 +265,10 @@ template<class Scalar,
 void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode,LocalOrdinalViewType>::mult_A_B_reuse_kernel_wrapper(
                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
-                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
+                                                                                               const LocalOrdinalViewType & targetMapToOrigRow_dev,
+                                                                                               const LocalOrdinalViewType & targetMapToImportRow_dev,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol_dev,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol_dev,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -303,8 +303,24 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCuda
   const LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
-  // Since this is being run on Cuda, we need to fence because the below host code will use UVM
-  typename graph_t::execution_space().fence();
+  // Since this is being run on Cuda, we need to fence because the below code will use UVM
+  // typename graph_t::execution_space().fence();
+  
+  // KDDKDD UVM Without UVM, need to copy targetMap arrays to host.
+  // KDDKDD UVM Ideally, this function would run on device and use 
+  // KDDKDD UVM KokkosKernels instead of this host implementation.
+  auto targetMapToOrigRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToOrigRow_dev);
+  auto targetMapToImportRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToImportRow_dev);
+  auto Bcol2Ccol =
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Bcol2Ccol_dev);
+  auto Icol2Ccol = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Icol2Ccol_dev);
 
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
@@ -478,10 +494,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
                                                                                                const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> & Dinv,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Aview,
                                                                                                CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& Bview,
-                                                                                               const LocalOrdinalViewType & targetMapToOrigRow,
-                                                                                               const LocalOrdinalViewType & targetMapToImportRow,
-                                                                                               const LocalOrdinalViewType & Bcol2Ccol,
-                                                                                               const LocalOrdinalViewType & Icol2Ccol,
+                                                                                               const LocalOrdinalViewType & targetMapToOrigRow_dev,
+                                                                                               const LocalOrdinalViewType & targetMapToImportRow_dev,
+                                                                                               const LocalOrdinalViewType & Bcol2Ccol_dev,
+                                                                                               const LocalOrdinalViewType & Icol2Ccol_dev,
                                                                                                CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosCudaWrapperNode>& C,
                                                                                                Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCudaWrapperNode> > Cimport,
                                                                                                const std::string& label,
@@ -517,7 +533,24 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosCud
   const SC SC_ZERO = Teuchos::ScalarTraits<Scalar>::zero();
 
   // Since this is being run on Cuda, we need to fence because the below host code will use UVM
-  typename graph_t::execution_space().fence();
+  // KDDKDD typename graph_t::execution_space().fence();
+
+  // KDDKDD UVM Without UVM, need to copy targetMap arrays to host.
+  // KDDKDD UVM Ideally, this function would run on device and use 
+  // KDDKDD UVM KokkosKernels instead of this host implementation.
+  auto targetMapToOrigRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToOrigRow_dev);
+  auto targetMapToImportRow = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           targetMapToImportRow_dev);
+  auto Bcol2Ccol =
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Bcol2Ccol_dev);
+  auto Icol2Ccol = 
+       Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), 
+                                           Icol2Ccol_dev);
+  
  
   // Sizes
   RCP<const map_type> Ccolmap = C.getColMap();
