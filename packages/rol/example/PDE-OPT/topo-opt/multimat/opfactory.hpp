@@ -45,7 +45,7 @@
 #define OPFACTORY_TOPOOPT_MULTIMAT_HPP
 
 #include "ROL_Bounds.hpp"
-#include "ROL_NewOptimizationProblem.hpp"
+#include "ROL_Problem.hpp"
 
 #include "../../TOOLS/pdevector.hpp"
 #include "../../TOOLS/meshreader.hpp"
@@ -157,9 +157,9 @@ public:
     build()->check(true,*os_);
   }
 
-  ROL::Ptr<ROL::NewOptimizationProblem<Real>> build(void) {
-    ROL::Ptr<ROL::NewOptimizationProblem<Real>> prob
-      = ROL::makePtr<ROL::NewOptimizationProblem<Real>>(obj_,z_);
+  ROL::Ptr<ROL::Problem<Real>> build(void) {
+    ROL::Ptr<ROL::Problem<Real>> prob
+      = ROL::makePtr<ROL::Problem<Real>>(obj_,z_);
     prob->addBoundConstraint(bnd_);
     prob->addLinearConstraint("Weight",vcon_,vmul_,vbnd_);
     if (!useIneq_) {

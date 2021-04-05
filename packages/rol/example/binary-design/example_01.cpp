@@ -45,8 +45,8 @@
     \brief Shows how to minimize a function with binary (0/1) constraints.
 */
 
-#include "ROL_CompositeStepAlgorithm_E.hpp"
-#include "ROL_FletcherAlgorithm_E.hpp"
+#include "ROL_TypeE_CompositeStepAlgorithm.hpp"
+#include "ROL_TypeE_FletcherAlgorithm.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Stream.hpp"
 
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
       (*c_ptr)[i] = 0.0;
     }
     {
-      ROL::CompositeStepAlgorithm_E<RealT> algo(*parlist);
+      ROL::TypeE::CompositeStepAlgorithm<RealT> algo(*parlist);
       ROL::Ptr<ROL::Vector<RealT> > l = c->dual().clone();
       algo.run(*x, *obj, *con, *l, *outStream);
     }
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
       (*c_ptr)[i] = 0.0;
     }
     {
-      ROL::FletcherAlgorithm_E<RealT> algo(*parlist);
+      ROL::TypeE::FletcherAlgorithm<RealT> algo(*parlist);
       ROL::Ptr<ROL::Vector<RealT> > l = c->dual().clone();
       algo.run(*x, *obj, *con, *l, *outStream);
     }

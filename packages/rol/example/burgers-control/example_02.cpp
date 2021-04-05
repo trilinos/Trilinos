@@ -47,8 +47,8 @@
            Step and trust regions.
 */
 
-#include "ROL_TrustRegionAlgorithm_U.hpp"
-#include "ROL_CompositeStepAlgorithm_E.hpp"
+#include "ROL_TypeU_TrustRegionAlgorithm.hpp"
+#include "ROL_TypeE_CompositeStepAlgorithm.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Stream.hpp"
 
@@ -154,25 +154,25 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",1000);
 
-    // Run optimization with CompositeStepAlgorithm_E (equality-constrained).
+    // Run equality-constrained optimization.
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     z.zero();
     con.solve(c,u,z,zerotol);
     c.zero(); l.zero();
     {
       // Define algorithm.
-      ROL::CompositeStepAlgorithm_E<RealT> algo(*parlist);
+      ROL::TypeE::CompositeStepAlgorithm<RealT> algo(*parlist);
       // Run Algorithm
       algo.run(x, obj, con, l, *outStream);
     }
     ROL::Ptr<ROL::Vector<RealT> > zCS = z.clone();
     zCS->set(z);
 
-    // Run optimization with TrustRegionAlgorithm_U (unconstrained).
+    // Run unconstrained optimization.
     z.zero();
     {
       // Define algorithm.
-      ROL::TrustRegionAlgorithm_U<RealT> algo(*parlist);
+      ROL::TypeU::TrustRegionAlgorithm<RealT> algo(*parlist);
       // Run Algorithm
       algo.run(z, z.dual(), robj, *outStream);
     }

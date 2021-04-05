@@ -57,7 +57,7 @@
 #include <algorithm>
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 #include "../TOOLS/meshreader.hpp"
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -177,13 +177,13 @@ int main(int argc, char *argv[]) {
       robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
 
     // Build optimization problem and check derivatives
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj,zp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
     optProb->check(true,*outStream);
 
     // Build optimization solver and solve
     zp->zero(); up->zero(); pp->zero();
-    ROL::NewOptimizationSolver<RealT> optSolver(optProb,*parlist);
+    ROL::Solver<RealT> optSolver(optProb,*parlist);
     std::clock_t timerTR = std::clock();
     optSolver.solve(*outStream);
     *outStream << "Trust Region Time: "

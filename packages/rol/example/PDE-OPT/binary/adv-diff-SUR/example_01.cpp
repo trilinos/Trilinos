@@ -54,7 +54,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "opfactory.hpp"
 #include "hilbert.hpp"
 
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     ROL::Ptr<BinaryAdvDiffFactory<RealT>> factory;
     ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
     ROL::Ptr<ROL::Vector<RealT>> z, omega, uomega, uz, du;
     RealT err(0);
     int order = parlist->sublist("Problem").get("Hilbert Curve Order",6);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
       problem = factory->build();
       problem->finalize(false,true,*outStream);
       if (checkDeriv) problem->check(true,*outStream);
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem, *parlist);
+      solver = ROL::makePtr<ROL::Solver<RealT>>(problem, *parlist);
       solver->solve(*outStream);
       z = problem->getPrimalOptimizationVector();
       factory->getState(uz,z);

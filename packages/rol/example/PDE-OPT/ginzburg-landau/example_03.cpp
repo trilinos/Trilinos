@@ -57,7 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/pdeconstraint.hpp"
@@ -156,20 +156,20 @@ int main(int argc, char *argv[]) {
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
 
     // Set up optimization problem
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem;
+    ROL::Ptr<ROL::Problem<RealT>> problem;
     bool useReducedSpace = parlist->sublist("Problem").get("Use Reduced Space",true);
     if (useReducedSpace) {
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj,zp);
+      problem = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
     }
     else {
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
+      problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
       problem->addConstraint("PDE",con,pp);
     }
     bool checkDeriv = parlist->sublist("Problem").get("Check derivatives",false);
     if (checkDeriv) problem->check(true,*outStream);
 
     // Solve optimization problem
-    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Solver<RealT> solver(problem,*parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     solver.solve(*outStream);
     algoTimer.stop();

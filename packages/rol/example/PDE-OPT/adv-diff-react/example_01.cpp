@@ -58,7 +58,7 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StdTeuchosBatchManager.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
@@ -233,7 +233,7 @@ int main(int argc, char *argv[]) {
     bool useBundle = parlist->sublist("Problem").get("Is problem nonsmooth?",false);
     if ( useBundle ) parlist.sublist("Step").set("Type","Bundle");
     else             parlist.sublist("Step").set("Type","Trust Region");{
-    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
+    ROL::Solver<RealT> solver(opt,*parlist);
     zp->zero(); // set zero initial guess
     std::clock_t timer = std::clock();
     solver.solve(*outStream);

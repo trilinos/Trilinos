@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
       }
       parlist->sublist("Step").set("Type","Bundle");
       parlist->sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
-      ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+      ROL::Solver<RealT> solver(problem,*parlist);
       solver.solve(*outStream);
     }
     else if (method == "Epi-Reg") {
@@ -140,7 +140,7 @@ int main(int argc, char* argv[]) {
           = ROL::makePtr<ROL::StochasticProblem<RealT>>(robj, z);
         problem->makeObjectiveStochastic(list, sampler);
         problem->finalize(false,true,*outStream);
-        ROL::NewOptimizationSolver<RealT> solver(problem,list);
+        ROL::Solver<RealT> solver(problem,list);
         solver.solve(*outStream);
         // Get solution statistic
         stat = problem->getSolutionStatistic();
@@ -164,8 +164,8 @@ int main(int argc, char* argv[]) {
       }
     }
     else {
-      ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem
-        = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, z);
+      ROL::Ptr<ROL::Problem<RealT>> problem
+        = ROL::makePtr<ROL::Problem<RealT>>(robj, z);
       problem->finalize(false,true,*outStream);
       ROL::PrimalDualRisk<RealT> solver(problem, sampler, *parlist);
       if (parlist->sublist("Problem").get("Run Derivative Check",false)) {

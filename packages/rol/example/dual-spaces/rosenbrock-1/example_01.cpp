@@ -48,7 +48,7 @@
 #define USE_HESSVEC 1
 
 #include "ROL_Rosenbrock.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include <iostream>
@@ -309,8 +309,8 @@ int main(int argc, char *argv[]) {
     std::vector<RealT> std_vec_err = av.checkVector(bv,cv,true,*outStream);
 
     // Build optimization problem.
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem
-      = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x,g);
+    ROL::Ptr<ROL::Problem<RealT>> problem
+      = ROL::makePtr<ROL::Problem<RealT>>(obj,x,g);
     problem->finalize(false,true,*outStream);
 
     // Define algorithm.
@@ -328,8 +328,8 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-14);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver
-      = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,parlist);
+    ROL::Ptr<ROL::Solver<RealT>> solver
+      = ROL::makePtr<ROL::Solver<RealT>>(problem,parlist);
 
     // Run Algorithm
     solver->solve(*outStream);

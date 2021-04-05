@@ -174,8 +174,8 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
     z->zero();
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem
-      = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(objReduced, z);
+    ROL::Ptr<ROL::Problem<RealT>> problem
+      = ROL::makePtr<ROL::Problem<RealT>>(objReduced, z);
     problem->addBoundConstraint(bnd);
     ROL::PrimalDualRisk<RealT> solver(problem, sampler, *parlist);
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);

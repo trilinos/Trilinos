@@ -57,7 +57,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_UnaryFunctions.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
@@ -337,7 +337,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     parlist->sublist("Step").set("Type","Trust Region");
-    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
+    ROL::Solver<RealT> solver(opt,*parlist);
     zp->set(*rzp);
     std::clock_t timer = std::clock();
     solver.solve(*outStream);

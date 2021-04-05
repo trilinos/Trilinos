@@ -13,7 +13,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  NewOptimizationProblem
+  Problem
   SOURCES test_02.cpp
   ARGS PrintItAll
   NUM_MPI_PROCS 1

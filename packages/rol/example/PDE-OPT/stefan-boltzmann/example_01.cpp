@@ -61,7 +61,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_OptimizationSolver.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -227,8 +227,8 @@ int main(int argc, char *argv[]) {
     ROL::OptimizationProblem<RealT> opt(objReduced,zp,bnd);
     parlist->sublist("SOL").set("Initial Statistic", one);
     opt.setStochasticObjective(*parlist,sampler);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> newopt
-      = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(opt.getObjective(),opt.getSolutionVector());
+    ROL::Ptr<ROL::Problem<RealT>> newopt
+      = ROL::makePtr<ROL::Problem<RealT>>(opt.getObjective(),opt.getSolutionVector());
     newopt->addBoundConstraint(opt.getBoundConstraint());
 
     /*************************************************************************/
@@ -257,7 +257,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     parlist->sublist("Step").set("Type","Trust Region");
-    ROL::NewOptimizationSolver<RealT> solver(newopt,*parlist);
+    ROL::Solver<RealT> solver(newopt,*parlist);
     //zp->zero();
     std::clock_t timer = std::clock();
     solver.solve(*outStream);

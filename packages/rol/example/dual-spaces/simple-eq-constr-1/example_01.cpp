@@ -47,7 +47,7 @@
 */
 
 #include "ROL_SimpleEqConstrained.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
@@ -527,8 +527,8 @@ int main(int argc, char *argv[]) {
 
     // Define problem.
     vl->zero(); vc->zero(); g->zero();
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x,g);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x,g);
     problem->addConstraint("Equality",constr,ROL::staticPtrCast<ROL::Vector<RealT>>(vl),ROL::staticPtrCast<ROL::Vector<RealT>>(vc));
     problem->finalize(false,true,*outStream);
 
@@ -546,8 +546,8 @@ int main(int argc, char *argv[]) {
     parlist.sublist("Status Test").set("Constraint Tolerance",1.e-12);
     parlist.sublist("Status Test").set("Step Tolerance",1.e-18);
     parlist.sublist("Status Test").set("Iteration Limit",100);
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver
-      = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem,parlist);
+    ROL::Ptr<ROL::Solver<RealT>> solver
+      = ROL::makePtr<ROL::Solver<RealT>>(problem,parlist);
 
     // Run Algorithm
     //(*x_ptr)[0] = 3.0; (*x_ptr)[1] = 2.0; (*x_ptr)[2] = 2.0; (*x_ptr)[3] = 1.0; (*x_ptr)[4] = 1.0;

@@ -59,7 +59,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
 
         // Solve optimization problem
         Teuchos::Time algoTimer("Algorithm Time", true);
-        ROL::NewOptimizationSolver<RealT> solver(prob,*parlist);
+        ROL::Solver<RealT> solver(prob,*parlist);
         solver.solve(*outStream);
         algoTimer.stop();
         *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";

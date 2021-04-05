@@ -57,7 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -324,9 +324,9 @@ int main(int argc, char *argv[]) {
     schurTimer.stop();
     *outStream << "Schur complement factorization time = " << schurTimer.totalElapsedTime() << " seconds.\n";
 
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj,zp);
-    ROL::NewOptimizationSolver<RealT> solver(prob,*parlist);
+    ROL::Ptr<ROL::Problem<RealT>>
+      prob = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
+    ROL::Solver<RealT> solver(prob,*parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     solver.solve(*outStream);
     algoTimer.stop();

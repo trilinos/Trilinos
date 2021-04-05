@@ -53,7 +53,7 @@
 // ROL_Types contains predefined constants and objects
 #include "ROL_Types.hpp"
 // ROL algorithmic information
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_PrimalDualRisk.hpp"
 // ROL vectors

@@ -56,7 +56,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -185,14 +185,14 @@ int main(int argc, char *argv[]) {
 
     // Build optimization problem
     du_ptr->putScalar(0.4);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      opt = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,up);
+    ROL::Ptr<ROL::Problem<RealT>>
+      opt = ROL::makePtr<ROL::Problem<RealT>>(obj,up);
     opt->addBoundConstraint(bnd);
     opt->finalize(false,true,*outStream);
 
     up->set(*dup);
     parlist->sublist("Step").set("Type","Trust Region");
-    ROL::NewOptimizationSolver<RealT> solverTR(opt,*parlist);
+    ROL::Solver<RealT> solverTR(opt,*parlist);
     std::clock_t timerTR = std::clock();
     solverTR.solve(*outStream);
     *outStream << "Trust Region Time: "
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
 
     up->set(*dup);
     parlist->sublist("Step").set("Type","Primal-Dual Active Set");
-    ROL::NewOptimizationSolver<RealT> solverPDAS(opt,*parlist);
+    ROL::Solver<RealT> solverPDAS(opt,*parlist);
     std::clock_t timerPDAS = std::clock();
     solverPDAS.solve(*outStream);
     *outStream << "Primal Dual Active Set Time: "

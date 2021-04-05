@@ -57,7 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/pdeconstraint.hpp"
@@ -250,12 +250,12 @@ int main(int argc, char *argv[]) {
     pdecon->printMeshData(*outStream);
     con->solve(*rp,*up,*zp,tol);
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
-    z_ptr->putScalar(static_cast<RealT>(-1));
+    z_ptr->putScalar(static_cast<RealT>(1));
 
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     problem->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Solver<RealT> solver(problem,*parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     solver.solve(*outStream);
     algoTimer.stop();

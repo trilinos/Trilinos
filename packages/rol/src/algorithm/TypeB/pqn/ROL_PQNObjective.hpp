@@ -52,7 +52,7 @@
     \brief Provides the interface to evaluate the quadratic quasi-Newton objective.
 
     This class implements the PQN quasi-Newton objective for use with
-    ROL::QuasiNewtonAlgorithm_B.  Given a function
+    ROL::TypeB::QuasiNewtonAlgorithm.  Given a function
     \f$f:\mathcal{X}\to\mathbb{R}\f$ and a Hessian approximation
     \f$B_k:\mathcal{X}}\to\mathcal{X}^*\f$, the functional is
     \f[

@@ -60,7 +60,7 @@
 #include "ROL_Algorithm.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -251,12 +251,12 @@ int main(int argc, char *argv[]) {
     up->setScalar(RealT(1));
     zp->randomize();//->setScalar(RealT(1));
     con->solve(*rp,*up,*zp,tol);    
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj, makePtrFromRef(x));
+    ROL::Ptr<ROL::Problem<RealT>>
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(obj, makePtrFromRef(x));
     optProb->addBoundConstraint(bnd);
     optProb->addConstraint("PDE", con, pp);
     optProb->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> optSolver(optProb, *parlist);
+    ROL::Solver<RealT> optSolver(optProb, *parlist);
     optSolver.solve(*outStream);
     std::clock_t timer = std::clock();
     *outStream << "Optimization time: "

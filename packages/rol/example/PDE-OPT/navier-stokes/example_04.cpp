@@ -64,7 +64,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -78,11 +78,11 @@
 typedef double RealT;
 
 template<class Real>
-void setUpAndSolve(const ROL::Ptr<ROL::NewOptimizationProblem<Real>> &opt,
+void setUpAndSolve(const ROL::Ptr<ROL::Problem<Real>> &opt,
                    Teuchos::ParameterList &parlist,
                    std::ostream &outStream) {
   parlist.sublist("Step").set("Type","Trust Region");
-  ROL::NewOptimizationSolver<Real> solver(opt,parlist);
+  ROL::Solver<Real> solver(opt,parlist);
   Teuchos::Time timer("Optimization Time", true);
   solver.solve(outStream);
   timer.stop();

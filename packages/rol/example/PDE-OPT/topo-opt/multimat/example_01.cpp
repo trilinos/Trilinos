@@ -57,7 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "opfactory.hpp"
 #include <fenv.h>
 
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]) {
       factory->check();
     }
     Teuchos::Time algoTimer("Algorithm Time", true);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem = factory->build();
-    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Ptr<ROL::Problem<RealT>> problem = factory->build();
+    ROL::Solver<RealT> solver(problem,*parlist);
     solver.solve(*outStream);
     ROL::Ptr<ROL::Vector<RealT>> z = problem->getPrimalOptimizationVector();
     algoTimer.stop();

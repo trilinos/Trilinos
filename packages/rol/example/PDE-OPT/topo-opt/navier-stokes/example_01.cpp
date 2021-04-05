@@ -60,7 +60,7 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_SingletonVector.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
 
@@ -170,8 +170,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BoundConstraint<RealT>>
     bnd = ROL::makePtr<ROL::Bounds<RealT>>(lp, hp);
     // Build optimization problem
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> optProb
-      = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
+    ROL::Ptr<ROL::Problem<RealT>> optProb
+      = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     optProb->addBoundConstraint(bnd);
     optProb->addLinearConstraint("Volume",icon,imul); //, ibnd);
     optProb->setProjectionAlgorithm(*parlist);
@@ -212,7 +212,7 @@ int main(int argc, char *argv[]) {
       if (infile.good()) assembler->inputTpetraVector(z_ptr,"control.txt");
       else               zp->setScalar(volFraction);
       Teuchos::Time algoTimer("Algorithm Time", true);
-      ROL::NewOptimizationSolver<RealT> optSolver(optProb,*parlist);
+      ROL::Solver<RealT> optSolver(optProb,*parlist);
       optSolver.solve(*outStream);
       algoTimer.stop();
       *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";

@@ -56,7 +56,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_UnaryFunctions.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
@@ -223,8 +223,8 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      opt = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,xp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      opt = ROL::makePtr<ROL::Problem<RealT>>(obj,xp);
     opt->addBoundConstraint(bnd);
     opt->addConstraint("PDE",pdeWithDoping,pp);
     opt->finalize(false,true,*outStream);
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
+    ROL::Solver<RealT> solver(opt,*parlist);
     zp->set(*rzp);
 
     bool initSolve = parlist->sublist("Problem").get("Solve state for full space",true);

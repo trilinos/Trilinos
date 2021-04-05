@@ -60,7 +60,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_StochasticProblem.hpp"
 #include "ROL_PrimalDualRisk.hpp"
 
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
         problem->addBoundConstraint(bnd);
         problem->makeObjectiveStochastic(list, sampler);
         problem->finalize(false,true,*outStream);
-        ROL::NewOptimizationSolver<RealT> solver(problem,list);
+        ROL::Solver<RealT> solver(problem,list);
         solver.solve(*outStream);
         // Get solution statistic
         stat = problem->getSolutionStatistic();
@@ -230,8 +230,8 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
-      ROL::Ptr<ROL::NewOptimizationProblem<RealT>> problem
-        = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(objReduced, z);
+      ROL::Ptr<ROL::Problem<RealT>> problem
+        = ROL::makePtr<ROL::Problem<RealT>>(objReduced, z);
       problem->addBoundConstraint(bnd);
       problem->finalize(false,true,*outStream);
       ROL::PrimalDualRisk<RealT> solver(problem, sampler, *parlist);

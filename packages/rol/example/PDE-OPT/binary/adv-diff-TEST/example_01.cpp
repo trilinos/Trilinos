@@ -54,7 +54,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_PEBBL_BranchAndBound.hpp"
 #include "ROL_PEBBL_TeuchosBranchHelper.hpp"
 #include "opfactory.hpp"
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     ROL::Ptr<BinaryAdvDiffFactory<RealT>>       factory;
     ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
     ROL::Ptr<ROL::Vector<RealT>>                z, u;
     int nx = parlist->sublist("Problem").get("Number of X-Cells",64);
     int ny = parlist->sublist("Problem").get("Number of Y-Cells",32);
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
         extractQP<RealT> qp(problem->getObjective(), problem->getPrimalOptimizationVector(), problem->getBoundConstraint());
         problem = qp();
       }
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem, *parlist);
+      solver = ROL::makePtr<ROL::Solver<RealT>>(problem, *parlist);
       solver->solve(*outStream);
       z = problem->getPrimalOptimizationVector();
     }

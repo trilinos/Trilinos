@@ -57,7 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/pdeconstraint.hpp"
@@ -262,10 +262,10 @@ int main(int argc, char *argv[]) {
     RealT err = assembler->computeStateError(u_ptr,sol,6,pde->getFieldHelper());
     *outStream << std::endl << "Error in uncontrolled state: " << err << std::endl;
 
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     problem->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Solver<RealT> solver(problem,*parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     solver.solve(*outStream);
     algoTimer.stop();

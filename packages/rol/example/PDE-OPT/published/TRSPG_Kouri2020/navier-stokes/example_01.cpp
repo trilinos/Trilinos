@@ -60,7 +60,7 @@
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_SingletonVector.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
 
@@ -166,8 +166,8 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::BoundConstraint<RealT>>
     bnd = ROL::makePtr<ROL::Bounds<RealT>>(lp, hp);
     // Build optimization problem
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> optProb
-      = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
+    ROL::Ptr<ROL::Problem<RealT>> optProb
+      = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     optProb->addBoundConstraint(bnd);
     optProb->addLinearConstraint("Volume",icon,imul);
     optProb->setProjectionAlgorithm(*parlist);
@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
     }
 
     // Solve optimization problem
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
     std::vector<RealT> vals(6);
 
     // SPG
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
     optProb->finalize(false,true,*outStream);
     parlist->sublist("Step").set("Type","Spectral Gradient");
     Teuchos::Time spgTimer("SPG Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optProb,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(optProb,*parlist);
     solver->solve(*outStream);
     spgTimer.stop();
     *outStream << "Total optimization time = " << spgTimer.totalElapsedTime() << " seconds.\n";
@@ -220,7 +220,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").set("Type","Line Search");
     parlist->sublist("Step").sublist("Line Search").sublist("Descent Method").set("Type","Quasi-Newton Method");
     Teuchos::Time pqnTimer("PQN Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optProb,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(optProb,*parlist);
     solver->solve(*outStream);
     pqnTimer.stop();
     *outStream << "Total optimization time = " << pqnTimer.totalElapsedTime() << " seconds.\n";
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").set("Type","Trust Region");
     parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model","Lin-More");
     Teuchos::Time lmtrTimer("LMTR Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optProb,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(optProb,*parlist);
     solver->solve(*outStream);
     lmtrTimer.stop();
     *outStream << "Total optimization time = " << lmtrTimer.totalElapsedTime() << " seconds.\n";
@@ -244,7 +244,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").set("Type","Trust Region");
     parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model","SPG");
     Teuchos::Time trspgTimer("TRSPG Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optProb,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(optProb,*parlist);
     solver->solve(*outStream);
     trspgTimer.stop();
     *outStream << "Total optimization time = " << trspgTimer.totalElapsedTime() << " seconds.\n";
@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Trust Region");
     parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model","Lin-More");
     Teuchos::Time allmtrTimer("AL-LMTR Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optProb,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(optProb,*parlist);
     solver->solve(*outStream);
     allmtrTimer.stop();
     *outStream << "Total optimization time = " << allmtrTimer.totalElapsedTime() << " seconds.\n";
@@ -272,7 +272,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").sublist("Augmented Lagrangian").set("Subproblem Step Type","Trust Region");
     parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model","SPG");
     Teuchos::Time altrspgTimer("AL-TRSPG Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(optProb,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(optProb,*parlist);
     solver->solve(*outStream);
     altrspgTimer.stop();
     *outStream << "Total optimization time = " << altrspgTimer.totalElapsedTime() << " seconds.\n";

@@ -63,7 +63,7 @@
 #include "pde_poisson_boltzmann.hpp"
 #include "obj_poisson_boltzmann.hpp"
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 typedef double RealT;
 
@@ -147,11 +147,11 @@ int main(int argc, char *argv[]) {
 
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      problem = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,x);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
     problem->addConstraint("PDE",con,pp);
     problem->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Solver<RealT> solver(problem,*parlist);
     solver.solve(*outStream);
 
     // Output.

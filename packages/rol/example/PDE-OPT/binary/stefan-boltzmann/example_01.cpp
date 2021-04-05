@@ -54,7 +54,7 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_PEBBL_BranchAndBound.hpp"
 #include "ROL_PEBBL_TeuchosBranchHelper.hpp"
 #include "opfactory.hpp"
@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     ROL::Ptr<BinaryStefanBoltzmannFactory<RealT>> factory;
     ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>>   problem;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>>   solver;
+    ROL::Ptr<ROL::Solver<RealT>>   solver;
     ROL::Ptr<ROL::Vector<RealT>>                  z, u;
     //factory = ROL::makePtr<BinaryStefanBoltzmannFactory<RealT>>(*parlist,comm,outStream);
     factory = ROL::makePtr<BinaryStefanBoltzmannFactory<RealT>>(*parlist,outStream);
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
       z->set(*pebbl.getSolution());
     }
     else {
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(problem, *parlist);
+      solver = ROL::makePtr<ROL::Solver<RealT>>(problem, *parlist);
       solver->solve(*outStream);
       z = problem->getPrimalOptimizationVector();
     }

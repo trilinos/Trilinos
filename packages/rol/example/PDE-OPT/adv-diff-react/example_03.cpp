@@ -57,7 +57,7 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Ptr<ROL::StochasticProblem<RealT>> opt;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
     zp->zero();
 
     int nQuad = 11, nSmooth = 1, N(2);
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
         opt->finalize(false,true,*outStream);
         if (checkDeriv) opt->check(true,*outStream);
         // Solve optimization problem
-        solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(opt,*parlist);
+        solver = ROL::makePtr<ROL::Solver<RealT>>(opt,*parlist);
         std::clock_t timer = std::clock();
         solver->solve(*outStream);
         *outStream << "Optimization time: "

@@ -57,7 +57,7 @@
 #include <algorithm>
 //#include <fenv.h>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 
@@ -176,15 +176,15 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     con->solve(*rp,*up,*zp,tol);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      opt = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,xp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      opt = ROL::makePtr<ROL::Problem<RealT>>(obj,xp);
     opt->addBoundConstraint(bnd);
     opt->addConstraint("PDE",con,pp);
     //opt->addLinearConstraint("PDE",con,pp);
     opt->finalize(false,true,*outStream);
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
     if (checkDeriv) opt->check(true,*outStream);
-    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
+    ROL::Solver<RealT> solver(opt,*parlist);
     std::clock_t timer = std::clock();
     solver.solve(*outStream);
     *outStream << "Optimization time: "

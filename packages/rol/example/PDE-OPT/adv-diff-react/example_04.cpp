@@ -61,7 +61,7 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_StochasticProblem.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     ROL::Ptr<ROL::StochasticProblem<RealT>> opt;
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>>  solver;
+    ROL::Ptr<ROL::Solver<RealT>>  solver;
 
     const int nruns = 7;
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
 
       // Solve optimization problem
       plvec[i].sublist("Step").set("Type","Trust Region");
-      solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(opt,plvec[i]);
+      solver = ROL::makePtr<ROL::Solver<RealT>>(opt,plvec[i]);
       std::clock_t timer = std::clock();
       solver->solve(*outStream);
       try                       { stat = opt->getSolutionStatistic(); }

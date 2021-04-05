@@ -56,7 +56,7 @@
 #include <algorithm>
 
 #include "ROL_Stream.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_BoundConstraint_SimOpt.hpp"
 #include "ROL_Bounds.hpp"
@@ -223,18 +223,18 @@ int main(int argc, char *argv[]) {
     }
 
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> optProb;
+    ROL::Ptr<ROL::Problem<RealT>> optProb;
     if ( useFullSpace ) {
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj, makePtrFromRef(x));
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(obj, makePtrFromRef(x));
       optProb->addBoundConstraint(bnd);
       optProb->addConstraint("PDE", con, pp);
     }
     else {
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
       optProb->addBoundConstraint(zbnd);
     }
     optProb->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> optSolver(optProb, *parlist);
+    ROL::Solver<RealT> optSolver(optProb, *parlist);
     optSolver.solve(*outStream);
 
     // Output.

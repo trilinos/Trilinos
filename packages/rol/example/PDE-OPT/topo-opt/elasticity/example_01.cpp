@@ -58,7 +58,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
@@ -356,8 +356,8 @@ int main(int argc, char *argv[]) {
     if (usePhaseField) bnd->deactivate();
 
     // Set up optimization problem.
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj,zp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      prob = ROL::makePtr<ROL::Problem<RealT>>(obj,zp);
     if (bnd->isActivated()) prob->addBoundConstraint(bnd);
     if ( minType == "Compliance" ) {
       if ( volEq ) prob->addLinearConstraint("Volume",icon,imul);
@@ -376,7 +376,7 @@ int main(int argc, char *argv[]) {
 
     // Solve optimization problem.
     Teuchos::Time algoTimer("Algorithm Time", true);
-    ROL::NewOptimizationSolver<RealT> solver(prob,*parlist);
+    ROL::Solver<RealT> solver(prob,*parlist);
     solver.solve(*outStream);
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";

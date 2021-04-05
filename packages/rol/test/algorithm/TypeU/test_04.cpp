@@ -46,7 +46,7 @@
 
 */
 
-#include "ROL_Algorithm_U_Factory.hpp"
+#include "ROL_TypeU_AlgorithmFactory.hpp"
 #include "ROL_HS9.hpp"
 #include "ROL_HS28.hpp"
 #include "ROL_HS48.hpp"
@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<ROL::Vector<RealT>>      sol, mul, x;
     ROL::Ptr<ROL::Objective<RealT>>   obj;
     ROL::Ptr<ROL::Constraint<RealT>>  con;
-    ROL::Ptr<ROL::Algorithm_U<RealT>> algo;
+    ROL::Ptr<ROL::TypeU::Algorithm<RealT>> algo;
     std::vector<RealT> data;
     RealT e1(0), e2(0), e3(0), e4(0), e5(0), err(0);
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
     mul = HS9.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     mul = HS28.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
     mul = HS48.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
     mul = HS49.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     mul = HS50.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     mul = HS51.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
@@ -234,7 +234,7 @@ int main(int argc, char *argv[]) {
     mul = HS52.getEqualityMultiplier();
     x   = sol->clone(); x->set(*sol);
 
-    algo = ROL::AlgorithmUFactory<RealT>(list);
+    algo = ROL::TypeU::AlgorithmFactory<RealT>(list);
     algo->run(*x,*obj,*con,*mul,*outStream);
 
     data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();

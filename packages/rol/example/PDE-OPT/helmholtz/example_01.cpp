@@ -57,7 +57,7 @@
 #include <algorithm>
 
 #include "ROL_Stream.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -271,15 +271,15 @@ int main(int argc, char *argv[]) {
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
 
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> optProb;
+    ROL::Ptr<ROL::Problem<RealT>> optProb;
     if ( useFullSpace ) {
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj, makePtrFromRef(x));
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(obj, makePtrFromRef(x));
       optProb->addConstraint("PDE", con, rp);
     }
     else {
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj,zp);
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
     }
-    ROL::NewOptimizationSolver<RealT> optSolver(optProb, *parlist);
+    ROL::Solver<RealT> optSolver(optProb, *parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     optSolver.solve(*outStream);
     algoTimer.stop();

@@ -58,7 +58,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
 #include "ROL_ConstraintFromObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
       bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
 
     // Set up optimization problem.
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      prob = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj_com,zp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      prob = ROL::makePtr<ROL::Problem<RealT>>(robj_com,zp);
     prob->addBoundConstraint(bnd);
     prob->addLinearConstraint("Volume",con_vol,imul);
     prob->setProjectionAlgorithm(*parlist);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
     if (derivCheck) prob->check(true,*outStream);
 
     // Solve optimization problem.
-    ROL::Ptr<ROL::NewOptimizationSolver<RealT>> solver;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
 
     // TRSPG
     zp->setScalar(initDens);
@@ -210,7 +210,7 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Step").set("Type","Trust Region");
     parlist->sublist("Step").sublist("Trust Region").set("Subproblem Model","SPG");
     Teuchos::Time trspgTimer("TRSPG Time", true);
-    solver = ROL::makePtr<ROL::NewOptimizationSolver<RealT>>(prob,*parlist);
+    solver = ROL::makePtr<ROL::Solver<RealT>>(prob,*parlist);
     solver->solve(*outStream);
     trspgTimer.stop();
     *outStream << "Total optimization time = " << trspgTimer.totalElapsedTime() << " seconds.\n";

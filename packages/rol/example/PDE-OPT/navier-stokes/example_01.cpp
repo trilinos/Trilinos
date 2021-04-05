@@ -58,7 +58,7 @@
 
 #include "ROL_TpetraMultiVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
     }
 
     up->zero(); zp->zero();
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>> optProb;
+    ROL::Ptr<ROL::Problem<RealT>> optProb;
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
     if ( useFullSpace ) {
       std::string step = parlist->sublist("Step").get("Type", "Composite Step");
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
             con->solve(*rp,*up,*zp,tol);
             pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
           }
-          optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(obj, makePtrFromRef(x));
+          optProb = ROL::makePtr<ROL::Problem<RealT>>(obj, makePtrFromRef(x));
           optProb->addConstraint("PDE", con, rp);
           break;
         }
@@ -187,10 +187,10 @@ int main(int argc, char *argv[]) {
     }
     else {
       parlist->sublist("Step").set("Type","Trust Region");
-      optProb = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj, zp);
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(robj, zp);
     }
     optProb->finalize(false,true,*outStream);
-    ROL::NewOptimizationSolver<RealT> optSolver(optProb, *parlist);
+    ROL::Solver<RealT> optSolver(optProb, *parlist);
     optSolver.solve(*outStream);
 
     // Output.

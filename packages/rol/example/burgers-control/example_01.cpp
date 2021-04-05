@@ -46,8 +46,8 @@
            steady Burgers' equation with bound constraints.
 */
 
-#include "ROL_PrimalDualActiveSetAlgorithm_B.hpp"
-#include "ROL_LinMoreAlgorithm_B.hpp"
+#include "ROL_TypeB_PrimalDualActiveSetAlgorithm.hpp"
+#include "ROL_TypeB_LinMoreAlgorithm.hpp"
 #include "ROL_Bounds.hpp"
 
 #include "Teuchos_GlobalMPISession.hpp"
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
     x.zero();
     {
       // Define algorithm.
-      ROL::PrimalDualActiveSetAlgorithm_B<RealT> algo(*parlist);
+      ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT> algo(*parlist);
       // Run algorithm.
       algo.run(x, obj, bcon, *outStream);
     }
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
     y.zero();
     {
       // Define algorithm.
-      ROL::LinMoreAlgorithm_B<RealT> algo(*parlist);
+      ROL::TypeB::LinMoreAlgorithm<RealT> algo(*parlist);
       // Run Algorithm
       algo.run(y,obj,bcon,*outStream);
     }

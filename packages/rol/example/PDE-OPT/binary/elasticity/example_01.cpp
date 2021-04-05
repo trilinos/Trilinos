@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
     if (!binary) {
       ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem = factory->build();
       problem->finalize(false,true,*outStream);
-      ROL::NewOptimizationSolver<RealT> solver(problem,*parlist);
+      ROL::Solver<RealT> solver(problem,*parlist);
       solver.solve(*outStream);
       z = problem->getPrimalOptimizationVector();
     }

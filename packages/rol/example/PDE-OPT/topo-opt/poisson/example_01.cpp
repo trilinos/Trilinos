@@ -56,7 +56,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_NewOptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
 
 #include "../../TOOLS/pdevector.hpp"
@@ -188,8 +188,8 @@ int main(int argc, char *argv[]) {
     *outStream << std::endl;
 
     // Initialize optimization problem.
-    ROL::Ptr<ROL::NewOptimizationProblem<RealT>>
-      opt = ROL::makePtr<ROL::NewOptimizationProblem<RealT>>(robj,zp);
+    ROL::Ptr<ROL::Problem<RealT>>
+      opt = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
     opt->addBoundConstraint(bnd);
     if (volEq) opt->addLinearConstraint("Volume",con_vol,imul);
     else       opt->addLinearConstraint("Volume",con_vol,imul,ibnd);
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
     if ( checkDeriv ) opt->check(true,*outStream);
 
     // Solve optimization problem
-    ROL::NewOptimizationSolver<RealT> solver(opt,*parlist);
+    ROL::Solver<RealT> solver(opt,*parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
     solver.solve(*outStream);
     algoTimer.stop();
