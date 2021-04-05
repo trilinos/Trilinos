@@ -245,8 +245,8 @@ namespace Ioex {
         size_t              count  = get_block_element_count(i);
         size_t              offset = get_block_element_offset(i);
         std::vector<double> file_data(count);
-        ex_get_partial_var(filePtr, 1, EX_ELEM_BLOCK, var_index, el_blocks[i].id_,
-			   offset + 1, count, file_data.data());
+        ex_get_partial_var(filePtr, 1, EX_ELEM_BLOCK, var_index, el_blocks[i].id_, offset + 1,
+                           count, file_data.data());
 
         for (double value : file_data) {
           m_decomposition.m_elementToProc.push_back((int)value);
