@@ -109,6 +109,29 @@ template <typename DualViewType>
 enableIfConstData<DualViewType>
 sync_device(DualViewType dualView) { }
 
+
+template <typename DualViewType>
+struct deviceMemoryIsHostAccessible {
+  using DeviceMemorySpace = typename DualViewType::t_dev::memory_space;
+  static constexpr bool value = Kokkos::SpaceAccessibility<Kokkos::Serial, DeviceMemorySpace>::accessible;
+};
+
+template <typename DualViewType>
+using enableIfUVM = std::enable_if_t<deviceMemoryIsHostAccessible<DualViewType>::value>;
+
+template <typename DualViewType>
+using enableIfNonUVM = std::enable_if_t<!deviceMemoryIsHostAccessible<DualViewType>::value>;
+
+template <typename DualViewType>
+enableIfUVM<DualViewType>
+fenceForUVM() {
+  Kokkos::fence();
+}
+
+template <typename DualViewType>
+enableIfNonUVM<DualViewType>
+fenceForUVM() { }
+
 }
 
 template <typename DualViewType>
@@ -184,6 +207,7 @@ public:
       return getHostView(Access::ReadWrite);
     }
     throwIfDeviceViewAlive();
+    impl::fenceForUVM<DualViewType>();
     dualView.clear_sync_state();
     dualView.modify_host();
     return dualView.view_host();
