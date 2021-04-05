@@ -62,10 +62,16 @@ echo "Using cmake = `which cmake`, ctest = `which ctest`"
 echo "Configuration = $CTEST_CONFIGURATION"
 env
 
+# Set the TMPDIR
+mkdir -p /tmp/$USER
+export TMPDIR=/tmp/$USER
 
 # Machine independent cron_driver:
 SCRIPT_DIR=`pwd`
 $SCRIPT_DIR/../cron_driver.py
+
+# Blitz the TMPDIR
+rm -rf /tmp/$USER
 
 module unload sems-cmake/3.17.1
 module unload sems-env
