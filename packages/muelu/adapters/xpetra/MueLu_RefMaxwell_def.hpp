@@ -1219,7 +1219,7 @@ namespace MueLu {
 
     }
 
-    if(!reuse && !allNodesBoundary_) {
+    if(!reuse && !allNodesBoundary_ && applyBCsTo22_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
