@@ -61,6 +61,7 @@
 #include "LOCA_Tpetra_LowRankUpdateRowMatrix.hpp"
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "LOCA_BorderedSolver_LowerTriangularBlockElimination.H"
 #include "LOCA_BorderedSolver_UpperTriangularBlockElimination.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
@@ -70,6 +71,13 @@
 
 // To suppress unreachable return warnings on cuda
 #include "Teuchos_CompilerCodeTweakMacros.hpp"
+
+// Forward declaration needed for ParameterList validation
+namespace LOCA {
+  namespace MultiContinuation {
+    class ConstraintModelEvaluator;
+  }
+}
 
 // Utility for extracting tpetra vector from nox vector
 using ST = NOX::Scalar;
@@ -155,9 +163,23 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
   isComplex(false),
   omega(0.0)
 {
-  scale_rows = solverParams->get("Scale Augmented Rows", true);
+  Teuchos::ParameterList validParams;
+  validParams.set("Bordered Solver Method", "Householder");
+  validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintModelEvaluator>(Teuchos::null));
+  validParams.set("Constraint Parameter Names",Teuchos::RCP<std::vector<std::string>>(Teuchos::null));
+  validParams.set("Scale Augmented Rows", true);
+  Teuchos::setStringToIntegralParameter<int>("Preconditioner Method",
+                                             "Jacobian",
+                                             "Matrix to use for Preconditioning",
+                                             Teuchos::tuple<std::string> ("Jacobian","SWM"),
+                                             &validParams);
+  validParams.set("Include UV In Preconditioner", false);
+  validParams.set("Use P For Preconditioner", false);
+  solverParams->validateParametersAndSetDefaults(validParams);
+
+  scale_rows = solverParams->get<bool>("Scale Augmented Rows");
   std::string prec_method =
-    solverParams->get("Preconditioner Method", "Jacobian");
+    solverParams->get<std::string>("Preconditioner Method");
   if (prec_method == "Jacobian")
     precMethod = JACOBIAN;
   else if (prec_method == "SMW")
@@ -166,10 +188,11 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
     globalData->locaErrorCheck->throwError(
         "LOCA::BorderedSolver::TpetraHouseholder::TpetraHouseholder()",
         "Unknown preconditioner method!  Choices are Jacobian, SMW");
+
   includeUV =
-    solverParams->get("Include UV In Preconditioner", false);
+    solverParams->get<bool>("Include UV In Preconditioner");
   use_P_For_Prec =
-    solverParams->get("Use P For Preconditioner", false);
+    solverParams->get<bool>("Use P For Preconditioner");
 }
 
 LOCA::BorderedSolver::TpetraHouseholder::~TpetraHouseholder()
