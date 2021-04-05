@@ -92,8 +92,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   // Initialize matrix and expected value of SpMV product
   {
     expected.putScalar(0.);
-    expected.clear_sync_state();
-    expected.modify_host();
     auto expectedData = expected.getDataNonConst();
     for (size_t i = 0; i < map->getNodeNumElements(); i++) {
 
@@ -155,8 +153,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
 
   // Initialize domain vector for SpMV
   {
-    x.clear_sync_state();
-    x.modify_host();
     auto xData = x.getDataNonConst();
     for (size_t i = 0; i < map->getNodeNumElements(); i++) 
       xData[i] = map->getGlobalElement(i);
@@ -167,8 +163,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   // Test product for correctness
   int ierr = 0;
   {
-    expected.sync_host();
-    y.sync_host();
     auto expectedData = expected.getData();
     auto yData = y.getData();
 
