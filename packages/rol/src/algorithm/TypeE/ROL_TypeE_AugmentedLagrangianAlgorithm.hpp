@@ -59,6 +59,7 @@ template<typename Real>
 class AugmentedLagrangianAlgorithm : public TypeE::Algorithm<Real> {
 private:
   ParameterList list_;
+  bool useRelTol_;
   // Lagrange multiplier update
   bool useDefaultInitPen_;
   bool scaleLagrangian_;

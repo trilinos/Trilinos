@@ -81,23 +81,23 @@ public:
   /** \brief Check algorithm status.
   */
   virtual bool check( AlgorithmState<Real> &state ) {
-     if (state.iter==0 && use_rel_) {
-       gtol_ *= state.gnorm;
-       stol_ *= state.gnorm;
-     }
-     if ( (state.gnorm > gtol_) && 
-          (state.snorm > stol_) && 
-          (state.iter  < max_iter_) ) {
-       return true;
-     }
-     else {
-       state.statusFlag = (state.gnorm <= gtol_ ? EXITSTATUS_CONVERGED
-                           : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
-                           : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
-                           : std::isnan(state.gnorm)||std::isnan(state.snorm) ? EXITSTATUS_NAN
-                           : EXITSTATUS_LAST);
-       return false;
-     }
+    if (state.iter==0 && use_rel_) {
+      gtol_ *= state.gnorm;
+      stol_ *= state.gnorm;
+    }
+    if ( (state.gnorm > gtol_) &&
+         (state.snorm > stol_) &&
+         (state.iter  < max_iter_) ) {
+      return true;
+    }
+    else {
+      state.statusFlag = (state.gnorm <= gtol_ ? EXITSTATUS_CONVERGED
+                          : state.snorm <= stol_ ? EXITSTATUS_STEPTOL
+                          : state.iter >= max_iter_ ? EXITSTATUS_MAXITER
+                          : std::isnan(state.gnorm)||std::isnan(state.snorm) ? EXITSTATUS_NAN
+                          : EXITSTATUS_LAST);
+      return false;
+    }
   }
 
 }; // class StatusTest

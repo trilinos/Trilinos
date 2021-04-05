@@ -81,15 +81,17 @@ AugmentedLagrangianAlgorithm<Real>::AugmentedLagrangianAlgorithm( ParameterList 
   HessianApprox_ = sublist.get("Level of Hessian Approximation",          0); 
   list_.sublist("Step").set("Type",subStep_);
   list_.sublist("Status Test").set("Iteration Limit",maxit_);
+  list_.sublist("Status Test").set("Use Relative Tolerances",false);
   // Verbosity setting
   verbosity_          = list.sublist("General").get("Output Level", 0);
   printHeader_        = verbosity_ > 2;
   print_              = (verbosity_ > 2 ? true : print_);
   list_.sublist("General").set("Output Level",(print_ ? verbosity_ : 0));
   // Outer iteration tolerances
-  outerFeasTolerance_ = list.sublist("Status Test").get("Constraint Tolerance", oem8);
-  outerOptTolerance_  = list.sublist("Status Test").get("Gradient Tolerance",   oem8);
-  outerStepTolerance_ = list.sublist("Status Test").get("Step Tolerance",       oem8);
+  outerFeasTolerance_ = list.sublist("Status Test").get("Constraint Tolerance",    oem8);
+  outerOptTolerance_  = list.sublist("Status Test").get("Gradient Tolerance",      oem8);
+  outerStepTolerance_ = list.sublist("Status Test").get("Step Tolerance",          oem8);
+  useRelTol_          = list.sublist("Status Test").get("Use Relative Tolerances", false);
   // Scaling
   useDefaultScaling_  = sublist.get("Use Default Problem Scaling", true);
   fscale_             = sublist.get("Objective Scaling",           one);
@@ -169,6 +171,7 @@ void AugmentedLagrangianAlgorithm<Real>::initialize( Vector<Real>               
       / std::max(one,std::pow(cscale_*state_->cnorm,two)),oem2*maxPenaltyParam_));
   }
   // Initialize intermediate stopping tolerances
+  if (useRelTol_) outerOptTolerance_ *= state_->gnorm;
   minPenaltyReciprocal_ = std::min(one/state_->searchSize,minPenaltyLowerBound_);
   optTolerance_  = std::max<Real>(TOL*outerOptTolerance_,
                             optToleranceInitial_*std::pow(minPenaltyReciprocal_,optDecreaseExponent_));
