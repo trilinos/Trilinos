@@ -61,18 +61,19 @@ namespace Intrepid2 {
     /**
       \brief Implementation of a general sum factorization algorithm, abstracted from the algorithm described by Mora and Demkowicz, for integration.  Uses hierarchical parallelism.
      */
-    template<class Scalar, class ExecSpaceType, int integralViewRank>
+    template<class Scalar, class DeviceType, int integralViewRank>
     class F_Integrate
     {
-      using TeamPolicy = Kokkos::TeamPolicy<ExecSpaceType>;
+      using ExecutionSpace = typename DeviceType::execution_space;
+      using TeamPolicy = Kokkos::TeamPolicy<ExecutionSpace>;
       using TeamMember = typename TeamPolicy::member_type;
       
-      using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, ExecSpaceType>;
+      using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, DeviceType>;
       IntegralViewType integralView_;
-      TensorData<Scalar,ExecSpaceType> leftComponent_;
-      Data<Scalar,ExecSpaceType> composedTransform_;
-      TensorData<Scalar,ExecSpaceType> rightComponent_;
-      TensorData<Scalar,ExecSpaceType> cellMeasures_;
+      TensorData<Scalar,DeviceType> leftComponent_;
+      Data<Scalar,DeviceType> composedTransform_;
+      TensorData<Scalar,DeviceType> rightComponent_;
+      TensorData<Scalar,DeviceType> cellMeasures_;
       int a_offset_;
       int b_offset_;
       int leftComponentSpan_;   //  leftComponentSpan tracks the dimensions spanned by the left component
@@ -99,11 +100,11 @@ namespace Intrepid2 {
       int maxFieldsRight_;
       int maxPointCount_;
     public:
-      F_Integrate(Data<Scalar,ExecSpaceType> integralData,
-                  TensorData<Scalar,ExecSpaceType> leftComponent,
-                  Data<Scalar,ExecSpaceType> composedTransform,
-                  TensorData<Scalar,ExecSpaceType> rightComponent,
-                  TensorData<Scalar,ExecSpaceType> cellMeasures,
+      F_Integrate(Data<Scalar,DeviceType> integralData,
+                  TensorData<Scalar,DeviceType> leftComponent,
+                  Data<Scalar,DeviceType> composedTransform,
+                  TensorData<Scalar,DeviceType> rightComponent,
+                  TensorData<Scalar,DeviceType> cellMeasures,
                   int a_offset,
                   int b_offset,
                   int leftFieldOrdinalOffset,
@@ -313,28 +314,28 @@ namespace Intrepid2 {
         const int numThreads      = teamMember.team_size(); // num threads
         const int scratchViewSize = offsetsForComponentOrdinal_[0]; // per thread
         
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> scratchView; // for caching partial integration values
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure
-        Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged> leftFields_x, leftFields_y, leftFields_z, rightFields_x, rightFields_y, rightFields_z; // cache the field values for faster access
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> scratchView; // for caching partial integration values
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure
+        Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_x, leftFields_y, leftFields_z, rightFields_x, rightFields_y, rightFields_z; // cache the field values for faster access
         if (fad_size_output_ > 0) {
-          scratchView = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),    scratchViewSize * numThreads,      fad_size_output_);
-          pointWeights   = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1),  fad_size_output_);
-          leftFields_x  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[0], pointBounds[0], fad_size_output_);
-          rightFields_x = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[0], pointBounds[0], fad_size_output_);
-          leftFields_y  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[1], pointBounds[1], fad_size_output_);
-          rightFields_y = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[1], pointBounds[1], fad_size_output_);
-          leftFields_z  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[2], pointBounds[2], fad_size_output_);
-          rightFields_z = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[2], pointBounds[2], fad_size_output_);
+          scratchView   = Kokkos::View<Scalar*,  DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),    scratchViewSize * numThreads,      fad_size_output_);
+          pointWeights  = Kokkos::View<Scalar*,  DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1),  fad_size_output_);
+          leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[0], pointBounds[0], fad_size_output_);
+          rightFields_x = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[0], pointBounds[0], fad_size_output_);
+          leftFields_y  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[1], pointBounds[1], fad_size_output_);
+          rightFields_y = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[1], pointBounds[1], fad_size_output_);
+          leftFields_z  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[2], pointBounds[2], fad_size_output_);
+          rightFields_z = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[2], pointBounds[2], fad_size_output_);
         }
         else {
-          scratchView = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),    scratchViewSize * numThreads);
-          pointWeights   = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
-          leftFields_x  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[0], pointBounds[0]);
-          rightFields_x = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[0], pointBounds[0]);
-          leftFields_y  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[1], pointBounds[1]);
-          rightFields_y = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[1], pointBounds[1]);
-          leftFields_z  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[2], pointBounds[2]);
-          rightFields_z = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[2], pointBounds[2]);
+          scratchView   = Kokkos::View<Scalar*,  DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),    scratchViewSize * numThreads);
+          pointWeights  = Kokkos::View<Scalar*,  DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
+          leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[0], pointBounds[0]);
+          rightFields_x = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[0], pointBounds[0]);
+          leftFields_y  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[1], pointBounds[1]);
+          rightFields_y = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[1], pointBounds[1]);
+          leftFields_z  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds[2], pointBounds[2]);
+          rightFields_z = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds[2], pointBounds[2]);
         }
         
 //        int approximateFlopCount = 0;
@@ -349,18 +350,18 @@ namespace Intrepid2 {
           {
             const int b = b_offset_ + b_component;
             
-            const Data<Scalar,ExecSpaceType> &  leftFinalComponent =  leftComponent_.getTensorComponent(R);
-            const Data<Scalar,ExecSpaceType> & rightFinalComponent = rightComponent_.getTensorComponent(R);
+            const Data<Scalar,DeviceType> &  leftFinalComponent =  leftComponent_.getTensorComponent(R);
+            const Data<Scalar,DeviceType> & rightFinalComponent = rightComponent_.getTensorComponent(R);
             
             const int numLeftFieldsFinal  =  leftFinalComponent.extent_int(0); // shape (F,P[,D])
             const int numRightFieldsFinal = rightFinalComponent.extent_int(0); // shape (F,P[,D])
             
-            const Data<Scalar,ExecSpaceType> &  leftTensorComponent_x =  leftComponent_.getTensorComponent(0);
-            const Data<Scalar,ExecSpaceType> & rightTensorComponent_x = rightComponent_.getTensorComponent(0);
-            const Data<Scalar,ExecSpaceType> &  leftTensorComponent_y =  leftComponent_.getTensorComponent(1);
-            const Data<Scalar,ExecSpaceType> & rightTensorComponent_y = rightComponent_.getTensorComponent(1);
-            const Data<Scalar,ExecSpaceType> &  leftTensorComponent_z =  leftComponent_.getTensorComponent(2);
-            const Data<Scalar,ExecSpaceType> & rightTensorComponent_z = rightComponent_.getTensorComponent(2);
+            const Data<Scalar,DeviceType> &  leftTensorComponent_x =  leftComponent_.getTensorComponent(0);
+            const Data<Scalar,DeviceType> & rightTensorComponent_x = rightComponent_.getTensorComponent(0);
+            const Data<Scalar,DeviceType> &  leftTensorComponent_y =  leftComponent_.getTensorComponent(1);
+            const Data<Scalar,DeviceType> & rightTensorComponent_y = rightComponent_.getTensorComponent(1);
+            const Data<Scalar,DeviceType> &  leftTensorComponent_z =  leftComponent_.getTensorComponent(2);
+            const Data<Scalar,DeviceType> & rightTensorComponent_z = rightComponent_.getTensorComponent(2);
             
             const int maxFields = (maxFieldsLeft_ > maxFieldsRight_) ? maxFieldsLeft_ : maxFieldsRight_;
             Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,maxFields * maxPointCount_), [&] (const int& fieldOrdinalPointOrdinal) {
@@ -593,20 +594,20 @@ namespace Intrepid2 {
         const int cellDataOrdinal = teamMember.league_rank();
         const int numThreads      = teamMember.team_size(); // num threads
         const int scratchViewSize = offsetsForComponentOrdinal_[0]; // per thread
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> scratchView; // for caching partial integration values
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure
-        Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged> leftFields, rightFields; // cache the field values for faster access
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> scratchView; // for caching partial integration values
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure
+        Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged> leftFields, rightFields; // cache the field values for faster access
         if (fad_size_output_ > 0) {
-          scratchView = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), scratchViewSize * numThreads,     fad_size_output_);
-          pointWeights   = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1), fad_size_output_);
-          leftFields  = Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsLeft_,  maxPointCount_, fad_size_output_);
-          rightFields = Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsRight_, maxPointCount_, fad_size_output_);
+          scratchView  = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), scratchViewSize * numThreads,     fad_size_output_);
+          pointWeights = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1), fad_size_output_);
+          leftFields   = Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsLeft_,  maxPointCount_, fad_size_output_);
+          rightFields  = Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsRight_, maxPointCount_, fad_size_output_);
         }
         else {
-          scratchView = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), scratchViewSize*numThreads);
-          pointWeights   = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
-          leftFields  = Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsLeft_,  maxPointCount_);
-          rightFields = Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsRight_, maxPointCount_);
+          scratchView  = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), scratchViewSize*numThreads);
+          pointWeights = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
+          leftFields   = Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsLeft_,  maxPointCount_);
+          rightFields  = Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), numTensorComponents, maxFieldsRight_, maxPointCount_);
         }
         
 //        int approximateFlopCount = 0;
@@ -621,15 +622,15 @@ namespace Intrepid2 {
           {
             const int b = b_offset_ + b_component;
             
-            const Data<Scalar,ExecSpaceType> &  leftFinalComponent =  leftComponent_.getTensorComponent(R);
-            const Data<Scalar,ExecSpaceType> & rightFinalComponent = rightComponent_.getTensorComponent(R);
+            const Data<Scalar,DeviceType> &  leftFinalComponent =  leftComponent_.getTensorComponent(R);
+            const Data<Scalar,DeviceType> & rightFinalComponent = rightComponent_.getTensorComponent(R);
             
             const int numLeftFieldsFinal  =  leftFinalComponent.extent_int(0); // shape (F,P[,D])
             const int numRightFieldsFinal = rightFinalComponent.extent_int(0); // shape (F,P[,D])
             
             Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,numTensorComponents), [&] (const int& r) {
-              const Data<Scalar,ExecSpaceType> &  leftTensorComponent =  leftComponent_.getTensorComponent(r);
-              const Data<Scalar,ExecSpaceType> & rightTensorComponent = rightComponent_.getTensorComponent(r);
+              const Data<Scalar,DeviceType> &  leftTensorComponent =  leftComponent_.getTensorComponent(r);
+              const Data<Scalar,DeviceType> & rightTensorComponent = rightComponent_.getTensorComponent(r);
               const int  leftFieldCount =  leftTensorComponent.extent_int(0);
               const int      pointCount =  leftTensorComponent.extent_int(1);
               const int        leftRank =  leftTensorComponent.rank();
@@ -883,8 +884,8 @@ namespace Intrepid2 {
         {
           for (int b_component=0; b_component < rightComponentSpan_; b_component++)
           {
-            const Data<Scalar,ExecSpaceType> &  leftFinalComponent =  leftComponent_.getTensorComponent(R);
-            const Data<Scalar,ExecSpaceType> & rightFinalComponent = rightComponent_.getTensorComponent(R);
+            const Data<Scalar,DeviceType> &  leftFinalComponent =  leftComponent_.getTensorComponent(R);
+            const Data<Scalar,DeviceType> & rightFinalComponent = rightComponent_.getTensorComponent(R);
             
             const int numLeftFieldsFinal  =  leftFinalComponent.extent_int(0); // shape (F,P[,D])
             const int numRightFieldsFinal = rightFinalComponent.extent_int(0); // shape (F,P[,D])
@@ -962,17 +963,17 @@ namespace Intrepid2 {
         
         if (fad_size_output_ > 0)
         {
-          shmem_size += Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(offsetsForComponentOrdinal_[0] * team_size, fad_size_output_);
-          shmem_size += Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(composedTransform_.extent_int(1),           fad_size_output_);
-          shmem_size += Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsLeft_,  maxPointCount_, fad_size_output_);
-          shmem_size += Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsRight_, maxPointCount_, fad_size_output_);
+          shmem_size += Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(offsetsForComponentOrdinal_[0] * team_size, fad_size_output_);
+          shmem_size += Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(composedTransform_.extent_int(1),           fad_size_output_);
+          shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsLeft_,  maxPointCount_, fad_size_output_);
+          shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsRight_, maxPointCount_, fad_size_output_);
         }
         else
         {
-          shmem_size += Kokkos::View<Scalar*, ExecSpaceType>::shmem_size(offsetsForComponentOrdinal_[0] * team_size);
-          shmem_size += Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(composedTransform_.extent_int(1));
-          shmem_size += Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsLeft_,  maxPointCount_);
-          shmem_size += Kokkos::View<Scalar***, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsRight_, maxPointCount_);
+          shmem_size += Kokkos::View<Scalar*,   DeviceType>::shmem_size(offsetsForComponentOrdinal_[0] * team_size);
+          shmem_size += Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(composedTransform_.extent_int(1));
+          shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsLeft_,  maxPointCount_);
+          shmem_size += Kokkos::View<Scalar***, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(numTensorComponents_, maxFieldsRight_, maxPointCount_);
         }
         
         return shmem_size;
@@ -988,18 +989,19 @@ namespace Intrepid2 {
      requires a cache of size (p_x+1)*(p_y+1).  So long as one is not over-integrating by too much, these sizes are about the same.  The real advantage of our approach here is (we expect)
      that it improves data locality.
        */
-      template<class Scalar, class ExecSpaceType, int integralViewRank>
+      template<class Scalar, class DeviceType, int integralViewRank>
       class F_IntegratePointValueCache
       {
-      using TeamPolicy = Kokkos::TeamPolicy<ExecSpaceType>;
+        using ExecutionSpace = typename DeviceType::execution_space;
+      using TeamPolicy = Kokkos::TeamPolicy<DeviceType>;
       using TeamMember = typename TeamPolicy::member_type;
 
-      using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, ExecSpaceType>;
+      using IntegralViewType = Kokkos::View<typename RankExpander<Scalar, integralViewRank>::value_type, DeviceType>;
       IntegralViewType integralView_;
-      TensorData<Scalar,ExecSpaceType> leftComponent_;
-      Data<Scalar,ExecSpaceType> composedTransform_;
-      TensorData<Scalar,ExecSpaceType> rightComponent_;
-      TensorData<Scalar,ExecSpaceType> cellMeasures_;
+      TensorData<Scalar,DeviceType> leftComponent_;
+      Data<Scalar,DeviceType> composedTransform_;
+      TensorData<Scalar,DeviceType> rightComponent_;
+      TensorData<Scalar,DeviceType> cellMeasures_;
       int a_offset_;
       int b_offset_;
       int leftComponentSpan_;   //  leftComponentSpan tracks the dimensions spanned by the left component
@@ -1020,11 +1022,11 @@ namespace Intrepid2 {
       int maxFieldsRight_;
       int maxPointCount_;
     public:
-      F_IntegratePointValueCache(Data<Scalar,ExecSpaceType> integralData,
-                                 TensorData<Scalar,ExecSpaceType> leftComponent,
-                                 Data<Scalar,ExecSpaceType> composedTransform,
-                                 TensorData<Scalar,ExecSpaceType> rightComponent,
-                                 TensorData<Scalar,ExecSpaceType> cellMeasures,
+      F_IntegratePointValueCache(Data<Scalar,DeviceType> integralData,
+                                 TensorData<Scalar,DeviceType> leftComponent,
+                                 Data<Scalar,DeviceType> composedTransform,
+                                 TensorData<Scalar,DeviceType> rightComponent,
+                                 TensorData<Scalar,DeviceType> cellMeasures,
                                  int a_offset,
                                  int b_offset,
                                  int leftFieldOrdinalOffset,
@@ -1208,39 +1210,39 @@ namespace Intrepid2 {
         
         const int numThreads       = teamMember.team_size(); // num threads
         const int GyEntryCount     = pointBounds_z; // for each thread: store one Gy value per z coordinate
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> GxIntegrals; // for caching Gx values: we integrate out the first component dimension for each coordinate in the remaining dimensios
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> GyIntegrals; // for caching Gy values (each thread gets a stack, of the same height as tensorComponents - 1)
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> GzIntegral;  // for one Gz value that we sum into before summing into the destination matrix
-        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GxIntegrals; // for caching Gx values: we integrate out the first component dimension for each coordinate in the remaining dimensios
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GyIntegrals; // for caching Gy values (each thread gets a stack, of the same height as tensorComponents - 1)
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> GzIntegral;  // for one Gz value that we sum into before summing into the destination matrix
+        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
         
-        Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged> leftFields_x, rightFields_x;
-        Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged> leftFields_y, rightFields_y;
-        Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged> leftFields_z, rightFields_z;
+        Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_x, rightFields_x;
+        Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_y, rightFields_y;
+        Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged> leftFields_z, rightFields_z;
         if (fad_size_output_ > 0) {
-          GxIntegrals   = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  pointsInNonzeroComponentDimensions, fad_size_output_);
-          GyIntegrals   = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  GyEntryCount * numThreads,          fad_size_output_);
-          GzIntegral    = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  numThreads,                         fad_size_output_);
-          pointWeights  = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(),  composedTransform_.extent_int(1),   fad_size_output_);
+          GxIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   pointsInNonzeroComponentDimensions, fad_size_output_);
+          GyIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   GyEntryCount * numThreads,          fad_size_output_);
+          GzIntegral    = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),   numThreads,                         fad_size_output_);
+          pointWeights  = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1),   fad_size_output_);
           
-          leftFields_x  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x, fad_size_output_);
-          rightFields_x = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_x, pointBounds_x, fad_size_output_);
-          leftFields_y  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_y, pointBounds_y, fad_size_output_);
-          rightFields_y = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_y, pointBounds_y, fad_size_output_);
-          leftFields_z  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_z, pointBounds_z, fad_size_output_);
-          rightFields_z = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_z, pointBounds_z, fad_size_output_);
+          leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x, fad_size_output_);
+          rightFields_x = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_x, pointBounds_x, fad_size_output_);
+          leftFields_y  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_y, pointBounds_y, fad_size_output_);
+          rightFields_y = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_y, pointBounds_y, fad_size_output_);
+          leftFields_z  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_z, pointBounds_z, fad_size_output_);
+          rightFields_z = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_z, pointBounds_z, fad_size_output_);
         }
         else {
-          GxIntegrals   = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  pointsInNonzeroComponentDimensions);
-          GyIntegrals   = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  GyEntryCount * numThreads);
-          GzIntegral    = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  numThreads);
-          pointWeights  = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(),  composedTransform_.extent_int(1));
+          GxIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  pointsInNonzeroComponentDimensions);
+          GyIntegrals   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  GyEntryCount * numThreads);
+          GzIntegral    = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  numThreads);
+          pointWeights  = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(),  composedTransform_.extent_int(1));
         
-          leftFields_x  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x);
-          rightFields_x = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_x, pointBounds_x);
-          leftFields_y  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_y, pointBounds_y);
-          rightFields_y = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_y, pointBounds_y);
-          leftFields_z  = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_z, pointBounds_z);
-          rightFields_z = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_z, pointBounds_z);
+          leftFields_x  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_x, pointBounds_x);
+          rightFields_x = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_x, pointBounds_x);
+          leftFields_y  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_y, pointBounds_y);
+          rightFields_y = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_y, pointBounds_y);
+          leftFields_z  = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(),  leftFieldBounds_z, pointBounds_z);
+          rightFields_z = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), rightFieldBounds_z, pointBounds_z);
         }
 
 //        int approximateFlopCount = 0;
@@ -1258,12 +1260,12 @@ namespace Intrepid2 {
           {
             const int b = b_offset_ + b_component;
 
-            const Data<Scalar,ExecSpaceType> &  leftTensorComponent_x =  leftComponent_.getTensorComponent(0);
-            const Data<Scalar,ExecSpaceType> & rightTensorComponent_x = rightComponent_.getTensorComponent(0);
-            const Data<Scalar,ExecSpaceType> &  leftTensorComponent_y =  leftComponent_.getTensorComponent(1);
-            const Data<Scalar,ExecSpaceType> & rightTensorComponent_y = rightComponent_.getTensorComponent(1);
-            const Data<Scalar,ExecSpaceType> &  leftTensorComponent_z =  leftComponent_.getTensorComponent(2);
-            const Data<Scalar,ExecSpaceType> & rightTensorComponent_z = rightComponent_.getTensorComponent(2);
+            const Data<Scalar,DeviceType> &  leftTensorComponent_x =  leftComponent_.getTensorComponent(0);
+            const Data<Scalar,DeviceType> & rightTensorComponent_x = rightComponent_.getTensorComponent(0);
+            const Data<Scalar,DeviceType> &  leftTensorComponent_y =  leftComponent_.getTensorComponent(1);
+            const Data<Scalar,DeviceType> & rightTensorComponent_y = rightComponent_.getTensorComponent(1);
+            const Data<Scalar,DeviceType> &  leftTensorComponent_z =  leftComponent_.getTensorComponent(2);
+            const Data<Scalar,DeviceType> & rightTensorComponent_z = rightComponent_.getTensorComponent(2);
             
             const int maxFields = (maxFieldsLeft_ > maxFieldsRight_) ? maxFieldsLeft_ : maxFieldsRight_;
             Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,maxFields), [&] (const int& fieldOrdinal) {
@@ -1443,23 +1445,23 @@ namespace Intrepid2 {
 //        const int cellDataOrdinal  = teamMember.league_rank();
 //        const int numThreads       = teamMember.team_size(); // num threads
 //        const int G_k_StackHeight = numTensorComponents - 1; // per thread
-//        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> G_0_IntegralsView; // for caching G0 values: we integrate out the first component dimension for each coordinate in the remaining dimensios
-//        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> G_k_StackView; // for caching G_k values (each thread gets a stack, of the same height as tensorComponents - 1)
-//        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
-//        Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged> leftFields, rightFields; // cache the field values at each level for faster access
+//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> G_0_IntegralsView; // for caching G0 values: we integrate out the first component dimension for each coordinate in the remaining dimensios
+//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> G_k_StackView; // for caching G_k values (each thread gets a stack, of the same height as tensorComponents - 1)
+//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> pointWeights; // indexed by (expanded) point; stores M_ab * cell measure; shared by team
+//        Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged> leftFields, rightFields; // cache the field values at each level for faster access
 //        if (fad_size_output_ > 0) {
-//          G_k_StackView     = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), G_k_StackHeight * numThreads,       fad_size_output_);
-//          G_0_IntegralsView = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), pointsInNonzeroComponentDimensions, fad_size_output_);
-//          pointWeights   = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1), fad_size_output_);
-//          leftFields     = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_, fad_size_output_);
-//          rightFields    = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_, fad_size_output_);
+//          G_k_StackView     = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), G_k_StackHeight * numThreads,       fad_size_output_);
+//          G_0_IntegralsView = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), pointsInNonzeroComponentDimensions, fad_size_output_);
+//          pointWeights   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1), fad_size_output_);
+//          leftFields     = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_, fad_size_output_);
+//          rightFields    = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_, fad_size_output_);
 //        }
 //        else {
-//          G_k_StackView     = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), G_k_StackHeight * numThreads);
-//          G_0_IntegralsView = Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), pointsInNonzeroComponentDimensions);
-//          pointWeights   = Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
-//          leftFields     = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_);
-//          rightFields    = Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_);
+//          G_k_StackView     = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), G_k_StackHeight * numThreads);
+//          G_0_IntegralsView = Kokkos::View<Scalar*,   DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), pointsInNonzeroComponentDimensions);
+//          pointWeights   = Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>  (teamMember.team_shmem(), composedTransform_.extent_int(1));
+//          leftFields     = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_);
+//          rightFields    = Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>(teamMember.team_shmem(), maxPointCount_);
 //        }
 //
 ////        int approximateFlopCount = 0;
@@ -1479,8 +1481,8 @@ namespace Intrepid2 {
 //          {
 //            const int b = b_offset_ + b_component;
 //
-//            const Data<Scalar,ExecSpaceType> &  leftFirstComponent =  leftComponent_.getTensorComponent(0);
-//            const Data<Scalar,ExecSpaceType> & rightFirstComponent = rightComponent_.getTensorComponent(0);
+//            const Data<Scalar,DeviceType> &  leftFirstComponent =  leftComponent_.getTensorComponent(0);
+//            const Data<Scalar,DeviceType> & rightFirstComponent = rightComponent_.getTensorComponent(0);
 //
 //            const int numLeftFieldsFirst  =  leftFirstComponent.extent_int(0); // shape (F,P[,D])
 //            const int numRightFieldsFirst = rightFirstComponent.extent_int(0); // shape (F,P[,D])
@@ -1753,31 +1755,31 @@ namespace Intrepid2 {
         
         if (fad_size_output_ > 0)
         {
-          shmem_size += Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions, fad_size_output_); // GxIntegrals: entries with x integrated away
-          shmem_size += Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads,          fad_size_output_); // GyIntegrals: entries with x,y integrated away
-          shmem_size += Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(           1 * numThreads,          fad_size_output_); // GzIntegral:  entry   with x,y,z integrated away
-          shmem_size += Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1), fad_size_output_); // pointWeights
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions, fad_size_output_); // GxIntegrals: entries with x integrated away
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads,          fad_size_output_); // GyIntegrals: entries with x,y integrated away
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(           1 * numThreads,          fad_size_output_); // GzIntegral:  entry   with x,y,z integrated away
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1), fad_size_output_); // pointWeights
           
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0], fad_size_output_); // leftFields_x
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[0], pointBounds_[0], fad_size_output_); // rightFields_x
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[1], pointBounds_[1], fad_size_output_); // leftFields_y
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[1], pointBounds_[1], fad_size_output_); // rightFields_y
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[2], pointBounds_[2], fad_size_output_); // leftFields_z
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[2], pointBounds_[2], fad_size_output_); // rightFields_z
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0], fad_size_output_); // leftFields_x
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[0], pointBounds_[0], fad_size_output_); // rightFields_x
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[1], pointBounds_[1], fad_size_output_); // leftFields_y
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[1], pointBounds_[1], fad_size_output_); // rightFields_y
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[2], pointBounds_[2], fad_size_output_); // leftFields_z
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[2], pointBounds_[2], fad_size_output_); // rightFields_z
         }
         else
         {
-          shmem_size += Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions);  // GxIntegrals: entries with x integrated away
-          shmem_size += Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads);           // GyIntegrals: entries with x,y integrated away
-          shmem_size += Kokkos::View<Scalar*,   ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( 1 * numThreads);                     // GzIntegral:  entry   with x,y,z integrated away
-          shmem_size += Kokkos::View<Scalar*, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1)); // pointWeights
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(pointsInNonzeroComponentDimensions);  // GxIntegrals: entries with x integrated away
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(GyEntryCount * numThreads);           // GyIntegrals: entries with x,y integrated away
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( 1 * numThreads);                     // GzIntegral:  entry   with x,y,z integrated away
+          shmem_size += Kokkos::View<Scalar*, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size  (composedTransform_.extent_int(1)); // pointWeights
           
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0]); // leftFields_x
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[0], pointBounds_[0]); // rightFields_x
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[1], pointBounds_[1]); // leftFields_y
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[1], pointBounds_[1]); // rightFields_y
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[2], pointBounds_[2]); // leftFields_z
-          shmem_size += Kokkos::View<Scalar**, ExecSpaceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[2], pointBounds_[2]); // rightFields_z
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[0], pointBounds_[0]); // leftFields_x
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[0], pointBounds_[0]); // rightFields_x
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[1], pointBounds_[1]); // leftFields_y
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[1], pointBounds_[1]); // rightFields_y
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size(  leftFieldBounds_[2], pointBounds_[2]); // leftFields_z
+          shmem_size += Kokkos::View<Scalar**, DeviceType, Kokkos::MemoryUnmanaged>::shmem_size( rightFieldBounds_[2], pointBounds_[2]); // rightFields_z
         }
 
         return shmem_size;
@@ -1785,11 +1787,11 @@ namespace Intrepid2 {
     };
   }
 
-template<typename ExecSpaceType>
+template<typename DeviceType>
 template<class Scalar>
-Data<Scalar,ExecSpaceType> IntegrationTools<ExecSpaceType>::allocateIntegralData(const TransformedVectorData<Scalar,ExecSpaceType> vectorDataLeft,
-                                                                                 const TensorData<Scalar,ExecSpaceType> cellMeasures,
-                                                                                 const TransformedVectorData<Scalar,ExecSpaceType> vectorDataRight)
+Data<Scalar,DeviceType> IntegrationTools<DeviceType>::allocateIntegralData(const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
+                                                                           const TensorData<Scalar,DeviceType> cellMeasures,
+                                                                           const TransformedVectorData<Scalar,DeviceType> vectorDataRight)
 {
   // allocates a (C,F,F) container for storing integral data
   
@@ -1817,26 +1819,28 @@ Data<Scalar,ExecSpaceType> IntegrationTools<ExecSpaceType>::allocateIntegralData
   
   if (cellVariationType != CONSTANT)
   {
-    Kokkos::View<Scalar***,ExecSpaceType> data("Intrepid2 integral data",cellDataExtent,numFieldsLeft,numFieldsRight);
-    return Data<Scalar,ExecSpaceType>(data, extents, variationTypes);
+    Kokkos::View<Scalar***,DeviceType> data("Intrepid2 integral data",cellDataExtent,numFieldsLeft,numFieldsRight);
+    return Data<Scalar,DeviceType>(data, extents, variationTypes);
   }
   else
   {
-    Kokkos::View<Scalar**,ExecSpaceType> data("Intrepid2 integral data",numFieldsLeft,numFieldsRight);
-    return Data<Scalar,ExecSpaceType>(data, extents, variationTypes);
+    Kokkos::View<Scalar**,DeviceType> data("Intrepid2 integral data",numFieldsLeft,numFieldsRight);
+    return Data<Scalar,DeviceType>(data, extents, variationTypes);
   }
 }
 
 //! Two use cases:
 //! 1. affine tensor-topology mesh: cellMeasures is a simple tensor product in this case.
 //! 2. arbitrary mesh: cellMeasures has trivial tensor product structure (one tensorial component).
-template<typename ExecSpaceType>
+template<typename DeviceType>
 template<class Scalar>
-void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integrals, const TransformedVectorData<Scalar,ExecSpaceType> & vectorDataLeft,
-                                                const TensorData<Scalar,ExecSpaceType> & cellMeasures,
-                                                const TransformedVectorData<Scalar,ExecSpaceType> & vectorDataRight, const bool sumInto,
-                                                double* approximateFlops)
+void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> & vectorDataLeft,
+                                             const TensorData<Scalar,DeviceType> & cellMeasures,
+                                             const TransformedVectorData<Scalar,DeviceType> & vectorDataRight, const bool sumInto,
+                                             double* approximateFlops)
 {
+  using ExecutionSpace = typename DeviceType::execution_space;
+
   if (approximateFlops != NULL)
   {
     *approximateFlops = 0;
@@ -1871,7 +1875,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
   {
     for (int vectorComponent=0; vectorComponent<numVectorComponentsLeft; vectorComponent++)
     {
-      const TensorData<Scalar,ExecSpaceType> &tensorData = refVectorLeft.getComponent(familyOrdinal,vectorComponent);
+      const TensorData<Scalar,DeviceType> &tensorData = refVectorLeft.getComponent(familyOrdinal,vectorComponent);
       if (tensorData.numTensorComponents() > 0)
       {
         if (numTensorComponentsLeft == -1)
@@ -1928,7 +1932,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
       pointDimensions[r] = cellMeasures.getTensorComponent(r+1).extent_int(0);
     }
 
-    Kokkos::Array< Kokkos::Array<ScalarView<Scalar,ExecSpaceType>, Parameters::MaxTensorComponents>, Parameters::MaxTensorComponents> componentIntegrals; // these are reference-space integrals; no Jacobians or cell measures applied as yet
+    Kokkos::Array< Kokkos::Array<ScalarView<Scalar,DeviceType>, Parameters::MaxTensorComponents>, Parameters::MaxTensorComponents> componentIntegrals; // these are reference-space integrals; no Jacobians or cell measures applied as yet
     
     for (int r=0; r<numPointTensorComponents; r++)
     {
@@ -1948,12 +1952,12 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
          while the axial components refer to distinct scalar functions, so their numbering in the data container is cumulative.
         */
         
-        const Data<Scalar,ExecSpaceType> &  leftComponent = vectorDataLeft.vectorData().getComponent(d).getTensorComponent(r);
-        const Data<Scalar,ExecSpaceType> & rightComponent = vectorDataRight.vectorData().getComponent(d).getTensorComponent(r);
+        const Data<Scalar,DeviceType> &  leftComponent = vectorDataLeft.vectorData().getComponent(d).getTensorComponent(r);
+        const Data<Scalar,DeviceType> & rightComponent = vectorDataRight.vectorData().getComponent(d).getTensorComponent(r);
         
         // It may be worth considering the possibility that some of these components point to the same data -- if so, we could possibly get better data locality by making the corresponding componentIntegral entries point to the same location as well.  (And we could avoid some computations here.)
         
-        const Data<Scalar,ExecSpaceType> & quadratureWeights = cellMeasures.getTensorComponent(r+1);
+        const Data<Scalar,DeviceType> & quadratureWeights = cellMeasures.getTensorComponent(r+1);
         
         int leftComponentCount  =  leftComponent.extent_int(0);
         int rightComponentCount = rightComponent.extent_int(0);
@@ -1962,11 +1966,11 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
         if (allocateFadStorage)
         {
           auto fad_size_output = dimension_scalar(integrals.getUnderlyingView());
-          componentIntegrals[r][d] = ScalarView<Scalar,ExecSpaceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftComponentCount, rightComponentCount, fad_size_output);
+          componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftComponentCount, rightComponentCount, fad_size_output);
         }
         else
         {
-          componentIntegrals[r][d] = ScalarView<Scalar,ExecSpaceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftComponentCount, rightComponentCount);
+          componentIntegrals[r][d] = ScalarView<Scalar,DeviceType>("componentIntegrals for tensor component " + std::to_string(r) + ", in dimension " + std::to_string(d), leftComponentCount, rightComponentCount);
         }
         
         Kokkos::deep_copy(componentIntegrals[r][d], 0.0); // initialize
@@ -1983,7 +1987,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
 //        INTREPID2_TEST_FOR_EXCEPTION(( leftComponentRank == 3) && ( leftComponent.extent_int(2) > 1), std::invalid_argument, "spaceDim > 1 not yet supported by this integrate() use case.");
 //        INTREPID2_TEST_FOR_EXCEPTION((rightComponentRank == 3) && (rightComponent.extent_int(2) > 1), std::invalid_argument, "spaceDim > 1 not yet supported by this integrate() use case.");
         
-        auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{leftComponentCount,rightComponentCount});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{leftComponentCount,rightComponentCount});
         
         for (int a=0; a<leftComponentDimSpan; a++)
         {
@@ -2006,11 +2010,11 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
         }
       }
     }
-    ExecSpaceType().fence(); // ensure that kernels launched above have completed before the kernels below launch.
+    ExecutionSpace().fence(); // ensure that kernels launched above have completed before the kernels below launch.
 
     // only one of these will be a valid container:
-    Kokkos::View<Scalar**,  ExecSpaceType> integralView2;
-    Kokkos::View<Scalar***, ExecSpaceType> integralView3;
+    Kokkos::View<Scalar**,  DeviceType> integralView2;
+    Kokkos::View<Scalar***, DeviceType> integralView3;
     if (integralViewRank == 3)
     {
       integralView3 = integrals.getUnderlyingView3();
@@ -2081,14 +2085,14 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
             if (haveLaunchedContributionToLeftFamily && haveLaunchedContributionToRightFamily)
             {
               // accumulation to the same block in integrals container; fence to ensure that that has completed before the next kernel is launched
-              ExecSpaceType().fence();
+              ExecutionSpace().fence();
             }
             haveLaunchedContributionToLeftFamily  = true;
             haveLaunchedContributionToRightFamily = true;
             
             Kokkos::Array<int,3> upperBounds {cellDataExtent,leftComponentFieldCount,rightComponentFieldCount}; // separately declared in effort to get around Intel 17.0.1 compiler weirdness.
             Kokkos::Array<int,3> lowerBounds {0,0,0};
-            auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>(lowerBounds, upperBounds);
+            auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>(lowerBounds, upperBounds);
             // TODO: note that for best performance, especially with Fad types, we should replace this parallel for with a Functor and use hierarchical parallelism
             Kokkos::parallel_for("compute field integrals", policy,
                                  KOKKOS_LAMBDA (const int &cellDataOrdinal, const int &leftFieldOrdinal, const int &rightFieldOrdinal) {
@@ -2150,13 +2154,13 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
   else // general case (not axis-aligned + affine tensor-product structure)
   {
     // prepare composed transformation matrices
-    const Data<Scalar,ExecSpaceType> & leftTransform  = vectorDataLeft.transform();
-    const Data<Scalar,ExecSpaceType> & rightTransform = vectorDataRight.transform();
+    const Data<Scalar,DeviceType> & leftTransform  = vectorDataLeft.transform();
+    const Data<Scalar,DeviceType> & rightTransform = vectorDataRight.transform();
     const bool transposeLeft  = true;
     const bool transposeRight = false;
 //    auto timer = Teuchos::TimeMonitor::getNewTimer("mat-mat");
 //    timer->start();
-    Data<Scalar,ExecSpaceType> composedTransform = leftTransform.allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
+    Data<Scalar,DeviceType> composedTransform = leftTransform.allocateMatMatResult(transposeLeft, leftTransform, transposeRight, rightTransform);
     composedTransform.storeMatMat(transposeLeft, leftTransform, transposeRight, rightTransform);
 //    timer->stop();
 //    std::cout << "Completed mat-mat in " << timer->totalElapsedTime() << " seconds.\n";
@@ -2182,7 +2186,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
       bool haveLaunchedContributionToCurrentFamilyLeft = false; // helps to track whether we need a Kokkos::fence before launching a kernel.
       for (int leftComponentOrdinal=0; leftComponentOrdinal<leftComponentCount; leftComponentOrdinal++)
       {
-        const TensorData<Scalar,ExecSpaceType> & leftComponent = vectorDataLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal);
+        const TensorData<Scalar,DeviceType> & leftComponent = vectorDataLeft.vectorData().getComponent(leftFamilyOrdinal, leftComponentOrdinal);
         if (!leftComponent.isValid())
         {
            // represents zero
@@ -2199,7 +2203,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
           int b_offset = 0;
           for (int rightComponentOrdinal=0; rightComponentOrdinal<rightComponentCount; rightComponentOrdinal++)
           {
-            const TensorData<Scalar,ExecSpaceType> & rightComponent = vectorDataRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal);
+            const TensorData<Scalar,DeviceType> & rightComponent = vectorDataRight.vectorData().getComponent(rightFamilyOrdinal, rightComponentOrdinal);
             if (!rightComponent.isValid())
             {
                // represents zero
@@ -2210,7 +2214,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
             INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(leftComponent.numTensorComponents() != rightComponent.numTensorComponents(), std::invalid_argument, "left TensorData and right TensorData have different number of tensor components.  This is not supported.");
             
             const int vectorSize = getVectorSizeForHierarchicalParallelism<Scalar>();
-            Kokkos::TeamPolicy<ExecSpaceType> policy = Kokkos::TeamPolicy<ExecSpaceType>(cellDataExtent,Kokkos::AUTO(),vectorSize);
+            Kokkos::TeamPolicy<ExecutionSpace> policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,Kokkos::AUTO(),vectorSize);
             
             // TODO: expose the options for forceNonSpecialized and usePointCacheForRank3Tensor through an IntegrationAlgorithm enumeration.
             // AUTOMATIC: let Intrepid2 choose an algorithm based on the inputs (and, perhaps, the execution space)
@@ -2226,7 +2230,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
             // if we have already launched something that contributes to that part of the integral container, we need a Kokkos fence() to ensure that these do not interfere with each other.
             if (haveLaunchedContributionToCurrentFamilyLeft && haveLaunchedContributionToCurrentFamilyRight)
             {
-              ExecSpaceType().fence();
+              ExecutionSpace().fence();
             }
             haveLaunchedContributionToCurrentFamilyLeft  = true;
             haveLaunchedContributionToCurrentFamilyRight = true;
@@ -2235,12 +2239,12 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
             {
               if (usePointCacheForRank3Tensor && (leftComponent.numTensorComponents() == 3))
               {
-                auto functor = Impl::F_IntegratePointValueCache<Scalar, ExecSpaceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
+                auto functor = Impl::F_IntegratePointValueCache<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
                 
                 const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
                 const int teamSize    = functor.teamSize(maxTeamSize);
                 
-                policy = Kokkos::TeamPolicy<ExecSpaceType>(cellDataExtent,teamSize,vectorSize);
+                policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
                 Kokkos::parallel_for( policy , functor, "F_IntegratePointValueCache rank 2");
                 
@@ -2251,12 +2255,12 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
               }
               else
               {
-                auto functor = Impl::F_Integrate<Scalar, ExecSpaceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
+                auto functor = Impl::F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
                 
                 const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
                 const int teamSize    = functor.teamSize(maxTeamSize);
                 
-                policy = Kokkos::TeamPolicy<ExecSpaceType>(cellDataExtent,teamSize,vectorSize);
+                policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
                 Kokkos::parallel_for( policy , functor, "F_Integrate rank 2");
                 
@@ -2270,12 +2274,12 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
             {
               if (usePointCacheForRank3Tensor && (leftComponent.numTensorComponents() == 3))
               {
-                auto functor = Impl::F_IntegratePointValueCache<Scalar, ExecSpaceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
+                auto functor = Impl::F_IntegratePointValueCache<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
                 
                 const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
                 const int teamSize    = functor.teamSize(maxTeamSize);
                 
-                policy = Kokkos::TeamPolicy<ExecSpaceType>(cellDataExtent,teamSize,vectorSize);
+                policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
                 Kokkos::parallel_for( policy , functor, "F_IntegratePointValueCache rank 3");
                 
@@ -2286,12 +2290,12 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
               }
               else
               {
-                auto functor = Impl::F_Integrate<Scalar, ExecSpaceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
+                auto functor = Impl::F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
                 
                 const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
                 const int teamSize    = functor.teamSize(maxTeamSize);
                 
-                policy = Kokkos::TeamPolicy<ExecSpaceType>(cellDataExtent,teamSize,vectorSize);
+                policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
                 Kokkos::parallel_for( policy , functor, "F_Integrate rank 3");
                 
@@ -2314,7 +2318,7 @@ void IntegrationTools<ExecSpaceType>::integrate(Data<Scalar,ExecSpaceType> integ
 //  {
 //    std::cout << "Approximate flop count (new): " << *approximateFlops << std::endl;
 //  }
-  ExecSpaceType().fence(); // make sure we've finished writing to integrals container before exiting…
+  ExecutionSpace().fence(); // make sure we've finished writing to integrals container before exiting…
 }
 
 } // end namespace Intrepid2

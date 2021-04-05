@@ -1,0 +1,37 @@
+TRILINOS_DRIVER_SETUP()
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  RELEASE_CUDA_NO_UVM
+  ctest_linux_nightly_mpi_release_nouvm_ascicgpu031.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 420
+  )
+
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  RELEASE_CUDA_UVM_NODEPRECATED
+  ctest_linux_nightly_mpi_release_uvm_nodeprecated_ascicgpu031.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 420
+  )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  RELEASE_CUDA_UVM_DEPRECATED
+  ctest_linux_nightly_mpi_release_uvm_deprecated_ascicgpu031.cmake
+  CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
+  TIMEOUT_MINUTES 420
+  )
+
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  DEBUG_CUDA_NO_UVM_CRS
+  ctest_linux_nightly_mpi_release_nouvm_crs_ascicgpu031.cmake
+  CTEST_INSTALLER_TYPE debug
+  RUN_SERIAL
+  TIMEOUT_MINUTES 420
+  )
+
+
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

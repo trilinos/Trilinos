@@ -186,7 +186,7 @@ public:
       }
       default:
         TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-	"Error - unknown action location.\n");
+          "Error - unknown action location.\n");
     }
   }
 
@@ -311,7 +311,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
 
@@ -433,7 +433,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
 

@@ -106,6 +106,19 @@ namespace Intrepid2 {
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 
+#ifndef KOKKOS_ENABLE_CUDA
+#define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg)                             \
+  if (test) {                                                           \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
+    Kokkos::abort(  "[Intrepid2] Abort\n");                             \
+  }
+#else
+  #define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg) device_assert(!(test));
+#endif
+
+
   // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
 #define INTREPID2_TEST_FOR_DEBUG_ABORT(test, info, msg)                 \

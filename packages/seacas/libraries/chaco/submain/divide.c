@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -12,7 +12,7 @@
 #include "structs.h"
 #include <stdio.h>
 
-void divide(struct vtx_data **graph,         /* graph data structure */
+void chaco_divide(struct vtx_data **graph,         /* graph data structure */
             int               nvtxs,         /* number of vertices in graph */
             int               nedges,        /* number of edges in graph */
             int               using_vwgts,   /* are vertex weights being used? */

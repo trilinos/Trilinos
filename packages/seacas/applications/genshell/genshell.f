@@ -419,6 +419,7 @@ C   --Write the QA records
       GOTO 50
 
  50   CONTINUE
+      call mdfree()
       call exclos(ndbin,  ierr)
       call exclos(ndbout, ierr)
 

@@ -78,20 +78,23 @@ namespace
   {
     // get quadrature points for integrating up to polyOrder
     const int quadratureDegree = 2*basis.getDegree();
-    using ExecutionSpace = typename Basis::ExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using PointScalar = typename Basis::PointValueType;
     using WeightScalar = typename Basis::OutputValueType;
+    using CubatureType = Cubature<DeviceType,PointScalar,WeightScalar>;
+    using PointView  = typename CubatureType::PointViewTypeAllocatable;
+    using WeightView = typename CubatureType::WeightViewTypeAllocatable;
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = basis.getBaseCellTopology().getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = basis.getBaseCellTopology().getDimension();
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
+    PointView points("quadrature points ref cell", numRefPoints, spaceDim);
+    WeightView weights("quadrature weights ref cell", numRefPoints);
     quadrature->getCubature(points, weights);
     
-    TensorPoints<PointScalar> tensorPoints;
-    TensorData<WeightScalar>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
     using HostPointViewType = Kokkos::DynRankView<PointScalar,Kokkos::HostSpace>;
     using HostWeightViewType = Kokkos::DynRankView<WeightScalar,Kokkos::HostSpace>;
@@ -100,7 +103,7 @@ namespace
     HostWeightViewType hostWeights("quadrature weights ref cell - host", numRefPoints);
     hostQuadrature->getCubature(hostPoints, hostWeights);
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)
@@ -111,28 +114,17 @@ namespace
     }
     else
     {
-      std::vector<ViewType<PointScalar>> pointComponents {points};
-      tensorPoints = TensorPoints<PointScalar>(pointComponents);
-      Data<WeightScalar> weightData(weights);
-      std::vector<Data<WeightScalar>> weightComponents {weightData};
-      tensorWeights = TensorData<WeightScalar>(weightComponents);
+      std::vector<ViewType<PointScalar,DeviceType>> pointComponents {points};
+      tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
+      Data<WeightScalar,DeviceType> weightData(weights);
+      std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};
+      tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
     
-    out << "Points being tested:\n";
-    for (int pointOrdinal=0; pointOrdinal<numRefPoints; pointOrdinal++)
-    {
-      out << pointOrdinal << ": " << "(";
-      for (int d=0; d<spaceDim; d++)
-      {
-        out << points(pointOrdinal,d);
-        if (d < spaceDim-1) out << ",";
-      }
-      out << ")\n";
-    }
-    
+    printFunctor2(points, out, "points being tested");
     printFunctor2(tensorPoints, out, "tensorPoints");
     
-    testFloatingEquality2(points,tensorPoints,  relTol, absTol, out, success, "points", "tensorPoints");
+    testFloatingEquality2(points, tensorPoints, relTol, absTol, out, success, "points", "tensorPoints");
         
     auto hostBasisPtr = basis.getHostBasis();
         
@@ -223,7 +215,7 @@ namespace
   TEUCHOS_UNIT_TEST( BasisValues, DefaultConstructor )
   {
     // test of default-constructed basis values object.
-    BasisValues<double> emptyBasisValues;
+    BasisValues<double,DefaultTestDeviceType> emptyBasisValues;
     TEST_EQUALITY(0, emptyBasisValues.rank());
     for (int d=0; d<8; d++)
     {

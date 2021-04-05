@@ -142,10 +142,12 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
 
   Kokkos::View<int *, buffer_device_type> imports( "imports", n_imports );
   auto imports_host = Kokkos::create_mirror_view (imports);
+  // This assertion fails and is meaningless for HIP right now which uses HostPinnedSpace here
+  #ifndef KOKKOS_ENABLE_HIP
   static_assert (std::is_same<typename decltype (imports_host)::memory_space,
                    Kokkos::HostSpace>::value,
                  "imports_host should be a HostSpace View, but is not.");
-
+  #endif
   if (Tpetra::Details::Behavior::assumeMpiIsCudaAware ()) {
     distributor.doPostsAndWaits (exports, 1, imports);
     Kokkos::deep_copy (imports_host, imports);
@@ -153,9 +155,12 @@ TEUCHOS_UNIT_TEST( Distributor, Issue1454 )
   else {
     Kokkos::deep_copy (imports_host, imports);
     auto exports_host = Kokkos::create_mirror_view (exports);
+    // This assertion fails and is meaningless for HIP right now which uses HostPinnedSpace here
+    #ifndef KOKKOS_ENABLE_HIP
     static_assert (std::is_same<typename decltype (exports_host)::memory_space,
                    Kokkos::HostSpace>::value,
       "exports_host should be a HostSpace View, but is not.");
+    #endif
     Kokkos::deep_copy (exports_host, exports);
     distributor.doPostsAndWaits (exports_host, 1, imports_host);
   }

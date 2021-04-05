@@ -60,10 +60,12 @@ std::string PhysicsState<Scalar>::description() const
 
 template<class Scalar>
 void PhysicsState<Scalar>::describe(
-  Teuchos::FancyOStream        & out,
+  Teuchos::FancyOStream        & in_out,
   const Teuchos::EVerbosityLevel /* verbLevel */) const
 {
-  out << description() << "::describe" << std::endl
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl
       << "  physicsName   = " << physicsName_ << std::endl;
 }
 

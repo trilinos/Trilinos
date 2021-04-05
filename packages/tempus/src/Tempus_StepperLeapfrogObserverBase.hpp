@@ -27,23 +27,9 @@ namespace Tempus {
  *  wishes to modify the solution and/or stepper data during the
  *  Stepper::takeStep, they should use the Modifier class (with care!).
  *
- *  Below is the Leapfrog algorithm with the locations of the observe calls
- *  italicized.
- *
- *  \f{algorithm}{                                                                               
- *  \renewcommand{\thealgorithm}{}                                                               
- *  \caption{Leapfrog with the locations of the application actions indicated.}             
- *  \begin{algorithmic}[1]
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute $\dot{x}_{n+1/2} = \dot{x}_n + 0.5\Delta t \ddot{x}_n$
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEFORE\_X\_UPDATE)}
- *    \State Compute $x_{n+1} = x_n + \Delta t \dot{x}_{n+1/2}$
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *    \State Evaluate $\ddot{x}_{n+1} = f(x_{n+1},t_{n+1})$
- *    \State \quad {\it observer.observe(solutionHistory, stepper, BEFORE\_XDOT\_UPDATE)}
- *    \State Compute half-step sync $\dot{x}_{n+1} = \dot{x}_{n+1/2} + 0.5 \Delta t \ddot{x}_{n+1}$ or full step $\dot{x}_{n+3/2} = \dot{x}_{n+1/2} + \Delta t \ddot{x}_{n+1}$
- *  \end{algorithmic}                                                                            
- *  \f}                                                                                          
+ *  The locations for these AppAction calls
+ *  (StepperLeapfrogAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperLeapfrog.
  */
 template<class Scalar>
 class StepperLeapfrogObserverBase

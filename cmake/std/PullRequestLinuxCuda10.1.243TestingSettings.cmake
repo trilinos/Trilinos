@@ -31,7 +31,8 @@ set (Trilinos_ENABLE_DEBUG OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Trilinos_ENABLE_DEBUG_SYMBOLS OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (BUILD_SHARED_LIBS OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Tpetra_INST_SERIAL ON CACHE BOOL "Set by default for CUDA PR testing")
-set (TPETRA_ASSUME_CUDA_AWARE_MPI ON CACHE BOOL "Set by default for CUDA PR testing")
+## this was moved to the environment settings in sems/PullRequestCuda10.1.243TestingEnv.sh
+## set (TPETRA_ASSUME_CUDA_AWARE_MPI ON CACHE BOOL "Set by default for CUDA PR testing")
 
 set (Trilinos_ENABLE_SECONDARY_TESTED_CODE OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (EpetraExt_ENABLE_HDF5 OFF CACHE BOOL "Set by default for CUDA PR testing")
@@ -133,6 +134,16 @@ set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
 # set (EpetraExt_inout_test_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 # set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 # set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+
+# Disable SEACAS tests that grep results out of stderr...
+set (SEACASIoss_create_path_fpp_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_lib_aprepro_lib_unit_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_lib_aprepro_lib_array_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_unit_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_array_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_command_line_vars_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_command_line_include_test_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
+set (SEACASAprepro_aprepro_test_dump_reread_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")
 
 set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 # set (CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "Kokkos turns off CXX extensions")

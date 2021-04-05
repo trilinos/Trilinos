@@ -8,7 +8,7 @@ import argparse
 parser = argparse.ArgumentParser(description='convert files by adding cell centroids and ID (for cubed-sphere)')
 parser.add_argument('--porder', dest='porder', type=int, default=3, help='polynomial degree for basis')
 parser.add_argument('--grids', dest='grids', type=int, default=2, help='number of grids for refinement sequence')
-parser.add_argument('--solver-type', dest='solver_type', type=int, default=1, help='solver type (int)')
+parser.add_argument('--solver-type', dest='solver_type', type=str, default='QR', help='solver type {QR,LU}')
 parser.add_argument('--in-trilinos', dest='in_trilinos', type=str, default='false', help='whether being called from inside of Trilinos')
 args = parser.parse_args()
 
@@ -42,7 +42,7 @@ for grid_num in range(grids):
             exe_name = "@CMAKE_CURRENT_BINARY_DIR@/Compadre_GMLS_Manifold_Test.exe"
         else:
             exe_name = "@CMAKE_CURRENT_BINARY_DIR@/GMLS_Manifold_Test"
-        output_commands = [exe_name,"%d"%porder,"%d"%num_target_sites,"3","%d"%(20*num_target_sites*pow(4,grid_num)),str(solver_type),"1","0","--kokkos-threads=4"]
+        output_commands = [exe_name,"--p","%d"%porder,"--nt","%d"%num_target_sites,"--d","3","--ns","%d"%(20*num_target_sites*pow(4,grid_num)),"--solver",str(solver_type),"--problem","MANIFOLD","--kokkos-threads=4"]
         print(output_commands)
         output = subprocess.check_output(output_commands, stderr=devnull)
         #print(output)

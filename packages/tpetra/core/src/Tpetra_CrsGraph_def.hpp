@@ -1848,41 +1848,6 @@ namespace Tpetra {
     }
   }
 
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  findLocalIndices(const RowInfo& rowInfo,
-                   const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                   std::function<void(const size_t, const size_t, const size_t)> fun) const
-  {
-    using LO = LocalOrdinal;
-    using inp_view_type = Kokkos::View<const LO*, Kokkos::HostSpace,
-      Kokkos::MemoryUnmanaged>;
-    inp_view_type inputInds(indices.getRawPtr(), indices.size());
-
-    size_t numFound = 0;
-    LO lclRow = rowInfo.localRow;
-    if (this->isLocallyIndexed())
-    {
-      numFound = Details::findCrsIndices(lclRow, rowPtrsUnpacked_host_,
-        rowInfo.numEntries,
-        lclIndsUnpacked_wdv.getHostView(Access::ReadOnly), inputInds, fun);
-    }
-    else if (this->isGloballyIndexed())
-    {
-      if (this->colMap_.is_null())
-        return Teuchos::OrdinalTraits<size_t>::invalid();
-      const auto& colMap = *(this->colMap_);
-      auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
-      numFound = Details::findCrsIndices(lclRow, rowPtrsUnpacked_host_,
-        rowInfo.numEntries,
-        gblInds_wdv.getHostView(Access::ReadOnly), inputInds, map, fun);
-    }
-    return numFound;
-  }
-
-
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t
   CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::

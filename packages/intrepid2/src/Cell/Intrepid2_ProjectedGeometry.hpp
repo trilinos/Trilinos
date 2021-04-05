@@ -63,13 +63,13 @@ namespace Intrepid2
 /** \class Intrepid2::ProjectedGeometry
     \brief Allows generation of geometry degrees of freedom based on a provided map from straight-edged mesh domain to curvilinear mesh domain.
 */
-  template<int spaceDim, typename PointScalar, typename ExecSpaceType>
+  template<int spaceDim, typename PointScalar, typename DeviceType>
   class ProjectedGeometry
   {
   public:
-    using ViewType      = ScalarView<      PointScalar, ExecSpaceType>;
-    using ConstViewType = ScalarView<const PointScalar, ExecSpaceType>;
-    using BasisPtr      = Teuchos::RCP< Basis<ExecSpaceType,PointScalar,PointScalar> >;
+    using ViewType      = ScalarView<      PointScalar, DeviceType>;
+    using ConstViewType = ScalarView<const PointScalar, DeviceType>;
+    using BasisPtr      = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
     
     /** \brief Generate geometry degrees of freedom based on a provided map from straight-edged mesh domain to curvilinear mesh domain.
        \param [out] projectedBasisNodes - the projected geometry degrees of freedom
@@ -81,7 +81,7 @@ namespace Intrepid2
      \see Intrepid2_ProjectedGeometryExamples.hpp for sample implementations of exactGeometry and exactGeometryGradient.
     */
     template<class ExactGeometry, class ExactGeometryGradient>
-    static void projectOntoHGRADBasis(ViewType projectedBasisNodes, BasisPtr targetHGradBasis, CellGeometry<PointScalar,spaceDim,ExecSpaceType> flatCellGeometry,
+    static void projectOntoHGRADBasis(ViewType projectedBasisNodes, BasisPtr targetHGradBasis, CellGeometry<PointScalar,spaceDim,DeviceType> flatCellGeometry,
                                       const ExactGeometry &exactGeometry, const ExactGeometryGradient &exactGeometryGradient)
     {
       const ordinal_type numCells = flatCellGeometry.extent_int(0); // (C,N,D)
@@ -92,8 +92,9 @@ namespace Intrepid2
       INTREPID2_TEST_FOR_EXCEPTION(projectedBasisNodes.extent_int(1) != targetHGradBasis->getCardinality(), std::invalid_argument, "projectedBasisNodes must have shape (C,F,D)");
       INTREPID2_TEST_FOR_EXCEPTION(projectedBasisNodes.extent_int(2) != spaceDim, std::invalid_argument, "projectedBasisNodes must have shape (C,F,D)");
       
-      using ProjectionTools  = Experimental::ProjectionTools<ExecSpaceType>;
-      using ProjectionStruct = Experimental::ProjectionStruct<ExecSpaceType,PointScalar>;
+      using ExecutionSpace = typename DeviceType::execution_space;
+      using ProjectionTools  = Experimental::ProjectionTools<ExecutionSpace>; // TODO: when ProjectionTools supports it, replace template argument with DeviceType
+      using ProjectionStruct = Experimental::ProjectionStruct<ExecutionSpace,PointScalar>; // TODO: when ProjectionTools supports it, replace template argument with DeviceType
       
       ProjectionStruct projectionStruct;
       ordinal_type targetQuadratureDegree(targetHGradBasis->getDegree()), targetDerivativeQuadratureDegree(targetHGradBasis->getDegree());
@@ -114,7 +115,7 @@ namespace Intrepid2
       ViewType evaluationPoints    ("ProjectedGeometry evaluation points (value)",    numCells, numPoints,     spaceDim);
       ViewType evaluationGradPoints("ProjectedGeometry evaluation points (gradient)", numCells, numGradPoints, spaceDim);
   
-      using CellTools = CellTools<ExecSpaceType>;
+      using CellTools = CellTools<DeviceType>;
       BasisPtr hgradLinearBasisForFlatGeometry = flatCellGeometry.basisForNodes();
       if (numPoints > 0)
       {
@@ -128,8 +129,8 @@ namespace Intrepid2
       auto refData = flatCellGeometry.getJacobianRefData(evaluationGradPoints);
       
       // evaluate, transform, and project in each component
-      auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},  {numCells,numPoints});
-      auto gradPolicy  = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{numCells,numGradPoints,spaceDim});
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},  {numCells,numPoints});
+      auto gradPolicy  = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{numCells,numGradPoints,spaceDim});
       
       ViewType evaluationValues    ("exact geometry values",    numCells, numPoints);
       ViewType evaluationGradients ("exact geometry gradients", numCells, numGradPoints, spaceDim);
@@ -168,8 +169,8 @@ namespace Intrepid2
         });
         
         // apply Jacobian
-        Data<PointScalar,ExecSpaceType> gradientData(evaluationGradients);
-        auto transformedGradientData = Data<PointScalar,ExecSpaceType>::allocateMatVecResult(gradPointsJacobians,gradientData);
+        Data<PointScalar,DeviceType> gradientData(evaluationGradients);
+        auto transformedGradientData = Data<PointScalar,DeviceType>::allocateMatVecResult(gradPointsJacobians,gradientData);
         
         transformedGradientData.storeMatVec(gradPointsJacobians,gradientData);
         

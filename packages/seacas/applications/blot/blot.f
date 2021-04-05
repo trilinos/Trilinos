@@ -992,6 +992,7 @@ C   --Finish graphics
 
 C   --Close files
 
+      call MDFREE()
       CALL EXCLOS(NDB, IERR)
       IF (NEUOPN) THEN
         WRITE (NEU, 10030) 'xmax', wxmax

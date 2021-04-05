@@ -301,11 +301,11 @@ namespace Intrepid2 {
 
     // these are tangents scaled by the appropriate edge lengths.
     for (ordinal_type edge=0;edge<numEdges;edge++) {  // loop over edges
-      CellTools<Kokkos::HostSpace::execution_space>::getReferenceEdgeTangent( edgeTan ,
+      CellTools<Kokkos::HostSpace>::getReferenceEdgeTangent( edgeTan ,
                                                                               edge ,
                                                                               this->basisCellTopology_ );
 
-      CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( edgePts ,
+      CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( edgePts ,
                                                                             linePts ,
                                                                             1 ,
                                                                             edge ,

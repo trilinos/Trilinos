@@ -45,12 +45,7 @@
 #include <Xpetra_Operator.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
-#include <FROSch_SumOperator_def.hpp>
-#include <FROSch_MultiplicativeOperator_def.hpp>
-#include <FROSch_AlgebraicOverlappingOperator_def.hpp>
-#include <FROSch_GDSWCoarseOperator_def.hpp>
-#include <FROSch_RGDSWCoarseOperator_def.hpp>
-#include <FROSch_IPOUHarmonicCoarseOperator_def.hpp>
+#include <FROSch_SchwarzOperators_fwd.hpp>
 
 
 namespace FROSch {

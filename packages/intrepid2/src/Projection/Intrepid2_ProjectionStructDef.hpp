@@ -105,7 +105,7 @@ void ProjectionStruct<SpT,ValueType>::createL2ProjectionStruct(const BasisPtrTyp
     basisCubPoints[0][iv] = view_type("basisCubPoints",1,dim);
     targetPointsRange(0,iv) = range_type(iv, iv+1);
     targetCubPoints[0][iv] = view_type("targetCubPoints",1,dim);
-    CellTools<SpT>::getReferenceVertex(coord, cellTopo, iv);
+    CellTools<host_space_type>::getReferenceVertex(coord, cellTopo, iv);
     for(ordinal_type d=0; d<dim; d++) {
       basisCubPoints[0][iv](0,d) = coord(d);
       targetCubPoints[0][iv](0,d) = coord(d);
@@ -237,7 +237,7 @@ void ProjectionStruct<SpT,ValueType>::createHGradProjectionStruct(const BasisPtr
     basisCubPoints[0][iv] = view_type("basisCubPoints",1,dim);
     targetPointsRange(0,iv) = range_type(iv, iv+1);
     targetCubPoints[0][iv] = view_type("targetCubPoints",1,dim);
-    CellTools<SpT>::getReferenceVertex(coord, cellTopo, iv);
+    CellTools<host_space_type>::getReferenceVertex(coord, cellTopo, iv);
     for(ordinal_type d=0; d<dim; d++) {
       basisCubPoints[0][iv](0,d) = coord(d);
       targetCubPoints[0][iv](0,d) = coord(d);

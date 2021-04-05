@@ -69,7 +69,7 @@ namespace FROSch {
     LevelID_ (levelID)
     {
         FROSCH_DETAILTIMER_START_LEVELID(dDInterfaceTime,"DDInterface::DDInterface");
-        FROSCH_ASSERT(((Dimension_==2)||(Dimension_==3)),"FROSch::DDInterface : ERROR: Only dimension 2 and 3 are available");
+        FROSCH_ASSERT(((Dimension_==2)||(Dimension_==3)),"FROSch::DDInterface: Only dimension 2 and 3 are available");
 
         //if (Verbose_ && Verbosity_==All) cout << "FROSch::DDInterface" << endl;
 
@@ -248,10 +248,10 @@ namespace FROSch {
         for (UN l=0; l<EntitySetVector_.size(); l++) {
             switch (l) {
                 case 0:
-                    FROSCH_ASSERT(EntitySetVector_[l]->getNumEntities()==0,"FROSch::DDInterface : ERROR: This case is impossible.");
+                    FROSCH_ASSERT(EntitySetVector_[l]->getNumEntities()==0,"FROSch::DDInterface: This case is impossible.");
                     break;
                 case 1:
-                    FROSCH_ASSERT(EntitySetVector_[l]->getNumEntities()==0,"FROSch::DDInterface : ERROR: In this case, the entity is interior to the subdomain.");
+                    FROSCH_ASSERT(EntitySetVector_[l]->getNumEntities()==0,"FROSch::DDInterface: In this case, the entity is interior to the subdomain.");
                     break;
                 case 2:
                     for (UN i=0; i<EntitySetVector_[l]->getNumEntities(); i++) {
@@ -829,7 +829,7 @@ namespace FROSch {
                 break;
 
             default:
-                FROSCH_ASSERT(false,"FROSch::DDInterface : ERROR: Specify a valid communication strategy.");
+                FROSCH_ASSERT(false,"FROSch::DDInterface: Specify a valid communication strategy.");
                 break;
         }
 
@@ -892,7 +892,7 @@ namespace FROSch {
                 }
                 interior->addNode(nodeIDI,nodeIDLocal,nodeIDGlobal,DofsPerNode_,dofsI,dofsLocal,dofsGlobal);
             } else {
-                FROSCH_ASSERT(componentsMultiplicity[localComponentIndices[i]]>1,"FROSch::DDInterface : ERROR: There cannot be any nodes with multiplicity 0.");
+                FROSCH_ASSERT(componentsMultiplicity[localComponentIndices[i]]>1,"FROSch::DDInterface: There cannot be any nodes with multiplicity 0.");
                 LO nodeIDGamma = interface->getNumNodes();
                 LO nodeIDLocal = i;
                 GO nodeIDGlobal = NodesMap_->getGlobalElement(nodeIDLocal);
@@ -914,7 +914,7 @@ namespace FROSch {
         Interface_->addEntity(interface);
 
         for (UN i=0; i<componentsSubdomainsUnique.size(); i++) {
-            FROSCH_ASSERT(componentsMultiplicity[i]>0,"FROSch::DDInterface : ERROR: There cannot be any component with multiplicity 0.");
+            FROSCH_ASSERT(componentsMultiplicity[i]>0,"FROSch::DDInterface: There cannot be any component with multiplicity 0.");
             RCP<InterfaceEntity<SC,LO,GO,NO> > tmpEntity(new InterfaceEntity<SC,LO,GO,NO>(VertexType,DofsPerNode_,componentsMultiplicity[i],&(componentsSubdomainsUnique[i][0])));
             LO nodeIDGamma;
             LO nodeIDLocal;

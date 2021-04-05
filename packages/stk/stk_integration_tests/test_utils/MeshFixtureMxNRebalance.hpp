@@ -52,6 +52,7 @@
 #include <stk_balance/internal/balanceMtoN.hpp>
 #include <stk_balance/internal/MxNutils.hpp>
 #include <stk_balance/internal/entityDataToField.hpp>
+#include <stk_balance/setup/M2NParser.hpp>
 
 class MeshFixtureMxNRebalance : public stk::unit_test_util::MeshFixture
 {
@@ -67,7 +68,8 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        EXPECT_TRUE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename()));
+        stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
+        EXPECT_TRUE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, parsedOptions));
     }
 
     // FIXME

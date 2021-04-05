@@ -62,7 +62,7 @@ IF(${PACKAGE_NAME}_ENABLE_Stratimikos AND ${PACKAGE_NAME}_ENABLE_Thyra)
     SOURCE_FILES stratimikos_ParameterList.xml stratimikos_ParameterList.yaml stratimikos_ParameterList2.xml
     set1-gmres.xml set1-cg.xml
     set2-sgs1.xml set2-sgs3.xml
-    set3-mg-jacobi.xml set3-mg-sgs.xml set3-mg-gs.xml set3-mg-chebyshev.xml
+    set3-mg-jacobi.xml set3-mg-sgs.xml set3-mg-gs.xml set3-mg-chebyshev.xml set3-mg-sgs-reuse.xml
     mg-gpu.xml
     )
 

@@ -84,67 +84,23 @@ namespace { // (anonymous)
 
   using std::endl;
 
-
   template<class ExecutionSpace>
   struct ExecSpaceName {
-    static const char* name ();
+    static const char* name () { return ExecutionSpace().name(); }
   };
 
   template<class MemorySpace>
   struct MemorySpaceName {
-    static const char* name ();
+    static const char* name () { return MemorySpace().name(); }
   };
-
-  template<>
-  struct MemorySpaceName<Kokkos::HostSpace> {
-    static const char* name () { return "HostSpace"; }
-  };
-
-#ifdef KOKKOS_ENABLE_SERIAL
-  template<>
-  struct ExecSpaceName<Kokkos::Serial> {
-    static const char* name () { return "Serial"; }
-  };
-#endif // KOKKOS_ENABLE_SERIAL
-
-#ifdef KOKKOS_ENABLE_THREADS
-  template<>
-  struct ExecSpaceName<Kokkos::Threads> {
-    static const char* name () { return "Threads"; }
-  };
-#endif // KOKKOS_ENABLE_THREADS
-
-#ifdef KOKKOS_ENABLE_OPENMP
-  template<>
-  struct ExecSpaceName<Kokkos::OpenMP> {
-    static const char* name () { return "OpenMP"; }
-  };
-#endif // KOKKOS_ENABLE_OPENMP
-
-#ifdef KOKKOS_ENABLE_CUDA
-  template<>
-  struct ExecSpaceName<Kokkos::Cuda> {
-    static const char* name () { return "Cuda"; }
-  };
-
-  template<>
-  struct MemorySpaceName<Kokkos::CudaSpace> {
-    static const char* name () { return "CudaSpace"; }
-  };
-
-  template<>
-  struct MemorySpaceName<Kokkos::CudaUVMSpace> {
-    static const char* name () { return "CudaUVMSpace"; }
-  };
-#endif // KOKKOS_ENABLE_CUDA
 
   template<class DeviceType>
   std::string deviceName ()
   {
     return std::string ("Kokkos::Device<") +
-      ExecSpaceName<typename DeviceType::execution_space>::name () +
+      DeviceType::execution_space::name() +
       std::string (", ") +
-      MemorySpaceName<typename DeviceType::memory_space>::name () +
+      DeviceType::memory_space::name() +
       std::string (" >");
   }
 

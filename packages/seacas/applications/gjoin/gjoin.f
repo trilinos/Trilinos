@@ -709,6 +709,7 @@ C   --Write the QA records
       GOTO 150
 
   150 CONTINUE
+      call mdfree()
       CALL WRAPUP (QAINFO(1))
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       OPEN (UNIT=9, FILE='%gjoin', FORM='unformatted',

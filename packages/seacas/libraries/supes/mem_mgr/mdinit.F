@@ -940,6 +940,31 @@ C     Was MDINIT previously called?
 
 C***********************************************************************
 
+      ENTRY MDFREE ()
+
+C***********************************************************************
+
+C     This section frees all memory allocated by supes
+
+C     Was MDINIT previously called?
+
+      IF (.NOT. INIT) THEN
+         LASTER = NOINIT
+         IF (EUNIT .GT. 0) WRITE (EUNIT, *) 'MDINIT NOT CALLED BEFORE ',
+     *      'CALLING MDFREE.'
+         ERRVEC(LASTER) = ERRVEC(LASTER) + 1
+         LERROR = LASTER
+         RETURN
+      END IF
+
+      CALL MXFREE (OFFSET, DICT, DPOINT, LDICT, NNAMES, CHRCOL, MYLOC)
+
+      LASTER = SUCESS
+      ERRVEC(LASTER) = ERRVEC(LASTER) + 1
+      RETURN
+
+C***********************************************************************
+
       ENTRY MDLONG (TNAME1, NEWLOC, NEWLEN)
 
 C***********************************************************************

@@ -45,5 +45,6 @@ C***********************************************************************
          CALL VDESCP (10003, 0, 0)
          CALL PLTEND
       ENDIF
+      call mdfree()
       stop
       END

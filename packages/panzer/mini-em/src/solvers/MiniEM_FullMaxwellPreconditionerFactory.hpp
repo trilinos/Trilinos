@@ -34,6 +34,8 @@ private:
    // type of preconditioner for Schur complement
    std::string S_E_prec_type_;
 
+   mutable Teko::InverseLinearOp S_E_prec_;
+
    // parameters
    Teuchos::ParameterList params;
 };

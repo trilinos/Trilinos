@@ -147,13 +147,13 @@ if($ENV{CTEST_CONFIGURATION} MATCHES "default")
       TIMEOUT_MINUTES 330
       )
 
-    TRILINOS_DRIVER_ADD_DASHBOARD(
-      OPENMPI-1.10.1_DEBUG_VALGRIND
-      ctest_linux_nightly_mpi_debug_valgrind_muelu_geminga.cmake
-      CTEST_INSTALLER_TYPE release
-      RUN_SERIAL
-      TIMEOUT_MINUTES 330
-      )
+    # TRILINOS_DRIVER_ADD_DASHBOARD(
+    #   OPENMPI-1.10.1_DEBUG_VALGRIND
+    #   ctest_linux_nightly_mpi_debug_valgrind_muelu_geminga.cmake
+    #   CTEST_INSTALLER_TYPE release
+    #   RUN_SERIAL
+    #   TIMEOUT_MINUTES 330
+    #   )
 
   endif()
 

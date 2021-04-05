@@ -1940,11 +1940,6 @@ public:
     ///
     /// \return The number of indices found.
     size_t
-    findLocalIndices(const RowInfo& rowInfo,
-                     const Teuchos::ArrayView<const local_ordinal_type>& indices,
-                     std::function<void(const size_t, const size_t, const size_t)> fun) const;
-
-    size_t
     findGlobalIndices(const RowInfo& rowInfo,
                       const Teuchos::ArrayView<const global_ordinal_type>& indices,
                       std::function<void(const size_t, const size_t, const size_t)> fun) const;

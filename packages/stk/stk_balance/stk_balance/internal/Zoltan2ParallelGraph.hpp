@@ -52,7 +52,7 @@ public:
 
     void adjust_vertex_weights(const stk::balance::BalanceSettings& balanceSettings,
                                stk::mesh::BulkData& stkMeshBulkData,
-                               const std::vector<stk::mesh::Selector>& selectors,
+                               const stk::mesh::Selector & selector,
                                const stk::mesh::impl::LocalIdMapper& localIds);
 
     void adjust_weights_for_small_meshes();

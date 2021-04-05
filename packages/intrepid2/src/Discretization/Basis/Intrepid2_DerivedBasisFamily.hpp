@@ -86,8 +86,9 @@ namespace Intrepid2
     using OutputValueType = typename LineBasisHGRAD::OutputValueType;
     using PointValueType  = typename LineBasisHGRAD::PointValueType;
     
-    using Basis    = typename LineBasisHGRAD::BasisBase;
-    using BasisPtr = Teuchos::RCP<Basis>;
+    using Basis      = typename LineBasisHGRAD::BasisBase;
+    using BasisPtr   = Teuchos::RCP<Basis>;
+    using DeviceType = typename Basis::DeviceType;
     
     // line bases
     using HGRAD_LINE = LineBasisHGRAD;
