@@ -337,6 +337,7 @@ getLocalRowCopy (local_ordinal_type localRow,
     overlappingGraph_->getLocalRowCopy (localRowOffset, indices, numIndices);
   }
 }
+#endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class GraphType>
