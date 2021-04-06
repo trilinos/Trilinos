@@ -592,7 +592,26 @@ namespace Tpetra {
 
     std::sort(view_rcp.begin(),view_rcp.end());    
   }
- 
+
+  /**
+   * \brief Convenience wrapper for a reversed std::sort for host-accessible views
+   *
+   * Reverse Sort the values in the array (of length size) in ascending order.
+
+   * @param view A host-accessible 1D Kokkos::View.
+   * @param size Length of the array (or portion of which to sort, from the *end*)
+   */
+  template<class View>
+  void reverse_sort(View &view, const size_t &size) {
+    // NOTE: This assumes the view is host-accessible.
+    // Wrap the view as rcps (this happens to preserve the reference counting, but that doesn't really matter here)
+    Teuchos::ArrayRCP<typename View::non_const_value_type> view_rcp =  Kokkos::Compat::persistingView(view, 0, size);
+
+    std::sort(view_rcp.rbegin(),view_rcp.rend());    
+  }
+  
+
+
 
   /**
    * \brief Sort the first array, and apply the same permutation to the second
