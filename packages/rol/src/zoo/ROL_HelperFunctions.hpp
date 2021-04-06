@@ -75,7 +75,8 @@ namespace ROL {
       obj.hessVec(*h, *e, x, tol);
       for (int j=0; j<dim; j++) {
         e = x.basis(j);
-        H(j,i) = e->dot(h->dual());
+        //H(j,i) = e->dot(h->dual());
+        H(j,i) = e->apply(*h);
       }
     }
 

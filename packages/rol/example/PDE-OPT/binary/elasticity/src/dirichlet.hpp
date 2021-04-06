@@ -193,7 +193,8 @@ public:
 
   void applyJacobian2(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &J) const {
     const int d = J.size();
-    const int f = J[0][0]->dimension(1);
+    const int T = J[0].size();
+    const int f = J[0][0]->dimension(2);
     const int numSideSets = sidesets_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
@@ -208,34 +209,10 @@ public:
             for (int l = 0; l < numBdryDofs; ++l) {
               for (int m=0; m < f; ++m) {
                 for (int n=0; n < numConDim; ++n) {
-                  for (int p=0; p < d; ++p) {
+                  for (int p=0; p < T; ++p) {
                     (*J[conDim[n]][p])(cidx,fidx_[j][l],m) = static_cast<Real>(0);
                   }
                 }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
-  void applyJacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &J) const {
-    const int d = J.size();
-    const int numSideSets = sidesets_.size();
-    if (numSideSets > 0) {
-      for (int i = 0; i < numSideSets; ++i) {
-        const std::vector<int> conDim = getConstrainedDimensions(types_[i],d);
-        const int numConDim = conDim.size();
-        const int numLocalSideIds = bdryCellLocIds_[sidesets_[i]].size();
-        for (int j = 0; j < numLocalSideIds; ++j) {
-          const int numCellsSide = bdryCellLocIds_[sidesets_[i]][j].size();
-          const int numBdryDofs = fidx_[j].size();
-          for (int k = 0; k < numCellsSide; ++k) {
-            const int cidx = bdryCellLocIds_[sidesets_[i]][j][k];
-            for (int l = 0; l < numBdryDofs; ++l) {
-              for (int m=0; m < numConDim; ++m) {
-                (*J[conDim[m]])(cidx,fidx_[j][l]) = static_cast<Real>(0);
               }
             }
           }

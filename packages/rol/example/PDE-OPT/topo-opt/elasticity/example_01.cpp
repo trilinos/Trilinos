@@ -58,25 +58,24 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_ScaledStdVector.hpp"
-#include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_CompositeConstraint_SimOpt.hpp"
+#include "ROL_ConstraintFromObjective.hpp"
 #include "ROL_LinearCombinationObjective.hpp"
 
-#include "../../TOOLS/pdeconstraint.hpp"
-#include "../../TOOLS/linearpdeconstraint.hpp"
-#include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/pdevector.hpp"
-#include "../../TOOLS/integralconstraint.hpp"
+#include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/meshreader.hpp"
-#include "src/obj_compliance.hpp"
-#include "src/obj_volume.hpp"
-#include "src/obj_phasefield.hpp"
+
 #include "src/mesh_topo-opt.hpp"
 #include "src/pde_elasticity.hpp"
-#include "src/pde_filter.hpp"
+
+#include "../src/pde_filter.hpp"
+#include "../src/filtered_compliance_robj.hpp"
+#include "../src/volume_con.hpp"
+#include "../src/volume_obj.hpp"
+#include "../src/obj_volume.hpp"
+#include "../src/obj_phasefield.hpp"
 
 typedef double RealT;
 
@@ -88,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
@@ -110,30 +109,108 @@ int main(int argc, char *argv[]) {
 
     // Retrieve parameters.
     const std::string example = parlist->sublist("Problem").get("Example", "Default");
-    const RealT domainWidth   = parlist->sublist("Geometry").get("Width", 1.0);
-    const RealT domainHeight  = parlist->sublist("Geometry").get("Height", 1.0);
-    const RealT domainDepth   = parlist->sublist("Geometry").get("Depth", 1.0);
     const RealT volFraction   = parlist->sublist("Problem").get("Volume Fraction", 0.4);
+    const RealT initDens      = parlist->sublist("Problem").get("Initial Density",volFraction);
     const RealT cmpFactor     = parlist->sublist("Problem").get("Compliance Factor", 1.1);
-    RealT cmpScaling          = parlist->sublist("Problem").get("Compliance Scaling", 1e-4);
     int probDim               = parlist->sublist("Problem").get("Problem Dimension", 2);
     const std::string minType = parlist->sublist("Problem").get("Minimization Type", "Volume");
     const bool usePhaseField  = parlist->sublist("Problem").get("Use Phase Field", false);
     bool useFilter            = parlist->sublist("Problem").get("Use Filter", true);
+    const bool normalizeObj   = parlist->sublist("Problem").get("Normalize Compliance", true);
+    const bool volEq          = parlist->sublist("Problem").get("Use Volume Equality Constraint",true);
+    std::string hessAppr      = parlist->sublist("Problem").get("Hessian Approximation","None");
+    hessAppr                  = (minType == "Compliance" ? hessAppr : "None");
     if (example == "2D Wheel"                   ||
         example == "2D Truss"                   ||
         example == "2D Cantilever with 1 Load"  ||
         example == "2D Cantilever with 3 Loads" ||
         example == "2D Beams"                   ||
-        example == "2D Carrier Plate") {
+        example == "2D Carrier Plate")
       probDim = 2;
-    }
-    else if (example == "3D Cantilever") {
+    else if (example == "3D Cantilever" ||
+             example == "3D L Beam")
       probDim = 3;
+    if (usePhaseField) useFilter = false;
+
+    /*** Initialize main data structure. ***/
+    TEUCHOS_TEST_FOR_EXCEPTION(probDim<2 || probDim>3, std::invalid_argument,
+      ">>> PDE-OPT/topo-opt/elasticity/example_01.cpp: Problem dim is not 2 or 3!");
+    ROL::Ptr<MeshManager<RealT>> meshMgr;
+    if (probDim == 2) meshMgr = ROL::makePtr<MeshManager_TopoOpt<RealT>>(*parlist);
+    else              meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
+    // Initialize PDE describing elasticity equations.
+    ROL::Ptr<PDE_Elasticity<RealT>>
+      pde = ROL::makePtr<PDE_Elasticity<RealT>>(*parlist);
+
+    // Initialize the filter PDE.
+    ROL::Ptr<PDE<RealT>> pdeFilter = pde;
+
+    // Initialize reduced compliance objective function.
+    ROL::Ptr<ROL::Objective<RealT>> robj_com;
+    ROL::Ptr<Assembler<RealT>> assembler, assemblerFilter;
+    if (useFilter && !usePhaseField) {
+      pdeFilter = ROL::makePtr<PDE_Filter<RealT>>(*parlist);
+      pde->setDensityFields(pdeFilter->getFields());
+      robj_com = ROL::makePtr<TopOptFilteredComplianceObjective<RealT>>(
+                 pde,pdeFilter,meshMgr,comm,*parlist,*outStream);
+      assembler = ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT>>(robj_com)->getAssembler();
+      assemblerFilter = ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT>>(robj_com)->getFilterAssembler();
     }
-    if (usePhaseField) {
-      useFilter = false;
+    else {
+      robj_com = ROL::makePtr<TopOptComplianceObjective<RealT>>(
+                 pde,meshMgr,comm,*parlist,*outStream);
+      assembler = ROL::dynamicPtrCast<TopOptComplianceObjective<RealT>>(robj_com)->getAssembler();
+      assemblerFilter = assembler;
     }
+
+    // Create vectors.
+    ROL::Ptr<Tpetra::MultiVector<>> u_ptr, p_ptr, r_ptr, z_ptr;
+    u_ptr = assembler->createStateVector();         u_ptr->putScalar(0.0);
+    p_ptr = assembler->createStateVector();         p_ptr->putScalar(0.0);
+    r_ptr = assembler->createResidualVector();      r_ptr->putScalar(0.0);
+    z_ptr = assemblerFilter->createControlVector(); z_ptr->putScalar(1.0);
+    ROL::Ptr<ROL::Vector<RealT>> up, pp, rp, zp;
+    up = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
+    pp = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
+    rp = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
+    zp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pdeFilter,assemblerFilter,*parlist);
+
+    // Build volume objective function.
+    ROL::Ptr<QoI<RealT>> qoi_vol;
+    if (minType == "Compliance" && volEq) {
+      if (useFilter && !usePhaseField)
+        qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT>>(ROL::dynamicPtrCast<PDE_Filter<RealT>>(pdeFilter)->getDensityFE(),
+                                                          volFraction);
+      else
+        qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT>>(pde->getDensityFE(),
+                                                          volFraction);
+    }
+    else {
+      if (useFilter && !usePhaseField)
+        qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT>>(ROL::dynamicPtrCast<PDE_Filter<RealT>>(pdeFilter)->getDensityFE());
+      else
+        qoi_vol = ROL::makePtr<QoI_Volume_TopoOpt<RealT>>(pde->getDensityFE());
+    }
+    ROL::Ptr<TopOptVolumeObjective<RealT>>
+      obj_vol = ROL::makePtr<TopOptVolumeObjective<RealT>>(qoi_vol,assemblerFilter,zp);
+    ROL::Ptr<TopOptVolumeConstraint<RealT>>
+      con_vol = ROL::makePtr<TopOptVolumeConstraint<RealT>>(qoi_vol,assemblerFilter,zp);
+
+    // Compute volume
+    zp->setScalar(1.0);
+    RealT vol = obj_vol->value(*zp,tol);
+
+    // Normalize compliance objective function
+    RealT cs(1);
+    zp->setScalar(initDens);
+    if (normalizeObj) {
+      if (useFilter && !usePhaseField)
+        cs = ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT>>(robj_com)->normalize(*zp,tol);
+      else
+        cs = ROL::dynamicPtrCast<TopOptComplianceObjective<RealT>>(robj_com)->normalize(*zp,tol);
+    }
+
+    // Output problem details
     *outStream << std::endl;
     *outStream << "Problem Data"          << std::endl;
     *outStream << "  Example:           " << example << std::endl;
@@ -150,118 +227,47 @@ int main(int argc, char *argv[]) {
     }
     else if (minType == "Compliance") {
       *outStream << "  Volume Fraction:   " << volFraction << std::endl;
+      *outStream << "  Initial Density:   " << initDens    << std::endl;
+      *outStream << "  Use Equality:      " << volEq       << std::endl;
+      *outStream << "  Hessian Approx:    " << hessAppr    << std::endl;
     }
+    *outStream << "  Domain Volume:     " << vol << std::endl;
+    *outStream << "  Compliance Scale:  " << cs  << std::endl;
     *outStream << std::endl;
-
-    /*** Initialize main data structure. ***/
-    ROL::Ptr<MeshManager<RealT> > meshMgr;
-    if (probDim == 2) {
-      meshMgr = ROL::makePtr<MeshManager_TopoOpt<RealT>>(*parlist);
-    } else if (probDim == 3) {
-      meshMgr = ROL::makePtr<MeshReader<RealT>>(*parlist);
-    }
-    else {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/topo-opt/elasticity/example_01.cpp: Problem dim is not 2 or 3!");
-    }
-    // Initialize PDE describing elasticity equations.
-    ROL::Ptr<PDE_Elasticity<RealT> > pde
-      = ROL::makePtr<PDE_Elasticity<RealT>>(*parlist);
-    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
-    // Initialize the filter PDE.
-    ROL::Ptr<PDE_Filter<RealT> > pdeFilter
-      = ROL::makePtr<PDE_Filter<RealT>>(*parlist);
-    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > conFilter
-      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pdeFilter,meshMgr,comm,*parlist,*outStream);
-    // Cast the constraint and get the assembler.
-    ROL::Ptr<PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPtrCast<PDE_Constraint<RealT> >(con);
-    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
-    con->setSolveParameters(*parlist);
-
-    // Create vectors.
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, p_ptr, z_ptr, r_ptr;
-    u_ptr = assembler->createStateVector();    u_ptr->putScalar(0.0);
-    p_ptr = assembler->createStateVector();    p_ptr->putScalar(0.0);
-    z_ptr = assembler->createControlVector();  z_ptr->putScalar(1.0);
-    //z_ptr = assembler->createControlVector();  z_ptr->putScalar((minType=="Compliance" ? volFraction : 1.0));
-    r_ptr = assembler->createResidualVector(); r_ptr->putScalar(0.0);
-    ROL::Ptr<ROL::Vector<RealT> > up, pp, zp, rp;
-    up = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler,*parlist);
-    pp = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,assembler,*parlist);
-    zp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,assembler,*parlist);
-    rp = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler,*parlist);
-
-    // Initialize "filtered" of "unfiltered" constraint.
-    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > pdeWithFilter;
-    if (useFilter && !usePhaseField) {
-      bool useStorage = parlist->sublist("Problem").get("Use State Storage",true);
-      pdeWithFilter
-        = ROL::makePtr<ROL::CompositeConstraint_SimOpt<RealT>>(con, conFilter,
-                                                               *rp, *rp, *up, *zp, *zp,
-                                                               useStorage);
-    }
-    else {
-      pdeWithFilter = con;
-    }
-    pdeWithFilter->setSolveParameters(*parlist);
-
-    // Initialize compliance objective function.
-    con->value(*rp, *up, *zp, tol);
-    RealT rnorm2 = rp->dot(*rp);
-    if (rnorm2 > 1e2*ROL::ROL_EPSILON<RealT>()) {
-      cmpScaling /= rnorm2;
-    }
-    ROL::Ptr<QoI<RealT>> qoi_com
-      = ROL::makePtr<QoI_Compliance_TopoOpt<RealT>>(pde->getFE(),
-                                                    pde->getLoad(),
-                                                    pde->getBdryFE(),
-                                                    pde->getBdryCellLocIds(),
-                                                    pde->getTraction(),
-                                                    pde->getFieldHelper(),
-                                                    cmpScaling);
-    ROL::Ptr<ROL::Objective_SimOpt<RealT>> obj_com
-      = ROL::makePtr<PDE_Objective<RealT>>(qoi_com,assembler);
-
-    // Initialize reduced compliance objective function.
-    bool storage = parlist->sublist("Problem").get("Use state storage",true);
-    ROL::Ptr<ROL::SimController<RealT> > stateStore
-      = ROL::makePtr<ROL::SimController<RealT>>();
-    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj_com
-      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj_com,
-                     pdeWithFilter,stateStore,up,zp,pp,storage);
 
     // Create objective, constraint, multiplier and bounds
     ROL::Ptr<ROL::Objective<RealT>>       obj;
     ROL::Ptr<ROL::Constraint<RealT>>      icon;
-    ROL::Ptr<ROL::Vector<RealT>>          iup;
+    ROL::Ptr<ROL::Vector<RealT>>          iup, ilp;
     ROL::Ptr<ROL::Vector<RealT>>          imul;
     ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd;
     if (!usePhaseField) {
-      // Build volume objective function.
-      ROL::Ptr<QoI<RealT>> qoi_vol
-        = ROL::makePtr<QoI_Volume_TopoOpt<RealT>>(pde->getFE(),
-                                                  pde->getFieldHelper());
-      ROL::Ptr<ROL::Objective<RealT>> obj_vol
-        = ROL::makePtr<IntegralOptObjective<RealT>>(qoi_vol,assembler);
       if (minType == "Volume") {
         obj  = obj_vol;
         icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(robj_com);
         // Set upper bound to compliance for solid beam.
+        zp->setScalar(1.0);
         RealT comp = robj_com->value(*zp,tol);
+        ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
         iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(cmpFactor*comp);
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-        ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
+        ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilp,iup);
       }
       else if (minType == "Compliance") {
         obj  = robj_com;
-        icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(obj_vol);
-        // Set upper bound to fraction of total volume.
-        RealT vol = domainHeight*domainWidth*domainDepth;
-        iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
+        icon = con_vol;
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-        ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
+        if (volEq) {
+          ilp  = ROL::nullPtr;
+          iup  = ROL::nullPtr;
+          ibnd = ROL::nullPtr;
+        }
+        else {
+          // Set upper bound to fraction of total volume.
+          ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+          iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
+          ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilp,iup);
+        }
       }
       else if (minType == "Total") {
         std::vector<ROL::Ptr<ROL::Objective<RealT>>> obj_vec(2,ROL::nullPtr);
@@ -272,6 +278,7 @@ int main(int argc, char *argv[]) {
         weights[1] = parlist->sublist("Problem").get("Volume Objective Scale",0.04096);
         obj  = ROL::makePtr<ROL::LinearCombinationObjective<RealT>>(weights,obj_vec);
         icon = ROL::nullPtr;
+        ilp  = ROL::nullPtr;
         iup  = ROL::nullPtr;
         imul = ROL::nullPtr;
         ibnd = ROL::nullPtr;
@@ -281,20 +288,13 @@ int main(int argc, char *argv[]) {
       }
     }
     else {
-      // Build volume objective function.
-      ROL::Ptr<QoI<RealT>> qoi_vol
-        = ROL::makePtr<QoI_Volume_PhaseField<RealT>>(pde->getFE(),
-                                                     pde->getFieldHelper());
-      ROL::Ptr<IntegralOptObjective<RealT>> obj_vol
-        = ROL::makePtr<IntegralOptObjective<RealT>>(qoi_vol,assembler);
       // Build Modica-Mortola Energy objective function.
       RealT penParam = parlist->sublist("Problem").get("Phase Field Penalty Parameter",1e-1);
-      ROL::Ptr<QoI<RealT>> qoi_pfe
-        = ROL::makePtr<QoI_ModicaMortolaEnergy_PhaseField<RealT>>(pde->getFE(),
-                                                                  pde->getFieldHelper(),
-                                                                  penParam);
-      ROL::Ptr<IntegralOptObjective<RealT>> obj_pfe
-        = ROL::makePtr<IntegralOptObjective<RealT>>(qoi_pfe,assembler);
+      ROL::Ptr<QoI<RealT>>
+        qoi_pfe = ROL::makePtr<QoI_ModicaMortolaEnergy_PhaseField<RealT>>(pde->getDensityFE(),
+                                                                          penParam);
+      ROL::Ptr<IntegralOptObjective<RealT>>
+        obj_pfe = ROL::makePtr<IntegralOptObjective<RealT>>(qoi_pfe,assembler);
       // Get weights for linear combination objective.
       std::vector<RealT> weights(1,0.0);
       weights[0] = parlist->sublist("Problem").get("Phase Field Energy Objective Scale",0.00064);
@@ -307,20 +307,28 @@ int main(int argc, char *argv[]) {
         icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(robj_com);
         // Set upper bound to compliance for solid beam.
         RealT comp = robj_com->value(*zp,tol);
+        ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
         iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(cmpFactor*comp);
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-        ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
+        ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilp,iup);
       }
       else if (minType == "Compliance") {
         weights.push_back(static_cast<RealT>(1));
         obj_vec.push_back(robj_com);
         obj  = ROL::makePtr<ROL::LinearCombinationObjective<RealT>>(weights,obj_vec);
-        icon = ROL::makePtr<ROL::ConstraintFromObjective<RealT>>(obj_vol);
-        // Set upper bound to fraction of total volume.
-        RealT vol = domainHeight*domainWidth*domainDepth;
-        iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
+        icon = con_vol;
         imul = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
-        ibnd = ROL::makePtr<ROL::Bounds<RealT>>(*iup,false);
+        if (volEq) {
+          ilp  = ROL::nullPtr;
+          iup  = ROL::nullPtr;
+          ibnd = ROL::nullPtr;
+        }
+        else {
+          // Set upper bound to fraction of total volume.
+          ilp  = ROL::makePtr<ROL::SingletonVector<RealT>>(0);
+          iup  = ROL::makePtr<ROL::SingletonVector<RealT>>(volFraction*vol);
+          ibnd = ROL::makePtr<ROL::Bounds<RealT>>(ilp,iup);
+        }
       }
       else if (minType == "Total") {
         weights.push_back(static_cast<RealT>(1));
@@ -329,6 +337,7 @@ int main(int argc, char *argv[]) {
         obj_vec.push_back(obj_vol);
         obj  = ROL::makePtr<ROL::LinearCombinationObjective<RealT>>(weights,obj_vec);
         icon = ROL::nullPtr;
+        ilp  = ROL::nullPtr;
         iup  = ROL::nullPtr;
         imul = ROL::nullPtr;
         ibnd = ROL::nullPtr;
@@ -339,36 +348,53 @@ int main(int argc, char *argv[]) {
     }
 
     // Initialize bound constraints.
-    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr, hi_ptr;
     RealT lval = (usePhaseField ? -1.0 : 0.0), uval = 1.0;
-    lo_ptr = assembler->createControlVector(); lo_ptr->putScalar(lval);
-    hi_ptr = assembler->createControlVector(); hi_ptr->putScalar(uval);
-    ROL::Ptr<ROL::Vector<RealT> > lop, hip;
-    lop = ROL::makePtr<PDE_PrimalOptVector<RealT>>(lo_ptr,pde,assembler);
-    hip = ROL::makePtr<PDE_PrimalOptVector<RealT>>(hi_ptr,pde,assembler);
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
-    if (usePhaseField) {
-      bnd->deactivate();
-    }
+    ROL::Ptr<ROL::Vector<RealT>> lop = zp->clone(); lop->setScalar(lval);
+    ROL::Ptr<ROL::Vector<RealT>> hip = zp->clone(); hip->setScalar(uval);
+    ROL::Ptr<ROL::BoundConstraint<RealT>>
+      bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    if (usePhaseField) bnd->deactivate();
 
-    // Set up and solve.
-    ROL::OptimizationProblem<RealT> problem(obj,zp,bnd,icon,imul,ibnd);
-    bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
-    if (derivCheck) {
-      problem.check(*outStream);
+    // Set up optimization problem.
+    ROL::Ptr<ROL::Problem<RealT>>
+      prob = ROL::makePtr<ROL::Problem<RealT>>(obj,zp);
+    if (bnd->isActivated()) prob->addBoundConstraint(bnd);
+    if ( minType == "Compliance" ) {
+      if ( volEq ) prob->addLinearConstraint("Volume",icon,imul);
+      else         prob->addLinearConstraint("Volume",icon,imul,ibnd);
     }
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    else if ( minType == "Volume" )
+      prob->addConstraint("Compliance",icon,imul,ibnd);
+
+    bool expLin = parlist->sublist("Problem").get("Project Linear Constraints",true);
+    prob->setProjectionAlgorithm(*parlist);
+    prob->finalize(!expLin,true,*outStream);
+
+    // Check derivatives.
+    bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
+    if (derivCheck) prob->check(true,*outStream);
+
+    // Solve optimization problem.
     Teuchos::Time algoTimer("Algorithm Time", true);
+    ROL::Solver<RealT> solver(prob,*parlist);
     solver.solve(*outStream);
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
-
     // Output.
-    pdecon->printMeshData(*outStream);
-    con->solve(*rp,*up,*zp,tol);
-    pdecon->outputTpetraVector(u_ptr,"state.txt");
-    pdecon->outputTpetraVector(z_ptr,"density.txt");
+    if (useFilter && !usePhaseField) {
+      ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT>>(robj_com)->summarize(*outStream);
+      ROL::dynamicPtrCast<TopOptFilteredComplianceObjective<RealT>>(robj_com)->printToFile(*zp,*outStream);
+    }
+    else {
+      ROL::dynamicPtrCast<TopOptComplianceObjective<RealT>>(robj_com)->summarize(*outStream);
+      ROL::dynamicPtrCast<TopOptComplianceObjective<RealT>>(robj_com)->printToFile(*zp,*outStream);
+    }
+    if (minType == "Compliance") {
+      con_vol->summarize(*outStream);
+    }
+    else if (minType == "Volume") {
+      obj_vol->summarize(*outStream);
+    }
 
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();

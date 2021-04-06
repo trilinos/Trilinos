@@ -57,7 +57,7 @@
 #include <algorithm>
 
 #include "ROL_Stream.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -271,21 +271,17 @@ int main(int argc, char *argv[]) {
     pdecon->outputTpetraVector(u_ptr,"state_uncontrolled.txt");
 
     bool useFullSpace = parlist->sublist("Problem").get("Full space",false);
-    ROL::Ptr<ROL::Algorithm<RealT> > algo;
-    Teuchos::Time algoTimer("Algorithm Time", true);
+    ROL::Ptr<ROL::Problem<RealT>> optProb;
     if ( useFullSpace ) {
-      ROL::OptimizationProblem<RealT> optProb(obj, makePtrFromRef(x), con, rp);
-      ROL::OptimizationSolver<RealT> optSolver(optProb, *parlist);
-      optSolver.solve(*outStream);
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(obj, makePtrFromRef(x));
+      optProb->addConstraint("PDE", con, rp);
     }
     else {
-      ROL::Ptr<ROL::Step<RealT>>
-        step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
-      ROL::Ptr<ROL::StatusTest<RealT>>
-        status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-      ROL::Algorithm<RealT> algo(step,status,false);
-      algo.run(*zp,*robj,true,*outStream);
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
     }
+    ROL::Solver<RealT> optSolver(optProb, *parlist);
+    Teuchos::Time algoTimer("Algorithm Time", true);
+    optSolver.solve(*outStream);
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 

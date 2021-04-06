@@ -42,8 +42,8 @@
 // @HEADER
 
 #include "test_05.hpp"
-#include "ROL_PEBBL_Driver.hpp"
-#include "ROL_StdBranchHelper_PEBBL.hpp"
+#include "ROL_PEBBL_BranchAndBound.hpp"
+#include "ROL_PEBBL_StdBranchHelper.hpp"
 
 typedef double RealT;
 
@@ -74,13 +74,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* SOLVE **************************************************************/
     /**********************************************************************************************/
-//    ROL::Ptr<ROL::OptimizationSolver<RealT>>
-//      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*(factory->build()),*parlist);
-//    solver->solve(*outStream);
-    ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper
-      = ROL::makePtr<ROL::StdBranchHelper_PEBBL<RealT>>();
-    ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
+    ROL::Ptr<ROL::PEBBL::StdBranchHelper<RealT>> bHelper
+      = ROL::makePtr<ROL::PEBBL::StdBranchHelper<RealT>>();
+    ROL::PEBBL::BranchAndBound<RealT> pebbl(factory,parlist,bHelper,3,outStream);
     pebbl.solve(argc,argv,*outStream);
+    *outStream << "Solution Vector:" << std::endl << "  ";
+    pebbl.getSolution()->print(*outStream);
+    *outStream << std::endl;
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";

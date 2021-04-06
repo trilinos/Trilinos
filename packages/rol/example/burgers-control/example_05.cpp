@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
       *outStream << "\nSOLVE SMOOTHED CONDITIONAL VALUE AT RISK WITH TRUST REGION\n";
       // Build CVaR risk measure
       ROL::ParameterList list;
-      list.sublist("SOL").set("Stochastic Component Type",ra);
+      list.sublist("SOL").set("Type",ra);
       list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
       list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
       list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Confidence Level",cl);
@@ -189,7 +189,7 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     *outStream << "\nSOLVE NONSMOOTH CVAR PROBLEM WITH BUNDLE TRUST REGION\n";
     ROL::ParameterList list;
-    list.sublist("SOL").set("Stochastic Component Type",ra);
+    list.sublist("SOL").set("Type",ra);
     list.sublist("SOL").set("Store Sampled Value and Gradient",storage);
     list.sublist("SOL").sublist("Risk Measure").set("Name",rm);
     list.sublist("SOL").sublist("Risk Measure").sublist(rm).set("Confidence Level",cl);

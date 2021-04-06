@@ -59,13 +59,13 @@ namespace ROL {
 template <class Real>
 class AugmentedSystemPrecOperator : public LinearOperator<Real> {
 private:
-  const Ptr<Constraint<Real>> con_;
-  const Ptr<Vector<Real>>     x_;
+  const Ptr<Constraint<Real>>   con_;
+  const Ptr<const Vector<Real>> x_;
 
 public:
   virtual ~AugmentedSystemPrecOperator() {}
-  AugmentedSystemPrecOperator(const Ptr<Constraint<Real>> &con,
-                              const Ptr<Vector<Real>>     &x)
+  AugmentedSystemPrecOperator(const Ptr<Constraint<Real>>   &con,
+                              const Ptr<const Vector<Real>> &x)
     : con_(con), x_(x) {}
 
   void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {

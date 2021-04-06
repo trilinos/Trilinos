@@ -41,11 +41,11 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_COMPOSITE_EQUALITY_CONSTRAINT_SIMOPT_H
-#define ROL_COMPOSITE_EQUALITY_CONSTRAINT_SIMOPT_H
+#ifndef ROL_COMPOSITECONSTRAINT_SIMOPT_H
+#define ROL_COMPOSITECONSTRAINT_SIMOPT_H
 
 #include "ROL_Constraint_SimOpt.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 /** @ingroup func_group
     \class ROL::CompositeConstraint_SimOpt
@@ -68,213 +68,77 @@
     ---
 */
 
-
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class CompositeConstraint_SimOpt : public Constraint_SimOpt<Real> {
 private:
   // Constraints
-  const ROL::Ptr<Constraint_SimOpt<Real> > conVal_;
-  const ROL::Ptr<Constraint_SimOpt<Real> > conRed_;
+  const ROL::Ptr<Constraint_SimOpt<Real>> conVal_, conRed_;
   // Additional vector storage for solve
-  ROL::Ptr<Vector<Real> > Sz_;
-  ROL::Ptr<Vector<Real> > primRed_;
-  ROL::Ptr<Vector<Real> > dualRed_;
-  ROL::Ptr<Vector<Real> > primZ_;
-  ROL::Ptr<Vector<Real> > dualZ_;
-  ROL::Ptr<Vector<Real> > dualZ1_;
-  // State storage through SimController interface
-  ROL::Ptr<SimController<Real> > stateStore_;
+  ROL::Ptr<Vector<Real>> Sz_, primRed_, dualRed_, primZ_, dualZ_, dualZ1_, primU_;
+  // State storage through VectorController interface
+  ROL::Ptr<VectorController<Real>> stateStore_;
   // Update information
-  bool updateFlag_;
+  bool updateFlag_, newUpdate_;
   int updateIter_;
+  UpdateType updateType_;
   // Boolean variables
   const bool storage_, isConRedParametrized_;
 
-  void solveConRed(const Vector<Real> &z, Real &tol) {
-    std::vector<Real> param = Constraint_SimOpt<Real>::getParameter();
-    // Check if state has been computed.
-    bool isComputed = false;
-    if (storage_) {
-      isComputed = stateStore_->get(*Sz_,param);
-    }
-    // Solve state equation if not done already.
-    if (!isComputed || !storage_) {
-      // Update equality constraint with new Opt variable.
-      conRed_->update_2(z,updateFlag_,updateIter_);
-      // Solve state equation.
-      conRed_->solve(*primRed_,*Sz_,z,tol);
-      // Update equality constraint with new Sim variable.
-      conRed_->update_1(*Sz_,updateFlag_,updateIter_);
-      // Update equality constraint.
-      conRed_->update(*Sz_, z, updateFlag_, updateIter_);
-      // Store state.
-      if (storage_) {
-        stateStore_->set(*Sz_,param);
-      }
-    }
-  }
-
-  void applySens(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &z, Real &tol) { 
-    // Solve reducible constraint
-    solveConRed(z, tol);
-    // Solve linearization of reducible constraint in direction v
-    conRed_->applyJacobian_2(*primRed_, v, *Sz_, z, tol);
-    conRed_->applyInverseJacobian_1(jv, *primRed_, *Sz_, z, tol);
-    jv.scale(static_cast<Real>(-1));
-  }
-
-  void applyAdjointSens(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &z, Real &tol) {
-    // Solve reducible constraint
-    solveConRed(z, tol);
-    // Solve adjoint of linearized reducible constraint
-    conRed_->applyInverseAdjointJacobian_1(*dualRed_, v, *Sz_, z, tol);
-    conRed_->applyAdjointJacobian_2(ajv, *dualRed_, *Sz_, z, tol);
-    ajv.scale(static_cast<Real>(-1));
-  }
-
 public:
-  CompositeConstraint_SimOpt(const ROL::Ptr<Constraint_SimOpt<Real> > &conVal,
-                             const ROL::Ptr<Constraint_SimOpt<Real> > &conRed,
-                             const Vector<Real> &cVal, const Vector<Real> &cRed,
-                             const Vector<Real> &u, const Vector<Real> &Sz, const Vector<Real> &z,
-                             const bool storage = true, const bool isConRedParametrized = false)
-    : Constraint_SimOpt<Real>(), conVal_(conVal), conRed_(conRed),
-      updateFlag_(true), updateIter_(0), storage_(storage),
-      isConRedParametrized_(isConRedParametrized) {
-    Sz_      = Sz.clone();
-    primRed_ = cRed.clone();
-    dualRed_ = cRed.dual().clone();
-    primZ_   = z.clone();
-    dualZ_   = z.dual().clone();
-    dualZ1_  = z.dual().clone();
-    stateStore_ = ROL::makePtr<SimController<Real>>();
-  }
+  CompositeConstraint_SimOpt(const ROL::Ptr<Constraint_SimOpt<Real>> &conVal,
+                             const ROL::Ptr<Constraint_SimOpt<Real>> &conRed,
+                             const Vector<Real> &cVal,
+                             const Vector<Real> &cRed,
+                             const Vector<Real> &u,
+                             const Vector<Real> &Sz,
+                             const Vector<Real> &z,
+                             bool storage = true,
+                             bool isConRedParametrized = false);
 
-  void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    // Update this
-    update_2(z, flag, iter);
-    update_1(u, flag, iter);
-  }
-
-  void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {
-    conVal_->update_1(u, flag, iter);
-    // Update constraints with solution to reducible constraint
-    conVal_->update(u, *Sz_, flag, iter);
-  }
-
-  void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {
-    //conRed_->update_2(z, flag, iter);
-    // Solve reducible constraint
-    updateFlag_ = flag;
-    updateIter_ = iter;
-    Real ctol = std::sqrt(ROL_EPSILON<Real>());
-    stateStore_->equalityConstraintUpdate(true);
-    solveConRed(z, ctol);
-  }
-
-  void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->value(c, u, *Sz_, tol);
-  }
-
-  void solve(Vector<Real> &c, Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->solve(c, u, *Sz_, tol);
-  }
-
+  void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1) override;
+  void update_1(const Vector<Real> &u, bool flag = true, int iter = -1) override;
+  void update_2(const Vector<Real> &z, bool flag = true, int iter = -1) override;
+  void update(const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) override;
+  void update_1(const Vector<Real> &u, UpdateType type, int iter = -1) override;
+  void update_2(const Vector<Real> &z, UpdateType type, int iter = -1) override;
+  void solve_update(const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) override;
+  void value(Vector<Real> &c, const Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
+  void solve(Vector<Real> &c, Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
   void applyJacobian_1(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &u,
-                       const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyJacobian_1(jv, v, u, *Sz_, tol);
-  }
-
+                       const Vector<Real> &z, Real &tol) override;
   void applyJacobian_2(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &u,
-                       const Vector<Real> &z, Real &tol) { 
-    applySens(*primZ_, v, z, tol);
-    conVal_->applyJacobian_2(jv, *primZ_, u, *Sz_, tol);
-  }
-
+                       const Vector<Real> &z, Real &tol) override; 
   void applyInverseJacobian_1(Vector<Real> &ijv, const Vector<Real> &v, const Vector<Real> &u,
-                              const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyInverseJacobian_1(ijv, v, u, *Sz_, tol);
-  }
-
+                              const Vector<Real> &z, Real &tol) override;
   void applyAdjointJacobian_1(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &u,
-                              const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyAdjointJacobian_1(ajv, v, u, *Sz_, tol);
-  }
-
+                              const Vector<Real> &z, Real &tol) override;
   void applyAdjointJacobian_2(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &u,
-                              const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyAdjointJacobian_2(*dualZ_, v, u, *Sz_, tol);
-    applyAdjointSens(ajv, *dualZ_, z, tol);
-  }
-
+                              const Vector<Real> &z, Real &tol) override;
   void applyInverseAdjointJacobian_1(Vector<Real> &ijv, const Vector<Real> &v, const Vector<Real> &u,
-                                     const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyInverseAdjointJacobian_1(ijv, v, u, *Sz_, tol);
-  }
-
+                                     const Vector<Real> &z, Real &tol) override;
   void applyAdjointHessian_11(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
-                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyAdjointHessian_11(ahwv, w, v, u, z, tol);
-  }
-
+                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
   void applyAdjointHessian_12(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
-                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    solveConRed(z, tol);
-    conVal_->applyAdjointHessian_12(*dualZ_, w, v, u, *Sz_, tol);
-    applyAdjointSens(ahwv, *dualZ_, z, tol);
-  }
-
+                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
   void applyAdjointHessian_21(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
-                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    applySens(*primZ_, v, z, tol);
-    conVal_->applyAdjointHessian_21(ahwv, w, *primZ_, u, *Sz_, tol);
-  }
-
+                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
   void applyAdjointHessian_22(Vector<Real> &ahwv, const Vector<Real> &w, const Vector<Real> &v,
-                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) {
-    ahwv.zero();
-    applySens(*primZ_, v, z, tol);
-
-    conVal_->applyAdjointJacobian_2(*dualZ_, w, u, *Sz_, tol);
-    conRed_->applyInverseAdjointJacobian_1(*dualRed_, *dualZ_, *Sz_, z, tol);
-    conRed_->applyAdjointHessian_22(*dualZ_, *dualRed_, v, *Sz_, z, tol);
-    ahwv.axpy(static_cast<Real>(-1), *dualZ_);
-    conRed_->applyAdjointHessian_12(*dualZ_, *dualRed_, *primZ_, *Sz_, z, tol);
-    ahwv.axpy(static_cast<Real>(-1), *dualZ_);
-
-    conRed_->applyAdjointHessian_11(*dualZ1_, *dualRed_, *primZ_, *Sz_, z, tol);
-    conRed_->applyAdjointHessian_21(*dualZ_, *dualRed_, v, *Sz_, z, tol);
-    dualZ1_->plus(*dualZ_); 
-    dualZ1_->scale(static_cast<Real>(-1));
-    
-    conVal_->applyAdjointHessian_22(*dualZ_, w, *primZ_, u, *Sz_, tol);
-    dualZ1_->plus(*dualZ_); 
-
-    applyAdjointSens(*dualZ_, *dualZ1_, z, tol);
-    ahwv.plus(*dualZ_);
-  }
+                              const Vector<Real> &u, const Vector<Real> &z, Real &tol) override;
 
 // Definitions for parametrized (stochastic) equality constraints
 public:
-  void setParameter(const std::vector<Real> &param) {
-    conVal_->setParameter(param);
-    if (isConRedParametrized_) {
-      conRed_->setParameter(param);
-      Constraint_SimOpt<Real>::setParameter(param);
-    }
-  }
+  void setParameter(const std::vector<Real> &param) override;
+
+private:
+  void solveConRed(Vector<Real> &Sz, const Vector<Real> &z, Real &tol);
+  void applySens(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &Sz, const Vector<Real> &z, Real &tol);
+  void applyAdjointSens(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &Sz, const Vector<Real> &z, Real &tol);
 }; // class CompositeConstraint_SimOpt
 
 } // namespace ROL
+
+#include "ROL_CompositeConstraint_SimOpt_Def.hpp"
 
 #endif

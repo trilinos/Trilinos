@@ -52,45 +52,26 @@ namespace ROL {
 template <class Real>
 class RiskLessConstraint : public Constraint<Real> {
 private:
-  const ROL::Ptr<Constraint<Real> > con_;
+  const Ptr<Constraint<Real>> con_;
 
 public:
-  RiskLessConstraint(const ROL::Ptr<Constraint<Real> > &con)
-    : con_(con) {}
+  RiskLessConstraint(const Ptr<Constraint<Real>> &con);
 
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    con_->value(c,*x0,tol);
-  }
-
-  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    ROL::Ptr<const Vector<Real> > v0 = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-    con_->applyJacobian(jv,*v0,*x0,tol);
-  }
-
+  void update(const Vector<Real> &x, UpdateType type, int iter = -1) override;
+  void update(const Vector<Real> &x, bool flag = true, int iter = -1) override;
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
   using Constraint<Real>::applyAdjointJacobian;
-  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    ROL::Ptr<Vector<Real> > ajv0 = dynamic_cast<RiskVector<Real>&>(ajv).getVector();
-    con_->applyAdjointJacobian(*ajv0,v,*x0,tol);
-  }
-
-  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const Vector<Real> > x0 = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    ROL::Ptr<const Vector<Real> > v0 = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-    ROL::Ptr<Vector<Real> > ahuv0 = dynamic_cast<RiskVector<Real>&>(ahuv).getVector();
-    con_->applyAdjointHessian(*ahuv0,u,*v0,*x0,tol);
-  }
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
 
 public:
-  virtual void setParameter(const std::vector<Real> &param) {
-    Constraint<Real>::setParameter(param);
-    con_->setParameter(param);
-  }
+  void setParameter(const std::vector<Real> &param) override;
 
 }; // class RiskLessConstraint
 
 } // namespace ROL
+
+#include "ROL_RiskLessConstraint_Def.hpp"
 
 #endif

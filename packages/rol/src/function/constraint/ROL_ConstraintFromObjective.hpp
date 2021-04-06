@@ -60,91 +60,36 @@
 
 namespace ROL {
 
-template<class Real> 
+template<typename Real> 
 class ConstraintFromObjective : public Constraint<Real> {
-
-  using V = ROL::Vector<Real>;
-
 private:
-
-  const ROL::Ptr<Objective<Real> > obj_;
-  ROL::Ptr<V>                      dualVector_;
-  const Real                           offset_;
-  bool                                 isDualInitialized_;
-
-  Real getValue( const V& x ) { 
-    return dynamic_cast<const SingletonVector<Real>&>(x).getValue(); 
-  }
- 
-  void setValue( V& x, Real val ) {
-    dynamic_cast<SingletonVector<Real>&>(x).setValue(val);
-  }
+  const Ptr<Objective<Real>> obj_;
+  Ptr<Vector<Real>>          dualVector_;
+  const Real                 offset_;
+  bool                       isDualInitialized_;
 
 public:
+  ConstraintFromObjective( const Ptr<Objective<Real>> &obj, const Real offset = 0 );
 
-  ConstraintFromObjective( const ROL::Ptr<Objective<Real> > &obj, const Real offset = 0 ) :
-    obj_(obj), dualVector_(ROL::nullPtr), offset_(offset), isDualInitialized_(false) {}
+  const Ptr<Objective<Real>> getObjective(void) const;
 
-  const ROL::Ptr<Objective<Real> > getObjective(void) const { return obj_; }
+  void setParameter( const std::vector<Real> &param ) override;
 
+  void update( const Vector<Real>& x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real>& x, bool flag = true, int iter = -1 ) override;
+  void value( Vector<Real>& c, const Vector<Real>& x, Real& tol ) override;
+  void applyJacobian( Vector<Real>& jv, const Vector<Real>& v, const Vector<Real>& x, Real& tol ) override;
+  void applyAdjointJacobian( Vector<Real>& ajv, const Vector<Real>& v, const Vector<Real>& x, Real& tol ) override;
+  void applyAdjointHessian( Vector<Real>& ahuv, const Vector<Real>& u, const Vector<Real>& v, const Vector<Real>& x, Real& tol ) override;
 
-  void setParameter( const std::vector<Real> &param ) {
-    obj_->setParameter(param);
-    Constraint<Real>::setParameter(param);
-  }
-
-
-  /** \brief Update constraint
-  */
-  void update( const V& x, bool flag = true, int iter = -1 ) {
-    obj_->update(x,flag,iter);
-  }
-  
-  /** \brief Evaluate constraint c(x) = f(x)-offset
-  */
-  void value( V& c, const V& x, Real& tol ) {
-    setValue(c, obj_->value(x,tol) - offset_ ); 
-  }
-
-  /** \brief Apply the constraint Jacobian at \f$x\f$, \f$c'(x) \in L(\mathcal{X}, \mathcal{C})\f$,
-             to vector \f$v\f$.
-      \f[ 
-          c'(x)v = \lim_{t\rightarrow 0} \frac{d}{dt} f(x+tv) = \langle \nabla f(x),v\rangle 
-      \f]
-  */
-  void applyJacobian( V& jv, const V& v, const V& x, Real& tol ) {
-    if ( !isDualInitialized_ ) {
-      dualVector_ = x.dual().clone();
-      isDualInitialized_ = true;
-    }
-    obj_->gradient(*dualVector_,x,tol);
-    setValue(jv,v.dot(dualVector_->dual()));
-  }
-
-  /** \brief Apply the adjoint of the the constraint Jacobian at 
-             \f$x\f$, \f$c'(x)^\ast \in L(\mathcal{C}^\ast, \mathcal{X}^\ast)\f$,
-             to vector \f$v\f$.
-
-      \f[ c'(x)^\ast v = v\nabla f(x) \f]
-  */
-  void applyAdjointJacobian( V& ajv, const V& v, const V& x, Real& tol ) {
-    obj_->gradient(ajv,x,tol);
-    ajv.scale(getValue(v));
-  }
-
-  /** \brief Apply the derivative of the adjoint of the constraint Jacobian at \f$x\f$
-             to vector \f$u\f$ in direction \f$v\f$,
-             according to \f$ v \mapsto c''(x)(v,\cdot)^\ast u \f$.
-
-     \f[ c"(x)(v,\cdot)^\ast = u \frac{d}{dt} \nabla f(x+tv)\big|_{t=0}
-  */
-  void applyAdjointHessian( V& ahuv, const V& u, const V& v, const V& x, Real& tol ) {
-    obj_->hessVec(ahuv,v,x,tol);
-    ahuv.scale(getValue(u));
-  }
+private:
+  Real getValue( const Vector<Real>& x ); 
+  void setValue( Vector<Real>& x, Real val );
 
 }; // ConstraintFromObjective
 
 } // namespace ROL
+
+#include "ROL_ConstraintFromObjective_Def.hpp"
 
 #endif // ROL_CONSTRAINTFROMOBJECTIVE_H

@@ -47,14 +47,15 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 #include "../../TOOLS/pdeobjective.hpp"
 #include "../../TOOLS/pdevector.hpp"
 #include "objsum.hpp"
+#include "tv_2d.hpp"
 
 template<class Real>
-class BinaryAdvDiffFactory : public ROL::OptimizationProblemFactory<Real> {
+class BinaryAdvDiffFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   int dim_;
 
@@ -62,10 +63,10 @@ private:
   ROL::Ptr<const Teuchos::Comm<int>> comm_;
   ROL::Ptr<std::ostream> os_;
 
-  ROL::Ptr<FEMdata<Real>>        fem_;
-  ROL::Ptr<Assembler<Real>>      assembler_;
-  ROL::Ptr<ROL::Objective<Real>> penalty_, binary_;
-  ROL::Ptr<ROL::Vector<Real>>    z_;
+  ROL::Ptr<FEMdata<Real>>              fem_;
+  ROL::Ptr<Assembler<Real>>            assembler_;
+  ROL::Ptr<ROL::Objective<Real>>       penalty_, binary_;
+  ROL::Ptr<ROL::Vector<Real>>          z_;
   ROL::Ptr<ROL::BoundConstraint<Real>> bnd_;  
 
 public:
@@ -78,17 +79,20 @@ public:
 
     std::string costType = pl_.sublist("Problem").get("Control Cost Type", "TV");
     std::vector<ROL::Ptr<QoI<Real>>> qoi_pen(2,ROL::nullPtr);
-    if (costType=="TV") {
-      qoi_pen[0] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(fem_->getFE2(),pl_);
-    }
-    else if (costType=="L1") {
-      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(fem_->getFE2(),pl_);
+    if (costType=="TV")
+      qoi_pen[0] = ROL::makePtr<QoI_TVControl_Cost_adv_diff<Real>>(fem_->getControlFE(),pl_);
+    else if (costType=="L1")
+      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_adv_diff<Real>>(fem_->getControlFE(),pl_);
+    else
+      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_L2_adv_diff<Real>>(fem_->getControlFE(),pl_);
+    qoi_pen[1] = ROL::makePtr<QoI_IntegralityControl_Cost_adv_diff<Real>>(fem_->getControlFE(),pl_);
+    int ctrlOrder = pl_.sublist("Problem").get("Order of Control Discretization",0);
+    if (ctrlOrder==0 && costType=="TV") {
+      penalty_ = ROL::makePtr<Objective_TV_2D_C0<Real>>(pl_);
     }
     else {
-      qoi_pen[0] = ROL::makePtr<QoI_Control_Cost_L2_adv_diff<Real>>(fem_->getFE2(),pl_);
+      penalty_ = ROL::makePtr<IntegralOptObjective<Real>>(qoi_pen[0],assembler_);
     }
-    qoi_pen[1] = ROL::makePtr<QoI_IntegralityControl_Cost_adv_diff<Real>>(fem_->getFE2(),pl_);
-    penalty_ = ROL::makePtr<IntegralOptObjective<Real>>(qoi_pen[0],assembler_);
     binary_  = ROL::makePtr<IntegralOptObjective<Real>>(qoi_pen[1],assembler_);
     // Create template control vector
     bool usePC = pl_.sublist("Problem").get("Piecewise Constant Controls", true);
@@ -125,10 +129,15 @@ public:
     bnd_ = ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
   }
 
-  void update(void) {}
-
-  ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
-    return ROL::makePtr<Sum_Objective<Real>>(fem_,penalty_,binary_,pl_,os_,true);
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
+    int bbout = pl_.sublist("Problem").get("BB Output Level", 0);
+    ROL::Ptr<ROL::Objective<Real>>
+      obj = ROL::makePtr<Sum_Objective<Real>>(fem_,penalty_,binary_,pl_,os_,bbout>2);
+    ROL::Ptr<ROL::Vector<Real>> z = z_->clone(); z->set(*z_);
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(obj,z);
+    problem->addBoundConstraint(bnd_);
+    return problem;
   }
 
   ROL::Ptr<ROL::Vector<Real>> buildSolutionVector(void) {
@@ -136,33 +145,9 @@ public:
     return z;
   }
 
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildBoundConstraint(void) {
-    return bnd_;
-    //ROL::Ptr<ROL::Vector<Real>> zlop = z_->clone(), zhip = z_->clone();
-    //zlop->setScalar(static_cast<Real>(0));
-    //zhip->setScalar(static_cast<Real>(1));
-    //return ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
-    //return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    return ROL::nullPtr;
+  bool controlType(void) const {
+    bool usePC = pl_.sublist("Problem").get("Piecewise Constant Controls", true);
+    return !usePC;
   }
 
   void getState(ROL::Ptr<ROL::Vector<Real>> &u, const ROL::Ptr<ROL::Vector<Real>> &z) const {

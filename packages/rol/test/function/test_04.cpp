@@ -123,17 +123,60 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /************* CHECK DERIVATIVES AND CONSISTENCY *************************/
     /*************************************************************************/
+    RealT rnorm(0), cnorm(0);
+    ROL::ParameterList list;
     RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
+    list.sublist("SimOpt").sublist("Solve").set("Output Iteration History",print);
+    list.sublist("SimOpt").sublist("Solve").set("Step Tolerance",ROL::ROL_EPSILON<RealT>());
+    // Newton
+    list.sublist("SimOpt").sublist("Solve").set("Absolute Residual Tolerance",tol);
+    list.sublist("SimOpt").sublist("Solve").set("Solver Type",0);
+    con->setSolveParameters(list);
+    u_ptr->assign(nx, 1.0);
     con->solve(*cp,*up,*zp,tol);
-    RealT rnorm = cp->norm();
+    rnorm = cp->norm();
     con->value(*cp,*up,*zp,tol);
-    RealT cnorm = cp->norm();
+    cnorm = cp->norm();
     errorFlag += ((cnorm > tol) ? 1 : 0) + ((rnorm > tol) ? 1 : 0);
     *outStream << std::scientific << std::setprecision(8);
-    *outStream << "\nTest SimOpt solve at feasible (u,z):\n";
-    *outStream << "  Solver Residual = " << rnorm << "\n";
+    *outStream << std::endl;
+    *outStream << "Test SimOpt solve at feasible (u,z):" << std::endl;
+    *outStream << "  Solver Residual = " << rnorm << std::endl;
     *outStream << "       ||c(u,z)|| = " << cnorm;
-    *outStream << "\n\n";
+    *outStream << std::endl << std::endl;
+    // Levenberg-Marquardt
+    list.sublist("SimOpt").sublist("Solve").set("Absolute Residual Tolerance",1e-4*tol);
+    list.sublist("SimOpt").sublist("Solve").set("Solver Type",1);
+    con->setSolveParameters(list);
+    u_ptr->assign(nx, 1.0);
+    con->solve(*cp,*up,*zp,tol);
+    rnorm = cp->norm();
+    con->value(*cp,*up,*zp,tol);
+    cnorm = cp->norm();
+    errorFlag += ((cnorm > tol) ? 1 : 0) + ((rnorm > tol) ? 1 : 0);
+    *outStream << std::scientific << std::setprecision(8);
+    *outStream << std::endl;
+    *outStream << "Test SimOpt solve at feasible (u,z):" << std::endl;
+    *outStream << "  Solver Residual = " << rnorm << std::endl;
+    *outStream << "       ||c(u,z)|| = " << cnorm;
+    *outStream << std::endl << std::endl;
+    // Composite Step
+    list.sublist("SimOpt").sublist("Solve").set("Absolute Residual Tolerance",tol);
+    list.sublist("SimOpt").sublist("Solve").set("Solver Type",2);
+    con->setSolveParameters(list);
+    u_ptr->assign(nx, 1.0);
+    con->solve(*cp,*up,*zp,tol);
+    rnorm = cp->norm();
+    con->value(*cp,*up,*zp,tol);
+    cnorm = cp->norm();
+    tol *= 100.0;  // Probably will not need this when we have composite step
+    errorFlag += ((cnorm > tol) ? 1 : 0) + ((rnorm > tol) ? 1 : 0);
+    *outStream << std::scientific << std::setprecision(8);
+    *outStream << std::endl;
+    *outStream << "Test SimOpt solve at feasible (u,z):" << std::endl;
+    *outStream << "  Solver Residual = " << rnorm << std::endl;
+    *outStream << "       ||c(u,z)|| = " << cnorm;
+    *outStream << std::endl << std::endl;
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";

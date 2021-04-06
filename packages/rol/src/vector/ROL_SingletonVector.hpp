@@ -70,10 +70,10 @@ private:
 
 public:
 
-  SingletonVector(const Real& value=0) : value_(value) {}
+  SingletonVector(Real value = Real(0)) : value_(value) {}
 
   Real getValue() const { return value_; }
-  void setValue( const Real& v ) { value_=v; }
+  void setValue( Real v ) { value_ = v; }
 
   void set( const V& x ) { 
     value_ = getValueX(x);

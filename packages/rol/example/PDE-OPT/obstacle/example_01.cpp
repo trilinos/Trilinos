@@ -56,11 +56,8 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_PrimalDualActiveSetStep.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_Bundle.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeobjective.hpp"
@@ -95,15 +92,15 @@ Real evaluateUpperBound(const std::vector<Real> & coord) {
 
 
 template <class Real>
-void computeUpperBound(const ROL::Ptr<Tpetra::MultiVector<> > & ubVec,
-                       const ROL::Ptr<const FE<Real> > & fe,
-                       const ROL::Ptr<Intrepid::FieldContainer<Real> > & cellNodes,
-                       const ROL::Ptr<Intrepid::FieldContainer<int> > & cellDofs,
+void computeUpperBound(const ROL::Ptr<Tpetra::MultiVector<>> & ubVec,
+                       const ROL::Ptr<const FE<Real>> & fe,
+                       const ROL::Ptr<Intrepid::FieldContainer<Real>> & cellNodes,
+                       const ROL::Ptr<Intrepid::FieldContainer<int>> & cellDofs,
                        const Teuchos::Array<typename Tpetra::Map<>::global_ordinal_type> & cellIds) {
   int c = fe->gradN()->dimension(0);
   int f = fe->gradN()->dimension(1);
   int d = fe->gradN()->dimension(3);
-  ROL::Ptr<Intrepid::FieldContainer<Real> > dofPoints =
+  ROL::Ptr<Intrepid::FieldContainer<Real>> dofPoints =
     ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,d);
   fe->computeDofCoords(dofPoints, cellNodes);
   
@@ -132,7 +129,7 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
@@ -152,66 +149,62 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize PDE describing the obstacle problem ***/
-    ROL::Ptr<MeshManager<RealT> > meshMgr
-      = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
-    ROL::Ptr<PDE_Obstacle<RealT> > pde
-      = ROL::makePtr<PDE_Obstacle<RealT>>(*parlist);
-    ROL::Ptr<EnergyObjective<RealT> > obj
-      = ROL::makePtr<EnergyObjective<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
-    ROL::Ptr<Assembler<RealT> > assembler = obj->getAssembler();
+    ROL::Ptr<MeshManager<RealT>>
+      meshMgr = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
+    ROL::Ptr<PDE_Obstacle<RealT>>
+      pde = ROL::makePtr<PDE_Obstacle<RealT>>(*parlist);
+    ROL::Ptr<EnergyObjective<RealT>>
+      obj = ROL::makePtr<EnergyObjective<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<Assembler<RealT>> assembler = obj->getAssembler();
 
-    // Create state vector and set to zeroes
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = assembler->createStateVector();
-    u_ptr->randomize();
-    ROL::Ptr<ROL::Vector<RealT> > up
-      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
-    // Create state direction vector and set to random
-    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = assembler->createStateVector();
-    du_ptr->randomize();
-    ROL::Ptr<ROL::Vector<RealT> > dup
-      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
+    // Create state vectors
+    ROL::Ptr<Tpetra::MultiVector<>> u_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<>> du_ptr = assembler->createStateVector();
+    u_ptr->randomize(); du_ptr->randomize();
+    ROL::Ptr<ROL::Vector<RealT>> up, dup;
+    up  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,assembler);
+    dup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,assembler);
 
     // Build bound constraints
-    ROL::Ptr<Tpetra::MultiVector<> > lo_ptr = assembler->createStateVector();
-    ROL::Ptr<Tpetra::MultiVector<> > hi_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<>> lo_ptr = assembler->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<>> hi_ptr = assembler->createStateVector();
     lo_ptr->putScalar(0.0); hi_ptr->putScalar(1.0);
     computeUpperBound<RealT>(hi_ptr,pde->getFE(),
                              pde->getCellNodes(),
                              assembler->getDofManager()->getCellDofs(),
                              assembler->getCellIds());
-    ROL::Ptr<ROL::Vector<RealT> > lop
-      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(lo_ptr,pde,assembler);
-    ROL::Ptr<ROL::Vector<RealT> > hip
-      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(hi_ptr,pde,assembler);
-    ROL::Ptr<ROL::BoundConstraint<RealT> > bnd
-      = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
+    ROL::Ptr<ROL::Vector<RealT>> lop, hip;
+    lop = ROL::makePtr<PDE_PrimalSimVector<RealT>>(lo_ptr,pde,assembler);
+    hip = ROL::makePtr<PDE_PrimalSimVector<RealT>>(hi_ptr,pde,assembler);
+    ROL::Ptr<ROL::BoundConstraint<RealT>>
+      bnd = ROL::makePtr<ROL::Bounds<RealT>>(lop,hip);
 
     // Run derivative checks
     obj->checkGradient(*up,*dup,true,*outStream);
     obj->checkHessVec(*up,*dup,true,*outStream);
 
+    // Build optimization problem
     du_ptr->putScalar(0.4);
+    ROL::Ptr<ROL::Problem<RealT>>
+      opt = ROL::makePtr<ROL::Problem<RealT>>(obj,up);
+    opt->addBoundConstraint(bnd);
+    opt->finalize(false,true,*outStream);
+
     up->set(*dup);
-    ROL::Ptr<ROL::Step<RealT>>
-      stepTR = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
-    ROL::Ptr<ROL::StatusTest<RealT>>
-      statusTR = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-    ROL::Algorithm<RealT> algoTR(stepTR,statusTR,false);
+    parlist->sublist("Step").set("Type","Trust Region");
+    ROL::Solver<RealT> solverTR(opt,*parlist);
     std::clock_t timerTR = std::clock();
-    algoTR.run(*up,*obj,*bnd,true,*outStream);
+    solverTR.solve(*outStream);
     *outStream << "Trust Region Time: "
                << static_cast<RealT>(std::clock()-timerTR)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
 
     up->set(*dup);
-    ROL::Ptr<ROL::Step<RealT>>
-      stepPDAS = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(*parlist);
-    ROL::Ptr<ROL::StatusTest<RealT>>
-      statusPDAS = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-    ROL::Algorithm<RealT> algoPDAS(stepPDAS,statusPDAS,false);
+    parlist->sublist("Step").set("Type","Primal-Dual Active Set");
+    ROL::Solver<RealT> solverPDAS(opt,*parlist);
     std::clock_t timerPDAS = std::clock();
-    algoPDAS.run(*up,*obj,*bnd,true,*outStream);
-    *outStream << "PD Active Set Time: "
+    solverPDAS.solve(*outStream);
+    *outStream << "Primal Dual Active Set Time: "
                << static_cast<RealT>(std::clock()-timerPDAS)/static_cast<RealT>(CLOCKS_PER_SEC)
                << " seconds." << std::endl << std::endl;
 

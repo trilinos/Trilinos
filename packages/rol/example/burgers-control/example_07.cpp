@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     RealT order = 2.0, threshold = -0.85*(1.0-x);
     ROL::Ptr<ROL::ParameterList> bpoelist = ROL::makePtr<ROL::ParameterList>();
     bpoelist->sublist("SOL").set("Store Sampled Value and Gradient",true);
-    bpoelist->sublist("SOL").set("Stochastic Component Type","Probability");
+    bpoelist->sublist("SOL").set("Type","Probability");
     bpoelist->sublist("SOL").sublist("Probability").set("Name","bPOE");
     bpoelist->sublist("SOL").sublist("Probability").sublist("bPOE").set("Threshold",threshold);
     bpoelist->sublist("SOL").sublist("Probability").sublist("bPOE").set("Moment Order",order);

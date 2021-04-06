@@ -1,7 +1,8 @@
 <ParameterList name="Inputs">
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
-    <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <Parameter name="Output Level"                           type="int"    value="1"   />
+    <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0" />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />
@@ -68,8 +69,9 @@
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
+      <Parameter name="Subproblem Model"                     type="string" value="Lin-More"     />
       <Parameter name="Initial Radius"                       type="double" value="10.0"         />
-      <Parameter name="Maximum Radius"                       type="double" value="5.e3"         />
+      <Parameter name="Maximum Radius"                       type="double" value="1e8"          />
       <Parameter name="Step Acceptance Threshold"            type="double" value="0.05"         />
       <Parameter name="Radius Shrinking Threshold"           type="double" value="0.05"         />
       <Parameter name="Radius Growing Threshold"             type="double" value="0.9"          />

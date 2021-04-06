@@ -111,6 +111,12 @@ public:
     return *dual_vec_;
   }
 
+  Real apply( const Vector<Real> &x ) const {
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
+    return vec1_->apply(*(xs.get_1())) + vec2_->apply(*(xs.get_2()));
+  }
+
   ROL::Ptr<Vector<Real> > basis( const int i )  const {
     int n1 = (vec1_)->dimension();
     if ( i < n1 ) {

@@ -58,7 +58,7 @@ inline void RandVarFunctionalInfo(ROL::ParameterList &parlist, std::string &name
                                   std::vector<Real> &upper, bool &isBoundActivated,
                                   const bool printToStream = false,
                                   std::ostream &outStream = std::cout) {
-  std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
+  std::string type = parlist.sublist("SOL").get("Type","Risk Averse");
   if (type == "Risk Averse") {
     RiskMeasureInfo<Real>(parlist,name,nStatistic,lower,upper,isBoundActivated,printToStream,outStream);
   }

@@ -47,7 +47,7 @@
 #include "ROL_Bounds.hpp"
 #include "ROL_ScaledStdVector.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 #include "../../TOOLS/linearpdeconstraint.hpp"
 #include "../../TOOLS/pdeobjective.hpp"
@@ -57,7 +57,7 @@
 #include "mesh_adv_diff.hpp"
 
 template<class Real>
-class BinaryAdvDiffFactory : public ROL::OptimizationProblemFactory<Real> {
+class BinaryAdvDiffFactory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   int dim_;
 
@@ -78,6 +78,14 @@ public:
                  const ROL::Ptr<const Teuchos::Comm<int>> &comm,
                  const ROL::Ptr<std::ostream>             &os)
     : pl_(pl), comm_(comm), os_(os) {}
+
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
+    update();
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(buildObjective(),buildSolutionVector());
+    problem->addBoundConstraint(buildBoundConstraint());
+    return problem;
+  }
 
   void update(void) {
     mesh_      = ROL::makePtr<MeshManager_adv_diff<Real>>(pl_);
@@ -142,26 +150,6 @@ public:
     zhip->setScalar(static_cast<Real>(1));
     return ROL::makePtr<ROL::Bounds<Real>>(zlop,zhip);
     //return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    return ROL::nullPtr;
   }
 
   void getState(ROL::Ptr<ROL::Vector<Real>> &u, const ROL::Ptr<ROL::Vector<Real>> &z) const {

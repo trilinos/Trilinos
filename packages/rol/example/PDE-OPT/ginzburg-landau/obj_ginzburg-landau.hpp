@@ -54,10 +54,10 @@
 template <class Real>
 class QoI_GinzburgLandau_StateTracking : public QoI<Real> {
 private:
-  const ROL::Ptr<FE<Real> > fe_;
-  const ROL::Ptr<FieldHelper<Real> > fieldHelper_;
+  const ROL::Ptr<FE<Real>> fe_;
+  const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
 
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > target_;
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> target_;
 
   Real epsilon0_;
   Real lambda_;
@@ -85,8 +85,8 @@ protected:
   }
   
 public:
-  QoI_GinzburgLandau_StateTracking(const ROL::Ptr<FE<Real> > &fe,
-                                   const ROL::Ptr<FieldHelper<Real> > &fieldHelper,
+  QoI_GinzburgLandau_StateTracking(const ROL::Ptr<FE<Real>> &fe,
+                                   const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                    Teuchos::ParameterList &parlist)
     : fe_(fe), fieldHelper_(fieldHelper) {
     lambda_   = parlist.sublist("Problem").get("Current Loading",1.0);
@@ -97,22 +97,23 @@ public:
 
   virtual Real evaluateImagTarget(const std::vector<Real> &x) const = 0;
 
-  Real value(ROL::Ptr<Intrepid::FieldContainer<Real> > & val,
-             const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-             const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-             const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  Real value(ROL::Ptr<Intrepid::FieldContainer<Real>>             &val,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+             const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c = fe_->gradN()->dimension(0);
-    int p = fe_->gradN()->dimension(2);
+    const int c = fe_->gradN()->dimension(0);
+    const int p = fe_->gradN()->dimension(2);
     // Initialize output val
     val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
     // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     // Evaluate on FE basis
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval;
+    valU_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i=0; i<2; ++i) {
-      ROL::Ptr<Intrepid::FieldContainer<Real> > valU_eval
-        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      valU_eval->initialize();
       fe_->evaluateValue(valU_eval, U[i]);
       Intrepid::RealSpaceTools<Real>::subtract(*valU_eval,*target_[i]);
       fe_->computeIntegral(val,valU_eval,valU_eval,true);
@@ -121,23 +122,24 @@ public:
     return static_cast<Real>(0);
   }
 
-  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & grad,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real>>             &grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c = fe_->gradN()->dimension(0);
-    int f = fe_->gradN()->dimension(1);
-    int p = fe_->gradN()->dimension(2);
+    const int c = fe_->gradN()->dimension(0);
+    const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
     // Initialize output grad
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > G(2);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> G(2);
     // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > U;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
     fieldHelper_->splitFieldCoeff(U, u_coeff);
     // Evaluate on FE basis
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valU_eval;
+    valU_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i=0; i<2; ++i) {
-      ROL::Ptr<Intrepid::FieldContainer<Real> > valU_eval
-        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      valU_eval->initialize();
       fe_->evaluateValue(valU_eval, U[i]);
       Intrepid::RealSpaceTools<Real>::subtract(*valU_eval,*target_[i]);
       G[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
@@ -152,31 +154,32 @@ public:
     fieldHelper_->combineFieldCoeff(grad, G);
   }
 
-  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & grad,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real>>             &grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_GinzburgLandau_StateTracking::gradient_2 is zero.");
   }
 
-  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     // Get relevant dimensions
-    int c = fe_->gradN()->dimension(0);
-    int f = fe_->gradN()->dimension(1);
-    int p = fe_->gradN()->dimension(2);
+    const int c = fe_->gradN()->dimension(0);
+    const int f = fe_->gradN()->dimension(1);
+    const int p = fe_->gradN()->dimension(2);
     // Initialize output hessvec
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > H(2);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(2);
     // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > V;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V;
     fieldHelper_->splitFieldCoeff(V, v_coeff);
     // Evaluate on FE basis
+    ROL::Ptr<Intrepid::FieldContainer<Real>> valV_eval;
+    valV_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
     for (int i=0; i<2; ++i) {
-      ROL::Ptr<Intrepid::FieldContainer<Real> > valV_eval
-        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+      valV_eval->initialize();
       fe_->evaluateValue(valV_eval, V[i]);
       H[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
       Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
@@ -190,27 +193,27 @@ public:
     fieldHelper_->combineFieldCoeff(hess, H);
   }
 
-  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_TopoOpt::HessVec_12 is zero.");
   }
 
-  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_TopoOpt::HessVec_21 is zero.");
   }
 
-  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_TopoOpt::HessVec_22 is zero.");
   }
 
@@ -220,22 +223,22 @@ public:
 template <class Real>
 class QoI_GinzburgLandau_ControlPenalty : public QoI<Real> {
 private:
-  const ROL::Ptr<FE<Real> > fe_;
-  const std::vector<ROL::Ptr<FE<Real> > > feBdry_;
-  const std::vector<std::vector<int> > bdryCellLocIds_;
-  const ROL::Ptr<FieldHelper<Real> > fieldHelper_;
+  const ROL::Ptr<FE<Real>> fe_;
+  const std::vector<ROL::Ptr<FE<Real>>> feBdry_;
+  const std::vector<std::vector<int>> bdryCellLocIds_;
+  const ROL::Ptr<FieldHelper<Real>> fieldHelper_;
   Real delta0_;
   Real lambda_;
 
-  ROL::Ptr<Intrepid::FieldContainer<Real> > getBoundaryCoeff(
-      const Intrepid::FieldContainer<Real> & cell_coeff,
+  ROL::Ptr<Intrepid::FieldContainer<Real>> getBoundaryCoeff(
+      const Intrepid::FieldContainer<Real> &cell_coeff,
       int locSideId) const {
     std::vector<int> bdryCellLocId = bdryCellLocIds_[locSideId];
     const int numCellsSide = bdryCellLocId.size();
     const int f = fe_->N()->dimension(1);
     
-    ROL::Ptr<Intrepid::FieldContainer<Real > > bdry_coeff = 
-      ROL::makePtr<Intrepid::FieldContainer<Real >>(numCellsSide, f);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> bdry_coeff = 
+      ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, f);
     for (int i = 0; i < numCellsSide; ++i) {
       for (int j = 0; j < f; ++j) {
         (*bdry_coeff)(i, j) = cell_coeff(bdryCellLocId[i], j);
@@ -245,25 +248,25 @@ private:
   }
 
 public:
-  QoI_GinzburgLandau_ControlPenalty(const ROL::Ptr<FE<Real> > &fe,
-                                    const std::vector<ROL::Ptr<FE<Real> > > &feBdry,
-                                    const std::vector<std::vector<int> > &bdryCellLocIds,
-                                    const ROL::Ptr<FieldHelper<Real> > &fieldHelper,
+  QoI_GinzburgLandau_ControlPenalty(const ROL::Ptr<FE<Real>> &fe,
+                                    const std::vector<ROL::Ptr<FE<Real>>> &feBdry,
+                                    const std::vector<std::vector<int>> &bdryCellLocIds,
+                                    const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                     Teuchos::ParameterList &parlist)
   : fe_(fe), feBdry_(feBdry), bdryCellLocIds_(bdryCellLocIds), fieldHelper_(fieldHelper) {
     delta0_ = parlist.sublist("Problem").get("Control Scaling",1.0);
     lambda_ = parlist.sublist("Problem").get("Current Loading",1.0);
   }
 
-  Real value(ROL::Ptr<Intrepid::FieldContainer<Real> > & val,
-             const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-             const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-             const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  Real value(ROL::Ptr<Intrepid::FieldContainer<Real>>             &val,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+             const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+             const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     const int c = fe_->gradN()->dimension(0);
     // Initialize output val
     val = ROL::makePtr<Intrepid::FieldContainer<Real>>(c);
     // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> Z;
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
     // Compute cost integral
     const int numLocSides = bdryCellLocIds_.size();
@@ -273,9 +276,9 @@ public:
         if ( numCellsSide ) {
           const int numCubPerSide = feBdry_[j]->cubPts()->dimension(1);
           // Evaluate control on FE basis
-          ROL::Ptr<Intrepid::FieldContainer<Real> > z_coeff_bdry
+          ROL::Ptr<Intrepid::FieldContainer<Real>> z_coeff_bdry
             = getBoundaryCoeff(*Z[i], j);
-          ROL::Ptr<Intrepid::FieldContainer<Real> > valZ_eval
+          ROL::Ptr<Intrepid::FieldContainer<Real>> valZ_eval
             = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
           feBdry_[j]->evaluateValue(valZ_eval, z_coeff_bdry);
           // Integrate cell cost
@@ -293,30 +296,28 @@ public:
     return static_cast<Real>(0);
   }
 
-  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real> > & grad,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void gradient_1(ROL::Ptr<Intrepid::FieldContainer<Real>>             &grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_GinzburgLandau_ControlCost::gradient_1 is zero.");
   }
 
-  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real> > & grad,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void gradient_2(ROL::Ptr<Intrepid::FieldContainer<Real>>             &grad,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     // Initialize output grad
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > G(2);
-    for (int i=0; i<2; ++i) {
-      G[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
-    }
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> G(2);
     // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > Z;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> Z;
     fieldHelper_->splitFieldCoeff(Z, z_coeff);
     // Compute cost integral
     const int numLocSides = bdryCellLocIds_.size();
     for (int i = 0; i < 2; ++i) {
+      G[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
       for (int j = 0; j < numLocSides; ++j) {
         const int numCellsSide  = bdryCellLocIds_[j].size();
         if ( numCellsSide ) {
@@ -347,49 +348,47 @@ public:
     fieldHelper_->combineFieldCoeff(grad, G);
   }
 
-  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_11(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_GinzburgLandau_ControlCost::HessVec_11 is zero.");
   }
 
-  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_12(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_GinzburgLandau_ControlCost::HessVec_12 is zero.");
   }
 
-  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_21(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     throw Exception::Zero(">>> QoI_GinzburgLandau_ControlCost::HessVec_21 is zero.");
   }
 
-  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+  void HessVec_22(ROL::Ptr<Intrepid::FieldContainer<Real>>             &hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &v_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> &z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>>              &z_param = ROL::nullPtr) {
     // Get relevant dimensions
     const int c = fe_->gradN()->dimension(0);
     const int f = fe_->gradN()->dimension(1);
     // Initialize output grad
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > H(2);
-    for (int i=0; i<2; ++i) {
-      H[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
-    }
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(2);
     // Get components of the control
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > V;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V;
     fieldHelper_->splitFieldCoeff(V, v_coeff);
     // Compute cost integral
     const int numLocSides = bdryCellLocIds_.size();
     for (int i = 0; i < 2; ++i) {
+      H[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
       for (int j = 0; j < numLocSides; ++j) {
         const int numCellsSide  = bdryCellLocIds_[j].size();
         if ( numCellsSide ) {

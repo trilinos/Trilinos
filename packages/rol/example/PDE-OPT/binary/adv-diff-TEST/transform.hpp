@@ -41,14 +41,15 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_TRANSFORM_PEBBL_H
-#define ROL_PDEOPT_TRANSFORM_PEBBL_H
+#ifndef ROL_ADVDIFFTEST_INTEGERTRANSFORMATION_H
+#define ROL_ADVDIFFTEST_INTEGERTRANSFORMATION_H
 
-#include "ROL_StdTransform_PEBBL.hpp"
+#include "ROL_PEBBL_StdIntegerTransformation.hpp"
+#include "ROL_PEBBL_TpetraIntegerTransformation.hpp"
 #include "../../TOOLS/pdevector.hpp"
 
 template <class Real>
-class PDEOPT_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
+class StdAdvDiffIntegerTransformation : public ROL::PEBBL::StdIntegerTransformation<Real> {
 private:
   ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
     try {
@@ -60,20 +61,41 @@ private:
   }
 
 public:
-  PDEOPT_Transform_PEBBL(void)
-    : ROL::StdTransform_PEBBL<Real>() {}
+  StdAdvDiffIntegerTransformation(void)
+    : ROL::PEBBL::StdIntegerTransformation<Real>() {}
 
-  PDEOPT_Transform_PEBBL(const PDEOPT_Transform_PEBBL &T)
-    : ROL::StdTransform_PEBBL<Real>(T) {}
+  StdAdvDiffIntegerTransformation(const StdAdvDiffIntegerTransformation &T)
+    : ROL::PEBBL::StdIntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::StdTransform_PEBBL<Real>::pruneVector(*getParameter(c));
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::StdIntegerTransformation<Real>::fixValues(*getParameter(c),zero);
   }
 
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::StdTransform_PEBBL<Real>::shiftVector(*getParameter(c));
+}; // class StdAdvDiffIntegerTransformation
+
+template <class Real>
+class TpetraAdvDiffIntegerTransformation : public ROL::PEBBL::TpetraIntegerTransformation<Real> {
+private:
+  ROL::Ptr<ROL::TpetraMultiVector<Real>> getData(ROL::Vector<Real> &x) const {
+    try {
+      return ROL::makePtrFromRef(dynamic_cast<ROL::TpetraMultiVector<Real>&>(x));
+    }
+    catch (std::exception &e) {
+      return dynamic_cast<PDE_OptVector<Real>&>(x).getField();
+    }
   }
 
-}; // class PDEOPT_Transform_PEBBL
+public:
+  TpetraAdvDiffIntegerTransformation(void)
+    : ROL::PEBBL::TpetraIntegerTransformation<Real>() {}
+
+  TpetraAdvDiffIntegerTransformation(const TpetraAdvDiffIntegerTransformation &T)
+    : ROL::PEBBL::TpetraIntegerTransformation<Real>(T) {}
+
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::TpetraIntegerTransformation<Real>::fixValues(*getData(c),zero);
+  }
+
+}; // class TpetraAdvDiffIntegerTransformation
 
 #endif

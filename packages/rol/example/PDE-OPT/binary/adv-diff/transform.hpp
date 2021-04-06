@@ -41,34 +41,30 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_TRANSFORM_PEBBL_H
-#define ROL_PDEOPT_TRANSFORM_PEBBL_H
+#ifndef ROL_ADVDIFF_INTEGERTRANSFORMATION_H
+#define ROL_ADVDIFF_INTEGERTRANSFORMATION_H
 
-#include "ROL_StdTransform_PEBBL.hpp"
+#include "ROL_PEBBL_StdIntegerTransformation.hpp"
 #include "../../TOOLS/pdevector.hpp"
 
 template <class Real>
-class PDEOPT_Transform_PEBBL : public ROL::StdTransform_PEBBL<Real> {
+class AdvDiffIntegerTransformation : public ROL::PEBBL::StdIntegerTransformation<Real> {
 private:
   ROL::Ptr<ROL::StdVector<Real>> getParameter(ROL::Vector<Real> &x) const {
     return dynamic_cast<PDE_OptVector<Real>&>(x).getParameter();
   }
 
 public:
-  PDEOPT_Transform_PEBBL(void)
-    : ROL::StdTransform_PEBBL<Real>() {}
+  AdvDiffIntegerTransformation(void)
+    : ROL::PEBBL::StdIntegerTransformation<Real>() {}
 
-  PDEOPT_Transform_PEBBL(const PDEOPT_Transform_PEBBL &T)
-    : ROL::StdTransform_PEBBL<Real>(T) {}
+  AdvDiffIntegerTransformation(const AdvDiffIntegerTransformation &T)
+    : ROL::PEBBL::StdIntegerTransformation<Real>(T) {}
 
-  void pruneVector(ROL::Vector<Real> &c) {
-    ROL::StdTransform_PEBBL<Real>::pruneVector(*getParameter(c));
+  void fixValues(ROL::Vector<Real> &c, bool zero = false) const {
+    ROL::PEBBL::StdIntegerTransformation<Real>::fixValues(*getParameter(c),zero);
   }
 
-  void shiftVector(ROL::Vector<Real> &c) {
-    ROL::StdTransform_PEBBL<Real>::shiftVector(*getParameter(c));
-  }
-
-}; // class PDEOPT_Transform_PEBBL
+}; // class AdvDiffIntegerTransformation
 
 #endif

@@ -73,6 +73,10 @@ public:
     pobj_->update(x,flag,iter);
   }
 
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    pobj_->update(x,type,iter);
+  }
+
   Real value(const Vector<Real> &x,
              Real &tol) {
     const Vector_SimOpt<Real> &uz = dynamic_cast<const Vector_SimOpt<Real>&>(x);

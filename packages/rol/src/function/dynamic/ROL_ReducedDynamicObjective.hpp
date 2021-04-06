@@ -170,7 +170,7 @@ public:
       u0_                ( u0 ),                                            // Initial condition.
       timeStamp_         ( timeStamp ),                                     // Vector of time stamps.
       Nt_                ( timeStamp.size() ),                              // Number of time intervals.
-      useSketch_         ( pl.get("Use Sketching", true) ),                 // Use state sketch if true.
+      useSketch_         ( pl.get("Use Sketching", false) ),                // Use state sketch if true.
       rankState_         ( pl.get("State Rank", 10) ),                      // Rank of state sketch.
       stateSketch_       ( nullPtr ),                                       // State sketch object.
       rankAdjoint_       ( pl.get("Adjoint Rank", 10) ),                    // Rank of adjoint sketch.

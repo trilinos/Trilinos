@@ -45,6 +45,7 @@
 #define ROL_PROGRESSIVEHEDGING_H
 
 #include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_PH_Objective.hpp"
 #include "ROL_PH_StatusTest.hpp"
 #include "ROL_RiskVector.hpp"
@@ -100,13 +101,14 @@ private:
   bool print_;
 
   bool hasStat_;
-  Ptr<PH_Objective<Real>>        ph_objective_;
-  Ptr<Vector<Real>>              ph_vector_;
-  Ptr<BoundConstraint<Real>>     ph_bound_;
-  Ptr<Constraint<Real>>          ph_constraint_;
-  Ptr<OptimizationProblem<Real>> ph_problem_;
-  Ptr<OptimizationSolver<Real>>  ph_solver_;
-  Ptr<PH_StatusTest<Real>>       ph_status_;
+  Ptr<PH_Objective<Real>>           ph_objective_;
+  Ptr<Vector<Real>>                 ph_vector_;
+  Ptr<BoundConstraint<Real>>        ph_bound_;
+  Ptr<Constraint<Real>>             ph_constraint_;
+  Ptr<OptimizationProblem<Real>>    ph_problem_;
+  Ptr<Problem<Real>>                ph_problem_new_;
+  Ptr<Solver<Real>>                 ph_solver_;
+  Ptr<PH_StatusTest<Real>>          ph_status_;
   Ptr<Vector<Real>> z_psum_, z_gsum_;
   std::vector<Ptr<Vector<Real>>> wvec_;
 
@@ -144,12 +146,13 @@ public:
     maxPen_       = (maxPen_ <= static_cast<Real>(0) ? ROL_INF<Real>() : maxPen_);
     penaltyParam_ = std::min(penaltyParam_,maxPen_);
     // Create progressive hedging vector
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
-    std::string prob = parlist.sublist("SOL").sublist("Probability").get("Name","bPOE");
+    ParameterList olist; olist.sublist("SOL") = parlist.sublist("SOL").sublist("Objective");
+    std::string type = olist.sublist("SOL").get("Type","Risk Neutral");
+    std::string prob = olist.sublist("SOL").sublist("Probability").get("Name","bPOE");
     hasStat_ = ((type=="Risk Averse") ||
                 (type=="Deviation")   ||
                 (type=="Probability" && prob=="bPOE"));
-    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(parlist);
+    Ptr<ParameterList> parlistptr = makePtrFromRef<ParameterList>(olist);
     if (hasStat_) {
       ph_vector_  = makePtr<RiskVector<Real>>(parlistptr,
                                               input_->getSolutionVector());
@@ -161,7 +164,7 @@ public:
     ph_objective_ = makePtr<PH_Objective<Real>>(input_->getObjective(),
                                                 ph_vector_,
                                                 penaltyParam_,
-                                                parlist);
+                                                olist);
     // Create progressive hedging bound constraint
     if (hasStat_) {
       ph_bound_   = makePtr<RiskBoundConstraint<Real>>(parlistptr,
@@ -186,8 +189,19 @@ public:
                                                       ph_bound_,
                                                       ph_constraint_,
                                                       input_->getMultiplierVector());
+    ph_problem_new_ = makePtr<Problem<Real>>(ph_problem_->getObjective(),
+                                             ph_problem_->getSolutionVector());
+    if (ph_problem_->getBoundConstraint() != nullPtr) {
+      if (ph_problem_->getBoundConstraint()->isActivated()) {
+        ph_problem_new_->addBoundConstraint(ph_problem_->getBoundConstraint());
+      }
+    }
+    if (ph_problem_->getConstraint() != nullPtr) {
+      ph_problem_new_->addConstraint("PH Constraint",ph_problem_->getConstraint(),
+                                     ph_problem_->getMultiplierVector());
+    }
     // Build progressive hedging subproblem solver
-    ph_solver_    = makePtr<OptimizationSolver<Real>>(*ph_problem_, parlist);
+    ph_solver_    = makePtr<Solver<Real>>(ph_problem_new_, parlist);
     // Build progressive hedging status test for inexact solves
     if (useInexact_) {
       ph_status_  = makePtr<PH_StatusTest<Real>>(parlist,
@@ -259,7 +273,7 @@ public:
         }
         wvec_[j]->axpy(penaltyParam_,*ph_problem_->getSolutionVector());
         vec_p[0] += sampler_->getMyWeight(j)
-                  * ph_problem_->getSolutionVector()->dot(
+                   *ph_problem_->getSolutionVector()->dot(
                    *ph_problem_->getSolutionVector());
         vec_p[1] += static_cast<Real>(ph_solver_->getAlgorithmState()->iter);
         z_psum_->axpy(sampler_->getMyWeight(j),*ph_problem_->getSolutionVector());

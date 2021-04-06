@@ -66,9 +66,9 @@ public:
 
   Objective_CheckInterface( Objective<Real>& obj ) : 
     obj_(obj), tol_(sqrt(ROL_EPSILON<Real>())) {}
-   
+
   f_update_t<Real> update() {
-    return bind( &Objective<Real>::update, &obj_, ph::_1, true, 0 );
+    return bind( (void(Objective<Real>::*)(const Vector<Real>&,bool,int))&Objective<Real>::update, &obj_, ph::_1, true, 0 );
   }
 
   f_scalar_t<Real> value() {

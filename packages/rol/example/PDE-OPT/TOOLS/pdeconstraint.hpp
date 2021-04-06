@@ -437,7 +437,7 @@ private:
     #endif
     if ( v != ROL::nullPtr && !isJ3notImplemented_ ) {
       const size_t size = static_cast<size_t>(v->size());
-      if ( zeroOut || (isJ3zero_ && !zeroOut) ) {
+      if ( zeroOut ) { // || (isJ3zero_ && !zeroOut) ) {
         Jv->putScalar(static_cast<Real>(0));
       }
       if ( !isJ3zero_ ) {
@@ -544,7 +544,7 @@ private:
     #endif
     if ( v != ROL::nullPtr && !isH31notImplemented_ ) {
       const size_t size = static_cast<size_t>(v->size());
-      if ( zeroOut || (isH31zero_ && !zeroOut) ) {
+      if ( zeroOut ) { //|| (isH31zero_ && !zeroOut) ) {
         Hv->putScalar(static_cast<Real>(0));
       }
       if ( !isH31zero_ ) {
@@ -579,7 +579,7 @@ private:
     #endif
     if ( Hv != ROL::nullPtr && v != ROL::nullPtr && !isH23notImplemented_ ) {
       const size_t size = static_cast<size_t>(Hv->size());
-      if ( zeroOut || (isH23zero_ && !zeroOut) ) {
+      if ( zeroOut ) { // || (isH23zero_ && !zeroOut) ) {
         Hv->assign(size,static_cast<Real>(0));
       }
       if ( !isH23zero_ ) {
@@ -601,7 +601,7 @@ private:
     #endif
     if ( Hv != ROL::nullPtr && v != ROL::nullPtr && !isH32notImplemented_ ) {
       const size_t size = static_cast<size_t>(v->size());
-      if ( zeroOut || (isH32zero_ && !zeroOut) ) {
+      if ( zeroOut ) { // || (isH32zero_ && !zeroOut) ) {
         Hv->putScalar(static_cast<Real>(0));
       }
       if ( !isH32zero_ ) {
@@ -621,7 +621,7 @@ private:
     #endif
     if ( Hv != ROL::nullPtr && !isH33notImplemented_ ) {
       const size_t size = static_cast<size_t>(Hv->size());
-      if ( zeroOut || (isH33zero_ && !zeroOut) ) {
+      if ( zeroOut ) { // || (isH33zero_ && !zeroOut) ) {
         Hv->assign(size,static_cast<Real>(0));
       }
       if ( !isH33zero_ ) {
@@ -759,6 +759,32 @@ public:
     update_2(z,flag,iter);
   }
 
+  // Do something smarter here
+  void update_1(const ROL::Vector<Real> &u, ROL::UpdateType type, int iter = -1) {
+    computeJ1_ = true;
+    computeJ2_ = true;
+    computeJ3_ = true;
+  }
+
+  void update_2(const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
+    computeJ1_ = true;
+    computeJ2_ = true;
+    computeJ3_ = true;
+  }
+
+  void update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
+    update_1(u,type,iter);
+    update_2(z,type,iter);
+  }
+
+  void solve_update(const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1) {
+    update(u,z,type,iter);
+  }
+
+  void solve(ROL::Vector<Real> &c, ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
+    ROL::Constraint_SimOpt<Real>::solve(c,u,z,tol);
+  }
+
   using ROL::Constraint_SimOpt<Real>::value;
   void value(ROL::Vector<Real> &c, const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol) {
     ROL::Ptr<Tpetra::MultiVector<> >       cf = getField(c);
@@ -796,6 +822,7 @@ public:
     ROL::Ptr<const std::vector<Real> >     vp = getConstParameter(v);
     bool useFD2 = (isJ2notImplemented_ && vf != ROL::nullPtr);
     bool useFD3 = (isJ3notImplemented_ && vp != ROL::nullPtr);
+    jv.zero();
     if (useFD2 || useFD3) {
       ROL::Constraint_SimOpt<Real>::applyJacobian_2(jv,v,u,z,tol);
     }
@@ -908,6 +935,7 @@ public:
     ROL::Ptr<const std::vector<Real> >     vp = getConstParameter(v);
     bool useFD2 = (isH21notImplemented_ && vf != ROL::nullPtr);
     bool useFD3 = (isH31notImplemented_ && vp != ROL::nullPtr);
+    ahwv.zero();
     if (useFD2 || useFD3) {
       ROL::Constraint_SimOpt<Real>::applyAdjointHessian_21(ahwv,w,v,u,z,tol);
     }
@@ -934,6 +962,7 @@ public:
     assembleH23(w,u,z);
     assembleH32(w,u,z);
     assembleH33(w,u,z);
+    ahwv.zero();
 
     ROL::Ptr<Tpetra::MultiVector<> >    ahwvf = getField(ahwv);
     ROL::Ptr<std::vector<Real> >        ahwvp = getParameter(ahwv);
@@ -956,7 +985,7 @@ public:
         applyHessian23(ahwvp,vf,zeroOut);
       }
       if (!useFD32) {
-        applyHessian32(ahwvf,vp);
+        applyHessian32(ahwvf,vp,zeroOut);
         zeroOut = (vf == ROL::nullPtr);
       }
       if (!useFD33) {

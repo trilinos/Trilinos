@@ -1,4 +1,5 @@
-// @HEADER
+// @ass ROL::PEBBL::TpetraIntegerTransformation
+// EADER
 // ************************************************************************
 //
 //               Rapid Optimization Library (ROL) Package
@@ -41,42 +42,42 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef ROL_PDEOPT_BRANCHHELPER_PEBBL_H
-#define ROL_PDEOPT_BRANCHHELPER_PEBBL_H
+#ifndef ROL_ADVDIFF_BRANCHHELPER_H
+#define ROL_ADVDIFF_BRANCHHELPER_H
 
-#include "ROL_StdBranchHelper_PEBBL.hpp"
+#include "ROL_PEBBL_StdBranchHelper.hpp"
 #include "transform.hpp"
 
 template <class Real>
-class PDEOPT_BranchHelper_PEBBL : public ROL::StdBranchHelper_PEBBL<Real> {
+class AdvDiffBranchHelper : public ROL::PEBBL::StdBranchHelper<Real> {
 private:
   ROL::Ptr<const ROL::StdVector<Real>> getParameter(const ROL::Vector<Real> &x) const {
     return dynamic_cast<const PDE_OptVector<Real>&>(x).getParameter();
   }
 
 public:
-  PDEOPT_BranchHelper_PEBBL(const Real tol = 1e-6, const int method = 0)
-    : ROL::StdBranchHelper_PEBBL<Real>(tol, method) {}
+  AdvDiffBranchHelper(const Real tol = 1e-6, const int method = 0)
+    : ROL::PEBBL::StdBranchHelper<Real>(tol, method) {}
 
-  PDEOPT_BranchHelper_PEBBL(const PDEOPT_BranchHelper_PEBBL &BH)
-    : ROL::StdBranchHelper_PEBBL<Real>(BH) {}
+  AdvDiffBranchHelper(const AdvDiffBranchHelper &BH)
+    : ROL::PEBBL::StdBranchHelper<Real>(BH) {}
 
   //int getMyIndex(const ROL::Vector<Real> &x) const {
-  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector &g) const {
+  int getMyIndex(const ROL::Vector<Real> &x, const ROL::Vector<Real> &g) const {
     // Use Std implementation
-    return ROL::StdBranchHelper_PEBBL<Real>::getMyIndex(*getParameter(x),*getParameter(g));
+    return ROL::PEBBL::StdBranchHelper<Real>::getMyIndex(*getParameter(x),*getParameter(g));
   }
 
   void getMyNumFrac(int &nfrac, Real &integralityMeasure,
                     const ROL::Vector<Real> &x) const {
     // Use Std implementation
-    ROL::StdBranchHelper_PEBBL<Real>::getMyNumFrac(nfrac, integralityMeasure, *getParameter(x));
+    ROL::PEBBL::StdBranchHelper<Real>::getMyNumFrac(nfrac, integralityMeasure, *getParameter(x));
   }
 
-  ROL::Ptr<ROL::Transform_PEBBL<Real>> createTransform(void) const {
-    return ROL::makePtr<PDEOPT_Transform_PEBBL<Real>>();
+  ROL::Ptr<ROL::PEBBL::IntegerTransformation<Real>> createTransform(void) const {
+    return ROL::makePtr<AdvDiffIntegerTransformation<Real>>();
   }
 
-}; // class PDEOPT_BranchHelper_PEBBL
+}; // class AdvDiffBranchHelper
 
 #endif

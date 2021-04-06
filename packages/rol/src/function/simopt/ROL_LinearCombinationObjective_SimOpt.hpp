@@ -75,6 +75,12 @@ public:
       udual_(ROL::nullPtr), zdual_(ROL::nullPtr),
       uinitialized_(false), zinitialized_(false) {}
 
+  void update(const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) {
+    for (size_t i=0; i<size_; ++i) {
+      obj_[i]->update(u,z,type,iter);
+    }
+  }
+
   void update(const Vector<Real> &u, const Vector<Real> &z, bool flag = true, int iter = -1) {
     for (size_t i=0; i<size_; ++i) {
       obj_[i]->update(u,z,flag,iter);

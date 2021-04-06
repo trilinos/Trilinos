@@ -3,7 +3,7 @@
 #define FEMDATA_H
 
 #include "ROL_Objective.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 #include "../../TOOLS/assembler.hpp"
 #include "../../TOOLS/solver.hpp"
 #include "../../TOOLS/pdevector.hpp"
@@ -48,8 +48,8 @@ public:
     return pde_->getFE();
   }
 
-  const ROL::Ptr<FE<Real>> getFE2(void) const {
-    return pde_->getFE2();
+  const ROL::Ptr<FE<Real>> getControlFE(void) const {
+    return pde_->getControlFE();
   }
 
   // PDE definitions
