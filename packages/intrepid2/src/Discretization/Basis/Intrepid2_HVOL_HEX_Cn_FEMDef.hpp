@@ -265,6 +265,7 @@ namespace Intrepid2 {
     Basis_HVOL_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();
 
+    this->pointType_         = pointType;
     this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("HVOL::HEX::Cn::vinv", cardLine, cardLine);
     lineBasis.getVandermondeInverse(this->vinv_);
     

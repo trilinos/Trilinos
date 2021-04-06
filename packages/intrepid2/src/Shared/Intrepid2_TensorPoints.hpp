@@ -56,15 +56,15 @@ namespace Intrepid2 {
 /** \class Intrepid2::TensorPoints
     \brief View-like interface to tensor points; point components are stored separately; the appropriate coordinate is determined from the composite point index and requested dimension at access time.
 */
-  template<class PointScalar, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class PointScalar, typename DeviceType>
   class TensorPoints {
   protected:
     Kokkos::Array< ScalarView<PointScalar,DeviceType>, Parameters::MaxTensorComponents> pointTensorComponents_; // each component has dimensions (P,D)
     ordinal_type numTensorComponents_;
     ordinal_type totalPointCount_;
     ordinal_type totalDimension_;
-    Kokkos::vector<ordinal_type> dimToComponent_;
-    Kokkos::vector<ordinal_type> dimToComponentDim_;
+    Kokkos::View<ordinal_type*, DeviceType> dimToComponent_;
+    Kokkos::View<ordinal_type*, DeviceType> dimToComponentDim_;
     Kokkos::Array<ordinal_type, Parameters::MaxTensorComponents> pointModulus_;
     Kokkos::Array<ordinal_type, Parameters::MaxTensorComponents> pointDivisor_;
     
@@ -90,21 +90,26 @@ namespace Intrepid2 {
         pointDivisor_[r] = pointDivisor;
         pointDivisor *= pointTensorComponents_[r].extent_int(0);
       }
-      dimToComponent_    = Kokkos::vector<ordinal_type>(totalDimension_);
-      dimToComponentDim_ = Kokkos::vector<ordinal_type>(totalDimension_);
+      dimToComponent_    = Kokkos::View<ordinal_type*, DeviceType>("dimToComponent_",totalDimension_);
+      dimToComponentDim_ = Kokkos::View<ordinal_type*, DeviceType>("dimToComponentDim_",totalDimension_);
       ordinal_type d=0;
       ordinal_type dimsSoFar = 0;
+
+      auto dimToComponentHost = Kokkos::create_mirror_view(dimToComponent_);
+      auto dimToComponentDimHost = Kokkos::create_mirror_view(dimToComponentDim_);
       for (ordinal_type r=0; r<numTensorComponents_; r++)
       {
         const int componentDim = pointTensorComponents_[r].extent_int(1);
         for (int i=0; i<componentDim; i++)
         {
-          dimToComponent_[d]    = r;
-          dimToComponentDim_[d] = d - dimsSoFar;
+          dimToComponentHost[d]    = r;
+          dimToComponentDimHost[d] = d - dimsSoFar;
           d++;
         }
         dimsSoFar += componentDim;
       }
+      Kokkos::deep_copy(dimToComponent_,dimToComponentHost);
+      Kokkos::deep_copy(dimToComponentDim_,dimToComponentDimHost);
     }
   public:
     /**

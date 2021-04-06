@@ -580,7 +580,6 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     static_assert( supports_rank<FunctorType2,rank>::value, "Both Functor1 and Functor2 must support the specified rank through operator().");
     using Functor1IteratorScalar = FunctorIterator<FunctorType1, Scalar, rank>;
     using Functor2IteratorScalar = FunctorIterator<FunctorType2, Scalar, rank>;
-    using ViewIteratorBool       = Intrepid2::ViewIterator<ViewType<bool,ExecutionSpace>, bool>;
 
     // check that rank/size match
     TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(functor1) != rank, std::invalid_argument, "functor1 and functor2 must agree in rank"); // Kokkos::View does not provide rank() method; getFunctorRank() provides common interface
@@ -638,7 +637,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       
       FunctorIterator<decltype(functor1CopyHost),Scalar,rank> vi1(functor1CopyHost);
       FunctorIterator<decltype(functor2CopyHost),Scalar,rank> vi2(functor2CopyHost);
-      ViewIteratorBool    viMatch(valuesMatchHost);
+      Intrepid2::ViewIterator<decltype(valuesMatchHost), bool> viMatch(valuesMatchHost);
       
       bool moreEntries = true;
       while (moreEntries)

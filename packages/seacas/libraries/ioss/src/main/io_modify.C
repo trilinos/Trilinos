@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -286,7 +286,7 @@ int main(int argc, char *argv[])
   // NOTE: The "READ_RESTART" mode ensures that the node and element ids will be mapped.
   //========================================================================
   Ioss::PropertyManager properties = set_properties(interFace);
-  properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_APPEND));
+  properties.add(Ioss::Property("APPEND_OUTPUT", Ioss::DB_MODIFY));
 
   Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(input_type, inpfile, Ioss::WRITE_RESTART,
                                                   (MPI_Comm)MPI_COMM_WORLD, properties);

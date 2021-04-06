@@ -65,7 +65,7 @@
 
 namespace Intrepid2
 {
-  template<class Scalar, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename ExecSpaceType>
   class BasisValues
   {
     using TensorDataType = TensorData<Scalar,ExecSpaceType>;

@@ -111,13 +111,12 @@ namespace Intrepid2 {
     const ordinal_type numEdges = cellTopo.getEdgeCount();
     const ordinal_type numFaces = cellTopo.getFaceCount();
     
-    auto matData_host = Kokkos::create_mirror_view(matData);
     {
       const ordinal_type numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
         if(cellBasis->getDofCount(1, edgeId) < 2) continue;
         for (ordinal_type edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          auto mat = Kokkos::subview(matData_host,
+          auto mat = Kokkos::subview(matData,
               edgeId, edgeOrt,
               Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HGRAD
@@ -137,7 +136,7 @@ namespace Intrepid2 {
         const ordinal_type numOrt = 2*cellTopo.getSideCount(2,faceId);
         if(cellBasis->getDofCount(2, faceId) < 1) continue;
         for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
-          auto mat = Kokkos::subview(matData_host,
+          auto mat = Kokkos::subview(matData,
               numEdges+faceId, faceOrt,
               Kokkos::ALL(), Kokkos::ALL());
           /// KK: mauro, this is an expensive construction for high order elements 
@@ -150,7 +149,6 @@ namespace Intrepid2 {
         }
       }
     }
-    Kokkos::deep_copy(matData, matData_host);
   }
 
   //
@@ -166,13 +164,12 @@ namespace Intrepid2 {
     const ordinal_type numEdges = cellTopo.getEdgeCount();
     const ordinal_type numFaces = cellTopo.getFaceCount();
 
-    auto matData_host = Kokkos::create_mirror_view(matData);
     {
       const ordinal_type numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
         if(cellBasis->getDofCount(1, edgeId) < 1) continue;
         for (ordinal_type edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          auto mat = Kokkos::subview(matData_host, 
+          auto mat = Kokkos::subview(matData,
                                      edgeId, edgeOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
@@ -187,7 +184,7 @@ namespace Intrepid2 {
         const ordinal_type numOrt = 2*cellTopo.getSideCount(2,faceId);
         if(cellBasis->getDofCount(2, faceId) < 1) continue;
         for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
-          auto mat = Kokkos::subview(matData_host,
+          auto mat = Kokkos::subview(matData,
                                      numEdges+faceId, faceOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL
@@ -197,7 +194,6 @@ namespace Intrepid2 {
         }
       }
     }
-    Kokkos::deep_copy(matData, matData_host);
   }
 
   //
@@ -213,7 +209,6 @@ namespace Intrepid2 {
     const ordinal_type numSides = cellTopo.getSideCount();
     const ordinal_type sideDim = cellTopo.getDimension()-1;
 
-    auto matData_host = Kokkos::create_mirror_view(matData);
     {
       for (ordinal_type sideId=0;sideId<numSides;++sideId) {
         if(cellBasis->getDofCount(sideDim, sideId) < 1) continue;
@@ -228,7 +223,6 @@ namespace Intrepid2 {
         }
       }
     }
-    Kokkos::deep_copy(matData, matData_host);
   }
 
   template<typename DT>

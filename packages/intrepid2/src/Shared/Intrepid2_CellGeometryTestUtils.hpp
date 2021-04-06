@@ -106,7 +106,7 @@ namespace Intrepid2
    \param [in] gridCellCounts - array specifying the number of cells in each coordinate dimension.
    \return a uniform Cartesion mesh, with origin at 0, with the specified domain extents and grid cell counts.
 */
-  template<class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   inline CellGeometry<PointScalar,spaceDim,DeviceType> uniformCartesianMesh(const Kokkos::Array<PointScalar,spaceDim> &domainExtents,
                                                                             const Kokkos::Array<int,spaceDim> &gridCellCounts)
   {
@@ -128,7 +128,7 @@ namespace Intrepid2
    \param [in] gridCellCounts - the number of cells in each coordinate dimension.
    \return a uniform Cartesion mesh, with origin at 0, with the specified domain extent and grid cell counts.
 */
-  template<class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   inline CellGeometry<PointScalar,spaceDim,DeviceType> uniformCartesianMesh(const PointScalar &domainExtent, const int &meshWidth)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;

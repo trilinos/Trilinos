@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -183,7 +183,7 @@ namespace Ioex {
     void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
                                       const Ioss::GroupingEntity *ge, int64_t count,
                                       void *variables) const;
-    void write_meta_data(bool appending) override;
+    void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) override;
     void gather_communication_metadata(Ioex::CommunicationMetaData *meta);
 
     // Read related metadata and store it in the region...
