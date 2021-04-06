@@ -55,7 +55,6 @@
            - Inverse identity check for linear operators
 */
 
-#include "ROL_Types.hpp"
 #include "ROL_FiniteDifference.hpp"
 
 namespace ROL {

@@ -41,86 +41,30 @@
 // ************************************************************************
 // @HEADER
 
-#pragma once
 #ifndef ROL_BINARYFUNCTIONS_H
 #define ROL_BINARYFUNCTIONS_H
 
+#include "ROL_Elementwise_Function.hpp"
+
 namespace ROL {
 namespace Elementwise {
-
-template<class Real> 
-class Axpy : public BinaryFunction<Real> {
-public:
-  Axpy(Real alpha) : alpha_(alpha) {}
-  virtual ~Axpy() = default;
-
-  Real apply( const Real &x, const Real &y ) const {
-    return x+alpha_*y;
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
-  }
-
-  Real get_alpha() const { return alpha_; } 
-
-private:
-  Real alpha_;
-};
-
-template<class Real> 
-class Aypx : public BinaryFunction<Real> {
-public:
-  Aypx(Real alpha) : alpha_(alpha) {}
-  virtual ~Aypx() = default;
-
-  Real apply( const Real &x, const Real &y ) const {
-    return alpha_*x+y;
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
-  }
-
-  Real get_alpha() const { return alpha_; }
-
-private:
-  Real alpha_;
-};
-
-
 
 // Used to set every element in a vector to a specific value
 template<class Real>
 class Multiply : public BinaryFunction<Real> {
 public:
-
-  Multiply() = default;
-  virtual ~Multiply() = default;
+  Multiply( ) { }
 
   Real apply( const Real &x, const Real &y ) const {
     return x*y;
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
-  }
-  
+  }  
 }; // class Multiply
 
 template<class Real>
 class Plus : public BinaryFunction<Real> {
 public:
-
-  Plus() = default;
-  virtual ~Plus() = default;
-
   Real apply( const Real &x, const Real &y ) const {
     return x+y;
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
   }
 };
 
@@ -129,48 +73,55 @@ public:
 template<class Real>
 class Divide : public BinaryFunction<Real> {
 public:
-
-  Divide() = default;
-  virtual ~Divide() = default;
+  Divide( ) { }
 
   Real apply( const Real &x, const Real &y ) const {
     return x/y;
-  }
-  
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
-  }
+  }  
 }; // class Divide
 
 template<class Real>
 class DivideAndInvert : public BinaryFunction<Real> {
 public:
-
-  DivideAndInvert() = default;
-  virtual ~DivideAndInvert() = default;
+  DivideAndInvert( ) { }
 
   Real apply( const Real &x, const Real &y ) const {
     return y/x;
   }  
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
-  }
 }; // class DivideAndInvert
 
+
+
+template<class Real> 
+class Axpy : public BinaryFunction<Real> {
+private:
+  Real a_;
+public:
+  Axpy(Real a) : a_(a) {}
+  Real apply( const Real &x, const Real &y ) const {
+    return x+a_*y;
+  }
+};
+
+
+template<class Real> 
+class Aypx : public BinaryFunction<Real> {
+private:
+  Real a_;
+public:
+  Aypx(Real a) : a_(a) {}
+  Real apply( const Real &x, const Real &y ) const {
+    return a_*x+y;
+  }
+};
 
 
 template<class Real>
 class Min : public BinaryFunction<Real> {
 public:
-  Min() = default;
-  virtual ~Min() = default;
+  Min() {}
   Real apply(const Real &x, const Real &y) const {
     return std::min(x,y);
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
   }
 };
 
@@ -178,14 +129,9 @@ public:
 template<class Real>
 class Max : public BinaryFunction<Real> {
 public:
-  Max() = default;
-  virtual ~Max() = default;
+  Max() {}
   Real apply(const Real &x, const Real &y) const {
     return std::max(x,y);
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
   }
 };
 
@@ -193,42 +139,24 @@ public:
 template<class Real> 
 class Set : public BinaryFunction<Real> {
 public:
-  Set() = default;
-  virtual ~Set() = default;
   Real apply( const Real &x, const Real &y ) const {
     return y;
-  }
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
   }
 };
 
 template<class Real> 
 class Lesser : public BinaryFunction<Real> {
 public:
-  Lesser() = default;
-  virtual ~Lesser() = default;
   Real apply( const Real &x, const Real &y ) const {
-    return static_cast<Real>(x<y);
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
+    return (x<y) ? x : y;
   }
 };
 
 template<class Real> 
 class Greater : public BinaryFunction<Real> {
 public:
-  Greater() = default;
-  virtual ~Greater() = default;
-
   Real apply( const Real &x, const Real &y ) const {
-    return static_cast<Real>(x>y);
-  }
-
-  void accept( typename BinaryFunction<Real>::Visitor& visitor ) const override {
-    visitor.visit( *this );
+    return (x>y) ? x : y;
   }
 };
 
@@ -236,16 +164,19 @@ public:
 // a comparative condition
 template<class Real>
 class ValueSet : public BinaryFunction<Real> {
+private:
+  const Real threshold_;
+  const int option_;
+  const Real c1_;
+  const Real c2_;
 public:
-
   static const int LESS_THAN    = 0;
   static const int EQUAL_TO     = 1;
   static const int GREATER_THAN = 2;
-
-  ValueSet( Real threshold, int option, Real c1=Real(1), Real c2=Real(0) ) :
-    threshold_(threshold), c1_(c1), c2_(c2), option_(option) {}
+  ValueSet( const Real& threshold, const int option, const Real &c1=Real(1), const Real &c2=Real(0) ) :
+    threshold_(threshold), option_(option), c1_(c1), c2_(c2) {}
  
-  Real apply( const Real &x, const Real &y ) const {
+  Real apply(const Real &x, const Real &y ) const {
     Real result(c2_);
     switch( option_ ) {
       case LESS_THAN:    { result = y <  threshold_ ? c1_ : c2_; break; }
@@ -254,17 +185,28 @@ public:
     }
     return result;
   }
-  Real get_threshold() const { return threshold_; }
-  Real get_c1() const { return c1_; }
-  Real get_c2() const { return c2_; }
-  int get_option() const { return option_; }
+};
+
+
+// Evaluate g(f(x,y))
+template<class Real> 
+class BinaryComposition : public BinaryFunction<Real> {
 
 private:
-  Real threshold_;
-  Real c1_;
-  Real c2_;
-  int option_;
+
+  ROL::Ptr<BinaryFunction<Real> > f_;
+  ROL::Ptr<UnaryFunction<Real> >  g_;
+
+public:
+
+  BinaryComposition( ROL::Ptr<BinaryFunction<Real> > &f,
+                     ROL::Ptr<UnaryFunction<Real> > &g ) : f_(f), g_(g) {}
+  Real apply( const Real &x, const Real &y ) const {
+    return g_->apply(f_->apply(x,y));
+  }
+
 };
+
 
 } // namespace Elementwise
 } // namespace ROL

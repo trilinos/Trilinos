@@ -62,10 +62,10 @@
 #include <sstream>
 #include <limits>
 #include <type_traits>
-#include "ROL_stacktrace.hpp"
+#include <ROL_stacktrace.hpp>
 #include "ROL_ScalarTraits.hpp"
-#include "ROL_Ptr.hpp"
-#include "ROL_Vector.hpp"
+#include <ROL_Ptr.hpp>
+#include <ROL_Vector.hpp>
 #include <ROL_config.h>
 
 /** \def    ROL_NUM_CHECKDERIV_STEPS

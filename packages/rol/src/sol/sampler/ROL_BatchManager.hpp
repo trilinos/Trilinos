@@ -45,6 +45,7 @@
 #define ROL_BATCHMANAGER_HPP
 
 #include "ROL_Vector.hpp"
+#include "ROL_Elementwise_Function.hpp"
 
 namespace ROL {
 

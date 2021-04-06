@@ -50,6 +50,8 @@
 
 #include "ROL_TrustRegion.hpp"
 #include "ROL_LinMoreModel.hpp"
+#include "ROL_Elementwise_Function.hpp"
+#include "ROL_Elementwise_Reduce.hpp"
 
 namespace ROL { 
 

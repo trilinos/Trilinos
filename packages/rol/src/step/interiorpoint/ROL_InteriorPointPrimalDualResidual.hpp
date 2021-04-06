@@ -45,6 +45,7 @@
 #ifndef ROL_INTERIORPOINT_PRIMALDUAL_RESIDUAL_H
 #define ROL_INTERIORPOINT_PRIMALDUAL_RESIDUAL_H
 
+#include "ROL_Elementwise_Function.hpp"
 #include "ROL_Constraint.hpp"
 #include "ROL_LinearOperator.hpp"
 #include "ROL_Objective.hpp"

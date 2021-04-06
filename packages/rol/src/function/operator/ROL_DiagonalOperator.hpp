@@ -45,6 +45,7 @@
 #define ROL_DIAGONALOPERATOR_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_Elementwise_Function.hpp"
 #include "ROL_LinearOperator.hpp"
 
 

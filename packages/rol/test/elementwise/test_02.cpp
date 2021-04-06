@@ -46,7 +46,6 @@
     \brief Test of Tpetra::MultiVector interface for elementwise functions
 */
 
-#include "ROL_Types.hpp"
 #include "ROL_TpetraMultiVector.hpp"
 
 #include "ROL_Stream.hpp"
@@ -169,6 +168,19 @@ int main(int argc, char *argv[]) {
     x.axpy(-1.0,x_recip);
 
     errorFlag += ( x.norm() > errtol ) ? 1 : 0;
+
+    // Test Binary Function with wrapper
+    ROL::Elementwise::applyBinaryInPlace(y,x_recip,Product<RealT>);
+
+    errorFlag += ( std::abs(y.norm()-static_cast<RealT>(k)) > errtol ) ? 1 : 0; 
+
+    // Test Unary Functor with wrapper
+    Threshold<RealT> threshold(threshValue);
+    ROL::Elementwise::applyUnaryInPlace(z,threshold);
+
+    z.axpy(-1.0,z_thresh);
+
+    errorFlag += ( z.norm() > errtol ) ? 1 : 0;
 
     // Test reduce
     ROL::Elementwise::ReductionMax<RealT> maximum;
