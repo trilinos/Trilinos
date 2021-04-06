@@ -69,6 +69,9 @@ public:
   typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
   typedef typename MatrixType::values_host_view_type values_host_view_type;
 
+  typedef typename MatrixType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
 
   using row_matrix_type = Tpetra::RowMatrix<scalar_type, local_ordinal_type,
 					    global_ordinal_type, node_type>;
@@ -214,10 +217,16 @@ public:
   */
   virtual void
   getGlobalRowCopy (global_ordinal_type GlobalRow,
+                    nonconst_global_inds_host_view_type &Indices,
+                    nonconst_values_host_view_type &Values,
+                    size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowCopy (global_ordinal_type GlobalRow,
                     const Teuchos::ArrayView<global_ordinal_type> &Indices,
                     const Teuchos::ArrayView<scalar_type> &Values,
                     size_t &NumEntries) const;
-
+#endif
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
     \param LocalRow - (In) Local row number for which indices are desired.
@@ -231,9 +240,16 @@ public:
   */
   virtual void
   getLocalRowCopy (local_ordinal_type LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getLocalRowCopy (local_ordinal_type LocalRow,
                    const Teuchos::ArrayView<local_ordinal_type> &Indices,
                    const Teuchos::ArrayView<scalar_type> &Values,
                    size_t &NumEntries) const;
+#endif
 
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
@@ -384,11 +400,11 @@ private:
 
   //! Graph of the matrix (as returned by getGraph()).
   Teuchos::RCP<const row_graph_type> graph_;
+  //! Used in apply(), to avoid allocation each time.
+  mutable nonconst_local_inds_host_view_type Indices_;
+  //! Used in apply(), to avoid allocation each time.
+  mutable nonconst_values_host_view_type Values_;
 
-  //! Used in apply(), to avoid allocation each time.
-  mutable Teuchos::Array<local_ordinal_type> Indices_;
-  //! Used in apply(), to avoid allocation each time.
-  mutable Teuchos::Array<scalar_type> Values_;
 
 }; // class OverlappingRowMatrix
 

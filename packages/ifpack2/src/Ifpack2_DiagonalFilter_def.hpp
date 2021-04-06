@@ -256,6 +256,8 @@ void DiagonalFilter<MatrixType>::
 
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void DiagonalFilter<MatrixType>::
 getGlobalRowCopy (GlobalOrdinal GlobalRow,
                   const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                   const Teuchos::ArrayView<Scalar> &Values,
@@ -285,9 +287,9 @@ void DiagonalFilter<MatrixType>::
 template<class MatrixType>
 void
 DiagonalFilter<MatrixType>::
-getLocalRowCopy (local_ordinal_type LocalRow,
-                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
-                 const Teuchos::ArrayView<scalar_type> &Values,
+getLocalRowCopy (LocalOrdinal LocalRow,
+                 const Teuchos::ArrayView<LocalOrdinal> &Indices,
+                 const Teuchos::ArrayView<Scalar> &Values,
              size_t &NumEntries) const
 {
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
