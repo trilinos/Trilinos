@@ -809,7 +809,7 @@ void RILUK<MatrixType>::compute ()
         local_ordinal_type j = InI[jj];
         scalar_type multiplier = InV[jj]; // current_mults++;
         
-        InV[jj] *= DV(j);
+        InV[jj] *= static_cast<scalar_type>(DV(j));
         
         U_->getLocalRowView(j, UUI, UUV); // View of row above
         NumUU = UUI.size();
@@ -860,11 +860,11 @@ void RILUK<MatrixType>::compute ()
         }
       }
       else {
-        DV(i) = STS::one () / DV(i); // Invert diagonal value
+        DV(i) = static_cast<impl_scalar_type>(STS::one ()) / DV(i); // Invert diagonal value
       }
 
       for (size_t j = 0; j < NumU; ++j) {
-        InV[NumL+1+j] *= DV(i); // Scale U by inverse of diagonal
+        InV[NumL+1+j] *= static_cast<scalar_type>(DV(i)); // Scale U by inverse of diagonal
       }
 
       if (NumU) {
