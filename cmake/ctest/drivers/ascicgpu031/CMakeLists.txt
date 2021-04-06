@@ -27,7 +27,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   DEBUG_CUDA_NO_UVM_CRS
-  ctest_linux_nightly_mpi_debug_nouvm_crs_ascicgpu031.cmake
+  ctest_linux_nightly_mpi_debug_nouvm_ascicgpu031_crs.cmake
   CTEST_INSTALLER_TYPE debug
   RUN_SERIAL
   TIMEOUT_MINUTES 420
@@ -35,7 +35,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   DEBUG_CUDA_UVM_DEPRECATED_CRS
-  ctest_linux_nightly_mpi_debug_uvm_deprecated_crs_ascicgpu031.cmake
+  ctest_linux_nightly_mpi_debug_uvm_deprecated_ascicgpu031_crs.cmake
   CTEST_INSTALLER_TYPE debug
   RUN_SERIAL
   TIMEOUT_MINUTES 420
@@ -43,7 +43,7 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   DEBUG_CUDA_UVM_NODEPRECATED_CRS
-  ctest_linux_nightly_mpi_debug_uvm_nodeprecated_crs_ascicgpu031.cmake
+  ctest_linux_nightly_mpi_debug_uvm_nodeprecated_ascicgpu031_crs.cmake
   CTEST_INSTALLER_TYPE debug
   RUN_SERIAL
   TIMEOUT_MINUTES 420
