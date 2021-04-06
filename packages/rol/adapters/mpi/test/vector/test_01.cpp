@@ -41,7 +41,6 @@
 // ************************************************************************
 // @HEADER
 
-#include "ROL_Types.hpp"
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 
