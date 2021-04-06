@@ -207,7 +207,7 @@ option.  See the documentation of setParameters() for details.
 Gauss-Seidel / SOR also comes in a symmetric version.  This method
 first does a Forward sweep, then a Backward sweep.  Only the symmetric
 version of this preconditioner is guaranteed to be symmetric (or Hermitian,
-if the matrix's data are complex).
+if the matrix data are complex).
 
 Users may set the relaxation method via the "relaxation: type"
 parameter.  For all relaxation methods, users may specify the number
@@ -611,13 +611,13 @@ private:
   //! \name Implementation of multithreaded Gauss-Seidel.
   //@{
 
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::StaticCrsGraphType::row_map_type lno_row_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
-  typedef typename local_matrix_type::values_type scalar_nonzero_view_t;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::device_type PersistentWorkSpace;
-  typedef typename local_matrix_type::StaticCrsGraphType::execution_space MyExecSpace;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::row_map_type lno_row_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::entries_type lno_nonzero_view_t;
+  typedef typename local_matrix_device_type::values_type scalar_nonzero_view_t;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type TemporaryWorkSpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::device_type PersistentWorkSpace;
+  typedef typename local_matrix_device_type::StaticCrsGraphType::execution_space MyExecSpace;
   typedef typename KokkosKernels::Experimental::KokkosKernelsHandle
       <typename lno_row_view_t::const_value_type, local_ordinal_type,typename scalar_nonzero_view_t::value_type,
       MyExecSpace, TemporaryWorkSpace,PersistentWorkSpace > mt_kernel_handle_type;

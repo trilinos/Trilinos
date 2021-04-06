@@ -629,8 +629,8 @@ void TriDiSolver<MatrixType, false>::extract (Teuchos::SerialTriDiMatrix<int, sc
   // each row of A_local.
   const size_type maxNumRowEntries =
     static_cast<size_type> (A_local.getNodeMaxNumRowEntries ());
-  Array<LO> localIndices (maxNumRowEntries);
-  Array<scalar_type> values (maxNumRowEntries);
+  nonconst_local_inds_host_view_type localIndices("localIndices",maxNumRowEntries);
+  nonconst_values_host_view_type values ("values",maxNumRowEntries);
 
   const LO numLocalRows = static_cast<LO> (rowMap.getNodeNumElements ());
   const LO minLocalRow = rowMap.getMinLocalIndex ();
@@ -648,8 +648,8 @@ void TriDiSolver<MatrixType, false>::extract (Teuchos::SerialTriDiMatrix<int, sc
       static_cast<size_type> (A_local.getNumEntriesInLocalRow (localRow));
     size_t numEntriesOut = 0; // ignored
     A_local.getLocalRowCopy (localRow,
-                             localIndices (0, numEntriesInRow),
-                             values (0, numEntriesInRow),
+                             localIndices,
+                             values,
                              numEntriesOut);
     for (LO k = 0; k < numEntriesInRow; ++k) {
       const LO localCol = localIndices[k];
