@@ -865,13 +865,13 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     if (DoL1Method_ && IsParallel_) {
       const scalar_type two = one + one;
       const size_t maxLength = A_->getNodeMaxNumRowEntries ();
-      Array<LO> indices (maxLength);
-      Array<scalar_type> values (maxLength * blockSize * blockSize);
+      nonconst_local_inds_host_view_type indices ("indices",maxLength);
+      nonconst_values_host_view_type values ("values",maxLength * blockSize * blockSize);
       size_t numEntries = 0;
 
       for (LO i = 0; i < lclNumMeshRows; ++i) {
         // FIXME (mfh 16 Dec 2015) Get views instead of copies.
-        blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
+        blockCrsA->getLocalRowCopy (i, indices, values, numEntries);
 
         auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
         for (LO subRow = 0; subRow < blockSize; ++subRow) {
@@ -1081,12 +1081,12 @@ void Relaxation<MatrixType>::compute ()
       auto diag = Diagonal_->getLocalViewHost(Tpetra::Access::ReadWrite);
       const magnitude_type two = STM::one () + STM::one ();
       const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
-      Array<local_ordinal_type> indices (maxLength);
-      Array<scalar_type> values (maxLength);
+      nonconst_local_inds_host_view_type indices ("indices",maxLength);
+      nonconst_values_host_view_type values ("values",maxLength);
       size_t numEntries;
 
       for (LO i = 0; i < numMyRows; ++i) {
-        A_row.getLocalRowCopy (i, indices (), values (), numEntries);
+        A_row.getLocalRowCopy (i, indices, values, numEntries);
         magnitude_type diagonal_boost = STM::zero ();
         for (size_t k = 0 ; k < numEntries; ++k) {
           if (indices[k] > numMyRows) {

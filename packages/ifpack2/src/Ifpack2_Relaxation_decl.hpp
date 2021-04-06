@@ -606,6 +606,10 @@ private:
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
 
+  typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
 
   //@}
   //! \name Implementation of multithreaded Gauss-Seidel.
