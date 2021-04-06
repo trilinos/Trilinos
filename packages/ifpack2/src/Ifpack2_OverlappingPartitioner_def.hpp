@@ -309,10 +309,8 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
     // of row `i'.
 
     int MaxNumEntries_tmp = Graph_->getNodeMaxNumRowEntries();
-    Teuchos::Array<local_ordinal_type> Indices;
-    Indices.resize (MaxNumEntries_tmp);
-    Teuchos::Array<local_ordinal_type> newIndices;
-    newIndices.resize(MaxNumEntries_tmp);
+    nonconst_local_inds_host_view_type Indices("Indices",MaxNumEntries_tmp);
+    nonconst_local_inds_host_view_type newIndices("newIndices",MaxNumEntries_tmp);
     
     if (!maintainSparsity_) {
 
@@ -322,7 +320,7 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
           const local_ordinal_type LRID = Parts_[part][i];
           
           size_t numIndices;
-          Graph_->getLocalRowCopy (LRID, Indices (), numIndices);
+          Graph_->getLocalRowCopy (LRID, Indices, numIndices);
 
           for (size_t j = 0; j < numIndices; ++j) {
             // use *local* indices only
@@ -366,12 +364,12 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
           const local_ordinal_type LRID = Parts_[part][i];
           
           size_t numIndices;
-          Graph_->getLocalRowCopy (LRID, Indices (), numIndices);
+          Graph_->getLocalRowCopy (LRID, Indices, numIndices);
           //JJH: the entries in Indices are already sorted.  However, the Tpetra documentation states
           //     that we can't count on this always being true, hence we sort.  Also note that there are
           //     unused entries at the end of Indices (it's sized to hold any row).  This means we can't
           //     just use Indices.end() in sorting and in std::includes
-          std::sort(Indices.begin(),Indices.begin()+numIndices);
+          Tpetra::sort(Indices,numIndices);
 
           for (size_t j = 0; j < numIndices; ++j) {
             // use *local* indices only
@@ -389,10 +387,12 @@ void OverlappingPartitioner<GraphType>::computeOverlappingPartitions()
               // Check if row associated with "col" increases connectivity already defined by row LRID's stencil.
               // If it does and maintainSparsity_ is true, do not add "col" to the current partition (block).
               size_t numNewIndices;
-              Graph_->getLocalRowCopy(col, newIndices(), numNewIndices);
-              std::sort(newIndices.begin(),newIndices.begin()+numNewIndices);
-              bool isSubset = std::includes(Indices.begin(),Indices.begin()+numIndices,
-                                   newIndices.begin(),newIndices.begin()+numNewIndices);
+              Graph_->getLocalRowCopy(col, newIndices, numNewIndices);
+              Tpetra::sort(newIndices,numNewIndices);
+              auto Indices_rcp = Kokkos::Compat::persistingView<nonconst_local_inds_host_view_type>(Indices, 0, numIndices);
+              auto newIndices_rcp = Kokkos::Compat::persistingView<nonconst_local_inds_host_view_type>(newIndices, 0, numNewIndices);
+              bool isSubset = std::includes(Indices_rcp.begin(),Indices_rcp.begin()+numIndices,
+                                   newIndices_rcp.begin(),newIndices_rcp.begin()+numNewIndices);
               if (isSubset) {
                 tmp[part].push_back (col);
               }
