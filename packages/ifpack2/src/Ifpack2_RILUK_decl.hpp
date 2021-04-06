@@ -291,6 +291,11 @@ class RILUK:
 
   template <class NewMatrixType> friend class RILUK;
 
+  typedef typename crs_matrix_type::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename crs_matrix_type::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename crs_matrix_type::values_host_view_type values_host_view_type;
+
+
   typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
   typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;

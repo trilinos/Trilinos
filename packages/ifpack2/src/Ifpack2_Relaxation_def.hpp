@@ -704,7 +704,7 @@ void Relaxation<MatrixType>::initialize ()
         else
           mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
       }
-      local_matrix_type kcsr = crsMat->getLocalMatrix ();
+      local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
       if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2) {
         // set parameters for two-stage GS
         mtKernelHandle_->set_gs_set_num_inner_sweeps (NumInnerSweeps_);
@@ -1293,7 +1293,7 @@ void Relaxation<MatrixType>::compute ()
         (crsMat == nullptr, std::logic_error, methodName << ": "
          "Multithreaded Gauss-Seidel methods currently only work "
          "when the input matrix is a Tpetra::CrsMatrix.");
-      local_matrix_type kcsr = crsMat->getLocalMatrix ();
+      local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
 
       //TODO BMK: This should be ReadOnly, and KokkosKernels should accept a
       //const-valued view for user-provided D^-1. OK for now, Diagonal_ is nonconst.
@@ -2069,7 +2069,7 @@ ApplyInverseMTGS_CrsMatrix(
       */
   }
 
-  local_matrix_type kcsr = crsMat->getLocalMatrix ();
+  local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
 
   bool update_y_vector = true;
   //false as it was done up already, and we dont want to zero it in each sweep.
