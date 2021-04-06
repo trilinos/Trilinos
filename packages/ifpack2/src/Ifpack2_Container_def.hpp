@@ -844,7 +844,12 @@ Details::StridedRowView<
   typename ContainerImpl<MatrixType, LocalScalarType>::NO>
 ContainerImpl<MatrixType, LocalScalarType>::
 getInputRowView(LO row) const
-{
+{  
+
+  typedef typename MatrixType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+  
   if(this->hasBlockCrs_)
   {
     const LO* colinds;
@@ -856,12 +861,12 @@ getInputRowView(LO row) const
   else if(!this->inputMatrix_->supportsRowViews())
   {
     size_t maxEntries = this->inputMatrix_->getNodeMaxNumRowEntries();
-    Teuchos::Array<LO> indsCopy(maxEntries);
-    Teuchos::Array<SC> valsCopy(maxEntries);
+    nonconst_local_inds_host_view_type indsCopy("indsCopy",maxEntries);
+    nonconst_values_host_view_type valsCopy("valsCopy",maxEntries);
     size_t numEntries;
     this->inputMatrix_->getLocalRowCopy(row, indsCopy, valsCopy, numEntries);
-    indsCopy.resize(numEntries);
-    valsCopy.resize(numEntries);
+    Kokkos::resize(indsCopy,numEntries);
+    Kokkos::resize(valsCopy,numEntries);
     return StridedRowView(valsCopy, indsCopy);
   }
   else
