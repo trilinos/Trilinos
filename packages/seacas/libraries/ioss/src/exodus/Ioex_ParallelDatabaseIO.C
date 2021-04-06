@@ -332,9 +332,10 @@ namespace Ioex {
     }
 
     if (!is_input()) {
-      // Check whether appending to existing file...
+      // Check whether appending to or modifying existing file...
       if (open_create_behavior() == Ioss::DB_APPEND ||
-          open_create_behavior() == Ioss::DB_APPEND_GROUP) {
+          open_create_behavior() == Ioss::DB_APPEND_GROUP ||
+          open_create_behavior() == Ioss::DB_MODIFY) {
         // Append to file if it already exists -- See if the file exists.
         Ioss::FileInfo file = Ioss::FileInfo(get_filename());
         fileExists          = file.exists();
@@ -4597,10 +4598,10 @@ int64_t ParallelDatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const 
   return num_to_get;
 }
 
-void ParallelDatabaseIO::write_meta_data(bool appending)
+void ParallelDatabaseIO::write_meta_data(Ioss::IfDatabaseExistsBehavior behavior)
 {
   Ioss::Region *region = get_region();
-  common_write_meta_data(appending);
+  common_write_meta_data(behavior);
 
   char the_title[max_line_length + 1];
 
@@ -4617,7 +4618,7 @@ void ParallelDatabaseIO::write_meta_data(bool appending)
   Ioex::Mesh mesh(spatialDimension, the_title, util(), file_per_processor);
   mesh.populate(region);
 
-  if (!appending) {
+  if (behavior != Ioss::DB_APPEND && behavior != Ioss::DB_MODIFY) {
     if (!properties.exists("OMIT_QA_RECORDS")) {
       put_qa();
     }
@@ -4642,7 +4643,7 @@ void ParallelDatabaseIO::write_meta_data(bool appending)
   // processor begins...
   update_processor_offset_property(region, mesh);
 
-  if (!appending) {
+  if (behavior != Ioss::DB_APPEND && behavior != Ioss::DB_MODIFY) {
     output_node_map();
     output_other_meta_data();
   }

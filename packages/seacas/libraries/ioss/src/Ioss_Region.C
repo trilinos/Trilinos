@@ -307,7 +307,8 @@ namespace {
 
   bool is_input_or_appending_output(const Ioss::DatabaseIO *iodatabase)
   {
-    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND;
+    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND ||
+           iodatabase->open_create_behavior() == Ioss::DB_MODIFY;
   }
 } // namespace
 
@@ -336,7 +337,8 @@ namespace Ioss {
       Region::begin_mode(STATE_DEFINE_MODEL);
       iodatabase->read_meta_data();
       Region::end_mode(STATE_DEFINE_MODEL);
-      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND) {
+      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND &&
+          iodatabase->open_create_behavior() != Ioss::DB_MODIFY) {
         modelDefined     = true;
         transientDefined = true;
         Region::begin_mode(STATE_READONLY);
