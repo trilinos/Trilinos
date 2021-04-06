@@ -842,7 +842,7 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
               if (vl == VERB_EXTREME) {
                 if (isGloballyIndexed()) {
                   global_inds_host_view_type rowinds;
-                  scalar_host_view_type rowvals;
+                  values_host_view_type rowvals;
                   getGlobalRowView (gid, rowinds, rowvals);
                   for (size_t j = 0; j < nE; ++j) {
                     out << " (" << rowinds[j]
@@ -852,7 +852,7 @@ void OverlappingRowMatrix<MatrixType>::describe(Teuchos::FancyOStream &out,
                 }
                 else if (isLocallyIndexed()) {
                   local_inds_host_view_type rowinds;
-                  scalar_host_view_type rowvals;
+                  values_host_view_type rowvals;
                   getLocalRowView (r, rowinds, rowvals);
                   for (size_t j=0; j < nE; ++j) {
                     out << " (" << getColMap()->getGlobalElement(rowinds[j])
