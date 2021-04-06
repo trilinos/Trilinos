@@ -94,7 +94,6 @@ public:
   typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
   typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
 
-
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
   typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
   typedef typename row_matrix_type::mag_type mag_type;
