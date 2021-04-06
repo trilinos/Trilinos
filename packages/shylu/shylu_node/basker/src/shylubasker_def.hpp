@@ -1050,6 +1050,7 @@ namespace BaskerNS
     Kokkos::Timer copyperm_timer;
     //printf( " A.nnz= %d vs (%d, %d) nblks=%d, btfa_nnz=%d, btfb_nnz=%d, btfc_nnz=%d\n",(int)nnz, (int)A.nnz,(int)A.val.extent(0),
     //        btf_nblks,btfa_nnz,btfb_nnz,btfc_nnz );
+
     if ( btf_nblks > 1 ) { //non-single block case
     #ifdef KOKKOS_ENABLE_OPENMP
     #pragma omp parallel for
@@ -1113,7 +1114,7 @@ namespace BaskerNS
       return BASKER_ERROR;
     }
     if(Options.verbose == BASKER_TRUE) {
-      std::cout<< "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds() << std::endl;
+      std::cout << "Basker Factor: Time to permute and copy from input vals to new vals and blocks: " << copyperm_timer.seconds();
     }
     //end sfactor_copy2 replacement stuff
 
@@ -1176,6 +1177,27 @@ namespace BaskerNS
     }
     printf("];\n");*/
 
+    if (Options.replace_tiny_pivot && BTF_A.nnz > 0) {
+      // to compute norm of A
+      using STS = Teuchos::ScalarTraits<Entry>;
+      using Mag = typename STS::magnitudeType;
+      const Entry zero (0.0);
+      A.anorm = abs(zero);
+      for (Int j = 0; j < (Int)A.ncol; j++) {
+        Mag anorm_j = abs(zero);
+        for (Int k = A.col_ptr(j); k < A.col_ptr(j+1); k++) {
+          anorm_j += abs(A.val(k));
+        }
+        if (anorm_j > A.anorm) {
+          A.anorm = anorm_j;
+        }
+      }
+      BTF_A.gnorm = A.anorm;
+      if(Options.verbose == BASKER_TRUE) {
+         Kokkos::Timer normA_timer;
+         cout<< " Basker Factor: Time to compute norm(A) = " << A.anorm << ": " << normA_timer.seconds() << std::endl;
+      }
+    }
 
     // ==================================================================================================
     // compute blk_mwm & blk_amd
@@ -1372,6 +1394,16 @@ namespace BaskerNS
         Options.amd_dom = amd_dom;
         // reset tabs
         btf_tabs(1) = save_tab;
+        /*printf(" + A = [\n" );
+        if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+            }
+          }
+        }
+        printf("];\n");*/
+
 
         int info_scotch = 0;
         BASKER_BOOL keep_zeros = true;
@@ -1754,6 +1786,16 @@ namespace BaskerNS
         if(Options.verbose == BASKER_TRUE) {
           std::cout<< " > Basker Factor: Time to compute and apply ND on a big block A: " << nd_nd_timer.seconds() << std::endl;
         }
+        /*printf(" x A = [\n" );
+        if (BTF_A.nrow > 0 && BTF_A.ncol > 0) {
+          for(Int j = 0; j < BTF_A.ncol; j++) {
+            for(Int k = BTF_A.col_ptr[j]; k < BTF_A.col_ptr[j+1]; k++) {
+              printf("%d %d %e\n", BTF_A.row_idx[k], j, BTF_A.val[k]);
+            }
+          }
+        }
+        printf("];\n");*/
+
 
         nd_nd_timer.reset();
         // ----------------------------------------------------------------------------------------------

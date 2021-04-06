@@ -735,7 +735,6 @@ namespace BaskerNS
 
     basker_options()
     {
-
       //Operation Options
       same_pattern = BASKER_FALSE;
 
@@ -787,6 +786,7 @@ namespace BaskerNS
 
       //Prune (if not pruned, check for numerical cancelatin)
       prune = BASKER_FALSE;
+      replace_tiny_pivot = BASKER_TRUE;
 
       //BTF Options
       btf_prune_size = (Int)BASKER_BTF_PRUNE_SIZE;
@@ -831,6 +831,9 @@ namespace BaskerNS
     // TODO: remove this (matching during symbolic)
     int btf_matching; // carbinality matching before BTF (Symbolic):                0 = none, 1 = Basker, or 2 = Trilinos (default) (3 = MC64 if enable)
     int blk_matching; // max weight matching on each of diagonal blocks (Numeric):  0 = none (default), or 1 = Basker (2 = MC64 if enable)
+
+    // Replace tiny pivott
+    BASKER_BOOL replace_tiny_pivot;
 
     // Option to apply MWM at numeric through "delayed" pivot
     int static_delayed_pivot;

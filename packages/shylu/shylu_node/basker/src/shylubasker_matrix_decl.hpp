@@ -3,6 +3,7 @@
 
 /*Basker Includes*/
 #include "shylubasker_types.hpp"
+#include "shylubasker_scalar_traits.hpp"
 
 /*System Includes*/
 #include <limits>
@@ -123,8 +124,6 @@ namespace BaskerNS
     //Class size.
 
     string label;
-
-
     BASKER_BOOL v_fill;
 
     Int srow, scol; //start col (wrt global matrix, if a block)
@@ -160,7 +159,10 @@ namespace BaskerNS
     Int           p_size;
     #endif
     
+    using Mag = typename Basker_ScalarTraits<Entry>::magnitudeType;
     Entry tpivot;
+    Mag anorm; // norm of the block
+    Mag gnorm; // norm of "global" matrix
 
     //***Deprecated***
     //Remove..... will not be used in future ver

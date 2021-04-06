@@ -82,7 +82,7 @@ namespace BaskerNS
       gn = A.ncol;
       gm = A.nrow;
       ATEMP = A;
-      A = BTF_A; 
+      A = BTF_A;
     }
     //printf("Switch time: %f \n", tza.seconds());
 

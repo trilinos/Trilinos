@@ -555,7 +555,7 @@ namespace BaskerNS
         if(t == BASKER_MAX_IDX)
         {
           ++lcnt;
-          if(absv > maxv) 
+          if(absv > maxv || maxindex == BASKER_MAX_IDX) 
           {
             maxv     = absv;
             pivot    = value;

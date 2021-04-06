@@ -34,6 +34,8 @@ namespace BaskerNS
     w_fill  = BASKER_FALSE;
     #endif
     inc_lvl_flg = BASKER_FALSE;
+    anorm = -1.0;
+    gnorm = -1.0;
     //printf("matrix init\n");
   }//end BaskerMatrix()
 
@@ -52,6 +54,8 @@ namespace BaskerNS
     w_fill  = BASKER_FALSE;
     #endif
     inc_lvl_flg = BASKER_FALSE;
+    anorm = -1.0;
+    gnorm = -1.0;
   }//end BaskerMatrix(label)
 
   template <class Int, class Entry, class Exe_Space>
@@ -63,6 +67,8 @@ namespace BaskerNS
   )
   {
     tpivot = 0;
+    anorm = -1.0;
+    gnorm = -1.0;
     #ifdef BASKER_2DL
     p_size = 0;
     w_fill = BASKER_FALSE;
@@ -81,6 +87,8 @@ namespace BaskerNS
   )
   {
     tpivot = 0;
+    anorm = -1.0;
+    gnorm = -1.0;
     #ifdef BASKER_2DL
     p_size = 0;
     w_fill = BASKER_FALSE;
@@ -490,6 +498,9 @@ namespace BaskerNS
    bool keep_zeros
   )
   {
+    using STS = Teuchos::ScalarTraits<Entry>;
+    using Mag = typename STS::magnitudeType;
+
     if(nnz == 0)
     {
       for(Int i = 0; i < ncol+1; i++)
@@ -550,6 +561,8 @@ namespace BaskerNS
     //printf( " kid=%d: convert2D(%dx%d, nnz = %d, alloc = %d, scol = %d, ncol = %d)\n",kid,M.nrow,M.ncol,M.nnz,alloc, scol,ncol );
 
     const Entry zero(0.0);
+
+    anorm = abs(zero);
     Int temp_count = 0;
     for(Int k = scol; k < scol+ncol; ++k)
     {
@@ -568,6 +581,7 @@ namespace BaskerNS
       {
         printf(" kid=%d: col_ptr(%d-%d) = %d, M.col_ptr(%d) = %d\n", kid,k,scol,col_ptr(k-scol), k+1,M.col_ptr(k+1));
       }*/
+      Mag anorm_k (0.0);
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
@@ -610,9 +624,12 @@ namespace BaskerNS
         {
           row_idx(temp_count) = j-srow;
           val(temp_count) = M.val(i);
+
+          anorm_k += abs(M.val(i));
           temp_count++;
         }
       }
+      anorm = (anorm > anorm_k ? anorm : anorm_k);
       /*if (kid == 1) 
       {
         printf( " %d: col_ptr(%d) = %d\n",kid,k-scol,temp_count );
