@@ -348,8 +348,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, IMEX_RK_Modifier)
   stepper->setOrder(order);                        
   stepper->setSolver(solver);                          
   stepper->setUseFSAL(useFSAL);                       
-  //stepper->setICConsistency(ICConsistency);           
-  //stepper->setICConsistencyCheck(ICConsistencyCheck); 
+  stepper->setICConsistency(ICConsistency);           
+  stepper->setICConsistencyCheck(ICConsistencyCheck); 
   stepper->setZeroInitialGuess(zeroInitialGuess);    
 
   stepper->setModel(model);
