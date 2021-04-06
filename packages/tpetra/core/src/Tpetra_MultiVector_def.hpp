@@ -3127,7 +3127,7 @@ namespace Tpetra {
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
     // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
-    // CrsMatrix's Gauss-Seidel implementation (which assumes the
+    // Ifpack2's Gauss-Seidel implementation (which assumes the
     // ability to create domain Map views of column Map MultiVectors,
     // and then get the original column Map MultiVector out again).
     // If we just use X.origView_ here, it breaks the fix for #46.
