@@ -323,7 +323,7 @@ getGlobalRowCopy (global_ordinal_type globalRow,
                   size_t& numEntries) const
 {
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Vaues.data(),Values.size());
+  nonconst_values_host_view_type val_in(Values.data(),Values.size());
   getGlobalRowCopy(DropRow,ind_in,val_in,NumEntries);  
 }
 #endif
@@ -376,7 +376,7 @@ void ReorderFilter<MatrixType>::getLocalRowCopy (local_ordinal_type LocalRow,
                  size_t &NumEntries) const
 {
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Vaues.data(),Values.size());
+  nonconst_values_host_view_type val_in(Values.data(),Values.size());
   getLocalRowCopy(DropRow,ind_in,val_in,NumEntries);  
 }
 #endif
