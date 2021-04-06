@@ -41,21 +41,12 @@ GET_PROPERTY( STACKTRACE_STRING GLOBAL PROPERTY STACKTRACE_IMPL )
 
 ADD_SUBDIRECTORY(src)
 
-LIST(APPEND adapter_list "")
-
-IF( ROL_ENABLE_Kokkos ) 
-ADD_SUBDIRECTORY(adapters/kokkos)
-  LIST(APPEND adapter_list "Kokkos") 
-ENDIF()
-
 IF( ROL_ENABLE_Sacado ) 
 ADD_SUBDIRECTORY(adapters/sacado)
-  LIST(APPEND adapter_list "Sacado") 
 ENDIF()
 
 IF (ROL_ENABLE_ArrayFireCPU)
   ADD_SUBDIRECTORY(adapters/arrayfire)
-  LIST(APPEND adapter_list "ArrayFireCPU") 
 ENDIF()
 
 # Adapters which require use of Teuchos
@@ -69,47 +60,37 @@ IF( ${USING_TEUCHOS_ALL} )
 
 
 ADD_SUBDIRECTORY(adapters/teuchos)
-LIST(APPEND adapter_list "teuchos") 
 
 IF( TPL_ENABLE_MPI ) 
 ADD_SUBDIRECTORY(adapters/mpi)
-  LIST(APPEND adapter_list "MPI") 
 ENDIF()
 
 IF( ROL_ENABLE_Epetra )
 ADD_SUBDIRECTORY(adapters/epetra)
-  LIST(APPEND adapter_list "EPetra") 
 ENDIF()
 
 IF( ROL_ENABLE_Tpetra )
 ADD_SUBDIRECTORY(adapters/tpetra)
-  LIST(APPEND adapter_list "TPetra") 
 ENDIF()
 
 IF( ROL_ENABLE_Belos )
 ADD_SUBDIRECTORY(adapters/belos)
-  LIST(APPEND adapter_list "Belos") 
 ENDIF()
 
 IF( ROL_ENABLE_Thyra )
 ADD_SUBDIRECTORY(adapters/thyra)
-  LIST(APPEND adapter_list "Thyra") 
 ENDIF()
 
 IF( ROL_ENABLE_TriKota )
 ADD_SUBDIRECTORY(adapters/trikota)
-  LIST(APPEND adapter_list "TriKota") 
 ENDIF()
 
 IF( ROL_ENABLE_pebbl )
 ADD_SUBDIRECTORY(adapters/pebbl)
-  LIST(APPEND adapter_list "pebbl") 
 ENDIF()
 
 IF (ROL_ENABLE_Boost AND ROL_ENABLE_MiniTensor)
   ADD_SUBDIRECTORY(adapters/minitensor)
-  LIST(APPEND adapter_list "Boost") 
-  LIST(APPEND adapter_list "MiniTensor") 
 ENDIF()
 
 ENDIF( ${USING_TEUCHOS_ALL} )
@@ -119,14 +100,7 @@ ENDIF( ${USING_TEUCHOS_ALL} )
 
 IF (ROL_ENABLE_Eigen)
   ADD_SUBDIRECTORY(adapters/eigen)
-  LIST(APPEND adapter_list "Eigen") 
 ENDIF()
-
-LIST(LENGTH adapter_list num_adapters)
-
-IF(num_adapters GREATER 0) 
-  MESSAGE("ROL has been configured to build the following adapters: ${adapter_list}")
-endif()
 
 
 TRIBITS_ADD_TEST_DIRECTORIES(test)
