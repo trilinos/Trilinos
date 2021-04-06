@@ -522,14 +522,12 @@ void RILUK<MatrixType>::initialize ()
                                     A_local_->getColMap (),
                                     entriesPerRow()));
         // copy entries into A_local_crs
-        Teuchos::Array<local_ordinal_type> indices(A_local_->getNodeMaxNumRowEntries());
-        Teuchos::Array<scalar_type> values(A_local_->getNodeMaxNumRowEntries());
+        nonconst_local_inds_host_view_type indices("indices",A_local_->getNodeMaxNumRowEntries());
+        nonconst_values_host_view_type values("values",A_local_->getNodeMaxNumRowEntries());
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
-          A_local_->getLocalRowCopy(i, indices(), values(), numEntries);
-          ArrayView<const local_ordinal_type> indicesInsert(indices.data(), numEntries);
-          ArrayView<const scalar_type> valuesInsert(values.data(), numEntries);
-          A_local_crs_nc->insertLocalValues(i, indicesInsert, valuesInsert);
+          A_local_->getLocalRowCopy(i, indices, values, numEntries);
+          A_local_crs_nc->insertLocalValues(i, numEntries, values.data(), indices.data());
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
