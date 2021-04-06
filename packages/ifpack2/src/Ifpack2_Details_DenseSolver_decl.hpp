@@ -125,6 +125,12 @@ public:
   static_assert(std::is_same<MatrixType, row_matrix_type>::value,
                 "Ifpack2::Details::DenseSolver: Please use MatrixType = Tpetra::RowMatrix.");
 
+  typedef typename row_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename row_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename row_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+
+
   //! Specialization of Tpetra::Map used by this class.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
