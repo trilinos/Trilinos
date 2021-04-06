@@ -65,8 +65,8 @@ DiagonalFilter (const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,G
   pos_.resize(getNodeNumRows());
   val_=Teuchos::rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()));
 
-  std::vector<LocalOrdinal> Indices(getNodeMaxNumRowEntries());
-  std::vector<Scalar> Values(getNodeMaxNumRowEntries());
+  nonconst_local_inds_host_view_type Indices("Indices",getNodeMaxNumRowEntries());
+  nonconst_values_host_view_type Values("Values",getNodeMaxNumRowEntries());
   size_t NumEntries;
   magnitudeType mysign;
 
@@ -239,10 +239,11 @@ bool DiagonalFilter<MatrixType>::isFillComplete() const
 
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::
-getGlobalRowCopy (GlobalOrdinal GlobalRow,
-                  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
-                  const Teuchos::ArrayView<Scalar> &Values,
-                  size_t &NumEntries) const
+  getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                   nonconst_global_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const
+
 {
   Teuchos::ArrayRCP< const Scalar > myvals=val_->get1dView();
   LocalOrdinal LocalRow=getRowMap()->getLocalElement(GlobalRow);
@@ -253,12 +254,24 @@ getGlobalRowCopy (GlobalOrdinal GlobalRow,
     Values[pos_[LocalRow]] += myvals[LocalRow];
 }
 
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                  const Teuchos::ArrayView<GlobalOrdinal> &Indices,
+                  const Teuchos::ArrayView<Scalar> &Values,
+                  size_t &NumEntries) const {
+  nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(Vaues.data(),Values.size());
+  getGlobalRowCopy(globalRow,ind_in,val_in,NumEntries); 
+}
+#endif
+
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::
-getLocalRowCopy (LocalOrdinal LocalRow,
-                 const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                 const Teuchos::ArrayView<Scalar> &Values,
-                 size_t &NumEntries) const
+ getLocalRowCopy (LocalOrdinal LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const
 {
   Teuchos::ArrayRCP< const Scalar > myvals=val_->get1dView();
 
@@ -267,6 +280,22 @@ getLocalRowCopy (LocalOrdinal LocalRow,
   if (pos_[LocalRow] != -1)
     Values[pos_[LocalRow]] += myvals[LocalRow];
 }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void
+DiagonalFilter<MatrixType>::
+getLocalRowCopy (local_ordinal_type LocalRow,
+                 const Teuchos::ArrayView<local_ordinal_type> &Indices,
+                 const Teuchos::ArrayView<scalar_type> &Values,
+             size_t &NumEntries) const
+{
+  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(Vaues.data(),Values.size());
+  getLocalRowCopy(DropRow,ind_in,val_in,NumEntries);  
+}
+#endif
+
 
 template<class MatrixType>
 void DiagonalFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,

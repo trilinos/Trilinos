@@ -83,6 +83,10 @@ public:
   typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
   typedef typename MatrixType::values_host_view_type values_host_view_type;
 
+  typedef typename MatrixType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
@@ -190,10 +194,17 @@ public:
     with row \c GlobalRow. If \c GlobalRow does not belong to this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
+  virtual void
+  getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                   nonconst_global_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow,
                                 const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                                 const Teuchos::ArrayView<Scalar> &Values,
                                 size_t &NumEntries) const;
+#endif
 
   //! Extract a list of entries in a specified local row of the graph. Put into storage allocated by calling routine.
   /*!
@@ -206,11 +217,17 @@ public:
     with row \c LocalRow. If \c LocalRow is not valid for this node, then \c Indices and \c Values are unchanged and \c NumIndices is
     returned as Teuchos::OrdinalTraits<size_t>::invalid().
   */
+  virtual void
+  getLocalRowCopy (LocalOrdinal LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void getLocalRowCopy(LocalOrdinal LocalRow,
                                const Teuchos::ArrayView<LocalOrdinal> &Indices,
                                const Teuchos::ArrayView<Scalar> &Values,
                                size_t &NumEntries) const ;
-
+#endif
   //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
   /*!
     \param GlobalRow - (In) Global row number for which indices are desired.
