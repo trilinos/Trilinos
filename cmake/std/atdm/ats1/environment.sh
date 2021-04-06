@@ -60,7 +60,7 @@ else
 fi
 
 if [[ "${SPARC_MODULE}" == "" ]] ; then
-  echo "No SPARC_MODULE loaded so existing!"
+  echo "No SPARC_MODULE loaded so exiting!"
   return
 fi
 
