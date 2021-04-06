@@ -325,7 +325,6 @@ getGlobalRowCopy (global_ordinal_type globalRow,
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
   nonconst_values_host_view_type val_in(Vaues.data(),Values.size());
   getGlobalRowCopy(DropRow,ind_in,val_in,NumEntries);  
-
 }
 #endif
 
