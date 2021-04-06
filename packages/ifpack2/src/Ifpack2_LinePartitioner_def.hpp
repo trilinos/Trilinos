@@ -122,7 +122,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
   size_t N               = this->Graph_->getNodeNumRows();
   size_t allocated_space = this->Graph_->getNodeMaxNumRowEntries();
 
-  Teuchos::Array<LO>     cols(allocated_space);
+  nonconst_local_ids_host_view_type cols("cols",allocated_space);
   Teuchos::Array<LO>     indices(allocated_space);
   Teuchos::Array<double> dist(allocated_space);
 
@@ -137,7 +137,7 @@ int LinePartitioner<GraphType,Scalar>::Compute_Blocks_AutoLine(Teuchos::ArrayVie
     if(blockIndices[i] != invalid) continue;
 
     // Get neighbors and sort by distance
-    this->Graph_->getLocalRowCopy(i,cols(),nz);
+    this->Graph_->getLocalRowCopy(i,cols,nz);
     double x0 = (!xvals.is_null()) ? xvals[i/NumEqns_] : zero;
     double y0 = (!yvals.is_null()) ? yvals[i/NumEqns_] : zero;
     double z0 = (!zvals.is_null()) ? zvals[i/NumEqns_] : zero;
