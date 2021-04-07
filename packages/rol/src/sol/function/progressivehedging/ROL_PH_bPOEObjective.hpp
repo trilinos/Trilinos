@@ -199,7 +199,8 @@ public:
     Real prob1 = bPOEobjective(xt,val_,1);
     Real prob2 = bPOEobjective(xt,val_,2);
     getGradient(*xvec,tol);
-    Real gv   = vvec->dot(g_->dual());
+    //Real gv   = vvec->dot(g_->dual());
+    Real gv   = vvec->apply(*g_);
     obj_->hessVec(*hvec,*vvec,*xvec,tol);
     hvec->scale(prob1*xt);
     hvec->axpy(prob2*xt*(vt*diff+xt*gv)+vt*prob1,*g_);

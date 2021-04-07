@@ -61,31 +61,24 @@
     ---
 */
 
-
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class LinearObjective : public Objective<Real> {
 private:
-  const ROL::Ptr<const Vector<Real> > cost_;
+  const Ptr<const Vector<Real>> cost_, dual_cost_;
 
 public:
-  LinearObjective(const ROL::Ptr<const Vector<Real> > &cost) : cost_(cost) {}
+  LinearObjective(const Ptr<const Vector<Real>> &cost);
 
-  Real value( const Vector<Real> &x, Real &tol ) {
-    return x.dot(cost_->dual());
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    g.set(*cost_);
-  }
-
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    hv.zero();
-  }
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
 }; // class LinearObjective
 
 } // namespace ROL
+
+#include "ROL_LinearObjective_Def.hpp"
 
 #endif

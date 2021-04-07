@@ -672,6 +672,35 @@ public:
     }
   }
 
+  void update( const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1) {
+    if(z_hasChanged(z) || u_hasChanged(u)) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Objective_SimOpt::update, Either The State Or The Parameters Changed" << std::endl;
+      computeValue = computeGradient1 = computeGradient2 = true;
+
+      if (Teuchos::is_null(rol_z_ptr))
+        rol_z_ptr = z.clone();
+      rol_z_ptr->set(z);
+
+      if (Teuchos::is_null(rol_u_ptr))
+        rol_u_ptr = u.clone();
+      rol_u_ptr->set(u);
+    }
+
+    if(params != Teuchos::null) {
+      auto& z_stored_ptr = params->get<Teuchos::RCP<Vector<Real> > >("Optimization Variable");
+      if(Teuchos::is_null(z_stored_ptr) || z_hasChanged(*z_stored_ptr)) {
+        if(verbosityLevel >= Teuchos::VERB_HIGH)
+          *out << "ROL::ThyraProductME_Objective_SimOpt::update, Signaling That Parameter Changed" << std::endl;
+        params->set<bool>("Optimization Variables Changed", true);
+        if(Teuchos::is_null(z_stored_ptr))
+          z_stored_ptr = z.clone();
+        z_stored_ptr->set(z);
+      }
+      params->set<int>("Optimizer Iteration Number", iter);
+    }
+  }
+
   bool z_hasChanged(const Vector<Real> &rol_z) const {
     bool changed = true;
     if (Teuchos::nonnull(rol_z_ptr)) {

@@ -57,7 +57,7 @@
 #include <algorithm>
 
 #include "ROL_Reduced_Objective_SimOpt.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 #include "../TOOLS/meshreader.hpp"
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 
     /*** Initialize main data structure. ***/
     int probDim = parlist->sublist("Problem").get("Problem Dimension",2);
-    ROL::Ptr<MeshManager<RealT> > meshMgr;
+    ROL::Ptr<MeshManager<RealT>> meshMgr;
     if (probDim == 1) {
       meshMgr = ROL::makePtr<MeshManager_Interval<RealT>>(*parlist);
     } else if (probDim == 2) {
@@ -143,26 +143,26 @@ int main(int argc, char *argv[]) {
         ">>> PDE-OPT/poisson/example_01.cpp: Problem dim is not 1, 2 or 3!");
     }
     // Initialize PDE describe Poisson's equation
-    ROL::Ptr<PDE_Poisson<RealT> > pde
-      = ROL::makePtr<PDE_Poisson<RealT>>(*parlist);
-    ROL::Ptr<ROL::Constraint_SimOpt<RealT> > con
-      = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Poisson<RealT>>
+      pde = ROL::makePtr<PDE_Poisson<RealT>>(*parlist);
+    ROL::Ptr<ROL::Constraint_SimOpt<RealT>>
+      con = ROL::makePtr<Linear_PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Cast the constraint and get the assembler.
-    ROL::Ptr<Linear_PDE_Constraint<RealT> > pdecon
-      = ROL::dynamicPtrCast<Linear_PDE_Constraint<RealT> >(con);
-    ROL::Ptr<Assembler<RealT> > assembler = pdecon->getAssembler();
+    ROL::Ptr<Linear_PDE_Constraint<RealT>>
+      pdecon = ROL::dynamicPtrCast<Linear_PDE_Constraint<RealT>>(con);
+    ROL::Ptr<Assembler<RealT>> assembler = pdecon->getAssembler();
     // Initialize quadratic objective function
-    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(2,ROL::nullPtr);
     qoi_vec[0] = ROL::makePtr<QoI_L2Tracking_Poisson<RealT>>(pde->getFE());
     qoi_vec[1] = ROL::makePtr<QoI_L2Penalty_Poisson<RealT>>(pde->getFE());
     RealT alpha = parlist->sublist("Problem").get("Control penalty parameter",1e-2);
     std::vector<RealT> wt(2); wt[0] = static_cast<RealT>(1); wt[1] = alpha;
-    ROL::Ptr<ROL::Objective_SimOpt<RealT> > obj
-      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wt,assembler);
+    ROL::Ptr<ROL::Objective_SimOpt<RealT>>
+      obj = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,wt,assembler);
 
     // Create state vector and set to zeroes
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr, z_ptr, p_ptr, r_ptr;
-    ROL::Ptr<ROL::Vector<RealT> > up, zp, pp, rp;
+    ROL::Ptr<Tpetra::MultiVector<>> u_ptr, z_ptr, p_ptr, r_ptr;
+    ROL::Ptr<ROL::Vector<RealT>> up, zp, pp, rp;
     u_ptr  = assembler->createStateVector();   u_ptr->putScalar(0.0);
     z_ptr  = assembler->createControlVector(); z_ptr->putScalar(0.0);
     p_ptr  = assembler->createStateVector();   p_ptr->putScalar(0.0);
@@ -173,16 +173,17 @@ int main(int argc, char *argv[]) {
     rp  = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,assembler);
 
     // Initialize reduced objective function
-    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT> > robj
-      = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
+    ROL::Ptr<ROL::Reduced_Objective_SimOpt<RealT>>
+      robj = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj, con, up, zp, pp);
 
     // Build optimization problem and check derivatives
-    ROL::OptimizationProblem<RealT> optProb(robj,zp);
-    optProb.check(*outStream);
+    ROL::Ptr<ROL::Problem<RealT>>
+      optProb = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
+    optProb->check(true,*outStream);
 
     // Build optimization solver and solve
     zp->zero(); up->zero(); pp->zero();
-    ROL::OptimizationSolver<RealT> optSolver(optProb,*parlist);
+    ROL::Solver<RealT> optSolver(optProb,*parlist);
     std::clock_t timerTR = std::clock();
     optSolver.solve(*outStream);
     *outStream << "Trust Region Time: "
@@ -192,12 +193,12 @@ int main(int argc, char *argv[]) {
     // Compute solution error
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
-    ROL::Ptr<Solution<RealT> > usol
-      = ROL::makePtr<stateSolution<RealT>>();
+    ROL::Ptr<Solution<RealT>>
+      usol = ROL::makePtr<stateSolution<RealT>>();
     RealT uerr = assembler->computeStateError(u_ptr,usol);
     *outStream << "State Error: " << uerr << std::endl;
-    ROL::Ptr<Solution<RealT> > zsol
-      = ROL::makePtr<controlSolution<RealT>>(alpha);
+    ROL::Ptr<Solution<RealT>>
+      zsol = ROL::makePtr<controlSolution<RealT>>(alpha);
     RealT zerr = assembler->computeControlError(z_ptr,zsol);
     *outStream << "Control Error: " << zerr << std::endl;
 

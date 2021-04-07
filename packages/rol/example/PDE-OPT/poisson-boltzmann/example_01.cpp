@@ -56,10 +56,6 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_ConstraintStatusTest.hpp"
-#include "ROL_CompositeStep.hpp"
-
 #include "../TOOLS/meshmanager.hpp"
 #include "../TOOLS/pdeconstraint.hpp"
 #include "../TOOLS/pdeobjective.hpp"
@@ -67,7 +63,7 @@
 #include "pde_poisson_boltzmann.hpp"
 #include "obj_poisson_boltzmann.hpp"
 
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
 
 typedef double RealT;
 
@@ -79,7 +75,7 @@ int main(int argc, char *argv[]) {
 
   /*** Initialize communicator. ***/
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &bhs);
-  ROL::Ptr<const Teuchos::Comm<int> > comm
+  ROL::Ptr<const Teuchos::Comm<int>> comm
     = Tpetra::getDefaultComm();
   const int myRank = comm->getRank();
   if ((iprint > 0) && (myRank == 0)) {
@@ -99,69 +95,64 @@ int main(int argc, char *argv[]) {
     Teuchos::updateParametersFromXmlFile( filename, parlist.ptr() );
 
     /*** Initialize main data structure. ***/
-    ROL::Ptr<MeshManager<RealT> > meshMgr
-      = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
+    ROL::Ptr<MeshManager<RealT>>
+      meshMgr = ROL::makePtr<MeshManager_Rectangle<RealT>>(*parlist);
     // Initialize PDE describe Poisson's equation
-    ROL::Ptr<PDE_Poisson_Boltzmann<RealT> > pde
-      = ROL::makePtr<PDE_Poisson_Boltzmann<RealT>>(*parlist);
-    ROL::Ptr<PDE_Constraint<RealT> > con
-      = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
+    ROL::Ptr<PDE_Poisson_Boltzmann<RealT>>
+      pde = ROL::makePtr<PDE_Poisson_Boltzmann<RealT>>(*parlist);
+    ROL::Ptr<PDE_Constraint<RealT>>
+      con = ROL::makePtr<PDE_Constraint<RealT>>(pde,meshMgr,comm,*parlist,*outStream);
     // Initialize quadratic objective function
-    std::vector<ROL::Ptr<QoI<RealT> > > qoi_vec(2,ROL::nullPtr);
+    std::vector<ROL::Ptr<QoI<RealT>>> qoi_vec(2,ROL::nullPtr);
     qoi_vec[0] = ROL::makePtr<QoI_L2Tracking_Poisson_Boltzmann<RealT>>(pde->getFE());
     qoi_vec[1] = ROL::makePtr<QoI_L2Penalty_Poisson_Boltzmann<RealT>>(pde->getFE());
-    ROL::Ptr<StdObjective_Poisson_Boltzmann<RealT> > std_obj
-      = ROL::makePtr<StdObjective_Poisson_Boltzmann<RealT>>(*parlist);
-    ROL::Ptr<PDE_Objective<RealT> > obj
-      = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,con->getAssembler());
+    ROL::Ptr<StdObjective_Poisson_Boltzmann<RealT>>
+      std_obj = ROL::makePtr<StdObjective_Poisson_Boltzmann<RealT>>(*parlist);
+    ROL::Ptr<PDE_Objective<RealT>>
+      obj = ROL::makePtr<PDE_Objective<RealT>>(qoi_vec,std_obj,con->getAssembler());
 
-    // Create state vector and set to zeroes
-    ROL::Ptr<Tpetra::MultiVector<> > u_ptr = con->getAssembler()->createStateVector();
+    // Create vectors
+    ROL::Ptr<Tpetra::MultiVector<>> u_ptr = con->getAssembler()->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<>> z_ptr = con->getAssembler()->createControlVector();
+    ROL::Ptr<Tpetra::MultiVector<>> p_ptr = con->getAssembler()->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<>> r_ptr = con->getAssembler()->createResidualVector();
+    ROL::Ptr<Tpetra::MultiVector<>> du_ptr = con->getAssembler()->createStateVector();
+    ROL::Ptr<Tpetra::MultiVector<>> dz_ptr = con->getAssembler()->createControlVector();
     u_ptr->randomize();
-    ROL::Ptr<ROL::Vector<RealT> > up
-      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,con->getAssembler());
-    // Create control vector and set to ones
-    ROL::Ptr<Tpetra::MultiVector<> > z_ptr = con->getAssembler()->createControlVector();
     z_ptr->putScalar(1.0);
-    ROL::Ptr<ROL::Vector<RealT> > zp
-      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,con->getAssembler());
-    // Create residual vector and set to zeros
-    ROL::Ptr<Tpetra::MultiVector<> > r_ptr = con->getAssembler()->createResidualVector();
+    p_ptr->putScalar(0.0);
     r_ptr->putScalar(0.0);
-    ROL::Ptr<ROL::Vector<RealT> > rp
-      = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,con->getAssembler());
-    // Create state direction vector and set to random
-    ROL::Ptr<Tpetra::MultiVector<> > du_ptr = con->getAssembler()->createStateVector();
     du_ptr->randomize();
-    ROL::Ptr<ROL::Vector<RealT> > dup
-      = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,con->getAssembler());
-    // Create control direction vector and set to random
-    ROL::Ptr<Tpetra::MultiVector<> > dz_ptr = con->getAssembler()->createControlVector();
-    //dz_ptr->randomize();
     dz_ptr->putScalar(0.0);
-    ROL::Ptr<ROL::Vector<RealT> > dzp
-      = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,con->getAssembler());
+    ROL::Ptr<ROL::Vector<RealT>> up, zp, pp, rp, dup, dzp;
+    up  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(u_ptr,pde,con->getAssembler());
+    zp  = ROL::makePtr<PDE_PrimalOptVector<RealT>>(z_ptr,pde,con->getAssembler());
+    pp  = ROL::makePtr<PDE_PrimalSimVector<RealT>>(p_ptr,pde,con->getAssembler());
+    rp  = ROL::makePtr<PDE_DualSimVector<RealT>>(r_ptr,pde,con->getAssembler());
+    dup = ROL::makePtr<PDE_PrimalSimVector<RealT>>(du_ptr,pde,con->getAssembler());
+    dzp = ROL::makePtr<PDE_PrimalOptVector<RealT>>(dz_ptr,pde,con->getAssembler());
     // Create ROL SimOpt vectors
-    ROL::Vector_SimOpt<RealT> x(up,zp);
-    ROL::Vector_SimOpt<RealT> d(dup,dzp);
+    ROL::Ptr<ROL::Vector_SimOpt<RealT>> x, d;
+    x = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(up,zp);
+    d = ROL::makePtr<ROL::Vector_SimOpt<RealT>>(dup,dzp);
 
     // Run derivative checks
-    obj->checkGradient(x,d,true,*outStream);
-    obj->checkHessVec(x,d,true,*outStream);
-    con->checkApplyJacobian(x,d,*up,true,*outStream);
-    con->checkApplyAdjointHessian(x,*dup,d,x,true,*outStream);
-    con->checkAdjointConsistencyJacobian(*dup,d,x,true,*outStream);
+    obj->checkGradient(*x,*d,true,*outStream);
+    obj->checkHessVec(*x,*d,true,*outStream);
+    con->checkApplyJacobian(*x,*d,*up,true,*outStream);
+    con->checkApplyAdjointHessian(*x,*dup,*d,*x,true,*outStream);
+    con->checkAdjointConsistencyJacobian(*dup,*d,*x,true,*outStream);
     con->checkInverseJacobian_1(*up,*up,*up,*zp,true,*outStream);
     con->checkInverseAdjointJacobian_1(*up,*up,*up,*zp,true,*outStream);
 
     RealT tol(1.e-8);
     con->solve(*rp,*up,*zp,tol);
-    ROL::Ptr<ROL::Step<RealT>>
-      step = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
-    ROL::Ptr<ROL::StatusTest<RealT>>
-      status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
-    ROL::Algorithm<RealT> algo(step,status,false);
-    algo.run(x,*rp,*obj,*con,true,*outStream);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
+    problem->addConstraint("PDE",con,pp);
+    problem->finalize(false,true,*outStream);
+    ROL::Solver<RealT> solver(problem,*parlist);
+    solver.solve(*outStream);
 
     // Output.
     con->getAssembler()->printMeshData(*outStream);

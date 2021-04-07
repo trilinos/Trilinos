@@ -2,7 +2,7 @@
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
     <Parameter name="Check Derivatives"          type="bool"    value="false" />
-    <Parameter name="Use Quadratic Program"      type="bool"    value="false" />
+    <Parameter name="Use Quadratic Program"      type="bool"    value="true"  />
     <Parameter name="Use Storage"                type="bool"    value="false" />
     <Parameter name="Control Cost"               type="double"  value="3e0"   />
     <Parameter name="State Cost"                 type="double"  value="1e5"   />
@@ -74,7 +74,7 @@
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
-    <Parameter name="Print Verbosity"                        type="int"    value="0"     />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />
@@ -95,6 +95,15 @@
       <Parameter name="Absolute Tolerance" type="double" value="1.e-4"               />
       <Parameter name="Relative Tolerance" type="double" value="1.e-2"               />
       <Parameter name="Iteration Limit"    type="int"    value="100"                 />
+    </ParameterList>
+    <!-- ===========  POLYHEDRAL PROJECTION INPUTS  =========== -->
+    <ParameterList name="Polyhedral Projection">
+      <Parameter name="Type"               type="string" value="Dai-Fletcher" />
+      <Parameter name="Iteration Limit"    type="int"    value="1000"         />
+      <!--
+      <Parameter name="Absolute Tolerance" type="double" value="1.e-4"   />
+      <Parameter name="Relative Tolerance" type="double" value="1.e-2"   />
+      -->
     </ParameterList>
   </ParameterList>
 

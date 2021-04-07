@@ -60,11 +60,11 @@ public:
     QoI_GinzburgLandau_StateTracking<Real>::computeTarget();
   }
 
-  virtual Real evaluateRealTarget(const std::vector<Real> &x) const {
+  virtual Real evaluateRealTarget(const std::vector<Real> &x) const override {
     return static_cast<Real>(1)/std::sqrt(static_cast<Real>(2));
   }
 
-  virtual Real evaluateImagTarget(const std::vector<Real> &x) const {
+  virtual Real evaluateImagTarget(const std::vector<Real> &x) const override {
     return static_cast<Real>(1)/std::sqrt(static_cast<Real>(2));
   }
 }; // QoI_GinzburgLandau_StateTracking_ex02

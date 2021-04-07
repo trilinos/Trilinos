@@ -45,8 +45,8 @@
     \brief Provides the interface for local (cell-based) objective function computations.
 */
 
-#ifndef PDEOPT_MATERIALTENSOR_HPP
-#define PDEOPT_MATERIALTENSOR_HPP
+#ifndef PDEOPT_MATERIALTENSOR_MULTIMAT_HPP
+#define PDEOPT_MATERIALTENSOR_MULTIMAT_HPP
 
 #include "../../../TOOLS/fe.hpp"
 
@@ -59,6 +59,9 @@ private:
   Real youngsModulus_;
   Real poissonRatio_;
   bool isPlainStress_;
+  Real minDensity_;
+  Real maxDensity_;
+  Real powerSIMP_;
   std::vector<std::vector<Real>> materialMat_;
 
   // Precomputed quantities.
@@ -203,6 +206,9 @@ public:
     youngsModulus_  = parlist.get("Young's Modulus",     1.0);
     poissonRatio_   = parlist.get("Poisson Ratio",       0.3);
     isPlainStress_  = parlist.get("Use Plain Stress",    true);
+    minDensity_     = parlist.get("Minimum Density",     1e-4);
+    maxDensity_     = parlist.get("Maximum Density",     1.0);
+    powerSIMP_      = parlist.get("SIMP Power",          3.0);
   }
 
   void setFE(ROL::Ptr<FE<Real>> &fe) {
@@ -217,29 +223,11 @@ public:
     int p = fe_->gradN()->dimension(2);
     int matd = materialMat_.size();
 
-    int rank = inData->rank();
-
-    if (rank == 3) {
-      for (int i=0; i<c; ++i) {
-        for (int j=0; j<p; ++j) {
-          for (int k=0; k<matd; ++k) {
-            for (int l=0; l<matd; ++l) {
-              (*out)(i,j,k) += materialMat_[k][l] * (*inData)(i,j,l);
-            }
-          }
-        }
-      }
-    }
-    else if (rank == 4) {
-      int f = fe_->gradN()->dimension(1);
-      for (int i=0; i<c; ++i) {
-        for (int j=0; j<f; ++j) {
-          for (int k=0; k<p; ++k) {
-            for (int m=0; m<matd; ++m) {
-              for (int n=0; n<matd; ++n) {
-                (*out)(i,j,k,m) += materialMat_[m][n] * (*inData)(i,j,k,n);
-              }
-            }
+    for (int i=0; i<c; ++i) {
+      for (int j=0; j<p; ++j) {
+        for (int k=0; k<matd; ++k) {
+          for (int l=0; l<matd; ++l) {
+            (*out)(i,j,k) += materialMat_[k][l] * (*inData)(i,j,l);
           }
         }
       }
@@ -276,6 +264,31 @@ public:
         }
       }
     } 
+  }
+
+  void computeDensity(ROL::Ptr<Intrepid::FieldContainer<Real>> & rho,
+                      const ROL::Ptr<Intrepid::FieldContainer<Real>> & Z,
+                      const int deriv = 0) const {
+    // Retrieve dimensions.
+    int c = rho->dimension(0);
+    int p = rho->dimension(1);
+
+    Real z(0);
+    const Real zero(0), one(1), two(2), diff = maxDensity_-minDensity_;
+    for (int i=0; i<c; ++i) {
+      for (int j=0; j<p; ++j) {
+        z = (*Z)(i,j);
+        if (deriv==0) {
+          (*rho)(i,j) = minDensity_ + diff*(powerSIMP_==one ? z : std::pow(z, powerSIMP_));
+        }
+        else if (deriv==1) {
+          (*rho)(i,j) = diff*(powerSIMP_==one ? one : powerSIMP_*std::pow(z, powerSIMP_-one));
+        }
+        else if (deriv==2) {
+          (*rho)(i,j) = diff*(powerSIMP_==one ? zero : powerSIMP_*(powerSIMP_-one)*std::pow(z, powerSIMP_-two));
+        }
+      }
+    }
   }
 
   const ROL::Ptr<Intrepid::FieldContainer<Real>> B(const int i) const {

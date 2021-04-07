@@ -69,7 +69,7 @@ public:
     con_(con), tol_(sqrt(ROL_EPSILON<Real>())) {}
    
   f_update_t<Real> update() {
-    return bind( &Constraint<Real>::update, &con_, ph::_1, true, 0 );
+    return bind( (void(Constraint<Real>::*)(const Vector<Real>&,bool,int))&Constraint<Real>::update, &con_, ph::_1, true, 0 );
   }
 
   f_vector_t<Real> value() {

@@ -49,77 +49,32 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class LinearCombinationObjective : public Objective<Real> {
 private:
-  const std::vector<ROL::Ptr<Objective<Real> > > obj_;
+  const std::vector<Ptr<Objective<Real>>> obj_;
   std::vector<Real> weights_;
   size_t size_;
 
-  ROL::Ptr<Vector<Real> > xdual_;
+  Ptr<Vector<Real>> xdual_;
   bool initialized_;
 
 public:
-  LinearCombinationObjective(const std::vector<ROL::Ptr<Objective<Real> > > &obj)
-    : Objective<Real>(), obj_(obj),
-      xdual_(ROL::nullPtr), initialized_(false) {
-    size_ = obj_.size();
-    weights_.clear(); weights_.assign(size_,static_cast<Real>(1));
-  }
-
+  LinearCombinationObjective(const std::vector<Ptr<Objective<Real>>> &obj);
   LinearCombinationObjective(const std::vector<Real> &weights,
-                             const std::vector<ROL::Ptr<Objective<Real> > > &obj)
-    : Objective<Real>(), obj_(obj), weights_(weights), size_(weights.size()),
-      xdual_(ROL::nullPtr), initialized_(false) {}
+                             const std::vector<Ptr<Objective<Real>>> &obj);
 
-  void update(const Vector<Real> &x, bool flag = true, int iter = -1) {
-    for (size_t i=0; i<size_; ++i) {
-      obj_[i]->update(x,flag,iter);
-    }
-  }
+  void update(const Vector<Real> &x, UpdateType type, int iter = -1) override;
+  void update(const Vector<Real> &x, bool flag = true, int iter = -1) override;
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void setParameter(const std::vector<Real> &param) override;
 
-  Real value( const Vector<Real> &x, Real &tol ) {
-    Real val = 0.;
-    for (size_t i = 0; i < size_; i++) {
-      val += weights_[i]*obj_[i]->value(x,tol);
-    } 
-    return val;
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    if (!initialized_) {
-      xdual_ = g.clone();
-      initialized_ = true;
-    }
-    g.zero();
-    for (size_t i = 0; i < size_; i++) {
-      obj_[i]->gradient(*xdual_,x,tol);
-      g.axpy(weights_[i],*xdual_);
-    }
-  }
-
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    if (!initialized_) {
-      xdual_ = hv.clone();
-      initialized_ = true;
-    }
-    hv.zero();
-    for (size_t i = 0; i < size_; i++) {
-      obj_[i]->hessVec(*xdual_,v,x,tol);
-      hv.axpy(weights_[i],*xdual_);
-    }
-  }
-
-// Definitions for parametrized (stochastic) objective functions
-public:
-  void setParameter(const std::vector<Real> &param) {
-    Objective<Real>::setParameter(param);
-    for (size_t i = 0; i < size_; ++i) {
-      obj_[i]->setParameter(param);
-    }
-  }
 }; // class LinearCombinationObjective
 
 } // namespace ROL
+
+#include "ROL_LinearCombinationObjective_Def.hpp"
 
 #endif

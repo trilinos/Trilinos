@@ -49,13 +49,18 @@
 #include "ROL_Types.hpp"
 #include <iostream>
 
-#include "ROL_NonlinearLeastSquaresObjective_SimOpt.hpp"
-#include "ROL_Constraint_State.hpp"
+namespace ROL {
+
+template <class Real>
+class Constraint_SimOpt;
+
+}
+
+#include "ROL_NonlinearLeastSquaresObjective.hpp"
+#include "ROL_SimConstraint.hpp"
 #include "ROL_Objective_FSsolver.hpp"
-#include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_CompositeStep.hpp"
-#include "ROL_ConstraintStatusTest.hpp"
+#include "ROL_TypeU_TrustRegionAlgorithm.hpp"
+#include "ROL_TypeE_AugmentedLagrangianAlgorithm.hpp"
 
 /** @ingroup func_group
     \class ROL::Constraint_SimOpt
@@ -159,6 +164,10 @@ public:
     update_1(u,flag,iter);
     update_2(z,flag,iter);  
   }
+  virtual void update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1 ) {
+    update_1(u,type,iter);
+    update_2(z,type,iter);  
+  }
 
   /** \brief Update constraint functions with respect to Sim variable.  
                 x is the optimization variable, 
@@ -166,6 +175,7 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_1( const Vector<Real> &u, bool flag = true, int iter = -1 ) {}
+  virtual void update_1( const Vector<Real> &u, UpdateType type, int iter = -1 ) {}
 
   /** \brief Update constraint functions with respect to Opt variable.
                 x is the optimization variable, 
@@ -173,7 +183,15 @@ public:
                 iter is the outer algorithm iterations count.
   */
   virtual void update_2( const Vector<Real> &z, bool flag = true, int iter = -1 ) {}
+  virtual void update_2( const Vector<Real> &z, UpdateType type, int iter = -1 ) {}
 
+  /** \brief Update SimOpt constraint during solve (disconnected from optimization updates).
+  
+                @param[in]    x is the optimization variable
+                @param[in] type is the update type
+                @param[in] iter is the solver iteration count
+  */
+  virtual void solve_update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1) {}
 
   /** \brief Evaluate the constraint operator \f$c:\mathcal{U}\times\mathcal{Z} \rightarrow \mathcal{C}\f$
              at \f$(u,z)\f$.
@@ -208,10 +226,9 @@ public:
                      Vector<Real> &u, 
                      const Vector<Real> &z,
                      Real &tol) {
-    if ( zero_ ) {
-      u.zero();
-    }
-    update(u,z,true);
+    if ( zero_ ) u.zero();
+    Ptr<std::ostream> stream = makeStreamPtr(std::cout, print_);
+    solve_update(u,z,UpdateType::Initial,0);
     value(c,u,z,tol);
     Real cnorm = c.norm();
     const Real ctol = std::min(atol_, rtol_*cnorm);
@@ -221,86 +238,74 @@ public:
         jv_   = u.clone();
         firstSolve_ = false;
       }
+      const Real one(1);
       Real alpha(1), tmp(0);
       int cnt = 0;
-      if ( print_ ) {
-        std::cout << "\n     Default Constraint_SimOpt::solve\n";
-        std::cout << "       ";
-        std::cout << std::setw(6)  << std::left << "iter";
-        std::cout << std::setw(15) << std::left << "rnorm";
-        std::cout << std::setw(15) << std::left << "alpha";
-        std::cout << "\n";
-      }
+      *stream << std::endl;
+      *stream << "     Default Constraint_SimOpt::solve" << std::endl;
+      *stream << "       ";
+      *stream << std::setw(6)  << std::left << "iter";
+      *stream << std::setw(15) << std::left << "rnorm";
+      *stream << std::setw(15) << std::left << "alpha";
+      *stream << std::endl;
       for (cnt = 0; cnt < maxit_; ++cnt) {
         // Compute Newton step
         applyInverseJacobian_1(*jv_,c,u,z,tol);
         unew_->set(u);
         unew_->axpy(-alpha, *jv_);
-        update_1(*unew_);
-        //update(*unew_,z);
+        solve_update(*unew_,z,UpdateType::Trial);
         value(c,*unew_,z,tol);
         tmp = c.norm();
         // Perform backtracking line search
-        while ( tmp > (1.0-decr_*alpha)*cnorm &&
+        while ( tmp > (one-decr_*alpha)*cnorm &&
                 alpha > stol_ ) {
           alpha *= factor_;
           unew_->set(u);
           unew_->axpy(-alpha,*jv_);
-          update_1(*unew_);
-          //update(*unew_,z);
+          solve_update(*unew_,z,UpdateType::Trial);
           value(c,*unew_,z,tol);
           tmp = c.norm();
         }
-        if ( print_ ) {
-          std::cout << "       ";
-          std::cout << std::setw(6)  << std::left << cnt;
-          std::cout << std::scientific << std::setprecision(6);
-          std::cout << std::setw(15) << std::left << tmp;
-          std::cout << std::scientific << std::setprecision(6);
-          std::cout << std::setw(15) << std::left << alpha;
-          std::cout << "\n";
-        }
+        *stream << "       ";
+        *stream << std::setw(6)  << std::left << cnt;
+        *stream << std::scientific << std::setprecision(6);
+        *stream << std::setw(15) << std::left << tmp;
+        *stream << std::scientific << std::setprecision(6);
+        *stream << std::setw(15) << std::left << alpha;
+        *stream << std::endl;
         // Update iterate
         cnorm = tmp;
         u.set(*unew_);
-        if (cnorm <= ctol) { // = covers the case of identically zero residual
-          break;
-        }
-        update(u,z,true);
-        alpha = 1.0;
+        solve_update(u,z,UpdateType::Accept,cnt);
+        if (cnorm <= ctol) break; // = covers the case of identically zero residual
+        alpha = one;
       }
     }
     if (solverType_==1 || (solverType_==3 && cnorm > ctol)) {
-      Ptr<Constraint_SimOpt<Real>> con = makePtrFromRef(*this);
-      Ptr<Objective<Real>> obj = makePtr<NonlinearLeastSquaresObjective_SimOpt<Real>>(con,u,z,c,true);
+      Ptr<Constraint<Real>> con = makePtr<SimConstraint<Real>>(makePtrFromRef(*this),makePtrFromRef(z),true);
+      Ptr<Objective<Real>>  obj = makePtr<NonlinearLeastSquaresObjective<Real>>(con,u,c,true);
       ParameterList parlist;
+      parlist.sublist("General").set("Output Level",1);
+      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
+      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
       parlist.sublist("Status Test").set("Gradient Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      parlist.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-      parlist.sublist("General").sublist("Krylov").set("Iteration Limit",100);
-      Ptr<Step<Real>>         step = makePtr<TrustRegionStep<Real>>(parlist);
-      Ptr<StatusTest<Real>> status = makePtr<StatusTest<Real>>(parlist);
-      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
-      algo->run(u,*obj,print_);
+      Ptr<TypeU::Algorithm<Real>> algo = makePtr<TypeU::TrustRegionAlgorithm<Real>>(parlist);
+      algo->run(u,*obj,*stream);
       value(c,u,z,tol);
     }
     if (solverType_==2 || (solverType_==4 && cnorm > ctol)) {
-      Ptr<Constraint_SimOpt<Real>> con = makePtrFromRef(*this);
-      Ptr<const Vector<Real>> zVec = makePtrFromRef(z);
-      Ptr<Constraint<Real>> conU
-        = makePtr<Constraint_State<Real>>(con,zVec);
-      Ptr<Objective<Real>> objU
-        = makePtr<Objective_FSsolver<Real>>();
+      Ptr<Constraint<Real>> con = makePtr<SimConstraint<Real>>(makePtrFromRef(*this),makePtrFromRef(z),true);
+      Ptr<Objective<Real>>  obj = makePtr<Objective_FSsolver<Real>>();
+      Ptr<Vector<Real>>       l = c.dual().clone();
       ParameterList parlist;
+      parlist.sublist("General").set("Output Level",1);
       parlist.sublist("Status Test").set("Constraint Tolerance",ctol);
       parlist.sublist("Status Test").set("Step Tolerance",stol_);
       parlist.sublist("Status Test").set("Iteration Limit",maxit_);
-      Ptr<Step<Real>>         step = makePtr<CompositeStep<Real>>(parlist);
-      Ptr<StatusTest<Real>> status = makePtr<ConstraintStatusTest<Real>>(parlist);
-      Ptr<Algorithm<Real>>    algo = makePtr<Algorithm<Real>>(step,status,false);
-      Ptr<Vector<Real>>          l = c.dual().clone();
-      algo->run(u,*l,*objU,*conU,print_);
+      Ptr<TypeE::Algorithm<Real>> algo = makePtr<TypeE::AugmentedLagrangianAlgorithm<Real>>(parlist);
+      algo->run(u,*obj,*con,*l,*stream);
       value(c,u,z,tol);
     }
     if (solverType_ > 4 || solverType_ < 0) {
@@ -900,6 +905,11 @@ public:
       dynamic_cast<const Vector<Real>&>(x));
     update(*(xs.get_1()),*(xs.get_2()),flag,iter);
   }
+  virtual void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    const Vector_SimOpt<Real> &xs = dynamic_cast<const Vector_SimOpt<Real>&>(
+      dynamic_cast<const Vector<Real>&>(x));
+    update(*(xs.get_1()),*(xs.get_2()),type,iter);
+  }
 
   virtual void value(Vector<Real> &c,
                      const Vector<Real> &x,
@@ -1028,9 +1038,7 @@ public:
              the user does not define the dual() operation.
 
              @param[out]      w              is a dual constraint-space vector
-             @param[in]       v              is a simulation-space vector    u_lo->zero();
-    u_up->setScalar( height );
-
+             @param[in]       v              is a simulation-space vector
              @param[in]       u              is the constraint argument; a simulation-space vector
              @param[in]       z              is the constraint argument; an optimization-space vector
              @param[in]       dualw          is a constraint-space vector 
@@ -1052,11 +1060,13 @@ public:
     Ptr<Vector<Real>> Jv = dualw.clone();
     update(u,z);
     applyJacobian_1(*Jv,v,u,z,tol);
-    Real wJv = w.dot(Jv->dual());
+    //Real wJv = w.dot(Jv->dual());
+    Real wJv = w.apply(*Jv);
     Ptr<Vector<Real>> Jw = dualv.clone();
     update(u,z);
     applyAdjointJacobian_1(*Jw,w,u,z,tol);
-    Real vJw = v.dot(Jw->dual());
+    //Real vJw = v.dot(Jw->dual());
+    Real vJw = v.apply(*Jw);
     Real diff = std::abs(wJv-vJw);
     if ( printToStream ) {
       std::stringstream hist;
@@ -1119,11 +1129,13 @@ public:
     Ptr<Vector<Real>> Jv = dualw.clone();
     update(u,z);
     applyJacobian_2(*Jv,v,u,z,tol);
-    Real wJv = w.dot(Jv->dual());
+    //Real wJv = w.dot(Jv->dual());
+    Real wJv = w.apply(*Jv);
     Ptr<Vector<Real>> Jw = dualv.clone();
     update(u,z);
     applyAdjointJacobian_2(*Jw,w,u,z,tol);
-    Real vJw = v.dot(Jw->dual());
+    //Real vJw = v.dot(Jw->dual());
+    Real vJw = v.apply(*Jw);
     Real diff = std::abs(wJv-vJw);
     if ( printToStream ) {
       std::stringstream hist;

@@ -43,9 +43,20 @@
 
 /*! \file  example_02.cpp
     \brief Shows how to solve a steady Burgers' optimal control problem using
-	   the SimOpt interface.  We solve the control problem using Composite
+    the SimOpt interface.  We solve the control problem using Composite
            Step and trust regions.
 */
+
+#include "ROL_TypeU_TrustRegionAlgorithm.hpp"
+#include "ROL_TypeE_CompositeStepAlgorithm.hpp"
+#include "ROL_Reduced_Objective_SimOpt.hpp"
+#include "ROL_Stream.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_LAPACK.hpp"
+
+#include <iostream>
+#include <algorithm>
 
 #include "example_02.hpp"
 
@@ -142,29 +153,29 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Constraint Tolerance",1.e-14);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",1000);
-    // Declare ROL algorithm pointer.
-    ROL::Ptr<ROL::Algorithm<RealT>>  algo;
-    ROL::Ptr<ROL::Step<RealT>>       step;
-    ROL::Ptr<ROL::StatusTest<RealT>> status;
 
-    // Run optimization with Composite Step.
-    step   = ROL::makePtr<ROL::CompositeStep<RealT>>(*parlist);
-    status = ROL::makePtr<ROL::ConstraintStatusTest<RealT>>(*parlist);
-    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
+    // Run equality-constrained optimization.
     RealT zerotol = std::sqrt(ROL::ROL_EPSILON<RealT>());
     z.zero();
     con.solve(c,u,z,zerotol);
     c.zero(); l.zero();
-    algo->run(x, g, l, c, obj, con, true, *outStream);
+    {
+      // Define algorithm.
+      ROL::TypeE::CompositeStepAlgorithm<RealT> algo(*parlist);
+      // Run Algorithm
+      algo.run(x, obj, con, l, *outStream);
+    }
     ROL::Ptr<ROL::Vector<RealT> > zCS = z.clone();
     zCS->set(z);
 
-    // Run Optimization with Trust-Region algorithm.
-    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
-    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
+    // Run unconstrained optimization.
     z.zero();
-    algo->run(z,robj,true,*outStream);
+    {
+      // Define algorithm.
+      ROL::TypeU::TrustRegionAlgorithm<RealT> algo(*parlist);
+      // Run Algorithm
+      algo.run(z, z.dual(), robj, *outStream);
+    }
 
     // Check solutions.
     ROL::Ptr<ROL::Vector<RealT> > err = z.clone();

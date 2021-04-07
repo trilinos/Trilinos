@@ -74,7 +74,7 @@
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
-    <Parameter name="Print Verbosity"                        type="int"    value="0"     />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />

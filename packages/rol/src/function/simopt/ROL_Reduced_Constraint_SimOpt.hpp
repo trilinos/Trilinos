@@ -46,7 +46,7 @@
 #define ROL_REDUCED_CONSTRAINT_SIMOPT_H
 
 #include "ROL_Constraint_SimOpt.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 
 namespace ROL {
 
@@ -55,8 +55,8 @@ class Reduced_Constraint_SimOpt : public Constraint<Real> {
 private:
   const ROL::Ptr<Constraint_SimOpt<Real> > conVal_;          
   const ROL::Ptr<Constraint_SimOpt<Real> > conRed_; 
-  const ROL::Ptr<SimController<Real> > stateStore_;
-  ROL::Ptr<SimController<Real> > adjointStore_;
+  const ROL::Ptr<VectorController<Real> > stateStore_;
+  ROL::Ptr<VectorController<Real> > adjointStore_;
 
   // Primal vectors
   ROL::Ptr<Vector<Real> > state_;                              
@@ -163,7 +163,7 @@ public:
 
       @param[in] obj          is a pointer to a SimOpt objective function.
       @param[in] con          is a pointer to a SimOpt equality constraint.
-      @param[in] stateStore   is a pointer to a SimController object.
+      @param[in] stateStore   is a pointer to a VectorController object.
       @param[in] state        is a pointer to a state space vector, \f$\mathcal{U}\f$.
       @param[in] control      is a pointer to a optimization space vector, \f$\mathcal{Z}\f$.
       @param[in] adjoint      is a pointer to a dual constraint space vector, \f$\mathcal{C}^*\f$.
@@ -173,7 +173,7 @@ public:
   Reduced_Constraint_SimOpt(
       const ROL::Ptr<Constraint_SimOpt<Real> > &conVal, 
       const ROL::Ptr<Constraint_SimOpt<Real> > &conRed, 
-      const ROL::Ptr<SimController<Real> > &stateStore,
+      const ROL::Ptr<VectorController<Real> > &stateStore,
       const ROL::Ptr<Vector<Real> > &state, 
       const ROL::Ptr<Vector<Real> > &control, 
       const ROL::Ptr<Vector<Real> > &adjoint,
@@ -183,7 +183,7 @@ public:
     : conVal_(conVal), conRed_(conRed), stateStore_(stateStore),
       storage_(storage), useFDhessVec_(useFDhessVec),
       updateFlag_(true), updateIter_(0) {
-    adjointStore_ = ROL::makePtr<SimController<Real>>();
+    adjointStore_ = ROL::makePtr<VectorController<Real>>();
     state_        = state->clone();
     adjoint_      = adjoint->clone();
     residual_     = residual->clone();
@@ -201,7 +201,7 @@ public:
 
       @param[in] obj          is a pointer to a SimOpt objective function.
       @param[in] con          is a pointer to a SimOpt equality constraint.
-      @param[in] stateStore   is a pointer to a SimController object.
+      @param[in] stateStore   is a pointer to a VectorController object.
       @param[in] state        is a pointer to a state space vector, \f$\mathcal{U}\f$.
       @param[in] control      is a pointer to a optimization space vector, \f$\mathcal{Z}\f$.
       @param[in] adjoint      is a pointer to a dual constraint space vector, \f$\mathcal{C}^*\f$.
@@ -213,7 +213,7 @@ public:
   Reduced_Constraint_SimOpt(
       const ROL::Ptr<Constraint_SimOpt<Real> > &conVal, 
       const ROL::Ptr<Constraint_SimOpt<Real> > &conRed,
-      const ROL::Ptr<SimController<Real> > &stateStore, 
+      const ROL::Ptr<VectorController<Real> > &stateStore, 
       const ROL::Ptr<Vector<Real> > &state,
       const ROL::Ptr<Vector<Real> > &control, 
       const ROL::Ptr<Vector<Real> > &adjoint,
@@ -227,7 +227,7 @@ public:
     : conVal_(conVal), conRed_(conRed), stateStore_(stateStore),
       storage_(storage), useFDhessVec_(useFDhessVec),
       updateFlag_(true), updateIter_(0) {
-    adjointStore_ = ROL::makePtr<SimController<Real>>();
+    adjointStore_ = ROL::makePtr<VectorController<Real>>();
     state_        = state->clone();
     adjoint_      = adjoint->clone();
     residual_     = residual->clone();
@@ -245,8 +245,8 @@ public:
   void update( const Vector<Real> &z, bool flag = true, int iter = -1 ) {
     updateFlag_ = flag;
     updateIter_ = iter;
-    stateStore_->equalityConstraintUpdate(true);
-    adjointStore_->equalityConstraintUpdate(flag);
+    stateStore_->constraintUpdate(true);
+    adjointStore_->constraintUpdate(flag);
   }
 
   /** \brief Given \f$z\in\mathcal{Z}\f$, evaluate the equality constraint 

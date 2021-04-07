@@ -47,6 +47,8 @@
 #include "ROL_Vector.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_SampleGenerator.hpp"
+#include "ROL_ScalarController.hpp"
+#include "ROL_VectorController.hpp"
 
 namespace ROL {
 
@@ -66,8 +68,10 @@ private:
   bool firstUpdate_;
   bool storage_;
 
-  std::map<std::vector<Real>,Real> value_storage_;
-  std::map<std::vector<Real>,Ptr<Vector<Real>>> gradient_storage_;
+  //std::map<std::vector<Real>,Real> value_storage_;
+  //std::map<std::vector<Real>,Ptr<Vector<Real>>> gradient_storage_;
+  Ptr<ScalarController<Real>> value_storage_;
+  Ptr<VectorController<Real>> gradient_storage_;
 
   void initialize(const Vector<Real> &x) {
     if ( firstUpdate_ ) {
@@ -80,30 +84,30 @@ private:
 
   void getValue(Real &val, const Vector<Real> &x,
           const std::vector<Real> &param, Real &tol) {
-    if ( storage_ && value_storage_.count(param) ) {
-      val = value_storage_[param];
+    bool isComputed = false;
+    if ( storage_) {
+      isComputed = value_storage_->get(val,param);
     }
-    else {
+    if (!isComputed || !storage_) {
       ParametrizedObjective_->setParameter(param);
       val = ParametrizedObjective_->value(x,tol);
       if ( storage_ ) {
-        value_storage_.insert(std::pair<std::vector<Real>,Real>(param,val));
+        value_storage_->set(val,param);
       }
     }
   }
 
   void getGradient(Vector<Real> &g, const Vector<Real> &x,
              const std::vector<Real> &param, Real &tol) {
-    if ( storage_ && gradient_storage_.count(param) ) {
-      g.set(*(gradient_storage_[param]));
+    bool isComputed = false;
+    if ( storage_) {
+      isComputed = gradient_storage_->get(g,param);
     }
-    else {
+    if (!isComputed || !storage_) {
       ParametrizedObjective_->setParameter(param);
       ParametrizedObjective_->gradient(g,x,tol);
       if ( storage_ ) {
-        Ptr<Vector<Real>> tmp = g.clone();
-        gradient_storage_.insert(std::pair<std::vector<Real>,Ptr<Vector<Real>>>(param,tmp));
-        gradient_storage_[param]->set(g);
+        gradient_storage_->set(g,param);
       }
     }
   }
@@ -124,8 +128,8 @@ public:
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(hsampler),
       firstUpdate_(true), storage_(storage) {
-    value_storage_.clear();
-    gradient_storage_.clear();
+    value_storage_ = makePtr<ScalarController<Real>>();
+    gradient_storage_ = makePtr<VectorController<Real>>();
   }
 
   RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
@@ -135,8 +139,8 @@ public:
     : ParametrizedObjective_(pObj),
       ValueSampler_(vsampler), GradientSampler_(gsampler), HessianSampler_(gsampler),
       firstUpdate_(true), storage_(storage) {
-    value_storage_.clear();
-    gradient_storage_.clear();
+    value_storage_ = makePtr<ScalarController<Real>>();
+    gradient_storage_ = makePtr<VectorController<Real>>();
   }
 
   RiskNeutralObjective( const Ptr<Objective<Real>>       &pObj,
@@ -145,8 +149,25 @@ public:
     : ParametrizedObjective_(pObj),
       ValueSampler_(sampler), GradientSampler_(sampler), HessianSampler_(sampler),
       firstUpdate_(true), storage_(storage) {
-    value_storage_.clear();
-    gradient_storage_.clear();
+    value_storage_ = makePtr<ScalarController<Real>>();
+    gradient_storage_ = makePtr<VectorController<Real>>();
+  }
+
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    initialize(x);
+//    ParametrizedObjective_->update(x,(flag && iter>=0),iter);
+    ParametrizedObjective_->update(x,type,iter);
+    ValueSampler_->update(x);
+    value_ = static_cast<Real>(0);
+    if ( storage_ ) {
+      value_storage_->objectiveUpdate(type);
+      gradient_storage_->objectiveUpdate(type);
+    }
+    if ( type != UpdateType::Trial && type != UpdateType::Revert ) { //&& iter>=0 ) {
+      GradientSampler_->update(x);
+      HessianSampler_->update(x);
+      gradient_->zero();
+    }
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
@@ -156,16 +177,16 @@ public:
     ValueSampler_->update(x);
     value_ = static_cast<Real>(0);
     if ( storage_ ) {
-      value_storage_.clear();
+      value_storage_->objectiveUpdate(true);
     }
-    if ( flag ) { //&& iter>=0 ) {
+    //if ( flag ) { //&& iter>=0 ) {
       GradientSampler_->update(x);
       HessianSampler_->update(x);
       gradient_->zero();
       if ( storage_ ) {
-        gradient_storage_.clear();
+        gradient_storage_->objectiveUpdate(true);
       }
-    }
+    //}
   }
 
   Real value( const Vector<Real> &x, Real &tol ) {

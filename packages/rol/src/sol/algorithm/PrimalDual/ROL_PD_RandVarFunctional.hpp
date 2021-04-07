@@ -56,9 +56,9 @@ private:
   int update_;
   bool setData_;
 
-  Ptr<SampledScalar<Real>> values_;
-  Ptr<SampledScalar<Real>> multipliers_;
-  Ptr<SampledScalar<Real>> multipliers_new_;
+  Ptr<ScalarController<Real>> values_;
+  Ptr<ScalarController<Real>> multipliers_;
+  Ptr<ScalarController<Real>> multipliers_new_;
 
 protected:
   // Set value data at current parameter
@@ -101,9 +101,9 @@ protected:
 public:
   PD_RandVarFunctional(void)
     : RandVarFunctional<Real>(), pen_(1.0), update_(0), setData_(true) {
-    values_          = makePtr<SampledScalar<Real>>();
-    multipliers_     = makePtr<SampledScalar<Real>>();
-    multipliers_new_ = makePtr<SampledScalar<Real>>();
+    values_          = makePtr<ScalarController<Real>>();
+    multipliers_     = makePtr<ScalarController<Real>>();
+    multipliers_new_ = makePtr<ScalarController<Real>>();
   }
 
   void setData(SampleGenerator<Real> &sampler, const Real pen, const Real lam = 0.0) {
@@ -149,13 +149,13 @@ public:
     pen_ = pen;
   }
 
-  virtual void setStorage(const Ptr<SampledScalar<Real>> &value_storage,
-                          const Ptr<SampledVector<Real>> &gradient_storage) {
+  virtual void setStorage(const Ptr<ScalarController<Real>> &value_storage,
+                          const Ptr<VectorController<Real>> &gradient_storage) {
     RandVarFunctional<Real>::setStorage(value_storage,gradient_storage);
   }
 
-  virtual void setHessVecStorage(const Ptr<SampledScalar<Real>> &gradvec_storage,
-                                 const Ptr<SampledVector<Real>> &hessvec_storage) {
+  virtual void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
+                                 const Ptr<VectorController<Real>> &hessvec_storage) {
     RandVarFunctional<Real>::setHessVecStorage(gradvec_storage,hessvec_storage);
   }
  

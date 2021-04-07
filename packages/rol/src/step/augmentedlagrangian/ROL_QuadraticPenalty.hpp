@@ -139,7 +139,7 @@ public:
 
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     con_->update(x,flag,iter);
-    isConstraintComputed_ = ( flag ? false : isConstraintComputed_ );
+    isConstraintComputed_ = ((flag || (!flag && iter < 0)) ? false : isConstraintComputed_);
   }
 
   virtual Real value( const Vector<Real> &x, Real &tol ) {

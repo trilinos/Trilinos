@@ -50,7 +50,8 @@
 #include "ROL_StdBoundConstraint.hpp"
 #include "ROL_Types.hpp"
 
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_OptimizationProblem.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Objective.hpp"
 #include "ROL_BatchManager.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
@@ -108,11 +109,15 @@ RealT setUpAndSolve(ROL::ParameterList                    & list,
                     std::ostream                          & outStream) {
   ROL::OptimizationProblem<RealT> opt(pObj,x,bnd);
   opt.setStochasticObjective(list,sampler);
+  ROL::Ptr<ROL::Problem<RealT>>
+    newprob = ROL::makePtr<ROL::Problem<RealT>>(opt.getObjective(),opt.getSolutionVector());
+  if (opt.getBoundConstraint()->isActivated())
+    newprob->addBoundConstraint(opt.getBoundConstraint());
   outStream << "\nCheck Derivatives of Stochastic Objective Function\n";
-  opt.check(outStream);
+  newprob->check(true,outStream);
   // Run ROL algorithm
   list.sublist("Step").set("Type","Trust Region");
-  ROL::OptimizationSolver<RealT> solver(opt,list);
+  ROL::Solver<RealT> solver(newprob,list);
   solver.solve(outStream);
   ROL::Ptr<ROL::Objective<RealT>> robj = opt.getObjective();
   RealT tol(1.e-8);
@@ -142,6 +147,7 @@ int main(int argc, char* argv[]) {
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
+  bool print     = iprint > 0;
   ROL::Ptr<std::ostream> outStream;
   ROL::nullstream bhs; // outputs nothing
   if (iprint > 0)
@@ -160,6 +166,7 @@ int main(int argc, char* argv[]) {
     
     auto parlist = ROL::getParametersFromXmlFile( filename );
     ROL::ParameterList list = *parlist;
+    list.sublist("General").set("Output Level",print ? 1 : 0);
     /**********************************************************************************************/
     /************************* CONSTRUCT SOL COMPONENTS *******************************************/
     /**********************************************************************************************/
@@ -200,7 +207,7 @@ int main(int argc, char* argv[]) {
     int nQuadLo = 0, nQuadUp = 21, order = 0;
     std::vector<RealT> norm(nQuadUp-nQuadLo), obj(nQuadUp-nQuadLo);
     *outStream << "\nSPECTRAL RISK MEASURE\n";
-    list.sublist("SOL").set("Stochastic Component Type","Risk Averse");
+    list.sublist("SOL").set("Type","Risk Averse");
     list.sublist("SOL").sublist("Risk Measure").set("Name","Spectral Risk");
     std::vector<ROL::Ptr<std::vector<RealT>>> hist(nQuadUp-nQuadLo,ROL::nullPtr);
     std::vector<ROL::Ptr<ROL::StdVector<RealT>>> hvec(nQuadUp-nQuadLo,ROL::nullPtr);
