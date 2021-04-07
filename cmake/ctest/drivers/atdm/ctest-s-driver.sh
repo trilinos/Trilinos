@@ -16,6 +16,10 @@ source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/setup_env.sh
 source ${WORKSPACE}/Trilinos/cmake/ctest/drivers/atdm/utils/create-src-and-build-dir.sh
 
 echo
+echo "Printing all of the proxy env vars:"
+set | grep -i proxy=
+
+echo
 echo "Running: ctest -V -S $WORKSPACE/Trilinos/cmake/ctest/drivers/atdm/ctest-driver.cmake ..."
 
 ctest -V $ATDM_CONFIG_CTEST_REGEX -S \
