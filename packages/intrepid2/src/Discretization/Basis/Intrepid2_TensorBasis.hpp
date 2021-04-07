@@ -433,7 +433,8 @@ struct OperatorTensorDecomposition
     
     bool tensorPoints_; // if true, input1 and input2 refer to values at decomposed points, and P = P1 * P2.  If false, then the two inputs refer to points in the full-dimensional space, and their point lengths are the same as that of the final output.
     
-    Kokkos::vector<RankCombinationType> rank_combinations_; // indicates the policy by which the input views will be combined in output view
+    using RankCombinationViewType = typename TensorViewIteratorType::RankCombinationViewType;
+    RankCombinationViewType rank_combinations_;// indicates the policy by which the input views will be combined in output view
     
     double weight_;
     
@@ -470,17 +471,18 @@ struct OperatorTensorDecomposition
       
       const ordinal_type outputRank = output.rank();
       INTREPID2_TEST_FOR_EXCEPTION(outputRank > max_rank, std::invalid_argument, "Unsupported view combination.");
-      rank_combinations_ = Kokkos::vector<RankCombinationType>(max_rank);
+      rank_combinations_ = RankCombinationViewType("Rank_combinations_", max_rank);
+      auto rank_combinations_host = Kokkos::create_mirror_view(rank_combinations_);
       
-      rank_combinations_[0] = TensorViewIteratorType::TENSOR_PRODUCT; // field combination is always tensor product
-      rank_combinations_[1] = tensorPoints ? TensorViewIteratorType::TENSOR_PRODUCT : TensorViewIteratorType::DIMENSION_MATCH; // tensorPoints controls interpretation of the point dimension
+      rank_combinations_host[0] = TensorViewIteratorType::TENSOR_PRODUCT; // field combination is always tensor product
+      rank_combinations_host[1] = tensorPoints ? TensorViewIteratorType::TENSOR_PRODUCT : TensorViewIteratorType::DIMENSION_MATCH; // tensorPoints controls interpretation of the point dimension
       for (ordinal_type d=2; d<max_rank; d++)
       {
         // d >= 2 have the interpretation of spatial dimensions (gradients, etc.)
         // we let the extents of the containers determine what we're doing here
         if ((inputValues1.extent_int(d) == inputValues2.extent_int(d)) && (output.extent_int(d) == 1))
         {
-          rank_combinations_[d] = TensorViewIteratorType::TENSOR_CONTRACTION;
+          rank_combinations_host[d] = TensorViewIteratorType::TENSOR_CONTRACTION;
         }
         else if (((inputValues1.extent_int(d) == output.extent_int(d)) && (inputValues2.extent_int(d) == 1))
                  || ((inputValues2.extent_int(d) == output.extent_int(d)) && (inputValues1.extent_int(d) == 1))
@@ -488,18 +490,18 @@ struct OperatorTensorDecomposition
         {
           // this looks like multiplication of a vector by a scalar, resulting in a vector
           // this can be understood as a tensor product
-          rank_combinations_[d] = TensorViewIteratorType::TENSOR_PRODUCT;
+          rank_combinations_host[d] = TensorViewIteratorType::TENSOR_PRODUCT;
         }
         else if ((inputValues1.extent_int(d) == inputValues2.extent_int(d)) && (output.extent_int(d) == inputValues1.extent_int(d) * inputValues2.extent_int(d)))
         {
           // this is actually a generalization of the above case: a tensor product, something like a vector outer product
-          rank_combinations_[d] = TensorViewIteratorType::TENSOR_PRODUCT;
+          rank_combinations_host[d] = TensorViewIteratorType::TENSOR_PRODUCT;
         }
         else if ((inputValues1.extent_int(d) == inputValues2.extent_int(d)) && (output.extent_int(d) == inputValues1.extent_int(d)))
         {
           // it's a bit weird (I'm not aware of the use case, in the present context), but we can handle this case by adopting DIMENSION_MATCH here
           // this is something like MATLAB's .* and .+ operators, which operate entry-wise
-          rank_combinations_[d] = TensorViewIteratorType::DIMENSION_MATCH;
+          rank_combinations_host[d] = TensorViewIteratorType::DIMENSION_MATCH;
         }
         else
         {
@@ -509,6 +511,7 @@ struct OperatorTensorDecomposition
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unable to find an interpretation for this combination of views");
         }
       }
+      Kokkos::deep_copy(rank_combinations_,rank_combinations_host);
     }
     
     KOKKOS_INLINE_FUNCTION
@@ -570,7 +573,7 @@ struct OperatorTensorDecomposition
     
     std::string name_; // name of the basis
   public:
-    
+    using DeviceType = typename BasisBase::DeviceType;
     using ExecutionSpace  = typename BasisBase::ExecutionSpace;
     using OutputValueType = typename BasisBase::OutputValueType;
     using PointValueType  = typename BasisBase::PointValueType;
@@ -764,7 +767,7 @@ struct OperatorTensorDecomposition
      
         Note that only the basic exact-sequence operators are supported at the moment: VALUE, GRAD, DIV, CURL.
      */
-    virtual BasisValues<OutputValueType,ExecutionSpace> allocateBasisValues( TensorPoints<PointValueType,ExecutionSpace> points, const EOperator operatorType = OPERATOR_VALUE) const override
+    virtual BasisValues<OutputValueType,DeviceType> allocateBasisValues( TensorPoints<PointValueType,DeviceType> points, const EOperator operatorType = OPERATOR_VALUE) const override
     {
       const bool operatorSupported = (operatorType == OPERATOR_VALUE) || (operatorType == OPERATOR_GRAD) || (operatorType == OPERATOR_CURL) || (operatorType == OPERATOR_DIV);
       INTREPID2_TEST_FOR_EXCEPTION(!operatorSupported, std::invalid_argument, "operator is not supported by allocateBasisValues");
@@ -778,31 +781,31 @@ struct OperatorTensorDecomposition
       if (useVectorData)
       {
         const int numFamilies = 1;
-        std::vector< std::vector<TensorData<OutputValueType,ExecutionSpace> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,ExecutionSpace> >(numVectorComponents));
+        std::vector< std::vector<TensorData<OutputValueType,DeviceType> > > vectorComponents(numFamilies, std::vector<TensorData<OutputValueType,DeviceType> >(numVectorComponents));
         
         const int familyOrdinal = 0;
         for (ordinal_type vectorComponentOrdinal=0; vectorComponentOrdinal<numVectorComponents; vectorComponentOrdinal++)
         {
           if (!opDecomposition.identicallyZeroComponent(vectorComponentOrdinal))
           {
-            std::vector< Data<OutputValueType,ExecutionSpace> > componentData;
+            std::vector< Data<OutputValueType,DeviceType> > componentData;
             for (ordinal_type r=0; r<numBasisComponents; r++)
             {
               const int numComponentPoints = points.componentPointCount(r);
               const EOperator op = opDecomposition.op(vectorComponentOrdinal, r);
               auto componentView = tensorComponents_[r]->allocateOutputView(numComponentPoints, op);
-              componentData.push_back(Data<OutputValueType,ExecutionSpace>(componentView));
+              componentData.push_back(Data<OutputValueType,DeviceType>(componentView));
             }
-            vectorComponents[familyOrdinal][vectorComponentOrdinal] = TensorData<OutputValueType,ExecutionSpace>(componentData);
+            vectorComponents[familyOrdinal][vectorComponentOrdinal] = TensorData<OutputValueType,DeviceType>(componentData);
           }
         }
-        VectorData<OutputValueType,ExecutionSpace> vectorData(vectorComponents);
-        return BasisValues<OutputValueType,ExecutionSpace>(vectorData);
+        VectorData<OutputValueType,DeviceType> vectorData(vectorComponents);
+        return BasisValues<OutputValueType,DeviceType>(vectorData);
       }
       else
       {
         // TensorData: single tensor product
-        std::vector< Data<OutputValueType,ExecutionSpace> > componentData;
+        std::vector< Data<OutputValueType,DeviceType> > componentData;
         
         const ordinal_type vectorComponentOrdinal = 0;
         for (ordinal_type r=0; r<numBasisComponents; r++)
@@ -816,13 +819,13 @@ struct OperatorTensorDecomposition
           //  we want Data to insulate us from that fact)
           const Kokkos::Array<int,7> extents {componentView.extent_int(0), componentView.extent_int(1), 1,1,1,1,1};
           Kokkos::Array<DataVariationType,7> variationType {GENERAL, GENERAL, CONSTANT, CONSTANT, CONSTANT, CONSTANT, CONSTANT };
-          componentData.push_back(Data<OutputValueType,ExecutionSpace>(componentView, rank, extents, variationType));
+          componentData.push_back(Data<OutputValueType,DeviceType>(componentView, rank, extents, variationType));
         }
         
-        TensorData<OutputValueType,ExecutionSpace> tensorData(componentData);
+        TensorData<OutputValueType,DeviceType> tensorData(componentData);
         
-        std::vector< TensorData<OutputValueType,ExecutionSpace> > tensorDataEntries {tensorData};
-        return BasisValues<OutputValueType,ExecutionSpace>(tensorDataEntries);
+        std::vector< TensorData<OutputValueType,DeviceType> > tensorDataEntries {tensorData};
+        return BasisValues<OutputValueType,DeviceType>(tensorDataEntries);
       }
     }
     
@@ -1040,8 +1043,8 @@ struct OperatorTensorDecomposition
     */
     virtual
     void
-    getValues(       BasisValues<OutputValueType,ExecutionSpace> outputValues,
-               const TensorPoints<PointValueType,ExecutionSpace>  inputPoints,
+    getValues(       BasisValues<OutputValueType,DeviceType> outputValues,
+               const TensorPoints<PointValueType,DeviceType>  inputPoints,
                const EOperator operatorType = OPERATOR_VALUE ) const override
     {
       OperatorTensorDecomposition operatorDecomposition = getOperatorDecomposition(operatorType);
@@ -1066,7 +1069,7 @@ struct OperatorTensorDecomposition
             PointViewType  pointView      = inputPoints.getTensorComponent(basisOrdinal);
             
             // Data stores things in fixed-rank Kokkos::View, but Basis requires DynRankView.  We allocate a temporary DynRankView, then copy back to Data.
-            const Data<OutputValueType,ExecutionSpace> & outputData = tensorData.getTensorComponent(basisOrdinal);
+            const Data<OutputValueType,DeviceType> & outputData = tensorData.getTensorComponent(basisOrdinal);
             
             auto basisValueView = outputData.getUnderlyingView();
             tensorComponents_[basisOrdinal]->getValues(basisValueView, pointView, op);

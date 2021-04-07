@@ -257,20 +257,22 @@ struct computeDofCoordsAndCoeffs {
   }
 };
 
-template<typename SpT>
+template<typename DeviceType>
 template<typename BasisType,
 class ...coordsProperties, class ...coeffsProperties,
 typename ortValueType, class ...ortProperties>
 void
-LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
+LagrangianInterpolation<DeviceType>::getDofCoordsAndCoeffs(
     Kokkos::DynRankView<typename BasisType::scalarType, coordsProperties...> dofCoords,
     Kokkos::DynRankView<typename BasisType::scalarType, coeffsProperties...> dofCoeffs,
     const BasisType* basis,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts) {
 
+  using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
   using scalarType = typename BasisType::scalarType;
-  using ScalarViewType = Kokkos::DynRankView<scalarType, SpT>;
-  using intViewType = Kokkos::DynRankView<ordinal_type, SpT>;
+  using ScalarViewType = Kokkos::DynRankView<scalarType, DeviceType>;
+  using ScalarViewTypeHost = Kokkos::DynRankView<scalarType, HostSpaceType>;
+  using intViewType = Kokkos::DynRankView<ordinal_type, DeviceType>;
   using range_type = Kokkos::pair<ordinal_type,ordinal_type>;
 
   const auto topo = basis->getBaseCellTopology();
@@ -282,14 +284,14 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   ordinal_type numEdges = (basis->getDofCount(1, 0) > 0) ? topo.getEdgeCount() : 0;
   ordinal_type numFaces = (basis->getDofCount(2, 0) > 0) ? topo.getFaceCount() : 0;
 
-  std::vector<Teuchos::RCP<Basis<SpT,scalarType,scalarType> > > edgeBases, faceBases;
+  std::vector<Teuchos::RCP<Basis<DeviceType,scalarType,scalarType> > > edgeBases, faceBases;
 
   for(int i=0;i<numEdges;++i)
     edgeBases.push_back(basis->getSubCellRefBasis(1,i));
   for(int i=0;i<numFaces;++i)
     faceBases.push_back(basis->getSubCellRefBasis(2,i));
 
-  auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(), basis->getAllDofOrdinal());
+  auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename DeviceType::memory_space(), basis->getAllDofOrdinal());
 
   const ordinal_type dim = topo.getDimension();
 
@@ -297,14 +299,14 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
 
   ScalarViewType refDofCoords("refDofCoords", dofCoords.extent(1), dofCoords.extent(2)), refDofCoeffs;
   basis->getDofCoords(refDofCoords);
-  RealSpaceTools<SpT>::clone(dofCoords,refDofCoords);
+  RealSpaceTools<DeviceType>::clone(dofCoords,refDofCoords);
 
   if(dofCoeffs.rank() == 3) //vector basis
     refDofCoeffs = ScalarViewType("refDofCoeffs", dofCoeffs.extent(1), dofCoeffs.extent(2));
   else //scalar basis
     refDofCoeffs = ScalarViewType("refDofCoeffs",dofCoeffs.extent(1));
   basis->getDofCoeffs(refDofCoeffs);
-  RealSpaceTools<SpT>::clone(dofCoeffs,refDofCoeffs);
+  RealSpaceTools<DeviceType>::clone(dofCoeffs,refDofCoeffs);
 
   if((numFaces == 0) && (numEdges == 0)) 
     return;
@@ -312,7 +314,6 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   //*** Pre-compute needed quantities related to edge DoFs that do not depend on the cell ***
   intViewType edgeTopoKey("edgeTopoKey",numEdges);
   intViewType sOrt("eOrt", numEdges);
-  ScalarViewType edgeParam;
   intViewType numEdgesInternalDofs("numEdgesInternalDofs", numEdges);
   ScalarViewType  edgesInternalDofCoords;
   intViewType  edgesInternalDofOrdinals;
@@ -321,39 +322,45 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   ordinal_type maxNumEdgesInternalDofs=0;
   ordinal_type edgeBasisMaxCardinality=0;
 
+  auto hostNumEdgesInternalDofs = Kokkos::create_mirror_view(numEdgesInternalDofs);
   for (ordinal_type iedge=0; iedge < numEdges; ++iedge) {
     ordinal_type numInternalDofs = edgeBases[iedge]->getDofCount(1,0);
-    numEdgesInternalDofs(iedge) = numInternalDofs;
+    hostNumEdgesInternalDofs(iedge) = numInternalDofs;
     maxNumEdgesInternalDofs = std::max(maxNumEdgesInternalDofs,numInternalDofs);
     ordinal_type edgeBasisCardinality = edgeBases[iedge]->getCardinality();
     edgeBasisMaxCardinality = std::max(edgeBasisMaxCardinality, edgeBasisCardinality);
   }
+  Kokkos::deep_copy(numEdgesInternalDofs,hostNumEdgesInternalDofs);
 
+  edgeDofCoeffs = ScalarViewType("edgeDofCoeffs", numEdges, edgeBasisMaxCardinality);
   edgesInternalDofCoords = ScalarViewType("edgeInternalDofCoords", numEdges, maxNumEdgesInternalDofs,1);
   edgesInternalDofOrdinals = intViewType("edgeInternalDofCoords", numEdges, maxNumEdgesInternalDofs);
-  edgeDofCoeffs = ScalarViewType("edgeDofCoeffs", numEdges, edgeBasisMaxCardinality);
-
+  auto hostEdgesInternalDofCoords = Kokkos::create_mirror_view(edgesInternalDofCoords);
+  auto hostEdgesInternalDofOrdinals = Kokkos::create_mirror_view(edgesInternalDofOrdinals);
+  auto hostEdgeTopoKey = Kokkos::create_mirror_view(edgeTopoKey);
   for (ordinal_type iedge=0; iedge < numEdges; ++iedge) {
-    auto edgeBasis = edgeBases[iedge];
-    edgeTopoKey(iedge) = edgeBasis->getBaseCellTopology().getBaseKey();
-    ordinal_type edgeBasisCardinality = edgeBasis->getCardinality();
-    ScalarViewType  edgeDofCoords("edgeDofCoords", edgeBasisCardinality, 1);
-    edgeBasis->getDofCoords(edgeDofCoords);
-    for(ordinal_type i=0; i<numEdgesInternalDofs(iedge); ++i) {
-      edgesInternalDofOrdinals(iedge, i) = edgeBasis->getDofOrdinal(1, 0, i);
-      edgesInternalDofCoords(iedge, i,0) = edgeDofCoords(edgesInternalDofOrdinals(iedge, i),0);
+    auto hostEdgeBasisPtr = edgeBases[iedge]->getHostBasis();
+    hostEdgeTopoKey(iedge) = hostEdgeBasisPtr->getBaseCellTopology().getBaseKey();
+    ordinal_type edgeBasisCardinality = hostEdgeBasisPtr->getCardinality();
+    ScalarViewTypeHost  edgeDofCoords("edgeDofCoords", edgeBasisCardinality, 1);
+    hostEdgeBasisPtr->getDofCoords(edgeDofCoords);
+    for(ordinal_type i=0; i<hostNumEdgesInternalDofs(iedge); ++i) {
+      hostEdgesInternalDofOrdinals(iedge, i) = hostEdgeBasisPtr->getDofOrdinal(1, 0, i);
+      hostEdgesInternalDofCoords(iedge, i,0) = edgeDofCoords(hostEdgesInternalDofOrdinals(iedge, i),0);
     }
-
-    auto dofRange = range_type(0, edgeBasis->getCardinality());
-    edgeBasis->getDofCoeffs(Kokkos::subview(edgeDofCoeffs, iedge, dofRange));
+    auto edgeBasisPtr = edgeBases[iedge];
+    auto dofRange = range_type(0, edgeBasisPtr->getCardinality());
+    edgeBasisPtr->getDofCoeffs(Kokkos::subview(edgeDofCoeffs, iedge, dofRange));
   }
+  Kokkos::deep_copy(edgesInternalDofCoords,hostEdgesInternalDofCoords);
+  Kokkos::deep_copy(edgesInternalDofOrdinals,hostEdgesInternalDofOrdinals);
+  Kokkos::deep_copy(edgeTopoKey,hostEdgeTopoKey);
 
-  CellTools<SpT>::getSubcellParametrization(edgeParam, 1, topo);
+  auto edgeParam = RefSubcellParametrization<DeviceType>::get(1, topo.getKey());
 
   //*** Pre-compute needed quantities related to face DoFs that do not depend on the cell ***
   intViewType faceTopoKey("faceTopoKey",numFaces);
   intViewType fOrt("fOrt", numFaces);
-  ScalarViewType faceParam;
   intViewType numFacesInternalDofs("numFacesInternalDofs", numFaces);
   ScalarViewType  facesInternalDofCoords;
   intViewType  facesInternalDofOrdinals;
@@ -362,13 +369,15 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   ordinal_type maxNumFacesInternalDofs=0;
   ordinal_type faceBasisMaxCardinality=0;
 
+  auto hostNumFacesInternalDofs = Kokkos::create_mirror_view(numFacesInternalDofs);
   for (ordinal_type iface=0; iface < numFaces; ++iface) {
     ordinal_type numInternalDofs = faceBases[iface]->getDofCount(2,0);
-    numFacesInternalDofs(iface) = numInternalDofs;
+    hostNumFacesInternalDofs(iface) = numInternalDofs;
     maxNumFacesInternalDofs = std::max(maxNumFacesInternalDofs,numInternalDofs);
     ordinal_type faceBasisCardinality = faceBases[iface]->getCardinality();
     faceBasisMaxCardinality = std::max(faceBasisMaxCardinality, faceBasisCardinality);
   }
+  Kokkos::deep_copy(numFacesInternalDofs,hostNumFacesInternalDofs);
 
   facesInternalDofCoords = ScalarViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs, 2);
   facesInternalDofOrdinals = intViewType("faceInternalDofCoords", numFaces, maxNumFacesInternalDofs);
@@ -378,29 +387,36 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
   else
     faceDofCoeffs = ScalarViewType("faceDofCoeffs", numFaces, faceBasisMaxCardinality);
 
+  auto hostFacesInternalDofCoords = Kokkos::create_mirror_view(facesInternalDofCoords);
+  auto hostFacesInternalDofOrdinals = Kokkos::create_mirror_view(facesInternalDofOrdinals);
+  auto hostFaceTopoKey = Kokkos::create_mirror_view(faceTopoKey);
   for (ordinal_type iface=0; iface < numFaces; ++iface) {
-    auto faceBasis = faceBases[iface];
-    faceTopoKey(iface) = faceBasis->getBaseCellTopology().getBaseKey();
-    ordinal_type faceBasisCardinality = faceBasis->getCardinality();
-    ScalarViewType  faceDofCoords("faceDofCoords", faceBasisCardinality, 2);
-    faceBasis->getDofCoords(faceDofCoords);
-    for(ordinal_type i=0; i<numFacesInternalDofs(iface); ++i) {
-      facesInternalDofOrdinals(iface, i) = faceBasis->getDofOrdinal(2, 0, i);
+    auto hostFaceBasisPtr = faceBases[iface]->getHostBasis();
+    hostFaceTopoKey(iface) = hostFaceBasisPtr->getBaseCellTopology().getBaseKey();
+    ordinal_type faceBasisCardinality = hostFaceBasisPtr->getCardinality();
+    ScalarViewTypeHost  faceDofCoords("faceDofCoords", faceBasisCardinality, 2);
+    hostFaceBasisPtr->getDofCoords(faceDofCoords);
+    for(ordinal_type i=0; i<hostNumFacesInternalDofs(iface); ++i) {
+      hostFacesInternalDofOrdinals(iface, i) = hostFaceBasisPtr->getDofOrdinal(2, 0, i);
       for(ordinal_type d=0; d <2; ++d)
-        facesInternalDofCoords(iface, i,d) = faceDofCoords(facesInternalDofOrdinals(iface, i),d);
+        hostFacesInternalDofCoords(iface, i,d) = faceDofCoords(hostFacesInternalDofOrdinals(iface, i),d);
     }
-
-    auto dofRange = range_type(0, faceBasis->getCardinality());
-    faceBasis->getDofCoeffs(Kokkos::subview(faceDofCoeffs, iface, dofRange, Kokkos::ALL()));
+    auto faceBasisPtr = faceBases[iface];
+    auto dofRange = range_type(0, faceBasisPtr->getCardinality());
+    faceBasisPtr->getDofCoeffs(Kokkos::subview(faceDofCoeffs, iface, dofRange, Kokkos::ALL()));
   }
+  Kokkos::deep_copy(facesInternalDofCoords,hostFacesInternalDofCoords);
+  Kokkos::deep_copy(facesInternalDofOrdinals,hostFacesInternalDofOrdinals);
+  Kokkos::deep_copy(faceTopoKey,hostFaceTopoKey);
 
+  typename RefSubcellParametrization<DeviceType>::ConstViewType faceParam;
   if(dim > 2)
-    CellTools<SpT>::getSubcellParametrization(faceParam, 2, topo);
+    faceParam = RefSubcellParametrization<DeviceType>::get(2, topo.getKey());
 
 
   //*** Loop over cells ***
 
-  const Kokkos::RangePolicy<SpT> policy(0, numCells);
+  const Kokkos::RangePolicy<typename DeviceType::execution_space> policy(0, numCells);
   typedef computeDofCoordsAndCoeffs
       <decltype(dofCoords),
       decltype(dofCoeffs),
@@ -422,15 +438,15 @@ LagrangianInterpolation<SpT>::getDofCoordsAndCoeffs(
 }
 
 
-template<typename SpT>
+template<typename DeviceType>
 template<typename basisCoeffsViewType,
 typename funcViewType,
 typename dofCoeffViewType>
 void
-LagrangianInterpolation<SpT>::getBasisCoeffs(basisCoeffsViewType basisCoeffs,
+LagrangianInterpolation<DeviceType>::getBasisCoeffs(basisCoeffsViewType basisCoeffs,
     const funcViewType functionValsAtDofCoords,
     const dofCoeffViewType dofCoeffs){
-  ArrayTools<SpT>::dotMultiplyDataData(basisCoeffs,functionValsAtDofCoords,dofCoeffs);
+  ArrayTools<DeviceType>::dotMultiplyDataData(basisCoeffs,functionValsAtDofCoords,dofCoeffs);
 }
 }
 }

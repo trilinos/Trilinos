@@ -98,8 +98,8 @@ class DirichletResidual_EdgeBasis
   PointValues2<double> pointValues;
 
   Teuchos::RCP<const std::vector<Intrepid2::Orientation> > orientations;
-  Kokkos::DynRankView<double,PHX::Device> edgeParam; //edge parametrization
-  Kokkos::DynRankView<double,PHX::Device> faceParam; //face parametrization
+  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType edgeParam; //edge parametrization
+  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType faceParam; //face parametrization
 
 }; // end of class DirichletResidual_EdgeBasis
 

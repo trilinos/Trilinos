@@ -34,24 +34,15 @@
 
 #include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/util/SortAndUnique.hpp>
 #include <stk_coupling/Utils.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
+#include "TestCompatibilityMode.hpp"
 #include <stdexcept>
+#include <algorithm>
+#include <vector>
 
 namespace {
-
-TEST(UnitTestSplitComm, has_split_comm_false_when_same)
-{
-  EXPECT_FALSE(stk::coupling::has_split_comm(MPI_COMM_WORLD, MPI_COMM_WORLD));
-}
-
-TEST(UnitTestSplitComm, has_split_comm_true_when_different)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  EXPECT_TRUE(stk::coupling::has_split_comm(MPI_COMM_WORLD, MPI_COMM_SELF));
-}
-
 
 TEST(UnitTestSplitComm, string_to_color_empty_string_throw)
 {
@@ -74,89 +65,367 @@ TEST(UnitTestSplitComm, string_to_color_nominal)
   EXPECT_TRUE(0 <= stk::coupling::string_to_color(appString2));
 }
 
-TEST(UnitTestSplitComm, split_comm_np1)
+TEST(UnitTestSplitComm, split_comms_my_comm_np1)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
-  
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { GTEST_SKIP(); }
+
   int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
 
-  MPI_Comm splitComm = stk::coupling::split_comm(MPI_COMM_WORLD, myColor);
-  EXPECT_FALSE(stk::coupling::has_split_comm(MPI_COMM_WORLD, splitComm));
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  MPI_Comm splitComm = splitComms.get_split_comm();
   EXPECT_EQ(1, stk::parallel_machine_size(splitComm));
 }
 
-TEST(UnitTestSplitComm, split_comm_same_color)
+TEST(UnitTestSplitComm, split_comms_my_comm_same_color)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
   int myColor = 0;
 
-  MPI_Comm splitComm = stk::coupling::split_comm(MPI_COMM_WORLD, myColor);
-  EXPECT_FALSE(stk::coupling::has_split_comm(MPI_COMM_WORLD, splitComm));
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  MPI_Comm splitComm = splitComms.get_split_comm();
   EXPECT_EQ(2, stk::parallel_machine_size(splitComm));
 }
 
-TEST(UnitTestSplitComm, split_comm)
+TEST(UnitTestSplitComm, split_comms_my_comm)
 {
   int numWorldProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
-  if (numWorldProcs <= 1) { return; }
+  if (numWorldProcs <= 1) { GTEST_SKIP(); }
   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
   int myColor = myRank == 0 ? 0 : 1;
 
-  MPI_Comm splitComm = stk::coupling::split_comm(MPI_COMM_WORLD, myColor);
-  EXPECT_TRUE(stk::coupling::has_split_comm(MPI_COMM_WORLD, splitComm));
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  MPI_Comm splitComm = splitComms.get_split_comm();
   int expectedSize = myRank == 0 ? 1 : (numWorldProcs - 1);
   EXPECT_EQ(expectedSize, stk::parallel_machine_size(splitComm));
 }
 
-TEST(UnitTestSplitComm, calc_my_root_and_other_root_ranks_both_comm_world)
+TEST(UnitTestSplitComm, get_other_colors_2_colors)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-
-  std::pair<int,int> rootRanks = 
-      stk::coupling::calc_my_root_and_other_root_ranks(MPI_COMM_WORLD, MPI_COMM_WORLD);
-  EXPECT_EQ(rootRanks.first, rootRanks.second);
-}
-  
-TEST(UnitTestSplitComm, calc_my_root_and_other_root_ranks_both_split_comms)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  
-  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  MPI_Comm splitComm = stk::coupling::split_comm(MPI_COMM_WORLD, myColor);
-
-  std::pair<int,int> rootRanks = 
-      stk::coupling::calc_my_root_and_other_root_ranks(splitComm, splitComm);
-  EXPECT_EQ(rootRanks.first, rootRanks.second);
-}
-
-TEST(UnitTestSplitComm, calc_my_root_and_other_root_ranks)
-{
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { return; }
-  
-  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  MPI_Comm splitComm = stk::coupling::split_comm(MPI_COMM_WORLD, myColor);
-
-  std::pair<int,int> rootRanks = 
-      stk::coupling::calc_my_root_and_other_root_ranks(MPI_COMM_WORLD, splitComm);
-
+  int numWorldProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numWorldProcs <= 1) { GTEST_SKIP(); }
   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  int otherRank = 1 - myRank;
-  EXPECT_EQ(myRank, rootRanks.first);
-  EXPECT_EQ(otherRank, rootRanks.second);
+  int myColor = myRank == 0 ? 0 : 1;
+
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  std::vector<int> otherColors = splitComms.get_other_colors();
+  EXPECT_EQ(1u, otherColors.size());
+  EXPECT_EQ((myRank == 0) ? 1 : 0, otherColors[0]);
 }
 
-TEST(UnitTestSplitComm, calc_my_root_and_other_root_ranks_non_contig_comm)
+TEST(UnitTestSplitComm, get_other_colors_3_colors)
 {
-  if (stk::parallel_machine_size(MPI_COMM_WORLD) < 3) { return; }
+  int numWorldProcs = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (numWorldProcs != 3) { GTEST_SKIP(); }
   int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  int myColor = myRank == 1 ? 1 : 0;
-  MPI_Comm splitComm = stk::coupling::split_comm(MPI_COMM_WORLD, myColor);
+  int myColor = myRank;
 
-  int expectedOtherRootRank = myRank == 1 ? 0 : 1;
-  std::pair<int,int> rootRanks = 
-      stk::coupling::calc_my_root_and_other_root_ranks(MPI_COMM_WORLD, splitComm);
-  EXPECT_EQ(expectedOtherRootRank, rootRanks.second);
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  std::vector<int> otherColors = splitComms.get_other_colors();
+  EXPECT_EQ(2u, otherColors.size());
+  std::sort(otherColors.begin(), otherColors.end());
+  if(myRank == 0)
+  {
+    EXPECT_EQ(1, otherColors[0]);
+    EXPECT_EQ(2, otherColors[1]);
+  }
+  else if(myRank == 1)
+  {
+    EXPECT_EQ(0, otherColors[0]);
+    EXPECT_EQ(2, otherColors[1]);
+  }
+  else
+  {
+    EXPECT_EQ(0, otherColors[0]);
+    EXPECT_EQ(1, otherColors[1]);
+  }
+}
+
+TEST(UnitTestSplitComm, split_comms_comm_world)
+{
+  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
+
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  MPI_Comm commWorld = splitComms.get_parent_comm();
+
+  int commCompareResult;
+  MPI_Comm_compare(MPI_COMM_WORLD, commWorld, &commCompareResult);
+  EXPECT_EQ(MPI_IDENT, commCompareResult);
+}
+
+int find_pairwise_comm_size(const std::vector<int>& colors, int color1, int color2)
+{
+  int count = 0;
+  for(unsigned i = 0; i < colors.size(); i++) {
+    if(colors[i] == color1 || colors[i] == color2) {
+      count++;
+    }
+  }
+  return count;
+}
+
+void check_round_robin_communicate(MPI_Comm comm)
+{
+  MPI_Request request;
+  MPI_Status status;
+
+  int recvValue = -1;
+  int commSize = stk::parallel_machine_size(comm);
+  int myLocalRank = stk::parallel_machine_rank(comm);
+  int recvRank = (myLocalRank - 1 + commSize) % commSize;
+  int sendRank = (myLocalRank + 1) % commSize;
+
+  MPI_Irecv(&recvValue, 1, MPI_INT, recvRank, MPI_ANY_TAG, comm, &request);
+  MPI_Send(&myLocalRank, 1, MPI_INT, sendRank, 0, comm);
+  MPI_Wait(&request, &status);
+
+  EXPECT_EQ(recvValue, recvRank);
+}
+
+void check_pairwise_comms(const stk::coupling::SplitComms& splitComms, const std::vector<int>& colors, int myColor)
+{
+  std::vector<int> uniqueColors(colors.size());
+  std::copy(colors.begin(), colors.end(), uniqueColors.begin());
+  stk::util::sort_and_unique(uniqueColors);
+
+  for(int color : uniqueColors) {
+    if(color == myColor) {
+      EXPECT_ANY_THROW(splitComms.get_pairwise_comm(color));
+    } else {
+      MPI_Comm pairwiseComm = splitComms.get_pairwise_comm(color);
+      int pairwiseCommSize = find_pairwise_comm_size(colors, myColor, color);
+      EXPECT_EQ(stk::parallel_machine_size(pairwiseComm), pairwiseCommSize);
+
+      check_round_robin_communicate(pairwiseComm);
+    }
+  }
+}
+
+TEST(UnitTestSplitComm, split_comms_2colors_pairwise_comm_equals_comm_world)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+
+  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  int otherColor = 1 - myColor;
+  MPI_Comm pairwiseComm = splitComms.get_pairwise_comm(otherColor);
+  int result;
+  MPI_Comm_compare(MPI_COMM_WORLD, pairwiseComm, &result);
+  EXPECT_EQ(MPI_IDENT, result);
+  MPI_Comm_compare(splitComms.get_parent_comm(), pairwiseComm, &result);
+  EXPECT_EQ(MPI_IDENT, result);
+}
+
+TEST(UnitTestSplitComm, split_comms_pairwise_comm)
+{
+  int commSize = stk::parallel_machine_size(MPI_COMM_WORLD);
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  std::vector<int> colors;
+
+  for(int i = 0; i < commSize; i++) {
+    colors.push_back(i);
+  }
+
+  int myColor = colors[myRank];
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  check_pairwise_comms(splitComms, colors, myColor);
+}
+
+TEST(UnitTestSplitComm, split_comms_pairwise_comm_two_ranks_per_color)
+{
+  int commSize = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (commSize < 4 || commSize % 2 != 0) { GTEST_SKIP(); }
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  std::vector<int> colors;
+
+  for(int i = 0; i < commSize; i++) {
+    colors.push_back(i / 2);
+  }
+
+  int myColor = colors[myRank];
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  check_pairwise_comms(splitComms, colors, myColor);
+}
+
+TEST(UnitTestSplitComm, split_comms_pairwise_comm_random_colors_per_rank)
+{
+  int commSize = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (commSize != 3) { GTEST_SKIP(); }
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  std::vector<int> colors = {5,8,3};
+
+  int myColor = colors[myRank];
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  check_pairwise_comms(splitComms, colors, myColor);
+}
+
+TEST(UnitTestSplitComm, split_comms_pairwise_comm_non_consecutive_ranks_per_color)
+{
+  int commSize = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (commSize != 8) { GTEST_SKIP(); }
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  std::vector<int> colors = {0,1,1,2,3,3,2,0};
+
+  int myColor = colors[myRank];
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  check_pairwise_comms(splitComms, colors, myColor);
+}
+
+TEST(UnitTestSplitComm, split_comms_pairwise_comm_different_rank_counts_per_color)
+{
+  int commSize = stk::parallel_machine_size(MPI_COMM_WORLD);
+  if (commSize != 8) { GTEST_SKIP(); }
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  std::vector<int> colors = {0,1,1,1,1,1,2,2};
+
+  int myColor = colors[myRank];
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  check_pairwise_comms(splitComms, colors, myColor);
+}
+
+TEST(UnitTestSplitComm, get_pairwise_root_ranks_2procs)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int otherColor = 1 - myColor;
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  stk::coupling::PairwiseRanks ranks = splitComms.get_pairwise_root_ranks(otherColor);
+  EXPECT_EQ(myColor, ranks.localColorRoot);
+  EXPECT_EQ(otherColor, ranks.otherColorRoot);
+}
+
+TEST(UnitTestSplitComm, get_pairwise_root_ranks_3proc)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 3) { GTEST_SKIP(); }
+  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  std::vector<int> otherColors = splitComms.get_other_colors();
+
+  for(int otherColor : otherColors)
+  {
+    stk::coupling::PairwiseRanks pairwiseRanks = splitComms.get_pairwise_root_ranks(otherColor);
+
+    MPI_Comm pairedComm = splitComms.get_pairwise_comm(otherColor);
+    int myRank = stk::parallel_machine_rank(pairedComm);
+    int otherRank = (myRank == 0) ? 1 : 0;
+
+    EXPECT_EQ(myRank, pairwiseRanks.localColorRoot);
+    EXPECT_EQ(otherRank, pairwiseRanks.otherColorRoot);
+  }
+}
+
+TEST(UnitTestSplitComm, get_pairwise_root_ranks_3colors_6ranks)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 6) { GTEST_SKIP(); }
+  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD)/2;
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  std::vector<int> otherColors = splitComms.get_other_colors();
+
+  for(int otherColor : otherColors)
+  {
+    stk::coupling::PairwiseRanks pairwiseRanks = splitComms.get_pairwise_root_ranks(otherColor);
+    int myRoot = (myColor < otherColor) ? 0 : 2;
+    int otherRoot = 2 - myRoot;
+
+    EXPECT_EQ(myRoot, pairwiseRanks.localColorRoot);
+    EXPECT_EQ(otherRoot, pairwiseRanks.otherColorRoot);
+  }
+}
+
+TEST(UnitTestSplitComm, get_pairwise_root_ranks_3colors_unequal_rank_distribution)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 6) { GTEST_SKIP(); }
+  std::vector<int> numRanksPerColor = {2, 1, 3};
+  std::vector<int> colorOfRank = {0, 0, 1, 2, 2, 2};
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int myColor = colorOfRank[myRank];
+
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  std::vector<int> otherColors = splitComms.get_other_colors();
+
+  for(int otherColor : otherColors)
+  {
+    stk::coupling::PairwiseRanks pairwiseRanks = splitComms.get_pairwise_root_ranks(otherColor);
+    int myRoot, otherRoot;
+    if (myColor < otherColor) {
+      myRoot = 0;
+      otherRoot = numRanksPerColor[myColor];
+    } else {
+      myRoot = numRanksPerColor[otherColor];
+      otherRoot = 0;
+    }
+
+    EXPECT_EQ(myRoot, pairwiseRanks.localColorRoot);
+    EXPECT_EQ(otherRoot, pairwiseRanks.otherColorRoot);
+  }
+}
+
+TEST(UnitTestSplitComm, get_pairwise_root_ranks_3colors_unequal_noncontiguous_rank_distribution)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 6) { GTEST_SKIP(); }
+  std::vector<int> colorOfRank = {2, 1, 0, 2, 0, 2};
+  int myRank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int myColor = colorOfRank[myRank];
+
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+  std::vector<int> otherColors = splitComms.get_other_colors();
+
+  for(int otherColor : otherColors)
+  {
+    stk::coupling::PairwiseRanks pairwiseRanks = splitComms.get_pairwise_root_ranks(otherColor);
+    int myRoot = (myColor > otherColor) ? 0 : 1;
+    int otherRoot = 1 - myRoot;
+
+    EXPECT_EQ(myRoot, pairwiseRanks.localColorRoot);
+    EXPECT_EQ(otherRoot, pairwiseRanks.otherColorRoot);
+  }
+}
+
+TEST(UnitTestSplitComm, get_pairwise_root_ranks_2procs_invalid_color)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) { GTEST_SKIP(); }
+  int myColor = stk::parallel_machine_rank(MPI_COMM_WORLD);
+  int otherColor = 100;
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, myColor);
+
+  EXPECT_ANY_THROW(splitComms.get_pairwise_root_ranks(otherColor));
+}
+
+TEST(UnitTestSplitComm, is_coupling_version_incompatible)
+{
+  TestCompatibilityMode testMode(stk::coupling::impl::Incompatible);
+  int color = 0;
+  EXPECT_ANY_THROW(stk::coupling::SplitComms(MPI_COMM_WORLD, color));
+}
+
+TEST(UnitTestSplitComm, is_coupling_version_deprecated_current)
+{
+  TestCompatibilityMode testMode(stk::coupling::impl::Current);
+  int color = 0;
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, color);
+  EXPECT_FALSE(splitComms.is_coupling_version_deprecated());
+}
+
+TEST(UnitTestSplitComm, is_coupling_version_deprecated_BackwardsCompatible)
+{
+  TestCompatibilityMode testMode(stk::coupling::impl::BackwardsCompatible);
+  int color = 0;
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, color);
+  EXPECT_FALSE(splitComms.is_coupling_version_deprecated());
+}
+
+TEST(UnitTestSplitComm, is_coupling_version_deprecated_deprecated)
+{
+  TestCompatibilityMode testMode(stk::coupling::impl::Deprecated);
+  int color = 0;
+  stk::coupling::SplitComms splitComms(MPI_COMM_WORLD, color);
+  EXPECT_TRUE(splitComms.is_coupling_version_deprecated());
 }
 
 }

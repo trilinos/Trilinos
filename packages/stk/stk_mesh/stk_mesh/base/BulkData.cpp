@@ -4940,7 +4940,6 @@ void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const Ent
 {
     part_storage.induced_part_ordinals.clear();
     induced_part_membership(*this, entity, part_storage.induced_part_ordinals);
-
     impl::unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     impl::filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
 
@@ -4998,12 +4997,20 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
     std::string errorMsg;
     try
     {
+        std::vector<bool> shouldProcess(get_size_of_entity_index_space(), false);
         for(const EntityCommListInfo& info : m_entity_comm_list)
         {
             const int owner = parallel_owner_rank(info.entity);
             bool i_own_this_entity = (owner == p_rank);
+            
             if(i_own_this_entity && state(info.entity) != Unchanged)
             {
+                shouldProcess[info.entity.local_offset()] = true;
+            }
+        }
+        for(const EntityCommListInfo& info : m_entity_comm_list)
+        {
+            if (shouldProcess[info.entity.local_offset()]) {
                 remove_unneeded_induced_parts(info.entity, info.entity_comm->comm_map, part_storage,  comm);
             }
         }

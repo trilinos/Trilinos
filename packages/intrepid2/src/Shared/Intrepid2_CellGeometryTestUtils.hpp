@@ -61,21 +61,22 @@ namespace Intrepid2
    \param [in] copyAffineness - if true, the resulting geometry will be marked as affine if the original geometry was, allowing reduce storage of Jacobians, etc.
    \return a representation of the same geometry, defined using cell-to-nodes and node-to-coordinates containers.
 */
-  template< typename PointScalar, int spaceDim, typename ExecutionSpace >
+  template< typename PointScalar, int spaceDim, typename DeviceType >
   inline
-  CellGeometry<PointScalar, spaceDim, ExecutionSpace> getNodalCellGeometry(CellGeometry<PointScalar, spaceDim, ExecutionSpace> &anyCellGeometry,
-                                                                           const bool &copyAffineness)
+  CellGeometry<PointScalar, spaceDim, DeviceType> getNodalCellGeometry(CellGeometry<PointScalar, spaceDim, DeviceType> &anyCellGeometry,
+                                                                       const bool &copyAffineness)
   {
     // copy the nodes from CellGeometry into a raw View
     const int numCells = anyCellGeometry.extent_int(0);
     const int numNodes = anyCellGeometry.extent_int(1);
     
-    using PointScalarView = ScalarView<PointScalar, ExecutionSpace >;
-    using intView         = ScalarView<        int, ExecutionSpace >;
+    using PointScalarView = ScalarView<PointScalar, DeviceType >;
+    using intView         = ScalarView<        int, DeviceType >;
     
-    auto cellToNodes      = intView             ("cell to nodes", numCells, numNodes);    // this will be a one-to-one mapping
-    PointScalarView nodes = getView<PointScalar>("nodes", numCells * numNodes, spaceDim); // we store redundant copies of vertices for each cell
+    auto cellToNodes      = intView                          ("cell to nodes", numCells, numNodes);    // this will be a one-to-one mapping
+    PointScalarView nodes = getView<PointScalar,DeviceType>("nodes", numCells * numNodes, spaceDim); // we store redundant copies of vertices for each cell
 
+    using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodes});
     
     // "workset"
@@ -95,7 +96,7 @@ namespace Intrepid2
     const auto nodeOrdering = anyCellGeometry.nodeOrderingForHypercubes();
     
     const auto cellTopology = anyCellGeometry.cellTopology();
-    CellGeometry<PointScalar, spaceDim, ExecutionSpace> nodalCellGeometry(cellTopology,cellToNodes,nodes,claimAffine,nodeOrdering);
+    CellGeometry<PointScalar, spaceDim, DeviceType> nodalCellGeometry(cellTopology,cellToNodes,nodes,claimAffine,nodeOrdering);
     
     return nodalCellGeometry;
   }
@@ -105,9 +106,9 @@ namespace Intrepid2
    \param [in] gridCellCounts - array specifying the number of cells in each coordinate dimension.
    \return a uniform Cartesion mesh, with origin at 0, with the specified domain extents and grid cell counts.
 */
-  template<class PointScalar, int spaceDim, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
-  inline CellGeometry<PointScalar,spaceDim,ExecSpaceType> uniformCartesianMesh(const Kokkos::Array<PointScalar,spaceDim> &domainExtents,
-                                                                               const Kokkos::Array<int,spaceDim> &gridCellCounts)
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  inline CellGeometry<PointScalar,spaceDim,DeviceType> uniformCartesianMesh(const Kokkos::Array<PointScalar,spaceDim> &domainExtents,
+                                                                            const Kokkos::Array<int,spaceDim> &gridCellCounts)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;
     for (int d=0; d<spaceDim; d++)
@@ -115,7 +116,7 @@ namespace Intrepid2
       origin[d] = 0.0;
     }
     
-    using CellGeometry = ::Intrepid2::CellGeometry<PointScalar, spaceDim, ExecSpaceType>;
+    using CellGeometry = ::Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType>;
     const auto NO_SUBDIVISION = CellGeometry::NO_SUBDIVISION;
     const auto HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS = CellGeometry::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
     
@@ -127,8 +128,8 @@ namespace Intrepid2
    \param [in] gridCellCounts - the number of cells in each coordinate dimension.
    \return a uniform Cartesion mesh, with origin at 0, with the specified domain extent and grid cell counts.
 */
-  template<class PointScalar, int spaceDim, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
-  inline CellGeometry<PointScalar,spaceDim,ExecSpaceType> uniformCartesianMesh(const PointScalar &domainExtent, const int &meshWidth)
+  template<class PointScalar, int spaceDim, typename DeviceType>
+  inline CellGeometry<PointScalar,spaceDim,DeviceType> uniformCartesianMesh(const PointScalar &domainExtent, const int &meshWidth)
   {
     Kokkos::Array<PointScalar,spaceDim> origin;
     Kokkos::Array<PointScalar,spaceDim> domainExtents;
@@ -140,7 +141,7 @@ namespace Intrepid2
       gridCellCounts[d] = meshWidth;
     }
     
-    using CellGeometry = ::Intrepid2::CellGeometry<PointScalar, spaceDim, ExecSpaceType>;
+    using CellGeometry = ::Intrepid2::CellGeometry<PointScalar, spaceDim, DeviceType>;
     const auto NO_SUBDIVISION = CellGeometry::NO_SUBDIVISION;
     const auto HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS = CellGeometry::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
     

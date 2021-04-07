@@ -35,11 +35,11 @@
 #ifndef STK_UTIL_REGISTRY_RegisterProduct_hpp
 #define STK_UTIL_REGISTRY_RegisterProduct_hpp
 
-namespace sierra {
+namespace stk {
 
 void
 register_product();
 
-} // namespace sierra
+} // namespace stk
 
 #endif // STK_UTIL_REGISTRY_RegisterProduct_hpp

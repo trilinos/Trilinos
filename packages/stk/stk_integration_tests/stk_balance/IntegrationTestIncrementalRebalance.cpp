@@ -48,7 +48,6 @@ public:
     using stk::balance::GraphCreationSettings::getToleranceForFaceSearch;
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
-    virtual bool areVertexWeightsProvidedInAVector() const { return false; }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
     virtual bool includeSearchResultsInGraph() const { return true; }
     virtual bool getEdgesForParticlesUsingSearch() const { return true; }
@@ -226,7 +225,7 @@ protected:
         out << "after mesh read:" << std::endl;
         print_locally_owned_elements(out);
 
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
 
         set_proc_owner_on_field();
         set_weights_on_elements();
@@ -266,7 +265,7 @@ protected:
         const double defaultVertexWeight = 0.0;
         stk::balance::FieldVertexWeightSettings graphSettings(get_bulk(), *get_weight_field(), defaultVertexWeight);
         graphSettings.setDecompMethod(method);
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
 
         out << "after first balance:" << std::endl;
@@ -303,7 +302,7 @@ protected:
         stk::balance::FieldVertexWeightSettings graphSettings(get_bulk(), *get_weight_field(), defaultVertexWeight);
         graphSettings.setDecompMethod(method1);
         if (get_bulk().parallel_rank()==0) std::cerr << "Decomposition method = " << method1 << std::endl;
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
 
         out << "after first balance:" << std::endl;
@@ -313,6 +312,7 @@ protected:
         set_weights_on_elements({9, 10}, 2.0);
         set_proc_owner_on_field();
         graphSettings.setDecompMethod(method2);
+
         if (get_bulk().parallel_rank()==0) std::cerr << "Decomposition method = " << method2 << std::endl;
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
 
@@ -323,7 +323,12 @@ protected:
         out.close();
 
         size_t num_elements_migrated_to_me = calculate_migrated_elements();
-        EXPECT_EQ(12u, num_elements_migrated_to_me);
+        if (get_bulk().parallel_rank() == 0) {
+          EXPECT_EQ(24u, num_elements_migrated_to_me);
+        }
+        else {
+          EXPECT_EQ(12u, num_elements_migrated_to_me);
+        }
     }
 
     void decomposeWithRcbThenParmetisAndCheckMigration()
@@ -339,7 +344,7 @@ protected:
         const double defaultVertexWeight = 0.0;
         stk::balance::FieldVertexWeightSettings graphSettings(get_bulk(), *get_weight_field(), defaultVertexWeight);
         graphSettings.setDecompMethod("rcb");
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
 
         out << "after first rebalance:" << std::endl;
@@ -449,7 +454,7 @@ protected:
         const double defaultVertexWeight = 0.0;
         FieldVertexWeightSettingsWithSearchForParticles graphSettings(get_bulk(), *get_weight_field(), defaultVertexWeight, incrementalRebalance);
         graphSettings.setDecompMethod(decompMethod);
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
     }
 
@@ -636,10 +641,10 @@ TEST_F(IncrementalRebalance, parmetis_case1)
 }
 
 #if !defined(__APPLE__)
-TEST_F(IncrementalRebalance, rcb_then_parmetis_case2)
+TEST_F(IncrementalRebalance, rib_then_parmetis_case2)
 {
     if(stk::parallel_machine_size(get_comm())==3)
-        decompose1x9x9beamThenRebalanceWithLast2ElementChanges("rcb", "parmetis");
+        decompose1x9x9beamThenRebalanceWithLast2ElementChanges("rib", "parmetis");
 }
 #endif
 

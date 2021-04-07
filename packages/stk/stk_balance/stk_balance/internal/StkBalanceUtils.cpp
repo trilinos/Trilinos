@@ -11,30 +11,53 @@
 
 #include <iostream>
 #include <iomanip>
-
+#include <set>
 
 namespace stk { namespace balance { namespace internal {
 
-int getNumSharedNodesBetweenElements(const ::stk::mesh::BulkData& stkMeshBulkData,
-                                     const ::stk::mesh::Entity element1,
-                                     const ::stk::mesh::Entity element2)
+bool has_common_nodes_between_elements(const stk::mesh::BulkData & stkMeshBulkData,
+                                       const stk::mesh::Entity & element1,
+                                       const stk::mesh::Entity & element2)
 {
-    const stk::mesh::Entity* nodes1 = stkMeshBulkData.begin_nodes(element1);
-    int numNodes1 = stkMeshBulkData.num_nodes(element1);
-    const stk::mesh::Entity* nodes2 = stkMeshBulkData.begin_nodes(element2);
-    int numNodes2 = stkMeshBulkData.num_nodes(element2);
+  const stk::mesh::Entity* nodes1 = stkMeshBulkData.begin_nodes(element1);
+  int numNodes1 = stkMeshBulkData.num_nodes(element1);
+  const stk::mesh::Entity* nodes2 = stkMeshBulkData.begin_nodes(element2);
+  int numNodes2 = stkMeshBulkData.num_nodes(element2);
 
-    int numShared = 0;
-    for(int i1=0; i1<numNodes1; ++i1) {
-        for(int i2=0; i2<numNodes2; ++i2) {
-            if (nodes1[i1] == nodes2[i2]) {
-                ++numShared;
-                break;
-            }
-        }
+  for (int i1 = 0; i1 < numNodes1; ++i1) {
+    for (int i2 = 0; i2 < numNodes2; ++i2) {
+      if (nodes1[i1] == nodes2[i2]) {
+        return true;
+      }
     }
+  }
 
-    return numShared;
+  return false;
+}
+
+int get_num_common_nodes_between_elements(const ::stk::mesh::BulkData& stkMeshBulkData,
+                                          const ::stk::mesh::Entity element1,
+                                          const ::stk::mesh::Entity element2)
+{
+  const stk::mesh::Entity* nodes1 = stkMeshBulkData.begin_nodes(element1);
+  int numNodes1 = stkMeshBulkData.num_nodes(element1);
+  const stk::mesh::Entity* nodes2 = stkMeshBulkData.begin_nodes(element2);
+  int numNodes2 = stkMeshBulkData.num_nodes(element2);
+
+  static std::vector<stk::mesh::Entity> commonNodes;
+  commonNodes.clear();
+
+  for (int i1 = 0; i1 < numNodes1; ++i1) {
+    for (int i2 = 0; i2 < numNodes2; ++i2) {
+      if (nodes1[i1] == nodes2[i2]) {
+        commonNodes.push_back(nodes1[i1]);
+        break;
+      }
+    }
+  }
+
+  stk::util::sort_and_unique(commonNodes);
+  return commonNodes.size();
 }
 
 std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const std::string& baseFilename)
@@ -76,30 +99,36 @@ void addBoxForNodes(stk::mesh::BulkData& stkMeshBulkData,
     faceBoxes.emplace_back(faceBox, id);
 }
 
-void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings, const stk::mesh::FieldBase* coord, stk::balance::internal::SearchBoxIdentProcs &faceBoxes, const stk::mesh::Selector& searchSelector)
+void fillFaceBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData, const BalanceSettings & balanceSettings,
+                          const stk::mesh::FieldBase* coord, stk::balance::internal::SearchBoxIdentProcs &faceBoxes,
+                          const stk::mesh::Selector& searchSelector)
 {
-    std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData, searchSelector, !searchSelector);
-    stk::mesh::EntityVector sideNodes;
-    for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet)
-    {
-        stk::mesh::Entity sidesetElement = sidesetEntry.element;
-        stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
-        stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement,
-                                     stkMeshBulkData.mesh_meta_data().side_rank(),
-                                     sidesetSide, sideNodes);
-        const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
-                                                                     sideNodes.data(), sideNodes.size());
-        addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
-                       stkMeshBulkData.identifier(sidesetElement), faceBoxes);
+  std::vector<stk::mesh::SideSetEntry> skinnedSideSet = stk::mesh::SkinMeshUtil::get_skinned_sideset_excluding_region(stkMeshBulkData,
+                                                                                                                      searchSelector,
+                                                                                                                      !searchSelector);
+  stk::mesh::EntityVector sideNodes;
+  for (stk::mesh::SideSetEntry sidesetEntry : skinnedSideSet) {
+    stk::mesh::Entity sidesetElement = sidesetEntry.element;
+    if (searchSelector(stkMeshBulkData.bucket(sidesetElement))) {
+      stk::mesh::ConnectivityOrdinal sidesetSide = sidesetEntry.side;
+      stk::mesh::get_subcell_nodes(stkMeshBulkData, sidesetElement,
+                                   stkMeshBulkData.mesh_meta_data().side_rank(),
+                                   sidesetSide, sideNodes);
+      const double eps = balanceSettings.getToleranceForFaceSearch(stkMeshBulkData, *coord,
+                                                                   sideNodes.data(), sideNodes.size());
+      addBoxForNodes(stkMeshBulkData, sideNodes.size(), &sideNodes[0], coord, eps,
+                     stkMeshBulkData.identifier(sidesetElement), faceBoxes);
     }
+  }
 }
 
 void fillParticleBoxesWithIds(stk::mesh::BulkData &stkMeshBulkData,
                               const BalanceSettings & balanceSettings,
                               const stk::mesh::FieldBase* coord,
-                              stk::balance::internal::SearchBoxIdentProcs &boxes)
+                              stk::balance::internal::SearchBoxIdentProcs &boxes,
+                              const stk::mesh::Selector& searchSelector)
 {
-    const stk::mesh::BucketVector &elementBuckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
+    const stk::mesh::BucketVector &elementBuckets = stkMeshBulkData.get_buckets(stk::topology::ELEMENT_RANK, searchSelector);
 
     for (size_t i=0;i<elementBuckets.size();i++)
     {
@@ -128,10 +157,7 @@ SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMesh
                                                     const BalanceSettings &balanceSettings,
                                                     const stk::mesh::Selector& searchSelector)
 {
-    bool useLocalIds = balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH ||
-                       balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
-                       balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS;
-    ThrowRequireWithSierraHelpMsg(useLocalIds != true);
+    ThrowRequireWithSierraHelpMsg(!balanceSettings.usingColoring());
 
     const stk::mesh::FieldBase * coord = stkMeshBulkData.mesh_meta_data().coordinate_field();
 
@@ -140,7 +166,7 @@ SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMesh
 
     if ( balanceSettings.getEdgesForParticlesUsingSearch() )
     {
-        fillParticleBoxesWithIds(stkMeshBulkData, balanceSettings, coord, faceBoxes);
+        fillParticleBoxesWithIds(stkMeshBulkData, balanceSettings, coord, faceBoxes, searchSelector);
     }
 
     stk::balance::internal::SearchElemPairs searchResults;

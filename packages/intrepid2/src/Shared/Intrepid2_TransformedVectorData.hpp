@@ -60,22 +60,22 @@ namespace Intrepid2 {
  
  TransformedVectorData provides a View-like interface of rank 4, with shape (C,F,P,D).  When the corresponding accessor is used, the transformed value is determined from corresponding reference space values and the transformation.
 */
-  template<class Scalar, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename DeviceType>
   class TransformedVectorData
   {
   public:
-    using Transform = Data<Scalar,ExecSpaceType>;
+    using Transform = Data<Scalar,DeviceType>;
     
-    Data<Scalar,ExecSpaceType> transform_; // (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform
+    Data<Scalar,DeviceType> transform_; // (C,P,D,D) jacobian or jacobian inverse; can also be unset for identity transform
     
-    VectorData<Scalar, ExecSpaceType> vectorData_; // notionally (F,P,D) container
+    VectorData<Scalar, DeviceType> vectorData_; // notionally (F,P,D) container
     
     /**
      \brief Standard constructor.
      \param [in] transform - the transformation matrix, with nominal shape (C,P,D,D)
      \param [in] vectorData - the reference-space data to be transformed, with nominal shape (F,P,D)
     */
-    TransformedVectorData(const Data<Scalar,ExecSpaceType> &transform, const VectorData<Scalar,ExecSpaceType> &vectorData)
+    TransformedVectorData(const Data<Scalar,DeviceType> &transform, const VectorData<Scalar,DeviceType> &vectorData)
     :
     transform_(transform), vectorData_(vectorData)
     {
@@ -87,14 +87,14 @@ namespace Intrepid2 {
      \brief Constructor for the case of an identity transform.
      \param [in] vectorData - the reference-space data, with nominal shape (F,P,D)
     */
-    TransformedVectorData(const VectorData<Scalar, ExecSpaceType> &vectorData)
+    TransformedVectorData(const VectorData<Scalar, DeviceType> &vectorData)
     :
     vectorData_(vectorData)
     {}
     
-    //! copy-like constructor for differing execution spaces.  This does a deep_copy of underlying views.
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    TransformedVectorData(const TransformedVectorData<Scalar,OtherExecSpaceType> &transformedVectorData)
+    //! copy-like constructor for differing device types.  This may do a deep_copy of underlying views, depending on the memory spaces involved.
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<DeviceType, OtherDeviceType>::value>::type>
+    TransformedVectorData(const TransformedVectorData<Scalar,OtherDeviceType> &transformedVectorData)
     :
     transform_(transformedVectorData.transform()),
     vectorData_(transformedVectorData.vectorData())
@@ -188,13 +188,13 @@ namespace Intrepid2 {
     }
     
     //! Returns the transform matrix.  An invalid/empty container indicates the identity transform.
-    const Data<Scalar,ExecSpaceType> & transform() const
+    const Data<Scalar,DeviceType> & transform() const
     {
       return transform_;
     }
     
     //! Returns the reference-space vector data.
-    const VectorData<Scalar,ExecSpaceType> & vectorData() const
+    const VectorData<Scalar,DeviceType> & vectorData() const
     {
       return vectorData_;
     }

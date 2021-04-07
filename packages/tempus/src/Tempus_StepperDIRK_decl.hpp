@@ -62,54 +62,62 @@ namespace Tempus {
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for DIRK is
  *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{DIRK with the application-action locations indicated.}
- *  \begin{algorithmic}[1]
- *    \If {``Reset initial guess.''}
- *      \State $X \leftarrow x_{n-1}$
- *        \Comment{Reset initial guess to last timestep.}
- *    \EndIf
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \For {$i = 0 \ldots s-1$}
- *      \State $\tilde{X} \leftarrow
- *                      x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}$
- *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
- *      \If { $a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
- *        \State $\dot{X}_i \leftarrow 0$
- *          \Comment{Not needed for later calculations.}
- *      \ElsIf {$a_{ii} = 0$}             \Comment{Explicit stage.}
- *        \If {$i=0$ and ``Use FSAL'' and (previous step not failed)}
- *          \State $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
- *            \Comment{Use $\dot{X}_{s-1}$ from $n-1$ time step.}
- *        \Else
- *          \State $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
- *        \EndIf
- *      \Else                          \Comment{Implicit stage.}
- *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *        \If {``Zero initial guess.''}
- *          \State $X \leftarrow 0$
- *            \Comment{Else use previous stage value as initial guess.}
- *        \EndIf
- *        \State Solve $\mathcal{F}_i(
- *                      \dot{X}_i = \frac{X - \tilde{X}}{a_{ii} \Delta t},
- *                      X, t_{n-1}+c_{i}\Delta t) = 0$ for $X$
- *        \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *        \State $\dot{X}_i \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
- *      \EndIf
- *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \State {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
- *    \EndFor
- *    \State $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=0}^{s-1}b_i\,\dot{X}_i$
- *    \If {``Embedded''}  \Comment{Compute the local truncation error estimate.}
- *      \State $\mathbf{e} \leftarrow
- *                         \sum_{i=0}^{s-1} (b_i-b^\ast_i)\Delta t\,\dot{X}_i$
- *      \State $\tilde{\mathbf{e}} \leftarrow
- *             \mathbf{e}/(a_{tol} + \max(\|x_n\|, \|x_{n-1}\|)r_{tol})$
- *      \State $e_n \leftarrow \|\tilde{\mathbf{e}}\|_\infty$
- *    \EndIf
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *  \f{center}{
+ *    \parbox{6in}{
+ *    \rule{6in}{0.4pt} \\
+ *    {\bf Algorithm} DIRK \\
+ *    \rule{6in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\bf if ("Reset Initial guess.") then}
+ *      \item \quad $X \leftarrow x_{n-1}$
+ *                  \hfill {\it * Reset initial guess to last timestep.}
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf for {$i = 0 \ldots s-1$}}
+ *      \item \quad $\tilde{X} \leftarrow
+ *                     x_{n-1} +\Delta t \sum_{j=1}^{i-1} a_{ij}\,\dot{X}_{j}$
+ *      \item \quad {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
+ *      \item \quad {\bf if ( $a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$) then}
+ *      \item \qquad  $\dot{X}_i \leftarrow 0$
+ *                    \hfill {\it * Not needed for later calculations.}
+ *      \item \quad {\bf else if ($a_{ii} = 0$) then}
+ *                  \hfill {\it * Explicit stage.}
+ *      \item \qquad  {\bf if ($i=0$ and ``Use FSAL'' and (previous step not failed))}
+ *      \item \qquad \quad  $\dot{X}_0 \leftarrow \dot{X}_{s-1}$
+ *                          \hfill {\it * Use $\dot{X}_{s-1}$ from $n-1$ time step.}
+ *      \item \qquad {\bf else}
+ *      \item \qquad \quad  $\dot{X}_i \leftarrow \bar{f}(\tilde{X},t_{n-1}+c_i\Delta t)$
+ *      \item \qquad {\bf endif}
+ *      \item \quad {\bf else}
+ *                  \hfill {\it * Implicit stage.}
+ *      \item \qquad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item \qquad  {\bf if (``Zero initial guess.'')}
+ *      \item \qquad \quad  $X \leftarrow 0$
+ *                          \hfill {\it * Else use previous stage value as initial guess.}
+ *      \item \qquad {\bf endif}
+ *      \item \qquad {\bf Solve $\mathcal{F}_i(
+ *                                \dot{X}_i = \frac{X - \tilde{X}}{a_{ii} \Delta t},
+ *                                X, t_{n-1}+c_{i}\Delta t) = 0$ for $X$}
+ *      \item \qquad  {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item \qquad  $\dot{X}_i \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *      \item \quad  {\bf endif}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
+ *      \item {\bf end for}
+ *      \item $x_n \leftarrow x_{n-1} + \Delta t\,\sum_{i=0}^{s-1}b_i\,\dot{X}_i$
+ *      \item {\bf if (``Embedded'') then}
+ *            \hfill {\it * Compute the local truncation error estimate.}
+ *      \item \quad  $\mathbf{e} \leftarrow
+ *                               \sum_{i=0}^{s-1} (b_i-b^\ast_i)\Delta t\,\dot{X}_i$
+ *      \item \quad  $\tilde{\mathbf{e}} \leftarrow
+ *                     \mathbf{e}/(a_{tol} + \max(\|x_n\|, \|x_{n-1}\|)r_{tol})$
+ *      \item \quad  $e_n \leftarrow \|\tilde{\mathbf{e}}\|_\infty$
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{6in}{0.4pt}
+ *    }
  *  \f}
  *
  *  The First-Same-As-Last (FSAL) principle is not needed with DIRK, but
@@ -126,7 +134,7 @@ namespace Tempus {
  *  and \f$ \beta \equiv \frac{\partial x_n}{\partial x_n} = 1\f$. For the stage
  *  solutions, we have
  *  \f[
- *    \mathcal{F}_i = \dot{X}_{i} - \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t) =0.
+ *    \mathcal{F}_i = \dot{X}_{i} - \bar{f}(X_{i},t_{n-1}+c_{i}\Delta t) = 0
  *  \f]
  *  where \f$\mathcal{F}_n \rightarrow \mathcal{F}_i\f$,
  *  \f$x_n \rightarrow X_{i}\f$, and
@@ -227,6 +235,8 @@ public:
         this->setUseEmbedded(pl->get<bool>("Use Embedded"));
       if ( pl->isParameter("Zero Initial Guess") )
         this->setZeroInitialGuess(pl->get<bool>("Zero Initial Guess"));
+      if (pl->isParameter("Solver Name") )
+        this->setStepperSolverValues(pl);
     }
   }
 

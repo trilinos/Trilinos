@@ -77,6 +77,7 @@ namespace
   template<int spaceDim>
   void testVectorTransformation(const int &polyOrder, const int &meshWidth, Teuchos::FancyOStream &out, bool &success)
   {
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
     using PointScalar = double;
     
@@ -85,7 +86,7 @@ namespace
     
     auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
     
-    auto lineBasis = Intrepid2::getLineBasis< Intrepid2::NodalBasisFamily<> >(fs, polyOrder);
+    auto lineBasis = Intrepid2::getLineBasis< Intrepid2::NodalBasisFamily<DeviceType> >(fs, polyOrder);
     
     int numFields_1D = lineBasis->getCardinality();
     
@@ -104,17 +105,16 @@ namespace
     else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
     else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
     
-    using ExecSpaceType = Kokkos::DefaultExecutionSpace;
-    auto lineCubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(lineTopo,polyOrder*2);
+    auto lineCubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(lineTopo,polyOrder*2);
     int numPoints_1D = lineCubature->getNumPoints();
-    ScalarView<PointScalar,ExecSpaceType> lineCubaturePoints("line cubature points",numPoints_1D,1);
-    ScalarView<double,ExecSpaceType> lineCubatureWeights("line cubature weights", numPoints_1D);
+    ScalarView<PointScalar,DeviceType> lineCubaturePoints("line cubature points",numPoints_1D,1);
+    ScalarView<double,DeviceType> lineCubatureWeights("line cubature weights", numPoints_1D);
     
     lineCubature->getCubature(lineCubaturePoints, lineCubatureWeights);
     
     // Allocate some intermediate containers
-    ScalarView<Scalar,ExecSpaceType> lineBasisValues    ("line basis values",      numFields_1D, numPoints_1D   );
-    ScalarView<Scalar,ExecSpaceType> lineBasisGradValues("line basis grad values", numFields_1D, numPoints_1D, 1);
+    ScalarView<Scalar,DeviceType> lineBasisValues    ("line basis values",      numFields_1D, numPoints_1D   );
+    ScalarView<Scalar,DeviceType> lineBasisGradValues("line basis grad values", numFields_1D, numPoints_1D, 1);
     
     // for now, we use 1D values to build up the 2D or 3D gradients
     // eventually, TensorBasis should offer a getValues() variant that returns tensor basis data
@@ -124,21 +124,21 @@ namespace
     // drop the trivial space dimension in line gradient values:
     Kokkos::resize(lineBasisGradValues, numFields_1D, numPoints_1D);
       
-    Kokkos::Array<TensorData<Scalar,ExecSpaceType>, spaceDim> vectorComponents;
+    Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim> vectorComponents;
     
     for (int d=0; d<spaceDim; d++)
     {
-      Kokkos::Array<Data<Scalar,ExecSpaceType>, spaceDim> gradComponent_d;
+      Kokkos::Array<Data<Scalar,DeviceType>, spaceDim> gradComponent_d;
       for (int d2=0; d2<spaceDim; d2++)
       {
-        if (d2 == d) gradComponent_d[d2] = Data<Scalar,ExecSpaceType>(lineBasisGradValues);
-        else         gradComponent_d[d2] = Data<Scalar,ExecSpaceType>(lineBasisValues);
+        if (d2 == d) gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisGradValues);
+        else         gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisValues);
       }
-      vectorComponents[d] = TensorData<Scalar,ExecSpaceType>(gradComponent_d);
+      vectorComponents[d] = TensorData<Scalar,DeviceType>(gradComponent_d);
     }
-    VectorData<Scalar,ExecSpaceType> gradientValues(vectorComponents, false); // false: not axis-aligned
+    VectorData<Scalar,DeviceType> gradientValues(vectorComponents, false); // false: not axis-aligned
     
-    CellGeometry<PointScalar,spaceDim,ExecSpaceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,ExecSpaceType>(1.0, meshWidth);
+    CellGeometry<PointScalar,spaceDim,DeviceType> cellNodes = uniformCartesianMesh<PointScalar,spaceDim,DeviceType>(1.0, meshWidth);
     
     // goal here is to do a weighted Poisson; i.e. (f grad u, grad v) on each cell
     
@@ -149,14 +149,14 @@ namespace
     }
     
     auto jacobian = cellNodes.allocateJacobianData(pointsPerCell);
-    auto jacobianDet = CellTools<ExecSpaceType>::allocateJacobianDet(jacobian);
-    auto jacobianInv = CellTools<ExecSpaceType>::allocateJacobianInv(jacobian);
+    auto jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
+    auto jacobianInv = CellTools<DeviceType>::allocateJacobianInv(jacobian);
     cellNodes.setJacobian(                   jacobian, pointsPerCell);
-    CellTools<ExecSpaceType>::setJacobianDet(jacobianDet, jacobian);
-    CellTools<ExecSpaceType>::setJacobianInv(jacobianInv, jacobian);
+    CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
+    CellTools<DeviceType>::setJacobianInv(jacobianInv, jacobian);
     
     // lazily-evaluated transformed gradient values:
-    auto transformedGradientData = FunctionSpaceTools<ExecSpaceType>::getHGRADtransformGRAD(jacobianInv, gradientValues);
+    auto transformedGradientData = FunctionSpaceTools<DeviceType>::getHGRADtransformGRAD(jacobianInv, gradientValues);
 
     int numPoints = 1;
     for (int d=0; d<spaceDim; d++)
@@ -165,22 +165,21 @@ namespace
     }
     
     // now, compute transformed values in the classic, expanded way
-    ScalarView<Scalar,ExecSpaceType> expandedTransformedGradValues("transformed grad values", numCells, numFields, numPoints, spaceDim);
+    ScalarView<Scalar,DeviceType> expandedTransformedGradValues("transformed grad values", numCells, numFields, numPoints, spaceDim);
     
-    auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<> >(cellTopo, fs, polyOrder);
+    auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
     
     // Allocate some intermediate containers
-    ScalarView<Scalar,ExecSpaceType> basisValues    ("basis values", numFields, numPoints );
-    ScalarView<Scalar,ExecSpaceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
+    ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
+    ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
 
-    ScalarView<Scalar,ExecSpaceType> transformedGradValues("transformed grad values", numCells, numFields, numPoints, spaceDim);
-    ScalarView<Scalar,ExecSpaceType> transformedWeightedGradValues("transformed weighted grad values", numCells, numFields, numPoints, spaceDim);
+    ScalarView<Scalar,DeviceType> transformedGradValues("transformed grad values", numCells, numFields, numPoints, spaceDim);
+    ScalarView<Scalar,DeviceType> transformedWeightedGradValues("transformed weighted grad values", numCells, numFields, numPoints, spaceDim);
     
-    using Kokkos::DefaultExecutionSpace;
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<DefaultExecutionSpace>(cellTopo,polyOrder*2);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
     TEST_EQUALITY( numPoints, cubature->getNumPoints());
-    ScalarView<PointScalar,ExecSpaceType> cubaturePoints("cubature points",numPoints,spaceDim);
-    ScalarView<double,ExecSpaceType> cubatureWeights("cubature weights", numPoints);
+    ScalarView<PointScalar,DeviceType> cubaturePoints("cubature points",numPoints,spaceDim);
+    ScalarView<double,DeviceType> cubatureWeights("cubature weights", numPoints);
     
     cubature->getCubature(cubaturePoints, cubatureWeights);
     
@@ -188,23 +187,25 @@ namespace
     basis->getValues(basisGradValues, cubaturePoints, Intrepid2::OPERATOR_GRAD  );
     
     const int numNodesPerCell = cellNodes.numNodesPerCell();
-    ScalarView<PointScalar,ExecSpaceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
-    for (int cellOrdinal=0; cellOrdinal<numCells; cellOrdinal++)
+    ScalarView<PointScalar,DeviceType> expandedCellNodes("expanded cell nodes",numCells,numNodesPerCell,spaceDim);
+    
+    using ExecutionSpace = typename DeviceType::execution_space;
+    auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerCell});
+    Kokkos::parallel_for("fill expanded cell nodes", policy,
+    KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinal)
     {
-      for (int nodeOrdinal=0; nodeOrdinal<numNodesPerCell; nodeOrdinal++)
+      for (int d=0; d<spaceDim; d++)
       {
-        for (int d=0; d<spaceDim; d++)
-        {
-          expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
-        }
+        expandedCellNodes(cellOrdinal,nodeOrdinal,d) = cellNodes(cellOrdinal,nodeOrdinal,d);
       }
-    }
+    });
     
-    ScalarView<Scalar,ExecSpaceType> expandedJacobian("jacobian", numCells, numPoints, spaceDim, spaceDim);
-    ScalarView<Scalar,ExecSpaceType> expandedJacobianInverse("jacobian inverse", numCells, numPoints, spaceDim, spaceDim);
+    ScalarView<Scalar,DeviceType> expandedJacobian("jacobian", numCells, numPoints, spaceDim, spaceDim);
+    ScalarView<Scalar,DeviceType> expandedJacobianInverse("jacobian inverse", numCells, numPoints, spaceDim, spaceDim);
     
-    using CellTools = Intrepid2::CellTools<Kokkos::DefaultExecutionSpace>;
-    using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<Kokkos::DefaultExecutionSpace>;
+    using CellTools = Intrepid2::CellTools<DeviceType>;
+    using ExecutionSpace = typename DeviceType::execution_space;
+    using FunctionSpaceTools = Intrepid2::FunctionSpaceTools<ExecutionSpace>; // TODO: once FunctionSpaceTools supports DeviceType, change the template argument here.
     
     CellTools::setJacobian(expandedJacobian, cubaturePoints, expandedCellNodes, cellTopo);
     CellTools::setJacobianInv(expandedJacobianInverse, expandedJacobian);

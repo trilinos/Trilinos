@@ -60,9 +60,13 @@ using SearchElemPairs     = std::vector<SearchElemPair>;
 
 std::string get_parallel_filename(int subdomainIndex, int numSubdomains, const std::string& baseFilename);
 
-int getNumSharedNodesBetweenElements(const ::stk::mesh::BulkData& stkMeshBulkData,
-                                     const ::stk::mesh::Entity element1,
-                                     const ::stk::mesh::Entity element2);
+bool has_common_nodes_between_elements(const stk::mesh::BulkData & stkMeshBulkData,
+                                       const stk::mesh::Entity & element1,
+                                       const stk::mesh::Entity & element2);
+
+int get_num_common_nodes_between_elements(const ::stk::mesh::BulkData& stkMeshBulkData,
+                                          const ::stk::mesh::Entity element1,
+                                          const ::stk::mesh::Entity element2);
 
 SearchElemPairs getBBIntersectionsForFacesParticles(stk::mesh::BulkData& stkMeshBulkData,
                                                     const BalanceSettings &balanceSettings,

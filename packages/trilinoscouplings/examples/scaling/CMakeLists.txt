@@ -112,7 +112,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
         TRIBITS_ADD_TEST(
           Example_Maxwell
           NAME Example_Maxwell_MueLu_Stratimikos
-          ARGS "--solverName=MueLu-Stratimikos"
+          ARGS "--solverName=Stratimikos"
           NUM_MPI_PROCS 1
           COMM mpi serial
           )
@@ -120,7 +120,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
         TRIBITS_ADD_TEST(
           Example_Maxwell
           NAME Example_Maxwell_MueLu_Stratimikos
-          ARGS "--solverName=MueLu-Stratimikos"
+          ARGS "--solverName=Stratimikos"
           NUM_MPI_PROCS 4
           COMM mpi
           )
@@ -134,7 +134,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
 	    NUM_MPI_PROCS 1
 	    COMM mpi serial
 	    )
-	  
+
 	ENDIF()
 
       ENDIF()
@@ -142,7 +142,7 @@ IF(${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_EpetraExt AND
   ENDIF()
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMaxwellFiles
-    SOURCE_FILES Maxwell.xml Ninja.xml Maxwell_avatar.xml
+    SOURCE_FILES Maxwell.xml Ninja.xml Maxwell_avatar.xml stratimikos.xml
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
     )
@@ -498,7 +498,7 @@ ENDIF()
 
 
 # Just build this executable; don't run it as a test.
-IF (${PACKAGE_NAME}_ENABLE_Pamgen AND 
+IF (${PACKAGE_NAME}_ENABLE_Pamgen AND
     ${PACKAGE_NAME}_ENABLE_SEACASExodus AND
     ${PACKAGE_NAME}_ENABLE_SEACASNemesis)
   message("-- TrilinosCouplings: Building rtpamgen")
@@ -513,7 +513,7 @@ IF (${PACKAGE_NAME}_ENABLE_Pamgen AND
      DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
      )
 
-   
+
   TRIBITS_ADD_TEST(
    rtpamgen
    NAME "RTpamgen_test"

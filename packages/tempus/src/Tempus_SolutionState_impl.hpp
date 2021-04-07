@@ -408,6 +408,13 @@ void SolutionState<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
+  if (verbLevel == Teuchos::VERB_MEDIUM) {
+    out << "(index =" <<std::setw(6)<< this->getIndex()
+        << "; time =" <<std::setw(10)<<std::setprecision(3)<<this->getTime()
+        << "; dt   =" <<std::setw(10)<<std::setprecision(3)<<this->getTimeStep()
+        << ")" << std::endl;
+  }
+
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe:" << std::endl
         << "metaData = " << std::endl;

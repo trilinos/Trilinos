@@ -52,6 +52,12 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_TypeTraits.hpp"
+#include "Stratimikos_Config.h"
+#ifdef HAVE_STRATIMIKOS_THYRATPETRAADAPTERS
+#  include "Thyra_TpetraThyraWrappers.hpp"
+#  include <MatrixMarket_Tpetra.hpp>
+#  include <TpetraExt_MatrixMatrix.hpp>
+#endif
 
 namespace {
   // Set the Belos solver's parameter list to scale its residual norms
@@ -152,7 +158,10 @@ BelosLinearOpWithSolve<Scalar>::BelosLinearOpWithSolve()
   isExternalPrec_(false),
   supportSolveUse_(SUPPORT_SOLVE_UNSPECIFIED),
   defaultTol_ (-1.0),
-  label_("")
+  label_(""),
+  filenameLHS_(""),
+  filenameRHS_(""),
+  counter_(0)
 {}
 
 
@@ -228,6 +237,12 @@ void BelosLinearOpWithSolve<Scalar>::initialize(
     if (solverPL_->isParameter("Timer Label") && solverPL_->isType<std::string>("Timer Label")) {
       label_ = solverPL_->get<std::string>("Timer Label");
       lp_->setLabel(label_);
+    }
+    if (solverPL_->isParameter("Filename LHS") && solverPL_->isType<std::string>("Filename LHS")) {
+      filenameLHS_ = solverPL_->get<std::string>("Filename LHS");
+    }
+    if (solverPL_->isParameter("Filename RHS") && solverPL_->isType<std::string>("Filename RHS")) {
+      filenameRHS_ = solverPL_->get<std::string>("Filename RHS");
     }
   }
   else {
@@ -558,6 +573,29 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     *out << "Using iterative solver = " << describe(*iterativeSolver_,verbLevel);
     *out << "With #Eqns="<<B.range()->dim()<<", #RHSs="<<B.domain()->dim()<<" ...\n";
   }
+
+#ifdef HAVE_STRATIMIKOS_THYRATPETRAADAPTERS
+  //
+  // Write RHS and LHS to file if desired
+  //
+  if (filenameLHS_ != "") {
+    try {
+      auto tmv = Thyra::TpetraOperatorVectorExtraction<Scalar>::getTpetraMultiVector(Teuchos::rcpFromPtr(X));
+      Tpetra::MatrixMarket::Writer<::Tpetra::CrsMatrix<Scalar> >::writeDenseFile(filenameLHS_+ "." + label_ + "." + std::to_string(counter_), *tmv, "", "");
+    } catch (const std::logic_error&) {
+      *out << "Warning: Cannot write LHS multivector to file.\n";
+    }
+  }
+  if (filenameRHS_ != "") {
+    try {
+      auto tmv = Thyra::TpetraOperatorVectorExtraction<Scalar>::getConstTpetraMultiVector(Teuchos::rcpFromRef(B));
+      Tpetra::MatrixMarket::Writer<::Tpetra::CrsMatrix<Scalar> >::writeDenseFile(filenameRHS_+ "." + label_ + "." + std::to_string(counter_), *tmv, "", "");
+    } catch (const std::logic_error&) {
+      *out << "Warning: Cannot write RHS multivector to file.\n";
+    }
+  }
+  ++counter_;
+#endif
 
   //
   // Set RHS and LHS

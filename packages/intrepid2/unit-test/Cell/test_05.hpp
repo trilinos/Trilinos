@@ -78,8 +78,9 @@ namespace Intrepid2 {
     };
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int CellTools_Test05(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -93,9 +94,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
       *outStream
@@ -139,8 +140,8 @@ namespace Intrepid2 {
       try {
         
 #ifdef HAVE_INTREPID2_DEBUG
-        typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
-        typedef CellTools<DeviceSpaceType> ct;
+        typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
+        typedef CellTools<DeviceType> ct;
 
         std::vector<shards::CellTopology> standardBaseTopologies;
         shards::getTopologies(standardBaseTopologies, 4, shards::STANDARD_CELL, shards::BASE_TOPOLOGY);

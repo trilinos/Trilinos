@@ -79,8 +79,9 @@ namespace Intrepid2 {
     };
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int FunctionSpaceTools_Test02(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -94,9 +95,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
       
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
       *outStream
@@ -115,9 +116,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef CellTools<DeviceType> ct;
+      typedef FunctionSpaceTools<DeviceType> fst;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       
       int errorFlag = 0;
       
@@ -136,12 +137,12 @@ namespace Intrepid2 {
         shards::CellTopology cell_topo = shards::getCellTopologyData< shards::Hexahedron<8> >();
 
         const auto cub_degree = 20;
-        auto cub = cub_factory.create<DeviceSpaceType,ValueType,ValueType>(cell_topo, cub_degree);
+        auto cub = cub_factory.create<DeviceType,ValueType,ValueType>(cell_topo, cub_degree);
 
         const auto space_dim = cub->getDimension();
         const auto num_cub_points = cub->getNumPoints();
 
-        Basis_HCURL_HEX_I1_FEM<DeviceSpaceType> hexBasis;
+        Basis_HCURL_HEX_I1_FEM<DeviceType> hexBasis;
         const auto num_fields = hexBasis.getCardinality();
 
         /* Cell geometries and orientations. */
@@ -225,8 +226,8 @@ namespace Intrepid2 {
         const Kokkos::DynRankView<ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> cell_nodes_host (const_cast<ValueType*>(&hexnodes[0]),  num_cells, num_nodes, space_dim);
         const Kokkos::DynRankView<ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> field_signs_host(const_cast<ValueType*>(&edgesigns[0]), num_cells, num_fields);
 
-        auto cell_nodes_device  = create_mirror_view(typename DeviceSpaceType::memory_space(), cell_nodes_host);
-        auto field_signs_device = create_mirror_view(typename DeviceSpaceType::memory_space(), field_signs_host);
+        auto cell_nodes_device  = create_mirror_view(typename DeviceType::memory_space(), cell_nodes_host);
+        auto field_signs_device = create_mirror_view(typename DeviceType::memory_space(), field_signs_host);
         Kokkos::deep_copy(cell_nodes_device, cell_nodes_host);
         Kokkos::deep_copy(field_signs_device, field_signs_host);
 
@@ -285,12 +286,14 @@ namespace Intrepid2 {
         // apply field signs (after the fact, as a post-processing step)
         fst::applyLeftFieldSigns(mass_matrices, field_signs);
         fst::applyRightFieldSigns(mass_matrices, field_signs);
-        DeviceSpaceType().fence();
+        ExecSpaceType().fence();
 
         /*******************  STOP COMPUTATION ***********************/
 
 
         /******************* START COMPARISON ***********************/
+        auto mass_matrices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mass_matrices);
+        auto stiffness_matrices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stiffness_matrices);
 
         //bases definition has changed and we need to scale
         //them for comparison with old stored values
@@ -307,7 +310,7 @@ namespace Intrepid2 {
 
           std::ifstream massfile(&filename[0]);
           if (massfile.is_open()) {
-            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices_host, cid, Kokkos::ALL(), Kokkos::ALL());
 
             for (ordinal_type i=0; i < num_fields; ++i)
               for (ordinal_type j=0; j < num_fields; ++j)
@@ -332,7 +335,7 @@ namespace Intrepid2 {
 
           std::ifstream stifffile(&filename[0]);
           if (stifffile.is_open()) {
-            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices_host, cid, Kokkos::ALL(), Kokkos::ALL());
 
             for (ordinal_type i=0; i < num_fields; ++i)
               for (ordinal_type j=0; j < num_fields; ++j)
@@ -359,7 +362,7 @@ namespace Intrepid2 {
 
           std::ifstream massfile(&filename[0]);
           if (massfile.is_open()) {
-            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices_host, cid, Kokkos::ALL(), Kokkos::ALL());
             
             for (ordinal_type i=0; i < num_fields; ++i)
               for (ordinal_type j=0; j < num_fields; ++j)
@@ -385,7 +388,7 @@ namespace Intrepid2 {
 
           std::ifstream stifffile(&filename[0]);
           if (stifffile.is_open()) {
-            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices_host, cid, Kokkos::ALL(), Kokkos::ALL());
             
             for (ordinal_type i=0; i < num_fields; ++i)
               for (ordinal_type j=0; j < num_fields; ++j)

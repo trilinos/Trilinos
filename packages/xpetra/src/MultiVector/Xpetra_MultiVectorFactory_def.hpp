@@ -106,6 +106,26 @@ Build(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node>>& map,
 }
 
 
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP<MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>>
+MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Build(const Teuchos::RCP<const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > &source,
+      Teuchos::DataAccess copyOrView)
+{
+    XPETRA_MONITOR("MultiVectorFactory::Build");
+
+#ifdef HAVE_XPETRA_TPETRA
+    if(source->getMap()->lib() == UseTpetra)
+    {
+      return rcp(new TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*source, copyOrView));
+    }
+#endif
+
+    XPETRA_FACTORY_ERROR_IF_EPETRA(source->getMap()->lib());
+    XPETRA_FACTORY_END;
+}
+
+
 }      // namespace Xpetra
 
 #endif

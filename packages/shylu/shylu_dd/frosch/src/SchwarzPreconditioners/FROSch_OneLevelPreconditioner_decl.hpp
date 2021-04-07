@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_ONELEVELPRECONDITIONER__DECL_HPP
-#define _FROSCH_ONELEVELPRECONDITIONER__DECL_HPP
+#ifndef _FROSCH_ONELEVELPRECONDITIONER_DECL_HPP
+#define _FROSCH_ONELEVELPRECONDITIONER_DECL_HPP
 
 #include <FROSch_SchwarzPreconditioner_def.hpp>
 
@@ -49,7 +49,7 @@ namespace FROSch {
 
     using namespace std;
     using namespace Teuchos;
-    using namespace Xpetra;
+    using namespace Xpetra;    
 
     template <class SC = double,
               class LO = int,

@@ -789,7 +789,7 @@ INCLUDE(PrintVar)
 # ``${PROJECT_NAME}_TRIBITS_DIR`` (pointing to the TriBITS location).  For example,
 # a valid project can be a simple as::
 #
-#   CMAKE_MINIMUM_REQUIRED(VERSION 3.10.0)
+#   CMAKE_MINIMUM_REQUIRED(VERSION 3.17.0)
 #   SET(PROJECT_NAME TAATDriver)
 #   PROJECT(${PROJECT_NAME} NONE)
 #   SET(${PROJECT_NAME}_TRACE_ADD_TEST TRUE)

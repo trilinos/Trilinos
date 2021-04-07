@@ -8,6 +8,7 @@
       <Parameter docString="" id="4" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="2"/>
       <ParameterList name="Interpolator">
         <Parameter name="Interpolator Type" type="string" value="Lagrange"/>
+        <Parameter name="Order" type="int" value="0"/>
       </ParameterList>
     </ParameterList>
     <ParameterList id="26" name="Time Step Control">

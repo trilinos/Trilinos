@@ -75,7 +75,7 @@ namespace Intrepid2 {
         These functions have non-void return types and expect to be used for small problems.
         However, high level (working on cell-level) functions are parallelized.
   */
-  template<typename ExecSpaceType = void>
+  template<typename DeviceType = void>
   class RealSpaceTools {
   public:
 

@@ -343,12 +343,14 @@ template<class Scalar>
 void
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  state_integrator_->describe(out, verbLevel);
-  sens_integrator_->describe(out, verbLevel);
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  state_integrator_->describe(in_out, verbLevel);
+  sens_integrator_->describe(in_out, verbLevel);
 }
 
 template<class Scalar>
@@ -442,7 +444,7 @@ buildSolutionHistory()
   RCP<ParameterList> shPL =
     Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
                      "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   const int num_param =
     rcp_dynamic_cast<const DMVPV>(sens_integrator_->getX())->getMultiVector()->domain()->dim();
@@ -541,7 +543,7 @@ buildSolutionHistory()
     prod_state->setX(x);
     prod_state->setXDot(x_dot);
     prod_state->setXDotDot(x_dot_dot);
-    solutionHistory_->addState(prod_state);
+    solutionHistory_->addState(prod_state, false);
   }
 }
 

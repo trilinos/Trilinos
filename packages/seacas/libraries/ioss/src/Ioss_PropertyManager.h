@@ -37,8 +37,10 @@ namespace Ioss {
     // Checks if a property with 'property_name' exists in the database.
     bool exists(const std::string &property_name) const;
 
-    Property get(const std::string &property_name) const;
-    int64_t  get_optional(const std::string &property_name, int64_t optional_value) const;
+    Property    get(const std::string &property_name) const;
+    int64_t     get_optional(const std::string &property_name, int64_t optional_value) const;
+    std::string get_optional(const std::string &property_name,
+                             const std::string &optional_value) const;
 
     // Returns the names of all properties
     int describe(NameList *names) const;

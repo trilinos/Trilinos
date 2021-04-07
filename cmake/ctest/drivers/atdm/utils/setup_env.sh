@@ -35,12 +35,15 @@ fi
 echo
 echo "Unsetting HTTP_PROXY and http_proxy env vars for submit to CDash"
 
-unset HTTP_PROXY
 unset http_proxy
+unset HTTP_PROXY
+unset no_proxy
+unset NO_PROXY
 
-# NOTE: Above we have to unset http_proxy and HTTP_PROXY to allow the submit
-# to the testing-dev.sandia.gov/cdash/ site.  But we can't unset https_proxy
-# which is needed for the git operations with https://github.com.
+# NOTE: Above we have to unset http_proxy, HTTP_PROXY, no_proxy, and NO_PROXY
+# to allow the submit to the testing-dev.sandia.gov/cdash/ site.  But we can't
+# unset https_proxy which is needed for the git operations with
+# https://github.com.
 
 #
 # C) Setup install-releated stuff
