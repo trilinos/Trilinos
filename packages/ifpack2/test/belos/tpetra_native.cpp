@@ -32,8 +32,8 @@ deepCopyFillCompleteCrsMatrix (const Tpetra::CrsMatrix<SC, LO, GO, NT>& A)
     (! A.isFillComplete (), std::invalid_argument,
      "deepCopyFillCompleteCrsMatrix: Input matrix A must be fillComplete.");
   RCP<crs_matrix_type> A_copy (new crs_matrix_type (A.getCrsGraph ()));
-  auto A_copy_lcl = A_copy->getLocalMatrix ();
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_copy_lcl = A_copy->getLocalMatrixDevice ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   Kokkos::deep_copy (A_copy_lcl.values, A_lcl.values);
   A_copy->fillComplete (A.getDomainMap (), A.getRangeMap ());
   return A_copy;

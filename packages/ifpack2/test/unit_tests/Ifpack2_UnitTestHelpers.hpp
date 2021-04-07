@@ -959,6 +959,10 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
     typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
     typedef typename MatrixType::values_host_view_type values_host_view_type;
 
+    typedef typename MatrixType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+    typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+    typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+
 
     NotCrsMatrix (Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) : A_(A){;}
     virtual ~NotCrsMatrix(){;}
@@ -992,16 +996,27 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > c
 
     virtual void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                      nonconst_global_inds_host_view_type &indices,
+                      nonconst_values_host_view_type &values,size_t &NumEntries) const {A_->getGlobalRowCopy(GlobalRow,indices,values,NumEntries);}
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                       const Teuchos::ArrayView<Scalar> &Values,
                       size_t &NumEntries) const {A_->getGlobalRowCopy(GlobalRow,Indices,Values,NumEntries);}
+#endif
 
+    virtual void
+    getLocalRowCopy (LocalOrdinal LocalRow,
+                      nonconst_local_inds_host_view_type & indices,
+                     nonconst_values_host_view_type & values,size_t &NumEntries) const {A_->getLocalRowCopy(LocalRow,indices,values,NumEntries);}
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getLocalRowCopy (LocalOrdinal LocalRow,
                      const Teuchos::ArrayView<LocalOrdinal> &Indices,
                      const Teuchos::ArrayView<Scalar> &Values,
                      size_t &NumEntries) const {A_->getLocalRowCopy(LocalRow,Indices,Values,NumEntries);}
-
+#endif
 
   virtual void
   getGlobalRowView (GlobalOrdinal GlobalRow,

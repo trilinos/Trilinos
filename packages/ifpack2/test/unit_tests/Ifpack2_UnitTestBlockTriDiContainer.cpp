@@ -286,7 +286,7 @@ static LO run_teuchos_tests (const Input& in, Teuchos::FancyOStream& out, bool& 
                    << (nonuniform_lines ? " nonuniform_lines" : " uniform_lines")
                    << " nvec " << nvec;
                 const std::string details = ss.str();
-                bool threw = false;
+                //bool threw = false;
                 //try {
                   ne = btdct::test_BR_BTDC(in.comm, sb, sbp, bs, nvec, nonuniform_lines,
                                            different_maps, jacobi, overlap_comm, seq_method,

@@ -124,7 +124,7 @@ localSolve (Tpetra::MultiVector<
     (mode == Teuchos::TRANS ? "T" : "N");
   const std::string diag = implicitUnitDiag ? "U" : "N";
 
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_lcl = A.getLocalMatrixHost ();
 
   if (X.isConstantStride () && Y.isConstantStride ()) {
     auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
@@ -207,6 +207,7 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
   typedef GlobalOrdinal GO;
   typedef Tpetra::Map<LO, GO> map_type;
   typedef typename map_type::device_type device_type;
+  typedef Tpetra::CrsGraph<LO, GO> crs_graph_type;
   typedef Tpetra::CrsMatrix<Scalar, LO, GO> crs_matrix_type;
   typedef Tpetra::RowMatrix<Scalar, LO, GO> row_matrix_type;
   typedef Tpetra::MultiVector<Scalar, LO, GO> mv_type;
@@ -363,10 +364,10 @@ void testCompareToLocalSolve (bool& success, Teuchos::FancyOStream& out,
       // (it shouldn't).
       RCP<crs_matrix_type> A_copy;
       {
-        typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
-        typedef typename crs_matrix_type::local_graph_type local_graph_type;
+        typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
+        typedef typename crs_graph_type::local_graph_device_type local_graph_type;
 
-        local_matrix_type A_lcl = A->getLocalMatrix ();
+        local_matrix_type A_lcl = A->getLocalMatrixDevice ();
 
         typename local_matrix_type::row_map_type::non_const_type ptr ("A_copy.ptr", A_lcl.graph.row_map.extent (0));
         Kokkos::deep_copy (ptr, A_lcl.graph.row_map);
@@ -810,11 +811,14 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   RCP<const map_type> domMap = rowMap;
   RCP<const map_type> ranMap = rowMap;
 
-  typedef typename crs_matrix_type::local_graph_type local_graph_type;
-  typedef typename crs_matrix_type::local_matrix_type local_matrix_type;
+  typedef typename crs_matrix_type::local_graph_device_type local_graph_type;
+  typedef typename crs_matrix_type::local_matrix_device_type local_matrix_type;
   typedef typename local_matrix_type::row_map_type::non_const_type row_offsets_type;
   typedef typename local_graph_type::entries_type::non_const_type col_inds_type;
   typedef typename local_matrix_type::values_type::non_const_type values_type;
+
+  typedef typename crs_matrix_type::local_inds_host_view_type const_local_inds_type;
+  typedef typename crs_matrix_type::values_host_view_type const_values_type;
 
   //
   // The suffix _d here stands for (GPU) "device," and the suffix _h
@@ -944,10 +948,9 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    // FIXME (mfh 23 Aug 2016) This may depend on UVM.
-    // We should instead rely on dual view semantics here.
-    Teuchos::ArrayView<const LO> lclColInds;
-    Teuchos::ArrayView<const SC> vals;
+
+    const_local_inds_type lclColInds;
+    const_values_type vals;
 
     L->getLocalRowView (lclNumRows - 1, lclColInds, vals);
     if (explicitlyStoreUnitDiagonalOfL) {

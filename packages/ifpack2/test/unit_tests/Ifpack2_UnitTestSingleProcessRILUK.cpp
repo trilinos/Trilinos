@@ -73,7 +73,7 @@ template<class MatrixType, class VectorType>
 void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
                             Teuchos::RCP<MatrixType>& Ln, Teuchos::RCP<MatrixType>& Un, Teuchos::RCP<VectorType>& Dn) {
 
-  typedef typename MatrixType::local_matrix_type local_matrix_type;
+  typedef typename MatrixType::local_matrix_device_type local_matrix_type;
   typedef typename std::remove_const<typename local_matrix_type::size_type>::type    size_type;
   typedef typename std::remove_const<typename local_matrix_type::ordinal_type>::type ordinal_type;
   typedef typename std::remove_const<typename local_matrix_type::value_type>::type   value_type;
@@ -87,11 +87,11 @@ void remove_diags_and_scale(const MatrixType& L, const MatrixType& U,
   typedef Kokkos::TeamPolicy<execution_space> team_policy;
   typedef typename Kokkos::TeamPolicy<execution_space>::member_type member_type;
 
-  auto L_rowmap  = L.getLocalMatrix().graph.row_map;
-  auto L_entries = L.getLocalMatrix().graph.entries;
+  auto L_rowmap  = L.getLocalMatrixDevice().graph.row_map;
+  auto L_entries = L.getLocalMatrixDevice().graph.entries;
   auto L_values  = L.getLocalValuesView();
-  auto U_rowmap  = U.getLocalMatrix().graph.row_map;
-  auto U_entries = U.getLocalMatrix().graph.entries;
+  auto U_rowmap  = U.getLocalMatrixDevice().graph.row_map;
+  auto U_entries = U.getLocalMatrixDevice().graph.entries;
   auto U_values  = U.getLocalValuesView();
 
   rowmap_type  Ln_rowmap ("Ln_rowmap",  L_rowmap.extent(0));
@@ -700,20 +700,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
       //Copy the banded matrix into a new matrix with permuted row map GIDs.
       //This matrix will have the sparsity pattern as the original matrix.
       RCP<crs_matrix_type> permutedMatrix = Teuchos::rcp(new crs_matrix_type(permRowMap, 5));
-      Teuchos::Array<GO> Inds(5);
-      Teuchos::Array<GO> pInds(5);
-      Teuchos::Array<Scalar>        Vals(5);
-      Teuchos::Array<Scalar>        pVals(5);
+      typename crs_matrix_type::nonconst_global_inds_host_view_type Inds("Inds",5), pInds("pInds",5);
+      typename crs_matrix_type::nonconst_values_host_view_type Vals("Vals",5), pVals("pVals",5);
       size_t numEntries;
       for (global_size_t i=0; i<num_rows_per_proc; ++i) {
-        crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
-        pInds.resize(numEntries);
-        pVals.resize(numEntries);
+        crsmatrix->getGlobalRowCopy(i,Inds,Vals,numEntries);
+        Kokkos::resize(pInds,numEntries);
+        Kokkos::resize(pVals,numEntries);
         for (size_t j=0; j<numEntries; ++j) {
           pInds[j] = origToPerm[Inds[j]];
           pVals[j] = Vals[j];
         }
-        permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),pVals());
+        permutedMatrix->insertGlobalValues(origToPerm[i],numEntries,pVals.data(),pInds.data());
       }
       permutedMatrix->fillComplete();
     
