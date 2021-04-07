@@ -65,7 +65,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.ascicgpu031.gcc-cuda.
 # details to BUILD_DIR_NAME.
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_NAME_DETAILS NOUVM)
+SET(BUILD_NAME_DETAILS UVM_DEPRECATED_CRS)
 
 SET(CTEST_PARALLEL_LEVEL 8)
 SET(CTEST_TEST_TYPE Nightly)
@@ -84,8 +84,14 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DTpetra_INST_INT_LONG_LONG:BOOL=ON"
   "-DTpetra_INST_COMPLEX_FLOAT:BOOL=OFF"
 
-  "-D Kokkos_ENABLE_CUDA_UVM=OFF"
+  "-DKokkos_ENABLE_CUDA_UVM:BOOL=ON"
 
+  "-DTpetra_ENABLE_DEPRECATED_CODE:BOOL=OFF" 
+
+  ### Zoltan tests do not build correctly in this framework; unknown reason
+  ### But we don't need them in UVM-removal testing, so disable them
+  "-D Zoltan_ENABLE_TESTS=OFF"
+  "-D Zoltan_ENABLE_EXAMPLES=OFF"
 )
 
 #
