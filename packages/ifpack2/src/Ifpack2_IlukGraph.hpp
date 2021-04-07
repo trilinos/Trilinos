@@ -404,9 +404,11 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
           L_Graph_->getLocalRowCopy(i, CurrentRow_view, LenL);  // Get L Indices
           CurrentRow[LenL] = i;                              // Put in Diagonal
           if (LenU > 0) {
-            nonconst_local_inds_host_view_type URowView = Kokkos::subview(CurrentRow_view,std::make_pair(LenL+1,LenU));
+            ArrayView<local_ordinal_type> URowView = CurrentRow.view (LenL+1,LenU);            
+            nonconst_local_inds_host_view_type URowView_v(URowView.data(),URowView.size());
+
             // Get U Indices
-            U_Graph_->getLocalRowCopy (i, URowView, LenU);
+            U_Graph_->getLocalRowCopy (i, URowView_v, LenU);
           }
 
           // Construct linked list for current row
