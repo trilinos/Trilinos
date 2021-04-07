@@ -122,6 +122,7 @@ int main(int argc, char *argv[]) {
     // debug options
     bool print_percept_mesh           = false;                clp.setOption("print-percept-mesh", "no-print-percept-mesh", &print_percept_mesh, "Calls perceptMesh's print_info routine");
     bool print_debug_info             = false;                clp.setOption("print-debug-info", "no-print-debug-info", &print_debug_info, "Print more debugging information");
+    bool dump_element_vertices        = false;                clp.setOption("dump-element-vertices", "no-dump-element-vertices", &dump_element_vertices, "Dump the panzer_stk mesh vertices, element-by-element");
 
     // timer options
     bool useStackedTimer              = false;                clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
@@ -337,6 +338,8 @@ int main(int argc, char *argv[]) {
     /********************************** CONSTRUCT REGIONS *****************************/
     /**********************************************************************************/
 
+    tm = Teuchos::null;
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 3 - Setup Region Information")));
     unsigned int children_per_element = 1 << (dimension*mesh_refinements);
     if(print_debug_info)
       std::cout << "Number of mesh children = " << children_per_element << std::endl;
@@ -375,7 +378,7 @@ int main(int argc, char *argv[]) {
         if(print_debug_info)
           std::cout << "Starting element id = " << elem_id_start << std::endl;
       }
-
+      //panzer_stk::workset_utils::getIdsAndVertices
 
       {
         const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->element_rank());
@@ -410,6 +413,7 @@ int main(int argc, char *argv[]) {
                 if(print_debug_info)
                   std::cout << "Stk Node = " << node << std::endl;
 
+
                 //std::cout << "node " << node << std::endl;
                 //        double *f_data = refinedMesh->field_data(field, node, null_u);
                 //        for (int i_stride=0; i_stride < refinedMesh->get_spatial_dim(); i_stride++)
@@ -421,12 +425,37 @@ int main(int argc, char *argv[]) {
             }
             else
             {
-              std::cout << "parent= " << refinedMesh->id(element) << std::endl;
+              if(print_debug_info)
+                std::cout << "parent= " << refinedMesh->id(element) << std::endl;
             }
           }
         }
       }
     }
+
+    // Probably need to map indices of elements from the Percept indices back to the Panzer indices
+
+
+    std::vector<stk::mesh::Entity> elements;
+    Kokkos::DynRankView<double,PHX::Device> vertices;
+    std::vector<std::size_t> localIds;
+
+    panzer_stk::workset_utils::getIdsAndVertices(*mesh,eBlocks[0],localIds,vertices);
+    //mesh->getElementVertices(elements,0,vertices);
+
+    if(dump_element_vertices)
+    {
+      for(unsigned int ielem=0; ielem<vertices.extent(0); ++ielem)
+        for(unsigned int ivert=0; ivert<vertices.extent(1); ++ivert)
+        {
+          std::cout << "element " << ielem << " vertex " << ivert << " = (" << vertices(ielem,ivert,0);
+          for(unsigned int idim=1; idim<vertices.extent(2); ++idim) // fenceposting the output
+            std::cout << ", " << vertices(ielem,ivert,idim);
+          std::cout << ")" << std::endl;
+        }
+    }
+
+
 
     if(print_debug_info)
     {
@@ -441,6 +470,8 @@ int main(int argc, char *argv[]) {
     // Setup response library for checking the error in this manufactered solution
     ////////////////////////////////////////////////////////////////////////
 
+    tm = Teuchos::null;
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 4 - Other Panzer Setup")));
     Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
     = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
@@ -553,6 +584,9 @@ int main(int argc, char *argv[]) {
     // solve the linear system
     /////////////////////////////////////////////////////////////
 
+    tm = Teuchos::null;
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 5 - Linear Solver")));
+
     // convert generic linear object container to tpetra container
     Teuchos::RCP<panzer::TpetraLinearObjContainer<ST,LO,GO> > tp_container = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<ST,LO,GO> >(container);
 
@@ -563,7 +597,10 @@ int main(int argc, char *argv[]) {
     else
     {
       Teuchos::ParameterList mueLuParamList;
-      mueLuParamList.set("verbosity", "low");
+      if(print_debug_info)
+        mueLuParamList.set("verbosity", "high");
+      else
+        mueLuParamList.set("verbosity", "low");
       mueLuParamList.set("max levels", 3);
       mueLuParamList.set("coarse: max size", 10);
       mueLuParamList.set("multigrid algorithm", "sa");
@@ -592,6 +629,9 @@ int main(int argc, char *argv[]) {
 
     // output data (optional)
     /////////////////////////////////////////////////////////////
+
+    tm = Teuchos::null;
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 6 - Output Data")));
 
     // write the solution to matrix
     {
