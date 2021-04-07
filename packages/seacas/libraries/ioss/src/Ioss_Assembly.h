@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Assembly_h
@@ -27,8 +27,8 @@ namespace Ioss {
   class Assembly : public GroupingEntity
   {
   public:
-    Assembly()  = default; // Used for template typing only
-    ~Assembly() = default;
+    Assembly()           = default; // Used for template typing only
+    ~Assembly() override = default;
     Assembly(const Assembly &);
 
     Assembly(DatabaseIO *io_database, const std::string &my_name);

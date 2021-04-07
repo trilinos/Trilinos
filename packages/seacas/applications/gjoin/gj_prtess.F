@@ -1,13 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE PRTESS (ISTAT, NESS1, NESS2, IDESS, NEESS, ISCR)
 C=======================================================================
-C $Id: prtess.F,v 1.2 2001/06/26 17:38:54 gdsjaar Exp $
 
 C   --*** PRTESS *** (GJOIN) Print summary for element side sets
 C   --   Written by Amy Gilkey - revised 02/04/88

@@ -31,15 +31,16 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
-#include <stk_util/parallel/ParallelComm.hpp>
+#include "stk_util/parallel/ParallelComm.hpp"
+#include "stk_util/parallel/ParallelReduce.hpp"  // for Reduce, ReduceEnd, ReduceMax, ReduceBitOr
+#include "stk_util/util/SimpleArrayOps.hpp"      // for Max, BitOr, Min
+#include <cstdlib>                               // for free, malloc
+#include <iostream>                              // for operator<<, basic_ostream::operator<<
+#include <new>                                   // for operator new
+#include <stdexcept>                             // for runtime_error
+#include <vector>                                // for vector
 
-#include <iostream>
-#include <sstream>
-#include <stdexcept>
-#include <stdlib.h>
-#include <vector>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
 namespace stk {
 
@@ -90,6 +91,13 @@ void CommBuffer::unpack_overflow() const
 
 //----------------------------------------------------------------------
 
+void CommBuffer::set_buffer_ptrs(unsigned char* begin, unsigned char* ptr, unsigned char* end)
+{
+  m_beg = begin;
+  m_ptr = ptr;
+  m_end = end;
+}
+
 void CommBuffer::deallocate( const unsigned number , CommBuffer * buffers )
 {
   if ( nullptr != buffers ) {
@@ -134,9 +142,7 @@ CommBuffer * CommBuffer::allocate(
 
       for ( unsigned i = 0 ; i < number ; ++i ) {
         CommBuffer & b = b_base[i] ;
-        b.m_beg = ptr ;
-        b.m_ptr = ptr ;
-        b.m_end = ptr + size[i] ;
+        b.set_buffer_ptrs(ptr, ptr, ptr + size[i]);
         ptr += align_quad( size[i] );
       }
     }
@@ -177,9 +183,8 @@ bool CommBroadcast::allocate_buffer( const bool local_flag )
     throw std::runtime_error( msg );
   }
 
-  m_buffer.m_beg = static_cast<CommBuffer::ucharp>( malloc( root_send_size ) );
-  m_buffer.m_ptr = m_buffer.m_beg ;
-  m_buffer.m_end = m_buffer.m_beg + root_send_size ;
+  unsigned char* ptr = static_cast<CommBuffer::ucharp>( malloc( root_send_size ) );
+  m_buffer.set_buffer_ptrs(ptr, ptr, ptr + root_send_size);
 
   return flag ;
 }
@@ -189,9 +194,7 @@ CommBroadcast::~CommBroadcast()
   try {
     if ( m_buffer.m_beg ) { free( static_cast<void*>( m_buffer.m_beg ) ); }
   } catch(...) {}
-  m_buffer.m_beg = nullptr ;
-  m_buffer.m_ptr = nullptr ;
-  m_buffer.m_end = nullptr ;
+  m_buffer.set_buffer_ptrs(nullptr, nullptr, nullptr);
 }
 
 CommBuffer & CommBroadcast::recv_buffer()

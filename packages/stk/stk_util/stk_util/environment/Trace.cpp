@@ -34,16 +34,15 @@
 // 
  */
 
-#include <stk_util/environment/Trace.hpp>
-#include <cstring>                      // for strcmp
-#include <exception>                    // for uncaught_exception
-#include <stk_util/environment/Env.hpp>        // for cpu_now
-#include <stk_util/environment/FormatTime.hpp>  // for formatTime
-#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
-#include <string>                       // for basic_string, string, etc
-#include <utility>                      // for pair
-#include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_TRACE_STATS
+#include "stk_util/environment/Trace.hpp"
+#include "stk_util/environment/Env.hpp"         // for cpu_now
+#include "stk_util/environment/FormatTime.hpp"  // for formatTime
+#include "stk_util/util/Writer.hpp"             // for operator<<, Writer, dendl, pop, push
+#include "stk_util/util/Writer_fwd.hpp"         // for LOG_TRACE_STATS
+#include <cstring>                              // for strcmp
+#include <string>                               // for basic_string, string, allocator, basic_st...
 #include <sstream>
+#include <utility>                              // for pair
 
 namespace stk {
 namespace diag {
@@ -243,7 +242,7 @@ Trace::Trace(
     m_diagWriter.incTraceDepth();
 
     m_diagWriter.m(m_lineMask) << m_functionSpec
-                               << (std::uncaught_exception() ? " (throw unwinding) " : "")
+                               << (has_uncaught_exception() ? " (throw unwinding) " : "")
                                << push << dendl;
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
@@ -264,7 +263,7 @@ Trace::~Trace()
       m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime) << "s]" << dendl;
     }
 
-    m_diagWriter.m(m_lineMask) << (std::uncaught_exception() ? " (throw unwinding) " : "")
+    m_diagWriter.m(m_lineMask) << (has_uncaught_exception() ? " (throw unwinding) " : "")
                                << pop << dendl;
 
     m_diagWriter.decTraceDepth();

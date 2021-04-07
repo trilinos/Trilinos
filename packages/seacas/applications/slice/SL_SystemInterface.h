@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
@@ -11,9 +11,9 @@
 #include <iosfwd>
 #include <string>
 #include <vector>
-using StringVector = std::vector<std::string>;
-using Omissions    = std::vector<StringVector>;
-typedef std::vector<std::pair<std::string, int>> StringIdVector;
+using StringVector   = std::vector<std::string>;
+using Omissions      = std::vector<StringVector>;
+using StringIdVector = std::vector<std::pair<std::string, int>>;
 
 class SystemInterface
 {
@@ -26,6 +26,7 @@ public:
   size_t             processor_count() const { return processorCount_; }
   const std::string &decomposition_method() const { return decompMethod_; }
   const std::string &decomposition_file() const { return decompFile_; }
+  const std::string &decomposition_variable() const { return decompVariable_; }
   const std::string &output_path() const { return outputPath_; }
 
   int debug() const { return debugLevel_; }
@@ -77,10 +78,11 @@ private:
 
   std::string decompMethod_{"linear"};
   std::string decompFile_;
+  std::string decompVariable_{"processor_id"};
   std::string outputPath_;
 
-  size_t partialReadCount_{1000000000};
-  size_t maxFiles_{1020};
+  size_t partialReadCount_{1'000'000'000};
+  size_t maxFiles_{1'020};
   int    processorCount_{1};
   int    debugLevel_{0};
   int    screenWidth_{0};
@@ -95,6 +97,8 @@ public:
   bool netcdf4_{false};
   bool netcdf5_{false};
   bool disableFieldRecognition_{false};
+  bool szip_{false};
+  bool zlib_{true};
 
 private:
   bool contig_{false};

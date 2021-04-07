@@ -309,6 +309,7 @@ c) Using the QT CMake configuration GUI:
   create a fragment file and just load it by setting
   `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above) in the GUI.
 
+
 Selecting the list of packages to enable
 ----------------------------------------
 
@@ -352,10 +353,11 @@ for ``<Project>_SE_PACKAGES`` using, for example::
 
   ./do-configure 2>&1 | grep "<Project>_SE_PACKAGES: "
 
-.. _<Project>_DUMP_PACKAGE_DEPENDENCIES:
 
 Print package dependencies
 ++++++++++++++++++++++++++
+
+.. _<Project>_DUMP_PACKAGE_DEPENDENCIES:
 
 The set of package dependencies can be printed in the ``cmake`` STDOUT by
 setting the configure option::
@@ -570,6 +572,7 @@ expensive configure time checks and to preserve other cache variables that you
 have set and don't want to loose.  For example, one would want to do this to
 avoid compiler and TPL checks.
 
+
 Selecting compiler and linker options
 -------------------------------------
 
@@ -628,7 +631,7 @@ However, on Linux systems, the observed algorithm appears to be:
 3. Search for the Fortran compiler with names like ``f90``, ``gfortran``,
    etc., but restrict the search to the same directory specified by base path
    to the C compiler given in the variable ``CMAKE_C_COMPILER``.  The first
-   compiler that is found is set to ``CMAKE_CXX_COMPILER``.
+   compiler that is found is set to ``CMAKE_Fortran_COMPILER``.
 
 **WARNING:** While this build-in CMake compiler search algorithm may seems
 reasonable, it fails to find the correct compilers in many cases for a non-MPI
@@ -668,35 +671,39 @@ typically ``"-g -O0"`` while ``CMAKE_CXX_FLAGS_RELEASE`` is typically
 ``-DCMAKE_CXX_FLAGS="-04"``, then this level gets overridden by the flags
 specified in ``CMAKE_<LANG>_FLAGS_BUILD`` or ``CMAKE_<LANG>_FLAGS_RELEASE``.
 
-Note that TriBITS will set defaults for ``CMAKE_<LANG>_FLAGS`` and
+TriBITS will set defaults for ``CMAKE_<LANG>_FLAGS`` and
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>``, which may be different that what
 raw CMake would set.  TriBITS provides a means for project and package
 developers and users to set and override these compiler flag variables
 globally and on a package-by-package basis.  Below, the facilities for
 manipulating compiler flags is described.
 
-Also, to see that the full set of compiler flags one has to actually build a
-target with, for example ``make VERBOSE=1`` (see `Building with verbose output
-without reconfiguring`_).  One can not just look at the cache variables for
+To see that the full set of compiler flags one has to actually build a target
+by running, for example, ``make VERBOSE=1 <target_name>`` (see `Building with
+verbose output without reconfiguring`_).  (NOTE: One can also see the exact
+set of flags used for each target in the generated ``build.ninja`` file when
+using the Ninja generator.) One cannot just look at the cache variables for
 ``CMAKE_<LANG>_FLAGS`` and ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` in the
-file ``CMakeCache.txt``.  These get overwritten and redefined by TriBITS in
-development as described below (see `Overriding CMAKE_BUILD_TYPE debug/release
-compiler options`_).
+file ``CMakeCache.txt`` and see the full set of flags are actaully being used.
+These varaibles can override the cache varables by TriBITS as project-level
+local non-cache varaibles as described below (see `Overriding CMAKE_BUILD_TYPE
+debug/release compiler options`_).
 
 The <Project> TriBITS CMake build system will set up default compile flags for
 GCC ('GNU') in development mode
 (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``) on order to help produce
 portable code.  These flags set up strong warning options and enforce language
-standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``),
+standards.  In release mode (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=OFF``),
 these flags are not set.  These flags get set internally into the variables
 ``CMAKE_<LANG>_FLAGS`` (when processing packages, not at the global cache
 variable level) but the user can append flags that override these as described
 below.
 
-.. _CMAKE_BUILD_TYPE:
 
 Configuring to build with default debug or release compiler flags
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. _CMAKE_BUILD_TYPE:
 
 To build a debug version, pass into 'cmake'::
 
@@ -715,6 +722,7 @@ to what is in ``CMAKE_<LANG>_FLAGS_RELEASE``.
 The default build type is typically ``CMAKE_BUILD_TYPE=RELEASE`` unless ``-D
 USE_XSDK_DEFAULTS=TRUE`` is set in which case the default build type is
 ``CMAKE_BUILD_TYPE=DEBUG`` as per the xSDK configure standard.
+
 
 Adding arbitrary compiler flags but keeping default build-type flags
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -782,6 +790,7 @@ manually set ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>`` directly!  To
 override those options, see
 ``CMAKE_<LANG>_FLAGS_<CMAKE_BUILD_TYPE>_OVERRIDE`` below.
 
+
 Overriding CMAKE_BUILD_TYPE debug/release compiler options
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -808,6 +817,7 @@ NOTES: The TriBITS CMake cache variable
 internally by CMake and the new varaible is needed to make the override
 explicit.
 
+
 Appending arbitrary libraries and link flags every executable
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -831,10 +841,11 @@ instead.  The TriBITS variable ``<Project>_EXTRA_LINK_FLAGS`` is badly named
 in this respect but the name remains due to backward compatibility
 requirements.
 
-.. _<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:
 
 Turning off strong warnings for individual packages
 +++++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. _<TRIBITS_PACKAGE>_DISABLE_STRONG_WARNINGS:
 
 To turn off strong warnings (for all languages) for a given TriBITS package,
 set::
@@ -849,6 +860,7 @@ Note that strong warnings are only enabled by default in development mode
 (``<Project>_ENABLE_DEVELOPMENT_MODE==ON``) but not release mode
 (``<Project>_ENABLE_DEVELOPMENT_MODE==ON``).  A release of <Project> should
 therefore not have strong warning options enabled.
+
 
 Overriding all (strong warnings and debug/release) compiler options
 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -874,6 +886,7 @@ NOTE: By setting ``CMAKE_BUILD_TYPE=NONE``, then ``CMAKE_<LANG>_FLAGS_NONE``
 will be empty and therefore the options set in ``CMAKE_<LANG>_FLAGS`` will
 be all that is passed in.
 
+
 Enable and disable shadowing warnings for all <Project> packages
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -891,6 +904,7 @@ NOTE: The default value is empty '' which lets each <Project> package
 decide for itself if shadowing warnings will be turned on or off for that
 package.
 
+
 Removing warnings as errors for CLEANED packages
 ++++++++++++++++++++++++++++++++++++++++++++++++
 
@@ -899,6 +913,7 @@ applied to compile CLEANED packages (like the Trilinos package Teuchos), set
 the following when configuring::
 
   -D <Project>_WARNINGS_AS_ERRORS_FLAGS=""
+
 
 Adding debug symbols to the build
 +++++++++++++++++++++++++++++++++
@@ -909,6 +924,7 @@ To get the compiler to add debug symbols to the build, configure with::
 
 This will add ``-g`` on most compilers.  NOTE: One does **not** generally
 need to create a fully debug build to get debug symbols on most compilers.
+
 
 Enabling support for Ninja
 --------------------------
@@ -978,30 +994,30 @@ NOTE: These options are ignored when using Makefiles or other CMake
 generators.  They only work for the Ninja generator.
 
 
-Enabling explicit template instantiation for C++
-------------------------------------------------
+Disabling explicit template instantiation for C++
+-------------------------------------------------
 
-To enable explicit template instantiation for C++ code for packages that
-support it, configure with::
+By default, support for optional explicit template instantiation (ETI) for C++
+code is enabled.  To disable support for optional ETI, configure with::
 
-  -D <Project>_ENABLE_EXPLICIT_INSTANTIATION=ON
+  -D <Project>_ENABLE_EXPLICIT_INSTANTIATION=OFF
 
 When ``OFF``, all packages that have templated C++ code will use implicit
-template instantiation.
+template instantiation (unless they have hard-coded usage of ETI).
 
-Explicit template instantiation can be enabled (``ON``) or disabled (``OFF``)
-for individual packages with::
-
+ETI can be enabled (``ON``) or disabled (``OFF``) for individual packages
+with::
 
   -D <TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION=[ON|OFF]
 
 The default value for ``<TRIBITS_PACKAGE>_ENABLE_EXPLICIT_INSTANTIATION`` is
 set by ``<Project>_ENABLE_EXPLICIT_INSTANTIATION``.
 
-For packages that support it, explicit template instantation can massively
-reduce the compile times for the C++ code involved.  To see what packages
-support explicit instantation just search the CMakeCache.txt file for
-variables with ``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
+For packages that support it, explicit template instantiation can massively
+reduce the compile times for the C++ code involved and can even avoid compiler
+crashes in some cases.  To see what packages support explicit template
+instantiation, just search the CMakeCache.txt file for variables with
+``ENABLE_EXPLICIT_INSTANTIATION`` in the name.
 
 
 Disabling the Fortran compiler and all Fortran code
@@ -1230,10 +1246,13 @@ c) **Setting up to run MPI programs:**
     -D MPI_EXEC_MAX_NUMPROCS=4
 
   (The maximum number of processes to allow when setting up and running MPI
-  test and example executables.  The default is set to '4' but should be set
-  to the largest number that can be tolerated for the given machine.  Tests
-  with more processes than this are excluded from the test suite at configure
-  time.)
+  tests and examples that use MPI.  The default is set to '4' but should be
+  set to the largest number that can be tolerated for the given machine or the
+  most cores on the machine that you want the test suite to be able to use.
+  Tests and examples that require more processes than this are excluded from
+  the CTest test suite at configure time.  ``MPI_EXEC_MAX_NUMPROCS`` is also
+  used to exclude tests in a non-MPI build (i.e. ``TPL_ENABLE_MPI=OFF``) if
+  the number of required cores for a given test is greater than this value.)
 
   ::
 
@@ -1261,6 +1280,7 @@ c) **Setting up to run MPI programs:**
   ``MPI_EXEC_POST_NUMPROCS_FLAGS`` must be quoted and separated by ``';'`` as
   these variables are interpreted as CMake arrays.
 
+
 Configuring for OpenMP support
 ------------------------------
 
@@ -1282,10 +1302,11 @@ the ``FIND_PACKAGE(OpenMP)`` command will fail.  Setting the variable
 ``-DOpenMP_<LANG>_FLAGS_OVERRIDE= " "`` is the only way to enable OpenMP but
 skip adding the OpenMP flags provided by ``FIND_PACKAGE(OpenMP)``.
 
-.. _BUILD_SHARED_LIBS:
 
 Building shared libraries
 -------------------------
+
+.. _BUILD_SHARED_LIBS:
 
 To configure to build shared libraries, set::
 
@@ -1311,6 +1332,7 @@ environment variables.  However, this can be disabled by setting::
 
 but it is hard to find a use case where that would be useful.
 
+
 Building static libraries and executables
 -----------------------------------------
 
@@ -1330,10 +1352,6 @@ libraries.  The second flag tells cmake to locate static library versions of
 any required TPLs.  The third flag tells the auto-detection routines that
 search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
-
-NOTE: The flag ``<Project>_LINK_SEARCH_START_STATIC`` is only supported in
-cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
-of cmake.
 
 
 Enabling the usage of resource files to reduce length of build lines
@@ -2040,6 +2058,30 @@ at configure time.  Therefore, all of the decisions about what test targets
 should be build and which tests should be run can be made at configure time.
 
 
+Set specific tests to run in serial
++++++++++++++++++++++++++++++++++++
+
+In order to cause a specific test to run by itself on the machine and not at
+the same time as other tests (such as when running multiple tests at the same
+time with something like ``ctest -j16``), set at configure time::
+
+  -D <fullTestName>_SET_RUN_SERIAL=ON
+
+This will set the CTest test property ``RUN_SERIAL`` for the test
+``<fullTestName>``.
+
+This can help to avoid longer runtimes and timeouts when some individual tests
+don't run as quickly when run beside other tests running at the same time on
+the same machine.  These longer runtimes can often occur when running tests
+with CUDA code on GPUs and with OpenMP code on some platforms with some OpenMP
+options.
+
+Also, if individual tests have ``RUN_SERIAL`` set by default internally, they
+can have the ``RUN_SERIAL`` property removed by setting::
+
+  -D <fullTestName>_SET_RUN_SERIAL=OFF
+
+
 Trace test addition or exclusion
 ++++++++++++++++++++++++++++++++
 
@@ -2070,11 +2112,10 @@ and therefore will only work on many (but perhaps not all) Linux/Unix/Mac
 systems and not native Windows systems.
 
 
-.. _DART_TESTING_TIMEOUT:
-
-
 Setting test timeouts at configure time
 +++++++++++++++++++++++++++++++++++++++
+
+.. _DART_TESTING_TIMEOUT:
 
 A maximum default time limit (timeout) for all the tests can be set at
 configure time using the cache variable::
@@ -2118,11 +2159,11 @@ NOTES:
 * To set or override the default global test timeout limit at runtime, see
   `Overriding test timeouts`_.
 
-.. _<Project>_SCALE_TEST_TIMEOUT:
-
 
 Scaling test timeouts at configure time
 +++++++++++++++++++++++++++++++++++++++
+
+.. _<Project>_SCALE_TEST_TIMEOUT:
 
 The global default test timeout `DART_TESTING_TIMEOUT`_ as well as all of the
 timeouts for the individual tests that have their own timeout set (through the
@@ -2401,6 +2442,7 @@ NOTE: The set of extra repositories listed in the file
 ``<Project>_PRE_REPOSITORIES`` if PRE extra repos are listed and/or
 ``<Project>_EXTRA_REPOSITORIES`` if POST extra repos are listed.
 
+
 Selecting a different source location for a package
 ---------------------------------------------------
 
@@ -2498,6 +2540,7 @@ NOTES:
   really only be turned on for large projects (where the extra overhead is
   small) or for smaller projects for extra informational purposes.
 
+
 Generating export files
 -----------------------
 
@@ -2534,10 +2577,11 @@ NOTES:
 * One would only want to limit the export files generated for very large
   projects where the cost my be high for doing so.
 
-.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 Generating a project repo version file
 --------------------------------------
+
+.. _<Project>_GENERATE_REPO_VERSION_FILE:
 
 When working with local git repos for the project sources, one can generate a
 ``<Project>RepoVersion.txt`` file which lists all of the repos and their
@@ -2553,10 +2597,11 @@ NOTE: If the base ``.git/`` directory is missing, then no
 ``<Project>RepoVersion.txt`` file will get generated and a ``NOTE`` message is
 printed to cmake STDOUT.
 
-.. _<Project>_GENERATE_VERSION_DATE_FILES:
 
 Generating git version date files
 ---------------------------------
+
+.. _<Project>_GENERATE_VERSION_DATE_FILES:
 
 When working with local git repos for the project sources, one can generate
 the files ``VersionDate.cmake`` and ``<Project>_version_date.h`` in the build
@@ -2694,6 +2739,7 @@ Windows, XCode on Macs, and Eclipse project files but using those build
 systems are not documented here (consult standard CMake and concrete build
 tool documentation).
 
+
 Building all targets
 --------------------
 
@@ -2744,7 +2790,6 @@ Building all of the libraries for a package
 To build only the libraries for given TriBITS package, use::
 
   $ make <TRIBITS_PACKAGE>_libs
-
 
 
 Building all of the libraries for all enabled packages
@@ -3793,7 +3838,7 @@ or when running the ``dashboard`` target with::
 Using the ``dashboard`` target, one can also run coverage and memory testing
 and submit to CDash as described below.  But to take full advantage of the
 all-at-once mode and to have results displayed on CDash broken down
-package-by-package, one must be using CMake/CTest 3.10 or newer and be
+package-by-package, one must be using CMake/CTest 3.17 or newer and be
 submitting to a newer CDash version (from about mid 2018 and newer).
 
 For submitting line coverage results, once you configure with
@@ -3870,3 +3915,5 @@ original configure state.  Even with the all-at-once mode, if one kills the
 with an invalid configuration of the project.  In these cases, one may need to
 configure from scratch to get back to the original state before calling ``make
 dashboard``.
+
+..  LocalWords:  templated instantiation Makefiles CMake

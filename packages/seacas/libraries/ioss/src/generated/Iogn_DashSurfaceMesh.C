@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <algorithm> // for copy
@@ -341,9 +341,9 @@ namespace Iogn {
   {
     elem_sides.clear();
     const std::vector<int> &curSideData = mExodusData.sidesetConnectivity[setId - 1];
-    for (size_t i = 0; i < curSideData.size(); ++i) {
-      elem_sides.push_back(curSideData[i] / 10);
-      elem_sides.push_back(curSideData[i] % 10);
+    for (auto curSide : curSideData) {
+      elem_sides.push_back(curSide / 10);
+      elem_sides.push_back(curSide % 10);
     }
   }
 

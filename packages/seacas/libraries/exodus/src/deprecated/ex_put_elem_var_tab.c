@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -23,7 +23,7 @@ will be output.
 
 Although writing the element variable truth table is optional, it is
 encouraged because it creates at one time all the necessary
-~~~{.c}{NetCDF} variables in which to hold the exodus element variable
+`NetCDF` variables in which to hold the exodus element variable
 values. This results in significant time savings.
 
 The function ex_put_variable_param() must be called before this

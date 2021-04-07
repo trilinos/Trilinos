@@ -84,7 +84,7 @@ void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)
   Selector all = bulk.mesh_meta_data().universal_part();
   count_entities(all, bulk, mem_usage.entity_counts);
 
-  size_t nranks = mem_usage.entity_counts.size();
+  EntityRank nranks = static_cast<EntityRank>(mem_usage.entity_counts.size());
   mem_usage.downward_relation_counts.resize(nranks, 0);
   mem_usage.upward_relation_counts.resize(nranks, 0);
   mem_usage.bucket_counts.resize(nranks, 0);

@@ -1,16 +1,15 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
-
 
       SUBROUTINE PLTOND (MD, TITLE, NTITLE, XX, YY, XLAB, YLAB, NP,
      1   CURVE, TPLOT)
-C
+
 C     DOUBLE PRECISION VERSION
 C        OUTPUT DATA IN GRAFAID NEUTRAL FILE FORMAT FOR ONE PLOT
-C
+
 C ----------------------------------------------------------------------
 C VARIABLES:
 C     Name     Type     Description
@@ -23,20 +22,20 @@ C     NP       integer  Number of Points
 C     CURVE    char*16  Curve Name
 C     TPLOT    logical  .TRUE.  if X-variable is time
 C                       .FALSE. if X-variable is not time
-C
+
 C ARRAYS:
 C     Name     Dimension   Type     Description
 C     ----     ---------   ----     ----------------------------------
 C     TITLE    NTITLE      char*80  Title for current curve
 C     XX       NP          real     X-variable data
 C     YY       NP          real     Y-variable data
-C
+
 C     SUBROUTINES AND FUNCTIONS CALLED:
-C
+
       CHARACTER*(*) TITLE(*)
       CHARACTER*(*) XLAB,YLAB
       REAL*8 XX(*), YY(*), XMN, XMX, YMN, YMX
-C
+
       LOGICAL MONO, TPLOT
       CHARACTER*(*) CURVE
       CHARACTER*11 BEGIN
@@ -45,9 +44,9 @@ C
       CHARACTER*4 XTYP, AXTYP
       DATA COMMA/','/, AXTYP/'NOLO'/
       DATA BEGIN/'BEGIN CURVE'/, ECURVE/'END CURVE'/, AUX/'F'/
-C
+
 C     ...LOCATE MINIMUM AND MAXIMUM VALUES AND CHECK FOR NONMONOTONIC DATA
-C
+
       MONO = .TRUE.
       IF (TPLOT) THEN
          XMN = XX(1)
@@ -69,16 +68,16 @@ C
        ELSE
          XTYP = 'NONM'
        END IF
-C
+
       YMN=YY(1)
       YMX=YY(1)
       DO 20 I=2,NP
          YMN = MIN(YMN, YY(I))
          YMX = MAX(YMX, YY(I))
    20    CONTINUE
-C
+
 C     BEGIN TO WRITE CURVE PACKET
-C
+
       WRITE (MD, 40) BEGIN,COMMA,CURVE
       WRITE (MD, 50) NTITLE,COMMA,TITLE(1)
       DO 30 I=2,NTITLE
@@ -89,18 +88,18 @@ C
       WRITE (MD, 80) XMN,COMMA,XMX,COMMA,YMN,COMMA,YMX,COMMA,
      1               NP,COMMA,AUX
       WRITE (MD, 90) AXTYP,COMMA,XTYP,COMMA
-C
+
 C     WRITE DATA PAIRS
-C
+
       DO 35 III=1,NP
          WRITE (MD, 100) XX(III),COMMA,YY(III)
    35  CONTINUE
-C
+
 C     WRITE END OF CURVE PACKET
-C
+
       WRITE (MD, 110) ECURVE,COMMA,CURVE
       RETURN
-C
+
    40 FORMAT (A11,A1,A16)
    50 FORMAT (I1,A1,A)
    60 FORMAT (A)

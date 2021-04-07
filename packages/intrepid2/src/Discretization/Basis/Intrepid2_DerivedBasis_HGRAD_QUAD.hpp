@@ -57,8 +57,12 @@ namespace Intrepid2
 {
   template<class HGRAD_LINE>
   class Basis_Derived_HGRAD_QUAD
-  : public Basis_TensorBasis<HGRAD_LINE, HGRAD_LINE>
+  : public Basis_TensorBasis<typename HGRAD_LINE::BasisBase>
   {
+  protected:
+    std::string name_;
+    ordinal_type order_x_, order_y_;
+    EPointType pointType_;
   public:
     using ExecutionSpace  = typename HGRAD_LINE::ExecutionSpace;
     using OutputValueType = typename HGRAD_LINE::OutputValueType;
@@ -68,25 +72,37 @@ namespace Intrepid2
     using PointViewType  = typename HGRAD_LINE::PointViewType ;
     using ScalarViewType = typename HGRAD_LINE::ScalarViewType;
     
+    using BasisBase = typename HGRAD_LINE::BasisBase;
     using LineBasis = HGRAD_LINE;
-    using TensorBasis = Basis_TensorBasis<LineBasis,LineBasis>;
+    using TensorBasis = Basis_TensorBasis<BasisBase>;
 
     /** \brief  Constructor.
         \param [in] polyOrder_x - the polynomial order in the x dimension.
         \param [in] polyOrder_y - the polynomial order in the y dimension.
+        \param [in] pointType   - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_QUAD(int polyOrder_x, int polyOrder_y)
+    Basis_Derived_HGRAD_QUAD(int polyOrder_x, int polyOrder_y, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    TensorBasis(LineBasis(polyOrder_x),
-                LineBasis(polyOrder_y))
+    TensorBasis(Teuchos::rcp( new LineBasis(polyOrder_x, pointType)),
+                Teuchos::rcp( new LineBasis(polyOrder_y, pointType)))
     {
       this->functionSpace_ = FUNCTION_SPACE_HGRAD;
+
+      std::ostringstream basisName;
+      basisName << "HGRAD_QUAD (" << this->TensorBasis::getName() << ")";
+      name_ = basisName.str();
+
+      order_x_= polyOrder_x;
+      order_y_ = polyOrder_x;
+      pointType_ = pointType;
     }
 
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order to use in both dimensions.
+        \param [in] pointType - type of lattice used for creating the DoF coordinates.
      */
-    Basis_Derived_HGRAD_QUAD(int polyOrder) : Basis_Derived_HGRAD_QUAD(polyOrder,polyOrder) {}
+    Basis_Derived_HGRAD_QUAD(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT) : Basis_Derived_HGRAD_QUAD(polyOrder,polyOrder,pointType) {}
+
 
     /** \brief True if orientation is required
     */
@@ -94,8 +110,38 @@ namespace Intrepid2
       return (this->getDofCount(1,0) > 1); //if it has more than 1 DOF per edge, than it needs orientations
     }
     
-    using Basis<ExecutionSpace,OutputValueType,PointValueType>::getValues;
+    /** \brief Returns a simple decomposition of the specified operator: what operator(s) should be applied to basis1, and what operator(s) to basis2.  A one-element vector corresponds to a single TensorData entry; a multiple-element vector corresponds to a VectorData object with axialComponents = false.
+    */
+    virtual OperatorTensorDecomposition getSimpleOperatorDecomposition(const EOperator operatorType) const override
+    {
+      const EOperator VALUE = Intrepid2::OPERATOR_VALUE;
+      const EOperator GRAD  = Intrepid2::OPERATOR_GRAD;
+      
+      if (operatorType == VALUE)
+      {
+        return OperatorTensorDecomposition(Intrepid2::OPERATOR_VALUE,Intrepid2::OPERATOR_VALUE);
+      }
+      else if (operatorType == GRAD)
+      {
+        // to evaluate gradient, we need both OP_VALUE and OP_GRAD (thanks to product rule)
+        // for 1D line x line, we will put derivative * value in first component, and value * derivative in second
+        
+        std::vector< std::vector<EOperator> > ops;
+        ops.push_back(std::vector<EOperator>{GRAD,  VALUE});
+        ops.push_back(std::vector<EOperator>{VALUE, GRAD});
+        
+        std::vector<double> weights(ops.size(), 1.0);
+        
+        return OperatorTensorDecomposition(ops, weights);
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
+      }
+    }
     
+    using BasisBase::getValues;
+
     /** \brief  multi-component getValues() method (required/called by TensorBasis)
         \param [out] outputValues - the view into which to place the output values
         \param [in] operatorType - the operator on the basis
@@ -149,6 +195,55 @@ namespace Intrepid2
       {
         INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"operator not yet supported");
       }
+    }
+                             
+
+    /** \brief  Returns basis name
+
+     \return the name of the basis
+     */
+    virtual
+    const char*
+    getName() const override {
+      return name_.c_str();
+    }
+
+      /** \brief returns the basis associated to a subCell.
+
+          The bases of the subCell are the restriction to the subCell
+          of the bases of the parent cell.
+          TODO: test this method when different orders are used in different directions
+          \param [in] subCellDim - dimension of subCell
+          \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
+          \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
+       */
+    Teuchos::RCP<BasisBase>
+      getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
+      if(subCellDim == 1) {
+        switch(subCellOrd) {
+        case 0:
+        case 2:
+          return Teuchos::rcp( new LineBasis(order_x_, pointType_) );
+        case 1:
+        case 3:
+          return Teuchos::rcp( new LineBasis(order_y_, pointType_) );
+        }
+      }
+
+      INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
+    }
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual HostBasisPtr<OutputValueType, PointValueType>
+    getHostBasis() const override {
+      using HostBasis  = Basis_Derived_HGRAD_QUAD<typename HGRAD_LINE::HostBasis>;
+      
+      auto hostBasis = Teuchos::rcp(new HostBasis(order_x_, order_y_, pointType_));
+      
+      return hostBasis;
     }
   };
 } // end namespace Intrepid2

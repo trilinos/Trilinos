@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Assembly.h>
@@ -36,15 +36,9 @@ namespace {
     const Ioss::GroupingEntity *old_ge = assem->get_member(name);
 
     if (old_ge != nullptr) {
-      std::string filename = assem->get_database()->get_filename();
-      int64_t     id1      = 0;
-      int64_t     id2      = 0;
-      if (member->property_exists(id_str())) {
-        id1 = member->get_property(id_str()).get_int();
-      }
-      if (old_ge->property_exists(id_str())) {
-        id2 = old_ge->get_property(id_str()).get_int();
-      }
+      std::string        filename = assem->get_database()->get_filename();
+      int64_t            id1      = member->get_optional_property(id_str(), 0);
+      int64_t            id2      = old_ge->get_optional_property(id_str(), 0);
       std::ostringstream errmsg;
       fmt::print(errmsg,
                  "\nERROR: There are multiple assembly members named '{}' "
@@ -99,7 +93,7 @@ const Ioss::GroupingEntity *Ioss::Assembly::get_member(const std::string &my_nam
 {
   IOSS_FUNC_ENTER(m_);
   const Ioss::GroupingEntity *ge = nullptr;
-  for (auto mem : m_members) {
+  for (const auto &mem : m_members) {
     if (mem->name() == my_name) {
       ge = mem;
       break;

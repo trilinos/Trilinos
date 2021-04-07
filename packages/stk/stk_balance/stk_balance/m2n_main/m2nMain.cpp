@@ -3,6 +3,8 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/internal/balanceMtoN.hpp>
 #include <stk_balance/internal/Inputs.hpp>
+#include <stk_balance/internal/M2NDecomposer.hpp>
+#include <stk_balance/setup/M2NParser.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/FillMesh.hpp>
@@ -13,69 +15,30 @@
 #include <stk_util/command_line/CommandLineParser.hpp>
 #include <stk_util/command_line/CommandLineParserParallel.hpp>
 #include <stk_util/command_line/CommandLineParserUtils.hpp>
+#include <stk_util/environment/Env.hpp>
+#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/environment/memory_util.hpp>
 #include <stk_util/environment/FileUtils.hpp>
-#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/string_utils.hpp>
+#include <stk_util/util/human_bytes.hpp>
 
 #include <string>
 #include <iostream>
 #include <fstream>
+#include <memory>
 
 namespace
 {
 
-struct CommandLineOptions
+void set_output_streams(MPI_Comm comm)
 {
-    stk::CommandLineOption infile{"infile", "i", "input file decomposed for old number of processors"};
-    stk::CommandLineOption nprocs{"nprocs", "n", "new number of processors"};
-};
-
-CommandLineOptions m2nOptions;
-
-struct ParsedOptions
-{
-    std::string inFile;
-    int targetNumProcs;
-};
-
-std::string get_quick_example(const std::string &execName, MPI_Comm comm)
-{
-    std::string nProcs = std::to_string(stk::parallel_machine_size(comm));
-    std::string infileName = m2nOptions.infile.name;
-    std::string nProcName = m2nOptions.nprocs.name;
-    std::string mpiCmd = "  > mpirun -n " + nProcs + " " + execName + " ";
-    std::string usage = "Usage:\n" + mpiCmd + stk::angle_it(infileName) + " " + stk::angle_it(nProcName)
-                            + "\n" + mpiCmd + stk::dash_it(infileName) + " " + stk::angle_it(infileName)
-                            + " " + stk::dash_it(nProcName) + " " + stk::angle_it(nProcName)
-                  + "\n\n";
-    return usage;
+  if (stk::parallel_machine_rank(comm) != 0) {
+    stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
+  }
+  Ioss::Utils::set_output_stream(sierra::Env::outputP0());
 }
 
-std::string get_examples(const std::string &executableName)
-{
-    std::string examples = "Examples:\n\n";
-    std::string tab = "  ";
-    examples += tab + "To change from 16 processor decomposition to 128 processor decomposition:\n";
-    examples += tab + tab + "> mpirun -n 16 " + executableName + " file.exo 128\n";
-    examples += "\n";
-    examples += tab + "To change from 16 processor decomposition to 8 processor decomposition:\n";
-    examples += tab + tab + "> mpirun -n 16 " + executableName + " file.exo 8\n";
-    return examples;
-}
-
-ParsedOptions parse_m2n_command_line(int argc, const char**argv, stk::CommandLineParserParallel &commandLine, MPI_Comm comm)
-{
-    std::string execName = stk::tailname(argv[0]);
-    stk::parse_command_line(argc, argv, get_quick_example(execName, comm), get_examples(execName), commandLine, comm);
-
-    std::string inFile = commandLine.get_option_value<std::string>(m2nOptions.infile.name);
-    int targetNumProcs = commandLine.get_option_value<int>(m2nOptions.nprocs.name);
-    ThrowRequireMsg(targetNumProcs > 0, "Please specify a valid target processor count.");
-
-    return ParsedOptions{inFile, targetNumProcs};
-}
-
-void rebalance_m_to_n(ParsedOptions &parsedOptions, MPI_Comm comm)
+void rebalance_m_to_n(stk::balance::M2NParsedOptions &parsedOptions, MPI_Comm comm)
 {
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
@@ -86,7 +49,7 @@ void rebalance_m_to_n(ParsedOptions &parsedOptions, MPI_Comm comm)
     stk::io::StkMeshIoBroker ioBroker;
     stk::io::fill_mesh_preexisting(ioBroker, parsedOptions.inFile, bulk);
 
-    stk::balance::internal::rebalanceMtoN(ioBroker, field, parsedOptions.targetNumProcs, parsedOptions.inFile);
+    stk::balance::internal::rebalanceMtoN(ioBroker, field, parsedOptions);
 }
 
 }
@@ -96,13 +59,17 @@ int main(int argc, const char**argv)
     MPI_Init(&argc, const_cast<char***>(&argv));
     MPI_Comm comm = MPI_COMM_WORLD;
 
-    stk::CommandLineParserParallel commandLine(comm);
-    commandLine.add_required_positional<std::string>(m2nOptions.infile);
-    commandLine.add_required_positional<int>(m2nOptions.nprocs);
+    stk::balance::M2NParser parser(comm);
+    stk::balance::M2NParsedOptions parsedOptions;
+    parser.parse_command_line_options(argc, argv, parsedOptions);
 
-    ParsedOptions balanceOptions = parse_m2n_command_line(argc, argv, commandLine, comm);
-    rebalance_m_to_n(balanceOptions, comm);
+    set_output_streams(comm);
+    rebalance_m_to_n(parsedOptions, comm);
 
+    size_t hwmMax = 0, hwmMin = 0, hwmAvg = 0;
+    stk::get_memory_high_water_mark_across_processors(comm, hwmMax, hwmMin, hwmAvg);
+    sierra::Env::outputP0() << "Memory HWM across procs, max/min/avg: "
+            << stk::human_bytes(hwmMax) << " / " << stk::human_bytes(hwmMin) << " / "<< stk::human_bytes(hwmAvg) << std::endl;
     MPI_Finalize();
     return 0;
 }

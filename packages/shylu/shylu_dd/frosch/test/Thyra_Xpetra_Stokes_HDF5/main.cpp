@@ -80,7 +80,7 @@
 
 // Stratimikos includes
 //#include <Stratimikos_DefaultLinearSolverBuilder.hpp>
-#include <Stratimikos_FROSchXpetra.hpp>
+#include <Stratimikos_FROSch_def.hpp>
 
 #include <Tpetra_Core.hpp>
 
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
     CommandLineProcessor::EParseCommandLineReturn parseReturn = My_CLP.parse(argc,argv);
-    if(parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
+    if (parseReturn == CommandLineProcessor::PARSE_HELP_PRINTED) {
         return(EXIT_SUCCESS);
     }
 
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Import Monolythic System #\n##############################\n" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Import Monolithic System #\n##############################\n" << endl;
 
         unsigned Dimension = 2;
         RCP<HDF5> hDF5IO(new HDF5(*EpetraComm));
@@ -280,7 +280,7 @@ int main(int argc, char *argv[])
         sublist(plList,"FROSch")->set("DofsPerNode Vector",dofsPerNodeVector);
 
         Comm->barrier();
-        if(Comm->getRank()==0) {
+        if (Comm->getRank()==0) {
             cout << "##################\n# Parameter List #\n##################" << endl;
             parameterList->print(cout);
             cout << endl;

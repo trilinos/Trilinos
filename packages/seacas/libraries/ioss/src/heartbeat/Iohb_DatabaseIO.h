@@ -1,12 +1,13 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Iohb_DatabaseIO_h
 #define IOSS_Iohb_DatabaseIO_h
 
+#include "Iohb_Layout.h"
 #include "Ioss_State.h" // for State
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>    // for DatabaseUsage
@@ -17,7 +18,6 @@
 #include <iostream>          // for ostream
 #include <string>            // for string
 namespace Iohb {
-  class Layout;
   class CommSet;
   class EdgeBlock;
   class EdgeSet;
@@ -45,7 +45,7 @@ namespace Ioss {
 namespace Iohb {
   class Layout;
 
-  enum Format { DEFAULT = 0, SPYHIS = 1, TEXT, TS_TEXT, CSV, TS_CSV };
+  enum class Format { DEFAULT = 0, SPYHIS = 1, TEXT, TS_TEXT, CSV, TS_CSV };
 
   class IOFactory : public Ioss::IOFactory
   {
@@ -177,9 +177,9 @@ namespace Iohb {
     time_t timeLastFlush_{0};
     time_t flushInterval_{10};
 
-    std::ostream *logStream{nullptr};
-    Layout *      layout_{nullptr};
-    Layout *      legend_{nullptr};
+    std::ostream *          logStream{nullptr};
+    std::unique_ptr<Layout> layout_{};
+    std::unique_ptr<Layout> legend_{};
 
     std::string defaultTsFormat{"[%H:%M:%S]"};
     std::string tsFormat{};
@@ -191,9 +191,9 @@ namespace Iohb {
     bool        appendOutput{false};
     bool        addTimeField{false};
 
-    bool        initialized_{false};
-    bool        streamNeedsDelete{false};
-    enum Format fileFormat { DEFAULT };
+    bool   initialized_{false};
+    bool   streamNeedsDelete{false};
+    Format fileFormat{Format::DEFAULT};
   };
 } // namespace Iohb
 #endif // IOSS_Iohb_DatabaseIO_h

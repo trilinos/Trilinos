@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <create_inline_mesh.h>
@@ -526,7 +526,7 @@ namespace Iopg {
       block->property_add(Ioss::Property("guid", util().generate_guid(id)));
       block->property_add(Ioss::Property("original_block_order", iblk));
 
-      if (block->get_property("topology_type").get_string() != save_type && save_type != "null" &&
+      if (block->topology()->name() != save_type && save_type != "null" &&
           save_type != "") {
         // Maintain original element type on output database if possible.
         block->property_add(Ioss::Property("original_topology_type", save_type));
@@ -1082,7 +1082,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::ElementBlock *eb, const Ioss:
       // (The 'genesis' portion)
 
       if (field.get_name() == "connectivity" || field.get_name() == "connectivity_raw") {
-        int element_nodes = eb->get_property("topology_node_count").get_int();
+        int element_nodes = eb->topology()->number_nodes();
         assert(field.raw_storage()->component_count() == element_nodes);
 
         // The connectivity is stored in a 1D array.

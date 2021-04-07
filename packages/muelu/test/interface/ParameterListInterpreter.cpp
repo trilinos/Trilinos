@@ -213,6 +213,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
         baseFile = outFile.substr(0, outFile.find_last_of('.'));
         found = baseFile.find("_np");
         jumpOut = true;
+        xmlFile = prefix + xmlFile;
         std::cout << "Test dir: " << dirList[k] << std::endl;
       }
 
@@ -246,13 +247,11 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
       Teuchos::ParameterList paramList;
       Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFile, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
       if      (dirList[k] == prefix+"EasyParameterListInterpreter/" || dirList[k] == prefix+"EasyParameterListInterpreter-heavy/")
-        paramList.set("verbosity", "test");
+        paramList.set("verbosity", "interfacetest");
       else if (dirList[k] == prefix+"FactoryParameterListInterpreter/" || dirList[k] == prefix+"FactoryParameterListInterpreter-heavy/")
-        paramList.sublist("Hierarchy").set("verbosity", "Test");
-      else if (dirList[k] == prefix+"MLParameterListInterpreter/")
-        paramList.set("ML output",     42);
-      else if (dirList[k] == prefix+"MLParameterListInterpreter2/")
-        paramList.set("ML output",     10);
+        paramList.sublist("Hierarchy").set("verbosity", "InterfaceTest");
+      else if (dirList[k] == prefix+"MLParameterListInterpreter/" || dirList[k] == prefix+"MLParameterListInterpreter2/")
+        paramList.set("ML output",     666);
 
       try {
         timer.start();

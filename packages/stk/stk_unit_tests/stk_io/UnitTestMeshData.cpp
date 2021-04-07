@@ -36,6 +36,7 @@
 #include <stdlib.h>                     // for rand, srand, RAND_MAX
 #include <stk_io/IossBridge.hpp>        // for is_part_io_part
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <Ioss_ConcreteVariableType.h>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -359,9 +360,11 @@ TEST(StkMeshIoBroker, removeIoPartAttribute)
 class StkIoFixture : public stk::unit_test_util::MeshFixture
 {
 protected:
-    void setup_mesh(const std::string & meshSpec, stk::mesh::BulkData::AutomaticAuraOption auraOption)
+    void setup_mesh(const std::string & meshSpec,
+                    stk::mesh::BulkData::AutomaticAuraOption auraOption,
+                    unsigned bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity) override
     {
-        setup_empty_mesh(auraOption);
+        setup_empty_mesh(auraOption, bucketCapacity);
 
 //        stk::mesh::Field<int> & field = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "nodal_field");
 //        const int initValue = 0;
@@ -390,3 +393,56 @@ TEST_F(StkIoFixture, customCoordinateName)
 
     unlink(meshName.c_str());
 }
+
+stk::mesh::Part& declare_elem_part(stk::mesh::MetaData& meta, const std::string& partName)
+{
+  stk::mesh::Part& part = meta.declare_part(partName, stk::topology::ELEM_RANK);
+  stk::io::put_io_part_attribute(part);
+  return part;
+}
+
+Ioss::Field* create_ioss_field(const std::string& fieldName,
+                               int numScalarComponentsPerField,
+                               int numFieldCopiesPerEntity)
+{
+  const Ioss::VariableType* symTensor = Ioss::VariableType::factory("sym_tensor_33", numFieldCopiesPerEntity);
+
+  return new Ioss::Field(fieldName, Ioss::Field::REAL, symTensor, Ioss::Field::TRANSIENT, numScalarComponentsPerField);
+}
+
+TEST(DeclareIossField, reRegisterWithDifferentNumCopies)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+  stk::mesh::MetaData meta(3);
+
+  stk::mesh::Part& myPart = declare_elem_part(meta, "myPart");
+  stk::mesh::Part& myOtherPart = declare_elem_part(meta, "myOtherPart");
+
+  Ioss::Sym_Tensor_33::factory();
+
+  int numScalarComponentsPerField = 6;
+  int numFieldCopiesPerEntity = 1;
+  std::string fieldName("left_stretch");
+
+  Ioss::Field* iossField1copy = create_ioss_field(fieldName, numScalarComponentsPerField, numFieldCopiesPerEntity);
+
+  const stk::mesh::FieldBase* stkField =
+      stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myPart, *iossField1copy, false);
+
+  unsigned expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
+  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+
+  numFieldCopiesPerEntity = 9;
+  
+  Ioss::Field* iossField9copies = create_ioss_field(fieldName, numScalarComponentsPerField, numFieldCopiesPerEntity);
+
+  stkField =
+      stk::io::impl::declare_stk_field_internal(meta, stk::topology::ELEM_RANK, myOtherPart, *iossField9copies, false);
+
+  expectedMaxSize = numFieldCopiesPerEntity*numScalarComponentsPerField;
+  EXPECT_EQ(expectedMaxSize, stkField->max_size(stk::topology::ELEM_RANK));
+
+  delete iossField1copy;
+  delete iossField9copies;
+}
+

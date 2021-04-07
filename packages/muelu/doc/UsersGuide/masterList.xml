@@ -134,6 +134,7 @@
      <parameter>
        <name>hierarchy label</name>
        <type>string</type>
+       <name-ML>ML label</name-ML>
        <default>""</default>
        <description>Label for the hierarchy. Is applied to timer labels.</description>
        <visible>true</visible>
@@ -404,9 +405,22 @@
       <name>aggregation: drop scheme</name>
       <type>string</type>
       <default>"classical"</default>
-      <description>Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".</description>
+      <description>Connectivity dropping scheme for a graph used in
+      aggregation. Possible values: "classical", "distance laplacian",
+      "unsupported vector smoothing"</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
+
+    <parameter>
+      <name>aggregation: block diagonal: interleaved blocksize</name>
+      <type>int</type>
+      <default>3</default>
+      <description>Effective block size to use for
+      block-diagonalization.  This assumes the PDE is interleaved</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>aggregation: number of random vectors</name>
@@ -435,6 +449,16 @@
       <comment-ML>parameter not existing in ML</comment-ML>
       <visible>false</visible>
     </parameter>
+
+    <parameter>
+      <name>aggregation: distance laplacian directional weights</name>
+      <type>Array(double)</type>
+      <default>{1,1,1}</default>
+      <description>Directional weights for the distance laplacian</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
 
     <parameter>
       <name>aggregation: distance laplacian algo</name>
@@ -569,7 +593,7 @@
       <name>aggregation: coloring algorithm</name>
       <type>string</type>
       <default>serial</default>
-      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.</description>
+      <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
 
@@ -614,6 +638,15 @@
       <type>bool</type>
       <default>true</default>
       <description>Whether the root node should be included in the aggregates formed in phase 2a.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>aggregation: phase2a agg factor</name>
+      <type>double</type>
+      <default>0.5</default>
+      <description>Agg factor for Phase 2a sizes</description>
       <visible>false</visible>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
@@ -883,6 +916,18 @@
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
+    <parameter>
+      <name>aggregate qualities: mode</name>
+      <type>string</type>
+      <default>eigenvalue</default>
+      <description>Whether to compute eigenvalues (``eigenvalue''),
+      aggregates sizes (``size'') or
+      both (``both'').</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+    
+
+
   </aggregate_qualities>
 
   <misc>
@@ -892,7 +937,7 @@
       <type>\parameterlist</type>
       <description>Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
-      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'', ``Aggregates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in
@@ -1078,6 +1123,52 @@
     </parameter>
 
     <parameter>
+      <name>sa: use rowsumabs diagonal scaling</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
+      <name>sa: enforce constraints</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa.
+Only used when tentative: calculate qr is set to false.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
+      <name>sa: max eigenvalue</name>
+      <type>double</type>
+      <default>-1.0</default>
+      <description>If not -1, use this value for lambdaMax(Dinv A) in prolongator smoothing instead of calculating it.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
+      <name>sa: rowsumabs diagonal replacement tolerance</name>
+      <type>double</type>
+      <default>-1.0</default>
+      <description>If not -1, use this value for deciding whether a diagonal value in prolongator smoothing is too small and should be replaced.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
+      <name>sa: rowsumabs diagonal replacement value</name>
+      <type>double</type>
+      <default>0.0</default>
+      <description>If it's determined that a diagonal entry in prolongator smoothing is too small, replace that entry with this value.</description>
+      <visible>false</visible>
+      <name-ML>not supported by ML</name-ML>
+    </parameter>
+
+    <parameter>
       <name>interp: interpolation order</name>
       <type>int</type>
       <default>1</default>
@@ -1147,6 +1238,52 @@
       <type>bool</type>
       <default>true</default>
       <description>Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: use spread lumping</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Lump (but not necessarily to the diagonal, trying not to lose diagonal dominance more than the original matrix) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace. Only used when filtered matrix: use lumping is set to true. </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: spread lumping diag dom growth factor</name>
+      <type>double</type>
+      <default>1.1</default>
+      <description>Determines how much a measure of diagonal dominance is allowed to grow when using spread lumping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: spread lumping diag dom cap</name>
+      <type>double</type>
+      <default>2.0</default>
+      <description>For matrix rows that are very diagonally dominant, we ignore the diag dom growth factor and instead use this simple cap as to how large the diagonal dominance measure should allowed to be after dropping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. </description>
+      <visible>false</visible>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: use root stencil</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Use root-node based sparsification of the filtered
+      matrix. This usually reduces operator complexity in the case of small aggregates.</description>
+      <comment-ML>not supported by ML</comment-ML>
+    </parameter>
+
+    <parameter>
+      <name>filtered matrix: Dirichlet threshold</name>
+      <type>double</type>
+      <default>-1.0</default>
+      <description>Dirichlet threshold to use for detecting zero
+      diagonals in the filtered matrix (which get replaced with a one).  Any negative number disables
+      the thresholding.</description>
       <comment-ML>not supported by ML</comment-ML>
     </parameter>
 
@@ -1453,6 +1590,15 @@
     </parameter>
 
     <parameter>
+      <name>rap: fix zero diagonals replacement</name>
+      <type>double</type>
+      <default>1.</default>
+      <description>Replacement value for diagonal entries that are considered zero.</description>
+      <comment-ML>not supported by ML</comment-ML>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
       <name>rap: shift</name>
       <type>double</type>
       <default>0.0</default>
@@ -1649,10 +1795,26 @@ optimized neighbor discovery for Importer construction.</description>
     </parameter>
 
     <parameter>
-      <name>refmaxwell: ratio AH / A22 subcommunicators</name>
-      <type>double</type>
-      <default>1.0</default>
-      <description>Ratio for the split into sub-communicators.</description>
+      <name>refmaxwell: enable reuse</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Prepare for solver reuse.</description>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: skip first (1,1) level</name>
+      <type>bool</type>
+      <default>true</default>
+      <description>Skip the first level of the (1,1) hierarchy.</description>
+      <visible>false</visible>
+    </parameter>
+
+    <parameter>
+      <name>refmaxwell: normalize nullspace</name>
+      <type>bool</type>
+      <default>false</default>
+      <description>Normalize the nullspace.</description>
+      <visible>false</visible>
     </parameter>
 
   </refmaxwell>

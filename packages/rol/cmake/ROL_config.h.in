@@ -46,5 +46,8 @@
  * Config Options *
  ******************/
 
+/* Define for runtime debug checking support. */
+#cmakedefine HAVE_ROL_DEBUG
+
 /* Define for performance timer support. */
 #cmakedefine ROL_TIMERS

@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <algorithm>
@@ -57,14 +57,8 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   // Create storage for midpoints.
   auto *  x2 = new double[num_elmts];
-  double *y2 = nullptr;
-  double *z2 = nullptr;
-  if (dim > 1) {
-    y2 = new double[num_elmts];
-  }
-  if (dim > 2) {
-    z2 = new double[num_elmts];
-  }
+  double *y2 = dim > 1 ? new double[num_elmts] : nullptr;
+  double *z2 = dim > 2 ? new double[num_elmts] : nullptr;
 
   // Load coordinates for file 2 and get pointers to them.
   file2.Load_Nodal_Coordinates();
@@ -79,18 +73,15 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
     // Compute midpoints of each element and place into x,y,z arrays.
     size_t num_blocks = file2.Num_Elmt_Blocks();
     size_t e          = 0;
-    double sum_x;
-    double sum_y;
-    double sum_z;
     for (size_t b = 0; b < num_blocks; ++b) {
       const Exo_Block<INT> *block              = file2.Get_Elmt_Block_by_Index(b);
       size_t                num_elmts_in_block = block->Size();
       size_t                num_nodes_per_elmt = block->Num_Nodes_per_Elmt();
       for (size_t i = 0; i < num_elmts_in_block; ++i) {
-        const INT *conn = block->Connectivity(i); // Connectivity for element i.
-        sum_x           = 0.0;
-        sum_y           = 0.0;
-        sum_z           = 0.0;
+        const INT *conn  = block->Connectivity(i); // Connectivity for element i.
+        double     sum_x = 0.0;
+        double     sum_y = 0.0;
+        double     sum_z = 0.0;
         for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
           sum_x += x2_f[conn[j] - 1];
           if (dim > 1) {
@@ -131,19 +122,15 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-  if (save_tolerance_type == IGNORE_) {
-    interFace.coord_tol.type = ABSOLUTE_;
+  ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == ToleranceMode::IGNORE_) {
+    interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
   size_t num_blocks = file1.Num_Elmt_Blocks();
   size_t e1         = 0;
   size_t e2         = 0;
-  INT    sort_idx;
-  double mid_x;
-  double mid_y;
-  double mid_z;
 
   for (size_t b = 0; b < num_blocks; ++b) {
     const Exo_Block<INT> *block1 = file1.Get_Elmt_Block_by_Index(b);
@@ -155,9 +142,9 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
       const INT *conn1 = block1->Connectivity(i);
 
       // Compute midpoint.
-      mid_x = 0.0;
-      mid_y = 0.0;
-      mid_z = 0.0;
+      double mid_x = 0.0;
+      double mid_y = 0.0;
+      double mid_z = 0.0;
 
       for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
         SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes);
@@ -178,7 +165,8 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
       }
 
       // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim, interFace.ignore_dups);
+      INT sort_idx =
+          Find(mid_x, mid_y, mid_z, x2, y2, z2, id, num_elmts, dim, interFace.ignore_dups);
 
       if (sort_idx < 0) {
         Error(fmt::format("Files are different (couldn't match element {} from block {} from first "
@@ -328,11 +316,8 @@ void Compute_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1, ExoII_
   file2.Free_Elmt_Blocks();
 
   delete[] x2;
-
   delete[] y2;
-
   delete[] z2;
-
   delete[] id;
 
   interFace.coord_tol.type = save_tolerance_type;
@@ -444,19 +429,15 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
 
   // Cannot ignore the comparisons, so make sure the coord_tol_type
   // is not -1 which is "ignore"
-  TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-  if (save_tolerance_type == IGNORE_) {
-    interFace.coord_tol.type = ABSOLUTE_;
+  ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+  if (save_tolerance_type == ToleranceMode::IGNORE_) {
+    interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
   }
 
   // Match elmts in first file to their corresponding elmts in second.
   size_t num_blocks1 = file1.Num_Elmt_Blocks();
   size_t e1          = 0;
   size_t e2          = 0;
-  INT    sort_idx;
-  double mid_x;
-  double mid_y;
-  double mid_z;
 
   bool   first     = true;
   size_t unmatched = 0;
@@ -470,9 +451,9 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
       const INT *conn1 = block1->Connectivity(i);
 
       // Compute midpoint.
-      mid_x = 0.0;
-      mid_y = 0.0;
-      mid_z = 0.0;
+      double mid_x = 0.0;
+      double mid_y = 0.0;
+      double mid_z = 0.0;
 
       for (size_t j = 0; j < num_nodes_per_elmt; ++j) {
         SMART_ASSERT(conn1[j] >= 1 && conn1[j] <= (INT)num_nodes1);
@@ -493,7 +474,8 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
       }
 
       // Locate midpoint in sorted array.
-      sort_idx = Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim, interFace.ignore_dups);
+      INT sort_idx =
+          Find(mid_x, mid_y, mid_z, x2, y2, z2, id2, num_elmts2, dim, interFace.ignore_dups);
       if (sort_idx < 0) {
         unmatched++;
         if (first && interFace.show_unmatched) {
@@ -616,11 +598,8 @@ void Compute_Partial_Maps(INT *&node_map, INT *&elmt_map, ExoII_Read<INT> &file1
   file2.Free_Elmt_Blocks();
 
   delete[] x2;
-
   delete[] y2;
-
   delete[] z2;
-
   delete[] id2;
 
   interFace.coord_tol.type = save_tolerance_type;
@@ -788,9 +767,9 @@ namespace {
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-    if (save_tolerance_type == IGNORE_) {
-      interFace.coord_tol.type = ABSOLUTE_;
+    ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == ToleranceMode::IGNORE_) {
+      interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
     }
 
     // Find unmapped nodes in file2; count the unmapped nodes in file_1.
@@ -884,23 +863,23 @@ namespace {
            INT *id, size_t N, int dim, bool ignore_dups)
   {
     SMART_ASSERT(x != nullptr);
-    SMART_ASSERT(N > 0);
+    if (N == 0) {
+      return -1;
+    }
 
     // Cannot ignore the comparisons, so make sure the coord_tol_type
     // is not -1 which is "ignore"
-    TOLERANCE_TYPE_enum save_tolerance_type = interFace.coord_tol.type;
-    if (save_tolerance_type == IGNORE_) {
-      interFace.coord_tol.type = ABSOLUTE_;
+    ToleranceMode save_tolerance_type = interFace.coord_tol.type;
+    if (save_tolerance_type == ToleranceMode::IGNORE_) {
+      interFace.coord_tol.type = ToleranceMode::ABSOLUTE_;
     }
 
     // Find the index such that x0 > x[0,1,...,low-1] and x0 >= x[low]
     // where x[N] is infinity.
-
-    size_t mid;
     size_t low  = 0;
     size_t high = N;
     while (low < high) {
-      mid = (low + high) / 2;
+      size_t mid = (low + high) / 2;
       if (x[id[mid]] < x0) {
         low = mid + 1;
       }
@@ -982,13 +961,8 @@ namespace {
 
   double find_range(const double *x, size_t num_nodes)
   {
-    double rmin = x[0];
-    double rmax = x[0];
-    for (size_t i = 1; i < num_nodes; i++) {
-      rmin = rmin < x[i] ? rmin : x[i];
-      rmax = rmax > x[i] ? rmax : x[i];
-    }
-    return rmax - rmin;
+    auto range = std::minmax_element(x, x + num_nodes);
+    return *range.second - *range.first;
   }
 } // namespace
 
@@ -1038,12 +1012,12 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
         if (tmp >= min) {
           break;
         }
-
         min = tmp;
       }
     }
     break;
   }
+
   case 2: {
     for (size_t i = 0; i < num_nodes; i++) {
       for (size_t j = i + 1; j < num_nodes; j++) {
@@ -1051,13 +1025,13 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
         if (delr > min) {
           break;
         }
-
         double tmp = dist_sqrd(x[indx[i]], y[indx[i]], x[indx[j]], y[indx[j]]);
         min        = min < tmp ? min : tmp;
       }
     }
     break;
   }
+
   case 3: {
     for (size_t i = 0; i < num_nodes; i++) {
       for (size_t j = i + 1; j < num_nodes; j++) {
@@ -1065,7 +1039,6 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
         if (delr > min) {
           break;
         }
-
         double tmp =
             dist_sqrd(x[indx[i]], y[indx[i]], z[indx[i]], x[indx[j]], y[indx[j]], z[indx[j]]);
         min = min < tmp ? min : tmp;
@@ -1079,6 +1052,69 @@ template <typename INT> double Find_Min_Coord_Sep(ExoII_Read<INT> &file)
 }
 
 template <typename INT>
+bool Compare_Maps_Internal(const INT *entity_map, bool partial_flag, const INT *entity_id_map1,
+                           const INT *entity_id_map2, size_t num_entities1, size_t num_entities2,
+                           const char *type)
+{
+  bool diff       = false;
+  int  warn_count = 0;
+
+  if (entity_map != nullptr) {
+    if (!interFace.dump_mapping) {
+      // There is a map between file1 and file2, but all entities are
+      // used in both files.
+      for (size_t i = 0; i < num_entities1; i++) {
+        size_t idx = entity_map[i];
+        if (idx >= num_entities2) {
+          continue;
+        }
+        if (entity_id_map1[i] != entity_id_map2[idx]) {
+          if (!(entity_id_map2[idx] == 0 &&
+                partial_flag)) { // Don't output diff if non-matched and partial
+            fmt::print(stderr,
+                       "exodiff: WARNING .. The local {} {} with global id {} in file1 has the "
+                       "global id "
+                       "{} in file2.\n",
+                       type, i + 1, entity_id_map1[i], entity_id_map2[idx]);
+            diff = true;
+            warn_count++;
+            if (warn_count >= interFace.max_warnings) {
+              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+              break;
+            }
+          }
+        }
+      }
+    }
+  }
+  else {
+    // No entity mapping between file1 and file2 -- do a straight compare.
+    for (size_t i = 0; i < num_entities1; i++) {
+      if (i >= num_entities2) {
+        break;
+      }
+      if (entity_id_map1[i] != entity_id_map2[i]) {
+        if (!(entity_id_map2[i] == 0 &&
+              partial_flag)) { // Don't output diff if non-matched and partial
+          fmt::print(
+              stderr,
+              "exodiff: WARNING .. The local {} {} with global id {} in file1 has the global id "
+              "{} in file2.\n",
+              type, i + 1, entity_id_map1[i], entity_id_map2[i]);
+          diff = true;
+          warn_count++;
+          if (warn_count >= interFace.max_warnings) {
+            fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
+            break;
+          }
+        }
+      }
+    }
+  }
+  return diff;
+}
+
+template <typename INT>
 bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *node_map,
                   const INT *elmt_map, bool partial_flag)
 {
@@ -1087,123 +1123,36 @@ bool Compare_Maps(ExoII_Read<INT> &file1, ExoII_Read<INT> &file2, const INT *nod
   // element and node in each file.
 
   size_t num_nodes1 = file1.Num_Nodes();
-  size_t num_elmts1 = file1.Num_Elmts();
-
-  // size_t num_nodes2 = file2.Num_Nodes();
-  // size_t num_elmts2 = file2.Num_Elmts();
+  size_t num_nodes2 = file2.Num_Nodes();
 
   // NOTE: file1 maps are already loaded...
   file2.Load_Node_Map();
-  file2.Load_Elmt_Map();
 
   const INT *node_id_map1 = file1.Get_Node_Map();
-  const INT *elem_id_map1 = file1.Get_Elmt_Map();
-
   const INT *node_id_map2 = file2.Get_Node_Map();
+
+  bool diff_nodes = Compare_Maps_Internal(node_map, partial_flag, node_id_map1, node_id_map2,
+                                          num_nodes1, num_nodes2, "node");
+  file2.Free_Node_Map();
+
+  size_t num_elmts1 = file1.Num_Elmts();
+  size_t num_elmts2 = file2.Num_Elmts();
+
+  // NOTE: file1 maps are already loaded...
+  file2.Load_Elmt_Map();
+
+  const INT *elem_id_map1 = file1.Get_Elmt_Map();
   const INT *elem_id_map2 = file2.Get_Elmt_Map();
 
-  bool diff       = false;
-  int  warn_count = 0;
+  bool diff_elems = Compare_Maps_Internal(elmt_map, partial_flag, elem_id_map1, elem_id_map2,
+                                          num_elmts1, num_elmts2, "element");
 
-  if (node_map != nullptr) {
-    if (!interFace.dump_mapping) {
-      // There is a map between file1 and file2, but all nodes are
-      // used in both files.
-      for (size_t i = 0; i < num_nodes1; i++) {
-        if (node_id_map1[i] != node_id_map2[node_map[i]]) {
-          if (!(node_id_map2[node_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            fmt::print(stderr,
-                       "exodiff: WARNING .. The local node {} with global id {} in file1 has the "
-                       "global id "
-                       "{} in file2.\n",
-                       i + 1, node_id_map1[i], node_id_map2[node_map[i]]);
-            diff = true;
-            warn_count++;
-            if (warn_count >= interFace.max_warnings) {
-              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-  else {
-    // No node mapping between file1 and file2 -- do a straight compare.
-    for (size_t i = 0; i < num_nodes1; i++) {
-      if (node_id_map1[i] != node_id_map2[i]) {
-        if (!(node_id_map2[i] == 0 &&
-              partial_flag)) { // Don't output diff if non-matched and partial
-          fmt::print(
-              stderr,
-              "exodiff: WARNING .. The local node {} with global id {} in file1 has the global id "
-              "{} in file2.\n",
-              i + 1, node_id_map1[i], node_id_map2[i]);
-          diff = true;
-          warn_count++;
-          if (warn_count >= interFace.max_warnings) {
-            fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  warn_count = 0;
-  if (elmt_map != nullptr) {
-    if (!interFace.dump_mapping) {
-      // There is a map between file1 and file2, but all elements are
-      // used in both files.
-      for (size_t i = 0; i < num_elmts1; i++) {
-        if (elem_id_map1[i] != elem_id_map2[elmt_map[i]]) {
-          if (!(elem_id_map2[elmt_map[i]] == 0 &&
-                partial_flag)) { // Don't output diff if non-matched and partial
-            fmt::print(stderr,
-                       "exodiff: WARNING .. The local element {} with global id {} in file1 has "
-                       "the global id "
-                       "{} in file2.\n",
-                       i + 1, elem_id_map1[i], elem_id_map2[elmt_map[i]]);
-            diff = true;
-            warn_count++;
-            if (warn_count >= interFace.max_warnings) {
-              fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-              break;
-            }
-          }
-        }
-      }
-    }
-  }
-  else {
-    // No element mapping between file1 and file2 -- do a straight compare.
-    for (size_t i = 0; i < num_elmts1; i++) {
-      if (elem_id_map1[i] != elem_id_map2[i]) {
-        if (!(elem_id_map2[i] == 0 &&
-              partial_flag)) { // Don't output diff if non-matched and partial
-          fmt::print(stderr,
-                     "exodiff: WARNING .. The local element {} with global id {} in file1 has the "
-                     "global id "
-                     "{} in file2.\n",
-                     i + 1, elem_id_map1[i], elem_id_map2[i]);
-          diff = true;
-          warn_count++;
-          if (warn_count >= interFace.max_warnings) {
-            fmt::print(stderr, "exodiff: WARNING .. Too many warnings, skipping remainder...\n");
-            break;
-          }
-        }
-      }
-    }
-  }
-  file2.Free_Node_Map();
   file2.Free_Elmt_Map();
 
-  if (diff) {
+  if (diff_nodes || diff_elems) {
     fmt::print("\n");
   }
-  return diff;
+  return diff_nodes || diff_elems;
 }
 
 template void Compute_Maps(int *&node_map, int *&elmt_map, ExoII_Read<int> &file1,

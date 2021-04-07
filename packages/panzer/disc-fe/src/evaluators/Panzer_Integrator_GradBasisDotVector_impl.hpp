@@ -79,7 +79,7 @@ namespace panzer
     multiplier_(multiplier),
     basisName_(basis.name())
   {
-    using Kokkos::View;
+    using PHX::View;
     using panzer::BASIS;
     using panzer::Cell;
     using panzer::EvaluatorStyle;
@@ -125,8 +125,7 @@ namespace panzer
     // Add the dependent field multipliers, if there are any.
     int i(0);
     fieldMults_.resize(fmNames.size());
-    kokkosFieldMults_ =
-      View<View<const ScalarT**,typename PHX::DevLayout<ScalarT>::type,PHX::Device>*>("GradBasisDotVector::KokkosFieldMultipliers",
+    kokkosFieldMults_ = View<View<const ScalarT**>*>("GradBasisDotVector::KokkosFieldMultipliers",
       fmNames.size());
     for (const auto& name : fmNames)
     {
@@ -191,12 +190,10 @@ namespace panzer
   {
     using panzer::getBasisIndex;
     using std::size_t;
-    using PHX::Device;
 
-    // Get the Kokkos::Views of the field multipliers.
+    // Get the PHX::Views of the field multipliers.
     for (size_t i(0); i < fieldMults_.size(); ++i)
       kokkosFieldMults_(i) = fieldMults_[i].get_static_view();
-    Device().fence();
 
     // Determine the index in the Workset bases for our particular basis name.
     basisIndex_ = getBasisIndex(basisName_, (*sd.worksets_)[0], this->wda);

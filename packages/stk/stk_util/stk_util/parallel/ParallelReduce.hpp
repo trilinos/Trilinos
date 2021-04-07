@@ -35,16 +35,15 @@
 #ifndef stk_util_parallel_ParallelReduce_hpp
 #define stk_util_parallel_ParallelReduce_hpp
 
-#include <stk_util/stk_config.h>
-#include <stdint.h>                     // for int64_t
-#include <cstddef>                      // for size_t
-#include <iosfwd>                       // for ostream
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/util/SimpleArrayOps.hpp>  // for BitAnd, BitOr, Copy, etc
-#include <string>                       // for string
-#include <stk_util/parallel/ParallelComm.hpp>
-#include <stk_util/parallel/MPI.hpp>
-#include "stk_util/util/ReportHandler.hpp"
+#include "stk_util/parallel/MPI.hpp"         // for Datatype, get_mpi_loc_op, Loc
+#include "stk_util/parallel/Parallel.hpp"    // for ParallelMachine, ompi_communicator_t, MPI_Op
+#include "stk_util/stk_config.h"             // for STK_HAS_MPI
+#include "stk_util/util/ReportHandler.hpp"   // for ThrowRequire
+#include "stk_util/util/SimpleArrayOps.hpp"  // for BitAnd, BitOr, Copy, Max, Min, Prod, Sum
+#include <cstddef>                           // for size_t
+#include <functional>                        // for greater, less
+#include <iosfwd>                            // for ostream
+#include <string>                            // for string
 
 //------------------------------------------------------------------------
 
@@ -86,6 +85,14 @@ T get_global_sum(ParallelMachine comm, T local)
     return global;
 }
 
+template<typename T>
+T get_global_max(ParallelMachine comm, T local)
+{
+    T global;
+    stk::all_reduce_max(comm, &local, &global, 1);
+    return global;
+}
+
 template<typename T, typename IdType>
 void
 all_reduce_loc_impl(ParallelMachine comm,
@@ -96,24 +103,34 @@ all_reduce_loc_impl(ParallelMachine comm,
     unsigned n,
     MPI_Op mpiOp)
 {
-    using MpiLocType = sierra::MPI::Loc<T, IdType>;
-
-    if ( n < 1 ) return;
-    MpiLocType * const vin  = new MpiLocType[n] ;
-    MpiLocType * const vout = new MpiLocType[n] ;
-    for (unsigned i = 0 ; i < n ; ++i ) {
-      vin[i].m_value = local_extrema[i] ;
-      vin[i].m_loc = local_loc[i] ;
+    int numProcs = 0;
+    MPI_Comm_size(comm, &numProcs);
+    if (numProcs > 1) {
+      using MpiLocType = sierra::MPI::Loc<T, IdType>;
+  
+      if ( n < 1 ) return;
+      MpiLocType * const vin  = new MpiLocType[n] ;
+      MpiLocType * const vout = new MpiLocType[n] ;
+      for (unsigned i = 0 ; i < n ; ++i ) {
+        vin[i].m_value = local_extrema[i] ;
+        vin[i].m_loc = local_loc[i] ;
+      }
+  
+      ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n, sierra::MPI::Datatype< MpiLocType >::type(), mpiOp, comm ) );
+  
+      for (unsigned i = 0 ; i < n ; ++i ) {
+        global_extrema[i] = vout[i].m_value ;
+        global_loc[i] = vout[i].m_loc ;
+      }
+      delete[] vin ;
+      delete[] vout ;
     }
-
-    ThrowRequire( MPI_SUCCESS == MPI_Allreduce( vin, vout, (int) n, sierra::MPI::Datatype< MpiLocType >::type(), mpiOp, comm ) );
-
-    for (unsigned i = 0 ; i < n ; ++i ) {
-      global_extrema[i] = vout[i].m_value ;
-      global_loc[i] = vout[i].m_loc ;
+    else {
+      for (unsigned i = 0 ; i < n ; ++i ) {
+        global_extrema[i] = local_extrema[i];
+        global_loc[i] = local_loc[i];
+      }
     }
-    delete[] vin ;
-    delete[] vout ;
 }
 
 template<typename T, typename IdType>
@@ -257,6 +274,16 @@ struct ReduceEnd {
   static void op( WorkType & , WorkType & ) {}
 };
 
+inline
+void dummy_reference_ReduceEnd_to_avoid_compiler_warnings()
+{
+  ReduceEnd reduceEnd;
+  ReduceEnd::WorkType w;
+  reduceEnd.copyin(w);
+  ReduceEnd::op(w,w);
+  reduceEnd.copyout(w);
+}
+
 // Workhorse class for aggregating reduction operations.
 
 template <class Op, typename T, class Next>
@@ -366,15 +393,17 @@ namespace {
 template < class ReduceOp >
 void all_reduce_driver( ParallelMachine comm , const ReduceOp & op )
 {
-  typedef typename ReduceOp::WorkType WorkType ;
+  if (comm != parallel_machine_null()) {
+    typedef typename ReduceOp::WorkType WorkType ;
 
-  WorkType inbuf , outbuf ;
+    WorkType inbuf , outbuf ;
 
-  ParallelReduceOp f =
-    reinterpret_cast<ParallelReduceOp>( & ReduceOp::void_op );
-  op.copyin( inbuf );
-  all_reduce( comm , f , & inbuf, & outbuf, sizeof(WorkType) );
-  op.copyout( outbuf );
+    ParallelReduceOp f =
+      reinterpret_cast<ParallelReduceOp>( & ReduceOp::void_op );
+    op.copyin( inbuf );
+    all_reduce( comm , f , & inbuf, & outbuf, sizeof(WorkType) );
+    op.copyout( outbuf );
+  }
 }
 
 }

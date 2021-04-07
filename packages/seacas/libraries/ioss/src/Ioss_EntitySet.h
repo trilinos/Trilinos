@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_EntitySet_h
@@ -35,13 +35,13 @@ namespace Ioss {
   class EntitySet : public GroupingEntity
   {
   public:
-    Property get_implicit_property(const std::string &my_name) const override = 0;
+    EntitySet &operator=(const EntitySet &)                                     = delete;
+    Property   get_implicit_property(const std::string &my_name) const override = 0;
 
   protected:
     EntitySet(DatabaseIO *io_database, const std::string &my_name, size_t entity_cnt);
     EntitySet(const EntitySet &) = default;
-    EntitySet &operator=(const EntitySet &) = delete;
-    ~EntitySet() override                   = default;
+    ~EntitySet() override        = default;
 
   protected:
     void count_attributes() const;

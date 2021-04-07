@@ -42,11 +42,6 @@
 
 /// \file Tpetra_CrsGraph_decl.hpp
 /// \brief Declaration of the Tpetra::CrsGraph class
-///
-/// If you want to use Tpetra::CrsGraph, include "Tpetra_CrsGraph.hpp"
-/// (a file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::CrsGraph, include this file
-/// (Tpetra_CrsGraph_decl.hpp).
 
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
@@ -256,7 +251,9 @@ namespace Tpetra {
     //! The type of the part of the sparse graph on each MPI process.
     using local_graph_type = Kokkos::StaticCrsGraph<local_ordinal_type,
                                                     Kokkos::LayoutLeft,
-                                                    device_type>;
+                                                    device_type,
+                                                    void,
+                                                    size_t>;
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;
@@ -302,7 +299,7 @@ namespace Tpetra {
     ///   null, any missing parameters will be filled in with their
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
-              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -369,7 +366,7 @@ namespace Tpetra {
     ///   default values.
     CrsGraph (const Teuchos::RCP<const map_type>& rowMap,
               const Teuchos::RCP<const map_type>& colMap,
-              const Kokkos::DualView<const size_t*, execution_space>& numEntPerRow,
+              const Kokkos::DualView<const size_t*, device_type>& numEntPerRow,
               const ProfileType pftype = TPETRA_DEFAULT_PROFILE_TYPE,
               const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
@@ -1123,7 +1120,8 @@ namespace Tpetra {
      const Kokkos::DualView<const local_ordinal_type*,
        buffer_device_type>& permuteToLIDs,
      const Kokkos::DualView<const local_ordinal_type*,
-       buffer_device_type>& permuteFromLIDs) override;
+       buffer_device_type>& permuteFromLIDs,
+     const CombineMode CM) override;
 
     using padding_type = Details::CrsPadding<
       local_ordinal_type, global_ordinal_type>;
@@ -1305,6 +1303,7 @@ namespace Tpetra {
     /// it only tells us whether boundForAllLocalRows has a meaningful
     /// value on output.  We don't necessarily check whether all
     /// entries of boundPerLocalRow are the same.
+    TPETRA_DEPRECATED
     void
     getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
                                         size_t& boundForAllLocalRows,
@@ -1818,11 +1817,6 @@ namespace Tpetra {
     ///
     /// \return The number of indices found.
     size_t
-    findLocalIndices(const RowInfo& rowInfo,
-                     const Teuchos::ArrayView<const local_ordinal_type>& indices,
-                     std::function<void(const size_t, const size_t, const size_t)> fun) const;
-
-    size_t
     findGlobalIndices(const RowInfo& rowInfo,
                       const Teuchos::ArrayView<const global_ordinal_type>& indices,
                       std::function<void(const size_t, const size_t, const size_t)> fun) const;
@@ -1937,7 +1931,6 @@ namespace Tpetra {
     /// Global constants include:
     /// <ul>
     /// <li> globalNumEntries_ </li>
-    /// <li> globalNumDiags_ </li>
     /// <li> globalMaxNumRowEntries_ </li>
     /// </ul>
     ///
@@ -1946,17 +1939,7 @@ namespace Tpetra {
     /// <li> globalNumEntries_ </li>
     /// <li> globalMaxNumRowEntries_ </li>
     /// </ul>
-    ///
-    /// Only compute the following if the input argument
-    /// computeLocalTriangularConstants is true:
-    /// <ul>
-    /// <li> globalNumDiags_ </li>
-    /// </ul>
-    /// The bool input argument comes from an input ParameterList bool
-    /// parameter "compute local triangular constants", named
-    /// analogously to the existing bool parameter "compute global
-    /// constants".
-    void computeGlobalConstants (const bool computeLocalTriangularConstants);
+    void computeGlobalConstants ();
 
   protected:
     /// \brief Compute local constants, if they have not yet been computed.
@@ -1968,9 +1951,6 @@ namespace Tpetra {
     ///
     /// Local constants include:
     /// <ul>
-    /// <li> lowerTriangular_ </li>
-    /// <li> upperTriangular_ </li>
-    /// <li> nodeNumDiags_ </li>
     /// <li> nodeMaxNumRowEntries_ </li>
     /// </ul>
     ///
@@ -1979,21 +1959,9 @@ namespace Tpetra {
     /// <li> nodeMaxNumRowEntries_ </li>
     /// </ul>
     ///
-    /// Only compute the following if the input argument
-    /// computeLocalTriangularConstants is true:
-    /// <ul>
-    /// <li> lowerTriangular_ </li>
-    /// <li> upperTriangular_ </li>
-    /// <li> nodeNumDiags_ </li>
-    /// </ul>
-    /// The bool input argument comes from an input ParameterList bool
-    /// parameter "compute local triangular constants", named
-    /// analogously to the existing bool parameter "compute global
-    /// constants".
-    ///
     /// computeGlobalConstants calls this method, if global constants
     /// have not yet been computed.
-    void computeLocalConstants (const bool computeLocalTriangularConstants);
+    void computeLocalConstants ();
 
     /// \brief Get information about the locally owned row with local
     ///   index myRow.
@@ -2049,7 +2017,7 @@ namespace Tpetra {
     ///
     /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
-    Kokkos::View<const local_ordinal_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<const local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowView (const RowInfo& rowInfo) const;
 
     /// \brief Get a nonconst nonowned view of the local column
@@ -2058,7 +2026,7 @@ namespace Tpetra {
     ///
     /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
-    Kokkos::View<local_ordinal_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<local_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getLocalKokkosRowViewNonConst (const RowInfo& rowInfo);
 
     /// \brief Get a const nonowned view of the global column indices
@@ -2067,7 +2035,7 @@ namespace Tpetra {
     ///
     /// \param rowInfo [in] Result of calling getRowInfo with the
     ///   index of the local row to view.
-    Kokkos::View<const global_ordinal_type*, execution_space, Kokkos::MemoryUnmanaged>
+    Kokkos::View<const global_ordinal_type*, device_type, Kokkos::MemoryUnmanaged>
     getGlobalKokkosRowView (const RowInfo& rowInfo) const;
 
   protected:
@@ -2159,11 +2127,6 @@ namespace Tpetra {
     //! Local graph; only initialized after first fillComplete() call.
     local_graph_type lclGraph_;
 
-    /// \brief Local number of (populated) diagonal entries.
-    ///
-    /// Computed in computeLocalConstants(); only valid when isFillComplete().
-    size_t nodeNumDiags_ = Teuchos::OrdinalTraits<size_t>::invalid();
-
     /// \brief Local maximum of the number of entries in each row.
     ///
     /// Computed in computeLocalConstants; only valid when
@@ -2175,13 +2138,6 @@ namespace Tpetra {
     ///
     /// Only valid when isFillComplete() is true.
     global_size_t globalNumEntries_ =
-      Teuchos::OrdinalTraits<global_size_t>::invalid();
-
-    /// \brief Global number of (populated) diagonal entries.
-    ///
-    /// Computed in computeGlobalConstants; only valid when
-    ///   isFillComplete() is true.
-    global_size_t globalNumDiags_ =
       Teuchos::OrdinalTraits<global_size_t>::invalid();
 
     /// \brief Global maximum of the number of entries in each row.
@@ -2216,7 +2172,7 @@ namespace Tpetra {
     /// allocate, rather than doing lazy allocation at first insert.
     /// This will make both k_numAllocPerRow_ and numAllocForAllRows_
     /// obsolete.
-    typename Kokkos::View<const size_t*, execution_space>::HostMirror
+    typename Kokkos::View<const size_t*, device_type>::HostMirror
     k_numAllocPerRow_;
 
     /// \brief The maximum number of entries to allow in each locally owned row.
@@ -2242,7 +2198,7 @@ namespace Tpetra {
     typename local_graph_type::entries_type::non_const_type k_lclInds1D_;
 
     //! Type of the k_gblInds1D_ array of global column indices.
-    typedef Kokkos::View<global_ordinal_type*, execution_space> t_GlobalOrdinal_1D;
+    typedef Kokkos::View<global_ordinal_type*, device_type> t_GlobalOrdinal_1D;
 
     /// \brief Global column indices for all rows.
     ///
@@ -2321,10 +2277,6 @@ namespace Tpetra {
     bool indicesAreGlobal_ = false;
     bool fillComplete_ = false;
 
-    //! Whether the graph is locally lower triangular.
-    bool lowerTriangular_ = false;
-    //! Whether the graph is locally upper triangular.
-    bool upperTriangular_ = false;
     //! Whether the graph's indices are sorted in each row, on this process.
     bool indicesAreSorted_ = true;
     /// \brief Whether the graph's indices are non-redundant (merged)
@@ -2361,7 +2313,6 @@ namespace Tpetra {
     static bool getDebug();
 
     /// \brief Whether to do extra debug checks.
-    ///
     /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
     bool debug_ = getDebug();
 
@@ -2373,6 +2324,22 @@ namespace Tpetra {
     /// This comes from Tpetra::Details::Behavior::debug("CrsGraph").
     bool verbose_ = getVerbose();
 
+  private:
+    //! Track if we still might need to fence for the StaticGraph.
+    mutable bool need_sync_host_uvm_access = false;
+
+    //! Request fence before next host access.
+    void set_need_sync_host_uvm_access() {
+      need_sync_host_uvm_access = true;
+    }
+
+    //! Fence if necessary and set flag so we don't duplicate.
+    void execute_sync_host_uvm_access() const {
+      if(need_sync_host_uvm_access) {
+        Kokkos::fence();
+        need_sync_host_uvm_access = false;
+      }
+    }
   }; // class CrsGraph
 
   /// \brief Nonmember function to create an empty CrsGraph given a

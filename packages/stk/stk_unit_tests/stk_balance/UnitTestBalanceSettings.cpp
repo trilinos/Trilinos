@@ -32,10 +32,11 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "gtest/gtest.h"
-#include "stk_unit_test_utils/MeshFixture.hpp"
 #include "stk_balance/balanceUtils.hpp"
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
-class BalanceSettingsTester : public stk::unit_test_util::MeshFixture
+class BalanceSettingsTester : public ::testing::Test
 {
 public:
   stk::balance::BalanceSettings& get_balance_settings()
@@ -71,6 +72,12 @@ TEST_F(BalanceSettingsTester, outputFilename)
   EXPECT_EQ(settings.get_output_filename(), "output/cube.g");
 }
 
+TEST_F(BalanceSettingsTester, getGraphVertexWeight_supports_PYRAMID_5)
+{
+  stk::balance::BalanceSettings& settings = get_balance_settings();
+  EXPECT_EQ(1, settings.getGraphVertexWeight(stk::topology::PYRAMID_5));
+}
+
 TEST(BalanceSettings, defaultContactSearchStatus)
 {
   stk::balance::BalanceSettings balanceSettings;
@@ -90,9 +97,6 @@ TEST(BalanceSettings, defaultContactSearchStatus)
 
   stk::balance::BasicZoltan2Settings basicZoltan2Settings;
   EXPECT_FALSE(basicZoltan2Settings.includeSearchResultsInGraph());
-
-  stk::balance::UserSpecifiedVertexWeightsSetting userSpecifiedVertexWeightsSetting;
-  EXPECT_FALSE(userSpecifiedVertexWeightsSetting.includeSearchResultsInGraph());
 
   stk::balance::GraphCreationSettingsForZoltan2 graphCreationSettingsForZoltan2;
   EXPECT_TRUE(graphCreationSettingsWithCustomTolerances.includeSearchResultsInGraph());
@@ -138,10 +142,6 @@ TEST(BalanceSettings, toggleContactSearchStatus)
   stk::balance::BasicZoltan2Settings basicZoltan2Settings;
   basicZoltan2Settings.setIncludeSearchResultsInGraph(true);
   EXPECT_TRUE(basicZoltan2Settings.includeSearchResultsInGraph());
-
-  stk::balance::UserSpecifiedVertexWeightsSetting userSpecifiedVertexWeightsSetting;
-  userSpecifiedVertexWeightsSetting.setIncludeSearchResultsInGraph(true);
-  EXPECT_TRUE(userSpecifiedVertexWeightsSetting.includeSearchResultsInGraph());
 
   stk::balance::GraphCreationSettingsForZoltan2 graphCreationSettingsForZoltan2;
   graphCreationSettingsForZoltan2.setIncludeSearchResultsInGraph(false);

@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "Ioss_CodeTypes.h"           // for IntVector
@@ -50,7 +50,7 @@ Ioss::Unknown::Unknown() : Ioss::ElementTopology(Ioss::Unknown::name, Ioss::Unkn
 Ioss::Unknown::~Unknown() = default;
 
 int Ioss::Unknown::parametric_dimension() const { return 0; }
-int Ioss::Unknown::spatial_dimension() const { return 0; }
+int Ioss::Unknown::spatial_dimension() const { return 3; }
 int Ioss::Unknown::order() const { return 0; }
 
 int Ioss::Unknown::number_corner_nodes() const { return number_nodes(); }

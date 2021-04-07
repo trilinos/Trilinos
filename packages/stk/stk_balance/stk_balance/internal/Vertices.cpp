@@ -1,6 +1,6 @@
 #include "Vertices.hpp"
 #include "privateDeclarations.hpp"
-#include "balanceUtils.hpp"
+#include "stk_balance/balanceUtils.hpp"
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
@@ -34,22 +34,41 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
                                  const stk::mesh::EntityVector &entities,
                                  const std::vector<stk::mesh::Selector> &selectors)
 {
-    if(balanceSettings.areVertexWeightsProvidedViaFields())
-    {
-        fillFieldVertexWeights(balanceSettings, bulkData, selectors, entities);
+  if (balanceSettings.areVertexWeightsProvidedViaFields()) {
+    fillFieldVertexWeights(balanceSettings, bulkData, selectors, entities);
+  }
+  else {
+    mVertexWeights.resize(entities.size(), 0.0);
+    for (size_t i = 0; i < entities.size(); ++i) {
+      mVertexWeights[i] = balanceSettings.getGraphVertexWeight(bulkData.bucket(entities[i]).topology());
     }
-    else
-    {
-        mVertexWeights.resize(entities.size(), 0.0);
-        for(size_t i=0;i<entities.size();++i)
-            mVertexWeights[i] = balanceSettings.getGraphVertexWeight(bulkData.bucket(entities[i]).topology());
+  }
+
+  const BlockWeightMultipliers & blockWeightMultipliers = balanceSettings.getVertexWeightBlockMultipliers();
+  if (!blockWeightMultipliers.empty()) {
+    stk::mesh::PartVector blocksWithWeights;
+    for (const auto & blockMultiplier : blockWeightMultipliers) {
+      stk::mesh::Part * block = bulkData.mesh_meta_data().get_part(blockMultiplier.first);
+      ThrowRequireMsg(block != nullptr, "Mesh does not contain a block named '" + blockMultiplier.first + "'");
+      blocksWithWeights.push_back(block);
     }
+
+    for (size_t i = 0; i < entities.size(); ++i) {
+      for (const stk::mesh::Part * block : blocksWithWeights) {
+        if (bulkData.bucket(entities[i]).member(*block)) {
+          mVertexWeights[i] *= blockWeightMultipliers.at(block->name());
+          break;
+        }
+      }
+    }
+  }
+
 }
 
 void Vertices::fillFieldVertexWeights(const stk::balance::BalanceSettings& balanceSettings,
-                            const stk::mesh::BulkData& stkMeshBulkData,
-                            const std::vector<stk::mesh::Selector>& selectors,
-                            const stk::mesh::EntityVector &entitiesToBalance)
+                                      const stk::mesh::BulkData& stkMeshBulkData,
+                                      const std::vector<stk::mesh::Selector>& selectors,
+                                      const stk::mesh::EntityVector &entitiesToBalance)
 {
     unsigned numSelectors = selectors.size();
     unsigned numEntities = entitiesToBalance.size();

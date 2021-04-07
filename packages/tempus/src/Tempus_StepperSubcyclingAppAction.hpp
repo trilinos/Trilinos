@@ -15,29 +15,20 @@
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperSubcycling;
 
 /** \brief Application Action for StepperSubcycling.
  *
- *  This class provides a means to apply various actions with the Subcycling time step.
- *  The data available to this class is solution variables (through
+ *  This class provides a means to apply various actions with the Subcycling
+ *  time step.  The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
- *  the application to just observe this data (i.e., use but not change the
- *  data) to change any of it (USER BEWARE!).
+ *  the application to just observe this data, i.e., use but not change
+ *  any of it (USER BEWARE!).
  *
- *  Below is the Subcycling algorithm and includes the locations where the
- *  application can take actions (in italicized).
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Subcyling with the locations of the application actions indicated.}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute $x_{n}$ from $x_{n-1}$, applying appActions from sub-steppers
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations for these AppAction calls
+ *  (StepperSubcyclingAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperSubcycling.
  */
 template<class Scalar>
 class StepperSubcyclingAppAction

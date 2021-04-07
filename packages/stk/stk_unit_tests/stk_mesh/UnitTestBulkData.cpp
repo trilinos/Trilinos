@@ -69,8 +69,10 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityVector, etc
 #include "stk_mesh/baseImpl/MeshImplUtils.hpp"
 #include "stk_mesh/baseImpl/MeshCommImplUtils.hpp"
+#include "stk_mesh/baseImpl/EntityGhostData.hpp"
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
+#include "stk_unit_test_utils/stk_mesh_fixtures/TestHexFixture.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/HexFixture.hpp"  // for HexFixture, etc
 #include "stk_unit_test_utils/stk_mesh_fixtures/QuadFixture.hpp"  // for QuadFixture
 #include "stk_unit_test_utils/stk_mesh_fixtures/RingFixture.hpp"  // for RingFixture
@@ -1984,28 +1986,28 @@ TEST(BulkData, testParallelSideCreationWithoutAura)
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+class BulkDataWithHexes : public stk::mesh::fixtures::TestHexFixture {};
+
 // Testing of field_data_footprint(.)
-TEST(BulkData, test_total_field_data_footprint )
+TEST_F(BulkDataWithHexes, test_total_field_data_footprint )
 {
     // Test 3x1x1 HexFixture structure
     const unsigned NX = 3;
     const unsigned NY = 1;
     const unsigned NZ = 1;
-    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
-    hf.m_meta.commit();
-    hf.generate_mesh();
+    setup_mesh(NX, NY, NZ);
 
-    const stk::mesh::BulkData &mesh = hf.m_bulk_data;
+    const stk::mesh::BulkData &mesh = get_bulk();
 
     // Call function we're testing
-    size_t field_data_footprint = mesh.total_field_data_footprint(stk::topology::NODE_RANK);
+    size_t field_data_footprint = stk::mesh::get_total_ngp_field_allocation_bytes(get_coord_field());
 
     // Alternative computation explicitly gathers buckets.
     size_t node_fields_footprint = 0;
     const stk::mesh::BucketVector &node_buckets = mesh.buckets(stk::topology::NODE_RANK);
     for(size_t i = 0; i < node_buckets.size(); ++i)
     {
-        node_fields_footprint += node_buckets[i]->capacity() * field_bytes_per_entity(hf.m_coord_field, *node_buckets[i]);
+        node_fields_footprint += node_buckets[i]->capacity() * field_bytes_per_entity(get_coord_field(), *node_buckets[i]);
     }
 
     EXPECT_EQ(node_fields_footprint, field_data_footprint);
@@ -2014,22 +2016,20 @@ TEST(BulkData, test_total_field_data_footprint )
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Testing of get_buckets and get_entities functions
-TEST(BulkData, test_get_entities )
+TEST_F(BulkDataWithHexes, test_get_entities )
 {
     // Test 3x4x4 HexFixture structure
     const unsigned NX = 3;
     const unsigned NY = 4;
     const unsigned NZ = 40;
-    stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD, NX, NY, NZ);
+    setup_mesh(NX, NY, NZ);
 
-    hf.m_meta.commit();
-    hf.generate_mesh();
-    const stk::mesh::BulkData &mesh = hf.m_bulk_data;
+    const stk::mesh::BulkData &mesh = get_bulk();
 
     Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
     const stk::mesh::BucketVector &bucket_ptrs = mesh.get_buckets(stk::topology::NODE_RANK, select_owned);
     stk::mesh::EntityVector entities;
-    mesh.get_entities(stk::topology::NODE_RANK, select_owned, entities);
+    stk::mesh::get_selected_entities(select_owned, mesh.buckets(stk::topology::NODE_RANK), entities);
     //
     //  Confirm that the number of entities exracted by either bucket or entity access is identical
     //
@@ -2371,7 +2371,7 @@ TEST(BulkData, testCommList)
 std::string printGhostData(stk::mesh::BulkData & bulkData, stk::mesh::Entity entity)
 {
     std::ostringstream oss;
-    std::vector<stk::mesh::EntityGhostData> egd;
+    std::vector<stk::mesh::impl::EntityGhostData> egd;
     stk::mesh::impl::get_ghost_data(bulkData, entity, egd);
     for(size_t z = 0; z < egd.size(); ++z)
     {
@@ -2400,9 +2400,9 @@ std::string printGhostDataByRank(stk::mesh::BulkData & bulkData, stk::topology::
 TEST(BulkData, EntityGhostData)
 {
     std::string gold_result = "(Entity_lid=0, direction=SEND, processor=128, ghosting level=LOCALLY_OWNED)";
-    stk::mesh::EntityGhostData data;
-    data.direction = stk::mesh::EntityGhostData::SEND;
-    data.ghostingLevel = stk::mesh::EntityGhostData::LOCALLY_OWNED;
+    stk::mesh::impl::EntityGhostData data;
+    data.direction = stk::mesh::impl::EntityGhostData::SEND;
+    data.ghostingLevel = stk::mesh::impl::EntityGhostData::LOCALLY_OWNED;
     data.processor = 128;
     std::ostringstream oss;
     oss << data;
@@ -3381,7 +3381,7 @@ TEST(BulkData, orphaned_node_closure_count_shared_nodes_non_owner_adds_element)
   if (myRank == 0)
   {
     std::vector<Entity> element_vector;
-    bulk.get_entities(stk::topology::ELEMENT_RANK, meta.universal_part(), element_vector);
+    stk::mesh::get_entities(bulk, stk::topology::ELEMENT_RANK, element_vector);
     ASSERT_EQ(1u, element_vector.size());
     EXPECT_TRUE(bulk.destroy_entity(element_vector[0]));
     EXPECT_TRUE(bulk.destroy_entity(node1));
@@ -5987,7 +5987,7 @@ TEST( BulkData, AddSharedNodesInTwoSteps)
         return;
     }
 
-    int nodeId = 1;
+    stk::mesh::EntityId nodeId = 1;
     const unsigned spatialDim = 3;
     stk::mesh::MetaData meta(spatialDim);
     stk::mesh::BulkData mesh(meta, pm);

@@ -1,14 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: adddsp.f,v 1.1 1991/02/21 15:42:08 gdsjaar Exp $
-C $Log: adddsp.f,v $
-C Revision 1.1  1991/02/21 15:42:08  gdsjaar
-C Initial revision
-C
       SUBROUTINE ADDDSP (COORDS, DSP)
       DIMENSION COORDS (NUMNP,*), DSP(NUMNP,*)
 CC

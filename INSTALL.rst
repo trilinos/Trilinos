@@ -2,15 +2,14 @@
 Quick configure, build and install hints for Trilinos
 ==================================================================
 
-:Author: Brent Perschbacher
-:Contact: bmpersc@sandia.gov
+:Contact: trilinos-framework@software.sandia.gov
 
 This document is intended to be a very concise set of examples of how to
-configure, build and install Trilinos. The intended audience is those who need
-a quick refresher on Trilinos CMake build system or those wanting a quick
-install without worrying about all the features and options that are
-available.  For a more indepth document on what features and options are
-available and how to use them, see the document:
+configure, build, install, and build downstream code against Trilinos. The
+intended audience is those who need a quick refresher on Trilinos CMake build
+system or those wanting a quick install without worrying about all the
+features and options that are available.  For a more indepth document on what
+features and options are available and how to use them, see the document:
 
   https://trilinos.org/docs/files/TrilinosBuildReference.html
 
@@ -22,8 +21,8 @@ available and how to use them, see the document:
 Requirements
 ============
 
-* CMake 3.10.0 or newer
-* A C and C++ compiler
+* CMake 3.17.1 or newer
+* C and C++ compiler
 * Optionally a Fortran compiler
 * Optionally an installation of MPI
 
@@ -37,11 +36,12 @@ Following are a few examples of simple configurations for Trilinos. Anything in
 It is recommended that you put your configure options in a script (e..g
 ``do-configure``) so you can repeat the configure if necessary.
 
-Note: all examples assume a unix like command line and Makefile Generators.
+Note: all examples assume a unix like command line and the CMake Makefile
+Generator.
 
 
 Simple MPI instructions (enables most packages)
-------------------------------------------------
+-----------------------------------------------
 
 ::
 
@@ -60,8 +60,8 @@ will need to either point to them or disable them as specified in the CMake
 output.
 
 
-Simple serial instructions (enables most packages)
---------------------------------------------------
+Simple non-MPI instructions (enables most packages)
+---------------------------------------------------
 
 ::
 
@@ -70,7 +70,7 @@ Simple serial instructions (enables most packages)
   -DCMAKE_CXX_COMPILER=<path to C++ compiler> \
   -DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
   -DTrilinos_ENABLE_ALL_PACKAGES=ON \
-  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
   <path to Trilinos source>
   
   make -j<n> install
@@ -87,25 +87,26 @@ Intermediate MPI instructions (enables a few packages)
   -DTrilinos_ENABLE_Epetra=ON \
   -DTrilinos_ENABLE_AztecOO=ON \
   -DTrilinos_ENABLE_Ifpack=ON \
-  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
   <path to Trilinos source>
   
   make -j<n> install
 
 
-Intermediate MPI instructions (enables a few packages)
-------------------------------------------------------
+Intermediate MPI instructions (enables a few packages, explict compilers)
+-------------------------------------------------------------------------
 
 ::
 
   cmake \
-  -DCMAKE_C_COMPILER=<path to C compiler> \
-  -DCMAKE_CXX_COMPILER=<path to C++ compiler> \
-  -DCMAKE_Fortran_COMPILER=<path to Fortran compiler> \
+  -DTPL_ENABLE_MPI=ON \
+  -DCMAKE_C_COMPILER=<path to MPI C compiler wrapper> \
+  -DCMAKE_CXX_COMPILER=<path to MPI C++ compiler wrapper> \
+  -DCMAKE_Fortran_COMPILER=<path to MPI Fortran compiler wrapper> \
   -DTrilinos_ENABLE_Epetra=ON \
   -DTrilinos_ENABLE_AztecOO=ON \
   -DTrilinos_ENABLE_Ifpack=ON \
-  -DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+  -DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
   <path to Trilinos source>
   
   make -j<n> install
@@ -114,10 +115,9 @@ Intermediate MPI instructions (enables a few packages)
 Useful Options
 ==============
 
-To turn on explicit template instantiation (can massively reduce build times)
-use::
+To generate Ninja build files (Ninja 1.10+) instead of Makefiles use::
 
-  -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION=ON
+  -GNinja
 
 To use shared libraries (much smaller executables and faster linking) use::
 
@@ -139,7 +139,20 @@ To enable a package::
 
   -DTrilinos_ENABLE_<package name>=ON
 
+To get the list of packages that can be enabled, run::
+
+  cmake <path to Trilinos source> 2>&1 \
+    | grep "Final set of non-enabled SE packages"
+
 To enable tests::
 
   -DTrilinos_ENABLE_TESTS=ON
 
+
+Building against installed Trilinos
+===================================
+
+For information on how to build against an installation of Trilinos, see
+`demos/simpleBuildAgainstTrilinos`_
+
+.. _demos/simpleBuildAgainstTrilinos: demos/simpleBuildAgainstTrilinos/README.md

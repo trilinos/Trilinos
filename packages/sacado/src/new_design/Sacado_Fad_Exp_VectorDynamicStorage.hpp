@@ -65,14 +65,14 @@ namespace Sacado {
       };
 
       //! Default constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage() :
         v_(), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
         dx_(nullptr)
       {}
 
       //! Constructor with value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage(const T & x) :
         v_(x), owns_mem(true), sz_(0), len_(0), stride_(1), val_(&v_),
         dx_(nullptr)
@@ -82,7 +82,7 @@ namespace Sacado {
       /*!
        * Initializes derivative array 0 of length \c sz
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage(const int sz, const T & x,
                            const DerivInit zero_out = InitDerivArray) :
         v_(x), owns_mem(true), sz_(sz), len_(sz), stride_(1), val_(&v_) {
@@ -98,14 +98,14 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage(const int sz, const int i, const value_type & x) :
         VectorDynamicStorage(sz, x, InitDerivArray) {
         dx_[i]=1.;
       }
 
       //! Constructor with supplied memory
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage(const int sz, T* x, U* dx_p, const int stride,
                            bool zero_out) :
         v_(), owns_mem(false), sz_(sz), len_(sz), stride_(stride),
@@ -115,7 +115,7 @@ namespace Sacado {
       }
 
       //! Copy constructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage(const VectorDynamicStorage& x) :
         v_(*x.val_), owns_mem(true), sz_(x.sz_), len_(x.sz_),
         stride_(1), val_(&v_)  {
@@ -127,7 +127,7 @@ namespace Sacado {
       // always fall-back to copy
 
       //! Destructor
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       ~VectorDynamicStorage() {
         if (owns_mem) {
           if (len_ != 0)
@@ -136,7 +136,7 @@ namespace Sacado {
       }
 
       //! Assignment
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       VectorDynamicStorage& operator=(const VectorDynamicStorage& x) {
         if (this != &x) {
           *val_ = *x.val_;
@@ -166,18 +166,18 @@ namespace Sacado {
       // always fall-back to copy
 
       //! Returns number of derivative components
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int size() const { return sz_;}
 
       //! Returns array length
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       int length() const { return len_; }
 
       //! Resize the derivative array to sz
       /*!
        * Note:  This does not necessarily preserve derivative components.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resize(int sz) {
         if (sz > len_) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
@@ -197,7 +197,7 @@ namespace Sacado {
        * This method doest not preserve any existing derivative components but
        * sets any that are added to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void resizeAndZero(int sz) {
         if (sz > len_) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
@@ -219,7 +219,7 @@ namespace Sacado {
        * This method preserves any existing derivative components and
        * sets any that are added to zero.
        */
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void expand(int sz) {
         if (sz > len_) {
 #if defined(SACADO_DEBUG) && !defined(__CUDA_ARCH__ )
@@ -239,13 +239,13 @@ namespace Sacado {
       }
 
       //! Zero out derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void zero() {
         ds_array<U>::strided_zero(dx_, stride_, sz_);
       }
 
       //! Set value/derivative array memory
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       void setMemory(int sz, T* x, U* dx_p, int stride) {
 
         // Destroy old memory
@@ -264,27 +264,27 @@ namespace Sacado {
       }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const T& val() const { return *val_; }
 
       //! Returns value
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       T& val() { return *val_; }
 
       //! Returns derivative array
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const U* dx() const { return dx_;}
 
       //! Returns derivative component \c i with bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       U dx(int i) const { return sz_ ? dx_[i*stride_] : T(0.); }
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       U& fastAccessDx(int i) { return dx_[i*stride_];}
 
       //! Returns derivative component \c i without bounds checking
-      KOKKOS_INLINE_FUNCTION
+      SACADO_INLINE_FUNCTION
       const U& fastAccessDx(int i) const { return dx_[i*stride_];}
 
     private:

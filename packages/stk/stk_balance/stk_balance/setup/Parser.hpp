@@ -56,6 +56,7 @@ struct OptionNames
   const std::string faceSearchRelTol = "face-search-rel-tol";
   const std::string contactSearch = "contact-search";
   const std::string decompMethod = "decomp-method";
+  const std::string vertexWeightBlockMultiplier = "block-weights";
 };
 
 class Examples
@@ -90,6 +91,7 @@ private:
   void set_contact_search(BalanceSettings& settings) const;
   void set_contact_search_tolerance(BalanceSettings& settings) const;
   void set_decomp_method(BalanceSettings& settings) const;
+  void set_vertex_weight_block_multiplier(BalanceSettings& settings) const;
 
   const MPI_Comm m_comm;
   const OptionNames m_optionNames;

@@ -1,7 +1,7 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
 c$$$      program test
@@ -29,20 +29,20 @@ c$$$        write (*,*) i, indx(i), a(indx(i))
 c$$$      end do
 c$$$
 c$$$      end
-C
+
 C------------------------------------------------------------------------
 C     SUBROUTINE INDEXI: Indexes an integer array ARRAY, that is
 C           it outputs an array INDX such that ARRAY(INDX(J)) is in
 C           ascending order for J=1,2,...,N.  The input quantities N and
 C           ARRAY are not changed.
-C
+
 C     ARRAY (*)        -  Array to be sorted
 C     INDX  (modified) -  Sorted order of ARRAY
 C     N                -  Number of elements in ARRAY
 C     INIT             -  .FALSE. if INDX already setup
 C                         .TRUE.  if INDX must be initialized
 C------------------------------------------------------------------------
-C
+
       subroutine indexi(a, indx, n, init)
 
       integer a(*)
@@ -84,9 +84,10 @@ C
       do while(root*2 + 1 .lt. bottom)
         child = root * 2 + 1
 
-        if ((child + 1 .lt. bottom) .and.
-     *    (a(indx(child)) .lt. a(indx(child+1)))) then
-          child = child + 1
+        if ((child + 1 .lt. bottom)) then
+           if ((a(indx(child)) .lt. a(indx(child+1)))) then
+              child = child + 1
+           end if
         end if
 
         if (a(indx(root)) .lt. a(indx(child))) then
@@ -100,5 +101,4 @@ C
       end do
       return
       end
-
 

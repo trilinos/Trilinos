@@ -232,12 +232,14 @@ namespace panzer {
     //
     //           u(x,y)=DF^{-T}*u_ref(F^{-1}(x,y))
 
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,0),5.0/12.0,1e-5);        // 0 edge basis is [(1-y_ref)/4, 0] 
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,2),3.0/4.0,1e-5);         // 2 edge basis is [(1+y_ref)/4, 0] 
+    auto fieldData_qedge1_h = Kokkos::create_mirror_view(fieldData_qedge1.get_view());
+    Kokkos::deep_copy(fieldData_qedge1_h, fieldData_qedge1.get_view());
+    TEST_FLOATING_EQUALITY(fieldData_qedge1_h(0,0),5.0/6.0,1e-5);        // 0 edge basis is [(1-y_ref)/2, 0]
+    TEST_FLOATING_EQUALITY(fieldData_qedge1_h(0,2),3.0/2.0,1e-5);         // 2 edge basis is [(1+y_ref)/2, 0]
 
     // these two have sign changes because of the mesh topology!
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,1),0.428925006266,1e-5);  // 1 edge basis is [(1+x_ref)/4, 0] 
-    TEST_FLOATING_EQUALITY(fieldData_qedge1(0,3),0.344719536524,1e-5);  // 3 edge basis is [(1-x_ref)/4, 0] 
+    TEST_FLOATING_EQUALITY(fieldData_qedge1_h(0,1),2*0.428925006266,1e-5);  // 1 edge basis is [(1+x_ref)/2, 0]
+    TEST_FLOATING_EQUALITY(fieldData_qedge1_h(0,3),2*0.344719536524,1e-5);  // 3 edge basis is [(1-x_ref)/2, 0]
   }
 
   Teuchos::RCP<panzer::IntegrationRule> buildIR(const std::size_t& workset_size, const int& cubature_degree)

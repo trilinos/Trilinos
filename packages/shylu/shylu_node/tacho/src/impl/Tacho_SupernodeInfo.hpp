@@ -364,7 +364,8 @@ namespace Tacho {
                   ii = i + s.row_begin,  // row in U
                   row = perm(ii), kbeg = ap(row), kend = ap(row+1);   // row in A
                 const ordinal_type kcnt = kend - kbeg;
-                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt), [&](const ordinal_type &kk) {
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member, kcnt),
+                  [&, kbeg, ii](const ordinal_type &kk) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
                     const ordinal_type k  = kk + kbeg;
                     const ordinal_type jj = peri(aj(k) /* col in A */); // col in U
                     if (ii <= jj) {

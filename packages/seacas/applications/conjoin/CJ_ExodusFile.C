@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "CJ_CodeTypes.h" // for StringIdVector, etc
@@ -184,7 +184,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
     mode |= EX_ALL_INT64_DB;
   }
 
-  if (si.compress_data() > 0 || si.use_netcdf4()) {
+  if (si.compress_data() > 0 || si.use_netcdf4() || si.szip()) {
     mode |= EX_NETCDF4;
   }
 
@@ -198,6 +198,13 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
   if (si.compress_data() > 0) {
     ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
     ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
+
+    if (si.szip()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_SZIP);
+    }
+    else if (si.zlib()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZLIB);
+    }
   }
 
   fmt::print("IO Word size is {} bytes.\n", ioWordSize_);
@@ -205,11 +212,7 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si)
   return true;
 }
 
-#if defined(__PUMAGON__)
-#include <stdio.h>
-#else
 #include <unistd.h>
-#endif
 
 namespace {
   int get_free_descriptor_count()

@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_State_h
@@ -20,7 +20,7 @@ namespace Ioss {
                              occurred. */
     STATE_READONLY,     /**< An input database that is not in STATE_UNKNOWN is in this
                              state, which means that it cannot be written to or changed. */
-    STATE_CLOSED,       /**< The sates are not nested, so each state must end with a transition
+    STATE_CLOSED,       /**< The states are not nested, so each state must end with a transition
                              to this state prior to entering the next state. */
     STATE_DEFINE_MODEL, /**< Defining the metadata, which defines the topology of the model
                              (nontransient, geometry and topology). */

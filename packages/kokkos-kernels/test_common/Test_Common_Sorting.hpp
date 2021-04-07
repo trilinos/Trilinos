@@ -544,7 +544,7 @@ void testBitonicSortLexicographic()
 }
 
 template<typename exec_space>
-void testSortCRS(default_lno_t numRows, default_size_type nnz, bool doValues)
+void testSortCRS(default_lno_t numRows, default_lno_t numCols, default_size_type nnz, bool doValues)
 {
   using scalar_t = default_scalar;
   using lno_t = default_lno_t;
@@ -559,7 +559,7 @@ void testSortCRS(default_lno_t numRows, default_size_type nnz, bool doValues)
   //IMPORTANT: kk_generate_sparse_matrix does not sort the rows, if it did this
   //wouldn't test anything
   crsMat_t A = KokkosKernels::Impl::kk_generate_sparse_matrix<crsMat_t>
-    (numRows, numRows, nnz, 2, numRows / 2);
+    (numRows, numCols, nnz, 2, numCols / 2);
   auto rowmap = A.graph.row_map;
   auto entries = A.graph.entries;
   auto values = A.values;
@@ -774,15 +774,20 @@ TEST_F( TestCategory, common_device_bitonic) {
 }
 
 TEST_F( TestCategory, common_sort_crsgraph) {
-  testSortCRS<TestExecSpace>(10, 20, false);
-  testSortCRS<TestExecSpace>(100, 2000, false);
-  testSortCRS<TestExecSpace>(1000, 30000, false);
+  testSortCRS<TestExecSpace>(10, 10, 20, false);
+  testSortCRS<TestExecSpace>(100, 100, 2000, false);
+  testSortCRS<TestExecSpace>(1000, 1000, 30000, false);
 }
 
 TEST_F( TestCategory, common_sort_crsmatrix) {
-  testSortCRS<TestExecSpace>(10, 20, true);
-  testSortCRS<TestExecSpace>(100, 2000, true);
-  testSortCRS<TestExecSpace>(1000, 30000, true);
+  testSortCRS<TestExecSpace>(10, 10, 20, true);
+  testSortCRS<TestExecSpace>(100, 100, 2000, true);
+  testSortCRS<TestExecSpace>(1000, 1000, 30000, true);
+}
+
+TEST_F( TestCategory, common_sort_crs_longrows) {
+  testSortCRS<TestExecSpace>(1, 50000, 10000, false);
+  testSortCRS<TestExecSpace>(1, 50000, 10000, true);
 }
 
 TEST_F( TestCategory, common_sort_merge_crsmatrix) {

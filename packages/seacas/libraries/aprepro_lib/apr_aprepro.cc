@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "apr_scanner.h"    // for Scanner
@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.16 (2020/06/09)";
+  const char *       version_string = "5.21 (2021/03/15)";
 
   void output_copyright();
 
@@ -76,7 +76,7 @@ namespace SEAMS {
     cleanup_memory();
   }
 
-  std::string Aprepro::version() const { return version_string; }
+  std::string Aprepro::version() { return version_string; }
 
   void Aprepro::clear_results()
   {
@@ -94,7 +94,7 @@ namespace SEAMS {
 
     if (!ap_options.include_file.empty()) {
       stateImmutable = true;
-      echo           = 0;
+      echo           = false;
       scanner->add_include_file(ap_options.include_file, true);
     }
 
@@ -140,7 +140,7 @@ namespace SEAMS {
 
     if (!ap_options.include_file.empty()) {
       stateImmutable = true;
-      echo           = 0;
+      echo           = false;
       stringScanner->add_include_file(ap_options.include_file, true);
     }
 
@@ -425,6 +425,9 @@ namespace SEAMS {
       ap_options.errors_and_warnings_fatal = true;
       ap_options.errors_fatal              = true;
     }
+    else if (option == "--require_defined" || option == "-R") {
+      ap_options.require_defined = true;
+    }
     else if (option == "--trace" || option == "-t") {
       ap_options.trace_parsing = true;
     }
@@ -494,6 +497,7 @@ namespace SEAMS {
              "encountered\n"
           << " --errors_and_warnings_fatal or -F: Exit program with nonzero status if "
              "warnings are encountered\n"
+          << "--require_defined or -R: Tread undefined variable warnings as fatal\n"
           << "--one_based_index or -1: Array indexing is one-based (default = zero-based)\n"
           << "    --interactive or -i: Interactive use, no buffering           \n"
           << "    --include=P or -I=P: Include file or include path            \n"
@@ -509,7 +513,7 @@ namespace SEAMS {
           << "      --copyright or -C: Print copyright message                 \n"
           << "   --keep_history or -k: Keep a history of aprepro substitutions.\n"
           << "                         (not for general interactive use)       \n"
-          << "          --quiet or -q: (deprecated, option is ignored)         \n"
+          << "          --quiet or -q: Do not print the header output line     \n"
           << "                var=val: Assign value 'val' to variable 'var'    \n"
           << "                         Use var=\\\"sval\\\" for a string variable\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"

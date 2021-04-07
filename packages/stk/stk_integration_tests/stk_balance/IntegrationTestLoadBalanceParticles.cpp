@@ -213,7 +213,7 @@ protected:
 
     void do_stk_particle_rebalance()
     {
-        stk::mesh::Selector selector = (!(*m_particlePart)) & get_meta().locally_owned_part();
+        stk::mesh::Selector selector = !(*m_particlePart);
         const double defaultVertexWeight = 0.0;
         StkParticleRebalance graphSettings(m_particleManager, get_bulk(), *m_particleCountField, defaultVertexWeight);
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
@@ -221,7 +221,7 @@ protected:
 
     void do_stk_rebalance()
     {
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
         const double defaultVertexWeight = 0.0;
         StkRebalance graphSettings(get_bulk(), *m_particleCountField, defaultVertexWeight);
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
@@ -241,7 +241,7 @@ protected:
     {
         stk::mesh::EntityVector solidElements;
         stk::mesh::Selector solidSelector = (!(*m_particlePart)) & get_meta().locally_owned_part();
-        stk::mesh::get_selected_entities(solidSelector, get_bulk().buckets(stk::topology::ELEM_RANK), solidElements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, solidSelector, solidElements);
         return get_total_weight_for_these_elements(solidElements);
     }
 
@@ -256,7 +256,7 @@ protected:
     {
         stk::mesh::EntityVector particleElements;
         stk::mesh::Selector particleSelector = (*m_particlePart) & get_meta().locally_owned_part();
-        stk::mesh::get_selected_entities(particleSelector, get_bulk().buckets(stk::topology::ELEM_RANK), particleElements);
+        stk::mesh::get_entities(get_bulk(), stk::topology::ELEM_RANK, particleSelector, particleElements);
 
         const double expectedParticles = (2 * numLocalElements) - 1;
         const double actualParticlesThisProc = get_total_element_weight_for_this_proc(numLocalElements);

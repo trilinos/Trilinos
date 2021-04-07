@@ -39,10 +39,17 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
-#define THYRA_FROSCH_XPETRA_FACTORY_DEF_HPP
+#ifndef _THYRA_FROSCH_FACTORY_DEF_HPP
+#define _THYRA_FROSCH_FACTORY_DEF_HPP
 
 #include "Thyra_FROSchFactory_decl.hpp"
+
+#include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
+#include <FROSch_GDSWPreconditioner_def.hpp>
+#include <FROSch_RGDSWPreconditioner_def.hpp>
+#include <FROSch_OneLevelPreconditioner_def.hpp>
+#include <FROSch_TwoLevelPreconditioner_def.hpp>
+#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 
 
 namespace Thyra {
@@ -50,7 +57,6 @@ namespace Thyra {
     using namespace FROSch;
     using namespace std;
     using namespace Teuchos;
-    using namespace Thyra;
     using namespace Xpetra;
 
     //Constructor
@@ -248,22 +254,34 @@ namespace Thyra {
                 SchwarzPreconditioner = TLP;
             } else if (!paramList_->get("FROSch Preconditioner Type","TwoLevelPreconditioner").compare("TwoLevelBlockPreconditioner")) {
                 ConstXMapPtrVecPtr repeatedMaps = null;
+                ConstXMultiVectorPtrVecPtr coordinatesList = null;
                 UNVecPtr dofsPerNodeVector;
                 DofOrderingVecPtr dofOrderings;
 
                 FROSCH_ASSERT(paramList_->isParameter("DofsPerNode Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofsPerNode Vector.");
                 FROSCH_ASSERT(paramList_->isParameter("DofOrdering Vector"),"Currently, TwoLevelBlockPreconditioner cannot be constructed without DofOrdering Vector.");
+                // Extract the repeated map vector
                 if (paramList_->isParameter("Repeated Map Vector")) {
                     XMapPtrVecPtr repeatedMapsTmp = ExtractVectorFromParameterList<XMapPtr>(*paramList_,"Repeated Map Vector");
+                    XMultiVectorPtrVecPtr nodeListVecTmp = ExtractVectorFromParameterList<XMultiVectorPtr>(*paramList_,"Coordinates List Vector");
                     if (!repeatedMapsTmp.is_null()) {
                         repeatedMaps.resize(repeatedMapsTmp.size());
                         for (unsigned i=0; i<repeatedMaps.size(); i++) {
                             repeatedMaps[i] = repeatedMapsTmp[i].getConst();
                         }
                     }
-                    FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMaps.is_null()");
+                    // Extract the nodeList map vector
+                    if (!nodeListVecTmp.is_null()) {
+                      coordinatesList.resize(nodeListVecTmp.size());
+                      for (unsigned i = 0; i<coordinatesList.size();i++) {
+                        coordinatesList[i] = nodeListVecTmp[i].getConst();
+                      }
+                    }
 
+                    FROSCH_ASSERT(!repeatedMaps.is_null(),"FROSch::FROSchFactory: repeatedMaps.is_null()");
+                    // Extract the DofsPerNode  vector
                     dofsPerNodeVector = ExtractVectorFromParameterList<UN>(*paramList_,"DofsPerNode Vector");
+                    // Extract the DofOrdering vector
                     dofOrderings = ExtractVectorFromParameterList<DofOrdering>(*paramList_,"DofOrdering Vector");
                 } else {
                     FROSCH_ASSERT(false,"Currently, TwoLevelBlockPreconditioner cannot be constructed without Repeated Maps.");
@@ -278,11 +296,12 @@ namespace Thyra {
                                  dofsPerNodeVector,
                                  dofOrderings,
                                  paramList_->get("Overlap",1),
+                                 coordinatesList,
                                  repeatedMaps);
 
                 SchwarzPreconditioner = TLBP;
             } else {
-                FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
+                FROSCH_ASSERT(false,"Thyra::FROSchFactory: Preconditioner Type is unknown.");
             }
 
             SchwarzPreconditioner->compute();
@@ -331,7 +350,7 @@ namespace Thyra {
                 TLBP->resetMatrix(A);
                 SchwarzPreconditioner = TLBP;
             } else {
-                FROSCH_ASSERT(false,"Thyra::FROSchFactory : ERROR: Preconditioner Type is unknown.");
+                FROSCH_ASSERT(false,"Thyra::FROSchFactory: Preconditioner Type is unknown.");
             }
             // recompute SchwarzPreconditioner
             SchwarzPreconditioner->compute();
@@ -428,7 +447,7 @@ namespace Thyra {
 #endif
                 }
             }
-            FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory : ERROR: repeatedMap.is_null()");
+            FROSCH_ASSERT(!repeatedMap.is_null(),"FROSch::FROSchFactory: repeatedMap.is_null()");
         }
         return repeatedMap;
     }
@@ -452,7 +471,7 @@ namespace Thyra {
 #endif
                 }
             }
-            FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory : ERROR: coordinatesList.is_null()");
+            FROSCH_ASSERT(!coordinatesList.is_null(),"FROSch::FROSchFactory: coordinatesList.is_null()");
         }
         return coordinatesList;
     }
@@ -476,7 +495,7 @@ namespace Thyra {
 #endif
                 }
             }
-            FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory : ERROR: nullSpaceBasis.is_null()");
+            FROSCH_ASSERT(!nullSpaceBasis.is_null(),"FROSch::FROSchFactory: nullSpaceBasis.is_null()");
         }
         return nullSpaceBasis;
     }

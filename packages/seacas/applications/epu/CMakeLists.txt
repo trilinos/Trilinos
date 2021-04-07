@@ -2,8 +2,8 @@
 # In a MPI-enabled build, it will build 'epu' which is a serial application and 'pepu' which is a parallel-enabled epu
 # In a serial, non-MPI-enabled build, it will only build 'epu'.
 # On some platforms, both applications may perform the same if run in serial; however, some platforms require
-# parallel applications to be run on a compute-partition.  We used to just build a parallel-enabled epu 
-# when MPI was enabled, but this caused issues for users on those platforms which would not allow a 
+# parallel applications to be run on a compute-partition.  We used to just build a parallel-enabled epu
+# when MPI was enabled, but this caused issues for users on those platforms which would not allow a
 # parallel application to be run on a non-compute partition, so now we build two versions...
 
 TRIBITS_SUBPACKAGE(Epu)

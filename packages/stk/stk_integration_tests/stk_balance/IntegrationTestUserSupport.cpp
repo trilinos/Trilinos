@@ -196,7 +196,8 @@ TEST(Stkbalance, modifyMeshIfNeeded)
     EXPECT_NO_THROW(stk::io::fill_mesh(filename, bulk));
 
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+    const bool sortById = true;
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, meta.locally_owned_part(), elements, sortById);
 
     std::vector<std::set<stk::mesh::Entity>> components;
 
@@ -288,7 +289,8 @@ TEST(Stkbalance, checkForDegenerateElements)
     EXPECT_NO_THROW(stk::io::fill_mesh_with_auto_decomp(filename, bulk));
 
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(meta.locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+    const bool sortById = true;
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, meta.locally_owned_part(), elements, sortById);
 
     std::ostringstream os;
     std::vector<stk::mesh::PartOrdinal> ords;
@@ -374,7 +376,7 @@ void set_contact_weights(stk::mesh::Field<double>& contactCriteria, double weigh
                 stk::mesh::Entity elem2 = bulk.get_entity(stk::topology::ELEMENT_RANK, searchResults[i].second.id());
                 int anyIntersections = 0;
                 if (bulk.is_valid(elem1) && bulk.is_valid(elem2)) {
-                    anyIntersections = stk::balance::internal::getNumSharedNodesBetweenElements(bulk, elem1, elem2);
+                    anyIntersections = stk::balance::internal::get_num_common_nodes_between_elements(bulk, elem1, elem2);
                 }
                 if (anyIntersections == 0) {
                     if (bulk.is_valid(elem1)) {

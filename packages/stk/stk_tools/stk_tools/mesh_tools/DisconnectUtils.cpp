@@ -121,7 +121,7 @@ void populate_blocks_to_reconnect(const stk::mesh::BulkData& bulk, const BlockPa
     }
   }
 
-  for(const BlockPair blockPair : orderedBlockPairsInMeshCopy) {
+  for(const BlockPair & blockPair : orderedBlockPairsInMeshCopy) {
     blockPairsToReconnect.push_back(blockPair);
   }
 }

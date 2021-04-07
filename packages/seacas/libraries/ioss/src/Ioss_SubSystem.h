@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_SubSystem_h
@@ -10,6 +10,7 @@
 #include <Ioss_Assembly.h>
 #include <Ioss_Blob.h>
 #include <Ioss_CommSet.h>
+#include <Ioss_Compare.h>
 #include <Ioss_CoordinateFrame.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
@@ -36,4 +37,5 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
+
 #endif

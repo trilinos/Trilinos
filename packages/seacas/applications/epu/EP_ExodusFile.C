@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -164,8 +164,6 @@ bool Excn::ExodusFile::initialize(const SystemInterface &si, int start_part, int
   std::string sub_dir  = si.sub_dir();
 
   ParallelDisks disks;
-  disks.Raid_Offset(si.raid_offset());
-  disks.Number_of_Raids(si.raid_count());
 
   float version = 0.0;
 
@@ -279,12 +277,15 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
   // Did user specify it via -netcdf4 or -large_model argument...
   int mode = 0;
 
-  if (si.compress_data() > 0) {
+  if (si.compress_data() > 0 || si.szip()) {
     // Force netcdf-4 if compression is specified...
     mode |= EX_NETCDF4;
   }
   else if (si.use_netcdf4()) {
     mode |= EX_NETCDF4;
+  }
+  else if (si.use_netcdf5()) {
+    mode |= EX_64BIT_DATA;
   }
   else if (ex_large_model(fileids_[0]) == 1) {
     mode |= EX_LARGE_MODEL;
@@ -313,7 +314,13 @@ bool Excn::ExodusFile::create_output(const SystemInterface &si, int cycle)
     return false;
   }
 
-  if (si.compress_data() > 0) {
+  if (si.compress_data() > 0 || si.szip()) {
+    if (si.szip()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_SZIP);
+    }
+    else if (si.zlib()) {
+      ex_set_option(outputId_, EX_OPT_COMPRESSION_TYPE, EX_COMPRESS_ZLIB);
+    }
     ex_set_option(outputId_, EX_OPT_COMPRESSION_LEVEL, si.compress_data());
     ex_set_option(outputId_, EX_OPT_COMPRESSION_SHUFFLE, 1);
   }
@@ -338,9 +345,7 @@ size_t Excn::ExodusFile::get_free_descriptor_count()
 {
 // Returns maximum number of files that one process can have open
 // at one time. (POSIX)
-#if defined(__PUMAGON__)
-  int fdmax = FOPEN_MAX;
-#elif defined(_WIN32)
+#if defined(_WIN32)
   int fdmax = _getmaxstdio();
 #else
   int fdmax = sysconf(_SC_OPEN_MAX);

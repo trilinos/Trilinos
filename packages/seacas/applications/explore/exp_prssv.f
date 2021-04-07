@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE PRSSV (NOUT, NSTEP, NUMESS, LISESS, LESSEL,
@@ -49,7 +49,6 @@ C     --   LTSESS - IN - the element sides for all sets
 
       CHARACTER*20 STRA, STRB
 
-
 C ... See if need to read the data
       if (nstep .ne. nstepss) then
          nstepss = nstep
@@ -92,7 +91,6 @@ C ... See if need to read the data
            WRITE (*, 10010) irow, icol, NAMEV(LISVAR(I))
         END IF
  90   continue
-
 
       WRITE (STRA, 10001, IOSTAT=IDUM) NUMESS
 10001 FORMAT ('(#', I4, ')')

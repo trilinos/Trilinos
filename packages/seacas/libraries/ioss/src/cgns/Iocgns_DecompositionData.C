@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_Defines.h>
@@ -9,6 +9,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SmartAssert.h>
+#include <Ioss_Sort.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
 #include <cgns/Iocgns_DecompositionData.h>
@@ -35,7 +36,7 @@ namespace {
   int zoltan_num_dim(void *data, int *ierr)
   {
     // Return dimensionality of coordinate data.
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     *ierr = ZOLTAN_OK;
     return zdata->spatial_dimension();
@@ -44,7 +45,7 @@ namespace {
   int zoltan_num_obj(void *data, int *ierr)
   {
     // Return number of objects (element count) on this processor...
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     *ierr = ZOLTAN_OK;
     return zdata->decomp_elem_count();
@@ -54,7 +55,7 @@ namespace {
                        ZOLTAN_ID_PTR lids, int wdim, float *wgts, int *ierr)
   {
     // Return list of object IDs, both local and global.
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     // At the time this is called, we don't have much information
     // These routines are the ones that are developing that
@@ -64,11 +65,11 @@ namespace {
 
     *ierr = ZOLTAN_OK;
 
-    if (lids) {
+    if (lids != nullptr) {
       std::iota(lids, lids + element_count, 0);
     }
 
-    if (wdim) {
+    if (wdim != 0) {
       std::fill(wgts, wgts + element_count, 1.0);
     }
 
@@ -76,13 +77,12 @@ namespace {
       std::iota(gids, gids + element_count, element_offset);
     }
     else if (ngid_ent == 2) {
-      int64_t *global_ids = (int64_t *)gids;
+      auto *global_ids = (int64_t *)gids;
       std::iota(global_ids, global_ids + element_count, element_offset);
     }
     else {
       *ierr = ZOLTAN_FATAL;
     }
-    return;
   }
 
   void zoltan_geom(void *data, int /* ngid_ent */, int /* nlid_ent */, int /* nobj */,
@@ -90,12 +90,11 @@ namespace {
                    int *ierr)
   {
     // Return coordinates for objects.
-    Iocgns::DecompositionDataBase *zdata = (Iocgns::DecompositionDataBase *)(data);
+    auto *zdata = (Iocgns::DecompositionDataBase *)(data);
 
     std::copy(zdata->centroids().begin(), zdata->centroids().end(), &geom[0]);
 
     *ierr = ZOLTAN_OK;
-    return;
   }
 #endif
 
@@ -253,12 +252,15 @@ namespace Iocgns {
     if (!m_lineDecomposition.empty()) {
       // See if the ordinal is specified as "__ordinal_{ijk}" which is used for testing...
       if (m_lineDecomposition.find("__ordinal_") == 0) {
-        // Get the ordinal... (last character of string)
-        char ordinal = m_lineDecomposition[m_lineDecomposition.size() - 1];
-        int  ord     = ordinal == 'i' ? 0 : ordinal == 'j' ? 1 : 2;
+        auto         sub = m_lineDecomposition.substr(10);
+        unsigned int ord = 0;
+        for (size_t i = 0; i < sub.size(); i++) {
+          char ordinal = sub[i];
+          ord |= ordinal == 'i' ? Ordinal::I : ordinal == 'j' ? Ordinal::J : Ordinal::K;
+        }
         for (auto zone : m_structuredZones) {
           if (zone->is_active()) {
-            zone->m_lineOrdinal = ord;
+            zone->m_lineOrdinal |= ord;
           }
         }
       }
@@ -272,10 +274,10 @@ namespace Iocgns {
     Utils::decompose_model(m_structuredZones, m_decomposition.m_processorCount, rank,
                            m_loadBalanceThreshold, verbose);
 
-    std::sort(m_structuredZones.begin(), m_structuredZones.end(),
-              [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-                return a->m_zone < b->m_zone;
-              });
+    Ioss::sort(m_structuredZones.begin(), m_structuredZones.end(),
+               [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+                 return a->m_zone < b->m_zone;
+               });
 
     for (auto zone : m_structuredZones) {
       if (zone->is_active()) {
@@ -298,7 +300,7 @@ namespace Iocgns {
               zone_node_count);
           auto zgcs = zone->m_zoneConnectivity;
 #if 0
-	  // This should work, but doesn't... 
+	  // This should work, but doesn't...
           fmt::print(Ioss::DEBUG(), "{}\n", fmt::join(zgcs, "\n"));
 #else
           for (auto &zgc : zgcs) {
@@ -317,10 +319,10 @@ namespace Iocgns {
           Ioss::OUTPUT(),
           "     n    proc  parent    imin    imax    jmin    jmax    kmin    kmax          work\n");
       auto tmp_zone(m_structuredZones);
-      std::sort(tmp_zone.begin(), tmp_zone.end(),
-                [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-                  return a->m_proc < b->m_proc;
-                });
+      Ioss::sort(tmp_zone.begin(), tmp_zone.end(),
+                 [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+                   return a->m_proc < b->m_proc;
+                 });
 
       for (auto &zone : tmp_zone) {
         if (zone->is_active()) {

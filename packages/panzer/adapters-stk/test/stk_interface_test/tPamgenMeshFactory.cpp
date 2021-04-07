@@ -54,6 +54,10 @@
 
 #include "Shards_BasicTopologies.hpp"
 
+#ifdef PANZER_HAVE_PERCEPT
+#include "percept/PerceptMesh.hpp"
+#endif
+
 #ifdef HAVE_MPI
    #include "Epetra_MpiComm.h"
 #else
@@ -320,5 +324,130 @@ TEUCHOS_UNIT_TEST(tPamgenFactory, getMeshDimension)
 {
   TEST_EQUALITY(panzer_stk::getMeshDimension("pamgen_test.gen",MPI_COMM_WORLD,false),3);
 }
+
+
+#ifdef PANZER_HAVE_PERCEPT
+// test the ability to save the percept mesh hierarchy
+TEUCHOS_UNIT_TEST(tPamgenFactory, keepPerceptData)
+{
+  using namespace Teuchos;
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+
+  {
+    out << "\nCreating pamgen mesh with parent elements." << std::endl;
+    RCP<ParameterList> p = parameterList();
+    const std::string input_file_name = "pamgen_test.gen";
+    p->set("File Name",input_file_name);
+    p->set("File Type","Pamgen");
+    p->set("Levels of Uniform Refinement",1);
+    p->set("Keep Percept Data",true);
+    p->set("Keep Percept Parent Elements",true);
+
+    RCP<STK_ExodusReaderFactory> pamgenFactory = rcp(new STK_ExodusReaderFactory());
+    TEST_NOTHROW(pamgenFactory->setParameterList(p));
+
+    RCP<STK_Interface> mesh = pamgenFactory->buildMesh(MPI_COMM_WORLD);
+    RCP<percept::PerceptMesh> refinedMesh = mesh->getRefinedMesh();
+
+    // check if the Percept data exists and has elements
+    TEST_ASSERT(nonnull(refinedMesh));
+    TEST_ASSERT(refinedMesh->get_number_elements()>0);
+
+    // check if the parent information is stored
+    std::vector<stk::mesh::EntityRank> ranks_to_be_deleted;
+    ranks_to_be_deleted.push_back(stk::topology::ELEMENT_RANK);
+    ranks_to_be_deleted.push_back(refinedMesh->side_rank());
+    if (refinedMesh->get_spatial_dim() == 3)
+      ranks_to_be_deleted.push_back(refinedMesh->edge_rank());
+
+    //percept::SetOfEntities parents(*refinedMesh->get_bulk_data());
+    for (unsigned irank=0; irank < ranks_to_be_deleted.size()-1; irank++) // don't look for children of nodes
+    {
+      const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets( ranks_to_be_deleted[irank] );
+      int npar=0;
+      int nchild=0;
+      for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      {
+        stk::mesh::Bucket & bucket = **k ;
+
+        const unsigned num_elements_in_bucket = bucket.size();
+        for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+        {
+	  stk::mesh::Entity element = bucket[iElement];
+	  if (!refinedMesh->isParentElement(element, false))
+	  {
+	    ++nchild;
+	  }
+     	  else
+	  {
+	    ++npar;
+	    //parents.insert(element);
+	  }
+        }
+      }
+      TEST_ASSERT(npar>0);
+      TEST_ASSERT(nchild>0);
+    }
+  }
+
+
+  {
+    out << "\nCreating pamgen mesh without parent elements." << std::endl;
+    RCP<ParameterList> p = parameterList();
+    const std::string input_file_name = "pamgen_test.gen";
+    p->set("File Name",input_file_name);
+    p->set("File Type","Pamgen");
+    p->set("Levels of Uniform Refinement",1);
+    p->set("Keep Percept Data",true);
+
+    RCP<STK_ExodusReaderFactory> pamgenFactory = rcp(new STK_ExodusReaderFactory());
+    TEST_NOTHROW(pamgenFactory->setParameterList(p));
+
+    RCP<STK_Interface> mesh = pamgenFactory->buildMesh(MPI_COMM_WORLD);
+    RCP<percept::PerceptMesh> refinedMesh = mesh->getRefinedMesh();
+
+    // check if the Percept data exists and has elements
+    TEST_ASSERT(nonnull(refinedMesh));
+    TEST_ASSERT(refinedMesh->get_number_elements()>0);
+
+    // check if the parent information is stored 
+    std::vector<stk::mesh::EntityRank> ranks_to_be_deleted;
+    ranks_to_be_deleted.push_back(stk::topology::ELEMENT_RANK);
+    ranks_to_be_deleted.push_back(refinedMesh->side_rank());
+    if (refinedMesh->get_spatial_dim() == 3)
+      ranks_to_be_deleted.push_back(refinedMesh->edge_rank());
+
+    //percept::SetOfEntities parents(*refinedMesh->get_bulk_data());
+    for (unsigned irank=0; irank < ranks_to_be_deleted.size()-1; irank++) // don't look for children of nodes
+    {
+      const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets( ranks_to_be_deleted[irank] );
+      int npar=0;
+      int nchild=0;
+      for ( stk::mesh::BucketVector::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      {
+        stk::mesh::Bucket & bucket = **k ;
+
+        const unsigned num_elements_in_bucket = bucket.size();
+        for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
+        {
+	  stk::mesh::Entity element = bucket[iElement];
+	  if (!refinedMesh->isParentElement(element, false))
+	  {
+	    ++nchild;
+	  }
+     	  else
+	  {
+	    ++npar;
+	    //parents.insert(element);
+	  }
+        }
+      }
+      TEST_EQUALITY(npar,0);
+      TEST_ASSERT(nchild>0);
+    }
+  }
+}
+#endif
 
 } // namespace panzer_stk

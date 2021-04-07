@@ -136,7 +136,9 @@ namespace Intrepid2 {
     /// Maximum number of Newton iterations used internally in methods such as computing the action of the inverse reference to physical cell map.
     static constexpr ordinal_type MaxNewton            = 15;      
     /// Maximum order of derivatives allowed in intrepid.
-    static constexpr ordinal_type MaxDerivative        = 10;     
+    static constexpr ordinal_type MaxDerivative        = 10;
+    /// Maximum number of tensor/Cartesian products that can be taken: this allows hypercube basis in 7D to be formed by 7 line basis components.
+    static constexpr ordinal_type MaxTensorComponents  = 7;
 
     // we do not want to use hard-wired epsilon, threshold and tolerence. 
     // static constexpr double Epsilon   = 1.0e-16; 
@@ -419,7 +421,8 @@ namespace Intrepid2 {
   enum EPointType {
     POINTTYPE_EQUISPACED = 0,             // value = 0
     POINTTYPE_WARPBLEND,
-    POINTTYPE_GAUSS
+    POINTTYPE_GAUSS,
+    POINTTYPE_DEFAULT,
   };
 
   KOKKOS_INLINE_FUNCTION
@@ -428,6 +431,7 @@ namespace Intrepid2 {
     case POINTTYPE_EQUISPACED:     return "Equispaced Points";
     case POINTTYPE_WARPBLEND:      return "WarpBlend Points";
     case POINTTYPE_GAUSS:          return "Gauss Points";
+    case POINTTYPE_DEFAULT:        return "Default Points";
     }
     return "INVALID EPointType";
   }
@@ -449,7 +453,7 @@ namespace Intrepid2 {
   enum EBasis {
     BASIS_FEM_DEFAULT = 0,                // value = 0
     BASIS_FEM_HIERARCHICAL,               // value = 1
-    BASIS_FEM_FIAT,                       // value = 2
+    BASIS_FEM_LAGRANGIAN,                 // value = 2
     BASIS_FVD_DEFAULT,                    // value = 3
     BASIS_FVD_COVOLUME,                   // value = 4
     BASIS_FVD_MIMETIC,                    // value = 5
@@ -461,7 +465,7 @@ namespace Intrepid2 {
     switch(basis) {
     case BASIS_FEM_DEFAULT:      return "FEM Default";
     case BASIS_FEM_HIERARCHICAL: return "FEM Hierarchical";
-    case BASIS_FEM_FIAT:         return "FEM FIAT";
+    case BASIS_FEM_LAGRANGIAN:         return "FEM FIAT";
     case BASIS_FVD_DEFAULT:      return "FVD Default";
     case BASIS_FVD_COVOLUME:     return "FVD Covolume";
     case BASIS_FVD_MIMETIC:      return "FVD Mimetic";
@@ -479,7 +483,7 @@ namespace Intrepid2 {
   bool isValidBasis(const EBasis basisType){
     return ( basisType == BASIS_FEM_DEFAULT      ||
              basisType == BASIS_FEM_HIERARCHICAL ||
-             basisType == BASIS_FEM_FIAT         ||
+             basisType == BASIS_FEM_LAGRANGIAN         ||
              basisType == BASIS_FVD_DEFAULT      ||
              basisType == BASIS_FVD_COVOLUME     ||
              basisType == BASIS_FVD_MIMETIC );

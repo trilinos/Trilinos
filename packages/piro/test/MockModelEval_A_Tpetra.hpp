@@ -70,11 +70,10 @@ typedef Thyra::TpetraOperatorVectorExtraction<
  * g = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2
  * subject to:
  * f_0 = (x_0)^3 - p_0 = 0
- * f_i = x_i^3 - (i+3)*(i+p_1)^2 for i != 0
+ * f_i = x_i * (1 + x_0 - p_0^(1/3)) - (i+p_1) - 0.5*(x_0 - p_0),  (for i != 0)
  *
  * solution is p = (1,3).
  */
-
 
 class MockModelEval_A_Tpetra
     : public Thyra::ModelEvaluatorDefaultBase<double>
@@ -113,6 +112,10 @@ class MockModelEval_A_Tpetra
   /** \brief . */
   Teuchos::RCP<const Thyra::LinearOpWithSolveFactoryBase<double>>
   get_W_factory() const;
+
+  /** \brief . */
+  Teuchos::RCP<Thyra::LinearOpBase<double>>
+  create_hess_g_pp( int j, int l1, int l2 ) const;
 
   /** \brief . */
   Thyra::ModelEvaluatorBase::InArgs<double>
@@ -167,6 +170,7 @@ class MockModelEval_A_Tpetra
   Teuchos::RCP<const Tpetra_Map> p_map;
   Teuchos::RCP<const Tpetra_Map> g_map;
   Teuchos::RCP<Tpetra_CrsGraph> crs_graph;
+  Teuchos::RCP<Tpetra_CrsGraph> hess_crs_graph;
   Teuchos::RCP<const Teuchos::Comm<int> > comm;
 
   Teuchos::RCP<Tpetra_Vector> p_vec;

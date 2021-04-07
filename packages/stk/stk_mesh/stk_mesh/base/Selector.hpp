@@ -38,12 +38,12 @@
 #include <stddef.h>                     // for NULL
 #include <iosfwd>                       // for ostream
 #include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_mesh/base/Part.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowAssert
 #include <vector>                       // for vector, operator!=, etc
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class FieldBase; } }
-namespace stk { namespace mesh { class Part; } }
 
 
 
@@ -68,9 +68,9 @@ namespace impl {
 // A node in the expression tree of a selector
 struct SelectorNode
 {
-  SelectorNode(Part const* arg_part = NULL) : m_type(SelectorNodeType::PART)
+  SelectorNode(Part const* arg_part = nullptr) : m_type(SelectorNodeType::PART)
   {
-    m_value.part_ptr = arg_part;
+    m_value.part_ord = arg_part==nullptr ? InvalidPartOrdinal : arg_part->mesh_meta_data_ordinal();
   }
 
   SelectorNode(FieldBase const* arg_field) : m_type(SelectorNodeType::FIELD)
@@ -108,13 +108,13 @@ struct SelectorNode
   //    S1    S2   &   S3   !    &
   //
 
-  // Either leaf (part_ptr) or unary (no data) or binary (offset from current pos to rhs)
+  // Either leaf (part_ord) or unary (no data) or binary (offset from current pos to rhs)
   union value_type
   {
     enum { right_offset = 1 };
     enum { unary_offset = 1 };
 
-    Part      const* part_ptr;
+    PartOrdinal part_ord;
     FieldBase const* field_ptr;
     unsigned left_offset; // for binary op
     // no storage required for unary op
@@ -138,10 +138,10 @@ struct SelectorNode
     return this - m_value.unary_offset;
   }
 
-  Part const* part() const
+  PartOrdinal part() const
   {
     ThrowAssert(m_type == SelectorNodeType::PART);
-    return m_value.part_ptr;
+    return m_value.part_ord;
   }
 
   FieldBase const* field() const
@@ -172,18 +172,19 @@ public:
 
   Selector()
     : m_expr(1) // default Selector is null part (selects nothing)
+    , m_meta(nullptr)
   {}
 
   /** \brief  A part that is required */
   Selector(const Part & part)
     : m_expr(1, impl::SelectorNode(&part))
-  {}
+    , m_meta(((m_expr[0].part()==InvalidPartOrdinal) ? nullptr : &part.mesh_meta_data()))
+  {
+    ThrowAssertMsg(m_meta!=nullptr, "constructing Selector with bad part reference, probably from dereferencing a null part pointer.");
+  }
 
   /** \brief  Bucket has field */
-  Selector(const FieldBase & field)
-    : m_expr(1, impl::SelectorNode(&field))
-  {}
-
+  Selector(const FieldBase & field);
 
   bool operator == (const Selector & rhs) const
   { return m_expr == rhs.m_expr; }
@@ -209,6 +210,7 @@ public:
   {
     if (is_null()) {
       m_expr = selector.m_expr;
+      m_meta = selector.m_meta;
     }
     else {
       add_binary_op(SelectorNodeType::UNION, selector);
@@ -292,11 +294,11 @@ public:
 
 private:
 
-  BulkData* find_mesh() const;
+  const BulkData* find_mesh() const;
 
   bool is_null() const {
     if(m_expr.size() > 1) return false;
-    if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().m_value.part_ptr  == nullptr) {
+    if(m_expr.back().m_type == SelectorNodeType::PART  && m_expr.back().m_value.part_ord  == InvalidPartOrdinal) {
       return true;
     } else if(m_expr.back().m_type == SelectorNodeType::FIELD && m_expr.back().m_value.field_ptr == nullptr) {
       return true;
@@ -312,11 +314,15 @@ private:
 
     m_expr.insert(m_expr.end(), rhs.m_expr.begin(), rhs.m_expr.end());
     m_expr.push_back(root);
+    if (m_meta == nullptr && rhs.m_meta != nullptr) {
+      m_meta = rhs.m_meta;
+    }
 
     return *this;
   }
 
   std::vector<impl::SelectorNode> m_expr;
+  const MetaData* m_meta;
 };
 
 inline

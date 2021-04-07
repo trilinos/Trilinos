@@ -63,7 +63,7 @@ namespace FROSch {
                                                                                 UN levelID) :
     GDSWInterfacePartitionOfUnity<SC,LO,GO,NO> (mpiComm,serialComm,dimension,dofsPerNode,nodesMap,dofsMaps,parameterList,verbosity,levelID)
     {
-        FROSCH_TIMER_START_LEVELID(rGDSWInterfacePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::RGDSWInterfacePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(rGDSWInterfacePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::RGDSWInterfacePartitionOfUnity");
         this->UseVertices_ = false;
         this->UseShortEdges_ = false;
         this->UseStraightEdges_ = false;
@@ -77,7 +77,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Type","Full").compare("Custom")) {
             UseRoots_ = this->ParameterList_->sublist("Custom").get("Roots",false);
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
+            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity: Specify a valid Type.");
         }
 
         if (!this->ParameterList_->get("Distance Function","Constant").compare("Constant")) {
@@ -85,16 +85,16 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Distance Function","Constant").compare("Inverse Euclidean")) {
             DistanceFunction_ = InverseEuclideanDistanceFunction;
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity : ERROR: Specify a valid Distance Function.");
+            FROSCH_ASSERT(false,"FROSch::RGDSWInterfacePartitionOfUnity: Specify a valid Distance Function.");
         }
-        this->LocalPartitionOfUnity_ = XMultiVectorPtrVecPtr(1);
-        this->PartitionOfUnityMaps_ = XMapPtrVecPtr(1);
+        this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(1);
+        this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(1);
     }
 
     template <class SC,class LO,class GO,class NO>
     int RGDSWInterfacePartitionOfUnity<SC,LO,GO,NO>::computePartitionOfUnity(ConstXMultiVectorPtr nodeList)
     {
-        FROSCH_TIMER_START_LEVELID(computePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::computePartitionOfUnity");
+        FROSCH_DETAILTIMER_START_LEVELID(computePartitionOfUnityTime,"RGDSWInterfacePartitionOfUnity::computePartitionOfUnity");
         // Interface
         UN dofsPerNode = this->DDInterface_->getInterface()->getEntity(0)->getDofsPerNode();
         UN numInterfaceDofs = dofsPerNode*this->DDInterface_->getInterface()->getEntity(0)->getNumNodes();
@@ -121,19 +121,19 @@ namespace FROSch {
 
         if (this->Verbose_) {
             cout
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| "
-            << left << setw(74) << "RGDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
+            << left << setw(74) << "> RGDSW Interface Partition Of Unity " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")" << right
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "========================================================================================="
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << "| " << left << setw(41) << "Roots" << right
             << " | " << setw(41) << boolalpha << UseRoots_ << noboolalpha
             << " |"
-            << "\n" << setw(FROSCH_INDENT) << " "
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
             << setw(89) << "-----------------------------------------------------------------------------------------"
             << endl;
         }

@@ -1,31 +1,20 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: geti1r.f,v 1.1 1990/11/30 11:08:11 gdsjaar Exp $
-C $Log: geti1r.f,v $
-C Revision 1.1  1990/11/30 11:08:11  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.MAIN]GETI1R.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE GETI1R (MCOM, ICOM, JCOM, CIN, IIN, RIN, KIN, I1, R1,
      &   IFOUND)
 C***********************************************************************
-C
+
 C  SUBROUTINE GETI1R = GETS AN INTEGER AND A REAL INPUT NUMBER
-C
+
 C***********************************************************************
-C
+
       DIMENSION IIN(MCOM), RIN(MCOM), KIN(MCOM)
       CHARACTER*72 CIN(MCOM)
-C
+
       IF( (ICOM .GT. JCOM) .OR. (CIN(ICOM) (1:1) .EQ. ' ') ) THEN
          ICOM = ICOM+1
          IFOUND = 0
@@ -42,5 +31,5 @@ C
          ENDIF
       ENDIF
       RETURN
-C
+
       END

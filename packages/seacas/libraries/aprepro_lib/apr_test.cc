@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <fstream>
@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
       // Example showing how to get the substitution history for the current line.
       if (aprepro.ap_options.keep_history) {
         std::vector<SEAMS::history_data> hist = aprepro.get_history();
-        for (auto curr_history : hist) {
+        for (const auto &curr_history : hist) {
 
           std::cout << curr_history.original << " was substituted with "
                     << curr_history.substitution << " at index " << curr_history.index << '\n';

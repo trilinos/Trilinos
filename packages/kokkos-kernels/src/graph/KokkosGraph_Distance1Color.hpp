@@ -44,8 +44,6 @@
 #ifndef _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
 #define _KOKKOSGRAPH_DISTANCE1_COLOR_HPP
 
-#include <sstream>
-
 #include "KokkosGraph_Distance1ColorHandle.hpp"
 #include "KokkosGraph_Distance1Color_impl.hpp"
 #include "KokkosKernels_Utils.hpp"

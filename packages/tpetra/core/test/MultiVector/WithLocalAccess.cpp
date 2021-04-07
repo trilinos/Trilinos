@@ -114,7 +114,7 @@ namespace { // (anonymous)
       {
         using local_access_type =
           LocalAccess<multivec_type, dev_mem_space,
-                      Tpetra::Details::read_only>;
+                      Tpetra::Access::ReadOnly>;
 
         using mv_mlo = GetMasterLocalObject<local_access_type>::
           master_local_object_type;
@@ -291,7 +291,7 @@ namespace { // (anonymous)
 
       using local_access_type = decltype (lclAccess);
       static_assert(std::is_same<local_access_type::access_mode,
-        Tpetra::Details::write_only>::value, "Incorrect AccessMode");
+        Tpetra::Access::WriteOnly>::value, "Incorrect AccessMode");
       static_assert
         (std::is_same<local_access_type::global_object_type, vec_type>::value,
          "Incorrect global_object_type");
@@ -324,11 +324,14 @@ namespace { // (anonymous)
          "Result of getNonowningLocalObject for a Vector must be "
          "a rank-1 Kokkos::View");
 #endif // KOKKOS_ENABLE_CUDA
+// Using HipHostPinnedSpace for HIP makes this assertion not hold so we disabel the assert
+#ifndef KOKKOS_ENABLE_HIP
       static_assert
         (std::is_same<
            decltype (X_lcl_1d_wo)::device_type::execution_space,
            vec_type::dual_view_type::t_dev::execution_space>::value,
          "Wrong execution space");
+#endif
       Kokkos::parallel_for (
         "Device kernel for write-only Tpetra::Vector",
         range_type (0, LO (numLocal)),

@@ -44,11 +44,6 @@
 
 /// \file Tpetra_Vector_def.hpp
 /// \brief Definition of the Tpetra::Vector class
-///
-/// If you want to use Tpetra::Vector, include "Tpetra_Vector.hpp" (a
-/// file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::Vector, include
-/// "Tpetra_Vector_decl.hpp".
 
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Details_gathervPrint.hpp"
@@ -118,7 +113,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value) const {
+  replaceGlobalValue (const GlobalOrdinal globalRow, const Scalar& value) {
     this->base_type::replaceGlobalValue (globalRow, 0, value);
   }
 
@@ -127,7 +122,7 @@ namespace Tpetra {
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const Scalar& value,
-                      const bool atomic) const
+                      const bool atomic)
   {
     this->base_type::sumIntoGlobalValue (globalRow, 0, value, atomic);
   }
@@ -135,7 +130,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  replaceLocalValue (const LocalOrdinal myRow, const Scalar& value) const {
+  replaceLocalValue (const LocalOrdinal myRow, const Scalar& value) {
     this->base_type::replaceLocalValue (myRow, 0, value);
   }
 
@@ -144,7 +139,7 @@ namespace Tpetra {
   Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sumIntoLocalValue (const LocalOrdinal globalRow,
                      const Scalar& value,
-                     const bool atomic) const
+                     const bool atomic)
   {
     this->base_type::sumIntoLocalValue (globalRow, 0, value, atomic);
   }

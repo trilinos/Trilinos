@@ -32,20 +32,22 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/stk_config.h>        // for STK_HAS_MPI
-#include <stk_util/environment/RuntimeMessage.hpp>
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <algorithm>                    // for max, stable_sort
-#include <functional>                   // for equal_to, binary_function
-#include <sstream>                      // for operator<<, basic_ostream, etc
-#include <stdexcept>                    // for runtime_error
-#include <stk_util/util/ReportHandler.hpp>  // for report
-#include <stk_util/util/Bootstrap.hpp>  // for Bootstrap
-#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
-#include <string>                       // for string, char_traits, etc
-#include <utility>                      // for pair, operator==
-#include <vector>                       // for vector, etc
-#include <unordered_map>
+#include "stk_util/environment/RuntimeMessage.hpp"
+#include "stk_util/parallel/Parallel.hpp"   // for parallel_machine_rank, MPI_Gather, MPI_Gatherv
+#include "stk_util/stk_config.h"            // for STK_HAS_MPI
+#include "stk_util/util/Bootstrap.hpp"      // for Bootstrap
+#include "stk_util/util/Marshal.hpp"        // for operator<<, operator>>, Marshal
+#include "stk_util/util/ReportHandler.hpp"  // for report
+#include <algorithm>                        // for stable_sort
+#include <functional>                       // for hash, binary_function
+#include <sstream>                          // for operator<<, basic_ostream, basic_ostream::ope...
+#include <stdexcept>                        // for runtime_error
+#include <string>                           // for string, operator<<, char_traits, operator==
+#include <system_error>                     // for hash
+#include <unordered_map>                    // for unordered_map<>::iterator, _Node_iterator
+#include <utility>                          // for pair
+#include <vector>                           // for vector, vector<>::const_iterator
+
 
 namespace stk {
   typedef std::pair<MessageId, std::string> MessageKey;
@@ -168,11 +170,7 @@ get_message_type_info(
   return s_messageTypeInfo[type & MSG_TYPE_MASK];
 }
 
-
-
-
-
-
+#ifdef STK_HAS_MPI
 Marshal &operator<<(Marshal &mout, const DeferredMessage &s)  {
   mout << s.m_type << s.m_messageId << s.m_rank << s.m_throttleGroup << s.m_throttleCutoff << s.m_header << s.m_aggregate;
   return mout;
@@ -182,6 +180,7 @@ Marshal &operator>>(Marshal &min, DeferredMessage &s)  {
   min >> s.m_type >> s.m_messageId >> s.m_rank >> s.m_throttleGroup >> s.m_throttleCutoff >> s.m_header >> s.m_aggregate;
   return min;
 }
+#endif // STK_HAS_MPI
 
 } // namespace <empty>
 
@@ -451,3 +450,4 @@ operator<<(
 }
 
 } // namespace stk
+

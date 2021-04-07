@@ -58,7 +58,7 @@ namespace Tpetra {
     const std::string defaultVal = "ADD";
     const bool caseSensitive = false;
 
-    const Teuchos::Array<std::string>::size_type numParams = 5;
+    const Teuchos::Array<std::string>::size_type numParams = 6;
     Teuchos::Array<std::string> strs (numParams);
     Teuchos::Array<std::string> docs (numParams);
     Teuchos::Array<enum_type> vals (numParams);
@@ -68,18 +68,22 @@ namespace Tpetra {
     strs[2] = "REPLACE";
     strs[3] = "ABSMAX";
     strs[4] = "ZERO";
+    strs[5] = "ADD_ASSIGN";
 
-    docs[0] = "Sum new values into existing values";
+    docs[0] = "Sum new values";
     docs[1] = "Insert new values that don't currently exist";
     docs[2] = "Replace existing values with new values";
     docs[3] = "Replace old value with maximum of magnitudes of old and new values";
     docs[4] = "Replace old values with zero";
+    docs[5] = "Do addition assignment (+=) of new values into existing value; "
+              "may not be supported by all classes";
 
     vals[0] = ADD;
     vals[1] = INSERT;
     vals[2] = REPLACE;
     vals[3] = ABSMAX;
     vals[4] = ZERO;
+    vals[5] = ADD_ASSIGN;
 
     plist.set (paramName, defaultVal, docString,
                Teuchos::rcp (new validator_type (strs (), docs (), vals (),
@@ -104,6 +108,9 @@ namespace Tpetra {
       break;
     case ZERO:
       combineModeStr = "ZERO";
+      break;
+    case ADD_ASSIGN:
+      combineModeStr = "ADD_ASSIGN";
       break;
     default:
       combineModeStr = "INVALID";

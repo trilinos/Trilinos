@@ -290,6 +290,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
+  eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
@@ -317,6 +318,7 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
+  eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
   textbookAlgorithm_ (false),
@@ -359,6 +361,7 @@ setParameters (Teuchos::ParameterList& plist)
   const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
+  const int defaultEigNormalizationFreq = 1;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
   const bool defaultTextbookAlgorithm = false;
@@ -377,6 +380,7 @@ setParameters (Teuchos::ParameterList& plist)
   ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
+  int eigNormalizationFreq = defaultEigNormalizationFreq;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
   bool textbookAlgorithm = defaultTextbookAlgorithm;
@@ -581,6 +585,13 @@ setParameters (Teuchos::ParameterList& plist)
     "\" parameter (also called \"eigen-analysis: iterations\") must be a "
     "nonnegative integer.  You gave a value of " << eigMaxIters << ".");
 
+  eigNormalizationFreq = plist.get ("chebyshev: eigenvalue normalization frequency", eigNormalizationFreq);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    eigNormalizationFreq < 0, std::invalid_argument,
+    "Ifpack2::Chebyshev::setParameters: \"chebyshev: eigenvalue normalization frequency"
+    "\" parameter must be a "
+    "nonnegative integer.  You gave a value of " << eigNormalizationFreq << ".")
+
   zeroStartingSolution = plist.get ("chebyshev: zero starting solution",
                                     zeroStartingSolution);
   assumeMatrixUnchanged = plist.get ("chebyshev: assume matrix does not change",
@@ -643,6 +654,7 @@ setParameters (Teuchos::ParameterList& plist)
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
+  eigNormalizationFreq_ = eigNormalizationFreq;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
   textbookAlgorithm_ = textbookAlgorithm;
@@ -1350,7 +1362,7 @@ powerMethodWithInitGuess (const op_type& A,
   const ST zero = static_cast<ST> (0.0);
   const ST one = static_cast<ST> (1.0);
   ST lambdaMax = zero;
-  ST RQ_top, RQ_bottom, norm;
+  ST RQ_top, RQ_bottom = one, norm;
 
   V y (A.getRangeMap ());
   norm = x.norm2 ();
@@ -1373,31 +1385,45 @@ powerMethodWithInitGuess (const op_type& A,
     *out_ << "  norm1(x.scale(one/norm)): " << x.norm1 () << endl;
   }
 
-  for (int iter = 0; iter < numIters; ++iter) {
+  for (int iter = 0; iter < numIters-1; ++iter) {
     if (debug_) {
       *out_ << "  Iteration " << iter << endl;
     }
     A.apply (x, y);
-    solve (y, D_inv, y);
-    RQ_top = y.dot (x);
-    RQ_bottom = x.dot (x);
-    if (debug_) {
-      *out_ << "   RQ_top: " << RQ_top
-            << ", RQ_bottom: " << RQ_bottom << endl;
-    }
-    lambdaMax = RQ_top / RQ_bottom;
-    norm = y.norm2 ();
-    if (norm == zero) { // Return something reasonable.
-      if (debug_) {
-        *out_ << "   norm is zero; returning zero" << endl;
+    solve (x, D_inv, y);
+
+    if (((iter+1) % eigNormalizationFreq_ == 0) && (iter < numIters-2)) {
+      norm = x.norm2 ();
+      if (norm == zero) { // Return something reasonable.
+        if (debug_) {
+          *out_ << "   norm is zero; returning zero" << endl;
+        }
+        return zero;
       }
-      return zero;
+      x.scale (one / norm);
     }
-    x.update (one / norm, y, zero);
   }
   if (debug_) {
     *out_ << "  lambdaMax: " << lambdaMax << endl;
   }
+
+  norm = x.norm2 ();
+  if (norm == zero) { // Return something reasonable.
+    if (debug_) {
+      *out_ << "   norm is zero; returning zero" << endl;
+    }
+    return zero;
+  }
+  x.scale (one / norm);
+  A.apply (x, y);
+  solve (y, D_inv, y);
+  RQ_top = y.dot (x);
+  RQ_bottom = one;
+  if (debug_) {
+    *out_ << "   RQ_top: " << RQ_top
+          << ", RQ_bottom: " << RQ_bottom << endl;
+  }
+  lambdaMax = RQ_top / RQ_bottom;
   return lambdaMax;
 }
 
@@ -1512,8 +1538,10 @@ description () const {
       << ", lambdaMax: " << lambdaMaxForApply_
       << ", alpha: " << eigRatioForApply_
       << ", lambdaMin: " << lambdaMinForApply_
-      << ", boost factor: " << boostFactor_
-      << "}";
+      << ", boost factor: " << boostFactor_;
+  if (!userInvDiag_.is_null())
+    oss << ", diagonal: user-supplied";
+  oss << "}";
   return oss.str();
 }
 
@@ -1649,6 +1677,7 @@ describe (Teuchos::FancyOStream& out,
           << "userEigRatio_: " << userEigRatio_ << endl
           << "numIters_: " << numIters_ << endl
           << "eigMaxIters_: " << eigMaxIters_ << endl
+          << "eigNormalizationFreq_: " << eigNormalizationFreq_ << endl
           << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
           << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl
           << "textbookAlgorithm_: " << textbookAlgorithm_ << endl

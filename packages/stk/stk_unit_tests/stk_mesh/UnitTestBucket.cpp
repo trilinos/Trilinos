@@ -34,6 +34,7 @@
 
 #include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_unit_test_utils/stk_mesh_fixtures/TestHexFixture.hpp"
 #include "stk_unit_test_utils/stk_mesh_fixtures/BoxFixture.hpp"  // for BoxFixture
 #include <gtest/gtest.h>
 #include <sstream>                      // for ostringstream, etc
@@ -43,8 +44,8 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field_on_mesh
+#include <stk_mesh/base/GetNgpField.hpp>
 #include <stk_unit_test_utils/FaceTestingUtils.hpp>
-#include <stk_unit_test_utils/ioUtils.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <string>                       // for string, basic_string, etc
 #include <vector>                       // for vector, etc
@@ -245,7 +246,9 @@ bool does_rank_have_permutation(stk::mesh::EntityRank rank)
     return rank > stk::topology::NODE_RANK && rank < stk::topology::CONSTRAINT_RANK;
 }
 
-TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
+class BucketHex : public stk::mesh::fixtures::TestHexFixture {};
+
+TEST_F(BucketHex, testing_valid_permutation_on_various_ranks)
 {
     const int num_procs_this_test_works_for = 1;
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == num_procs_this_test_works_for)
@@ -258,10 +261,9 @@ TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
         entity_rank_names[stk::topology::ELEM_RANK] = std::string("ELEMENT");
         entity_rank_names[stk::topology::CONSTRAINT_RANK] = std::string("CONSTRAINT");
 
-        const unsigned spatialDim = 3;
-        stk::mesh::MetaData meta(spatialDim, entity_rank_names);
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::io::fill_mesh("generated:1x1x1", bulk);
+        setup_mesh(1, 1, 1, entity_rank_names);
+        stk::mesh::MetaData& meta = get_meta();
+        stk::mesh::BulkData& bulk = get_bulk();
 
         const unsigned num_nodes_on_one_hex = 8;
         stk::mesh::EntityVector nodes(num_nodes_on_one_hex);
@@ -322,13 +324,13 @@ TEST(UnitTestingOfBucket, testing_valid_permutation_on_various_ranks)
     }
 }
 
-TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_face_to_element)
+TEST_F(BucketHex, changing_conn_on_bucket_for_face_to_element)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
-        stk::mesh::MetaData meta(3);
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::io::fill_mesh("generated:1x1x1", bulk);
+        setup_mesh(1, 1, 1);
+        stk::mesh::MetaData& meta = get_meta();
+        stk::mesh::BulkData& bulk = get_bulk();
 
         unsigned face_node_ids[] = { 5, 6, 8, 7 };
         stk::mesh::EntityVector nodes(4);
@@ -394,13 +396,13 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_face_to_element)
     }
 }
 
-TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_edge_to_element)
+TEST_F(BucketHex, changing_conn_on_bucket_for_edge_to_element)
 {
     if (stk::parallel_machine_size(MPI_COMM_WORLD) == 1)
     {
-        stk::mesh::MetaData meta(3);
-        stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
-        stk::io::fill_mesh("generated:1x1x1", bulk);
+        setup_mesh(1, 1, 1);
+        stk::mesh::MetaData& meta = get_meta();
+        stk::mesh::BulkData& bulk = get_bulk();
 
         unsigned edge_node_ids[] = { 5, 6 };
         stk::mesh::EntityVector nodes(2);
@@ -462,5 +464,52 @@ TEST(UnitTestingOfBucket, changing_conn_on_bucket_for_edge_to_element)
         test_nodes_and_permutation(bulk, elem, edge, new_nodes);
     }
 }
+
+#ifdef STK_USE_DEVICE_MESH
+void do_nonmodifying_debug_check(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
+{
+  const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
+  ASSERT_EQ(buckets.size(), 1u);
+
+  buckets[0]->check_size_invariant();
+
+  EXPECT_FALSE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+}
+
+void do_modifying_entity_creation(stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & coordsField)
+{
+  unsigned face_node_ids[] = { 5, 6, 8, 7 };
+  stk::mesh::EntityVector nodes(4);
+  for (size_t i = 0 ; i < nodes.size(); ++i) {
+    nodes[i] = bulk.get_entity(stk::topology::NODE_RANK, face_node_ids[i]);
+  }
+
+  const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+  stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, 1);
+  bulk.modification_begin();
+  stk::unit_test_util::declare_element_side_with_nodes(bulk, elem, nodes, 1, meta.get_topology_root_part(stk::topology::QUAD_4));
+  bulk.modification_end();
+
+  const stk::mesh::BucketVector & buckets = bulk.buckets(stk::topology::NODE_RANK);
+  ASSERT_EQ(buckets.size(), 2u);
+  EXPECT_TRUE(buckets[0]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+  EXPECT_TRUE(buckets[1]->get_ngp_field_bucket_is_modified(coordsField.mesh_meta_data_ordinal()));
+}
+
+TEST_F(BucketHex, checkModifiedStatus)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  setup_mesh(1, 1, 1);
+  stk::mesh::MetaData& meta = get_meta();
+  stk::mesh::BulkData& bulk = get_bulk();
+
+  const stk::mesh::FieldBase & coordsField = *meta.coordinate_field();
+  stk::mesh::get_updated_ngp_field<double>(coordsField);
+
+  do_nonmodifying_debug_check(bulk, coordsField);
+  do_modifying_entity_creation(bulk, coordsField);
+}
+#endif
 
 }

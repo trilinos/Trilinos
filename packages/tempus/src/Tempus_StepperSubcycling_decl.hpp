@@ -11,9 +11,6 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  #include "Tempus_StepperSubcyclingObserver.hpp"
-#endif
 #include "Tempus_StepperSubcyclingAppAction.hpp"
 #include "Tempus_IntegratorBasic.hpp"
 
@@ -34,6 +31,24 @@ namespace Tempus {
  *   - No restart capability within subcycling, but still have restart
  *     capability from the full timestep.
  *   - Do not need to keep a solution history of the subcycling.
+ *
+ *  <b> Algorithm </b>
+ *  The algorithm for Subcycling stepper is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Subcycling \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf Advance solution, $x_{n}$ from $x_{n-1}$, by cycling substeppers.}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
  */
 template<class Scalar>
 class StepperSubcycling : virtual public Tempus::Stepper<Scalar>
@@ -47,18 +62,7 @@ public:
   */
   StepperSubcycling();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
   /// Constructor
-  StepperSubcycling(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperSubcyclingObserver<Scalar> >& obs,
-    const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator,
-    bool useFSAL,
-    std::string ICConsistency,
-    bool ICConsistencyCheck);
-#endif
-
-  /// Constructor                                                                       
   StepperSubcycling(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
     const Teuchos::RCP<IntegratorBasic<Scalar> >& integrator,
@@ -77,13 +81,6 @@ public:
 
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
       getModel(){return scIntegrator_->getStepper()->getModel();}
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE    
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > obs = Teuchos::null);
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const;
-#endif
 
     virtual void setAppAction(
       Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > appAction = Teuchos::null);
@@ -127,7 +124,6 @@ public:
     virtual Scalar getOrder() const;
     virtual Scalar getOrderMin() const;
     virtual Scalar getOrderMax() const;
-
     virtual OrderODE getOrderODE()   const;
   //@}
 
@@ -145,7 +141,6 @@ public:
     virtual void setSubcyclingMinTimeStep(Scalar MinTimeStep);
     virtual void setSubcyclingInitTimeStep(Scalar InitTimeStep);
     virtual void setSubcyclingMaxTimeStep(Scalar MaxTimeStep);
-    virtual void setSubcyclingStepType(std::string StepType);
     virtual void setSubcyclingMaxFailures(int MaxFailures);
     virtual void setSubcyclingMaxConsecFailures(int MaxConsecFailures);
     virtual void setSubcyclingScreenOutputIndexInterval(int i);
@@ -177,13 +172,20 @@ public:
 
 protected:
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  Teuchos::RCP<StepperSubcyclingObserver<Scalar> >  stepperSCObserver_;
-#endif
   Teuchos::RCP<StepperSubcyclingAppAction<Scalar> > stepperSCAppAction_;
   Teuchos::RCP<IntegratorBasic<Scalar> >            scIntegrator_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> >
+createStepperSubcycling(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
 
 } // namespace Tempus
 

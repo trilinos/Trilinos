@@ -11,6 +11,7 @@ ATDM_CONFIG_SCRIPT_DIR=`readlink -f ${CURRENT_SCRIPTS_DIR}/../..`
 unset ATDM_CONFIG_SYSTEM_NAME
 unset ATDM_CONFIG_SYSTEM_DIR
 
+
 testAllDefaults() {
   ATDM_CONFIG_BUILD_NAME=default
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
@@ -23,7 +24,8 @@ testAllDefaults() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_ADDRESS_SANITIZER} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} OFF
@@ -43,7 +45,8 @@ testCompilerClangAndDefaults() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_ADDRESS_SANITIZER} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} OFF
@@ -118,6 +121,39 @@ testCompilerIntel() {
 }
 
 
+testNompi() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-mpi
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-MPI
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-mpi-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-no-mpi
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-NO-MPI
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default-no-mpi-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_MPI} OFF
+
+}
+
+
 testKokkosArch() {
 
   # Test first arch and defaults for everything else
@@ -132,7 +168,7 @@ testKokkosArch() {
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_CUDA} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_USE_PTHREADS} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_CUDA_RDC} OFF
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_COMPLEX} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_SHARED_LIBS} OFF
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_PT_PACKAGES} OFF
@@ -336,12 +372,28 @@ testRDC() {
 
 }
 
+testAddressSanitizer() {
+
+  ATDM_CONFIG_BUILD_NAME=default
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} OFF ${ATDM_CONFIG_ADDRESS_SANITIZER}
+
+  ATDM_CONFIG_BUILD_NAME=default-asan-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ON ${ATDM_CONFIG_ADDRESS_SANITIZER}
+
+  ATDM_CONFIG_BUILD_NAME=default_asan-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ON ${ATDM_CONFIG_ADDRESS_SANITIZER}
+
+}
+
 
 testFPIC() {
 
   ATDM_CONFIG_BUILD_NAME=default
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
-  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
 
   ATDM_CONFIG_BUILD_NAME=default-fpic-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
@@ -350,6 +402,14 @@ testFPIC() {
   ATDM_CONFIG_BUILD_NAME=default_fpic-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} ON
+
+  ATDM_CONFIG_BUILD_NAME=default-no-fpic-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
+
+  ATDM_CONFIG_BUILD_NAME=default_no-fpic-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ${ATDM_CONFIG_FPIC} OFF
 
 }
 

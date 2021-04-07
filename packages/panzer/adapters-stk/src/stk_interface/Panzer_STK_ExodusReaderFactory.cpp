@@ -52,7 +52,7 @@
 #include <Ionit_Initializer.h>
 #include <Ioss_ElementBlock.h>
 #include <Ioss_Region.h>
-#include <GetBuckets.hpp>
+#include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
@@ -76,15 +76,17 @@ int getMeshDimension(const std::string & meshStr,
 }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), meshScaleFactor_(0.0),
-    levelsOfRefinement_(0)
+  : fileName_(""), restartIndex_(0), isExodus_(true), userMeshScaling_(false), keepPerceptData_(false),
+    keepPerceptParentElements_(false), meshScaleFactor_(0.0), levelsOfRefinement_(0),
+    createEdgeBlocks_(false), createFaceBlocks_(false)
 { }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,
                                                  const int restartIndex,
                                                  const bool isExodus)
-  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false), meshScaleFactor_(0.0),
-    levelsOfRefinement_(0)
+  : fileName_(fileName), restartIndex_(restartIndex), isExodus_(isExodus), userMeshScaling_(false),
+    keepPerceptData_(false), keepPerceptParentElements_(false), meshScaleFactor_(0.0), levelsOfRefinement_(0),
+    createEdgeBlocks_(false), createFaceBlocks_(false)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -154,6 +156,15 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    registerSidesets(*mesh);
    registerNodesets(*mesh);
 
+   if (createEdgeBlocks_) {
+      registerEdgeBlocks(*mesh);
+   }
+   if (createFaceBlocks_ && mesh->getMetaData()->spatial_dimension() > 2) {
+      registerFaceBlocks(*mesh);
+   }
+
+   buildMetaData(parallelMach, *mesh);
+
    mesh->addPeriodicBCs(periodicBCVec_);
 
    return mesh;
@@ -186,7 +197,7 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
    // build mesh bulk data
    meshData->populate_bulk_data();
 
-   const bool deleteParentElements = true;
+   const bool deleteParentElements = !keepPerceptParentElements_;
    if (levelsOfRefinement_ > 0)
      mesh.refineMesh(levelsOfRefinement_,deleteParentElements);
 
@@ -230,6 +241,21 @@ void STK_ExodusReaderFactory::completeMeshConstruction(STK_Interface & mesh,stk:
 
    mesh.buildSubcells();
    mesh.buildLocalElementIDs();
+   if (createEdgeBlocks_) {
+      mesh.buildLocalEdgeIDs();
+   }
+   if (createFaceBlocks_ && mesh.getMetaData()->spatial_dimension() > 2) {
+      mesh.buildLocalFaceIDs();
+   }
+
+   mesh.beginModification();
+   if (createEdgeBlocks_) {
+      addEdgeBlocks(mesh);
+   }
+   if (createFaceBlocks_ && mesh.getMetaData()->spatial_dimension() > 2) {
+      addFaceBlocks(mesh);
+   }
+   mesh.endModification();
 
    if (userMeshScaling_) {
      stk::mesh::Field<double,stk::mesh::Cartesian>* coord_field =
@@ -282,6 +308,20 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    if(!paramList->isParameter("Levels of Uniform Refinement"))
      paramList->set<int>("Levels of Uniform Refinement", 0);
 
+   if(!paramList->isParameter("Keep Percept Data"))
+     paramList->set<bool>("Keep Percept Data", false);
+
+   if(!paramList->isParameter("Keep Percept Parent Elements"))
+     paramList->set<bool>("Keep Percept Parent Elements", false);
+
+   if(!paramList->isParameter("Create Edge Blocks"))
+     // default to false to prevent massive exodiff test failures
+     paramList->set<bool>("Create Edge Blocks", false);
+
+   if(!paramList->isParameter("Create Face Blocks"))
+     // default to false to prevent massive exodiff test failures
+     paramList->set<bool>("Create Face Blocks", false);
+
    paramList->validateParameters(*getValidParameters(),0);
 
    setMyParamList(paramList);
@@ -305,7 +345,15 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 
+   keepPerceptData_ = paramList->get<bool>("Keep Percept Data");
+
+   keepPerceptParentElements_ = paramList->get<bool>("Keep Percept Parent Elements");
+
    levelsOfRefinement_ = paramList->get<int>("Levels of Uniform Refinement");
+
+   createEdgeBlocks_ = paramList->get<bool>("Create Edge Blocks");
+
+   createFaceBlocks_ = paramList->get<bool>("Create Face Blocks");
 }
 
 //! From ParameterListAcceptor
@@ -335,6 +383,16 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       bcs.set<int>("Count",0); // no default periodic boundary conditions
 
       validParams->set("Levels of Uniform Refinement",0,"Number of levels of inline uniform mesh refinement");
+
+      validParams->set("Keep Percept Data",false,"Keep the Percept mesh after uniform refinement is applied");
+
+      validParams->set("Keep Percept Parent Elements",false,"Keep the parent element information in the Percept data");
+
+      // default to false to prevent massive exodiff test failures
+      validParams->set("Create Edge Blocks",false,"Create or copy edge blocks in the mesh");
+
+      // default to false to prevent massive exodiff test failures
+      validParams->set("Create Face Blocks",false,"Create or copy face blocks in the mesh");
    }
 
    return validParams.getConst();
@@ -426,6 +484,125 @@ void STK_ExodusReaderFactory::registerNodesets(STK_Interface & mesh) const
          // only add subset parts that have no topology
          if(part->name()!=STK_Interface::nodesString)
             mesh.addNodeset(part->name());
+      }
+   }
+}
+
+void STK_ExodusReaderFactory::registerEdgeBlocks(STK_Interface & mesh) const
+{
+   using Teuchos::RCP;
+
+   RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+   const stk::mesh::PartVector & parts = metaData->get_parts();
+
+   stk::mesh::PartVector::const_iterator partItr;
+   for(partItr=parts.begin();partItr!=parts.end();++partItr) {
+      const stk::mesh::Part * part = *partItr;
+      const stk::mesh::PartVector & subsets = part->subsets();
+      shards::CellTopology cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*part));
+      const CellTopologyData * ct = cellTopo.getCellTopologyData();
+
+      if(part->primary_entity_rank()==mesh.getEdgeRank() && ct==0 && subsets.size()>0) {
+         TEUCHOS_TEST_FOR_EXCEPTION(subsets.size()!=1,std::runtime_error,
+                            "STK_ExodusReaderFactory::registerEdgeBlocks error - part \"" << part->name() <<
+                            "\" has more than one subset");
+
+         if (stk::io::has_edge_block_part_attribute(*part) && stk::io::get_edge_block_part_attribute(*part)) {
+           // grab cell topology and name of subset part
+           const stk::mesh::Part * edge_part = subsets[0];
+           shards::CellTopology edge_cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*edge_part));
+           const CellTopologyData * edge_ct = edge_cellTopo.getCellTopologyData();
+
+           // only add subset parts that have no topology
+           if(edge_ct!=0) {
+              mesh.addEdgeBlock(part->name(),edge_ct);
+           }
+         }
+      }
+   }
+}
+
+void STK_ExodusReaderFactory::registerFaceBlocks(STK_Interface & mesh) const
+{
+   using Teuchos::RCP;
+
+   RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+   const stk::mesh::PartVector & parts = metaData->get_parts();
+
+   stk::mesh::PartVector::const_iterator partItr;
+   for(partItr=parts.begin();partItr!=parts.end();++partItr) {
+      const stk::mesh::Part * part = *partItr;
+      const stk::mesh::PartVector & subsets = part->subsets();
+      shards::CellTopology cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*part));
+      const CellTopologyData * ct = cellTopo.getCellTopologyData();
+
+      if(part->primary_entity_rank()==mesh.getFaceRank() && ct==0 && subsets.size()>0) {
+         TEUCHOS_TEST_FOR_EXCEPTION(subsets.size()!=1,std::runtime_error,
+                            "STK_ExodusReaderFactory::registerFaceBlocks error - part \"" << part->name() <<
+                            "\" has more than one subset");
+
+         if (stk::io::has_face_block_part_attribute(*part) && stk::io::get_face_block_part_attribute(*part)) {
+           // grab cell topology and name of subset part
+           const stk::mesh::Part * face_part = subsets[0];
+           shards::CellTopology face_cellTopo = stk::mesh::get_cell_topology(metaData->get_topology(*face_part));
+           const CellTopologyData * face_ct = face_cellTopo.getCellTopologyData();
+
+           // only add subset parts that have no topology
+           if(face_ct!=0) {
+              mesh.addFaceBlock(part->name(),face_ct);
+           }
+         }
+      }
+   }
+}
+
+// Pre-Condition: call beginModification() before entry
+// Post-Condition: call endModification() after exit
+void STK_ExodusReaderFactory::addEdgeBlocks(STK_Interface & mesh) const
+{
+   stk::mesh::Part * edge_block = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   std::vector<stk::mesh::Entity> edges;
+   bulkData->get_entities(mesh.getEdgeRank(),metaData->locally_owned_part(),edges);
+   mesh.addEntitiesToEdgeBlock(edges, edge_block);
+}
+
+// Pre-Condition: call beginModification() before entry
+// Post-Condition: call endModification() after exit
+void STK_ExodusReaderFactory::addFaceBlocks(STK_Interface & mesh) const
+{
+   stk::mesh::Part * face_block = mesh.getFaceBlock(panzer_stk::STK_Interface::faceBlockString);
+
+   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk::mesh::MetaData> metaData = mesh.getMetaData();
+
+   std::vector<stk::mesh::Entity> faces;
+   bulkData->get_entities(mesh.getFaceRank(),metaData->locally_owned_part(),faces);
+   mesh.addEntitiesToFaceBlock(faces, face_block);
+}
+
+void STK_ExodusReaderFactory::buildMetaData(stk::ParallelMachine /* parallelMach */, STK_Interface & mesh) const
+{
+   std::vector<std::string> block_names;
+   mesh.getElementBlockNames(block_names);
+
+   const CellTopologyData *ctd = mesh.getCellTopology(block_names[0])->getCellTopologyData();
+
+   if (createEdgeBlocks_) {
+      auto ep = mesh.getEdgeBlock(panzer_stk::STK_Interface::edgeBlockString);
+      if (ep == 0) {
+         const CellTopologyData * edge_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(1,0);
+         mesh.addEdgeBlock(panzer_stk::STK_Interface::edgeBlockString, edge_ctd);
+      }
+   }
+   if (createFaceBlocks_ && mesh.getMetaData()->spatial_dimension() > 2) {
+      auto fp = mesh.getFaceBlock(panzer_stk::STK_Interface::faceBlockString);
+      if (fp == 0) {
+         const CellTopologyData * face_ctd = shards::CellTopology(ctd).getBaseCellTopologyData(2,0);
+         mesh.addFaceBlock(panzer_stk::STK_Interface::faceBlockString, face_ctd);
       }
    }
 }

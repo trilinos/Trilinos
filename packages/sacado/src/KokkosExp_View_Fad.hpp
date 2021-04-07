@@ -366,7 +366,6 @@ struct SacadoViewFill
       const size_t n0 = output.extent(0);
       Kokkos::RangePolicy<execution_space> policy( 0, n0 );
       Kokkos::parallel_for( policy, *this );
-      execution_space().fence();
     }
 };
 
@@ -413,11 +412,11 @@ void deep_copy(
   Impl::SacadoViewFill< View<DT,DP...> >( view , value );
 }
 
-
 /* Specialize for deep copy of FAD */
-template< class DT , class ... DP , class ST , class ... SP >
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
-void deep_copy( const View<DT,DP...> & dst ,
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
   ( std::is_same< typename ViewTraits<DT,DP...>::specialize
@@ -454,7 +453,32 @@ void deep_copy( const View<DT,DP...> & dst ,
   typename PODViewDeepCopyType< View<DT,DP...> >::type dst_array( dst );
   typename PODViewDeepCopyType< View<ST,SP...> >::type src_array( src );
 #endif
-  Kokkos::deep_copy( dst_array , src_array );
+  Kokkos::deep_copy( ExecSpace(), dst_array , src_array );
+}
+
+/* Specialize for deep copy of FAD */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  ( std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<DT,DP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+  &&
+  ( std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFad >::value
+    ||
+    std::is_same< typename ViewTraits<ST,SP...>::specialize
+                , Kokkos::Impl::ViewSpecializeSacadoFadContiguous >::value )
+  )>::type * = 0 )
+{
+  using exec_space = typename View<DT,DP...>::execution_space;
+  Kokkos::fence();
+  Kokkos::deep_copy(exec_space(), dst, src);
+  Kokkos::fence();
 }
 
 template< class T , class ... P >
@@ -497,29 +521,30 @@ create_mirror( const Kokkos::View<T,P...> & src
              )
 {
   typedef View<T,P...>                   src_type ;
+  typedef typename src_type::array_type  src_array_type ;
   typedef typename src_type::HostMirror  dst_type ;
 
   Kokkos::LayoutStride layout ;
 
-  layout.dimension[0] = src.extent(0);
-  layout.dimension[1] = src.extent(1);
-  layout.dimension[2] = src.extent(2);
-  layout.dimension[3] = src.extent(3);
-  layout.dimension[4] = src.extent(4);
-  layout.dimension[5] = src.extent(5);
-  layout.dimension[6] = src.extent(6);
-  layout.dimension[7] = src.extent(7);
+  // Use dimensions/strides from array_type to get hidden dim/stride
+  src_array_type src_array = src;
+  layout.dimension[0] = src_array.extent(0);
+  layout.dimension[1] = src_array.extent(1);
+  layout.dimension[2] = src_array.extent(2);
+  layout.dimension[3] = src_array.extent(3);
+  layout.dimension[4] = src_array.extent(4);
+  layout.dimension[5] = src_array.extent(5);
+  layout.dimension[6] = src_array.extent(6);
+  layout.dimension[7] = src_array.extent(7);
 
-  layout.stride[0] = src.stride_0();
-  layout.stride[1] = src.stride_1();
-  layout.stride[2] = src.stride_2();
-  layout.stride[3] = src.stride_3();
-  layout.stride[4] = src.stride_4();
-  layout.stride[5] = src.stride_5();
-  layout.stride[6] = src.stride_6();
-  layout.stride[7] = src.stride_7();
-
-  layout.dimension[src_type::rank] = Kokkos::dimension_scalar(src);
+  layout.stride[0] = src_array.stride_0();
+  layout.stride[1] = src_array.stride_1();
+  layout.stride[2] = src_array.stride_2();
+  layout.stride[3] = src_array.stride_3();
+  layout.stride[4] = src_array.stride_4();
+  layout.stride[5] = src_array.stride_5();
+  layout.stride[6] = src_array.stride_6();
+  layout.stride[7] = src_array.stride_7();
 
   return dst_type(std::string(src.label()).append("_mirror"), layout);
 }
@@ -1394,6 +1419,7 @@ public:
         record->m_destroy = functor_type( ( (ViewCtorProp<void,execution_space> const &) prop).value
                                         , (fad_value_type *) m_impl_handle
                                         , m_array_offset.span()
+                                        , record->get_label()
                                         );
 
         // Construct values
@@ -1480,10 +1506,10 @@ public:
         "View assignment must have compatible layout" );
 
       static_assert(
-        std::is_same< typename DstTraits::scalar_array_type
-                    , typename SrcTraits::scalar_array_type >::value ||
-        std::is_same< typename DstTraits::scalar_array_type
-                    , typename SrcTraits::const_scalar_array_type >::value ,
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::value_type >::value ||
+        std::is_same< typename DstTraits::value_type
+                    , typename SrcTraits::const_value_type >::value ,
         "View assignment must have same value type or const = non-const" );
 
       static_assert(

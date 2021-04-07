@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CompositeVariableType.h>
@@ -174,7 +174,7 @@ namespace Ioss {
     }
 
     bool match = false;
-    for (auto vtype : registry()) {
+    for (const auto &vtype : registry()) {
       ivt = vtype.second;
       if (ivt->suffix_count() == static_cast<int>(size)) {
         if (ivt->match(suffices)) {

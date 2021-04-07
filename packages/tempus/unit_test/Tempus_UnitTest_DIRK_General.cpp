@@ -13,7 +13,6 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 
 #include "../TestModels/SinCosModel.hpp"
@@ -32,8 +31,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-
-using Tempus::StepperFactory;
 
 
 // ************************************************************
@@ -56,10 +53,10 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
-  bool useEmbedded          = stepper->getUseEmbeddedDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
+  bool useEmbedded          = stepper->getUseEmbedded();
   bool zeroInitialGuess     = stepper->getZeroInitialGuess();
 
   using Teuchos::as;
@@ -84,10 +81,6 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
   int order = 2;
 
   // Test the set functions.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs    = rcp(new Tempus::StepperRKObserverComposite<double>());
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -102,17 +95,10 @@ TEUCHOS_UNIT_TEST(DIRK_General, Default_Construction)
 
 
   // Full argument list construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperDIRK_General<double>(
-    model, obs, solver, useFSAL,
-    ICConsistency, ICConsistencyCheck, useEmbedded, zeroInitialGuess,
-    A, b, c, order, order, order, bstar));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper = rcp(new Tempus::StepperDIRK_General<double>(
     model, solver, useFSAL, ICConsistency, ICConsistencyCheck,
     useEmbedded, zeroInitialGuess, modifier,
-    A, b, c, order, order, order, bstar));
+    A, b, c, order, order, order,bstar));
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Test stepper properties.

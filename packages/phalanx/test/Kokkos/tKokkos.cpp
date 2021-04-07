@@ -333,7 +333,7 @@ namespace phalanx_test {
     TEST_EQUALITY(f3.get(),6);
   }
 
-  // yes we could do thsi with deep copy, but want to experiment with
+  // yes we could do this with deep copy, but want to experiment with
   // wrapping tasks to insert functions into all PHX nodes
   template <typename Scalar,typename Device>
   class InitializeView {
@@ -855,8 +855,8 @@ namespace phalanx_test {
     using fad_dev_layout = typename PHX::DevLayout<FadType**>::type;
 
     // Expected layout based on architecture.
-    using DefaultDevLayout = PHX::exec_space::array_layout;
-#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD)
+    using DefaultDevLayout = PHX::DefaultDevLayout;
+#if defined(SACADO_VIEW_CUDA_HIERARCHICAL_DFAD) || defined(SACADO_VIEW_CUDA_HIERARCHICAL)
 
 #if defined(KOKKOS_ENABLE_CUDA)
     using DefaultFadLayout = Kokkos::LayoutContiguous<DefaultDevLayout,32>;

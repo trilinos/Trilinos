@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioex_IOFactory_h
@@ -28,7 +28,7 @@ namespace Ioex {
     Ioss::DatabaseIO *make_IO(const std::string &filename, Ioss::DatabaseUsage db_usage,
                               MPI_Comm                     communicator,
                               const Ioss::PropertyManager &properties) const override;
-    void              show_config() const override;
+    std::string       show_config() const override;
   };
 } // namespace Ioex
 #endif // IOSS_Ioex_IOFactory_h

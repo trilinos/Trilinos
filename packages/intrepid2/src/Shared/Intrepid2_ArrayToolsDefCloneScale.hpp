@@ -128,10 +128,10 @@ namespace Intrepid2 {
     };
   } 
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
-  void ArrayTools<SpT>::
+  void ArrayTools<DeviceType>::
   cloneFields(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
                const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -149,10 +149,9 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
-    typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
-    
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<3>, Kokkos::IndexType<ordinal_type> >;
+
+    using range_policy_type = Kokkos::MDRangePolicy
+      < ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
 
     range_policy_type policy( { 0, 0, 0 },
                               { /*C*/ output.extent(0), /*F*/ output.extent(1), /*P*/ output.extent(2) } );
@@ -176,10 +175,10 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
-  void ArrayTools<SpT>::
+  void ArrayTools<DeviceType>::
   cloneData(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
              const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -197,10 +196,9 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
-    typedef typename ExecSpace< typename inputViewType::execution_space , SpT >::ExecSpaceType ExecSpaceType;
     
-    using range_policy_type = Kokkos::Experimental::MDRangePolicy
-      < ExecSpaceType, Kokkos::Experimental::Rank<2>, Kokkos::IndexType<ordinal_type> >;
+    using range_policy_type = Kokkos::MDRangePolicy
+      < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;
     
     range_policy_type policy( { 0, 0 },
                               { /*C*/ output.extent(0), /*P*/ output.extent(1) } );

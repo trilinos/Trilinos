@@ -1,45 +1,24 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: refrsh.F,v 1.1 1998/04/10 04:30:23 gdsjaar Exp $
-C $Log: refrsh.F,v $
-C Revision 1.1  1998/04/10 04:30:23  gdsjaar
-C Added the ifdef needsdoubleescape to the graphics symbol
-C plotting. Required moving some .f to .F files and specifying in Imakefile
-C
-C Revision 1.2  1991/03/22 19:44:09  gdsjaar
-C Initialized ADDLNK to .FALSE.
-C
-c Revision 1.1.1.1  1990/11/30  11:14:34  gdsjaar
-c FASTQ Version 2.0X
-c
-c Revision 1.1  90/11/30  11:14:33  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]REFRSH.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE REFRSH (MP, ML, MS, MR, MSNAP, N, COOR, ILINE, LTYPE,
      &   LCON, NLPS, IFLINE, ILLIST, NSPR, IFSIDE, ISLIST, LINKP, LINKL,
      &   LINKS, LINKR, TITLE, X1, X2, Y1, Y2, ALPHA, SNAP, SNAPDX,
      &   NSNAP, SNAPDR, TALL, X11, X22, Y11, Y22, AXIST)
 C***********************************************************************
-C
+
 C  SUBROUTINE REFRSH = REPAINTS THE DIGITIZING SCREEN WITH SNAP LINES
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     DIGIT = A SUBROUTINE TO DIGITIZE GEOMETRY
-C
+
 C***********************************************************************
-C
+
       DIMENSION COOR(2, MP), ILINE(ML), LTYPE(ML), LCON(3, ML)
       DIMENSION NLPS(MS), IFLINE(MS), ILLIST(MS*3)
       DIMENSION NSPR(MR), IFSIDE(MR), ISLIST(MR*4)
@@ -47,12 +26,12 @@ C
       DIMENSION LINKR(2, MR)
       DIMENSION XDUM(2), YDUM(2)
       DIMENSION N(28), SNAPDX(2, MSNAP), NSNAP(2)
-C
+
       CHARACTER*72 TITLE
-C
+
       LOGICAL ALPHA, SNAP, SNAPDR, CPUIFC, AXIST
       LOGICAL ADDLNK, GETMAX, NUMPLT, TEST
-C
+
       ADDLNK = .FALSE.
 
       IF (.NOT.ALPHA)THEN
@@ -94,9 +73,9 @@ C
          Y22 = Y22 + (YDIMR*SHRINK)
          CALL MPORT2 (X11, X22, Y11, Y22)
          CALL PLTFRM (0)
-C
+
 C  PLOT THE TITLE
-C
+
          CALL STRLNG (TITLE, LEN)
          IF ((LEN.GT.1).OR. (TITLE (1:1).NE.' '))THEN
             CALL PLTXHL (TITLE(1:LEN), XLEN)
@@ -105,43 +84,43 @@ C
             IF (CPUIFC (.TRUE.) )RETURN
          ENDIF
          CALL PLTFLU
-C
+
 C  PLOT THE GRID LINES IF APPLICABLE
-C
+
          IF (SNAP)THEN
             SNAPDR = .TRUE.
             CALL PLTSTD (1, 4.)
-C
+
 C  PLOT THE X GRID LINES
-C
+
             YBOT = SNAPDX(2, 1)
             YTOP = SNAPDX(2, NSNAP(2))
             DO 100 I = 1, NSNAP(1)
                CALL D2GRID (SNAPDX(1, I), YBOT, SNAPDX(1, I), YTOP)
                IF (CPUIFC (.TRUE.) )RETURN
   100       CONTINUE
-C
+
 C  PLOT THE Y GRID LINES
-C
+
             XLEFT = SNAPDX(1, 1)
             XRIGHT = SNAPDX(1, NSNAP(1))
             DO 110 I = 1, NSNAP(2)
                CALL D2GRID (XLEFT, SNAPDX(2, I), XRIGHT, SNAPDX(2, I))
                IF (CPUIFC(.TRUE.) )RETURN
   110       CONTINUE
-C
+
             CALL PLTSTD (1, 7.)
          ELSE
             SNAPDR = .FALSE.
          ENDIF
-C
+
 C  PLOT THE AXIS IF APPLICABLE
-C
+
          IF (AXIST) CALL SETAXS(XDUM,YDUM)
          IF (CPUIFC(.TRUE.) )RETURN
-C
+
 C  PLOT POINTS ALREADY IN THE DATABASE
-C
+
          CALL PLTSTT (2, TALL*.5)
          CALL PLTSTD (1, 3.)
          DO 120 I = 1, N(18)
@@ -155,9 +134,9 @@ C
             ENDIF
             IF (CPUIFC (.TRUE.) )RETURN
   120    CONTINUE
-C
+
 C  PLOT LINES ALREADY IN THE DATABASE
-C
+
          KNUM = 0
          CALL PLTSTD (1, 7.)
          COLOR = 7.
@@ -181,9 +160,9 @@ C
                ENDIF
             ENDIF
   130    CONTINUE
-C
+
 C  PLOT REGIONS ALREADY IN THE DATABASE
-C
+
          CALL PLTSTD (1, 3.)
          DO 140 I = 1, N(22)
             CALL LTSORT (MR, LINKR, I, II, ADDLNK)
@@ -202,7 +181,7 @@ C
             ENDIF
   140    CONTINUE
       ENDIF
-C
+
       RETURN
-C
+
       END

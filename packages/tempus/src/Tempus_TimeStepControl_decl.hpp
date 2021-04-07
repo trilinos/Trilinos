@@ -9,55 +9,89 @@
 #ifndef Tempus_TimeStepControl_decl_hpp
 #define Tempus_TimeStepControl_decl_hpp
 
-// Teuchos
-#include "Teuchos_VerboseObject.hpp"
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-// Tempus
-#include "Tempus_config.hpp"
-#include "Tempus_SolutionHistory.hpp"
-#include "Tempus_TimeStepControlStrategyComposite.hpp"
-
 #include <iostream>
 #include <iterator>
 #include <sstream>
+
+#include "Teuchos_VerboseObject.hpp"
+#include "Teuchos_Describable.hpp"
+
+#include "Tempus_config.hpp"
+#include "Tempus_SolutionHistory.hpp"
+#include "Tempus_TimeStepControlStrategy.hpp"
 
 
 namespace Tempus {
 
 /** \brief TimeStepControl manages the time step size.
- *  There several mechanicisms that effect the time step size and
+ *  There several mechanisms that effect the time step size and
  *  handled with this class:
  *   - Maximum and minimum time
  *   - Maximum and minimum time index
  *   - Maximum and minimum time step size
  *   - Maximum and minimum error
- *   - Maximum and minimum order
  *   - Startup considerations (e.g., ramping)
  *   - Solution and/or diagnostic output
  *  Additional step control can be added through the step control observer,
  *  or inheriting from this class.
  *   - Stability limits (e.g., CFL number)
+ *
+ *  Using TimeStepControlStrategy allows applications to define their
+ *  very own strategy used to determine the next time step size
+ *  (`setNextTimeStep()`).  Applications can define multiple strategies
+ *  and add it to a vector of strategies TimeStepControlStrategyComposite
+ *  using setTimeStepControlStrategy().  TimeStepControlStrategyComposite
+ *  iterates over the list of strategies to determine the "optimal"
+ *  next time step size.
+ *
  */
 template<class Scalar>
 class TimeStepControl
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::ParameterListAcceptor,
     virtual public Teuchos::VerboseObject<Tempus::TimeStepControl<Scalar> >
 {
 public:
 
+  /// Default Constructor
+  TimeStepControl();
+
   /// Constructor
-  TimeStepControl(Teuchos::RCP<Teuchos::ParameterList> pList = Teuchos::null);
+  TimeStepControl(
+    Scalar              initTime,
+    Scalar              finalTime,
+    Scalar              minTimeStep,
+    Scalar              initTimeStep,
+    Scalar              maxTimeStep,
+    int                 initIndex,
+    int                 finalIndex,
+    Scalar              maxAbsError,
+    Scalar              maxRelError,
+    int                 maxFailures,
+    int                 maxConsecFailures,
+    int                 numTimeSteps,
+    bool                printDtChanges,
+    bool                outputExactly,
+    std::vector<int>    outputIndices,
+    std::vector<Scalar> outputTimes,
+    int                 outputIndexInterval,
+    Scalar              outputTimeInterval,
+    Teuchos::RCP<TimeStepControlStrategy<Scalar>> stepControlStrategy);
 
   /// Destructor
   virtual ~TimeStepControl() {}
 
-  virtual void initialize(Teuchos::RCP<Teuchos::ParameterList> pList =
-    Teuchos::null) { this->setParameterList(pList); }
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  /// Deprecated get the time step size.
+  virtual void getNextTimeStep(
+    const Teuchos::RCP<SolutionHistory<Scalar> > & sh,
+    Status & integratorStatus)
+  {
+    this->setNextTimeStep(sh, integratorStatus);
+  };
+#endif
 
   /** \brief Determine the time step size.*/
-  virtual void getNextTimeStep(
+  virtual void setNextTimeStep(
     const Teuchos::RCP<SolutionHistory<Scalar> > & solutionHistory,
     Status & integratorStatus);
 
@@ -67,17 +101,8 @@ public:
   /** \brief Check if time step index is within minimum and maximum index. */
   virtual bool indexInRange(const int iStep) const;
 
-  /** \brief Set the TimeStepControlStrategy. */
-  virtual void setTimeStepControlStrategy(
-        Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs = Teuchos::null);
-
-  /// \name Overridden from Teuchos::ParameterListAccepto{}
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl);
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList();
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList();
-  //@}
+  /// Return ParameterList with current values.
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -86,139 +111,112 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const;
   //@}
 
-  /// \name Get ParameterList values
+  /// \name Get accessors
   //@{
-    virtual Scalar getInitTime() const
-      { return tscPL_->get<double>("Initial Time"); }
-    virtual Scalar getFinalTime() const
-      { return tscPL_->get<double>("Final Time"); }
-    virtual Scalar getMinTimeStep() const
-      { return tscPL_->get<double>("Minimum Time Step"); }
-    virtual Scalar getInitTimeStep() const
-      { return tscPL_->get<double>("Initial Time Step"); }
-    virtual Scalar getMaxTimeStep() const
-      { return tscPL_->get<double>("Maximum Time Step"); }
-    virtual int getInitIndex() const
-      { return tscPL_->get<int>   ("Initial Time Index"); }
-    virtual int getFinalIndex() const
-      { return tscPL_->get<int>   ("Final Time Index"); }
-    virtual Scalar getMaxAbsError() const
-      { return tscPL_->get<double>("Maximum Absolute Error"); }
-    virtual Scalar getMaxRelError() const
-      { return tscPL_->get<double>("Maximum Relative Error"); }
-    virtual int getMinOrder() const
-      { return tscPL_->get<int>   ("Minimum Order"); }
-    virtual int getInitOrder() const
-      { return tscPL_->get<int>   ("Initial Order"); }
-    virtual int getMaxOrder() const
-      { return tscPL_->get<int>   ("Maximum Order"); }
-    virtual std::string getStepType() const
-      { return tscPL_->get<std::string>("Integrator Step Type"); }
-    virtual bool getOutputExactly() const
-      { return tscPL_->get<bool>("Output Exactly On Output Times"); }
-    virtual std::vector<int> getOutputIndices() const
-      { return outputIndices_; }
-    virtual std::vector<Scalar> getOutputTimes() const
-      { return outputTimes_; }
-    virtual int getMaxFailures() const
-      { return tscPL_->get<int>("Maximum Number of Stepper Failures"); }
-    virtual int getMaxConsecFailures() const
-      { return tscPL_->
-               get<int>("Maximum Number of Consecutive Stepper Failures"); }
-    virtual int getNumTimeSteps() const
-      { return tscPL_->get<int>("Number of Time Steps"); }
-    virtual Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>>
+    virtual std::string getStepType() const { return stepControlStrategy_->getStepType(); }
+    virtual Scalar getInitTime() const { return initTime_; }
+    virtual Scalar getFinalTime() const { return finalTime_; }
+    virtual Scalar getMinTimeStep() const { return minTimeStep_; }
+    virtual Scalar getInitTimeStep() const { return initTimeStep_; }
+    virtual Scalar getMaxTimeStep() const { return maxTimeStep_; }
+    virtual int getInitIndex() const { return initIndex_; }
+    virtual int getFinalIndex() const { return finalIndex_; }
+    virtual Scalar getMaxAbsError() const { return maxAbsError_; }
+    virtual Scalar getMaxRelError() const { return maxRelError_; }
+    virtual bool getOutputExactly() const { return outputExactly_; }
+    virtual std::vector<int> getOutputIndices() const { return outputIndices_; }
+    virtual std::vector<Scalar> getOutputTimes() const { return outputTimes_; }
+    virtual int getMaxFailures() const { return maxFailures_; }
+    virtual int getMaxConsecFailures() const { return maxConsecFailures_; }
+    virtual bool getPrintDtChanges() const { return printDtChanges_; }
+    virtual int getNumTimeSteps() const { return numTimeSteps_; }
+
+    virtual Teuchos::RCP<TimeStepControlStrategy<Scalar>>
        getTimeStepControlStrategy() const { return stepControlStrategy_;}
-    virtual int getOutputIndexInterval()
-      { return outputIndexInterval_;}
-    virtual double getOutputTimeInterval()
-      { return outputTimeInterval_;}
+    virtual int getOutputIndexInterval() const { return outputIndexInterval_;}
+    virtual Scalar getOutputTimeInterval() const { return outputTimeInterval_;}
   //@}
 
-  /// \name Set ParameterList values
+  /// \name Set accessors
   //@{
-    virtual void setInitTime(Scalar InitTime)
-      { tscPL_->set<double>("Initial Time"             , InitTime    ); }
-    virtual void setFinalTime(Scalar FinalTime)
-      { tscPL_->set<double>("Final Time"               , FinalTime   ); }
-    virtual void setMinTimeStep(Scalar MinTimeStep)
-      { tscPL_->set<double>("Minimum Time Step"        , MinTimeStep ); }
-    virtual void setInitTimeStep(Scalar InitTimeStep)
-      { tscPL_->set<double>("Initial Time Step"        , InitTimeStep); }
-    virtual void setMaxTimeStep(Scalar MaxTimeStep)
-      { tscPL_->set<double>("Maximum Time Step"        , MaxTimeStep ); }
-    virtual void setInitIndex(int InitIndex)
-      { tscPL_->set<int>   ("Initial Time Index"       , InitIndex   ); }
-    virtual void setFinalIndex(int FinalIndex)
-      { tscPL_->set<int>   ("Final Time Index"         , FinalIndex  ); }
-    virtual void setMaxAbsError(Scalar MaxAbsError)
-      { tscPL_->set<double>("Maximum Absolute Error"   , MaxAbsError ); }
-    virtual void setMaxRelError(Scalar MaxRelError)
-      { tscPL_->set<double>("Maximum Relative Error"   , MaxRelError ); }
-    virtual void setMinOrder(int MinOrder)
-     { tscPL_->set<int>   ("Minimum Order"             , MinOrder    ); }
-    virtual void setInitOrder(int InitOrder)
-      { tscPL_->set<int>   ("Initial Order"            , InitOrder   ); }
-    virtual void setMaxOrder(int MaxOrder)
-      { tscPL_->set<int>   ("Maximum Order"            , MaxOrder    ); }
-    virtual void setStepType(std::string StepType)
-      { tscPL_->set<std::string>("Integrator Step Type", StepType    ); }
-    virtual void setOutputExactly(bool OutputExactly)
-      { tscPL_->get<bool>("Output Exactly On Output Times", OutputExactly); }
-    virtual void setOutputIndices(std::vector<int> OutputIndices)
-      { outputIndices_ = OutputIndices;
-        std::ostringstream ss;
-        std::copy(OutputIndices.begin(), OutputIndices.end()-1,
-                  std::ostream_iterator<int>(ss, ","));
-        ss << OutputIndices.back();
-        tscPL_->set<std::string>("Output Index List", ss.str());
-      }
-    virtual void setOutputTimes(std::vector<Scalar> OutputTimes)
-      {
-        outputTimes_ = OutputTimes;
-        std::ostringstream ss;
-        ss << std::setprecision(16);
-        if (!outputTimes_.empty()) {
-          for (size_t i=0; i < outputTimes_.size()-1; ++i)
-            ss << outputTimes_[i] << ",";
-          ss << outputTimes_[outputTimes_.size()-1];
-        }
-        tscPL_->set<std::string>("Output Time List", ss.str());
-      }
-    virtual void setMaxFailures(int MaxFailures)
-      { tscPL_->set<int>("Maximum Number of Stepper Failures", MaxFailures); }
-    virtual void setMaxConsecFailures(int MaxConsecFailures)
-      { tscPL_->set<int>
-        ("Maximum Number of Consecutive Stepper Failures", MaxConsecFailures); }
+    virtual void setInitTime(Scalar t) { initTime_ = t; isInitialized_ = false; }
+    virtual void setFinalTime(Scalar t) { finalTime_ = t; isInitialized_ = false; }
+    virtual void setMinTimeStep(Scalar t) { minTimeStep_ = t; isInitialized_ = false; }
+    virtual void setInitTimeStep(Scalar t) { initTimeStep_ = t; isInitialized_ = false; }
+    virtual void setMaxTimeStep(Scalar t) { maxTimeStep_ = t; isInitialized_ = false; }
+    virtual void setInitIndex(int i) { initIndex_ = i; isInitialized_ = false; }
+    virtual void setFinalIndex(int i) { finalIndex_ = i; isInitialized_ = false; }
+    virtual void setMaxAbsError(Scalar e) { maxAbsError_ = e; isInitialized_ = false; }
+    virtual void setMaxRelError(Scalar e) { maxRelError_ = e; isInitialized_ = false; }
+    virtual void setMaxFailures(int i) { maxFailures_ = i; isInitialized_ = false; }
+    virtual void setMaxConsecFailures(int i) { maxConsecFailures_ = i; isInitialized_ = false; }
+    virtual void setPrintDtChanges(bool b) { printDtChanges_ = b; isInitialized_ = false; }
     virtual void setNumTimeSteps(int numTimeSteps);
-    virtual void setOutputIndexInterval(int OutputIndexInterval)
-      { tscPL_->set<int>("Output Index Interval",OutputIndexInterval);
-        outputIndexInterval_ = OutputIndexInterval; }
-    virtual void setOutputTimeInterval(double OutputTimeInterval)
-      { tscPL_->set<double>("Output Time Interval",OutputTimeInterval);
-        outputTimeInterval_ = OutputTimeInterval; }
-    virtual void setPrintDtChanges(bool printDtChanges)
-      { printDtChanges_ = printDtChanges; }
-    virtual bool getPrintDtChanges() const { return printDtChanges_; }
+
+    virtual void setOutputExactly(bool b) { outputExactly_ = b; isInitialized_ = false; }
+    virtual void setOutputIndices(std::vector<int> v) { outputIndices_ = v; isInitialized_ = false; }
+    virtual void setOutputTimes(std::vector<Scalar> v) { outputTimes_ = v; isInitialized_ = false; }
+    virtual void setOutputIndexInterval(int i) { outputIndexInterval_ = i; isInitialized_ = false; }
+    virtual void setOutputTimeInterval(Scalar t) { outputTimeInterval_ = t; isInitialized_ = false; }
+
+    virtual void setTimeStepControlStrategy(
+      Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs = Teuchos::null);
   //@}
+
+  virtual void printDtChanges(int istep, Scalar dt_old, Scalar dt_new,
+                              std::string reason) const;
+
+  virtual void initialize() const;
+  virtual bool isInitialized() { return isInitialized_; }
+  virtual void checkInitialized();
 
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList> tscPL_;
+  mutable bool isInitialized_;     ///< Bool if TimeStepControl is initialized.
+  Scalar       initTime_;          ///< Initial Time
+  Scalar       finalTime_;         ///< Final Time
+  Scalar       minTimeStep_;       ///< Minimum Time Step
+  Scalar       initTimeStep_;      ///< Initial Time Step
+  Scalar       maxTimeStep_;       ///< Maximum Time Step
+  int          initIndex_;         ///< Initial Time Index
+  int          finalIndex_;        ///< Final Time Index
+  Scalar       maxAbsError_;       ///< Maximum Absolute Error
+  Scalar       maxRelError_;       ///< Maximum Relative Error
+  int          maxFailures_;       ///< Maximum Number of Stepper Failures
+  int          maxConsecFailures_; ///< Maximum Number of Consecutive Stepper Failures
+  int          numTimeSteps_;      ///< Number of time steps for Constant time step
+  bool         printDtChanges_;    ///< Print timestep size when it changes
 
-  std::vector<int>    outputIndices_;  ///< Vector of output indices.
-  std::vector<Scalar> outputTimes_;    ///< Vector of output times.
+  bool                outputExactly_;  ///< Output Exactly On Output Times
+  std::vector<int>    outputIndices_;  ///< Vector of output indices
+  std::vector<Scalar> outputTimes_;    ///< Vector of output times
   int outputIndexInterval_;
-  double outputTimeInterval_;
+  Scalar outputTimeInterval_;
 
   bool outputAdjustedDt_; ///< Flag indicating that dt was adjusted for output.
   Scalar dtAfterOutput_;  ///< dt to reinstate after output step.
 
-  Teuchos::RCP<TimeStepControlStrategyComposite<Scalar>> stepControlStrategy_;
-
-  bool printDtChanges_;
+  Teuchos::RCP<TimeStepControlStrategy<Scalar>> stepControlStrategy_;
 
 };
+
+
+/// Nonmember constructor from ParameterList.
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
+  Teuchos::RCP<Teuchos::ParameterList> const& pList,
+  bool runInitialize = true);
+
+/// Nonmember function to return ParameterList with default values.
+template<class Scalar>
+Teuchos::RCP<Teuchos::ParameterList> getTimeStepControlPL()
+{
+  auto tsc = rcp(new Tempus::TimeStepControl<Scalar>());
+  return Teuchos::rcp_const_cast<Teuchos::ParameterList> (tsc->getValidParameters());
+}
+
+
 } // namespace Tempus
 
 #endif // Tempus_TimeStepControl_decl_hpp

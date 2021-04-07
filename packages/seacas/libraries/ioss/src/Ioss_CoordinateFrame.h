@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_CoordinateFrame_h
@@ -25,7 +25,12 @@ namespace Ioss {
     const double *axis_3_point() const;
     const double *plane_1_3_point() const;
 
+    bool operator!=(const Ioss::CoordinateFrame &rhs) const;
+    bool operator==(const Ioss::CoordinateFrame &rhs) const;
+    bool equal(const Ioss::CoordinateFrame &rhs) const;
+
   private:
+    bool                equal_(const Ioss::CoordinateFrame &rhs, bool quiet) const;
     std::vector<double> pointList_{};
     int64_t             id_{};
     char                tag_;

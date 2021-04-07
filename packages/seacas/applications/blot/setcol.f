@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C-----------------------------------------------------------------------
@@ -31,7 +31,6 @@ C     ISHDCL(3, *) = Starting location in color map (SET)
       logical first
       save    first
       data    first /.TRUE./
-
 
       if (FIRST) THEN
         FIRST = .FALSE.
@@ -159,31 +158,3 @@ C ... Single color for entire model
       return
       end
 C-----------------------------------------------------------------------
-C $Log: setcol.f,v $
-C Revision 1.4  2009/03/25 12:36:47  gdsjaar
-C Add copyright and license notice to all files.
-C Permission to assert copyright has been granted; blot is now open source, BSD
-C
-C Revision 1.3  1998/08/21 14:57:59  gdsjaar
-C Fixed array bounds problem
-C
-C Revision 1.2  1998/06/12 15:53:36  gdsjaar
-C 1. Problem with TIMES array. Blot accesses a dummy timestep even if
-C there were no timesteps on the database. Array wasn't allocated, so
-C writing off into never-never land.
-C
-C 2. Inconsistency among some common blocks. Some places weren't using
-C the include but had the definition hardwired in. Removed those.
-C
-C 3. Added 'EXTERNAL BLKDAT' to all routines that used data values set
-C in BLKDAT
-C
-C 4. Cleanup of some A vs. IA argument passing.
-C
-C Revision 1.1  1994/04/07 20:11:29  gdsjaar
-C Initial checkin of ACCESS/graphics/blotII2
-C
-c Revision 1.1  1993/10/22  18:56:42  gdsjaar
-c Moved block shading routine to separate subroutine.
-c
-

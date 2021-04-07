@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_ConstructedVariableType_h
@@ -17,9 +17,7 @@ namespace Ioss {
     std::string label(int which, char suffix_sep = '_') const override;
     ConstructedVariableType(const std::string &my_name, int number_components, bool delete_me);
     explicit ConstructedVariableType(int number_components, bool delete_me);
-
-  private:
-    ConstructedVariableType(const ConstructedVariableType &);
+    ConstructedVariableType(const ConstructedVariableType &) = delete;
   };
 } // namespace Ioss
 #endif

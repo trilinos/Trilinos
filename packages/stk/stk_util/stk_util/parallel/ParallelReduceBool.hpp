@@ -35,13 +35,12 @@
 #ifndef stk_util_parallel_ParallelReduceBool_hpp
 #define stk_util_parallel_ParallelReduceBool_hpp
 
-#include <stk_util/parallel/ParallelReduce.hpp>  // for ParallelMachine, etc
+#include "stk_util/parallel/ParallelReduce.hpp"  // for ParallelMachine, etc
 
 //------------------------------------------------------------------------
 
 namespace stk {
 
-#if defined (STK_HAS_MPI)
 inline bool is_true_on_all_procs(ParallelMachine comm , const bool truthValue)
 {
     unsigned localResult = truthValue;
@@ -57,7 +56,7 @@ inline bool is_true_on_any_proc(ParallelMachine comm , const bool truthValue)
     stk::all_reduce_max<unsigned>( comm, &localResult, &globalResult , 1 );
     return (0 != globalResult);
 }
-#endif
+
 }
 
 #endif

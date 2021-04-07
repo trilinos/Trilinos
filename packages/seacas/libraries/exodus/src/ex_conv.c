@@ -2,21 +2,9 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
-/*****************************************************************************
- *
- * exutils - exodus utilities
- *
- * entry conditions -
- *
- * exit conditions -
- *
- * revision history -
- *
- *
- *****************************************************************************/
 
 #include "exodusII.h"     // for ex_err, etc
 #include "exodusII_int.h" // for ex__file_item, EX_FATAL, etc
@@ -72,7 +60,11 @@ int ex__check_multiple_open(const char *path, int mode, const char *func)
                  " File corruption or incorrect behavior can occur.\n",
                  path);
         ex_err(func, errmsg, EX_BADFILEID);
+#if defined BUILT_IN_SIERRA
+        EX_FUNC_LEAVE(EX_NOERR);
+#else
         EX_FUNC_LEAVE(EX_FATAL);
+#endif
       }
     }
     ptr = ptr->next;
@@ -80,24 +72,27 @@ int ex__check_multiple_open(const char *path, int mode, const char *func)
   EX_FUNC_LEAVE(EX_NOERR);
 }
 
-void ex__check_valid_file_id(int exoid, const char *func)
+int ex__check_valid_file_id(int exoid, const char *func)
 {
-  int error = 0;
+  bool error = false;
   if (exoid <= 0) {
-    error = 1;
+    error = true;
   }
 #if !defined BUILT_IN_SIERRA
   else {
     struct ex__file_item *file = ex__find_file_item(exoid);
 
     if (!file) {
-      error = 1;
+      error = true;
     }
   }
 #endif
 
   if (error) {
-    ex_opts(EX_ABORT | EX_VERBOSE);
+    int old_opt = ex_opts(EX_VERBOSE);
+    if (old_opt & EX_ABORT) {
+      ex_opts(EX_VERBOSE | EX_ABORT);
+    }
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH,
              "ERROR: In \"%s\", the file id %d was not obtained via a call "
@@ -106,11 +101,14 @@ void ex__check_valid_file_id(int exoid, const char *func)
              "corruption or data loss or other potential problems.",
              func, exoid);
     ex_err(__func__, errmsg, EX_BADFILEID);
+    ex_opts(old_opt);
+    return EX_FATAL;
   }
+  return EX_NOERR;
 }
 
 int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_wordsize,
-                  int int64_status, int is_parallel, int is_hdf5, int is_pnetcdf, int is_write)
+                  int int64_status, bool is_parallel, bool is_hdf5, bool is_pnetcdf, bool is_write)
 {
   char                  errmsg[MAX_ERR_LENGTH];
   struct ex__file_item *new_file;
@@ -148,9 +146,11 @@ int ex__conv_init(int exoid, int *comp_wordsize, int *io_wordsize, int file_word
    *
    * \param is_parallel   1 if parallel file; 0 if serial
    *
-   * \param is_hdf5      1 if parallel netcdf-4 mode; 0 if not.
+   * \param is_hdf5       1 if parallel netcdf-4 mode; 0 if not.
    *
    * \param is_pnetcdf    1 if parallel PNetCDF file; 0 if not.
+   *
+   * \param is_write      1 if output file; 0 if readonly
    *
    * word size parameters are specified in bytes. valid values are 0, 4, and 8:
    */
@@ -331,7 +331,7 @@ nc_type nc_flt_code(int exoid)
     char errmsg[MAX_ERR_LENGTH];
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: unknown file id %d for nc_flt_code().", exoid);
     ex_err(__func__, errmsg, EX_BADFILEID);
-    return ((nc_type)-1);
+    EX_FUNC_LEAVE((nc_type)-1);
   }
   EX_FUNC_LEAVE(file->netcdf_type_code);
 }
@@ -433,13 +433,27 @@ int ex_set_option(int exoid, ex_option_type option, int option_value)
     /* Check whether file type supports compression... */
     if (file->is_hdf5) {
       int value = option_value;
-      if (value > 9) {
-        value = 9;
+      if (file->compression_algorithm == EX_COMPRESS_ZLIB) {
+        if (value > 9) {
+          value = 9;
+        }
+        if (value < 0) {
+          value = 0;
+        }
       }
-      if (value < 0) {
-        value = 0;
+      else if (file->compression_algorithm == EX_COMPRESS_SZIP) {
+        if (value % 2 != 0 || value < 4 || value > 32) {
+          char errmsg[MAX_ERR_LENGTH];
+          snprintf(errmsg, MAX_ERR_LENGTH,
+                   "ERROR: invalid value %d for SZIP Compression.  Must be even and 4 <= value <= "
+                   "32. Ignoring.",
+                   value);
+          ex_err_fn(exoid, __func__, errmsg, EX_BADPARAM);
+          EX_FUNC_LEAVE(EX_FATAL);
+        }
       }
       file->compression_level = value;
+      assert(value == file->compression_level);
     }
     else {
       file->compression_level = 0;

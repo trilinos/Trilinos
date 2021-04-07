@@ -34,7 +34,9 @@
 
 #include "stk_tools/mesh_tools/DetectHingesImpl.hpp"
 #include "stk_tools/mesh_tools/DisconnectBlocksImpl.hpp"
+#include "stk_util/util/GraphCycleDetector.hpp"
 #include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/baseImpl/elementGraph/BulkDataIdMapper.hpp"
 #include "stk_util/parallel/ParallelReduce.hpp"
 #include "stk_util/util/SortAndUnique.hpp"
 #include "stk_mesh/base/FEMHelpers.hpp"
@@ -50,57 +52,107 @@ namespace impl {
 void print_node_count(stk::mesh::BulkData& bulk, const std::string str)
 {
   stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
 
   std::cout << str << std::endl;
   std::cout << "p:" << bulk.parallel_rank() << " node vec size: " << nodes.size() << std::endl;
 }
 
-void fill_pairwise_common_nodes_by_face(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem, stk::mesh::EntityVector& commonNodes)
+bool are_equal(const stk::mesh::Entity* nodesPtr, const stk::mesh::EntityVector& nodesVec)
 {
-  if(bulk.mesh_meta_data().spatial_dimension() != 3) {
-    return;
-  }
-
-  stk::mesh::EntityVector elemSubTopoNodes(bulk.num_nodes(elem));
-  stk::mesh::EntityVector sortedElemSubTopoNodes(bulk.num_nodes(elem));
-  stk::topology elementTopo = bulk.bucket(elem).topology();
-  stk::mesh::EntityRank subRank = bulk.mesh_meta_data().side_rank();
-
-  unsigned numSubTopo = elementTopo.num_sub_topology(subRank);
-
-  for(unsigned i = 0; i < numSubTopo; i++) {
-    stk::topology subTopo = elementTopo.sub_topology(subRank, i);
-    if(commonNodes.size() != subTopo.num_nodes()) {
-      continue;
+  for(stk::mesh::Entity node : nodesVec) {
+    if (node != *nodesPtr) {
+      return false;
     }
-
-    elementTopo.sub_topology_nodes(bulk.begin_nodes(elem), subRank, i, elemSubTopoNodes.begin());
-    elemSubTopoNodes.resize(commonNodes.size());
-    sortedElemSubTopoNodes = elemSubTopoNodes;
-    std::sort(sortedElemSubTopoNodes.begin(), sortedElemSubTopoNodes.end());
-
-    if(sortedElemSubTopoNodes == commonNodes) {
-      elemSubTopoNodes.swap(commonNodes);
-      return;
-    }
+    ++nodesPtr;
   }
+  return true;
 }
 
-stk::mesh::EntityVector get_pairwise_common_nodes(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem1,
+class SideFinder
+{
+public:
+  SideFinder(const stk::mesh::BulkData& bulkData, stk::mesh::Entity element)
+   : m_bulk(bulkData), m_elem(element)
+  {
+    const unsigned numNodes = m_bulk.num_nodes(m_elem);
+    if (numNodes > MAX_NUM_NODES) {
+      m_heapScratchSpace.resize(numNodes);
+      m_scratchSpace = m_heapScratchSpace.data();
+    }
+    else {
+      m_scratchSpace = m_stackScratchSpace;
+    }
+  }
+
+  virtual ~SideFinder() {}
+
+  bool put_nodes_in_side_order(stk::mesh::EntityVector& nodes)
+  {
+    stk::topology elementTopo = m_bulk.bucket(m_elem).topology();
+    stk::mesh::EntityRank subRank = m_bulk.mesh_meta_data().side_rank();
+
+    const unsigned numSubTopo = elementTopo.num_sub_topology(subRank);
+    const unsigned numNodes = nodes.size();
+    const stk::mesh::Entity* elemNodes = m_bulk.begin_nodes(m_elem);
+
+    for(unsigned i = 0; i < numSubTopo; i++) {
+      stk::topology subTopo = elementTopo.sub_topology(subRank, i);
+      if(numNodes != subTopo.num_nodes()) {
+        continue;
+      }
+
+      elementTopo.sub_topology_nodes(elemNodes, subRank, i, m_scratchSpace);
+      std::sort(m_scratchSpace, m_scratchSpace+subTopo.num_nodes());
+
+      if(are_equal(m_scratchSpace, nodes)) {
+        elementTopo.sub_topology_nodes(elemNodes, subRank, i, nodes.begin());
+        return true;
+      }
+    }
+    return false;
+  }
+
+private:
+  const stk::mesh::BulkData& m_bulk;
+  stk::mesh::Entity m_elem;
+  static constexpr unsigned MAX_NUM_NODES = 32;
+  stk::mesh::Entity m_stackScratchSpace[MAX_NUM_NODES];
+  stk::mesh::EntityVector m_heapScratchSpace;
+  stk::mesh::Entity* m_scratchSpace;
+};
+
+std::pair<stk::mesh::EntityVector,bool> get_pairwise_common_nodes(const stk::mesh::BulkData& bulk,
+                                         stk::mesh::Entity elem1,
                                          stk::mesh::Entity elem2)
 {
-  stk::mesh::EntityVector commonNodes;
-  stk::mesh::EntityVector sortedElem1Nodes(bulk.begin_nodes(elem1), bulk.begin_nodes(elem1)+bulk.num_nodes(elem1));
-  stk::mesh::EntityVector sortedElem2Nodes(bulk.begin_nodes(elem2), bulk.begin_nodes(elem2)+bulk.num_nodes(elem2));
-  std::sort(sortedElem1Nodes.begin(), sortedElem1Nodes.end());
-  std::sort(sortedElem2Nodes.begin(), sortedElem2Nodes.end());
-  std::set_intersection(sortedElem1Nodes.begin(), sortedElem1Nodes.end(),
-                        sortedElem2Nodes.begin(), sortedElem2Nodes.end(),
-                        std::back_inserter(commonNodes));
+  std::pair<stk::mesh::EntityVector,bool> result;
+  stk::mesh::EntityVector& commonNodes = result.first;
+  commonNodes.assign(bulk.begin_nodes(elem1), bulk.end_nodes(elem1));
 
-  fill_pairwise_common_nodes_by_face(bulk, elem1, commonNodes);
-  return commonNodes;
+  const stk::mesh::Entity* elem2Nodes = bulk.begin_nodes(elem2);
+  const unsigned numElem2Nodes = bulk.num_nodes(elem2);
+  unsigned numIntersect = 0;
+  const unsigned numElem1Nodes = commonNodes.size();
+  for(unsigned n=0; n<numElem1Nodes; ++n) {
+    for(unsigned m=0; m<numElem2Nodes; ++m) {
+      if (commonNodes[n] == elem2Nodes[m]) {
+        if (n > numIntersect) {
+          commonNodes[numIntersect] = commonNodes[n];
+        }
+        ++numIntersect;
+        break;
+      }
+    }
+  }
+  commonNodes.resize(numIntersect);
+  std::sort(commonNodes.begin(), commonNodes.end());
+
+  SideFinder sideFinder(bulk, elem1);
+  bool commonNodesAreSideNodes = sideFinder.put_nodes_in_side_order(commonNodes);
+  result.second = commonNodesAreSideNodes;
+
+  return result;
 }
 
 stk::mesh::EntityVector get_common_elements(const stk::mesh::BulkData& bulk, stk::mesh::Entity node1, stk::mesh::Entity node2)
@@ -122,10 +174,10 @@ stk::mesh::EntityVector get_common_elements(const stk::mesh::BulkData& bulk, stk
 void populate_pairwise_side_info(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem1,
                                  stk::mesh::Entity elem2, PairwiseSideInfoVector& infoVec)
 {
-    PairwiseSideInfo info(bulk, elem1, elem2);
+    infoVec.emplace_back(bulk, elem1, elem2);
 
-    if(info.get_common_nodes().size() > 0) {
-      infoVec.push_back(info);
+    if(infoVec.back().get_common_nodes().empty()) {
+      infoVec.pop_back();
     }
 }
 
@@ -143,24 +195,32 @@ void fill_common_nodes_for_connected_elems(const stk::mesh::BulkData& bulk, stk:
   }
 }
 
-bool common_nodes_are_part_of_a_side (const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& commonElements, const stk::mesh::EntityVector commonNodes)
+bool nodes_are_elem_side_nodes(const stk::mesh::BulkData& bulk, stk::mesh::Entity elem,
+                               const stk::mesh::EntityVector& nodesToCheck)
 {
-  const stk::mesh::MetaData& meta = bulk.mesh_meta_data();
-  stk::mesh::EntityRank sideRank = meta.side_rank();
+  stk::topology elementTopo = bulk.bucket(elem).topology();
+
+  const stk::mesh::EntityRank sideRank = bulk.mesh_meta_data().side_rank();
+  const unsigned numSubTopo = elementTopo.num_sub_topology(sideRank);
+
+  for(unsigned i = 0; i < numSubTopo; i++) {
+    const stk::topology subTopo = elementTopo.sub_topology(sideRank, i);
+    if(nodesToCheck.size() != subTopo.num_nodes()) {
+      continue;
+    }
+
+    if(stk::mesh::is_side_equivalent(bulk, elem, i, nodesToCheck.data())) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool common_nodes_are_part_of_a_side (const stk::mesh::BulkData& bulk, const stk::mesh::EntityVector& commonElements, const stk::mesh::EntityVector& commonNodes)
+{
   for(stk::mesh::Entity elem : commonElements) {
-    stk::topology elementTopo = bulk.bucket(elem).topology();
-
-    unsigned numSubTopo = elementTopo.num_sub_topology(sideRank);
-
-    for(unsigned i = 0; i < numSubTopo; i++) {
-      stk::topology subTopo = elementTopo.sub_topology(sideRank, i);
-      if(commonNodes.size() != subTopo.num_nodes()) {
-        continue;
-      }
-
-      if(stk::mesh::is_side_equivalent(bulk, elem, i, commonNodes.data())) {
-        return true;
-      }
+    if (nodes_are_elem_side_nodes(bulk, elem, commonNodes)) {
+      return true;
     }
   }
   return false;
@@ -244,7 +304,7 @@ HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk, const stk::mesh
 HingeNodeVector get_hinge_nodes(const stk::mesh::BulkData& bulk)
 {
   stk::mesh::EntityVector nodes;
-  bulk.get_entities(stk::topology::NODE_RANK, bulk.mesh_meta_data().universal_part(), nodes);
+  stk::mesh::get_entities(bulk, stk::topology::NODE_RANK, nodes);
 
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
 
@@ -461,7 +521,7 @@ void insert_into_group(const PairwiseSideInfoVector& infoVec, HingeGroupVector& 
 }
 
 void insert_into_group(const PairwiseSideInfoVector& node1InfoVec, const PairwiseSideInfoVector& node2InfoVec,
-                       stk::mesh::EntityVector commonElem, HingeGroupVector& groupVec)
+                       const stk::mesh::EntityVector& commonElem, HingeGroupVector& groupVec)
 {
   for(const PairwiseSideInfo& info : node1InfoVec) {
     int elem1Idx = find_element_in_groups(groupVec, info.get_element1());
@@ -591,29 +651,18 @@ void print_disconnect_group_info(const DisconnectGroup& group, unsigned indentLe
   }
 }
 
-void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, bool debug)
+void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
 {
-  HingeEdgeVector hingeEdges = get_hinge_edges(bulk,hingeNodes);
   HingeGroupVector hingeGroups;
   std::vector<stk::mesh::EntityId> newNodeIdVec;
   std::pair<stk::mesh::Part*, stk::mesh::PartVector> hingeBlocks;
 
   LinkInfo info;
-  std::ostringstream& os = info.os;
-
-  if(debug) {
-    os << "P" << bulk.parallel_rank() << std::endl;
-  }
 
   bulk.modification_begin();
 
   for(HingeNode& hinge : hingeNodes) {
     hingeGroups = get_convex_groupings(bulk, hinge);
-
-    if(debug) {
-      print_hinge_node_info(bulk, hinge, 1u, os);
-      print_hinge_group_info(bulk, hingeGroups, 2u, os);
-    }
 
     for (size_t firstGroupIdx = 0; firstGroupIdx < hingeGroups.size()-1; ++firstGroupIdx) {
       for (size_t secondGroupIdx = firstGroupIdx+1; secondGroupIdx < hingeGroups.size(); ++secondGroupIdx) {
@@ -629,21 +678,14 @@ void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, boo
         stk::mesh::ConstPartVector blocksForSecondGroup = get_blocks_for_hinge_group(bulk, *secondGroup);
         DisconnectGroup group(bulk, blocksForSecondGroup, hinge.get_node());
 
-        if(debug) {
-          os << indent(1u) << "Creating disconnect group for hinge group with id " << group.id() << std::endl;
-        }
-
         add_to_sharing_lookup(bulk, hinge.get_node(), info.sharedInfo);
 
         if(group.needs_to_communicate()) {
-          if(debug) {
-            os << indent(1u) << "Group needs to communicate ... adding to node map" << std::endl;
-          }
           NodeMapKey key(hinge.get_node(), group);
           info.clonedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
         } else {
           NodeMapKey key(hinge.get_node(), group);
-          info.preservedNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
+          info.originalNodeMap[key] = NodeMapValue(bulk, hinge.get_node());
         }
       }
     }
@@ -651,38 +693,80 @@ void snip_all_hinges(stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, boo
 
   create_new_duplicate_node_IDs(bulk, info);
 
-  if(debug) {
-    for (auto & nodeMapEntry : info.clonedNodeMap) {
-      os << indent(1u) << "Disconnect group with id " << nodeMapEntry.first.disconnectedGroup.id()
-                       << " has duplicate node id: " << nodeMapEntry.second.newNodeId << std::endl;
-    }
-  }
-
   communicate_shared_node_information(bulk, info);
 
   for(auto mapEntry = info.clonedNodeMap.begin(); mapEntry != info.clonedNodeMap.end(); ++mapEntry) {
     const NodeMapKey& key = mapEntry->first;
-
-    if(debug) {
-      print_disconnect_group_info(key.disconnectedGroup, 1u, os);
-      os << indent(2u) << "New node id: " << mapEntry->second.newNodeId << std::endl;
-    }
     disconnect_elements(bulk, key, mapEntry->second, info);
   }
   info.flush(std::cout);
   bulk.modification_end();
 }
 
-void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes, bool debug)
+HingeNodeVector get_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
 {
-  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
-  snip_all_hinges(bulk, hingeNodes, debug); 
+  HingeEdgeVector hingeEdges = get_hinge_edges(bulk, hingeNodes);
+  stk::mesh::impl::LocalIdMapper localIdMapper;
+  localIdMapper.set_size(bulk);
+
+  for(unsigned i  = 0; i < hingeNodes.size(); i++) {
+    localIdMapper.add_new_entity_with_local_id(hingeNodes[i].get_node(), i);
+  }
+
+  GraphCycleDetector hingeGraph(hingeNodes.size());
+
+  for(auto hingeEdge : hingeEdges) {
+    unsigned hingeNode1Id = localIdMapper.entity_to_local(hingeEdge.first.get_node());
+    unsigned hingeNode2Id = localIdMapper.entity_to_local(hingeEdge.second.get_node());
+    hingeGraph.add_edge(hingeNode1Id, hingeNode2Id);
+  }
+
+  HingeNodeVector cyclicHingeNodes;
+  const std::vector<unsigned>& nodesInCycles = hingeGraph.get_nodes_in_cycles();
+
+  for(unsigned nodeId : nodesInCycles) {
+    cyclicHingeNodes.push_back(hingeNodes[nodeId]);
+  }
+
+  return cyclicHingeNodes;
 }
 
-void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk, bool debug)
+void prune_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes, const HingeNodeVector& prunedHingeNodes)
+{
+  for(auto node : prunedHingeNodes) {
+    auto it = std::find(hingeNodes.begin(), hingeNodes.end(), node);
+
+    if(it != hingeNodes.end()) {
+      hingeNodes.erase(it);
+    }
+  }
+}
+
+void prune_cyclic_hinge_nodes(const stk::mesh::BulkData& bulk, HingeNodeVector& hingeNodes)
+{
+  HingeNodeVector cyclicHingeNodes = get_cyclic_hinge_nodes(bulk, hingeNodes);
+  prune_hinge_nodes(bulk, hingeNodes, cyclicHingeNodes);
+}
+
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes)
+{
+  snip_all_hinges_for_input_nodes(bulk, nodes, HingeNodeVector{});
+}
+
+void snip_all_hinges_for_input_nodes(stk::mesh::BulkData& bulk, const stk::mesh::EntityVector nodes,
+                                     const HingeNodeVector& preservedHingeNodes)
+{
+  HingeNodeVector hingeNodes = get_hinge_nodes(bulk, nodes);
+  // prune_cyclic_hinge_nodes(bulk, hingeNodes);
+  prune_hinge_nodes(bulk, hingeNodes, preservedHingeNodes);
+  snip_all_hinges(bulk, hingeNodes); 
+}
+
+void snip_all_hinges_between_blocks(stk::mesh::BulkData& bulk)
 {
   HingeNodeVector hingeNodes = get_hinge_nodes(bulk);
-  snip_all_hinges(bulk, hingeNodes, debug); 
+  // prune_cyclic_hinge_nodes(bulk, hingeNodes);
+  snip_all_hinges(bulk, hingeNodes); 
 }
 
 } } }

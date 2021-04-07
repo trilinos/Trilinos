@@ -150,15 +150,17 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     std::string matrixFile;                             clp.setOption("matrix",                &matrixFile,        "matrix data file");
     std::string rhsFile;                                clp.setOption("rhs",                   &rhsFile,           "rhs data file");
     std::string coordFile;                              clp.setOption("coords",                &coordFile,         "coordinates data file");
+    std::string coordMapFile;                           clp.setOption("coordsmap",             &coordMapFile,      "coordinates map data file");
     std::string nullFile;                               clp.setOption("nullspace",             &nullFile,          "nullspace data file");
     std::string materialFile;                           clp.setOption("material",              &materialFile,      "material data file");
     int         numVectors        = 1;                  clp.setOption("multivector",           &numVectors,        "number of rhs to solve simultaneously");
+    int         numSolves         = 1;                  clp.setOption("numSolves",             &numSolves,         "number of times the system should be solved");
 
     switch (clp.parse(argc,argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
       case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
 
     RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -192,8 +194,9 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
     RCP<MultiVector>           X, B;
 
     std::ostringstream galeriStream;
-    MatrixLoad<SC,LocalOrdinal,GlobalOrdinal,Node>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,matrixParameters,xpetraParameters,galeriStream);
+    MatrixLoad<SC,LocalOrdinal,GlobalOrdinal,Node>(comm,lib,binaryFormat,matrixFile,rhsFile,rowMapFile,colMapFile,domainMapFile,rangeMapFile,coordFile,coordMapFile,nullFile,materialFile,map,A,coordinates,nullspace,material,X,B,numVectors,matrixParameters,xpetraParameters,galeriStream);
     out << galeriStream.str();
+    X->putScalar(0);
 
     //
     // Build Thyra linear algebra objects
@@ -232,14 +235,34 @@ int MainWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::main_(Teuchos::Command
 
     // Build a new "solver factory" according to the previously specified parameter list.
     RCP<Thyra::LinearOpWithSolveFactoryBase<Scalar> > solverFactory = Thyra::createLinearSolveStrategy(linearSolverBuilder);
+    auto precFactory = solverFactory->getPreconditionerFactory();
+    RCP<Thyra::PreconditionerBase<Scalar> > prec;
+    Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA;
+    if (!precFactory.is_null()) {
+      prec = precFactory->createPrec();
 
-    // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
-    Teuchos::RCP<Thyra::LinearOpWithSolveBase<Scalar> > thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+      // Build a Thyra operator corresponding to A^{-1} computed using the Stratimikos solver.
+      Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+      thyraInverseA = solverFactory->createOp();
+      Thyra::initializePreconditionedOp<double>(*solverFactory, thyraA, prec, thyraInverseA.ptr());
+    } else {
+      thyraInverseA = Thyra::linearOpWithSolve(*solverFactory, thyraA);
+    }
 
     // Solve Ax = b.
     Thyra::SolveStatus<Scalar> status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
 
     success = (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+
+    for (int solveno = 1; solveno < numSolves; solveno++) {
+      if (!precFactory.is_null())
+        Thyra::initializePrec<double>(*precFactory, thyraA, prec.ptr());
+      thyraX->assign(0.);
+
+      status = Thyra::solve<Scalar>(*thyraInverseA, Thyra::NOTRANS, *thyraB, thyraX.ptr());
+
+      success = success && (status.solveStatus == Thyra::SOLVE_STATUS_CONVERGED);
+    }
 
     // print timings
     if (printTimings) {

@@ -35,7 +35,6 @@
 #define SACADO_KOKKOS_USE_MEMORY_POOL 1
 
 #include "Fad_KokkosTests.hpp"
-#include "Kokkos_Core.hpp"
 
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutLeft,32> LeftContiguous32;
 typedef Kokkos::LayoutContiguous<Kokkos::LayoutRight,32> RightContiguous32;

@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -62,7 +62,7 @@ C     and shells in other parts of the program (newess)
         call exgelb(ndbin, idelb(ielb), namelb(ielb), numelb(ielb),
      &    numlnk(ielb), numatr(ielb), ierr)
         if (ierr .ne. 0) goto 30
-C
+
 C ... See if there are any non-quad element blocks since we have to
 C     read in the connectivity different for exodusII than the code
 C     expects

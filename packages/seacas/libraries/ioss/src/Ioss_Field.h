@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Field_h
@@ -42,7 +42,7 @@ namespace Ioss {
     static Ioss::Field::BasicType get_field_type(int64_t /*dummy*/) { return INT64; }
     static Ioss::Field::BasicType get_field_type(uint64_t /*dummy*/) { return INT64; }
     static Ioss::Field::BasicType get_field_type(Complex /*dummy*/) { return COMPLEX; }
-    static Ioss::Field::BasicType get_field_type(std::string /*dummy*/) { return STRING; }
+    static Ioss::Field::BasicType get_field_type(const std::string & /*dummy*/) { return STRING; }
 
     /* \brief Categorizes the type of information held in the field.
      */
@@ -96,6 +96,10 @@ namespace Ioss {
 
     // Compare two fields (used for STL container)
     bool operator<(const Field &other) const;
+
+    bool operator==(const Ioss::Field rhs) const;
+    bool operator!=(const Ioss::Field rhs) const;
+    bool equal(const Ioss::Field rhs) const;
 
     ~Field();
 
@@ -160,6 +164,7 @@ namespace Ioss {
     const VariableType *transStorage_{}; // Storage type after transformation
 
     std::vector<Transform *> transforms_;
+    bool                     equal_(const Ioss::Field rhs, bool quiet) const;
   };
 } // namespace Ioss
 #endif

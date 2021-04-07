@@ -37,7 +37,7 @@ namespace Tacho {
             });
         }
       } else {
-        printf("Error: abort\n");
+        printf("Error: Copy<Algo::Internal> A and B dimensions are not same\n");
       }
       return 0;
     }

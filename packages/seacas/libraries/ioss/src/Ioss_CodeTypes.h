@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_code_types_h
@@ -37,9 +37,9 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
 #define SEACAS_HAVE_MPI
 /* #undef IOSS_THREADSAFE */
 /* #undef SEACAS_HAVE_KOKKOS */
-/* #undef SEACAS_HAVE_DATAWAREHOUSE */
 #define SEACAS_HAVE_EXODUS
 #define SEACAS_HAVE_CGNS
+/* #undef SEACAS_HAVE_FAODEL */
 #define SEACAS_HAVE_PAMGEN
 #else
 #include <SEACASIoss_config.h>
@@ -58,6 +58,9 @@ inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33")
     (void)(x);                                                                                     \
   } while (0)
 
+#ifndef MPI_COMM_SELF
+#define MPI_COMM_SELF 0
+#endif
 #ifndef MPI_COMM_WORLD
 #define MPI_COMM_WORLD 0
 using MPI_Comm       = int;

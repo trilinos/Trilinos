@@ -25,6 +25,7 @@ observeStartIntegrator(const Integrator<Scalar>& integrator){
 
   std::time_t begin = std::time(nullptr);
   const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "\nTempus - IntegratorBasic\n"
        << std::asctime(std::localtime(&begin)) << "\n"
@@ -74,6 +75,7 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
      integrator.getStepperTimer()->reset();
 
      const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+     out->setOutputToRootOnly(0);
      Teuchos::OSTab ostab(out,0,"ScreenOutput");
      *out<<std::scientific
         <<std::setw( 6)<<std::setprecision(3)<<cs->getIndex()
@@ -104,11 +106,15 @@ observeEndIntegrator(const Integrator<Scalar>& integrator){
   std::time_t end = std::time(nullptr);
   const Scalar runtime = integrator.getIntegratorTimer()->totalElapsedTime();
   const Teuchos::RCP<Teuchos::FancyOStream> out = integrator.getOStream();
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,0,"ScreenOutput");
   *out << "============================================================================\n"
        << "  Total runtime = " << runtime << " sec = "
        << runtime/60.0 << " min\n"
        << std::asctime(std::localtime(&end))
+       << "\nNumber of Accepted Steps = " << integrator.getSolutionHistory()->getCurrentState()->getIndex()
+       << "\nNumber of Failures = " << integrator.getSolutionHistory()->getCurrentState()->getMetaData()->getNRunningFailures()
+       << "\n"
        << exitStatus << "\n"
        << std::endl;
 }

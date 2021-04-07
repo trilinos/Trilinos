@@ -858,11 +858,82 @@ inline size_t kk_is_d1_coloring_valid(
 
   struct ColorChecker <in_row_view_t, in_nnz_view_t, in_color_view_t, team_member_t>  cc(num_rows, xadj, adj, v_colors, team_work_chunk_size);
   size_t num_conf = 0;
-  Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValie", dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
+  Kokkos::parallel_reduce( "KokkosKernels::Common::IsD1ColoringValid", dynamic_team_policy(num_rows / team_work_chunk_size + 1 ,
       suggested_team_size, vector_size), cc, num_conf);
 
   MyExecSpace().fence();
   return num_conf;
+}
+
+template<typename Reducer, typename ordinal_t, typename rowmap_t>
+struct MinMaxDegreeFunctor
+{
+  using ReducerVal = typename Reducer::value_type;
+  MinMaxDegreeFunctor(const rowmap_t& rowmap_)
+    : rowmap(rowmap_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i, ReducerVal& lminmax) const
+  {
+    ordinal_t deg = rowmap(i + 1) - rowmap(i);
+    if(deg < lminmax.min_val)
+      lminmax.min_val = deg;
+    if(deg > lminmax.max_val)
+      lminmax.max_val = deg;
+  }
+  rowmap_t rowmap;
+};
+
+template<typename Reducer, typename ordinal_t, typename rowmap_t>
+struct MaxDegreeFunctor
+{
+  using ReducerVal = typename Reducer::value_type;
+  MaxDegreeFunctor(const rowmap_t& rowmap_)
+    : rowmap(rowmap_) {}
+  KOKKOS_INLINE_FUNCTION void operator()(ordinal_t i, ReducerVal& lmax) const
+  {
+    ordinal_t deg = rowmap(i + 1) - rowmap(i);
+    if(deg > lmax)
+      lmax = deg;
+  }
+  rowmap_t rowmap;
+};
+
+template<typename device_t, typename ordinal_t, typename rowmap_t>
+ordinal_t graph_max_degree(const rowmap_t& rowmap)
+{
+  using Reducer = Kokkos::Max<ordinal_t>;
+  ordinal_t nrows = rowmap.extent(0);
+  if(nrows)
+    nrows--;
+  if(nrows == 0)
+    return 0;
+  ordinal_t val;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename device_t::execution_space>(0, nrows),
+      MaxDegreeFunctor<Reducer, ordinal_t, rowmap_t>(rowmap),
+      Reducer(val));
+  return val;
+}
+
+template<typename device_t, typename ordinal_t, typename rowmap_t>
+void graph_min_max_degree(const rowmap_t& rowmap, ordinal_t& min_degree, ordinal_t& max_degree)
+{
+  using Reducer = Kokkos::MinMax<ordinal_t>;
+  ordinal_t nrows = rowmap.extent(0);
+  if(nrows)
+    nrows--;
+  if(nrows == 0)
+  {
+    min_degree = 0;
+    max_degree = 0;
+    return;
+  }
+  typename Reducer::value_type result;
+  Kokkos::parallel_reduce(
+      Kokkos::RangePolicy<typename device_t::execution_space>(0, nrows),
+      MinMaxDegreeFunctor<Reducer, ordinal_t, rowmap_t>(rowmap),
+      Reducer(result));
+  min_degree = result.min_val;
+  max_degree = result.max_val;
 }
 
 template<typename execution_space, typename rowmap_t, typename entries_t, typename values_t>
@@ -970,15 +1041,12 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
 {
   using lno_t = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-#ifdef KOKKOS_ENABLE_CUDA
-  //only CUDA benefits from using team-based bitonic
-  bool useRadix = std::is_same<execution_space, Kokkos::Cuda>::value ? false : true;
-#else
-  bool useRadix = true;
-#endif
+  bool useRadix = !kk_is_gpu_exec_space<execution_space>();
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if(numRows == 0)
+    return;
   SortCrsMatrixFunctor<execution_space, rowmap_t, entries_t, values_t>
     funct(useRadix, rowmap, entries, values);
-  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if(useRadix)
   {
     Kokkos::parallel_for("sort_crs_matrix", Kokkos::RangePolicy<execution_space>(0, numRows), funct);
@@ -988,16 +1056,15 @@ void sort_crs_matrix(const rowmap_t& rowmap, const entries_t& entries, const val
     //Try to get teamsize to be largest power of 2 not greater than avg entries per row
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
-    int teamSize = 1;
-    lno_t avgDeg = 0;
-    if(numRows)
-      avgDeg = (entries.extent(0) + numRows - 1) / numRows;
-    while(teamSize * 2 * 2 <= avgDeg)
+    lno_t idealTeamSize = 1;
+    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    while(idealTeamSize < avgDeg / 2)
     {
-      teamSize *= 2;
+      idealTeamSize *= 2;
     }
-    team_pol temp(numRows, teamSize);
-    teamSize = std::min(teamSize, temp.team_size_max(funct, Kokkos::ParallelForTag()));
+    team_pol temp(numRows, 1);
+    lno_t maxTeamSize = temp.team_size_max(funct, Kokkos::ParallelForTag());
+    lno_t teamSize = std::min(idealTeamSize, maxTeamSize);
     Kokkos::parallel_for("sort_crs_matrix", team_pol(numRows, teamSize), funct);
   }
 }
@@ -1023,15 +1090,12 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
 {
   using lno_t = typename entries_t::non_const_value_type;
   using team_pol = Kokkos::TeamPolicy<execution_space>;
-#ifdef KOKKOS_ENABLE_CUDA
-  //only CUDA benefits from using team-based bitonic
-  bool useRadix = std::is_same<execution_space, Kokkos::Cuda>::value ? false : true;
-#else
-  bool useRadix = true;
-#endif
+  bool useRadix = !kk_is_gpu_exec_space<execution_space>();
+  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
+  if(numRows == 0)
+    return;
   SortCrsGraphFunctor<execution_space, rowmap_t, entries_t>
     funct(useRadix, rowmap, entries);
-  lno_t numRows = rowmap.extent(0) ? rowmap.extent(0) - 1 : 0;
   if(useRadix)
   {
     Kokkos::parallel_for("sort_crs_graph", Kokkos::RangePolicy<execution_space>(0, numRows), funct);
@@ -1042,16 +1106,15 @@ void sort_crs_graph(const rowmap_t& rowmap, const entries_t& entries)
     //half the entries per row. 0.5 * #entries is bitonic's parallelism within a row.
     //TODO (probably important for performnce): add thread-level sort also, and use that
     //for small avg degree. But this works for now.
-    int teamSize = 1;
-    lno_t avgDeg = 0;
-    if(numRows)
-      avgDeg = (entries.extent(0) + numRows - 1) / numRows;
-    while(teamSize * 2 * 2 <= avgDeg)
+    lno_t idealTeamSize = 1;
+    lno_t avgDeg = (entries.extent(0) + numRows - 1) / numRows;
+    while(idealTeamSize < avgDeg / 2)
     {
-      teamSize *= 2;
+      idealTeamSize *= 2;
     }
-    team_pol temp(numRows, teamSize);
-    teamSize = std::min(teamSize, temp.team_size_max(funct, Kokkos::ParallelForTag()));
+    team_pol temp(numRows, 1);
+    lno_t maxTeamSize = temp.team_size_max(funct, Kokkos::ParallelForTag());
+    lno_t teamSize = std::min(idealTeamSize, maxTeamSize);
     Kokkos::parallel_for("sort_crs_graph", team_pol(numRows, teamSize), funct);
   }
 }
@@ -1097,14 +1160,14 @@ struct MergedRowmapFunctor
 };
 
 template<typename rowmap_t, typename entries_t, typename values_t>
-struct MergedEntriesFunctor
+struct MatrixMergedEntriesFunctor
 {
   using size_type = typename rowmap_t::non_const_value_type;
   using lno_t = typename entries_t::non_const_value_type;
   using scalar_t = typename values_t::non_const_value_type;
 
   //Precondition: entries are sorted within each row
-  MergedEntriesFunctor(
+  MatrixMergedEntriesFunctor(
       const rowmap_t& rowmap_, const entries_t& entries_, const values_t& values_,
       const rowmap_t& mergedRowmap_, const entries_t& mergedEntries_, const values_t& mergedValues_)
     : rowmap(rowmap_), entries(entries_), values(values_),
@@ -1154,6 +1217,52 @@ struct MergedEntriesFunctor
   values_t mergedValues;
 };
 
+template<typename rowmap_t, typename entries_t>
+struct GraphMergedEntriesFunctor
+{
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+
+  //Precondition: entries are sorted within each row
+  GraphMergedEntriesFunctor(
+      const rowmap_t& rowmap_, const entries_t& entries_,
+      const rowmap_t& mergedRowmap_, const entries_t& mergedEntries_)
+    : rowmap(rowmap_), entries(entries_),
+    mergedRowmap(mergedRowmap_), mergedEntries(mergedEntries_)
+  {}
+
+  KOKKOS_INLINE_FUNCTION void operator()(lno_t row) const
+  {
+    size_type rowBegin = rowmap(row);
+    size_type rowEnd = rowmap(row + 1);
+    if(rowEnd == rowBegin)
+    {
+      //Row was empty to begin with, nothing to do
+      return;
+    }
+    //Otherwise, accumulate the value for each column
+    lno_t accumCol = entries(rowBegin);
+    size_type insertPos = mergedRowmap(row);
+    for(size_type j = rowBegin + 1; j < rowEnd; j++)
+    {
+      if(accumCol != entries(j))
+      {
+        //write out and reset
+        mergedEntries(insertPos) = accumCol;
+        insertPos++;
+        accumCol = entries(j);
+      }
+    }
+    //always left with the last unique entry
+    mergedEntries(insertPos) = accumCol;
+  }
+
+  rowmap_t rowmap;
+  entries_t entries;
+  rowmap_t mergedRowmap;
+  entries_t mergedEntries;
+};
+
 //Sort the rows of matrix, and merge duplicate entries.
 template<typename crsMat_t>
 crsMat_t sort_and_merge_matrix(const crsMat_t& A)
@@ -1177,12 +1286,47 @@ crsMat_t sort_and_merge_matrix(const crsMat_t& A)
   values_t mergedValues("SortedMerged values", numCompressedEntries);
   //Compute merged entries and values
   Kokkos::parallel_for(range_t(0, A.numRows()),
-      MergedEntriesFunctor<c_rowmap_t, entries_t, values_t>
+      MatrixMergedEntriesFunctor<c_rowmap_t, entries_t, values_t>
       (A.graph.row_map, A.graph.entries, A.values,
        mergedRowmap, mergedEntries, mergedValues));
   //Finally, construct the new compressed matrix
   return crsMat_t("SortedMerged", A.numRows(), A.numCols(), numCompressedEntries,
       mergedValues, mergedRowmap, mergedEntries);
+}
+
+template<typename exec_space, typename rowmap_t, typename entries_t>
+void sort_and_merge_graph(
+    const typename rowmap_t::const_type& rowmap_in, const entries_t& entries_in,
+    rowmap_t& rowmap_out, entries_t& entries_out)
+{
+  using size_type = typename rowmap_t::non_const_value_type;
+  using lno_t = typename entries_t::non_const_value_type;
+  using range_t = Kokkos::RangePolicy<exec_space>;
+  using const_rowmap_t = typename rowmap_t::const_type;
+  lno_t numRows = rowmap_in.extent(0);
+  if(numRows <= 1)
+  {
+    //Matrix has zero rows
+    rowmap_out = rowmap_t();
+    entries_out = entries_t();
+    return;
+  }
+  numRows--;
+  //Sort in place
+  sort_crs_graph<exec_space, const_rowmap_t, entries_t>(rowmap_in, entries_in);
+  //Count entries per row into a new rowmap, in terms of merges that can be done
+  rowmap_out = rowmap_t(Kokkos::ViewAllocateWithoutInitializing("SortedMerged rowmap"), numRows + 1);
+  size_type numCompressedEntries = 0;
+  Kokkos::parallel_reduce(range_t(0, numRows),
+      MergedRowmapFunctor<rowmap_t, entries_t>(rowmap_out, rowmap_in, entries_in), numCompressedEntries);
+  //Prefix sum to get rowmap
+  kk_exclusive_parallel_prefix_sum<rowmap_t, exec_space>(numRows + 1, rowmap_out);
+  entries_out = entries_t("SortedMerged entries", numCompressedEntries);
+  //Compute merged entries and values
+  Kokkos::parallel_for(range_t(0, numRows),
+      GraphMergedEntriesFunctor<const_rowmap_t, entries_t>
+      (rowmap_in, entries_in,
+       rowmap_out, entries_out));
 }
 
 template <typename lno_view_t,
@@ -1199,76 +1343,44 @@ void kk_sort_graph(
 
     out_nnz_view_t out_adj,
     out_scalar_view_t out_vals){
-  ExecSpaceType exec = kk_get_exec_space_type<MyExecSpace>();
+  // TODO BMK: can this function be deprecated?
+  typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
+  Kokkos::deep_copy (hr, in_xadj);
+  typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
+  Kokkos::deep_copy (he, in_adj);
+  typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
+  Kokkos::deep_copy (hv, in_vals);
+  MyExecSpace().fence();
 
-  if (exec == Exec_CUDA){
-    typename lno_view_t::HostMirror hr = Kokkos::create_mirror_view (in_xadj);
-    Kokkos::deep_copy (hr, in_xadj);
-    typename lno_nnz_view_t::HostMirror he = Kokkos::create_mirror_view (in_adj);
-    Kokkos::deep_copy (he, in_adj);
-    typename scalar_view_t::HostMirror hv = Kokkos::create_mirror_view (in_vals);
-    Kokkos::deep_copy (hv, in_vals);
-    MyExecSpace().fence();
+  typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
+  typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
 
-    typename lno_nnz_view_t::HostMirror heo = Kokkos::create_mirror_view (out_adj);
-    typename scalar_view_t::HostMirror hvo = Kokkos::create_mirror_view (out_vals);
+  typedef typename lno_view_t::non_const_value_type size_type;
+  typedef typename lno_nnz_view_t::non_const_value_type lno_t;
+  typedef typename scalar_view_t::non_const_value_type scalar_t;
 
+  lno_t nrows = in_xadj.extent(0) - 1;
+  std::vector <Edge<lno_t, scalar_t> > edges(in_adj.extent(0));
 
-    typedef typename lno_view_t::non_const_value_type size_type;
-    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
-    typedef typename scalar_view_t::non_const_value_type scalar_t;
-
-    lno_t nrows = in_xadj.extent(0) - 1;
-    std::vector <Edge<lno_t, scalar_t> > edges(in_adj.extent(0));
-
-    size_type row_size = 0;
-    for (lno_t i = 0; i < nrows; ++i){
-      for (size_type j = hr(i); j < hr(i + 1); ++j){
-        edges[row_size].src = i;
-        edges[row_size].dst = he(j);
-        edges[row_size++].ew = hv(j);
-      }
+  size_type row_size = 0;
+  for (lno_t i = 0; i < nrows; ++i){
+    for (size_type j = hr(i); j < hr(i + 1); ++j){
+      edges[row_size].src = i;
+      edges[row_size].dst = he(j);
+      edges[row_size++].ew = hv(j);
     }
-    std::sort (edges.begin(), edges.begin() + row_size);
-    size_type ne = in_adj.extent(0);
-    for(size_type i = 0; i < ne; ++i){
-      heo(i) = edges[i].dst;
-      hvo(i) = edges[i].ew;
-    }
-
-
-    Kokkos::deep_copy (out_adj, heo);
-    Kokkos::deep_copy (out_vals, hvo);
-    MyExecSpace().fence();
   }
-  else {
-
-
-    typedef typename lno_view_t::non_const_value_type size_type;
-    typedef typename lno_nnz_view_t::non_const_value_type lno_t;
-    typedef typename scalar_view_t::non_const_value_type scalar_t;
-
-    lno_t nrows = in_xadj.extent(0) - 1;
-    std::vector <Edge<lno_t, scalar_t> > edges(in_adj.extent(0));
-
-    size_type row_size = 0;
-    for (lno_t i = 0; i < nrows; ++i){
-      for (size_type j = in_xadj(i); j < in_xadj(i + 1); ++j){
-        edges[row_size].src = i;
-        edges[row_size].dst = in_adj(j);
-        edges[row_size++].ew = in_vals(j);
-      }
-    }
-    std::sort (edges.begin(), edges.begin() + row_size);
-    size_type ne = in_adj.extent(0);
-    for(size_type i = 0; i < ne; ++i){
-      out_adj(i) = edges[i].dst;
-      out_vals(i) = edges[i].ew;
-    }
-
-
-
+  std::sort (edges.begin(), edges.begin() + row_size);
+  size_type ne = in_adj.extent(0);
+  for(size_type i = 0; i < ne; ++i){
+    heo(i) = edges[i].dst;
+    hvo(i) = edges[i].ew;
   }
+
+
+  Kokkos::deep_copy (out_adj, heo);
+  Kokkos::deep_copy (out_vals, hvo);
+  MyExecSpace().fence();
 }
 
 /*
@@ -1562,47 +1674,46 @@ struct LowerTriangularMatrix{
       const size_type write_end = t_xadj[row_index + 1];
       const lno_t write_left_work = write_end - write_begin;
 
-      switch (exec_space){
-      case Exec_CUDA:
-        //TODO: Write cuda version here.
-        /*
+      //TODO: Write GPU (vector-level) version here:
+      /*
+      if(kk_is_gpu_exec_space<ExecutionSpace>())
+      {
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(teamMember, read_left_work),
             [&] (lno_t i) {
           const size_type adjind = i + col_begin;
           const lno_t colIndex = adj[adjind];
-
         });
-        */
+      }
+      else
+      ...
+      */
 
-      default:
-        for (lno_t r = 0 , w = 0; r <  read_left_work && w < write_left_work; ++r){
-          const size_type adjind = r + col_begin;
-          const lno_t colIndex = adj[adjind];
-          lno_t colperm = colIndex;
-          if (permutation != NULL){
-            colperm = permutation[colIndex];
-          }
-          if (is_lower){
-            if (row_perm > colperm){
-              if (in_vals != NULL){
-                t_vals[write_begin + w] = in_vals[adjind];
-              }
-              t_adj[write_begin + w++] = colIndex;
-            }
-          }
-          else {
-            if (row_perm < colperm){
-              if (in_vals != NULL){
-                t_vals[write_begin + w] = in_vals[adjind];
-              }
-              t_adj[write_begin + w++] = colIndex;
-            }
-          }
-
-
+      for (lno_t r = 0 , w = 0; r <  read_left_work && w < write_left_work; ++r){
+        const size_type adjind = r + col_begin;
+        const lno_t colIndex = adj[adjind];
+        lno_t colperm = colIndex;
+        if (permutation != NULL){
+          colperm = permutation[colIndex];
         }
-        break;
+        if (is_lower){
+          if (row_perm > colperm){
+            if (in_vals != NULL){
+              t_vals[write_begin + w] = in_vals[adjind];
+            }
+            t_adj[write_begin + w++] = colIndex;
+          }
+        }
+        else {
+          if (row_perm < colperm){
+            if (in_vals != NULL){
+              t_vals[write_begin + w] = in_vals[adjind];
+            }
+            t_adj[write_begin + w++] = colIndex;
+          }
+        }
+
+
       }
     });
   }
@@ -2188,7 +2299,6 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
 
-#ifndef KOKKOS_ENABLE_CUDA
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
 
@@ -2229,7 +2339,6 @@ void kk_create_incidence_tranpose_matrix_from_lower_triangle(
     }
 
     });
-#endif
   }
 
 template <typename row_map_view_t,
@@ -2246,7 +2355,6 @@ void kk_create_incidence_matrix_from_lower_triangle(
     out_cols_view_t &out_entries,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-#ifndef KOKKOS_ENABLE_CUDA
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
@@ -2318,8 +2426,7 @@ void kk_create_incidence_matrix_from_lower_triangle(
       tmp);
 
       out_entries = outcols;
-#endif
-  }
+}
 
 
 
@@ -2339,7 +2446,6 @@ void kk_create_incidence_matrix_from_original_matrix(
     permutation_view_t permutation,
     bool use_dynamic_scheduling = false,
     bool chunksize = 4){
-#ifndef KOKKOS_ENABLE_CUDA
 
   //typedef typename row_map_view_t::const_type const_row_map_view_t;
   //typedef typename cols_view_t::const_type   const_cols_view_t;
@@ -2460,7 +2566,6 @@ void kk_create_incidence_matrix_from_original_matrix(
       tmp);
 
       out_entries = outcols;*/
-#endif
   }
 
 

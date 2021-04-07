@@ -11,8 +11,9 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/SkinMesh.hpp>
-#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.h>
+#include <stk_unit_test_utils/StkMeshFromGeneratedMesh.hpp>
 #include <stk_util/environment/WallTime.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <test_utils/OptionsForTesting.hpp>
 #include <integrationtest/MeshUtilsForBoundingVolumes.hpp>
 #include <unit_tests/UnitTestUtils.hpp>
@@ -400,7 +401,7 @@ TEST(LoadBalance, zoltan2Adapter)
         zoltan2Graph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
                                                        graphSettings,
                                                        adjacencyProcs,
-                                                       stkMeshBulkData.mesh_meta_data().locally_owned_part(),
+                                                       stkMeshBulkData.mesh_meta_data().universal_part(),
                                                        localIds);
 
         std::vector<size_t> counts;
@@ -491,7 +492,7 @@ TEST(LoadBalance, DISABLED_createGraphEdgesUsingNodeConnectivity)
         stk::balance::GraphCreationSettings graphSettings;
         std::vector<int> adjacencyProcs;
 
-        stk::mesh::Selector mySelector = stkMeshBulkData.mesh_meta_data().locally_owned_part();
+        stk::mesh::Selector mySelector = stkMeshBulkData.mesh_meta_data().universal_part();
         myGraph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
                                                   graphSettings,
                                                   adjacencyProcs,
@@ -572,7 +573,7 @@ TEST(LoadBalance, zoltan2coloring)
         zoltan2Graph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
                                                        coloringSettings,
                                                        adjacencyProcs,
-                                                       stkMeshBulkData.mesh_meta_data().locally_owned_part(),
+                                                       stkMeshBulkData.mesh_meta_data().universal_part(),
                                                        localIds);
 
         std::vector<size_t> counts;
@@ -643,7 +644,7 @@ TEST(LoadBalance, ourColoring)
         myGraph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
                                                   coloringSettings,
                                                   adjacencyProcs,
-                                                  stkMeshBulkData.mesh_meta_data().locally_owned_part(),
+                                                  stkMeshBulkData.mesh_meta_data().universal_part(),
                                                   localIds);
 
         std::vector<int> coloring(myGraph.get_vertex_ids().size(), std::numeric_limits<int>::max());
@@ -699,7 +700,7 @@ void checkMeshIsLoadBalanced(const stk::balance::BalanceSettings& balanceSetting
     zoltan2Graph.fillZoltan2AdapterDataFromStkMesh(stkMeshBulkData,
                                                    balanceSettings,
                                                    adjacencyProcs,
-                                                   stkMeshBulkData.mesh_meta_data().locally_owned_part(),
+                                                   stkMeshBulkData.mesh_meta_data().universal_part(),
                                                    localIds);
 
     struct LoadBalanceDiagnostics diagnostics;
@@ -772,8 +773,10 @@ TEST(LoadBalance, MxN_decomposition)
 
         unsigned num_procs_decomp = static_cast<unsigned>(options.numSubdomains());
         stk::mesh::EntityProcVec decomp;
-        std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().locally_owned_part()};
-        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(loadBalanceSettings, num_procs_decomp, decomp, stkMeshBulkData, selectors);
+        std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().universal_part()};
+        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
+                                                                     stkMeshBulkData.parallel(), num_procs_decomp,
+                                                                     loadBalanceSettings, decomp);
 
         std::string output_file_name = "output.exo";
         balance_utils::putEntityProcOnMeshField(stkMeshBulkData, decomp);
@@ -876,10 +879,7 @@ TEST(LoadBalance, MxN_decomposition)
 TEST(LoadBalance, findBoundaryNodesAndFaces)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = -1;
-    MPI_Comm_size(communicator, &numProcs);
-    int me;
-    MPI_Comm_rank(communicator, &me);
+    int numProcs = stk::parallel_machine_size(communicator);
 
     Options options = getOptionsForTest("generated:3x3x3");
 
@@ -893,29 +893,17 @@ TEST(LoadBalance, findBoundaryNodesAndFaces)
         stk::mesh::PartVector add_parts(1, &skin_part);
         stk::mesh::skin_mesh(stkMeshBulkData, stkMeshBulkData.mesh_meta_data().locally_owned_part(), add_parts);
 
-        const stk::mesh::BucketVector &nodeBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, skin_part);
-        const stk::mesh::BucketVector &faceBuckets = stkMeshBulkData.get_buckets(stk::topology::FACE_RANK, skin_part);
+        unsigned numNodes = stk::mesh::count_selected_entities(skin_part, stkMeshBulkData.buckets(stk::topology::NODE_RANK));
 
-        unsigned numNodes = 0;
-        for(size_t i = 0; i < nodeBuckets.size(); i++)
-        {
-            numNodes += nodeBuckets[i]->size();
-        }
+        unsigned numFaces = stk::mesh::count_selected_entities(skin_part, stkMeshBulkData.buckets(stk::topology::FACE_RANK));
 
-        unsigned numFaces = 0;
-        for(size_t i = 0; i < faceBuckets.size(); i++)
-        {
-            numFaces += faceBuckets[i]->size();
-        }
-
-        std::vector<size_t> counts;
-        stk::mesh::count_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData, counts);
+        unsigned numElems = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
         if(!options.overRideTest())
         {
             EXPECT_EQ(56u, numNodes);
             EXPECT_EQ(54u, numFaces);
-            EXPECT_EQ(27u, counts[stk::topology::ELEMENT_RANK]);
+            EXPECT_EQ(27u, numElems);
         }
     }
 }
@@ -978,7 +966,7 @@ TEST(LoadBalance, doOneElementSearch)
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::GraphCreationSettings settings;
         settings.setToleranceForFaceSearch( 0.1 );
-        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, settings, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
+        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, settings, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().universal_part());
 
         size_t goldNumFaceBoxes = 6u;
         EXPECT_EQ(goldNumFaceBoxes, faceBoxes.size());
@@ -1092,7 +1080,7 @@ TEST(LoadBalance, doSearch)
         const stk::mesh::FieldBase* coord = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::NODE_RANK, "coordinates");
         stk::balance::GraphCreationSettings settings;
         settings.setToleranceForFaceSearch( 0.1 );
-        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, settings, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().locally_owned_part());
+        stk::balance::internal::fillFaceBoxesWithIds(stkMeshBulkData, settings, coord, faceBoxes, stkMeshBulkData.mesh_meta_data().universal_part());
 
         std::vector<stk::balance::internal::StkBox> faceItems(faceBoxes.size());
         for(size_t i = 0; i < faceBoxes.size(); i++)
@@ -1170,7 +1158,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
                                                                 stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
         std::vector<double> vertexWeights(numElements, 1);
-        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
         unsigned numEdgesCreated = 2;
         EXPECT_EQ(numEdgesCreated, graphEdges.size());
@@ -1179,7 +1167,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
 
         }
@@ -1287,7 +1276,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
         size_t numElements = stk::mesh::count_selected_entities(stkMeshBulkData.mesh_meta_data().locally_owned_part(),
                                                                         stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
         std::vector<double> vertexWeights(numElements, 1);
-        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
         unsigned numEdgesCreated = 2;
         EXPECT_EQ(numEdgesCreated, graphEdges.size());
@@ -1296,7 +1285,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
 
         }
@@ -1343,7 +1333,7 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
                                                                         stkMeshBulkData.buckets(stk::topology::ELEM_RANK));
 
         std::vector<double> vertexWeights(numElements, 1);
-        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.locally_owned_part());
+        stk::balance::internal::addGraphEdgesUsingBBSearch(stkMeshBulkData, loadBalanceSettings, graphEdges, meta.universal_part());
 
         unsigned numEdgesCreated = 12;
         EXPECT_EQ(numEdgesCreated, graphEdges.size());
@@ -1352,7 +1342,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
         }
     }

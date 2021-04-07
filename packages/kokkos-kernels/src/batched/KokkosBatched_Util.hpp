@@ -26,21 +26,22 @@
 
 // TPL macros
 #if defined (KOKKOSKERNELS_ENABLE_TPL_MKL) 
-#define __KOKKOSBATCHED_INTEL_MKL__ 1
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL__ 1
 #include "mkl_version.h"
 #if __INTEL_MKL__ >= 2018
-#define __KOKKOSBATCHED_INTEL_MKL_BATCHED__ 1    
-#define __KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__ 1
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_BATCHED__ 1    
+#define __KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__ 1
 #include "mkl.h"
   //#include "mkl_types.h"
 #endif
 #endif
 
-namespace KokkosBatched {
-
-#if defined (KOKKOSKERNELS_ENABLE_TPL_CUBLAS)
-#define __KOKKOSKERNELS_NVIDIA_CUBLAS__ 1
+#if defined(KOKKOSKERNELS_ENABLE_TPL_LAPACKE)
+#define __KOKKOSBATCHED_ENABLE_LAPACKE__ 1
+#include "lapacke.h"
 #endif
+
+namespace KokkosBatched {
 
 #define Int2StringHelper(A) #A
 #define Int2String(A) Int2StringHelper(A)
@@ -241,12 +242,20 @@ namespace KokkosBatched {
     struct NonUnit { static const bool use_unit_diag = false; };
   };
 
+  struct Direct {
+    struct Forward {};
+    struct Backward {};
+  };
+
   struct Mode {
     struct Serial {
       static const char *name() { return "Serial"; }        
     };
     struct Team {
       static const char *name() { return "Team"; }
+    };
+    struct TeamVector {
+      static const char *name() { return "TeamVector"; }
     };
   };
 
@@ -261,11 +270,16 @@ namespace KokkosBatched {
         // regieter blocking (not about team parallelism).
         // this mb should vary according to
         // - team policy (smaller) or range policy (bigger)
-        // - space (cuda vs host)
+        // - space (gpu vs host)
         // - blocksize input (blk <= 4 mb = 2, otherwise mb = 4), etc.
 #if defined(KOKKOS_ENABLE_CUDA)
         template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
+        ::type mb() { return 2; }
+#endif
+#if defined(KOKKOS_ENABLE_HIP)
+        template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
+        typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::Experimental::HIPSpace>::value,int>
         ::type mb() { return 2; }
 #endif
         template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
@@ -278,13 +292,25 @@ namespace KokkosBatched {
       struct CompactMKL {
         static const char* name() { return "CompactMKL"; }
       };
+
+      // When this is first developed, unblocked algorithm is a naive implementation 
+      // and blocked algorithm uses register blocking variant of algorithm (manual unrolling). 
+      // This distinction is almost meaningless and it just adds more complications. 
+      // Eventually, the blocked version will be removed and we only use the default 
+      // algorithm. For testing and development purpose, we still leave algorithm tag
+      // in the template arguments.
+      using Default = Unblocked;
     };
 
     using Gemm = Level3;
     using Trsm = Level3;
+    using Trmm = Level3;
+    using Trtri = Level3;
     using LU   = Level3;
     using InverseLU = Level3;
     using SolveLU   = Level3;
+    using QR = Level3;
+    using UTV = Level3;
 
     struct Level2 {
       struct Unblocked {};
@@ -300,16 +326,30 @@ namespace KokkosBatched {
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::CudaSpace>::value,int>
         ::type mb() { return 1; }
 #endif
+#if defined(KOKKOS_ENABLE_HIP)
+        template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
+        typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::Experimental::HIPSpace>::value,int>
+        ::type mb() { return 1; }
+#endif
         template<typename ActiveMemorySpaceType> KOKKOS_INLINE_FUNCTION static constexpr
         typename std::enable_if<std::is_same<ActiveMemorySpaceType,Kokkos::HostSpace>::value,int>
         ::type mb() { return 4; }
       };
       struct MKL {};
       struct CompactMKL {};
+
+      // When this is first developed, unblocked algorithm is a naive implementation 
+      // and blocked algorithm uses register blocking variant of algorithm (manual unrolling). 
+      // This distinction is almost meaningless and it just adds more complications. 
+      // Eventually, the blocked version will be removed and we only use the default 
+      // algorithm. For testing and development purpose, we still leave algorithm tag
+      // in the template arguments.
+      using Default = Unblocked;
     };
 
     using Gemv = Level2;
     using Trsv = Level2;
+    using ApplyQ = Level2;
 
     //         struct Level1 {
     //           struct Unblocked {};

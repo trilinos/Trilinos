@@ -69,10 +69,11 @@ namespace Intrepid2
    
    This functor is not intended for use outside of LegendreBasis_HVOL_LINE.
   */
-  template<class ExecutionSpace, class OutputScalar, class PointScalar,
+  template<class DeviceType, class OutputScalar, class PointScalar,
   class OutputFieldType, class InputPointsType>
   struct Hierarchical_HVOL_LINE_Functor
   {
+    using ExecutionSpace     = typename DeviceType::execution_space;
     using ScratchSpace       = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView  = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using PointScratchView   = Kokkos::View<PointScalar*, ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -177,21 +178,25 @@ namespace Intrepid2
                Computers & Mathematics with Applications, Volume 70, Issue 4, 2015, Pages 353-458, ISSN 0898-1221.
                https://doi.org/10.1016/j.camwa.2015.04.027.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
   class LegendreBasis_HVOL_LINE
-  : public Basis<ExecutionSpace,OutputScalar,PointScalar>
+  : public Basis<DeviceType,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
+    using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
+    using HostBasis = LegendreBasis_HVOL_LINE<typename Kokkos::HostSpace::device_type,OutputScalar,PointScalar>;
     
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType OutputViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType  PointViewType;
-    typedef typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType ScalarViewType;
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType ;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
+    EPointType pointType_;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order of the basis.
@@ -201,10 +206,12 @@ namespace Intrepid2
      polynomial order.
      
      */
-    LegendreBasis_HVOL_LINE(int polyOrder)
+    LegendreBasis_HVOL_LINE(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    polyOrder_(polyOrder)
+    polyOrder_(polyOrder),
+    pointType_(pointType)
     {
+      INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
       this->basisCardinality_  = polyOrder+1;
       this->basisDegree_       = polyOrder;
       this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
@@ -256,7 +263,7 @@ namespace Intrepid2
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)
-    using Basis<ExecutionSpace,OutputScalar,PointScalar>::getValues;
+    using BasisBase::getValues;
     
     /** \brief  Returns basis name
      
@@ -291,7 +298,7 @@ namespace Intrepid2
     {
       auto numPoints = inputPoints.extent_int(0);
       
-      using FunctorType = Hierarchical_HVOL_LINE_Functor<ExecutionSpace, OutputScalar, PointScalar, OutputViewType, PointViewType>;
+      using FunctorType = Hierarchical_HVOL_LINE_Functor<DeviceType, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
       FunctorType functor(outputValues, inputPoints, polyOrder_, operatorType);
       
@@ -300,8 +307,21 @@ namespace Intrepid2
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
       
+      using ExecutionSpace = typename BasisBase::ExecutionSpace;
+      
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
       Kokkos::parallel_for( policy , functor, "Hierarchical_HVOL_LINE_Functor");
+    }
+    
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar>
+    getHostBasis() const override {
+      using HostDeviceType = typename Kokkos::HostSpace::device_type;
+      using HostBasisType  = LegendreBasis_HVOL_LINE<HostDeviceType, OutputScalar, PointScalar>;
+      return Teuchos::rcp( new HostBasisType(polyOrder_, pointType_) );
     }
   };
 } // end namespace Intrepid2

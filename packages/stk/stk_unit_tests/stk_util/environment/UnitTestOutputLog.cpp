@@ -32,15 +32,18 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
+#include "gtest/gtest.h"
+#include "stk_util/parallel/Parallel.hpp"
+#include "stk_util/environment/OutputLog.hpp"
 #include <iostream>
 #include <fstream>
 #include <stdexcept>
-#include <stk_util/environment/OutputLog.hpp>
 
-#include <gtest/gtest.h>
 
 TEST(UnitTestOutputLog, UnitTest)
 {
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) > 1) { GTEST_SKIP(); }
+
   // UseCase-Environment registers a bunch of things automatically, some of
   // which conflict with this test. We unregister the conflicting streams
   // here.
@@ -197,3 +200,4 @@ TEST(UnitTestOutputLog, UnitTest)
     stk::unregister_ostream(out);
   }
 }
+

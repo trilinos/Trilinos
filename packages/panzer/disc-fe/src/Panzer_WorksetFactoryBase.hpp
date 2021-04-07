@@ -53,6 +53,9 @@
 
 namespace panzer {
 
+// Used to apply orientations to worksets constructed by factory
+class OrientationsInterface;
+
 /** Pure virtual base class used to construct 
   * worksets on volumes and side sets.
   */
@@ -81,6 +84,29 @@ public:
    Teuchos::RCP<std::vector<panzer::Workset> >
    getWorksets(const WorksetDescriptor & worksetDesc,
                const panzer::WorksetNeeds & needs) const = 0;
+
+   /**
+    * \brief Used to apply orientations to any bases added to the worksets
+    *
+    * \param[in] orientations Orientations object used to apply orientations to worksets
+    */
+   void
+   setOrientationsInterface(const Teuchos::RCP<const panzer::OrientationsInterface> & orientations)
+   {orientations_ = orientations;}
+
+   /**
+    * \brief Get the orientations associated with the worksets
+    *
+    * \return Orientations information
+    */
+   Teuchos::RCP<const OrientationsInterface>
+   getOrientationsInterface() const
+   {return orientations_;}
+
+protected:
+
+   /// Indexer used for applying orientations
+   Teuchos::RCP<const OrientationsInterface> orientations_;
 };
 
 }

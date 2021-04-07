@@ -11,6 +11,7 @@
 
 #include "Tempus_config.hpp"
 #include "Tempus_StepperExplicit.hpp"
+#include "Tempus_StepperNewmarkExplicitAFormAppAction.hpp"
 
 namespace Tempus {
 
@@ -35,24 +36,58 @@ namespace Tempus {
  *  where \f$\mathbf{v} = \dot{\mathbf{x}}\f$ and \f$\mathbf{d} = \mathbf{x}\f$.
  *
  *  <b> Algorithm </b>
- *  The algorithm for the Newmark explicit A-form is
- *   - if ( !useFSAL )
- *     - \f$\mathbf{a}^{n-1} =
- *          \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})\f$
- *   - \f$\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
- *                            + \Delta t^2 \mathbf{a}^{n-1} / 2\f$
- *   - \f$\mathbf{v}^{\ast} =
- *        \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}\f$
- *   - \f$\mathbf{a}^{\ast} =
- *        \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})\f$
- *   - \f$\mathbf{d}^n = \mathbf{d}^{\ast}\f$
- *   - \f$\mathbf{v}^n =
- *        \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}\f$
- *   - if ( useFSAL )
- *     - \f$\mathbf{a}^n =
- *          \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)\f$
+ *  The algorithm for the Newmark Explicit A-form is
  *
- *  The default for Forward Euler is to use FSAL (useFSAL=true).
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Newmark Explicit A-form \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf if (Not ``Use FSAL'' or (previous step failed)) then}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $\mathbf{a}^{n-1} =
+ *                   \bar{\mathbf{f}}(\mathbf{d}^{n-1}, \mathbf{v}^{n-1}, t^{n-1})$
+ *      \item {\bf endif}
+ *      \item $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                               + \Delta t^2 \mathbf{a}^{n-1} / 2$
+ *      \item $\mathbf{v}^{\ast} =
+ *            \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
+ *      \item $\mathbf{a}^{\ast} =
+ *            \bar{\mathbf{f}}(\mathbf{d}^{\ast}, \mathbf{v}^{\ast}, t^{n-1})$
+ *      \item $\mathbf{d}^n = \mathbf{d}^{\ast}$
+ *      \item $\mathbf{v}^n =
+ *            \mathbf{v}^{\ast} + \Delta t \gamma \mathbf{a}^{\ast}$
+ *      \item {\bf if (``Use FSAL'') then}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $\mathbf{a}^n =
+ *                   \bar{\mathbf{f}}(\mathbf{d}^n, \mathbf{v}^n, t^n)$
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
+ *
+ *  Note that with useFSAL=false \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not
+ *  at the same time level at the end of the time step (i.e., they are not
+ *  sync'ed).
+ *
+ *  To have them at the same time level, we can use the First-Same-As-Last
+ *  (FSAL) principle where the function evaulation from the last time step
+ *  can be used as the first function evalulation of the current step.
+ *
+ *  The default is to use FSAL (useFSAL=true), but will also work
+ *  with useFSAL=false.  Using useFSAL=true does assume that the
+ *  solution, \f$x\f$, its time derivative, \f$\dot{x}\f$, and its
+ *  second time derivative, \f$\ddot{x}\f$, are consistent at the
+ *  initial conditions (ICs), i.e.,
+ *  \f$\ddot{x}_{0} = \bar{f}(x_{0},\dot{x}_{0},t_{0})\f$.
+ *  This can be ensured by setting setICConsistency("Consistent"),
+ *  and checked with setICConsistencyCheck(true).
+ *
  */
 template<class Scalar>
 class StepperNewmarkExplicitAForm
@@ -67,22 +102,18 @@ public:
   */
   StepperNewmarkExplicitAForm();
 
+
   /// Constructor
   StepperNewmarkExplicitAForm(
     const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-    const Teuchos::RCP<StepperObserver<Scalar> >& obs,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
-    Scalar gamma);
+    Scalar gamma,
+    const Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> >& stepperAppAction);
 
-  /// \name Basic stepper methods
-  //@{
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
+    virtual Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > getAppAction() const
+    { return stepperNewmarkExpAppAction_; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (
@@ -110,7 +141,7 @@ public:
       {return isExplicit() and isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
-
+    virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
 
@@ -152,15 +183,27 @@ public:
     this->isInitialized_ = false;
   }
 
-  bool getUseFSALDefault() const { return true; }
-  std::string getICConsistencyDefault() const { return "Consistent"; }
+  virtual void setAppAction(
+      Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > appAction);
 
 protected:
 
   Scalar gammaDefault_;
   Scalar gamma_;
+  Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> > stepperNewmarkExpAppAction_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkExplicitAForm<Scalar> >
+createStepperNewmarkExplicitAForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 } // namespace Tempus
 
 #endif // Tempus_StepperNewmarkExplicitAForm_decl_hpp

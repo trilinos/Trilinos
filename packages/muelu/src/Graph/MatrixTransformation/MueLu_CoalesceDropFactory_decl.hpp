@@ -50,6 +50,7 @@
 #include <Xpetra_MultiVector_fwd.hpp>
 #include <Xpetra_VectorFactory_fwd.hpp>
 #include <Xpetra_Vector_fwd.hpp>
+#include <Xpetra_ExportFactory_fwd.hpp>
 #include <Xpetra_ImportFactory_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 #include <Xpetra_CrsGraph_fwd.hpp>
@@ -75,7 +76,7 @@ namespace MueLu {
 
   /*!
     @class CoalesceDropFactory
-    @brief Factory for creating a graph base on a given matrix.
+    @brief Factory for creating a graph based on a given matrix.
 
     Factory for creating graphs from matrices with entries selectively dropped.
 
@@ -87,10 +88,10 @@ namespace MueLu {
 
     - one DOF per node without dropping (i.e. "aggregation: drop tol" = 0.0)
     - one DOF per node with dropping (i.e. "aggregation: drop tol" > 0.0)
-    - DOFs per node > 1 withouth dropping
-    - DOFs per node > 1 with dropping
+    - number of DOFs per node > 1 withouth dropping
+    - number of DOFs per node > 1 with dropping
 
-    Additionally there is a code path for the distance-laplacian mode.
+    Additionally, there is a code path for the distance-laplacian mode.
 
     ## Input/output of CoalesceDropFactory ##
 
@@ -172,6 +173,11 @@ namespace MueLu {
     //! Method to merge rows of matrix for systems of PDEs.
     void MergeRows(const Matrix& A, const LO row, Array<LO>& cols, const Array<LO>& translation) const;
     void MergeRowsWithDropping(const Matrix& A, const LO row, const ArrayRCP<const SC>& ghostedDiagVals, SC threshold, Array<LO>& cols, const Array<LO>& translation) const;
+
+
+    // When we want to decouple a block diagonal system (returns Teuchos::null if generate_matrix is false)
+    Teuchos::RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > BlockDiagonalize(Level & currentLevel,const RCP<Matrix> & A, bool generate_matrix) const;
+
   }; //class CoalesceDropFactory
 
 } //namespace MueLu

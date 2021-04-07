@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "fmt/color.h"
@@ -68,7 +68,7 @@ void ERR_OUT(std::ostringstream &buf)
   }
 }
 
-void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color)
+void DIFF_OUT(std::ostringstream &buf, fmt::detail::color_type color)
 {
   if (term_out()) {
     fmt::print(fmt::fg(color), "{}\n", buf.str());
@@ -78,7 +78,7 @@ void DIFF_OUT(std::ostringstream &buf, fmt::internal::color_type color)
   }
 }
 
-void DIFF_OUT(const std::string &buf, fmt::internal::color_type color)
+void DIFF_OUT(const std::string &buf, fmt::detail::color_type color)
 {
   if (term_out()) {
     fmt::print(fmt::fg(color), "{}\n", buf);

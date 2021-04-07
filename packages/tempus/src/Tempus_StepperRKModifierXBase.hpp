@@ -13,6 +13,7 @@
 #include "Tempus_SolutionHistory.hpp"
 #include "Tempus_StepperRKAppAction.hpp"
 
+#include "Teuchos_SerialDenseVector.hpp"
 
 namespace Tempus {
 
@@ -28,22 +29,11 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the RK algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Backward Euler with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State \quad {\it modifierX.modify(x, time, dt, XDOT\_END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperRKModifierXBase::MODIFIER_TYPE
+ *  which correspond to the RK AppActions
+ *  (StepperRKAppAction::ACTION_LOCATION)
+ *  in takeStep are documented in each of the RK Algorithm sections:
+ *  StepperExplicitRK, StepperDIRK and StepperIMEX_RK.
  */
 template<class Scalar>
 class StepperRKModifierXBase
@@ -72,52 +62,49 @@ private:
     using Teuchos::RCP;
 
     MODIFIER_TYPE modType = X_BEGIN_STEP;
+    const int stageNumber = stepper->getStageNumber();
+    Teuchos::SerialDenseVector<int,Scalar> c = stepper->getTableau()->c();
     RCP<SolutionState<Scalar> > workingState = sh->getWorkingState();
-    const Scalar time = workingState->getTime();
-    const Scalar dt   = workingState->getTimeStep();
-    RCP<Thyra::VectorBase<Scalar> > x;
+    const Scalar dt = workingState->getTimeStep();
+    Scalar time = sh->getCurrentState()->getTime();
+    if (stageNumber >= 0) time += c(stageNumber)*dt;
+    RCP<Thyra::VectorBase<Scalar> > x = workingState->getX();
 
     switch(actLoc) {
       case StepperRKAppAction<Scalar>::BEGIN_STEP:
       {
         modType = X_BEGIN_STEP;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEGIN_STAGE:
       {
         modType = X_BEGIN_STAGE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEFORE_SOLVE:
       {
         modType = X_BEFORE_SOLVE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::AFTER_SOLVE:
       {
         modType = X_AFTER_SOLVE;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::BEFORE_EXPLICIT_EVAL:
       {
         modType = X_BEFORE_EXPLICIT_EVAL;
-        x = workingState->getX();
         break;
       }
       case StepperRKAppAction<Scalar>::END_STAGE:
       {
-        modType = XDOT_END_STAGE;
-        x = stepper->getStepperXDot(workingState);
+        modType = X_END_STAGE;
         break;
       }
       case StepperRKAppAction<Scalar>::END_STEP:
       {
         modType = X_END_STEP;
-        x = workingState->getX();
+        time = workingState->getTime();
         break;
       }
       default:
@@ -125,7 +112,7 @@ private:
         "Error - unknown action location.\n");
     }
 
-    this->modify(x, time, dt, modType);
+    this->modify(x, time, dt, stageNumber, modType);
   }
 
 public:
@@ -137,7 +124,7 @@ public:
     X_BEFORE_SOLVE,         ///< Modify \f$x\f$ before the implicit solve.
     X_AFTER_SOLVE,          ///< Modify \f$x\f$ after the implicit solve.
     X_BEFORE_EXPLICIT_EVAL, ///< Modify \f$x\f$ before the explicit evaluation.
-    XDOT_END_STAGE,         ///< Modify \f$\dot{x}\f$ at the end of the stage.
+    X_END_STAGE,            ///< Modify \f$x\f$ at the end of the stage.
     X_END_STEP              ///< Modify \f$x\f$ at the end of the step.
   };
 
@@ -145,6 +132,7 @@ public:
   virtual void modify(
     Teuchos::RCP<Thyra::VectorBase<Scalar> > /* x */,
     const Scalar /* time */, const Scalar /* dt */,
+    const int /* stageNumber */,
     const MODIFIER_TYPE modType) = 0;
 
 };

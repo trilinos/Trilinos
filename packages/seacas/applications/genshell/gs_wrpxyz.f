@@ -1,34 +1,12 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
       SUBROUTINE WRPXYZ (XN, YN, XN3, YN3, ZN3, ATRIB)
 C=======================================================================
-
-C   $Id: wrpxyz.f,v 1.5 1993/05/27 22:17:06 gdsjaar Exp $
-C   $Log: wrpxyz.f,v $
-C   Revision 1.5  1993/05/27 22:17:06  gdsjaar
-C   Added new ellipse transformation code
-C
-c Revision 1.4  1991/07/31  17:30:53  gdsjaar
-c Added WARP AXIS VERTICAL command to map to surface
-c without changing input X and Y coordinates.  Updated Version to X0.01.00
-c
-c Revision 1.3  1991/01/11  08:39:58  gdsjaar
-c Removed DEBUG comment lines
-c
-c Revision 1.2  91/01/09  12:59:47  gdsjaar
-c Initial conversion from GEN3D to GENSHELL, no BC yet
-c
-c Revision 1.1.1.1  90/08/20  12:23:33  gdsjaar
-c Gen3D Mesh Generation Program
-c
-c Revision 1.1  90/08/20  12:23:31  gdsjaar
-c Initial revision
-c
 
 C   --*** WRPXYZ *** (GEN3D) Calculate 3D coordinates
 C   --   Written by Amy Gilkey - revised 05/09/88
@@ -57,9 +35,9 @@ C   --      CENTER, NUMCOL, NUMROW of /PARAMS/
       REAL ATRIB(NUMEL)
 
       IF (IWARP .EQ. 1) THEN
-C
+
 C ... Warp type 1: Point Centered
-C
+
          DO 100 INP = 1, NUMNP
             XN3(INP) = XN(INP)
             YN3(INP) = YN(INP)
@@ -68,9 +46,9 @@ C
 
          CONTINUE
       ELSE IF (IWARP .EQ. -1) THEN
-C
+
 C ... Warp type -1: X Axis Centered
-C
+
          DO 110 INP = 1, NUMNP
             THET = YN(INP) / DWARP
             XN3(INP) = XN(INP)
@@ -79,9 +57,9 @@ C
   110    CONTINUE
 
       ELSE IF (IWARP .EQ. -2) THEN
-C
+
 C ... Warp type -2: Y Axis Centered
-C
+
          DO 120 INP = 1, NUMNP
             THET = XN(INP) / DWARP
             XN3(INP) = SIN(THET) * DWARP
@@ -90,9 +68,9 @@ C
   120    CONTINUE
 
       ELSE IF (IWARP .EQ. -3) THEN
-C
+
 C ... Warp type -3: X Axis Centered, Project straight up
-C
+
          DO 130 INP = 1, NUMNP
             XN3(INP) = XN(INP)
             YN3(INP) = YN(INP)
@@ -100,9 +78,9 @@ C
   130    CONTINUE
 
       ELSE IF (IWARP .EQ. -4) THEN
-C
+
 C ... Warp type -4: Y Axis Centered, Project straight up
-C
+
          DO 140 INP = 1, NUMNP
             XN3(INP) = XN(INP)
             YN3(INP) = YN(INP)
@@ -110,9 +88,9 @@ C
   140    CONTINUE
 
       ELSE IF (IWARP .EQ. 2) THEN
-C
+
 C ... Warp type 2: Point-Centered Ellipse
-C
+
          DO 150 INP = 1, NUMNP
             DX = XN(INP)
             DY = YN(INP)

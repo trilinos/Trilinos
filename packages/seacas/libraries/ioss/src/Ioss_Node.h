@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Node_h
@@ -20,6 +20,7 @@ namespace Ioss {
     static const char *name;
 
     static void factory();
+    Node(const Node &) = delete;
     ~Node() override;
 
     ElementShape shape() const override { return ElementShape::POINT; }
@@ -48,8 +49,6 @@ namespace Ioss {
 
   private:
     static Node instance_;
-
-    Node(const Node &) = delete;
   };
 } // namespace Ioss
 #endif

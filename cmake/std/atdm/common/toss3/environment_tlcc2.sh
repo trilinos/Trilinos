@@ -24,7 +24,7 @@ module purge &> /dev/null
 module purge
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
-module load cmake/3.12.2
+module load sems-cmake/3.19.1
 module load sems-ninja_fortran/1.8.2
 
 if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
@@ -47,7 +47,7 @@ if [ "$ATDM_CONFIG_COMPILER" == "INTEL" ]; then
     module load sems-boost/1.66.0/base
 
     module swap mkl/18.0.0.128 mkl/18.0.5.274
-    module load gcc/4.9.3
+    module load cde/v1/compiler/gcc/7.2.0
     module unload sems-python/2.7.9
     export BOOST_ROOT=$SEMS_BOOST_ROOT
     export HDF5_ROOT=$SEMS_HDF5_ROOT

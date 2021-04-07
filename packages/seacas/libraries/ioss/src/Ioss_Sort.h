@@ -1,26 +1,23 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Sort_h
 #define IOSS_Ioss_Sort_h
 
+#include <pdqsort.h>
+
 #include <cstddef>
 #include <vector>
+#if 0
 
 // This is used instead of the std::sort since we were having issues
 // with the std::sort on some compiler versions with certain options
 // enabled (-fopenmp).  If this shows up as a hotspot in performance
 // measurements, then we can use std::sort on most platforms and just
 // use this version where there are compiler issues.
-
-// Using Explicit Template Instantiation with the types:
-//
-// std::vector<int>, std::vector<int64_t>, std::vector<std::pair<int64_t,int64_t>>
-//
-// Update in Ioss_Sort.C if other types are needed.
 
 namespace {
   const int QSORT_CUTOFF = 12;
@@ -66,13 +63,10 @@ namespace {
 
   template <typename INT> void qsort_int(INT v[], size_t left, size_t right)
   {
-    size_t pivot;
-    size_t i, j;
-
     if (left + QSORT_CUTOFF < right) {
-      pivot = median3(v, left, right);
-      i     = left;
-      j     = right - 1;
+      size_t pivot = median3(v, left, right);
+      size_t i     = left;
+      size_t j     = right - 1;
 
       for (;;) {
         while (v[++i] < v[pivot]) {
@@ -97,16 +91,14 @@ namespace {
 
   template <typename INT> void isort_int(INT v[], size_t N)
   {
-    size_t i, j;
+    size_t j;
     size_t ndx = 0;
-    INT    small;
-    INT    tmp;
 
     if (N <= 1) {
       return;
     }
-    small = v[0];
-    for (i = 1; i < N; i++) {
+    INT small = v[0];
+    for (size_t i = 1; i < N; i++) {
       if (v[i] < small) {
         small = v[i];
         ndx   = i;
@@ -115,8 +107,8 @@ namespace {
     /* Put smallest value in slot 0 */
     SWAP(v, 0, ndx);
 
-    for (i = 1; i < N; i++) {
-      tmp = v[i];
+    for (size_t i = 1; i < N; i++) {
+      INT tmp = v[i];
       for (j = i; tmp < v[j - 1]; j--) {
         v[j] = v[j - 1];
       }
@@ -124,6 +116,7 @@ namespace {
     }
   }
 } // namespace
+#endif
 
 namespace Ioss {
   template <typename INT> void qsort(std::vector<INT> &v)
@@ -131,8 +124,30 @@ namespace Ioss {
     if (v.size() <= 1) {
       return;
     }
+#if 0
     qsort_int(v.data(), 0, v.size() - 1);
     isort_int(v.data(), v.size());
+#else
+    pdqsort(v.begin(), v.end());
+#endif
+  }
+
+  template <class Iter, class Comp> inline void sort(Iter begin, Iter end, Comp compare)
+  {
+#if USE_STD_SORT
+    std::sort(begin, end, compare);
+#else
+    pdqsort(begin, end, compare);
+#endif
+  }
+
+  template <class Iter> inline void sort(Iter begin, Iter end)
+  {
+#if USE_STD_SORT
+    std::sort(begin, end);
+#else
+    pdqsort(begin, end);
+#endif
   }
 } // namespace Ioss
 

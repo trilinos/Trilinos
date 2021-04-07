@@ -10,6 +10,7 @@
 #define Tempus_StepperImplicit_decl_hpp
 
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
 
@@ -310,6 +311,12 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
+  /// Set StepperImplicit member data from the ParameterList.
+  void setStepperImplicitValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
+  /// Set solver from ParameterList.
+  void setStepperSolverValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
 protected:
 
   Teuchos::RCP<WrapperModelEvaluator<Scalar> >        wrapperModel_;
@@ -317,7 +324,6 @@ protected:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> >      initialGuess_;
   bool zeroInitialGuess_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >              stepperObserver_;
 };
 
 } // namespace Tempus

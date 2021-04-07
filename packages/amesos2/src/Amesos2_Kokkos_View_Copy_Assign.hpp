@@ -74,20 +74,37 @@ update_dst_size(dst_t & dst, const src_t & src) {  // templated just for 2d
 }
 
 // now handle type mismatch for same memory space - here types are same
+// bInitialize:
+//   If bInitialize is false, then the data needs to be allocated but not initialized.
+//   If we are about to solve into x we don't care about setting the original values.
+//   In this case, we are assigning the view directly so bInitialize does not matter.
+// bAssigned:
+//   bAssigned tells the caller if the data was simply assigned, so it is set true in this case.
 template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
-implement_copy_or_assign_same_mem_check_types(dst_t & dst, const src_t & src) {
+implement_copy_or_assign_same_mem_check_types(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
   dst = src; // just assign the ptr - no need to copy
+  bAssigned = true;
 }
 
 // now handle type mismatch for same memory space - now types are different
+// bInitialize:
+//   If bInitialize is false, then the data needs to be allocated but not initialized.
+//   If we are about to solve into x we don't care about setting the original values.
+//   In this case, we are allocating so we first make the memory via update_dst_size.
+//   Then we only copy from the source if bInitialize is true.
+// bAssigned:
+//   bAssigned tells the caller if the data was simply assigned, so it is set false in this case.
 template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<!std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
-implement_copy_or_assign_same_mem_check_types(dst_t & dst, const src_t & src) {
+implement_copy_or_assign_same_mem_check_types(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
   update_dst_size(dst, src); // allocates if necessary
-  Kokkos::deep_copy(dst, src); // full copy
+  if(bInitialize) { // bInitialize false would be for solver getting x, where the actual values are not needed
+    Kokkos::deep_copy(dst, src); // full copy
+  }
+  bAssigned = false;
 }
 
 // implement_copy_or_assign has 2 versions for matched memory and
@@ -97,16 +114,29 @@ implement_copy_or_assign_same_mem_check_types(dst_t & dst, const src_t & src) {
 template<class dst_t, class src_t> // version for same memory spaces
 typename std::enable_if<std::is_same<typename dst_t::memory_space,
   typename src_t::memory_space>::value>::type
+deep_copy_or_assign_view(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
+  implement_copy_or_assign_same_mem_check_types(bInitialize, dst, src, bAssigned);
+}
+
+// for convenience this version does not take bInitialize input and bAssigned ouput
+// then it's assumed you want bInitialize true and don't need to know bAssigned
+template<class dst_t, class src_t> // version for same memory spaces
+typename std::enable_if<std::is_same<typename dst_t::memory_space,
+  typename src_t::memory_space>::value>::type
 deep_copy_or_assign_view(dst_t & dst, const src_t & src) {
-  implement_copy_or_assign_same_mem_check_types(dst, src);
+  bool bAssigned; // output not needed
+  implement_copy_or_assign_same_mem_check_types(true, dst, src, bAssigned);
 }
 
 template<class dst_t, class src_t> // version for different memory spaces
 typename std::enable_if<std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
-implement_copy_or_assign_diff_mem_check_types(dst_t & dst, const src_t & src) {
+implement_copy_or_assign_diff_mem_check_types(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
   update_dst_size(dst, src); // allocates if necessary
-  Kokkos::deep_copy(dst, src); // full copy
+  if(bInitialize) { // bInitialize false would be for solver getting x, where the actual values are not needed
+    Kokkos::deep_copy(dst, src); // full copy
+  }
+  bAssigned = false;
 }
 
 template<class dst_t, class src_t> // version for different memory spaces
@@ -130,18 +160,31 @@ implement_copy_or_assign_diff_mem_diff_types_check_dim(dst_t & dst, const src_t 
 template<class dst_t, class src_t> // version for different memory spaces
 typename std::enable_if<!std::is_same<typename dst_t::value_type,
   typename src_t::value_type>::value>::type
-implement_copy_or_assign_diff_mem_check_types(dst_t & dst, const src_t & src) {
+implement_copy_or_assign_diff_mem_check_types(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
   update_dst_size(dst, src); // allocates if necessary
-  // since mem space and types are different, we specify the order of operations
-  // Kokkos::deep_copy won't do both since it would be a hidden deep_copy
-  implement_copy_or_assign_diff_mem_diff_types_check_dim(dst, src);
+  bAssigned = false;
+  if(bInitialize) { // bInitialize false would be for solver getting x, where the actual values are not needed
+    // since mem space and types are different, we specify the order of operations
+    // Kokkos::deep_copy won't do both since it would be a hidden deep_copy
+    implement_copy_or_assign_diff_mem_diff_types_check_dim(dst, src);
+  }
 }
 
 template<class dst_t, class src_t> // version for different memory spaces
 typename std::enable_if<!std::is_same<typename dst_t::memory_space,
   typename src_t::memory_space>::value>::type
+deep_copy_or_assign_view(bool bInitialize, dst_t & dst, const src_t & src, bool & bAssigned) {
+  implement_copy_or_assign_diff_mem_check_types(bInitialize, dst, src, bAssigned); // full copy
+}
+
+// for convenience this version does not take bInitialize input and bAssigned ouput
+// then it's assumed you want bInitialize true and don't need to know bAssigned
+template<class dst_t, class src_t> // version for different memory spaces
+typename std::enable_if<!std::is_same<typename dst_t::memory_space,
+  typename src_t::memory_space>::value>::type
 deep_copy_or_assign_view(dst_t & dst, const src_t & src) {
-  implement_copy_or_assign_diff_mem_check_types(dst, src); // full copy
+  bool bAssigned; // output not needed
+  implement_copy_or_assign_diff_mem_check_types(true, dst, src, bAssigned); // full copy
 }
 
 } // end namespace Amesos2

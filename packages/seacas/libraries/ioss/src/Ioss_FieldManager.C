@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Field.h>
 #include <Ioss_FieldManager.h>
+#include <Ioss_Sort.h>
 #include <cassert>
 #include <cstddef>
 #include <map>
@@ -98,12 +99,12 @@ int Ioss::FieldManager::describe(NameList *names) const
 {
   IOSS_FUNC_ENTER(m_);
   int the_count = 0;
-  for (auto I = fields.cbegin(); I != fields.cend(); ++I) {
-    names->push_back((*I).second.get_name());
+  for (const auto &field : fields) {
+    names->push_back(field.second.get_name());
     the_count++;
   }
   if (the_count > 0) {
-    std::sort(names->begin(), names->end());
+    Ioss::sort(names->begin(), names->end());
   }
   return the_count;
 }
@@ -119,14 +120,14 @@ int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) co
 {
   IOSS_FUNC_ENTER(m_);
   int the_count = 0;
-  for (auto I = fields.cbegin(); I != fields.cend(); ++I) {
-    if ((*I).second.get_role() == role) {
-      names->push_back((*I).second.get_name());
+  for (const auto &field : fields) {
+    if (field.second.get_role() == role) {
+      names->push_back(field.second.get_name());
       the_count++;
     }
   }
   if (the_count > 0) {
-    std::sort(names->begin(), names->end());
+    Ioss::sort(names->begin(), names->end());
   }
   return the_count;
 }

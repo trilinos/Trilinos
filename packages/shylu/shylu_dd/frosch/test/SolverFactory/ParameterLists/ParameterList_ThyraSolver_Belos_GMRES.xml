@@ -1,0 +1,12 @@
+<ParameterList name="Solver Factory Example">
+    <Parameter name="SolverType" type="string" value="ThyraSolver"/>
+    <ParameterList name="ThyraSolver">
+        <Parameter name="Linear Solver Type" type="string" value="Belos"/>
+        <ParameterList name="Linear Solver Types">
+            <ParameterList name="Belos">
+                <Parameter name="Solver Type" type="string" value="Block GMRES"/>
+            </ParameterList>
+        </ParameterList>
+        <Parameter name="Preconditioner Type" type="string" value="None"/>
+    </ParameterList>
+</ParameterList>

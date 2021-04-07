@@ -1,11 +1,12 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "io_info.h"
 #include <Ioss_Hex8.h>
+#include <Ioss_Sort.h>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
 #if defined(SEACAS_HAVE_CGNS)
@@ -54,10 +55,10 @@ namespace {
       auto mm = std::minmax_element(df.begin(), df.end());
       fmt::print("{}Distribution Factors: ", prefix);
       if (*mm.first == *mm.second) {
-        fmt::print("all values = {}\n", *mm.first);
+        fmt::print("all values = {:#}\n", *mm.first);
       }
       else {
-        fmt::print("minimum value = {}, maximum value = {}\n", *mm.first, *mm.second);
+        fmt::print("minimum value = {:#}, maximum value = {:#}\n", *mm.first, *mm.second);
       }
     }
   }
@@ -69,10 +70,7 @@ namespace {
 
   int64_t id(Ioss::GroupingEntity *entity)
   {
-    int64_t id = -1;
-    if (entity->property_exists("id")) {
-      id = entity->get_property("id").get_int();
-    }
+    int64_t id = entity->get_optional_property("id", -1);
     return id;
   }
 
@@ -97,7 +95,7 @@ namespace {
 
     const Ioss::ElementBlockContainer &ebs = region.get_element_blocks();
     for (auto eb : ebs) {
-      if (eb->get_property("topology_type").get_string() == Ioss::Hex8::name) {
+      if (eb->topology()->name() == Ioss::Hex8::name) {
         hex_volume(eb, coordinates);
       }
     }
@@ -227,7 +225,7 @@ namespace {
                    sb->get_property("offset_k").get_int());
       }
 
-      fmt::print("{:14n} cells, {:14n} nodes ", num_cell, num_node);
+      fmt::print("  {:14n} cells, {:14n} nodes ", num_cell, num_node);
 
       info_aliases(region, sb, true, false);
       Ioss::Utils::info_fields(sb, Ioss::Field::TRANSIENT, "\n\tTransient:  ");
@@ -244,12 +242,12 @@ namespace {
       if (!sb->m_boundaryConditions.empty()) {
         fmt::print("\tBoundary Conditions:\n");
         // NOTE: The sort here is just to make io_info more useful for regression testing.
-        //       With the sort, we get more reproducable output.  For now, only needed for BC...
+        //       With the sort, we get more reproducible output.  For now, only needed for BC...
         auto sb_bc = sb->m_boundaryConditions;
-        std::sort(sb_bc.begin(), sb_bc.end(),
-                  [](const Ioss::BoundaryCondition &a, const Ioss::BoundaryCondition &b) {
-                    return a.m_bcName < b.m_bcName;
-                  });
+        Ioss::sort(sb_bc.begin(), sb_bc.end(),
+                   [](const Ioss::BoundaryCondition &a, const Ioss::BoundaryCondition &b) {
+                     return a.m_bcName < b.m_bcName;
+                   });
 
         for (const auto &bc : sb_bc) {
           fmt::print("{}\n", bc);
@@ -311,7 +309,7 @@ namespace {
     for (auto eb : ebs) {
       int64_t num_elem = eb->entity_count();
 
-      std::string type       = eb->get_property("topology_type").get_string();
+      std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} elements, {:3d} attributes.", name(eb),
                  id(eb), type, num_elem, num_attrib);
@@ -347,7 +345,7 @@ namespace {
     for (auto eb : ebs) {
       int64_t num_edge = eb->entity_count();
 
-      std::string type       = eb->get_property("topology_type").get_string();
+      std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} edges, {:3d} attributes.\n", name(eb),
                  id(eb), type, num_edge, num_attrib);
@@ -375,7 +373,7 @@ namespace {
     for (auto eb : ebs) {
       int64_t num_face = eb->entity_count();
 
-      std::string type       = eb->get_property("topology_type").get_string();
+      std::string type       = eb->topology()->name();
       int64_t     num_attrib = eb->get_property("attribute_count").get_int();
       fmt::print("\n{} id: {:6d}, topology: {:>10s}, {:14n} faces, {:3d} attributes.\n", name(eb),
                  id(eb), type, num_face, num_attrib);

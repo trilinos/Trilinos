@@ -9,8 +9,10 @@
 #ifndef Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 #define Tempus_StepperStaggeredForwardSensitivity_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
+
 
 namespace Tempus {
 
@@ -86,13 +88,6 @@ public:
       Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > solver = Teuchos::null);
     virtual Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> > getSolver() const
     { return stateStepper_->getSolver(); }
-
-    /// Set Observer
-    virtual void setObserver(
-      Teuchos::RCP<StepperObserver<Scalar> > /* obs */ = Teuchos::null){}
-
-    virtual Teuchos::RCP<StepperObserver<Scalar> > getObserver() const
-    { return Teuchos::null; }
 
     /// Set the initial conditions and make them consistent.
     virtual void setInitialConditions (

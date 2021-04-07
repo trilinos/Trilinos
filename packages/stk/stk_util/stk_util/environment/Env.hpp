@@ -32,15 +32,13 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef STK_UTIL_DIAG_Env_h
-#define STK_UTIL_DIAG_Env_h
+#ifndef STK_UTIL_ENVIRONMENT_Env_hpp
+#define STK_UTIL_ENVIRONMENT_Env_hpp
 
-#include <stk_util/stk_config.h>
-#if defined ( STK_HAS_MPI )
-#  include "mpi.h"                        // for MPI_Comm
-#endif
-#include <ios>                          // for ostream
-#include <string>                       // for string
+#include "stk_util/parallel/Parallel.hpp"  // for MPI_Comm
+#include <ios>                             // for ostream
+#include <string>                          // for string
+
 
 
 namespace sierra {
@@ -388,4 +386,4 @@ void set_mpi_communicator(MPI_Comm communicator);
 } // namespace Env
 } // namespace sierra
 
-#endif // STK_UTIL_DIAG_Env_h
+#endif // STK_UTIL_ENVIRONMENT_Env_hpp

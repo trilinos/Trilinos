@@ -131,7 +131,7 @@ getValues(       OutputViewType output,
   }
 }
 
-template<typename SpT, ordinal_type numPtsPerEval,
+template<typename DT, ordinal_type numPtsPerEval,
 typename outputValueValueType, class ...outputValueProperties,
 typename inputPointValueType,  class ...inputPointProperties,
 typename vinvValueType,        class ...vinvProperties>
@@ -144,7 +144,7 @@ getValues( /* */ Kokkos::DynRankView<outputValueValueType,outputValueProperties.
   typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
   typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
   typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
-  typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+  typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
   // loopSize corresponds to cardinality
   const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
@@ -184,8 +184,8 @@ getValues( /* */ Kokkos::DynRankView<outputValueValueType,outputValueProperties.
 }
 
 // -------------------------------------------------------------------------------------
-template<typename SpT, typename OT, typename PT>
-Basis_HDIV_TET_In_FEM<SpT,OT,PT>::
+template<typename DT, typename OT, typename PT>
+Basis_HDIV_TET_In_FEM<DT,OT,PT>::
 Basis_HDIV_TET_In_FEM( const ordinal_type order,
     const EPointType   pointType ) {
 
@@ -193,9 +193,10 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   this->basisCardinality_  = CardinalityHDivTet(order);
   this->basisDegree_       = order; // small n
   this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );
-  this->basisType_         = BASIS_FEM_FIAT;
+  this->basisType_         = BASIS_FEM_LAGRANGIAN;
   this->basisCoordinates_  = COORDINATES_CARTESIAN;
   this->functionSpace_     = FUNCTION_SPACE_HDIV;
+  pointType_ = pointType;
 
   const ordinal_type card = this->basisCardinality_;
 
@@ -213,13 +214,13 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   ordinal_type tags[maxCard][tagSize];
 
   // points are computed in the host and will be copied
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   dofCoords("Hdiv::Tet::In::dofCoords", card, spaceDim);
 
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   dofCoeffs("Hdiv::Tet::In::dofCoeffs", card, spaceDim);
 
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   coeffs("Hdiv::Tet::In::coeffs", cardVecPn, card);
 
   // first, need to project the basis for RT space onto the
@@ -227,7 +228,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   // get coefficients of PkHx
 
   const ordinal_type lwork = card*card;
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V1("Hdiv::Tet::In::V1", cardVecPn, card);
 
   // basis for the space is
@@ -248,12 +249,12 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   // now I need to integrate { (x,y,z) phi } against the big basis
   // first, get a cubature rule.
   CubatureDirectTetDefault<Kokkos::HostSpace::execution_space,scalarType,scalarType> myCub( 2 * order );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> cubPoints("Hdiv::Tet::In::cubPoints", myCub.getNumPoints() , spaceDim );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> cubWeights("Hdiv::Tet::In::cubWeights", myCub.getNumPoints() );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubPoints("Hdiv::Tet::In::cubPoints", myCub.getNumPoints() , spaceDim );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> cubWeights("Hdiv::Tet::In::cubWeights", myCub.getNumPoints() );
   myCub.getCubature( cubPoints , cubWeights );
 
   // tabulate the scalar orthonormal basis at cubature points
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hdiv::Tet::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtCubPoints("Hdiv::Tet::In::phisAtCubPoints", cardPn , myCub.getNumPoints() );
   Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>(phisAtCubPoints, cubPoints, order, OPERATOR_VALUE);
 
   // now do the integration
@@ -271,7 +272,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   }
 
   // next, apply the RT nodes (rows) to the basis for (P_n)^3 (columns)
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
   V2("Hdiv::Tet::In::V2", card ,cardVecPn);
 
   const ordinal_type numFaces = this->basisCellTopology_.getFaceCount();
@@ -283,7 +284,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
       1 );
 
   // get the points on the tetrahedron face
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> triPts("Hdiv::Tet::In::triPts", numPtsPerFace , 2 );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> triPts("Hdiv::Tet::In::triPts", numPtsPerFace , 2 );
 
   // construct lattice
   const ordinal_type offset = 1;
@@ -294,25 +295,19 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
       pointType );
 
   // holds the image of the tet points
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> facePts("Hdiv::Tet::In::facePts", numPtsPerFace , spaceDim );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> phisAtFacePoints("Hdiv::Tet::In::phisAtFacePoints", cardPn , numPtsPerFace );
-  Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace> faceNormal("Hcurl::Tet::In::faceNormal", spaceDim );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> facePts("Hdiv::Tet::In::facePts", numPtsPerFace , spaceDim );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> phisAtFacePoints("Hdiv::Tet::In::phisAtFacePoints", cardPn , numPtsPerFace );
+  Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace> faceNormal("Hcurl::Tet::In::faceNormal", spaceDim );
 
   // loop over faces
   for (ordinal_type face=0;face<numFaces;face++) {  // loop over faces
 
     // these are normal scaled by the appropriate face areas.
-    CellTools<Kokkos::HostSpace::execution_space>::getReferenceSideNormal( faceNormal ,
+    CellTools<Kokkos::HostSpace>::getReferenceSideNormal( faceNormal ,
         face ,
         this->basisCellTopology_ );
 
-    // multiply to account for reference face areas, so that magnitude of faceNormal is equal to the face measure
-    const scalarType refTriangleMeasure = 0.5;
-    for (ordinal_type j=0;j<spaceDim;j++)
-      faceNormal(j) *= refTriangleMeasure;
-
-
-    CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( facePts ,
+    CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( facePts ,
         triPts ,
         2 ,
         face ,
@@ -356,7 +351,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
       1 );
 
   if (numPtsPerCell > 0) {
-    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     internalPoints( "Hdiv::Tet::In::internalPoints", numPtsPerCell , spaceDim );
     PointTools::getLattice( internalPoints ,
         this->basisCellTopology_ ,
@@ -364,7 +359,7 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
         1 ,
         pointType );
 
-    Kokkos::DynRankView<scalarType,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<scalarType,typename DT::execution_space::array_layout,Kokkos::HostSpace>
     phisAtInternalPoints("Hdiv::Tet::In::phisAtInternalPoints", cardPn , numPtsPerCell );
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::getValues<Kokkos::HostSpace::execution_space,Parameters::MaxNumPtsPerBasisEval>( phisAtInternalPoints , internalPoints , order, OPERATOR_VALUE );
 
@@ -441,13 +436,13 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
       coeffs(i,j) = s;
     }
 
-  this->coeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), coeffs);
+  this->coeffs_ = Kokkos::create_mirror_view(typename DT::memory_space(), coeffs);
   Kokkos::deep_copy(this->coeffs_ , coeffs);
 
-  this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+  this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
   Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
-  this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);
+  this->dofCoeffs_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoeffs);
   Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
 
 

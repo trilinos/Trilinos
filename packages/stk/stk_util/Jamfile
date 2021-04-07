@@ -71,7 +71,6 @@ local installed-end-user-files =
 local installed-developer-files = 
   stk_util_utest
   stk_util_doc_test
-  stk_util_parallel_utest
   ;
 
 #
@@ -137,7 +136,6 @@ install install-user-lib
     stk_util_diag
     stk_util_util
     stk_util_command_line
-    stk_util_unit_test_support
   : <location>$(install-root)/stk/stk_util/lib
   ;
 
@@ -153,7 +151,7 @@ exe stk_util_doc_test
   :
     [ glob $(stk_util-root)/../stk_doc_tests/stk_util/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//comparisonUtils
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_doc_tests/stk_util
@@ -166,20 +164,12 @@ exe stk_util_utest
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/environment/*.cpp ]
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/command_line/*.cpp ]
     [ glob $(stk_util-root)/../stk_unit_tests/stk_util/diag/*.cpp ]
+    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/parallel/*.cpp ]
     /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//comparisonUtils
+    /sierra/stk_unit_test_utils//stk_unit_test_utils
     stk_util_command_line
   : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util
-  ;
-
-exe stk_util_parallel_utest
-  :
-    [ glob $(stk_util-root)/../stk_unit_tests/stk_util/parallel/*.cpp ]
-    /sierra/stk_unit_test_utils//stk_unit_main
-    /sierra/stk_unit_test_utils//comparisonUtils
-    stk_util_command_line
-  : <tag>@sierra-exec-tag
     <include>$(stk_util-root)/../stk_unit_tests/stk_util/parallel
   ;
 
@@ -230,8 +220,8 @@ if ( $(use_git_version) = "yes" ) || ( [ os.name ] = NT ) {
 }
 else
 {
-    local v = [ SHELL "echo \"// 4.29.0\" > $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
-    version = 4.29.0 ;
+    local v = [ SHELL "echo \"// 4.59.7\" > $(stk_util-root-inc)/stk_util/registry/stk_version.hpp" : exit-status ] ;
+    version = 4.59.7 ;
 }
 
 lib stk_util_environment
@@ -270,7 +260,7 @@ lib stk_util_registry
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        <define>STK_VERSION=\"\\\"$(version)\\\"\"
+        <define>STK_VERSION_STRING=\"\\\"$(version)\\\"\"
         <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
     ]
     [ ifuserbuild
@@ -342,28 +332,6 @@ lib stk_util_command_line
     # Any parameters within this 'ifuserbuild' block apply to user
     # builds only and will not be present for developer builds.
         <file>$(stk_util-root)/lib/libstk_util_command_line.a
-    ]
-    [ ifdevbuild
-        # Any parameters within this 'ifdevbuild' block apply to development
-        # builds only and will not be present for user builds.
-        <toolset>gcc:<cflags>"-Wextra -Wpedantic -Wshadow -Wno-unused-parameter"
-    ]
-  ;
-
-lib stk_util_unit_test_support
-  :
-    [ ifdevbuild
-    # Any parameters within this 'ifdevbuild' block apply to development
-    # builds only and will not be present for user builds.
-    [ glob $(stk_util-root)/stk_util/unit_test_support/*.cpp ]
-    ]
-    /mpi//mpi
-    /tpl/gtest//gtest
-  :
-    [ ifuserbuild
-    # Any parameters within this 'ifuserbuild' block apply to user
-    # builds only and will not be present for developer builds.
-        <file>$(stk_util-root)/lib/libstk_util_unit_test_support.a
     ]
     [ ifdevbuild
         # Any parameters within this 'ifdevbuild' block apply to development

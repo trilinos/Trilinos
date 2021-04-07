@@ -179,11 +179,12 @@ namespace Experimental {
            the orientation.
  */
 
-template<typename ExecSpaceType>
+template<typename DeviceType>
 class ProjectionTools {
 public:
-
-  using EvalPointsType = typename ProjectionStruct<ExecSpaceType, double>::EvalPointsType;
+  using ExecSpaceType = typename DeviceType::execution_space;
+  using MemSpaceType = typename DeviceType::memory_space;
+  using EvalPointsType = typename ProjectionStruct<DeviceType, double>::EvalPointsType;
 
 
   /** \brief  Computes evaluation points for L2 projection
@@ -208,7 +209,7 @@ public:
   getL2EvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
       const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
@@ -241,7 +242,95 @@ public:
       const typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
+
+
+  /** \brief  Computes evaluation points for local L2 projection
+     for broken HGRAD HCURL HDIV and HVOL spaces
+
+      \code
+      C  - num. cells
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  evaluationPoints [out] - rank-3 view (C,P,D) containing the coordinates of the evaluation
+                                       points for the projection at each cell
+      \param  cellBasis        [in]  - pointer to the basis for the projection
+      \param  projStruct       [in]  - pointer to ProjectionStruct object
+      \param  evalPointType    [in]  - enum selecting whether the points should be computed for the basis
+                                       functions or for the target function
+   */
+  template<typename BasisType>
+  static void
+  getL2DGEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
+      const BasisType* cellBasis,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
+      const EvalPointsType evalPointType = EvalPointsType::TARGET
+  );
+
+  /** \brief  Computes evaluation points for local L2 projection
+     for broken HGRAD HCURL HDIV and HVOL spaces
+
+     This function simply perform an L2 projection in each cell with no guarantee
+     of preserving continuity across cells
+
+      \code
+      C  - num. cells
+      F  - num. fields
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  basisCoeffs         [out] - rank-2 view (C,F) containing the basis coefficients
+      \param  targetAtEvalPoints  [in]  - variable rank view containing the values of the target function
+                                          evaluated at the evaluation points
+      \param  cellOrientations    [in]  - 1-rank view (C) containing the Orientation objects at each cell
+      \param  cellBasis           [in]  - pointer to the basis for the projection
+      \param  projStruct          [in]  - pointer to ProjectionStruct object
+
+      \remark targetAtEvalPoints has rank 2 (C,P) for HGRAD and HVOL elements, and rank 3 (C,P,D)
+              for HCURL and HDIV elements
+   */
+  template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
+  typename funValsValueType, class ...funValsProperties,
+  typename BasisType,
+  typename ortValueType,       class ...ortProperties>
+  static void
+  getL2DGBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+      const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
+      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
+      const BasisType* cellBasis,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
+
+  /** \brief  Computes evaluation points for local L2 projection
+     for broken HGRAD HCURL HDIV and HVOL spaces
+
+     This function simply perform an L2 projection in each cell with no guarantee
+     of preserving continuity across cells. It also does not account for orientation.
+
+      \code
+      C  - num. cells
+      F  - num. fields
+      P  - num. evaluation points
+      D  - spatial dimension
+      \endcode
+
+      \param  basisCoeffs         [out] - rank-2 view (C,F) containing the basis coefficients
+      \param  targetAtEvalPoints  [in]  - variable rank view containing the values of the target function
+                                          evaluated at the evaluation points
+      \param  cellBasis           [in]  - pointer to the basis for the projection
+      \param  projStruct          [in]  - pointer to ProjectionStruct object
+
+      \remark targetAtEvalPoints has rank 2 (C,P) for HGRAD and HVOL elements, and rank 3 (C,P,D)
+              for HCURL and HDIV elements
+   */
+  template<typename basisViewType, typename targetViewType, typename BasisType>
+  static void
+  getL2DGBasisCoeffs(basisViewType basisCoeffs,
+      const targetViewType targetAtTargetEPoints,
+      const BasisType* cellBasis,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
 
   /** \brief  Computes evaluation points for HGrad projection
@@ -257,20 +346,19 @@ public:
                                        points, at each cell
       \param  gradEvalPoints   [in]  - rank-3 view (C,P2,D) containing the coordinates of the points
                                        where to evaluate the function gradients, at each cell
-      \param  cellOrientations [in]  - rank-1 view (C) containing the Orientation objects at each cell
+      \param  cellOrientations [in]  - rank-1 container (C) containing the Orientation objects at each cell
       \param  cellBasis        [in]  - pointer to the HGRAD basis for the projection
       \param  projStruct       [in]  - pointer to ProjectionStruct object
       \param  evalPointType    [in]  - enum selecting whether the points should be computed for the basis
                                        functions or for the target function
    */
-  template<typename BasisType,
-  typename ortValueType,       class ...ortProperties>
+  template<typename BasisType, typename OrientationViewType >
   static void
   getHGradEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
       typename BasisType::ScalarViewType gradEvalPoints,
-      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
+      const OrientationViewType cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
       const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
@@ -297,19 +385,17 @@ public:
       \param  cellBasis                  [in]  - pointer to the HGRAD basis for the projection
       \param  projStruct                 [in]  - pointer to ProjectionStruct object
    */
-  template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
-  typename funValsValueType, class ...funValsProperties,
-  typename BasisType,
-  typename ortValueType,       class ...ortProperties>
+  template<class BasisCoeffsViewType, class TargetValueViewType, class TargetGradViewType,
+           class BasisType, class OrientationViewType>
   static void
-  getHGradBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
-      const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtEvalPoints,
-      const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetGradAtGradEvalPoints,
-      const typename BasisType::ScalarViewType evaluationPoints,
-      const typename BasisType::ScalarViewType gradEvalPoints,
-      const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
-      const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+  getHGradBasisCoeffs(BasisCoeffsViewType basisCoeffs,
+                      const TargetValueViewType targetAtEvalPoints,
+                      const TargetGradViewType targetGradAtGradEvalPoints,
+                      const typename BasisType::ScalarViewType evaluationPoints,
+                      const typename BasisType::ScalarViewType gradEvalPoints,
+                      const OrientationViewType cellOrientations,
+                      const BasisType* cellBasis,
+                      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
 
   /** \brief  Computes evaluation points for HCurl projection
@@ -338,7 +424,7 @@ public:
       typename BasisType::ScalarViewType curlEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
       const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
@@ -379,7 +465,7 @@ public:
       const typename BasisType::ScalarViewType curlEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
 
   /** \brief  Computes evaluation points for HDiv projection
@@ -408,7 +494,7 @@ public:
       typename BasisType::ScalarViewType divEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
       const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
@@ -447,7 +533,7 @@ public:
       const typename BasisType::ScalarViewType divEvalPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
   /** \brief  Computes evaluation points for HVol projection
 
@@ -471,7 +557,7 @@ public:
   getHVolEvaluationPoints(typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType, ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct,
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
       const EvalPointsType evalPointType = EvalPointsType::TARGET
   );
 
@@ -503,7 +589,7 @@ public:
       const typename BasisType::ScalarViewType evaluationPoints,
       const Kokkos::DynRankView<ortValueType,   ortProperties...>  cellOrientations,
       const BasisType* cellBasis,
-      ProjectionStruct<ExecSpaceType, typename BasisType::scalarType> * projStruct);
+      ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct);
 
 
   /** \brief  Class to solve a square system A x = b on each cell
@@ -577,6 +663,7 @@ public:
     template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4>
     void solveParallel(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 taul,
         ViewType3 work,const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
+      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
 
       ordinal_type numCells = basisCoeffs.extent(0);
 
@@ -584,14 +671,17 @@ public:
         auto A0 = Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL());
         auto tau0 = Kokkos::subview(taul, 0, Kokkos::ALL());
 
-        auto A0_host = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(), A0);
-        auto tau0_host = Kokkos::create_mirror_view(typename ExecSpaceType::memory_space(), tau0);
-
+        Kokkos::DynRankView<typename ViewType2::value_type, HostSpaceType> A0_host("A0_host", A0.extent(0),A0.extent(1));
+        auto A0_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A0_host);
+        Kokkos::deep_copy(A0_device, A0);
+        Kokkos::deep_copy(A0_host, A0_device);
 
         for(ordinal_type i=n; i<n+m; ++i)
           for(ordinal_type j=0; j<n; ++j)
             A0_host(i,j) = A0_host(j,i);
 
+        Kokkos::DynRankView<typename ViewType2::value_type, HostSpaceType> tau0_host("A0_host", tau0.extent(0));
+        auto tau0_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), tau0_host);
         auto w0_host = Kokkos::create_mirror_view(Kokkos::subview(work, 0, Kokkos::ALL()));
 
         //computing QR of A0. QR is saved in A0 and tau0
@@ -599,8 +689,10 @@ public:
             A0_host.data(), A0_host.stride_0(), A0_host.stride_1(),
             tau0_host.data(), tau0_host.stride_0(), w0_host.data());
 
-        Kokkos::deep_copy(A0, A0_host);
-        Kokkos::deep_copy(tau0, tau0_host);
+        Kokkos::deep_copy(A0_device, A0_host);
+        Kokkos::deep_copy(A0, A0_device);
+        Kokkos::deep_copy(tau0_device, tau0_host);
+        Kokkos::deep_copy(tau0, tau0_device);
 
         Kokkos::parallel_for (systemName_,
             Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
@@ -610,7 +702,7 @@ public:
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q0 -> b
-          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A0.extent(0), A0.extent(1),
               A0.data(),  A0.stride_0(), A0.stride_1(),
               tau0.data(), tau0.stride_0(),
@@ -651,7 +743,7 @@ public:
           auto b = Kokkos::subview(elemRhs, ic, Kokkos::ALL());
 
           //b'*Q -> b
-          KokkosBatched::SerialApplyQ_RightNoTransForwardInternal::invoke(
+          KokkosBatched::SerialApplyQ_RightForwardInternal::invoke(
               1, A.extent(0), A.extent(1),
               A.data(),  A.stride_0(), A.stride_1(),
               tau.data(), tau.stride_0(),
@@ -681,31 +773,34 @@ public:
     void solveSerial(ViewType1 basisCoeffs, ViewType2 elemMat, ViewType2 elemRhs, ViewType2 ,
         ViewType3, const  ViewType4 elemDof, ordinal_type n, ordinal_type m) {
       using valueType = typename ViewType2::value_type;
-      using host_space_type = typename Kokkos::Impl::is_space<ExecSpaceType>::host_mirror_space::execution_space;
-      Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type>
+      using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+      Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType>
       serialElemMat("serialElemMat", n+m, n+m);
       Teuchos::LAPACK<ordinal_type,valueType> lapack_;
       ordinal_type numCells = basisCoeffs.extent(0);
 
       if(matrixIndependentOfCell_) {
         ViewType2 elemRhsTrans("transRhs", elemRhs.extent(1), elemRhs.extent(0));
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type>
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType>
         pivVec("pivVec", m+n + std::max(m+n, numCells), 1);
 
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type> serialElemRhs("serialElemRhs", n+m, numCells);
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType> serialElemRhs("serialElemRhs", n+m, numCells);
 
-        auto A = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
-            Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
-        auto b = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(), elemRhs);
+        Kokkos::DynRankView<typename ViewType2::value_type, HostSpaceType> A_host("A0_host", elemMat.extent(1),elemMat.extent(2));
+        auto A_device = Kokkos::create_mirror_view(typename DeviceType::memory_space(), A_host);
+        Kokkos::deep_copy(A_device, Kokkos::subview(elemMat, 0, Kokkos::ALL(), Kokkos::ALL()));
+        Kokkos::deep_copy(A_host, A_device);
+
+        auto b = Kokkos::create_mirror_view_and_copy(HostSpaceType(), elemRhs);
 
         auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(
-            typename ExecSpaceType::memory_space(), basisCoeffs);
+            HostSpaceType(), basisCoeffs);
 
         for(ordinal_type i=0; i<m+n; ++i) {
           for(ordinal_type ic=0; ic< numCells; ++ic)
             serialElemRhs(i,ic) = b(ic,i);
           for(ordinal_type j=0; j<n; ++j)
-            serialElemMat(j,i) = A(j,i);
+            serialElemMat(j,i) = A_host(j,i);
         }
 
         for(ordinal_type i=n; i<n+m; ++i)
@@ -725,15 +820,15 @@ public:
         }
       }
       else {
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type> pivVec("pivVec", 2*(m+n), 1);
-        Kokkos::View<valueType**,Kokkos::LayoutLeft,host_space_type> serialElemRhs("serialElemRhs", n+m, 1 );
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType> pivVec("pivVec", 2*(m+n), 1);
+        Kokkos::View<valueType**,Kokkos::LayoutLeft,HostSpaceType> serialElemRhs("serialElemRhs", n+m, 1 );
         for (ordinal_type ic = 0; ic < numCells; ic++) {
-          auto A = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+          auto A = Kokkos::create_mirror_view_and_copy(HostSpaceType(),
               Kokkos::subview(elemMat, ic, Kokkos::ALL(), Kokkos::ALL()));
-          auto b = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+          auto b = Kokkos::create_mirror_view_and_copy(HostSpaceType(),
               Kokkos::subview(elemRhs, ic, Kokkos::ALL()));
           auto basisCoeffs_ = Kokkos::subview(basisCoeffs, ic, Kokkos::ALL());
-          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(typename ExecSpaceType::memory_space(),
+          auto serialBasisCoeffs = Kokkos::create_mirror_view_and_copy(HostSpaceType(),
               basisCoeffs_);
 
           Kokkos::deep_copy(serialElemMat,valueType(0));  //LAPACK might overwrite the matrix

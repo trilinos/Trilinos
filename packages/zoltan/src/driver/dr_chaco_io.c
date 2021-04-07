@@ -88,7 +88,7 @@ int read_chaco_file(int Proc,
   char   cmesg[256];
   char   chaco_fname[FILENAME_MAX + 8];
 
-  int    i, nvtxs,base;
+  int    nvtxs,base;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0;
   int   *start = NULL, *adj = NULL;
@@ -135,14 +135,7 @@ int read_chaco_file(int Proc,
       return 0;
     }
 
-    base = 1;
-    if (start){
-      base = adj[0];
-      for (i=1; i < start[nvtxs]; i++){
-        if (adj[i] < base)
-          base = adj[i];
-      }
-    }
+    base = 1;  // chaco files are one-based
 
     /* Read Chaco geometry file, if provided. */
     sprintf(chaco_fname, "%s.coords", pio_info->pexo_fname);

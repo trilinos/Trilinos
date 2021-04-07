@@ -1,10 +1,11 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_SmartAssert.h>
 #include <algorithm>
 #include <cgns/Iocgns_StructuredZoneData.h>
 #include <fmt/color.h>
@@ -196,7 +197,7 @@ namespace {
 
     const auto &adam_name = parent->m_adam->m_name;
 
-    assert(c1->m_adam->m_zone == c2->m_adam->m_zone);
+    SMART_ASSERT(c1->m_adam->m_zone == c2->m_adam->m_zone)(c1->m_adam->m_zone)(c2->m_adam->m_zone);
 
     c1->m_zoneConnectivity.emplace_back(c1_base + "--" + c2_base, c1->m_zone, adam_name, c2->m_zone,
                                         transform, range_beg, range_end, donor_range_beg,
@@ -223,7 +224,7 @@ namespace Iocgns {
     m_name = "zone_" + std::to_string(zone);
 
     auto ordinals = Ioss::tokenize(nixnjxnk, "x");
-    assert(ordinals.size() == 3);
+    SMART_ASSERT(ordinals.size() == 3)(ordinals.size());
 
     m_ordinal[0] = std::stoi(ordinals[0]);
     m_ordinal[1] = std::stoi(ordinals[1]);
@@ -244,20 +245,42 @@ namespace Iocgns {
       ratio = 1.0 / ratio;
     }
 
-    size_t ord0 = size_t((double)m_ordinal[0] * ratio + 0.5);
-    size_t ord1 = size_t((double)m_ordinal[1] * ratio + 0.5);
-    size_t ord2 = size_t((double)m_ordinal[2] * ratio + 0.5);
+    auto ord0 = llround((double)m_ordinal[0] * ratio);
+    auto ord1 = llround((double)m_ordinal[1] * ratio);
+    auto ord2 = llround((double)m_ordinal[2] * ratio);
 
     size_t work0 = ord0 * m_ordinal[1] * m_ordinal[2];
     size_t work1 = ord1 * m_ordinal[0] * m_ordinal[2];
     size_t work2 = ord2 * m_ordinal[0] * m_ordinal[1];
 
-    if (m_lineOrdinal == 0 || m_ordinal[0] == 1)
+    // Don't decompose along m_lineOrdinal direction and Avoid decompositions 1-cell thick.
+    if (m_lineOrdinal & Ordinal::I || m_ordinal[0] == 1 || ord0 == 1 || m_ordinal[0] - ord0 == 1) {
       work0 = 0;
-    if (m_lineOrdinal == 1 || m_ordinal[1] == 1)
+    }
+    if (m_lineOrdinal & Ordinal::J || m_ordinal[1] == 1 || ord1 == 1 || m_ordinal[1] - ord1 == 1) {
       work1 = 0;
-    if (m_lineOrdinal == 2 || m_ordinal[2] == 1)
+    }
+    if (m_lineOrdinal & Ordinal::K || m_ordinal[2] == 1 || ord2 == 1 || m_ordinal[2] - ord2 == 1) {
       work2 = 0;
+    }
+
+    bool enforce_1cell_constraint = true;
+    if (work0 == 0 && work1 == 0 && work2 == 0) {
+      // Need to relax the "cells > 1" constraint...
+      work0 = ord0 * m_ordinal[1] * m_ordinal[2];
+      work1 = ord1 * m_ordinal[0] * m_ordinal[2];
+      work2 = ord2 * m_ordinal[0] * m_ordinal[1];
+      if (m_lineOrdinal & Ordinal::I || m_ordinal[0] == 1) {
+        work0 = 0;
+      }
+      if (m_lineOrdinal & Ordinal::J || m_ordinal[1] == 1) {
+        work1 = 0;
+      }
+      if (m_lineOrdinal & Ordinal::K || m_ordinal[2] == 1) {
+        work2 = 0;
+      }
+      enforce_1cell_constraint = false;
+    }
 
     auto delta0 = std::make_pair(std::abs((double)work0 - avg_work), -m_ordinal[0]);
     auto delta1 = std::make_pair(std::abs((double)work1 - avg_work), -m_ordinal[1]);
@@ -274,23 +297,44 @@ namespace Iocgns {
       min_delta   = delta2;
     }
 
-    int ordinal = min_ordinal;
+    unsigned int ordinal = min_ordinal;
 
-    if (m_ordinal[ordinal] <= 1 || (work0 == 0 && work1 == 0 && work2 == 0)) {
+    // One more check to try to produce more "squarish" decompositions.
+    // Check the ratio of max ordinal to selected min_ordinal and if > 1.5 (heuristic), choose the
+    // max ordinal instead.
+    int max_ordinal    = -1;
+    int max_ordinal_sz = 0;
+    for (int i = 0; i < 3; i++) {
+      unsigned ord = i == 0 ? 1 : 2 * i;
+      if (!(m_lineOrdinal & ord) && m_ordinal[i] > max_ordinal_sz) {
+        max_ordinal    = i;
+        max_ordinal_sz = m_ordinal[i];
+      }
+    }
+
+    if (max_ordinal != -1 && (double)max_ordinal_sz / m_ordinal[ordinal] > 1.5) {
+      ordinal = max_ordinal;
+    }
+
+    if ((m_ordinal[ordinal] <= (enforce_1cell_constraint ? 1 : 0)) ||
+        (work0 == 0 && work1 == 0 && work2 == 0)) {
       return std::make_pair(nullptr, nullptr);
     }
 
-    assert(ordinal != m_lineOrdinal);
+    //    SMART_ASSERT(!(ordinal & m_lineOrdinal))(ordinal)(m_lineOrdinal);
 
     m_child1 = new StructuredZoneData;
     m_child2 = new StructuredZoneData;
 
     m_child1->m_name             = m_name + "_c1";
     m_child1->m_ordinal          = m_ordinal;
-    m_child1->m_ordinal[ordinal] = m_ordinal[ordinal] * ratio + 0.5;
+    m_child1->m_ordinal[ordinal] = llround(m_ordinal[ordinal] * ratio);
     if (m_child1->m_ordinal[ordinal] == 0) {
       m_child1->m_ordinal[ordinal] = 1;
     }
+    SMART_ASSERT(!enforce_1cell_constraint || m_child1->m_ordinal[ordinal] != 1)
+    (!enforce_1cell_constraint)(m_child1->m_ordinal[ordinal] != 1);
+
     m_child1->m_offset = m_offset; // Child1 offsets the same as parent;
 
     m_child1->m_lineOrdinal  = m_lineOrdinal;
@@ -304,6 +348,7 @@ namespace Iocgns {
     m_child2->m_ordinal          = m_ordinal;
     m_child2->m_ordinal[ordinal] = m_ordinal[ordinal] - m_child1->m_ordinal[ordinal];
     assert(m_child2->m_ordinal[ordinal] > 0);
+    assert(!enforce_1cell_constraint || m_child2->m_ordinal[ordinal] != 1);
     m_child2->m_offset = m_offset;
     m_child2->m_offset[ordinal] += m_child1->m_ordinal[ordinal];
 
@@ -352,57 +397,91 @@ namespace Iocgns {
     return std::make_pair(m_child1, m_child2);
   }
 
+  namespace {
+    void update_zgc(Ioss::ZoneConnectivity &zgc, Iocgns::StructuredZoneData *child,
+                    std::vector<Ioss::ZoneConnectivity> &zgc_vec, bool new_zgc)
+    {
+      zgc.m_donorZone = child->m_zone;
+      zgc_subset_donor_ranges(child, zgc);
+      // If `!new_zgc`, then the zgc is already in `zgc_vec`
+      if (new_zgc) {
+        zgc_vec.push_back(zgc);
+      }
+    }
+  } // namespace
+
   // If a zgc points to a donor zone which was split (has non-null children),
   // then create two zgc that point to each child.  Update range and donor_range
-  void StructuredZoneData::resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones)
+  void StructuredZoneData::resolve_zgc_split_donor(
+      const std::vector<Iocgns::StructuredZoneData *> &zones)
   {
+    // Updates m_zoneConnectivity in place, but in case a new zgc is created,
+    // need a place to store it to avoid invalidating any iterators...
+    // Guess at size to avoid as many reallocations as possible.
+    // At most 1 new zgc per split...
+    std::vector<Ioss::ZoneConnectivity> new_zgc;
+    new_zgc.reserve(m_zoneConnectivity.size());
+
     bool did_split = false;
     do {
       did_split = false;
-      std::vector<Ioss::ZoneConnectivity> new_zgc;
-      for (auto zgc : m_zoneConnectivity) {
+
+      for (auto &zgc : m_zoneConnectivity) {
         auto &donor_zone = zones[zgc.m_donorZone - 1];
         if (!donor_zone->is_active()) {
-          did_split    = true;
-          bool overlap = false;
-          auto c1_zgc(zgc);
-          c1_zgc.m_donorZone = donor_zone->m_child1->m_zone;
-          if (zgc_donor_overlaps(donor_zone->m_child1, c1_zgc)) {
-            overlap = true;
-            zgc_subset_donor_ranges(donor_zone->m_child1, c1_zgc);
-            if (c1_zgc.get_shared_node_count() > 2) {
-              new_zgc.push_back(c1_zgc);
+          did_split = true;
+
+          bool overlap_1 = zgc_donor_overlaps(donor_zone->m_child1, zgc);
+          bool overlap_2 = zgc_donor_overlaps(donor_zone->m_child2, zgc);
+          bool overlap   = overlap_1 || overlap_2;
+
+          // Child 1
+          if (overlap_1) {
+            if (!overlap_2) {
+              // Use `zgc` since don't need it anymore...
+              update_zgc(zgc, donor_zone->m_child1, new_zgc, false);
+            }
+            else {
+              auto c1_zgc(zgc);
+              update_zgc(c1_zgc, donor_zone->m_child1, new_zgc, true);
             }
           }
-          auto c2_zgc(zgc);
-          c2_zgc.m_donorZone = donor_zone->m_child2->m_zone;
-          if (zgc_donor_overlaps(donor_zone->m_child2, c2_zgc)) {
-            overlap = true;
-            zgc_subset_donor_ranges(donor_zone->m_child2, c2_zgc);
-            if (c2_zgc.get_shared_node_count() > 2) {
-              new_zgc.push_back(c2_zgc);
-            }
+
+          // Child 2
+          if (overlap_2) {
+            // Use `zgc` since don't need it anymore...
+            update_zgc(zgc, donor_zone->m_child2, new_zgc, false);
           }
+
           if (!overlap) {
             // Need to add at least one copy of this zgc even if no overlap
             // so can maintain the original (un parallel decomposed) ranges
             // for use in output...
-            c1_zgc.m_ownerRangeBeg = c1_zgc.m_ownerRangeEnd = {{0, 0, 0}};
-            c1_zgc.m_donorRangeBeg = c1_zgc.m_donorRangeEnd = {{0, 0, 0}};
-            new_zgc.push_back(c1_zgc);
+            zgc.m_donorZone     = donor_zone->m_child1->m_zone;
+            zgc.m_ownerRangeBeg = zgc.m_ownerRangeEnd = {{0, 0, 0}};
+            zgc.m_donorRangeBeg = zgc.m_donorRangeEnd = {{0, 0, 0}};
           }
-        }
-        else {
-          new_zgc.push_back(zgc);
         }
       }
       if (did_split) {
-        std::swap(m_zoneConnectivity, new_zgc);
+        if (!new_zgc.empty()) {
+          m_zoneConnectivity.insert(m_zoneConnectivity.end(), new_zgc.begin(), new_zgc.end());
+          new_zgc.clear();
+        }
+        // Filter out all zgc that do not contain any faces unless needed to maintain original zgc
+        // reconstruction...
+        m_zoneConnectivity.erase(
+            std::remove_if(m_zoneConnectivity.begin(), m_zoneConnectivity.end(),
+                           [](Ioss::ZoneConnectivity &zgc) {
+                             return zgc.get_shared_node_count() <= 2 && !zgc.retain_original();
+                           }),
+            m_zoneConnectivity.end());
       }
     } while (did_split);
   }
 
-  void StructuredZoneData::update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones)
+  void
+  StructuredZoneData::update_zgc_processor(const std::vector<Iocgns::StructuredZoneData *> &zones)
   {
     for (auto &zgc : m_zoneConnectivity) {
       auto &donor_zone = zones[zgc.m_donorZone - 1];

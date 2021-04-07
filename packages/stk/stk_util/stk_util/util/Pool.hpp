@@ -32,10 +32,8 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#ifndef _stk_util_util_Pool_hpp_
-#define _stk_util_util_Pool_hpp_
-
-#include <cstdlib>
+#ifndef STK_UTIL_UTIL_POOL_HPP
+#define STK_UTIL_UTIL_POOL_HPP
 
 #ifndef STK_UTIL_POOL_ALLOC_CHUNK_SIZE_K
 #define STK_UTIL_POOL_ALLOC_CHUNK_SIZE_K 512
@@ -98,4 +96,3 @@ inline void Pool::free(void* b)
 }//namespace stk
 
 #endif
-

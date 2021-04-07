@@ -354,7 +354,7 @@ void STKConnManager::applyPeriodicBCs(const panzer::FieldPattern & fp, GlobalOrd
         TEUCHOS_ASSERT(false);
 
       // get relevent elements and node IDs
-      stkMeshDB_->getOwnedElementsSharingNode(oldNodeId-offset0,elements,localIds,(*matchTypes)[m]);
+      stkMeshDB_->getOwnedElementsSharingNode(stk::mesh::EntityId(oldNodeId-offset0),elements,localIds,(*matchTypes)[m]);
 
       // modify global numbering already built for each element
       for(std::size_t e=0;e<elements.size();e++){

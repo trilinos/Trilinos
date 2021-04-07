@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef SEACAS_ExodusEntity_H
@@ -30,11 +30,12 @@ namespace Excn {
     size_t count(ObjectType type) const
     {
       switch (type) {
-      case EBLK: return blockCount;
-      case NSET: return nodesetCount;
-      case SSET: return sidesetCount;
-      case NODE: return nodeCount;
-      case ELEM: return elementCount;
+      case Excn::ObjectType::EBLK: return blockCount;
+      case Excn::ObjectType::NSET: return nodesetCount;
+      case Excn::ObjectType::SSET: return sidesetCount;
+      case Excn::ObjectType::NODE: return nodeCount;
+      case Excn::ObjectType::ELEM: return elementCount;
+      case Excn::ObjectType::ASSM: return assemblyCount;
       default: return 0;
       }
     }
@@ -48,8 +49,24 @@ namespace Excn {
     int         blockCount{0};
     int         nodesetCount{0};
     int         sidesetCount{0};
+    int         assemblyCount{0};
     bool        needNodeMap{true};
     bool        needElementMap{true};
+  };
+
+  class Assembly
+  {
+  public:
+    Assembly() = default;
+
+    size_t     entity_count() const { return entityCount; }
+    ObjectType entity_type() const { return type_; }
+
+    ex_entity_id         id{0};
+    std::string          name_{""};
+    ObjectType           type_{Excn::ObjectType::UNSET};
+    int                  entityCount{0};
+    std::vector<int64_t> entityList;
   };
 
   class Block
@@ -128,7 +145,7 @@ namespace Excn {
     }
   };
 
-  typedef std::pair<int64_t, int64_t> Side;
+  using Side = std::pair<int64_t, int64_t>;
   template <typename INT> class SideSet
   {
   public:

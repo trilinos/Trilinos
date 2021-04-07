@@ -696,6 +696,7 @@ ModifiableLinearOp getAbsRowSumMatrix(const LinearOp & op)
 
      // compute absolute value row sum
      diag.putScalar(0.0);
+     diag.sync_host(); // UVM read of getLocalRowView
      for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
         LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
         std::vector<LO> indices(numEntries);
@@ -757,6 +758,7 @@ ModifiableLinearOp getAbsRowSumInvMatrix(const LinearOp & op)
 
      // compute absolute value row sum
      diag.putScalar(0.0);
+     diag.sync_host(); // UVM read of getLocalRowView
      for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
         LO numEntries = tCrsOp->getNumEntriesInLocalRow (i); 
         std::vector<LO> indices(numEntries);
@@ -2126,6 +2128,7 @@ double infNorm(const LinearOp & op)
 
     // compute absolute value row sum
     diag.putScalar(0.0);
+    diag.sync_host(); // UVM read of getLocalRowView
     for(LO i=0;i<(LO) tCrsOp->getNodeNumRows();i++) {
        LO numEntries = tCrsOp->getNumEntriesInLocalRow (i);
        std::vector<LO> indices(numEntries);

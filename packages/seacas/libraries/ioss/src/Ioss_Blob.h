@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Blob_h
@@ -29,7 +29,7 @@ namespace Ioss {
   public:
     Blob()                  = default; // Used for template typing only
     Blob(const Blob &other) = default;
-    ~Blob()                 = default;
+    ~Blob() override        = default;
 
     Blob(DatabaseIO *io_database, const std::string &my_name, int64_t item_count);
 

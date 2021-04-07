@@ -48,6 +48,7 @@
 #include "Tpetra_Details_CrsPadding.hpp"
 #include <iostream>
 #include <memory>
+#include <unordered_map>
 
 /// \file Tpetra_Details_crsUtils.hpp
 /// \brief Functions for manipulating CRS arrays
@@ -416,25 +417,68 @@ insert_crs_indices(
   const size_t num_new_indices = static_cast<size_t> (new_indices.size ());
   size_t num_inserted = 0;
 
-  for (size_t k = 0; k < num_new_indices; ++k) {
-    const ordinal_type idx = std::forward<IndexMap>(map)(new_indices[k]);
-    offset_type row_offset = start;
-    for (; row_offset < end; ++row_offset) {
-      if (idx == cur_indices[row_offset]) {
-        break;
+  size_t numIndicesLookup = num_assigned + num_new_indices;
+
+  // Threshold determined from test/Utils/insertCrsIndicesThreshold.cpp
+  const size_t useLookUpTableThreshold = 400; 
+
+  if (numIndicesLookup <= useLookUpTableThreshold || num_new_indices == 1) {
+    // For rows with few nonzeros, can use a serial search to find duplicates
+    // Or if inserting only one index, serial search is as fast as anything else
+    for (size_t k = 0; k < num_new_indices; ++k) {
+      const ordinal_type idx = std::forward<IndexMap>(map)(new_indices[k]);
+      offset_type row_offset = start;
+      for (; row_offset < end; ++row_offset) {
+        if (idx == cur_indices[row_offset]) {
+          break;
+        }
       }
+  
+      if (row_offset == end) {
+        if (num_inserted >= num_avail) { // not enough room
+          return Teuchos::OrdinalTraits<size_t>::invalid();
+        }
+        // This index is not yet in indices
+        cur_indices[end++] = idx;
+        num_inserted++;
+      }
+      if (cb) {
+        cb(k, start, row_offset - start);
+      }
+    }
+  }
+  else {
+    // For rows with many nonzeros, use a lookup table to find duplicates
+    std::unordered_map<ordinal_type, offset_type> idxLookup(numIndicesLookup);
+
+    // Put existing indices into the lookup table
+    for (size_t k = 0; k < num_assigned; k++) {
+      idxLookup[cur_indices[start+k]] = start+k;
     }
 
-    if (row_offset == end) {
-      if (num_inserted >= num_avail) { // not enough room
-        return Teuchos::OrdinalTraits<size_t>::invalid();
+    // Check for new indices in table; insert if not there yet
+    for (size_t k = 0; k < num_new_indices; k++) {
+      const ordinal_type idx = std::forward<IndexMap>(map)(new_indices[k]);
+      offset_type row_offset;
+
+      auto it = idxLookup.find(idx);
+      if (it == idxLookup.end()) {
+        if (num_inserted >= num_avail) { // not enough room
+          return Teuchos::OrdinalTraits<size_t>::invalid();
+        }
+        // index not found; insert it
+        row_offset = end;
+        cur_indices[end++] = idx;
+        idxLookup[idx] = row_offset;
+        num_inserted++;
       }
-      // This index is not yet in indices
-      cur_indices[end++] = idx;
-      num_inserted++;
-    }
-    if (cb) {
-      cb(k, start, row_offset - start);
+      else {
+        // index found; note its position
+        row_offset = it->second;
+      }
+      if (cb) {
+        cb(k, start, row_offset - start);
+      }
     }
   }
   num_assigned += num_inserted;

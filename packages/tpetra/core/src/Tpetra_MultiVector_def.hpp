@@ -351,7 +351,7 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      constexpr size_t localLengthThreshold = 10000;
+      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
     }
   }
@@ -406,6 +406,21 @@ namespace { // (anonymous)
 
 
 namespace Tpetra {
+
+  namespace Details {
+    template <typename DstView, typename SrcView>
+    struct AddAssignFunctor {
+      // This functor would be better as a lambda, but CUDA cannot compile
+      // lambdas in protected functions.  It compiles fine with the functor.
+      AddAssignFunctor(DstView &tgt_, SrcView &src_) : tgt(tgt_), src(src_) {}
+
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const size_t k) const { tgt(k) += src(k); }
+
+      DstView tgt;
+      SrcView src;
+    };
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -962,7 +977,8 @@ namespace Tpetra {
   (const SrcDistObject& sourceObj,
    const size_t numSameIDs,
    const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteToLIDs,
-   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs)
+   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& permuteFromLIDs,
+   const CombineMode CM)
   {
     using ::Tpetra::Details::Behavior;
     using ::Tpetra::Details::getDualViewCopyFromArrayView;
@@ -1065,7 +1081,19 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_h, rows, tgtCol);
           auto src_j = Kokkos::subview (src_h, rows, srcCol);
-          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+          if (CM == ADD_ASSIGN) { 
+            // Sum src_j into tgt_j
+            using range_t = 
+                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+            range_t rp(0,numSameIDs);
+            Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
+                    aaf(tgt_j, src_j);
+            Kokkos::parallel_for(rp, aaf);
+          }
+          else { 
+            // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
+          }
         }
       }
       else { // copy on device
@@ -1079,10 +1107,23 @@ namespace Tpetra {
 
           auto tgt_j = Kokkos::subview (tgt_d, rows, tgtCol);
           auto src_j = Kokkos::subview (src_d, rows, srcCol);
-          Kokkos::deep_copy (tgt_j, src_j); // Copy src_j into tgt_j
+          if (CM == ADD_ASSIGN) { 
+            // Sum src_j into tgt_j
+            using range_t = 
+                  Kokkos::RangePolicy<typename Node::execution_space, size_t>;
+            range_t rp(0,numSameIDs);
+            Tpetra::Details::AddAssignFunctor<decltype(tgt_j), decltype(src_j)>
+                    aaf(tgt_j, src_j);
+            Kokkos::parallel_for(rp, aaf);
+          }
+          else { 
+            // Copy src_j into tgt_j
+            Kokkos::deep_copy (tgt_j, src_j); 
+          }
         }
       }
     }
+
 
     // For the remaining GIDs, execute the permutations.  This may
     // involve noncontiguous access of both source and destination
@@ -1208,15 +1249,36 @@ namespace Tpetra {
           create_const_view (tgtWhichVecs.view_host ());
         auto srcWhichVecs_h =
           create_const_view (srcWhichVecs.view_host ());
-        permute_array_multi_column_variable_stride (tgt_h, src_h,
-                                                    permuteToLIDs_h,
-                                                    permuteFromLIDs_h,
-                                                    tgtWhichVecs_h,
-                                                    srcWhichVecs_h, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                      permuteToLIDs_h,
+                                                      permuteFromLIDs_h,
+                                                      tgtWhichVecs_h,
+                                                      srcWhichVecs_h, numCols,
+                                                      op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column_variable_stride (tgt_h, src_h,
+                                                      permuteToLIDs_h,
+                                                      permuteFromLIDs_h,
+                                                      tgtWhichVecs_h,
+                                                      srcWhichVecs_h, numCols,
+                                                      op_type());
+        }
       }
       else {
-        permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
-                                    permuteFromLIDs_h, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                      permuteFromLIDs_h, numCols, op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column (tgt_h, src_h, permuteToLIDs_h,
+                                      permuteFromLIDs_h, numCols, op_type());
+        }
       }
     }
     else { // permute on device
@@ -1244,15 +1306,36 @@ namespace Tpetra {
         // getDualViewCopyFromArrayView puts them in the right place.
         auto tgtWhichVecs_d = create_const_view (tgtWhichVecs.view_device ());
         auto srcWhichVecs_d = create_const_view (srcWhichVecs.view_device ());
-        permute_array_multi_column_variable_stride (tgt_d, src_d,
-                                                    permuteToLIDs_d,
-                                                    permuteFromLIDs_d,
-                                                    tgtWhichVecs_d,
-                                                    srcWhichVecs_d, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                      permuteToLIDs_d,
+                                                      permuteFromLIDs_d,
+                                                      tgtWhichVecs_d,
+                                                      srcWhichVecs_d, numCols,
+                                                      op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column_variable_stride (tgt_d, src_d,
+                                                      permuteToLIDs_d,
+                                                      permuteFromLIDs_d,
+                                                      tgtWhichVecs_d,
+                                                      srcWhichVecs_d, numCols,
+                                                      op_type());
+        }
       }
       else {
-        permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
-                                    permuteFromLIDs_d, numCols);
+        if (CM == ADD_ASSIGN) {
+          using op_type = KokkosRefactor::Details::AddOp;
+          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                      permuteFromLIDs_d, numCols, op_type());
+        }
+        else {
+          using op_type = KokkosRefactor::Details::InsertOp;
+          permute_array_multi_column (tgt_d, src_d, permuteToLIDs_d,
+                                      permuteFromLIDs_d, numCols, op_type());
+        }
       }
     }
 
@@ -1539,7 +1622,6 @@ namespace Tpetra {
     using KokkosRefactor::Details::unpack_array_multi_column_variable_stride;
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using std::endl;
-    using IST = impl_scalar_type;
     const char longFuncName[] = "Tpetra::MultiVector::unpackAndCombine";
     const char tfecfFuncName[] = "unpackAndCombine: ";
     ProfilingRegion regionUAC (longFuncName);
@@ -1671,7 +1753,7 @@ namespace Tpetra {
       // custom combine modes, start editing here.
 
       if (CM == INSERT || CM == REPLACE) {
-        using op_type = KokkosRefactor::Details::InsertOp<IST>;
+        using op_type = KokkosRefactor::Details::InsertOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1712,8 +1794,8 @@ namespace Tpetra {
           }
         }
       }
-      else if (CM == ADD) {
-        using op_type = KokkosRefactor::Details::AddOp<IST>;
+      else if (CM == ADD || CM == ADD_ASSIGN) {
+        using op_type = KokkosRefactor::Details::AddOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1754,7 +1836,7 @@ namespace Tpetra {
         }
       }
       else if (CM == ABSMAX) {
-        using op_type = KokkosRefactor::Details::AbsMaxOp<IST>;
+        using op_type = KokkosRefactor::Details::AbsMaxOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
             unpack_array_multi_column (host_exec_space (),
@@ -1962,7 +2044,7 @@ namespace Tpetra {
   namespace { // (anonymous)
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type
-    multiVectorSingleColumnDot (MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x,
+    multiVectorSingleColumnDot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x,
                                 const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& y)
     {
       using ::Tpetra::Details::ProfilingRegion;
@@ -1988,14 +2070,9 @@ namespace Tpetra {
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-        if (x.need_sync_device ()) {
-          x.sync_device ();
-        }
-        if (y.need_sync_device ()) {
-          const_cast<MV&>(y).sync_device ();
-        }
+        const_cast<MV&>(x).sync_device ();
+        const_cast<MV&>(y).sync_device ();
 
-        x.modify_device ();
         auto x_2d = x.getLocalViewDevice ();
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
         auto y_2d = y.getLocalViewDevice ();
@@ -2024,7 +2101,6 @@ namespace Tpetra {
   dot (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A,
        const Teuchos::ArrayView<dot_type>& dots) const
   {
-    typedef Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "dot: ";
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Teuchos::ArrayView)");
 
@@ -2057,7 +2133,7 @@ namespace Tpetra {
        numDots << " != this->getNumVectors() = " << numVecs << ".");
 
     if (numVecs == 1 && this->isConstantStride () && A.isConstantStride ()) {
-      const dot_type gblDot = multiVectorSingleColumnDot (const_cast<MV&> (*this), A);
+      const dot_type gblDot = multiVectorSingleColumnDot (*this, A);
       dots[0] = gblDot;
     }
     else {
@@ -3951,7 +4027,6 @@ namespace Tpetra {
 
     // If Case 2 then sum up *this and distribute it to all processes.
     if (Case2) {
-      Kokkos::fence();
       this->reduce ();
     }
   }
@@ -4047,6 +4122,7 @@ namespace Tpetra {
       // NOTE (mfh 17 Mar 2019) If we ever get rid of UVM, then device
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
+      Kokkos::fence(); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       this->modify_device ();
       auto X_lcl = this->getLocalViewDevice ();
       allReduceView (X_lcl, X_lcl, *comm);
@@ -4063,26 +4139,30 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
-                     const impl_scalar_type& ScalarValue) const
+                     const impl_scalar_type& ScalarValue)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
-    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclRow < minLocalIndex || lclRow > maxLocalIndex,
-      std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
-      << " is invalid.  The range of valid row indices on this process "
-      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
-      << ", " << maxLocalIndex << "].");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(col),
-      std::runtime_error,
-      "Tpetra::MultiVector::replaceLocalValue: vector index " << col
-      << " of the multivector is invalid.");
-#endif
+    if (::Tpetra::Details::Behavior::debug()) {
+      const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+      const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lclRow < minLocalIndex || lclRow > maxLocalIndex,
+        std::runtime_error,
+        "Tpetra::MultiVector::replaceLocalValue: row index " << lclRow
+        << " is invalid.  The range of valid row indices on this process "
+        << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+        << ", " << maxLocalIndex << "].");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        vectorIndexOutOfRange(col),
+        std::runtime_error,
+        "Tpetra::MultiVector::replaceLocalValue: vector index " << col
+        << " of the multivector is invalid.");
+    }
+
+    this->sync_host();
+
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     view_.h_view (lclRow, colInd) = ScalarValue;
+    this->modify_host();
   }
 
 
@@ -4092,24 +4172,27 @@ namespace Tpetra {
   sumIntoLocalValue (const LocalOrdinal lclRow,
                      const size_t col,
                      const impl_scalar_type& value,
-                     const bool atomic) const
+                     const bool atomic)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
-    const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclRow < minLocalIndex || lclRow > maxLocalIndex,
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
-      << " is invalid.  The range of valid row indices on this process "
-      << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
-      << ", " << maxLocalIndex << "].");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(col),
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoLocalValue: vector index " << col
-      << " of the multivector is invalid.");
-#endif
+    if (::Tpetra::Details::Behavior::debug()) {
+      const LocalOrdinal minLocalIndex = this->getMap()->getMinLocalIndex();
+      const LocalOrdinal maxLocalIndex = this->getMap()->getMaxLocalIndex();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        lclRow < minLocalIndex || lclRow > maxLocalIndex,
+        std::runtime_error,
+        "Tpetra::MultiVector::sumIntoLocalValue: row index " << lclRow
+        << " is invalid.  The range of valid row indices on this process "
+        << this->getMap()->getComm()->getRank() << " is [" << minLocalIndex
+        << ", " << maxLocalIndex << "].");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        vectorIndexOutOfRange(col),
+        std::runtime_error,
+        "Tpetra::MultiVector::sumIntoLocalValue: vector index " << col
+        << " of the multivector is invalid.");
+    }
+
+    this->sync_host();
+
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
     if (atomic) {
       Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
@@ -4117,6 +4200,7 @@ namespace Tpetra {
     else {
       view_.h_view (lclRow, colInd) += value;
     }
+    this->modify_host();
   }
 
 
@@ -4125,22 +4209,24 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   replaceGlobalValue (const GlobalOrdinal gblRow,
                       const size_t col,
-                      const impl_scalar_type& ScalarValue) const
+                      const impl_scalar_type& ScalarValue)
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
     const LocalOrdinal lclRow = this->map_->getLocalElement (gblRow);
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "replaceGlobalValue: ";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
-       std::runtime_error,
-       "Global row index " << gblRow << " is not present on this process "
-       << this->getMap ()->getComm ()->getRank () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (this->vectorIndexOutOfRange (col), std::runtime_error,
-       "Vector index " << col << " of the MultiVector is invalid.");
-#endif // HAVE_TPETRA_DEBUG
+
+    if (::Tpetra::Details::Behavior::debug()) {
+      const char tfecfFuncName[] = "replaceGlobalValue: ";
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
+         std::runtime_error,
+         "Global row index " << gblRow << " is not present on this process "
+         << this->getMap ()->getComm ()->getRank () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
+        (this->vectorIndexOutOfRange (col), std::runtime_error,
+         "Vector index " << col << " of the MultiVector is invalid.");
+    }
+
     this->replaceLocalValue (lclRow, col, ScalarValue);
   }
 
@@ -4150,24 +4236,26 @@ namespace Tpetra {
   sumIntoGlobalValue (const GlobalOrdinal globalRow,
                       const size_t col,
                       const impl_scalar_type& value,
-                      const bool atomic) const
+                      const bool atomic)
   {
     // mfh 23 Nov 2015: Use map_ and not getMap(), because the latter
     // touches the RCP's reference count, which isn't thread safe.
     const LocalOrdinal lclRow = this->map_->getLocalElement (globalRow);
-#ifdef HAVE_TEUCHOS_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << globalRow
-      << " is not present on this process "
-      << this->getMap ()->getComm ()->getRank () << ".");
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      vectorIndexOutOfRange(col),
-      std::runtime_error,
-      "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << col
-      << " of the multivector is invalid.");
-#endif
+
+    if (::Tpetra::Details::Behavior::debug()) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          lclRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid (),
+          std::runtime_error,
+          "Tpetra::MultiVector::sumIntoGlobalValue: Global row index " << globalRow
+          << " is not present on this process "
+          << this->getMap ()->getComm ()->getRank () << ".");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+          vectorIndexOutOfRange(col),
+          std::runtime_error,
+          "Tpetra::MultiVector::sumIntoGlobalValue: Vector index " << col
+          << " of the multivector is invalid.");
+    }
+
     this->sumIntoLocalValue (lclRow, col, value, atomic);
   }
 

@@ -1,29 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: delfsq.f,v 1.2 1998/07/14 18:18:38 gdsjaar Exp $
-C $Log: delfsq.f,v $
-C Revision 1.2  1998/07/14 18:18:38  gdsjaar
-C Removed unused variables, cleaned up a little.
-C
-C Changed BLUE labels to GREEN to help visibility on black background
-C (indirectly requested by a couple users)
-C
-C Revision 1.1.1.1  1990/11/30 11:05:53  gdsjaar
-C FASTQ Version 2.0X
-C
-c Revision 1.1  90/11/30  11:05:50  gdsjaar
-c Initial revision
-c
-C
-CC* FILE: [.MAIN]DELFSQ.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE DELFSQ (MP, ML, MS, MR, MSC, MCOM, ICOM, JCOM, CIN,
      &   RIN, IIN, KIN, N, IPBOUN, ILBOUN, ISBOUN, NLPS, IFLINE, ILLIST,
      &   NSPR, IFSIDE, ISLIST, IRPB, IPBF, NPPF, IFPB, LISTPB, ILBF,
@@ -32,23 +12,23 @@ C
      &   IWTLBF, IWTSBF, IFHOLE, NHPR, IHLIST, IRGFLG, NUMBER, DEFSCH,
      &   OPTIM, VAXVMS, WROTE, TIME1, BATCH, VERSN)
 C***********************************************************************
-C
+
 C  SUBROUTINE DELFSQ = DELETES POINTS, LINES, REGIONS, SCHEMES, AND
 C                      BOUNDARY DEFINITIONS
-C
+
 C***********************************************************************
-C
+
 C  SUBROUTINE CALLED BY:
 C     FASTQ = A PROGRAM TO QUICKLY PREPARE QMESH INPUT
-C
+
 C***********************************************************************
-C
+
 C  VARIABLES USED:
 C     IANS   = LOGICAL RESPONSE FROM YES-NO QUESTION
 C     ANS    = CHARACTER RESPONSE FOR MENU CHOICE
-C
+
 C***********************************************************************
-C
+
       DIMENSION IPBOUN(MP), ILBOUN(ML), ISBOUN(ML)
       DIMENSION NLPS(MS), IFLINE(MS), ILLIST(MS*3)
       DIMENSION NSPR(MR), IFSIDE(MR), ISLIST(4*MR), IRPB(MR)
@@ -62,16 +42,16 @@ C
       DIMENSION IFHOLE(MR), NHPR(MR), IHLIST(MR*2), IRGFLG(MR)
       DIMENSION N(29)
       DIMENSION KIN(MCOM), CIN(MCOM), IIN(MCOM), RIN(MCOM)
-C
+
       CHARACTER*72 DEFSCH, CIN
       CHARACTER VERSN*9, NUMBER*80
-C
+
       LOGICAL OPTIM, ADDLNK, VAXVMS, WROTE, SIDEOK, BATCH, NOROOM
       LOGICAL LGROUP
-C
+
       ADDLNK = .TRUE.
       IZ = 0
-C
+
   100 CONTINUE
       IF (ICOM .GT. JCOM) THEN
          CALL MESAGE (' ')
@@ -79,7 +59,7 @@ C
      &      JCOM, KIN, CIN, IIN, RIN)
          ICOM = 1
       END IF
-C
+
       IF ((CIN(ICOM)(1:1) .EQ. 'P') .OR. (CIN(ICOM)(1:1) .EQ. 'p')) THEN
          ICOM = ICOM + 1
          IF (N(1) .GT. 0) THEN
@@ -107,7 +87,7 @@ C
             CALL MESAGE ('* NO POINTS IN THE CURRENT DATABASE *')
             CALL MESAGE ('*-----------------------------------*')
          END IF
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'L') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'l')) THEN
          ICOM = ICOM + 1
@@ -136,9 +116,9 @@ C
             CALL MESAGE ('* NO LINES IN THE CURRENT DATABASE *')
             CALL MESAGE ('*----------------------------------*')
          END IF
-C
+
 C  DELETE BAR SET DEFINITIONS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'BA') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ba')) THEN
          ICOM = ICOM + 1
@@ -167,9 +147,9 @@ C
             CALL MESAGE ('* NO BAR SETS IN THE CURRENT DATABASE *')
             CALL MESAGE ('*-------------------------------------*')
          END IF
-C
+
 C  DELETE THE RENUMBERING CARDS
-C
+
       ELSE IF ((CIN(ICOM)(1:3) .EQ. 'REN') .OR.
      &   (CIN(ICOM)(1:3) .EQ. 'ren')) THEN
          ICOM = ICOM + 1
@@ -219,9 +199,9 @@ C
             CALL MESAGE (' ')
             OPTIM = .FALSE.
          END IF
-C
+
 C  DELETE THE REGIONS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'R') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'r')) THEN
          ICOM = ICOM + 1
@@ -251,9 +231,9 @@ C
                   ADDLNK = .FALSE.
                   CALL LTSORT (MR, LINKR, I, IPTR, ADDLNK)
                   IF ((IPTR .GT. 0) .AND. (IRGFLG(IPTR) .LE. 0)) THEN
-C
+
 C  DELETE REGION FROM BODY LIST
-C
+
                      DO 250 J = 1, N(9)
                         IF (IRPB(J) .EQ. I) THEN
                            DO 240 K = J + 1, N(9)
@@ -262,9 +242,9 @@ C
                            N(9) = N(9) - 1
                         END IF
   250                CONTINUE
-C
+
 C  DELETE REGION FROM GROUPS
-C
+
                      DO 280 J = 1, N(7)
                         IF (IRGFLG(J) .GE. 1) THEN
                            K1 = IFSIDE(IPTR)
@@ -279,9 +259,9 @@ C
   270                      CONTINUE
                         END IF
   280                CONTINUE
-C
+
 C  DELETE REGION FROM HOLES
-C
+
                      DO 310 J = 1, N(7)
                         IF (NHPR(J) .GE. 1) THEN
                            K1 = IFHOLE(IPTR)
@@ -296,9 +276,9 @@ C
   300                      CONTINUE
                         END IF
   310                CONTINUE
-C
+
 C  DELETE LINK TO REGION
-C
+
                      ADDLNK = .TRUE.
                      CALL LTSORT (MR, LINKR, I, IZ, ADDLNK)
                   END IF
@@ -312,9 +292,9 @@ C
             CALL MESAGE ('* NO REGIONS IN THE CURRENT DATABASE *')
             CALL MESAGE ('*------------------------------------*')
          END IF
-C
+
 C  DELETE THE GROUPS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'G') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'g')) THEN
          ICOM = ICOM + 1
@@ -344,9 +324,9 @@ C
                   ADDLNK = .FALSE.
                   CALL LTSORT (MR, LINKR, I, IPTR, ADDLNK)
                   IF ((IPTR .GT. 0) .AND. (IRGFLG(IPTR) .GE. 1)) THEN
-C
+
 C  DELETE GROUP FROM BODY LIST
-C
+
                      DO 370 J = 1, N(9)
                         IF (IRPB(J) .EQ. I) THEN
                            DO 360 K = J + 1, N(9)
@@ -355,9 +335,9 @@ C
                            N(9) = N(9) - 1
                         END IF
   370                CONTINUE
-C
+
 C  DELETE LINK TO GROUP
-C
+
                      ADDLNK = .TRUE.
                      CALL LTSORT (MR, LINKR, I, IZ, ADDLNK)
                   END IF
@@ -371,9 +351,9 @@ C
             CALL MESAGE ('* NO GROUPS IN THE CURRENT DATABASE *')
             CALL MESAGE ('*-----------------------------------*')
          END IF
-C
+
 C  DELETE THE HOLES
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'HO') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ho')) THEN
          ICOM = ICOM + 1
@@ -413,9 +393,9 @@ C
             CALL MESAGE ('* NO HOLES IN THE CURRENT DATABASE *')
             CALL MESAGE ('*----------------------------------*')
          END IF
-C
+
 C  DELETE SCHEMES
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SC') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sc')) THEN
          ICOM = ICOM + 1
@@ -449,16 +429,16 @@ C
             WRITE(*, 10020) DEFSCH
             CALL MESAGE (' ')
          END IF
-C
+
 C  SPAWN A PROCESS
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'SP') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'sp')) THEN
          ICOM = ICOM + 1
          CALL SPAWN (VAXVMS)
-C
+
 C  DELETE SIDE DEFINITIONS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'S') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 's')) THEN
          ICOM = ICOM + 1
@@ -487,9 +467,9 @@ C
             CALL MESAGE ('* NO SIDES IN THE CURRENT DATABASE *')
             CALL MESAGE ('*----------------------------------*')
          END IF
-C
+
 C  DELETE BOUNDARY CONDITIONS
-C
+
       ELSE IF ((CIN(ICOM)(1:1) .EQ. 'B') .OR.
      &   (CIN(ICOM)(1:1) .EQ. 'b')) THEN
          ICOM = ICOM + 1
@@ -565,9 +545,9 @@ C
                   DO 480 I = I1, I2
                      CALL LTSORT (ML, LINKLB, I, IZ, ADDLNK)
   480             CONTINUE
-C
+
 C  RELINK UP THE LINES TO THEIR ASSOCIATED FLAGS
-C
+
                   SIDEOK = .TRUE.
                   CALL LINKBC (ML, MS, 1, N(13), N(2), N(26), N(13),
      &               N(14), N(20), ILBF, IFLB, NLPF, LISTLB, NLPS,
@@ -606,9 +586,9 @@ C
                   DO 500 I = I1, I2
                      CALL LTSORT (ML, LINKSB, I, IZ, ADDLNK)
   500             CONTINUE
-C
+
 C  RELINK UP THE LINES TO THEIR ASSOCIATED FLAGS
-C
+
                   SIDEOK = .TRUE.
                   CALL LINKBC (ML, MS, 1, N(15), N(2), N(27), N(15),
      &               N(16), N(20), ISBF, IFSB, NSPF, LISTSB, NLPS,
@@ -627,9 +607,9 @@ C
                CALL MESAGE (' ')
             END IF
          END IF
-C
+
 C  EXIT OPTION - EXITS FASTQ
-C
+
       ELSE IF ((CIN(ICOM)(1:2) .EQ. 'EX') .OR.
      &   (CIN(ICOM)(1:2) .EQ. 'ex')) THEN
          ICOM = ICOM + 1
@@ -645,20 +625,20 @@ C
       ELSE IF (CIN(ICOM)(1:1) .EQ. ' ') THEN
          ICOM = ICOM + 1
          RETURN
-C
+
 C  PRINT HELP MESAGE
-C
+
       ELSE
          ICOM = ICOM + 1
          CALL HELP_FQ(6)
-C
+
       END IF
       GO TO 100
-C
+
 10000 FORMAT (' NO HOLES DEFINED IN REGION:', I6)
 10010 FORMAT (' UNDEFINED REGION:', I6)
 10020 FORMAT (' DEFLT: ', A72)
 10040 FORMAT (1X, I5, 2X, A72)
 10050 FORMAT (8X, A8)
-C
+
       END

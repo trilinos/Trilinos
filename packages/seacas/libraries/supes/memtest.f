@@ -1,13 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       PROGRAM MEMTEST
-C
+
 C     THIS PROGRAM TESTS THE SUPES MEMORY MANAGER.
-C
+
       PARAMETER (MFIELD=4)
       CHARACTER*32 VERSN
       CHARACTER*8 CV(MFIELD)
@@ -20,9 +20,9 @@ C
       CALL GSUPEV(VERSN)
       WRITE (*,'(A, A)') ' SUPES Version ', VERSN
 
-      CALL EXNAME (6, CV(1), LEN)
+c      CALL EXNAME (6, CV(1), LEN)
 c      OPEN (6, STATUS='unknown',FILE=CV(1)(1:LEN))
-      CALL EXNAME (8, CV(1), LEN)
+c      CALL EXNAME (8, CV(1), LEN)
 c      OPEN (8, STATUS='unknown',FILE=CV(1)(1:LEN))
   100 CALL FREFLD( 0,8,'FUNC: ',MFIELD,IOSTAT,N,KV,CV,IV,RV )
       IF ( IOSTAT .NE. 0 ) CV(1) = 'EXIT'

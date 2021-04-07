@@ -1,24 +1,9 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
-C $Id: pltdrw.f,v 1.4 2001/01/05 18:17:07 gdsjaar Exp $
-C $Log: pltdrw.f,v $
-C Revision 1.4  2001/01/05 18:17:07  gdsjaar
-C Variable was assumed to be saved, but wasn't.  Added a SAVE statement
-C
-C Revision 1.3  1998/03/23 04:58:35  gdsjaar
-C Fixed data statement ordering
-C
-C Revision 1.2  1993/07/16 18:07:52  gdsjaar
-C Added external pltblk statements so that linkers would pull in block
-C data subprogram to initialize constants.
-C
-c Revision 1.1  1993/07/16  16:48:03  gdsjaar
-c Changed plt to library rather than single source file.
-c
 C=======================================================================
       SUBROUTINE PLTDRW(X,Y)
       REAL DEVCAP(23)

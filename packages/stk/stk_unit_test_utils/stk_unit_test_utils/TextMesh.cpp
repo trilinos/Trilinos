@@ -43,12 +43,12 @@ class TopologyMapping
 public:
   stk::topology::topology_t topology(const std::string& name)
   {
-    auto it = nameToTopology.find(name);
-    return (it != nameToTopology.end() ? it->second : stk::topology::INVALID_TOPOLOGY);
+    auto it = m_nameToTopology.find(name);
+    return (it != m_nameToTopology.end() ? it->second : stk::topology::INVALID_TOPOLOGY);
   }
 
 private:
-  std::unordered_map<std::string, stk::topology::topology_t> nameToTopology =
+  std::unordered_map<std::string, stk::topology::topology_t> m_nameToTopology =
   {
     {  "NODE"          , stk::topology::NODE         },
     {  "LINE_2"        , stk::topology::LINE_2       },
@@ -105,6 +105,106 @@ struct ElementData
   stk::mesh::EntityId identifier;
   stk::mesh::EntityIdVector nodeIds;
   std::string partName = "";
+  unsigned partId;
+};
+
+class PartIdMapping
+{
+public:
+  PartIdMapping()
+    : m_idsAssigned(false)
+  { }
+
+  void register_part_name(const std::string& name)
+  {
+    m_partNames.push_back(name);
+    handle_block_part(name);
+  }
+
+  void register_part_name_with_id(const std::string& name, unsigned id)
+  {
+    register_part_name(name);
+    assign(name, id);
+  }
+
+  unsigned get(const std::string& name)
+  {
+    if (!m_idsAssigned) assign_ids();
+
+    auto it = m_ids.find(name);
+    ThrowRequireMsg(it != m_ids.end(), "PartIdMapping has no ID for invalid part name " << name);
+    return it->second;
+  }
+
+private:
+  void handle_block_part(const std::string& name)
+  {
+    const std::string blockPrefix = "BLOCK_";
+    const unsigned prefixLength = blockPrefix.length();
+
+    if (name.length() < prefixLength+1) return;
+
+    const std::string namePrefix = name.substr(0, prefixLength);
+    const std::string nameSuffix = name.substr(prefixLength);
+
+    if (namePrefix != blockPrefix) return;
+
+    unsigned id;
+    std::istringstream nameSuffixStream(nameSuffix);
+    nameSuffixStream >> id;
+    if (nameSuffixStream.fail()) {
+      return;
+    }
+    assign(name, id);
+  }
+
+  void assign_ids()
+  {
+    unsigned nextPartId = 1;
+    for (const std::string& name : m_partNames) {
+      if (m_ids.find(name) == m_ids.end()) {
+        while (is_assigned(nextPartId)) nextPartId++;
+
+        assign(name, nextPartId);
+      }
+    }
+
+    m_idsAssigned = true;
+  }
+
+  void assign(const std::string& name, unsigned id)
+  {
+    validate_name_and_id(name, id);
+    m_ids[name] = id;
+    m_assignedIds.insert(id);
+  }
+
+  void validate_name_and_id(const std::string& name, unsigned id)
+  {
+    if (is_registered(name)) {
+      ThrowRequireMsg(m_ids[name] == id,
+          "Cannot assign part '" << name << "' two different ids: " << m_ids[name] << " and " << id);
+    }
+    else {
+      ThrowRequireMsg(!is_assigned(id),
+          "Part id " << id << " has already been assigned, cannot assign it to part '" << name << "'");
+    }
+  }
+
+  bool is_registered(const std::string& name)
+  {
+    return m_ids.count(name) > 0;
+  }
+
+  bool is_assigned(unsigned id) const
+  {
+    return m_assignedIds.count(id) > 0;
+  }
+
+  std::vector<std::string> m_partNames;
+  std::set<unsigned> m_assignedIds;
+  std::unordered_map<std::string, unsigned> m_ids;
+  bool m_idsAssigned;
 };
 
 struct TextMeshData
@@ -124,32 +224,32 @@ struct TextMeshData
 
   const EntityIdSet nodes_on_proc(int proc) const
   {
-    auto it = nodesOnProc.find(proc);
-    return it != nodesOnProc.end() ? it->second : EntityIdSet();
+    auto it = m_nodesOnProc.find(proc);
+    return it != m_nodesOnProc.end() ? it->second : EntityIdSet();
   }
 
   const std::set<int> procs_for_node(const stk::mesh::EntityId& nodeId) const
   {
-    auto it = procsForNode.find(nodeId);
-    return it != procsForNode.end() ? it->second : std::set<int>();
+    auto it = m_procsForNode.find(nodeId);
+    return it != m_procsForNode.end() ? it->second : std::set<int>();
   }
 
 private:
   void associate_node_with_proc(const stk::mesh::EntityId& nodeId, int proc)
   {
-    procsForNode[nodeId].insert(proc);
-    nodesOnProc[proc].insert(nodeId);
+    m_procsForNode[nodeId].insert(proc);
+    m_nodesOnProc[proc].insert(nodeId);
   }
 
-  std::unordered_map<stk::mesh::EntityId, std::set<int>> procsForNode;
-  std::unordered_map<int, EntityIdSet> nodesOnProc;
+  std::unordered_map<stk::mesh::EntityId, std::set<int>> m_procsForNode;
+  std::unordered_map<int, EntityIdSet> m_nodesOnProc;
 };
 
 class TextMeshParser
 {
 public:
   TextMeshParser(unsigned dim)
-    : spatialDim(dim)
+    : m_spatialDim(dim)
   {
     validate_spatial_dim();
   }
@@ -157,15 +257,19 @@ public:
   TextMeshData parse(const std::string& meshDescription)
   {
     TextMeshData data;
-    data.spatialDim = spatialDim;
+    data.spatialDim = m_spatialDim;
 
     const std::vector<std::string> lines = split(meshDescription, '\n');
 
-    lineNumber = 1;
+    m_lineNumber = 1;
     for (const std::string& line : lines) {
       ElementData elem = parse_element(line);
       data.add_element(elem);
-      lineNumber++;
+      m_lineNumber++;
+    }
+
+    for (ElementData& elem : data.elementDataVec) {
+      set_part_id(elem);
     }
 
     return data;
@@ -174,7 +278,7 @@ public:
 private:
   void validate_spatial_dim()
   {
-    ThrowRequireMsg(spatialDim == 2 || spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
+    ThrowRequireMsg(m_spatialDim == 2 || m_spatialDim == 3, "Error!  Spatial dimension not defined to be 2 or 3!");
   }
 
   std::vector<std::string> split(const std::string &s, char delim)
@@ -209,11 +313,19 @@ private:
       elementData.nodeIds.push_back(nodeId);
     }
 
-    if(tokens.size() == numNodes+4) {
+    if (tokens.size() >= numNodes+4) {
       elementData.partName = tokens[3+numNodes];
     }
     else {
       elementData.partName = "block_" + elementData.topology.name();
+    }
+    validate_part_name(elementData.partName);
+
+    if (tokens.size() >= numNodes+5) {
+      m_partIds.register_part_name_with_id(elementData.partName, parse_part_id(tokens[4+numNodes]));
+    }
+    else {
+      m_partIds.register_part_name(elementData.partName);
     }
 
     return elementData;
@@ -236,7 +348,7 @@ private:
   {
     ThrowRequireMsg(numTokens >= 4,
                     "Error!  Each line must contain the following fields (with at least one node):  "
-                    "Processor, GlobalId, Element Topology, NodeIds.  Error on line " << lineNumber << ".");
+                    "Processor, GlobalId, Element Topology, NodeIds.  Error on line " << m_lineNumber << ".");
   }
 
   int parse_proc(const std::string& token)
@@ -251,38 +363,63 @@ private:
 
   stk::topology parse_topology(const std::string& token)
   {
-    stk::topology topology = topologyMapping.topology(token);
+    stk::topology topology = m_topologyMapping.topology(token);
     validate_topology(topology, token);
     return topology;
+  }
+
+  unsigned parse_part_id(const std::string& token)
+  {
+    return std::stoul(token);
   }
 
   void validate_topology(const stk::topology& topology, const std::string& token)
   {
     ThrowRequireMsg(topology != stk::topology::INVALID_TOPOLOGY,
-                    "Error!  Topology = >>" << token << "<< is invalid from line " << lineNumber << ".");
-    ThrowRequireMsg(topology.defined_on_spatial_dimension(spatialDim),
-                    "Error on input line " << lineNumber << ".  Topology = " << topology
-                    << " is not defined on spatial dimension = " << spatialDim
+                    "Error!  Topology = >>" << token << "<< is invalid from line " << m_lineNumber << ".");
+    ThrowRequireMsg(topology.defined_on_spatial_dimension(m_spatialDim),
+                    "Error on input line " << m_lineNumber << ".  Topology = " << topology
+                    << " is not defined on spatial dimension = " << m_spatialDim
                     << " set in MetaData.");
   }
 
   void validate_token_count(size_t numTokens, unsigned numNodes, const std::string& topologyName)
   {
-    ThrowRequireMsg(numTokens == numNodes+3 || numTokens == numNodes+4,
+    ThrowRequireMsg(numTokens >= numNodes+3 && numTokens <= numNodes+5,
                     "Error!  The input line appears to contain " << numTokens-3 << " nodes, but the topology "
-                    << topologyName << " needs " << numNodes << " nodes on line " << lineNumber << ".");
+                    << topologyName << " needs " << numNodes << " nodes on line " << m_lineNumber << ".");
   }
 
-  unsigned spatialDim;
-  TopologyMapping topologyMapping;
-  size_t lineNumber;
+  void validate_part_name(const std::string& name)
+  {
+    ThrowRequireMsg(!is_number(name),
+                    "The input line " << m_lineNumber << " specifies the numeric part name " << name);
+  }
+
+  bool is_number(const std::string& name)
+  {
+    unsigned num;
+    std::istringstream nameStream(name);
+    nameStream >> num;
+    return !nameStream.fail();
+  }
+
+  void set_part_id(ElementData& elem)
+  {
+    elem.partId = m_partIds.get(elem.partName);
+  }
+
+  unsigned m_spatialDim;
+  TopologyMapping m_topologyMapping;
+  size_t m_lineNumber;
+  PartIdMapping m_partIds;
 };
 
 class MetaDataInitializer
 {
 public:
   MetaDataInitializer(const TextMeshData& d, stk::mesh::MetaData& m)
-    : data(d), meta(m)
+    : m_data(d), m_meta(m)
   { }
 
   void setup()
@@ -294,21 +431,22 @@ public:
 private:
   void declare_parts()
   {
-    for (const ElementData& elementData : data.elementDataVec) {
-      stk::mesh::Part& part = meta.declare_part_with_topology(elementData.partName, elementData.topology);
+    for (const ElementData& elementData : m_data.elementDataVec) {
+      if (m_meta.get_part(elementData.partName) == nullptr) {
+        stk::mesh::Part& part = m_meta.declare_part_with_topology(elementData.partName, elementData.topology);
 
-      if (!stk::io::is_part_io_part(part)) {
         stk::io::put_io_part_attribute(part);
+        m_meta.set_part_id(part, elementData.partId);
       }
     }
   }
 
   void declare_coordinate_field()
   {
-    if (data.spatialDim == 3) {
+    if (m_data.spatialDim == 3) {
       declare_coordinate_field_with_type<stk::mesh::CoordinatesField>();
     }
-    else if (data.spatialDim == 2) {
+    else if (m_data.spatialDim == 2) {
       declare_coordinate_field_with_type<stk::mesh::Field<double, stk::mesh::Cartesian2d>>();
     }
   }
@@ -316,63 +454,63 @@ private:
   template<typename F>
   void declare_coordinate_field_with_type()
   {
-    F& coordsField = meta.declare_field<F>(stk::topology::NODE_RANK, meta.coordinate_field_name());
-    stk::mesh::put_field_on_mesh(coordsField, meta.universal_part(), data.spatialDim, static_cast<double*>(nullptr));
+    F& coordsField = m_meta.declare_field<F>(stk::topology::NODE_RANK, m_meta.coordinate_field_name());
+    stk::mesh::put_field_on_mesh(coordsField, m_meta.universal_part(), m_data.spatialDim, static_cast<double*>(nullptr));
   }
 
-  const TextMeshData& data;
-  stk::mesh::MetaData& meta;
+  const TextMeshData& m_data;
+  stk::mesh::MetaData& m_meta;
 };
 
 class BulkDataInitializer
 {
 public:
   BulkDataInitializer(const TextMeshData& d, stk::mesh::BulkData& b)
-    : data(d),
-      bulk(b),
-      meta(bulk.mesh_meta_data())
+    : m_data(d),
+      m_bulk(b),
+      m_meta(m_bulk.mesh_meta_data())
   { }
 
   void setup()
   {
-    bulk.modification_begin();
-    for (const ElementData& elementData : data.elementDataVec) {
+    m_bulk.modification_begin();
+    for (const ElementData& elementData : m_data.elementDataVec) {
       if (is_locally_owned(elementData)) {
         add_element(elementData);
       }
     }
     setup_node_sharing();
-    bulk.modification_end();
+    m_bulk.modification_end();
   }
 
 private:
   bool is_locally_owned(const ElementData& elem)
   {
-    return elem.proc == bulk.parallel_rank();
+    return elem.proc == m_bulk.parallel_rank();
   }
 
   void add_element(const ElementData& elem)
   {
-    stk::mesh::Part* part = meta.get_part(elem.partName);
-    stk::mesh::declare_element(bulk, *part, elem.identifier, elem.nodeIds);
+    stk::mesh::Part* part = m_meta.get_part(elem.partName);
+    stk::mesh::declare_element(m_bulk, *part, elem.identifier, elem.nodeIds);
   }
 
   void setup_node_sharing()
   {
-    for (const stk::mesh::EntityId& nodeId : data.nodes_on_proc(bulk.parallel_rank())) {
-      for (int proc : data.procs_for_node(nodeId)) {
-        if (proc == bulk.parallel_rank()) continue;
+    for (const stk::mesh::EntityId& nodeId : m_data.nodes_on_proc(m_bulk.parallel_rank())) {
+      for (int proc : m_data.procs_for_node(nodeId)) {
+        if (proc == m_bulk.parallel_rank()) continue;
 
-        const stk::mesh::Entity& node = bulk.get_entity(stk::topology::NODE_RANK, nodeId);
-        bulk.add_node_sharing(node, proc);
+        const stk::mesh::Entity& node = m_bulk.get_entity(stk::topology::NODE_RANK, nodeId);
+        m_bulk.add_node_sharing(node, proc);
       }
     }
   }
 
-  const TextMeshData& data;
+  const TextMeshData& m_data;
 
-  stk::mesh::BulkData& bulk;
-  stk::mesh::MetaData& meta;
+  stk::mesh::BulkData& m_bulk;
+  stk::mesh::MetaData& m_meta;
 };
 
 class Coordinates
@@ -386,7 +524,7 @@ public:
 
   const std::vector<double>& operator[](const stk::mesh::EntityId& nodeId) const
   {
-    auto it(nodalCoords.find(nodeId));
+    auto it(m_nodalCoords.find(nodeId));
     return it->second;
   }
 
@@ -403,27 +541,27 @@ private:
   {
     std::vector<double>::const_iterator coordIter = coordinates.begin();
     for (const stk::mesh::EntityId& nodeId : data.nodeIds) {
-      nodalCoords[nodeId] = std::vector<double>(coordIter, coordIter+data.spatialDim);
+      m_nodalCoords[nodeId] = std::vector<double>(coordIter, coordIter+data.spatialDim);
       coordIter += data.spatialDim;
     }
   }
 
-  std::unordered_map<stk::mesh::EntityId, std::vector<double>> nodalCoords;
+  std::unordered_map<stk::mesh::EntityId, std::vector<double>> m_nodalCoords;
 };
 
 class CoordinateInitializer
 {
 public:
   CoordinateInitializer(const TextMeshData& d, stk::mesh::BulkData& b)
-    : data(d),
-      bulk(b),
-      meta(bulk.mesh_meta_data()),
-      coordsField(*meta.coordinate_field())
+    : m_data(d),
+      m_bulk(b),
+      m_meta(m_bulk.mesh_meta_data()),
+      m_coordsField(*m_meta.coordinate_field())
   { }
 
   void setup(const std::vector<double>& coordinates)
   {
-    Coordinates coords(data, coordinates);
+    Coordinates coords(m_data, coordinates);
     fill_node_list();
     fill_coordinate_field(coords);
     communicate_coordinate_field();
@@ -432,14 +570,14 @@ public:
 private:
   void fill_node_list()
   {
-    stk::mesh::get_selected_entities(meta.universal_part(), bulk.buckets(stk::topology::NODE_RANK), nodes, true);
+    stk::mesh::get_selected_entities(m_meta.universal_part(), m_bulk.buckets(stk::topology::NODE_RANK), m_nodes, true);
   }
 
   void fill_coordinate_field(const Coordinates& coordinates)
   {
-    for (stk::mesh::Entity& node : nodes) {
-      stk::mesh::EntityId nodeId = bulk.identifier(node);
-      double* nodalCoordsLocation = static_cast<double*>(stk::mesh::field_data(coordsField, node));
+    for (stk::mesh::Entity& node : m_nodes) {
+      stk::mesh::EntityId nodeId = m_bulk.identifier(node);
+      double* nodalCoordsLocation = static_cast<double*>(stk::mesh::field_data(m_coordsField, node));
       copy_coordinates(coordinates[nodeId], nodalCoordsLocation);
     }
   }
@@ -453,51 +591,51 @@ private:
 
   void communicate_coordinate_field()
   {
-    if (bulk.is_automatic_aura_on()) {
-      stk::mesh::communicate_field_data(bulk, {&coordsField});
+    if (m_bulk.is_automatic_aura_on()) {
+      stk::mesh::communicate_field_data(m_bulk, {&m_coordsField});
     }
   }
 
-  const TextMeshData& data;
+  const TextMeshData& m_data;
 
-  stk::mesh::BulkData& bulk;
-  stk::mesh::MetaData& meta;
+  stk::mesh::BulkData& m_bulk;
+  stk::mesh::MetaData& m_meta;
 
-  const stk::mesh::FieldBase& coordsField;
-  stk::mesh::EntityVector nodes;
+  const stk::mesh::FieldBase& m_coordsField;
+  stk::mesh::EntityVector m_nodes;
 };
 
 class TextMesh
 {
 public:
   TextMesh(stk::mesh::BulkData& b, const std::string& meshDesc)
-    : bulk(b),
-      meta(bulk.mesh_meta_data()),
-      parser(meta.spatial_dimension()),
-      data(parser.parse(meshDesc))
+    : m_bulk(b),
+      m_meta(m_bulk.mesh_meta_data()),
+      m_parser(m_meta.spatial_dimension()),
+      m_data(m_parser.parse(meshDesc))
   { }
 
   void setup_mesh()
   {
-    MetaDataInitializer metaInit(data, meta);
+    MetaDataInitializer metaInit(m_data, m_meta);
     metaInit.setup();
 
-    BulkDataInitializer bulkInit(data, bulk);
+    BulkDataInitializer bulkInit(m_data, m_bulk);
     bulkInit.setup();
   }
 
   void setup_coordinates(const std::vector<double>& coordinates)
   {
-    CoordinateInitializer coordInit(data, bulk);
+    CoordinateInitializer coordInit(m_data, m_bulk);
     coordInit.setup(coordinates);
   }
 
 private:
-  stk::mesh::BulkData& bulk;
-  stk::mesh::MetaData& meta;
+  stk::mesh::BulkData& m_bulk;
+  stk::mesh::MetaData& m_meta;
 
-  TextMeshParser parser;
-  TextMeshData data;
+  TextMeshParser m_parser;
+  TextMeshData m_data;
 };
 
 void setup_text_mesh(stk::mesh::BulkData& bulk, const std::string& meshDesc)

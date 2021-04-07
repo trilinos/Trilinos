@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 #include "SL_SystemInterface.h"
 
@@ -18,12 +18,6 @@
 #include <SL_tokenize.h>
 #include <copyright.h>
 #include <fmt/format.h>
-
-#if defined(__PUMAGON__)
-#define NPOS (size_t) - 1
-#else
-#define NPOS std::string::npos
-#endif
 
 namespace {
   int  get_free_descriptor_count();
@@ -48,29 +42,38 @@ SystemInterface::~SystemInterface() = default;
 
 void SystemInterface::enroll_options()
 {
-  options_.usage("[options] list_of_files_to_join");
+  options_.usage("[options] file_to_split");
 
   options_.enroll("help", GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
-  options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);
+  options_.enroll("in_type", GetLongOption::MandatoryValue,
+                  "File format for input mesh file (default = exodus)", "exodusii", nullptr, true);
 
   options_.enroll("processors", GetLongOption::MandatoryValue,
                   "Number of processors to decompose the mesh for", "1");
 
-  options_.enroll("debug", GetLongOption::MandatoryValue, "Debug level: 0, 1, 2, 4 or'd", "0");
+  options_.enroll(
+      "method", GetLongOption::MandatoryValue,
+      "Decomposition method\n"
+      "\t\t'linear'   : #elem/#proc to each processor\n"
+      "\t\t'scattered': Shuffle elements to each processor (cyclic)\n"
+      "\t\t'random'   : Random distribution of elements, maintains balance\n"
+      "\t\t'rb'       : Metis multilevel recursive bisection\n"
+      "\t\t'kway'     : Metis multilevel k-way graph partitioning\n"
+      "\t\t'variable' : Read element-processor assignment from an element variable\n"
+      "\t\t'map'      : Read element-processor assignment from an element map [processor_id]\n"
+      "\t\t'file'     : Read element-processor assignment from file",
+      "linear");
 
-  options_.enroll("in_type", GetLongOption::MandatoryValue,
-                  "File format for input mesh file (default = exodus)", "exodusii");
-
-  options_.enroll("method", GetLongOption::MandatoryValue,
-                  "Decomposition method\n"
-                  "\t\t'linear'   : #elem/#proc to each processor\n"
-                  "\t\t'scattered': Shuffle elements to each processor (cyclic)\n"
-                  "\t\t'random'   : Random distribution of elements, maintains balance\n"
-                  "\t\t'rb'       : Metis multilevel recursive bisection\n"
-                  "\t\t'kway'     : Metis multilevel k-way graph partitioning\n"
-                  "\t\t'file'     : Read element-processor assignment from file",
-                  "linear");
+  options_.enroll(
+      "decomposition_name", GetLongOption::MandatoryValue,
+      "The name of the element variable (method = `variable`)\n"
+      "\t\tor element map (method = `map`) containing the element to processor mapping.\n"
+      "\t\tIf no name is specified, then `processor_id` will be used.\n"
+      "\t\tIf the name is followed by a ',' and an integer or 'auto', then\n"
+      "\t\tthe entries in the map will be divided by the integer value or\n"
+      "\t\t(if auto) by `int((max_entry+1)/proc_count)`.",
+      nullptr);
 
   options_.enroll("decomposition_file", GetLongOption::MandatoryValue,
                   "File containing element to processor mapping\n"
@@ -80,23 +83,26 @@ void SystemInterface::enroll_options()
                   "\t\tIf two integers (count proc), they specify that the next\n"
                   "\t\t\t'count' elements are on processor 'proc'",
                   nullptr);
+  options_.enroll("contiguous_decomposition", GetLongOption::NoValue,
+                  "If the input mesh is contiguous, create contiguous decompositions", nullptr,
+                  nullptr, true);
 
   options_.enroll("output_path", GetLongOption::MandatoryValue,
                   "Path to where decomposed files will be written.\n"
                   "\t\tThe string %P will be replaced with the processor count\n"
                   "\t\tThe string %M will be replaced with the decomposition method.\n"
                   "\t\tDefault is the location of the input mesh",
-                  nullptr);
+                  nullptr, nullptr, true);
 
   options_.enroll("Partial_read_count", GetLongOption::MandatoryValue,
-                  "Split the coordinate and connetivity reads into a\n"
+                  "Split the coordinate and connectivity reads into a\n"
                   "\t\tmaximum of this many nodes or elements at a time to reduce memory.",
                   "1000000000");
 
   options_.enroll("max-files", GetLongOption::MandatoryValue,
                   "Specify maximum number of processor files to write at one time.\n"
                   "\t\tUsually use default value; this is typically used for debugging.",
-                  nullptr);
+                  nullptr, nullptr, true);
 
   options_.enroll("netcdf4", GetLongOption::NoValue,
                   "Output database will be a netcdf4 "
@@ -104,21 +110,35 @@ void SystemInterface::enroll_options()
                   "classical netcdf file format",
                   nullptr);
 
-  options_.enroll("64-bit", GetLongOption::NoValue, "Use 64-bit integers on output database",
-                  nullptr);
-
   options_.enroll("netcdf5", GetLongOption::NoValue,
                   "Output database will be a netcdf5 (CDF5) "
                   "file instead of the classical netcdf file format",
                   nullptr);
 
+  options_.enroll("64-bit", GetLongOption::NoValue, "Use 64-bit integers on output database",
+                  nullptr, nullptr, true);
+
   options_.enroll("shuffle", GetLongOption::NoValue,
                   "Use a netcdf4 hdf5-based file and use hdf5s shuffle mode with compression.",
                   nullptr);
 
+  options_.enroll(
+      "zlib", GetLongOption::NoValue,
+      "Use the Zlib / libz compression method if compression is enabled (default) [exodus only].",
+      nullptr);
+
+  options_.enroll("szip", GetLongOption::NoValue,
+                  "Use SZip compression. [exodus only, enables netcdf-4]", nullptr);
+
   options_.enroll("compress", GetLongOption::MandatoryValue,
                   "Specify the hdf5 compression level [0..9] to be used on the output file.",
-                  nullptr);
+                  nullptr, nullptr, true);
+
+  options_.enroll("debug", GetLongOption::MandatoryValue, "Debug level: 0, 1, 2, 4 or'd", "0");
+
+  options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);
+
+  options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
 
 #if 0
   options_.enroll("omit_blocks", GetLongOption::MandatoryValue,
@@ -155,10 +175,6 @@ void SystemInterface::enroll_options()
                   nullptr);
 
 #endif
-  options_.enroll("contiguous_decomposition", GetLongOption::NoValue,
-                  "If the input mesh is contiguous, create contiguous decompositions", nullptr);
-
-  options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
 }
 
 bool SystemInterface::parse_options(int argc, char **argv)
@@ -185,7 +201,7 @@ bool SystemInterface::parse_options(int argc, char **argv)
   }
 
   if (options_.retrieve("copyright") != nullptr) {
-    fmt::print("{}", copyright("2016-2019"));
+    fmt::print("{}", copyright("2016-2021"));
     exit(EXIT_SUCCESS);
   }
 
@@ -215,40 +231,12 @@ bool SystemInterface::parse_options(int argc, char **argv)
     options_.parse(options, options_.basename(*argv));
   }
 
-  {
-    const char *temp = options_.retrieve("processors");
-    processorCount_  = strtoul(temp, nullptr, 0);
-  }
-
-  {
-    const char *temp  = options_.retrieve("Partial_read_count");
-    partialReadCount_ = strtoul(temp, nullptr, 0);
-  }
-
-  {
-    const char *temp = options_.retrieve("max-files");
-    if (temp != nullptr) {
-      maxFiles_ = strtoul(temp, nullptr, 0);
-    }
-    else {
-      maxFiles_ = get_free_descriptor_count();
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("debug");
-    debugLevel_      = strtoul(temp, nullptr, 0);
-  }
-
-  {
-    const char *temp = options_.retrieve("in_type");
-    inputFormat_     = temp;
-  }
-
-  {
-    const char *temp = options_.retrieve("method");
-    decompMethod_    = temp;
-  }
+  processorCount_   = options_.get_option_value("processors", processorCount_);
+  partialReadCount_ = options_.get_option_value("Partial_read_count", partialReadCount_);
+  maxFiles_         = options_.get_option_value("max-files", get_free_descriptor_count());
+  debugLevel_       = options_.get_option_value("debug", debugLevel_);
+  inputFormat_      = options_.get_option_value("in_type", inputFormat_);
+  decompMethod_     = options_.get_option_value("method", decompMethod_);
 
   {
     if (decompMethod_ == "file") {
@@ -263,16 +251,14 @@ bool SystemInterface::parse_options(int argc, char **argv)
         return false;
       }
     }
-  }
-
-  {
-    const char *temp = options_.retrieve("output_path");
-    if (temp != nullptr) {
-      outputPath_ = temp;
+    else if (decompMethod_ == "variable" || decompMethod_ == "map") {
+      // If isn't specified, then default `processor_id` is used.
+      decompVariable_ = options_.get_option_value("decomposition_name", decompVariable_);
     }
   }
 
-  ints64Bit_ = (options_.retrieve("64-bit") != nullptr);
+  outputPath_ = options_.get_option_value("output_path", outputPath_);
+  ints64Bit_  = (options_.retrieve("64-bit") != nullptr);
 
   if (options_.retrieve("netcdf4") != nullptr) {
     netcdf4_ = true;
@@ -286,12 +272,18 @@ bool SystemInterface::parse_options(int argc, char **argv)
 
   shuffle_ = (options_.retrieve("shuffle") != nullptr);
 
-  {
-    const char *temp = options_.retrieve("compress");
-    if (temp != nullptr) {
-      compressionLevel_ = std::strtol(temp, nullptr, 10);
-    }
+  if (options_.retrieve("szip") != nullptr) {
+    szip_ = true;
+    zlib_ = false;
   }
+  zlib_ = (options_.retrieve("zlib") != nullptr);
+
+  if (szip_ && zlib_) {
+    fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
+  }
+
+  compressionLevel_ = options_.get_option_value("compress", compressionLevel_);
+  contig_           = options_.retrieve("contiguous_decomposition") != nullptr;
 
 #if 0
  {
@@ -331,19 +323,9 @@ bool SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("disable_field_recognition")) {
-    disableFieldRecognition_ = true;
-  } else {
-    disableFieldRecognition_ = false;
-  }
+  disableFieldRecognition_ = options_.retrieve("disable_field_recognition") != nullptr;
 #endif
 
-  if (options_.retrieve("contiguous_decomposition") != nullptr) {
-    contig_ = true;
-  }
-  else {
-    contig_ = false;
-  }
   return true;
 }
 
@@ -429,7 +411,7 @@ namespace {
     return s;
   }
 
-  typedef std::vector<std::string> StringVector;
+  using StringVector = std::vector<std::string>;
   bool string_id_sort(const std::pair<std::string, int> &t1, const std::pair<std::string, int> &t2)
   {
     return t1.first < t2.first || (!(t2.first < t1.first) && t1.second < t2.second);

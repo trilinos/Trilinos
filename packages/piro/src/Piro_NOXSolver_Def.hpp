@@ -117,7 +117,6 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   using Teuchos::RCP;
   bool observeFinalSolution = true;
   const int num_p = this->num_p();
-  const int num_g = this->num_g();
 
   //For Analysis problems we typically do not want to write the solution at each NOX solver.
   //Instead we write at every "write interval" iterations of optimization solver.
@@ -126,72 +125,30 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   //This relies on the fact that sensitivities are always called by ROL at each iteration to asses whether the solver is converged
   //TODO: when write_interval>1, at the moment there is no guarantee that the final iteration of the optimization (i.e. the converged solution) gets printed
 
-  //When write_interval>0 we print only after computing the sensitivities,
-  //to make sure to print them updated if required.
-  bool solving_sensitivities = false;
-  for (int i=0; i<num_p; i++) {
-    for (int j=0; j<=num_g; j++) {
-      if (!outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, i).none() && !outArgs.get_DgDp(j,i).isEmpty()) {
-        solving_sensitivities = true;
-        break;
-      }
-    }
-  }
-  if(appParams->isSublist("Analysis")){
-    auto analysisParams = appParams->sublist("Analysis");
-    if(analysisParams.isSublist("Optimization Status")){
-      auto optimizationParams = analysisParams.sublist("Optimization Status");
-      if(optimizationParams.isParameter("Optimizer Iteration Number")) {
-        int iteration = optimizationParams.template get<int>("Optimizer Iteration Number");
-        int write_interval = analysisParams.get("Write Interval",1);
-        Teuchos::RCP<Teuchos::ParameterList> writeParams = Teuchos::rcp(new Teuchos::ParameterList());
-        if(analysisParams.isSublist("ROL") && analysisParams.sublist("ROL").get("Use Old Reduced Space Interface", false)) {
-          if (write_interval > 0) {
-            observeFinalSolution = (iteration >= 0 && solving_sensitivities && iteration != current_iteration) ? (iteration%write_interval == 0) : false;
-            if(observeFinalSolution)
-              current_iteration = iteration;
-          }
-          else if (write_interval == 0)
-            observeFinalSolution = false;
-          else if (write_interval == -1)
-            observeFinalSolution = true;
-        }
-        else
-          observeFinalSolution = false;
-      }
+  if(appParams->isSublist("Optimization Status")){
+    auto optimizationParams = appParams->sublist("Optimization Status");
+    if(optimizationParams.isParameter("Optimizer Iteration Number"))
+      observeFinalSolution = false;
 
-      // Call observer method for each parameter if optimization variables have changed
-      if (optimizationParams.isParameter("Optimization Variables Changed")) {
-        if (optimizationParams.template get<bool>("Optimization Variables Changed")) {
-          if (analysisParams.isSublist("ROL")) {
-            auto rolParams = analysisParams.sublist("ROL");
-            if(rolParams.get("Use Old Reduced Space Interface", false)) {
-              int num_parameters = rolParams.get("Number of Parameters", 1);
-              for(int i=0; i<num_parameters; ++i) {
-                std::ostringstream ss; ss << "Parameter Vector Index " << i;
-                const int p_ind = rolParams.get(ss.str(), i);
-                const auto paramNames = *this->getModel().get_p_names(p_ind);
-                if(Teuchos::nonnull(this->observer))
-                  this->observer->parameterChanged(paramNames[0]);
-              }
-              optimizationParams.set("Optimization Variables Changed", false);
-            }
-          }
-        }
-      }
-      solveState = optimizationParams.isParameter("Compute State") ? optimizationParams.template get<bool>("Compute State") : true;
-    }
+    solveState = optimizationParams.isParameter("Compute State") ? optimizationParams.template get<bool>("Compute State") : true;
   }
 
   // Forward all parameters to underlying model
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = this->getModel().createInArgs();
-  for (int l = 0; l < this->num_p(); ++l) {
-    modelInArgs.set_p(l, inArgs.get_p(l));
+  for (int l = 0; l < num_p; ++l) {
+    if (Teuchos::nonnull(inArgs.get_p(l)))
+      modelInArgs.set_p(l, inArgs.get_p(l));
+    else
+      modelInArgs.set_p(l, this->getModel().getNominalValues().get_p(l));
+
+    modelInArgs.set_p_direction(l, inArgs.get_p_direction(l));
   }
 
   // Find the solution of the implicit underlying model
   Thyra::SolveStatus<Scalar> solve_status;
   const Thyra::SolveCriteria<Scalar> solve_criteria;
+
+  Teuchos::ParameterList analysisParams;
 
   if(solveState)
   {
@@ -226,12 +183,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           "Nonlinear solver failed to converge");
     }
 
-    if(appParams->isSublist("Analysis")){
-      Teuchos::ParameterList& analysisParams = appParams->sublist("Analysis");
-      if(analysisParams.isSublist("Optimization Status")) {
-        analysisParams.sublist("Optimization Status").set("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
-        analysisParams.sublist("Optimization Status").set("Compute State", false);
-      }
+    if(appParams->isSublist("Optimization Status")){
+      appParams->sublist("Optimization Status").set("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
+      appParams->sublist("Optimization Status").set("Compute State", false);
     }
 
     auto final_point = model->createInArgs();
@@ -247,7 +201,20 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
   modelInArgs.set_x(finalSolution);
 
-  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
+  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, analysisParams);
+  
+  bool computeReducedHessian = false;
+  for (int g_index=0; g_index<this->num_g(); ++g_index) {
+    for (int p_index=0; p_index<this->num_p(); ++p_index)
+      if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_hess_vec_prod_g_pp, g_index, p_index, p_index))
+        if(Teuchos::nonnull(outArgs.get_hess_vec_prod_g_pp(g_index, p_index, p_index))) {
+          computeReducedHessian = true;
+          break;
+        }
+  }
+
+  if(computeReducedHessian == true)   
+    this->evalReducedHessian(modelInArgs, outArgs);
 
   if (Teuchos::nonnull(this->observer) && observeFinalSolution) {
     this->observer->observeSolution(*finalSolution);

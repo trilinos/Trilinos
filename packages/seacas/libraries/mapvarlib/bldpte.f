@@ -1,29 +1,28 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
       SUBROUTINE BLDPTE(X,Y,Z,ICON,CENTER)
-C
+
 C***********************************************************************
-C
+
 C BLDPTE LOADS THE ELEMENT CENTROIDS INTO THE XYZSRF ARRAY
-C
+
 C Calls subroutine CNTR
-C
+
 C Called by MAPVAR
-C
+
 C***********************************************************************
-C
+
       include 'bmesh.blk'
       include 'ebbyeb.blk'
       include 'tapes.blk'
-C
+
       DIMENSION X(*),Y(*),Z(*),CENTER(NUMEBB,*),ICON(NELNDB,*)
       DIMENSION XX(27), YY(27), ZZ(27)
-C
-C
+
 C      NNODES = NNELM(ITYPE)
       NNODES = NELNDB
       IF (ITYPE .EQ. 6) NNODES = 4

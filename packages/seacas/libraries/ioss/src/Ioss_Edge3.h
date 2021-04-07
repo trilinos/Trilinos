@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Edge3_h
@@ -21,6 +21,7 @@ namespace Ioss {
 
     static void factory();
     ~Edge3() override;
+    Edge3(const Edge3 &) = delete;
 
     ElementShape shape() const override { return ElementShape::LINE; }
     int          spatial_dimension() const override;
@@ -48,8 +49,6 @@ namespace Ioss {
 
   private:
     static Edge3 instance_;
-
-    Edge3(const Edge3 &) = delete;
   };
 } // namespace Ioss
 #endif

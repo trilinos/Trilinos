@@ -1,47 +1,35 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 /*
- * $Id: exdate.c,v 1.19 2008/03/14 13:22:36 gdsjaar Exp $
  */
 
 /*
 C     DESCRIPTION:
 C     This routine returns the current date in a character string. The
 C     format is as follows:
-C
+
 C       YYYYMMDD
-C
+
 C     MM is a two digit month
 C     DD is a two digit day
 C     YYYY is a four digit year
-C
+
 C     This is known as the "Compact ISO 8601 format"
-C
+
 C     FORMAL PARAMETERS:
 C     STRING    CHARACTER       String to receive the date
-C
+
 ************************************************************************
-C
+
 */
 
 #define STRLEN 8
-#include <stdio.h> // for sprintf
-#include <time.h>  // for tm, localtime, time, time_t
-
-static char *copy_string(char *dest, char const *source, long int elements)
-{
-  char *d;
-  for (d = dest; d + 1 < dest + elements && *source; d++, source++) {
-    *d = *source;
-  }
-  *d = '\0';
-  return d;
-}
+#include <time.h>
 
 #if defined(ADDC_)
 void exdate_(char *string, long int len)
@@ -49,15 +37,7 @@ void exdate_(char *string, long int len)
 void exdate(char *string, long int len)
 #endif
 {
-  struct tm *t;
-  time_t     tim;
-
-  char Temp[STRLEN + 1]; /* Temporary string storage slot. */
-
-  tim = time((time_t *)0);
-  t   = localtime(&tim);
-  t->tm_year += 1900;
-
-  sprintf(Temp, "%04d%02d%02d", t->tm_year, t->tm_mon + 1, t->tm_mday);
-  copy_string(string, Temp, STRLEN + 1);
+  time_t     tim = time((time_t *)0);
+  struct tm *t   = localtime(&tim);
+  strftime(string, STRLEN + 1, "%Y%m%d", t);
 }

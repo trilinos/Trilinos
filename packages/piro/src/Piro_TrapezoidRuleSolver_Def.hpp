@@ -74,7 +74,7 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
                      "Not Implemented for Ng>1 : " << num_g << std::endl);
 
   *out << "\nA) Get the base parameter list ...\n";
-
+ 
   RCP<Teuchos::ParameterList> trPL = sublist(appParams, "Trapezoid Rule", true);
   trPL->validateParameters(*getValidTrapezoidRuleParameters(),0);
 
@@ -91,13 +91,13 @@ TrapezoidRuleSolver(const Teuchos::RCP<Teuchos::ParameterList> &appParams_,
   numTimeSteps = trPL->get("Num Time Steps", 10);
   t_final = trPL->get("Final Time", 0.1);
   t_init  = trPL->get("Initial Time", 0.0);
-  delta_t = t_final / numTimeSteps;
+  delta_t = (t_final - t_init) / numTimeSteps;
 
   *out << "\nB) Using Trapezoid Decorator and NOX Solver\n";
 
   // Construct NOX solver -- will look for NOX sublist -- this must be set!!
   trPL->sublist("NOX").set("Reset Initial Guess",true);
-  noxSolver = Teuchos::rcp(new Piro::NOXSolver<Scalar>(trPL, model));
+  noxSolver = Teuchos::rcp(new Piro::NOXSolver<Scalar>(appParams, model));
 
 }
 
@@ -399,11 +399,32 @@ Piro::TrapezoidRuleSolver<Scalar>::getValidTrapezoidRuleParameters() const
   validPL->set<double>("Final Time", 1.0, "");
   validPL->set<double>("Initial Time", 0.0, "");
   validPL->set<std::string>("Verbosity Level", "", "");
-  validPL->set<bool>("Invert Mass Matrix", false, "");
-  validPL->set<bool>("Lump Mass Matrix", false, "");
+  validPL->set<bool>("Lump Mass Matrix", false, "Boolean to tell code to lump mass matrix");
+  validPL->set<bool>("Constant Mass Matrix", false, "Boolean to tell code to if mass matrix is constant in time");
   validPL->sublist("Stratimikos", false, "");
   validPL->sublist("NOX", false, "");
   return validPL;
+}
+
+template <typename Scalar>
+Teuchos::RCP<Piro::NOXSolver<Scalar> >
+Piro::TrapezoidRuleSolver<Scalar>::getNOXSolver() const
+{
+  return noxSolver;
+}
+
+template <typename Scalar>
+Teuchos::RCP<Piro::TrapezoidDecorator<Scalar> >
+Piro::TrapezoidRuleSolver<Scalar>::getDecorator() const
+{
+  return model;
+}
+
+template <typename Scalar>
+Teuchos::RCP<Thyra::AdaptiveSolutionManager>
+Piro::TrapezoidRuleSolver<Scalar>::getSolutionManager() const
+{
+  return solMgr;
 }
 
 /****************************************************************************/

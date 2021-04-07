@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_ParallelUtils_h
@@ -23,6 +23,7 @@ namespace Ioss {
   class ParallelUtils
   {
   public:
+    ParallelUtils() = default;
     explicit ParallelUtils(MPI_Comm the_communicator);
     ~ParallelUtils() = default;
 
@@ -32,19 +33,19 @@ namespace Ioss {
     enum MinMax { DO_MAX, DO_MIN, DO_SUM };
 
     /*!
+     * See if any external properties specified via the
+     * IOSS_PROPERTIES environment variable.  If any found, add to
+     * `properties`.
+     */
+    void add_environment_properties(Ioss::PropertyManager &properties);
+
+    /*!
      * Returns 'true' if 'name' is defined in the environment.
      * The value of the environment variable is returned in 'value'.
      * getenv system call is only done on processor 0.
      * If '!sync_parallel', then don't push to other processors.
      */
     bool get_environment(const std::string &name, std::string &value, bool sync_parallel) const;
-
-    /*!
-     * See if any external properties specified via the
-     * IOSS_PROPERTIES environment variable.  If any found, add to
-     * `properties`.
-     */
-    void add_environment_properties(Ioss::PropertyManager &properties);
 
     /*!
      * Returns 'true' if 'name' is defined in the environment.
@@ -119,18 +120,19 @@ namespace Ioss {
     void progress(const std::string &output) const;
 
   private:
-    MPI_Comm communicator_;
+    MPI_Comm communicator_{MPI_COMM_WORLD};
   };
 
 #ifdef SEACAS_HAVE_MPI
   inline MPI_Datatype mpi_type(double /*dummy*/) { return MPI_DOUBLE; }
   inline MPI_Datatype mpi_type(float /*dummy*/) { return MPI_FLOAT; }
   inline MPI_Datatype mpi_type(int /*dummy*/) { return MPI_INT; }
-  inline MPI_Datatype mpi_type(char /*dummy*/) { return MPI_CHAR; }
   inline MPI_Datatype mpi_type(long int /*dummy*/) { return MPI_LONG_LONG_INT; }
   inline MPI_Datatype mpi_type(long long int /*dummy*/) { return MPI_LONG_LONG_INT; }
   inline MPI_Datatype mpi_type(unsigned int /*dummy*/) { return MPI_UNSIGNED; }
   inline MPI_Datatype mpi_type(unsigned long int /*dummy*/) { return MPI_UNSIGNED_LONG; }
+  inline MPI_Datatype mpi_type(unsigned long long int /*dummy*/) { return MPI_UNSIGNED_LONG_LONG; }
+  inline MPI_Datatype mpi_type(char /*dummy*/) { return MPI_CHAR; }
 
   template <typename T>
   int MY_Alltoallv64(const std::vector<T> &sendbuf, const std::vector<int64_t> &sendcounts,

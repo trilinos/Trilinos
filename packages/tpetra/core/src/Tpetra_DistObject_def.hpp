@@ -687,8 +687,6 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
     using std::endl;
-    using DT = device_type;
-    using DES = typename DT::execution_space;
     const char funcName[] = "Tpetra::DistObject::doTransferNew";
 
     ProfilingRegion region_dTN(funcName);
@@ -769,7 +767,7 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         this->copyAndPermute (src, numSameIDs, permuteToLIDs,
-                              permuteFromLIDs);
+                              permuteFromLIDs, CM);
         if (verbose) {
           std::ostringstream os;
           os << *prefix << "After copyAndPermute:" << endl
@@ -1077,6 +1075,7 @@ namespace Tpetra {
             }
           }
           else { // pack on device
+            Kokkos::fence(); // for UVM
             this->imports_.modify_device ();
             if (revOp == DoReverse) {
               distor.doReversePostsAndWaits
@@ -1137,6 +1136,7 @@ namespace Tpetra {
             }
           }
           else { // pack on device
+            Kokkos::fence(); // for UVM
             this->imports_.modify_device ();
             if (revOp == DoReverse) {
               distor.doReversePostsAndWaits
@@ -1218,7 +1218,8 @@ namespace Tpetra {
      buffer_device_type>&,
    const Kokkos::DualView<
      const local_ordinal_type*,
-     buffer_device_type>&)
+     buffer_device_type>&,
+   const CombineMode CM)
   {}
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

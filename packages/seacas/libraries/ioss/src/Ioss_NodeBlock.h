@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_NodeBlock_h
@@ -56,6 +56,10 @@ namespace Ioss {
     // in the grouping entity instead of having an explicit value assigned.
     // An example would be 'element_block_count' for a region.
     Property get_implicit_property(const std::string &my_name) const override;
+
+    bool operator!=(const Ioss::NodeBlock &rhs) const;
+    bool operator==(const Ioss::NodeBlock &rhs) const;
+    bool equal(const Ioss::NodeBlock &rhs) const;
 
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,

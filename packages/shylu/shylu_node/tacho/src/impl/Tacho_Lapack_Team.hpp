@@ -17,7 +17,7 @@ namespace Tacho {
         KOKKOS_INLINE_FUNCTION
         void potrf_upper(MemberType &member, 
                          const int m, 
-                         T *A, const int as0, const int as1,
+                         T *__restrict__ A, const int as0, const int as1,
                          int *info) {
           if (m <= 0) return;
 
@@ -106,7 +106,7 @@ namespace Tacho {
       void potrf(MemberType &member,
                  const char uplo,
                  const int m, 
-                 /* */ T *A, const int lda,
+                 /* */ T *__restrict__ A, const int lda,
                  int *info) {
         switch (uplo) {
         case 'U':

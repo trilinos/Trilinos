@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C     -*- Mode: fortran -*-
@@ -10,7 +10,6 @@ C=======================================================================
      &     NSPL1, RSA, ZSA, ZS2A, DISTA, SCRA,
      &     SLLFT, SLRGT, RDTHET, SWEEP, NOSCAL )
 C=======================================================================
-
 
 C     --*** SPLXYZ *** (GEN3D) Calculate 3D coordinates for Double-surface
 C     Spline projection

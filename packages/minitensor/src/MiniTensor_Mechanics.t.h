@@ -613,7 +613,6 @@ check_strict_ellipticity(Tensor4<T, N> const & A)
 // Assume A has major and minor symmetries.
 //
 template<typename T, Index N>
-KOKKOS_INLINE_FUNCTION
 std::pair<bool, Vector<T, N>>
 check_strong_ellipticity(Tensor4<T, N> const & A)
 {

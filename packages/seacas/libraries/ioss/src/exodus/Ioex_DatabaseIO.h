@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 // -*- Mode: c++ -*-
@@ -62,7 +62,7 @@ namespace Ioex {
     DatabaseIO &operator=(const DatabaseIO &from) = delete;
     ~DatabaseIO() override                        = default;
 
-    // Kluge -- a few applications need access so can diretly access exodus API
+    // Kluge -- a few applications need access so can directly access exodus API
     int get_file_pointer() const override; // Open file and set exodusFilePtr.
 
   private:
@@ -183,7 +183,7 @@ namespace Ioex {
     void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
                                       const Ioss::GroupingEntity *ge, int64_t count,
                                       void *variables) const;
-    void write_meta_data() override;
+    void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) override;
     void gather_communication_metadata(Ioex::CommunicationMetaData *meta);
 
     // Read related metadata and store it in the region...
@@ -207,8 +207,8 @@ namespace Ioex {
 
     // ID Mapping functions.
     const Ioss::Map &get_map(ex_entity_type type) const;
-    const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entityCount, ex_entity_type entity_type,
-                             ex_inquiry inquiry_type) const;
+    const Ioss::Map &get_map(Ioss::Map &entity_map, int64_t entity_count,
+                             ex_entity_type entity_type, ex_inquiry inquiry_type) const;
 
     // Internal data handling
     int64_t handle_node_ids(void *ids, int64_t num_to_get) const;

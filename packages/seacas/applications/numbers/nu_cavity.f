@@ -1,13 +1,13 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
       SUBROUTINE CAVITY (A, CRD, IDESS, NEESS, NNESS, IPEESS, IPNESS,
      *   LTEESS, LTNESS, FACESS, DISP, NUMNP, NDIM, NUMESS,
      *   TIME, ITMSEL, TITLE, CENT, CENTER)
-C
+
       include 'nu_io.blk'
       DIMENSION A(*), CRD(NUMNP,NDIM), IDESS(*), NEESS(*),
      *   NNESS(*), IPEESS(*), IPNESS(*), LTEESS(*), LTNESS(*),
@@ -18,10 +18,10 @@ C
       include 'nu_ptim.blk'
       include 'nu_cav.blk'
       LOGICAL ERROR, CENTER
-C
+
       CALL GETCAV (ERROR, IDESS, NUMESS)
       IF (ERROR) RETURN
-C
+
       TVOL = 0.0
       DO 10 NCAV = 1, NUMCAV
          IFLG = IFND(NCAV)
@@ -33,7 +33,7 @@ C
             CALL VOL2D( CRD, LTNESS(IPTR), NEESS(IFLG), VOLUME,
      *         NDIM, NUMESS, AXI, CENT, NUMNP, CENTER)
          END IF
-C
+
          TVOL = TVOL + VOLUME
    10 CONTINUE
       DO 20 IO=IOMIN, IOMAX
@@ -50,9 +50,8 @@ C
    50 FORMAT ( ' Apex at X =',1PE15.8,', Y =',1PE15.8,', Z =',1PE15.8)
    60 FORMAT (/' Undeformed Volume of Cavity is ',1PE15.8)
 
-C
 C ... REWIND EXODUS FILE TO BEGINNING OF TIMESTEPS
-C
+
       IF (EXODUS .AND. ISDIS) THEN
          TIMEL = STMIN
          CALL GETDSP (CRD, DISP, NDIM, NUMNP, TIME, ITMSEL, 'R', ISTAT)
@@ -67,7 +66,7 @@ C
      *     '           Change           Change',/
      *      4X,'----             ------           ------',
      *     '           --------         -------')
-C
+
          DELLAS = 0.0
    90    CONTINUE
          CALL GETDSP (CRD, DISP, NDIM, NUMNP, TIME, ITMSEL, 'S', ISTAT)
@@ -86,7 +85,7 @@ C     NOTE: Positive delcav = shrink in cavity volume
                CALL DVOL2D(CRD, DISP, LTNESS(IPTR),
      *            NEESS(IFLG), DELCAV, NDIM, AXI, NUMNP)
             END IF
-C
+
             DELVOL =  DELVOL + DELCAV
   100    CONTINUE
          DELDEL = DELVOL - DELLAS

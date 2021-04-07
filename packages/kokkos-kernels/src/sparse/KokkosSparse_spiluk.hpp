@@ -316,18 +316,12 @@ namespace Experimental {
     static_assert (LValuesType::rank == 1,
         "spiluk_numeric: A_values, L_values and U_values must all have rank 1.");
 
-    static_assert (std::is_same<typename LRowMapType::value_type,
-                                typename LRowMapType::non_const_value_type>::value,
-                   "spiluk_numeric: The output L_rowmap must be nonconst.");
     static_assert (std::is_same<typename LEntriesType::value_type,
                                 typename LEntriesType::non_const_value_type>::value,
                    "spiluk_numeric: The output L_entries must be nonconst.");
     static_assert (std::is_same<typename LValuesType::value_type,
                                 typename LValuesType::non_const_value_type>::value,
                    "spiluk_numeric: The output L_values must be nonconst.");
-    static_assert (std::is_same<typename URowMapType::value_type,
-                                typename URowMapType::non_const_value_type>::value,
-                   "spiluk_numeric: The output U_rowmap must be nonconst.");
     static_assert (std::is_same<typename UEntriesType::value_type,
                                 typename UEntriesType::non_const_value_type>::value,
                    "spiluk_numeric: The output U_entries must be nonconst.");
@@ -368,6 +362,13 @@ namespace Experimental {
       Kokkos::Impl::throw_runtime_exception (os.str ());
     }
 
+    // Check if symbolic has been called
+    if ( handle->get_spiluk_handle()->is_symbolic_complete() == false ) {
+      std::ostringstream os;
+      os << "KokkosSparse::Experimental::spiluk_numeric: spiluk_symbolic must be called before spiluk_numeric.";
+      Kokkos::Impl::throw_runtime_exception (os.str ());
+    }
+
     typedef typename KernelHandle::const_size_type c_size_t;
     typedef typename KernelHandle::const_nnz_lno_t c_lno_t;
     typedef typename KernelHandle::const_nnz_scalar_t c_scalar_t;
@@ -398,7 +399,7 @@ namespace Experimental {
           Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > AValues_Internal;
 
     typedef Kokkos::View<
-          typename LRowMapType::non_const_value_type*,
+          typename LRowMapType::const_value_type*,
           typename KokkosKernels::Impl::GetUnifiedLayout<LRowMapType>::array_layout,
           typename LRowMapType::device_type,
           Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > LRowMap_Internal;
@@ -416,7 +417,7 @@ namespace Experimental {
           Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > LValues_Internal;
 
     typedef Kokkos::View<
-          typename URowMapType::non_const_value_type*,
+          typename URowMapType::const_value_type*,
           typename KokkosKernels::Impl::GetUnifiedLayout<URowMapType>::array_layout,
           typename URowMapType::device_type,
           Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > URowMap_Internal;

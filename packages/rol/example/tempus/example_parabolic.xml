@@ -51,12 +51,8 @@
         <Parameter name="Initial Time Step"      type="double" value="0.01"/>
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
-        <Parameter name="Minimum Order"          type="int"    value="1"/>
-        <Parameter name="Initial Order"          type="int"    value="1"/>
-        <Parameter name="Maximum Order"          type="int"    value="1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
         <Parameter name="Output Time List"       type="string" value=""/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="10.0"/>

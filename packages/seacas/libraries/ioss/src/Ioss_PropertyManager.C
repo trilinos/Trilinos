@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Property.h>
@@ -69,6 +69,34 @@ Ioss::Property Ioss::PropertyManager::get(const std::string &property_name) cons
     IOSS_ERROR(errmsg);
   }
   return (*iter).second;
+}
+
+/** \brief Get an optional property object from the property manager.
+ *
+ *  \param[in] property_name The name of the property to get.
+ *  \param[in] optional_value The value to return if the property does not exist.
+ *  \returns The property object.
+ */
+int64_t Ioss::PropertyManager::get_optional(const std::string &property_name,
+                                            int64_t            optional_value) const
+{
+  IOSS_FUNC_ENTER(m_);
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
+    return optional_value;
+  }
+  return (*iter).second.get_int();
+}
+
+std::string Ioss::PropertyManager::get_optional(const std::string &property_name,
+                                                const std::string &optional_value) const
+{
+  IOSS_FUNC_ENTER(m_);
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
+    return optional_value;
+  }
+  return (*iter).second.get_string();
 }
 
 /** \brief Remove a property from the property manager.

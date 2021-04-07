@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -94,8 +94,12 @@ static int ex_copy_internal(int in_exoid, int out_exoid, int mesh_only)
   char errmsg[MAX_ERR_LENGTH];
 
   EX_FUNC_ENTER();
-  ex__check_valid_file_id(in_exoid, __func__);
-  ex__check_valid_file_id(out_exoid, __func__);
+  if (ex__check_valid_file_id(in_exoid, __func__) != EX_NOERR) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
+  if (ex__check_valid_file_id(out_exoid, __func__) != EX_NOERR) {
+    EX_FUNC_LEAVE(EX_FATAL);
+  }
 
   /*
    * Get exodus_large_model setting on both input and output

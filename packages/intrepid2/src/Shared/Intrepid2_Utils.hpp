@@ -50,10 +50,12 @@
 #define __INTREPID2_UTILS_HPP__
 
 #include "Intrepid2_ConfigDefs.hpp"
+#include "Intrepid2_DeviceAssert.hpp"
 #include "Intrepid2_Types.hpp"
 
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Macros.hpp" // provides some preprocessor values used in definitions of INTREPID2_DEPRECATED, etc.
+#include "Kokkos_Random.hpp"
 
 #ifdef HAVE_INTREPID2_SACADO
 #include "Kokkos_LayoutNatural.hpp"
@@ -85,15 +87,15 @@ namespace Intrepid2 {
   }
 
 #ifndef KOKKOS_ENABLE_CUDA
-#define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg)           \
-  if (test) {                                                            \
-    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
-    printf("            Test that evaluated to true: %s\n", #test);     \
-    printf("            %s \n", msg);                                   \
-    throw x(msg);                                                       \
+#define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg)                              \
+  if (test) {                                                                               \
+    std::cout << "[Intrepid2] Error in file " << __FILE__ << ", line " << __LINE__ << "\n"; \
+    std::cout << "            Test that evaluated to true: " << #test << "\n";              \
+    std::cout << "            " << msg << " \n";                                            \
+    throw x(msg);                                                                           \
   }
 #else
-  #define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg) device_assert(!test);
+  #define INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(test, x, msg) device_assert(!(test));
 #endif
   
 #define INTREPID2_TEST_FOR_ABORT(test, msg)                             \
@@ -103,6 +105,19 @@ namespace Intrepid2 {
     printf("            %s \n", msg);                                   \
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
+
+#ifndef KOKKOS_ENABLE_CUDA
+#define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg)                             \
+  if (test) {                                                           \
+    printf("[Intrepid2] Error in file %s, line %d\n",__FILE__,__LINE__); \
+    printf("            Test that evaluated to true: %s\n", #test);     \
+    printf("            %s \n", msg);                                   \
+    Kokkos::abort(  "[Intrepid2] Abort\n");                             \
+  }
+#else
+  #define INTREPID2_TEST_FOR_ABORT_DEVICE_SAFE(test, msg) device_assert(!(test));
+#endif
+
 
   // check the first error only
 #ifdef INTREPID2_TEST_FOR_DEBUG_ABORT_OVERRIDE_TO_CONTINUE
@@ -123,29 +138,7 @@ namespace Intrepid2 {
     Kokkos::abort(  "[Intrepid2] Abort\n");                             \
   }
 #endif
-  
-// adapted from Kokkos_Macros.hpp
-#if defined(KOKKOS_COMPILER_GNU) || defined(KOKKOS_COMPILER_CLANG)
-  #if defined(KOKKOS_COMPILER_CLANG)
-    #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) __attribute__((deprecated(msg,fixit)))
-    #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
-  #else // GNU
-    #if not defined(KOKKOS_ENABLE_CUDA)
-      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit) [[deprecated(msg)]]
-      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
-      // see https://gcc.gnu.org/onlinedocs/gcc-4.9.0/gcc/Function-Attributes.html
-    #else // GNU + CUDA
-      // for unknown reasons, the CUDA compilers seem to have trouble with this gcc feature
-      // we therefore disable typedef deprecation warnings on CUDA
-      #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-      #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg)
-    #endif
-  #endif
-#else
-  // don't issue deprecation warnings on compilers other than gcc and clang (this is not part of the C++11 standard; it is compiler-specific)
-  #define INTREPID2_DEPRECATED_TYPENAME_REPLACEMENT(msg,fixit)
-  #define INTREPID2_DEPRECATED_TYPENAME_TRAILING_ATTRIBUTE(msg) 
-#endif
+
   /**
    \brief scalar type traits
   */ 
@@ -339,12 +332,18 @@ namespace Intrepid2 {
   template<typename T, typename ...P>
   KOKKOS_INLINE_FUNCTION
   constexpr typename
-  std::enable_if< std::is_pod<T>::value, unsigned >::type
-  dimension_scalar(const Kokkos::View<T, P...> view) {return 1;}
+  std::enable_if< std::is_pod< typename Kokkos::View<T, P...>::value_type >::value, unsigned >::type
+  dimension_scalar(const Kokkos::View<T, P...> /*view*/) {return 1;}
 
-  template<typename T>
+  template<typename T, typename ...P>
   KOKKOS_FORCEINLINE_FUNCTION
-  static ordinal_type get_dimension_scalar(const T view) {
+  static ordinal_type get_dimension_scalar(const Kokkos::DynRankView<T, P...> &view) {
+    return dimension_scalar(view);
+  }
+
+  template<typename T, typename ...P>
+  KOKKOS_FORCEINLINE_FUNCTION
+  static ordinal_type get_dimension_scalar(const Kokkos::View<T, P...> &view) {
     return dimension_scalar(view);
   }
   
@@ -357,7 +356,9 @@ namespace Intrepid2 {
   //! views cannot be instantiated without also providing stride information.
   //!
   template<class ViewType, class ... DimArgs>
-  inline ViewType getMatchingViewWithLabel(ViewType &view, const std::string &label, DimArgs... dims)
+  inline
+  Kokkos::DynRankView<typename ViewType::value_type, typename DeduceLayout< ViewType >::result_layout, typename ViewType::device_type >
+  getMatchingViewWithLabel(const ViewType &view, const std::string &label, DimArgs... dims)
   {
     using ValueType          = typename ViewType::value_type;
     using ResultLayout       = typename DeduceLayout< ViewType >::result_layout;
@@ -375,7 +376,325 @@ namespace Intrepid2 {
       return ViewTypeWithLayout(label,dims...,derivative_dimension);
     }
   }
-  
+ 
+  /**
+    \brief SFINAE helper to detect whether a type supports a 1-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_1
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0))>::type );
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 2-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_2
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0,0))>::type ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 3-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_3
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0,0,0))>::type ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 4-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_4
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0,0,0,0))>::type ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 5-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_5
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0,0,0,0,0))>::type ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 6-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_6
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0,0,0,0,0,0))>::type ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 7-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank_7
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( typename std::remove_reference<decltype( std::declval<C>().operator()(0,0,0,0,0,0,0))>::type ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a rank-integral-argument operator().
+  */
+  template <typename T, int rank>
+  class supports_rank
+  {
+  public:
+      enum { value = false };
+  };
+
+  /**
+    \brief SFINAE helper to detect whether a type supports a 1-integral-argument operator().
+  */
+  template <typename T>
+  class supports_rank<T,1>
+  {
+  public:
+      enum { value = supports_rank_1<T>::value };
+  };
+
+//! SFINAE helper to detect whether a type supports a 2-integral-argument operator().
+  template <typename T>
+  class supports_rank<T,2>
+  {
+  public:
+      enum { value = supports_rank_2<T>::value };
+  };
+
+//! SFINAE helper to detect whether a type supports a 3-integral-argument operator().
+  template <typename T>
+  class supports_rank<T,3>
+  {
+  public:
+      enum { value = supports_rank_3<T>::value };
+  };
+
+//! SFINAE helper to detect whether a type supports a 4-integral-argument operator().
+  template <typename T>
+  class supports_rank<T,4>
+  {
+  public:
+      enum { value = supports_rank_4<T>::value };
+  };
+
+//! SFINAE helper to detect whether a type supports a 5-integral-argument operator().
+  template <typename T>
+  class supports_rank<T,5>
+  {
+  public:
+      enum { value = supports_rank_5<T>::value };
+  };
+
+//! SFINAE helper to detect whether a type supports a 6-integral-argument operator().
+  template <typename T>
+  class supports_rank<T,6>
+  {
+  public:
+      enum { value = supports_rank_6<T>::value };
+  };
+
+//! SFINAE helper to detect whether a type supports a 7-integral-argument operator().
+  template <typename T>
+  class supports_rank<T,7>
+  {
+  public:
+      enum { value = supports_rank_7<T>::value };
+  };
+
+
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar, int rank>
+  struct RankExpander {
+    
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,0>
+  {
+    using value_type = Scalar;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,1>
+  {
+    using value_type = Scalar*;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,2>
+  {
+    using value_type = Scalar**;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,3>
+  {
+    using value_type = Scalar***;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,4>
+  {
+    using value_type = Scalar****;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,5>
+  {
+    using value_type = Scalar*****;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,6>
+  {
+    using value_type = Scalar******;
+  };
+
+  /**
+    \brief Helper to get Scalar[*+] where the number of *'s matches the given rank.
+  */
+  template<typename Scalar>
+  struct RankExpander<Scalar,7>
+  {
+    using value_type = Scalar*******;
+  };
+
+//  static_assert(supports_rank_4< Kokkos::DynRankView<double> >::value, "rank 4 check of supports_rank");
+//
+//  static_assert(supports_rank<Kokkos::DynRankView<double>, 1>::value, "rank 1 check of supports_rank");
+//
+//  static_assert(supports_rank<Kokkos::View<double*>,       1>::value, "rank 1 check of supports_rank");
+//  static_assert(supports_rank<Kokkos::View<double**>,      2>::value, "rank 2 check of supports_rank");
+//  static_assert(supports_rank<Kokkos::View<double***>,     3>::value, "rank 3 check of supports_rank");
+//  static_assert(supports_rank<Kokkos::View<double****>,    4>::value, "rank 4 check of supports_rank");
+//  static_assert(supports_rank<Kokkos::View<double*****>,   5>::value, "rank 5 check of supports_rank");
+//  static_assert(supports_rank<Kokkos::View<double******>,  6>::value, "rank 6 check of supports_rank");
+//  static_assert(supports_rank<Kokkos::View<double*******>, 7>::value, "rank 7 check of supports_rank");
+
+  /**
+    \brief Tests whether a class implements rank().  Used in getFunctorRank() method below; allows us to do one thing for View and another for DynRankView and our custom Functor types.
+  */
+  template <typename T>
+  class has_rank_method
+  {
+      typedef char one;
+      struct two { char x[2]; };
+
+      template <typename C> static one test( decltype( std::declval<C>().rank()  ) ) ;
+      template <typename C> static two test(...);
+
+  public:
+      enum { value = sizeof(test<T>(0)) == sizeof(char) };
+  };
+
+  static_assert(  has_rank_method<Kokkos::DynRankView<double> >::value, "DynRankView implements rank(), so this assert should pass -- if not, something may be wrong with has_rank_method.");
+  static_assert(! has_rank_method<Kokkos::View<double> >::value,        "View does not implement rank() -- if this assert fails, something may be wrong with has_rank_method.");
+
+  template< bool B, class T >
+  using enable_if_t = typename std::enable_if<B,T>::type;
+
+  /**
+    \brief \return functor.rank() if the functor implements rank(); functor.rank otherwise.
+  */
+  template<class Functor>
+  enable_if_t<has_rank_method<Functor>::value, unsigned>
+  KOKKOS_INLINE_FUNCTION
+  getFunctorRank(const Functor &functor)
+  {
+    return functor.rank();
+  }
+
+  /**
+    \brief \return functor.rank() if the functor implements rank(); functor.rank otherwise.
+  */
+  template<class Functor>
+  enable_if_t<!has_rank_method<Functor>::value, unsigned>
+  KOKKOS_INLINE_FUNCTION
+  getFunctorRank(const Functor &functor)
+  {
+    return functor.rank;
+  }
+
   /**
    \brief Define layout that will allow us to wrap Sacado Scalar objects in Views without copying
    */

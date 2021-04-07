@@ -31,9 +31,9 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stk_util/stk_config.h>
-#include <stk_util/command_line/CommandLineParser.hpp>
-#include <stk_util/environment/ParseCommandLineArgs.hpp>
+#include "stk_util/command_line/CommandLineParser.hpp"
+#include "stk_util/environment/ParseCommandLineArgs.hpp"  // for parse_command_line_args
+#include <exception>                                      // for exception
 
 namespace stk {
 

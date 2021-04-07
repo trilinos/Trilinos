@@ -51,7 +51,7 @@ using namespace KokkosBatched;
 int main (int argc, char *argv[]) {
   Kokkos::initialize(argc, argv); 
 
-#if !defined(__CUDA_ARCH__)
+#if !defined(__CUDA_ARCH__) && !defined(__HIP_DEVICE_COMPILE__)
   typedef Kokkos::DefaultHostExecutionSpace HostSpaceType;
   const bool detail = false;
 
@@ -88,7 +88,7 @@ int main (int argc, char *argv[]) {
   }
   
   // MKL
-#if defined(__KOKKOSBATCHED_INTEL_MKL_COMPACT_BATCHED__)
+#if defined(__KOKKOSBATCHED_ENABLE_INTEL_MKL_COMPACT_BATCHED__)
   std::cout << " Perf Test::CompactMKL Begin\n";
   {
     const bool test_mkl = true;

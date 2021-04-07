@@ -56,7 +56,7 @@ namespace FROSch {
                                                           ParameterListPtr parameterList) :
     SchwarzOperator<SC,LO,GO,NO> (k,parameterList)
     {
-        FROSCH_TIMER_START_LEVELID(overlappingOperatorTime,"OverlappingOperator::OverlappingOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(overlappingOperatorTime,"OverlappingOperator::OverlappingOperator");
         if (!this->ParameterList_->get("Combine Values in Overlap","Restricted").compare("Averaging")) {
             Combine_ = Averaging;
         } else if (!this->ParameterList_->get("Combine Values in Overlap","Restricted").compare("Full")) {
@@ -82,7 +82,7 @@ namespace FROSch {
                                                  SC beta) const
     {
         FROSCH_TIMER_START_LEVELID(applyTime,"OverlappingOperator::apply");
-        FROSCH_ASSERT(this->IsComputed_,"FROSch::OverlappingOperator : ERROR: OverlappingOperator has to be computed before calling apply()");
+        FROSCH_ASSERT(this->IsComputed_,"FROSch::OverlappingOperator: OverlappingOperator has to be computed before calling apply()");
         if (XTmp_.is_null()) XTmp_ = MultiVectorFactory<SC,LO,GO,NO>::Build(x.getMap(),x.getNumVectors());
         *XTmp_ = x;
         if (!usePreconditionerOnly && mode == NO_TRANS) {
@@ -126,15 +126,39 @@ namespace FROSch {
         XTmp_->putScalar(ScalarTraits<SC>::zero());
         ConstXMapPtr yMap = y.getMap();
         ConstXMapPtr yOverlapMap = YOverlap_->getMap();
-        if (Combine_ == Restricted){
-            GO globID = 0;
-            LO localID = 0;
-            for (UN i=0; i<y.getNumVectors(); i++) {
-                ConstSCVecPtr yOverlapData_i = YOverlap_->getData(i);
-                for (UN j=0; j<yMap->getNodeNumElements(); j++) {
-                    globID = yMap->getGlobalElement(j);
-                    localID = yOverlapMap->getLocalElement(globID);
-                    XTmp_->getDataNonConst(i)[j] = yOverlapData_i[localID];
+        if (Combine_ == Restricted) {
+#if defined(HAVE_XPETRA_KOKKOS_REFACTOR) && defined(HAVE_XPETRA_TPETRA)
+            if (XTmp_->getMap()->lib() == UseTpetra) {
+                auto yLocalMap = yMap->getLocalMap();
+                auto yLocalOverlapMap = yOverlapMap->getLocalMap();
+                // run local restriction on execution space defined by local-map
+                using XMap            = typename SchwarzOperator<SC,LO,GO,NO>::XMap;
+                using execution_space = typename XMap::local_map_type::execution_space;
+                Kokkos::RangePolicy<execution_space> policy (0, yMap->getNodeNumElements());
+                for (UN i=0; i<y.getNumVectors(); i++) {
+                    auto yOverlapData_i = YOverlap_->getData(i);
+                    auto xLocalData_i = XTmp_->getDataNonConst(i);
+                    Kokkos::parallel_for(
+                      "FROSch_OverlappingOperator::applyLocalRestriction", policy,
+                      KOKKOS_LAMBDA(const int j) {
+                        GO gID = yLocalMap.getGlobalElement(j);
+                        LO lID = yLocalOverlapMap.getLocalElement(gID);
+                        xLocalData_i[j] = yOverlapData_i[lID];
+                      });
+                }
+                Kokkos::fence();
+            } else
+#endif
+            {
+                GO globID = 0;
+                LO localID = 0;
+                for (UN i=0; i<y.getNumVectors(); i++) {
+                    ConstSCVecPtr yOverlapData_i = YOverlap_->getData(i);
+                    for (UN j=0; j<yMap->getNodeNumElements(); j++) {
+                        globID = yMap->getGlobalElement(j);
+                        localID = yOverlapMap->getLocalElement(globID);
+                        XTmp_->getDataNonConst(i)[j] = yOverlapData_i[localID];
+                    }
                 }
             }
         } else {
@@ -159,7 +183,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::initializeOverlappingOperator()
     {
-        FROSCH_TIMER_START_LEVELID(initializeOverlappingOperatorTime,"OverlappingOperator::initializeOverlappingOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(initializeOverlappingOperatorTime,"OverlappingOperator::initializeOverlappingOperator");
         Scatter_ = ImportFactory<LO,GO,NO>::Build(this->getDomainMap(),OverlappingMap_);
         if (Combine_ == Averaging) {
             Multiplicity_ = MultiVectorFactory<SC,LO,GO,NO>::Build(this->getRangeMap(),1);
@@ -176,7 +200,7 @@ namespace FROSch {
     template <class SC,class LO,class GO,class NO>
     int OverlappingOperator<SC,LO,GO,NO>::computeOverlappingOperator()
     {
-        FROSCH_TIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
+        FROSCH_DETAILTIMER_START_LEVELID(computeOverlappingOperatorTime,"OverlappingOperator::computeOverlappingOperator");
 
         updateLocalOverlappingMatrices();
 
@@ -187,11 +211,13 @@ namespace FROSch {
 
         if (!reuseSymbolicFactorization) {
             if (this->IsComputed_ && this->Verbose_) cout << "FROSch::OverlappingOperator : Recomputing the Symbolic Factorization" << endl;
-            SubdomainSolver_.reset(new SubdomainSolver<SC,LO,GO,NO>(OverlappingMatrix_,sublist(this->ParameterList_,"Solver")));
+            SubdomainSolver_ = SolverFactory<SC,LO,GO,NO>::Build(OverlappingMatrix_,
+                                                                 sublist(this->ParameterList_,"Solver"),
+                                                                 string("Solver (Level ") + to_string(this->LevelID_) + string(")"));
             SubdomainSolver_->initialize();
         } else {
-            FROSCH_ASSERT(!SubdomainSolver_.is_null(),"FROSch::OverlappingOperator : ERROR: SubdomainSolver_.is_null()");
-            SubdomainSolver_->resetMatrix(OverlappingMatrix_,true);
+            FROSCH_ASSERT(!SubdomainSolver_.is_null(),"FROSch::OverlappingOperator: SubdomainSolver_.is_null()");
+            SubdomainSolver_->updateMatrix(OverlappingMatrix_,true);
         }
         this->IsComputed_ = true;
         return SubdomainSolver_->compute();

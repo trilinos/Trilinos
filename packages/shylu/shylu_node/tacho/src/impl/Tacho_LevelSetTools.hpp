@@ -133,7 +133,7 @@ namespace Tacho {
     // workspace meta data for solve
     size_type_array_host _h_buf_solve_ptr, _h_buf_solve_nrhs_ptr;
     size_type_array _buf_solve_ptr, _buf_solve_nrhs_ptr;
-    
+
     // workspace
     size_type _bufsize_factorize, _bufsize_solve;
     value_type_array _buf;
@@ -214,7 +214,7 @@ namespace Tacho {
     void
     track_alloc(const double in) {
       stat.m_used += in;
-      stat.m_peak  = max(stat.m_peak, stat.m_used);
+      stat.m_peak  = std::max(stat.m_peak, stat.m_used);
     }
 
     inline
@@ -235,14 +235,15 @@ namespace Tacho {
     inline
     void
     print_stat_init() {
+      const double kilo(1024);
       printf("  Time\n");
       printf("             time for initialization:                         %10.6f s\n", stat.t_init);
       printf("             time for compute mode classification:            %10.6f s\n", stat.t_mode_classification);
       printf("             total time spent:                                %10.6f s\n", (stat.t_init+stat.t_mode_classification));
       printf("\n");
       printf("  Memory\n");
-      printf("             workspace allocated for solve:                   %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used:                                %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             workspace allocated for solve:                   %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used:                                %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
       printf("  Compute Mode in Factorize with a Threshold(%d)\n", _device_factorize_thres);
       printf("             # of subproblems using device functions:         %6d\n", stat.n_device_factorize);
@@ -266,11 +267,15 @@ namespace Tacho {
         flop += DenseFlopCount<value_type>::Chol(m);
         if (variant == 1) { 
           flop += DenseFlopCount<value_type>::Trsm(true,  m, m);
+        } 
+        else if (variant == 2) {
+          flop += DenseFlopCount<value_type>::Trsm(true,  m, m);
+          flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
         }
         flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
         flop += DenseFlopCount<value_type>::Syrk(m, n);
       }
-
+      const double kilo(1024);
       printf("  Time\n");
       printf("             time for extra work e.g.,workspace allocation:   %10.6f s\n", stat.t_extra);
       printf("             time for copying A into U:                       %10.6f s\n", stat.t_copy);
@@ -278,29 +283,30 @@ namespace Tacho {
       printf("             total time spent:                                %10.6f s\n", (stat.t_extra+stat.t_copy+stat.t_factor));
       printf("\n");
       printf("  Memory\n");
-      printf("             memory used in factorization:                    %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used in factorization:               %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used in factorization:               %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
       printf("  Kernels\n");
       printf("             # of kernels launching:                          %6d\n", stat.n_kernel_launching);
       printf("\n");
       printf("  FLOPs\n");
-      printf("             gflop   for numeric factorization:               %10.2f GFLOP\n", flop/1024/1024/1024);
-      printf("             gflop/s for numeric factorization:               %10.2f GFLOP/s\n", flop/stat.t_factor/1024/1024/1024);
+      printf("             gflop   for numeric factorization:               %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
       printf("\n");
 
     }
-      
+
     inline
     void
     print_stat_solve() {
+      const double kilo(1024);
       printf("  Time\n");
       printf("             time for extra work e.g.,workspace and permute:  %10.6f s\n", stat.t_extra);
       printf("             time for solve:                                  %10.6f s\n", stat.t_solve);
       printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
       printf("\n");
       printf("  Memory\n");
-      printf("             memory used in solve:                            %10.2f MB\n", stat.m_used/1024/1024);
+      printf("             memory used in solve:                            %10.3f MB\n", stat.m_used/kilo/kilo);
       printf("\n");
       printf("  Kernels\n");
       printf("             # of kernels launching:                          %6d\n", stat.n_kernel_launching);
@@ -310,9 +316,10 @@ namespace Tacho {
     inline
     void
     print_stat_memory() {
+      const double kilo(1024);
       printf("  Memory\n");
-      printf("             memory used now:                                 %10.2f MB\n", stat.m_used/1024/1024);
-      printf("             peak memory used:                                %10.2f MB\n", stat.m_peak/1024/1024);
+      printf("             memory used now:                                 %10.3f MB\n", stat.m_used/kilo/kilo);
+      printf("             peak memory used:                                %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
     }
 
@@ -357,7 +364,7 @@ namespace Tacho {
         // first count # of supernodes in each level
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
           ++_h_level_ptr(_h_stree_level(sid)+1);
-        
+
         // scan 
         for (ordinal_type i=0;i<_nlevel;++i) 
           _h_level_ptr(i+1) += _h_level_ptr(i);
@@ -406,7 +413,8 @@ namespace Tacho {
             const auto s = _h_supernodes(sid); 
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             const ordinal_type schur_work_size = n_m*(n_m+max_factor_team_size);            
-            const ordinal_type factor_work_size = variant == 0 ? schur_work_size : std::max(m*m, schur_work_size);
+            const ordinal_type factor_work_size_variants[3] = { schur_work_size, std::max(m*m, schur_work_size), m*m+schur_work_size };
+            const ordinal_type factor_work_size = factor_work_size_variants[variant];
             const ordinal_type solve_work_size = variant == 0 ? n_m : n;
             _h_buf_factor_ptr(k) = factor_work_size + _h_buf_factor_ptr(k-1);
             _h_buf_solve_ptr(k) = solve_work_size + _h_buf_solve_ptr(k-1);
@@ -453,7 +461,7 @@ namespace Tacho {
 
       _h_factorize_mode = ordinal_type_array_host(do_not_initialize_tag("h_factorize_mode"), _nsupernodes);
       Kokkos::deep_copy(_h_factorize_mode, -1);
-      
+
       _h_solve_mode = ordinal_type_array_host(do_not_initialize_tag("h_solve_mode"), _nsupernodes);
       Kokkos::deep_copy(_h_solve_mode, -1);
 
@@ -471,7 +479,7 @@ namespace Tacho {
           }
         }
       }
-      
+
       _team_serial_level_cut = _nlevel;
       {        
         for (ordinal_type lvl=_device_level_cut;lvl<_team_serial_level_cut;++lvl) {          
@@ -543,7 +551,7 @@ namespace Tacho {
         _bufsize_solve(0), 
         _nstreams(0), 
         stat() {}
-    
+
     LevelSetTools(const LevelSetTools &b) = default;
 
     LevelSetTools(const NumericTools<value_type,scheduler_type> &N)
@@ -571,7 +579,7 @@ namespace Tacho {
       }
       _cuda_streams.clear();
       _exec_instances.clear();
-      
+
       if (_is_cublas_created) {
         _status = cusolverDnDestroy(_handle_lapack); checkDeviceLapackStatus("cusolverDnDestroy");
       }
@@ -702,7 +710,7 @@ namespace Tacho {
 
               value_type *bptr = _buf.data()+h_buf_factor_ptr(p-pbeg);
               UnmanagedViewType<value_type_matrix> T(bptr, m, m);
-              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T); checkDeviceBlasStatus("SetIdentity");
+              _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, T, one); checkDeviceBlasStatus("SetIdentity");
               exec_instance.fence();
               _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
                 ::invoke(_handle_blas, Diag::NonUnit(), one, ATL, T); checkDeviceBlasStatus("trsm");
@@ -731,6 +739,84 @@ namespace Tacho {
 
     inline
     void
+    factorizeOnDeviceVar2(const ordinal_type pbeg, 
+                          const ordinal_type pend,
+                          const size_type_array_host &h_buf_factor_ptr,
+                          const value_type_array &work) {
+      const value_type one(1), minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      exec_space exec_instance;
+      for (ordinal_type p=pbeg;p<pend;++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceBlasStatus("cublasSetStream");
+          _status = cusolverDnSetStream(_handle_lapack, mystream); checkDeviceLapackStatus("cusolverDnSetStream");
+
+          exec_instance = _exec_instances[qid];
+
+          const size_type worksize = work.extent(0)/_nstreams;
+          value_type_array W(work.data() + worksize*qid, worksize);
+          ++q;
+#else
+          value_type_array W = work;
+#endif          
+          const auto &s = _h_supernodes(sid);
+          {
+            const ordinal_type m = s.m, n = s.n, n_m = n-m;
+            if (m > 0) {
+              value_type *aptr = s.buf;
+              UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
+              _status = Chol<Uplo::Upper,Algo::OnDevice>
+                ::invoke(_handle_lapack, ATL, W); checkDeviceLapackStatus("chol");
+
+              value_type *bptr = _buf.data()+h_buf_factor_ptr(p-pbeg);
+              if (n_m > 0) {
+                exec_instance.fence();
+                UnmanagedViewType<value_type_matrix> ABR(bptr, n_m, n_m); bptr += ABR.span();
+                UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+                
+                _status = Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, Diag::NonUnit(), one, ATL, ATR); checkDeviceBlasStatus("trsm");
+                exec_instance.fence();
+                _status = Herk<Uplo::Upper,Trans::ConjTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, minus_one, ATR, zero, ABR);
+                exec_instance.fence();                
+
+                /// additional things
+                UnmanagedViewType<value_type_matrix> T(bptr, m, m); 
+                _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL); checkDeviceBlasStatus("Copy");
+                exec_instance.fence();
+                _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, minus_one); checkDeviceBlasStatus("SetIdentity");
+                exec_instance.fence();
+
+                UnmanagedViewType<value_type_matrix> AT(ATL.data(), m, n);
+                _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, Diag::NonUnit(), minus_one, T, AT); checkDeviceBlasStatus("trsm");
+                exec_instance.fence();
+              } else {
+                exec_instance.fence();
+                /// additional things
+                UnmanagedViewType<value_type_matrix> T(bptr, m, m); 
+                _status = Copy<Algo::OnDevice>::invoke(exec_instance, T, ATL); checkDeviceBlasStatus("Copy");
+                exec_instance.fence();
+                _status = SetIdentity<Algo::OnDevice>::invoke(exec_instance, ATL, one); checkDeviceBlasStatus("SetIdentity");
+                exec_instance.fence();
+                _status = Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, Diag::NonUnit(), one, T, ATL); checkDeviceBlasStatus("trsm");
+              }
+            }
+          }
+        }
+      }
+    }
+
+    inline
+    void
     factorizeOnDevice(const ordinal_type pbeg, 
                       const ordinal_type pend,
                       const size_type_array_host &h_buf_factor_ptr,
@@ -739,8 +825,12 @@ namespace Tacho {
         factorizeOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work); 
       else if (variant == 1)
         factorizeOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work); 
-      else 
-        printf("Error: abort\n");
+      else if (variant == 2)
+        factorizeOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work); 
+      else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
+                                 "LevelSetTools::factorizeOnDevice, algorithm variant is not supported");
+      }
     }
 
     ///
@@ -752,7 +842,7 @@ namespace Tacho {
                       const ordinal_type verbose = 0) {
       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       Kokkos::Impl::Timer timer;
-      
+
       timer.reset();
       value_type_array work;
       {
@@ -763,7 +853,7 @@ namespace Tacho {
         value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
         const size_type worksize = Chol<Uplo::Upper,Algo::OnDevice>
           ::invoke(_handle_lapack, T, work); 
-        
+
         work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams+1));
         track_alloc(work.span()*sizeof(value_type));
 #endif
@@ -799,7 +889,7 @@ namespace Tacho {
           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
                                      typename functor_type::UpdateTag> team_policy_update;
 #endif
-     
+
           functor_type functor(_info, 
                                _factorize_mode,
                                _level_sids,
@@ -807,16 +897,16 @@ namespace Tacho {
 
           team_policy_factor policy_factor(1,1,1);
           team_policy_update policy_update(1,1,1);
-          
+
           {
             for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
               const ordinal_type 
                 pbeg = _h_level_ptr(lvl), 
                 pend = _h_level_ptr(lvl+1),
                 pcnt = pend - pbeg;
-              
+
               const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
-              
+
               const auto buf_factor_ptr = Kokkos::subview(_buf_factor_ptr, range_buf_factor_ptr);
               functor.setRange(pbeg, pend);
               functor.setBufferPtr(buf_factor_ptr);
@@ -938,7 +1028,7 @@ namespace Tacho {
 
               value_type *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);
               UnmanagedViewType<value_type_matrix> bT(bptr, m, nrhs); bptr += m*nrhs; 
-              
+
               const ordinal_type offm = s.row_begin;
               auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
 
@@ -961,6 +1051,45 @@ namespace Tacho {
 
     inline
     void
+    solveLowerOnDeviceVar2(const ordinal_type pbeg, 
+                           const ordinal_type pend,
+                           const size_type_array_host &h_buf_solve_ptr,
+                           const value_type_matrix &t) {
+      const ordinal_type nrhs = t.extent(1);
+      const value_type one(1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      for (ordinal_type p=pbeg;p<pend;++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          _status = cublasSetStream(_handle_blas, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
+          ++q;
+#endif          
+          const auto &s = _h_supernodes(sid);
+          {
+            const ordinal_type m = s.m, n = s.n;
+            if (m > 0) {
+              value_type *aptr = s.buf;
+              UnmanagedViewType<value_type_matrix> A(aptr, m, n); 
+
+              value_type *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);
+              UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs); 
+
+              const ordinal_type offm = s.row_begin;
+              auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
+
+              _status = Gemv<Trans::ConjTranspose,Algo::OnDevice>
+                ::invoke(_handle_blas, one, A, tT, zero, b); checkDeviceBlasStatus("gemv");
+            }
+          }
+        }
+      }
+    }
+
+    inline
+    void
     solveLowerOnDevice(const ordinal_type pbeg, 
                        const ordinal_type pend,
                        const size_type_array_host &h_buf_solve_ptr,
@@ -969,8 +1098,12 @@ namespace Tacho {
         solveLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
       else if (variant == 1)
         solveLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
-      else
-        printf("Error: abort\n");
+      else if (variant == 2)
+        solveLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
+                                 "LevelSetTools::solveLowerOnDevice, algorithm variant is not supported");
+      }
     }
 
     inline
@@ -984,11 +1117,15 @@ namespace Tacho {
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
 #endif 
+      exec_space exec_instance;
       for (ordinal_type p=pbeg;p<pend;++p) {
         const ordinal_type sid = _h_level_sids(p);
         if (_h_solve_mode(sid) == 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
-          _status = cublasSetStream(_handle_blas, _cuda_streams[q%_nstreams]); checkDeviceStatus("cublasSetStream");
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceStatus("cublasSetStream");
+          exec_instance = _exec_instances[qid];
           ++q;
 #endif          
           const auto &s = _h_supernodes(sid);
@@ -1001,11 +1138,12 @@ namespace Tacho {
 
               const ordinal_type offm = s.row_begin;
               const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
-                
+
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
                 Gemv<Trans::NoTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
+                exec_instance.fence();
               }
               _status = Trsv<Uplo::Upper,Trans::NoTranspose,Algo::OnDevice>
                 ::invoke(_handle_blas, Diag::NonUnit(), AL, tT); checkDeviceBlasStatus("trsv");
@@ -1047,7 +1185,7 @@ namespace Tacho {
 
               const ordinal_type offm = s.row_begin;
               const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
-                
+
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
                 const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs); 
@@ -1058,15 +1196,55 @@ namespace Tacho {
 
               _status = Gemv<Trans::NoTranspose,Algo::OnDevice>
                 ::invoke(_handle_blas, one, AL, tT, zero, bT); checkDeviceBlasStatus("gemv");
-              
+
               exec_instance.fence();
-              
+
               _status = Copy<Algo::OnDevice>::invoke(exec_instance, tT, bT); checkDeviceBlasStatus("Copy");
             }
           }
         }
       }
     }
+
+    inline
+    void
+    solveUpperOnDeviceVar2(const ordinal_type pbeg,
+                           const ordinal_type pend,
+                           const size_type_array_host &h_buf_solve_ptr,
+                           const value_type_matrix &t) {
+      const ordinal_type nrhs = t.extent(1);
+      const value_type one(1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif 
+      for (ordinal_type p=pbeg;p<pend;++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceStatus("cublasSetStream");
+          ++q;
+#endif          
+          const auto &s = _h_supernodes(sid);
+          {
+            const ordinal_type m = s.m, n = s.n;
+            if (m > 0 && n > 0) {
+              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
+              const UnmanagedViewType<value_type_matrix> A(aptr, m, n); 
+              const UnmanagedViewType<value_type_matrix> b(bptr, n, nrhs); 
+               
+              const ordinal_type offm = s.row_begin;
+              const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
+               
+              Gemv<Trans::NoTranspose,Algo::OnDevice>
+                ::invoke(_handle_blas, one, A, b, zero, tT); checkDeviceBlasStatus("gemv");
+            }
+          }
+        }
+      }
+    }
+
     inline
     void
     solveUpperOnDevice(const ordinal_type pbeg,
@@ -1077,8 +1255,12 @@ namespace Tacho {
         solveUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
       else if (variant == 1) 
         solveUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
-      else
-        printf("Error: abort\n");
+      else if (variant == 2) 
+        solveUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+      else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
+                                 "LevelSetTools::solveUpperOnDevice, algorithm variant is not supported");
+      }
     }
 
     inline

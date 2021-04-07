@@ -55,10 +55,9 @@ public:
   bool needToReortho = false;
   int maxOrthoSteps = 0;
   std::string orthoType {"ICGS"};
-  std::string precoType {"none"};
   std::string precoSide {"none"};
-  bool computeRitzValues = false;
-  bool computeRitzValuesOnFly = true;
+  bool computeRitzValues = true;
+  bool computeRitzValuesOnFly = false;
 };
 
 // The default constructor creates output corresponding to "solving
@@ -158,8 +157,7 @@ operator<< (std::ostream& out,
     out << " Orthogonalization: " << si.orthoType << endl;
   }
   out << " Step size: " << si.stepSize << endl
-      << " Preconditioner: " << si.precoType << " (" << si.precoSide << ")"
-      << endl;
+      << " Preconditioner: " << si.precoSide << endl;
   return out;
 }
 

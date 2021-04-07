@@ -57,17 +57,17 @@ namespace Intrepid2 {
   /** \class Intrepid2::CubatureDirectLineGaussJacobi20
       \brief Defines GaussJacobi20 integration rules on a line used for Pyramid only.
   */
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename pointValueType = double,
            typename weightValueType = double>
   class CubatureDirectLineGaussJacobi20
-    : public CubatureDirect<ExecSpaceType,pointValueType,weightValueType> {
+    : public CubatureDirect<DeviceType,pointValueType,weightValueType> {
   public:
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureDataStatic CubatureDataStatic;
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::CubatureData       CubatureData;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::CubatureDataStatic CubatureDataStatic;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::CubatureData       CubatureData;
 
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::PointViewType  PointViewType;
-    typedef typename CubatureDirect<ExecSpaceType,pointValueType,weightValueType>::weightViewType weightViewType;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::PointViewType  PointViewType;
+    typedef typename CubatureDirect<DeviceType,pointValueType,weightValueType>::weightViewType weightViewType;
 
   private:
     // static data initialize upto 1 but we only support upto Parameters::MaxCubatureDegreePyr
@@ -89,7 +89,7 @@ namespace Intrepid2 {
      */
     virtual
     const char*
-    getName() const {
+    getName() const override {
       return "CubatureDirectLineGaussJacobi20";
     }
   };

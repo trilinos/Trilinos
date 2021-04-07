@@ -198,6 +198,20 @@ void deep_copy( const View<DT,DP...> & dst ,
               , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
     )>::type * = 0 );
 
+/* Specialize for deep copy of MP::Vector */
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+    )>::type * = 0 );
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------
@@ -385,9 +399,10 @@ void deep_copy(
 }
 
 /* Specialize for deep copy of MP::Vector */
-template< class DT , class ... DP , class ST , class ... SP >
+template< class ExecSpace, class DT , class ... DP , class ST , class ... SP >
 inline
-void deep_copy( const View<DT,DP...> & dst ,
+void deep_copy( const ExecSpace &,
+                const View<DT,DP...> & dst ,
                 const View<ST,SP...> & src
   , typename std::enable_if<(
   std::is_same< typename ViewTraits<DT,DP...>::specialize
@@ -414,12 +429,33 @@ void deep_copy( const View<DT,DP...> & dst ,
   // but this seems easier.
 
   // Kokkos::deep_copy(
+  //   ExecSpace() ,
   //   typename View<DT,DP...>::array_type( dst ) ,
   //   typename View<ST,SP...>::array_type( src ) );
 
   Kokkos::deep_copy(
+    ExecSpace() ,
     typename FlatArrayType< View<DT,DP...> >::type( dst ) ,
     typename FlatArrayType< View<ST,SP...> >::type( src ) );
+}
+
+/* Specialize for deep copy of MP::Vector */
+template< class DT , class ... DP , class ST , class ... SP >
+inline
+void deep_copy( const View<DT,DP...> & dst ,
+                const View<ST,SP...> & src
+  , typename std::enable_if<(
+  std::is_same< typename ViewTraits<DT,DP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  &&
+  std::is_same< typename ViewTraits<ST,SP...>::specialize
+              , Kokkos::Experimental::Impl::ViewMPVectorContiguous >::value
+  )>::type * )
+{
+  using exec_space = typename View<DT,DP...>::execution_space;
+  Kokkos::fence();
+  Kokkos::deep_copy(exec_space(), dst, src);
+  Kokkos::fence();
 }
 
 }
@@ -559,7 +595,7 @@ struct MPVectorAllocation<ValueType, true> {
                              const size_t span,
                              const unsigned vector_size,
                              scalar_type* scalar_ptr) :
-      m_functor( space , scalar_ptr , span*vector_size ),
+      m_functor( space , scalar_ptr , span*vector_size , "Stokhos_MP_VectorContig_ConstructDestructFunctor1" ),
       m_initialize(initialize) {}
 
     inline void construct_shared_allocation() {
@@ -689,7 +725,7 @@ struct MPVectorAllocation<ValueType, false> {
                              const unsigned vector_size,
                              scalar_type* scalar_ptr,
                              value_type* value_ptr) :
-      m_scalar_functor( space , scalar_ptr , span*vector_size ),
+      m_scalar_functor( space , scalar_ptr , span*vector_size , "Stokhos_MP_VectorContig_ConstructDestructFunctor2" ),
       m_vector_functor( space , value_ptr , scalar_ptr , span , vector_size ),
       m_initialize(initialize) {}
 

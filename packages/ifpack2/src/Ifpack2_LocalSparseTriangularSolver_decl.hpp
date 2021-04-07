@@ -49,6 +49,8 @@
 #include "Teuchos_FancyOStream.hpp"
 #include <type_traits>
 
+#include "KokkosSparse_sptrsv.hpp"
+
 namespace Ifpack2 {
 
 /// \brief "Preconditioner" that solves local sparse triangular systems.
@@ -111,6 +113,17 @@ public:
                  "Please don't use Tpetra::CrsMatrix (a subclass of "
                  "Tpetra::RowMatrix) here anymore.  The constructor can take "
                  "either a RowMatrix or a CrsMatrix just fine.");
+
+  // Use the local matrix types
+  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using local_matrix_graph_type = typename local_matrix_type::StaticCrsGraphType;
+  using lno_row_view_t = typename local_matrix_graph_type::row_map_type;
+  using lno_nonzero_view_t = typename local_matrix_graph_type::entries_type;
+  using scalar_nonzero_view_t = typename local_matrix_type::values_type;
+  using TemporaryMemorySpace = typename local_matrix_graph_type::device_type::memory_space;
+  using PersistentMemorySpace = typename local_matrix_graph_type::device_type::memory_space;
+  using HandleExecSpace = typename local_matrix_graph_type::device_type::execution_space;
+  using k_handle = typename KokkosKernels::Experimental::KokkosKernelsHandle<typename lno_row_view_t::const_value_type, typename lno_nonzero_view_t::const_value_type, typename scalar_nonzero_view_t::value_type, HandleExecSpace, TemporaryMemorySpace,PersistentMemorySpace >;
 
   /// \brief Constructor
   ///
@@ -366,6 +379,10 @@ private:
   //! Optional HTS implementation.
   class HtsImpl;
   Teuchos::RCP<HtsImpl> htsImpl_;
+
+  //! Optional KokkosKernels implementation.
+  bool isKokkosKernelsSptrsv_;
+  Teuchos::RCP<k_handle> kh_;
 
   /// \brief "L" if the matrix is locally lower triangular, "U" if the
   ///   matrix is locally upper triangular, or "N" if unknown or

@@ -234,6 +234,7 @@ void RBILUK<MatrixType>::initialize ()
   blockSize_ = A_block_->getBlockSize();
 
   Teuchos::Time timer ("RBILUK::initialize");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
 
@@ -254,7 +255,7 @@ void RBILUK<MatrixType>::initialize ()
                              node_type> crs_graph_type;
 
     RCP<const crs_graph_type> matrixCrsGraph = Teuchos::rcpFromRef(A_block_->getCrsGraph() );
-    this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (matrixCrsGraph,
+    this->Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type,kk_handle_type> (matrixCrsGraph,
         this->LevelOfFill_, 0));
 
     this->Graph_->initialize ();
@@ -266,7 +267,7 @@ void RBILUK<MatrixType>::initialize ()
 
   this->isInitialized_ = true;
   this->numInitialize_ += 1;
-  this->initializeTime_ += timer.totalElapsedTime ();
+  this->initializeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -485,6 +486,7 @@ void RBILUK<MatrixType>::compute ()
   D_block_->modify_host ();
 
   Teuchos::Time timer ("RBILUK::compute");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     this->isComputed_ = false;
@@ -772,7 +774,7 @@ void RBILUK<MatrixType>::compute ()
 
   this->isComputed_ = true;
   this->numCompute_ += 1;
-  this->computeTime_ += timer.totalElapsedTime ();
+  this->computeTime_ += (timer.wallTime() - startTime);
 }
 
 
@@ -823,6 +825,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const scalar_type zero = STM::zero ();
 
   Teuchos::Time timer ("RBILUK::apply");
+  double startTime = timer.wallTime();
   { // Start timing
     Teuchos::TimeMonitor timeMon (timer);
     if (alpha == one && beta == zero) {
@@ -836,13 +839,14 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         const local_ordinal_type numVectors = xBlock.getNumVectors();
         BMV cBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
         BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
+        cBlock.sync_host();
         for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
         {
           for (size_t i = 0; i < D_block_->getNodeNumRows(); ++i)
           {
             local_ordinal_type local_row = i;
-            little_vec_type xval = xBlock.getLocalBlock(local_row,imv);
-            little_vec_type cval = cBlock.getLocalBlock(local_row,imv);
+            little_host_vec_type xval = xBlock.getLocalBlock(local_row,imv);
+            little_host_vec_type cval = cBlock.getLocalBlock(local_row,imv);
             //cval.assign(xval);
             Tpetra::COPY (xval, cval);
 
@@ -855,7 +859,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             for (local_ordinal_type j = 0; j < NumL; ++j)
             {
               local_ordinal_type col = colValsL[j];
-              little_vec_type prevVal = cBlock.getLocalBlock(col, imv);
+              little_host_vec_type prevVal = cBlock.getLocalBlock(col, imv);
 
               const local_ordinal_type matOffset = blockMatSize*j;
               little_block_type lij((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
@@ -870,14 +874,15 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         D_block_->applyBlock(cBlock, rBlock);
 
         // Solve U Y = R.
+        rBlock.sync_host();
         for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
         {
           const local_ordinal_type numRows = D_block_->getNodeNumRows();
           for (local_ordinal_type i = 0; i < numRows; ++i)
           {
             local_ordinal_type local_row = (numRows-1)-i;
-            little_vec_type rval = rBlock.getLocalBlock(local_row,imv);
-            little_vec_type yval = yBlock.getLocalBlock(local_row,imv);
+            little_host_vec_type rval = rBlock.getLocalBlock(local_row,imv);
+            little_host_vec_type yval = yBlock.getLocalBlock(local_row,imv);
             //yval.assign(rval);
             Tpetra::COPY (rval, yval);
 
@@ -890,7 +895,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             for (local_ordinal_type j = 0; j < NumU; ++j)
             {
               local_ordinal_type col = colValsU[NumU-1-j];
-              little_vec_type prevVal = yBlock.getLocalBlock(col, imv);
+              little_host_vec_type prevVal = yBlock.getLocalBlock(col, imv);
 
               const local_ordinal_type matOffset = blockMatSize*(NumU-1-j);
               little_block_type uij((typename little_block_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
@@ -923,7 +928,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   } // Stop timing
 
   this->numApply_ += 1;
-  this->applyTime_ = timer.totalElapsedTime ();
+  this->applyTime_ += (timer.wallTime() - startTime);
 }
 
 

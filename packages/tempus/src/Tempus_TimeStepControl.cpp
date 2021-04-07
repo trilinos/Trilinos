@@ -13,7 +13,15 @@
 #include "Tempus_TimeStepControl_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(TimeStepControl)
+
+  // Nonmember constructor from ParameterList.
+  template Teuchos::RCP<TimeStepControl<double> >
+  createTimeStepControl(
+    Teuchos::RCP<Teuchos::ParameterList> const& pList,
+    bool runInitialize);
+
 }
 
 #endif

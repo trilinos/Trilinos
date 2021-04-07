@@ -10,6 +10,7 @@
 #define Tempus_StepperExplicit_decl_hpp
 
 // Tempus
+#include "Tempus_config.hpp"
 #include "Tempus_Stepper.hpp"
 
 
@@ -100,6 +101,9 @@ public:
 
   virtual bool isValidSetup(Teuchos::FancyOStream & out) const;
 
+  /// Set StepperExplicit member data from the ParameterList.
+  void setStepperExplicitValues(Teuchos::RCP<Teuchos::ParameterList> pl);
+
 protected:
 
   /// Explicit ODE ModelEvaluator
@@ -108,8 +112,8 @@ protected:
   Thyra::ModelEvaluatorBase::InArgs<Scalar>          inArgs_;
   Thyra::ModelEvaluatorBase::OutArgs<Scalar>         outArgs_;
 
-  Teuchos::RCP<StepperObserver<Scalar> >             stepperObserver_;
- };
+};
+
 
 } // namespace Tempus
 #endif // Tempus_StepperExplicit_decl_hpp

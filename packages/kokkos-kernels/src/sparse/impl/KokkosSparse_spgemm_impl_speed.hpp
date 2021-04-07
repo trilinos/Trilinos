@@ -130,19 +130,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -150,6 +142,10 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
+      return row_index;
+#endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
       return row_index;
 #endif
     }
@@ -354,10 +350,14 @@ struct KokkosSPGEMM
     all_shared_memory += sizeof(nnz_lno_t) * shmem_key_size;
     scalar_t* vals = KokkosKernels::Impl::alignPtr<char*, scalar_t>(all_shared_memory);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
-    hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+    hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t>
+    // issue-508, TODO: understand and re-work below parallel_for loop.
+    // Inialize hm2 with correct max_value_size and hashOpRHS
+    // global_memory_hash_size is computed, per team of threads -- this is hashOpRHS.
+
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,scalar_t,KokkosKernels::Experimental::HashOpType::modulo>
     hm2(0, 0,
         NULL, NULL, NULL, NULL);
     /*
@@ -366,13 +366,10 @@ struct KokkosSPGEMM
         pbeginsC + c_row_begin, pnextsC + c_row_begin, pEntriesC + c_row_begin, pvaluesC + c_row_begin);
         */
 
-
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index) {
       const size_type c_row_begin = rowmapC[row_index];
       const nnz_lno_t global_memory_hash_size = nnz_lno_t(rowmapC[row_index + 1] - c_row_begin);
 
-      hm2.hash_key_size = global_memory_hash_size;
-      hm2.max_value_size = global_memory_hash_size;
       hm2.keys = pEntriesC + c_row_begin;
       hm2.values = pvaluesC + c_row_begin;
       hm2.hash_begins = pbeginsC + c_row_begin;
@@ -406,22 +403,18 @@ struct KokkosSPGEMM
           nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work_);
           nnz_lno_t b_col_ind = -1;
           scalar_t b_val = -1;
-          nnz_lno_t hash = -1;
           Kokkos::parallel_for(
               Kokkos::ThreadVectorRange(teamMember, work_to_handle),
               [&] (nnz_lno_t i) {
             const size_type adjind = i + rowBegin;
             b_col_ind = entriesB[adjind];
             b_val = valuesB[adjind] * valA;
-            //hash = b_col_ind % shmem_key_size;
-            hash = b_col_ind & shared_memory_hash_func;
           });
 
           int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeAdd(
-              teamMember, vector_size,
-              hash, b_col_ind, b_val,
-              used_hash_sizes,
-              shmem_key_size);
+                                b_col_ind, b_val,
+                                used_hash_sizes
+                              );
 
           int overall_num_unsuccess = 0;
 
@@ -437,10 +430,11 @@ struct KokkosSPGEMM
             }
 
             //int insertion =
-            hm2.vector_atomic_insert_into_hash_mergeAdd(
+            hm2.vector_atomic_insert_into_hash_mergeAdd_with_team_level_list_length(
                 teamMember, vector_size,
                 hash_,b_col_ind,b_val,
-                used_hash_sizes + 1, hm2.max_value_size
+                used_hash_sizes + 1,
+                global_memory_hash_size
             );
 
           }
@@ -491,7 +485,7 @@ struct KokkosSPGEMM
 //
 //  Policy typedefs with tags found in: KokkosSparse_spgemm_impl.hpp
 //
-//  if Cuda enabled :
+//  if GPU:
 //    "KokkosSparse::NumericCMEM::KKSPEED::GPU" : gpu_team_policy_t,  i.e. GPUTag
 //
 //  else :
@@ -529,7 +523,7 @@ void
 
   Kokkos::Impl::Timer numeric_speed_timer_with_free;
 
-  if (my_exec_space_ == KokkosKernels::Impl::Exec_CUDA){
+  if (KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>()) {
     //allocate memory for begins and next to be used by the hashmap
     nnz_lno_temp_work_view_t beginsC
     (Kokkos::ViewAllocateWithoutInitializing("C keys"), valuesC_.extent(0));

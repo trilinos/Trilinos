@@ -29,12 +29,8 @@
         <Parameter name="Minimum Time Step"      type="double" value="0.00001"/>
         <Parameter name="Initial Time Step"      type="double" value="0.1"/>
         <Parameter name="Maximum Time Step"      type="double" value="0.1"/>
-        <Parameter name="Minimum Order"          type="int"    value="1"/>
-        <Parameter name="Initial Order"          type="int"    value="1"/>
-        <Parameter name="Maximum Order"          type="int"    value="1"/>
         <Parameter name="Maximum Absolute Error" type="double" value="1.0e-8"/>
         <Parameter name="Maximum Relative Error" type="double" value="1.0e-8"/>
-        <Parameter name="Integrator Step Type"  type="string" value="Constant"/>
         <Parameter name="Output Time List"       type="string" value=""/>
         <Parameter name="Output Index List"      type="string" value=""/>
         <Parameter name="Output Time Interval"   type="double" value="10.0"/>
@@ -49,7 +45,7 @@
       <Parameter name="Stepper Type"  type="string" value="Trapezoidal Method"/>
       <Parameter name="Use FSAL"       type="bool" value="true"/>
       <Parameter name="Initial Condition Consistency" type="string" value="Consistent"/>
-      <Parameter name="Initial Condition Consistency Check" type="bool" value="true"/>
+      <Parameter name="Initial Condition Consistency Check" type="bool" value="false"/>
 
       <Parameter name="Solver Name"    type="string" value="Default Solver"/>
       <Parameter name="Zero Initial Guess" type="bool" value="0"/>

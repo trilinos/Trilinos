@@ -9,11 +9,9 @@
 #ifndef Tempus_IntegratorBasic_impl_hpp
 #define Tempus_IntegratorBasic_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Teuchos_TimeMonitor.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperFactory.hpp"
-#include "Tempus_TimeStepControl.hpp"
-#include <ctime>
 
 
 namespace Tempus {
@@ -97,16 +95,12 @@ void IntegratorBasic<Scalar>::setStepper(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
-  if (stepper_ == Teuchos::null) {
-    // Construct from Integrator ParameterList
-    RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
-    std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
+  // Construct from Integrator ParameterList
+  RCP<StepperFactory<Scalar> > sf =Teuchos::rcp(new StepperFactory<Scalar>());
+  std::string stepperName = integratorPL_->get<std::string>("Stepper Name");
 
-    RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
-    stepper_ = sf->createMultiSteppers(stepperPL, models);
-  } else {
-    stepper_->createSubSteppers(models);
-  }
+  RCP<ParameterList> stepperPL = Teuchos::sublist(tempusPL_,stepperName,true);
+  stepper_ = sf->createStepper(stepperPL, models);
 }
 
 
@@ -128,7 +122,7 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
   // Construct from Integrator ParameterList
   RCP<ParameterList> shPL =
     Teuchos::sublist(integratorPL_, "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   if (state == Teuchos::null) {
     // Construct default IC from the application model
@@ -141,11 +135,7 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
     newState->setTimeStep(timeStepControl_->getInitTimeStep());
     newState->setTolRel  (timeStepControl_->getMaxRelError());
     newState->setTolAbs  (timeStepControl_->getMaxAbsError());
-    int order = timeStepControl_->getInitOrder();
-    if (order == 0) order = stepper_->getOrder();
-    if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
-    if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
-    newState->setOrder(order);
+    newState->setOrder   (stepper_->getOrder());
     newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
     solutionHistory_->addState(newState);
@@ -173,7 +163,7 @@ initializeSolutionHistory(Scalar t0,
   // Construct from Integrator ParameterList
   RCP<ParameterList> shPL =
     Teuchos::sublist(integratorPL_, "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   // Create and set xdot and xdotdot.
   RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
@@ -195,11 +185,7 @@ initializeSolutionHistory(Scalar t0,
   newState->setTime    (t0);
   newState->setIndex   (timeStepControl_->getInitIndex());
   newState->setTimeStep(timeStepControl_->getInitTimeStep());
-  int order = timeStepControl_->getInitOrder();
-  if (order == 0) order = stepper_->getOrder();
-  if (order < stepper_->getOrderMin()) order = stepper_->getOrderMin();
-  if (order > stepper_->getOrderMax()) order = stepper_->getOrderMax();
-  newState->setOrder(order);
+  newState->setOrder(stepper_->getOrder());
 
   newState->setSolutionStatus(Status::PASSED);  // ICs are considered passing.
 
@@ -228,11 +214,6 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
       << "        Supplied SolutionHistory has only " << sh->getNumStates()
       << " SolutionStates.\n");
 
-    // Make integratorPL_ consistent with new SolutionHistory.
-    RCP<ParameterList> shPL = sh->getNonconstParameterList();
-    integratorPL_->set("Solution History", shPL->name());
-    integratorPL_->set(shPL->name(), *shPL);
-
     solutionHistory_ = sh;
   }
 }
@@ -252,11 +233,11 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
         // Construct from Integrator ParameterList
         RCP<ParameterList> tscPL =
           Teuchos::sublist(integratorPL_,"Time Step Control",true);
-        timeStepControl_ = rcp(new TimeStepControl<Scalar>(tscPL));
+        timeStepControl_ = createTimeStepControl<Scalar>(tscPL);
       } else {
         // Construct default TimeStepControl
         timeStepControl_ = rcp(new TimeStepControl<Scalar>());
-        RCP<ParameterList> tscPL = timeStepControl_->getNonconstParameterList();
+        RCP<const ParameterList> tscPL = timeStepControl_->getValidParameters();
         integratorPL_->set("Time Step Control", tscPL->name());
         integratorPL_->set(tscPL->name(), *tscPL);
       }
@@ -264,12 +245,12 @@ void IntegratorBasic<Scalar>::setTimeStepControl(
 
   } else {
     // Make integratorPL_ consistent with new TimeStepControl.
-    RCP<ParameterList> tscPL = tsc->getNonconstParameterList();
-    integratorPL_->set("Time Step Control", tscPL->name());
-    integratorPL_->set(tscPL->name(), *tscPL);
     timeStepControl_ = tsc;
+    RCP<const ParameterList> tscPL = timeStepControl_->getValidParameters();
+    integratorPL_->set(tscPL->name(), *tscPL);
   }
 
+  timeStepControl_->initialize();
 }
 
 
@@ -314,39 +295,6 @@ void IntegratorBasic<Scalar>::initialize()
   // Set initial conditions, make them consistent, and set stepper memory.
   stepper_->setInitialConditions(solutionHistory_);
 
-  // Ensure TimeStepControl orders match the Stepper orders.
-  if (timeStepControl_->getMinOrder() < stepper_->getOrderMin())
-      timeStepControl_->setMinOrder(stepper_->getOrderMin());
-  if (timeStepControl_->getMinOrder() > stepper_->getOrderMax())
-      timeStepControl_->setMinOrder(stepper_->getOrderMax());
-
-  if (timeStepControl_->getMaxOrder() == 0 ||
-      timeStepControl_->getMaxOrder() > stepper_->getOrderMax())
-      timeStepControl_->setMaxOrder(stepper_->getOrderMax());
-  if (timeStepControl_->getMaxOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setMaxOrder(timeStepControl_->getMinOrder());
-
-  if (timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMinOrder());
-  if (timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder())
-      timeStepControl_->setInitOrder(timeStepControl_->getMaxOrder());
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    timeStepControl_->getMinOrder() > timeStepControl_->getMaxOrder(),
-    std::out_of_range,
-       "Error - Invalid TimeStepControl min order greater than max order.\n"
-    << "        Min order = " << timeStepControl_->getMinOrder() << "\n"
-    << "        Max order = " << timeStepControl_->getMaxOrder() << "\n");
-
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    timeStepControl_->getInitOrder() < timeStepControl_->getMinOrder() ||
-    timeStepControl_->getInitOrder() > timeStepControl_->getMaxOrder(),
-    std::out_of_range,
-       "Error - Initial TimeStepControl order is out of min/max range.\n"
-    << "        Initial order = " << timeStepControl_->getInitOrder() << "\n"
-    << "        Min order     = " << timeStepControl_->getMinOrder()  << "\n"
-    << "        Max order     = " << timeStepControl_->getMaxOrder()  << "\n");
-
   if (integratorTimer_ == Teuchos::null)
     integratorTimer_ = rcp(new Teuchos::Time("Integrator Timer"));
   if (stepperTimer_ == Teuchos::null)
@@ -355,6 +303,7 @@ void IntegratorBasic<Scalar>::initialize()
   if (Teuchos::as<int>(this->getVerbLevel()) >=
       Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"IntegratorBasic::IntegratorBasic");
     *out << this->description() << std::endl;
   }
@@ -373,22 +322,24 @@ std::string IntegratorBasic<Scalar>::description() const
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  out << "solutionHistory= " << solutionHistory_->description()<<std::endl;
-  out << "timeStepControl= " << timeStepControl_->description()<<std::endl;
-  out << "stepper        = " << stepper_        ->description()<<std::endl;
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  *out << "solutionHistory= " << solutionHistory_->description()<<std::endl;
+  *out << "timeStepControl= " << timeStepControl_->description()<<std::endl;
+  *out << "stepper        = " << stepper_        ->description()<<std::endl;
 
   if (Teuchos::as<int>(verbLevel) >=
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    out << "solutionHistory= " << std::endl;
-    solutionHistory_->describe(out,verbLevel);
-    out << "timeStepControl= " << std::endl;
-    timeStepControl_->describe(out,verbLevel);
-    out << "stepper        = " << std::endl;
-    stepper_        ->describe(out,verbLevel);
+    *out << "solutionHistory= " << std::endl;
+    solutionHistory_->describe(in_out,verbLevel);
+    *out << "timeStepControl= " << std::endl;
+    timeStepControl_->describe(in_out,verbLevel);
+    *out << "stepper        = " << std::endl;
+    stepper_        ->describe(in_out,verbLevel);
   }
 }
 
@@ -407,12 +358,19 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::startIntegrator()
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->setOutputToRootOnly(0);
   if (isInitialized_ == false) {
     Teuchos::OSTab ostab(out,1,"StartIntegrator");
     *out << "Failure - IntegratorBasic is not initialized." << std::endl;
     integratorStatus_ = Status::FAILED;
     return;
   }
+
+  //set the Abs/Rel tolerance
+  auto cs = solutionHistory_->getCurrentState();
+  cs->setTolRel(timeStepControl_->getMaxRelError());
+  cs->setTolAbs(timeStepControl_->getMaxAbsError());
+
   integratorTimer_->start();
   // get optimal initial time step
   const Scalar initDt =
@@ -420,6 +378,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
               stepper_->getInitTimeStep(solutionHistory_));
   // update initial time step
   timeStepControl_->setInitTimeStep(initDt);
+  timeStepControl_->initialize();
   integratorStatus_ = WORKING;
 }
 
@@ -443,7 +402,7 @@ bool IntegratorBasic<Scalar>::advanceTime()
       startTimeStep();
       integratorObserver_->observeStartTimeStep(*this);
 
-      timeStepControl_->getNextTimeStep(solutionHistory_, integratorStatus_);
+      timeStepControl_->setNextTimeStep(solutionHistory_, integratorStatus_);
       integratorObserver_->observeNextTimeStep(*this);
 
       if (integratorStatus_ == Status::FAILED) break;
@@ -506,6 +465,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
   // Too many TimeStep failures, Integrator fails.
   if (ws->getNFailures() >= timeStepControl_->getMaxFailures()) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,2,"checkTimeStep");
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
          << "  (nFailures = "<<ws->getNFailures()<< ") >= (nFailuresMax = "
@@ -516,6 +476,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
   if (ws->getNConsecutiveFailures()
       >= timeStepControl_->getMaxConsecFailures()){
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"checkTimeStep");
     *out << "Failure - Stepper has failed more than the maximum "
          << "consecutive allowed.\n"
@@ -538,6 +499,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
      )
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,0,"checkTimeStep");
     *out <<std::scientific
       <<std::setw( 6)<<std::setprecision(3)<<ws->getIndex()
@@ -702,7 +664,7 @@ IntegratorBasic<Scalar>::unsetParameterList()
   return(temp_param_list);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,
@@ -713,7 +675,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >&      model,
@@ -724,7 +686,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic()
 {
@@ -733,7 +695,7 @@ Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic()
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                     pList,

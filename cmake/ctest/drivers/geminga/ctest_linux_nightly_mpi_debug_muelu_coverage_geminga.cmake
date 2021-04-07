@@ -83,6 +83,7 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DMueLu_ENABLE_Experimental=ON"
   "-DXpetra_ENABLE_Experimental=ON"
   "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS=ON"
+  "-DTrilinos_EXTRA_LINK_FLAGS='-lgcov'"
 )
 
 #

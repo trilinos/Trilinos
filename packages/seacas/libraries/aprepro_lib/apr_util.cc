@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "aprepro.h"        // for symrec, Aprepro, etc
@@ -139,7 +139,12 @@ namespace SEAMS {
   void undefined_error(const SEAMS::Aprepro &apr, const std::string &var)
   {
     if (!apr.inIfdefGetvar) {
-      apr.warning("Undefined variable '" + var + "'");
+      if (apr.ap_options.require_defined) {
+        apr.error("Undefined variable '" + var + "'");
+      }
+      else {
+        apr.warning("Undefined variable '" + var + "'");
+      }
     }
     else {
       apr.inIfdefGetvar = false;

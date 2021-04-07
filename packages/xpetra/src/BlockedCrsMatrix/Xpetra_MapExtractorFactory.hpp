@@ -64,19 +64,31 @@ namespace Xpetra {
 
   private:
     //! Private construtor, since this is a static class
-    MapExtractorFactory() {}
+    MapExtractorFactory() = delete;
 
   public:
-    /// \brief Constructor specifying the Maps.
-    ///
-    /// The Maps indirectly specify the linear algebra library to use
-    /// (Tpetra or Epetra).
+    /*!
+      @brief Build MapExtrasctor from a given set of partial maps.
+
+      The Maps indirectly specify the linear algebra library to use (Tpetra or Epetra).
+    */
     static Teuchos::RCP<Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
     Build (const Teuchos::RCP<const Map>& fullmap,
            const std::vector<Teuchos::RCP<const Map> >& maps,
            bool bThyraMode = false)
     {
       return rcp (new Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> (fullmap, maps, bThyraMode));
+    }
+
+    /*!
+      @brief Build MapExtrasctor from a given BlockedMap.
+
+      The Maps indirectly specify the linear algebra library to use (Tpetra or Epetra).
+    */
+    static Teuchos::RCP<Xpetra::MapExtractor<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+    Build (const Teuchos::RCP<const Xpetra::BlockedMap<LocalOrdinal,GlobalOrdinal,Node>>& blockedMap)
+    {
+      return rcp(new MapExtractor(blockedMap));
     }
   };
 

@@ -159,8 +159,8 @@ namespace MueLu {
 
       // Construct and launch functor to fill coarse coordinates values
       coarseCoordinatesBuilderFunctor myCoarseCoordinatesBuilder(geoData,
-                                                                 fineCoordinates->  template getLocalView<device_type>(),
-                                                                 coarseCoordinates->template getLocalView<device_type>());
+                                                                 fineCoordinates->  getDeviceLocalView(),
+                                                                 coarseCoordinates->getDeviceLocalView());
       Kokkos::parallel_for("GeometricInterpolation: build coarse coordinates",
                            Kokkos::RangePolicy<execution_space>(0, geoData->getNumCoarseNodes()),
                            myCoarseCoordinatesBuilder);

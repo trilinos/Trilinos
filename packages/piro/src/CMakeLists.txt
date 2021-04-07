@@ -59,6 +59,7 @@ APPEND_SET(HEADERS
   Piro_MatrixFreeLinearOp.hpp
   Piro_MatrixFreeLinearOp_Def.hpp
   Piro_ObserverBase.hpp
+  Piro_ROL_ObserverBase.hpp
   )
 #
 # B.2) epetra files
@@ -68,6 +69,9 @@ IF (Piro_ENABLE_NOX)
   APPEND_SET(HEADERS
     Piro_SteadyStateSolver.hpp
     Piro_SteadyStateSolver_Def.hpp
+    Piro_Reduced_Objective_SimOpt.hpp
+    Piro_ThyraProductME_Objective_SimOpt.hpp
+    Piro_ThyraProductME_Constraint_SimOpt.hpp
     Piro_NOXSolver.hpp
     Piro_NOXSolver_Def.hpp
     Piro_LOCASolver.hpp

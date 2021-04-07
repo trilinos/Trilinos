@@ -43,7 +43,7 @@ INCLUDE(XpetraAddTest)
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
   XPETRA_ADD_TEST_TPETRA(FixedMatrixPattern 4)
   XPETRA_ADD_TEST_TPETRA(StandardReuse 4)
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     ReuseSequence
     NAME "ReuseSequenceTpetra"
     ARGS "--linAlgebra=Tpetra --xml=reuse_seq.xml --nx=40 --ny=40 --dim=2"
@@ -54,7 +54,7 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
   XPETRA_ADD_TEST_EPETRA(FixedMatrixPattern 4)
   XPETRA_ADD_TEST_EPETRA(StandardReuse 4)
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     ReuseSequence
     NAME "ReuseSequenceEpetra"
     ARGS "--linAlgebra=Epetra --xml=reuse_seq.xml --nx=40 --ny=40 --dim=2"

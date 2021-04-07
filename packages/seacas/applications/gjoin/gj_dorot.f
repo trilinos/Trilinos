@@ -1,20 +1,8 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
-
-C $Id: dorot.f,v 1.1 1999/01/18 19:21:21 gdsjaar Exp $
-C $Log: dorot.f,v $
-C Revision 1.1  1999/01/18 19:21:21  gdsjaar
-C ExodusII version of gjoin, needs testing and syncing with exodus 1 version, but is being committed to permit easier testing and modifications.  This was created by Dave Fry at Goodyear
-C
-c Revision 1.1.1.1  1998/11/05  16:23:25  a294617
-c Initial import == gjoin 1.36
-c
-C Revision 1.1  1992/11/11 22:00:09  gdsjaar
-C Added revolve and revcen transformation commands.
-C
 
       subroutine dorot(ndim, numnp, xn, yn, zn, rotmat, rotcen)
       real xn(*), yn(*), zn(*)

@@ -144,6 +144,12 @@ class TrapezoidRuleSolver
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_p_space(int l) const;
   /** \brief . */
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > get_g_space(int j) const;
+  /** \brief . */
+  Teuchos::RCP<Piro::NOXSolver<Scalar> > getNOXSolver() const;
+  /** \brief . */
+  Teuchos::RCP<Piro::TrapezoidDecorator<Scalar> > getDecorator() const;
+  /** \brief . */
+  Teuchos::RCP<Thyra::AdaptiveSolutionManager> getSolutionManager() const;
   //@}
 
 private:

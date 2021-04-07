@@ -8,7 +8,9 @@
 #include <stk_mesh/base/NgpMesh.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
+#include <stk_unit_test_utils/GetMeshSpec.hpp>
 
 namespace ngp_unit_test_utils {
 
@@ -30,6 +32,12 @@ DualViewType create_dualview(const std::string& name, unsigned size)
   return result;
 }
 
+inline void setup_mesh_4hex_4block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
+{
+  std::string meshDesc = stk::unit_test_util::get_many_block_mesh_desc(4);
+  stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
+}
+
 inline void setup_mesh_3hex_3block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
@@ -46,7 +54,7 @@ inline void setup_mesh_3hex_2block(stk::mesh::BulkData& bulk, unsigned bucketCap
   stk::unit_test_util::setup_text_mesh(bulk, meshDesc);
 }
 
-inline void setup_mesh_2hex_3block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
+inline void setup_mesh_2hex_2block(stk::mesh::BulkData& bulk, unsigned bucketCapacity)
 {
   std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
                          "0,2,HEX_8,5,6,7,8,9,10,11,12,block_2";
@@ -83,7 +91,7 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
   }
   Kokkos::deep_copy(bucketPartOrdinals, hostBucketPartOrdinals);
 
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   Kokkos::parallel_for(1, KOKKOS_LAMBDA(size_t /*index*/) {
                          NGP_ASSERT_EQ(ngpMesh.num_buckets(stk::topology::ELEM_RANK), numBuckets);
                          for (unsigned i = 0; i < numBuckets; ++i) {

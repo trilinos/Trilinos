@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "ED_SystemInterface.h" // for SystemInterface, etc
@@ -78,12 +78,9 @@ template <typename INT> void Side_Set<INT>::load_sides(const INT *elmt_map) cons
 {
   int err = 0;
   if ((elmts == nullptr || sides == nullptr) && numEntity > 0) {
-    elmts = new INT[numEntity];
-    SMART_ASSERT(elmts != nullptr);
-    sides = new INT[numEntity];
-    SMART_ASSERT(sides != nullptr);
+    elmts     = new INT[numEntity];
+    sides     = new INT[numEntity];
     sideIndex = new INT[numEntity];
-    SMART_ASSERT(sideIndex != nullptr);
 
     err = ex_get_set(fileId, EX_SIDE_SET, id_, elmts, sides);
 

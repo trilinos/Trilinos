@@ -104,6 +104,12 @@ inline int RowsPerThread<Kokkos::Cuda>(const int NNZPerRow) {
   return 1;
 }
 #endif
+#ifdef KOKKOS_ENABLE_HIP
+template<>
+inline int RowsPerThread<Kokkos::Experimental::HIP>(const int NNZPerRow) {
+  return 1;
+}
+#endif
 
 // A simple struct for storing a kernel launch configuration.
 // This is currently used by CrsMatrix to allow the user to have some control
@@ -406,17 +412,10 @@ public:
 
   //! Type of a host-memory mirror of the sparse matrix.
   typedef CrsMatrix<ScalarType, OrdinalType, host_mirror_space, MemoryTraits> HostMirror;
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-  //! Type of the graph structure of the sparse matrix.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, size_type, memory_traits> StaticCrsGraphType;
-  //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
-  typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, size_type, memory_traits> staticcrsgraph_type;
-#else
   //! Type of the graph structure of the sparse matrix.
   typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> StaticCrsGraphType;
   //! Type of the graph structure of the sparse matrix - consistent with Kokkos.
   typedef Kokkos::StaticCrsGraph<ordinal_type, Kokkos::LayoutLeft, device_type, memory_traits, size_type> staticcrsgraph_type;
-#endif
   //! Type of column indices in the sparse matrix.
   typedef typename staticcrsgraph_type::entries_type index_type;
   //! Const version of the type of column indices in the sparse matrix.
@@ -506,11 +505,11 @@ public:
   {}
 
   /// \brief Constructor that copies raw arrays of host data in
-  ///   coordinate format.
+  ///   3-array CRS (compresed row storage) format.
   ///
-  /// On input, each entry of the sparse matrix is stored in val[k],
-  /// with row index rows[k] and column index cols[k].  We assume that
-  /// the entries are sorted in increasing order by row index.
+  /// On input, the entries must be sorted by row. \c rowmap determines where each row begins
+  /// and ends. For each entry k (0 <= k < annz), \c cols[k] gives the adjacent column,
+  /// and \c val[k] gives the corresponding matrix value.
   ///
   /// This constructor is mainly useful for benchmarking or for
   /// reading the sparse matrix's data from a file.
@@ -519,27 +518,21 @@ public:
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.
-  /// \param val [in] The entries.
-  /// \param rows [in] The row indices.  rows[k] is the row index of
-  ///   val[k].
-  /// \param cols [in] The column indices.  cols[k] is the column
-  ///   index of val[k].
-  /// \param pad [in] If true, pad the sparse matrix's storage with
-  ///   zeros in order to improve cache alignment and / or
-  ///   vectorization.
-  ///
-  /// FIXME (mfh 21 Jun 2013) The \c pad argument is currently not used.
+  /// \param val [in] The values.
+  /// \param rowmap [in] The row offsets. The values/columns in row k begin at index
+  ///   \c rowmap[k] and end at \c rowmap[k+1]-1 (inclusive). This means the array
+  ///   must have length \c nrows+1.
+  /// \param cols [in] The column indices. \c cols[k] is the column
+  ///   index of entry k, with a corresponding value of \c val[k] .
   CrsMatrix (const std::string &label,
              OrdinalType nrows,
              OrdinalType ncols,
              size_type annz,
              ScalarType* val,
-             OrdinalType* rows,
-             OrdinalType* cols,
-             bool pad = false)
+             OrdinalType* rowmap,
+             OrdinalType* cols)
   {
-    (void) pad;
-    ctor_impl (label, nrows, ncols, annz, val, rows, cols);
+    ctor_impl (label, nrows, ncols, annz, val, rowmap, cols);
 
     // FIXME (mfh 09 Aug 2013) Specialize this on the Device type.
     // Only use cuSPARSE for the Cuda Device.
@@ -566,23 +559,23 @@ public:
   /// \param nrows [in] The number of rows.
   /// \param ncols [in] The number of columns.
   /// \param annz [in] The number of entries.
-  /// \param vals [in/out] The entries.
-  /// \param rows [in/out] The row map (containing the offsets to the
+  /// \param vals [in] The entries.
+  /// \param rowmap [in] The row map (containing the offsets to the
   ///   data in each row).
-  /// \param cols [in/out] The column indices.
+  /// \param cols [in] The column indices.
   CrsMatrix (const std::string& /* label */,
              const OrdinalType nrows,
              const OrdinalType ncols,
              const size_type annz,
              const values_type& vals,
-             const row_map_type& rows,
+             const row_map_type& rowmap,
              const index_type& cols) :
-    graph (cols, rows),
+    graph (cols, rowmap),
     values (vals),
     numCols_ (ncols)
   {
-    const ordinal_type actualNumRows = (rows.extent(0) != 0) ?
-      static_cast<ordinal_type> (rows.extent(0) - static_cast<size_type> (1)) :
+    const ordinal_type actualNumRows = (rowmap.extent(0) != 0) ?
+      static_cast<ordinal_type> (rowmap.extent(0) - static_cast<size_type> (1)) :
       static_cast<ordinal_type> (0);
     if (nrows != actualNumRows) {
       std::ostringstream os;

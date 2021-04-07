@@ -13,6 +13,7 @@
 #include <string>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Tempus_config.hpp"
 
 namespace Tempus {
 
@@ -21,8 +22,8 @@ namespace Tempus {
 
   //! Tokenize a string, put tokens in a vector
   void StringTokenizer(std::vector<std::string>& tokens,
-		       const std::string& str,
-		       const std::string delimiter = ",",bool trim=false);
+                       const std::string& str,
+                       const std::string delimiter = ",",bool trim=false);
 
   //! Turn a vector of tokens into a vector of doubles
   void TokensToDoubles(std::vector<double> & values,

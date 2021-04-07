@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_ElementBlock_h
@@ -40,6 +40,9 @@ namespace Ioss {
 
     void                   get_block_adjacencies(std::vector<std::string> &block_adjacency) const;
     AxisAlignedBoundingBox get_bounding_box() const;
+    bool                   operator==(const Ioss::ElementBlock &rhs) const;
+    bool                   operator!=(const Ioss::ElementBlock &rhs) const;
+    bool                   equal(const Ioss::ElementBlock &rhs) const;
 
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,

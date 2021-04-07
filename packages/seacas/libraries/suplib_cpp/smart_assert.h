@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 #if !defined(SMART_ASSERT_H)
 #define SMART_ASSERT_H
@@ -56,7 +56,7 @@ class assert_context
   using string = std::string;
 
 public:
-  assert_context() : line_(0), level_(lvl_debug) {}
+  assert_context() {}
 
   // where the assertion failed: file & line
   void set_file_line(const char *file, int line)
@@ -98,14 +98,14 @@ public:
 private:
   // where the assertion occurred
   string file_{};
-  int    line_;
+  int    line_{0};
 
   // expression and values
   string     expr_{};
   vals_array vals_{};
 
   // level and message
-  int    level_;
+  int    level_{lvl_debug};
   string msg_{};
 };
 

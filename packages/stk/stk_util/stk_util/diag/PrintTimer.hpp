@@ -35,11 +35,11 @@
 #ifndef STK_UTIL_DIAG_PrintTimer_hpp
 #define STK_UTIL_DIAG_PrintTimer_hpp
 
-#include <iosfwd>                       // for ostream
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include "stk_util/parallel/Parallel.hpp"       // for ParallelMachine
 #include "stk_util/diag/TimerMetricTraits.hpp"  // for MetricsMask
-namespace stk { namespace diag { class Timer; } }
+#include <iosfwd>                               // for ostream
 
+namespace stk { namespace diag { class Timer; } }
 
 namespace stk {
 namespace diag {

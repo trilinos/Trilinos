@@ -9,12 +9,13 @@
 #ifndef Tempus_IntegratorForwardSensitivity_impl_hpp
 #define Tempus_IntegratorForwardSensitivity_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+
 #include "Tempus_CombinedForwardSensitivityModelEvaluator.hpp"
 #include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
+
 
 namespace Tempus {
 
@@ -173,26 +174,26 @@ getDxDp() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getXdot() const
+getXDot() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
-  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXdot());
+  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXDot());
   return Xdot->getMultiVector()->col(0);
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getDxdotDp() const
+getDXDotDp() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
-  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXdot());
+  RCP<const DMVPV> Xdot = rcp_dynamic_cast<const DMVPV>(integrator_->getXDot());
   const int num_param = Xdot->getMultiVector()->domain()->dim()-1;
   const Teuchos::Range1D rng(1,num_param);
   return Xdot->getMultiVector()->subView(rng);
@@ -201,28 +202,28 @@ getDxdotDp() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getXdotdot() const
+getXDotDot() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   RCP<const DMVPV> Xdotdot =
-    rcp_dynamic_cast<const DMVPV>(integrator_->getXdotdot());
+    rcp_dynamic_cast<const DMVPV>(integrator_->getXDotDot());
   return Xdotdot->getMultiVector()->col(0);
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
 IntegratorForwardSensitivity<Scalar>::
-getDxdotdotDp() const
+getDXDotDotDp() const
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
   typedef Thyra::DefaultMultiVectorProductVector<Scalar> DMVPV;
 
   RCP<const DMVPV> Xdotdot =
-    rcp_dynamic_cast<const DMVPV>(integrator_->getXdotdot());
+    rcp_dynamic_cast<const DMVPV>(integrator_->getXDotDot());
   const int num_param = Xdotdot->getMultiVector()->domain()->dim()-1;
   const Teuchos::Range1D rng(1,num_param);
   return Xdotdot->getMultiVector()->subView(rng);
@@ -241,11 +242,13 @@ template<class Scalar>
 void
 IntegratorForwardSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  integrator_->describe(out, verbLevel);
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  integrator_->describe(in_out, verbLevel);
 }
 
 template<class Scalar>
@@ -324,7 +327,7 @@ createSensitivityModelAndStepper(
   }
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
@@ -336,7 +339,7 @@ integratorForwardSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity(
@@ -348,7 +351,7 @@ integratorForwardSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorForwardSensitivity<Scalar> >
 integratorForwardSensitivity()

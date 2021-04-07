@@ -1,34 +1,23 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: fixlxn.f,v 1.1 1990/11/30 11:07:27 gdsjaar Exp $
-C $Log: fixlxn.f,v $
-C Revision 1.1  1990/11/30 11:07:27  gdsjaar
-C Initial revision
-C
-C
-CC* FILE: [.PAVING]FIXLXN.FOR
-CC* MODIFIED BY: TED BLACKER
-CC* MODIFICATION DATE: 7/6/90
-CC* MODIFICATION: COMPLETED HEADER INFORMATION
-C
       SUBROUTINE FIXLXN (MXND, LXN, NXL, NUID, NAVAIL, IAVAIL, NNN, LLL,
      &   NNNOLD, LLLOLD, ERR, NOROOM)
 C***********************************************************************
-C
+
 C  SUBROUTINE FIXLXN = FIXES THE ADDITIONS TO LXN
-C
+
 C***********************************************************************
-C
+
       DIMENSION NXL (2, 3*MXND), LXN (4, MXND), NUID (MXND)
-C
+
       LOGICAL ERR, NOROOM
-C
+
 C     RE-SETUP AVAILABLE LXN-SPACE LINKS
-C
+
       IOLD = 0
       NAVAIL = 0
       DO 100 I = 1, NNNOLD
@@ -57,9 +46,9 @@ C
             LXN (4, I) = I + 1
   110    CONTINUE
       ENDIF
-C
+
 C     COMPLETE LXN ARRAYS FOR ANY NEW LINES
-C
+
       DO 130 L = LLLOLD + 1, LLL
          DO 120 I = 1, 2
             CALL ADDLXN (MXND, LXN, NUID, NAVAIL, IAVAIL, NXL (I, L),
@@ -72,8 +61,8 @@ C
             ENDIF
   120    CONTINUE
   130 CONTINUE
-C
+
   140 CONTINUE
       RETURN
-C
+
       END

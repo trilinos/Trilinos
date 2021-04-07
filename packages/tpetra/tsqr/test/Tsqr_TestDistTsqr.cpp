@@ -828,7 +828,6 @@ public:
     using Teuchos::RCP;                                                 \
     using SC = theType;                                                 \
     using base_messenger_type = TSQR::MessengerBase<SC>;                \
-    using base_messenger_ptr = RCP<base_messenger_type>;                \
     using derived_messenger_type = TSQR::TeuchosMessenger<SC>;          \
     using derived_messenger_ptr = RCP<derived_messenger_type>;          \
     using benchmarker_type = DistTsqrBenchmarker<int, SC>;              \
@@ -926,8 +925,6 @@ benchmark(Teuchos::RCP<const Teuchos::Comm<int>> comm,
           std::vector<int>& seed,
           const bool useSeed)
 {
-  using timer_type = Teuchos::Time;
-
   const bool testReal = params.testReal;
   const bool testComplex = params.testComplex;
   const int numCols = params.numCols;

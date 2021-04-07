@@ -123,8 +123,7 @@ namespace panzer_stk {
 
     // KK: invoke serial interface; cubDegree is 1 and integration point is one 
     //     for debugging statement, use max dimension
-    // this lookup table setup is necessary before any impl::celltools is called
-    Intrepid2::Impl::CellTools::setSubcellParametrization();
+    auto side_parametrization = Intrepid2::RefSubcellParametrization<Kokkos::HostSpace>::get(2,parentTopology->getKey());
     Kokkos::DynRankView<double,Kokkos::HostSpace> normal_at_point("normal",3); // parentTopology->getDimension());
     for ( ; sideID != localSideTopoIDs.end(); ++side,++sideID,++parentElement) {
     
@@ -145,10 +144,8 @@ namespace panzer_stk {
       {
         auto jac_at_point = Kokkos::subview(iv.jac.get_view(), 0, 0, Kokkos::ALL(), Kokkos::ALL());
         Intrepid2::Impl::
-          CellTools::Serial::getPhysicalSideNormal(normal_at_point, jac_at_point, *sideID, *(ir->topology));
+          CellTools::Serial::getPhysicalSideNormal(normal_at_point, side_parametrization, jac_at_point, *sideID);
       }
-      // Kokkos::DynRankView<double,PHX::Device> normal("normal",1,ir->num_points,parentTopology->getDimension());
-      // Intrepid2::CellTools<PHX::exec_space>::getPhysicalSideNormals(normal, iv.jac.get_view(), *sideID, *(ir->topology));
 
       if (pout != NULL) {
       *pout << "element normals: "

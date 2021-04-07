@@ -43,16 +43,16 @@ driver script name is:
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
     ${ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX}<build-name-keysi>.sh
 
-For example, ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-waterman- and
+For example, ATDM_CONFIG_CTEST_S_BUILD_NAME_PREFIX=Trilinos-atdm-ats2- and
 <build-name-keysi>=cuda-9.2-release-debug gives the full build name
-'Trilinos-atdm-waterman-cuda-9.2-release-debug'.
+'Trilinos-atdm-ats2-cuda-9.2-release-debug'.
 
 However, if env var:
 
   ATDM_CTEST_S_USE_FULL_BUILD_NAME=1
 
 is set, then <build-name-keysi> must match the full build name
-(e.g. <build-name-keysi>=Trilinos-atdm-waterman_cuda-9.2_fpic_opt) giving the
+(e.g. <build-name-keysi>=Trilinos-atdm-ats2-9.2_fpic_opt) giving the
 full script name:
 
   Trilinos/cmake/ctest/drivers/atdm/<system_name>/drivers/
@@ -66,9 +66,9 @@ To select the default env to load instead of 'default', use:
   env ATDM_CTEST_S_DEFAULT_ENV=<system_name>-default \\
   ./ctest-s-local-test-driver.sh <build-name-1> >build-name-2> ...
 
-(For example, one must set ATDM_CTEST_S_DEFAULT_ENV=cee-rhel6-default to run
-the 'cee-rhel6' builds on CEE RHEL6 and RHE7 machines. Otherwise the
-'sems-rhel6' env will be selected which is the default env on those machines.)
+(For example, one must set ATDM_CTEST_S_DEFAULT_ENV=cee-rhel7-default to run
+the 'cee-rhel7' builds on CEE RHE7 machines. Otherwise the 'sems-rhel7' env
+will be selected which is the default env on those machines.)
 
 To control the list of packages tested, to build from scratch (default is to
 rebuild), and not submit to CDash, use, for example:

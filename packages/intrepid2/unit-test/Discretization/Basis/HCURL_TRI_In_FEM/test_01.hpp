@@ -81,7 +81,7 @@ namespace Test {
     }
 
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -94,12 +94,12 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
+  using DeviceSpaceType = typename DeviceType::execution_space;   
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
-//  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-//  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"
@@ -115,10 +115,10 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
@@ -127,8 +127,8 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
   int errorFlag = 0;
   constexpr ordinal_type dim =2;
 
-  typedef Basis_HCURL_TRI_In_FEM<DeviceSpaceType,OutValueType,PointValueType> TriBasisType;
-  typedef Basis_HDIV_TRI_In_FEM<DeviceSpaceType,OutValueType,PointValueType> TriBasisHDivType;
+  typedef Basis_HCURL_TRI_In_FEM<DeviceType,OutValueType,PointValueType> TriBasisType;
+  typedef Basis_HDIV_TRI_In_FEM<DeviceType,OutValueType,PointValueType> TriBasisHDivType;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
 //  constexpr ordinal_type dim = 2;
@@ -150,7 +150,7 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     triBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
     DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
     triBasis.getDofCoeffs(dofCoeffs);
@@ -203,12 +203,14 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     const ordinal_type order = std::min(4, maxOrder);
     TriBasisType triBasis(order, POINTTYPE_WARPBLEND);
 
+    shards::CellTopology tri_3(shards::getCellTopologyData<shards::Triangle<3> >());
+
     const ordinal_type cardinality = triBasis.getCardinality();
     DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, cardinality , dim);
     triBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     triBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
@@ -221,9 +223,13 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
     //Normals at each edge
     DynRankViewHostScalarValueType ConstructWithLabelScalar(tangents, numFields,dim); // normals at each point basis point
-    tangents(0,0)  =  1.0; tangents(0,1)  = 0.0;
-    tangents(1,0)  =  -1.0; tangents(1,1)  =  1.0;
-    tangents(2,0)  =  0.0; tangents(2,1)  =  -1.0;
+
+    for (int edgeId = 0; edgeId < 3; ++edgeId) {
+      auto tangent = Kokkos::subview(tangents, edgeId, Kokkos::ALL());
+    CellTools<Kokkos::HostSpace::execution_space>::getReferenceEdgeTangent( tangent ,
+        edgeId ,
+        tri_3 );
+    }
 
     const auto allTags = triBasis.getAllDofTags();
 
@@ -282,11 +288,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-    auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lattice_host_scalar);
+    auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
     deep_copy(lattice_scalar, lattice_host_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+    RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
     triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
@@ -331,7 +337,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
     errorFlag = -1000;
   };
 
-
+  // Intrepid2 basis have been redefined and they are no longer
+  // equivalent to FIAT basis. However they are proportional to the FIAT basis
+  // with a scaling that depends on the geometric entity (points, edge, face, cell)
+  // associated to the basis
+  scalar_type scaling_factor[4] = {0,2,1,0};
 
   try {
 
@@ -352,11 +362,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lattice_host_scalar);
+      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
       deep_copy(lattice_scalar, lattice_host_scalar);
 
       DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-      RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+      RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
       DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
       triBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
@@ -415,11 +425,13 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
           0.000000000000000e+00, 0.000000000000000e+00
       };
 
+      const auto allTags = triBasis.getAllDofTags();
       ordinal_type cur=0;
       for (ordinal_type i=0;i<cardinality;i++) {
+        auto scaling = scaling_factor[allTags(i,0)];
         for (ordinal_type j=0;j<np_lattice;j++) {
           for (ordinal_type k=0;k<dim; k++) {
-            if (std::abs( h_basisAtLattice(i,j,k) - fiat_vals[cur] ) > tol ) {
+            if (std::abs( h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) > tol ) {
               errorFlag++;
               *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -427,8 +439,8 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
               *outStream << " At multi-index { ";
               *outStream << i << " " << j << " " << k;
               *outStream << "}  computed value: " <<  h_basisAtLattice(i,j,k)
-                            << " but correct value: " << fiat_vals[cur] << "\n";
-              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - fiat_vals[cur] ) << "\n";
+                            << " but correct value: " << scaling*fiat_vals[cur] << "\n";
+              *outStream << "Difference: " << std::fabs(  h_basisAtLattice(i,j,k) - scaling*fiat_vals[cur] ) << "\n";
             }
             cur++;
           }
@@ -461,11 +473,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
       DynRankViewHostScalarValueType ConstructWithLabelScalar(lattice_host_scalar, np_lattice , dim);
       PointTools::getLattice(lattice_host_scalar, tri_3, order, 0, POINTTYPE_EQUISPACED);
 
-      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), lattice_host_scalar);
+      auto lattice_scalar = Kokkos::create_mirror_view(typename DeviceType::memory_space(), lattice_host_scalar);
       deep_copy(lattice_scalar, lattice_host_scalar);
 
       DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-      RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+      RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
       DynRankViewOutValueType ConstructWithLabelOutView(basisDivAtLattice, cardinality , np_lattice);
       triBasis.getValues(basisDivAtLattice, lattice, OPERATOR_CURL);
@@ -527,9 +539,11 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
 
 
     ordinal_type cur=0;
+    const auto allTags = triBasis.getAllDofTags();
     for (ordinal_type i=0;i<cardinality;i++) {
+      auto scaling = scaling_factor[allTags(i,0)];
       for (ordinal_type j=0;j<np_lattice;j++) {
-        if (std::abs( h_basisDivAtLattice(i,j) - fiat_divs[cur] ) > tol ) {
+        if (std::abs( h_basisDivAtLattice(i,j) - scaling*fiat_divs[cur] ) > tol ) {
           errorFlag++;
           *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
 
@@ -537,8 +551,8 @@ int HCURL_TRI_In_FEM_Test01(const bool verbose) {
           *outStream << " At multi-index { ";
           *outStream << i << " " << j;
           *outStream << "}  computed value: " <<  h_basisDivAtLattice(i,j)
-                          << " but correct value: " << fiat_divs[cur] << "\n";
-          *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - fiat_divs[cur] ) << "\n";
+                          << " but correct value: " << scaling*fiat_divs[cur] << "\n";
+          *outStream << "Difference: " << std::fabs(  h_basisDivAtLattice(i,j) - scaling*fiat_divs[cur] ) << "\n";
         }
         cur++;
       }

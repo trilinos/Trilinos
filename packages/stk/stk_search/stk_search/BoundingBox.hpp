@@ -36,6 +36,8 @@
 #ifndef STK_SEARCH_BOUNDINGBOX_HPP
 #define STK_SEARCH_BOUNDINGBOX_HPP
 
+#include "Kokkos_Macros.hpp"
+#include <array>
 #include <stk_math/StkVector.hpp>
 #include <stk_search/Box.hpp>
 #include <stk_search/Plane.hpp>
@@ -237,7 +239,8 @@ inline bool intersects(Box<T1> const& a, Sphere<T2> const& b)
 
 // intersects: Box,Box
 template <typename T1, typename T2>
-inline bool intersects(Box<T1> const& a, Box<T2> const& b)
+KOKKOS_FORCEINLINE_FUNCTION
+bool intersects(Box<T1> const& a, Box<T2> const& b)
 {
   Point<T1> const& amin = a.min_corner();
   Point<T1> const& amax = a.max_corner();

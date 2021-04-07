@@ -180,6 +180,19 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: PDE equations", 1);
   Teuchos::RCP<Tpetra::MultiVector<> > dummy;
   params.set("partitioner: coordinates",dummy);
+
+  // Ifpack2_Hypre.hpp
+  params.set("hypre: Solver", "PCG");
+  params.set("hypre: Preconditioner", "Euclid");
+  params.set("hypre: SolveOrPrecondition", "Solver");
+  params.sublist("hypre: Solver functions").disableRecursiveValidation();
+
+  params.sublist("hypre: Preconditioner functions").disableRecursiveValidation();
+  params.sublist("Operators").disableRecursiveValidation();
+  params.sublist("Coordinates").disableRecursiveValidation();
+  params.set("hypre: Dump", false);
+  params.set("hypre: SetPreconditioner", false);
+  params.set("hypre: NumFunctions", 0);
 }
 
 }//namespace Ifpack2

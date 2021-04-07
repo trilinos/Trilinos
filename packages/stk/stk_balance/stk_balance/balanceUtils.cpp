@@ -96,6 +96,17 @@ double BalanceSettings::getVertexWeightMultiplierForVertexInSearch() const
     return 15;
 }
 
+void BalanceSettings::setVertexWeightBlockMultiplier(const std::string & blockName, double multiplier)
+{
+  m_vertexWeightBlockMultipliers[blockName] = multiplier;
+}
+
+const BlockWeightMultipliers &
+BalanceSettings::getVertexWeightBlockMultipliers() const
+{
+  return m_vertexWeightBlockMultipliers;
+}
+
 bool BalanceSettings::isIncrementalRebalance() const
 {
     return false;
@@ -106,19 +117,9 @@ bool BalanceSettings::isMultiCriteriaRebalance() const
     return false;
 }
 
-bool BalanceSettings::areVertexWeightsProvidedInAVector() const
-{
-    return false;
-}
-
 bool BalanceSettings::areVertexWeightsProvidedViaFields() const
 {
     return false;
-}
-
-std::vector<double> BalanceSettings::getVertexWeightsViaVector() const
-{
-    return std::vector<double>();
 }
 
 double BalanceSettings::getImbalanceTolerance() const
@@ -205,7 +206,7 @@ const stk::mesh::Field<int> * BalanceSettings::getSpiderVolumeConnectivityCountF
     return nullptr;
 }
 
-bool BalanceSettings::useLocalIds() const
+bool BalanceSettings::usingColoring() const
 {
     return getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH ||
            getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
@@ -338,6 +339,8 @@ int GraphCreationSettings::getGraphVertexWeight(stk::topology type) const
             return 3;
         case stk::topology::HEXAHEDRON_20:
             return 8;
+        case stk::topology::PYRAMID_5:
+            return 1;
         case stk::topology::TETRAHEDRON_4:
             return 1;
         case stk::topology::TETRAHEDRON_10:

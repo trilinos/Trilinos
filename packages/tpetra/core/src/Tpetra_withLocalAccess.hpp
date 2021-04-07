@@ -43,6 +43,7 @@
 #define TPETRA_WITHLOCALACCESS_HPP
 
 #include "TpetraCore_config.h"
+#include "Tpetra_Access.hpp"
 #include <functional>
 #include <type_traits>
 
@@ -57,39 +58,10 @@ namespace Tpetra {
   ////////////////////////////////////////////////////////////
 
   namespace Details {
-    /// \brief Enum for declaring access intent.
-    ///
-    /// This is not for users; it's an implementation detail of
-    /// functions readOnly, writeOnly, and readWrite (see below).
-    enum class EAccess {
-      ReadOnly,
-      WriteOnly,
-      ReadWrite
-    };
-
-    /// \brief Tag class for declaring access intent.
-    ///
-    /// This is a class, not an enum, so that LocalAccess (see below)
-    /// can have a parameter pack.  You can't mix class types and
-    /// constexpr values in a parameter pack.  Compare to
-    /// Kokkos::MemoryTraits or Kokkos::Schedule.
-    template<const EAccess accessMode>
-    class Access {
-      /// \brief Type alias to help identifying the tag class.
-      ///
-      /// We follow Kokkos in identifying a tag class by checking
-      /// whether a type alias inside it has the same type as the tag
-      /// class itself.
-      using access_mode = Access<accessMode>;
-    };
-
     template<class T> struct is_access_mode : public std::false_type {};
-    template<EAccess am>
-    struct is_access_mode<Access<am>> : public std::true_type {};
-
-    using read_only = Access<EAccess::ReadOnly>;
-    using write_only = Access<EAccess::WriteOnly>;
-    using read_write = Access<EAccess::ReadWrite>;
+    template<> struct is_access_mode<Access::ReadOnly> : public std::true_type {};
+    template<> struct is_access_mode<Access::ReadWrite> : public std::true_type {};
+    template<> struct is_access_mode<Access::WriteOnly> : public std::true_type {};
 
     /// \brief Given a global object, get its default memory space
     ///   (both the type and the default instance thereof).
@@ -257,7 +229,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -266,7 +238,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (const GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -274,7 +246,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::write_only>
+    Access::WriteOnly>
   writeOnly (GlobalObjectType&);
 
   /// \brief Declare that you want to access the given global object's
@@ -282,7 +254,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_write>
+    Access::ReadWrite>
   readWrite (GlobalObjectType&);
 
   ////////////////////////////////////////////////////////////
@@ -681,7 +653,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (GlobalObjectType& G)
   {
     return {G};
@@ -690,7 +662,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_only>
+    Access::ReadOnly>
   readOnly (const GlobalObjectType& G)
   {
     GlobalObjectType& G_nc = const_cast<GlobalObjectType&> (G);
@@ -700,7 +672,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::write_only>
+    Access::WriteOnly>
   writeOnly (GlobalObjectType& G)
   {
     return {G};
@@ -709,7 +681,7 @@ namespace Tpetra {
   template<class GlobalObjectType>
   Details::LocalAccess<
     GlobalObjectType,
-    Details::read_write>
+    Access::ReadWrite>
   readWrite (GlobalObjectType& G)
   {
     return {G};
@@ -821,6 +793,57 @@ namespace Tpetra {
     };
 
     /// \brief Specialization of WithLocalAccess that implements the
+    ///   "base class" of the user providing one GlobalObject
+    ///   arguments, and a function that takes one arguments.
+    ///   Required to workaround a compile error with intel-19 in c++14 mode.
+    template<class FirstLocalAccessType>
+    struct WithLocalAccess<FirstLocalAccessType> {
+      using current_user_function_type =
+        typename ArgsToFunction<FirstLocalAccessType>::type;
+
+      static void
+      withLocalAccess (current_user_function_type userFunction,
+                       FirstLocalAccessType first)
+      {
+        // The "master" local object is the scope guard for local
+        // data.  Its constructor may allocate temporary storage, copy
+        // data to the desired memory space, etc.  Its destructor will
+        // put everything back.  "Put everything back" could be a
+        // no-op, or it could copy data back so where they need to go
+        // and/or free temporary storage.
+        //
+        // Users define this function and the type it returns by
+        // specializing GetMasterLocalObject for LocalAccess
+        // specializations.
+        auto first_lcl_master = getMasterLocalObject (first);
+
+        // The "nonowning" local object is a nonowning view of the
+        // "master" local object.  This is the only local object that
+        // users see, and they see it as input to their function.
+        // Subsequent slices / subviews view this nonowning local
+        // object.  All such nonowning views must have lifetime
+        // contained within the lifetime of the master local object.
+        //
+        // Users define this function and the type it returns by
+        // specializing GetNonowningLocalObject (see above).
+        //
+        // Constraining the nonowning views' lifetime to this scope
+        // means that master local object types may use low-cost
+        // ownership models, like that of std::unique_ptr.  There
+        // should be no need for reference counting (in the manner of
+        // std::shared_ptr) or Herb Sutter's deferred_heap.
+        auto first_lcl_view = getNonowningLocalObject (first, first_lcl_master);
+
+        // Curry the user's function by fixing the first argument.
+
+        WithLocalAccess<>::withLocalAccess
+          ([=] () {
+             userFunction (first_lcl_view);
+           });
+      }
+    };
+
+    /// \brief Specialization of WithLocalAccess that implements the
     ///   "recursion case."
     ///
     /// \tparam FirstLocalAccessType Specialization of LocalAccess.
@@ -866,17 +889,6 @@ namespace Tpetra {
         auto first_lcl_view = getNonowningLocalObject (first, first_lcl_master);
 
         // Curry the user's function by fixing the first argument.
-
-        // The commented-out implementation requires C++14, because it
-        // uses a generic lambda (the special case where parameters
-        // are "auto").  We do have the types of the arguments,
-        // though, from ArgsToFunction, so we don't need this feature.
-
-        // WithLocalAccess<Rest...>::withLocalAccess
-        //   (rest...,
-        //    [=] (auto ... args) {
-        //      userFunction (first_lcl_view, args...);
-        //    });
 
         WithLocalAccess<Rest...>::withLocalAccess
           ([=] (with_local_access_function_argument_type<Rest>... args) {

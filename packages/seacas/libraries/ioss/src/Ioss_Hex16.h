@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_Hex16_h
@@ -21,6 +21,7 @@ namespace Ioss {
 
     static void factory();
     ~Hex16() override;
+    Hex16(const Hex16 &) = delete;
 
     ElementShape shape() const override { return ElementShape::HEX; }
     int          spatial_dimension() const override;
@@ -54,8 +55,6 @@ namespace Ioss {
 
   private:
     static Hex16 instance_;
-
-    Hex16(const Hex16 &) = delete;
   };
 } // namespace Ioss
 #endif

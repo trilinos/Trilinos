@@ -78,7 +78,7 @@ Documentation`_.  Finally, several bits of information are provided in the
 Background
 ==========
 
-In order to easily find the most appropriate documentation, see the 'TriBITS 
+In order to easily find the most appropriate documentation, see the `TriBITS
 Developer and User Roles`_ guide.  This guide describes the different roles 
 that users of TriBITS may play and offers links to relevant sections of the
 documentation.  Additionally, the reader may wish to review the `CMake Language 
@@ -779,7 +779,7 @@ the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` (the current minimum version
 of CMake required by TriBITS is given at in `Getting set up to use CMake`_) .
 For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
 
-  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 3.10.0)
+  SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 3.17.0)
   CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED}
     FATAL_ERROR)
 
@@ -4566,10 +4566,10 @@ Test Test Category         ``BASIC``           (`Test Test Category BASIC`_)
 =========================  ==================  ====================================
 
 Typically a TriBITS project will define a "standard development environment"
-which is comprised of a standard compiler (e.g. GCC 4.6.1), TPL versions
-(e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake 3.10.0, git
-1.8.2, etc.).  This standard development environment is expected to be used to
-test changes to the project's code before any push.  By using a standard
+which is comprised of a standard compiler (e.g. GCC 8.3.0), TPL versions
+(e.g. OpenMPI 4.0.5, Boost 4.9, etc.), and other tools (e.g. cmake 3.17.0, git
+2.10.1, etc.).  This standard development environment is expected to be used
+to test changes to the project's code before any push.  By using a standard
 development environment, if the code builds and all the tests pass for the
 "default" pre-push builds for one developer, then that maximizes the
 probability that the code will also build and all tests will pass for every
@@ -6304,6 +6304,41 @@ The following steps describe how to submit results to a CDash site using the
   .. the other cloned and updated by the CTest driver script.
 
 
+How to submit testing results to a custom CDash Group
+-----------------------------------------------------
+
+Following up on `How to submit testing results to a CDash site`_, to submit
+build and test results to a custom "Group" on CDash (instead of just
+"Nightly", "Continuous" or "Experimental"), one just has to create the new
+group on CDash using the CDash GUI interface and then tell the ctest -S local
+driver to submit results to that CDash group.  The steps for doing this are
+given below.
+
+1. Create the new CDash group ``<special_group>`` for CDash project
+   ``<ProjectName>`` on the targeted CDash site.
+
+   If the CDash group ``<special_group>`` is not already created, then one can
+   create it by first logging into CDash with an account that can modify the
+   CDash project ``<ProjectName>``.  Once logged in, go to the project edit
+   page and select "Settings" and "Groups".  From there, create the new group
+   ``<special_group>``.  Set the "Build Type" to either "Daily" or "Latest".
+
+2. Set ``${PROJECT_NAME}_TRACK=<special_group>`` with the CTest -S driver
+   script.
+
+   One can either do that by setting ``SET(${PROJECT_NAME}_TRACK
+   <special_group>)`` in the CTest -S ``*.cmake`` driver script itself or can
+   set it in the environment when running the ctest -S driver script.  For
+   example::
+ 
+     $ env <Project>_TRACK=<special_group> ... \
+       ctest -V -S <ctest_driver>.cmake
+ 
+   If the "build type" for the CDash group ``<special_group>`` was set to
+   "Daily", then set `CTEST_TEST_TYPE`_ to ``Nightly``.  Otherwise,
+   ``CTEST_TEST_TYPE`` can be set to ``Continuous`` or ``Experimental``.
+
+
 Additional Topics
 =================
 
@@ -6366,11 +6401,11 @@ after all is the whole goal of CMake).
 While the TriBITS Core functionality to configure, build, test, and install
 software is written using only raw CMake, the more sophisticated development
 tools needed to implement the full TriBITS development environment require
-Python 2.4 (or higher, but not Python 3.x) (see `Python Support`_).  Python is
-needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition, these
-python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated testing
-and submits to CDash.  Also note that ``git`` is the chosen version control
-tool for the TriBITS software development tools and all the VC-related
+Python 2.7 (or higher including Python 3.x) (see `Python Support`_).  Python
+is needed for tools like `checkin-test.py`_ and `gitdist`_.  In addition,
+these python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive automated
+testing and submits to CDash.  Also note that ``git`` is the chosen version
+control tool for the TriBITS software development tools and all the VC-related
 functionality in TriBITS.  But none of this is required for doing the most
 basic building, testing, or installation of a project using TriBITS Core.
 
@@ -6380,13 +6415,13 @@ Python Support
 
 TriBITS Core does not require anything other than raw CMake.  However, Python
 Utils, TriBITS CI Support, and other extended TriBITS components require
-Python.  These extra TriBITS tools only require Python 2.4+.  By default, when
-a TriBITS project starts to configure using CMake, it will try to find Python
-2.4+ on the system (see `Full Processing of TriBITS Project Files`_).  If
-Python is found, it will set the global cache variable ``PYTHON_EXECUTABLE``.
-If it is not found, then it will print a warning and ``PYTHON_EXECUTABLE``
-will be empty.  With this default behavior, if Python is found, then the
-TriBITS project can use it.  Otherwise, it can do without it.
+Python.  These extra TriBITS tools only require Python 2.7+ (and 3.x).  By
+default, when a TriBITS project starts to configure using CMake, it will try
+to find Python 2.7+ on the system (see `Full Processing of TriBITS Project
+Files`_).  If Python is found, it will set the global cache variable
+``PYTHON_EXECUTABLE``.  If it is not found, then it will print a warning and
+``PYTHON_EXECUTABLE`` will be empty.  With this default behavior, if Python is
+found, then the TriBITS project can use it.  Otherwise, it can do without it.
 
 While the default behavior for finding Python described above is useful for
 many TriBITS project (such as Trilinos), some TriBITS projects need different
@@ -6400,11 +6435,11 @@ behavior such as:
    can't be found.  In this case, the TriBITS project would set
    `${PROJECT_NAME}_REQUIRES_PYTHON`_ to ``TRUE``.
 
-3. Some TriBITS projects may require a version of Python more recent than 2.4.
+3. Some TriBITS projects may require a version of Python more recent than 2.7.
    In this case, the TriBITS project would set `PythonInterp_FIND_VERSION`_ to
-   some value higher than ``2.4``.  For example, may newer systems have Python
-   2.6.6 or higher versions installed by default and projects developed on
-   such a system typically requires this version or higher.
+   some value higher than ``2.7``.  For example, may newer systems have only
+   Python 3.5.2 or higher versions installed by default and projects developed
+   on such a system typically requires this version or higher.
 
 
 Project-Specific Build Reference
@@ -6577,6 +6612,28 @@ install commands from the former two files are run before install commands for
 the enabled packages while install commands from the latter two files are run
 after.)
 
+One can also change what compilers are written into the generated
+``<Project>Config.cmake`` and ``<Package>Config.cmake`` files for the build
+and the install trees.  By default, the compilers pointed to in these
+``Config.cmake`` files will be ``CMAKE_<LANG>_COMPILER`` where ``<LANG>`` =
+``CXX``, ``C``, and ``Fortran``.  But one can change this by setting any of
+the following::
+
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_BUILD_DIR <path>)
+  SET(CMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_C_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+  SET(CMAKE_Fortran_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR <path>)
+
+before the ``Config.cmake`` files are generated.  These can also be set in the
+CMake cache using, for example,
+``-DCMAKE_CXX_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR:FILEPATH=<path>``.
+
+This is used, for example, when compiler wrappers are used for the build tree
+and are set to ``CMAKE_<LANG>_COMPILER`` but when one wants to point to the
+original underlying compilers for the installed ``Config.cmake`` files.
+
 
 RPATH Handling
 --------------
@@ -6679,14 +6736,14 @@ exclude, it will exclude every file in the entire source tree that has
 trailing ``".*"`` means "match any character zero or more times" and
 ``"someFile"`` can match anywhere in the file name path.  Also, note that if
 you add in an exclude like ``"*.pyc"`` (i.e. trying to exclude all of the
-generated Python bite code files) that it will exclude every file that has
+generated Python byte code files) that it will exclude every file that has
 ``"pyc"`` in the name and **not** just those with the file extension
 ``"pyc"``.  For example, the exclude ``".pyc"`` would exclude the files
 ``"puppyc"``, ``"lpycso"``, etc.  If you want to exclude all files with
-extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!  One's
-lack of understanding of this fact will cost someone hours of lost time
+extension ``"pyc"``, you have to add the exclude regex ``".*[.]pyc$"``!
+One's lack of understanding of this fact will cost someone hours of lost time
 debugging what happens when random files are missing when one tries to
-configure what is left.  Somethings, what is left will actually configure and
+configure what is left.  Sometimes, what is left will actually configure and
 might almost build!
 
 **NOTE:** As warned in `TriBITS Package Core Files`_ and `TriBITS Subpackage
@@ -8323,12 +8380,11 @@ These options are described below.
   `<projectDir>/CMakeLists.txt`_ file because the latter is not directly
   processed in CTest -S driver scripts using ``TRIBITS_CTEST_DRIVER()``.)
 
-  In general, a project should change the default to ``TRUE`` when the minimum
-  CMake version being used with the project is CMake 3.10+ and when using a
-  newer CDash installation that can accomidate the results coming from ctest
-  -S and display them package-by-package very nicely.  Otherwise, most
-  projects are better off with package-by-package mode since it results in
-  nicer display on CDash.
+  In general, a project should change the default to ``TRUE`` when using a
+  newer CDash installation with CDash versions 3.0+ that can accomidate the
+  results coming from ctest -S and display them package-by-package very
+  nicely.  Otherwise, most projects are better off with package-by-package
+  mode since it results in nicer display on CDash for older CDash versions.
 
 .. _${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES:
 
@@ -8873,16 +8929,16 @@ These options are described below.
 **PythonInterp_FIND_VERSION**
 
   Determines the version of Python that is looked for.  TriBITS requires at
-  least version "2.4".  A particular TriBITS project can require a higher
+  least version "2.7".  A particular TriBITS project can require a higher
   version of TriBITS and this is set using, for example:
 
-    SET(PythonInterp_FIND_VERSION_DEFAULT "2.6.6")
+    SET(PythonInterp_FIND_VERSION_DEFAULT "3.5.2")
 
   in the `<projectDir>/ProjectName.cmake`_ file (See `Python Support`_).  The
-  default is version "2.4".  The user can force a more recent version of
+  default is version "2.7".  The user can force a more recent version of
   Python by configuring with, for example::
 
-    -D PythonInterp_FIND_VERSION="2.7.3"
+    -D PythonInterp_FIND_VERSION="3.6.2"
 
 
 TriBITS Macros and Functions
@@ -9310,7 +9366,7 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. Common references to raw CMake commands:
 
-.. _CONFIGURE_FILE(): https://cmake.org/cmake/help/v3.10/command/configure_file.html
+.. _CONFIGURE_FILE(): https://cmake.org/cmake/help/v3.17/command/configure_file.html
 
 .. Other references
 

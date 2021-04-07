@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <cgns/Iocgns_DatabaseIO.h> // for DatabaseIO -- serial
@@ -81,7 +81,7 @@ namespace Iocgns {
       return new Iocgns::DatabaseIO(nullptr, filename, db_usage, communicator, properties);
   }
 
-  void IOFactory::show_config() const { Iocgns::Utils::show_config(); }
+  std::string IOFactory::show_config() const { return Iocgns::Utils::show_config(); }
 } // namespace Iocgns
 
 #if defined(SEACAS_HAVE_MPI)

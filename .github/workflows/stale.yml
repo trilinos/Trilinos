@@ -1,0 +1,69 @@
+#
+# This workflow will process issues and PR's to determine if they are stale and/or need to be
+# removed.
+#
+name: "Close stale issues"
+on:
+  # Regular scheduling, run daily at 6AM Mountain time (12:00pm UTC)
+  # - Note: Mountain Standard Time (MST) is 7 hours behind UTC during the winter.
+  # Cron strings: MIN HR DOM MON DOW
+  schedule:
+  - cron: "0 12 * * 0,3,6"
+  #- cron: "0 12 * * *"
+
+
+# See https://github.com/actions/stale/blob/master/action.yml for information on actions
+# that GitHub knows for stale issues.
+
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/stale@v3.0.18
+      with:
+        debug-only: false
+        ascending: true
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        days-before-stale: 365
+        days-before-close: 30
+        stale-issue-label: 'MARKED_FOR_CLOSURE'
+        close-issue-label: 'CLOSED_DUE_TO_INACTIVITY'
+        stale-pr-label: 'MARKED_FOR_CLOSURE'
+        close-pr-label: 'CLOSED_DUE_TO_INACTIVITY'
+        exempt-issue-labels: 'DO_NOT_AUTOCLOSE'
+        # We specifically DO NOT exempt PR's from autoclosing.
+        #exempt-pr-labels: ''
+        remove-stale-when-updated: true
+        operations-per-run: 55
+        stale-issue-message: >
+          This issue has had no activity for **365** days and is marked for
+          closure. It will be closed after an additional **30** days of inactivity.
+
+          If you would like to keep this issue open please add a comment and remove
+          the `MARKED_FOR_CLOSURE` label.
+
+          If this issue should be kept open even with no activity beyond the time
+          limits you can add the label `DO_NOT_AUTOCLOSE`.
+
+        close-issue-message: >
+          This issue was closed due to inactivity for **395** days.
+
+        stale-pr-message: >
+          This Pull Request has been *marked for closure* due to inactivity.
+
+          Because of the changing nature of the Trilinos source due to active
+          development, a pull request with _no_ activity for **365** days is
+          considered to be abandoned and will be automatically closed after **30**
+          additional days of inactivity from when it was marked inactive.
+
+          If this should be kept open, please post a comment and remove the
+          label `MARKED_FOR_CLOSURE` to reset the inactivity timer.
+
+        close-pr-message: >
+          This Pull Request has been automatically closed due to **395** days of inactivity.
+
+        # start-date : only consider issues/PR's created after this date.
+        start-date: '2001-01-01T00:00:00Z'
+
+

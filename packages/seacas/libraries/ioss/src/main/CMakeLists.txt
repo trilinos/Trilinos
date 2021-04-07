@@ -1,7 +1,5 @@
-
 SET(HEADERS "")
 SET(SOURCES "")
-
 
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.h)
@@ -241,7 +239,6 @@ else()
 	     )
 endif()
 
-
 if ( CGNS_CGNSLIST_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(exodus64_to_unstructured_cgns
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --64 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block64.cgns
@@ -304,12 +301,10 @@ TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_to_exodus
 TRIBITS_ADD_ADVANCED_TEST(exodus_to_unstructured_cgns_file_per_state_to_exodus
    TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} --file_per_state ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-link.cgns
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS ${NPROCS}
    TEST_1 EXEC io_shell ARGS ${JOIN_ARG} 8-block-link.cgns 8-block-rt.g
      NOEXEPREFIX NOEXESUFFIX
-     NUM_MPI_PROCS 1
    TEST_2 CMND ${SEACAS_EXODIFF_BINARY} ARGS -stat -pedantic ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g 8-block-rt.g
-  COMM mpi serial
+  COMM serial
   XHOSTTYPE Windows
   )
 
@@ -355,6 +350,24 @@ TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_bc_no_parents_to_exodus
   COMM mpi serial
   XHOSTTYPE Windows
   )
+
+IF (disabled)
+# This requires a patched version of NetCDF.  Once the PR is accepted, the test will be re-enabled.
+TRIBITS_ADD_ADVANCED_TEST(exodus_append
+   TEST_0 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} --Maximum_Time=0.055 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g base.g
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 EXEC io_shell ARGS --Minimum_Time=0.055 ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g append.g
+     NUM_MPI_PROCS 1
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_2 EXEC io_shell ARGS ${DECOMP_ARG} ${JOIN_ARG} --append_after_time 0.055 append.g base.g
+     NUM_MPI_PROCS 1-4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_3 CMND ${SEACAS_EXODIFF_BINARY} ARGS -map ${CMAKE_CURRENT_SOURCE_DIR}/test/8-block.g base.g
+     NUM_MPI_PROCS 1
+  COMM mpi serial
+  )
+endif()
 
 if ( CGNS_CGNSDIFF_BINARY )
 TRIBITS_ADD_ADVANCED_TEST(cgns_Q2_parents_no_parent_compare_random_decomp
@@ -516,18 +529,6 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_reordered_zones_fields
   COMM mpi serial
   )
 
-TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_bump
-   TEST_0 EXEC io_shell ARGS ${CMAKE_CURRENT_SOURCE_DIR}/test/bump_str.cgns tmp.cgns
-     NUM_MPI_PROCS 1-4
-     NOEXEPREFIX NOEXESUFFIX
-   TEST_1 EXEC io_shell ARGS tmp.cgns bump_str_out.cgns
-     NUM_MPI_PROCS 1-4
-     NOEXEPREFIX NOEXESUFFIX
-   TEST_2 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/bump_str.cgns bump_str_out.cgns
-     NUM_MPI_PROCS 1
-  COMM mpi serial
-  )
-
 TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_single_fpp_single_fields
    TEST_0 EXEC io_shell ARGS --compose external ${CMAKE_CURRENT_SOURCE_DIR}/test/blottner.cgns blottner-fpp.cgns
      NUM_MPI_PROCS 1-4
@@ -539,6 +540,17 @@ TRIBITS_ADD_ADVANCED_TEST(structured_cgns_roundtrip_single_fpp_single_fields
      NUM_MPI_PROCS 1
   COMM mpi
   )
+
+if (TPL_ENABLE_MPI)
+TRIBITS_ADD_ADVANCED_TEST(structured_cgns_pre_split_join
+   TEST_0 EXEC io_shell ARGS --external ${CMAKE_CURRENT_SOURCE_DIR}/test/pre-split-old.cgns pre-split-old.cgns
+     NUM_MPI_PROCS 4
+     NOEXEPREFIX NOEXESUFFIX
+   TEST_1 CMND ${CGNS_CGNSDIFF_BINARY} ARGS -d ${CMAKE_CURRENT_SOURCE_DIR}/test/pre-split_cgns.gold pre-split-old.cgns
+     NUM_MPI_PROCS 1
+  COMM mpi
+)
+endif()
 
 IF (TPL_ENABLE_Pamgen OR Trilinos_ENABLE_Pamgen)
 TRIBITS_ADD_ADVANCED_TEST(pamgen_to_unstructured_cgns

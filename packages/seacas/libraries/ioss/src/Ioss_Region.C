@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Assembly.h>
@@ -29,6 +29,7 @@
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_SmartAssert.h>
+#include <Ioss_Sort.h>
 #include <Ioss_State.h>
 #include <Ioss_StructuredBlock.h>
 
@@ -64,7 +65,8 @@ namespace {
     return nullptr;
   }
 
-  template <typename T> size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
+  template <typename T>
+  size_t internal_get_variable_count(const std::vector<T> &entities, Ioss::Field::RoleType role)
   {
     Ioss::NameList names;
     for (auto ent : entities) {
@@ -121,18 +123,12 @@ namespace {
       if (old_ge != nullptr &&
           !(old_ge->type() == Ioss::SIDEBLOCK || old_ge->type() == Ioss::SIDESET)) {
         std::string        filename = region->get_database()->get_filename();
+        int64_t            id1      = entity->get_optional_property(id_str(), 0);
+        int64_t            id2      = old_ge->get_optional_property(id_str(), 0);
         std::ostringstream errmsg;
-        int64_t            id1 = 0;
-        int64_t            id2 = 0;
-        if (entity->property_exists(id_str())) {
-          id1 = entity->get_property(id_str()).get_int();
-        }
-        if (old_ge->property_exists(id_str())) {
-          id2 = old_ge->get_property(id_str()).get_int();
-        }
         fmt::print(errmsg,
                    "ERROR: There are multiple blocks or sets with the same name defined in the "
-                   "exodus file '{}'.\n"
+                   "database file '{}'.\n"
                    "\tBoth {} {} and {} {} are named '{}'.  All names must be unique.",
                    filename, entity->type_string(), id1, old_ge->type_string(), id2, name);
         IOSS_ERROR(errmsg);
@@ -181,6 +177,7 @@ namespace {
     std::vector<size_t> hashes;
 
     size_t which = 1;
+    hashes.reserve(entities.size());
     for (const auto &entity : entities) {
       hashes.push_back(compute_hash(entity, which++));
     }
@@ -310,7 +307,8 @@ namespace {
 
   bool is_input_or_appending_output(const Ioss::DatabaseIO *iodatabase)
   {
-    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND;
+    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND ||
+           iodatabase->open_create_behavior() == Ioss::DB_MODIFY;
   }
 } // namespace
 
@@ -329,21 +327,20 @@ namespace Ioss {
    *
    */
   Region::Region(DatabaseIO *iodatabase, const std::string &my_name)
-      : GroupingEntity(iodatabase, my_name, 1), currentState(-1), stateCount(0),
-        modelDefined(false), transientDefined(false)
+      : GroupingEntity(iodatabase, my_name, 1)
   {
     SMART_ASSERT(iodatabase != nullptr);
     iodatabase->set_region(this);
 
     if (iodatabase->usage() != Ioss::WRITE_HEARTBEAT &&
         (is_input_or_appending_output(iodatabase))) {
-      // Read metadata -- populates GroupingEntity lists and transient data
       Region::begin_mode(STATE_DEFINE_MODEL);
       iodatabase->read_meta_data();
-      modelDefined     = true;
-      transientDefined = true;
       Region::end_mode(STATE_DEFINE_MODEL);
-      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND) {
+      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND &&
+          iodatabase->open_create_behavior() != Ioss::DB_MODIFY) {
+        modelDefined     = true;
+        transientDefined = true;
         Region::begin_mode(STATE_READONLY);
       }
     }
@@ -552,7 +549,7 @@ namespace Ioss {
     fmt::print(
         strm,
         "\n Database: {0}\n"
-        " Mesh Type = {1}, {39}\n\n"
+        " Mesh Type = {1}, {39}\n"
         "                      {38:{24}s}\t                 {38:{23}s}\t Variables : Transient / Reduction\n"
         " Spatial dimensions = {2:{24}n}\t                 {38:{23}s}\t Global     = {26:{25}n}\t{44:{25}n}\n"
         " Node blocks        = {7:{24}n}\t Nodes         = {3:{23}n}\t Nodal      = {27:{25}n}\t{45:{25}n}\n"
@@ -689,7 +686,7 @@ namespace Ioss {
         auto sortName = [](const Ioss::EntityBlock *b1, const Ioss::EntityBlock *b2) {
           return (b1->name() < b2->name());
         };
-        std::sort(structuredBlocks.begin(), structuredBlocks.end(), sortName);
+        Ioss::sort(structuredBlocks.begin(), structuredBlocks.end(), sortName);
       }
       else {
         // Sort the element blocks based on the idOffset field, followed by
@@ -703,9 +700,9 @@ namespace Ioss {
                                                : (b1_orderInt < b2_orderInt));
         };
 
-        std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
-        std::sort(faceBlocks.begin(), faceBlocks.end(), lessOffset);
-        std::sort(edgeBlocks.begin(), edgeBlocks.end(), lessOffset);
+        Ioss::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
+        Ioss::sort(faceBlocks.begin(), faceBlocks.end(), lessOffset);
+        Ioss::sort(edgeBlocks.begin(), edgeBlocks.end(), lessOffset);
 
         // Now update the block offsets based on this new order...
         {
@@ -1058,6 +1055,11 @@ namespace Ioss {
       structured_block->property_add(
           Ioss::Property(orig_block_order(), (int)structuredBlocks.size()));
       structuredBlocks.push_back(structured_block);
+
+      // This will possibly be overwritten at a later time when the block is output
+      // to the cgns file
+      structured_block->property_add(Ioss::Property("zone", (int)structuredBlocks.size()));
+      structured_block->property_add(Ioss::Property("base", 1));
       // Add name as alias to itself to simplify later uses...
       add_alias__(structured_block);
       return true;
@@ -1541,15 +1543,8 @@ namespace Ioss {
       if (old_ge != nullptr && ge != old_ge) {
         if (!((old_ge->type() == SIDEBLOCK && ge->type() == SIDESET) ||
               (ge->type() == SIDEBLOCK && old_ge->type() == SIDESET))) {
-          ssize_t old_id = -1;
-          ssize_t new_id = -1;
-          if (old_ge->property_exists(id_str())) {
-            old_id = old_ge->get_property(id_str()).get_int();
-          }
-          if (ge->property_exists(id_str())) {
-            new_id = ge->get_property(id_str()).get_int();
-          }
-
+          ssize_t            old_id = old_ge->get_optional_property(id_str(), -1);
+          ssize_t            new_id = ge->get_optional_property(id_str(), -1);
           std::ostringstream errmsg;
           fmt::print(errmsg,
                      "\n\nERROR: Duplicate names detected.\n"
@@ -1648,7 +1643,7 @@ namespace Ioss {
   {
     IOSS_FUNC_ENTER(m_);
     size_t size = aliases.size();
-    for (auto alias_pair : aliases_) {
+    for (const auto &alias_pair : aliases_) {
       std::string alias = alias_pair.first;
       std::string base  = alias_pair.second;
       if (base == my_name) {
@@ -2445,7 +2440,7 @@ namespace Ioss {
     // Iterate through list, [ returns <alias, base_entity_name> ], if
     // 'base_entity_name' is defined on the restart file, add 'alias' as
     // an alias for it...
-    for (auto alias_pair : aliases_) {
+    for (const auto &alias_pair : aliases_) {
       std::string alias = alias_pair.first;
       std::string base  = alias_pair.second;
       if (alias != base && to->get_entity(base) != nullptr) {
@@ -2494,7 +2489,7 @@ namespace Ioss {
    */
   void Region::synchronize_id_and_name(const Region *from, bool sync_attribute_field_names)
   {
-    for (auto alias_pair : aliases_) {
+    for (const auto &alias_pair : aliases_) {
       std::string alias = alias_pair.first;
       std::string base  = alias_pair.second;
 
@@ -2585,7 +2580,7 @@ namespace Ioss {
       }
     }
 
-    for (auto alias_pair : aliases_) {
+    for (const auto &alias_pair : aliases_) {
       std::string alias = alias_pair.first;
       std::string base  = alias_pair.second;
 

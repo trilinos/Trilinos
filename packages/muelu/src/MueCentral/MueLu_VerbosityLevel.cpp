@@ -52,23 +52,23 @@
 namespace MueLu {
 
   VerbLevel toMueLuVerbLevel(const Teuchos::EVerbosityLevel verbLevel) {
-      switch(verbLevel)
-        {
-        case Teuchos::VERB_NONE:
-          return None;
-        case Teuchos::VERB_DEFAULT:
-          return Default;
-        case Teuchos::VERB_LOW:
-          return Low;
-        case Teuchos::VERB_MEDIUM:
-          return Medium;
-        case Teuchos::VERB_HIGH:
-          return High;
-        case Teuchos::VERB_EXTREME:
-          return Extreme;
-        default:
-          TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Unknown enum value found.");
-        }
+    switch(verbLevel)
+      {
+      case Teuchos::VERB_NONE:
+        return None;
+      case Teuchos::VERB_DEFAULT:
+        return Default;
+      case Teuchos::VERB_LOW:
+        return Low;
+      case Teuchos::VERB_MEDIUM:
+        return Medium;
+      case Teuchos::VERB_HIGH:
+        return High;
+      case Teuchos::VERB_EXTREME:
+        return Extreme;
+      default:
+        TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Unknown enum value found.");
+      }
   }
 
   std::string
@@ -107,6 +107,7 @@ namespace MueLu {
     verbMap["timings1"]       = Timings1;
     verbMap["timingsByLevel"] = TimingsByLevel;
     verbMap["external"]       = External;
+    verbMap["developer"]      = Developer;
     verbMap["debug"]          = Debug;
     verbMap["test"]           = Test;
 
@@ -116,6 +117,7 @@ namespace MueLu {
     verbMap["statistics"]     = Statistics;
     verbMap["timings"]        = Timings;
     verbMap["test"]           = Test;
+    verbMap["interfacetest"]  = InterfaceTest;
     //for users and developers
     verbMap["none"]           = None;
     verbMap["low"]            = Low;

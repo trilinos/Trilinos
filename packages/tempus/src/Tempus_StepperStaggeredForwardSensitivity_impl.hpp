@@ -9,19 +9,17 @@
 #ifndef Tempus_StepperStaggeredForwardSensitivity_impl_hpp
 #define Tempus_StepperStaggeredForwardSensitivity_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
-#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
-#include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 
-namespace Tempus {
+#include "Tempus_StepperFactory.hpp"
+#include "Tempus_WrapStaggeredFSAModelEvaluator.hpp"
+#include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
 
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
+
+namespace Tempus {
 
 
 template<class Scalar>
@@ -155,7 +153,7 @@ takeStep(
     state_state->setX(x);
     state_state->setXDot(xdot);
     state_state->setXDotDot(xdotdot);
-    stateSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+    stateSolutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
     stateSolutionHistory_->addState(state_state);
 
     const int num_param = X->getMultiVector()->domain()->dim()-1;
@@ -183,7 +181,7 @@ takeStep(
     sens_state->setX(dxdp_vec);
     sens_state->setXDot(dxdotdp_vec);
     sens_state->setXDotDot(dxdotdotdp_vec);
-    sensSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+    sensSolutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
     sensSolutionHistory_->addState(sens_state);
   }
 

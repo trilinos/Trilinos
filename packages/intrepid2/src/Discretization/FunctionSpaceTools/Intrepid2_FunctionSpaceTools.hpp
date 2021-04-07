@@ -63,6 +63,10 @@
 #include "Intrepid2_RealSpaceTools.hpp"
 #include "Intrepid2_CellTools.hpp"
 
+#include "Intrepid2_Data.hpp"
+#include "Intrepid2_TransformedVectorData.hpp"
+#include "Intrepid2_VectorData.hpp"
+
 #include "Kokkos_Core.hpp"
 
 
@@ -74,9 +78,60 @@ namespace Intrepid2 {
       and FE reference space; in addition, provides several function
       transformation utilities.
   */
-  template<typename ExecSpaceType = void>
+  template<typename DeviceType>
   class FunctionSpaceTools {
+    using ExecSpaceType = typename DeviceType::execution_space;
+    using MemSpaceType = typename DeviceType::memory_space;
   public:
+    /** \brief Transformation of a gradient field in the H-grad space, defined at points on a
+          reference cell, stored in the user-provided container <var><b>inputVals</b></var>
+          and nominally indexed by (F,P,D).  The returned object contains the transformed gradient field,
+          defined on cells in physical space and nominally indexed by (C,F,P,D).  The transformations are
+          computed on entry access; algorithms such as sum factorization rely on having access to the
+          reference-space basis values as well as the transformation operator; both are stored in the
+          returned TransformedVectorData object.
+
+          Computes pullback of gradients of \e HGRAD functions
+          \f$\Phi^*(\nabla\widehat{u}_f) = \left((DF_c)^{-{\sf T}}\cdot\nabla\widehat{u}_f\right)\circ F^{-1}_{c}\f$
+          for points in one or more physical cells that are images of a given set of points in the reference cell:
+          \f[
+          \{ x_{c,p} \}_{p=0}^P = \{ F_{c} (\widehat{x}_p) \}_{p=0}^{P}\qquad 0\le c < C \,.
+          \f]
+          In this case \f$ F^{-1}_{c}(x_{c,p}) = \widehat{x}_p \f$ and the user-provided container
+          should contain the gradients of the function set \f$\{\widehat{u}_f\}_{f=0}^{F}\f$ at the
+          reference points:
+          \f[
+          inputVals(f,p,*) = \nabla\widehat{u}_f(\widehat{x}_p) \,.
+          \f]
+          The method returns
+          \f[
+          outputVals(c,f,p,*)
+          = \left((DF_c)^{-{\sf T}}\cdot\nabla\widehat{u}_f\right)\circ F^{-1}_{c}(x_{c,p})
+          = (DF_c)^{-{\sf T}}(\widehat{x}_p)\cdot\nabla\widehat{u}_f(\widehat{x}_p) \qquad 0\le c < C \,.
+          \f]
+          See Section \ref sec_pullbacks for more details about pullbacks.
+    
+          \code
+          |------|----------------------|--------------------------------------------------|
+          |      |         Index        |                   Dimension                      |
+          |------|----------------------|--------------------------------------------------|
+          |   C  |         cell         |  0 <= C < num. integration domains               |
+          |   F  |         field        |  0 <= F < dim. of the basis                      |
+          |   P  |         point        |  0 <= P < num. integration points                |
+          |   D  |         space dim    |  0 <= D < spatial dimension                      |
+          |------|----------------------|--------------------------------------------------|
+          \endcode
+
+          \param  jacobianInverse  [in]  - Input array containing cell Jacobian inverses.
+          \param  inputVals        [in]  - Input array of reference HGRAD gradients.
+     \return TransformedVectorData object defined on (C,F,P,D) indices; transformation is computed on access.
+      */
+    template<class Scalar>
+    static TransformedVectorData<Scalar,DeviceType> getHGRADtransformGRAD(const Data<Scalar,DeviceType> &jacobianInverse, const VectorData<Scalar,DeviceType> &refBasisGradValues)
+    {
+      return TransformedVectorData<Scalar,DeviceType>(jacobianInverse,refBasisGradValues);
+    }
+    
     /** \brief Transformation of a (scalar) value field in the H-grad space, defined at points on a
         reference cell, stored in the user-provided container <var><b>input</b></var>
         and indexed by (F,P), into the output container <var><b>output</b></var>,
@@ -552,7 +607,6 @@ namespace Intrepid2 {
                const Kokkos::DynRankView<leftValueValueType,  leftValueProperties...>   leftValues,
                const Kokkos::DynRankView<rightValueValueType, rightValueProperties...>  rightValues,
                const bool sumInto = false);
-    
 
     /** \brief   Returns the weighted integration measures \a <b>outputVals</b> with dimensions
         (C,P) used for the computation of cell integrals, by multiplying absolute values 

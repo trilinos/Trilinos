@@ -109,7 +109,7 @@ public:
   typedef typename Kokkos::View<nnz_lno_t *, HandlePersistentMemorySpace> nnz_lno_persistent_work_view_t;
   typedef typename nnz_lno_persistent_work_view_t::HostMirror nnz_lno_persistent_work_host_view_t; //Host view type
 
-  typedef Kokkos::TeamPolicy<HandleExecSpace> team_policy_t ;
+  typedef Kokkos::TeamPolicy<ExecutionSpace> team_policy_t ;
   typedef typename team_policy_t::member_type team_member_t ;
 
   typedef typename Kokkos::View<size_t *> non_const_1d_size_type_view_t;
@@ -229,54 +229,34 @@ private:
   }
 
 
-  /** \brief Chooses best algorithm based on the execution space. COLORING_EB if cuda, COLORING_VB otherwise.
+  /** \brief Chooses best algorithm based on the execution space. COLORING_SERIAL if serial, otherwise COLORING_VBBIT.
+   *         VBBIT is the fastest parallel algorithm (unless on GPU and the graph's maximum degree is very large, but
+   *         we don't have information about the graph here)
    */
   void choose_default_algorithm()
   {
-#if defined( KOKKOS_ENABLE_SERIAL )
-    if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
+    auto exec = KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>();
+    if(exec == KokkosKernels::Impl::Exec_SERIAL)
+    {
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
-      std::cout << "Serial Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+      std::cout << "Serial Execution Space, Default Algorithm: COLORING_SERIAL\n";
 #endif
     }
-#endif
-
-#if defined( KOKKOS_ENABLE_THREADS )
-    if (std::is_same< Kokkos::Threads , ExecutionSpace >::value){
-      this->coloring_algorithm_type = COLORING_VB;
-#ifdef VERBOSE
-      std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-#endif
-    }
-#endif
-
-#if defined( KOKKOS_ENABLE_OPENMP )
-    if (std::is_same< Kokkos::OpenMP, ExecutionSpace >::value){
-      this->coloring_algorithm_type = COLORING_VB;
-#ifdef VERBOSE
-      std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_VB" << std::endl;
-#endif
-    }
-#endif
-
-#if defined( KOKKOS_ENABLE_CUDA )
-    if (std::is_same<Kokkos::Cuda, ExecutionSpace >::value){
+    else if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    {
       this->coloring_algorithm_type = COLORING_EB;
 #ifdef VERBOSE
-      std::cout << "Cuda Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+      std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_EB\n";
 #endif
     }
-#endif
-
-#if defined( KOKKOS_ENABLE_QTHREAD)
-    if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
+    else
+    {
       this->coloring_algorithm_type = COLORING_VB;
 #ifdef VERBOSE
-      std::cout << "Qthread Execution Space, Default Algorithm: COLORING_VB" << std::endl;
+      std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_VB\n";
 #endif
     }
-#endif
   }
 
   template<typename v1, typename v2, typename v3>
@@ -357,7 +337,7 @@ private:
         }
       }, new_edge_count);
 
-      Kokkos::single(Kokkos::PerThread(teamMember),[=] () {
+      Kokkos::single(Kokkos::PerThread(teamMember),[&] () {
         lower_xadj_counts(ii + 1) = new_edge_count;
       });
     }
@@ -463,7 +443,7 @@ private:
       row_index_view_type xadj, nonzero_view_type adj){
 
     KokkosKernels::Impl::symmetrize_and_get_lower_diagonal_edge_list
-    <row_index_view_type, nonzero_view_type, nnz_lno_persistent_work_view_t, HandleExecSpace>
+    <row_index_view_type, nonzero_view_type, nnz_lno_persistent_work_view_t, ExecutionSpace>
       (
         nv,
         xadj,
@@ -496,13 +476,8 @@ private:
 
       size_type_temp_work_view_t lower_count("LowerXADJ", nv + 1);
       size_type new_num_edge = 0;
-      typedef Kokkos::RangePolicy<HandleExecSpace> my_exec_space;
-
-      if ( false
-#if defined( KOKKOS_ENABLE_CUDA )
-          || std::is_same<Kokkos::Cuda, ExecutionSpace >::value
-#endif
-         )
+      typedef Kokkos::RangePolicy<ExecutionSpace> my_exec_space;
+      if (KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
       {
 
 
@@ -510,30 +485,22 @@ private:
         int vector_size = 0;
 
         CountLowerTriangleTeam<row_index_view_type, nonzero_view_type, size_type_temp_work_view_t> clt (nv, xadj, adj, lower_count);
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-        int max_allowed_team_size = team_policy_t::team_size_max(clt);
-        KokkosKernels::Impl::get_suggested_vector_team_size<size_type, HandleExecSpace>(
-            max_allowed_team_size,
-            vector_size,
-            teamSizeMax,
-            nv, ne);
-#else
+
         KokkosKernels::Impl::get_suggested_vector_size<size_type, HandleExecSpace>(
             vector_size,
             nv, ne);
 
         teamSizeMax = KokkosKernels::Impl::get_suggested_team_size<team_policy_t>(clt, vector_size);
-#endif
 
         Kokkos::parallel_for("KokkosGraph::CountLowerTriangleTeam",
             team_policy_t((nv + teamSizeMax - 1) / teamSizeMax, teamSizeMax, vector_size),
             clt//, new_num_edge
         );
 
-        KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, HandleExecSpace>
+        KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, ExecutionSpace>
         (nv+1, lower_count);
         //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
-        HandleExecSpace().fence();
+        ExecutionSpace().fence();
         auto lower_total_count = Kokkos::subview(lower_count, nv);
         auto hlower = Kokkos::create_mirror_view (lower_total_count);
         Kokkos::deep_copy (hlower, lower_total_count);
@@ -559,7 +526,7 @@ private:
 
         //Kokkos::parallel_scan (my_exec_space(0, nv + 1), PPS<row_lno_temp_work_view_t>(lower_count));
 
-        KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, HandleExecSpace>
+        KokkosKernels::Impl::inclusive_parallel_prefix_sum<size_type_temp_work_view_t, ExecutionSpace>
         (nv+1, lower_count);
         nnz_lno_persistent_work_view_t half_src (Kokkos::ViewAllocateWithoutInitializing("HALF SRC"),new_num_edge);
         nnz_lno_persistent_work_view_t half_dst (Kokkos::ViewAllocateWithoutInitializing("HALF DST"),new_num_edge);

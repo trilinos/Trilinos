@@ -33,11 +33,12 @@
 // 
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <string.h>                     // for strcmp, strncmp
+#include <cstring>                      // for strcmp, strncmp
 #include <Shards_CellTopologyManagedData.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <sstream>
 #include <set>                          // for set
+#include <algorithm>                    // for transform
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceMin, etc
@@ -415,7 +416,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset, bool verify
 
 void MetaData::internal_declare_part_subset( Part & superset , Part & subset, bool verifyFieldRestrictions )
 {
-  require_not_committed();
+//  require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );
   require_same_mesh_meta_data( MetaData::get(subset) );
 
@@ -658,123 +659,382 @@ stk::topology MetaData::get_topology(const Part & part) const
 
 namespace {
 
-void pack( CommBuffer & b , const PartVector & pset )
+class VerifyConsistency
 {
-  PartVector::const_iterator i , j ;
-  for ( i = pset.begin() ; i != pset.end() ; ++i ) {
-    const Part & p = **i ;
-    const PartVector & subsets   = p.subsets();
-
-    const size_t       name_len = p.name().size() + 1 ;
-    const char * const name_ptr = p.name().c_str();
-
-    {
-      const unsigned ord = p.mesh_meta_data_ordinal();
-      b.pack<unsigned>( ord );
-    }
-
-    b.pack<unsigned>( name_len );
-    b.pack<char>( name_ptr , name_len );
-
-    const unsigned subset_size = static_cast<unsigned>(subsets.size());
-    b.pack<unsigned>( subset_size );
-    for ( j = subsets.begin() ; j != subsets.end() ; ++j ) {
-      const Part & s = **j ;
-      const unsigned ord = s.mesh_meta_data_ordinal();
-      b.pack<unsigned>( ord );
-    }
-  }
-}
-
-bool unpack_verify( CommBuffer & b , const PartVector & pset )
-{
-  enum { MAX_TEXT_LEN = 4096 };
-  char b_text[ MAX_TEXT_LEN ];
-  unsigned b_tmp = 0;
-
-  bool ok = true ;
-  PartVector::const_iterator i , j ;
-  for ( i = pset.begin() ; ok && i != pset.end() ; ++i ) {
-    const Part & p = **i ;
-    const PartVector & subsets   = p.subsets();
-    const unsigned     name_len = static_cast<unsigned>(p.name().size()) + 1 ;
-    const char * const name_ptr = p.name().c_str();
-
-    if ( ok ) {
-      b.unpack<unsigned>( b_tmp );
-      ok = b_tmp == p.mesh_meta_data_ordinal();
-    }
-
-    if ( ok ) {
-      b.unpack<unsigned>( b_tmp );
-      ok = b_tmp == name_len ;
-    }
-    if ( ok ) {
-      b.unpack<char>( b_text , name_len );
-      ok = 0 == strcmp( name_ptr , b_text );
-    }
-
-    if ( ok ) {
-      b.unpack<unsigned>( b_tmp );
-      ok = b_tmp == subsets.size() ;
-    }
-    for ( j = subsets.begin() ; ok && j != subsets.end() ; ++j ) {
-      const Part & s = **j ;
-      b.unpack<unsigned>( b_tmp );
-      ok = b_tmp == s.mesh_meta_data_ordinal();
-    }
-
-  }
-  return ok ;
-}
-
-void pack( CommBuffer & ,
-           const std::vector< FieldBase * > & )
-{
-}
-
-bool unpack_verify( CommBuffer & ,
-                    const std::vector< FieldBase * > & )
-{
-  bool ok = true ;
-  return ok ;
-}
-
-}
-
-//----------------------------------------------------------------------
-
-void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
-{
-  const unsigned p_rank = parallel_machine_rank( pm );
-
-  const bool is_root = 0 == p_rank ;
-
-  CommBroadcast comm( pm , 0 );
-
-  if ( is_root ) {
-    pack( comm.send_buffer() , s.get_parts() );
-    pack( comm.send_buffer() , s.get_fields() );
+public:
+  VerifyConsistency(const MetaData & meta, ParallelMachine pm)
+    : m_meta(meta),
+      m_parallelMachine(pm),
+      m_pRank(stk::parallel_machine_rank(pm))
+  {
   }
 
-  comm.allocate_buffer();
+  virtual ~VerifyConsistency() = default;
 
-  if ( is_root ) {
-    pack( comm.send_buffer() , s.get_parts() );
-    pack( comm.send_buffer() , s.get_fields() );
+  void verify()
+  {
+    const bool isRoot = (m_pRank == 0);
+
+    CommBroadcast comm(m_parallelMachine, 0);
+
+    if (isRoot) {
+        pack(comm.send_buffer());
+    }
+    comm.allocate_buffer();
+
+    if (isRoot) {
+        pack(comm.send_buffer());
+    }
+    comm.communicate();
+
+    int ok = unpack_verify(comm.recv_buffer());
+    stk::all_reduce(m_parallelMachine, ReduceMin<1>(&ok));
+
+    ThrowRequireMsg(ok, "[p" << m_pRank << "] MetaData parallel consistency failure");
   }
 
-  comm.communicate();
+  virtual void pack(CommBuffer & b) = 0;
+  virtual bool unpack_verify(CommBuffer & b) = 0;
 
-  int ok[ 2 ];
+protected:
+  const MetaData & m_meta;
+  ParallelMachine m_parallelMachine;
+  int m_pRank;
+};
 
-  ok[0] = unpack_verify( comm.recv_buffer() , s.get_parts() );
-  ok[1] = unpack_verify( comm.recv_buffer() , s.get_fields() );
+class VerifyPartConsistency : public VerifyConsistency
+{
+public:
+  VerifyPartConsistency(const MetaData & meta, ParallelMachine pm)
+    : VerifyConsistency(meta, pm),
+      m_rootPartOrdinal(0),
+      m_rootPartNameLen(0),
+      m_rootPartName{0},
+      m_rootPartRank(stk::topology::INVALID_RANK),
+      m_rootPartTopology(stk::topology::INVALID_TOPOLOGY),
+      m_rootPartSubsetSize(0)
+  {
+  }
 
-  all_reduce( pm , ReduceMin<2>( ok ) );
+  virtual ~VerifyPartConsistency() = default;
 
-  ThrowRequireMsg(ok[0], "P" << p_rank << ": FAILED for Parts");
-  ThrowRequireMsg(ok[1], "P" << p_rank << ": FAILED for Fields");
+  virtual void pack(CommBuffer & b)
+  {
+    for (const stk::mesh::Part * part : m_meta.get_parts()) {
+      if (!stk::mesh::impl::is_internal_part(*part)) {
+        const PartVector & subsetParts = part->subsets();
+        const char * const partNamePtr = part->name().c_str();
+        const unsigned     partNameLen = static_cast<unsigned>(part->name().size()) + 1;
+
+        b.pack<stk::mesh::Ordinal>(part->mesh_meta_data_ordinal());
+        b.pack<unsigned>(partNameLen);
+        b.pack<char>(partNamePtr, partNameLen);
+        b.pack<stk::mesh::EntityRank>(part->primary_entity_rank());
+        b.pack<stk::topology::topology_t>(part->topology());
+        b.pack<unsigned>(subsetParts.size());
+        for (const stk::mesh::Part * subsetPart : subsetParts) {
+          b.pack<unsigned>(subsetPart->mesh_meta_data_ordinal());
+        }
+      }
+    }
+  }
+
+  virtual bool unpack_verify(CommBuffer & b)
+  {
+    const stk::mesh::PartVector & localParts = m_meta.get_parts();
+    bool ok = true;
+
+    std::set<const stk::mesh::Part *> unprocessedParts;
+    std::transform(localParts.begin(), localParts.end(),
+                   std::inserter(unprocessedParts, unprocessedParts.end()), [](const stk::mesh::Part* p) {return p;});
+
+    while (b.remaining()) {
+      b.unpack<stk::mesh::Ordinal>(m_rootPartOrdinal);
+      b.unpack<unsigned>(m_rootPartNameLen);
+      b.unpack<char>(m_rootPartName, m_rootPartNameLen);
+      b.unpack<stk::mesh::EntityRank>(m_rootPartRank);
+      b.unpack<stk::topology::topology_t>(m_rootPartTopology);
+      b.unpack<unsigned>(m_rootPartSubsetSize);
+      m_rootPartSubsetOrdinals.resize(m_rootPartSubsetSize);
+      for (unsigned i = 0; i < m_rootPartSubsetSize; ++i) {
+        b.unpack<unsigned>(m_rootPartSubsetOrdinals[i]);
+      }
+
+      stk::mesh::Part * localPart = get_local_part(localParts);
+      unprocessedParts.erase(localPart);
+      ok = check_local_part(localPart) && ok;
+
+      ok = ok && check_part_name(localPart);
+      ok = ok && check_part_rank(localPart);
+      ok = ok && check_part_topology(localPart);
+      ok = ok && check_part_subsets(localPart);
+    }
+
+    ok = check_extra_parts(unprocessedParts) && ok;
+
+    return ok;
+  }
+
+  stk::mesh::Part * get_local_part(const stk::mesh::PartVector & parts)
+  {
+    stk::mesh::Part * localPart = nullptr;
+    if (m_rootPartOrdinal < parts.size()) {
+      localPart = parts[m_rootPartOrdinal];
+    }
+    return localPart;
+  }
+
+  bool check_local_part(const stk::mesh::Part * localPart)
+  {
+    bool localPartValid = true;
+    if (localPart == nullptr) {
+      std::cerr << "[p" << m_pRank << "] Received extra Part (" << m_rootPartName << ") from root processor" << std::endl;
+      localPartValid = false;
+    }
+    return localPartValid;
+  }
+
+  bool check_part_name(const stk::mesh::Part * localPart)
+  {
+    const char * const localPartNamePtr = localPart->name().c_str();
+    const unsigned localPartNameLen = static_cast<unsigned>(localPart->name().size()) + 1;
+    bool nameLengthMatches = (localPartNameLen == m_rootPartNameLen);
+    bool nameMatches = nameLengthMatches && (strncmp(localPartNamePtr, m_rootPartName, localPartNameLen-1) == 0);
+
+    if (!nameMatches) {
+      std::cerr << "[p" << m_pRank << "] Part name (" << localPart->name()
+                << ") does not match Part name (" << m_rootPartName << ") on root processor" << std::endl;
+    }
+    return nameMatches;
+  }
+
+  bool check_part_rank(const stk::mesh::Part * localPart)
+  {
+    stk::mesh::EntityRank localPartRank = localPart->primary_entity_rank();
+    bool partRankMatches = (localPartRank == m_rootPartRank);
+
+    if (!partRankMatches) {
+      std::cerr << "[p" << m_pRank << "] Part " << localPart->name() << " rank (" << localPartRank
+                << ") does not match Part " << m_rootPartName << " rank (" << m_rootPartRank << ") on root processor" << std::endl;
+    }
+    return partRankMatches;
+  }
+
+  bool check_part_topology(const stk::mesh::Part * localPart)
+  {
+    stk::topology localPartTopology = localPart->topology();
+    bool partTopologyMatches = (localPartTopology == m_rootPartTopology);
+
+    if (!partTopologyMatches) {
+      std::cerr << "[p" << m_pRank << "] Part " << localPart->name() << " topology (" << localPartTopology
+                << ") does not match Part " << m_rootPartName << " topology (" << stk::topology(m_rootPartTopology)
+                << ") on root processor" << std::endl;
+    }
+    return partTopologyMatches;
+  }
+
+  bool check_part_subsets(const stk::mesh::Part * localPart)
+  {
+    const PartVector & localSubsetParts = localPart->subsets();
+    bool numberOfSubsetsMatches = (localSubsetParts.size() == m_rootPartSubsetSize);
+
+    bool subsetMatches = numberOfSubsetsMatches;
+    if (numberOfSubsetsMatches) {
+      for (unsigned i = 0; i < m_rootPartSubsetSize; ++i) {
+        subsetMatches = subsetMatches && (localSubsetParts[i]->mesh_meta_data_ordinal() == m_rootPartSubsetOrdinals[i]);
+      }
+    }
+
+    if (!subsetMatches) {
+      std::cerr << "[p" << m_pRank << "] Part " << localPart->name() << " subset ordinals (";
+      for (const stk::mesh::Part * subsetPart : localSubsetParts) {
+        std::cerr << subsetPart->mesh_meta_data_ordinal() << " ";
+      }
+      std::cerr << ") does not match Part " << m_rootPartName << " subset ordinals (";
+      for (const unsigned rootPartSubsetOrdinal : m_rootPartSubsetOrdinals) {
+        std::cerr << rootPartSubsetOrdinal << " ";
+      }
+      std::cerr << ") on root processor" << std::endl;
+    }
+
+    return subsetMatches;
+  }
+
+  bool check_extra_parts(const std::set<const stk::mesh::Part *> & unprocessedParts)
+  {
+    bool noExtraParts = true;
+    for (const stk::mesh::Part * part : unprocessedParts) {
+      if (!stk::mesh::impl::is_internal_part(*part)) {
+        std::cerr << "[p" << m_pRank << "] Have extra Part (" << part->name() << ") that does not exist on root processor" << std::endl;
+        noExtraParts = false;
+      }
+    }
+    return noExtraParts;
+  }
+
+private:
+  stk::mesh::Ordinal m_rootPartOrdinal;
+  unsigned m_rootPartNameLen;
+  char m_rootPartName[4096];
+  stk::mesh::EntityRank m_rootPartRank;
+  stk::topology::topology_t m_rootPartTopology;
+  unsigned m_rootPartSubsetSize;
+  std::vector<unsigned> m_rootPartSubsetOrdinals;
+};
+
+
+class VerifyFieldConsistency : public VerifyConsistency
+{
+public:
+  VerifyFieldConsistency(const MetaData & meta, ParallelMachine pm)
+    : VerifyConsistency(meta, pm),
+      m_rootFieldOrdinal(0),
+      m_rootFieldNameLen(0),
+      m_rootFieldName{0},
+      m_rootFieldRank(stk::topology::INVALID_RANK),
+      m_rootFieldNumberOfStates(0)
+  {
+  }
+
+  virtual ~VerifyFieldConsistency() = default;
+
+  virtual void pack(CommBuffer & b)
+  {
+    for (const stk::mesh::FieldBase * field : m_meta.get_fields()) {
+      const char * const fieldNamePtr = field->name().c_str();
+      const unsigned     fieldNameLen = static_cast<unsigned>(field->name().size()) + 1;
+
+      b.pack<stk::mesh::Ordinal>(field->mesh_meta_data_ordinal());
+      b.pack<unsigned>(fieldNameLen);
+      b.pack<char>(fieldNamePtr, fieldNameLen);
+      b.pack<stk::mesh::EntityRank>(field->entity_rank());
+      b.pack<unsigned>(field->number_of_states());
+
+      //  Remaining Fields attributes that should be checked:
+      //    field->field_array_rank()
+      //    field->dimension_tags()
+      //    field->data_traits()
+      //    field->state()
+      //    field->restrictions()
+      //    field->attribute()
+    }
+  }
+
+  virtual bool unpack_verify(CommBuffer & b)
+  {
+    const std::vector<stk::mesh::FieldBase *> & localFields = m_meta.get_fields();
+    bool ok = true;
+
+    std::set<const stk::mesh::FieldBase *> unprocessedFields;
+    std::transform(localFields.begin(), localFields.end(),
+                   std::inserter(unprocessedFields, unprocessedFields.end()), [](const stk::mesh::FieldBase* p) {return p;});
+
+    while (b.remaining()) {
+      b.unpack<stk::mesh::Ordinal>(m_rootFieldOrdinal);
+      b.unpack<unsigned>(m_rootFieldNameLen);
+      b.unpack<char>(m_rootFieldName, m_rootFieldNameLen);
+      b.unpack<stk::mesh::EntityRank>(m_rootFieldRank);
+      b.unpack<unsigned>(m_rootFieldNumberOfStates);
+
+      const stk::mesh::FieldBase * localField = get_local_field(localFields);
+      unprocessedFields.erase(localField);
+      ok = check_local_field(localField) && ok;
+
+      ok = ok && check_field_name(localField);
+      ok = ok && check_field_rank(localField);
+      ok = ok && check_field_number_of_states(localField);
+    }
+
+    ok = check_extra_fields(unprocessedFields) && ok;
+
+    return ok;
+  }
+
+  stk::mesh::FieldBase * get_local_field(const std::vector<FieldBase *> & localFields)
+  {
+    stk::mesh::FieldBase * localField = nullptr;
+    if (m_rootFieldOrdinal < localFields.size()) {
+      localField = localFields[m_rootFieldOrdinal];
+    }
+    return localField;
+  }
+
+  bool check_local_field(const stk::mesh::FieldBase * localField)
+  {
+    bool localFieldValid = true;
+    if (localField == nullptr) {
+      std::cerr << "[p" << m_pRank << "] Received extra Field (" << m_rootFieldName << ") from root processor" << std::endl;
+      localFieldValid = false;
+    }
+    return localFieldValid;
+  }
+
+  bool check_field_name(const stk::mesh::FieldBase * localField)
+  {
+    const char * const localFieldNamePtr = localField->name().c_str();
+    const unsigned localFieldNameLen = static_cast<unsigned>(localField->name().size()) + 1;
+    bool fieldNameLengthMatches = (localFieldNameLen == m_rootFieldNameLen);
+    bool fieldNameMatches = fieldNameLengthMatches && (strncmp(localFieldNamePtr, m_rootFieldName, localFieldNameLen-1) == 0);
+
+    if (!fieldNameMatches) {
+      std::cerr << "[p" << m_pRank << "] Field name (" << localField->name()
+                << ") does not match Field name (" << m_rootFieldName << ") on root processor" << std::endl;
+    }
+    return fieldNameMatches;
+  }
+
+  bool check_field_rank(const stk::mesh::FieldBase * localField)
+  {
+    stk::mesh::EntityRank localFieldRank = localField->entity_rank();
+    bool fieldRankMatches = (localFieldRank == m_rootFieldRank);
+
+    if (!fieldRankMatches) {
+      std::cerr << "[p" << m_pRank << "] Field " << localField->name() << " rank (" << localFieldRank
+                << ") does not match Field " << m_rootFieldName << " rank (" << m_rootFieldRank << ") on root processor" << std::endl;
+    }
+    return fieldRankMatches;
+  }
+
+  bool check_field_number_of_states(const stk::mesh::FieldBase * localField)
+  {
+    unsigned localNumberOfStates = localField->number_of_states();
+    bool fieldNumberOfStatesMatches = (localNumberOfStates == m_rootFieldNumberOfStates);
+
+    if (!fieldNumberOfStatesMatches) {
+      std::cerr << "[p" << m_pRank << "] Field " << localField->name() << " number of states (" << localNumberOfStates
+                << ") does not match Field " << m_rootFieldName << " number of states (" << m_rootFieldNumberOfStates
+                << ") on root processor" << std::endl;
+    }
+    return fieldNumberOfStatesMatches;
+  }
+
+  bool check_extra_fields(const std::set<const stk::mesh::FieldBase *> & unprocessedFields)
+  {
+    bool noExtraFields = true;
+    for (const stk::mesh::FieldBase * field : unprocessedFields) {
+      std::cerr << "[p" << m_pRank << "] Have extra Field (" << field->name() << ") that does not exist on root processor" << std::endl;
+      noExtraFields = false;
+    }
+    return noExtraFields;
+  }
+
+private:
+  stk::mesh::Ordinal m_rootFieldOrdinal;
+  unsigned m_rootFieldNameLen;
+  char m_rootFieldName[4096];
+  stk::mesh::EntityRank m_rootFieldRank;
+  unsigned m_rootFieldNumberOfStates;
+};
+
+}
+
+void verify_parallel_consistency(const MetaData & meta, ParallelMachine pm)
+{
+  VerifyPartConsistency partConsistency(meta, pm);
+  partConsistency.verify();
+
+  VerifyFieldConsistency fieldConsistency(meta, pm);
+  fieldConsistency.verify();
 }
 
 //----------------------------------------------------------------------
@@ -1144,6 +1404,17 @@ void MetaData::dump_all_meta_info(std::ostream& out) const
   const FieldVector& all_fields = m_field_repo.get_fields();
   for(const FieldBase* field : all_fields) {
      print(out, "    ", *field);
+  }
+}
+
+void sync_to_host_and_mark_modified(const MetaData& meta)
+{
+  const std::vector<FieldBase*>& fields = meta.get_fields();
+  for(FieldBase* field : fields) {
+    if (field->number_of_states() > 1) {
+      field->sync_to_host();
+      field->modify_on_host();
+    }
   }
 }
 

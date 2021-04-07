@@ -70,19 +70,19 @@ using std::endl;
 
 namespace {
 
-TEST( UnitTestRootTopology, noNewPartsWithTopologyAfterCommit )
+TEST( UnitTestRootTopology, newPartsWithTopologyAfterCommit )
 {
   //Test functions in MetaData.cpp
   const int spatial_dimension = 3;
-  MetaData uncommited_metadata(spatial_dimension);
-  MetaData commited_metadata(spatial_dimension);
+  MetaData uncommitted_metadata(spatial_dimension);
+  MetaData committed_metadata(spatial_dimension);
 
-  commited_metadata.commit();
+  committed_metadata.commit();
 
-  EXPECT_THROW(commited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3  ), std::logic_error);
+  EXPECT_NO_THROW(committed_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3  ));
 
-  EXPECT_NO_THROW(uncommited_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
-  uncommited_metadata.commit();
+  EXPECT_NO_THROW(uncommitted_metadata.declare_part_with_topology( std::string("a") , stk::topology::TRI_3 ));
+  uncommitted_metadata.commit();
 }
 
 TEST(UnitTestMetaData, superElemTopoDeclarePartWithTopology)
@@ -351,6 +351,364 @@ TEST(UnitTestMetaData, superset_of_shared_part)
         }
 
     }
+}
+
+TEST(UnitTestMetaData, ConsistentSerialDebugCheck)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  const int spatial_dimension = 3;
+  MetaData meta(spatial_dimension);
+
+  meta.declare_part("part_1", stk::topology::NODE_RANK);
+  meta.declare_part("part_2", stk::topology::NODE_RANK);
+
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "field_1");
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_2");
+
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+  EXPECT_NO_THROW(bulk.modification_begin());
+}
+
+TEST(UnitTestMetaData, ConsistentParallelDebugCheck)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  MetaData meta(spatial_dimension);
+
+  meta.declare_part("part_1", stk::topology::NODE_RANK);
+  meta.declare_part("part_2", stk::topology::NODE_RANK);
+
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "field_1");
+  meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_2");
+
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+
+  EXPECT_NO_THROW(bulk.modification_begin());
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameLength)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+  }
+  else {
+    meta.declare_part("really_long_part_1", stk::topology::NODE_RANK);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Part name (really_long_part_1) does not match Part name (part_1) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartNameText)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+  }
+  else {
+    meta.declare_part("part_2", stk::topology::NODE_RANK);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Part name (part_2) does not match Part name (part_1) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartRank)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+  }
+  else {
+    meta.declare_part("part_1", stk::topology::ELEM_RANK);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Part part_1 rank (ELEMENT_RANK) does not match Part part_1 rank (NODE_RANK) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartTopology)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part_with_topology("part_1", stk::topology::HEX_8);
+  }
+  else {
+    meta.declare_part_with_topology("part_1", stk::topology::TET_4);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Part part_1 topology (TETRAHEDRON_4) does not match Part part_1 topology (HEXAHEDRON_8) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadPartSubset)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+    meta.declare_part("part_2", stk::topology::NODE_RANK);
+  }
+  else {
+    stk::mesh::Part & part_1 = meta.declare_part("part_1", stk::topology::NODE_RANK);
+    stk::mesh::Part & part_2 = meta.declare_part("part_2", stk::topology::NODE_RANK);
+    meta.declare_part_subset(part_1, part_2);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Part part_1 subset ordinals (39 ) does not match Part part_1 subset ordinals () on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooFew)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+  }
+  else {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+    meta.declare_part("part_2", stk::topology::NODE_RANK);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Have extra Part (part_2) that does not exist on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfParts_RootTooMany)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+    meta.declare_part("part_2", stk::topology::NODE_RANK);
+  }
+  else {
+    meta.declare_part("part_1", stk::topology::NODE_RANK);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Received extra Part (part_2) from root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameLength)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  }
+  else {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "really_long_field_1");
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Field name (really_long_field_1) does not match Field name (field_1) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNameText)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  }
+  else {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_2");
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Field name (field_2) does not match Field name (field_1) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldRank)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  }
+  else {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::ELEM_RANK, "field_1");
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Field field_1 rank (ELEMENT_RANK) does not match Field field_1 rank (NODE_RANK) on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadFieldNumberOfStates)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1", 1);
+  }
+  else {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1", 2);
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Field field_1 number of states (2) does not match Field field_1 number of states (1) on root processor\n"
+                            "[p1] Have extra Field (field_1_STKFS_OLD) that does not exist on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooFew)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  }
+  else {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_2");
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Have extra Field (field_2) that does not exist on root processor\n");
+  }
+}
+
+TEST(UnitTestMetaData, InconsistentParallelDebugCheck_BadNumberOfFields_RootTooMany)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 2) return;
+
+  const int spatial_dimension = 3;
+  stk::mesh::MetaData meta(spatial_dimension);
+
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 0) {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_2");
+  }
+  else {
+    meta.declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "field_1");
+  }
+
+  testing::internal::CaptureStderr();
+  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  EXPECT_THROW(bulk.modification_begin(), std::logic_error);
+
+  std::string stderrString = testing::internal::GetCapturedStderr();
+  if (stk::parallel_machine_rank(MPI_COMM_WORLD) == 1) {
+    EXPECT_EQ(stderrString, "[p1] Received extra Field (field_2) from root processor\n");
+  }
 }
 
 }

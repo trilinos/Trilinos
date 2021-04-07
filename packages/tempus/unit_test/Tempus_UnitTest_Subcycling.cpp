@@ -12,8 +12,13 @@
 #include "Teuchos_DefaultComm.hpp"
 
 #include "Thyra_VectorStdOps.hpp"
+#include "NOX_Thyra.H"
 
 #include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperForwardEuler.hpp"
+#include "Tempus_StepperBackwardEuler.hpp"
+
+#include "Tempus_StepperSubcycling.hpp"
 #include "Tempus_StepperSubcyclingModifierBase.hpp"
 #include "Tempus_StepperSubcyclingModifierXBase.hpp"
 #include "Tempus_StepperSubcyclingObserverBase.hpp"
@@ -38,7 +43,6 @@ using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
 
 using Tempus::StepperFactory;
-using Tempus::StepperExplicitRK;
 
 
 // ************************************************************
@@ -46,34 +50,28 @@ using Tempus::StepperExplicitRK;
 TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 {
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
   // Default construction.
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperBE = sf->createStepperBackwardEuler(model, Teuchos::null);
+  auto stepperBE = Tempus::createStepperBackwardEuler(modelME, Teuchos::null);
   stepper->setSubcyclingStepper(stepperBE);
   stepper->initialize();
   TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
   // Default values for construction.
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  auto obs       = rcp(new Tempus::StepperSubcyclingObserver<double>());
-#endif
   auto modifier  = rcp(new Tempus::StepperSubcyclingModifierDefault<double>());
   auto modifierX = rcp(new Tempus::StepperSubcyclingModifierXDefault<double>());
   auto observer  = rcp(new Tempus::StepperSubcyclingObserverDefault<double>());
   auto solver    = rcp(new Thyra::NOXNonlinearSolver());
   solver->setParameterList(Tempus::defaultSolverParameters());
 
-  bool useFSAL              = stepper->getUseFSALDefault();
-  std::string ICConsistency = stepper->getICConsistencyDefault();
-  bool ICConsistencyCheck   = stepper->getICConsistencyCheckDefault();
+  bool useFSAL              = stepper->getUseFSAL();
+  std::string ICConsistency = stepper->getICConsistency();
+  bool ICConsistencyCheck   = stepper->getICConsistencyCheck();
 
   // Test the set functions
   stepper->setSolver(solver);                          stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper->setObserver(obs);                           stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
   stepper->setAppAction(modifier);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(modifierX);                    stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
   stepper->setAppAction(observer);                     stepper->initialize();  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
@@ -84,15 +82,9 @@ TEUCHOS_UNIT_TEST(Subcycling, Default_Construction)
 
   // Full argument list construction.
   auto scIntegrator = Teuchos::rcp(new Tempus::IntegratorBasic<double>());
-  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   scIntegrator->setStepperWStepper(stepperFE);
   scIntegrator->initialize();
-
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  stepper = rcp(new Tempus::StepperSubcycling<double>(
-    model, obs, scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck));
-  TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-#endif
 
   stepper = rcp(new Tempus::StepperSubcycling<double>(
     model,scIntegrator, useFSAL, ICConsistency, ICConsistencyCheck,modifier));
@@ -109,9 +101,9 @@ TEUCHOS_UNIT_TEST(Subcycling, MaxTimeStepDoesNotChangeDuring_takeStep)
 {
   // Setup the stepper ----------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperBE = sf->createStepperBackwardEuler(model, Teuchos::null);
+  auto stepperBE = Tempus::createStepperBackwardEuler(modelME, Teuchos::null);
   stepper->setSubcyclingStepper(stepperBE);
   stepper->initialize();
 
@@ -125,6 +117,7 @@ TEUCHOS_UNIT_TEST(Subcycling, MaxTimeStepDoesNotChangeDuring_takeStep)
   solutionHistory->initWorkingState();
 
   // Test
+  stepper->setSubcyclingInitTimeStep(0.25);
   stepper->setSubcyclingMaxTimeStep(0.5);
   double maxTimeStep_Set = stepper->getSubcyclingMaxTimeStep();
   stepper->takeStep(solutionHistory);
@@ -193,11 +186,11 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 {
   // Setup the SinCosModel ------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   auto modifier = rcp(new StepperSubcyclingModifierTest());
   stepper->setAppAction(modifier);
   stepper->setSubcyclingStepper(stepperFE);
@@ -205,7 +198,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
   stepper->setSubcyclingMinTimeStep      (15);
   stepper->setSubcyclingInitTimeStep     (15.0);
   stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -214,7 +206,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
@@ -250,11 +241,11 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Modifier)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
   TEST_COMPARE(modifier->testType, ==, "Subcycling - Modifier");
 }
@@ -315,11 +306,11 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
 {
   // Setup the SinCosModel ------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   auto observer = rcp(new StepperSubcyclingObserverTest());
   stepper->setAppAction(observer);
   stepper->setSubcyclingStepper(stepperFE);
@@ -327,7 +318,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
   stepper->setSubcyclingMinTimeStep      (15);
   stepper->setSubcyclingInitTimeStep     (15.0);
   stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -336,7 +326,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
@@ -372,10 +361,10 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_Observer)
 
   // Testing that values can be observed through the observer.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-14);
   x = solutionHistory->getWorkingState()->getX();
-  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
-  TEST_FLOATING_EQUALITY(observer->testDt, 15.0, 1.0e-15);
+  TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
+  TEST_FLOATING_EQUALITY(observer->testDt, 15.0, 1.0e-14);
 
   TEST_COMPARE(observer->testType, ==, "Subcyling");
 }
@@ -436,11 +425,11 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
 {
   // Setup the SinCosModel ------------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
+  auto modelME = rcp_dynamic_cast<const Thyra::ModelEvaluator<double> > (model);
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperSubcycling<double>());
-  auto sf = Teuchos::rcp(new Tempus::StepperFactory<double>());
-  auto stepperFE = sf->createStepperForwardEuler(model, Teuchos::null);
+  auto stepperFE = Tempus::createStepperForwardEuler(modelME, Teuchos::null);
   auto modifierX = rcp(new StepperSubcyclingModifierXTest());
   stepper->setAppAction(modifierX);
   stepper->setSubcyclingStepper(stepperFE);
@@ -448,7 +437,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
   stepper->setSubcyclingMinTimeStep      (15);
   stepper->setSubcyclingInitTimeStep     (15.0);
   stepper->setSubcyclingMaxTimeStep      (15.0);
-  stepper->setSubcyclingStepType         ("Constant");
   stepper->setSubcyclingMaxFailures      (10);
   stepper->setSubcyclingMaxConsecFailures(5);
   stepper->setSubcyclingScreenOutputIndexInterval(1);
@@ -457,7 +445,6 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
 
   // Setup TimeStepControl ------------------------------------
   auto timeStepControl = rcp(new Tempus::TimeStepControl<double>());
-  timeStepControl->setStepType ("Constant");
   timeStepControl->setInitIndex(0);
   timeStepControl->setInitTime (0.0);
   timeStepControl->setFinalTime(1.0);
@@ -500,15 +487,17 @@ TEUCHOS_UNIT_TEST(Subcycling, AppAction_ModifierX)
 
   // Testing that values can be set through the Modifier.
   auto x = solutionHistory->getCurrentState()->getX();
-  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-14);
   // Temporary memory for xDot is not guarranteed to exist outside the Stepper.
-  auto xDot = stepper->getStepperXDot(solutionHistory->getWorkingState());
-  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-15);
+  auto xDot = solutionHistory->getWorkingState()->getXDot();
+  if (xDot == Teuchos::null) xDot = stepper->getStepperXDot();
+
+  TEST_FLOATING_EQUALITY(modifierX->testXDot, get_ele(*(xDot), 0),1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
-  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-14);
 
   auto time = solutionHistory->getWorkingState()->getTime();
-  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
+  TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-14);
 }
 
 } // namespace Tempus_Test

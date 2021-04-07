@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -10,20 +10,20 @@ C=======================================================================
      &                   SOLEB,IDBLK,XB,YB,ZB,
      &                   ICONB,ITT,IBLK,TIMES,CENTER,
      &                   ISTP,IST,INSUB,ICOMPL,DUME)
-C
+
 C     ******************************************************************
-C
+
 C     SUBROUTINE TO CONTROL INTERPOLATION OF ELEMENT TRANSFORMED
 C     INTO NODAL RESULTS FROM MESH-A TO MESH-B
 C     INTERPOLATED SOLUTION IS PASSED OUT TO BE RETRANSFORMED
 C     INTO ELEMENT RESULTS AND THEN WRITTEN TO MESH-C EXODUS FILE
-C
+
 C     Calls subroutines SHAPEF
-C
+
 C     Called by MAPVAR
-C
+
 C     ******************************************************************
-C
+
 C ICONA   INT   Connectivity of donor mesh (1:nelnda,1:numeba)
 C SOLENA  REAL  Element variables at nodes for donor mesh
 C ISRCHR  INT   Donor mesh element in which point is found
@@ -44,9 +44,9 @@ C               1-first time; >1-second,etc time;
 C               used to control mapping for many element blocks to one
 C ICOMPL  INT   Flag for completion of mapping; used in many to one
 C               0-incomplete; 1-complete
-C
+
 C     ******************************************************************
-C
+
       include 'aexds1.blk'
       include 'aexds2.blk'
       include 'amesh.blk'
@@ -54,36 +54,36 @@ C
       include 'ebbyeb.blk'
       include 'ex2tp.blk'
       include 'tapes.blk'
-C
+
       DIMENSION TIMES(*), CENTER(NUMEBB,*)
       DIMENSION ICONA(NELNDA,*), SOLENA(NODESA,NVAREL)
       DIMENSION ITT(NVAREL,*)
       DIMENSION SOLEB(NUMEBB,*), XB(*), YB(*), ZB(*)
       DIMENSION ISRCHR(NISR,*), RSRCHR(NRSR,*), ICONB(nelndb,*)
       DIMENSION SOLN(27), XX(27), YY(27), ZZ(27), DUME(*)
-C
+
 C     ******************************************************************
-C
+
       DO 10 IVAR = 1,NVAREL
         IF (ITT(IVAR,IBLK) .EQ. 0)GO TO 10
-C
+
 C Initialize SOLEB if first time in subroutine for this element block
 C After first time into subroutine
 C retrieve SOLEB from storage in EXODUS
-C
+
         IF (INSUB .EQ. 1)THEN
           CALL INIELT(SOLEB,IVAR,TIMES,ISTP,IDBLK,CENTER,DUME)
         ELSE
           CALL EXGEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         END IF
-C
+
 C Loop on centroids in recipient mesh
-C
+
         DO 30 I = 1,NUMEBB
           IF (ISRCHR(1,I) .NE. 0)THEN
-C
+
 C Set parameters for element in donor mesh
-C
+
             S = RSRCHR(5,I)
             T = RSRCHR(6,I)
             R = 0.
@@ -92,9 +92,9 @@ C
               INODE = ICONA(J,ISRCHR(1,I))
               SOLN(J) = SOLENA(INODE,IVAR)
  20         CONTINUE
-C
+
 C Shape function to evaluate interpolation
-C
+
             CALL SHAPEF (3,S,T,R,SOLN,BVALUE)
             SOLEB(I,IVAR) = BVALUE
           ELSE
@@ -106,26 +106,26 @@ C
             end if
           END IF
  30     CONTINUE
-C
+
 C  If there is more searching to do (i.e. many blocks to one)
 C  use EXODUS as temporary storage
 C  don't bother to make adjustments to element variables yet
-C
+
         IF (ICOMPL .NE. 1)THEN
           CALL EXPEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         ELSE
-C
+
 C Do needed modification to element variable values
 C write element vars out to EXODUS data base
-C
+
 C+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 C ELMASS is special
-C
+
           IF (NAMVAR(nvargp+IVAR)(1:6) .EQ. 'ELMASS')THEN
-C
+
 C ELMASS was changed to nodal density prior to processing.
 C need to go back from density to element mass now
-C
+
             DO 100 IEL = 1, NUMEBB
               DO 105 I = 1, NNODES
                 XX(I) = XB(ICONB(I,IEL))
@@ -136,13 +136,13 @@ C
               SOLEB(IEL,IVAR) = SOLEB(IEL,IVAR) * VOLUME
  100        CONTINUE
           END IF
-C
+
 C****************************************************************
 C apply constraints to variables here as applicable
-C
+
 C Plastic strain (EQPS) and tearing
 C must greater than or equal to 0.
-C
+
           IF (NAMVAR(nvargp+IVAR)(1:4) .EQ. 'EQPS')THEN
             DO 110 IEL = 1, NUMEBB
               IF (SOLEB(IEL,IVAR) .LT. 0.)THEN
@@ -155,36 +155,36 @@ C
                 SOLEB(IEL,IVAR) = 0.
               END IF
   120       CONTINUE
-C
+
 C Hourglass forces and bulk viscosity have no meaning other than on
 C the mesh from which they originated, just set them to zero.
-C
+
           ELSE IF (NAMVAR(nvargp+IVAR)(1:2) .EQ. 'HG' .OR.
      &            NAMVAR(nvargp+IVAR)(1:5) .EQ. 'BULKQ')THEN
             DO 130 IEL = 1, NUMEBB
               SOLEB(IEL,IVAR) = 0.
   130       CONTINUE
-C
+
 C Shell element basis vectors are computed from the mesh
 C It makes no sense to transfer them - set them to zero.
-C
+
           ELSE IF (NAMVAR(nvargp+IVAR)(1:5) .EQ. 'BASEL')THEN
             DO 140 IEL = 1, NUMEBB
               SOLEB(IEL,IVAR) = 0.
  140        CONTINUE
-C
+
 C         ELSE IF (NAMVAR(nvargp+IVAR)(1:?) .EQ. ?????)THEN
 C           DO ??? IEL = 1, NUMEBB
 C             IF (SOLEB(IEL,IVAR) .??. ?.)THEN
 C               SOLEB(IEL,IVAR) = ?.
 C             END IF
 C  ???      CONTINUE
-C
+
           END IF
 c************************************************************************
-C
+
 C write element variables
-C
+
           CALL EXPEV(NTP4EX,IST,IVAR,IDBLK,NUMEBB,SOLEB(1,IVAR),IERR)
         END IF
    10 CONTINUE

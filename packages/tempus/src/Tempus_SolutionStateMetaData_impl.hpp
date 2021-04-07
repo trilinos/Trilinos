@@ -9,7 +9,6 @@
 #ifndef Tempus_SolutionStateMetaData_impl_hpp
 #define Tempus_SolutionStateMetaData_impl_hpp
 
-#include "Tempus_config.hpp"
 
 namespace Tempus {
 
@@ -183,28 +182,30 @@ void SolutionStateMetaData<Scalar>::describe(
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
   if (verbLevel == Teuchos::VERB_EXTREME) {
-    out << description() << "::describe:" << std::endl
-        << "time           = " << time_ << std::endl
-        << "iStep          = " << iStep_ << std::endl
-        << "dt             = " << dt_ << std::endl
-        << "errorAbs       = " << errorAbs_ << std::endl
-        << "errorRel       = " << errorRel_ << std::endl
-        << "order          = " << order_ << std::endl
-        << "nFailures      = " << nFailures_ << std::endl
-        << "nRunningFailures = " << nRunningFailures_<< std::endl
-        << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
-        << "tolRel         = " << tolRel_ << std::endl
-        << "tolAbs         = " << tolAbs_ << std::endl
-        << "xNormL2        = " << xNormL2_ << std::endl
-        << "dxNormL2Rel    = " << dxNormL2Rel_ << std::endl
-        << "dxNormL2Abs    = " << dxNormL2Abs_ << std::endl
-        << "computeNorms   = " << computeNorms_ << std::endl
-        << "solutionStatus = " << toString(solutionStatus_) << std::endl
-        << "output         = " << output_ << std::endl
-        << "outputScreen   = " << outputScreen_ << std::endl
-        << "isSynced       = " << isSynced_ << std::endl
-        << "isInterpolated = " << isInterpolated_ << std::endl
-        << "accuracy       = " << accuracy_ << std::endl;
+    auto l_out = Teuchos::fancyOStream( out.getOStream() );
+    l_out->setOutputToRootOnly(0);
+    *l_out << description() << "::describe:" << std::endl
+           << "time           = " << time_ << std::endl
+           << "iStep          = " << iStep_ << std::endl
+           << "dt             = " << dt_ << std::endl
+           << "errorAbs       = " << errorAbs_ << std::endl
+           << "errorRel       = " << errorRel_ << std::endl
+           << "order          = " << order_ << std::endl
+           << "nFailures      = " << nFailures_ << std::endl
+           << "nRunningFailures = " << nRunningFailures_<< std::endl
+           << "nConsecutiveFailures = " << nConsecutiveFailures_ << std::endl
+           << "tolRel         = " << tolRel_ << std::endl
+           << "tolAbs         = " << tolAbs_ << std::endl
+           << "xNormL2        = " << xNormL2_ << std::endl
+           << "dxNormL2Rel    = " << dxNormL2Rel_ << std::endl
+           << "dxNormL2Abs    = " << dxNormL2Abs_ << std::endl
+           << "computeNorms   = " << computeNorms_ << std::endl
+           << "solutionStatus = " << toString(solutionStatus_) << std::endl
+           << "output         = " << output_ << std::endl
+           << "outputScreen   = " << outputScreen_ << std::endl
+           << "isSynced       = " << isSynced_ << std::endl
+           << "isInterpolated = " << isInterpolated_ << std::endl
+           << "accuracy       = " << accuracy_ << std::endl;
   }
 }
 

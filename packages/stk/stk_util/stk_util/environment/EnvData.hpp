@@ -35,15 +35,14 @@
 #ifndef STK_UTIL_ENVIRONMENT_EnvData_h
 #define STK_UTIL_ENVIRONMENT_EnvData_h
 
-#include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI)
-#  include "mpi.h"
-#endif
-#include <iosfwd>
-#include <map>
-#include <string>
-#include <stk_util/environment/ParsedOptions.hpp>
-#include <stk_util/util/Null_Streambuf.hpp>
+#include "stk_util/parallel/Parallel.hpp"    // for MPI_Comm, ompi_communicator_t
+#include "stk_util/util/Null_Streambuf.hpp"  // for null_streambuf
+#include <iosfwd>                            // for ostream, ostringstream
+#include <map>                               // for map, map<>::value_compare
+#include <string>                            // for string
+#include <sstream>                           // for ostringstream
+
+namespace stk { class ParsedOptions; }
 
 namespace sierra {
   namespace Env {
@@ -67,7 +66,7 @@ namespace sierra {
     struct ExecInfo
     {
       MPI_Comm              m_groupComm;
-      int                   m_master;
+      int                   m_rootProcessor;
       MPI_Comm              m_worldComm;
       MPI_Comm              m_interComm;
     };

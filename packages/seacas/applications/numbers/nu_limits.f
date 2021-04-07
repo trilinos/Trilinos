@@ -1,27 +1,9 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 
-C $Id: limits.f,v 1.4 1999/02/16 21:38:00 gdsjaar Exp $
-C $Log: limits.f,v $
-C Revision 1.4  1999/02/16 21:38:00  gdsjaar
-C Converted to read exodusII database format.  Somewhat tested, not
-C ready for production yet.
-C
-C Revision 1.3  1993/07/21 22:34:56  gdsjaar
-C Removed unused variable--error
-C
-c Revision 1.2  1991/02/21  16:37:58  gdsjaar
-c Moved ENGNOT function out of write statements
-c
-c Revision 1.1.1.1  1991/02/21  15:43:50  gdsjaar
-c NUMBERS: Greg Sjaardema, initial Unix release
-c
-c Revision 1.1  1991/02/21  15:43:48  gdsjaar
-c Initial revision
-c
       SUBROUTINE LIMITS (XYZMIN, XYZMAX, CRD, IX, MAT, NDIM, NEBLK,
      *   NNODES, EXODUS, TIME, ITMSEL, CORDSP, NUMNP)
       DIMENSION CRD(NUMNP, *), IX(NNODES,*), MAT(6,*),
@@ -34,9 +16,9 @@ c
       LOGICAL EXODUS
       include 'nu_io.blk'
       include 'nu_ptim.blk'
-C
+
 C ... IF NOT EXODUS, THEN CORDSP CONTAINS COORDINATES
-C
+
       IF (EXODUS) THEN
          CALL GETDSP (CRD, CORDSP, NDIM, NUMNP, TIME, ITMSEL,
      *      'R', ISTAT)
@@ -56,12 +38,12 @@ C
             IF (MAT(5,IBLK) .NE. 1) GOTO 40
             IELBEG = MAT(3,IBLK)
             IELEND = MAT(4,IBLK)
-C
+
             XYZMIN(1,IBLK) = CORDSP(IX(1,IELBEG),1)
             XYZMIN(2,IBLK) = CORDSP(IX(1,IELBEG),2)
             XYZMAX(1,IBLK) = CORDSP(IX(1,IELBEG),1)
             XYZMAX(2,IBLK) = CORDSP(IX(1,IELBEG),2)
-C
+
             DO 30 IEL = IELBEG, IELEND
                DO 20 I = 1, NNODES
                   XYZMIN(1,IBLK) = MIN(XYZMIN(1,IBLK),
@@ -75,20 +57,20 @@ C
    20          CONTINUE
    30       CONTINUE
    40    CONTINUE
-C
+
       ELSE
          DO 70 IBLK = 1, NEBLK
             IF (MAT(5,IBLK) .NE. 1) GOTO 70
             IELBEG = MAT(3,IBLK)
             IELEND = MAT(4,IBLK)
-C
+
             XYZMIN(1,IBLK) = CORDSP(IX(1,IELBEG),1)
             XYZMIN(2,IBLK) = CORDSP(IX(1,IELBEG),2)
             XYZMIN(3,IBLK) = CORDSP(IX(1,IELBEG),3)
             XYZMAX(1,IBLK) = CORDSP(IX(1,IELBEG),1)
             XYZMAX(2,IBLK) = CORDSP(IX(1,IELBEG),2)
             XYZMAX(3,IBLK) = CORDSP(IX(1,IELBEG),3)
-C
+
             DO 60 IEL = IELBEG, IELEND
                DO 50 I = 1, NNODES
                   XYZMIN(1,IBLK) = MIN(XYZMIN(1,IBLK),
@@ -115,7 +97,7 @@ C
             OVMAX(I) = MAX(OVMAX(I), XYZMAX(I,J))
    80    CONTINUE
    90 CONTINUE
-C
+
       ENG1 = ENGNOT(TREAD,2)
       DO 120 IO=IOMIN, IOMAX
          IF (EXODUS) WRITE (IO, 140) ENG1

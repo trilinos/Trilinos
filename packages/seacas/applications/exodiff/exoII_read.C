@@ -1,15 +1,18 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include "ED_SystemInterface.h" // for SystemInterface, etc
+#include "edge_block.h"         // for Edge_Block
 #include "exoII_read.h"
-#include "exo_block.h" // for Exo_Block
-#include "exodusII.h"  // for ex_init_params, ex_opts, etc
+#include "exo_block.h"  // for Exo_Block
+#include "exodusII.h"   // for ex_init_params, ex_opts, etc
+#include "face_block.h" // for Face_Block
 #include "fmt/ostream.h"
 #include "node_set.h"     // for Node_Set
+#include "side_set.h"     // for Side_Set
 #include "smart_assert.h" // for SMART_ASSERT, Assert, etc
 #include "stringx.h"      // for chop_whitespace
 #include "util.h"         // for free_name_array, etc
@@ -28,7 +31,7 @@ namespace {
                  std::vector<std::string> &varlist);
 } // namespace
 
-template <typename INT> ExoII_Read<INT>::ExoII_Read() {}
+template <typename INT> ExoII_Read<INT>::ExoII_Read() = default;
 
 template <typename INT> ExoII_Read<INT>::ExoII_Read(const std::string &fname) : file_name(fname) {}
 
@@ -136,6 +139,20 @@ template <typename INT> const std::string &ExoII_Read<INT>::SS_Var_Name(int inde
   return ss_vars[index];
 }
 
+template <typename INT> const std::string &ExoII_Read<INT>::EB_Var_Name(int index) const
+{
+  SMART_ASSERT(Check_State());
+  SMART_ASSERT(index >= 0 && (unsigned)index < eb_vars.size());
+  return eb_vars[index];
+}
+
+template <typename INT> const std::string &ExoII_Read<INT>::FB_Var_Name(int index) const
+{
+  SMART_ASSERT(Check_State());
+  SMART_ASSERT(index >= 0 && (unsigned)index < fb_vars.size());
+  return fb_vars[index];
+}
+
 template <typename INT>
 Exo_Block<INT> *ExoII_Read<INT>::Get_Elmt_Block_by_Index(size_t block_index) const
 {
@@ -176,6 +193,8 @@ Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Index(EXOTYPE type, size_t block_inde
   case EX_ELEM_BLOCK: SMART_ASSERT(block_index < num_elmt_blocks); return &eblocks[block_index];
   case EX_NODE_SET: SMART_ASSERT(block_index < num_node_sets); return &nsets[block_index];
   case EX_SIDE_SET: SMART_ASSERT(block_index < num_side_sets); return &ssets[block_index];
+  case EX_EDGE_BLOCK: SMART_ASSERT(block_index < num_edge_blocks); return &edge_blocks[block_index];
+  case EX_FACE_BLOCK: SMART_ASSERT(block_index < num_face_blocks); return &face_blocks[block_index];
   default: return nullptr;
   }
 }
@@ -202,6 +221,20 @@ template <typename INT> Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Id(EXOTYPE ty
     for (size_t i = 0; i < num_side_sets; i++) {
       if (ssets[i].Id() == id) {
         return &ssets[i];
+      }
+    }
+    break;
+  case EX_EDGE_BLOCK:
+    for (size_t i = 0; i < num_edge_blocks; i++) {
+      if (edge_blocks[i].Id() == id) {
+        return &edge_blocks[i];
+      }
+    }
+    break;
+  case EX_FACE_BLOCK:
+    for (size_t i = 0; i < num_face_blocks; i++) {
+      if (face_blocks[i].Id() == id) {
+        return &face_blocks[i];
       }
     }
     break;
@@ -233,6 +266,20 @@ Exo_Entity *ExoII_Read<INT>::Get_Entity_by_Name(EXOTYPE type, const std::string 
     for (size_t i = 0; i < num_side_sets; i++) {
       if (ssets[i].Name() == name) {
         return &ssets[i];
+      }
+    }
+    break;
+  case EX_EDGE_BLOCK:
+    for (size_t i = 0; i < num_edge_blocks; i++) {
+      if (edge_blocks[i].Name() == name) {
+        return &edge_blocks[i];
+      }
+    }
+    break;
+  case EX_FACE_BLOCK:
+    for (size_t i = 0; i < num_face_blocks; i++) {
+      if (face_blocks[i].Name() == name) {
+        return &face_blocks[i];
       }
     }
     break;
@@ -282,6 +329,54 @@ Side_Set<INT> *ExoII_Read<INT>::Get_Side_Set_by_Name(const std::string &name) co
   for (size_t i = 0; i < num_side_sets; i++) {
     if (ssets[i].Name() == name) {
       return &ssets[i];
+    }
+  }
+  return nullptr;
+}
+
+template <typename INT>
+Edge_Block<INT> *ExoII_Read<INT>::Get_Edge_Block_by_Id(size_t block_id) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i = 0; i < num_edge_blocks; i++) {
+    if (edge_blocks[i].Id() == block_id) {
+      return &edge_blocks[i];
+    }
+  }
+  return nullptr;
+}
+
+template <typename INT>
+Edge_Block<INT> *ExoII_Read<INT>::Get_Edge_Block_by_Name(const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i = 0; i < num_edge_blocks; i++) {
+    if (edge_blocks[i].Name() == name) {
+      return &edge_blocks[i];
+    }
+  }
+  return nullptr;
+}
+
+template <typename INT>
+Face_Block<INT> *ExoII_Read<INT>::Get_Face_Block_by_Id(size_t block_id) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i = 0; i < num_face_blocks; i++) {
+    if (face_blocks[i].Id() == block_id) {
+      return &face_blocks[i];
+    }
+  }
+  return nullptr;
+}
+
+template <typename INT>
+Face_Block<INT> *ExoII_Read<INT>::Get_Face_Block_by_Name(const std::string &name) const
+{
+  SMART_ASSERT(Check_State());
+  for (size_t i = 0; i < num_face_blocks; i++) {
+    if (face_blocks[i].Name() == name) {
+      return &face_blocks[i];
     }
   }
   return nullptr;
@@ -719,6 +814,30 @@ Node_Set<INT> *ExoII_Read<INT>::Get_Node_Set_by_Index(size_t set_index) const
   return &nsets[set_index];
 }
 
+template <typename INT>
+Edge_Block<INT> *ExoII_Read<INT>::Get_Edge_Block_by_Index(size_t edge_block_index) const
+{
+  SMART_ASSERT(Check_State());
+
+  if (edge_block_index >= num_edge_blocks) {
+    return nullptr;
+  }
+
+  return &edge_blocks[edge_block_index];
+}
+
+template <typename INT>
+Face_Block<INT> *ExoII_Read<INT>::Get_Face_Block_by_Index(size_t face_block_index) const
+{
+  SMART_ASSERT(Check_State());
+
+  if (face_block_index >= num_face_blocks) {
+    return nullptr;
+  }
+
+  return &face_blocks[face_block_index];
+}
+
 // **********************  Misc functions  *************************** //
 
 // This function converts an Exodus global element number (1-offset) into
@@ -863,6 +982,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   num_elmt_blocks = info.num_elem_blk;
   num_node_sets   = info.num_node_sets;
   num_side_sets   = info.num_side_sets;
+  num_edge_blocks = info.num_edge_blk;
+  num_face_blocks = info.num_face_blk;
   title           = info.title;
 
   if (err > 0 && !interFace.quiet_flag) {
@@ -876,9 +997,11 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
                       "         num_elmt_blocks = {}\n"
                       "         num_node_sets = {}\n"
                       "         num_side_sets = {}\n"
+                      "         num_edge_blocks = {}\n"
+                      "         num_face_blocks = {}\n"
                       " ... Aborting...\n",
                       dimension, num_nodes, num_elmts, num_elmt_blocks, num_node_sets,
-                      num_side_sets));
+                      num_edge_blocks, num_face_blocks, num_side_sets));
     exit(1);
   }
 
@@ -938,6 +1061,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
       }
 
       eblocks[b].initialize(file_id, ids[b]);
+      eblocks[b].offset(e_count);
       e_count += eblocks[b].Size();
     }
 
@@ -1018,9 +1142,70 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     }
   }
 
+  //                     Edge & Face blocks...
+
+  if (edge_blocks) {
+    delete[] edge_blocks;
+  }
+  edge_blocks = nullptr;
+  if (num_edge_blocks > 0) {
+    edge_blocks = new Edge_Block<INT>[num_edge_blocks];
+    SMART_ASSERT(edge_blocks != nullptr);
+    std::vector<INT> ids(num_edge_blocks);
+
+    err = ex_get_ids(file_id, EX_EDGE_BLOCK, ids.data());
+
+    if (err < 0) {
+      Error("Failed to get edgeblock ids!  Aborting...\n");
+      exit(1);
+    }
+
+    for (size_t edge_block = 0; edge_block < num_edge_blocks; ++edge_block) {
+      if (ids[edge_block] <= EX_INVALID_ID) {
+        fmt::print(stderr,
+                   "EXODIFF  WARNING: Edgeblock Id "
+                   "for edgeblock index {} is {}"
+                   " which is negative.  This was returned by call to ex_get_ids().\n",
+                   edge_block, ids[edge_block]);
+      }
+
+      edge_blocks[edge_block].initialize(file_id, ids[edge_block]);
+    }
+  }
+
+  if (face_blocks) {
+    delete[] face_blocks;
+  }
+  face_blocks = nullptr;
+  if (num_face_blocks > 0) {
+    face_blocks = new Face_Block<INT>[num_face_blocks];
+    SMART_ASSERT(face_blocks != nullptr);
+    std::vector<INT> ids(num_face_blocks);
+
+    err = ex_get_ids(file_id, EX_FACE_BLOCK, ids.data());
+
+    if (err < 0) {
+      Error("Failed to get faceblock ids!  Aborting...\n");
+      exit(1);
+    }
+
+    for (size_t face_block = 0; face_block < num_face_blocks; ++face_block) {
+      if (ids[face_block] <= EX_INVALID_ID) {
+        fmt::print(stderr,
+                   "EXODIFF  WARNING: Faceblock Id "
+                   "for faceblock index {} is {}"
+                   " which is negative.  This was returned by call to ex_get_ids().\n",
+                   face_block, ids[face_block]);
+      }
+
+      face_blocks[face_block].initialize(file_id, ids[face_block]);
+    }
+  }
+
   //  **************  RESULTS info  ***************  //
 
-  int num_global_vars, num_nodal_vars, num_elmt_vars, num_ns_vars, num_ss_vars;
+  int num_global_vars, num_nodal_vars, num_elmt_vars, num_ns_vars, num_ss_vars, num_edge_vars,
+      num_face_vars;
 
   err = ex_get_variable_param(file_id, EX_GLOBAL, &num_global_vars);
   if (err < 0) {
@@ -1052,15 +1237,32 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
     exit(1);
   }
 
+  err = ex_get_variable_param(file_id, EX_EDGE_BLOCK, &num_edge_vars);
+  if (err < 0) {
+    Error("Failed to get number of edgeblock variables!  Aborting...\n");
+    exit(1);
+  }
+
+  err = ex_get_variable_param(file_id, EX_FACE_BLOCK, &num_face_vars);
+  if (err < 0) {
+    Error("Failed to get number of faceblock variables!  Aborting...\n");
+    exit(1);
+  }
+
   if (num_global_vars < 0 || num_nodal_vars < 0 || num_elmt_vars < 0 || num_ns_vars < 0 ||
-      num_ss_vars < 0) {
+      num_ss_vars < 0 || num_edge_vars < 0 || num_face_vars < 0) {
     Error(fmt::format("Data appears corrupt for"
                       " number of variables !\n"
                       "\tnum global vars  = {}\n"
                       "\tnum nodal vars   = {}\n"
                       "\tnum element vars = {}\n"
+                      "\tnum nodeset vars = {}\n"
+                      "\tnum sideset vars = {}\n"
+                      "\tnum edgeblock vars = {}\n"
+                      "\tnum faceblock vars = {}\n"
                       " ... Aborting...\n",
-                      num_global_vars, num_nodal_vars, num_elmt_vars));
+                      num_global_vars, num_nodal_vars, num_elmt_vars, num_ns_vars, num_ss_vars,
+                      num_edge_vars, num_face_vars));
     exit(1);
   }
 
@@ -1069,6 +1271,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   read_vars(file_id, EX_ELEM_BLOCK, "Element", num_elmt_vars, elmt_vars);
   read_vars(file_id, EX_NODE_SET, "Nodeset", num_ns_vars, ns_vars);
   read_vars(file_id, EX_SIDE_SET, "Sideset", num_ss_vars, ss_vars);
+  read_vars(file_id, EX_EDGE_BLOCK, "Edgeblock", num_edge_vars, eb_vars);
+  read_vars(file_id, EX_FACE_BLOCK, "Faceblock", num_face_vars, fb_vars);
 
   // Times:
   num_times = ex_inquire_int(file_id, EX_INQ_TIME);
@@ -1078,7 +1282,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   }
 
   if ((num_global_vars > 0 || num_nodal_vars > 0 || num_elmt_vars > 0 || num_ns_vars > 0 ||
-       num_ss_vars > 0) &&
+       num_ss_vars > 0 || num_edge_vars > 0 || num_face_vars > 0) &&
       num_times == 0) {
     Error("Consistency error -- The database contains transient variables, but no "
           "timesteps!\n");

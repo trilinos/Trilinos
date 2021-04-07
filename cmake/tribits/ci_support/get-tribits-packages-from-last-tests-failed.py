@@ -79,4 +79,4 @@ lastTestsFailedLines = readStrFromFile(options.lastTestsFailedFile).splitlines()
 packageNames = getPackageNamesFromLastTestsFailedLines(trilinosDependencies,
   lastTestsFailedLines)
 
-print ','.join(packageNames)
+print(','.join(packageNames))

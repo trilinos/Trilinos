@@ -49,6 +49,7 @@
 #include "Ifpack2_Details_UserPartitioner_decl.hpp"
 #include "Ifpack2_Details_UserPartitioner_def.hpp"
 #include <Ifpack2_Parameters.hpp>
+#include "Teuchos_TimeMonitor.hpp"
 
 namespace Ifpack2 {
 
@@ -84,7 +85,6 @@ template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
 BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
 :
-  Time_ (Teuchos::rcp (new Teuchos::Time ("Ifpack2::BlockRelaxation"))),
   Container_ (Teuchos::null),
   Partitioner_ (Teuchos::null),
   PartitionerType_ ("linear"),
@@ -481,54 +481,63 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     "Ifpack2::BlockRelaxation::apply: This method currently only implements "
     "the case beta == 0.  You specified beta = " << beta << ".");
 
-  Time_->start(true);
+  const std::string timerName ("Ifpack2::BlockRelaxation::apply");
+  Teuchos::RCP<Teuchos::Time> timer = Teuchos::TimeMonitor::lookupCounter (timerName);
+  if (timer.is_null ()) {
+    timer = Teuchos::TimeMonitor::getNewCounter (timerName);
+  }
 
-  // If X and Y are pointing to the same memory location,
-  // we need to create an auxiliary vector, Xcopy
-  Teuchos::RCP<const MV> X_copy;
+  double startTime = timer->wallTime();
+
   {
-    auto X_lcl_host = X.getLocalViewHost ();
-    auto Y_lcl_host = Y.getLocalViewHost ();
+    Teuchos::TimeMonitor timeMon (*timer);
 
-    if (X_lcl_host.data () == Y_lcl_host.data ()) {
-      X_copy = rcp (new MV (X, Teuchos::Copy));
-    } else {
-      X_copy = rcpFromRef (X);
+    // If X and Y are pointing to the same memory location,
+    // we need to create an auxiliary vector, Xcopy
+    Teuchos::RCP<const MV> X_copy;
+    {
+      auto X_lcl_host = X.getLocalViewHost ();
+      auto Y_lcl_host = Y.getLocalViewHost ();
+
+      if (X_lcl_host.data () == Y_lcl_host.data ()) {
+        X_copy = rcp (new MV (X, Teuchos::Copy));
+      } else {
+        X_copy = rcpFromRef (X);
+      }
+    }
+
+    if (ZeroStartingSolution_) {
+      Y.putScalar (STS::zero ());
+    }
+
+    // Flops are updated in each of the following.
+    switch (PrecType_) {
+    case Ifpack2::Details::JACOBI:
+      ApplyInverseJacobi(*X_copy,Y);
+      break;
+    case Ifpack2::Details::GS:
+      ApplyInverseGS(*X_copy,Y);
+      break;
+    case Ifpack2::Details::SGS:
+      ApplyInverseSGS(*X_copy,Y);
+      break;
+    case Ifpack2::Details::MTSPLITJACOBI:
+      //note: for this method, the container is always BlockTriDi
+      Container_->applyInverseJacobi(*X_copy, Y, DampingFactor_, ZeroStartingSolution_, NumSweeps_);
+      break;
+    default:
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Ifpack2::BlockRelaxation::apply: Invalid "
+        "PrecType_ enum value " << PrecType_ << ".  Valid values are Ifpack2::"
+        "Details::JACOBI = " << Ifpack2::Details::JACOBI << ", Ifpack2::Details"
+        "::GS = " << Ifpack2::Details::GS << ", and Ifpack2::Details::SGS = "
+        << Ifpack2::Details::SGS << ".  Please report this bug to the Ifpack2 "
+        "developers.");
     }
   }
 
-  if (ZeroStartingSolution_) {
-    Y.putScalar (STS::zero ());
-  }
-
-  // Flops are updated in each of the following.
-  switch (PrecType_) {
-  case Ifpack2::Details::JACOBI:
-    ApplyInverseJacobi(*X_copy,Y);
-    break;
-  case Ifpack2::Details::GS:
-    ApplyInverseGS(*X_copy,Y);
-    break;
-  case Ifpack2::Details::SGS:
-    ApplyInverseSGS(*X_copy,Y);
-    break;
-  case Ifpack2::Details::MTSPLITJACOBI:
-    //note: for this method, the container is always BlockTriDi
-    Container_->applyInverseJacobi(*X_copy, Y, DampingFactor_, ZeroStartingSolution_, NumSweeps_);
-    break;
-  default:
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::logic_error, "Ifpack2::BlockRelaxation::apply: Invalid "
-       "PrecType_ enum value " << PrecType_ << ".  Valid values are Ifpack2::"
-       "Details::JACOBI = " << Ifpack2::Details::JACOBI << ", Ifpack2::Details"
-       "::GS = " << Ifpack2::Details::GS << ", and Ifpack2::Details::SGS = "
-       << Ifpack2::Details::SGS << ".  Please report this bug to the Ifpack2 "
-       "developers.");
-  }
-
+  ApplyTime_ += (timer->wallTime() - startTime);
   ++NumApply_;
-  Time_->stop();
-  ApplyTime_ += Time_->totalElapsedTime();
 }
 
 template<class MatrixType,class ContainerType>
@@ -561,97 +570,102 @@ initialize ()
      "The matrix is null.  You must call setMatrix() with a nonnull matrix "
      "before you may call this method.");
 
-  // Check whether we have a BlockCrsMatrix
-  Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
-    Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
-  hasBlockCrsMatrix_ = !A_bcrs.is_null();
-  if (A_bcrs.is_null ()) {
-    hasBlockCrsMatrix_ = false;
-  }
-  else {
-    hasBlockCrsMatrix_ = true;
-  }
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::BlockRelaxation::initialize");
+  double startTime = timer->wallTime();
 
-  IsInitialized_ = false;
-  Time_->start (true);
+  { // Timing of initialize starts here
+    Teuchos::TimeMonitor timeMon (*timer);
+    IsInitialized_ = false;
 
-  NumLocalRows_      = A_->getNodeNumRows ();
-  NumGlobalRows_     = A_->getGlobalNumRows ();
-  NumGlobalNonzeros_ = A_->getGlobalNumEntries ();
+    // Check whether we have a BlockCrsMatrix
+    Teuchos::RCP<const block_crs_matrix_type> A_bcrs =
+      Teuchos::rcp_dynamic_cast<const block_crs_matrix_type> (A_);
+    hasBlockCrsMatrix_ = !A_bcrs.is_null();
+    if (A_bcrs.is_null ()) {
+      hasBlockCrsMatrix_ = false;
+    }
+    else {
+      hasBlockCrsMatrix_ = true;
+    }
 
-  // NTS: Will need to add support for Zoltan2 partitions later Also,
-  // will need a better way of handling the Graph typing issue.
-  // Especially with ordinal types w.r.t the container.
-  Partitioner_ = Teuchos::null;
+    NumLocalRows_      = A_->getNodeNumRows ();
+    NumGlobalRows_     = A_->getGlobalNumRows ();
+    NumGlobalNonzeros_ = A_->getGlobalNumEntries ();
 
-  if (PartitionerType_ == "linear") {
-    Partitioner_ =
-      rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
-  } else if (PartitionerType_ == "line") {
-    Partitioner_ =
-      rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
-  } else if (PartitionerType_ == "user") {
-    Partitioner_ =
-      rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
-  } else {
+    // NTS: Will need to add support for Zoltan2 partitions later Also,
+    // will need a better way of handling the Graph typing issue.
+    // Especially with ordinal types w.r.t the container.
+    Partitioner_ = Teuchos::null;
+
+    if (PartitionerType_ == "linear") {
+      Partitioner_ =
+        rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
+    } else if (PartitionerType_ == "line") {
+      Partitioner_ =
+        rcp (new Ifpack2::LinePartitioner<row_graph_type,typename MatrixType::scalar_type> (A_->getGraph ()));
+    } else if (PartitionerType_ == "user") {
+      Partitioner_ =
+        rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
+    } else {
+      // We should have checked for this in setParameters(), so it's a
+      // logic_error, not an invalid_argument or runtime_error.
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Unknown "
+        "partitioner type " << PartitionerType_ << ".  Valid values are "
+        "\"linear\", \"line\", and \"user\".");
+    }
+
+    // need to partition the graph of A
+    Partitioner_->setParameters (List_);
+    Partitioner_->compute ();
+
+    // get actual number of partitions
+    NumLocalBlocks_ = Partitioner_->numLocalParts ();
+
+    // Note: Unlike Ifpack, we'll punt on computing W_ until compute(), which is where
+    // we assume that the type of relaxation has been chosen.
+
+    if (A_->getComm()->getSize() != 1) {
+      IsParallel_ = true;
+    } else {
+      IsParallel_ = false;
+    }
+
     // We should have checked for this in setParameters(), so it's a
     // logic_error, not an invalid_argument or runtime_error.
     TEUCHOS_TEST_FOR_EXCEPTION
-      (true, std::logic_error, "Ifpack2::BlockRelaxation::initialize: Unknown "
-       "partitioner type " << PartitionerType_ << ".  Valid values are "
-       "\"linear\", \"line\", and \"user\".");
-  }
+      (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::initialize: "
+      "NumSweeps_ = " << NumSweeps_ << " < 0.");
 
-  // need to partition the graph of A
-  Partitioner_->setParameters (List_);
-  Partitioner_->compute ();
+    // Extract the submatrices
+    ExtractSubmatricesStructure ();
 
-  // get actual number of partitions
-  NumLocalBlocks_ = Partitioner_->numLocalParts ();
+    // Compute the weight vector if we're doing overlapped Jacobi (and
+    // only if we're doing overlapped Jacobi).
+    if (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (hasBlockCrsMatrix_, std::runtime_error,
+        "Ifpack2::BlockRelaxation::initialize: "
+        "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
 
-  // Note: Unlike Ifpack, we'll punt on computing W_ until compute(), which is where
-  // we assume that the type of relaxation has been chosen.
+      // weight of each vertex
+      W_ = rcp (new vector_type (A_->getRowMap ()));
+      W_->putScalar (STS::zero ());
+      Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
 
-  if (A_->getComm()->getSize() != 1) {
-    IsParallel_ = true;
-  } else {
-    IsParallel_ = false;
-  }
-
-  // We should have checked for this in setParameters(), so it's a
-  // logic_error, not an invalid_argument or runtime_error.
-  TEUCHOS_TEST_FOR_EXCEPTION
-    (NumSweeps_ < 0, std::logic_error, "Ifpack2::BlockRelaxation::initialize: "
-     "NumSweeps_ = " << NumSweeps_ << " < 0.");
-
-  // Extract the submatrices
-  ExtractSubmatricesStructure ();
-
-  // Compute the weight vector if we're doing overlapped Jacobi (and
-  // only if we're doing overlapped Jacobi).
-  if (PrecType_ == Ifpack2::Details::JACOBI && OverlapLevel_ > 0) {
-    TEUCHOS_TEST_FOR_EXCEPTION
-      (hasBlockCrsMatrix_, std::runtime_error,
-       "Ifpack2::BlockRelaxation::initialize: "
-       "We do not support overlapped Jacobi yet for Tpetra::BlockCrsMatrix.  Sorry!");
-
-    // weight of each vertex
-    W_ = rcp (new vector_type (A_->getRowMap ()));
-    W_->putScalar (STS::zero ());
-    Teuchos::ArrayRCP<scalar_type > w_ptr = W_->getDataNonConst(0);
-
-    for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
-      for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
-        local_ordinal_type LID = (*Partitioner_)(i,j);
-        w_ptr[LID] += STS::one();
+      for (local_ordinal_type i = 0 ; i < NumLocalBlocks_ ; ++i) {
+        for (size_t j = 0 ; j < Partitioner_->numRowsInPart(i) ; ++j) {
+          local_ordinal_type LID = (*Partitioner_)(i,j);
+          w_ptr[LID] += STS::one();
+        }
       }
+      W_->reciprocal (*W_);
     }
-    W_->reciprocal (*W_);
-  }
+  } // timing of initialize stops here
 
+  InitializeTime_ += (timer->wallTime() - startTime);
   ++NumInitialize_;
-  Time_->stop ();
-  InitializeTime_ += Time_->totalElapsedTime ();
   IsInitialized_ = true;
 }
 
@@ -672,16 +686,22 @@ compute ()
     initialize ();
   }
 
-  Time_->start (true);
+  Teuchos::RCP<Teuchos::Time> timer =
+    Teuchos::TimeMonitor::getNewCounter ("Ifpack2::BlockRelaxation::compute");
 
-  // reset values
-  IsComputed_ = false;
+  double startTime = timer->wallTime();
 
-  Container_->compute();   // compute each block matrix
+  {
+    Teuchos::TimeMonitor timeMon (*timer);
 
+    // reset values
+    IsComputed_ = false;
+
+    Container_->compute();   // compute each block matrix
+  }
+
+  ComputeTime_ += (timer->wallTime() - startTime);
   ++NumCompute_;
-  Time_->stop ();
-  ComputeTime_ += Time_->totalElapsedTime();
   IsComputed_ = true;
 }
 

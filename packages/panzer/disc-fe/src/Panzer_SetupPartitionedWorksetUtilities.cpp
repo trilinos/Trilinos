@@ -52,21 +52,26 @@ namespace panzer
 
 namespace
 {
-  void
-  convertMeshPartitionToWorkset(const panzer::LocalMeshPartition & partition,
-                                const panzer::WorksetNeeds & needs,
-                                panzer::Workset & workset)
-  {
-    workset.setup(partition, needs);
-    workset.num_cells = partition.num_owned_cells + partition.num_ghstd_cells + partition.num_virtual_cells;
-    workset.subcell_dim = -1;
-  } 
+void
+convertMeshPartitionToWorkset(const panzer::LocalMeshPartition & partition,
+                              const Teuchos::RCP<const OrientationsInterface> & orientations,
+                              panzer::Workset & workset)
+{
+  WorksetOptions options;
+  options.side_assembly_ = false;
+  options.align_side_points_ = false;
+  options.orientations_ = orientations;
+
+  // Construct the workset from the partition
+  workset.setup(partition, options);
+
+}
 }
 
 Teuchos::RCP<std::vector<panzer::Workset> >  
 buildPartitionedWorksets(const panzer::LocalMeshInfo & mesh_info,
                          const panzer::WorksetDescriptor & description,
-                         const panzer::WorksetNeeds & needs)
+                         const Teuchos::RCP<const OrientationsInterface> & orientations)
 {
   Teuchos::RCP<std::vector<panzer::Workset> > worksets = Teuchos::rcp(new std::vector<panzer::Workset>());
 
@@ -77,9 +82,15 @@ buildPartitionedWorksets(const panzer::LocalMeshInfo & mesh_info,
   std::vector<panzer::LocalMeshPartition> partitions;
   panzer::generateLocalMeshPartitions(mesh_info, description, partitions);
 
+  int i=0;
   for(const auto & partition : partitions){
     worksets->push_back(panzer::Workset());
-    convertMeshPartitionToWorkset(partition, needs, worksets->back());
+    convertMeshPartitionToWorkset(partition, orientations, worksets->back());
+
+    // We hash in a unique id the the given workset
+    size_t id = std::hash<WorksetDescriptor>()(description);
+    panzer::hash_combine(id, i++);
+    worksets->back().setIdentifier(id);
   }
 
   return worksets;

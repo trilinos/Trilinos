@@ -1,8 +1,8 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef IOSS_DECOMPOSITON_H
@@ -13,7 +13,7 @@
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_PropertyManager.h>
 #include <algorithm>
-#include <assert.h>
+#include <cassert>
 #include <map>
 #include <string>
 #include <vector>
@@ -25,6 +25,13 @@
 #if !defined(NO_ZOLTAN_SUPPORT)
 #undef MPICPP
 #include <zoltan_cpp.h>
+#endif
+
+#define DC_USE_HOPSCOTCH
+#if defined DC_USE_HOPSCOTCH
+#include <hopscotch_map.h>
+#elif defined DC_USE_ROBIN
+#include <robin_map.h>
 #endif
 
 namespace Ioss {
@@ -155,7 +162,7 @@ namespace Ioss {
     bool i_own_elem(size_t global_index) const
     {
       // global_index is 1-based index into global list of elements [1..global_element_count]
-      return elemGTL.count(global_index) != 0;
+      return elemGTL.find(global_index) != elemGTL.end();
     }
 
     size_t node_global_to_local(size_t global_index) const
@@ -176,7 +183,7 @@ namespace Ioss {
       // global_index is 1-based index into global list of elements [1..global_node_count]
       // return value is 1-based index into local list of elements on this
       // processor (ioss-decomposition)
-      typename std::map<INT, INT>::const_iterator I = elemGTL.find(global_index);
+      auto I = elemGTL.find(global_index);
       assert(I != elemGTL.end());
       return I->second;
     }
@@ -198,8 +205,8 @@ namespace Ioss {
         std::vector<BlockDecompositionData> &element_blocks);
 
     void simple_decompose();
-
     void simple_node_decompose();
+    void guided_decompose();
 
     void calculate_element_centroids(const std::vector<double> &x, const std::vector<double> &y,
                                      const std::vector<double> &z);
@@ -542,13 +549,16 @@ namespace Ioss {
       }
     }
 
-    MPI_Comm    m_comm;
-    int         m_processor{};
-    int         m_processorCount{};
-    std::string m_method;
+    MPI_Comm            m_comm;
+    Ioss::ParallelUtils m_pu;
+    int                 m_processor{};
+    int                 m_processorCount{};
+    std::string         m_method{};
+    std::string         m_decompExtra{};
 
     // Values for the file decomposition
     int    m_spatialDimension{3};
+    int    m_commonNodeCount{0};
     size_t m_globalElementCount{0};
     size_t m_elementCount{0};
     size_t m_elementOffset{0};
@@ -563,6 +573,7 @@ namespace Ioss {
     bool m_showProgress{false};
     bool m_showHWM{false};
 
+    std::vector<INT>    m_elementToProc; // Used by "MAP" scheme...
     std::vector<double> m_centroids;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes
@@ -577,17 +588,17 @@ namespace Ioss {
 
   private:
     // This processor "manages" the elements on the exodus mesh file from
-    // element_offset to element_offset+count (0-based). This is
+    // m_elementOffset to m_elementOffset+m_elementCount (0-based). This is
     // 'file' data
     //
     // This processor also appears to the Ioss clients to own other
     // element and node data based on the decomposition.  This is the
     // 'ioss' data.
     //
-    // The indices in 'local_element_map' are the elements that are
+    // The indices in `localElementMap` are the elements that are
     // common to both the 'file' data and the 'ioss' data.
-    // local_element_map[i] contains the location in 'file' data for
-    // the 'ioss' data at location 'i+import_pre_local_elem_index'
+    // `localElementMap[i]` contains the location in 'file' data for
+    // the 'ioss' data at location `i+m_importPreLocalElemIndex`
     //
     // local_element_map[i]+m_elementOffset is the 0-based global index
     //
@@ -602,11 +613,11 @@ namespace Ioss {
     // export_element_map[i]', then 'comm_send[i] = file[ind]' for i =
     // 0..#exported_elements
     //
-    // local_element_map.size() + import_element_map.size() == #
-    // ioss elements on this processor.
+    // local_element_map.size() + import_element_map.size() ==
+    // #ioss elements on this processor.
     //
-    // local_element_map.size() + export_element_map.size() == #
-    // file elements on this processor.
+    // local_element_map.size() + export_element_map.size() ==
+    // #file elements on this processor.
     //
     // export_element_map and import_element_map are sorted.
     // The primary key is processor order followed by global id.
@@ -621,8 +632,11 @@ namespace Ioss {
     std::vector<INT> importElementCount;
     std::vector<INT> importElementIndex;
 
+    // The list of my `file decomp` elements that will be exported to some other rank.
     std::vector<INT> exportElementMap;
+    // The number of elements that I will export to each other rank.
     std::vector<INT> exportElementCount;
+    // The index into `exportElementMap` for the elements that will be exported to each rank.
     std::vector<INT> exportElementIndex;
 
     std::vector<INT> nodeIndex;
@@ -632,7 +646,7 @@ namespace Ioss {
     std::vector<INT> exportNodeIndex;
 
     std::vector<INT>
-                     importNodeMap; // Where to put each imported nodes data in the list of all data...
+        importNodeMap; // Where to put each imported nodes data in the list of all data...
     std::vector<INT> importNodeCount;
     std::vector<INT> importNodeIndex;
 
@@ -642,8 +656,16 @@ namespace Ioss {
     std::vector<INT> m_nodeDist;
 
     // Note that nodeGTL is a sorted vector.
-    std::vector<INT>   nodeGTL; // Convert from global index to local index (1-based)
+    std::vector<INT> nodeGTL; // Convert from global index to local index (1-based)
+
+#if defined DC_USE_HOPSCOTCH
+    tsl::hopscotch_pg_map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#elif defined DC_USE_ROBIN
+    tsl::robin_pg_map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#else
+    // This is the original method that was used in IOSS prior to using hopscotch or robin map.
     std::map<INT, INT> elemGTL; // Convert from global index to local index (1-based)
+#endif
   };
 } // namespace Ioss
 #endif

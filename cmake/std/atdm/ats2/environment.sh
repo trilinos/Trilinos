@@ -6,7 +6,7 @@
 #
 ################################################################################
 
-# ats2 jobs all use the same environmnet changes to the
+# ats2 jobs all use the same environment changes to the
 # sourced script below will impact jobs on both of those
 # machines. please be mindful of this when making changes
 
@@ -56,7 +56,6 @@ echo "Using $ATDM_CONFIG_SYSTEM_NAME compiler stack $ATDM_CONFIG_COMPILER to bui
 
 # Some basic settings
 export ATDM_CONFIG_ENABLE_SPARC_SETTINGS=ON
-export ATDM_CONFIG_USE_NINJA=ON
 export ATDM_CONFIG_BUILD_COUNT=8 # Assume building on the shared login node!
 
 # Set ctest -j parallel level for non-CUDA builds
@@ -72,9 +71,12 @@ fi
 module purge --silent
 module load StdEnv
 
-# Load the sparc-dev/xxx module 
+# Load the sparc-dev/xxx module
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
 module load ${sparc_module_name}
+
+module unload cmake
+module load cmake/3.18.0
 
 # Set up stuff related the the host compiler
 
@@ -88,8 +90,30 @@ if [[ "$ATDM_CONFIG_COMPILER" == *"GNU"* ]]; then
   export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
   export CPATH=${BINUTILS_ROOT}/include:${CPATH}
 
-# ToDo: Add support for xl when needed
+  export ATDM_CONFIG_USE_NINJA=ON
 
+elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
+
+  # Point to binutils root.
+  export BINUTILS_ROOT=/usr/tce/packages/gcc/gcc-7.3.1
+  export LD_LIBRARY_PATH=${BINUTILS_ROOT}/lib:${LD_LIBRARY_PATH}
+  export LIBRARY_PATH=${BINUTILS_ROOT}/lib
+  export INCLUDE=${BINUTILS_ROOT}/include:${INCLUDE}
+  export CPATH=${BINUTILS_ROOT}/include:${CPATH}
+  export BLAS_ROOT=${CBLAS_ROOT}
+
+  # Don't use ninja as the fortran compiler test is broken.
+  export ATDM_CONFIG_USE_NINJA=OFF
+
+  if [[ "CUDA" == "$ATDM_CONFIG_NODE_TYPE" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
+  else
+    export ATDM_CONFIG_CXX_FLAGS="-qxflag=disable__cplusplusOverride"
+  fi
+
+  # set the gcc compiler XL  will use for backend to one that handles c++14
+  export XLC_USR_CONFIG=/opt/ibm/xlC/16.1.1/etc/xlc.cfg.rhel.7.6.gcc.7.3.1.cuda.10.1.243
+  export XLF_USR_CONFIG=/opt/ibm/xlf/16.1.1/etc/xlf.cfg.rhel.7.5.gcc.7.3.1.cuda.10.1.243
 fi
 
 # Set up stuff related to CUDA
@@ -134,10 +158,6 @@ fi
 # Prepend path to ninja after all of the modules are loaded
 export PATH=/projects/atdm_devops/vortex/ninja-fortran-1.8.2:$PATH
 
-# Prepend path to updated and patched CMake 3.17.2
-module unload cmake
-export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH
-
 # Set a standard git so everyone has the same git
 module load git/2.20.0
 
@@ -150,7 +170,7 @@ export ATDM_CONFIG_BINUTILS_LIBS="${BINUTILS_ROOT}/lib/libbfd.a;-lz;${BINUTILS_R
 
 export ATDM_CONFIG_USE_HWLOC=OFF
 export ATDM_CONFIG_HDF5_LIBS="-L${HDF5_ROOT}/lib;${HDF5_ROOT}/lib/libhdf5_hl.a;${HDF5_ROOT}/lib/libhdf5.a;-lz;-ldl"
-export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib;${NETCDF_ROOT}/lib/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
+export ATDM_CONFIG_NETCDF_LIBS="-L${NETCDF_ROOT}/lib64;${NETCDF_ROOT}/lib64/libnetcdf.a;${PNETCDF_ROOT}/lib/libpnetcdf.a;${ATDM_CONFIG_HDF5_LIBS};-lcurl"
 
 export ATDM_CONFIG_SUPERLUDIST_INCLUDE_DIRS=${SUPERLUDIST_ROOT}/include
 export ATDM_CONFIG_SUPERLUDIST_LIBS="${SUPERLUDIST_ROOT}/lib64/libsuperlu_dist.a"
@@ -165,17 +185,19 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
 
-# System-info for what ATS-2 system we are using
-if [[ "${ATDM_CONFIG_KNOWN_HOSTNAME}" == "vortex" ]] ; then
-  export ATDM_CONFIG_ATS2_LOGIN_NODE=vortex60
-  export ATDM_CONFIG_ATS2_LAUNCH_NODE=vortex59
-  # NOTE: If more login and launch nodes gets added to 'vortex', we will need
-  # to change this to a list of node names instead of just one.  But we will
-  # deal with that later if that occurs.
-else
-  echo "Error, the ats2 env on system '${ATDM_CONFIG_KNOWN_HOSTNAME}'"
-  return
+if [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] ; then
+  export ATDM_CONFIG_MPI_PRE_FLAGS="-M;-mca coll ^ibm"
+  # NOTE: We have to use the '-M' option name and not '--smpiarg' since
+  # 'trilinos_jsrun' has special logic
 fi
+
+# NOTE: We used to check for the launch node but at one point that changed
+# from 'vortex59' to 'vortex5' without warning.  That caused all of the tests
+# run with 'trilinos_jsrun' to fail on 2020-08-11 so we got no test results.
+# Therefore, we will not be checking for running on the launch node anymore in
+# order to avoid having all of the testing break when they change the launch
+# node again.  Therefore, we also removed checks for the login node as well.
+# This makes these scripts more robust to changes on 'vortex'.
 
 
 #
@@ -191,19 +213,6 @@ function atdm_ats2_get_allocated_compute_node_name() {
   fi
 }
 export -f atdm_ats2_get_allocated_compute_node_name
-
-
-function atdm_ats2_get_node_type() {
-  current_hostname=$(hostname)
-  if   [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LOGIN_NODE}" ]] ; then
-    echo "login_node"
-  elif [[ "${current_hostname}" == "${ATDM_CONFIG_ATS2_LAUNCH_NODE}" ]] ; then
-    echo "launch_node"
-  else
-    echo "compute_node"
-  fi
-}
-export -f atdm_ats2_get_node_type
 
 
 #

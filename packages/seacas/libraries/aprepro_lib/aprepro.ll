@@ -4,7 +4,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -570,7 +570,7 @@ integer {D}+({E})?
            symrec *s;
                              s = aprepro.getsym(yytext);
                              if (s == nullptr)
-                               s = aprepro.putsym (yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, 0);
+                               s = aprepro.putsym (yytext, SEAMS::Aprepro::SYMBOL_TYPE::UNDEFINED_VARIABLE, false);
                              yylval->tptr = s;
                              return((token::yytokentype)s->type);
                            }

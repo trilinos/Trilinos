@@ -1,8 +1,8 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #include "copy_string_cpp.h"
@@ -173,8 +173,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
   INT *  num_elem_in_ssets = nullptr, *num_df_in_ssets = nullptr, *num_df_in_nsets = nullptr;
   int    cpu_ws;
   float  version;
-  double start_time      = 0.0;
-  int    max_name_length = 0;
+  double start_time = 0.0;
 
   /* Allocate some memory for each processor read by this processor */
   globals.Proc_Num_Elem_Blk  = (int *)array_alloc(__FILE__, __LINE__, 1, Proc_Info[2], sizeof(int));
@@ -279,7 +278,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     }
   }
 
-  max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
+  auto max_name_length = ex_inquire_int(mesh_exoid, EX_INQ_DB_MAX_USED_NAME_LENGTH);
   ex_set_max_name_length(mesh_exoid, max_name_length);
 
   globals.Num_QA_Recs = ex_inquire_int(mesh_exoid, EX_INQ_QA);
@@ -318,6 +317,29 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
       fmt::print(stderr, "[{}]: ERROR, could not get Info record(s)\n", __func__);
       exit(1);
     }
+  }
+
+  /* Read in the assembly information */
+  {
+    ex_init_params ex_info;
+    ex_get_init_ext(mesh_exoid, &ex_info);
+    globals.Num_Assemblies = ex_info.num_assembly;
+  }
+
+  if (globals.Num_Assemblies > 0) {
+    globals.Assemblies.resize(globals.Num_Assemblies);
+    for (int i = 0; i < globals.Num_Assemblies; i++) {
+      globals.Assemblies[i].name        = nullptr;
+      globals.Assemblies[i].entity_list = nullptr;
+    }
+    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
+
+    for (auto &assembly : globals.Assemblies) {
+      assembly.entity_list = new int64_t[assembly.entity_count];
+    }
+
+    // Now get the assembly entity lists...
+    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
   }
 
   /* Read in the coordinate frame information */
@@ -864,8 +886,8 @@ template <typename T, typename INT>
 void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
 {
 
-  /* Function which reads the nodal coordinates information from an * EXODUS
-   * database for a given processor.
+  /* Function which reads the nodal coordinates information from an
+   * EXODUS database for a given processor.
    */
 
   /*

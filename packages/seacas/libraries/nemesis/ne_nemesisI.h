@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -18,7 +18,7 @@
 extern "C" {
 #endif
 
-#ifndef EXODUS_II_HDR
+#ifndef EXODUSII_H
 #include <stdint.h>
 /** Specifies that this argument is the id of an entity: element block, nodeset, sideset, ... */
 typedef int64_t ex_entity_id;

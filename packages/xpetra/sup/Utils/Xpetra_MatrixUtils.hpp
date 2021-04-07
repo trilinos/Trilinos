@@ -192,6 +192,8 @@ public:
     @param domainMapExtractor MapExtractor object describing the splitting of columns of the output block matrix
     @param columnMapExtractor (not fully clear whether we need that. is always Teuchos::null)
     @param bThyraMode If true, build a n x n blocked operator using Thyra GIDs
+
+    @return Fill-completed block version of intput matrix
   */
   static Teuchos::RCP<Xpetra::BlockedCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > SplitMatrix(
                        const Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& input,
@@ -439,11 +441,11 @@ public:
   /** Given a matrix A, detect too small diagonals and replace any found with ones. */
 
   static void CheckRepairMainDiagonal(RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>>& Ac,
-                                 bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
-                                 const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero())
+                                      bool const &repairZeroDiagonals, Teuchos::FancyOStream &fos,
+                                      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType threshold = Teuchos::ScalarTraits<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>::zero(),
+                                      const Scalar replacementValue = Teuchos::ScalarTraits<Scalar>::one())
   {
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
-    Scalar one = TST::one();
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
     p->set("DoOptimizeStorage", true);
@@ -486,7 +488,7 @@ public:
         if (TST::magnitude(diagVal[r]) <= threshold) {
           GlobalOrdinal grid = rowMap->getGlobalElement(r);
           indout[0] = grid;
-          valout[0] = one;
+          valout[0] = replacementValue;
           fixDiagMatrix->insertGlobalValues(grid,indout(), valout());
         }
       }
@@ -516,7 +518,7 @@ public:
 
     // print some output
     fos << "CheckRepairMainDiagonal: " << (repairZeroDiagonals ? "repaired " : "found ")
-              << gZeroDiags << " too small entries on main diagonal of Ac." << std::endl;
+        << gZeroDiags << " too small entries (threshold = " << threshold <<") on main diagonal of Ac." << std::endl;
 
 #ifdef HAVE_XPETRA_DEBUG // only for debugging
     // check whether Ac has been repaired...
@@ -545,13 +547,13 @@ public:
     Teuchos::TimeMonitor m1(*Teuchos::TimeMonitor::getNewTimer("RelativeDiagonalBoost"));
 
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != relativeThreshold.size()  && relativeThreshold.size() != 1,Xpetra::Exceptions::Incompatible, "Xpetra::MatrixUtils::RelativeDiagonal Boost:  Either A->GetFixedBlockSize() != relativeThreshold.size() OR relativeThreshold.size() == 1");
-    
+
     LocalOrdinal numPDEs = A->GetFixedBlockSize();
     typedef typename Teuchos::ScalarTraits<Scalar> TST;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType MT;
     Scalar zero = TST::zero();
     Scalar one = TST::one();
-    
+
     // Get the diagonal
     RCP<Vector> diag = VectorFactory::Build(A->getRowMap());
     A->getLocalDiagCopy(*diag);
@@ -562,7 +564,7 @@ public:
     std::vector<MT> l_diagMax(numPDEs), g_diagMax(numPDEs);
     for(size_t i=0; i<N; i++) {
       int pde = (int) (i % numPDEs);
-      if((int)i < numPDEs) 
+      if((int)i < numPDEs)
         l_diagMax[pde] = TST::magnitude(dataVal[i]);
       else
         l_diagMax[pde] = std::max(l_diagMax[pde],TST::magnitude(dataVal[i]));
@@ -577,11 +579,11 @@ public:
       GlobalOrdinal GRID = A->getRowMap()->getGlobalElement(i);
       int pde = (int) (i % numPDEs);
       index[0] = GRID;
-      if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde]) 
+      if (TST::magnitude(dataVal[i]) < relativeThreshold[pde] * g_diagMax[pde])
         value[0] = relativeThreshold[pde] * g_diagMax[pde] - TST::magnitude(dataVal[i]);
       else
         value[0] =zero;
-      boostMatrix->insertGlobalValues(GRID,index(),value());      
+      boostMatrix->insertGlobalValues(GRID,index(),value());
     }
     boostMatrix->fillComplete(A->getDomainMap(),A->getRangeMap());
 
@@ -617,7 +619,7 @@ public:
   static void inverseScaleBlockDiagonal(const Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  & blockDiagonal,
 					bool doTranspose,
 					Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & toBeScaled) {
-                            
+
     const UnderlyingLib lib = blockDiagonal.getMap()->lib();
 
       if(lib == Xpetra::UseEpetra) {
@@ -651,6 +653,23 @@ public:
                                "Local parts of row and column map do not match!");
   }
 
+  /*!
+    \@brief Convert matrix to strided row and column maps
+
+    @param matrix Matrix to be converted
+    @param rangeStridingInfo Striding information for row/range map
+    @param domainStridingInfo Striding information for column/domain map
+  */
+  static void convertMatrixToStridedMaps(
+      Teuchos::RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>> matrix,
+      std::vector<size_t>& rangeStridingInfo, std::vector<size_t>& domainStridingInfo)
+  {
+    RCP<const StridedMap> stridedRowMap = StridedMapFactory::Build(matrix->getRowMap(), rangeStridingInfo, -1, 0);
+    RCP<const StridedMap> stridedColMap = StridedMapFactory::Build(matrix->getColMap(), domainStridingInfo, -1, 0);
+
+    if (matrix->IsView("stridedMaps") == true) matrix->RemoveView("stridedMaps");
+    matrix->CreateView("stridedMaps", stridedRowMap, stridedColMap);
+  }
 
 };
 

@@ -45,7 +45,7 @@
 #include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/FieldRestriction.hpp"
 #include "stk_mesh/base/FieldState.hpp"  // for ::MaximumFieldStates, etc
-#include "stk_mesh/base/NgpField.hpp"
+#include "stk_mesh/base/NgpFieldBase.hpp"
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowErrorMsgIf, etc
 #include "stk_util/util/SortAndUnique.hpp"
 
@@ -378,6 +378,22 @@ FieldBaseImpl::modify_on_device() const
 }
 
 void
+FieldBaseImpl::modify_on_host(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_host(s);
+  }
+}
+
+void
+FieldBaseImpl::modify_on_device(const Selector& s) const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->modify_on_device(s);
+  }
+}
+
+void
 FieldBaseImpl::sync_to_host() const
 {
   if (m_ngpField != nullptr) {
@@ -398,6 +414,22 @@ FieldBaseImpl::clear_sync_state() const
 {
   if (m_ngpField != nullptr) {
     m_ngpField->clear_sync_state();
+  }
+}
+
+void
+FieldBaseImpl::clear_host_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_host_sync_state();
+  }
+}
+
+void
+FieldBaseImpl::clear_device_sync_state() const
+{
+  if (m_ngpField != nullptr) {
+    m_ngpField->clear_device_sync_state();
   }
 }
 
@@ -438,6 +470,7 @@ FieldBaseImpl::increment_num_syncs_to_device() const
 {
   ++m_numSyncsToDevice;
 }
+
 
 //----------------------------------------------------------------------
 

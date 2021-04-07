@@ -330,11 +330,9 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
   {
     RCP<const Teuchos::Comm<int>> comm = rcp(new Teuchos::SerialComm<int>());
     //numGlobalIndices is just the number of rows in the matrix
-    const Tpetra::global_size_t numGlobalIndices = mxGetM(mxa);
-    const mm_GlobalOrd indexBase = 0;
-    RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
-    RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
-    A = Tpetra::createCrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
+    const size_t numGlobalIndices = mxGetM(mxa);
+    RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, 0, comm));
+    RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), 0, comm));
     double* valueArray = mxGetPr(mxa);
     int nc = mxGetN(mxa);
     if(rewrap_ints)
@@ -348,6 +346,16 @@ RCP<Tpetra_CrsMatrix_double> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_double>>(co
       rowind = (int*) mxGetIr(mxa);
       colptr = (int*) mxGetJc(mxa);
     }
+    //Need this to convert CSC colptrs to CRS row counts
+    Teuchos::Array<size_t> rowCounts(numGlobalIndices);
+    for(int i = 0; i < nc; i++)
+    {
+      for(int j = colptr[i]; j < colptr[i + 1]; j++)
+      {
+        rowCounts[rowind[j]]++;
+      }
+    }
+    A = rcp(new Tpetra::CrsMatrix<double, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap, rowCounts()));
     for(int i = 0; i < nc; i++)
     {
       for(int j = colptr[i]; j < colptr[i + 1]; j++)
@@ -396,7 +404,6 @@ RCP<Tpetra_CrsMatrix_complex> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex>>(
     const mm_GlobalOrd indexBase = 0;
     RCP<const muemex_map_type> rowMap = rcp(new muemex_map_type(numGlobalIndices, indexBase, comm));
     RCP<const muemex_map_type> domainMap = rcp(new muemex_map_type(mxGetN(mxa), indexBase, comm));
-    A = Tpetra::createCrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap);
     double* realArray = mxGetPr(mxa);
     double* imagArray = mxGetPi(mxa);
     int* colptr;
@@ -413,6 +420,16 @@ RCP<Tpetra_CrsMatrix_complex> loadDataFromMatlab<RCP<Tpetra_CrsMatrix_complex>>(
       rowind = (int*) mxGetIr(mxa);
       colptr = (int*) mxGetJc(mxa);
     }
+    //Need this to convert CSC colptrs to CRS row counts
+    Teuchos::Array<size_t> rowCounts(numGlobalIndices);
+    for(int i = 0; i < nc; i++)
+    {
+      for(int j = colptr[i]; j < colptr[i + 1]; j++)
+      {
+        rowCounts[rowind[j]]++;
+      }
+    }
+    A = rcp(new Tpetra::CrsMatrix<complex_t, mm_LocalOrd, mm_GlobalOrd, mm_node_t>(rowMap, rowCounts()));
     for(int i = 0; i < nc; i++)
     {
       for(int j = colptr[i]; j < colptr[i + 1]; j++)
@@ -1309,8 +1326,8 @@ mxArray* saveDataToMatlab(RCP<FieldContainer_ordinal>& data)
   if(rank!=2)
     throw std::runtime_error("Error: Only rank two FieldContainers are supported.");
 
-  int nr = data->dimension(0);
-  int nc = data->dimension(1);
+  int nr = data->extent(0);
+  int nc = data->extent(1);
 
   mwSize dims[]={(mwSize)nr,(mwSize)nc};
   mxArray* mxa = mxCreateNumericArray(2,dims, mxINT32_CLASS, mxREAL);

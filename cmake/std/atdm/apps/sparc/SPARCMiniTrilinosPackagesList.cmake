@@ -1,0 +1,14 @@
+SET(SPARC_MiniTrilinos_Package_Enables
+  Kokkos
+  SEACAS
+  )
+SET(SPARC_MiniTrilinos_Package_Disables
+  Pamgen
+  )
+SET(SPARC_MiniTrilinos_TPL_Disables
+  METIS
+  ParMETIS
+  SuperLUDist
+  Boost
+  BoostLib
+  )

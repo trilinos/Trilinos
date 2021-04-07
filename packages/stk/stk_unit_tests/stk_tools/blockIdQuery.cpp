@@ -1,4 +1,5 @@
 #include "stk_mesh/base/GetEntities.hpp"  // for get_selected_entities
+#include "stk_mesh/base/SideSetUtil.hpp"
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_unit_test_utils/getOption.h>
 #include <stk_io/StkIoUtils.hpp>
@@ -38,7 +39,7 @@ TEST_F(StkToolsB, GetBlockIdsForSpecifiedSideset)
         const stk::mesh::Entity *elements = get_bulk().begin_elements(side);
         for (unsigned i = 0; i < numElements; ++i)
         {
-            const stk::mesh::Part *block = stk::io::getElementBlockSelectorForElement(get_bulk(), elements[i]);
+            const stk::mesh::Part *block = stk::mesh::get_element_block_selector_for_element(get_bulk(), elements[i]);
             blockIds.insert(block->id());
         }
     }

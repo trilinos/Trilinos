@@ -1,13 +1,13 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C     1 - 12x15  2 - 26x21  3 - 37x32  4 - 48x43
 C       - 14x12    - 23x26    - 34x37    - 41x48
 C       - 15x14    - 21x23    - 32x34    - 43x41
-C
+
 C     5 - 51x56  6 - 62x67  7 - 73x78  8 - 84x85
 C       - 58x51    - 65x62    - 76x73    - 87x84
 C       - 56x58    - 67x65    - 78x76    - 85x87
@@ -43,16 +43,16 @@ C=======================================================================
             XI = x( link(ISEG,iel) )
             YI = y( link(ISEG,iel) )
             ZI = z( link(ISEG,iel) )
-C
+
             do 40 ino = 1, 3
                XJ = x( link(map(ino,iseg,1),iel) ) - xi
                YJ = y( link(map(ino,iseg,1),iel) ) - yi
                ZJ = z( link(map(ino,iseg,1),iel) ) - zi
-C
+
                XK = x( link(map(ino,iseg,2),iel) ) - xi
                YK = y( link(map(ino,iseg,2),iel) ) - yi
                ZK = z( link(map(ino,iseg,2),iel) ) - zi
-C
+
                ax = yj * zk - zj * yk
                ay = zj * xk - xj * zk
                az = xj * yk - yj * xk
@@ -69,7 +69,6 @@ C
  50      continue
  60   continue
 
-C
       do 70 inod = 1, numnp
          if (nodes(inod) .ne. 0) then
             if ( abs(cosin(1, inod)) .gt. tol .or.

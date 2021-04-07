@@ -79,13 +79,14 @@ namespace Intrepid2
       TENSOR_PRODUCT,
       TENSOR_CONTRACTION
     };
+    using RankCombinationViewType = Kokkos::View<RankCombinationType*, typename TensorViewType::device_type>;
   protected:
     
     ViewIterator<TensorViewType, ScalarType> tensor_view_iterator_;
     ViewIterator<ViewType1, ScalarType> view1_iterator_;
     ViewIterator<ViewType2, ScalarType> view2_iterator_;
     
-    Kokkos::vector<RankCombinationType> rank_combination_types_;
+    RankCombinationViewType rank_combination_types_;
   public:
     /** \brief Constructor
         \param [in] tensor_view            - the view that stores the tensor combination
@@ -108,7 +109,7 @@ namespace Intrepid2
     */
     KOKKOS_INLINE_FUNCTION
     TensorViewIterator(TensorViewType tensor_view, ViewType1 view1, ViewType2 view2,
-                       Kokkos::vector<RankCombinationType> rank_combination_types)
+        RankCombinationViewType rank_combination_types)
     :
     tensor_view_iterator_(tensor_view),
     view1_iterator_(view1),
@@ -148,16 +149,22 @@ namespace Intrepid2
         }
         else
         {
-          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(contracting, std::invalid_argument, "encountered a non-contraction rank combination after a contraction; contractions can only go at the end");
-          expected_rank++;
-          if (rank_combination_types[d] == TENSOR_PRODUCT)
+          if (!contracting)
           {
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d) * view2.extent_int(d), std::invalid_argument, "For TENSOR_PRODUCT rank combination, the tensor View must have length in that dimension equal to the product of the two component views in that dimension");
+            expected_rank++;
+            if (rank_combination_types[d] == TENSOR_PRODUCT)
+            {
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d) * view2.extent_int(d), std::invalid_argument, "For TENSOR_PRODUCT rank combination, the tensor View must have length in that dimension equal to the product of the two component views in that dimension");
+            }
+            else // matching
+            {
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(view1.extent_int(d) != view2.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
+            }
           }
-          else // matching
+          else
           {
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(view1.extent_int(d) != view2.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(tensor_view.extent_int(d) != view1.extent_int(d), std::invalid_argument, "For DIMENSION_MATCH rank combination, all three views must have length equal to each other in that rank");
+            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(contracting, std::invalid_argument, "encountered a non-contraction rank combination after a contraction; contractions can only go at the end");
           }
         }
       }

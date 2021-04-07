@@ -489,6 +489,8 @@ evaluateFields(typename Traits::EvalData d)
     using clock = std::chrono::steady_clock;
     std::chrono::time_point<clock> start = clock::now();
 
+    typename PHX::Device().fence(); // temporary fence until UVM in evaluateFields fixed
+
     nodes_[topoSortEvalIndex[n]].getNonConst()->evaluateFields(d);
 
     nodes_[topoSortEvalIndex[n]].sumIntoExecutionTime(clock::now()-start);
@@ -1050,6 +1052,21 @@ const std::vector<Teuchos::RCP<PHX::FieldTag>>&
 PHX::DagManager<Traits>::getRequiredFields() const
 {
   return required_fields_;
+}
+//=======================================================================
+template<typename Traits>
+const std::unordered_map<std::string,int>&
+PHX::DagManager<Traits>::queryRegisteredFields() const
+{
+  return field_to_node_index_;
+}
+
+//=======================================================================
+template<typename Traits>
+const std::vector<PHX::DagNode<Traits>>&
+PHX::DagManager<Traits>::queryRegisteredEvaluators() const
+{
+  return nodes_;
 }
 
 //=======================================================================

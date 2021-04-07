@@ -198,71 +198,27 @@ class GraphColorDistance2Handle
      * Chooses best algorithm based on the execution space.
      *
      * This chooses the best algorithm based on the execution space:
-     * - COLORING_D2_SERIAL if the execution space is SERIAL
-     * - COLORING_D2_NB_BIT otherwise
+     * - COLORING_D2_SERIAL if the execution space is SERIAL (more work efficient than NB_BIT)
+     * - COLORING_D2_NB_BIT otherwise (fastest parallel algorithm)
      *
      */
 
     void choose_default_algorithm()
     {
-        bool found = false;
-#if defined(KOKKOS_ENABLE_SERIAL)
-        if(std::is_same<Kokkos::Serial, ExecutionSpace>::value)
+        if(KokkosKernels::Impl::kk_get_exec_space_type<ExecutionSpace>() == KokkosKernels::Impl::Exec_SERIAL)
         {
             this->coloring_algorithm_type = COLORING_D2_SERIAL;
-            found = true;
 #ifdef VERBOSE
-            std::cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL" << std::endl;
+            std::cout << "Serial Execution Space, Default Algorithm: COLORING_D2_SERIAL\n";
 #endif
         }
-#endif
-
-#if defined(KOKKOS_ENABLE_THREADS)
-        if(std::is_same<Kokkos::Threads, ExecutionSpace>::value)
+        else
         {
             this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
 #ifdef VERBOSE
-            std::cout << "PTHREAD Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
+            std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_D2_NB_BIT\n";
 #endif
         }
-#endif
-
-#if defined(KOKKOS_ENABLE_OPENMP)
-        if(std::is_same<Kokkos::OpenMP, ExecutionSpace>::value)
-        {
-            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "OpenMP Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
-#endif
-        }
-#endif
-
-#if defined(KOKKOS_ENABLE_CUDA)
-        if(std::is_same<Kokkos::Cuda, ExecutionSpace>::value)
-        {
-            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "Cuda Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
-#endif
-        }
-#endif
-
-#if defined(KOKKOS_ENABLE_QTHREAD)
-        if(std::is_same<Kokkos::Qthread, ExecutionSpace>::value)
-        {
-            this->coloring_algorithm_type = COLORING_D2_NB_BIT;
-            found = true;
-#ifdef VERBOSE
-            std::cout << "Qthread Execution Space, Default Algorithm: COLORING_D2_NB_BIT" << std::endl;
-#endif
-        }
-#endif
-        //Since this logic is based on checking every exec space, detect when a new one needs to be supported
-        if(!found)
-          throw std::logic_error("D2 coloring: default algorithm hasn't been chosen for the current execution space");
     }
 
 

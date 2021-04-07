@@ -72,7 +72,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int HCURL_QUAD_I1_FEM_Test01(const bool verbose) {
       
       Teuchos::RCP<std::ostream> outStream;
@@ -85,7 +85,8 @@ namespace Intrepid2 {
       
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-      
+
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
       
@@ -110,7 +111,7 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
       
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       typedef Kokkos::DynRankView<ValueType,HostSpaceType> DynRankViewHost;
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
       const ValueType tol = tolerence();
@@ -119,7 +120,7 @@ namespace Intrepid2 {
 
       typedef ValueType outputValueType;
       typedef ValueType pointValueType;
-      Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType,outputValueType,pointValueType> quadBasis;
+      Basis_HCURL_QUAD_I1_FEM<DeviceType,outputValueType,pointValueType> quadBasis;
   
       *outStream
         << "\n"
@@ -282,26 +283,26 @@ namespace Intrepid2 {
       try{  
         // VALUE: Each row pair gives the 4x2 correct basis set values at an evaluation point: (P,F,D) layout
         ValueType basisValues[] = {
-          0.500000, 0, 0, 0, 0, 0, 0, -0.500000, 0.500000, 0, 0, 0.500000, 0, \
-          0, 0, 0, 0, 0, 0, 0.500000, -0.500000, 0, 0, 0, 0, 0, 0, 0,     \
-          -0.500000, 0, 0, -0.500000, 0.250000, 0, 0, 0.250000, -0.250000, 0, \
-          0, -0.250000, 0.375000, 0, 0, 0.250000, -0.125000, 0, 0, -0.250000, \
-          0.125000, 0, 0, 0.250000, -0.375000, 0, 0, -0.250000, 0.250000, 0, 0, \
-          0.125000, -0.250000, 0, 0, -0.375000, 0.250000, 0, 0, 0.375000, \
-          -0.250000, 0, 0, -0.125000
+          1.0, 0, 0, 0, 0, 0, 0, -1.0, 1.0, 0, 0, 1.0, 0, \
+          0, 0, 0, 0, 0, 0, 1.0, -1.0, 0, 0, 0, 0, 0, 0, 0,     \
+          -1.0, 0, 0, -1.0, 0.5, 0, 0, 0.5, -0.5, 0, \
+          0, -0.5, 0.75, 0, 0, 0.5, -0.25, 0, 0, -0.5, \
+          0.25, 0, 0, 0.5, -0.75, 0, 0, -0.5, 0.5, 0, 0, \
+          0.25, -0.5, 0, 0, -0.75, 0.5, 0, 0, 0.75, \
+          -0.5, 0, 0, -0.25
         };
       
         // CURL: correct values in (F,P) format
         ValueType basisCurls[] = {
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25,
-          0.25, 0.25, 0.25, 0.25
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5,
+          0.5, 0.5, 0.5, 0.5
         };
       
         DynRankViewHost ConstructWithLabel(quadNodesHost, 9, 2);
@@ -317,7 +318,7 @@ namespace Intrepid2 {
         quadNodesHost(7,0) = -0.5;  quadNodesHost(7,1) =  0.0;
         quadNodesHost(8,0) =  0.5;  quadNodesHost(8,1) =  0.0;
 
-        auto quadNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), quadNodesHost);
+        auto quadNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), quadNodesHost);
         Kokkos::deep_copy(quadNodes, quadNodesHost);
         
         // Dimensions for the output arrays:
@@ -383,7 +384,7 @@ namespace Intrepid2 {
         << "===============================================================================\n";
     
       try{
-//        Basis_HCURL_QUAD_I1_FEM<DeviceSpaceType> quadBasis;
+//        Basis_HCURL_QUAD_I1_FEM<DeviceType> quadBasis;
         const ordinal_type numFields = quadBasis.getCardinality();
         const ordinal_type spaceDim  = quadBasis.getBaseCellTopology().getDimension();
       

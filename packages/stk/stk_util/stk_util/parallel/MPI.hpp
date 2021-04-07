@@ -35,20 +35,21 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
-#include <stk_util/stk_config.h>
+#include "stk_util/stk_config.h"           // for STK_HAS_MPI
+
 #if defined ( STK_HAS_MPI )
 
-#include "mpi.h"                        // for MPI_Datatype, etc
-#include <stddef.h>                     // for size_t
-#include <Kokkos_Core.hpp>
-#include <algorithm>                    // for min, max
-#include <complex>                      // for complex
-#include <iterator>                     // for iterator_traits, etc
-#include <stdexcept>                    // for runtime_error
-#include <vector>                       // for vector
-#include <iostream>
-#include <sys/types.h>
-#include <stdint.h>
+#include "Kokkos_Macros.hpp"               // for KOKKOS_DEFAULTED_FUNCTION, KOKKOS_INLINE_FUNCTION
+#include "stk_util/parallel/Parallel.hpp"  // for MPI_Datatype, ompi_datatype_t, MPI_Op, ompi_op_t
+#include <stddef.h>                        // for size_t
+#include <stdint.h>                        // for int64_t, uint64_t
+#include <algorithm>                       // for max, copy
+#include <complex>                         // for complex
+#include <iostream>                        // for operator<<, ostream, basic_ostream, basic_ostr...
+#include <iterator>                        // for iterator_traits, back_insert_iterator
+#include <stdexcept>                       // for runtime_error
+#include <vector>                          // for vector
+
 namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
@@ -854,8 +855,8 @@ struct Max
  */
 struct MinLoc
 {
-  template <typename T>
-  inline MinLoc(Loc<T> * dest, const Loc<T> *source) {
+  template <typename T, typename V>
+  inline MinLoc(Loc<T, V> * dest, const Loc<T, V> *source) {
     if (source->m_value < dest->m_value) {
       dest->m_value = source->m_value;
       dest->m_loc = source->m_loc;
@@ -870,8 +871,8 @@ struct MinLoc
  */
 struct MaxLoc
 {
-  template <typename T>
-  inline MaxLoc(Loc<T> * dest, const Loc<T> *source) {
+  template <typename T, typename V>
+  inline MaxLoc(Loc<T, V> * dest, const Loc<T, V> *source) {
     if (source->m_value > dest->m_value) {
       dest->m_value = source->m_value;
       dest->m_loc = source->m_loc;
@@ -1041,7 +1042,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 
   MPI_Allreduce(local_array_len.data(), global_array_len.data(), num_proc, MPI_INT, MPI_SUM, mpi_comm);
 
-  for(unsigned i = 0; i < num_proc; ++i) {
+  for(int i = 0; i < num_proc; ++i) {
     if(global_array_len[i] != size) {
       throw std::runtime_error("MPI.hpp::AllReduceCollected, not all processors have the same length array");
     }

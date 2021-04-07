@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Assembly.h>
@@ -200,7 +200,7 @@ namespace Ioex {
     int     status   = nc_inq_att(exodusFilePtr, NC_GLOBAL, "processor_info", &att_type, &att_len);
     if (status == NC_NOERR && att_type == NC_INT) {
       // Attribute exists on this database, read it and check that the information
-      // matches the current processor count and procesor id.
+      // matches the current processor count and processor id.
       int proc_info[2];
       status = nc_get_att_int(exodusFilePtr, NC_GLOBAL, "processor_info", proc_info);
       if (status == NC_NOERR) {
@@ -307,7 +307,7 @@ namespace Ioex {
       if (!succeed) {
         // Need to remove the property so it doesn't cause problems
         // later...
-        Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
+        auto *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
         new_entity->property_erase(id_prop);
         assert(!entity->property_exists(id_prop));
       }
@@ -393,7 +393,7 @@ namespace Ioex {
 
     // 'id' is a unique id for this entity type...
     idset->insert(std::make_pair(static_cast<int>(type), id));
-    Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
+    auto *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
     new_entity->property_add(Ioss::Property(id_prop, id));
     new_entity->property_update("guid", entity->get_database()->util().generate_guid(id));
     return id;
@@ -485,6 +485,12 @@ namespace Ioex {
     }
     db_has_name = false;
     return Ioss::Utils::encode_entity_name(basename, id);
+  }
+
+  void exodus_error(int exoid, int lineno, const char *function, const char *filename)
+  {
+    std::string empty{};
+    exodus_error(exoid, lineno, function, filename, empty);
   }
 
   void exodus_error(int exoid, int lineno, const char *function, const char *filename,
@@ -697,7 +703,7 @@ namespace Ioex {
     ge->property_describe(Ioss::Property::Origin::ATTRIBUTE, &properties);
 
     auto type = Ioex::map_exodus_type(ge->type());
-    auto id   = (ge->property_exists("id")) ? ge->get_property("id").get_int() : 0;
+    auto id   = ge->get_optional_property("id", 0);
 
     double  rval = 0.0;
     int64_t ival = 0;

@@ -43,13 +43,11 @@
 #include "stk_tools/mesh_tools/DisconnectGroup.hpp"
 #include "stk_tools/mesh_tools/DisconnectTypes.hpp"
 #include "stk_tools/mesh_tools/DisconnectUtils.hpp"
-#include "stk_util/parallel/ParallelComm.hpp"
 #include "stk_tools/mesh_tools/ConvexGroup.hpp"
+#include "stk_util/parallel/ParallelComm.hpp"
 #include <map>
 #include <utility>
 #include <vector>
-
-// #define PRINT_DEBUG
 
 namespace stk { namespace mesh { class BulkData; } }
 
@@ -142,13 +140,19 @@ struct LinkInfo
 {
   PreservedSharingInfo sharedInfo;
   NodeMapType clonedNodeMap;
-  NodeMapType preservedNodeMap;
+  NodeMapType originalNodeMap;
   bool preserveOrphans = false;
   int debugLevel = 0;
   std::string debugString = "";
   std::ostringstream os;
   NullStream ns;
   ReconnectMap reconnectMap;
+
+  double startTime;
+  double setupTime;
+  double disconnectTime;
+  double reconnectTime;
+  double snipTime;
 
   void flush(std::ostream& stream) {
     stream << os.str();
@@ -189,6 +193,8 @@ bool should_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeM
 
 bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, LinkInfo& info);
 
+bool can_be_reconnected(const DisconnectGroup& disconnectedGroup, const NodeMapValue& nodeMapValue, const BlockPair& blockPair, stk::mesh::Entity currentEntity, LinkInfo& info);
+
 bool is_block(const stk::mesh::BulkData & bulk, stk::mesh::Part & part);
 
 stk::mesh::Part* get_block_part_for_element(const stk::mesh::BulkData & bulk, stk::mesh::Entity element);
@@ -224,6 +230,8 @@ void restore_node_sharing(stk::mesh::BulkData& bulk, const NodeMapValue& value, 
 void sanitize_node_map(NodeMapType& nodeMap, LinkInfo& os);
 
 stk::mesh::EntityVector extract_nodes(const stk::mesh::BulkData& bulk, LinkInfo& info);
+
+stk::mesh::EntityVector get_affected_nodes(const stk::mesh::BulkData& bulk, const BlockPairVector& blocksToDisconnect);
 
 void disconnect_block_pairs(stk::mesh::BulkData& bulk, const std::vector<BlockPair>& blockPairsToDisconnect,
                             LinkInfo& info);

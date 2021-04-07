@@ -80,7 +80,7 @@ std::vector<double> get_attributes_of_first_element(const stk::mesh::BulkData &b
     stk::mesh::FieldVector attributeFields = get_attribute_fields_for_part(bulk.mesh_meta_data(), ioPart);
 
     stk::mesh::EntityVector elements;
-    stk::mesh::get_selected_entities(*ioPart, bulk.buckets(stk::topology::ELEM_RANK), elements);
+    stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, *ioPart, elements);
 
     std::vector<double> attributes;
     if(!elements.empty())

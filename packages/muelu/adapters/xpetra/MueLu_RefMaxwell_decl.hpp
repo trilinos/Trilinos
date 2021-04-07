@@ -93,6 +93,11 @@
 #include "Ifpack2_Hiptmair.hpp"
 #endif
 
+// Stratimikos
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+#include <Thyra_LinearOpWithSolveBase.hpp>
+#endif
+
 namespace MueLu {
 
   /*!
@@ -310,6 +315,12 @@ namespace MueLu {
     //! Setup the preconditioner
     void compute(bool reuse=false);
 
+    //! Detect Dirichlet boundary conditions
+    void detectBoundaryConditionsSM();
+
+    //! Remove explicit zeros
+    void removeExplicitZeros();
+
     //! Setup the prolongator for the (1,1)-block
     void buildProlongator();
 
@@ -362,14 +373,11 @@ namespace MueLu {
                     const Teuchos::RCP<RealValuedMultiVector> & Coords,
                     Teuchos::ParameterList& List);
 
+    //! Set the fine level smoother
+    void setFineLevelSmoother();
+
     //! apply additive algorithm for 2x2 solve
     void applyInverseAdditive(const MultiVector& RHS, MultiVector& X) const;
-
-    //! apply 1-2-1 algorithm for 2x2 solve
-    void applyInverse121(const MultiVector& RHS, MultiVector& X) const;
-
-    //! apply 2-1-2 algorithm for 2x2 solve
-    void applyInverse212(const MultiVector& RHS, MultiVector& X) const;
 
     //! apply solve to 1-1 block only
     void solveH(const MultiVector& RHS, MultiVector& X) const;
@@ -417,9 +425,14 @@ namespace MueLu {
     Teuchos::RCP<Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > hiptmairPreSmoother_, hiptmairPostSmoother_;
 #endif
     bool useHiptmairSmoothing_;
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+    RCP<Thyra::PreconditionerBase<Scalar> > thyraPrecH_, thyraPrec22_;
+#endif
     //! Various matrices
     Teuchos::RCP<Matrix> SM_Matrix_, D0_Matrix_, D0_T_Matrix_, M0inv_Matrix_, M1_Matrix_, Ms_Matrix_;
     Teuchos::RCP<Matrix> A_nodal_Matrix_, P11_, R11_, AH_, A22_, Addon_Matrix_;
+    Teuchos::RCP<const Map> D0origDomainMap_;
+    Teuchos::RCP<const Import> D0origImporter_;
     //! Vectors for BCs
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
     Kokkos::View<bool*, typename Node::device_type> BCrowsKokkos_, BCcolsKokkos_, BCdomainKokkos_;
@@ -433,17 +446,35 @@ namespace MueLu {
     //! Importer to coarse (1,1) hierarchy
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
     bool D0_T_R11_colMapsMatch_;
+    bool allEdgesBoundary_, allNodesBoundary_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
-    bool disable_addon_, dump_matrices_, useKokkos_, use_as_preconditioner_, implicitTranspose_, fuseProlongationAndUpdate_, syncTimers_;
+    bool disable_addon_, dump_matrices_, useKokkos_, use_as_preconditioner_, implicitTranspose_, fuseProlongationAndUpdate_, syncTimers_, enable_reuse_, skipFirstLevel_;
+    bool applyBCsToAnodal_, applyBCsToH_, applyBCsTo22_;
     int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory
-    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_, D0TR11Tmp_;
+    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, P11resSubComm_, P11xSubComm_, D0res_, D0x_, D0resSubComm_, D0xSubComm_, residual_, P11resTmp_, D0resTmp_, D0TR11Tmp_;
   };
+
+
+#if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
+  template<typename Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+  struct StratimikosWrapper {
+    static RCP<Thyra::PreconditionerBase<Scalar> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                     RCP<ParameterList> params);
+  };
+
+  template<class LocalOrdinal,class GlobalOrdinal,class Node>
+  struct StratimikosWrapper<double,LocalOrdinal,GlobalOrdinal,Node> {
+    static RCP<Thyra::PreconditionerBase<double> > setupStratimikosPreconditioner(RCP<Xpetra::Matrix<double,LocalOrdinal,GlobalOrdinal,Node> > A,
+                                                                                     RCP<ParameterList> params);
+  };
+#endif
+
 
 } // namespace
 

@@ -39,34 +39,14 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef _FROSCH_SUBDOMAINSOLVER_DECL_hpp
-#define _FROSCH_SUBDOMAINSOLVER_DECL_hpp
-
-#ifndef FROSCH_ASSERT
-#define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
-#endif
-
-#ifndef FROSCH_TIMER_START
-#define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
-#endif
-
-#ifndef FROSCH_TIMER_START_LEVELID
-#define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
-#endif
-
-#ifndef FROSCH_TIMER_STOP
-#define FROSCH_TIMER_STOP(A) A.reset();
-#endif
-
-#ifndef FROSCH_WARNING
-#define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << CLASS << " : WARNING: " << OUTPUT << std::endl;
-#endif
-
-#ifndef FROSCH_TEST_OUTPUT
-#define FROSCH_TEST_OUTPUT(COMM,VERBOSE,OUTPUT) COMM->barrier(); COMM->barrier(); COMM->barrier(); if (VERBOSE) std::cout << OUTPUT << std::endl;
-#endif
+#ifndef _FROSCH_SUBDOMAINSOLVER_DECL_HPP
+#define _FROSCH_SUBDOMAINSOLVER_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
+
+#include <FROSch_Output.h>
+#include <FROSch_Timers.h>
+
 #include <FROSch_Tools_decl.hpp>
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -100,6 +80,7 @@
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_THYRA
+#include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #ifdef HAVE_SHYLU_DDFROSCH_IFPACK2
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Thyra_Ifpack2PreconditionerFactory.hpp"
@@ -114,10 +95,22 @@ namespace FROSch {
     using namespace Xpetra;
 
     template <class SC,
-    class LO ,
-    class GO ,
-    class NO >
+              class LO,
+              class GO,
+              class NO>
     class OneLevelPreconditioner;
+
+    template<class SC,
+             class LO,
+             class GO,
+             class NO>
+    class TwoLevelPreconditioner;
+
+    template<class SC,
+             class LO,
+             class GO,
+             class NO>
+    class TwoLevelBlockPreconditioner;
 
     template <class SC = double,
               class LO = int,
@@ -150,8 +143,10 @@ namespace FROSch {
         using ConstTRowMatrixPtr          = RCP<const TRowMatrix>;
 
         using XMultiVector                = MultiVector<SC,LO,GO,NO>;
+        using ConstXMultiVector           = const MultiVector<SC,LO,GO,NO>;
         using XMultiVectorPtr             = RCP<XMultiVector>;
         using ConstXMultiVectorPtr        = RCP<const XMultiVector>;
+        using ConstXMultiVectorPtrVecPtr  = ArrayRCP<ConstXMultiVectorPtr>;
 
         using TMultiVector                = Tpetra::MultiVector<SC,LO,GO,NO>;
         using TMultiVectorPtr             = RCP<TMultiVector>;
@@ -166,8 +161,8 @@ namespace FROSch {
         using ParameterListPtr            = RCP<ParameterList>;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
-        using ELinearProblem               = Epetra_LinearProblem;
-        using ELinearProblemPtr            = RCP<Epetra_LinearProblem>;
+        using ELinearProblem              = Epetra_LinearProblem;
+        using ELinearProblemPtr           = RCP<Epetra_LinearProblem>;
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_AMESOS
@@ -184,7 +179,11 @@ namespace FROSch {
         using MueLuHierarchyPtr           = RCP<MueLu::Hierarchy<SC,LO,GO,NO> >;
 #endif
 
-        using GOVecPtr                    = ArrayRCP<GO>;
+        using UN                            = unsigned;
+        using UNVec                         = Teuchos::Array<UN>;
+        using UNVecPtr                      = Teuchos::ArrayRCP<UN>;
+
+        using GOVecPtr                      = ArrayRCP<GO>;
 
     public:
 
@@ -203,6 +202,7 @@ namespace FROSch {
         */
         SubdomainSolver(ConstXMatrixPtr k,
                         ParameterListPtr parameterList,
+                        string description = "undefined",
                         GOVecPtr blockCoarseSize=null);
 
         //! Destructor
@@ -294,6 +294,9 @@ namespace FROSch {
         //! Paremter list
         ParameterListPtr ParameterList_;
 
+        //! Description of the solver
+        string Description_;
+
         mutable XMultiVectorPtr YTmp_;
 
 #ifdef HAVE_SHYLU_DDFROSCH_EPETRA
@@ -318,7 +321,7 @@ namespace FROSch {
 #endif
 
 #ifdef HAVE_SHYLU_DDFROSCH_BELOS
-        RCP<Belos::LinearProblem<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > >  BelosLinearProblem_;
+        RCP<Belos::LinearProblem<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > > BelosLinearProblem_;
         RCP<Belos::SolverManager<SC,MultiVector<SC,LO,GO,NO>,Belos::OperatorT<MultiVector<SC,LO,GO,NO> > > > BelosSolverManager_;
 #endif
 
@@ -330,6 +333,9 @@ namespace FROSch {
         mutable RCP<Thyra::MultiVectorBase<SC> > ThyraYTmp_;
         RCP<Thyra::LinearOpWithSolveBase<SC> > LOWS_;
 #endif
+
+        RCP<TwoLevelBlockPreconditioner<SC,LO,GO,NO> > TLBP;
+        RCP<TwoLevelPreconditioner<SC,LO,GO,NO> > TLP;
 
         bool IsInitialized_ = false;
 

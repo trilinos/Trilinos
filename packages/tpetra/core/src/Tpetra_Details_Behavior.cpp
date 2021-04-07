@@ -289,6 +289,10 @@ namespace { // (anonymous)
 #endif // TPETRA_ASSUME_CUDA_AWARE_MPI
   }
 
+  constexpr bool cudaLaunchBlockingDefault () {
+    return false;
+  }
+
   constexpr bool hierarchicalUnpackDefault () {
     return true;
   }
@@ -351,6 +355,19 @@ bool Behavior::assumeMpiIsCudaAware ()
                                                    defaultValue);
 }
 
+bool Behavior::cudaLaunchBlocking ()
+{
+  constexpr char envVarName[] = "CUDA_LAUNCH_BLOCKING";
+  constexpr bool defaultValue = cudaLaunchBlockingDefault ();
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool (value_,
+                                                   initialized_,
+                                                   envVarName,
+                                                   defaultValue);
+}
+
 int Behavior::TAFC_OptimizationCoreCount ()
 {
     // only call getenv once, save the value.
@@ -376,9 +393,9 @@ size_t Behavior::verbosePrintCountThreshold ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
-size_t Behavior::longRowMinNumEntries ()
+size_t Behavior::rowImbalanceThreshold ()
 {
-  constexpr char envVarName[] = "TPETRA_LONG_ROW_MIN_NUM_ENTRIES";
+  constexpr char envVarName[] = "TPETRA_ROW_IMBALANCE_THRESHOLD";
   constexpr size_t defaultValue (256);
 
   static size_t value_ = defaultValue;
@@ -387,10 +404,21 @@ size_t Behavior::longRowMinNumEntries ()
     (value_, initialized_, envVarName, defaultValue);
 }
 
+bool Behavior::useMergePathMultiVector()
+{
+  constexpr char envVarName[] = "TPETRA_MULTIVECTOR_USE_MERGE_PATH";
+  constexpr bool defaultValue = false;
+
+  static bool value_ = defaultValue;
+  static bool initialized_ = false;
+  return idempotentlyGetEnvironmentVariableAsBool
+    (value_, initialized_, envVarName, defaultValue);
+}
+
   size_t Behavior::multivectorKernelLocationThreshold ()
 {
   constexpr char envVarName[] = "TPETRA_VECTOR_DEVICE_THRESHOLD";
-  constexpr size_t defaultValue (10000);
+  constexpr size_t defaultValue (22000);
 
   static size_t value_ = defaultValue;
   static bool initialized_ = false;

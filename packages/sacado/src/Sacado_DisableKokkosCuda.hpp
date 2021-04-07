@@ -46,18 +46,19 @@
 
 // Redefine KOKKOS_*_FUNCTION macros to not include __device__
 #if defined(HAVE_SACADO_KOKKOSCORE) && defined(KOKKOS_ENABLE_CUDA)
+// TODO double check me
+#if 1
+#undef SACADO_FUNCTION
+#undef SACADO_INLINE_FUNCTION
+#undef SACADO_FORCEINLINE_FUNCTION
 
-#undef KOKKOS_FUNCTION
-#undef KOKKOS_INLINE_FUNCTION
-#undef KOKKOS_FORCEINLINE_FUNCTION
-
-#define KOKKOS_FUNCTION /* */
-#define KOKKOS_INLINE_FUNCTION inline
-#define KOKKOS_FORCEINLINE_FUNCTION  inline
-
+#define SACADO_FUNCTION /* */
+#define SACADO_INLINE_FUNCTION inline
+#define SACADO_FORCEINLINE_FUNCTION  inline
+#endif
 #define SACADO_DISABLE_CUDA_IN_KOKKOS 1
 
 #endif
 
 
-#endif // SACADO_DISABLE_KOKKOS_CUDA_HPP
+#endif // SACADO_NO_KOKKOS_HPP

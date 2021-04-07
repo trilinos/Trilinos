@@ -61,3 +61,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  apply_orientations
+  SOURCES apply_orientations.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
+ 
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  parallel_apply_orientations
+  SOURCES parallel_apply_orientations.cpp ${UNIT_TEST_DRIVER}
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  )

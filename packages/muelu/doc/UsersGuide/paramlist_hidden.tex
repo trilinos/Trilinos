@@ -66,13 +66,20 @@
         
 \cbb{aggregation: ordering}{string}{"natural"}{Node ordering strategy. Possible values: "natural" (local index order), "graph" (filtered graph breadth-first order), "random" (random local index order).}
         
-\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in aggregation. Possible values: "classical", "distance laplacian", "unsupported vector smoothing".}
+\cbb{aggregation: drop scheme}{string}{"classical"}{Connectivity dropping scheme for a graph used in
+      aggregation. Possible values: "classical", "distance laplacian",
+      "unsupported vector smoothing"}
+        
+\cbb{aggregation: block diagonal: interleaved blocksize}{int}{3}{Effective block size to use for
+      block-diagonalization.  This assumes the PDE is interleaved}
         
 \cbb{aggregation: number of random vectors}{int}{10}{Determines how many random vectors are smoothed when "unsupported vector smoothing" used.}
         
 \cbb{aggregation: number of times to pre or post smooth}{int}{10}{Determines how many times presmoother (or postsmoother if no presmoother set) is invoked when "unsupported vector smoothing" used. Each invocation may include several smoother sweeps.}
         
 \cbb{aggregation: penalty parameters}{Array(double)}{{12.,-.2,0,0,0} }{Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.}
+        
+\cbb{aggregation: distance laplacian directional weights}{Array(double)}{{1,1,1}}{Directional weights for the distance laplacian}
         
 \cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         
@@ -107,7 +114,7 @@
         
 \cbb{aggregation: deterministic}{bool}{false}{Boolean indicating whether or not aggregation will be run deterministically in the kokkos refactored path (only used in uncoupled aggregation).}
         
-\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by defulat to COLORING_D2_SERIAL.}
+\cbb{aggregation: coloring algorithm}{string}{serial}{Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.}
         
 \cbb{aggregation: enable phase 1}{bool}{true}{Turn on/off phase 1 of aggregation}
         
@@ -118,6 +125,8 @@
 \cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
         
 \cbb{aggregation: phase2a include root}{bool}{true}{Whether the root node should be included in the aggregates formed in phase 2a.}
+        
+\cbb{aggregation: phase2a agg factor}{double}{0.5}{Agg factor for Phase 2a sizes}
         
 \cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
       non-Dirichlet nodes that have no on-rank neighbors.  This only
@@ -190,9 +199,13 @@
         
 \cbb{aggregate qualities: percentiles}{Array(double)}{{}}{Percentiles of aggregate qualities to report (in a [0,1] range).}
         
+\cbb{aggregate qualities: mode}{string}{eigenvalue}{Whether to compute eigenvalues (``eigenvalue''),
+      aggregates sizes (``size'') or
+      both (``both'').}
+        
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
-      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'', ``Aggregates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in
@@ -234,6 +247,17 @@
         
 \cbb{sa: eigenvalue estimate num iterations}{int}{10}{Number of power iterations to use to estimate max eigenvalue. This has effect only if estimation occurs during prolongator smoothing.}
         
+\cbb{sa: use rowsumabs diagonal scaling}{bool}{false}{Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.}
+        
+\cbb{sa: enforce constraints}{bool}{false}{Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa.
+Only used when tentative: calculate qr is set to false.}
+        
+\cbb{sa: max eigenvalue}{double}{-1.0}{If not -1, use this value for lambdaMax(Dinv A) in prolongator smoothing instead of calculating it.}
+        
+\cbb{sa: rowsumabs diagonal replacement tolerance}{double}{-1.0}{If not -1, use this value for deciding whether a diagonal value in prolongator smoothing is too small and should be replaced.}
+        
+\cbb{sa: rowsumabs diagonal replacement value}{double}{0.0}{If it's determined that a diagonal entry in prolongator smoothing is too small, replace that entry with this value.}
+        
 \cbb{interp: interpolation order}{int}{1}{Interpolation order used to interpolate values from coarse points to fine points. Possible values are 0 for piece-wise constant interpolation and 1 for piece-wise linear interpolation. This parameter is set to 1 by default.}
         
 \cbb{interp: build coarse coordinates}{bool}{true}{If false, skip the calculation of coarse coordinates.}
@@ -251,6 +275,19 @@
 \cbb{smoother: neighborhood type}{string}{""}{Valid options: node, edge, face, cell}
         
 \cbb{filtered matrix: use lumping}{bool}{true}{Lump (add to diagonal) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace.}
+        
+\cbb{filtered matrix: use spread lumping}{bool}{false}{Lump (but not necessarily to the diagonal, trying not to lose diagonal dominance more than the original matrix) dropped entries during the construction of a filtered matrix. This allows user to preserve constant nullspace. Only used when filtered matrix: use lumping is set to true. }
+        
+\cbb{filtered matrix: spread lumping diag dom growth factor}{double}{1.1}{Determines how much a measure of diagonal dominance is allowed to grow when using spread lumping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. }
+        
+\cbb{filtered matrix: spread lumping diag dom cap}{double}{2.0}{For matrix rows that are very diagonally dominant, we ignore the diag dom growth factor and instead use this simple cap as to how large the diagonal dominance measure should allowed to be after dropping. Only used when filtered matrix: use lumping and filtered matrix: use spread lumping are both set to true. }
+        
+\cbb{filtered matrix: use root stencil}{bool}{false}{Use root-node based sparsification of the filtered
+      matrix. This usually reduces operator complexity in the case of small aggregates.}
+        
+\cbb{filtered matrix: Dirichlet threshold}{double}{-1.0}{Dirichlet threshold to use for detecting zero
+      diagonals in the filtered matrix (which get replaced with a one).  Any negative number disables
+      the thresholding.}
         
 \cbb{filtered matrix: reuse eigenvalue}{bool}{true}{Skip eigenvalue calculation during the construction of a filtered matrix by reusing eigenvalue estimate from the original matrix. This allows us to skip heavy computation, but may lead to poorer convergence.}
         
@@ -318,6 +355,8 @@
         
 \cbb{rap: fix zero diagonals threshold}{double}{0.}{Threshold at which diagonal entry is considered zero.}
         
+\cbb{rap: fix zero diagonals replacement}{double}{1.}{Replacement value for diagonal entries that are considered zero.}
+        
 \cbb{rap: shift}{double}{0.0}{Shift to use in the RAPShiftFactory}
         
 \cbb{rap: shift diagonal M}{bool}{false}{Shift for the RAPShiftFactory is stored as a
@@ -362,5 +401,9 @@ optimized neighbor discovery for Importer construction.}
         
 \cbb{refmaxwell: subsolves on subcommunicators}{bool}{false}{Redistribute the two subsolves to disjoint sub-communicators (so that the additive solve can occur in parallel).}
         
-\cbb{refmaxwell: ratio AH / A22 subcommunicators}{double}{1.0}{Ratio for the split into sub-communicators.}
+\cbb{refmaxwell: enable reuse}{bool}{false}{Prepare for solver reuse.}
+        
+\cbb{refmaxwell: skip first (1,1) level}{bool}{true}{Skip the first level of the (1,1) hierarchy.}
+        
+\cbb{refmaxwell: normalize nullspace}{bool}{false}{Normalize the nullspace.}
         

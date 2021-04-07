@@ -53,9 +53,9 @@ namespace KokkosKernels{
 
 namespace Impl{
 
-enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA};
+enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA, Exec_HIP};
 template <typename ExecutionSpace>
-inline ExecSpaceType kk_get_exec_space_type(){
+KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
   ExecSpaceType exec_space = Exec_SERIAL;
 #if defined( KOKKOS_ENABLE_SERIAL )
   if (std::is_same< Kokkos::Serial , ExecutionSpace >::value){
@@ -81,6 +81,12 @@ inline ExecSpaceType kk_get_exec_space_type(){
   }
 #endif
 
+#if defined( KOKKOS_ENABLE_HIP )
+  if (std::is_same<Kokkos::Experimental::HIP, ExecutionSpace >::value){
+    exec_space = Exec_HIP;
+  }
+#endif
+
 #if defined( KOKKOS_ENABLE_QTHREAD)
   if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     exec_space = Exec_QTHREADS;
@@ -90,6 +96,60 @@ inline ExecSpaceType kk_get_exec_space_type(){
 
 }
 
+template <typename ExecutionSpace>
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space() {
+  return false;
+}
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
+  return true;
+}
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+  return true;
+}
+#endif
+
+//Host function to determine free and total device memory.
+//Will throw if execution space doesn't support this.
+template <typename MemorySpace>
+inline void kk_get_free_total_memory(size_t& free_mem, size_t& total_mem)
+{
+  std::ostringstream oss;
+  oss << "Error: memory space " << MemorySpace::name() << " does not support querying free/total memory.";
+  throw std::runtime_error(oss.str());
+}
+
+#ifdef KOKKOS_ENABLE_CUDA
+template <>
+inline void kk_get_free_total_memory<Kokkos::CudaSpace>(size_t& free_mem, size_t& total_mem)
+{
+  cudaMemGetInfo(&free_mem, &total_mem);
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::CudaUVMSpace>(size_t& free_mem, size_t& total_mem)
+{
+  cudaMemGetInfo(&free_mem, &total_mem);
+}
+template <>
+inline void kk_get_free_total_memory<Kokkos::CudaHostPinnedSpace>(size_t& free_mem, size_t& total_mem)
+{
+  cudaMemGetInfo(&free_mem, &total_mem);
+}
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+inline void kk_get_free_total_memory<Kokkos::Experimental::HIPSpace>(size_t& free_mem, size_t& total_mem)
+{
+  hipMemGetInfo(&free_mem, &total_mem);
+}
+#endif
 
 inline int kk_get_suggested_vector_size(
     const size_t nr, const  size_t nnz, const ExecSpaceType exec_space){
@@ -103,7 +163,7 @@ inline int kk_get_suggested_vector_size(
   case Exec_QTHREADS:
     break;
   case Exec_CUDA:
-
+  case Exec_HIP:
     if (nr > 0)
       suggested_vector_size_ = nnz / double (nr) + 0.5;
     if (suggested_vector_size_ < 3){
@@ -119,7 +179,14 @@ inline int kk_get_suggested_vector_size(
       suggested_vector_size_ = 16;
     }
     else {
-      suggested_vector_size_ = 32;
+      if(exec_space == Exec_CUDA || suggested_vector_size_ <= 48) {
+        //use full CUDA warp, or half a HIP wavefront
+        suggested_vector_size_ = 32;
+      }
+      else {
+        //use full HIP wavefront
+        suggested_vector_size_ = 64;
+      }
     }
     break;
   }
@@ -129,7 +196,9 @@ inline int kk_get_suggested_vector_size(
 
 
 inline int kk_get_suggested_team_size(const int vector_size, const ExecSpaceType exec_space){
-  if (exec_space == Exec_CUDA){
+  if (exec_space == Exec_CUDA || exec_space == Exec_HIP) {
+    //TODO: where this is used, tune the target value for
+    //threads per block (but 256 is probably OK for CUDA and HIP)
     return 256 / vector_size;
   }
   else {
@@ -167,6 +236,25 @@ struct SpaceInstance<Kokkos::Cuda> {
       value = (std::atoi(local_rank_str) == 0);
     }
     return value;
+  }
+};
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+template <>
+struct SpaceInstance<Kokkos::Experimental::HIP> {
+  static Kokkos::Experimental::HIP create() {
+    hipStream_t stream;
+    hipStreamCreate(&stream);
+    return Kokkos::Experimental::HIP(stream);
+  }
+  static void destroy(Kokkos::Experimental::HIP& space) {
+    hipStream_t stream = space.hip_stream();
+    hipStreamDestroy(stream);
+  }
+  static bool overlap() {
+    //TODO: does HIP have an equivalent for CUDA_LAUNCH_BLOCKING?
+    return true;
   }
 };
 #endif

@@ -1,17 +1,17 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
       SUBROUTINE MYPRNT (NAME1, UNIT, MYCV, OFFSET, TOFFST,
      *   DICT, DPOINT, LDICT, NNAMES, CHRNUM,
      *   CHRCOL, NCOLP, WRDSIZ, LASTER)
-C
+
       IMPLICIT INTEGER (A-Z)
       INCLUDE 'params.inc'
-C
+
 C***********************************************************************
-C
+
 C     NAME1    Name of array to be printed
                CHARACTER*8 NAME1
 C     UNIT     Output unit number.
@@ -31,18 +31,17 @@ C     CHRCOL   Number of column for character names.
 C     NCOLP    Number of print columns
 C     WRDSIZ   Number of characters to group together in printing.
 C     LASTER   Error return
-C
+
 C***********************************************************************
-C
-C
+
 C     Check worklength
-C
+
       IF (WRDSIZ .LT. 1 .OR. WRDSIZ+2+11 .GT. NCOLP) THEN
          LASTER = BADLEN
          RETURN
       END IF
 C     FIND NAME1 IN DICTIONARY
-C
+
       CALL MYFIND (NAME1, DICT, DPOINT, LDICT, NNAMES,
      *   CHRCOL, LASTER, ROW)
       IF (LASTER .NE. SUCESS) RETURN
@@ -56,7 +55,7 @@ C
      *      'MODE AND IS NOT YET RESOLVED.'
          RETURN
       END IF
-C
+
       DELTA = (DPOINT(ROW,CHRCOL,1) - 1) * CHRNUM + TOFFST
       NCOL = (NCOLP - 11) / (WRDSIZ + 2)
       NROW = (DPOINT(ROW,CHRCOL,3) + WRDSIZ * NCOL - 1)
@@ -78,7 +77,7 @@ C
             J = J + NCOL * WRDSIZ
   100    CONTINUE
   110 CONTINUE
-C
+
       LASTER = SUCESS
       RETURN
 10000 FORMAT('0'/'0ARRAY NAME = ',A,3X,'LOCATION = ',I16,3X,

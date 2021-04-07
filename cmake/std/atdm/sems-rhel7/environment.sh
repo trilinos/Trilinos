@@ -13,14 +13,18 @@
 if [ "$ATDM_CONFIG_COMPILER" == "DEFAULT" ] ; then
   export ATDM_CONFIG_COMPILER=GNU-7.2.0
 elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG"* ]]; then
-  if [[ "$ATDM_CONFIG_COMPILER" == "CLANG" ]] ; then
+  if [[ "$ATDM_CONFIG_COMPILER" == "CLANG" || \
+        "$ATDM_CONFIG_COMPILER" == "CLANG-10.0.0" ]] ; then
+    export ATDM_CONFIG_COMPILER=CLANG-10.0.0
+  elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-7.0.1" ]] ; then
     export ATDM_CONFIG_COMPILER=CLANG-7.0.1
-  elif [[ "$ATDM_CONFIG_COMPILER" != "CLANG-7.0.1" ]] ; then
+  else
     echo
     echo "***"
     echo "*** ERROR: CLANG COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only CLANG compilers supported on this system are:"
-    echo "***   clang (defaults to clang-7.0.1)"
+    echo "***   clang (defaults to clang-10.0.0)"
+    echo "***   clang-10.0.0"
     echo "***   clang-7.0.1"
     echo "***"
     return
@@ -116,8 +120,8 @@ module purge
 module load sems-env
 module load sems-git/2.10.1
 
-module load sems-cmake/3.12.2
-module load sems-ninja_fortran/1.8.2
+module load sems-cmake/3.19.1
+module load sems-ninja_fortran/1.10.0
 
 if [[ "$ATDM_CONFIG_NODE_TYPE" == "CUDA" ]] ; then
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=4
@@ -144,7 +148,14 @@ else
   export OMP_NUM_THREADS=1
 fi
 
-if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-7.0.1" ]] ; then
+if [[ "$ATDM_CONFIG_COMPILER" == "CLANG-10.0.0" ]] ; then
+  module load sems-clang/10.0.0
+  export OMPI_CXX=`which clang++`
+  export OMPI_CC=`which clang`
+  export OMPI_FC=`which gfortran`
+  export ATDM_CONFIG_LAPACK_LIBS="/usr/lib64/liblapack.so.3"
+  export ATDM_CONFIG_BLAS_LIBS="/usr/lib64/libblas.so.3"
+elif [[ "$ATDM_CONFIG_COMPILER" == "CLANG-7.0.1" ]] ; then
   module load sems-clang/7.0.1
   export OMPI_CXX=`which clang++`
   export OMPI_CC=`which clang`

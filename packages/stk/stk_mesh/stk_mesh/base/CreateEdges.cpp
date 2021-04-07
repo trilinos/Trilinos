@@ -51,6 +51,7 @@
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/baseImpl/ConnectEdgesImpl.hpp"
 #include "stk_topology/apply_functor.hpp"  // for topology::apply_host_functor
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology_utils.hpp"    // for topology::num_nodes
@@ -61,20 +62,12 @@
 namespace stk {
 namespace mesh {
 
-namespace impl {
-  typedef std::unordered_map<EntityVector,Entity,stk::mesh::impl::HashValueForEntityVector> edge_map_type;
-} //impl namespace
-
-namespace {
-
-typedef std::vector<EntityKey> EntityKeyVector;
-
 struct create_single_edge_impl
 {
   typedef void result_type;
 
   create_single_edge_impl(   size_t & count_edges
-                    , std::vector<stk::mesh::EntityId>               & available_ids
+                    , std::vector<EntityId>               & available_ids
                     , impl::edge_map_type        & edge_map
                     , BulkData             & mesh
                     , Entity               & element
@@ -292,105 +285,6 @@ struct create_edge_impl
   Bucket                & m_bucket;
   Part                  * m_part_to_insert_new_edges;
 };
-
-struct connect_face_impl
-{
-  typedef void result_type;
-
-  connect_face_impl(  impl::edge_map_type & edge_map
-                    , Bucket        & bucket
-                  )
-    : m_edge_map(edge_map)
-    , m_bucket(bucket)
-  {}
-
-  template <typename Topology>
-  void operator()(Topology t)
-  {
-    stk::topology face_topo = m_bucket.topology();
-
-    BulkData & mesh = m_bucket.mesh();
-    EntityVector edge_nodes;
-
-    Entity face_nodes[(Topology::num_nodes > 0) ? Topology::num_nodes : 1];
-    OrdinalVector scratch1, scratch2, scratch3;
-
-    for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
-      {
-        Entity const *nodes = m_bucket.begin_nodes(iface);
-        const int num_nodes = Topology::num_nodes;
-        for (int n=0; n<num_nodes; ++n) {
-          face_nodes[n] = nodes[n];
-        }
-      }
-
-      std::vector<bool> edge_exist(Topology::num_edges,false);
-      const int num_edges = m_bucket.num_edges(iface);
-      Entity const * edge_entity = m_bucket.begin_edges(iface);
-      ConnectivityOrdinal const *edge_ords = m_bucket.begin_edge_ordinals(iface);
-      for (int i=0 ; i < num_edges ; ++i)
-      {
-        if (mesh.is_valid(edge_entity[i]))
-        {
-          edge_exist[edge_ords[i]] = true;
-        }
-      }
-
-      for (unsigned e=0; e != Topology::num_edges; ++e) {
-
-        if (edge_exist[e]) continue;
-
-        auto edge_topo = Topology::edge_topology(e);
-        edge_nodes.resize(edge_topo.num_nodes());
-        Topology::edge_nodes(face_nodes, e, edge_nodes.data());
-
-        //sort edge nodes into lexicographical smallest permutation
-        if (EntityLess(mesh)(edge_nodes[1], edge_nodes[0])) {
-          std::swap(edge_nodes[0], edge_nodes[1]);
-        }
-
-        //the edge should already exist
-        typename impl::edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
-
-        //if this fails, we don't have the correct edge made yet
-        //which is fine
-        if (iedge != m_edge_map.end()) {
-          Entity edge = iedge->second;
-          Permutation perm = mesh.find_permutation(face_topo, face_nodes, edge_topo, edge_nodes.data(), e);
-          ThrowRequireMsg(perm != INVALID_PERMUTATION, "CreateEdges:  could not find valid permutation to connect face to element");
-          mesh.declare_relation(m_bucket[iface], edge, e, perm, scratch1, scratch2, scratch3);
-        }
-      }
-    }
-  }
-
-  //members
-  impl::edge_map_type         & m_edge_map;
-  Bucket                & m_bucket;
-};
-
-} //empty namespace
-
-namespace impl {
-
-  void connect_faces_to_edges(BulkData & mesh,
-                              const Selector & element_selector,
-                              impl::edge_map_type edge_map) {
-      // connect existing faces to edges
-      if (mesh.mesh_meta_data().spatial_dimension() == 3u) {
-
-          BucketVector const& face_buckets = mesh.get_buckets(stk::topology::FACE_RANK, element_selector & (mesh.mesh_meta_data().locally_owned_part() | mesh.mesh_meta_data().globally_shared_part()));
-
-          for (size_t i=0, e=face_buckets.size(); i<e; ++i) {
-              Bucket &b = *face_buckets[i];
-
-              connect_face_impl functor(edge_map, b);
-              stk::topology::apply_host_functor< connect_face_impl > apply(functor);
-              apply( b.topology() );
-          }
-      }
-  }
-} //namespace impl
 
 void create_edges( BulkData & mesh )
 {

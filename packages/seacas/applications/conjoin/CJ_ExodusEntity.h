@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 #ifndef SEACAS_ExodusEntity_H
 #define SEACAS_ExodusEntity_H
@@ -27,13 +27,13 @@ namespace Excn {
     size_t count(ObjectType type) const
     {
       switch (type) {
-      case EBLK: return blockCount;
-      case NSET: return nodesetCount;
-      case SSET: return sidesetCount;
-      case NODE: return nodeCount;
-      case ELEM: return elementCount;
-      case TIME: return timestepCount;
-      case DIM: return dimensionality;
+      case ObjectType::EBLK: return blockCount;
+      case ObjectType::NSET: return nodesetCount;
+      case ObjectType::SSET: return sidesetCount;
+      case ObjectType::NODE: return nodeCount;
+      case ObjectType::ELEM: return elementCount;
+      case ObjectType::TIME: return timestepCount;
+      case ObjectType::DIM: return dimensionality;
       default: return 0;
       }
     }
@@ -132,7 +132,7 @@ namespace Excn {
     }
   };
 
-  typedef std::pair<int, int> Side;
+  using Side = std::pair<int, int>;
   template <typename INT> struct SideSet
   {
     SideSet() = default;

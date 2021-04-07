@@ -197,19 +197,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -217,6 +209,10 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
+      return row_index;
+#endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
       return row_index;
 #endif
     }
@@ -230,7 +226,6 @@ struct KokkosSPGEMM
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
 
-
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(team_row_begin + teamMember.team_rank());
@@ -243,7 +238,8 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd> 
+    hm2(MaxRoughNonZero, pow2_hash_func, nullptr, nullptr, nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -256,9 +252,6 @@ struct KokkosSPGEMM
     hm2.keys = (nnz_lno_t *) (tmp);
     //tmp += MaxRoughNonZero;
     //hm2.values = (nnz_lno_t *) (tmp);
-
-    hm2.hash_key_size = pow2_hash_size;
-    hm2.max_value_size = MaxRoughNonZero;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t globally_used_hash_count = 0;
@@ -279,14 +272,12 @@ struct KokkosSPGEMM
 
           nnz_lno_t b_set_ind = b_entries[adjind];
           //nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
           //insert it to first hash.
           hm2.sequential_insert_into_hash_TrackHashes(
-              hash,
               b_set_ind,
               &used_hash_size,
-              hm2.max_value_size,&globally_used_hash_count,
+              &globally_used_hash_count,
               globally_used_hash_indices
           );
         }
@@ -441,8 +432,13 @@ struct KokkosSPGEMM
   }
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag&, const team_member_t & teamMember) const {
-
     nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+    
+    using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+
     if (row_index >= numrows) return;
 
 
@@ -482,10 +478,12 @@ struct KokkosSPGEMM
     //printf("begins:%ld, nexts:%ld, keys:%ld, vals:%ld\n", begins, nexts, keys, vals);
     //return;
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
+                    nullptr, nullptr,
+                    nullptr, nullptr);
 
     //initialize begins.
     Kokkos::parallel_for(
@@ -519,23 +517,19 @@ struct KokkosSPGEMM
         nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
 
         nnz_lno_t b_set_ind = -1;// , b_set = -1;
-        nnz_lno_t hash = -1;
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(teamMember, work_to_handle),
             [&] (nnz_lno_t i) {
           const size_type adjind = i + rowBegin;
           b_set_ind = b_entries[adjind];
           //b_set = entriesSetsB[adjind];
-          //hash = b_set_ind % shmem_key_size;
-          hash = b_set_ind & shared_memory_hash_func;
         });
 
 
         int num_unsuccess = hm.vector_atomic_insert_into_hash(
-            teamMember, vector_size,
-            hash, b_set_ind,
-            used_hash_sizes,
-            shmem_key_size);
+                              b_set_ind,
+                              used_hash_sizes
+                            );
 
 
         int overall_num_unsuccess = 0;
@@ -573,21 +567,16 @@ struct KokkosSPGEMM
             hm2.keys = (nnz_lno_t *) (tmp);
             //tmp += MaxRoughNonZero;
             //hm2.values = (nnz_lno_t *) (tmp);
-
-            hm2.hash_key_size = pow2_hash_size;
-            hm2.max_value_size = MaxRoughNonZero;
           }
 
-          nnz_lno_t hash_ = -1;
-          if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
-
-          //int insertion =
-          hm2.vector_atomic_insert_into_hash_TrackHashes(
-              teamMember, vector_size,
-              hash_,b_set_ind,
-              used_hash_sizes + 1, hm2.max_value_size
-              ,globally_used_hash_count, globally_used_hash_indices
-              );
+          if (num_unsuccess) {
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_TrackHashes(
+                b_set_ind,
+                used_hash_sizes + 1,
+                globally_used_hash_count, globally_used_hash_indices
+                );
+          }
 
         }
         left_work -= work_to_handle;
@@ -688,11 +677,11 @@ struct KokkosSPGEMM
    * \param entriesA_: col indices of A
    * \param row_ptr_begins_B_: beginning of the rows of B
    * \param row_ptr_ends_B_:end of the rows of B
-   * \param entriesSetIndicesB_: column set indices of B
-   * \param entriesSetsB_: columns sets of B
+   * \param entriesSetIndicesB_: column set indices of B [CSI]
+   * \param entriesSetsB_: columns sets of B             [CS]
    * \param rowmapC_: output rowmap C
    * \param hash_size_: global hashmap hash size.
-   * \param MaxRoughNonZero_: max flops for row.
+   * \param MaxRoughNonZero_: max flops for row.         [upper bound on entries per row]
    * \param sharedMemorySize_: shared memory size.
    * \param suggested_team_size_: suggested team size
    * \param team_row_chunk_size_: suggested team chunk size
@@ -787,19 +776,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -807,6 +788,10 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_CUDA )
     case KokkosKernels::Impl::Exec_CUDA:
+      return row_index;
+#endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
       return row_index;
 #endif
     }
@@ -984,12 +969,13 @@ struct KokkosSPGEMM
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
-
-
-
     const nnz_lno_t team_row_begin = teamMember.league_rank() * team_row_chunk_size;
     const nnz_lno_t team_row_end = KOKKOSKERNELS_MACRO_MIN(team_row_begin + team_row_chunk_size, numrows);
-
+    using hashmapType = 
+      KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
+                                                      nnz_lno_t,
+                                                      nnz_lno_t,
+                                                      KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
 
     //get memory from memory pool.
     volatile nnz_lno_t * tmp = NULL;
@@ -1003,7 +989,9 @@ struct KokkosSPGEMM
     tmp += pow2_hash_size;
 
     //create hashmap accumulator.
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
+                    nullptr, nullptr, 
+                    nullptr, nullptr);
 
     //set memory for hash begins.
     hm2.hash_begins = (nnz_lno_t *) (tmp);
@@ -1016,9 +1004,6 @@ struct KokkosSPGEMM
     hm2.keys = (nnz_lno_t *) (tmp);
     tmp += MaxRoughNonZero;
     hm2.values = (nnz_lno_t *) (tmp);
-
-    hm2.hash_key_size = pow2_hash_size;
-    hm2.max_value_size = MaxRoughNonZero;
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember, team_row_begin, team_row_end), [&] (const nnz_lno_t& row_index){
       nnz_lno_t globally_used_hash_count = 0;
@@ -1039,15 +1024,13 @@ struct KokkosSPGEMM
 
           nnz_lno_t b_set_ind = entriesSetIndicesB[adjind];
           nnz_lno_t b_set = entriesSetsB[adjind];
-          nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
           //insert it to first hash.
           hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-              hash,
-              b_set_ind, b_set,
-              &used_hash_size,
-              hm2.max_value_size,&globally_used_hash_count,
-              globally_used_hash_indices
+            b_set_ind, b_set,
+            &used_hash_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
       }
@@ -1081,9 +1064,12 @@ struct KokkosSPGEMM
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag&, const team_member_t & teamMember) const {
-
-
     nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+    
+    using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
     if (row_index >= numrows) return;
 
 
@@ -1096,6 +1082,8 @@ struct KokkosSPGEMM
     nnz_lno_t *globally_used_hash_indices = NULL;
 
     //shift it to the thread private part
+    // Each thread gets a partition and each partition consists of 4 arrays:
+    // begin, next, keys/ids, values
     all_shared_memory += thread_memory * teamMember.team_rank();
 
     //used_hash_sizes hold the size of 1st and 2nd level hashes
@@ -1123,10 +1111,12 @@ struct KokkosSPGEMM
     //printf("begins:%ld, nexts:%ld, keys:%ld, vals:%ld\n", begins, nexts, keys, vals);
     //return;
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
-      hm(shmem_hash_size, shmem_key_size, begins, nexts, keys, vals);
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::bitwiseAnd>
+      hm(shmem_key_size, shared_memory_hash_func, begins, nexts, keys, vals);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
+                    nullptr, nullptr,
+                    nullptr, nullptr);
 
     //initialize begins.
     Kokkos::parallel_for(
@@ -1160,23 +1150,18 @@ struct KokkosSPGEMM
         nnz_lno_t work_to_handle = KOKKOSKERNELS_MACRO_MIN(vector_size, left_work);
 
         nnz_lno_t b_set_ind = -1, b_set = -1;
-        nnz_lno_t hash = -1;
         Kokkos::parallel_for(
             Kokkos::ThreadVectorRange(teamMember, work_to_handle),
             [&] (nnz_lno_t i) {
           const size_type adjind = i + rowBegin;
           b_set_ind = entriesSetIndicesB[adjind];
           b_set = entriesSetsB[adjind];
-          //hash = b_set_ind % shmem_key_size;
-          hash = b_set_ind & shared_memory_hash_func;
         });
 
 
         int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size,
-            hash, b_set_ind, b_set,
-            used_hash_sizes,
-            shmem_key_size);
+                              b_set_ind, b_set, used_hash_sizes
+                            );
 
 
         int overall_num_unsuccess = 0;
@@ -1214,22 +1199,16 @@ struct KokkosSPGEMM
             hm2.keys = (nnz_lno_t *) (tmp);
             tmp += MaxRoughNonZero;
             hm2.values = (nnz_lno_t *) (tmp);
-
-            hm2.hash_key_size = pow2_hash_size;
-            hm2.max_value_size = MaxRoughNonZero;
           }
 
-          nnz_lno_t hash_ = -1;
-          if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
-
-          //int insertion =
-          hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-              teamMember, vector_size,
-              hash_,b_set_ind,b_set,
-              used_hash_sizes + 1, hm2.max_value_size
-              ,globally_used_hash_count, globally_used_hash_indices
-              );
-
+          if (num_unsuccess) {
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+                b_set_ind,b_set,
+                used_hash_sizes + 1,
+                globally_used_hash_count, globally_used_hash_indices
+                );
+          }
         }
         left_work -= work_to_handle;
         rowBegin += work_to_handle;
@@ -1522,13 +1501,14 @@ void KokkosSPGEMM
   ){
 
 	SPGEMMAlgorithm current_spgemm_algorithm = this->spgemm_algorithm;
+        constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<MyExecSpace>();
 	KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
-	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA)
+	if (exec_gpu)
 	{
 		current_spgemm_algorithm = SPGEMM_KK_MEMORY;
 	}
 	maxNumRoughNonzeros = KOKKOSKERNELS_MACRO_MIN(this->b_col_cnt, maxNumRoughNonzeros);
-    int shmem_size_to_use = shmem_size;
+	int shmem_size_to_use = shmem_size;
 
 	typedef KokkosKernels::Impl::UniformMemoryPool< MyTempMemorySpace, nnz_lno_t> pool_memory_space;
 
@@ -1540,7 +1520,7 @@ void KokkosSPGEMM
 	int suggested_vector_size = this->handle->get_suggested_vector_size(brows, bnnz);
 
 	//this kernel does not really work well if the vector size is less than 4.
-	if (suggested_vector_size < 4 && lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+	if (suggested_vector_size < 4 && exec_gpu) {
 		if (KOKKOSKERNELS_VERBOSE){
 			std::cout << "\tsuggested_vector_size:" << suggested_vector_size << " setting it to 4 for Structure kernel" << std::endl;
 		}
@@ -1551,7 +1531,7 @@ void KokkosSPGEMM
 
 
 	if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm){
-		if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+		if (exec_gpu){
 			//then chose the best method and parameters.
 			current_spgemm_algorithm = SPGEMM_KK_MEMORY;
 			int estimate_compress = 8;
@@ -1662,33 +1642,13 @@ void KokkosSPGEMM
 	}
 
 	//initizalize value for the mem pool
-	nnz_lno_t num_chunks = concurrency / suggested_vector_size;
 	KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
-	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+	if (exec_gpu) {
 		my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
 	}
 
-
-#if defined( KOKKOS_ENABLE_CUDA )
-	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-		size_t free_byte ;
-		size_t total_byte ;
-		cudaMemGetInfo( &free_byte, &total_byte ) ;
-		size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-		if (KOKKOSKERNELS_VERBOSE)
-			std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-		if (required_size + num_chunks > free_byte){
-			num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-		}
-		{
-			nnz_lno_t min_chunk_size = 1;
-			while (min_chunk_size * 2 <= num_chunks) {
-				min_chunk_size *= 2;
-			}
-			num_chunks = min_chunk_size;
-		}
-	}
-#endif
+        nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
+          (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
 	if (KOKKOSKERNELS_VERBOSE){
 		std::cout << "\tPool Size (MB):" << (num_chunks * chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. << " num_chunks:" << num_chunks << " chunksize:" << chunksize << std::endl;
@@ -1734,8 +1694,8 @@ void KokkosSPGEMM
 	timer1.reset();
 
 
-	if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-		Kokkos::parallel_for("StructureC_NC::CUDA_EXEC", gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
+	if (exec_gpu) {
+		Kokkos::parallel_for("StructureC_NC::GPU_EXEC", gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
 	}
 	else {
 		if (current_spgemm_algorithm == SPGEMM_KK_DENSE){
@@ -1820,8 +1780,9 @@ void KokkosSPGEMM
 ){
 
   SPGEMMAlgorithm current_spgemm_algorithm = this->spgemm_algorithm;
+  constexpr bool exec_gpu = KokkosKernels::Impl::kk_is_gpu_exec_space<typename HandleType::HandleExecSpace>();
   KokkosKernels::Impl::ExecSpaceType lcl_my_exec_space = this->handle->get_handle_exec_space();
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (exec_gpu) {
 	current_spgemm_algorithm = SPGEMM_KK_MEMORY;
   }
 
@@ -1829,7 +1790,7 @@ void KokkosSPGEMM
   nnz_lno_t brows = row_mapB_.extent(0) - 1;
   size_type bnnz =  entriesSetIndex.extent(0);
   size_type compressed_b_size = bnnz;
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (exec_gpu) {
 	  KokkosKernels::Impl::kk_reduce_diff_view <b_original_row_view_t,
 	  	  	  	  	  	  	  	  	  	  	  	b_compressed_row_view_t, MyExecSpace> (brows, old_row_mapB, row_mapB_, compressed_b_size);
 	  if (KOKKOSKERNELS_VERBOSE){
@@ -1839,7 +1800,7 @@ void KokkosSPGEMM
   int suggested_vector_size = this->handle->get_suggested_vector_size(brows, compressed_b_size);
 
   //this kernel does not really work well if the vector size is less than 4.
-  if (suggested_vector_size < 4 && lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+  if (suggested_vector_size < 4 && exec_gpu) {
       if (KOKKOSKERNELS_VERBOSE){
         std::cout << "\tsuggested_vector_size:" << suggested_vector_size << " setting it to 4 for Structure kernel" << std::endl;
       }
@@ -1850,7 +1811,7 @@ void KokkosSPGEMM
   int shmem_size_to_use = shmem_size;
 
   if (this->spgemm_algorithm == SPGEMM_KK || SPGEMM_KK_LP == this->spgemm_algorithm){
-	  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA){
+	  if (exec_gpu) {
 		  //then chose the best method and parameters.
 		  current_spgemm_algorithm = SPGEMM_KK_MEMORY;
 		  int estimate_compress = 8;
@@ -1980,7 +1941,7 @@ void KokkosSPGEMM
   }
 
 
-  if (current_spgemm_algorithm == SPGEMM_KK_DENSE && lcl_my_exec_space != KokkosKernels::Impl::Exec_CUDA){
+  if (current_spgemm_algorithm == SPGEMM_KK_DENSE && !exec_gpu) {
     nnz_lno_t col_size = this->b_col_cnt / (sizeof (nnz_lno_t) * 8)+ 1;
     nnz_lno_t max_row_size = KOKKOSKERNELS_MACRO_MIN(col_size, maxNumRoughNonzeros);
     chunksize = col_size + max_row_size;
@@ -1992,34 +1953,13 @@ void KokkosSPGEMM
       std::cout << "\tDense Acc - COLS:" << col_size << " max_row_size:" << max_row_size << std::endl;
     }
   }
-  nnz_lno_t num_chunks = concurrency / suggested_vector_size;
-
   KokkosKernels::Impl::PoolType my_pool_type = KokkosKernels::Impl::OneThread2OneChunk;
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+  if (exec_gpu) {
     my_pool_type = KokkosKernels::Impl::ManyThread2OneChunk;
   }
 
-
-#if defined( KOKKOS_ENABLE_CUDA )
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
-    size_t free_byte ;
-    size_t total_byte ;
-    cudaMemGetInfo( &free_byte, &total_byte ) ;
-    size_t required_size = size_t (num_chunks) * chunksize * sizeof(nnz_lno_t);
-    if (KOKKOSKERNELS_VERBOSE)
-      std::cout << "\tmempool required size:" << required_size << " free_byte:" << free_byte << " total_byte:" << total_byte << std::endl;
-    if (required_size + num_chunks > free_byte){
-      num_chunks = ((((free_byte - num_chunks)* 0.5) /8 ) * 8) / sizeof(nnz_lno_t) / chunksize;
-    }
-    {
-      nnz_lno_t min_chunk_size = 1;
-      while (min_chunk_size * 2 <= num_chunks) {
-        min_chunk_size *= 2;
-      }
-      num_chunks = min_chunk_size;
-    }
-  }
-#endif
+  nnz_lno_t num_chunks = this->template compute_num_pool_chunks<pool_memory_space>
+    (chunksize * sizeof(nnz_lno_t), concurrency / suggested_vector_size);
 
   if (KOKKOSKERNELS_VERBOSE){
     std::cout << "\tPool Size (MB):" << (num_chunks * chunksize * sizeof(nnz_lno_t)) / 1024. / 1024. << " num_chunks:" << num_chunks << " chunksize:" << chunksize << std::endl;
@@ -2064,7 +2004,7 @@ void KokkosSPGEMM
 
   timer1.reset();
 
-  if (lcl_my_exec_space == KokkosKernels::Impl::Exec_CUDA) {
+  if (exec_gpu) {
     Kokkos::parallel_for("KokkosSparse::StructureC::GPU_EXEC", gpu_team_policy_t(m / suggested_team_size + 1 , suggested_team_size, suggested_vector_size), sc);
   }
   else {
@@ -2600,19 +2540,11 @@ struct KokkosSPGEMM
 #endif
 #if defined( KOKKOS_ENABLE_OPENMP )
     case KokkosKernels::Impl::Exec_OMP:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::OpenMP::hardware_thread_id();
-  #else
       return Kokkos::OpenMP::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_THREADS )
     case KokkosKernels::Impl::Exec_PTHREADS:
-  #ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      return Kokkos::Threads::hardware_thread_id();
-  #else
       return Kokkos::Threads::impl_hardware_thread_id();
-  #endif
 #endif
 #if defined( KOKKOS_ENABLE_QTHREAD)
     case KokkosKernels::Impl::Exec_QTHREADS:
@@ -2622,20 +2554,30 @@ struct KokkosSPGEMM
     case KokkosKernels::Impl::Exec_CUDA:
       return row_index;
 #endif
+#if defined( KOKKOS_ENABLE_HIP )
+    case KokkosKernels::Impl::Exec_HIP:
+      return row_index;
+#endif
     }
   }
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const MultiCoreTag&, const team_member_t & teamMember) const {
-
     nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+    
+    using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
     if (row_index >= numrows) return;
     //get row index.
 
     nnz_lno_t *globally_used_hash_indices = NULL;
     nnz_lno_t globally_used_hash_count = 0;
     nnz_lno_t used_hash_size = 0;
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
+                    nullptr, nullptr,
+                    nullptr, nullptr);
 
     volatile nnz_lno_t * tmp = NULL;
     size_t tid = get_thread_id(row_index);
@@ -2658,9 +2600,6 @@ struct KokkosSPGEMM
     tmp += MaxRoughNonZero;
     hm2.values = (nnz_lno_t *) (tmp);
 
-    hm2.hash_key_size = pow2_hash_size;
-    hm2.max_value_size = MaxRoughNonZero;
-
 
     {
       const size_type col_begin = row_mapA[row_index];
@@ -2682,9 +2621,10 @@ struct KokkosSPGEMM
           nnz_lno_t hash = b_set_ind & pow2_hash_func;
 
           hm2.sequential_insert_into_hash_mergeOr_TrackHashes(
-              hash,b_set_ind,b_set,
-              &used_hash_size, hm2.max_value_size
-              ,&globally_used_hash_count, globally_used_hash_indices
+            b_set_ind,b_set,
+            &used_hash_size,
+            &globally_used_hash_count,
+            globally_used_hash_indices
           );
         }
       }
@@ -2718,8 +2658,13 @@ struct KokkosSPGEMM
 
   KOKKOS_INLINE_FUNCTION
   void operator()(const GPUTag&, const team_member_t & teamMember) const {
-
     nnz_lno_t row_index = teamMember.league_rank()  * teamMember.team_size()+ teamMember.team_rank();
+    
+    using hashmapType = KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        nnz_lno_t,
+                                                                        KokkosKernels::Experimental::HashOpType::bitwiseAnd>;
+    
     if (row_index >= numrows) return;
 
 
@@ -2761,10 +2706,12 @@ struct KokkosSPGEMM
     //printf("begins:%ld, nexts:%ld, keys:%ld, vals:%ld\n", begins, nexts, keys, vals);
     //return;
     //first level hashmap
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t>
+    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t,KokkosKernels::Experimental::HashOpType::modulo>
       hm(shared_memory_hash_size, shared_memory_hash_size, begins, nexts, keys, vals);
 
-    KokkosKernels::Experimental::HashmapAccumulator<nnz_lno_t,nnz_lno_t,nnz_lno_t> hm2;
+    hashmapType hm2(MaxRoughNonZero, pow2_hash_func,
+                    nullptr, nullptr,
+                    nullptr, nullptr);
 
     //initialize begins.
     Kokkos::parallel_for(
@@ -2805,15 +2752,14 @@ struct KokkosSPGEMM
           const size_type adjind = i + rowBegin;
           b_set_ind = entriesSetIndicesB[adjind];
           b_set = entriesSetsB[adjind];
-          hash = b_set_ind % shared_memory_hash_size;
         });
 
 
         int num_unsuccess = hm.vector_atomic_insert_into_hash_mergeOr(
-            teamMember, vector_size,
-            hash, b_set_ind, b_set,
-            used_hash_sizes,
-            shared_memory_hash_size);
+                              b_set_ind, b_set,
+                              used_hash_sizes,
+                              shared_memory_hash_size
+                            );
 
 
         int overall_num_unsuccess = 0;
@@ -2851,22 +2797,16 @@ struct KokkosSPGEMM
             hm2.keys = (nnz_lno_t *) (tmp);
             tmp += MaxRoughNonZero;
             hm2.values = (nnz_lno_t *) (tmp);
-
-            hm2.hash_key_size = pow2_hash_size;
-            hm2.max_value_size = MaxRoughNonZero;
           }
 
-          nnz_lno_t hash_ = -1;
-          if (num_unsuccess) hash_ = b_set_ind & pow2_hash_func;
-
-          //int insertion =
-          hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
-              teamMember, vector_size,
-              hash_,b_set_ind,b_set,
-              used_hash_sizes + 1, hm2.max_value_size
-              ,globally_used_hash_count, globally_used_hash_indices
-              );
-
+          if (num_unsuccess) {
+            //int insertion =
+            hm2.vector_atomic_insert_into_hash_mergeOr_TrackHashes(
+                b_set_ind,b_set,
+                used_hash_sizes + 1,
+                globally_used_hash_count, globally_used_hash_indices
+                );
+          }
         }
         left_work -= work_to_handle;
         rowBegin += work_to_handle;

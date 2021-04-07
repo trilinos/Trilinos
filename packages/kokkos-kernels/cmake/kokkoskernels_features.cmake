@@ -19,3 +19,12 @@ KOKKOSKERNELS_FEATURE_DEPENDS_ON_TPLS(
     SUPERLU
     BLAS
 )
+
+# ==================================================================
+# Fortran Complex BLAS
+# ==================================================================
+
+IF (KOKKOSKERNELS_ENABLE_TPL_BLAS OR KOKKOSKERNELS_ENABLE_TPL_MKL)
+  INCLUDE(CheckHostBlasReturnComplex.cmake)
+  CHECK_HOST_BLAS_RETURN_COMPLEX(KOKKOSKERNELS_TPL_BLAS_RETURN_COMPLEX)
+ENDIF()

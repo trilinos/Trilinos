@@ -9,15 +9,14 @@
 #ifndef Tempus_StepperSubcycling_impl_hpp
 #define Tempus_StepperSubcycling_impl_hpp
 
-#include "Tempus_StepperFactory.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+#include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperSubcyclingModifierDefault.hpp"
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_IntegratorObserverSubcycling.hpp"
 #include "Tempus_IntegratorObserverNoOp.hpp"
-
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Tempus {
@@ -30,21 +29,15 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   using Teuchos::ParameterList;
 
   this->setStepperType(        "Subcycling");
-  this->setUseFSAL(            this->getUseFSALDefault());
-  this->setICConsistency(      this->getICConsistencyDefault());
-  this->setICConsistencyCheck( this->getICConsistencyCheckDefault());
+  this->setUseFSAL(            false);
+  this->setICConsistency(      "None");
+  this->setICConsistencyCheck( false);
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver(Teuchos::rcp(new StepperSubcyclingObserver<Scalar>()));
-#endif
   this->setAppAction(Teuchos::null);
   scIntegrator_ = Teuchos::rcp(new IntegratorBasic<Scalar>());
-  scIntegrator_->setTimeStepControl();
 
   scIntegrator_->setObserver(
     Teuchos::rcp(new IntegratorObserverNoOp<Scalar>()));
-
-  this->setSubcyclingPrintDtChanges(false);
 
   RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
 
@@ -55,8 +48,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
     stepperPL->set("Stepper Type", "Forward Euler");
     tempusPL->set("Default Subcycling Stepper", *stepperPL);
 
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<Scalar>());
-    auto stepperFE = sf->createStepperForwardEuler(Teuchos::null,Teuchos::null);
+    auto stepperFE = Teuchos::rcp(new StepperForwardEuler<Scalar>());
     setSubcyclingStepper(stepperFE);
   }
 
@@ -77,34 +69,12 @@ StepperSubcycling<Scalar>::StepperSubcycling()
              .sublist("Time Step Control")
                  .set("Initial Time Step", std::numeric_limits<Scalar>::max());
   }
-}
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-StepperSubcycling<Scalar>::StepperSubcycling(
-  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel,
-  const Teuchos::RCP<StepperSubcyclingObserver<Scalar> >& obs,
-  const Teuchos::RCP<IntegratorBasic<Scalar> >& scIntegrator,
-  bool useFSAL,
-  std::string ICConsistency,
-  bool ICConsistencyCheck)
-{
-  this->setStepperType(        "Subcycling");
-  this->setUseFSAL(            useFSAL);
-  this->setICConsistency(      ICConsistency);
-  this->setICConsistencyCheck( ICConsistencyCheck);
-
-  this->setObserver(obs);
-  this->setAppAction(Teuchos::null);
-  scIntegrator_ = scIntegrator;
+  scIntegrator_->setTimeStepControl();
   this->setSubcyclingPrintDtChanges(false);
 
-  if (appModel != Teuchos::null) {
-    this->setModel(appModel);
-    this->initialize();
-  }
 }
-#endif
+
 
 template<class Scalar>
 StepperSubcycling<Scalar>::StepperSubcycling(
@@ -119,9 +89,6 @@ StepperSubcycling<Scalar>::StepperSubcycling(
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  this->setObserver();
-#endif
   this->setAppAction(stepperSCAppAction);
   scIntegrator_ = scIntegrator;
   this->setSubcyclingPrintDtChanges(false);
@@ -166,26 +133,6 @@ void StepperSubcycling<Scalar>::setSubcyclingMaxTimeStep(Scalar MaxTimeStep)
 
 
 template<class Scalar>
-void StepperSubcycling<Scalar>::setSubcyclingStepType(std::string stepType)
-{
-  scIntegrator_->getNonConstTimeStepControl()->setStepType(stepType);
-
-  auto tsc = scIntegrator_->getNonConstTimeStepControl();
-  auto tscStrategy = tsc->getTimeStepControlStrategy();
-  tscStrategy->clearObservers();
-
-  Teuchos::RCP<TimeStepControlStrategy<Scalar> > strategy =
-    Teuchos::rcp(new TimeStepControlStrategyConstant<Scalar>());
-  if (stepType == "Variable")
-    strategy = Teuchos::rcp(new TimeStepControlStrategyBasicVS<Scalar>());
-
-  tscStrategy->addStrategy(strategy);
-
-  this->isInitialized_ = false;
-}
-
-
-template<class Scalar>
 void StepperSubcycling<Scalar>::setSubcyclingMaxFailures(int MaxFailures)
 {
   scIntegrator_->getNonConstTimeStepControl()->setMaxFailures(MaxFailures);
@@ -225,7 +172,6 @@ void StepperSubcycling<Scalar>::
 setSubcyclingTimeStepControlStrategy(
   Teuchos::RCP<TimeStepControlStrategy<Scalar> > tscs)
 {
-  scIntegrator_->getNonConstTimeStepControl()->getTimeStepControlStrategy()->clearObservers();
   scIntegrator_->getNonConstTimeStepControl()->setTimeStepControlStrategy(tscs);
   this->isInitialized_ = false;
 }
@@ -327,25 +273,6 @@ void StepperSubcycling<Scalar>::setNonConstModel(
   this->isInitialized_ = false;
 }
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-template<class Scalar>
-void StepperSubcycling<Scalar>::setObserver(
-  Teuchos::RCP<StepperObserver<Scalar> > obs)
-{
-  if (obs != Teuchos::null) stepperSCObserver_ =
-    Teuchos::rcp_dynamic_cast<StepperSubcyclingObserver<Scalar> > (obs, true);
-
-  if (stepperSCObserver_ == Teuchos::null)
-    stepperSCObserver_ = Teuchos::rcp(new StepperSubcyclingObserver<Scalar>());
-
-  this->isInitialized_ = false;
-}
-
-template<class Scalar>
-Teuchos::RCP<StepperObserver<Scalar> >
-StepperSubcycling<Scalar>::getObserver() const
-{ return stepperSCObserver_; }
-#endif
 
 template<class Scalar>
 void StepperSubcycling<Scalar>::setAppAction(
@@ -378,12 +305,6 @@ void StepperSubcycling<Scalar>::initialize()
   }
   scIntegrator_->initialize();
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  if (stepperSCObserver_ == Teuchos::null) {
-    isValidSetup = false;
-    *out << "The Subcycling observer is not set!\n";
-  }
-#endif
   if (stepperSCAppAction_ == Teuchos::null) {
     isValidSetup = false;
     *out << "The Subcycling AppAction is not set!\n";
@@ -493,9 +414,6 @@ void StepperSubcycling<Scalar>::takeStep(
       "Try setting in \"Solution History\" \"Storage Type\" = \"Undo\"\n"
       "  or \"Storage Type\" = \"Static\" and \"Storage Limit\" = \"2\"\n");
 
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepperSCObserver_->observeBeginTakeStep(solutionHistory, *this);
-#endif
     RCP<StepperSubcycling<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
     stepperSCAppAction_->execute(solutionHistory, thisStepper,
       StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
@@ -555,9 +473,6 @@ void StepperSubcycling<Scalar>::takeStep(
     workingState->setOrder(scCS->getOrder());
     workingState->computeNorms(currentState);
     scSH->clear();
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-    stepperSCObserver_->observeEndTakeStep(solutionHistory, *this);
-#endif
     stepperSCAppAction_->execute(solutionHistory, thisStepper,
       StepperSubcyclingAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
@@ -590,9 +505,6 @@ void StepperSubcycling<Scalar>::describe(
   Stepper<Scalar>::describe(out, verbLevel);
 
   out << "--- StepperSubcycling ---\n";
-#ifndef TEMPUS_HIDE_DEPRECATED_CODE
-  out << "  stepperSCObserver = " << stepperSCObserver_ << std::endl;
-#endif
   out << "  stepperSCAppAction = " << stepperSCAppAction_ << std::endl;
   out << "  scIntegrator      = " << scIntegrator_ << std::endl;
   out << "-------------------------" << std::endl;
@@ -610,9 +522,40 @@ StepperSubcycling<Scalar>::getValidParameters() const
 
   Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
   getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  pl->set<bool>("Use FSAL", false);
+  pl->set<std::string>("Initial Condition Consistency", "None");
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> >
+createStepperSubcycling(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSubcycling<Scalar>());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(pl != Teuchos::null, std::logic_error,
+    "Error - Construction of StepperSubcycling with a ParameterList\n"
+    "is not implemented yet!\n");
+
+  if (pl != Teuchos::null) {
+    stepper->setStepperValues(pl);
+    //stepper->setStepperSubcyclingValues(pl);
+  }
+  //else {
+  //  integrator->setTempusParameterList(Teuchos::null);
+  //}
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

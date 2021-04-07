@@ -1,7 +1,7 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 // -*- Mode: c++ -*-
@@ -192,8 +192,8 @@ namespace Ioex {
     int64_t put_field_internal(const Ioss::Blob *blob, const Ioss::Field &field, void *data,
                                size_t data_size) const override             = 0;
 
-    virtual void write_meta_data() = 0;
-    void         write_results_metadata(bool gather_data = true);
+    virtual void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) = 0;
+    void         write_results_metadata(bool gather_data, Ioss::IfDatabaseExistsBehavior behavior);
 
     void openDatabase__() const override { get_file_pointer(); }
 
@@ -218,8 +218,7 @@ namespace Ioex {
     void put_info();
 
     template <typename T>
-    void internal_write_results_metadata(ex_entity_type type, std::vector<T *> entities,
-                                         int &glob_index);
+    void internal_gather_results_metadata(ex_entity_type type, std::vector<T *> entities);
 
     void generate_sideset_truth_table();
 
@@ -235,7 +234,7 @@ namespace Ioex {
     void add_attribute_fields(ex_entity_type entity_type, Ioss::GroupingEntity *block,
                               int attribute_count, const std::string &type);
 
-    void common_write_meta_data();
+    void common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior);
     void output_other_meta_data();
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,
@@ -265,7 +264,10 @@ namespace Ioex {
 
     // Private member data...
   protected:
-    mutable int         exodusFilePtr{-1};
+    mutable int m_exodusFilePtr{-1};
+    // If using links to file-per-state, the file pointer for "base" file.
+    mutable int m_exodusBasePtr{-1};
+
     mutable std::string m_groupName;
 
     mutable EntityIdSet ids_;

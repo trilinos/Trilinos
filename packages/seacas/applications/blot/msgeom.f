@@ -1,7 +1,7 @@
 C Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
-C 
+C
 C See packages/seacas/LICENSE for details
 
 C=======================================================================
@@ -19,7 +19,7 @@ C   --and element birth/death (for the time step).  A flag is set if the
 C   --faces are changed.
 C   --
 C   --This routine reserves and sets the following dynamic memory arrays:
-C   --   IX2NP - the node number for each mesh index (MASTER process only)
+C   --   IX2NP - the node number for each mesh index
 C   --
 C   --This routine uses MDFIND to find the following dynamic memory arrays:
 C   --   IF2EL2 - the secondary element number of each face

@@ -83,7 +83,6 @@
 #include "boost/any.hpp"                             // for any_cast, any
 #include "stk_io/DatabasePurpose.hpp"                // for DatabasePurpose, etc
 #include "stk_io/MeshField.hpp"                      // for MeshField, etc
-#include "stk_io/SidesetUpdater.hpp"
 #include "stk_mesh/base/BulkDataInlinedMethods.hpp"
 #include "stk_mesh/base/Entity.hpp"                  // for Entity
 #include "stk_mesh/base/FieldBase.hpp"               // for FieldBase
@@ -420,7 +419,8 @@ size_t get_entities(const stk::mesh::Part &part,
     stk::mesh::Selector selector = part & own;
     if (subset_selector) selector &= *subset_selector;
 
-    get_selected_entities(selector, bulk.buckets(type), entities);
+    const bool sortById = true;
+    stk::mesh::get_entities(bulk, type, selector, entities, sortById);
     return entities.size();
 }
 
@@ -464,30 +464,23 @@ void communicate_shared_side_entity_fields(const stk::mesh::BulkData& bulk,
 {
     stk::CommSparse comm(bulk.parallel());
 
-    for (stk::mesh::Entity side : sides) {
-        if (!bulk.bucket(side).owned())
-        {
-            CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
-            pack_distribution_factor(bulk, buffer, distFact, side);
-        }
-    }
+    const bool anythingToUnpack =
+        stk::pack_and_communicate(comm, [&comm, &bulk, &distFact, &sides]() {
+            for (stk::mesh::Entity side : sides) {
+                ThrowRequireMsg(bulk.is_valid(side),"communicate_shared_side_entity_fields, invalid side");
+                if (!bulk.bucket(side).owned()) {
+                    CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
+                    pack_distribution_factor(bulk, buffer, distFact, side);
+                }
+            }
+        });
 
-    comm.allocate_buffers();
-
-    for (stk::mesh::Entity side : sides) {
-        if (!bulk.bucket(side).owned())
-        {
-            CommBuffer & buffer = comm.send_buffer(bulk.parallel_owner_rank(side));
-            pack_distribution_factor(bulk, buffer, distFact, side);
-        }
-    }
-
-    comm.communicate();
-
-    for (int p = 0 ; p < bulk.parallel_size(); ++p) {
-        CommBuffer & buf = comm.recv_buffer(p);
-        while (buf.remaining()) {
-            unpack_distribution_factor(bulk, buf, distFact);
+    if (anythingToUnpack) {
+        for (int p = 0 ; p < bulk.parallel_size(); ++p) {
+            CommBuffer & buf = comm.recv_buffer(p);
+            while (buf.remaining()) {
+                unpack_distribution_factor(bulk, buf, distFact);
+            }
         }
     }
 }
@@ -544,8 +537,17 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
             std::vector<stk::mesh::Entity> sides;
             sides.reserve(side_count);
 
-            for(size_t is = 0; is < side_count; ++is)
-                sides.push_back(stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1, side_rank));
+            for (size_t is = 0; is < side_count; ++is) {
+                stk::mesh::Entity side = stk::mesh::get_side_entity_for_elem_id_side_pair_of_rank(bulk, elemSidePairs[is*2], elemSidePairs[is*2+1]-1, side_rank);
+                if (bulk.is_valid(side)) {
+                    sides.push_back(side);
+                }
+                else {
+                    std::ostringstream os;
+                    os<<"P"<<bulk.parallel_rank()<<" STK IO Warning, process_surface_entity_df: side {"<<elemSidePairs[is*2]<<","<<(elemSidePairs[is*2+1]-1)<<"} not valid."<<std::endl;
+                    std::cerr<<os.str();
+                }
+            }
 
             const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*sb_part);
             if (df_field != nullptr) {
@@ -661,13 +663,6 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
                 continue;
             }
 
-            stk::topology topo = part->topology();
-            if (topo == stk::topology::INVALID_TOPOLOGY) {
-                std::ostringstream msg ;
-                msg << " INTERNAL_ERROR: Part " << part->name() << " has invalid topology";
-                throw std::runtime_error( msg.str() );
-            }
-
             // See if we need to get the list of elements...
             bool elements_needed = false;
             Ioss::NameList names;
@@ -693,8 +688,8 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
 
             std::vector<INT> elem_ids ;
             entity->get_field_data("ids", elem_ids);
-
             size_t element_count = elem_ids.size();
+
             std::vector<stk::mesh::Entity> elements;
             elements.reserve(element_count);
 

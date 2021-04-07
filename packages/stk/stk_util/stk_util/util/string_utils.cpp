@@ -32,9 +32,12 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 
-#include <stk_util/util/string_utils.hpp>
-#include <string>
-#include <iostream>
+#include "stk_util/util/string_utils.hpp"
+#include <cstddef>  // for size_t
+#include <string>   // for string, operator+, allocator, char_traits
+#include <cctype>
+#include <algorithm>
+#include <sstream>
 
 namespace stk {
 
@@ -133,6 +136,43 @@ std::vector<std::string> make_vector_of_strings(const std::string& inputString, 
     }
   }
   return vecStr;
+}
+
+std::string ltrim_string(std::string s) {
+  s.erase(s.begin(), std::find_if(s.begin(), s.end(),
+                                  [](unsigned char ch) { return !std::isspace(ch); }
+                                  ));
+  return s;
+}
+
+std::string rtrim_string(std::string s) {
+  s.erase(std::find_if(s.rbegin(), s.rend(),
+                       [](unsigned char ch) { return !std::isspace(ch); }
+                       ).base(), s.end());
+  return s;
+}
+
+std::string trim_string(std::string s) {
+  return ltrim_string(rtrim_string(s));
+}
+
+std::vector<std::string> split_string(const std::string & input, const char separator)
+{
+  std::vector<std::string> separated;
+  std::istringstream iss(input);
+  std::string token;
+  while (std::getline(iss, token, separator)) {
+    separated.push_back(token);
+  }
+  if (input.back() == separator) {
+    separated.push_back("");
+  }
+  return separated;
+}
+
+std::vector<std::string> split_csv_string(const std::string & input)
+{
+  return split_string(input, ',');
 }
 
 } // namespace stk

@@ -13,6 +13,8 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/GetNgpField.hpp>
+#include <stk_mesh/base/GetNgpMesh.hpp>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/NgpForEachEntity.hpp>
 #include <stk_util/stk_config.h>
 #include "NgpUnitTestUtils.hpp"
@@ -20,6 +22,18 @@
 #include <string>
 
 namespace ngp_field_test {
+
+template<typename T>
+class NgpFieldTester : public stk::mesh::NgpField<T>
+{
+public:
+  bool test_need_sync_to_host() const { return this->need_sync_to_host(); }
+  bool test_need_sync_to_device() const { return this->need_sync_to_device(); }
+  unsigned test_get_contiguous_bucket_offset_end(const stk::mesh::BucketVector& buckets, unsigned i)
+  {
+    return this->get_contiguous_bucket_offset_end(buckets, i);
+  }
+};
 
 class NgpFieldFixture : public stk::unit_test_util::MeshFixture
 {
@@ -43,8 +57,8 @@ public:
                                         stk::topology::ELEM_RANK, "variableLengthField");
     stk::mesh::Field<int>& stkField2 = get_meta().declare_field<stk::mesh::Field<int>>(
                                         stk::topology::ELEM_RANK, "potentiallyOverwrittenField");
-    stk::mesh::Part& block1 = get_meta().declare_part("block_1", stk::topology::ELEM_RANK);
-    stk::mesh::Part& block2 = get_meta().declare_part("block_2", stk::topology::ELEM_RANK);
+    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::SHELL_QUAD_4);
+    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::SHELL_QUAD_4);
 
     const int init1[2] = {1, 1};
     stk::mesh::put_field_on_mesh(stkField1, block1, 1, init1);
@@ -57,6 +71,54 @@ public:
     const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,5,6,block_1\n"
                                  "0,2,SHELL_QUAD_4,2,3,4,5,block_2\n";
     stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  }
+
+  void setup_fields_five_hex_three_block_two_state_mesh(const int numComponent1, const int numComponent2)
+  {
+    const unsigned bucketCapacity = 2;
+    const unsigned numStates = 2;
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+
+    stk::mesh::Field<int>& stkField = get_meta().declare_field<stk::mesh::Field<int>>(
+                                        stk::topology::ELEM_RANK, "variableLengthField", numStates);
+
+    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::HEX_8);
+    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::HEX_8);
+    get_meta().declare_part_with_topology("block_3", stk::topology::HEX_8);
+
+    const std::vector<int> init1(numComponent1, -1);
+    stk::mesh::put_field_on_mesh(stkField, block1, numComponent1, init1.data());
+
+    const std::vector<int> init2(numComponent2, -2);
+    stk::mesh::put_field_on_mesh(stkField, block2, numComponent2, init2.data());
+
+    const std::string meshDesc = "0,1,HEX_8,1,2,3,4,5,6,7,8,block_1\n"
+                                 "0,2,HEX_8,5,6,7,8,9,10,11,12,block_1\n"
+                                 "0,3,HEX_8,9,13,14,15,16,17,18,19,block_2\n"
+                                 "0,4,HEX_8,9,20,21,22,23,24,25,26,block_2\n"
+                                 "0,5,HEX_8,9,27,28,29,30,31,32,33,block_3";
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  }
+
+  void setup_two_element_mesh_field_on_each_element(stk::mesh::Field<int>& intField, stk::mesh::Field<double>& doubleField)
+  {
+    stk::mesh::Part& block1 = get_meta().declare_part_with_topology("block_1", stk::topology::SHELL_QUAD_4);
+    stk::mesh::Part& block2 = get_meta().declare_part_with_topology("block_2", stk::topology::SHELL_QUAD_4);
+
+    int initIntVal = 1;
+    double initDoubleVal = 2.0;
+    stk::mesh::put_field_on_mesh(intField, block1, 1, &initIntVal);
+    stk::mesh::put_field_on_mesh(doubleField, block2, 1, &initDoubleVal);
+
+    const std::string meshDesc = "0,1,SHELL_QUAD_4,1,2,4,3,block_1\n"
+                                 "0,2,SHELL_QUAD_4,2,5,6,4,block_2\n";
+    stk::unit_test_util::setup_text_mesh(get_bulk(), meshDesc);
+  }
+
+  void setup_mesh_4hex_4block(unsigned bucketCapacity)
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    ngp_unit_test_utils::setup_mesh_4hex_4block(get_bulk(), bucketCapacity);
   }
 
   void setup_mesh_3hex_3block(unsigned bucketCapacity)
@@ -75,7 +137,31 @@ public:
   {
     get_meta().declare_part("block_3", stk::topology::ELEMENT_RANK);
     setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
-    ngp_unit_test_utils::setup_mesh_2hex_3block(get_bulk(), bucketCapacity);
+    ngp_unit_test_utils::setup_mesh_2hex_2block(get_bulk(), bucketCapacity);
+  }
+
+  void setup_mesh_2hex_2block(unsigned bucketCapacity)
+  {
+    setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+    ngp_unit_test_utils::setup_mesh_2hex_2block(get_bulk(), bucketCapacity);
+  }
+
+  void copy_fields_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::FieldBase* inputField,
+                             stk::mesh::FieldBase* outputField, const stk::mesh::Selector& selector)
+  {
+    stk::mesh::NgpField<int> inputNgpField = stk::mesh::get_updated_ngp_field<int>(*inputField);
+    stk::mesh::NgpField<int> outputNgpField = stk::mesh::get_updated_ngp_field<int>(*outputField);
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+                                     const int numScalarsPerEntity = inputNgpField.get_num_components_per_entity(entityIndex);
+                                     
+                                     for (int component=0; component<numScalarsPerEntity; component++) {
+                                       outputNgpField(entityIndex, component) = inputNgpField(entityIndex, component);
+                                     }
+                                   });
+
+    outputNgpField.modify_on_device();
   }
 
   template<typename T>
@@ -96,29 +182,19 @@ public:
     }
   }
 
-  template<typename T>
-  void check_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField)
+  template<typename T, typename FieldData, typename FieldDataMirror>
+  void get_field_data_from_device(stk::mesh::EntityVector& elements, stk::mesh::NgpField<T>& ngpField,
+                                  FieldData& deviceData, FieldDataMirror& hostData)
   {
-    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace>;
-
-    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
-    stk::mesh::Selector fieldSelector(stkField);
-    stk::mesh::EntityVector elements;
-    stk::mesh::get_entities(get_bulk(), rank, elements);
     unsigned numElems = elements.size();
-    stk::NgpVector<stk::mesh::Entity> ngpElements(elements.size());
+    stk::NgpVector<stk::mesh::Entity> ngpElements(numElems);
 
-    for(unsigned i = 0; i < elements.size(); i++) {
+    for(unsigned i = 0; i < numElems; i++) {
       ngpElements[i] = elements[i];
     }
     ngpElements.copy_host_to_device();
 
-    unsigned numPerEntity = stkField.max_size(rank);
-
-    FieldData deviceData = FieldData("deviceData", numElems, numPerEntity);
-    typename FieldData::HostMirror hostData = Kokkos::create_mirror_view(deviceData);
-
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
     Kokkos::parallel_for(numElems,
       KOKKOS_LAMBDA(const int& elemIdx) {
@@ -132,14 +208,78 @@ public:
       }
     );
     Kokkos::deep_copy(hostData, deviceData);
+  }
 
-    for(unsigned i = 0; i < numElems; i++) {
+  template<typename T, typename FieldDataMirror, typename Func>
+  void verify_field_data_on_device(const stk::mesh::EntityVector& elements, const stk::mesh::Field<T>& stkField,
+                                   const FieldDataMirror& hostData, Func&& checkFunc)
+  {
+    for(unsigned i = 0; i < elements.size(); i++) {
       T* data = stk::mesh::field_data<stk::mesh::Field<T>>(stkField, elements[i]);
       unsigned numComponents = stk::mesh::field_scalars_per_entity(stkField, elements[i]);
       for(unsigned j = 0; j < numComponents; j++) {
-        EXPECT_EQ(hostData(i,j), data[j]) << "i: " << i << " at (" << get_bulk().identifier(elements[i]) << "," << j << ") hostdata: " << hostData(i,j) << " dev data: " << data[j] << std::endl;
+        checkFunc(hostData(i,j), data[j]);
       }
     }
+  }
+
+  template<typename T, typename Func>
+  void check_field_data_equality_on_device(stk::mesh::EntityVector& elements, stk::mesh::EntityRank rank,
+                                           stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField,
+                                           Func&& checkFunc)
+  {
+    using FieldData = Kokkos::View<T**, Kokkos::LayoutRight, stk::mesh::MemSpace>;
+
+    unsigned numElems = elements.size();
+    unsigned numPerEntity = stkField.max_size(rank);
+    FieldData deviceData = FieldData("deviceData", numElems, numPerEntity);
+    typename FieldData::HostMirror hostData = Kokkos::create_mirror_view(deviceData);
+
+    get_field_data_from_device<T, FieldData, typename FieldData::HostMirror>(elements, ngpField, deviceData, hostData);
+    verify_field_data_on_device<T, typename FieldData::HostMirror>(elements, stkField, hostData, checkFunc);
+  }
+
+  template<typename T>
+  void check_mismatched_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField, stk::mesh::Selector& syncSelector)
+  {
+    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+    stk::mesh::Selector fieldSelector(stkField);
+    fieldSelector &= syncSelector;
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(fieldSelector, get_bulk().buckets(rank), elements);
+    auto checkFunc = [](T hostData, T stkData)
+                     {
+                       EXPECT_NE(hostData, stkData);
+                     };
+    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+  }
+
+  template<typename T>
+  void check_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField, stk::mesh::Selector& syncSelector)
+  {
+    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+    stk::mesh::Selector fieldSelector(stkField);
+    fieldSelector &= syncSelector;
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_selected_entities(fieldSelector, get_bulk().buckets(rank), elements);
+    auto checkFunc = [](T hostData, T stkData)
+                     {
+                       EXPECT_EQ(hostData, stkData);
+                     };
+    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
+  }
+
+  template<typename T>
+  void check_field_data_on_device(stk::mesh::NgpField<T>& ngpField, stk::mesh::Field<T>& stkField)
+  {
+    stk::mesh::EntityRank rank = stk::topology::ELEM_RANK;
+    stk::mesh::EntityVector elements;
+    stk::mesh::get_entities(get_bulk(), rank, elements);
+    auto checkFunc = [](T hostData, T stkData)
+                     {
+                       EXPECT_EQ(hostData, stkData);
+                     };
+    check_field_data_equality_on_device<T>(elements, rank, ngpField, stkField, checkFunc);
   }
 
   void set_element_field_data(stk::mesh::FieldBase* field)
@@ -176,6 +316,27 @@ public:
     }
   }
 
+  void set_element_field_data_on_device(stk::mesh::NgpMesh& ngpMesh, stk::mesh::Field<int>& stkIntField,
+                                        const stk::mesh::Selector& selector, unsigned multiplier)
+  {
+    stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+
+    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selector,
+                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entityIndex) {
+                                    const int numScalarsPerEntity = ngpField.get_num_components_per_entity(entityIndex);
+                                    for (int component=0; component<numScalarsPerEntity; component++) {
+                                      stk::mesh::Entity entity = ngpMesh.get_entity(stk::topology::ELEM_RANK, entityIndex);
+                                      ngpField(entityIndex, component) = ngpMesh.identifier(entity) * multiplier + component;
+                                    }
+                                  });
+  }
+
+  void setup_4hex_4block_mesh_with_field(unsigned bucketCapacity, stk::mesh::Field<int>& stkIntField)
+  {
+    setup_mesh_4hex_4block(bucketCapacity);
+    set_element_field_data(stkIntField, get_meta().universal_part(), 10u);
+  }
+
   void setup_3hex_3block_mesh_with_field(unsigned bucketCapacity, stk::mesh::Field<int>& stkIntField)
   {
     setup_mesh_3hex_3block(bucketCapacity);
@@ -192,6 +353,573 @@ public:
   {
     setup_mesh_2hex_3block(bucketCapacity);
     set_element_field_data(stkIntField, get_meta().universal_part(), 10u);
+  }
+
+  void setup_2hex_2block_mesh_with_field(unsigned bucketCapacity, stk::mesh::Field<int>& stkIntField)
+  {
+    setup_mesh_2hex_2block(bucketCapacity);
+    set_element_field_data(stkIntField, get_meta().universal_part(), 10u);
+  }
+
+  void run_modify_on_host_and_device_using_part_to_select()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_device(*part2);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_check_contiguous_bucket_offset_copy()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_4hex_4block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    NgpFieldTester<int>& ngpIntField = static_cast<NgpFieldTester<int>&>(ngpField);
+
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    stk::mesh::Part* part4 = get_meta().get_part("block_4");
+    ThrowRequire(part1 != nullptr && part2 != nullptr && part4 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+    stk::mesh::Selector selector4(*part4);
+
+    stk::mesh::Selector blockSelector = selector1 | selector2 | selector4;
+    stk::mesh::Selector selector = stk::mesh::selectField(stkIntField) & blockSelector;
+    
+    const stk::mesh::BucketVector& buckets = get_bulk().get_buckets(stk::topology::ELEM_RANK, selector);
+
+    unsigned startIndex = 0;
+    unsigned endIndex = ngpIntField.test_get_contiguous_bucket_offset_end(buckets, startIndex);
+    unsigned numBucketsCopied = endIndex - startIndex + 1;
+#ifdef STK_USE_DEVICE_MESH
+    EXPECT_EQ(numBucketsCopied, 2u);
+#else
+    EXPECT_EQ(numBucketsCopied, 1u);
+#endif
+    startIndex = 1;
+    endIndex = ngpIntField.test_get_contiguous_bucket_offset_end(buckets, startIndex);
+    numBucketsCopied = endIndex - startIndex + 1;
+    EXPECT_EQ(numBucketsCopied, 1u);
+
+    startIndex = 2;
+    endIndex = ngpIntField.test_get_contiguous_bucket_offset_end(buckets, startIndex);
+    numBucketsCopied = endIndex - startIndex + 1;
+    EXPECT_EQ(numBucketsCopied, 1u);
+  }
+
+  void run_sync_to_host_after_mesh_mod_and_modify_with_selector()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    stk::mesh::Entity entity = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 1u);
+
+    get_bulk().modification_begin();
+    get_bulk().change_entity_parts(entity, stk::mesh::PartVector{part2}, stk::mesh::PartVector{part1});
+    get_bulk().modification_end();
+    stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_sync_to_host_with_selector_only_selecting_middle_block()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    stk::mesh::Part* part3 = get_meta().get_part("block_3");
+    ThrowRequire(part1 != nullptr && part2 != nullptr && part3 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+    stk::mesh::Selector selector3(*part3);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector3, 12u);
+
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector3);
+#endif
+  }
+
+  void run_sync_to_host_with_selector_not_selecting_middle_block()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    stk::mesh::Part* part3 = get_meta().get_part("block_3");
+    ThrowRequire(part1 != nullptr && part2 != nullptr && part3 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+    stk::mesh::Selector selector3(*part3);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector3, 1000u);
+
+    ngpIntField.modify_on_device(selector1);
+    ngpIntField.modify_on_device(selector3);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector3);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#endif
+  }
+
+  void run_sync_to_host_with_selector_with_multiple_modified_on_device_sync_all()
+  {
+    unsigned numComponents = 2;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.modify_on_device();
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField);
+  }
+
+  void run_sync_to_host_with_selector_with_multiple_modified_on_device4()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_device();
+    ngpIntField.clear_device_sync_state();
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_sync_to_host_with_selector_with_multiple_modified_on_device3()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_device();
+    ngpIntField.clear_sync_state();
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_sync_to_host_with_selector_with_multiple_modified_on_device2()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_device();
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField);
+  }
+
+  void run_sync_to_host_with_selector_with_multiple_modified_on_device()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    stk::mesh::Part* part3 = get_meta().get_part("block_3");
+    ThrowRequire(part1 != nullptr && part2 != nullptr && part3 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+    stk::mesh::Selector selector3(*part3);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector3, 1000u);
+
+    ngpIntField.modify_on_device(selector1);
+    ngpIntField.modify_on_device(selector2);
+    ngpIntField.sync_to_host();
+
+    stk::mesh::Selector unionSelector = selector1 | selector2;
+    check_field_data_on_device<int>(ngpIntField, stkIntField, unionSelector);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector3);
+#endif
+  }
+
+  void run_sync_to_device_after_mesh_mod_and_modify_with_selector()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    get_bulk().modification_begin();
+    get_bulk().modification_end();
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_sync_to_device_with_selector_only_selecting_middle_block()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    stk::mesh::Part* part3 = get_meta().get_part("block_3");
+    ThrowRequire(part1 != nullptr && part2 != nullptr && part3 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+    stk::mesh::Selector selector3(*part3);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector3, 12u);
+
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector3);
+#endif
+  }
+
+  void run_sync_to_device_with_selector_not_selecting_middle_block()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    stk::mesh::Part* part3 = get_meta().get_part("block_3");
+    ThrowRequire(part1 != nullptr && part2 != nullptr && part3 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+    stk::mesh::Selector selector3(*part3);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector3, 12u);
+
+    ngpIntField.modify_on_host(selector1);
+    ngpIntField.modify_on_host(selector3);
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector3);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#endif
+  }
+
+  void run_sync_to_device_with_selector_with_multiple_modified_on_host_sync_all()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.modify_on_host();
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField);
+  }
+
+  void run_sync_to_device_with_selector_with_multiple_modified_on_host4()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+
+    ngpIntField.modify_on_host();
+    ngpIntField.clear_host_sync_state();
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_sync_to_device_with_selector_with_multiple_modified_on_host3()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+
+    ngpIntField.modify_on_host();
+    ngpIntField.clear_sync_state();
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
+  }
+
+  void run_sync_to_device_with_selector_with_multiple_modified_on_host2()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+
+    ngpIntField.modify_on_host();
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField);
+  }
+
+  void run_sync_to_device_with_selector_with_multiple_modified_on_host()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 12u);
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 12u);
+
+    ngpIntField.modify_on_host(selector1);
+    ngpIntField.modify_on_host(selector2);
+    ngpIntField.sync_to_device();
+
+    stk::mesh::Selector unionSelector = selector1 | selector2;
+    check_field_data_on_device<int>(ngpIntField, stkIntField, unionSelector);
+    check_field_data_on_device<int>(ngpIntField, stkIntField);
+  }
+
+  void run_sync_to_device_with_selector()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part = get_meta().get_part("block_2");
+    ThrowRequire(part != nullptr);
+    stk::mesh::Selector selector(*part);
+
+    modify_host_bucket_value_with_selector(stkIntField, ngpIntField, selector, 12u);
+
+    stkIntField.modify_on_host(selector);
+    stkIntField.sync_to_device();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
+  }
+
+  void run_sync_to_host_with_selector()
+  {
+    unsigned numComponents = 1;
+    stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
+    const unsigned bucketCapacity = 3;
+
+    setup_2hex_2block_mesh_with_field(bucketCapacity, stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::Part* part1 = get_meta().get_part("block_1");
+    stk::mesh::Part* part2 = get_meta().get_part("block_2");
+    ThrowRequire(part1 != nullptr && part2 != nullptr);
+    stk::mesh::Selector selector1(*part1);
+    stk::mesh::Selector selector2(*part2);
+
+    modify_device_bucket_value_with_selector(stkIntField, ngpIntField, selector1, 1u);
+    modify_device_bucket_value_with_selector(stkIntField, ngpIntField, selector2, 100u);
+    stkIntField.modify_on_device(selector2);
+    stkIntField.sync_to_host();
+
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector2);
+#ifdef STK_USE_DEVICE_MESH
+    check_mismatched_field_data_on_device<int>(ngpIntField, stkIntField, selector1);
+#endif
   }
 
   void run_add_and_delete_bucket3(unsigned numComponents)
@@ -260,7 +988,7 @@ public:
     stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField", numComponents);
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
-    stk::mesh::NgpField<int> ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+    stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
     modify_and_test_add_element(stkIntField, ngpIntField, bucketCapacity);
   }
@@ -272,14 +1000,14 @@ public:
 
     setup_3hex_3block_mesh_with_field(bucketCapacity, stkIntField);
     {
-      get_bulk().get_updated_ngp_mesh();
+      stk::mesh::get_updated_ngp_mesh(get_bulk());
       stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
       modify_and_test_add_element(stkIntField, ngpIntField, bucketCapacity);
     }
 
     {
-      stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+      stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
       stk::mesh::NgpField<int>& ngpIntField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
 
       check_field_data_on_host<int>(stkIntField, 10u);
@@ -390,7 +1118,7 @@ public:
 
   void modify_mesh_add_and_delete_bucket(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -448,9 +1176,27 @@ public:
     get_bulk().destroy_entity(element);
   }
 
+  void modify_host_bucket_value_with_selector(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField,
+                                              stk::mesh::Selector selector, int newMultiplier)
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
+    set_element_field_data(stkIntField, selector, newMultiplier);
+    ngpMesh.update_mesh();
+  }
+
+  void modify_device_bucket_value_with_selector(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField,
+                                                stk::mesh::Selector selector, int newMultiplier)
+  {
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+    check_field_data_on_device<int>(ngpIntField, stkIntField, selector);
+    set_element_field_data_on_device(ngpMesh, stkIntField, selector, newMultiplier);
+    // ngpMesh.update_mesh();
+  }
+
   void modify_mesh_add_and_delete_bucket3(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -462,7 +1208,7 @@ public:
 
   void modify_mesh_add_and_delete_bucket2(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -479,7 +1225,7 @@ public:
 
   void modify_mesh_delete_bucket_in_middle(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -493,7 +1239,7 @@ public:
 
   void modify_mesh_add_bucket_in_middle(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -507,14 +1253,16 @@ public:
 
   void modify_mesh_add_element(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField, unsigned bucketCapacity)
   {
-    stk::mesh::NgpMesh & ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), {{"block_1", {1}}, {"block_2", {2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
+
     get_bulk().modification_begin();
     stk::mesh::Entity newElement = add_element_and_place_in_block("block_3");
+    get_bulk().modification_end();
+
     int* data = stk::mesh::field_data(stkIntField, newElement);
     *data = get_bulk().identifier(newElement) * 10u;
-    get_bulk().modification_end();
     ngpMesh.update_mesh();
 
     if(bucketCapacity == 1) {
@@ -527,7 +1275,7 @@ public:
 
   void modify_mesh_change_bucket_content(stk::mesh::Field<int>& stkIntField, stk::mesh::NgpField<int>& ngpIntField)
   {
-    stk::mesh::NgpMesh& ngpMesh = get_bulk().get_updated_ngp_mesh();
+    stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     ngp_unit_test_utils::check_bucket_layout(get_bulk(), { {"block_1", {1, 2}}, {"block_3", {3}}});
     check_field_data_on_device<int>(ngpIntField, stkIntField);
     get_bulk().modification_begin();
@@ -575,7 +1323,7 @@ void test_field_values_on_device(stk::mesh::BulkData& bulk,
   stk::mesh::Selector selection = bulk.mesh_meta_data().locally_owned_part() & part;
   const stk::mesh::BucketVector& buckets = bulk.get_buckets(stkField.entity_rank(), selection);
   const unsigned numScalarsPerEntity = stk::mesh::field_scalars_per_entity(stkField, *buckets[0]);
-  stk::mesh::NgpMesh& ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh& ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, selection,
                                  KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
                                    for (unsigned component=0; component<numScalarsPerEntity; component++) {
@@ -644,7 +1392,7 @@ void modify_mesh_part_membership(stk::mesh::BulkData & bulk, stk::mesh::Part & p
   stk::mesh::PartVector addParts(1, &part);
   stk::mesh::EntityVector allElements;
 
-  bulk.get_entities(stk::topology::ELEM_RANK, bulk.mesh_meta_data().universal_part(), allElements);
+  stk::mesh::get_entities(bulk, stk::topology::ELEM_RANK, allElements);
 
   bulk.modification_begin();
   bulk.change_entity_parts(allElements[0], addParts);
@@ -660,7 +1408,7 @@ void sync_field_to_device(stk::mesh::Field<T> & field)
 template <typename T>
 void modify_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T> & stkField, int multiplier)
 {
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
   ngpField.sync_to_device();
@@ -678,7 +1426,7 @@ void modify_field_on_device(stk::mesh::BulkData & bulk, stk::mesh::Field<T> & st
 template <typename T>
 void modify_field_on_device(stk::mesh::BulkData& bulk, stk::mesh::Field<T>& stkField, stk::mesh::Part& part, int value)
 {
-  stk::mesh::NgpMesh & ngpMesh = bulk.get_updated_ngp_mesh();
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
   const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
   stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
   ngpField.sync_to_device();
@@ -733,6 +1481,119 @@ TEST_F(NgpFieldFixture, noOverwriteInVariableLengthFields)
   test_field_values_on_host(get_bulk(), potentiallyOverwrittenField, 3);
 }
 
+TEST_F(NgpFieldFixture, FieldCopyVariableLengthField)
+{
+  if (get_parallel_size() != 1) return;
+
+  const int numComponent1 = 8;
+  const int numComponent2 = 3;
+  setup_fields_five_hex_three_block_two_state_mesh(numComponent1, numComponent2);
+
+  auto ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
+  auto stkField = get_meta().get_field(stk::topology::ELEM_RANK, "variableLengthField");
+  auto elem2 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 2);
+  auto elem4 = get_bulk().get_entity(stk::topology::ELEMENT_RANK, 4);
+
+  stk::mesh::FieldBase* oldState = stkField->field_state(stk::mesh::StateOld);
+  stk::mesh::FieldBase* newState = stkField->field_state(stk::mesh::StateNew);
+
+  int* inData2 = reinterpret_cast<int*>(stk::mesh::field_data(*oldState, elem2));
+  int* inData4 = reinterpret_cast<int*>(stk::mesh::field_data(*oldState, elem4));
+
+  for(int c = 0; c < numComponent1; ++c) {
+    inData2[c] = 2 + c;
+  }
+  for(int c = 0; c < numComponent2; ++c) {
+    inData4[c] = numComponent1 + 3 + c;
+  }
+
+  copy_fields_on_device(ngpMesh, oldState, newState, get_meta().universal_part());
+  newState->sync_to_host();
+
+  int* outData2 = reinterpret_cast<int*>(stk::mesh::field_data(*newState, elem2));
+  int* outData4 = reinterpret_cast<int*>(stk::mesh::field_data(*newState, elem4));
+
+  for(int c = 0; c < numComponent1; ++c) {
+    EXPECT_EQ(2 + c, outData2[c]);
+  }
+  for(int c = 0; c < numComponent2; ++c) {
+    EXPECT_EQ(numComponent1 + 3 + c, outData4[c]);
+  }
+}
+
+void check_expected_num_elements(const stk::mesh::BulkData & bulk, unsigned numElements)
+{
+  std::vector<size_t> counts;
+  const stk::mesh::Part & locallyOwnedPart = bulk.mesh_meta_data().locally_owned_part();
+  stk::mesh::count_entities(locallyOwnedPart, bulk, counts);
+  ASSERT_EQ(counts[stk::topology::ELEM_RANK], numElements);
+}
+
+class NumScalarsPerEntity
+{
+public:
+  NumScalarsPerEntity() = default;
+
+  KOKKOS_INLINE_FUNCTION
+  unsigned& operator[](unsigned entityIndex)
+  {
+    return m_numScalars[entityIndex];
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  const unsigned& operator[](const unsigned entityIndex) const
+  {
+    return m_numScalars[entityIndex];
+  }
+
+private:
+  unsigned m_numScalars[2];
+};
+
+void fill_gold_num_scalars_per_entity(const stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & variableLengthField,
+                                      unsigned numElements, NumScalarsPerEntity& goldNumScalarsPerEntity)
+{
+  stk::mesh::EntityVector elements;
+  stk::mesh::get_selected_entities(bulk.mesh_meta_data().locally_owned_part(), bulk.buckets(stk::topology::ELEM_RANK), elements);
+  for (const stk::mesh::Entity & element : elements) {
+    const unsigned index = bulk.identifier(element) - 1;
+    ASSERT_LT(index, numElements);
+    goldNumScalarsPerEntity[index] = stk::mesh::field_scalars_per_entity(variableLengthField, element);
+  }
+}
+
+void test_num_scalars_per_entity(stk::mesh::BulkData & bulk, const stk::mesh::FieldBase & variableLengthField)
+{
+  const unsigned numElements = 2;
+  check_expected_num_elements(bulk, numElements);
+
+  NumScalarsPerEntity goldNumScalarsPerEntity;
+  fill_gold_num_scalars_per_entity(bulk, variableLengthField, numElements, goldNumScalarsPerEntity);
+
+  stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+  stk::mesh::NgpField<int> ngpVariableLengthField = stk::mesh::get_updated_ngp_field<int>(variableLengthField);
+
+  stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, bulk.mesh_meta_data().locally_owned_part(),
+                                 KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex & index) {
+                                   const stk::mesh::Entity element = ngpMesh.get_entity(stk::topology::ELEM_RANK, index);
+                                   const unsigned goldIndex = ngpMesh.identifier(element) - 1;
+                                   NGP_EXPECT_EQ(ngpVariableLengthField.get_num_components_per_entity(index),
+                                                 goldNumScalarsPerEntity[goldIndex]);
+                                 });
+}
+
+TEST_F(NgpFieldFixture, NumScalarsPerEntityOnDevice)
+{
+  if (get_parallel_size() != 1) return;
+
+  setup_two_field_two_element_mesh();
+
+  stk::mesh::Field<int>& variableLengthField = dynamic_cast<stk::mesh::Field<int>&>(
+                                               *get_meta().get_field(stk::topology::ELEM_RANK, "variableLengthField"));
+
+  test_num_scalars_per_entity(get_bulk(), variableLengthField);
+}
+
 TEST_F(NgpFieldFixture, TestAriaAlgorithm)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
@@ -742,7 +1603,7 @@ TEST_F(NgpFieldFixture, TestAriaAlgorithm)
 
   setup_mesh("generated:1x1x1", stk::mesh::BulkData::AUTO_AURA);
 
-  stk::mesh::NgpMesh ngpMesh = get_bulk().get_updated_ngp_mesh();
+  stk::mesh::NgpMesh ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
 
   int multiplier = 2;
   modify_field_on_device(get_bulk(), f1, multiplier);
@@ -814,13 +1675,8 @@ TEST_F(NgpFieldFixture, ModifyAndSync)
   sync_field_to_host(stkIntField);
   check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
 
-#ifdef STK_USE_DEVICE_MESH
   size_t expectedSyncsToDevice = 1;
   size_t expectedSyncsToHost = 1;
-#else
-  size_t expectedSyncsToDevice = 0;
-  size_t expectedSyncsToHost = 0;
-#endif
 
   EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
@@ -855,13 +1711,8 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnHost)
   sync_field_to_host(stkIntField);
   check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
 
-#ifdef STK_USE_DEVICE_MESH
   size_t expectedSyncsToDevice = 1;
   size_t expectedSyncsToHost = 1;
-#else
-  size_t expectedSyncsToDevice = 0;
-  size_t expectedSyncsToHost = 0;
-#endif
 
   EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());
   EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
@@ -890,16 +1741,90 @@ TEST_F(NgpFieldFixture, UpdateNgpFieldAfterMeshMod_WithMostCurrentDataOnDevice)
   modify_mesh_part_membership(get_bulk(), dummyPart);
 
   sync_field_to_host(stkIntField);
-  check_field_on_host(get_bulk(), stkIntField, multiplier);
 }
 
-template<typename T>
-class NgpFieldTester : public stk::mesh::NgpField<T>
+TEST_F(NgpFieldFixture, ConsistentNeedToSyncForAllCopies)
 {
-public:
-  bool test_need_sync_to_host() const { return this->need_sync_to_host(); }
-  bool test_need_sync_to_device() const { return this->need_sync_to_device(); }
-};
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  get_meta().declare_part("DummyPart", stk::topology::ELEM_RANK);
+  setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  initialize_ngp_field(stkIntField);
+  stk::mesh::NgpField<int> copyNgpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+
+  int multiplier = 2;
+  modify_field_on_host(get_bulk(), stkIntField, multiplier);
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+
+  copyNgpField.sync_to_device();
+  modify_field_on_device(get_bulk(), stkIntField, multiplier);
+
+  copyNgpField.sync_to_host();
+  check_field_on_host(get_bulk(), stkIntField, multiplier*multiplier);
+
+  size_t expectedSyncsToDevice = 1;
+  size_t expectedSyncsToHost = 1;
+
+  EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());
+  EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
+
+  EXPECT_EQ(stkIntField.num_syncs_to_device(), copyNgpField.num_syncs_to_device());
+  EXPECT_EQ(stkIntField.num_syncs_to_host(), copyNgpField.num_syncs_to_host());
+}
+
+TEST_F(NgpFieldFixture, ConsistentNeedToSyncForAllCopiesNoModifyCall)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  get_meta().declare_part("DummyPart", stk::topology::ELEM_RANK);
+  setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  initialize_ngp_field(stkIntField);
+  stk::mesh::NgpField<int> copyNgpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+
+  int multiplier = 1;
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+  copyNgpField.sync_to_device();
+  copyNgpField.sync_to_host();
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+
+  size_t expectedSyncsToDevice = 0;
+  size_t expectedSyncsToHost = 0;
+
+  EXPECT_EQ(expectedSyncsToDevice, stkIntField.num_syncs_to_device());
+  EXPECT_EQ(expectedSyncsToHost, stkIntField.num_syncs_to_host());
+
+  EXPECT_EQ(stkIntField.num_syncs_to_device(), copyNgpField.num_syncs_to_device());
+  EXPECT_EQ(stkIntField.num_syncs_to_host(), copyNgpField.num_syncs_to_host());
+}
+
+TEST_F(NgpFieldFixture, RequireSyncBetweenModifyOnHostAndDevice)
+{
+  if (stk::parallel_machine_size(MPI_COMM_WORLD) != 1) return;
+
+  stk::mesh::Field<int> & stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  get_meta().declare_part("DummyPart", stk::topology::ELEM_RANK);
+  setup_mesh("generated:1x1x2", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  initialize_ngp_field(stkIntField);
+  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+
+  int multiplier = 2;
+  modify_field_on_host(get_bulk(), stkIntField, multiplier);
+  check_field_on_host(get_bulk(), stkIntField, multiplier);
+#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
+  EXPECT_THROW(ngpField.modify_on_device(), std::logic_error);
+#endif
+
+  stkIntField.clear_sync_state();
+  ngpField.modify_on_device();
+#ifdef KOKKOS_ENABLE_DEBUG_DUALVIEW_MODIFY_CHECK
+  EXPECT_THROW(ngpField.modify_on_host(), std::logic_error);
+#endif
+}
 
 TEST_F(NgpFieldFixture, ClearSyncStateAfterModifyOnDevice)
 {
@@ -912,14 +1837,189 @@ TEST_F(NgpFieldFixture, ClearSyncStateAfterModifyOnDevice)
   NgpFieldTester<int>& testNgpField = static_cast<NgpFieldTester<int>&>(ngpField);
 
   testNgpField.modify_on_device();
-#ifdef STK_USE_DEVICE_MESH
+
   EXPECT_TRUE(testNgpField.test_need_sync_to_host());
-#else
-  EXPECT_FALSE(testNgpField.test_need_sync_to_host());
-#endif
 
   stkIntField.clear_sync_state();
   EXPECT_FALSE(testNgpField.test_need_sync_to_host());
+}
+
+TEST_F(NgpFieldFixture, ClearHostSyncState)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+  NgpFieldTester<int>& testNgpField = static_cast<NgpFieldTester<int>&>(ngpField);
+
+  testNgpField.modify_on_host();
+
+  EXPECT_TRUE(testNgpField.test_need_sync_to_device());
+
+  testNgpField.clear_host_sync_state();
+
+  EXPECT_FALSE(testNgpField.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldFixture, ClearDeviceSyncState)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+  NgpFieldTester<int>& testNgpField = static_cast<NgpFieldTester<int>&>(ngpField);
+
+  testNgpField.modify_on_device();
+
+  EXPECT_TRUE(testNgpField.test_need_sync_to_host());
+
+  testNgpField.clear_device_sync_state();
+
+  EXPECT_FALSE(testNgpField.test_need_sync_to_host());
+}
+
+TEST_F(NgpFieldFixture, ClearHostSyncState_doesntClearDeviceMod)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+  NgpFieldTester<int>& testNgpField = static_cast<NgpFieldTester<int>&>(ngpField);
+
+  testNgpField.modify_on_device();
+
+  EXPECT_TRUE(testNgpField.test_need_sync_to_host());
+
+  testNgpField.clear_host_sync_state();
+
+  EXPECT_TRUE(testNgpField.test_need_sync_to_host());
+}
+
+TEST_F(NgpFieldFixture, ClearDeviceSyncState_doesntClearHostMod)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  stk::mesh::Field<int>& stkIntField = create_field<int>(stk::topology::ELEM_RANK, "intField");
+  setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+  stk::mesh::NgpField<int>& ngpField = stk::mesh::get_updated_ngp_field<int>(stkIntField);
+  NgpFieldTester<int>& testNgpField = static_cast<NgpFieldTester<int>&>(ngpField);
+
+  testNgpField.modify_on_host();
+
+  EXPECT_TRUE(testNgpField.test_need_sync_to_device());
+
+  testNgpField.clear_device_sync_state();
+
+  EXPECT_TRUE(testNgpField.test_need_sync_to_device());
+}
+
+class NgpFieldSwapFixture : public NgpFieldFixture {
+public:
+  void setup_fields_for_swap() {
+    stk::mesh::Field<int>& stkIntField1 = create_field<int>(stk::topology::ELEM_RANK, "intField1");
+    stk::mesh::Field<int>& stkIntField2 = create_field<int>(stk::topology::ELEM_RANK, "intField2");
+    setup_mesh("generated:1x1x1", stk::mesh::BulkData::NO_AUTO_AURA);
+
+    stk::mesh::NgpField<int>& ngpField1 = stk::mesh::get_updated_ngp_field<int>(stkIntField1);
+    stk::mesh::NgpField<int>& ngpField2 = stk::mesh::get_updated_ngp_field<int>(stkIntField2);
+    testNgpField1 = static_cast<NgpFieldTester<int>&>(ngpField1);
+    testNgpField2 = static_cast<NgpFieldTester<int>&>(ngpField2);
+  }
+
+protected:
+  NgpFieldTester<int> testNgpField1;
+  NgpFieldTester<int> testNgpField2;
+
+};
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsUnset)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsSetModDevice)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  testNgpField1.modify_on_device();
+
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsSetModHost)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  testNgpField2.modify_on_host();
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+}
+
+TEST_F(NgpFieldSwapFixture, SwapSyncState_ModFlagsSetModHostDevice)
+{
+  if(stk::parallel_machine_size(MPI_COMM_WORLD) != 1) { return; }
+
+  setup_fields_for_swap();
+
+  testNgpField1.modify_on_host();
+  testNgpField2.modify_on_device();
+
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_host());
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_device());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_device());
+
+  testNgpField1.swap(testNgpField2);
+
+  EXPECT_TRUE(testNgpField1.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField2.test_need_sync_to_host());
+  EXPECT_FALSE(testNgpField1.test_need_sync_to_device());
+  EXPECT_TRUE(testNgpField2.test_need_sync_to_device());
 }
 
 TEST_F(OptimizedNgpFieldFixture, ChangeBucketContentsByUserWithSingleComponent)
@@ -1098,4 +2198,145 @@ TEST_F(OptimizedNgpFieldFixture, AddAndDeleteBucketWithSingleComponent3)
 
   run_add_and_delete_bucket3(numComponents);
 }
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelector)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorMultipleModifiedOnHost)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_with_multiple_modified_on_host();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorMultipleModifiedOnHost2)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_with_multiple_modified_on_host2();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorMultipleModifiedOnHost3)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_with_multiple_modified_on_host3();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorMultipleModifiedOnHost4)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_with_multiple_modified_on_host4();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorMultipleModifiedOnHostSyncAll)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_with_multiple_modified_on_host_sync_all();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorNotSelectingMiddleBlock)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_not_selecting_middle_block();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceWithSelectorOnlySelectingMiddleBlock)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_with_selector_only_selecting_middle_block();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToDeviceAfterMeshModAndModifyWithSelector)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_device_after_mesh_mod_and_modify_with_selector();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelector)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorMultipleModifiedOnDevice)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_with_multiple_modified_on_device();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorMultipleModifiedOnDevice2)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_with_multiple_modified_on_device2();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorMultipleModifiedOnDevice3)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_with_multiple_modified_on_device3();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorMultipleModifiedOnDevice4)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_with_multiple_modified_on_device4();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorMultipleModifiedOnDeviceSyncAll)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_with_multiple_modified_on_device_sync_all();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorNotSelectingMiddleBlock)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_not_selecting_middle_block();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostWithSelectorOnlySelectingMiddleBlock)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_with_selector_only_selecting_middle_block();
+}
+
+TEST_F(OptimizedNgpFieldFixture, SyncToHostAfterMeshModAndModifyWithSelector)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_sync_to_host_after_mesh_mod_and_modify_with_selector();
+}
+
+TEST_F(OptimizedNgpFieldFixture, CheckContiguousBucketOffsetCopy)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_check_contiguous_bucket_offset_copy();
+}
+
+TEST_F(OptimizedNgpFieldFixture, ModifyOnHostAndDeviceUsingPartToSelect)
+{
+  if (get_parallel_size() != 1) return;
+
+  run_modify_on_host_and_device_using_part_to_select();
+}
+
 }

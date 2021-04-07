@@ -101,6 +101,7 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength ();
     const size_t numVecs = X_in.getNumVectors ();
+    Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
       ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
@@ -109,6 +110,7 @@ public:
         X_out_j[i] = X_in_j[i_perm];
       }
     }
+    X_out.modify_host();
   }
 
   //Gather blocks (contiguous groups of blockSize rows)
@@ -124,6 +126,7 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numBlocks = X_out.getLocalLength() / blockSize;
     const size_t numVecs = X_in.getNumVectors ();
+    Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
       ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
@@ -134,6 +137,7 @@ public:
         }
       }
     }
+    X_out.modify_host();
   }
 
   void
@@ -144,6 +148,7 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numRows = X_out.getLocalLength();
     const size_t numVecs = X_in.getNumVectors();
+    Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<InScalar> X_in_j = X_in.getDataNonConst(j);
       ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
@@ -152,6 +157,7 @@ public:
         X_in_j[i_perm] = X_out_j[i];
       }
     }
+    X_out.modify_host();
   }
 
   void
@@ -164,6 +170,7 @@ public:
     using Teuchos::ArrayRCP;
     const size_t numBlocks = X_out.getLocalLength() / blockSize;
     const size_t numVecs = X_in.getNumVectors ();
+    Kokkos::fence();
     for (size_t j = 0; j < numVecs; ++j) {
       ArrayRCP<const InScalar> X_in_j = X_in.getData(j);
       ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
@@ -174,6 +181,7 @@ public:
         }
       }
     }
+    X_out.modify_host();
   }
 
   /******************/
@@ -185,6 +193,7 @@ public:
                         const Teuchos::ArrayView<const LO> perm) const
   {
     //note: j is col, i is row
+    Kokkos::fence(); // demonstrated via unit test failure
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < X_out.extent(0); ++i) {
         const LO i_perm = perm[i];
@@ -198,6 +207,7 @@ public:
                          const OutView X_out,
                          const Teuchos::ArrayView<const LO> perm) const
   {
+    Kokkos::fence();
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < X_out.extent(0); ++i) {
         const LO i_perm = perm[i];
@@ -213,6 +223,7 @@ public:
                              LO blockSize) const
   {
     //note: j is col, i is row
+    Kokkos::fence();
     size_t numBlocks = X_out.extent(0) / blockSize;
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < numBlocks; ++i) {
@@ -231,6 +242,7 @@ public:
                               LO blockSize) const
   {
     //note: j is col, i is row
+    Kokkos::fence();
     size_t numBlocks = X_out.extent(0) / blockSize;
     for(size_t j = 0; j < X_out.extent(1); ++j) {
       for(size_t i = 0; i < numBlocks; ++i) {
@@ -251,6 +263,7 @@ public:
                       const Teuchos::ArrayView<const LO> perm) const
   {
     //note: j is col, i is row
+    Kokkos::fence();
     size_t numRows = X_out.getLocalLength();
     for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
@@ -267,6 +280,7 @@ public:
                        const Teuchos::ArrayView<const LO> perm) const
   {
     size_t numRows = X_out.getLocalLength(); 
+    Kokkos::fence();
     for(size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
       for(size_t i = 0; i < numRows; ++i) {
@@ -284,6 +298,7 @@ public:
   {
     //note: j is col, i is row
     size_t numBlocks = X_out.getLocalLength() / blockSize;
+    Kokkos::fence();
     for(size_t j = 0; j < X_out.getNumVectors(); ++j) {
       Teuchos::ArrayRCP<OutScalar> X_out_j = X_out.getDataNonConst(j);
       for(size_t i = 0; i < numBlocks; ++i) {
@@ -302,6 +317,7 @@ public:
                             LO blockSize) const
   {
     size_t numBlocks = X_out.getLocalLength() / blockSize;
+    Kokkos::fence();
     for(size_t j = 0; j < X_in.extent(1); ++j) {
       Teuchos::ArrayRCP<const OutScalar> X_out_j = X_out.getData(j);
       for(size_t i = 0; i < numBlocks; ++i) {

@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       SUBROUTINE EVAL (STEP1, WSTEP1, MAXNE, MAXSTK,
@@ -75,7 +75,6 @@ C   --   Uses NUMELO, NUMNPO of /DBOUT/
       CHARACTER IVTYPE
       CHARACTER*5 STRA
       INTEGER MERR
-
 
       EXTERNAL MYSUM, MYMAX, MYMIN, MYSIGN, MYAMOD
       EXTERNAL myint, mynint, myabs, mydim, myexp, mylog,

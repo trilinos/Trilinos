@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_SideBlock_h
@@ -81,6 +81,10 @@ namespace Ioss {
     int  get_consistent_side_number() const;
     void set_consistent_side_number(int side) { consistentSideNumber = side; }
 
+    bool operator==(const SideBlock &) const;
+    bool operator!=(const SideBlock &) const;
+    bool equal(const SideBlock &) const;
+
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
@@ -89,6 +93,8 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
+    bool equal_(const SideBlock &, bool quiet) const;
+
     const SideSet *    owner_{nullptr};
     ElementTopology *  parentTopology_{nullptr}; // Topology of parent element (if any)
     const EntityBlock *parentBlock_{nullptr};

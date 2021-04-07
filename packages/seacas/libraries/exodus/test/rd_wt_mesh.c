@@ -2,13 +2,9 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
-
-#define _FILE_OFFSET_BITS 64
-#define _LARGEFILE_SOURCE
-#define _LARGE_FILES 1
 
 #ifdef PARALLEL_AWARE_EXODUS
 #include <mpi.h>
@@ -74,8 +70,8 @@ double my_timer()
 #ifdef PARALLEL_AWARE_EXODUS
   double t1 = MPI_Wtime();
 #else
-  clock_t ctime     = clock();
-  double  t1        = ctime / (double)CLOCKS_PER_SEC;
+  clock_t ctime = clock();
+  double  t1    = ctime / (double)CLOCKS_PER_SEC;
 #endif
   return t1;
 }
@@ -134,17 +130,13 @@ int main(int argc, char **argv)
 
   ex_opts(EX_VERBOSE | EX_ABORT);
 
-#if defined(__LIBCATAMOUNT__)
-  setlinebuf(stderr);
-#endif
-
 #ifdef PARALLEL_AWARE_EXODUS
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &num_domains);
 #else
-  rank              = 0;
-  num_domains       = 1;
+  rank        = 0;
+  num_domains = 1;
 #endif
   /*
    *    Processor 0: parse the command line arguments.
@@ -663,7 +655,7 @@ int read_exo_mesh(char *file_name, int rank, int *num_dim, int num_domains, int 
 #ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&file_size, &glob_file_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
-  glob_file_size    = file_size;
+  glob_file_size = file_size;
 #endif
 
   if (rank == 0) {
@@ -1145,7 +1137,7 @@ int write_exo_mesh(char *file_name, int rank, int num_dim, int num_domains, int 
 #ifdef PARALLEL_AWARE_EXODUS
   MPI_Allreduce(&file_size, &glob_file_size, 1, MPI_LONG, MPI_SUM, MPI_COMM_WORLD);
 #else
-  glob_file_size    = file_size;
+  glob_file_size = file_size;
 #endif
 
   if (rank == 0) {

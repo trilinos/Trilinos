@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -11,6 +11,9 @@
  */
 
 /* 1-d elements */
+
+#ifndef EL_ELM_H
+#define EL_ELM_H
 
 #define BAR2 0
 #define BAR3 1
@@ -71,3 +74,4 @@
 extern int elem_info(int info, int ielem_type, int supp);
 
 extern int get_type(const char string[], int nodes, int num_dim);
+#endif

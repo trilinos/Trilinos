@@ -1,7 +1,7 @@
 #include <vector>
-#include "balance.hpp"
-#include "balanceUtils.hpp"               // for BalanceSettings, etc
-#include "internal/privateDeclarations.hpp"  // for callZoltan1, etc
+#include "stk_balance/balance.hpp"
+#include "stk_balance/balanceUtils.hpp"               // for BalanceSettings, etc
+#include "stk_balance/internal/privateDeclarations.hpp"  // for callZoltan1, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_util/util/ReportHandler.hpp"  // for ThrowRequireMsg
 #include <stk_mesh/baseImpl/elementGraph/ElemElemGraph.hpp>

@@ -1,7 +1,7 @@
 C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
-C    
+C
 C    See packages/seacas/LICENSE for details
 C=======================================================================
       PROGRAM EXPLORE
@@ -420,63 +420,6 @@ C   --Process commands
       CALL MDSTAT (NERR, MEM)
       IF (NERR .GT. 0) GOTO 100
 
-      CALL MDDEL ('CORD')
-      CALL MCDEL ('NAMECO')
-      CALL MDDEL ('MAPEL')
-      CALL MDDEL ('MAPNO')
-      CALL MDDEL ('IDELB')
-      CALL MDDEL ('NUMELB')
-      CALL MDDEL ('NUMLNK')
-      CALL MDDEL ('NUMATR')
-      CALL MDDEL ('LENE')
-      CALL MCDEL ('EBTYPE')
-      CALL MCDEL ('EBNAME')
-      CALL MDDEL ('IDNPS')
-      CALL MDDEL ('NNNPS')
-      CALL MDDEL ('NDNPS')
-      CALL MDDEL ('IXNNPS')
-      CALL MDDEL ('IXDNPS')
-      CALL MDDEL ('LTNNPS')
-      CALL MDDEL ('FACNPS')
-      CALL MCDEL ('NSNAME')
-      CALL MDDEL ('LISNP')
-      CALL MDDEL ('NLISEL')
-      CALL MDDEL ('LISEL')
-      CALL MDDEL ('LISBEL')
-      CALL MDDEL ('LISNPS')
-      CALL MDDEL ('LISESS')
-      CALL MDDEL ('LINK')
-      CALL MDDEL ('ATRIB')
-      call mcdel ('ATRNM')
-      if (exodus) then
-        call mddel('LISGV')
-        call mddel('LISNV')
-        call mddel('LISEV')
-        call mddel('LISMV')
-        call mddel('LISSV')
-        call mddel('VARGL')
-        call mddel('VARNP')
-        call mddel('VAREL')
-        call mddel('VARNS')
-        call mddel('VARSS')
-        call mddel('TIMES')
-        call mcdel('VNAMEI')
-        call mcdel('VNAMEO')
-        CALL MDDEL('ISEVOK')
-        CALL MDDEL('ISNSVOK')
-        CALL MDDEL('ISSSVOK')
-      endif
-      if (.not. mapnd) then
-        call MDDEL('DBMAPNO')
-      end if
-      if (.not. mapel) then
-        call MDDEL('DBMAPEL')
-      end if
-      call mcdel('QAREC')
-      call mcdel('INFREC')
-
-      CALL MDSTAT (NERR, MEM)
-      IF (NERR .GT. 0) GOTO 100
 
       GOTO 110
 
@@ -486,6 +429,7 @@ C   --Process commands
 
  110  CONTINUE
 
+      call mdfree()
       call exclos(ndb, ierr)
 
  120  CONTINUE

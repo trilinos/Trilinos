@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef APR_BUILTIN_H
@@ -85,6 +85,7 @@ namespace SEAMS {
   const char *do_get_iso_date();
   const char *do_get_time();
   const char *do_get_temp_filename();
+  const char *do_version();
 
   const char *do_dumpsym1(char *pre);
   const char *do_dumpfunc1(char *pre);

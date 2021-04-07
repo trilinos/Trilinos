@@ -1,7 +1,7 @@
 // Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
-// 
+//
 // See packages/seacas/LICENSE for details
 
 #ifndef IOSS_Ioss_PropertyManager_h
@@ -37,7 +37,10 @@ namespace Ioss {
     // Checks if a property with 'property_name' exists in the database.
     bool exists(const std::string &property_name) const;
 
-    Property get(const std::string &property_name) const;
+    Property    get(const std::string &property_name) const;
+    int64_t     get_optional(const std::string &property_name, int64_t optional_value) const;
+    std::string get_optional(const std::string &property_name,
+                             const std::string &optional_value) const;
 
     // Returns the names of all properties
     int describe(NameList *names) const;

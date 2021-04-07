@@ -164,12 +164,11 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     fieldIds_[fd] = fieldGlobalIndexers_[fd]->getFieldNum(fieldName); // Field number in the sub-global-indexer
 
     const std::vector<int>& offsets = fieldGlobalIndexers_[fd]->getGIDFieldOffsets(blockId,fieldIds_[fd]);
-    fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("GatherSolution_BlockedTpetra(Residual):fieldOffsets",offsets.size());
+    fieldOffsets_[fd] = PHX::View<int*>("GatherSolution_BlockedTpetra(Residual):fieldOffsets",offsets.size());
     auto hostFieldOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
     for(std::size_t i=0; i < offsets.size(); ++i)
       hostFieldOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd],hostFieldOffsets);
-    typename PHX::Device().fence();
 
     maxElementBlockGIDCount = std::max(fieldGlobalIndexers_[fd]->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
   }
@@ -177,7 +176,7 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   // We will use one workset lid view for all fields, but has to be
   // sized big enough to hold the largest elementBlockGIDCount in the
   // ProductVector.
-  worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("GatherSolution_BlockedTpetra(Residual):worksetLIDs",
+  worksetLIDs_ = PHX::View<LO**>("GatherSolution_BlockedTpetra(Residual):worksetLIDs",
                                                 gatherFields_[0].extent(0),
                                                 maxElementBlockGIDCount);
 
@@ -203,7 +202,7 @@ evaluateFields(typename TRAITS::EvalData workset)
   using Thyra::VectorBase;
   using Thyra::ProductVectorBase;
   
-  const auto& localCellIds = this->wda(workset).cell_local_ids_k;
+  const PHX::View<const int*>& localCellIds = this->wda(workset).cell_local_ids_k;
   
   RCP<ProductVectorBase<ScalarT>> thyraBlockSolution;
   if (useTimeDerivativeSolutionVector_)
@@ -470,26 +469,25 @@ postRegistrationSetup(typename TRAITS::SetupData d,
     fieldIds_[fd] = subGlobalIndexer->getFieldNum(fieldName); // Field number in the sub-global-indexer
 
     const std::vector<int>& offsets = subGlobalIndexer->getGIDFieldOffsets(blockId,fieldIds_[fd]);
-    fieldOffsets_[fd] = Kokkos::View<int*,PHX::Device>("GatherSolution_BlockedTpetra(Jacobian):fieldOffsets",offsets.size());
+    fieldOffsets_[fd] = PHX::View<int*>("GatherSolution_BlockedTpetra(Jacobian):fieldOffsets",offsets.size());
     auto hostOffsets = Kokkos::create_mirror_view(fieldOffsets_[fd]);
     for (std::size_t i=0; i < offsets.size(); ++i)
       hostOffsets(i) = offsets[i];
     Kokkos::deep_copy(fieldOffsets_[fd], hostOffsets);
     maxElementBlockGIDCount = std::max(subGlobalIndexer->getElementBlockGIDCount(blockId),maxElementBlockGIDCount);
-    typename PHX::Device().fence();
   }
 
   // We will use one workset lid view for all fields, but has to be
   // sized big enough to hold the largest elementBlockGIDCount in the
   // ProductVector.
-  worksetLIDs_ = Kokkos::View<LO**,PHX::Device>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
+  worksetLIDs_ = PHX::View<LO**>("ScatterResidual_BlockedTpetra(Residual):worksetLIDs",
                                                 gatherFields_[0].extent(0),
                                                 maxElementBlockGIDCount);
 
   // Compute the block offsets
   const auto& blockGlobalIndexers = globalIndexer_->getFieldDOFManagers();
   const int numBlocks = static_cast<int>(globalIndexer_->getFieldDOFManagers().size());
-  blockOffsets_ = Kokkos::View<LO*,PHX::Device>("GatherSolution_BlockedTpetra(Jacobian):blockOffsets_",
+  blockOffsets_ = PHX::View<LO*>("GatherSolution_BlockedTpetra(Jacobian):blockOffsets_",
                                                 numBlocks+1); // Number of blocks, plus a sentinel
   const auto hostBlockOffsets = Kokkos::create_mirror_view(blockOffsets_);
   for (int blk=0;blk<numBlocks;++blk) {
@@ -500,7 +498,6 @@ postRegistrationSetup(typename TRAITS::SetupData d,
   Kokkos::deep_copy(blockOffsets_,hostBlockOffsets);
 
   indexerNames_.clear();  // Don't need this anymore
-  typename PHX::Device().fence();
 }
 
 template <typename TRAITS,typename S,typename LO,typename GO,typename NodeT>
@@ -557,10 +554,10 @@ evaluateFields(typename TRAITS::EvalData workset)
     const auto kokkosSolution = subblockSolution.template getLocalView<PHX::mem_space>();
 
     // Class data fields for lambda capture
-    const Kokkos::View<const int*,PHX::Device> fieldOffsets = fieldOffsets_[fieldIndex];
-    const Kokkos::View<const LO**,PHX::Device> worksetLIDs = worksetLIDs_;
+    const PHX::View<const int*> fieldOffsets = fieldOffsets_[fieldIndex];
+    const PHX::View<const LO**> worksetLIDs = worksetLIDs_;
     const PHX::View<ScalarT**> fieldValues = gatherFields_[fieldIndex].get_static_view();        
-    const Kokkos::View<const LO*,PHX::Device> blockOffsets = blockOffsets_;
+    const PHX::View<const LO*> blockOffsets = blockOffsets_;
     const int blockStart = blockOffsets(blockRowIndex);
     const int numDerivatives = blockOffsets(numFieldBlocks);
 

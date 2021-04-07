@@ -82,7 +82,7 @@ typedef std::vector< FieldBase * >  FieldVector;
 typedef std::vector< unsigned >     OrdinalVector;
 typedef std::vector< unsigned >     PermutationIndexVector;
 typedef std::vector<Entity>         EntityVector;
-
+typedef std::vector<EntityKey>      EntityKeyVector;
 
 template< typename Scalar = void ,
           class Tag1 = void , class Tag2 = void ,
@@ -153,7 +153,7 @@ typedef std::vector<BucketIndices> VolatileFastSharedCommMapOneRank;
 typedef stk::topology::rank_t EntityRank ;
 
 typedef std::map<std::pair<EntityRank, Selector>, std::pair<size_t, size_t> > SelectorCountMap;
-typedef std::map<std::pair<EntityRank, Selector>, BucketVector> SelectorBucketMap;
+typedef std::map<Selector, BucketVector> SelectorBucketMap;
 typedef std::vector<VolatileFastSharedCommMapOneRank> VolatileFastSharedCommMap;
 
 typedef std::map<EntityKey,std::set<int> > EntityToDependentProcessorsMap;

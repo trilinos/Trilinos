@@ -10,21 +10,17 @@
 #ifndef SIERRA_SLIB_RESOURCE2_H
 #define SIERRA_SLIB_RESOURCE2_H
 
-#include "stk_util/diag/String.hpp"       // for String, operator<, etc
-#include "stk_util/util/AnyData.hpp"      // for Value, AnyData
-#include "stk_util/util/Writer_fwd.hpp"   // for Writer
-#include <algorithm>                      // for find_if, lower_bound
-#include <stddef.h>                       // for size_t
-#include <typeinfo>                       // for type_info
-#include <vector>                         // for vector, etc
+#include "stk_util/diag/String.hpp"      // for String, operator<, operator==
+#include "stk_util/util/AnyData.hpp"     // for AnyData, Data (ptr only), Value, bad_any_data_cast
+#include "stk_util/util/Writer_fwd.hpp"  // for Writer
+#include <cstddef>                       // for size_t
+#include <algorithm>                     // for find_if, lower_bound
+#include <typeinfo>                      // for type_info
+#include <vector>                        // for vector, vector<>::const_iterator, vector<>::iter...
 
-namespace sierra {
-namespace Rsrc2 {
-class Resource;
-class ResourceList;
-struct Resource_;
-}
-}
+namespace sierra { namespace Rsrc2 { class Resource; } }
+namespace sierra { namespace Rsrc2 { class ResourceList; } }
+namespace sierra { namespace Rsrc2 { struct Resource_; } }
 
 namespace sierra {
 namespace Rsrc2 {

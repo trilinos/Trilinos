@@ -31,9 +31,11 @@
  // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <stk_util/stk_config.h>
-#include <stk_util/environment/OptionsSpecification.hpp>
-#include <stk_util/util/string_utils.hpp>
+#include "stk_util/environment/OptionsSpecification.hpp"
+#include "stk_util/util/string_utils.hpp"  // for dash_it, make_vector_of_strings
+#include <algorithm>                       // for copy, max
+#include <iomanip>                         // for operator<<, setw
+#include <utility>                         // for move
 
 namespace stk {
 

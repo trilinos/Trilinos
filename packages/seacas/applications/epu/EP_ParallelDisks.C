@@ -2,7 +2,7 @@
  * Copyright(C) 1999-2020 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 
@@ -24,28 +24,6 @@ Excn::ParallelDisks::ParallelDisks() = default;
 Excn::ParallelDisks::~ParallelDisks() = default;
 
 /*****************************************************************************/
-void Excn::ParallelDisks::Number_of_Raids(int i)
-{
-  number_of_raids = i;
-  create_disk_names();
-}
-
-/*****************************************************************************/
-void Excn::ParallelDisks::Raid_Offset(int i)
-{
-  raid_offset = i;
-  create_disk_names();
-}
-
-/*****************************************************************************/
-int Excn::ParallelDisks::Number_of_Raids() const { return number_of_raids; }
-
-/*****************************************************************************/
-int Excn::ParallelDisks::Raid_Offset() const { return raid_offset; }
-
-/*****************************************************************************/
-
-/*****************************************************************************/
 void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const std::string &subdir,
                                              std::string &name, int node, int numproc) const
 {
@@ -63,42 +41,11 @@ void Excn::ParallelDisks::rename_file_for_mp(const std::string &rootdir, const s
   }
 
   int lnn = node;
-  if (number_of_raids != 0) {
-    int diskn = lnn % number_of_raids;
-    Create_IO_Filename(name, lnn, numproc);
-    name = disk_names[diskn] + "/" + subdir + "/" + name;
-  }
-  else {
-    Create_IO_Filename(name, lnn, numproc);
-    if (!subdir.empty()) {
-      name = subdir + "/" + name;
-    }
+  Create_IO_Filename(name, lnn, numproc);
+  if (!subdir.empty()) {
+    name = subdir + "/" + name;
   }
   name = prepend + name;
-}
-
-/*****************************************************************************/
-void Excn::ParallelDisks::create_disk_names()
-{
-
-  if (number_of_raids == 0) {
-    return;
-  }
-
-  disk_names.resize(number_of_raids);
-  for (int i = 0; i < number_of_raids; i++) {
-    int num = i + raid_offset;
-    if (num < 10) {
-#ifdef COUGAR
-      disk_names[i] = std::to_string(num);
-#else
-      disk_names[i] = "0" + std::to_string(num);
-#endif
-    }
-    else {
-      disk_names[i] = std::to_string(num);
-    }
-  }
 }
 
 /*****************************************************************************/

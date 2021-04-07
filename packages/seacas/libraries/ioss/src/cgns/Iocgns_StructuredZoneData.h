@@ -1,8 +1,8 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
- * 
+ *
  * See packages/seacas/LICENSE for details
  */
 #ifndef IOCGNS_STRUCTUREDZONEDATA_H
@@ -15,6 +15,12 @@
 #include <utility>
 
 namespace Iocgns {
+  enum Ordinal {
+    I = 1,
+    J = 2,
+    K = 4,
+  };
+
   class StructuredZoneData
   {
   public:
@@ -38,7 +44,7 @@ namespace Iocgns {
     Ioss::IJK_t m_offset{{0, 0, 0}};
 
     // If value is 0, 1, or 2, then do not split along that ordinal
-    int m_lineOrdinal{-1};
+    unsigned int m_lineOrdinal{0};
 
     int m_zone{0};
 
@@ -87,8 +93,8 @@ namespace Iocgns {
 
     std::pair<StructuredZoneData *, StructuredZoneData *> split(int zone_id, double avg_work,
                                                                 int rank, bool verbose);
-    void resolve_zgc_split_donor(std::vector<Iocgns::StructuredZoneData *> &zones);
-    void update_zgc_processor(std::vector<Iocgns::StructuredZoneData *> &zones);
+    void resolve_zgc_split_donor(const std::vector<Iocgns::StructuredZoneData *> &zones);
+    void update_zgc_processor(const std::vector<Iocgns::StructuredZoneData *> &zones);
   };
 } // namespace Iocgns
 

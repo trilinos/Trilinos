@@ -63,7 +63,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
   )
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Driver_cp
-    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml
+    SOURCE_FILES scaling.xml scaling.yaml scaling-complex.xml scaling-withglobalconstants.xml scaling-complex-withglobalconstants.xml circ_nsp_dependency.xml isorropia.xml iso_poisson.xml conchas_milestone_zoltan.xml conchas_milestone_zoltan2.xml conchas_milestone_zoltan2_complex.xml sa_with_ilu.xml sa_with_Ifpack2_line_detection.xml rap.xml smoother.xml smoother_complex.xml tripleMatrixProduct.xml scaling-ml.xml elasticity3D.xml amgx.json amgx.xml scaling-with-rerun.xml scaling_distance2_agg.xml smooVec.mm smooVecCoalesce.xml pairwise.xml sa_enforce_constraints.xml
     CATEGORIES BASIC PERFORMANCE
    )
 
@@ -219,7 +219,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
 
   ENDIF()
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Driver
     NAME "RAPScalingTestEpetra"
     ARGS "--linAlgebra=Epetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
@@ -227,7 +227,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
     COMM serial mpi
     )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Driver
     NAME "SmootherScalingTestEpetra"
     ARGS "--linAlgebra=Epetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
@@ -235,7 +235,7 @@ IF (${PACKAGE_NAME}_HAVE_EPETRA_SOLVER_STACK AND (NOT Xpetra_INT_LONG_LONG))
     COMM serial mpi
     )
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     ReadMatrix
     NAME "ReadMatrixEpetra"
     ARGS "--linAlgebra=Epetra --xml=simple.xml"
@@ -329,6 +329,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
         COMM mpi # HAVE_MPI required
         )
 
+        TRIBITS_ADD_TEST(
+          Driver
+          NAME "DriverEnforceConstaints"
+          ARGS "--xml=sa_enforce_constraints.xml --stretchx=3. --matrixType=Laplace2D --nx=43 --ny=40"
+          NUM_MPI_PROCS 1
+          COMM mpi # HAVE_MPI required
+          RUN_SERIAL
+          )
+
       IF(${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
         TRIBITS_ADD_TEST(
           Driver
@@ -389,7 +398,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     ENDIF()
   ENDIF()
 
-  TRIBITS_ADD_TEST(
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
     Driver
     NAME "RAPScalingTestTpetra"
     ARGS "--linAlgebra=Tpetra --xml=rap.xml --solver=none --nx=50 --ny=50 --rebuild=1"
@@ -398,7 +407,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
     )
 
   IF (${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "SmootherScalingTestTpetra"
       ARGS "--linAlgebra=Tpetra --xml=smoother_complex.xml --nx=10 --ny=10 --solver=none"
@@ -406,7 +415,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       COMM serial mpi
       )
   ELSE()
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       Driver
       NAME "SmootherScalingTestTpetra"
       ARGS "--linAlgebra=Tpetra --xml=smoother.xml --nx=10 --ny=10 --solver=none"
@@ -417,7 +426,7 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
   # Reading a matrix saved in real format as complex does not work.
   IF (NOT ${PACKAGE_NAME}_INST_COMPLEX_INT_INT)
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       ReadMatrix
       NAME "ReadMatrixTpetra"
       ARGS "--linAlgebra=Tpetra --xml=simple.xml"
@@ -437,6 +446,58 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
 
 ENDIF()
 
+IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Epetra AND Tpetra_INST_SERIAL)
+  TRIBITS_ADD_EXECUTABLE(
+    SpMVPerformance
+    SOURCES SpMVPerformance.cpp
+    COMM mpi
+    CATEGORIES PERFORMANCE
+    )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Tpetra"
+    COMM mpi
+    NUM_MPI_PROCS 1
+    ARGS "--node=serial --linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Tpetra"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    ARGS "--node=serial --linAlgebra=Tpetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Epetra"
+    COMM mpi
+    NUM_MPI_PROCS 1
+    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+
+  TRIBITS_ADD_TEST(
+    SpMVPerformance
+    NAME_POSTFIX "Epetra"
+    COMM mpi
+    NUM_MPI_PROCS 4
+    ARGS "--linAlgebra=Epetra --nx=120 --ny=120 --nz=120 --matrixType=Laplace3D --num-runs=1000"
+    PASS_REGULAR_EXPRESSION "Complete"
+    RUN_SERIAL
+    CATEGORIES PERFORMANCE
+  )
+ENDIF()
 
 # Driver to evaluate low level Matrix Matrix multiply kernels potentially using different TPLs
 # This differs from the existing Matrix Matrix driver that forms parallel random matrices for testing
@@ -453,7 +514,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       )
 
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       MMKernelDriver
       NAME "MatrixMatrixKernelDriver"
       ARGS "--linAlgebra=Tpetra"
@@ -468,7 +529,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       )
 
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       JacobiKernelDriver
       NAME "JacobiKernelDriver"
       ARGS "--linAlgebra=Tpetra"
@@ -483,7 +544,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental AND ${PACKAGE_NAME}_ENABLE_Tpetra)
       )
 
 
-    TRIBITS_ADD_TEST(
+    MUELU_ADD_SERIAL_AND_MPI_TEST(
       TwoMatrixMMKernelDriver
       NAME "TwoMatrixMMKernelDriver"
       ARGS "--linAlgebra=Tpetra"

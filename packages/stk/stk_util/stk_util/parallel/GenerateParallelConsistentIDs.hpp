@@ -45,7 +45,6 @@
 #include <stdexcept>
 #include <string>                       // for string
 #include <sstream>
-#include "mpi.h"
 #include <assert.h>
 
 namespace stk {

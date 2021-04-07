@@ -9,11 +9,10 @@
 #ifndef Tempus_IntegratorPseudoTransientAdjointSensitivity_impl_hpp
 #define Tempus_IntegratorPseudoTransientAdjointSensitivity_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "NOX_Thyra.H"
+
 
 namespace Tempus {
 
@@ -85,9 +84,9 @@ advanceTime(const Scalar timeFinal)
   inargs.set_t(sens_integrator_->getTime());
   inargs.set_x(sens_integrator_->getX());
   if (inargs.supports(MEB::IN_ARG_x_dot))
-    inargs.set_x_dot(sens_integrator_->getXdot());
+    inargs.set_x_dot(sens_integrator_->getXDot());
   if (inargs.supports(MEB::IN_ARG_x_dot_dot))
-    inargs.set_x_dot_dot(sens_integrator_->getXdotdot());
+    inargs.set_x_dot_dot(sens_integrator_->getXDotDot());
   RCP<VectorBase<Scalar> > G = dgdp_;
   if (G == Teuchos::null) {
     G = Thyra::createMember(sens_model_->get_g_space(0));
@@ -238,17 +237,17 @@ getX() const
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-getXdot() const
+getXDot() const
 {
-  return state_integrator_->getXdot();
+  return state_integrator_->getXDot();
 }
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorBase<Scalar> >
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
-getXdotdot() const
+getXDotDot() const
 {
-  return state_integrator_->getXdotdot();
+  return state_integrator_->getXDotDot();
 }
 
 template<class Scalar>
@@ -272,12 +271,13 @@ template<class Scalar>
 void
 IntegratorPseudoTransientAdjointSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  state_integrator_->describe(out, verbLevel);
-  sens_integrator_->describe(out, verbLevel);
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  *out << description() << "::describe" << std::endl;
+  state_integrator_->describe(*out, verbLevel);
+  sens_integrator_->describe(*out, verbLevel);
 }
 
 template<class Scalar>
@@ -362,7 +362,7 @@ buildSolutionHistory()
   RCP<ParameterList> shPL =
     Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
                      "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   RCP<const VectorSpaceBase<Scalar> > x_space =
     model_->get_x_space();
@@ -451,11 +451,11 @@ buildSolutionHistory()
     prod_state->setX(x_b);
     prod_state->setXDot(x_dot_b);
     prod_state->setXDotDot(x_dot_dot_b);
-    solutionHistory_->addState(prod_state);
+    solutionHistory_->addState(prod_state, false);
   }
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity(
@@ -467,7 +467,7 @@ integratorPseudoTransientAdjointSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity(
@@ -479,7 +479,7 @@ integratorPseudoTransientAdjointSensitivity(
   return(integrator);
 }
 
-/// Non-member constructor
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<IntegratorPseudoTransientAdjointSensitivity<Scalar> >
 integratorPseudoTransientAdjointSensitivity()

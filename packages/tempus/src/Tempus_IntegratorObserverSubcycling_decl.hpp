@@ -9,6 +9,7 @@
 #ifndef Tempus_IntegratorObserverSubcycling_decl_hpp
 #define Tempus_IntegratorObserverSubcycling_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorObserver.hpp"
 #include "Tempus_Integrator.hpp"
 #include "Teuchos_Time.hpp"

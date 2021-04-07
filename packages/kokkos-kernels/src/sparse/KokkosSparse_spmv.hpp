@@ -49,11 +49,13 @@
 #define KOKKOSSPARSE_SPMV_HPP_
 
 #include "KokkosKernels_helpers.hpp"
+#include "KokkosKernels_Controls.hpp"
 #include "KokkosSparse_spmv_spec.hpp"
 #include "KokkosSparse_spmv_struct_spec.hpp"
 #include <type_traits>
 #include "KokkosSparse_CrsMatrix.hpp"
-
+#include "KokkosBlas1_scal.hpp"
+#include "KokkosKernels_Utils.hpp"
 
 namespace KokkosSparse {
 
@@ -64,7 +66,8 @@ namespace {
 
 template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
-spmv (const char mode[],
+spmv (KokkosKernels::Experimental::Controls controls,
+      const char mode[],
       const AlphaType& alpha,
       const AMatrix& A,
       const XVector& x,
@@ -136,22 +139,75 @@ spmv (const char mode[],
   XVector_Internal x_i = x;
   YVector_Internal y_i = y;
 
-  return Impl::SPMV<
-              typename AMatrix_Internal::value_type,
-              typename AMatrix_Internal::ordinal_type,
-              typename AMatrix_Internal::device_type,
-              typename AMatrix_Internal::memory_traits,
-              typename AMatrix_Internal::size_type,
-              typename XVector_Internal::value_type*,
-              typename XVector_Internal::array_layout,
-              typename XVector_Internal::device_type,
-              typename XVector_Internal::memory_traits,
-              typename YVector_Internal::value_type*,
-              typename YVector_Internal::array_layout,
-              typename YVector_Internal::device_type,
-              typename YVector_Internal::memory_traits>::spmv (mode, alpha, A_i, x_i, beta, y_i);
-}
+  if(alpha == Kokkos::ArithTraits<AlphaType>::zero() ||
+      A_i.numRows() == 0 || A_i.numCols() == 0 || A_i.nnz() == 0)
+  {
+    //This is required to maintain semantics of KokkosKernels native SpMV:
+    //if y contains NaN but beta = 0, the result y should be filled with 0.
+    //For example, this is useful for passing in uninitialized y and beta=0.
+    if(beta == Kokkos::ArithTraits<BetaType>::zero())
+      Kokkos::deep_copy(y_i, Kokkos::ArithTraits<BetaType>::zero());
+    else
+      KokkosBlas::scal(y_i, beta, y_i);
+    return;
+  }
 
+  //Whether to call KokkosKernel's native implementation, even if a TPL impl is available
+  bool useFallback = controls.isParameter("algorithm") && controls.getParameter("algorithm") == "native";
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
+  //cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only supports the normal (N) mode.
+#if (9000 <= CUDA_VERSION)
+  useFallback = useFallback || (mode[0] != NoTranspose[0]);
+#endif
+#if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
+  useFallback = useFallback || (mode[0] == Conjugate[0]);
+#endif
+#endif
+
+  if(useFallback)
+  {
+    //Explicitly call the non-TPL SPMV implementation
+    std::string label = "KokkosSparse::spmv[NATIVE," + Kokkos::ArithTraits<typename AMatrix_Internal::non_const_value_type>::name() + "]";
+    Kokkos::Profiling::pushRegion(label);
+    Impl::SPMV<
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type*,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type*,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits,
+      false>
+        ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
+    Kokkos::Profiling::popRegion();
+  }
+  else
+  {
+    //note: the cuSPARSE spmv wrapper defines a profiling region, so one is not needed here.
+    Impl::SPMV<
+      typename AMatrix_Internal::value_type,
+      typename AMatrix_Internal::ordinal_type,
+      typename AMatrix_Internal::device_type,
+      typename AMatrix_Internal::memory_traits,
+      typename AMatrix_Internal::size_type,
+      typename XVector_Internal::value_type*,
+      typename XVector_Internal::array_layout,
+      typename XVector_Internal::device_type,
+      typename XVector_Internal::memory_traits,
+      typename YVector_Internal::value_type*,
+      typename YVector_Internal::array_layout,
+      typename YVector_Internal::device_type,
+      typename YVector_Internal::memory_traits>
+        ::spmv (controls, mode, alpha, A_i, x_i, beta, y_i);
+  }
+}
 
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector ,
          class XLayout = typename XVector::array_layout>
@@ -222,7 +278,8 @@ struct SPMV2D1D<AlphaType, AMatrix, XVector, BetaType, YVector, Kokkos::LayoutRi
 
 template<class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
 void
-spmv (const char mode[],
+spmv (KokkosKernels::Experimental::Controls controls,
+      const char mode[],
       const AlphaType& alpha,
       const AMatrix& A,
       const XVector& x,
@@ -337,6 +394,7 @@ spmv (const char mode[],
 /// by \c mode.  If beta == 0, ignore and overwrite the initial
 /// entries of y; if alpha == 0, ignore the entries of A and x.
 ///
+/// \param controls [in] kokkos-kernels control structure
 /// \param mode [in] "N" for no transpose, "T" for transpose, or "C"
 ///   for conjugate transpose.
 /// \param alpha [in] Scalar multiplier for the matrix A.
@@ -348,17 +406,32 @@ spmv (const char mode[],
 ///   multivector (rank-2 Kokkos::View).  It must have the same number
 ///   of columns as x.
 template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
-void
-spmv(const char mode[],
-     const AlphaType& alpha,
-     const AMatrix& A,
-     const XVector& x,
-     const BetaType& beta,
-     const YVector& y) {
+void spmv(KokkosKernels::Experimental::Controls controls,
+	  const char mode[],
+	  const AlphaType& alpha,
+	  const AMatrix& A,
+	  const XVector& x,
+	  const BetaType& beta,
+	  const YVector& y) {
   using RANK_SPECIALISE =
     typename std::conditional<static_cast<int> (XVector::rank) == 2,
                               RANK_TWO, RANK_ONE>::type;
-  spmv (mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
+  spmv (controls, mode, alpha, A, x, beta, y, RANK_SPECIALISE ());
+}
+
+// Overload for backward compatibility and also just simpler
+// interface for users that are happy with the kernel default settings
+template <class AlphaType, class AMatrix, class XVector, class BetaType, class YVector>
+void spmv(const char mode[],
+	  const AlphaType& alpha,
+	  const AMatrix& A,
+	  const XVector& x,
+	  const BetaType& beta,
+	  const YVector& y) {
+
+  KokkosKernels::Experimental::Controls controls;
+  spmv(controls, mode, alpha, A, x, beta, y);
+
 }
 
   namespace Experimental {

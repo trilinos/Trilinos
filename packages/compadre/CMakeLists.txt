@@ -35,16 +35,9 @@ if (${PROJECT_NAME}_TRIBITS_DIR) # TriBITS CMake Project
       "Enable extreme debug code in compadre"
       OFF )
 
-  TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_LAPACK_DECLARED_THREADSAFE
-      LAPACK_DECLARED_THREADSAFE
-      "Set to OFF if non-threadsafe version of LAPACK being used"
-      ON )
-
   if ("${TPL_ENABLE_CUDA}" STREQUAL "ON")
-      set(Compadre_USE_LAPACK OFF CACHE BOOL "Whether to use LAPACK")
       set(Compadre_USE_CUDA   ON  CACHE BOOL "Whether to use CUDA")
   else ()
-      set(Compadre_USE_LAPACK ON  CACHE BOOL "Whether to use LAPACK")
       set(Compadre_USE_CUDA   OFF CACHE BOOL "Whether to use CUDA")
   endif()
 
@@ -92,6 +85,7 @@ else() # Raw CMake Project
   bob_option(PYTHON_CALLING_BUILD "Python setuptools calling build" OFF)
   bob_option(Compadre_USE_PYTHON "Use PYTHON" OFF)
   bob_option(Compadre_USE_MATLAB "Use MATLAB interface for PYTHON" OFF)
+  bob_option(Compadre_USE_MPI "Use MPI (not needed for Compadre toolkit)" OFF)
   set(PYTHON_LIBRARY_PREFIX "..") # relative to examples folder
   if (Compadre_USE_PYTHON)
     bob_input(PYTHON_EXECUTABLE "" PATH "Python executable location")
@@ -161,8 +155,6 @@ else() # Raw CMake Project
   set(KOKKOSKERNELS_IN_TRILINOS OFF)
   set(KOKKOSKERNELS_EXISTING_ELSEWHERE OFF)
   set(KOKKOSKERNELS_BUILT_FOR_USER OFF)
-  set(Compadre_USE_LAPACK ON) # ON until turned OFF if Compadre_USE_CUDA is eventually set
-  bob_option(LAPACK_DECLARED_THREADSAFE "Is LAPACK threadsafe? If not, default to serial calls for solves." ON)
 
   if (Trilinos_PREFIX)
     FIND_PACKAGE(Trilinos)
@@ -248,6 +240,11 @@ else() # Raw CMake Project
       set(Compadre_USE_PTHREAD ON)
     endif()
 
+    FIND_PACKAGE(Kokkos)
+    if (Kokkos_VERSION VERSION_LESS "3.3")
+        message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version 3.3.01 or greater")
+    endif()
+
   ENDIF()
 
   if (KOKKOS_IN_TRILINOS)
@@ -269,6 +266,8 @@ else() # Raw CMake Project
         bob_option(Kokkos_ENABLE_OPENMP "Whether to use OPENMP" ON)
         bob_option(Kokkos_ENABLE_PTHREAD "Whether to use PTHREAD" OFF)
       endif()
+      option(Kokkos_ENABLE_DEBUG "" "${Compadre_DEBUG}")
+      option(Kokkos_ENABLE_DEBUG_BOUNDS_CHECK "" "${Compadre_EXTREME_DEBUG}")
       option(Kokkos_ENABLE_CUDA_LAMBDA "" "${Kokkos_ENABLE_CUDA}")
       option(Kokkos_ENABLE_TESTS "" OFF)
       option(Kokkos_ENABLE_EXAMPLES "" OFF)
@@ -286,6 +285,9 @@ else() # Raw CMake Project
       # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
       # where specified (only)
       find_package(Kokkos PATHS "${KokkosCore_PREFIX}" NO_DEFAULT_PATH REQUIRED)
+      if (Kokkos_VERSION VERSION_LESS "3.3")
+          message(FATAL_ERROR "${Kokkos_VERSION}: Requires Trilinos with Kokkos version 3.3.01 or greater")
+      endif()
       set(KOKKOS_EXISTING_ELSEWHERE ON)
       # set Compadre_USE_ to whatever is enabled in Kokkos build
       if (TARGET Kokkos::OPENMP)
@@ -299,24 +301,9 @@ else() # Raw CMake Project
       set(Kokkos_PREFIX "${KokkosCore_PREFIX}")
     endif()
   endif()
-  # set LAPACK to off if CUDA is ON
-  if (Compadre_USE_CUDA)
-    set(Compadre_USE_LAPACK OFF)
-  endif()
-  message(STATUS "Compadre_USE_LAPACK: ${Compadre_USE_LAPACK}")
   message(STATUS "Compadre_USE_CUDA: ${Compadre_USE_CUDA}")
 
   if (KOKKOSKERNELS_IN_TRILINOS)
-    if (Compadre_USE_LAPACK)
-      list(FIND Trilinos_TPL_LIST "LAPACK" LAPACKID)
-      if (NOT(LAPACKID GREATER -1))
-        MESSAGE(FATAL_ERROR "Compadre_USE_LAPACK set to ON, but LAPACK not defined in Trilinos")
-      endif()
-      list(FIND Trilinos_TPL_LIST "BLAS" BLASID)
-      if (NOT(BLASID GREATER -1))
-          MESSAGE(FATAL_ERROR "Compadre_USE_LAPACK set to ON, but BLAS not defined in Trilinos")
-      endif()
-    endif()
     if (Compadre_US_CUDA)
       list(FIND Trilinos_TPL_LIST "CUDA" CUDAID)
       if (NOT(CUDAID GREATER -1))
@@ -329,14 +316,6 @@ else() # Raw CMake Project
     if (KokkosKernels_PREFIX STREQUAL "")
       SET(KOKKOSKERNELS_BUILT_FOR_USER ON)
       # both are required to be sure it finds it
-      OPTION(KokkosKernels_ENABLE_TPL_LAPACK "" "${Compadre_USE_LAPACK}")
-      SET(KokkosKernels_ENABLE_TPL_LAPACK "${Compadre_USE_LAPACK}")
-      OPTION(KokkosKernels_ENABLE_TPL_BLAS "" "${Compadre_USE_LAPACK}")
-      SET(KokkosKernels_ENABLE_TPL_BLAS "${Compadre_USE_LAPACK}")
-      OPTION(KokkosKernels_ENABLE_TPL_CUSPARSE "" "${Compadre_USE_CUDA}")
-      SET(KokkosKernels_ENABLE_TPL_CUSPARSE "${Compadre_USE_CUDA}")
-      OPTION(KokkosKernels_ENABLE_TPL_CUBLAS "" "${Compadre_USE_CUDA}")
-      SET(KokkosKernels_ENABLE_TPL_CUBLAS "${Compadre_USE_CUDA}")
       SET(KokkosKernels_ENABLE_EXAMPLES OFF)
       SET(KokkosKernels_ENABLE_TESTS OFF)
       OPTION(KokkosKernels_ETI_ONLY "" OFF)
@@ -363,12 +342,6 @@ else() # Raw CMake Project
       # Existing KokkosCore indicated by user by setting KokkosCore_PREFIX, so we look for it
       # where specified (only)
       find_package(KokkosKernels PATHS "${KokkosKernels_PREFIX}" NO_DEFAULT_PATH REQUIRED)
-      if(Compadre_USE_LAPACK AND NOT(TARGET Kokkos::LAPACK))
-        MESSAGE(FATAL_ERROR "Compadre_USE_LAPACK set to ON, but Kokkos::LAPACK not defined")
-      endif()
-      if(Compadre_USE_BLAS AND NOT(TARGET Kokkos::BLAS))
-        MESSAGE(FATAL_ERROR "Compadre_USE_BLAS set to ON, but Kokkos::BLAS not defined")
-      endif()
       if(Compadre_USE_CUDA AND NOT(TARGET Kokkos::CUDA))
         MESSAGE(FATAL_ERROR "Compadre_USE_CUDA set to ON, but Kokkos::CUDA not defined")
       endif()
@@ -381,13 +354,15 @@ else() # Raw CMake Project
 
 
   #MPI (Not really needed, only used so that if a kokkos-tool was built with MPI, it won't segfault)
-  FIND_PACKAGE(MPI QUIET)
-  bob_option(Compadre_USE_MPI "Use MPI for parallelism" ${MPI_CXX_FOUND})
-  message(STATUS "MPI Enabled: ${MPI_CXX_FOUND}")
-  if (MPI_CXX_FOUND)
-      MESSAGE(STATUS "MPI_CXX_INCLUDE_PATH: ${MPI_CXX_INCLUDE_PATH}")
-      MESSAGE(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
-  endif()
+  if (Compadre_USE_MPI)
+    FIND_PACKAGE(MPI QUIET)
+    bob_option(Compadre_USE_MPI "Use MPI for parallelism" ${MPI_CXX_FOUND})
+    message(STATUS "MPI Enabled: ${MPI_CXX_FOUND}")
+    if (MPI_CXX_FOUND)
+        MESSAGE(STATUS "MPI_CXX_INCLUDE_PATH: ${MPI_CXX_INCLUDE_PATH}")
+        MESSAGE(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
+    endif()
+  endif (Compadre_USE_MPI)
 
 
 
@@ -423,10 +398,8 @@ set(Compadre_KEY_BOOLS
     Compadre_DEBUG
     Compadre_EXTREME_DEBUG
     Compadre_USE_CUDA
-    Compadre_USE_LAPACK
     Compadre_USE_MPI
     Compadre_USE_PYTHON
-    LAPACK_DECLARED_THREADSAFE
    )
 
 set(Compadre_KEY_INTS
@@ -479,6 +452,16 @@ else() # Raw CMake Project
   # compadre library
   add_subdirectory(src)
 
+  if (Compadre_EXAMPLES AND Compadre_TESTS)
+    if (NOT TARGET gtest)
+      # gtest from kokkos
+      add_library(gtest
+          kokkos/tpls/gtest/gtest/gtest-all.cc
+      )
+      target_include_directories(gtest PUBLIC kokkos/tpls/gtest)
+    endif()
+  endif()
+
   if(Compadre_EXAMPLES)
     add_subdirectory(examples)
   endif()
@@ -496,3 +479,14 @@ else() # Raw CMake Project
     bob_end_package()
   endif()
 endif()
+
+## print variables beginning with some string
+#function (getListOfVarsStartingWith _prefix _varResult)
+#  get_cmake_property(_vars VARIABLES)
+#  string (REGEX MATCHALL "(^|;)${_prefix}[A-Za-z0-9_]*" _matchedVars "${_vars}")
+#  set (${_varResult} ${_matchedVars} PARENT_SCOPE)
+#endfunction()
+#getListOfVarsStartingWith("SomeString" matchedVars)
+#foreach (_var IN LISTS matchedVars)
+#    message("${_var}=${${_var}}")
+#endforeach()

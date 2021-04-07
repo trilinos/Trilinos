@@ -40,6 +40,7 @@
 #include <stddef.h>
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 
 namespace unitTestUtils
 {
@@ -110,10 +111,7 @@ bool has_mean_converged_within_tolerance(const RunInfo &runInfo, const double la
 
 bool has_converged_on_all_procs(bool done, stk::ParallelMachine comm)
 {
-    int sendDone = convert_bool_to_int(done);
-    int recvDone = 0;
-    MPI_Allreduce(&sendDone, &recvDone, 1, MPI_INTEGER, MPI_MIN, comm);
-    return recvDone == 1;
+    return stk::is_true_on_all_procs(comm, done);
 }
 
 template <typename ALGORITHM>
