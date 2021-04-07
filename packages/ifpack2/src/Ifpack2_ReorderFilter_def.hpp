@@ -317,14 +317,16 @@ void ReorderFilter<MatrixType>::
 }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
+template<class MatrixType>
+void ReorderFilter<MatrixType>::
 getGlobalRowCopy (global_ordinal_type globalRow,
-                  const Teuchos::ArrayView<global_ordinal_type>& globalInd,
-                  const Teuchos::ArrayView<scalar_type>& val,
+                  const Teuchos::ArrayView<global_ordinal_type>& Indices,
+                  const Teuchos::ArrayView<scalar_type>& Values,
                   size_t& numEntries) const
 {
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
   nonconst_values_host_view_type val_in(Values.data(),Values.size());
-  getGlobalRowCopy(DropRow,ind_in,val_in,NumEntries);  
+  getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
 }
 #endif
 
@@ -377,7 +379,7 @@ void ReorderFilter<MatrixType>::getLocalRowCopy (local_ordinal_type LocalRow,
 {
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
   nonconst_values_host_view_type val_in(Values.data(),Values.size());
-  getLocalRowCopy(DropRow,ind_in,val_in,NumEntries);  
+  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
 }
 #endif
 

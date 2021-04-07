@@ -324,7 +324,7 @@ template<class GraphType>
 void
 OverlappingRowGraph<GraphType>::
 getLocalRowCopy (local_ordinal_type localRow,
-                 nonconst_local_inds_host_view_type& indices,
+                 const Teuchos::ArrayView<local_ordinal_type>& indices,
                  size_t& numIndices) const
 {
   using Teuchos::as;
@@ -339,26 +339,6 @@ getLocalRowCopy (local_ordinal_type localRow,
 }
 #endif
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
-template<class GraphType>
-void
-OverlappingRowGraph<GraphType>::
-getLocalRowCopy (local_ordinal_type localRow, 
-                 const Teuchos::ArrayView<local_ordinal_type>& indices, 
-                 size_t& numIndices) const
-{
-  using Teuchos::as;
-  const size_t numMyRowsA = nonoverlappingGraph_->getNodeNumRows ();
-  if (as<size_t> (localRow) < numMyRowsA) {
-    nonoverlappingGraph_->getLocalRowCopy (localRow, indices, numIndices);
-  } else {
-    const local_ordinal_type localRowOffset = 
-      localRow - as<local_ordinal_type> (numMyRowsA);
-    overlappingGraph_->getLocalRowCopy (localRowOffset, indices, numIndices);
-  }
-}
-#endif
-  
 template<class GraphType>
 void
 OverlappingRowGraph<GraphType>::

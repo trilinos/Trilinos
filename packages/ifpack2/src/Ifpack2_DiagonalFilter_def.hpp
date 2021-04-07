@@ -264,7 +264,7 @@ getGlobalRowCopy (GlobalOrdinal GlobalRow,
                   size_t &NumEntries) const {
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
   nonconst_values_host_view_type val_in(Values.data(),Values.size());
-  getGlobalRowCopy(globalRow,ind_in,val_in,NumEntries); 
+  getGlobalRowCopy(GlobalRow,ind_in,val_in,NumEntries); 
 }
 #endif
 
@@ -294,7 +294,7 @@ getLocalRowCopy (LocalOrdinal LocalRow,
 {
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
   nonconst_values_host_view_type val_in(Values.data(),Values.size());
-  getLocalRowCopy(DropRow,ind_in,val_in,NumEntries);  
+  getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
 }
 #endif
 
