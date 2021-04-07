@@ -513,7 +513,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
 
           U_Graph_->removeLocalIndices (i); // Delete current set of Indices
           if (LenU > 0) {
-            U_Graph_->insertLocalIndices (i, CurrentRow);
+            U_Graph_->insertLocalIndices (i, CurrentRow.size(),CurrentRow.data());
           }
 
           // Allocate and fill Level info for this row

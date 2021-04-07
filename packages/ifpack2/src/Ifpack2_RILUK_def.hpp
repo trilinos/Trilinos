@@ -764,8 +764,8 @@ void RILUK<MatrixType>::compute ()
     const size_t MaxNumEntries =
             L_->getNodeMaxNumRowEntries () + U_->getNodeMaxNumRowEntries () + 1;
 
-    nonconst_local_inds_host_view_type InI("InI",MaxNumEntries); // Allocate temp space
-    nonconst_values_host_view_type InV("InV",MaxNumEntries);
+    Teuchos::Array<local_ordinal_type> InI(MaxNumEntries); // Allocate temp space
+    Teuchos::Array<scalar_type> InV(MaxNumEntries);
     size_t num_cols = U_->getColMap()->getNodeNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
@@ -792,8 +792,9 @@ void RILUK<MatrixType>::compute ()
       InV[NumL] = DV(i); // Put in diagonal
       InI[NumL] = local_row;
 
-      nonconst_local_inds_host_view_type InI_sub = Kokkos::subview(InI,std::make_pair(NumL+1, MaxNumEntries-NumL-1));
-      nonconst_values_host_view_type     InV_sub = Kokkos::subview(InV,std::make_pair(NumL+1, MaxNumEntries-NumL-1));
+      nonconst_local_inds_host_view_type InI_sub(InI.data()+NumL+1,MaxNumEntries-NumL-1);
+      nonconst_values_host_view_type     InV_sub(InV.data()+NumL+1,MaxNumEntries-NumL-1);
+  
       U_->getLocalRowCopy (local_row, InI_sub,InV_sub, NumU);
       NumIn = NumL+NumU+1;
 
@@ -841,8 +842,7 @@ void RILUK<MatrixType>::compute ()
       }
       if (NumL) {
         // Replace current row of L
-        L_->replaceLocalValues (local_row,NumL,InV.data(),InI.data());
-
+        L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
       }
 
       DV(i) = InV[NumL]; // Extract Diagonal value
@@ -869,7 +869,7 @@ void RILUK<MatrixType>::compute ()
 
       if (NumU) {
         // Replace current row of L and U        
-        U_->replaceLocalValues (local_row,NumU-NumL-1,InV.data()+NumL+1,InI.data()+NumL+1);
+        U_->replaceLocalValues (local_row, InI (NumL+1, NumU), InV (NumL+1, NumU));
       }
 
       // Reset column flags
