@@ -486,11 +486,7 @@ namespace BaskerNS
         }
         if (Options.replace_tiny_pivot && normA > abs(zero) && maxindex != BASKER_MAX_IDX) {
           pivot = normA * eps;
-          if (X(maxindex) >= zero) {
-            X(maxindex) = pivot;
-          } else {
-            X(maxindex) = -pivot;
-          }
+          X(maxindex) = pivot;
         } else {
           thread_array(kid).error_type =
             BASKER_ERROR_SINGULAR;
