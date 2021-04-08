@@ -5,10 +5,11 @@ ADD_SUBDIRECTORY(src)
 
 IF (Trilinos_ENABLE_Gtest)
   TRIBITS_ADD_TEST_DIRECTORIES(test)
+  TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
 ELSE()
-  MESSAGE(STATUS "BDDC disables tests as Trilinos disables Gtest")   
+  MESSAGE(STATUS "BDDC disables tests/examples as Trilinos disables Gtest")   
 ENDIF()
 
-TRIBITS_ADD_EXAMPLE_DIRECTORIES(example)
+
 
 TRIBITS_SUBPACKAGE_POSTPROCESS()
