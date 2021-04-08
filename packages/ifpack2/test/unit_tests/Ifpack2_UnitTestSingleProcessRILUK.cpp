@@ -290,6 +290,23 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
   RCP<const map_type> rowmap =
     tif_utest::create_tpetra_map<LO, GO, Node> (num_rows_per_proc);
 
+  // Matrix
+  // [ 2 .1  0  0  0]
+  // [.1  2  0  0  0]
+  // [ 0 .1  2 .1  0]
+  // [ 0  0 .1  2 .1]
+  // [ 0  0  0 .1  2]
+
+  // Matlab's Factors
+  // L
+  // Diagonal = 1 (implied)
+  // Subdiagonal (approx) = .05, .0501, .0501 .0501
+
+  // U
+  // Diagonal (approx)      = 2 1.995 1.995 1.995 1.995 
+  // Superdiagonal (approx) = .1 .1 .1 .1
+
+
   if (rowmap->getComm ()->getSize () > 1) {
     out << "This test may only be run in serial "
       "or with a single MPI process." << endl;
@@ -299,6 +316,12 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
   out << "Creating matrix" << endl;
   RCP<const crs_matrix_type> crsmatrix =
     tif_utest::create_test_matrix2<Scalar,LO,GO,Node>(rowmap);
+
+  {//CMS
+    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+    *out<<"***** A *****"<<std::endl;
+    crsmatrix->describe(*out,Teuchos::VERB_EXTREME);
+  }
 
   //----------------Default trisolver----------------//
   {
@@ -316,7 +339,18 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
     out << "Calling initialize() and compute()" << endl;
     prec.initialize();
     prec.compute();
-    
+   
+  {//CMS
+    auto out = Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cout));
+    *out<<"***** Test L *****"<<std::endl;
+    prec.getL().describe(*out,Teuchos::VERB_EXTREME);
+    *out<<"***** Test U *****"<<std::endl;
+    prec.getU().describe(*out,Teuchos::VERB_EXTREME);
+    *out<<"***** Test D *****"<<std::endl;
+    prec.getD().describe(*out,Teuchos::VERB_EXTREME);
+  }
+
+ 
     out << "Creating test problem" << endl;
     MV x (rowmap, 2);
     MV y (rowmap, 2);
@@ -408,6 +442,8 @@ void Ifpack2RILUKSingleProcess_test1 (bool& success, Teuchos::FancyOStream& out,
       test_alpha_beta(-0.42, 4.2, mode);
     }
   }
+
+  return;//CMS
   //----------------Kokkos Kernels SPTRSV----------------//
   {
     out << "Creating preconditioner" << endl;
