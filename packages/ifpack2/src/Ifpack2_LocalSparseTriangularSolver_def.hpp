@@ -123,6 +123,7 @@ public:
     Teuchos::ArrayRCP<const local_ordinal_type> colidx;
     Teuchos::ArrayRCP<const scalar_type> val;
     T_in.getAllValues(rowptr, colidx, val);
+    Kokkos::fence();
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,
@@ -195,6 +196,7 @@ public:
 #ifdef HAVE_IFPACK2_SHYLU_NODEHTS
     const auto& X_view = X.getLocalViewHost ();
     const auto& Y_view = Y.getLocalViewHost ();
+    Kokkos::fence();
 
     // Only does something if #rhs > current capacity.
     HTST::reset_max_nrhs(Timpl_.get(), X_view.extent(1));
