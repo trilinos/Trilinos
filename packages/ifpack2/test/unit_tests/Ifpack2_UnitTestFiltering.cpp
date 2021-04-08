@@ -132,16 +132,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   using vals_type = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::nonconst_values_host_view_type;
   lids_type Indices("Indices",max_nz_per_row);
   vals_type Values("Values",max_nz_per_row);
-  Teuchos::ArrayRCP<const Scalar> xview=lx.get1dView();
+  {// Host view needs to be scoped
+    Teuchos::ArrayRCP<const Scalar> xview=lx.get1dView();
 
-  for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
-    size_t NumEntries;
-    LocalA.getLocalRowCopy(i,Indices,Values,NumEntries);
-    Scalar sum=0;
-    for(LocalOrdinal j=0; (size_t) j < NumEntries; j++){
-      sum+=Values[j] * xview[Indices[j]];
+    for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
+      size_t NumEntries;
+      LocalA.getLocalRowCopy(i,Indices,Values,NumEntries);
+      Scalar sum=0;
+      for(LocalOrdinal j=0; (size_t) j < NumEntries; j++){
+        sum+=Values[j] * xview[Indices[j]];
+      }
+      lz.replaceLocalValue(i,sum);
     }
-    lz.replaceLocalValue(i,sum);
   }
 
   // Diff
