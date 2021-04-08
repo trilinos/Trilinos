@@ -47,6 +47,8 @@
 #include "Ifpack2_LocalSparseTriangularSolver.hpp"
 #include "Ifpack2_Details_getParamTryingTypes.hpp"
 #include "Kokkos_Sort.hpp"
+#include "KokkosKernels_SparseUtils.hpp"
+#include "KokkosKernels_Sorting.hpp"
 
 namespace Ifpack2 {
 
@@ -937,23 +939,18 @@ void RILUK<MatrixType>::compute ()
       U_->setAllToScalar (STS::zero ());
     }
     
-    auto L_rowmap  = L_->getLocalMatrixDevice().graph.row_map;
+    using row_map_type = typename crs_matrix_type::local_matrix_device_type::row_map_type;
+
+    row_map_type L_rowmap  = L_->getLocalMatrixDevice().graph.row_map;
     auto L_entries = L_->getLocalMatrixDevice().graph.entries;
     auto L_values  = L_->getLocalValuesView();
-    auto U_rowmap  = U_->getLocalMatrixDevice().graph.row_map;
+    row_map_type U_rowmap  = U_->getLocalMatrixDevice().graph.row_map;
     auto U_entries = U_->getLocalMatrixDevice().graph.entries;
     auto U_values  = U_->getLocalValuesView();
-    
-    for (unsigned int row_id = 0; row_id < L_rowmap.extent(0)-1; row_id++) {
-      int row_start = L_rowmap(row_id);
-      int row_end   = L_rowmap(row_id + 1);
-      Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
-    }
-    for (unsigned int row_id = 0; row_id < U_rowmap.extent(0)-1; row_id++) {
-      int row_start = U_rowmap(row_id);
-      int row_end   = U_rowmap(row_id + 1);
-      Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
-    }
+    using exec_space = typename crs_matrix_type::local_matrix_device_type::execution_space;
+       
+    KokkosKernels::Impl::sort_crs_graph<exec_space, decltype(L_rowmap), decltype(L_entries)>(L_rowmap, L_entries);
+    KokkosKernels::Impl::sort_crs_graph<exec_space, decltype(U_rowmap), decltype(U_entries)>(U_rowmap, U_entries);
     
     KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
                                                 A_local_rowmap_, A_local_entries_, A_local_values_, 
