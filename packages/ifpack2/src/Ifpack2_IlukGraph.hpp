@@ -289,22 +289,28 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
   using execution_space = typename device_type::execution_space;
   Kokkos::DualView<size_t*, device_type> numEntPerRow("numEntPerRow", NumMyRows);
   auto numEntPerRow_d = numEntPerRow.template view<device_type>();
-  auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
+
 
   const auto overalloc = Overalloc_;
   const auto levelfill = LevelFill_;
   numEntPerRow.sync_device();
   numEntPerRow.modify_device();
-  Kokkos::parallel_for("CountOverlapGraphRowEntries",
-    Kokkos::RangePolicy<execution_space>(0, NumMyRows),
-    KOKKOS_LAMBDA(const int i)
-    {
-      // Heuristic to get the maximum number of entries per row.
-      int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
-      numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
-                                  : ceil(static_cast<double>(RowMaxNumIndices) 
-                                        * pow(overalloc, levelfill));
-    });
+  {
+    // Scoping for the  localOverlapGraph access
+    auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
+    Kokkos::parallel_for("CountOverlapGraphRowEntries",
+                         Kokkos::RangePolicy<execution_space>(0, NumMyRows),
+                         KOKKOS_LAMBDA(const int i)
+                         {
+                           // Heuristic to get the maximum number of entries per row.
+                           int RowMaxNumIndices = localOverlapGraph.rowConst(i).length;
+                           numEntPerRow_d(i) = (levelfill == 0) ? RowMaxNumIndices  // No additional storage needed
+                             : ceil(static_cast<double>(RowMaxNumIndices) 
+                                    * pow(overalloc, levelfill));
+                         });
+   
+  };
+  numEntPerRow.sync_host();
 
   bool insertError;  // No error found yet while inserting entries
   do {
