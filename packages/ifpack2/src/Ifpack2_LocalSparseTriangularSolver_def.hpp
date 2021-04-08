@@ -752,10 +752,14 @@ localTriangularSolve (const MV& Y,
   else
   {
     const std::string diag = this->diag_;
-    auto A_lcl = this->A_crs_->getLocalMatrixDevice ();
+    // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+    // sequential, host-only code.  See
+    // https://github.com/kokkos/kokkos-kernels/issues/48. 
+
+    auto A_lcl = this->A_crs_->getLocalMatrixHost ();
 
     if (X.isConstantStride () && Y.isConstantStride ()) {
-      auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
+      auto X_lcl = X.getLocalViewHost (Tpetra::Access::ReadWrite);
       auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
           A_lcl, Y_lcl, X_lcl);
@@ -765,7 +769,7 @@ localTriangularSolve (const MV& Y,
         std::min (X.getNumVectors (), Y.getNumVectors ());
       for (size_t j = 0; j < numVecs; ++j) {
         auto X_j = X.getVectorNonConst (j);
-        auto Y_j = Y.getVector (j);
+        auto Y_j = Y.getVector (j);  // In develop, this was X, not Y.
         auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::ReadWrite);
         auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (),

@@ -787,7 +787,10 @@ void RILUK<MatrixType>::compute ()
       // Fill InV, InI with current row of L, D and U combined
 
       NumIn = MaxNumEntries;
-      L_->getLocalRowCopy (local_row, InI , InV, NumL);
+      nonconst_local_inds_host_view_type InI_v(InI.data(),MaxNumEntries);
+      nonconst_values_host_view_type     InV_v(InV.data(),MaxNumEntries);
+
+      L_->getLocalRowCopy (local_row, InI_v , InV_v, NumL);
 
       InV[NumL] = DV(i); // Put in diagonal
       InI[NumL] = local_row;
@@ -808,7 +811,7 @@ void RILUK<MatrixType>::compute ()
       for (size_t jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
         scalar_type multiplier = InV[jj]; // current_mults++;
-        
+
         InV[jj] *= DV(j);
         
         U_->getLocalRowView(j, UUI, UUV); // View of row above
@@ -824,6 +827,7 @@ void RILUK<MatrixType>::compute ()
               InV[kk] -= multiplier * UUV[k];
             }
           }
+
         }
         else {
           for (size_t k = 0; k < NumUU; ++k) {
@@ -840,6 +844,7 @@ void RILUK<MatrixType>::compute ()
           }
         }
       }
+
       if (NumL) {
         // Replace current row of L
         L_->replaceLocalValues (local_row, InI (0, NumL), InV (0, NumL));
