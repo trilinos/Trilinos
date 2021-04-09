@@ -440,7 +440,7 @@ fusedCase (vector_type& W,
   //D_inv, B, X and W are all Vectors, so it's safe to take the first column only
   auto Dinv_lcl = Kokkos::subview(D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   auto B_lcl = Kokkos::subview(B.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
-  auto X_domMap_lcl = Kokkos::subview(X.getLocalViewDevice(Tpetra::Access::OverwriteAll), Kokkos::ALL(), 0);
+  auto X_domMap_lcl = Kokkos::subview(X.getLocalViewDevice(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
   auto X_colMap_lcl = Kokkos::subview(X_colMap.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
 
   const bool do_X_update = !imp_.is_null ();

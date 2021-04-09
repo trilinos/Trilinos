@@ -728,17 +728,17 @@ template<class SC, class LO, class GO, class NT>
 auto getLocalView_1d_writeOnly (
   Tpetra::MultiVector<SC, LO, GO, NT>& X,
   const LO whichColumn)
--> decltype (Kokkos::subview (X.getLocalViewDevice(Access::OverwriteAll),
+-> decltype (Kokkos::subview (X.getLocalViewDevice(Access::ReadWrite),
                               Kokkos::ALL (), whichColumn))
 {
   if (X.isConstantStride ()) {
-    return Kokkos::subview (X.getLocalViewDevice(Access::OverwriteAll),
+    return Kokkos::subview (X.getLocalViewDevice(Access::ReadWrite),
                             Kokkos::ALL (), whichColumn);
   }
   else {
     using vector_t = Tpetra::Vector<SC, LO, GO, NT>;
     auto X_whichColumn = X.getVectorNonConst (whichColumn);
-    return Kokkos::subview(X_whichColumn->getLocalViewDevice(Access::OverwriteAll),
+    return Kokkos::subview(X_whichColumn->getLocalViewDevice(Access::ReadWrite),
                            Kokkos::ALL (), 0);
   }
 }

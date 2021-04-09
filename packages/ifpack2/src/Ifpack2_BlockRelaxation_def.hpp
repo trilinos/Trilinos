@@ -822,7 +822,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
       {
-        auto AYView = AY.getLocalViewHost (Tpetra::Access::OverwriteAll);
+        auto AYView = AY.getLocalViewHost (Tpetra::Access::ReadOnly);
         auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
         Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
       }
@@ -844,7 +844,7 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
       {
-        auto AYView = AY.getLocalViewHost (Tpetra::Access::OverwriteAll);
+        auto AYView = AY.getLocalViewHost (Tpetra::Access::ReadOnly);
         auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
         Container_->DoJacobi (AYView, YView, DampingFactor_);
       }

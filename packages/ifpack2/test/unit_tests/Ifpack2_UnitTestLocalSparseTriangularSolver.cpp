@@ -137,7 +137,7 @@ localSolve (Tpetra::MultiVector<
       std::min (X.getNumVectors (), Y.getNumVectors ());
     for (size_t j = 0; j < numVecs; ++j) {
       auto X_j = X.getVectorNonConst (j);
-      auto Y_j = X.getVector (j);
+      auto Y_j = Y.getVector (j);
       auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::OverwriteAll);
       auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
