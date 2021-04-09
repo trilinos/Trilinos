@@ -365,9 +365,7 @@ def createAsciiReportOfBuildStatsSummaries(buildStatsSummariesBinnedBySubdirs):
 # Help message
 #
 
-usageHelp = r"""summarize_build_stats.py --build-stats-csv-file=<csv-file>
-  --bin-by-subdirs-under-dirs=<basedir0>,<basedir1>,...
-
+usageHelp = r"""
 Summarize gathered build stats from the the build stats CSV file and print the
 report as ASCII text to STDOUT.  This prints a report like:
 
@@ -393,28 +391,24 @@ Full Project: max(file_size_mb) = ??? (<file-name>)
 # Helper functions for main()
 #
 
-
-def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
+def injectCmndLineOptionsInParser(clp):
   
-  clp.add_option(
-    "--build-stats-csv-file", dest="buildStatsCsvFile", type="string", default="",
+  clp.add_argument(
+    "--build-stats-csv-file", dest="buildStatsCsvFile", default="", required=True,
     help="The build status CSV file created by build wappers and gathered up." )
   
-  clp.add_option(
-    "--bin-by-subdirs-under-dirs", dest="binBySubdirsUnderDirsStr", type="string",
-    default="",
+  clp.add_argument(
+    "--bin-by-subdirs-under-dirs", dest="binBySubdirsUnderDirsStr", default="",
     help="List of base dirs to group results by subdir under."+\
       " Format '<basedir0>,<basedir1>,..." )
 
 
 def getCmndLineOptions():
-  from optparse import OptionParser
-  clp = OptionParser(usage=usageHelp)
+  from argparse import ArgumentParser, RawDescriptionHelpFormatter
+  clp = ArgumentParser(description=usageHelp,
+    formatter_class=RawDescriptionHelpFormatter)
   injectCmndLineOptionsInParser(clp)
-  (options, args) = clp.parse_args()
-  if options.buildStatsCsvFile == "":
-    raise Exception(
-      "Error, input argument --build-stats-csv-file must be set!")
+  options = clp.parse_args(sys.argv[1:])
   if not os.path.exists(options.buildStatsCsvFile):
     raise Exception(
       "Error, file '"+options.buildStatsCsvFile+"' does not exist!")
