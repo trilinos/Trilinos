@@ -155,7 +155,7 @@ set (Phalanx_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (ROL_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Sacado_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (SEACAS_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
-set (ShyLU_DD_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build") # Doesn't have any effect
+set (ShyLU_DD_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (STK_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Teko_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Tpetra_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
@@ -233,6 +233,7 @@ set (ShyLU_DDFROSch_test_solverfactory_froschpreconditioner_twolevelblockprecond
 set (ShyLU_DDFROSch_test_solverfactory_belos_gmres_DIM2_TPETRA_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DDFROSch_test_solverfactory_amesos2_klu_DIM3_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DDFROSch_test_solverfactory_amesos2_klu_DIM2_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+
 # Adelus UVM = OFF tests
 set (Adelus_vector_random_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (Adelus_vector_random_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
@@ -248,6 +249,9 @@ set (Piro_ThyraSolverTpetra_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-
 # MiniTensor UVM = OFF tests
 set (MiniTensor_test_Test_01_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (MiniTensor_test_Test_02_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+# SEACAS UVM = OFF tests
+set (SEACASIoss_exodus32_to_exodus32_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (SEACASIoss_exodus_fpp_serialize_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 # Stratimikos UVM = OFF tests
 set (Stratimikos_test_single_amesos2_tpetra_solver_driver_KLU2_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 
