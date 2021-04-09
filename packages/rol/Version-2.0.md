@@ -75,11 +75,12 @@ specific algorithmic objects.  This is done through a variety of
 `ROL::Algorithm` classes, which replace the `ROL::Step` classes.
 ROL Version 2.0 explicitly categorizes all algorithms into four
 groups, based on the problem type:
-1. `TypeU`: algorithms for _unconstrained_ problems;
-2. `TypeB`: algorithms for _bound-constrained_ problems;
-3. `TypeE`: algorithms for _equality-constrained_ problems; and
-4. `TypeG`: algorithms for problems with _general constraints_, e.g., equality and inequality constraints.
-Here are a few examples of Version 1.0 and Version 2.0 usage
+1. `TypeU`: algorithms for _unconstrained_ problems, e.g., `min f(x)`;
+2. `TypeB`: algorithms for _bound-constrained_ problems, e.g., `min f(x) s.t. a <= x <= b`;
+3. `TypeE`: algorithms for _equality-constrained_ problems, e.g., `min f(x) s.t. c(x) = 0`; and
+4. `TypeG`: algorithms for problems with _general constraints_, e.g., `min f(x) s.t. c(x) >= 0`.
+
+Here are a few examples of Version 1.0 and Version 2.0 usage.
 
 #### Example 1: Trust-region algorithm for unconstrained problems
 
