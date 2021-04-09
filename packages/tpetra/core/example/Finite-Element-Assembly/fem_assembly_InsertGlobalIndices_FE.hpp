@@ -490,6 +490,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   {
     TimeMonitor timerElementLoopMatrix
       (*TimeMonitor::getNewTimer ("3.2) ElementLoop  (Matrix)"));
+    auto owned_elt_to_node_ids = owned_element_to_node_ids.getDeviceView(Tpetra::Access::ReadOnly);
 
     // Loop over elements
     Tpetra::beginFill(*fe_matrix,*rhs);
@@ -511,7 +512,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         for (int element_node_idx = 0; element_node_idx < nperel;
              ++element_node_idx) {
           element_lcids(element_node_idx) =
-            localColMap.getLocalElement (owned_element_to_node_ids.getDeviceView(Tpetra::Access::ReadOnly) (element_gidx, element_node_idx));
+            localColMap.getLocalElement (owned_elt_to_node_ids (element_gidx, element_node_idx));
         }
 
         // For each node (row) on the current element:
@@ -519,7 +520,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         // - add the values to the fe_matrix.
         for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
           const local_ordinal_type local_row_id =
-            localMap.getLocalElement (owned_element_to_node_ids.getDeviceView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx));
+            localMap.getLocalElement (owned_elt_to_node_ids (element_gidx, element_node_idx));
           auto row_values = Kokkos::subview(element_matrix, element_node_idx, alln);
           // Force atomics on sums
           for (int col_idx = 0; col_idx < nperel; ++col_idx) {

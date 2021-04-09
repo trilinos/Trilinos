@@ -565,6 +565,7 @@ executeTotalElementLoopSPKokkos_
 
   timerElementLoopMemory = Teuchos::null;
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.3) ElementLoop  (Matrix)")));
+  auto owned_elt_to_node_ids = owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly);
 
   // Loop over owned elements:
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numOwnedElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
@@ -580,7 +581,7 @@ executeTotalElementLoopSPKokkos_
 
       // Get the local column ids array for this element
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {
-        element_lcids(element_node_idx) = localColMap.getLocalElement(owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx));
+        element_lcids(element_node_idx) = localColMap.getLocalElement(owned_elt_to_node_ids(element_gidx, element_node_idx));
       }
 
       // For each node (row) on the current element:
@@ -588,7 +589,7 @@ executeTotalElementLoopSPKokkos_
       // - add the values to the fe_matrix.
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
         {
-          global_ordinal_type global_row_id = owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+          global_ordinal_type global_row_id = owned_elt_to_node_ids(element_gidx, element_node_idx);
           local_ordinal_type local_row_id = localRowMap.getLocalElement(global_row_id);
           if(local_row_id != LO_INVALID) {
             // Force atomics on sums
@@ -603,6 +604,7 @@ executeTotalElementLoopSPKokkos_
   // Loop over ghost elements:
   // - This loop is the same as the element loop for owned elements, but this one
   //   is for ghost elements.
+  auto ghost_elt_to_node_ids = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly);
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numGhostElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
       // Get subviews
       pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
@@ -616,12 +618,12 @@ executeTotalElementLoopSPKokkos_
 
       // Get the local column ids array for this element
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {
-        element_lcids(element_node_idx) = localColMap.getLocalElement(ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx));
+        element_lcids(element_node_idx) = localColMap.getLocalElement(ghost_elt_to_node_ids(element_gidx, element_node_idx));
       }
 
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
         {
-          global_ordinal_type global_row_id = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+          global_ordinal_type global_row_id = ghost_elt_to_node_ids(element_gidx, element_node_idx);
           local_ordinal_type local_row_id = localRowMap.getLocalElement(global_row_id);
           if(local_row_id != LO_INVALID) {
             // Force atomics on sums
