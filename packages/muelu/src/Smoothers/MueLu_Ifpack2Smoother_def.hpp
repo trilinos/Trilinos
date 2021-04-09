@@ -87,7 +87,6 @@
 #include "Kokkos_DynRankView.hpp"
 #endif
 
-// #define IFPACK2_HAS_PROPER_REUSE
 
 namespace MueLu {
 
@@ -296,13 +295,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null() && isTRowMatrix) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available "
             "(either failed cast to CanChangeMatrix, or to Tpetra Row Matrix), reverting to full construction" << std::endl;
@@ -573,13 +567,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null()) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupBlockRelaxation(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;
@@ -733,13 +722,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null()) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupGeneric(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;
