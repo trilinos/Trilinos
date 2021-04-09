@@ -50,107 +50,98 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 Real Objective<Real>::dirDeriv( const Vector<Real> &x, const Vector<Real> &d, Real &tol) {
-  Real dnorm = d.norm(), zero(0);
-  if ( dnorm == zero ) {
-    return zero;
-  }
-  Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), one(1), v0(0), v1(0);
-  Real xnorm = x.norm(), h = cbrteps * std::max(xnorm/dnorm,one);
-  ROL::Ptr<Vector<Real>> y = x.clone();
-  y->set(x); y->axpy(h, d);
-  v0 = value(x,tol);
-  update(*y);
-  v1 = value(*y,tol);
-  update(x);
-  return (v1 - v0) / h;
+  if (dual_ == nullPtr) dual_ = x.dual().clone();
+  gradient(*dual_,x,tol);
+  //return d.dot(dual_->dual());
+  return d.apply(*dual_);
+  //Real dnorm = d.norm(), zero(0);
+  //if ( dnorm == zero ) {
+  //  return zero;
+  //}
+  //Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), one(1), v0(0), v1(0);
+  //Real xnorm = x.norm(), h = cbrteps * std::max(xnorm/dnorm,one);
+  //v0 = value(x,tol);
+  //prim_->set(x); prim_->axpy(h, d);
+  //update(*prim_,UpdateType::Temp);
+  //v1 = value(*prim_,tol);
+  //update(x,UpdateType::Revert);
+  //return (v1 - v0) / h;
 }
 
-template <class Real>
+template<typename Real>
 void Objective<Real>::gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-  g.zero();
-  Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), zero(0), one(1);
+  if (prim_ == nullPtr) prim_ = x.clone();
+  if (basis_ == nullPtr) basis_ = x.clone();
+
+  const Real cbrteps = std::cbrt(ROL_EPSILON<Real>()), zero(0), one(1);
   Real f0 = value(x,tol), h(0), xi(0), gi(0);
-  Ptr<Vector<Real>> y = x.clone(), ei = x.clone();
-  for (int i = 0; i < g.dimension(); i++) {
-    ei = x.basis(i);
-    xi = x.dot(*ei);
+  g.zero();
+  for (int i = 0; i < x.dimension(); i++) {
+    basis_->set(*x.basis(i));
+    xi = x.dot(*basis_);
     h  = cbrteps * std::max(std::abs(xi),one) * (xi < zero ? -one : one);
-    y->set(x); y->axpy(h,*ei);
-    h  = y->dot(*ei) - xi;
-    update(*y);
-    gi = (value(*y,tol) - f0) / h;
+    prim_->set(x); prim_->axpy(h,*basis_);
+    h  = prim_->dot(*basis_) - xi;
+    update(*prim_,UpdateType::Temp);
+    gi = (value(*prim_,tol) - f0) / h;
     g.axpy(gi,*g.basis(i));
   }
-  update(x);
+  update(x,UpdateType::Revert);
 }
 
-template <class Real>
+template<typename Real>
 void Objective<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-  Real zero(0), vnorm = v.norm();
+  const Real zero(0), vnorm = v.norm();
   // Get Step Length
   if ( vnorm == zero ) {
     hv.zero();
   }
   else {
-    Real gtol = std::sqrt(ROL_EPSILON<Real>()), one(1);
+    if (prim_ == nullPtr) prim_ = x.clone();
+    if (dual_ == nullPtr) dual_ = hv.clone();
 
-    Real h = std::max(one,x.norm()/vnorm)*tol;
     //Real h = 2.0/(v.norm()*v.norm())*tol;
+    const Real one(1), h(std::max(one,x.norm()/vnorm)*tol);
 
-    // Compute Gradient at x
-    ROL::Ptr<Vector<Real>> g = hv.clone();
-    gradient(*g,x,gtol);
-
-    // Compute y = x + h*v
-    ROL::Ptr<Vector<Real>> y = x.clone();
-    y->set(x); y->axpy(h,v);
-
-    // Compute Gradient at y
-    hv.zero();
-    update(*y);
-    gradient(hv,*y,gtol);
- 
-    // Compute Newton Quotient
-    hv.axpy(-one,*g);
-    hv.scale(one/h);
-
-    // Reset objective to x
-    update(x);
+    gradient(*dual_,x,tol);           // Compute gradient at x
+    prim_->set(x); prim_->axpy(h,v);  // Set prim = x + hv
+    update(*prim_,UpdateType::Temp);       // Temporarily update objective at x + hv
+    gradient(hv,*prim_,tol);          // Compute gradient at x + hv
+    hv.axpy(-one,*dual_);             // Compute difference (f'(x+hv)-f'(x))
+    hv.scale(one/h);                  // Compute Newton quotient (f'(x+hv)-f'(x))/h
+    update(x,UpdateType::Revert);          // Reset objective to x
   }
 }
 
+template<typename Real>
+std::vector<std::vector<Real>> Objective<Real>::checkGradient( const Vector<Real> &x,
+                                                               const Vector<Real> &g,
+                                                               const Vector<Real> &d,
+                                                               const bool printToStream,
+                                                               std::ostream & outStream,
+                                                               const int numSteps,
+                                                               const int order ) {
 
-
-template <class Real>
-std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
-                                                                const Vector<Real> &g,
-                                                                const Vector<Real> &d,
-                                                                const bool printToStream,
-                                                                std::ostream & outStream,
-                                                                const int numSteps,
-                                                                const int order ) {
-
+  const Real ten(10);
   std::vector<Real> steps(numSteps);
   for(int i=0;i<numSteps;++i) {
-    steps[i] = pow(10,-i);
+    steps[i] = pow(ten,static_cast<Real>(-i));
   }
 
   return checkGradient(x,g,d,steps,printToStream,outStream,order);
 
 } // checkGradient
 
-
-
-template <class Real>
-std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Real> &x,
-                                                                const Vector<Real> &g,
-                                                                const Vector<Real> &d,
-                                                                const std::vector<Real> &steps,
-                                                                const bool printToStream,
-                                                                std::ostream & outStream,
-                                                                const int order ) {
+template<typename Real>
+std::vector<std::vector<Real>> Objective<Real>::checkGradient( const Vector<Real> &x,
+                                                               const Vector<Real> &g,
+                                                               const Vector<Real> &d,
+                                                               const std::vector<Real> &steps,
+                                                               const bool printToStream,
+                                                               std::ostream & outStream,
+                                                               const int order ) {
 
   ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
@@ -163,23 +154,24 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   int numSteps = steps.size();
   int numVals = 4;
   std::vector<Real> tmp(numVals);
-  std::vector<std::vector<Real> > gCheck(numSteps, tmp);
+  std::vector<std::vector<Real>> gCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  ROL::nullstream oldFormatState;
+  nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Evaluate objective value at x.
-  this->update(x);
-  Real val = this->value(x,tol);
+  update(x,UpdateType::Temp);
+  Real val = value(x,tol);
 
   // Compute gradient at x.
-  ROL::Ptr<Vector<Real> > gtmp = g.clone();
-  this->gradient(*gtmp, x, tol);
-  Real dtg = d.dot(gtmp->dual());
+  Ptr<Vector<Real>> gtmp = g.clone();
+  gradient(*gtmp, x, tol);
+  //Real dtg = d.dot(gtmp->dual());
+  Real dtg = d.apply(*gtmp);
 
   // Temporary vectors.
-  ROL::Ptr<Vector<Real> > xnew = x.clone();
+  Ptr<Vector<Real>> xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
 
@@ -199,7 +191,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
 
       // Only evaluate at shifts where the weight is nonzero  
       if( weights[order-1][j+1] != 0 ) {
-        this->update(*xnew);
+        update(*xnew,UpdateType::Temp);
         gCheck[i][2] += weights[order-1][j+1] * this->value(*xnew,tol);
       }
     }
@@ -238,24 +230,18 @@ std::vector<std::vector<Real> > Objective<Real>::checkGradient( const Vector<Rea
   return gCheck;
 } // checkGradient
 
-
-
-
-
-
-
-
-template <class Real>
-std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real> &x,
-                                                               const Vector<Real> &hv,
-                                                               const Vector<Real> &v,
-                                                               const bool printToStream,
-                                                               std::ostream & outStream,
-                                                               const int numSteps,
-                                                               const int order ) {
+template<typename Real>
+std::vector<std::vector<Real>> Objective<Real>::checkHessVec( const Vector<Real> &x,
+                                                              const Vector<Real> &hv,
+                                                              const Vector<Real> &v,
+                                                              const bool printToStream,
+                                                              std::ostream & outStream,
+                                                              const int numSteps,
+                                                              const int order ) {
+  const Real ten(10);
   std::vector<Real> steps(numSteps);
   for(int i=0;i<numSteps;++i) {
-    steps[i] = pow(10,-i);
+    steps[i] = pow(ten,static_cast<Real>(-i));
   }
 
   return checkHessVec(x,hv,v,steps,printToStream,outStream,order);
@@ -263,14 +249,14 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
 
 
 
-template <class Real>
-std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real> &x,
-                                                               const Vector<Real> &hv,
-                                                               const Vector<Real> &v,
-                                                               const std::vector<Real> &steps,
-                                                               const bool printToStream,
-                                                               std::ostream & outStream,
-                                                               const int order ) {
+template<typename Real>
+std::vector<std::vector<Real>> Objective<Real>::checkHessVec( const Vector<Real> &x,
+                                                              const Vector<Real> &hv,
+                                                              const Vector<Real> &v,
+                                                              const std::vector<Real> &steps,
+                                                              const bool printToStream,
+                                                              std::ostream & outStream,
+                                                              const int order ) {
 
   ROL_TEST_FOR_EXCEPTION( order<1 || order>4, std::invalid_argument, 
                               "Error: finite difference order must be 1,2,3, or 4" );
@@ -278,64 +264,56 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   using Finite_Difference_Arrays::shifts;
   using Finite_Difference_Arrays::weights;
 
-
+  const Real one(1);
   Real tol = std::sqrt(ROL_EPSILON<Real>());
 
   int numSteps = steps.size();
   int numVals = 4;
   std::vector<Real> tmp(numVals);
-  std::vector<std::vector<Real> > hvCheck(numSteps, tmp);
+  std::vector<std::vector<Real>> hvCheck(numSteps, tmp);
 
   // Save the format state of the original outStream.
-  ROL::nullstream oldFormatState;
+  nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   // Compute gradient at x.
-  ROL::Ptr<Vector<Real> > g = hv.clone();
-  this->update(x);
-  this->gradient(*g, x, tol);
+  Ptr<Vector<Real>> g = hv.clone();
+  update(x,UpdateType::Temp);
+  gradient(*g, x, tol);
 
   // Compute (Hessian at x) times (vector v).
-  ROL::Ptr<Vector<Real> > Hv = hv.clone();
-  this->hessVec(*Hv, v, x, tol);
+  Ptr<Vector<Real>> Hv = hv.clone();
+  hessVec(*Hv, v, x, tol);
   Real normHv = Hv->norm();
 
   // Temporary vectors.
-  ROL::Ptr<Vector<Real> > gdif = hv.clone();
-  ROL::Ptr<Vector<Real> > gnew = hv.clone();
-  ROL::Ptr<Vector<Real> > xnew = x.clone();
+  Ptr<Vector<Real>> gdif = hv.clone();
+  Ptr<Vector<Real>> gnew = hv.clone();
+  Ptr<Vector<Real>> xnew = x.clone();
 
   for (int i=0; i<numSteps; i++) {
-
     Real eta = steps[i]; 
-
     // Evaluate objective value at x+eta*d.
     xnew->set(x);
-
     gdif->set(*g);
     gdif->scale(weights[order-1][0]);
-
-    for(int j=0; j<order; ++j) {
-
-        // Evaluate at x <- x+eta*c_i*d.
-        xnew->axpy(eta*shifts[order-1][j], v);
-
-        // Only evaluate at shifts where the weight is nonzero  
-        if( weights[order-1][j+1] != 0 ) {
-            this->update(*xnew);
-            this->gradient(*gnew, *xnew, tol); 
-            gdif->axpy(weights[order-1][j+1],*gnew);
-        }
-       
+    for (int j=0; j<order; ++j) {
+      // Evaluate at x <- x+eta*c_i*d.
+      xnew->axpy(eta*shifts[order-1][j], v);
+      // Only evaluate at shifts where the weight is nonzero  
+      if ( weights[order-1][j+1] != 0 ) {
+        update(*xnew,UpdateType::Temp);
+        gradient(*gnew, *xnew, tol); 
+        gdif->axpy(weights[order-1][j+1],*gnew);
+      }
     }
-
-    gdif->scale(1.0/eta);    
+    gdif->scale(one/eta);    
 
     // Compute norms of hessvec, finite-difference hessvec, and error.
     hvCheck[i][0] = eta;
     hvCheck[i][1] = normHv;
     hvCheck[i][2] = gdif->norm();
-    gdif->axpy(-1.0, *Hv);
+    gdif->axpy(-one, *Hv);
     hvCheck[i][3] = gdif->norm();
 
     if (printToStream) {
@@ -368,9 +346,7 @@ std::vector<std::vector<Real> > Objective<Real>::checkHessVec( const Vector<Real
   return hvCheck;
 } // checkHessVec
 
-
-
-template<class Real>
+template<typename Real>
 std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
                                                  const Vector<Real> &hv,
                                                  const Vector<Real> &v,
@@ -381,12 +357,15 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   Real tol = std::sqrt(ROL_EPSILON<Real>());
   
   // Compute (Hessian at x) times (vector v).
-  ROL::Ptr<Vector<Real> > h = hv.clone();
-  this->hessVec(*h, v, x, tol);
-  Real wHv = w.dot(h->dual());
+  Ptr<Vector<Real>> h = hv.clone();
+  update(x,UpdateType::Temp);
+  hessVec(*h, v, x, tol);
+  //Real wHv = w.dot(h->dual());
+  Real wHv = w.apply(*h);
 
-  this->hessVec(*h, w, x, tol);
-  Real vHw = v.dot(h->dual());
+  hessVec(*h, w, x, tol);
+  //Real vHw = v.dot(h->dual());
+  Real vHw = v.apply(*h);
 
   std::vector<Real> hsymCheck(3, 0);
 
@@ -395,7 +374,7 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   hsymCheck[2] = std::abs(vHw-wHv);
 
   // Save the format state of the original outStream.
-  ROL::nullstream oldFormatState;
+  nullstream oldFormatState;
   oldFormatState.copyfmt(outStream);
 
   if (printToStream) {
@@ -417,8 +396,6 @@ std::vector<Real> Objective<Real>::checkHessSym( const Vector<Real> &x,
   return hsymCheck;
 
 } // checkHessSym
-
-
 
 } // namespace ROL
 

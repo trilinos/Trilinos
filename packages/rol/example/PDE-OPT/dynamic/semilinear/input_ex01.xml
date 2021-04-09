@@ -98,11 +98,11 @@
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name="Stochastic Component Type" type="string" value="Mean Value"   />
+    <Parameter name="Type" type="string" value="Mean Value"   />
     <!--
-    <Parameter name="Stochastic Component Type" type="string" value="Risk Averse"  />
-    <Parameter name="Stochastic Component Type" type="string" value="Risk Neutral" />
-    <Parameter name="Stochastic Component Type" type="string" value="Probability"  />
+    <Parameter name="Type" type="string" value="Risk Averse"  />
+    <Parameter name="Type" type="string" value="Risk Neutral" />
+    <Parameter name="Type" type="string" value="Probability"  />
     -->
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="Entropic Risk" />

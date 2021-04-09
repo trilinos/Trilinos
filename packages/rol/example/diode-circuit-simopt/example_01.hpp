@@ -521,7 +521,7 @@ public:
     return ((*ex)[0] >= this->x_lo_[0] && (*ex)[1] >= this->x_lo_[1] &&
 	    (*ex)[0] <= this->x_up_[0] && (*ex)[1] <= this->x_up_[1]);
   }
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
+  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
     ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<std::vector<Real> > ev =
@@ -534,7 +534,7 @@ public:
       }
     }
   }
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
+  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
     ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<std::vector<Real> > ev =
@@ -547,7 +547,7 @@ public:
       }
     }
   }
-  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps) {
+  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &x, Real eps = Real(0)) {
     ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<std::vector<Real> > ev =
@@ -561,48 +561,48 @@ public:
       }
     }
   }
-  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
+  void pruneLowerActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
     ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
     ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
-    Real epsn = std::min(this->scale_*eps,this->min_diff_);
+    Real epsn = std::min(this->scale_*xeps,this->min_diff_);
     //epsn *= this->scale_;
     for ( int i = 0; i < 2; i++ ) {
-      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ) {
+      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > geps) ) {
 	(*ev)[i] = 0.0;
       }
     }
   }
-  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
+  void pruneUpperActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
     ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
     ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
-    Real epsn = std::min(this->scale_*eps,this->min_diff_);
+    Real epsn = std::min(this->scale_*xeps,this->min_diff_);
     //epsn *= this->scale_;
     for ( int i = 0; i < 2; i++ ) {
-      if ( ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
+      if ( ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < -geps) ) {
 	(*ev)[i] = 0.0;
       }
     }
   }
-  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real eps) {
+  void pruneActive(ROL::Vector<Real> &v, const ROL::Vector<Real> &g, const ROL::Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
     ROL::Ptr<const std::vector<Real> > ex =
       dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
     ROL::Ptr<const std::vector<Real> > eg =
       dynamic_cast<const ROL::StdVector<Real>&>(g).getVector();
     ROL::Ptr<std::vector<Real> > ev =
       dynamic_cast<ROL::StdVector<Real>&>(v).getVector();
-    Real epsn = std::min(this->scale_*eps,this->min_diff_);
+    Real epsn = std::min(this->scale_*xeps,this->min_diff_);
     //epsn *= this->scale_;
     for ( int i = 0; i < 2; i++ ) {
-      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > 0.0) ||
-	   ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < 0.0) ) {
+      if ( ((*ex)[i] <= this->x_lo_[i]+epsn && (*eg)[i] > geps) ||
+	   ((*ex)[i] >= this->x_up_[i]-epsn && (*eg)[i] < -geps) ) {
 	(*ev)[i] = 0.0;
       }
     }

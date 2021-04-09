@@ -1,0 +1,5 @@
+ADD_SUBDIRECTORY(elasticity)
+ADD_SUBDIRECTORY(navier-stokes)
+ADD_SUBDIRECTORY(lasso)
+ADD_SUBDIRECTORY(dualsvm)
+ADD_SUBDIRECTORY(simpreg)

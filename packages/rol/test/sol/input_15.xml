@@ -64,29 +64,31 @@
       <Parameter name="Penalty Update Frequency"               type="int"    value="4"     />
     </ParameterList>
 
-    <Parameter name = "Stochastic Component Type" type="string" value="Risk Averse" />
-    <ParameterList name="Risk Measure">
-      <Parameter name="Name" type="string" value="Mean Plus Semi-Deviation" />
-      <!-- ===========  CVAR SUBLIST  =========== -->
-      <ParameterList name="CVaR">
-        <Parameter name="Confidence Level"             type="double" value="0.8"   />
-        <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+    <ParameterList name="Objective">
+      <Parameter name = "Type" type="string" value="Risk Averse" />
+      <ParameterList name="Risk Measure">
+        <Parameter name="Name" type="string" value="Mean Plus Semi-Deviation" />
+        <!-- ===========  CVAR SUBLIST  =========== -->
+        <ParameterList name="CVaR">
+          <Parameter name="Confidence Level"             type="double" value="0.8"   />
+          <Parameter name="Convex Combination Parameter" type="double" value="0.8"   />
+        </ParameterList>
+        <!-- ===========  MEAN PLUS DEVIATION SUBLIST  =========== -->
+        <ParameterList name="Mean Plus Semi-Deviation">
+          <Parameter name="Coefficient"                  type="double" value="0.8"   />
+        </ParameterList>
+        <!-- ===========  MEAN PLUS DEVIATION FROM TARGET SUBLIST  =========== -->
+        <ParameterList name="Mean Plus Deviation From Target">
+          <Parameter name="Coefficient"                  type="double" value="0.8"   />
+          <Parameter name="Target"                       type="double" value="1.0"   />
+        </ParameterList>
       </ParameterList>
-      <!-- ===========  MEAN PLUS DEVIATION SUBLIST  =========== -->
-      <ParameterList name="Mean Plus Semi-Deviation">
-        <Parameter name="Coefficient"                  type="double" value="0.8"   />
-      </ParameterList>
-      <!-- ===========  MEAN PLUS DEVIATION FROM TARGET SUBLIST  =========== -->
-      <ParameterList name="Mean Plus Deviation From Target">
-        <Parameter name="Coefficient"                  type="double" value="0.8"   />
-        <Parameter name="Target"                       type="double" value="1.0"   />
-      </ParameterList>
-    </ParameterList>
-    <ParameterList name="Probability">
-      <Parameter name="Name" type="string" value="bPOE" />
-      <!-- ===========  BPOE SUBLIST  =========== -->
-      <ParameterList name="bPOE">
-        <Parameter name="Threshold"    type="double" value="0.9" />
+      <ParameterList name="Probability">
+        <Parameter name="Name" type="string" value="bPOE" />
+        <!-- ===========  BPOE SUBLIST  =========== -->
+        <ParameterList name="bPOE">
+          <Parameter name="Threshold"    type="double" value="0.9" />
+        </ParameterList>
       </ParameterList>
     </ParameterList>
   </ParameterList>

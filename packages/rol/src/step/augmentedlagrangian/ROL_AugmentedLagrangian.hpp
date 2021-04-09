@@ -145,6 +145,37 @@ public:
     pen_ = ROL::makePtr<QuadraticPenalty<Real>>(con,multiplier,penaltyParameter,optVec,conVec,scaleLagrangian_,HessianApprox);
   }
 
+  /** \brief Constructor.
+
+      This creates a valid AugmentedLagrangian object.
+      @param[in]          obj              is an objective function.
+      @param[in]          con              is an equality constraint.
+      @param[in]          mulitplier       is a Lagrange multiplier vector.
+      @param[in]          penaltyParameter is the penalty parameter.
+      @param[in]          optVec           is an optimization space vector.
+      @param[in]          conVec           is a constraint space vector.
+      @param[in]          parlist          is a parameter list.
+  */
+  AugmentedLagrangian(const ROL::Ptr<Objective<Real> > &obj,
+                      const ROL::Ptr<Constraint<Real> > &con,
+                      const Vector<Real> &multiplier,
+                      const Real penaltyParameter,
+                      const Vector<Real> &optVec,
+                      const Vector<Real> &conVec,
+                      const bool scaleLagrangian,
+                      const int HessianApprox)
+    : obj_(obj), penaltyParameter_(penaltyParameter),
+      fval_(0), fscale_(1),
+      nfval_(0), ngval_(0),
+      scaleLagrangian_(scaleLagrangian),
+      isValueComputed_(false), isGradientComputed_(false) {
+
+    gradient_      = optVec.dual().clone();
+    dualOptVector_ = optVec.dual().clone();
+
+    pen_ = ROL::makePtr<QuadraticPenalty<Real>>(con,multiplier,penaltyParameter,optVec,conVec,scaleLagrangian_,HessianApprox);
+  }
+
   /** \brief Null constructor.
 
       This constructor is only used for inheritance and does not create a
@@ -159,8 +190,8 @@ public:
   virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
     pen_->update(x,flag,iter);
-    isValueComputed_ = (flag ? false : isValueComputed_);
-    isGradientComputed_ = (flag ? false : isGradientComputed_);
+    isValueComputed_ = ((flag || (!flag && iter < 0)) ? false : isValueComputed_);
+    isGradientComputed_ = ((flag || (!flag && iter < 0)) ? false : isGradientComputed_);
   }
 
   void setScaling(const Real fscale, const Real cscale = 1.0) {

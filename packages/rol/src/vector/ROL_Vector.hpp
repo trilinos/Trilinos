@@ -227,6 +227,18 @@ public:
     return *this;
   }
 
+  /** \brief Apply \f$\mathtt{*this}\f$ to a dual vector.  This is equivalent
+             to the call \f$\mathtt{this->dot(x.dual())}\f$.
+
+             @param[in]     x      is a vector
+             @return         The number equal to \f$\langle \mathtt{*this}, x \rangle\f$.
+
+             ---
+  */
+  virtual Real apply(const Vector<Real> &x) const {
+    return this->dot(x.dual());
+  }
+
   virtual void applyUnary( const Elementwise::UnaryFunction<Real> &f ) {
     ROL_UNUSED(f);
     ROL_TEST_FOR_EXCEPTION( true, std::logic_error,
@@ -303,6 +315,7 @@ public:
              - Additivity of dot (inner) product: \f$(\mathtt{*this}, x+y)  = (\mathtt{*this}, x) + (\mathtt{*this}, y)\f$.
              - Consistency of scalar multiplication and norm: \f$\|{\mathtt{*this}} / {\|\mathtt{*this}\|} \| = 1\f$.
              - Reflexivity: \f$\mbox{dual}(\mbox{dual}(\mathtt{*this})) = \mathtt{*this}\f$ .
+             - Consistency of apply and dual: \f$\langle \mathtt{*this}, x\rangle = (\mbox{dual}(\mathtt{*this}),x) = (\mathtt{*this},\mbox{dual}(x))\f$.
 
              The consistency errors are defined as the norms or absolute values of the differences between the left-hand
              side and the right-hand side terms in the above equalities.
@@ -408,7 +421,21 @@ public:
     xtmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(this->dual()));
     ytmp = ROL::constPtrCast<Vector>(ROL::makePtrFromRef(xtmp->dual()));
     v->axpy(-one, *ytmp); vCheck.push_back(v->norm());
-    *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n\n";
+    *pStream << std::setw(width) << std::left << "Reflexivity. Consistency error: " << " " << vCheck.back() << "\n";
+
+    // Consistency of apply and dual.
+    v->set(*this);
+    xtmp = x.dual().clone(); xtmp->set(x.dual());
+    Real vx  = v->apply(*xtmp);
+    Real vxd = v->dot(xtmp->dual());
+    Real vdx = xtmp->dot(v->dual());
+    if (vx == zero) {
+      vCheck.push_back(std::max(std::abs(vx-vxd),std::abs(vx-vdx)));
+    }
+    else {
+      vCheck.push_back(std::max(std::abs(vx-vxd),std::abs(vx-vdx))/std::abs(vx));
+    }
+    *pStream << std::setw(width) << std::left << "Consistency of apply and dual:" << " " << vCheck.back() << "\n\n";
 
     //*pStream << "************   End verification of linear algebra.\n\n";
 

@@ -71,7 +71,7 @@ void Constraint<Real>::applyJacobian(Vector<Real> &jv,
   ROL::Ptr<Vector<Real> > xnew = x.clone();
   xnew->set(x);
   xnew->axpy(h,v);
-  this->update(*xnew);
+  this->update(*xnew,UpdateType::Temp);
 
   // Compute constraint at x + h*v.
   jv.zero();
@@ -121,11 +121,12 @@ void Constraint<Real>::applyAdjointJacobian(Vector<Real> &ajv,
     h = std::max(one,x.norm()/ex->norm())*tol;
     xnew->set(x);
     xnew->axpy(h,*ex);
-    this->update(*xnew);
+    this->update(*xnew,UpdateType::Temp);
     this->value(*cnew,*xnew,ctol);
     cnew->axpy(-one,*c0);
     cnew->scale(one/h);
-    ajv.axpy(cnew->dot(v.dual()),*eajv);
+    //ajv.axpy(cnew->dot(v.dual()),*eajv);
+    ajv.axpy(cnew->apply(v),*eajv);
   }
 }
 
@@ -179,7 +180,7 @@ void Constraint<Real>::applyAdjointHessian(Vector<Real> &huv,
   ROL::Ptr<Vector<Real> > xnew = x.clone();
   xnew->set(x);
   xnew->axpy(h,v);
-  update(*xnew);
+  update(*xnew,UpdateType::Temp);
 
   // Compute constraint Jacobian at x + h*v.
   huv.zero();
@@ -408,7 +409,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
 
   // Compute constraint value at x.
   ROL::Ptr<Vector<Real> > c = jv.clone();
-  this->update(x);
+  this->update(x,UpdateType::Temp);
   this->value(*c, x, tol);
 
   // Compute (Jacobian at x) times (vector v).
@@ -435,7 +436,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyJacobian(const Vecto
        xnew->axpy(eta*shifts[order-1][j], v);
 
        if( weights[order-1][j+1] != 0 ) {
-           this->update(*xnew);
+           this->update(*xnew,UpdateType::Temp);
            this->value(*cnew,*xnew,tol);
            cdif->axpy(weights[order-1][j+1],*cnew);    
        }
@@ -515,7 +516,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointJacobian(cons
   oldFormatState.copyfmt(outStream);
 
   // Compute constraint value at x.
-  this->update(x);
+  this->update(x,UpdateType::Temp);
   this->value(*c0, x, tol);
 
   // Compute (Jacobian at x) times (vector v).
@@ -531,11 +532,12 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointJacobian(cons
       eajv = ajv.basis(j);
       xnew->set(x);
       xnew->axpy(eta,*ex);
-      this->update(*xnew);
+      this->update(*xnew,UpdateType::Temp);
       this->value(*cnew,*xnew,tol);
       cnew->axpy(-one,*c0);
       cnew->scale(one/eta);
-      ajv1->axpy(cnew->dot(v.dual()),*eajv);
+      //ajv1->axpy(cnew->dot(v.dual()),*eajv);
+      ajv1->axpy(cnew->apply(v),*eajv);
     }
 
     // Compute norms of Jacobian-vector products, finite-difference approximations, and error.
@@ -596,8 +598,10 @@ Real Constraint<Real>::checkAdjointConsistencyJacobian(const Vector<Real> &w,
   applyJacobian(*Jv,v,x,tol);
   applyAdjointJacobian(*Jw,w,x,tol);
 
-  Real vJw = v.dot(Jw->dual());
-  Real wJv = w.dot(Jv->dual());
+  //Real vJw = v.dot(Jw->dual());
+  Real vJw = v.apply(*Jw);
+  //Real wJv = w.dot(Jv->dual());
+  Real wJv = w.apply(*Jv);
 
   Real diff = std::abs(wJv-vJw);
 
@@ -663,7 +667,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointHessian(const
   oldFormatState.copyfmt(outStream);
 
   // Apply adjoint Jacobian to u.
-  this->update(x);
+  this->update(x,UpdateType::Temp);
   this->applyAdjointJacobian(*AJu, u, x, tol);
 
   // Apply adjoint Hessian at x, in direction v, to u.
@@ -685,7 +689,7 @@ std::vector<std::vector<Real> > Constraint<Real>::checkApplyAdjointHessian(const
         xnew->axpy(eta*shifts[order-1][j],v); 
 
         if( weights[order-1][j+1] != 0 ) {    
-            this->update(*xnew);
+            this->update(*xnew,UpdateType::Temp);
             this->applyAdjointJacobian(*AJnew, u, *xnew, tol);
             AJdif->axpy(weights[order-1][j+1],*AJnew);
         }

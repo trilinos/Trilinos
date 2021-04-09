@@ -75,6 +75,7 @@ int main(int argc, char *argv[]) {
   try {
     std::string filename = "input.xml";
     auto parlist = ROL::getParametersFromXmlFile( filename );
+    parlist->sublist("Step").sublist("Trust Region").set("Initial Radius",10.0);
 
     // Setup optimization problem
     ROL::Ptr<ROL::Vector<RealT>> x0;

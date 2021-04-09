@@ -103,7 +103,11 @@ namespace ZOO {
       Real x4 = (*xp)[3];
       Real x5 = (*xp)[4];
 
-      Real val = exp(x1*x2*x3*x4*x5) - 0.5 * pow( (pow(x1,3)+pow(x2,3)+1.0), 2);
+      Real arg = x1*x2*x3*x4*x5;
+      Real val = -0.5*pow(pow(x1,3)+pow(x2,3)+1.0,2);
+      if (std::abs(arg) < 1e5) val += exp(x1*x2*x3*x4*x5);
+      else if (arg > 1e5) val += 1e10; 
+      //Real val = exp(x1*x2*x3*x4*x5) - 0.5 * pow( (pow(x1,3)+pow(x2,3)+1.0), 2);
 
       return val;
     }

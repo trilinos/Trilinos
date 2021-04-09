@@ -53,8 +53,8 @@
 // ROL_Types contains predefined constants and objects
 #include "ROL_StdVector.hpp"
 #include "ROL_Bounds.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_Constraint_PEBBL.hpp"
+#include "ROL_Solver.hpp"
+#include "ROL_PEBBL_IntegerConstraint.hpp"
 
 template<class Real>
 class Constraint_SimpleBinary : public ROL::Constraint<Real> {
@@ -75,39 +75,29 @@ public:
   void value(ROL::Vector<Real> &c,
        const ROL::Vector<Real> &x, 
              Real &tol) {
-    ROL::Ptr<std::vector<Real> >       cp = getVector(c);
-    ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
-    int dim(xp->size());
-    (*cp)[0] = static_cast<Real>(0);
-    for (int i = 0; i < dim; ++i) {
-      (*cp)[0] += (*xp)[i];
-    }
-    (*cp)[0] -= static_cast<Real>(budget_);
+    ROL::Ptr<std::vector<Real>>       cp = getVector(c);
+    ROL::Ptr<const std::vector<Real>> xp = getConstVector(x);
+    (*cp)[0] = -static_cast<Real>(budget_);
+    for (const auto & y : *xp) (*cp)[0] += y;
   }
 
   void applyJacobian(ROL::Vector<Real> &jv,
                const ROL::Vector<Real> &v,
                const ROL::Vector<Real> &x, 
                      Real &tol) {
-    ROL::Ptr<std::vector<Real> >      jvp = getVector(jv);
-    ROL::Ptr<const std::vector<Real> > vp = getConstVector(v);
+    ROL::Ptr<std::vector<Real>>      jvp = getVector(jv);
+    ROL::Ptr<const std::vector<Real>> vp = getConstVector(v);
     (*jvp)[0] = static_cast<Real>(0);
-    int dim(vp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*jvp)[0] += (*vp)[i];
-    }
+    for (const auto & y : *vp) (*jvp)[0] += y;
   }
 
   void applyAdjointJacobian(ROL::Vector<Real> &ajv,
                       const ROL::Vector<Real> &v,
                       const ROL::Vector<Real> &x, 
                             Real &tol) {
-    ROL::Ptr<std::vector<Real> >      jvp = getVector(ajv);
-    ROL::Ptr<const std::vector<Real> > vp = getConstVector(v);
-    int dim(jvp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*jvp)[i] = (*vp)[0];
-    }
+    ROL::Ptr<std::vector<Real>>      jvp = getVector(ajv);
+    ROL::Ptr<const std::vector<Real>> vp = getConstVector(v);
+    jvp->assign(jvp->size(),(*vp)[0]);
   }
 
   void applyAdjointHessian(ROL::Vector<Real> &ahwv,
@@ -122,7 +112,7 @@ public:
 template<class Real>
 class Objective_SimpleBinary : public ROL::Objective<Real> {
 private:
-  const std::vector<Real> alpha_;
+  const std::vector<Real> alpha_, beta_;
 
   ROL::Ptr<std::vector<Real>> getVector(ROL::Vector<Real> &x) const {
     return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
@@ -134,38 +124,38 @@ private:
 
 public:
   Objective_SimpleBinary(const std::vector<Real> &alpha)
-    : alpha_(alpha) {}
+    : alpha_(alpha), beta_(std::vector<Real>(alpha.size(),0)) {}
+  Objective_SimpleBinary(const std::vector<Real> &alpha, const std::vector<Real> &beta)
+    : alpha_(alpha), beta_(beta) {}
 
   Real value(const ROL::Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
-    int dim(xp->size());
+    ROL::Ptr<const std::vector<Real>> xp = getConstVector(x);
+    const Real half(0.5);
     Real val(0);
-    for (int i = 0; i < dim; ++i) {
-      val += alpha_[i] * (*xp)[i] * (*xp)[i];
-    }
-    return static_cast<Real>(0.5)*val;
+    const int dim(xp->size());
+    for (int i = 0; i < dim; ++i)
+      val += half * alpha_[i] * (*xp)[i] * (*xp)[i] - beta_[i] * (*xp)[i];
+    return val;
   }
 
   void gradient(ROL::Vector<Real> &g,
           const ROL::Vector<Real> &x,
                 Real &tol) {
-    ROL::Ptr<std::vector<Real> >       gp = getVector(g);
-    ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
-    int dim(xp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*gp)[i] = alpha_[i] * (*xp)[i];
-    }
+    ROL::Ptr<std::vector<Real>>       gp = getVector(g);
+    ROL::Ptr<const std::vector<Real>> xp = getConstVector(x);
+    const int dim(xp->size());
+    for (int i = 0; i < dim; ++i)
+      (*gp)[i] = alpha_[i] * (*xp)[i] - beta_[i];
   }
 
   void hessVec(ROL::Vector<Real> &hv,
          const ROL::Vector<Real> &v,
          const ROL::Vector<Real> &x,
                Real &tol ) {
-    ROL::Ptr<std::vector<Real> >      hvp = getVector(hv);
-    ROL::Ptr<const std::vector<Real> > vp = getConstVector(v);
-    int dim(vp->size());
-    for (int i = 0; i < dim; ++i) {
+    ROL::Ptr<std::vector<Real>>      hvp = getVector(hv);
+    ROL::Ptr<const std::vector<Real>> vp = getConstVector(v);
+    const int dim(vp->size());
+    for (int i = 0; i < dim; ++i)
       (*hvp)[i] = alpha_[i] * (*vp)[i];
-    }
   }
 };

@@ -60,7 +60,7 @@ private:
 public:
   StochasticConstraint(const Ptr<Objective<Real>> &obj,
                const Ptr<SampleGenerator<Real>>   &sampler,
-               ROL::ParameterList             &parlist,
+               ParameterList                      &parlist,
                const int index = 0)
     : sampler_(sampler) {
     robj_ = makePtr<StochasticObjective<Real>>(obj,parlist,sampler,1,index);
@@ -69,7 +69,7 @@ public:
 
   StochasticConstraint(const Ptr<Constraint<Real>> &con,
                const Ptr<SampleGenerator<Real>>    &sampler,
-               ROL::ParameterList              &parlist,
+               ParameterList                       &parlist,
                const int index = 0)
     : sampler_(sampler) {
     try {
@@ -86,6 +86,14 @@ public:
 
   Real computeStatistic(const Vector<Real> &x) const {
     return robj_->computeStatistic(x);
+  }
+
+  void setIndex(int ind) {
+    robj_->setIndex(ind);
+  }
+
+  void update(const Vector<Real> &x, UpdateType type, int iter = -1) {
+    con_->update(x,type,iter);
   }
 
   void update(const Vector<Real> &x, bool flag = true, int iter = -1) {

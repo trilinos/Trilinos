@@ -54,12 +54,12 @@ namespace ROL {
 template<class Real>
 class RiskNeutralConstraint : public Constraint<Real> {
 private:
-  const ROL::Ptr<Constraint<Real> >      con_;
-  const ROL::Ptr<SampleGenerator<Real> > xsampler_;
-  const ROL::Ptr<BatchManager<Real> >    cbman_;
+  const Ptr<Constraint<Real>>      con_;
+  const Ptr<SampleGenerator<Real>> xsampler_;
+  const Ptr<BatchManager<Real>>    cbman_;
 
-  ROL::Ptr<Vector<Real> > conVec_;
-  ROL::Ptr<Vector<Real> > optVec_;
+  Ptr<Vector<Real>> conVec_;
+  Ptr<Vector<Real>> optVec_;
 
   bool initialized_;
 
@@ -72,13 +72,17 @@ private:
   }
 
 public:
-  RiskNeutralConstraint( const ROL::Ptr<Constraint<Real> >      &con,
-                         const ROL::Ptr<SampleGenerator<Real> > &xsampler,
-                         const ROL::Ptr<BatchManager<Real> >    &cbman)
+  RiskNeutralConstraint( const Ptr<Constraint<Real>>      &con,
+                         const Ptr<SampleGenerator<Real>> &xsampler,
+                         const Ptr<BatchManager<Real>>    &cbman)
     : con_(con), xsampler_(xsampler), cbman_(cbman), initialized_(false) {}
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     con_->update(x,flag,iter);
+  }
+
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    con_->update(x,type,iter);
   }
 
   void value(Vector<Real> &c, const Vector<Real> &x, Real &tol ) {

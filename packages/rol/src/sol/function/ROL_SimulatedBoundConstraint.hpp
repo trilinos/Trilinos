@@ -58,10 +58,10 @@ namespace ROL {
 template <class Real>
 class SimulatedBoundConstraint : public BoundConstraint<Real> {
 private:
-  const ROL::Ptr<SampleGenerator<Real> > sampler_;
-  const ROL::Ptr<BoundConstraint<Real> > bnd_;
-  ROL::Ptr<Vector<Real> > l_;
-  ROL::Ptr<Vector<Real> > u_;
+  const Ptr<SampleGenerator<Real>> sampler_;
+  const Ptr<BoundConstraint<Real>> bnd_;
+  Ptr<Vector<Real>> l_;
+  Ptr<Vector<Real>> u_;
 
   const Vector<Real>& getVector(const Vector<Real> &x, int k) const {
     try {
@@ -84,19 +84,19 @@ private:
 public:
   ~SimulatedBoundConstraint() {}
 
-  SimulatedBoundConstraint(const ROL::Ptr<SampleGenerator<Real> > &sampler,
-                           const ROL::Ptr<BoundConstraint<Real> > &bnd )
+  SimulatedBoundConstraint(const Ptr<SampleGenerator<Real>> &sampler,
+                           const Ptr<BoundConstraint<Real>> &bnd )
     : sampler_(sampler), bnd_(bnd) {
     int nsamp = sampler_->numMySamples();
-    std::vector<ROL::Ptr<Vector<Real> > > lvec(nsamp), uvec(nsamp);
+    std::vector<Ptr<Vector<Real>>> lvec(nsamp), uvec(nsamp);
     for ( int k=0; k<sampler_->numMySamples(); ++k) {
       lvec[k] = bnd_->getLowerBound()->clone();
       lvec[k]->set(*bnd_->getLowerBound());
       uvec[k] = bnd_->getUpperBound()->clone();
       uvec[k]->set(*bnd_->getUpperBound());
     }
-    l_ = ROL::makePtr<SimulatedVector<Real>>(lvec,sampler_->getBatchManager());
-    u_ = ROL::makePtr<SimulatedVector<Real>>(uvec,sampler_->getBatchManager());
+    l_ = makePtr<SimulatedVector<Real>>(lvec,sampler_->getBatchManager());
+    u_ = makePtr<SimulatedVector<Real>>(uvec,sampler_->getBatchManager());
   }
 
   void project( Vector<Real> &x ) {
@@ -115,7 +115,7 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->pruneUpperActive(getVector(v,k),getVector(x,k),eps);
@@ -123,15 +123,15 @@ public:
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
-        bnd_->pruneUpperActive(getVector(v,k),getVector(g,k),getVector(x,k),eps);
+        bnd_->pruneUpperActive(getVector(v,k),getVector(g,k),getVector(x,k),xeps,geps);
       }
     }
   }
  
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
    if( bnd_->isActivated() ) {
      for( int k=0; k<sampler_->numMySamples(); ++k ) {
         bnd_->pruneLowerActive(getVector(v,k),getVector(x,k),eps);
@@ -139,19 +139,19 @@ public:
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if( bnd_->isActivated() ) {
       for( int k=0; k<sampler_->numMySamples(); ++k ) {
-        bnd_->pruneLowerActive(getVector(v,k),getVector(g,k),getVector(x,k),eps);
+        bnd_->pruneLowerActive(getVector(v,k),getVector(g,k),getVector(x,k),xeps,geps);
       }
     }
   }
  
-  const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
+  const Ptr<const Vector<Real>> getLowerBound( void ) const {
     return l_;
   }
 
-  const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
+  const Ptr<const Vector<Real>> getUpperBound( void ) const {
     return u_;
   }
 

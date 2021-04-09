@@ -54,198 +54,40 @@
 
 namespace ROL {
 
-  template<class Real>
-  class StdBoundConstraint : public BoundConstraint<Real> {
-  private:
-    int dim_;
-    std::vector<Real> x_lo_;
-    std::vector<Real> x_up_;
-    Real min_diff_;
-    Real scale_;
+template<class Real>
+class StdBoundConstraint : public BoundConstraint<Real> {
+private:
+  int dim_;
+  std::vector<Real> x_lo_;
+  std::vector<Real> x_up_;
+  Real min_diff_;
+  Real scale_;
 
-    ROL::Ptr<Vector<Real> > l_;
-    ROL::Ptr<Vector<Real> > u_;
+  using BoundConstraint<Real>::lower_;
+  using BoundConstraint<Real>::upper_;
 
-  public:
-    StdBoundConstraint(std::vector<Real> &x, bool isLower = false, Real scale = 1.0)
-      : scale_(scale) {
-      dim_ = x.size();
-      x_lo_.clear(); x_up_.clear();
-      if (isLower) {
-        x_lo_.assign(x.begin(),x.end());
-        x_up_.resize(dim_,ROL_INF<Real>());
-        BoundConstraint<Real>::activateLower();
-      }
-      else {
-        x_lo_.resize(dim_,ROL_NINF<Real>());
-        x_up_.assign(x.begin(),x.end());
-        BoundConstraint<Real>::activateUpper();
-      }
-      min_diff_ = ROL_INF<Real>();
+public:
+  StdBoundConstraint(std::vector<Real> &x, bool isLower = false, Real scale = Real(1));
 
-      l_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_lo_));
-      u_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_up_));
-    }
+  StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale = Real(1));
 
-    StdBoundConstraint(std::vector<Real> &l, std::vector<Real> &u, Real scale = 1.0)
-      : x_lo_(l), x_up_(u), scale_(scale) {
-      BoundConstraint<Real>::activate();
-      dim_ = x_lo_.size();
-      for ( int i = 0; i < dim_; i++ ) {
-        if ( i == 0 ) {
-          min_diff_ = x_up_[i] - x_lo_[i];
-        }
-        else {
-          min_diff_ = ( (min_diff_ < (x_up_[i] - x_lo_[i])) ? min_diff_ : (x_up_[i] - x_lo_[i]) );
-        }
-      }
-      min_diff_ *= 0.5;
+  bool isFeasible( const Vector<Real> &x ) override;
 
-      l_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_lo_));
-      u_ = ROL::makePtr<StdVector<Real>>(ROL::makePtrFromRef(x_up_));
-    }
+  void project( Vector<Real> &x ) override;
 
-    bool isFeasible( const Vector<Real> &x ) {
-      bool lflag = true, uflag = true;
-      if ( BoundConstraint<Real>::isActivated() ) {
-        ROL::Ptr<const std::vector<Real> > ex =
-          dynamic_cast<const StdVector<Real>&>(x).getVector();
-        if ( BoundConstraint<Real>::isLowerActivated() ) {
-          for ( int i = 0; i < dim_; ++i ) {
-            if ( (*ex)[i] < x_lo_[i] ) {
-              lflag = false;
-              break;
-            }
-          }
-        }
-        if ( BoundConstraint<Real>::isUpperActivated() ) {
-          for ( int i = 0; i < dim_; ++i ) {
-            if ( (*ex)[i] > x_up_[i] ) {
-              uflag = false;
-              break;
-            }
-          }
-        }
-      }
-      return (lflag && uflag);
-    }
+  void projectInterior( Vector<Real> &x ) override;
 
-    void project( Vector<Real> &x ) {
-      if ( BoundConstraint<Real>::isActivated() ) {
-        ROL::Ptr<std::vector<Real> > ex =
-          dynamic_cast<StdVector<Real>&>(x).getVector();
-        if ( BoundConstraint<Real>::isLowerActivated() ) {
-          for ( int i = 0; i < dim_; ++i ) {
-            (*ex)[i] = std::max(x_lo_[i],(*ex)[i]);
-          }
-        }
-        if ( BoundConstraint<Real>::isUpperActivated() ) {
-          for ( int i = 0; i < dim_; ++i ) {
-            (*ex)[i] = std::min(x_up_[i],(*ex)[i]);
-          }
-        }
-      }
-    }
+  void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) override;
 
-    void projectInterior( Vector<Real> &x ) {
-      if ( BoundConstraint<Real>::isActivated() ) {
-        ROL::Ptr<std::vector<Real> > ex =
-            dynamic_cast<StdVector<Real>&>(x).getVector();
-        const Real eps(1e-1), tol(100.0*ROL_EPSILON<Real>()), one(1);
-        if ( BoundConstraint<Real>::isLowerActivated() ) {
-          for ( int i = 0; i < dim_; ++i ) {
-            Real val = ((x_lo_[i] < -tol) ? (one-eps)*x_lo_[i]
-                     : ((x_lo_[i] >  tol) ? (one+eps)*x_lo_[i]
-                     : x_lo_[i]+eps));
-            val = std::min(x_lo_[i]+eps*min_diff_, val);
-            (*ex)[i] = ((*ex)[i] < x_lo_[i]+tol) ? val : (*ex)[i];
-          }
-        }
-        if ( BoundConstraint<Real>::isUpperActivated() ) {
-          for ( int i = 0; i < dim_; ++i ) {
-            Real val = ((x_up_[i] < -tol) ? (one+eps)*x_up_[i]
-                     : ((x_up_[i] >  tol) ? (one-eps)*x_up_[i]
-                     : x_up_[i]-eps));
-            val = std::max(x_up_[i]-eps*min_diff_, val);
-            (*ex)[i] = ((*ex)[i] > x_up_[i]-tol) ? val : (*ex)[i];
-          }
-        }
-      }
-    }
+  void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) override;
 
-    void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-      if ( BoundConstraint<Real>::isLowerActivated() ) {
-        ROL::Ptr<const std::vector<Real> > ex =
-          dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::Ptr<std::vector<Real> > ev =
-          dynamic_cast<StdVector<Real>&>(v).getVector();
-        Real epsn = std::min(scale_*eps,min_diff_);
-        for ( int i = 0; i < dim_; ++i ) {
-          if ( ((*ex)[i] <= x_lo_[i]+epsn) ) {
-            (*ev)[i] = static_cast<Real>(0);
-          }
-        }
-      }
-    }
+  void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) override;
 
-    void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
-      if ( BoundConstraint<Real>::isUpperActivated() ) {
-        ROL::Ptr<const std::vector<Real> > ex =
-          dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::Ptr<std::vector<Real> > ev =
-          dynamic_cast<StdVector<Real>&>(v).getVector();
-        Real epsn = std::min(scale_*eps,min_diff_);
-        for ( int i = 0; i < dim_; ++i ) {
-          if ( ((*ex)[i] >= x_up_[i]-epsn) ) {
-            (*ev)[i] = static_cast<Real>(0);
-          }
-        }
-      }
-    }
-
-    void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-      if ( BoundConstraint<Real>::isLowerActivated() ) {
-        ROL::Ptr<const std::vector<Real> > ex =
-          dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::Ptr<const std::vector<Real> > eg =
-          dynamic_cast<const StdVector<Real>&>(g).getVector();
-        ROL::Ptr<std::vector<Real> > ev =
-          dynamic_cast<StdVector<Real>&>(v).getVector();
-        Real epsn = std::min(scale_*eps,this->min_diff_);
-        for ( int i = 0; i < dim_; ++i ) {
-          if ( ((*ex)[i] <= x_lo_[i]+epsn && (*eg)[i] > static_cast<Real>(0)) ) {
-            (*ev)[i] = static_cast<Real>(0);
-          }
-        }
-      }
-    }
-
-    void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
-      if ( BoundConstraint<Real>::isUpperActivated() ) {
-        ROL::Ptr<const std::vector<Real> > ex = 
-          dynamic_cast<const StdVector<Real>&>(x).getVector();
-        ROL::Ptr<const std::vector<Real> > eg =
-          dynamic_cast<const StdVector<Real>&>(g).getVector();
-        ROL::Ptr<std::vector<Real> > ev =
-          dynamic_cast<StdVector<Real>&>(v).getVector();
-        Real epsn = std::min(scale_*eps,min_diff_);
-        for ( int i = 0; i < dim_; ++i ) {
-          if ( ((*ex)[i] >= x_up_[i]-epsn && (*eg)[i] < static_cast<Real>(0)) ) {
-            (*ev)[i] = static_cast<Real>(0);
-          }
-        }
-      }
-    }
- 
-    const ROL::Ptr<const Vector<Real> > getLowerBound( void ) const {
-      return l_;
-    }
-
-    const ROL::Ptr<const Vector<Real> > getUpperBound( void ) const {
-      return u_;
-    }
-  };
+  void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) override;
+};
 
 }// End ROL Namespace
+
+#include "ROL_StdBoundConstraint_Def.hpp"
 
 #endif

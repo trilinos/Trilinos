@@ -65,7 +65,7 @@ private:
   Ptr<SampleGenerator<Real>>  hsampler_; // Sampler for objective Hessian-times-a-vector
 
   const int comp_;
-  const int index_;
+  int index_;
 
   Ptr<const Vector<Real>> getConstVector(const Vector<Real> &x) const {
     const RiskVector<Real> &xrv = dynamic_cast<const RiskVector<Real>&>(x);
@@ -127,7 +127,7 @@ public:
     : StochasticObjective(obj,rvf,sampler,sampler,sampler,storage,comp,index) {}
 
   StochasticObjective( const Ptr<Objective<Real>> &obj,
-               ROL::ParameterList             &parlist,
+               ParameterList                      &parlist,
                const Ptr<SampleGenerator<Real>>   &vsampler,
                const Ptr<SampleGenerator<Real>>   &gsampler,
                const Ptr<SampleGenerator<Real>>   &hsampler,
@@ -135,18 +135,15 @@ public:
     : obj_(obj),
       vsampler_(vsampler), gsampler_(gsampler), hsampler_(hsampler),
       comp_(comp), index_(index) {
-    std::string type =parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
-    std::string name;
-    if (type == "Risk Averse") {
+    std::string name, type = parlist.sublist("SOL").get("Type","Risk Averse");
+    if (type == "Risk Averse")
       name = parlist.sublist("SOL").sublist("Risk Measure").get("Name","CVaR");
-    }
 
-    if (type == "Risk Averse" && name == "Convex Combination Risk Measure") {
+    if (type == "Risk Averse" && name == "Convex Combination Risk Measure")
       rvf_ = makePtr<ConvexCombinationRiskMeasure<Real>>(parlist);
-    }
-    else {
+    else
       rvf_ = RandVarFunctionalFactory<Real>(parlist);
-    }
+
     bool storage = parlist.sublist("SOL").get("Store Sampled Value and Gradient",true);
     rvf_->useStorage(storage);
   }
@@ -167,6 +164,24 @@ public:
   Real computeStatistic(const Vector<Real> &x) const {
     Ptr<const std::vector<Real>> xstat = getConstStat(x);
     return rvf_->computeStatistic(xstat);
+  }
+
+  void setIndex(int ind) {
+    index_ = ind;
+  }
+
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    Ptr<const Vector<Real>> x0 = getConstVector(x);
+    // Update random variable functional
+    rvf_->resetStorage(type);
+    // Update uncertain objective function
+    obj_->update(*x0,type,iter);
+    // Update samplers
+    vsampler_->update(*x0);
+    if ( type != UpdateType::Trial || type != UpdateType::Revert ) {
+      gsampler_->update(*x0);
+      hsampler_->update(*x0);
+    }
   }
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {

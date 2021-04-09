@@ -3,7 +3,7 @@
 #define MISFIT_ROBJ_H
 
 #include "ROL_Objective.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_VectorController.hpp"
 #include "femdata.hpp"
 
 template <class Real>
@@ -13,7 +13,7 @@ private:
   const ROL::Ptr<FEMdata<Real>> fem_;
 
   // Vector Storage
-  ROL::Ptr<ROL::SimController<Real>> stateStore_, adjointStore_;
+  ROL::Ptr<ROL::VectorController<Real>> stateStore_, adjointStore_;
   ROL::Ptr<ROL::Vector<Real>> state_, adjoint_, state_sens_, adjoint_sens_;
   ROL::Ptr<ROL::Vector<Real>> dualadjoint_;
 
@@ -27,8 +27,8 @@ public:
                    ROL::ParameterList            &list)
     : fem_(fem), nstat_(0), nadjo_(0), nsens_(0), nsadj_(0),
       nupda_(0), nfval_(0), ngrad_(0), nhess_(0), nprec_(0) {
-    stateStore_   = ROL::makePtr<ROL::SimController<Real>>();
-    adjointStore_ = ROL::makePtr<ROL::SimController<Real>>();
+    stateStore_   = ROL::makePtr<ROL::VectorController<Real>>();
+    adjointStore_ = ROL::makePtr<ROL::VectorController<Real>>();
 
     // Vector Storage
     state_        = fem_->createStateVector(list);
@@ -44,14 +44,14 @@ public:
     return fem_->getAssembler();
   }
 
-  void update( const ROL::Vector<Real> &z, bool flag = true, int iter = -1 ) {
+  void update( const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1 ) {
     nupda_++;
-    stateStore_->objectiveUpdate(true);
-    adjointStore_->objectiveUpdate(flag);
+    stateStore_->objectiveUpdate(type);
+    adjointStore_->objectiveUpdate(type);
   }
 
   void solvePDE(ROL::Vector<Real> &u, const ROL::Vector<Real> &z) {
-    update(z,false);
+    update(z,ROL::UpdateType::Temp);
     solve_state_equation(u,z);
   }
 
@@ -62,7 +62,8 @@ public:
     dualadjoint_->scale(static_cast<Real>(0.5));        // 0.5 Hu
     fem_->addObjectiveGradient(*dualadjoint_);          // 0.5 Hu + g
     // 0.5 uHu + gu + c0
-    return state_->dot(dualadjoint_->dual()) + fem_->getObjectiveConstant();
+    //return state_->dot(dualadjoint_->dual()) + fem_->getObjectiveConstant();
+    return state_->apply(*dualadjoint_) + fem_->getObjectiveConstant();
   }
 
   void gradient( ROL::Vector<Real> &g, const ROL::Vector<Real> &z, Real &tol ) {

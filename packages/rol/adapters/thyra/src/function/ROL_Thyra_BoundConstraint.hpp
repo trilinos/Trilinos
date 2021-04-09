@@ -113,13 +113,13 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^+_\epsilon(x)\f$.  Here,
       the upper \f$\epsilon\f$-active set is defined as
       \f[
-         \mathcal{A}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon\,\}.
+         \mathcal{A}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \ge b(\xi)-\epsilon\,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
 	  const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
 	  ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
 
@@ -133,20 +133,21 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^+_\epsilon(x)\f$.  Here,
       the upper \f$\epsilon\f$-binding set is defined as
       \f[
-         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = b(\xi)-\epsilon,\;
-                g(\xi) < 0 \,\}.
+         \mathcal{B}^+_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \ge b(\xi)-\epsilon_x,\;
+                g(\xi) < -\epsilon_g \,\}.
       \f]
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       g   is the negative search direction.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       g    is the negative search direction.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
 	const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
 	ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
 	const ThyraVector<Real>  & thyra_g = dynamic_cast<const ThyraVector<Real>&>(g);
 
-	Real epsn = std::min(eps,min_diff_);
+	Real epsn = std::min(xeps,min_diff_);
 
   Thyra::ele_wise_prune_upper(*thyra_x.getVector(), *thyra_x_up_, *thyra_g.getVector(), thyra_v.getVector().ptr(), epsn );
 
@@ -157,13 +158,13 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{A}^-_\epsilon(x)\f$.  Here,
       the lower \f$\epsilon\f$-active set is defined as
       \f[
-         \mathcal{A}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon\,\}.
+         \mathcal{A}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \le a(\xi)+\epsilon\,\}.
       \f]
       @param[out]      v   is the variable to be pruned.
       @param[in]       x   is the current optimization variable.
       @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
 	const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
   ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
 
@@ -178,20 +179,21 @@ public:
       This function sets \f$v(\xi)=0\f$ if \f$\xi\in\mathcal{B}^-_\epsilon(x)\f$.  Here,
       the lower \f$\epsilon\f$-binding set is defined as
       \f[
-         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) = a(\xi)+\epsilon,\;
-                g(\xi) > 0 \,\}.
+         \mathcal{B}^-_\epsilon(x) = \{\,\xi\in\Xi\,:\,x(\xi) \le a(\xi)+\epsilon_x,\;
+                g(\xi) > \epsilon_g \,\}.
       \f]
-      @param[out]      v   is the variable to be pruned.
-      @param[in]       x   is the current optimization variable.
-      @param[in]       g   is the negative search direction.
-      @param[in]       eps is the active-set tolerance \f$\epsilon\f$.
+      @param[out]      v    is the variable to be pruned.
+      @param[in]       x    is the current optimization variable.
+      @param[in]       g    is the negative search direction.
+      @param[in]       xeps is the active-set tolerance \f$\epsilon_x\f$.
+      @param[in]       geps is the binding-set tolerance \f$\epsilon_g\f$.
   */
-  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+  virtual void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
 	const ThyraVector<Real>  & thyra_x = dynamic_cast<const ThyraVector<Real>&>(x);
   ThyraVector<Real>  & thyra_v = dynamic_cast<ThyraVector<Real>&>(v);
 	const ThyraVector<Real>  & thyra_g = dynamic_cast<const ThyraVector<Real>&>(g);
 
-	Real epsn = std::min(eps,min_diff_);
+	Real epsn = std::min(xeps,min_diff_);
 
   Thyra::ele_wise_prune_lower(*thyra_x.getVector(), *thyra_x_lo_, *thyra_g.getVector(), thyra_v.getVector().ptr(), epsn );
   }

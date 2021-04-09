@@ -212,7 +212,6 @@ public:
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
-    bnd_->update(x,flag,iter);
   }
 
   /** \brief Compute value.

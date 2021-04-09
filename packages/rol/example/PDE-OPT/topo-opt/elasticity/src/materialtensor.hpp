@@ -63,14 +63,16 @@ private:
   Real maxDensity_;
   Real powerSIMP_;
   bool usePhaseField_;
-  std::vector<std::vector<Real> > materialMat_;
+  bool useProjection_;
+  Real beta_, eta_;
+  std::vector<std::vector<Real>> materialMat_;
 
   // Precomputed quantities.
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > BMat_;
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > BdetJMat_;
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > NMat_;
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > NdetJMat_;
-  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > CBdetJMat_;
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> BMat_;
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> BdetJMat_;
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> NMat_;
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> NdetJMat_;
+  std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> CBdetJMat_;
 
   void computeMaterialTensor(const int d) {
     int matd = (d*(d+1))/2;
@@ -205,13 +207,16 @@ private:
 public:
   MaterialTensor(Teuchos::ParameterList &parlist) {
     // Problem parameters.
-    youngsModulus_  = parlist.get("Young's Modulus",     1.0);
-    poissonRatio_   = parlist.get("Poisson Ratio",       0.3);
-    isPlainStress_  = parlist.get("Use Plain Stress",    true);
-    minDensity_     = parlist.get("Minimum Density",     1e-4);
-    maxDensity_     = parlist.get("Maximum Density",     1.0);
-    powerSIMP_      = parlist.get("SIMP Power",          3.0);
-    usePhaseField_  = parlist.get("Use Phase Field",     false);
+    youngsModulus_  = parlist.get("Young's Modulus",      1.0);
+    poissonRatio_   = parlist.get("Poisson Ratio",        0.3);
+    isPlainStress_  = parlist.get("Use Plain Stress",     true);
+    minDensity_     = parlist.get("Minimum Density",      1e-4);
+    maxDensity_     = parlist.get("Maximum Density",      1.0);
+    powerSIMP_      = parlist.get("SIMP Power",           3.0);
+    usePhaseField_  = parlist.get("Use Phase Field",      false);
+    useProjection_  = parlist.get("Use Projection",       false);
+    beta_           = parlist.get("Projection Parameter", 1.0);
+    eta_            = parlist.get("Projection Threshold", 0.5);
   }
 
   void setFE(ROL::Ptr<FE<Real> > &fe) {
@@ -274,8 +279,8 @@ public:
                       const ROL::Ptr<Intrepid::FieldContainer<Real> > & Z,
                       const int deriv = 0) const {
     // Retrieve dimensions.
-    int c = fe_->gradN()->dimension(0);
-    int p = fe_->gradN()->dimension(2);
+    int c = rho->dimension(0);
+    int p = rho->dimension(1);
 
     Real z(0);
     const Real half(0.5), one(1), two(2), diff = maxDensity_-minDensity_;
@@ -283,14 +288,31 @@ public:
       for (int j=0; j<p; ++j) {
         z = (*Z)(i,j);
         if (!usePhaseField_) {
-          if (deriv==0) {
-            (*rho)(i,j) = minDensity_ + diff*std::pow(z, powerSIMP_);
+          if (!useProjection_) {
+            if (deriv==0) {
+              (*rho)(i,j) = minDensity_ + diff*std::pow(z, powerSIMP_);
+            }
+            else if (deriv==1) {
+              (*rho)(i,j) = powerSIMP_*diff*std::pow(z, powerSIMP_-one);
+            }
+            else if (deriv==2) {
+              (*rho)(i,j) = powerSIMP_*(powerSIMP_-one)*diff*std::pow(z, powerSIMP_-two);
+            }
           }
-          else if (deriv==1) {
-            (*rho)(i,j) = powerSIMP_*diff*std::pow(z, powerSIMP_-one);
-          }
-          else if (deriv==2) {
-            (*rho)(i,j) = powerSIMP_*(powerSIMP_-one)*diff*std::pow(z, powerSIMP_-two);
+          else {
+            if (deriv==0) {
+              Real pz = project(z,0);
+              (*rho)(i,j) = minDensity_ + diff*std::pow(pz, powerSIMP_);
+            }
+            else if (deriv==1) {
+              Real pz = project(z,0), pz1 = project(z,1);
+              (*rho)(i,j) = powerSIMP_*diff*std::pow(pz, powerSIMP_-one)*pz1;
+            }
+            else if (deriv==2) {
+              Real pz = project(z,0), pz1 = project(z,1), pz2 = project(z,2);
+              (*rho)(i,j) = powerSIMP_*(powerSIMP_-one)*diff*std::pow(pz, powerSIMP_-two)*pz1*pz1
+                           +powerSIMP_*diff*std::pow(pz, powerSIMP_-one)*pz2;
+            }
           }
         }
         else {
@@ -332,6 +354,31 @@ public:
 
   int getMatrixDim(void) const {
     return materialMat_.size();
+  }
+
+private:
+  Real project(Real &rho, int deriv) const {
+    if (deriv==1) {
+      const Real one(1), tbe(std::tanh(beta_*eta_)), tbe1(std::tanh(beta_*(one-eta_)));
+      const Real tber(std::tanh(beta_*(rho-eta_)));
+      return (one-tber*tber)/(tbe+tbe1)*beta_;
+    }
+    else if (deriv==2) {
+      const Real one(1), tbe(std::tanh(beta_*eta_)), tbe1(std::tanh(beta_*(one-eta_)));
+      const Real tber(std::tanh(beta_*(rho-eta_))), two(2);
+      return -two*tber*(one-tber*tber)/(tbe+tbe1)*beta_*beta_;
+    }
+    const Real one(1), tbe(std::tanh(beta_*eta_)), tbe1(std::tanh(beta_*(one-eta_)));
+    return (tbe+std::tanh(beta_*(rho-eta_)))/(tbe+tbe1);
+    //if (deriv==1) {
+    //  const Real expB(std::exp(-beta_));
+    //  return beta_*std::exp(-beta_*rho) + expB;
+    //}
+    //else if (deriv==2) {
+    //  return -beta_*beta_*std::exp(-beta_*rho);
+    //}
+    //const Real one(1), expB(std::exp(-beta_));
+    //return one - std::exp(-beta_*rho) + rho*expB;
   }
 };
 

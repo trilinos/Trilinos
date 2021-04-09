@@ -65,7 +65,7 @@
       <Parameter name="Print Subproblem Solve History"         type="bool"   value="false" />
     </ParameterList>
 
-    <Parameter name = "Stochastic Component Type" type="string" value="Risk Neutral" />
+    <Parameter name = "Type" type="string" value="Risk Neutral" />
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="CVaR" />
       <!-- ===========  ENTROPIC RISK SUBLIST  =========== -->

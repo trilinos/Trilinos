@@ -121,6 +121,10 @@ public:
     obj_->update(u,z,flag,iter);
   }
 
+  void update( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, ROL::UpdateType type, int iter = -1 ) {
+    obj_->update(u,z,type,iter);
+  }
+
   Real value( const ROL::Vector<Real> &u, const ROL::Vector<Real> &z, Real &tol ) {
     return obj_->value(u,z,tol);
   }

@@ -15,7 +15,7 @@
 #include <Ioss_Field.h>
 #include <Ioss_Map.h>
 #include <Ioss_Utils.h>
-#include <visualization/utils/Iovs_Utils.h>
+#include <Iovs_Utils.h>
 
 #include <algorithm>
 #include <ctime>
