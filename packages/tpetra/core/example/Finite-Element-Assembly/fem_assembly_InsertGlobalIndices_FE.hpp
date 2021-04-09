@@ -261,7 +261,9 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
          ++element_gidx) {
       // Get the contributions for the current element
       ReferenceQuad4(element_matrix);
-      ReferenceQuad4RHS(element_rhs);
+      //ReferenceQuad4RHS(element_rhs);
+      for (int i = 0; i < element_rhs.size(); i++)
+	element_rhs[i] = static_cast<Scalar>(.25);
 
       // Fill the global column ids array for this element
       for (size_t element_node_idx=0;

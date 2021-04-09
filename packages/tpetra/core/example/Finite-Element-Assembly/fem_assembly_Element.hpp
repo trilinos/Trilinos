@@ -99,13 +99,13 @@ KOKKOS_INLINE_FUNCTION void ReferenceQuad4RHS(ViewType& rhs) {
   for(size_t i=0; i<rhs.extent(0); i++)
     rhs[i] = static_cast<Scalar>(.25);
 }
-
+  /*
 template<>
-void ReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
+void NReferenceQuad4RHS(Teuchos::Array<Scalar>& rhs) {
   for(int i=0; (int)i<rhs.size(); i++)
     rhs[i] = static_cast<Scalar>(.25);
 }
-
+  */
 //
 // This function prints out the quad4 array in a nice way.
 //  rows x cols?

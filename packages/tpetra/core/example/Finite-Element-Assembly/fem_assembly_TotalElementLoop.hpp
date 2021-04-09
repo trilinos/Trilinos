@@ -281,7 +281,9 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
        element_gidx < mesh.getNumOwnedElements (); ++element_gidx) {
     // Get the stiffness matrix for this element
     ReferenceQuad4(element_matrix);
-    ReferenceQuad4RHS(element_rhs);
+    //ReferenceQuad4RHS(element_rhs);
+    for (int i = 0; i < element_rhs.size(); i++) 
+      element_rhs[i] = static_cast<Scalar>(.25);
 
     // Fill the global column ids array for this element
     for (size_t element_node_idx = 0;
@@ -319,7 +321,9 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   for(size_t element_gidx=0; element_gidx<mesh.getNumGhostElements(); element_gidx++)
   {
     ReferenceQuad4(element_matrix);
-    ReferenceQuad4RHS(element_rhs);
+    //ReferenceQuad4RHS(element_rhs);
+    for (int i = 0; i < element_rhs.size(); i++)
+      element_rhs[i] = static_cast<Scalar>(.25);
 
     for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
