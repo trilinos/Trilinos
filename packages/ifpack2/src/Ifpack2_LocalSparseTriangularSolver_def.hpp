@@ -755,7 +755,7 @@ localTriangularSolve (const MV& Y,
     auto A_lcl = this->A_crs_->getLocalMatrix ();
 
     if (X.isConstantStride () && Y.isConstantStride ()) {
-      auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
+      auto X_lcl = X.getLocalViewHost (Tpetra::Access::ReadWrite);
       auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
           A_lcl, Y_lcl, X_lcl);
