@@ -138,7 +138,7 @@ private:
   void initializeOwnedAndGhostNodeGlobalIDs(void);
 
   void initializeOwnedAndGhostElementGlobalIDs(void);
-  
+
   //wrapped dual views 
   global_ordinal_view_type ownedElementGlobalIDs_;
   global_ordinal_view_type ghostElementGlobalIDs_;
@@ -148,7 +148,7 @@ private:
 
   global_ordinal_view_type ownedAndGhostNodeGlobalIDs_;
   global_ordinal_view_type ownedAndGhostElementGlobalIDs_;
-  
+
   global_ordinal_2d_array_type ownedElementToNode_;
   global_ordinal_2d_array_type ghostElementToNode_;
 
@@ -352,50 +352,75 @@ void MeshDatabase::print(std::ostream & oss)
   oss<<ss.str()<<" Stop/Start Nodes      = ["<<myNodeStart_[0]<<","<<myNodeStop_[0]<<")x["<<myNodeStart_[1]<<","<<myNodeStop_[1]<<")\n";
 
   oss<<ss.str()<<" Owned Global Elements = ";
-  for(size_t i=0; i<ownedElementGlobalIDs_.extent(0); i++) {
-    oss<<ownedElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly)[i]<<" ";
+  {
+    auto IDs = ownedElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
 
   oss<<"\n"<<ss.str()<<" Owned Global Nodes    = ";
-  for(size_t i=0; i<ownedNodeGlobalIDs_.extent(0); i++) {
-    oss<<ownedNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly)[i]<<" ";
+  {
+    auto IDs = ownedNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
 
   oss<<"\n"<<ss.str()<<" Owned Element2Node    = ";
-  for(size_t i=0; i<ownedElementToNode_.extent(0); i++) {
-    oss<<"(";
-    for(size_t j=0; j<ownedElementToNode_.extent(1); j++) {
-      oss<<ownedElementToNode_.getHostView(Tpetra::Access::ReadOnly)(i,j)<<" ";
+  {
+    auto IDs = ownedElementToNode_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<"(";
+      for(size_t j=0; j<IDs.extent(1); j++) {
+	oss<<IDs(i,j)<<" ";
+      }
+      oss<<") ";
     }
-    oss<<") ";
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Global Elements = ";
-  for(size_t i=0; i<ghostElementGlobalIDs_.extent(0); i++) {
-    oss<<ghostElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly)[i]<<" ";
+  {
+    auto IDs = ghostElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
+
   oss<<"\n"<<ss.str()<<" Ghost Global Nodes    = ";
-  for(size_t i=0; i<ghostNodeGlobalIDs_.extent(0); i++) {
-    oss<<ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly)[i]<<" ";
+  {
+    auto IDs = ghostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<IDs[i]<<" ";
+    }
   }
 
   oss<<"\n"<<ss.str()<<" Ghost Element2Node    = ";
-  for(size_t i=0; i<ghostElementToNode_.extent(0); i++) {
-    oss<<"(";
-    for(size_t j=0; j<ghostElementToNode_.extent(1); j++) {
-      oss<<ghostElementToNode_.getHostView(Tpetra::Access::ReadOnly)(i,j)<<" ";
+  {
+    auto IDs = ghostElementToNode_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss<<"(";
+      for(size_t j=0; j<IDs.extent(1); j++) {
+	oss<<IDs(i,j)<<" ";
+      }
+      oss<<") ";
     }
-    oss<<") ";
   }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Nodes = ";
-  for(size_t i=0; i<ownedAndGhostNodeGlobalIDs_.extent(0); i++) {
-    oss << ownedAndGhostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly)[i]<<" ";
+  {
+    auto IDs = ownedAndGhostNodeGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss << IDs[i]<<" ";
+    }
   }
 
   oss << "\n"<<ss.str()<<" Owned And Ghost Elements = ";
-  for(size_t i=0; i<ownedAndGhostElementGlobalIDs_.extent(0); i++) {
-    oss << ownedAndGhostElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly)[i]<<" ";
+  {
+    auto IDs = ownedAndGhostElementGlobalIDs_.getHostView(Tpetra::Access::ReadOnly);
+    for(size_t i=0; i<IDs.extent(0); i++) {
+      oss << IDs[i]<<" ";
+    }
   }
 
   oss<<std::endl;
