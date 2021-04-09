@@ -139,10 +139,10 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_type> row_map =
-    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(),
+    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                      0, comm));
   RCP<const map_type> owned_plus_shared_map =
-    rcp(new map_type(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs(),
+    rcp(new map_type(GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                      0, comm));
 
   if(opts.verbose) row_map->describe(out);
@@ -176,7 +176,8 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     //   each row associated with this element's contribution.
     for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-      global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
+      global_ids_in_row[element_node_idx] = 
+	owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
     }
 
     // Add the contributions from the current row into the graph.
@@ -267,7 +268,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
            element_node_idx < owned_element_to_node_ids.extent(1);
            ++element_node_idx) {
         column_global_ids[element_node_idx] =
-          owned_element_to_node_ids(element_gidx, element_node_idx);
+          owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
       }
 
       // For each node (row) on the current element:
@@ -277,7 +278,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
       for (size_t element_node_idx = 0; element_node_idx < 4;
            ++element_node_idx) {
         global_ordinal_type global_row_id =
-          owned_element_to_node_ids(element_gidx, element_node_idx);
+          owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
 
         for(size_t col_idx=0; col_idx<4; col_idx++) {
           column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
@@ -357,10 +358,10 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_type> row_map =
-    rcp (new map_type (GO_INVALID, mesh.getOwnedNodeGlobalIDs (),
+    rcp (new map_type (GO_INVALID, mesh.getOwnedNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                        0, comm));
   RCP<const map_type> owned_plus_shared_map =
-    rcp (new map_type (GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs (),
+    rcp (new map_type (GO_INVALID, mesh.getOwnedAndGhostNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly),
                        0, comm));
 
   if (opts.verbose) {
@@ -404,7 +405,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
            element_node_idx < owned_element_to_node_ids.extent(1);
            ++element_node_idx) {
         global_ids_in_row[element_node_idx] =
-          owned_element_to_node_ids(element_gidx, element_node_idx);
+          owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
       }
 
       // Add the contributions from the current row into the graph.
@@ -482,7 +483,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
   pair_type alln = pair_type(0,nperel);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*numOwnedElements);
   scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*numOwnedElements);
-  local_ordinal_view_type  all_lcids("all_lids",nperel*numOwnedElements);
+  local_ordinal_single_view_type  all_lcids("all_lids",nperel*numOwnedElements);
 
   timerElementLoopMemory=Teuchos::null;
 
@@ -510,7 +511,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         for (int element_node_idx = 0; element_node_idx < nperel;
              ++element_node_idx) {
           element_lcids(element_node_idx) =
-            localColMap.getLocalElement (owned_element_to_node_ids (element_gidx, element_node_idx));
+            localColMap.getLocalElement (owned_element_to_node_ids.getDeviceView(Tpetra::Access::ReadOnly) (element_gidx, element_node_idx));
         }
 
         // For each node (row) on the current element:
@@ -518,7 +519,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
         // - add the values to the fe_matrix.
         for (int element_node_idx = 0; element_node_idx < nperel; ++element_node_idx) {
           const local_ordinal_type local_row_id =
-            localMap.getLocalElement (owned_element_to_node_ids(element_gidx, element_node_idx));
+            localMap.getLocalElement (owned_element_to_node_ids.getDeviceView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx));
           auto row_values = Kokkos::subview(element_matrix, element_node_idx, alln);
           // Force atomics on sums
           for (int col_idx = 0; col_idx < nperel; ++col_idx) {
