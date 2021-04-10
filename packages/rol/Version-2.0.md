@@ -111,8 +111,11 @@ Here are a few examples of Version 1.0 and Version 2.0 usage.
 ##### Version 2.0
 
 ```cpp
-    ROL::TypeB::LinMoreAlgorithm() algorithm;
-    more_detail();
+    ROL::ParameterList parlist;
+    ... // fill parameter list with desired algorithmic options
+    ROL::TypeB::LinMoreAlgorithm<double> algo(parlist);
+    ... // define ROL::Vector 'x', ROL::Objective 'f' and ROL::BoundConstraint 'bnd'
+    algo.run(x, f, bnd);
 ```
 
 
