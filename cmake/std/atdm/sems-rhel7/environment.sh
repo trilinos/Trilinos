@@ -59,14 +59,14 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL"* ]]; then
   fi
 elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA"* ]]; then
   if [[ "$ATDM_CONFIG_COMPILER" == "CUDA" ]] ; then
-    export ATDM_CONFIG_COMPILER=CUDA-9.2
-  elif [[ "$ATDM_CONFIG_COMPILER" != "CUDA-9.2" ]] ; then
+    export ATDM_CONFIG_COMPILER=CUDA-10.1
+  elif [[ "$ATDM_CONFIG_COMPILER" != "CUDA-10.1" ]] ; then
     echo
     echo "***"
     echo "*** ERROR: CUDA COMPILER=$ATDM_CONFIG_COMPILER is not supported!"
     echo "*** Only CUDA compilers supported on this system are:"
-    echo "***   cuda (defaults to cuda-9.2)"
-    echo "***   cuda-9.2"
+    echo "***   cuda (defaults to cuda-10.1)"
+    echo "***   cuda-10.1"
     echo "***"
     return
   fi
@@ -204,9 +204,9 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.0.5" ]] ; then
   if [[ "${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}" != "" ]] ; then
     export LM_LICENSE_FILE=${ATDM_CONFIG_LM_LICENSE_FILE_OVERRIDE}
   fi
-elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-9.2" ]] ; then
+elif [[ "$ATDM_CONFIG_COMPILER" == "CUDA-10.1" ]] ; then
   module load sems-gcc/7.2.0
-  module load sems-cuda/9.2
+  module load sems-cuda/10.1
   export OMPI_CXX=${ATDM_CONFIG_NVCC_WRAPPER}
   if [ ! -x "$OMPI_CXX" ]; then
       echo "No nvcc_wrapper found"
