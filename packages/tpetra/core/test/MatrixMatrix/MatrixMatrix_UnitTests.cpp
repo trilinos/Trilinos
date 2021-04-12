@@ -1875,8 +1875,8 @@ bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C)
     for(size_t Cit = 0; Cit < Centries; Cit++)
     {
       GO col = Cinds[Cit];
-      SC val = Cvals[Cit];
-      SC goldVal = 0;
+      typename vals_type::value_type val = Cvals[Cit];
+      typename vals_type::value_type goldVal = 0;
       if(Ait < Aentries && Ainds[Ait] == col)
         goldVal += Avals[Ait++];
       if(Bit < Bentries && Binds[Bit] == col)

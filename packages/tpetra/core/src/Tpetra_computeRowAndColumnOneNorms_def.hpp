@@ -79,13 +79,15 @@ lclMaxNumEntriesRowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 
 template<class SC, class LO, class GO, class NT>
 void
-forEachLocalRowMatrixRow (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
-                          const LO lclNumRows,
-                          const std::size_t maxNumEnt,
-                          std::function<void (const LO lclRow,
-                                              const Teuchos::ArrayView<LO>& /* ind */,
-                                              const Teuchos::ArrayView<SC>& /* val */,
-                                              std::size_t /* numEnt */ )> doForEachRow)
+forEachLocalRowMatrixRow (
+  const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
+  const LO lclNumRows,
+  const std::size_t maxNumEnt,
+  std::function<void (
+       const LO lclRow,
+       const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& /*ind*/,
+       const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& /*val*/,
+       std::size_t /*numEnt*/ )> doForEachRow)
 {
   using lids_type = typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type;
   using vals_type = typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type;
@@ -97,20 +99,19 @@ forEachLocalRowMatrixRow (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
     lids_type ind = Kokkos::subview(indBuf,std::make_pair((size_t)0, numEnt));
     vals_type val = Kokkos::subview(valBuf,std::make_pair((size_t)0, numEnt));
     A.getLocalRowCopy (lclRow, ind, val, numEnt);
-    // NOTE: Because we'll let this descope, this is safe
-    Teuchos::ArrayView<LO> ind_a(ind.data(),numEnt);
-    Teuchos::ArrayView<SC> val_a(val.data(),numEnt);
-    doForEachRow (lclRow, ind_a, val_a, numEnt);
+    doForEachRow (lclRow, ind, val, numEnt);
   }
 }
 
 template<class SC, class LO, class GO, class NT>
 void
-forEachLocalRowMatrixRow (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
-                          std::function<void (const LO lclRow,
-                                              const Teuchos::ArrayView<LO>& /* ind */,
-                                              const Teuchos::ArrayView<SC>& /* val */,
-                                              std::size_t /* numEnt */ )> doForEachRow)
+forEachLocalRowMatrixRow (
+  const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
+  std::function<void (
+       const LO lclRow,
+       const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& /*ind*/,
+       const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& /*val*/,
+       std::size_t /*numEnt*/ )> doForEachRow)
 {
   const auto& rowMap = * (A.getRowMap ());
   const LO lclNumRows = static_cast<LO> (rowMap.getNodeNumElements ());
@@ -137,8 +138,8 @@ computeLocalRowScaledColumnNorms_RowMatrix (EquilibrationInfo<typename Kokkos::A
 
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
-         const Teuchos::ArrayView<LO>& ind,
-         const Teuchos::ArrayView<SC>& val,
+         const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
+         const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
       const mag_type rowNorm = rowNorms_h[lclRow];
       for (std::size_t k = 0; k < numEnt; ++k) {
@@ -174,8 +175,8 @@ computeLocalRowOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, NT>& A)
 
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
-         const Teuchos::ArrayView<LO>& ind,
-         const Teuchos::ArrayView<SC>& val,
+         const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
+         const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
       mag_type rowNorm {0.0};
       val_type diagVal {0.0};
@@ -243,8 +244,8 @@ computeLocalRowAndColumnOneNorms_RowMatrix (const Tpetra::RowMatrix<SC, LO, GO, 
 
   forEachLocalRowMatrixRow<SC, LO, GO, NT> (A,
     [&] (const LO lclRow,
-         const Teuchos::ArrayView<LO>& ind,
-         const Teuchos::ArrayView<SC>& val,
+         const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_local_inds_host_view_type& ind,
+         const typename Tpetra::RowMatrix<SC, LO, GO, NT>::nonconst_values_host_view_type& val,
          std::size_t numEnt) {
       mag_type rowNorm {0.0};
       val_type diagVal {0.0};

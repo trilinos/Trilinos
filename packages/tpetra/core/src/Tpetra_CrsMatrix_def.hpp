@@ -6327,7 +6327,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              "a row length of " << checkRowLength << "." << suffix);
         }
         rowIndsConstView = Teuchos::ArrayView<const GO>(rowIndsView.data(), rowLength);
-        rowValsConstView = Teuchos::ArrayView<const Scalar>(rowValsView.data(), rowLength);
+        rowValsConstView = Teuchos::ArrayView<const Scalar>(reinterpret_cast<Scalar *>(rowValsView.data()), rowLength);
       }
       else { // source matrix is globally indexed.
         global_inds_host_view_type rowIndsView;
@@ -6394,7 +6394,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
              << checkRowLength << "." << suffix);
         }
         rowIndsConstView = Teuchos::ArrayView<const GO>(rowIndsView.data(), rowLength);
-        rowValsConstView = Teuchos::ArrayView<const Scalar>(rowValsView.data(), rowLength);
+        rowValsConstView = Teuchos::ArrayView<const Scalar>(reinterpret_cast<Scalar *>(rowValsView.data()), rowLength);
       }
       else {
         global_inds_host_view_type rowIndsView;
@@ -8043,7 +8043,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             valView[k] *= alpha;
           }
         }
-        C->insertGlobalValues (globalRow, A_numEntries,valView.data(), indView.data());
+        C->insertGlobalValues (globalRow, A_numEntries,
+                               reinterpret_cast<Scalar *>(valView.data()),
+                               indView.data());
       }
     }
 
@@ -8065,7 +8067,9 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
             valView[k] *= beta;
           }
         }
-        C->insertGlobalValues (globalRow, B_numEntries, valView.data(), indView.data());
+        C->insertGlobalValues (globalRow, B_numEntries,
+                               reinterpret_cast<Scalar *>(valView.data()),
+                               indView.data());
       }
     }
 

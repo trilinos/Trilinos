@@ -113,15 +113,17 @@ createDeepCopy (const RowMatrix<SC, LO, GO, NT>& A)
         // we want a better way than reinterpret casting back and forth between scalar_type and
         // impl_scalar_type everywhere
         A_copy.insertGlobalValues (gblRow, inputInds.extent(0),
-                                   reinterpret_cast<const typename crs_matrix_type::scalar_type*>(inputVals.data()), inputInds.data());
+                                   reinterpret_cast<const typename crs_matrix_type::scalar_type*>(inputVals.data()),
+                                   inputInds.data());
       }
       else {
         const size_t lclNumEnt = A.getNumEntriesInLocalRow (lclRow);
         TEUCHOS_ASSERT(lclNumEnt <= maxNumEnt);
         size_t numEnt = 0;
-        A.getGlobalRowCopy (gblRow, inputIndsBuf,
-                            inputValsBuf, numEnt);
-        A_copy.insertGlobalValues (gblRow, numEnt, inputValsBuf.data(), inputIndsBuf.data());
+        A.getGlobalRowCopy (gblRow, inputIndsBuf, inputValsBuf, numEnt);
+        A_copy.insertGlobalValues (gblRow, numEnt, 
+                                   reinterpret_cast<const typename crs_matrix_type::scalar_type*>(inputValsBuf.data()),
+                                   inputIndsBuf.data());
 
       }
     }

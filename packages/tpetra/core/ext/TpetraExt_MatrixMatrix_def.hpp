@@ -527,9 +527,9 @@ void Add(
           a_vals[j] *= scalarA;
 
       if (bFilled)
-        B.sumIntoGlobalValues(row, a_numEntries, a_vals.data(), a_inds.data());
+        B.sumIntoGlobalValues(row, a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
       else
-        B.insertGlobalValues(row,  a_numEntries, a_vals.data(), a_inds.data());
+        B.insertGlobalValues(row,  a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
     }
   }
 }
@@ -1052,9 +1052,11 @@ void Add(
         }
 
         if (C->isFillComplete ()) {
-          C->sumIntoGlobalValues (globalRow, numEntries, Values.data(), Indices.data());
+          C->sumIntoGlobalValues (globalRow, numEntries, 
+                                  reinterpret_cast<Scalar *>(Values.data()), Indices.data());
         } else {
-          C->insertGlobalValues (globalRow,  numEntries, Values.data(), Indices.data());
+          C->insertGlobalValues (globalRow,  numEntries, 
+                                 reinterpret_cast<Scalar *>(Values.data()), Indices.data());
         }
       }
     }
