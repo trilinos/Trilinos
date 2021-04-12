@@ -394,13 +394,12 @@ Full Project: max(file_size_mb) = ??? (<file-name>)
 def injectCmndLineOptionsInParser(clp):
   
   clp.add_argument(
-    "--build-stats-csv-file", dest="buildStatsCsvFile", default="", required=True,
-    help="The build status CSV file created by build wappers and gathered up." )
-  
-  clp.add_argument(
     "--bin-by-subdirs-under-dirs", dest="binBySubdirsUnderDirsStr", default="",
     help="List of base dirs to group results by subdir under."+\
       " Format '<basedir0>,<basedir1>,..." )
+
+  clp.add_argument("buildStatsCsvFile",
+    help="The build status CSV file created by build wappers and gathered up." )
 
 
 def getCmndLineOptions():
