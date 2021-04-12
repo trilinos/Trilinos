@@ -3989,7 +3989,8 @@ LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
           while (*done != p2p_done_value) ;
         }
       }
-      // Flush (acquire) the global to the local view of x.
+      // Flush (acquire) the global to the local view of x. With OpenMP 5.0, we
+      // can specify acquire, release, or both, but for now we don't have 5.0.
 #ifdef _OPENMP
 #     pragma omp flush
 #endif
@@ -4025,7 +4026,13 @@ inline void Impl<Int, Size, Sclr>::
 rbwait (volatile p2p_Done* const s_done, const Size* s_ids,
         const Int* const s_idx, const Int i, const p2p_Done done_symbol) {
   const Int si = s_idx[i], si1 = s_idx[i+1];
-  if (si == si1) return;
+  if (si == si1) {
+    // acquire
+#ifdef _OPENMP
+#   pragma omp flush
+#endif
+    return;
+  }
   const Size* id = s_ids + si;
   const Size* const idn = s_ids + si1;
   while (id != idn) {
@@ -4033,7 +4040,7 @@ rbwait (volatile p2p_Done* const s_done, const Size* s_ids,
     while (*d != done_symbol) ;
     ++id;
   }
-  // Make sure x is updated.
+  // acquire
 #ifdef _OPENMP
 # pragma omp flush
 #endif
@@ -4047,6 +4054,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
   const Int nthreads = t.nthreads();
   if (nthreads == 1) {
     t.solve(x, ldx, x, ldx, nrhs);
+    // release
 #ifdef _OPENMP
 #   pragma omp flush
 #endif
@@ -4054,6 +4062,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
   } else {
     // Solve T wrk_ = x.
     t.solve(x, ldx, wrk_.data(), t.get_n(), nrhs);
+    // release
 #ifdef _OPENMP
 #   pragma omp flush
 #endif
@@ -4063,6 +4072,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
       for (Int i = 0; i < nthreads; ++i)
         while (inv_tri_done[i] < done) ;
     }
+    // acquire
 #ifdef _OPENMP
 #   pragma omp flush
 #endif
@@ -4072,6 +4082,7 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
       memcpy(x + irhs*ldx + row_start,
              wrk_.data() + irhs*t.get_n() + row_start,
              nr*sizeof(Sclr));
+    // release
 #ifdef _OPENMP
 #   pragma omp flush
 #endif
@@ -4083,9 +4094,6 @@ ondiag_solve (const OnDiagTri& t, Sclr* x, const Int ldx, const Int nrhs,
       for (Int i = 0; i < nthreads; ++i)
         while (inv_tri_done[i] < done) ;
     }
-#ifdef _OPENMP
-#   pragma omp flush
-#endif
     if (tid == 0)
       *t_barrier = step;
   }
@@ -4110,10 +4118,11 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
   const Size* const s_ids = nd_.s_ids[tid].empty() ? 0 : nd_.s_ids[tid].data();
   const Int* const s_idx = nd_.s_idx[tid].empty() ? 0 : nd_.s_idx[tid].data();
   const p2p_Done done_symbol = nd_.done_symbol;
-  { const OnDiagTri& t = nd_.t[0];
+  {
+    const OnDiagTri& t = nd_.t[0];
     if (tid < t.nthreads())
       ondiag_solve(t, x, ldx, nrhs, tid, 0, t_barrier, inv_tri_done);
-    }
+  }
   if ( ! nd_.os.empty()) {
     os += nd_.t[0].get_n();
     x_osi = x + nd_.os[0];
@@ -4129,6 +4138,7 @@ RecursiveTri::solve (const Sclr* b, Sclr* x, const Int ldx,
     if ( ! s.empty() && (s.parallel() || tid == 0)) {
       rbwait(s_done, s_ids, s_idx, i, done_symbol);
       s.n1Axpy(x_osi, ldx, nrhs, x_os, ldx, tid);
+      // release
 #ifdef _OPENMP
 #     pragma omp flush
 #endif
