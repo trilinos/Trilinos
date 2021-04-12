@@ -14,7 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp> // for CommBuffer
 #include <stk_coupling/Constants.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/impl_NamedValues.hpp>
 
 namespace stk
@@ -69,9 +69,6 @@ protected:
 
   impl::NamedValues m_vals;
   std::string m_name;
-
-private:
-  SyncInfo exchange(stk::ParallelMachine global, stk::ParallelMachine local) const;
 };
 
 template <>

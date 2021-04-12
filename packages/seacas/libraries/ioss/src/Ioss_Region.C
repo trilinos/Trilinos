@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -29,6 +29,7 @@
 #include <Ioss_SideBlock.h>
 #include <Ioss_SideSet.h>
 #include <Ioss_SmartAssert.h>
+#include <Ioss_Sort.h>
 #include <Ioss_State.h>
 #include <Ioss_StructuredBlock.h>
 
@@ -306,7 +307,8 @@ namespace {
 
   bool is_input_or_appending_output(const Ioss::DatabaseIO *iodatabase)
   {
-    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND;
+    return iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND ||
+           iodatabase->open_create_behavior() == Ioss::DB_MODIFY;
   }
 } // namespace
 
@@ -335,7 +337,8 @@ namespace Ioss {
       Region::begin_mode(STATE_DEFINE_MODEL);
       iodatabase->read_meta_data();
       Region::end_mode(STATE_DEFINE_MODEL);
-      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND) {
+      if (iodatabase->open_create_behavior() != Ioss::DB_APPEND &&
+          iodatabase->open_create_behavior() != Ioss::DB_MODIFY) {
         modelDefined     = true;
         transientDefined = true;
         Region::begin_mode(STATE_READONLY);
@@ -683,7 +686,7 @@ namespace Ioss {
         auto sortName = [](const Ioss::EntityBlock *b1, const Ioss::EntityBlock *b2) {
           return (b1->name() < b2->name());
         };
-        std::sort(structuredBlocks.begin(), structuredBlocks.end(), sortName);
+        Ioss::sort(structuredBlocks.begin(), structuredBlocks.end(), sortName);
       }
       else {
         // Sort the element blocks based on the idOffset field, followed by
@@ -697,9 +700,9 @@ namespace Ioss {
                                                : (b1_orderInt < b2_orderInt));
         };
 
-        std::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
-        std::sort(faceBlocks.begin(), faceBlocks.end(), lessOffset);
-        std::sort(edgeBlocks.begin(), edgeBlocks.end(), lessOffset);
+        Ioss::sort(elementBlocks.begin(), elementBlocks.end(), lessOffset);
+        Ioss::sort(faceBlocks.begin(), faceBlocks.end(), lessOffset);
+        Ioss::sort(edgeBlocks.begin(), edgeBlocks.end(), lessOffset);
 
         // Now update the block offsets based on this new order...
         {
@@ -1052,6 +1055,11 @@ namespace Ioss {
       structured_block->property_add(
           Ioss::Property(orig_block_order(), (int)structuredBlocks.size()));
       structuredBlocks.push_back(structured_block);
+
+      // This will possibly be overwritten at a later time when the block is output
+      // to the cgns file
+      structured_block->property_add(Ioss::Property("zone", (int)structuredBlocks.size()));
+      structured_block->property_add(Ioss::Property("base", 1));
       // Add name as alias to itself to simplify later uses...
       add_alias__(structured_block);
       return true;

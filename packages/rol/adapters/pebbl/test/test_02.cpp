@@ -49,7 +49,7 @@
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-#include "ROL_Constraint_PEBBL.hpp"
+#include "ROL_PEBBL_IntegerConstraint.hpp"
 #include "ROL_StdVector.hpp"
 
 typedef double RealT;
@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
     /************************* CONSTRUCT CONSTRAINT ***********************************************/
     /**********************************************************************************************/
     RealT tol(1e-8);
-    ROL::Constraint_PEBBL<RealT> econ1;
+    ROL::PEBBL::IntegerConstraint<RealT> econ1;
     std::pair<int,RealT> Ip(2,0.0);
     econ1.add(Ip);
     ROL::Ptr<ROL::Vector<RealT>> j1 = econ1.makeConstraintVector(); 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
     econ1.checkApplyJacobian(*x,*d,*j2,true,*outStream);
 
     *outStream << std::endl << std::endl;
-    ROL::Constraint_PEBBL<RealT> econ2(econ1);
+    ROL::PEBBL::IntegerConstraint<RealT> econ2(econ1);
     ROL::Ptr<ROL::Vector<RealT>> j3 = econ2.makeConstraintVector(); 
     econ2.value(*j3,*x,tol);
     RealT j3norm = j3->norm();

@@ -114,7 +114,7 @@ bool is_edge_in_graph(const Edge &edge, const std::vector<stk::balance::GraphEdg
 
 bool are_edges_equal(const Edge &edge, const stk::balance::GraphEdge &graphEdge)
 {
-    return (graphEdge.vertex1() == edge.first && graphEdge.vertex2() == edge.second);
+    return (graphEdge.vertex1() == edge.first && graphEdge.vertex2_id() == edge.second);
 }
 
 Edge get_cross_processor_edge_given_proc_id(const stk::mesh::BulkData &bulk)

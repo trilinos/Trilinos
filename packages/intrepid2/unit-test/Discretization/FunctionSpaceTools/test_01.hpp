@@ -79,8 +79,9 @@ namespace Intrepid2 {
     };
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int FunctionSpaceTools_Test01(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -94,9 +95,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
       
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
       *outStream
@@ -115,9 +116,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef CellTools<DeviceType> ct;
+      typedef FunctionSpaceTools<DeviceType> fst;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
       
       int errorFlag = 0;
       
@@ -136,12 +137,12 @@ namespace Intrepid2 {
         shards::CellTopology cell_topo = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
         const auto cub_degree = 2;
-        auto cub = cub_factory.create<DeviceSpaceType,ValueType,ValueType>(cell_topo, cub_degree);
+        auto cub = cub_factory.create<DeviceType,ValueType,ValueType>(cell_topo, cub_degree);
 
         const auto space_dim = cub->getDimension();
         const auto num_cub_points = cub->getNumPoints();
 
-        Basis_HGRAD_TET_C1_FEM<DeviceSpaceType> tetBasis;
+        Basis_HGRAD_TET_C1_FEM<DeviceType> tetBasis;
         const auto num_fields = tetBasis.getCardinality();
 
         /* Cell geometries and orientations. */
@@ -203,7 +204,7 @@ namespace Intrepid2 {
         // 1. mirror allocation
         // 2. deep copy preserving layout
         // 3. remap to native layout of the device
-        auto cell_nodes_device  = create_mirror_view(typename DeviceSpaceType::memory_space(), cell_nodes_host);
+        auto cell_nodes_device  = create_mirror_view(typename DeviceType::memory_space(), cell_nodes_host);
         Kokkos::deep_copy( cell_nodes_device, cell_nodes_host );
         Kokkos::deep_copy( cell_nodes , cell_nodes_device ); 
 
@@ -250,12 +251,15 @@ namespace Intrepid2 {
                        transformed_value_of_basis_at_cub_points,
                        weighted_transformed_value_of_basis_at_cub_points);
 
-        DeviceSpaceType().fence();
+        ExecSpaceType().fence();
 
         /*******************  STOP COMPUTATION ***********************/
 
 
         /******************* START COMPARISON ***********************/
+        auto mass_matrices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), mass_matrices);
+        auto stiffness_matrices_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), stiffness_matrices);
+
         std::string basedir = "../testdata";
         for (auto cid=0;cid<num_cells-1;++cid) {
           std::stringstream namestream;
@@ -267,7 +271,7 @@ namespace Intrepid2 {
 
           std::ifstream massfile(&filename[0]);
           if (massfile.is_open()) {
-            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            const auto mass_matrix_cell = Kokkos::subdynrankview(mass_matrices_host, cid, Kokkos::ALL(), Kokkos::ALL());
             errorFlag += compareToAnalytic(massfile,
                                            mass_matrix_cell, 
                                            1e-10, 
@@ -287,7 +291,7 @@ namespace Intrepid2 {
 
           std::ifstream stifffile(&filename[0]);
           if (stifffile.is_open()) {
-            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices, cid, Kokkos::ALL(), Kokkos::ALL());
+            const auto stiffness_matrix_cell = Kokkos::subdynrankview(stiffness_matrices_host, cid, Kokkos::ALL(), Kokkos::ALL());
             errorFlag += compareToAnalytic(stifffile,
                                            stiffness_matrix_cell,
                                            1e-10,

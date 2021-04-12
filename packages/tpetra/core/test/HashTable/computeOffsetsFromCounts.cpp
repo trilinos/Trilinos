@@ -84,6 +84,16 @@ namespace { // (anonymous)
 
   using std::endl;
 
+  template<class ExecutionSpace>
+  struct ExecSpaceName {
+    static const char* name () { return ExecutionSpace().name(); }
+  };
+
+  template<class MemorySpace>
+  struct MemorySpaceName {
+    static const char* name () { return MemorySpace().name(); }
+  };
+
   template<class DeviceType>
   std::string deviceName ()
   {

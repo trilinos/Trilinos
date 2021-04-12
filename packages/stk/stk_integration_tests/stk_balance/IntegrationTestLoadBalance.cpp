@@ -774,7 +774,9 @@ TEST(LoadBalance, MxN_decomposition)
         unsigned num_procs_decomp = static_cast<unsigned>(options.numSubdomains());
         stk::mesh::EntityProcVec decomp;
         std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().universal_part()};
-        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(loadBalanceSettings, num_procs_decomp, decomp, stkMeshBulkData, selectors);
+        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
+                                                                     stkMeshBulkData.parallel(), num_procs_decomp,
+                                                                     loadBalanceSettings, decomp);
 
         std::string output_file_name = "output.exo";
         balance_utils::putEntityProcOnMeshField(stkMeshBulkData, decomp);
@@ -1165,7 +1167,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchForContact)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
 
         }
@@ -1282,7 +1285,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticles)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
 
         }
@@ -1338,7 +1342,8 @@ TEST(LoadBalance, testGraphCreationUsingSearchWithParticlesAndSkin)
         {
             for(size_t i = 0; i < graphEdges.size(); i++)
             {
-                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1()) << ", " << graphEdges[i].vertex2() << ")" << std::endl;
+                std::cerr << "Edge " << i << " is(" << stkMeshBulkData.identifier(graphEdges[i].vertex1())
+                          << ", " << graphEdges[i].vertex2_id() << ")" << std::endl;
             }
         }
     }

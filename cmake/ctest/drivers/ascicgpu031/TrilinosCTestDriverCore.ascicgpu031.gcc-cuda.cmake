@@ -71,6 +71,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ENDIF()
 
   SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "git@gitlab-ex.sandia.gov:trilinos-project/Trilinos.git")
+  SET(Trilinos_BRANCH "TpetraDualViewRefactor" )
 
   SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )
@@ -80,6 +81,12 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET_DEFAULT(Trilinos_ENABLE_SECONDARY_TESTED_CODE ON)
   SET(Trilinos_CTEST_DO_ALL_AT_ONCE FALSE)
   SET_DEFAULT(Trilinos_EXCLUDE_PACKAGES             ${EXTRA_EXCLUDE_PACKAGES} TriKota Optika Pamgen)
+
+  # Select package disables
+  set (Trilinos_ENABLE_Gtest OFF CACHE BOOL "Gtest just does not build" FORCE)
+  set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL "Can't test Tacho with CUDA without RDC" FORCE)
+  set (Trilinos_ENABLE_Shards OFF CACHE BOOL "Shards does not build" FORCE)
+  set (Trilinos_ENABLE_Epetra OFF CACHE BOOL "We do not want Epetra" FORCE)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
@@ -92,12 +99,11 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
       "-DBUILD_SHARED_LIBS:BOOL=ON"
       "-DTrilinos_ENABLE_TESTS:BOOL=ON"
-      "-DTrilinos_ENABLE_TESTS:BOOL=OFF"
+      "-DTrilinos_ENABLE_EXAMPLES:BOOL=ON"
       "-DTrilinos_ENABLE_DEPENDENCY_UNIT_TESTS:BOOL=OFF"
       "-DTeuchos_GLOBALLY_REDUCE_UNITTEST_RESULTS:BOOL=ON"
 
       ### COMPILERS AND FLAGS ###
-      "-DTrilinos_ENABLE_CXX11:BOOL=ON"
       "-DCMAKE_CXX_FLAGS:STRING='-Wall -Wno-unknown-pragmas -Wno-unused-but-set-variable -Wno-inline -Wshadow'"
       "-DTrilinos_ENABLE_Fortran:BOOL=OFF"
 
@@ -122,8 +128,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DKokkos_ENABLE_CUDA_RELOCATABLE_DEVICE_CODE=OFF"
 
       "-DTrilinos_ENABLE_Epetra:BOOL=OFF"
+      "-DTrilinos_ENABLE_Gtest:BOOL=OFF"
       "-DTrilinos_ENABLE_Pamgen:BOOL=OFF"
+      "-DTrilinos_ENABLE_Shards:BOOL=OFF"
       "-DTrilinos_ENABLE_ShyLU_Node:BOOL=OFF"
+      "-DTrilinos_ENABLE_ShyLU_NodeTacho:BOOL=OFF"            
+      "-DTrilinos_ENABLE_ShyLU:BOOL=OFF"
+      "-DTrilinos_ENABLE_ShyLU_DD:BOOL=OFF"
+      "-DAmesos2_ENABLE_ShyLU_NodeTacho:BOOL=OFF"
+      "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"

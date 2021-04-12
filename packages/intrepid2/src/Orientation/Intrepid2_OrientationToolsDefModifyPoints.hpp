@@ -377,8 +377,8 @@ namespace Intrepid2 {
                                         const unsigned subcellTopoKey,
                                         const ordinal_type subcellOrd,
                                         const ordinal_type ort){
-      typename ParamViewType::value_type data[4];
-      ParamViewType jac(data, 2, 2);
+      typename ParamViewType::non_const_value_type data[4];
+      typename ParamViewType::non_const_type jac(data, 2, 2);
 
       ordinal_type cellDim = subcellParametrization.extent(1);
       ordinal_type numTans = subcellParametrization.extent(2)-1;

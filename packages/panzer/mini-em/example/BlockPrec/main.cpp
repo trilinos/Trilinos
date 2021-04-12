@@ -142,6 +142,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
 
   Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
   bool use_stacked_timer;
+  std::string test_name = "MiniEM 3D RefMaxwell";
 
   {
     // defaults for command-line options
@@ -179,6 +180,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     clp.setOption("resetSolver","no-resetSolver",&resetSolver,"update the solver in every timestep");
     clp.setOption("doSolveTimings","no-doSolveTimings",&doSolveTimings,"repeat the first solve \"numTimeSteps\" times");
     clp.setOption("stacked-timer","no-stacked-timer",&use_stacked_timer,"Run with or without stacked timer output");
+    clp.setOption("test-name", &test_name, "Name of test (for Watchr output)");
 
     // parse command-line argument
     clp.recogniseAllOptions(true);
@@ -732,7 +734,7 @@ int main_(Teuchos::CommandLineProcessor &clp, int argc,char * argv[])
     Teuchos::StackedTimer::OutputOptions options;
     options.output_fraction = options.output_histogram = options.output_minmax = true;
     stacked_timer->report(*out, comm, options);
-    auto xmlOut = stacked_timer->reportWatchrXML(std::string("MiniEM 3D RefMaxwell ") + std::to_string(comm->getSize()) + " ranks", comm);
+    auto xmlOut = stacked_timer->reportWatchrXML(test_name + ' ' + std::to_string(comm->getSize()) + " ranks", comm);
     if(xmlOut.length())
       std::cout << "\nAlso created Watchr performance report " << xmlOut << '\n';
   } else

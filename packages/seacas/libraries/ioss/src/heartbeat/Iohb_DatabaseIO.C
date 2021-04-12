@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -147,8 +147,6 @@ namespace Iohb {
 
   DatabaseIO::~DatabaseIO()
   {
-    delete layout_;
-    delete legend_;
     if (streamNeedsDelete && (logStream != nullptr)) {
       delete logStream;
     }
@@ -157,9 +155,6 @@ namespace Iohb {
   void DatabaseIO::initialize() const
   {
     if (!initialized_) {
-      assert(layout_ == nullptr);
-      assert(legend_ == nullptr);
-
       auto *new_this = const_cast<DatabaseIO *>(this);
 
       if (properties.exists("FILE_FORMAT")) {
@@ -282,7 +277,7 @@ namespace Iohb {
       }
 
       if (showLegend) {
-        new_this->legend_ = new Layout(false, precision_, separator_, fieldWidth_);
+        new_this->legend_ = std::make_unique<Layout>(false, precision_, separator_, fieldWidth_);
         if (!tsFormat.empty()) {
           new_this->legend_->add_literal("+");
           new_this->legend_->add_literal(time_stamp(tsFormat));
@@ -312,7 +307,7 @@ namespace Iohb {
     // If this is the first time, open the output stream and see if user wants a legend
     initialize();
 
-    layout_ = new Layout(showLabels, precision_, separator_, fieldWidth_);
+    layout_ = std::make_unique<Layout>(showLabels, precision_, separator_, fieldWidth_);
     if (tsFormat != "") {
       layout_->add_literal("+");
       layout_->add_literal(time_stamp(tsFormat));
@@ -343,13 +338,11 @@ namespace Iohb {
       }
 
       *logStream << *legend_ << '\n';
-      delete legend_;
-      legend_ = nullptr;
+      legend_.reset();
     }
 
     *logStream << *layout_ << '\n';
-    delete layout_;
-    layout_ = nullptr;
+    layout_.reset();
 
     // Flush the buffer to disk...
     // flush if there is more than 'flushInterval_' seconds since the last flush to avoid

@@ -203,6 +203,11 @@ namespace Intrepid2 {
     const char* getName() const override {
       return "Intrepid2_HVOL_C0_FEM";
     }
+
+    virtual HostBasisPtr<outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HVOL_C0_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisCellTopology_));
+    }
   };
 }
 

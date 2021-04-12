@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -136,6 +136,7 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
   char      errmsg[MAX_ERR_LENGTH];
   int       status;
   char      tmp_title[2048];
+  int       num_var;
 
   if (ex__check_valid_file_id(exoid, __func__) == EX_FATAL) {
     return (EX_FATAL);
@@ -813,6 +814,76 @@ static int ex_inquire_internal(int exoid, int req_info, int64_t *ret_int, float 
     if (ex__get_dimension_value(exoid, ret_int, 0, DIM_NUM_FAM, 1) != EX_NOERR) {
       return (EX_FATAL);
     }
+    break;
+
+  case EX_INQ_NUM_NODE_VAR:
+    if (ex_get_variable_param(exoid, EX_NODAL, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_EDGE_BLOCK_VAR:
+    if (ex_get_variable_param(exoid, EX_EDGE_BLOCK, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_FACE_BLOCK_VAR:
+    if (ex_get_variable_param(exoid, EX_FACE_BLOCK, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_ELEM_BLOCK_VAR:
+    if (ex_get_variable_param(exoid, EX_ELEM_BLOCK, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_NODE_SET_VAR:
+    if (ex_get_variable_param(exoid, EX_NODE_SET, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_EDGE_SET_VAR:
+    if (ex_get_variable_param(exoid, EX_EDGE_SET, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_FACE_SET_VAR:
+    if (ex_get_variable_param(exoid, EX_FACE_SET, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_ELEM_SET_VAR:
+    if (ex_get_variable_param(exoid, EX_ELEM_SET, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_SIDE_SET_VAR:
+    if (ex_get_variable_param(exoid, EX_SIDE_SET, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
+    break;
+
+  case EX_INQ_NUM_GLOBAL_VAR:
+    if (ex_get_variable_param(exoid, EX_GLOBAL, &num_var) != EX_NOERR) {
+      return (EX_FATAL);
+    }
+    *ret_int = num_var;
     break;
 
   case EX_INQ_COORD_FRAMES:

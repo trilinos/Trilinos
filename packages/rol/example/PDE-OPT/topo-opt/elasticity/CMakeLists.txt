@@ -29,88 +29,12 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
     ADD_DIR_TO_NAME
   )
 
-  TRIBITS_ADD_EXECUTABLE(
-    example_04
-    SOURCES example_04.cpp
-    ADD_DIR_TO_NAME
-  )
-
-#  TRIBITS_ADD_EXECUTABLE(
-#    example_05
-#    SOURCES example_05.cpp
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_EXECUTABLE(
-#    example_06
-#    SOURCES example_06.cpp
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_EXECUTABLE(
-#    example_07
-#    SOURCES example_07.cpp
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_EXECUTABLE(
-#    example_08
-#    SOURCES example_08.cpp
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_EXECUTABLE(
-#    example_09
-#    SOURCES example_09.cpp
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_EXECUTABLE(
-#    example_10
-#    SOURCES example_10.cpp
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_TEST(
-#    example_01
-#    ARGS PrintItAll
-#    NUM_MPI_PROCS 4
-#    NUM_TOTAL_CORES_USED 4
-#    PASS_REGULAR_EXPRESSION "TEST PASSED"
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  TRIBITS_ADD_TEST(
-#    example_02
-#    ARGS PrintItAll
-#    NUM_MPI_PROCS 4
-#    NUM_TOTAL_CORES_USED 4
-#    PASS_REGULAR_EXPRESSION "TEST PASSED"
-#    ADD_DIR_TO_NAME
-#  )
-#
-#  #TRIBITS_ADD_TEST(
-#  #  example_03
-#  #  ARGS PrintItAll
-#  #  NUM_MPI_PROCS 4
-#  #  NUM_TOTAL_CORES_USED 4
-#  #  PASS_REGULAR_EXPRESSION "TEST PASSED"
-#  #  ADD_DIR_TO_NAME
-#  #)
-
   TRIBITS_COPY_FILES_TO_BINARY_DIR(
     TopoOptDataCopy
     SOURCE_FILES
       input_ex01.xml
       input_ex02.xml
       input_ex03.xml
-      input_ex04.xml
-#      input_ex05.xml
-#      input_ex06.xml
-#      input_ex07.xml
-#      input_ex08.xml
-#      input_ex09.xml
-#      input_ex10.xml
       plotresults.m
       bwr.m
       plotdensity.m
@@ -121,6 +45,7 @@ IF(${PROJECT_NAME}_ENABLE_Intrepid AND
       meshfiles/brick1.e
       meshfiles/brick2.txt
       meshfiles/brick2.e
+      meshfiles/Lbeam.jou
     SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}"
     DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}"
   )

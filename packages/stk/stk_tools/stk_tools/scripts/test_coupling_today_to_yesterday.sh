@@ -57,28 +57,28 @@ exe_with_cleanup() {
 
 exe_with_cleanup 'bake4tests.sh --bin-dir $BIN_DIR_PREVIOUS >& $LOG_DIR/bake_previous.log'
 
-exe_with_cleanup 'cp $BIN_DIR_CURRENT/mock_aria $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_CURRENT/mock_salinas $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_PREVIOUS/mock_fuego $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_PREVIOUS/mock_sparc $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_aria $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_salinas $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_PREVIOUS/mock_fuego $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_PREVIOUS/mock_sparc $BIN_DIR_TEMP'
 
 echo 'Testing couplings with mock_aria and mock_salinas from today, and mock_fuego and mock_sparc from yesterday.'
 
 exe_with_cleanup 'testrun --allow-multipliers time --bin-dir $BIN_DIR_TEMP --save-all-results'
 
-exe_with_cleanup 'cp $BIN_DIR_PREVIOUS/mock_aria $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_PREVIOUS/mock_salinas $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_CURRENT/mock_fuego $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_CURRENT/mock_sparc $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_PREVIOUS/mock_aria $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_PREVIOUS/mock_salinas $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_fuego $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_sparc $BIN_DIR_TEMP'
 
 echo 'Testing couplings with mock_fuego and mock_sparc from today, and mock_aria and mock_salinas from yesterday.'
 
 exe_with_cleanup 'testrun --allow-multipliers time --bin-dir $BIN_DIR_TEMP --save-all-results'
 
-exe_with_cleanup 'cp $BIN_DIR_PREVIOUS/mock_aria $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_PREVIOUS/mock_fuego $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_CURRENT/mock_salinas $BIN_DIR_TEMP'
-exe_with_cleanup 'cp $BIN_DIR_CURRENT/mock_sparc $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_PREVIOUS/mock_aria $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_PREVIOUS/mock_fuego $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_salinas $BIN_DIR_TEMP'
+exe_with_cleanup '"cp" $BIN_DIR_CURRENT/mock_sparc $BIN_DIR_TEMP'
 
 echo 'Testing couplings with mock_aria and mock_fuego from today, and mock_salinas and mock_sparc from yesterday.'
 

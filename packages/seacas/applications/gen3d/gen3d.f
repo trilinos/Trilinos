@@ -563,6 +563,7 @@ C     --Write the side sets
       GOTO 50
 
    50 CONTINUE
+      call mdfree()
       call exclos(ndbin, ierr)
       call exclos(ndbout, ierr)
 
@@ -624,4 +625,3 @@ C   This is currently used in the sideset mirroring code
  10   continue
       return
       end
-

@@ -166,11 +166,9 @@ namespace Intrepid2 {
 
     // dofCoords on host and create its mirror view to device
     Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
-      dofCoords("dofCoordsHost", this->basisCardinality_, spaceDim), cellVerts("cellVerts", spaceDim);
+      dofCoords("dofCoordsHost", this->basisCardinality_, spaceDim);
 
-    CellTools<Kokkos::HostSpace::device_type>::getReferenceCellCenter(Kokkos::subview(dofCoords, 0, Kokkos::ALL()),
-                                           cellVerts,
-                                           cellTopo);
+    CellTools<Kokkos::HostSpace>::getReferenceCellCenter(Kokkos::subview(dofCoords, 0, Kokkos::ALL()), cellTopo);
 
     this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);

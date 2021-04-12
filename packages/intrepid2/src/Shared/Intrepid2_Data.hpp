@@ -168,7 +168,7 @@ namespace Intrepid2 {
      - BLOCK_PLUS_DIAGONAL: the data varies in this notional dimension and one other, corresponding to a square matrix that has some (possibly trivial) full block, with diagonal entries in the remaining dimensions.  The underlying View will have one dimension corresponding to the two notional dimensions, with extent corresponding to the number of nonzeros in the matrix.
      
   */
-  template<class DataScalar,typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class DataScalar,typename DeviceType>
   class Data {
   public:
     using value_type      = DataScalar;

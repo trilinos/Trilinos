@@ -70,7 +70,7 @@ void fill_zoltan2_parallel_graph(stk::mesh::BulkData& bulk, const stk::balance::
 {
     stk::mesh::Selector sel = bulk.mesh_meta_data().universal_part();
     zoltan2Graph.setMechanismCheckFlag();
-    stk::balance::internal::createZoltanParallelGraph(graphSettings, bulk, sel, zoltan2Graph);
+    stk::balance::internal::createZoltanParallelGraph(bulk, sel, bulk.parallel(), graphSettings, zoltan2Graph);
 }
 
 size_t one_based(size_t input)

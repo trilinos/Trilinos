@@ -11,7 +11,7 @@
 #define MOCK_UTILS_HPP
 
 #include <stk_coupling/Constants.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 

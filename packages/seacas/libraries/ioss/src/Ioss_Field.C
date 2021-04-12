@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -238,6 +238,63 @@ bool Ioss::Field::transform(void *data)
   }
   return true;
 }
+
+bool Ioss::Field::equal_(const Ioss::Field rhs, bool quiet) const
+{
+  if (Ioss::Utils::str_equal(this->name_, rhs.name_) == false) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "FIELD name mismatch ({} v. {})\n", this->name_.c_str(),
+                 rhs.name_.c_str());
+    }
+    return false;
+  }
+
+  if (this->type_ != rhs.type_) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "FIELD type mismatch ({} v. {})\n", this->type_, rhs.type_);
+    }
+    return false;
+  }
+
+  if (this->role_ != rhs.role_) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "FIELD role mismatch ({} v. {})\n", this->role_, rhs.role_);
+    }
+    return false;
+  }
+
+  if (this->rawCount_ != rhs.rawCount_) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "FIELD rawCount mismatch ({} v. {})\n", this->rawCount_,
+                 rhs.rawCount_);
+    }
+    return false;
+  }
+
+  if (this->transCount_ != rhs.transCount_) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "FIELD transCount mismatch ({} v. {})\n", this->transCount_,
+                 rhs.transCount_);
+    }
+    return false;
+  }
+
+  if (this->get_size() != rhs.get_size()) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "FIELD size mismatch ({} v. {})\n", this->get_size(),
+                 rhs.get_size());
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool Ioss::Field::operator==(const Ioss::Field rhs) const { return equal_(rhs, true); }
+
+bool Ioss::Field::operator!=(const Ioss::Field rhs) const { return !(*this == rhs); }
+
+bool Ioss::Field::equal(const Ioss::Field rhs) const { return equal_(rhs, false); }
 
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,

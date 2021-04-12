@@ -38,7 +38,6 @@
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_coupling/impl_NamedValues.hpp>
 #include <stk_util/util/ReportHandler.hpp>
-#include <stk_coupling/CommSplitting.hpp>
 #include <Teuchos_any.hpp>
 #include <cstdint>
 #include <string>
@@ -230,7 +229,7 @@ TEST(UnitTestNamedValues, commSparse)
   int destRank = (myRank+1) % numProcs;
 
   const bool needToUnpackRecvdMessage =
-    stk::pack_and_communicate(commSparse, [&commSparse, &myRank, &destRank, &values]() {
+    stk::pack_and_communicate(commSparse, [&commSparse, &destRank, &values]() {
       values.pack(commSparse.send_buffer(destRank));
     });
 

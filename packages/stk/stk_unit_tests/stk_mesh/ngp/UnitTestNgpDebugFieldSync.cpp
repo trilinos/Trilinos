@@ -85,15 +85,6 @@ public:
   }
 
   template <typename T>
-  void device_field_set_all(stk::mesh::Field<T> & stkField, T value)
-  {
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
-
-    ngpField.set_all(ngpMesh, value);
-  }
-
-  template <typename T>
   void write_scalar_field_on_host_using_entity_default_debugger(stk::mesh::Field<T> & stkField, T value)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -202,28 +193,6 @@ public:
   }
 
   template <typename T>
-  void read_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        access_for_memory_checking_tool(fieldData);
-      }
-    }
-  }
-
-  template <typename T>
-  void read_scalar_field_on_host_using_bucket(stk::mesh::Field<T> & stkField)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, *bucket);
-      access_for_memory_checking_tool(fieldData, bucket->size());
-    }
-  }
-
-  template <typename T>
   void read_vector_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -265,20 +234,6 @@ public:
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
     stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
-
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
-                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                     ngpField(entity, component) = value;
-                                   });
-  }
-
-  template <typename T>
-  void write_scalar_field_on_device(stk::mesh::Field<T> & stkField, T value)
-  {
-    const int component = 0;
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
@@ -1777,7 +1732,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MissingAllModifySyncCallsToHos
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_contains_file_name(stdoutString, "UnitTestNgpDebugFieldSync.cpp");
+  check_contains_file_name(stdoutString, "NgpDebugFieldSync_Fixtures.hpp");
   check_contains_a_line_number(stdoutString);
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");

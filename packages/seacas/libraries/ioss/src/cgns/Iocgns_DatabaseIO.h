@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -200,9 +200,9 @@ namespace Iocgns {
         -1}; // If using links to file-per-state, the file pointer for "base" file.
 
     int          m_flushInterval{0}; // Default is no flushing after each timestep
-    int          m_currentVertexSolutionIndex     = 0;
-    int          m_currentCellCenterSolutionIndex = 0;
-    mutable bool m_dbFinalized                    = false;
+    int          m_currentVertexSolutionIndex{0};
+    int          m_currentCellCenterSolutionIndex{0};
+    mutable bool m_dbFinalized{false};
 
     mutable std::vector<size_t> m_zoneOffset; // Offset for local zone/block element ids to global.
     mutable std::vector<size_t>

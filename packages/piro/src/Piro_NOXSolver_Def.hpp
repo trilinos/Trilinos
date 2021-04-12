@@ -136,7 +136,11 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   // Forward all parameters to underlying model
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = this->getModel().createInArgs();
   for (int l = 0; l < num_p; ++l) {
-    modelInArgs.set_p(l, inArgs.get_p(l));
+    if (Teuchos::nonnull(inArgs.get_p(l)))
+      modelInArgs.set_p(l, inArgs.get_p(l));
+    else
+      modelInArgs.set_p(l, this->getModel().getNominalValues().get_p(l));
+
     modelInArgs.set_p_direction(l, inArgs.get_p_direction(l));
   }
 

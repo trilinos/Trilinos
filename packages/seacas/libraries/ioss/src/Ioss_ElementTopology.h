@@ -113,10 +113,15 @@ namespace Ioss {
     static unsigned int     get_unique_id(const std::string &type);
     static int              describe(NameList *names);
 
+    bool operator==(const Ioss::ElementTopology &rhs) const;
+    bool operator!=(const Ioss::ElementTopology &rhs) const;
+    bool equal(const Ioss::ElementTopology &rhs) const;
+
   protected:
     ElementTopology(std::string type, std::string master_elem_name, bool delete_me = false);
 
   private:
+    bool              equal_(const Ioss::ElementTopology &rhs, bool quiet) const;
     const std::string name_;
     const std::string masterElementName_;
 

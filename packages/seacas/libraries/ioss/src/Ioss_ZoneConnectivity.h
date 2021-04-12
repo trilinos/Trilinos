@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -27,10 +27,16 @@ namespace Ioss {
 
   struct ZoneConnectivity
   {
-    ZoneConnectivity(std::string name, int owner_zone, std::string donor_name, int donor_zone,
-                     Ioss::IJK_t p_transform, Ioss::IJK_t range_beg, Ioss::IJK_t range_end,
-                     Ioss::IJK_t donor_beg, Ioss::IJK_t donor_end,
-                     Ioss::IJK_t owner_offset = IJK_t(), Ioss::IJK_t donor_offset = IJK_t())
+    // cereal requires a default constructor when de-serializing vectors of objects.  Because
+    // StructuredBlock contains a vector of ZoneConnectivity objects, this default constructor is
+    // necessary.
+    ZoneConnectivity() = default;
+
+    ZoneConnectivity(const std::string name, int owner_zone, const std::string donor_name,
+                     int donor_zone, const Ioss::IJK_t p_transform, const Ioss::IJK_t range_beg,
+                     const Ioss::IJK_t range_end, const Ioss::IJK_t donor_beg,
+                     const Ioss::IJK_t donor_end, const Ioss::IJK_t owner_offset = IJK_t(),
+                     const Ioss::IJK_t donor_offset = IJK_t())
         : m_connectionName(std::move(name)), m_donorName(std::move(donor_name)),
           m_transform(p_transform), m_ownerRangeBeg(range_beg), m_ownerRangeEnd(range_end),
           m_ownerOffset(owner_offset), m_donorRangeBeg(donor_beg), m_donorRangeEnd(donor_end),
@@ -80,6 +86,11 @@ namespace Ioss {
     std::vector<int>     get_range(int ordinal) const;
     friend std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc);
 
+    /* COMPARE two ZoneConnectivity objects  */
+    bool operator==(const Ioss::ZoneConnectivity &rhs) const;
+    bool operator!=(const Ioss::ZoneConnectivity &rhs) const;
+    bool equal(const Ioss::ZoneConnectivity &rhs) const;
+
     bool is_from_decomp() const { return m_fromDecomp; }
     bool is_active() const { return m_isActive && has_faces(); }
 
@@ -87,6 +98,14 @@ namespace Ioss {
     std::string m_donorName{}; // Name of the zone (m_donorZone) to which this zone is connected via
                                // this connection.
     Ioss::IJK_t m_transform{}; // The transform.  In the same form as defined by CGNS
+
+    template <class Archive> void serialize(Archive &archive)
+    {
+      archive(m_connectionName, m_donorName, m_transform, m_ownerRangeBeg, m_ownerRangeEnd,
+              m_ownerOffset, m_donorRangeBeg, m_donorRangeEnd, m_donorOffset, m_ownerGUID,
+              m_donorGUID, m_ownerZone, m_donorZone, m_ownerProcessor, m_donorProcessor,
+              m_sameRange, m_ownsSharedNodes, m_fromDecomp, m_isActive);
+    }
 
     // The following are all subsetted down to the portion that is actually on this zone
     // This can be different than m_ownerRange and m_donorRange in a parallel run if the
@@ -119,6 +138,10 @@ namespace Ioss {
     bool m_fromDecomp{false};
 
     bool m_isActive{true}; // True if non-zero range. That is, it has at least one face
+
+  private:
+    bool equal_(const Ioss::ZoneConnectivity &rhs, bool quiet) const;
   };
 } // namespace Ioss
+
 #endif

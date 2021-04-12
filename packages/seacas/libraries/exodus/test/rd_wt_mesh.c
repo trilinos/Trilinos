@@ -6,10 +6,6 @@
  * See packages/seacas/LICENSE for details
  */
 
-#define _FILE_OFFSET_BITS 64
-#define _LARGEFILE_SOURCE
-#define _LARGE_FILES 1
-
 #ifdef PARALLEL_AWARE_EXODUS
 #include <mpi.h>
 #else

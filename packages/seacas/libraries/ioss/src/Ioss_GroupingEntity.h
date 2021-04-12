@@ -162,14 +162,16 @@ namespace Ioss {
     // ========================================================================
     // Property-related information....
     // Just forward it through to the property manager...
-    void     property_add(const Property &new_prop);
-    void     property_erase(const std::string &property_name);
-    bool     property_exists(const std::string &property_name) const;
-    Property get_property(const std::string &property_name) const;
-    int64_t  get_optional_property(const std::string &property, int64_t optional_value) const;
-    int      property_describe(NameList *names) const;
-    int      property_describe(Ioss::Property::Origin origin, NameList *names) const;
-    size_t   property_count() const;
+    void        property_add(const Property &new_prop);
+    void        property_erase(const std::string &property_name);
+    bool        property_exists(const std::string &property_name) const;
+    Property    get_property(const std::string &property_name) const;
+    int64_t     get_optional_property(const std::string &property, int64_t optional_value) const;
+    std::string get_optional_property(const std::string &property_name,
+                                      const std::string &optional_value) const;
+    int         property_describe(NameList *names) const;
+    int         property_describe(Ioss::Property::Origin origin, NameList *names) const;
+    size_t      property_count() const;
     /** Add a property, or change its value if it already exists with
         a different value */
     void property_update(const std::string &property, int64_t value) const;
@@ -243,6 +245,11 @@ namespace Ioss {
 
     int64_t entity_count() const { return get_property("entity_count").get_int(); }
 
+    // COMPARE GroupingEntities
+    bool operator!=(const GroupingEntity &rhs) const;
+    bool operator==(const GroupingEntity &rhs) const;
+    bool equal(const GroupingEntity &rhs) const;
+
   protected:
     void count_attributes() const;
 
@@ -279,6 +286,8 @@ namespace Ioss {
 #if defined(IOSS_THREADSAFE)
     mutable std::mutex m_;
 #endif
+
+    bool equal_(const GroupingEntity &rhs, const bool quiet) const;
 
   private:
     void verify_field_exists(const std::string &field_name, const std::string &inout) const;
@@ -337,6 +346,13 @@ inline Ioss::Property Ioss::GroupingEntity::get_property(const std::string &prop
 
 inline int64_t Ioss::GroupingEntity::get_optional_property(const std::string &property_name,
                                                            int64_t            optional_value) const
+{
+  return properties.get_optional(property_name, optional_value);
+}
+
+inline std::string
+Ioss::GroupingEntity::get_optional_property(const std::string &property_name,
+                                            const std::string &optional_value) const
 {
   return properties.get_optional(property_name, optional_value);
 }

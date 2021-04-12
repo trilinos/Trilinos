@@ -35,7 +35,7 @@
 #include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_coupling/Utils.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
 #include <stk_coupling/SyncInfo.hpp>
 #include <stdexcept>
 

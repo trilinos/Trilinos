@@ -87,7 +87,7 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
     }
 
     //! MultiVector copy constructor.
-    EpetraIntMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
+    EpetraIntMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView=Teuchos::Copy) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
         "Xpetra::EpetraIntMultiVector only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
     }
@@ -399,8 +399,17 @@ const Epetra_IntMultiVector & toEpetra(const MultiVector<int, int, GlobalOrdinal
     }
 
     //! MultiVector copy constructor.
-    EpetraIntMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source) {
-      vec_ = rcp(new Epetra_IntMultiVector(toEpetra<GlobalOrdinal,Node>(source)));
+    EpetraIntMultiVectorT(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &source, const Teuchos::DataAccess copyOrView=Teuchos::Copy) {
+
+      if (copyOrView==Teuchos::Copy)
+        vec_ = rcp(new Epetra_IntMultiVector(toEpetra<GlobalOrdinal,Node>(source)));
+      else {
+        int* indices = new int [getNumVectors()];
+        for (size_t i = 0; i < getNumVectors(); i++)
+          indices[i] = i;
+        vec_ =  Teuchos::rcp(new Epetra_IntMultiVector(View, toEpetra<GlobalOrdinal,Node>(source), indices, getNumVectors()));
+        delete [] indices;
+      }
     }
 
     //! Set multi-vector values from array of pointers using Teuchos memory management classes. (copy).

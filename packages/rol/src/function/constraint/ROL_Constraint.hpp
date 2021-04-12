@@ -45,6 +45,7 @@
 #define ROL_CONSTRAINT_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_UpdateType.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -90,6 +91,19 @@ public:
   virtual ~Constraint(void) {}
 
   Constraint(void) : activated_(true) {}
+
+  /** \brief Update constraint function. 
+
+      This function updates the constraint function at new iterations. 
+      @param[in]          x      is the new iterate. 
+      @param[in]          type   is the type of update requested.
+      @param[in]          iter   is the outer algorithm iterations count.
+  */
+  virtual void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    ROL_UNUSED(x);
+    ROL_UNUSED(type);
+    ROL_UNUSED(iter);
+  }
 
   /** \brief Update constraint functions.  
                 x is the optimization variable, 

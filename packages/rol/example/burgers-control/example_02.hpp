@@ -46,21 +46,9 @@
            example_02.
 */
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_Types.hpp"
-#include "ROL_ParameterList.hpp"
-#include "ROL_Stream.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_LAPACK.hpp"
-
-#include <iostream>
-#include <algorithm>
-
 #include "ROL_StdVector.hpp"
-#include "ROL_Vector_SimOpt.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_Objective_SimOpt.hpp"
-#include "ROL_Reduced_Objective_SimOpt.hpp"
 
 template<class Real>
 class Constraint_BurgersControl : public ROL::Constraint_SimOpt<Real> {

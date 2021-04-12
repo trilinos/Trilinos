@@ -37,10 +37,10 @@
 #include "stk_util/util/Signal.hpp"
 #include "stk_util/util/Callback.hpp"       // for Callback
 #include "stk_util/util/FeatureTest.hpp"    // for SIERRA_MPI_ABORT_SIGNAL, SIERRA_USER_SHUTDOWN...
+#include "stk_util/util/ReportHandler.hpp"  // for SignalHandler
 #include "stk_util/util/SignalHandler.hpp"  // for SignalHandler
 #include <csignal>                          // for SIGBUS, SIGILL, SIGSEGV, raise, SIGTERM
-
-
+#include <sstream>
 
 namespace sierra {
 namespace Env {
@@ -211,7 +211,10 @@ EnvSignal::doSignal(
   }
   else {
     m_enabled = false;
-    m_message = message;
+    std::ostringstream os;
+    os << message << "\noccurred at:\n";
+    stk::output_stacktrace(os) << "\n";
+    m_message = os.str();
     ::siglongjmp(m_sigJmpBuf, signal);
   }
 }

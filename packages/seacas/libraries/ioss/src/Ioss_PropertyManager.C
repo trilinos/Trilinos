@@ -88,6 +88,17 @@ int64_t Ioss::PropertyManager::get_optional(const std::string &property_name,
   return (*iter).second.get_int();
 }
 
+std::string Ioss::PropertyManager::get_optional(const std::string &property_name,
+                                                const std::string &optional_value) const
+{
+  IOSS_FUNC_ENTER(m_);
+  auto iter = m_properties.find(property_name);
+  if (iter == m_properties.end()) {
+    return optional_value;
+  }
+  return (*iter).second.get_string();
+}
+
 /** \brief Remove a property from the property manager.
  *
  *  Assumes that the property with the given name already exists in the property manager.

@@ -83,6 +83,7 @@
 //#include "Intrepid2_HGRAD_WEDGE_I2_FEM.hpp"
 
 #include "Intrepid2_Data.hpp"
+#include "Intrepid2_CellData.hpp"
 
 namespace Intrepid2 {
 
@@ -105,6 +106,7 @@ namespace Intrepid2 {
   template<typename DeviceType>
   class CellTools {
     using ExecSpaceType = typename DeviceType::execution_space;
+    using MemSpaceType = typename DeviceType::memory_space;
   public:
 
     /** \brief  Checks if a cell topology has reference cell
@@ -114,50 +116,8 @@ namespace Intrepid2 {
     inline
     static bool
     hasReferenceCell( const shards::CellTopology cellTopo ) {
-      bool r_val = false;
-      switch ( cellTopo.getKey() ) {
-      case shards::Line<2>::key:
-      case shards::Line<3>::key:
-      case shards::ShellLine<2>::key:
-      case shards::ShellLine<3>::key:
-      case shards::Beam<2>::key:
-      case shards::Beam<3>::key:
-
-      case shards::Triangle<3>::key:
-        // case shards::Triangle<4>::key:
-      case shards::Triangle<6>::key:
-        // case shards::ShellTriangle<3>::key:
-        // case shards::ShellTriangle<6>::key:
-
-      case shards::Quadrilateral<4>::key:
-      case shards::Quadrilateral<8>::key:
-      case shards::Quadrilateral<9>::key:
-        //case shards::ShellQuadrilateral<4>::key:
-        //case shards::ShellQuadrilateral<8>::key:
-        //case shards::ShellQuadrilateral<9>::key:
-
-      case shards::Tetrahedron<4>::key:
-        // case shards::Tetrahedron<8>::key:
-      case shards::Tetrahedron<10>::key:
-        // case shards::Tetrahedron<11>::key:
-
-      case shards::Hexahedron<8>::key:
-      case shards::Hexahedron<20>::key:
-      case shards::Hexahedron<27>::key:
-
-      case shards::Pyramid<5>::key:
-        // case shards::Pyramid<13>::key:
-        // case shards::Pyramid<14>::key:
-
-      case shards::Wedge<6>::key:
-        // case shards::Wedge<15>::key:
-      case shards::Wedge<18>::key:
-        r_val = true;
-      }
-      return r_val;
+      return RefSubcellParametrization<DeviceType>::isSupported(cellTopo.getKey());
     }
-
-    typedef Kokkos::DynRankView<double,ExecSpaceType> subcellParamViewType;
 
   private:
 
@@ -208,120 +168,7 @@ namespace Intrepid2 {
       return r_val;
     }
 
-    // reference nodes initialized
-    /** \struct Intrepid2::CellTools::ReferenceNodeDataStatic
-        \brief Reference node containers for each supported topology
-     */
-    typedef Kokkos::DynRankView<const double,Kokkos::LayoutRight,Kokkos::HostSpace> referenceNodeDataViewHostType;
-    struct ReferenceNodeDataStatic {
-      double line[2][3], line_3[3][3];
-      double triangle[3][3], triangle_4[4][3], triangle_6[6][3];
-      double quadrilateral[4][3], quadrilateral_8[8][3], quadrilateral_9[9][3];
-      double tetrahedron[4][3], tetrahedron_8[8][3], tetrahedron_10[10][3], tetrahedron_11[10][3];
-      double hexahedron[8][3], hexahedron_20[20][3], hexahedron_27[27][3];
-      double pyramid[5][3], pyramid_13[13][3], pyramid_14[14][3];
-      double wedge[6][3], wedge_15[15][3], wedge_18[18][3];
-    };
-
-    /** \struct Intrepid2::CellTools::ReferenceNodeData
-        \brief Reference node data for each supported topology
-     */
-    typedef Kokkos::DynRankView<double,Kokkos::LayoutRight,ExecSpaceType> referenceNodeDataViewType;
-    struct ReferenceNodeData {
-      referenceNodeDataViewType line, line_3;
-      referenceNodeDataViewType triangle, triangle_4, triangle_6;
-      referenceNodeDataViewType quadrilateral, quadrilateral_8, quadrilateral_9;
-      referenceNodeDataViewType tetrahedron, tetrahedron_8, tetrahedron_10, tetrahedron_11;
-      referenceNodeDataViewType hexahedron, hexahedron_20, hexahedron_27;
-      referenceNodeDataViewType pyramid, pyramid_13, pyramid_14;
-      referenceNodeDataViewType wedge, wedge_15, wedge_18;
-    };
-
-    static  const ReferenceNodeDataStatic refNodeDataStatic_;
-    static        ReferenceNodeData       refNodeData_;
-
-    static bool isReferenceNodeDataSet_;
-    /** \brief Set reference node coordinates for supported topologies.
-    */
-    static void setReferenceNodeData();
-
-    //============================================================================================//
-    //                                                                                            //
-    //          Parametrization coefficients of edges and faces of reference cells                //
-    //                                                                                            //
-    //============================================================================================//
-
-    // static variables
-    /** \struct Intrepid2::CellTools::SubcellParamData
-        \brief Parametrization coefficients of edges and faces of reference cells
-     */
-    struct SubcellParamData {
-      subcellParamViewType dummy;
-      subcellParamViewType lineEdges;  // edge maps for 2d non-standard cells; shell line and beam
-      subcellParamViewType triEdges, quadEdges; // edge maps for 2d standard cells
-      subcellParamViewType shellTriEdges, shellQuadEdges; // edge maps for 3d non-standard cells; shell tri and quad
-      subcellParamViewType tetEdges, hexEdges, pyrEdges, wedgeEdges; // edge maps for 3d standard cells
-      subcellParamViewType shellTriFaces, shellQuadFaces; // face maps for 3d non-standard cells
-      subcellParamViewType tetFaces, hexFaces, pyrFaces, wedgeFaces; // face maps for 3d standard cells
-    };
-
-    static SubcellParamData subcellParamData_;
-
-    static bool isSubcellParametrizationSet_;
-
-
-    /** \brief  Sets orientation-preserving parametrizations of reference edges and faces of cell
-        topologies with reference cells. Used to populate Intrepid2::CellTools::SubcellParamData.
-
-        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
-        more information about parametrization maps.
-
-        \param  subcellParam           [out]  - array with the coefficients of the parametrization map
-        \param  subcellDim             [in]   - dimension of the subcells being parametrized (1 or 2)
-        \param  parentCell             [in]   - topology of the parent cell owning the subcells.
-    */
-    static void
-    setSubcellParametrization(       subcellParamViewType &subcellParam,
-                               const ordinal_type          subcellDim,
-                               const shards::CellTopology  parentCell );
-
-  public:
-
-    /** \brief  Defines orientation-preserving parametrizations of reference edges and faces of cell
-        topologies with reference cells.
-
-        Given an edge {V0, V1} of some reference cell, its parametrization is a mapping from
-        [-1,1] onto the edge. Parametrization of a triangular face {V0,V1,V2} is mapping from
-        the standard 2-simplex {(0,0,0), (1,0,0), (0,1,0)}, embedded in 3D onto that face.
-        Parametrization of a quadrilateral face {V0,V1,V2,V3} is mapping from the standard
-        2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)}, embedded in 3D, onto that face.
-
-        This method computes the coefficients of edge and face parametrization maps. 
-        All mappings are affine and orientation-preserving, i.e., they preserve the tangent
-        and normal directions implied by the vertex order of the edge or the face relative to
-        the reference cell:
-
-        \li     the tangent on [-1,1] from -1 in the direction of 1 is mapped to a tangent on edge {V0,V1}
-        from V0 in the direction of V1  (the forward direction of the edge determined by its
-        start and end vertices)
-
-        \li     the normal in the direction of (0,0,1) to the standard 2-simplex {(0,0,0),(1,0,0),(0,1,0)}
-        and the standard 2-cube {(-1,-1,0),(1,-1,0),(1,1,0),(-1,1,0)} is mapped to a normal
-        on {V0,V1,V2} and {V0,V1,V2,V3}, determined according to the right-hand rule
-        (see http://mathworld.wolfram.com/Right-HandRule.html for definition of right-hand rule
-        and Section \ref Section sec_cell_topology_subcell_map for further details).
-
-        Because faces of all reference cells supported in Intrepid are affine images of either
-        the standard 2-simplex or the standard 2-cube, the coordinate functions of the respective
-        parmetrization maps are linear polynomials in the parameter variables (u,v), i.e., they
-        are of the form \c F_i(u,v)=C_0(i)+C_1(i)u+C_2(i)v;  \c 0<=i<3 (face parametrizations
-        are supported only for 3D cells, thus parametrization maps have 3 coordinate functions).
-        As a result, application of these maps is independent of the face type which is convenient
-        for cells such as Wedge or Pyramid that have both types of faces. Also, coefficients of
-        coordinate functions for all faces can be stored together in the same array.
-
-    */
-    static void setSubcellParametrization();
+public:
 
    /** \brief  Default constructor.
       */
@@ -550,28 +397,21 @@ namespace Intrepid2 {
     // the node information can be used inside of kokkos functor and needs kokkos inline and
     // exception should be an abort. for now, let's not decorate
 
-    /** \brief  Computes the Cartesian coordinates of reference cell center.
+    /** \brief  Computes the Cartesian coordinates of reference cell barycenter.
 
-        Requires cell topology with a reference cell. Center coordinates are always returned
-        as an (x,y,z)-triple regardlesss of the actual topological cell dimension. The unused
-        coordinates are set to zero.
+        Requires cell topology with a reference cell.
 
         \param  cellCenter        [out] - coordinates of the specified reference cell center
-        \param  cellVertex        [in]  - coordinates of reference cell vertex 
         \param  cell              [in]  - cell topology 
     */
-    template<typename cellCenterValueType, class ...cellCenterProperties,
-             typename cellVertexValueType, class ...cellVertexProperties>
+    template<typename cellCenterValueType, class ...cellCenterProperties>
     static void
     getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
-                            Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                             const shards::CellTopology cell );
 
     /** \brief  Retrieves the Cartesian coordinates of a reference cell vertex.
 
-        Requires cell topology with a reference cell. Vertex coordinates are always returned
-        as an (x,y,z)-triple regardlesss of the actual topological cell dimension. The unused
-        coordinates are set to zero, e.g., vertex 0 of Line<2> is returned as {-1,0,0}.
+        Requires cell topology with a reference cell.
 
         \param  cellVertex        [out] - coordinates of the specified reference cell vertex
         \param  cell              [in]  - cell topology of the cell
@@ -717,11 +557,10 @@ namespace Intrepid2 {
         \param  faceOrd           [in]  - ordinal of the face whose tangents are computed
         \param  parentCell        [in]  - cell topology of the parent 3D reference cell
     */
-    template<typename refFaceTanUValueType, class ...refFaceTanUProperties,
-             typename refFaceTanVValueType, class ...refFaceTanVProperties>
+    template<typename refFaceTanValueType, class ...refFaceTanProperties>
     static void
-    getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
-                                    Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
+    getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanValueType,refFaceTanProperties...> refFaceTanU,
+                                    Kokkos::DynRankView<refFaceTanValueType,refFaceTanProperties...> refFaceTanV,
                               const ordinal_type         faceOrd,
                               const shards::CellTopology parentCell );
 
@@ -913,12 +752,11 @@ namespace Intrepid2 {
         \param  worksetFaceOrd    [in]  - face ordinal, relative to ref. cell, of the face workset
         \param  parentCell        [in]  - cell topology of the parent reference cell
     */
-    template<typename faceTanUValueType,        class ...faceTanUProperties,
-             typename faceTanVValueType,        class ...faceTanVProperties,
+    template<typename faceTanValueType,        class ...faceTanProperties,
              typename worksetJacobianValueType, class ...worksetJacobianProperties>
     static void
-    getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
-                                   Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
+    getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanU,
+                                   Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanV,
                              const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                              const ordinal_type         worksetFaceOrd,
                              const shards::CellTopology parentCell );
@@ -1145,26 +983,6 @@ namespace Intrepid2 {
     }
 
 
-
-
-    /** \brief  Returns array with the coefficients of the parametrization maps for the edges or faces
-        of a reference cell topology.
-
-        See Intrepid2::CellTools::setSubcellParametrization and Section \ref sec_cell_topology_subcell_map
-        more information about parametrization maps.
-
-        \param  subcellParam      [out] - coefficients of the parameterization map for all subcells of
-                                          the specified dimension
-        \param  subcellDim        [in]  - dimension of subcells whose parametrization map is returned
-        \param  parentCell        [in]  - topology of the reference cell owning the subcells
-
-    */
-    static void
-    getSubcellParametrization(  subcellParamViewType &subcellParam,
-                               const ordinal_type          subcellDim,
-                               const shards::CellTopology  parentCell );
-
-
     /** \brief  Computes parameterization maps of 1- and 2-subcells of reference cells.
 
         Applies \f$\hat{\Phi}_i\f$, the parametrization map of a subcell \f$\hat{\mathcal{S}}_i\f$
@@ -1223,28 +1041,6 @@ namespace Intrepid2 {
                            const ordinal_type subcellDim,
                            const ordinal_type subcellOrd,
                            const shards::CellTopology parentCell );
-
-
-    /**
-     \brief  Overload of mapToReferenceSubcell that runs on device.
-
-        \param  refSubcellPoints  [out] - rank-2 (P,D1) array with images of parameter space points
-        \param  paramPoints       [in]  - rank-2 (P,D2) array with points in 1D or 2D parameter domain
-        \param  subcellMap        [in]  - array with the coefficients of the subcell parametrization map
-        \param  subcellDim        [in]  - dimension of the subcell where points are mapped to
-        \param  subcellOrd        [in]  - subcell ordinal
-        \param  parentCellDim     [in]  - dimension of the parent cell.
-     */
-    template<typename refSubcellPointValueType, class ...refSubcellPointProperties,
-             typename paramPointValueType, class ...paramPointProperties>
-    static void
-    KOKKOS_INLINE_FUNCTION
-    mapToReferenceSubcell(       Kokkos::DynRankView<refSubcellPointValueType,refSubcellPointProperties...> refSubcellPoints,
-                           const Kokkos::DynRankView<paramPointValueType,paramPointProperties...>           paramPoints,
-                           const subcellParamViewType subcellMap,
-                           const ordinal_type subcellDim,
-                           const ordinal_type subcellOrd,
-                           const ordinal_type parentCellDim);
 
 
     //============================================================================================//
@@ -1720,9 +1516,7 @@ namespace Intrepid2 {
 #include "Intrepid2_CellToolsDefValidateArguments.hpp"
 #include "Intrepid2_CellToolsDefNodeInfo.hpp"
 
-#include "Intrepid2_CellToolsDefParametrization.hpp"
 #include "Intrepid2_CellToolsDefJacobian.hpp"
-
 #include "Intrepid2_CellToolsDefRefToPhys.hpp"
 #include "Intrepid2_CellToolsDefPhysToRef.hpp"
 

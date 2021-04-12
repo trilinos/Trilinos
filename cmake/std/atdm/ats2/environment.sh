@@ -68,12 +68,16 @@ fi
 
 # Purge then load StdEnv to get back to a fresh env in case previous other
 # modules were loaded.
-module purge --silent
-module load StdEnv
+if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+  module purge --silent
+  module load StdEnv
+else
+  echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
+fi
 
 # Load the sparc-dev/xxx module
 sparc_module_name=$(get_sparc_dev_module_name "$ATDM_CONFIG_COMPILER")
-module load ${sparc_module_name}
+atdm_config_load_sparc_dev_module ${sparc_module_name}
 
 module unload cmake
 module load cmake/3.18.0
@@ -184,6 +188,12 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
+
+if [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] ; then
+  export ATDM_CONFIG_MPI_PRE_FLAGS="-M;-mca coll ^ibm"
+  # NOTE: We have to use the '-M' option name and not '--smpiarg' since
+  # 'trilinos_jsrun' has special logic
+fi
 
 # NOTE: We used to check for the launch node but at one point that changed
 # from 'vortex59' to 'vortex5' without warning.  That caused all of the tests

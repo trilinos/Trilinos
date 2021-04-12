@@ -36,7 +36,6 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_coupling/Version.hpp>
 #include <stk_coupling/impl_VersionUtils.hpp>
-#include <stk_coupling/CommSplitting.hpp>
 #include "TestCompatibilityMode.hpp"
 
 namespace {

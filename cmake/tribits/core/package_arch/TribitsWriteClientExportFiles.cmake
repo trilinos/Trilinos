@@ -796,7 +796,7 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
     SET(PDOLLAR "$")
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
-      ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
+      ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
   ENDIF()
 
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
@@ -831,7 +831,7 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
       SET(PDOLLAR "$")
       CONFIGURE_FILE(
         ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
-        ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME})
+        ${PROJECT_BINARY_DIR}/Makefile.export.${PROJECT_NAME})
     ENDIF()
   ENDIF()
 
@@ -876,10 +876,10 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
   IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.cmake.in
-      ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
+      ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
 
     INSTALL(
-      FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake
+      FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake
       DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}"
       RENAME ${PROJECT_NAME}Config.cmake
       )
@@ -905,10 +905,10 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
 
     CONFIGURE_FILE(
       ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CMAKE_INSTALLATION_FILES_DIR}/TribitsProjectConfigTemplate.export.in
-      ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install )
+      ${PROJECT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install )
 
     INSTALL(
-      FILES ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install
+      FILES ${PROJECT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install
       DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME Makefile.export.${PROJECT_NAME}
       )
@@ -922,12 +922,12 @@ include(\"${${TRIBITS_PACKAGE}_BINARY_DIR}/${TRIBITS_PACKAGE}Config.cmake\")")
     SET(${PROJECT_NAME}_VERSION  0.0.0)
   ENDIF()
   WRITE_BASIC_PACKAGE_VERSION_FILE(
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     VERSION ${${PROJECT_NAME}_VERSION}
     COMPATIBILITY SameMajorVersion
     )
   INSTALL(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    FILES ${PROJECT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}/cmake/${PROJECT_NAME}"
     )
 

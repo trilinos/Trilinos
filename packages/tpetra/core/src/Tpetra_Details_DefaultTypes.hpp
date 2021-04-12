@@ -86,35 +86,54 @@ namespace DefaultTypes {
 #endif
 
   /// \typedef execution_space
-  /// \brief Default Tpetra execution space.
-#if defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
+  /// \brief Default Tpetra execution space and Node type.
+#if defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
+  using execution_space = ::Kokkos::Experimental::HIP;
+  using node_type = ::Kokkos::Compat::KokkosHIPWrapperNode;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
   using execution_space = ::Kokkos::Cuda;
+  using node_type = ::Kokkos::Compat::KokkosCudaWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_OPENMPWRAPPERNODE)
   using execution_space = ::Kokkos::OpenMP;
+  using node_type = ::Kokkos::Compat::KokkosOpenMPWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_THREADSWRAPPERNODE)
   using execution_space = ::Kokkos::Threads;
+  using node_type = ::Kokkos::Compat::KokkosThreadsWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_SERIALWRAPPERNODE)
   using execution_space = ::Kokkos::Serial;
+  using node_type = ::Kokkos::Compat::KokkosSerialWrapperNode;
 #else
 #    error "No default Tpetra Node type specified.  Please set the CMake option Tpetra_DefaultNode to a valid Node type."
 #endif
 
-  //! Default value of Node template parameter.
-  using node_type = ::Kokkos::Compat::KokkosDeviceWrapperNode<execution_space>;
-
   /// \brief Memory space used for MPI communication buffers.
   ///
-  /// See #1088 for why this is not just ExecutionSpace::memory_space.
-  template<class ExecutionSpace>
-  using comm_buffer_memory_space =
+  /// See #1088 for why this is not just ExecutionSpace::memory_space
+
+  template<typename ExecutionSpace>
+  struct CommBufferMemorySpace
+  {
+    using type = typename ExecutionSpace::memory_space;
+  };
+
 #ifdef KOKKOS_ENABLE_CUDA
-    typename std::conditional<
-      std::is_same<typename ExecutionSpace::execution_space, Kokkos::Cuda>::value,
-      Kokkos::CudaSpace,
-      typename ExecutionSpace::memory_space>::type;
-#else
-    typename ExecutionSpace::memory_space;
-#endif // KOKKOS_ENABLE_CUDA
+  template<>
+  struct CommBufferMemorySpace<Kokkos::Cuda>
+  {
+    using type = Kokkos::CudaSpace;
+  };
+#endif
+
+#ifdef KOKKOS_ENABLE_HIP
+  template<>
+  struct CommBufferMemorySpace<Kokkos::Experimental::HIPHostPinnedSpace>
+  {
+    using type = Kokkos::Experimental::HIPHostPinnedSpace;
+  };
+#endif
+
+  template<typename Device>
+  using comm_buffer_memory_space = typename CommBufferMemorySpace<typename Device::execution_space>::type;
 
 } // namespace DefaultTypes
 

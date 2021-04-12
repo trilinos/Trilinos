@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,7 +10,8 @@
 #include <algorithm>
 #include <array>
 #include <cassert>
-#include <cstddef> // for size_t
+#include <cstddef>
+#include <map>
 
 #define FG_USE_ROBIN
 #if defined FG_USE_STD
@@ -111,16 +112,17 @@ namespace Ioss {
 
     static size_t id_hash(size_t global_id);
 
-    template <typename INT> void generate_faces(INT /*dummy*/, bool block_by_block = false);
-    FaceUnorderedSet &           faces(const std::string &name = "ALL") { return faces_[name]; }
+    template <typename INT>
+    void generate_faces(INT /*dummy*/, bool block_by_block = false, bool local_ids = false);
+    FaceUnorderedSet &faces(const std::string &name = "ALL") { return faces_[name]; }
 
     //! Given a local node id (0-based), return the hashed value.
     size_t node_id_hash(size_t local_node_id) const { return hashIds_[local_node_id]; }
 
   private:
     template <typename INT> void hash_node_ids(const std::vector<INT> &node_ids);
-    template <typename INT> void generate_block_faces(INT /*dummy*/);
-    template <typename INT> void generate_model_faces(INT /*dummy*/);
+    template <typename INT> void generate_block_faces(INT /*dummy*/, bool local_ids);
+    template <typename INT> void generate_model_faces(INT /*dummy*/, bool local_ids);
 
     Ioss::Region &                          region_;
     std::map<std::string, FaceUnorderedSet> faces_;

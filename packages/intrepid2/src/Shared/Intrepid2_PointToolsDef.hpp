@@ -551,7 +551,7 @@ getWarpBlendLatticeTriangle( Kokkos::DynRankView<pointValueType,pointProperties.
 
    Kokkos::DynRankView<pointValueType, Kokkos::DefaultHostExecutionSpace> refPts("refPts", 1, N,2);
 
-   Intrepid2::CellTools<Kokkos::DefaultHostExecutionSpace>::mapToReferenceFrame( refPts ,
+   Intrepid2::CellTools<Kokkos::HostSpace>::mapToReferenceFrame( refPts ,
                                               warXY ,
                                               warburtonVerts ,
                                               shards::getCellTopologyData< shards::Triangle<3> >()
@@ -892,7 +892,7 @@ getWarpBlendLatticeTetrahedron(Kokkos::DynRankView<pointValueType,pointPropertie
 
    // now we convert to Pavel's reference triangle!
    Kokkos::DynRankView<pointValueType,Kokkos::DefaultHostExecutionSpace> refPts("refPts",1,N,3);
-   CellTools<Kokkos::DefaultHostExecutionSpace>::mapToReferenceFrame( refPts ,updatedPoints ,
+   CellTools<Kokkos::HostSpace>::mapToReferenceFrame( refPts ,updatedPoints ,
                                            warVerts_ ,
                                            shards::getCellTopologyData<shards::Tetrahedron<4> >()
                                            );

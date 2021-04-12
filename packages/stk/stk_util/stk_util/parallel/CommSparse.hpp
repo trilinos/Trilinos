@@ -159,6 +159,14 @@ public:
   /** Communicate send buffers to receive buffers.  */
   void communicate();
 
+  /** Communicate send buffers to receive buffers, interleave unpacking with
+   *    caller-provided functor.  */
+  template<typename UNPACK_ALGORITHM>
+  void communicate_with_unpack(const UNPACK_ALGORITHM & alg)
+  {
+    communicate_with_unpacker(alg);
+  }
+
   /** Swap send and receive buffers leading to reversed communication. */
   void swap_send_recv();
 
@@ -195,6 +203,8 @@ private:
   void rank_error( const char * , int ) const ;
 
   void allocate_data(std::vector<CommBuffer>& bufs, std::vector<unsigned char>& data);
+  void verify_send_buffers_filled();
+  void communicate_with_unpacker(const std::function<void(int fromProc, CommBuffer& buf)>& functor);
 
   ParallelMachine m_comm ;
   int             m_size ;

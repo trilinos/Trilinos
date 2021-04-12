@@ -149,9 +149,6 @@ namespace
     using PointScalar = double;
     using WeightScalar = double;
     DefaultCubatureFactory cub_factory;
-    using CubatureType   = Cubature<DeviceType,PointScalar,WeightScalar>;
-    using PointViewType  = typename CubatureType::PointViewTypeAllocatable;
-    using WeightViewType = typename CubatureType::WeightViewTypeAllocatable;
     
     shards::CellTopology cellTopo = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<> >());
     auto cellTopoKey = cellTopo.getKey();

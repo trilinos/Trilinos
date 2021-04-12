@@ -53,13 +53,13 @@ namespace ROL {
 template <class Real>
 class RiskBoundConstraint : public BoundConstraint<Real> {
 private:
-  ROL::Ptr<BoundConstraint<Real> > bc_;
+  Ptr<BoundConstraint<Real>> bc_;
 
-  ROL::Ptr<StdBoundConstraint<Real> > statObj_bc_;
+  Ptr<StdBoundConstraint<Real>> statObj_bc_;
   std::vector<Real> lowerObj_, upperObj_;
 
-  std::vector<ROL::Ptr<StdBoundConstraint<Real> > > statCon_bc_;
-  std::vector<std::vector<Real> > lowerCon_, upperCon_;
+  std::vector<Ptr<StdBoundConstraint<Real>>> statCon_bc_;
+  std::vector<std::vector<Real>> lowerCon_, upperCon_;
 
   bool augmentedObj_, activatedObj_;
   int nStatObj_;
@@ -69,9 +69,9 @@ private:
   std::vector<int> nStatCon_;
 
   mutable bool isLOinitialized_, isHIinitialized_; 
-  mutable ROL::Ptr<RiskVector<Real> > lo_, hi_;
+  mutable Ptr<RiskVector<Real>> lo_, hi_;
 
-  void setBoundInfo(ROL::ParameterList &parlist,
+  void setBoundInfo(ParameterList &parlist,
                     int &nStat,
                     std::vector<Real> &lower,
                     std::vector<Real> &upper,
@@ -79,7 +79,7 @@ private:
                     bool &activated) {
     lower.clear(); upper.clear();
     // Get stochastic optimization information
-    std::string optType = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
+    std::string optType = parlist.sublist("SOL").get("Type","Risk Averse");
     if ( optType == "Risk Averse" ||
          optType == "Deviation"   ||
          optType == "Regret"      ||
@@ -100,41 +100,41 @@ private:
     }
   }
 
-  bool buildObjStatBnd(ROL::Ptr<ROL::ParameterList> &parlist) {
+  bool buildObjStatBnd(Ptr<ParameterList> &parlist) {
     // Objective statistic bound
-    if (parlist != ROL::nullPtr) {
+    if (parlist != nullPtr) {
       setBoundInfo(*parlist,nStatObj_,lowerObj_,upperObj_,augmentedObj_,activatedObj_);
       // Build statistic bound constraint
       if ( augmentedObj_ ) {
-        statObj_bc_ = ROL::makePtr<StdBoundConstraint<Real>>(lowerObj_,upperObj_);
+        statObj_bc_ = makePtr<StdBoundConstraint<Real>>(lowerObj_,upperObj_);
       }
     }
     else {
       augmentedObj_ = false;
       activatedObj_ = false;
       nStatObj_     = 0;
-      statObj_bc_   = ROL::nullPtr;
+      statObj_bc_   = nullPtr;
     }
     // Determine whether or not bound constraint is activated
     if ( !activatedObj_ ) {
-      if ( statObj_bc_ != ROL::nullPtr ) {
+      if ( statObj_bc_ != nullPtr ) {
         statObj_bc_->deactivate();
       }
     }
     return activatedObj_;
   }
 
-  bool buildConStatBnd(std::vector<ROL::Ptr<ROL::ParameterList> > &parlist) {
+  bool buildConStatBnd(std::vector<Ptr<ParameterList>> &parlist) {
     // Constraint statistic bound
     int size = parlist.size();
     nStatCon_.clear(); nStatCon_.resize(size,0);
     lowerCon_.clear(); lowerCon_.resize(size);
     upperCon_.clear(); upperCon_.resize(size);
     activatedCon_.clear(); activatedCon_.resize(size,false);
-    statCon_bc_.clear(); statCon_bc_.resize(size,ROL::nullPtr);
+    statCon_bc_.clear(); statCon_bc_.resize(size,nullPtr);
     bool activated = false;
     for (int i = 0; i < size; ++i) {
-      if ( parlist[i] != ROL::nullPtr ) {
+      if ( parlist[i] != nullPtr ) {
         bool augmented = false;
         int nStat = 0;
         std::vector<Real> lo, up;
@@ -147,16 +147,16 @@ private:
         augmentedCon_ = (augmented ? true : augmentedCon_);
         // Build statistic bound constraint
         if ( augmented ) {
-          statCon_bc_[i] = ROL::makePtr<StdBoundConstraint<Real>>(lowerCon_[i],upperCon_[i]);
+          statCon_bc_[i] = makePtr<StdBoundConstraint<Real>>(lowerCon_[i],upperCon_[i]);
         }
       }
       else {
         activatedCon_[i] = false;
         nStatCon_[i]     = 0;
-        statCon_bc_[i]   = ROL::nullPtr;
+        statCon_bc_[i]   = nullPtr;
       }
       if ( !activatedCon_[i] ) {
-        if ( statCon_bc_[i] != ROL::nullPtr ) {
+        if ( statCon_bc_[i] != nullPtr ) {
           statCon_bc_[i]->deactivate();
         }
       }
@@ -168,9 +168,9 @@ private:
 public:
 
   // Objective risk only
-  RiskBoundConstraint(ROL::Ptr<ROL::ParameterList > &parlist,
-                const ROL::Ptr<BoundConstraint<Real> >  &bc = ROL::nullPtr)
-   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(ROL::nullPtr),
+  RiskBoundConstraint(Ptr<ParameterList>          &parlist,
+                const Ptr<BoundConstraint<Real>>  &bc = nullPtr)
+   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(nullPtr),
      augmentedObj_(false), activatedObj_(false),
      augmentedCon_(false),
      isLOinitialized_(false), isHIinitialized_(false) {
@@ -178,16 +178,16 @@ public:
     // Determine whether or not bound constraint is activated
     BoundConstraint<Real>::activate();
     if ( !activatedObj ) {
-      if ( bc == ROL::nullPtr || (bc != ROL::nullPtr && !bc->isActivated()) ) {
+      if ( bc == nullPtr || (bc != nullPtr && !bc->isActivated()) ) {
         BoundConstraint<Real>::deactivate();
       }
     }
   }
 
   // Constraint risk only
-  RiskBoundConstraint(std::vector<ROL::Ptr<ROL::ParameterList> > &parlist,
-                const ROL::Ptr<BoundConstraint<Real> >               &bc = ROL::nullPtr)
-   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(ROL::nullPtr),
+  RiskBoundConstraint(std::vector<Ptr<ParameterList>> &parlist,
+                const Ptr<BoundConstraint<Real>>      &bc = nullPtr)
+   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(nullPtr),
      augmentedObj_(false), activatedObj_(false),
      augmentedCon_(false),
      isLOinitialized_(false), isHIinitialized_(false) {
@@ -195,17 +195,17 @@ public:
     // Determine whether or not bound constraint is activated
     BoundConstraint<Real>::activate();
     if ( !activatedCon ) {
-      if ( bc == ROL::nullPtr || (bc != ROL::nullPtr && !bc->isActivated()) ) {
+      if ( bc == nullPtr || (bc != nullPtr && !bc->isActivated()) ) {
         BoundConstraint<Real>::deactivate();
       }
     }
   }
 
   // Objective and constraint risk
-  RiskBoundConstraint(ROL::Ptr<ROL::ParameterList>               &parlistObj,
-                      std::vector<ROL::Ptr<ROL::ParameterList> > &parlistCon,
-                const ROL::Ptr<BoundConstraint<Real> >               &bc = ROL::nullPtr)
-   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(ROL::nullPtr),
+  RiskBoundConstraint(Ptr<ParameterList>              &parlistObj,
+                      std::vector<Ptr<ParameterList>> &parlistCon,
+                const Ptr<BoundConstraint<Real>>      &bc = nullPtr)
+   : BoundConstraint<Real>(), bc_(bc), statObj_bc_(nullPtr),
      augmentedObj_(false), activatedObj_(false),
      augmentedCon_(false),
      isLOinitialized_(false), isHIinitialized_(false) {
@@ -214,14 +214,14 @@ public:
     // Determine whether or not bound constraint is activated
     BoundConstraint<Real>::activate();
     if ( !activatedObj && !activatedCon ) {
-      if ( bc == ROL::nullPtr || (bc != ROL::nullPtr && !bc->isActivated()) ) {
+      if ( bc == nullPtr || (bc != nullPtr && !bc->isActivated()) ) {
         BoundConstraint<Real>::deactivate();
       }
     }
   }
 
   // Objective only -- no statistic
-  RiskBoundConstraint(const Ptr<BoundConstraint<Real> > &bc)
+  RiskBoundConstraint(const Ptr<BoundConstraint<Real>> &bc)
    : BoundConstraint<Real>(), bc_(bc), statObj_bc_(nullPtr),
      augmentedObj_(false), activatedObj_(false),
      augmentedCon_(false),
@@ -235,188 +235,188 @@ public:
 
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->update(*xs,flag,iter);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
           statCon_bc_[i]->update(*xs,flag,iter);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<const Vector<Real> > xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
       bc_->update(*xv,flag,iter);
     }
   }
 
   void project( Vector<Real> &x ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<StdVector<Real> > xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->project(*xs);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<StdVector<Real> > xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(1,i);
           statCon_bc_[i]->project(*xs);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > xvec = dynamic_cast<RiskVector<Real>&>(x).getVector();
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>> xvec = dynamic_cast<RiskVector<Real>&>(x).getVector();
       bc_->project(*xvec);
     }
   }
 
   void projectInterior( Vector<Real> &x ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<StdVector<Real> > xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->projectInterior(*xs);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<StdVector<Real> > xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<StdVector<Real>> xs = dynamic_cast<RiskVector<Real>&>(x).getStatisticVector(1,i);
           statCon_bc_[i]->projectInterior(*xs);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<Vector<Real> > xvec = dynamic_cast<RiskVector<Real>&>(x).getVector();
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>> xvec = dynamic_cast<RiskVector<Real>&>(x).getVector();
       bc_->projectInterior(*xvec);
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
-      ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->pruneUpperActive(*vs,*xs,eps);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
-          ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
           statCon_bc_[i]->pruneUpperActive(*vs,*xs,eps);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<Vector<Real> >       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
-      ROL::Ptr<const Vector<Real> > xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>>       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
+      Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
       bc_->pruneUpperActive(*vv,*xv,eps);
     }
   }
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
-      ROL::Ptr<const StdVector<Real> > gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
-      ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
-      statObj_bc_->pruneUpperActive(*vs,*gs,*xs,eps);
+      Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      statObj_bc_->pruneUpperActive(*vs,*gs,*xs,xeps,geps);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
-          ROL::Ptr<const StdVector<Real> > gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
-          ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
-          statCon_bc_[i]->pruneUpperActive(*vs,*gs,*xs,eps);
+          Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          statCon_bc_[i]->pruneUpperActive(*vs,*gs,*xs,xeps,geps);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<Vector<Real> >       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
-      ROL::Ptr<const Vector<Real> > gv = dynamic_cast<const RiskVector<Real>&>(g).getVector();
-      ROL::Ptr<const Vector<Real> > xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-      bc_->pruneUpperActive(*vv,*gv,*xv,eps);
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>>       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
+      Ptr<const Vector<Real>> gv = dynamic_cast<const RiskVector<Real>&>(g).getVector();
+      Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+      bc_->pruneUpperActive(*vv,*gv,*xv,xeps,geps);
     }
   }
  
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
-      ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
       statObj_bc_->pruneLowerActive(*vs,*xs,eps);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
-          ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
           statCon_bc_[i]->pruneLowerActive(*vs,*xs,eps);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<Vector<Real> >       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
-      ROL::Ptr<const Vector<Real> > xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>>       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
+      Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
       bc_->pruneLowerActive(*vv,*xv,eps);
     }
   }
 
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) {
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
-      ROL::Ptr<const StdVector<Real> > gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
-      ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
-      statObj_bc_->pruneLowerActive(*vs,*gs,*xs,eps);
+      Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(0);
+      Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(0);
+      statObj_bc_->pruneLowerActive(*vs,*gs,*xs,xeps,geps);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<StdVector<Real> >       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
-          ROL::Ptr<const StdVector<Real> > gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
-          ROL::Ptr<const StdVector<Real> > xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
-          statCon_bc_[i]->pruneLowerActive(*vs,*gs,*xs,eps);
+          Ptr<StdVector<Real>>       vs = dynamic_cast<RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> gs = dynamic_cast<const RiskVector<Real>&>(g).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> xs = dynamic_cast<const RiskVector<Real>&>(x).getStatisticVector(1,i);
+          statCon_bc_[i]->pruneLowerActive(*vs,*gs,*xs,xeps,geps);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<Vector<Real> >       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
-      ROL::Ptr<const Vector<Real> > gv = dynamic_cast<const RiskVector<Real>&>(g).getVector();
-      ROL::Ptr<const Vector<Real> > xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-      bc_->pruneLowerActive(*vv,*gv,*xv,eps);
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<Vector<Real>>       vv = dynamic_cast<RiskVector<Real>&>(v).getVector();
+      Ptr<const Vector<Real>> gv = dynamic_cast<const RiskVector<Real>&>(g).getVector();
+      Ptr<const Vector<Real>> xv = dynamic_cast<const RiskVector<Real>&>(x).getVector();
+      bc_->pruneLowerActive(*vv,*gv,*xv,xeps,geps);
     }
   } 
 
-  const ROL::Ptr<const Vector<Real> > getLowerBound(void) const {
+  const Ptr<const Vector<Real>> getLowerBound(void) const {
     if (!isLOinitialized_) {
-      const ROL::Ptr<const Vector<Real> > vlo = bc_->getLowerBound();
-      ROL::Ptr<std::vector<Real> > lowerObj = ROL::makePtr<std::vector<Real>>(lowerObj_);
+      const Ptr<const Vector<Real>> vlo = bc_->getLowerBound();
+      Ptr<std::vector<Real>> lowerObj = makePtr<std::vector<Real>>(lowerObj_);
       int size = statCon_bc_.size();
-      std::vector<ROL::Ptr<std::vector<Real> > > lowerCon(size);
+      std::vector<Ptr<std::vector<Real>>> lowerCon(size);
       for (int i = 0; i < size; ++i) {
-        lowerCon[i] = ROL::makePtr<std::vector<Real>>(lowerCon_[i]);
+        lowerCon[i] = makePtr<std::vector<Real>>(lowerCon_[i]);
       }
-      lo_ = ROL::makePtr<RiskVector<Real>>(ROL::constPtrCast<Vector<Real>>(vlo),
+      lo_ = makePtr<RiskVector<Real>>(constPtrCast<Vector<Real>>(vlo),
                                               lowerObj,lowerCon);
       isLOinitialized_ = true;
     }
     return lo_;
   }
 
-  const ROL::Ptr<const Vector<Real> > getUpperBound(void) const {
+  const Ptr<const Vector<Real>> getUpperBound(void) const {
     if (!isHIinitialized_) {
-      const ROL::Ptr<const Vector<Real> > vhi = bc_->getUpperBound();
-      ROL::Ptr<std::vector<Real> > upperObj = ROL::makePtr<std::vector<Real>>(upperObj_);
+      const Ptr<const Vector<Real>> vhi = bc_->getUpperBound();
+      Ptr<std::vector<Real>> upperObj = makePtr<std::vector<Real>>(upperObj_);
       int size = statCon_bc_.size();
-      std::vector<ROL::Ptr<std::vector<Real> > > upperCon(size);
+      std::vector<Ptr<std::vector<Real>>> upperCon(size);
       for (int i = 0; i < size; ++i) {
-        upperCon[i] = ROL::makePtr<std::vector<Real>>(upperCon_[i]);
+        upperCon[i] = makePtr<std::vector<Real>>(upperCon_[i]);
       }
-      hi_ = ROL::makePtr<RiskVector<Real>>(ROL::constPtrCast<Vector<Real>>(vhi),
+      hi_ = makePtr<RiskVector<Real>>(constPtrCast<Vector<Real>>(vhi),
                                               upperObj,upperCon);
       isHIinitialized_ = true;
     }
@@ -426,20 +426,20 @@ public:
   bool isFeasible( const Vector<Real> &v ) { 
     bool flagstat = true, flagcon = true, flagvec = true;
     if ( augmentedObj_ && activatedObj_ ) {
-      ROL::Ptr<const StdVector<Real> > vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
+      Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(0);
       flagstat = statObj_bc_->isFeasible(*vs);
     }
     if (augmentedCon_) {
       int size = statCon_bc_.size();
       for (int i = 0; i < size; ++i) {
         if (activatedCon_[i]) {
-          ROL::Ptr<const StdVector<Real> > vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(1,i);
+          Ptr<const StdVector<Real>> vs = dynamic_cast<const RiskVector<Real>&>(v).getStatisticVector(1,i);
           flagcon = (!statCon_bc_[i]->isFeasible(*vs) ? false : flagcon);
         }
       }
     }
-    if ( bc_ != ROL::nullPtr && bc_->isActivated() ) {
-      ROL::Ptr<const Vector<Real> > vv = dynamic_cast<const RiskVector<Real>&>(v).getVector();
+    if ( bc_ != nullPtr && bc_->isActivated() ) {
+      Ptr<const Vector<Real>> vv = dynamic_cast<const RiskVector<Real>&>(v).getVector();
       flagvec = bc_->isFeasible(*vv);
     }
     return (flagstat && flagcon && flagvec);

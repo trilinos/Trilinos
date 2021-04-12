@@ -132,7 +132,7 @@ namespace Experimental {
     \todo  The implementation is mostly serial and needs to be improved for performance portability
  */
 
-template<typename ExecSpaceType>
+template<typename DeviceType>
 class LagrangianInterpolation {
 public:
 

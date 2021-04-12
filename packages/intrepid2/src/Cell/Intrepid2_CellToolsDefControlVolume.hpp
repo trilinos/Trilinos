@@ -368,11 +368,11 @@ namespace Intrepid2 {
 
   }
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename subcvCoordValueType, class ...subcvCoordProperties,
            typename cellCoordValueType,  class ...cellCoordProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getSubcvCoords(       Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoords,
                   const Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoords,
                   const shards::CellTopology primaryCell ) {
@@ -386,6 +386,13 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellCoords.extent(2) != primaryCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getSubcvCoords): cell coords dimension(2) does not match to the dimension of the cell." );
 #endif
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(subcvCoords)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellCoords)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getSubcvCoords(..): input/output views' memory spaces are not compatible with DeviceType");
+
 
     // get array dimensions
     const ordinal_type numCells = cellCoords.extent(0);
@@ -394,7 +401,8 @@ namespace Intrepid2 {
 
     // construct edge and face map for the cell type
     const ordinal_type numEdge = primaryCell.getSubcellCount(1);
-    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,Kokkos::HostSpace> edgeMapHost("CellTools::getSubcvCoords::edgeMapHost", numEdge, 3);
+    Kokkos::View<ordinal_type**,DeviceType> edgeMap("CellTools::getSubcvCoords::edgeMap", numEdge, 3);
+    auto edgeMapHost = Kokkos::create_mirror_view(edgeMap);
     for (ordinal_type i=0;i<numEdge;++i) {
       edgeMapHost(i,0) = primaryCell.getNodeCount(1, i);
       for (ordinal_type j=0;j<edgeMapHost(i,0);++j)
@@ -402,29 +410,24 @@ namespace Intrepid2 {
     }
 
     const ordinal_type numFace = (spaceDim > 2 ? primaryCell.getSubcellCount(2) : 0);
-    Kokkos::View<ordinal_type**,Kokkos::LayoutRight,Kokkos::HostSpace> faceMapHost("CellTools::getSubcvCoords::faceMapHost", numFace, 5);
+    Kokkos::View<ordinal_type**,DeviceType> faceMap("CellTools::getSubcvCoords::faceMap", numFace, 5);
+    auto faceMapHost = Kokkos::create_mirror_view(faceMap);
     for (ordinal_type i=0;i<numFace;++i) {
       faceMapHost(i,0) = primaryCell.getNodeCount(2, i);
       for (ordinal_type j=0;j<faceMapHost(i,0);++j)
         faceMapHost(i,j+1) = primaryCell.getNodeMap(2, i, j);
     }
 
-    // create mirror to device
-    auto edgeMap = Kokkos::create_mirror_view(typename SpT::memory_space(), edgeMapHost);
-    auto faceMap = Kokkos::create_mirror_view(typename SpT::memory_space(), faceMapHost);
-
     Kokkos::deep_copy(edgeMap, edgeMapHost);
     Kokkos::deep_copy(faceMap, faceMapHost);
 
     // parallel run
-    typedef Kokkos::DynRankView<subcvCoordValueType,subcvCoordProperties...> subcvCoordViewType;
-    typedef Kokkos::DynRankView<cellCoordValueType,cellCoordProperties...>   cellCoordViewType;
-    typedef Kokkos::View<ordinal_type**,Kokkos::LayoutRight,SpT>             mapViewType;
-
-    typedef typename ExecSpace<typename subcvCoordViewType::execution_space,SpT>::ExecSpaceType ExecutionSpace;
+    using subcvCoordViewType = decltype(subcvCoords);
+    using cellCoordViewType = decltype(cellCoords);
+    using mapViewType = decltype(edgeMap);
 
     const auto loopSize = numCells;
-    Kokkos::RangePolicy<ExecutionSpace,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+    Kokkos::RangePolicy<ExecSpaceType, Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
 
     switch (primaryCell.getKey()) {
     case shards::Triangle<3>::key:

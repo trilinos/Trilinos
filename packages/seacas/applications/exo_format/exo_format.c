@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -84,7 +84,7 @@ int main(int argc, char *argv[])
 
   fid = fopen(filename, "r");
   if (fid == NULL) {
-    (void)fprintf(stderr, "         Could not open %s\n", filename);
+    fprintf(stderr, "         Could not open %s\n", filename);
     exit(EXIT_FAILURE);
   }
   c1 = getc(fid);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
     hdf5_based = 1;
   }
   else {
-    (void)fprintf(stderr, "         %s is not an EXODUS or netCDF file\n", filename);
+    fprintf(stderr, "         %s is not an EXODUS or netCDF file\n", filename);
     exit(NOT_NETCDF);
   }
   exoid = ex_open(filename, EX_READ, /* access mode = READ */
@@ -109,12 +109,10 @@ int main(int argc, char *argv[])
 
   if (exoid < 0) {
     if (netcdf_based) {
-      (void)fprintf(stderr, "         %s is a NetCDF file, but not a valid EXODUS file\n",
-                    filename);
+      fprintf(stderr, "         %s is a NetCDF file, but not a valid EXODUS file\n", filename);
     }
     else if (hdf5_based) {
-      (void)fprintf(stderr, "         %s is an HDF5 file, but not a valid EXODUS file.\n",
-                    filename);
+      fprintf(stderr, "         %s is an HDF5 file, but not a valid EXODUS file.\n", filename);
     }
     exit(NOT_EXODUSII);
   }
@@ -221,7 +219,7 @@ int main(int argc, char *argv[])
     }
   }
   if (j == k) {
-    (void)fprintf(stderr, "         %s is not an EXODUS file\n", filename);
+    fprintf(stderr, "         %s is not an EXODUS file\n", filename);
     exit(NOT_EXODUSII);
   }
 

@@ -312,6 +312,7 @@ protected:
         set_weights_on_elements({9, 10}, 2.0);
         set_proc_owner_on_field();
         graphSettings.setDecompMethod(method2);
+
         if (get_bulk().parallel_rank()==0) std::cerr << "Decomposition method = " << method2 << std::endl;
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
 
@@ -322,7 +323,12 @@ protected:
         out.close();
 
         size_t num_elements_migrated_to_me = calculate_migrated_elements();
-        EXPECT_EQ(12u, num_elements_migrated_to_me);
+        if (get_bulk().parallel_rank() == 0) {
+          EXPECT_EQ(24u, num_elements_migrated_to_me);
+        }
+        else {
+          EXPECT_EQ(12u, num_elements_migrated_to_me);
+        }
     }
 
     void decomposeWithRcbThenParmetisAndCheckMigration()
@@ -635,10 +641,10 @@ TEST_F(IncrementalRebalance, parmetis_case1)
 }
 
 #if !defined(__APPLE__)
-TEST_F(IncrementalRebalance, rcb_then_parmetis_case2)
+TEST_F(IncrementalRebalance, rib_then_parmetis_case2)
 {
     if(stk::parallel_machine_size(get_comm())==3)
-        decompose1x9x9beamThenRebalanceWithLast2ElementChanges("rcb", "parmetis");
+        decompose1x9x9beamThenRebalanceWithLast2ElementChanges("rib", "parmetis");
 }
 #endif
 

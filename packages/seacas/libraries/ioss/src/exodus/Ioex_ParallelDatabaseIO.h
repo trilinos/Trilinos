@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -68,7 +68,7 @@ namespace Ioex {
                        const Ioss::PropertyManager &properties);
     ParallelDatabaseIO(const ParallelDatabaseIO &from) = delete;
     ParallelDatabaseIO &operator=(const ParallelDatabaseIO &from) = delete;
-    ~ParallelDatabaseIO();
+    ~ParallelDatabaseIO()                                         = default;
 
     int  get_file_pointer() const override; // Open file and set exodusFilePtr.
     bool needs_shared_node_information() const override { return true; }
@@ -194,7 +194,7 @@ namespace Ioex {
     void write_entity_transient_field(ex_entity_type type, const Ioss::Field &field,
                                       const Ioss::GroupingEntity *ge, int64_t count,
                                       void *variables) const;
-    void write_meta_data(bool appending) override;
+    void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) override;
 
     // Read related metadata and store it in the region...
     void read_region();

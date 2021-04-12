@@ -82,9 +82,15 @@ buildPartitionedWorksets(const panzer::LocalMeshInfo & mesh_info,
   std::vector<panzer::LocalMeshPartition> partitions;
   panzer::generateLocalMeshPartitions(mesh_info, description, partitions);
 
+  int i=0;
   for(const auto & partition : partitions){
     worksets->push_back(panzer::Workset());
     convertMeshPartitionToWorkset(partition, orientations, worksets->back());
+
+    // We hash in a unique id the the given workset
+    size_t id = std::hash<WorksetDescriptor>()(description);
+    panzer::hash_combine(id, i++);
+    worksets->back().setIdentifier(id);
   }
 
   return worksets;

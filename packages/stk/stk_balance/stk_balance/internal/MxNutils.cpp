@@ -54,7 +54,9 @@ std::vector<unsigned> assign_target_subdomains_roundrobin_to_procs(unsigned num_
 void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings, stk::mesh::EntityProcVec &decomp)
 {
     std::vector<stk::mesh::Selector> selectors = { bulk.mesh_meta_data().universal_part() };
-    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(graphSettings, num_partitions, decomp, bulk, selectors);
+    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(bulk, selectors,
+                                                                 bulk.parallel(), num_partitions,
+                                                                 graphSettings, decomp);
 }
 
 stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings)

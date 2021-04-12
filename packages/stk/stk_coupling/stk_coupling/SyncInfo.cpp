@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 
 namespace stk
@@ -30,9 +30,10 @@ void SyncInfo::unpack(stk::CommBuffer & b)
   m_vals.unpack(b);
 }
 
-SyncInfo
-SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local) const
+SyncInfo SyncInfo::exchange(const SplitComms & splitComms, int otherColor) const
 {
+  MPI_Comm global = splitComms.get_pairwise_comm(otherColor);
+  MPI_Comm local = splitComms.get_split_comm();
 
   int globalRank = -1;
   MPI_Comm_rank(global, &globalRank);
@@ -40,9 +41,9 @@ SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local) cons
   int localRank = -1;
   MPI_Comm_rank(local, &localRank);
 
-  int myRootProc;
-  int otherRootProc;
-  std::tie(myRootProc, otherRootProc) = stk::coupling::calc_my_root_and_other_root_ranks(global, local);
+  PairwiseRanks rootRanks = splitComms.get_pairwise_root_ranks(otherColor);
+  int myRootProc = rootRanks.localColorRoot;
+  int otherRootProc = rootRanks.otherColorRoot;
 
   if (globalRank == myRootProc)
   {
@@ -91,11 +92,6 @@ SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local) cons
   }
 
   return recvInfo;
-}
-
-SyncInfo SyncInfo::exchange(const SplitComms & splitComms, int otherColor) const
-{
-  return exchange(splitComms.get_pairwise_comm(otherColor), splitComms.get_split_comm());
 }
 
 SyncInfo::ColorToSyncInfoMap SyncInfo::exchange(const SplitComms & splitComms) const

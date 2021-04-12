@@ -91,12 +91,32 @@ int main(int argc, char *argv[]) {
 
     RealT xy = x.dot(y.dual());
     RealT yx = y.dot(x.dual());
+    RealT axy = x.apply(y);
+    RealT ayx = y.apply(x);
 
     outStream << "\nAbsolute error between x.dot(y.dual()) and y.dot(x.dual()): "
               << std::abs(xy-yx) << "\n";
     outStream << "x.dot(y.dual()): " << xy << "\n";
     outStream << "y.dot(x.dual()): " << yx << "\n";
     if ( std::abs(xy-yx) > errtol ) {
+      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    }
+
+    outStream << "\nAbsolute error between x.apply(y) and y.apply(x): "
+              << std::abs(axy-ayx) << "\n";
+    outStream << "x.apply(y): " << axy << "\n";
+    outStream << "y.apply(x): " << ayx << "\n";
+    if ( std::abs(axy-ayx) > errtol ) {
+      outStream << "---> POSSIBLE ERROR ABOVE!\n";
+      errorFlag++;
+    }
+
+    outStream << "\nAbsolute error between x.apply(y) and x.dot(y.dual()): "
+              << std::abs(axy-ayx) << "\n";
+    outStream << "x.apply(y):      " << axy << "\n";
+    outStream << "x.dot(y.dual()): " << xy  << "\n";
+    if ( std::abs(axy-xy) > errtol ) {
       outStream << "---> POSSIBLE ERROR ABOVE!\n";
       errorFlag++;
     }

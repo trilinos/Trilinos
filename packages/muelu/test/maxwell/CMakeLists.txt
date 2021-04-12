@@ -47,7 +47,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
         NAME "Maxwell3D-Tpetra-Stratimikos"
         ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell.xml"
         ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell2.xml"
-        ARGS "--linAlgebra=Tpetra --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell3.xml"
+        ARGS "--linAlgebra=Tpetra --solverName=Stratimikos --instantiation=DOUBLE_INT_INT --reuse --xml=Maxwell3.xml"
         COMM serial mpi
         NUM_MPI_PROCS 4
         )
@@ -69,7 +69,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
         Maxwell3D
         NAME "Maxwell3D-Epetra-Stratimikos"
         ARGS "--linAlgebra=Epetra --solverName=Stratimikos --reuse --xml=Maxwell.xml"
-        ARGS "--linAlgebra=Epetra --reuse --xml=Maxwell3.xml"
+        ARGS "--linAlgebra=Epetra --solverName=Stratimikos --reuse --xml=Maxwell3.xml"
         COMM serial mpi
         NUM_MPI_PROCS 4
         )
@@ -89,7 +89,7 @@ IF (${PACKAGE_NAME}_ENABLE_Belos AND ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
 
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
-    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
+    SOURCE_FILES M0.mat M1.mat S.mat D0.mat coords.mat Belos.xml Stratimikos.xml Maxwell.xml Maxwell2.xml Maxwell3.xml Maxwell_ML.xml Maxwell_ML_MueLu.xml Maxwell_ML1.xml
     )
 
   IF(HAVE_MUELU_COMPLEX)
