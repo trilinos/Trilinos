@@ -44,10 +44,75 @@ Describe the need for changes at a high level.
 #### Added features in Version 2.0
 
 ```cpp
-    ROL::Problem() problem;
+    // TypeU specification
+    ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
+    ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
+    ROL::Problem problem(obj,x);
+    // TypeU can now handle linear equality constraints.  If a linear
+    // equality constraint is added to the problem, the TypeU problem
+    // will eliminite the equality constraint using the change of variables
+    //     x = x_0 + N.apply(y)
+    // where x_0 is a feasible point for the linear equality constraint
+    // and N is a LinearOperator that projects onto the null space of the
+    // constraint Jacobian.
+    ROL::Ptr<ROL::Constraint<double>> lin_econ = ROL::makePtr<MyLinearEqualityConstraint<double>>();
+    ROL::Ptr<ROL::Vector<double>      lin_emul = ROL::makePtr<MyLinearEqualityConstraintMultiplier<double>>();
+    problem.addLinearConstraint("Linear Equality Constraint",lin_econ,lin_mul);
+
+    // TypeB specification
+    ROL::Ptr<ROL::BoundConstraint<double>> bnd = ROL::makePtr<MyBoundConstraint<double>>();
+    problem.addBoundConstraint(bnd)    
+    // TypeB can now handle polyhedral constraints specified by
+    // a bound constraint and linear equality/inequality constraints.
+    // If a linear equality/inequality constraint is added to the problem,
+    // the typeB problem will create a PolyhedralProjection object to
+    // handle the linear constraints.
+    ROL::Ptr<ROL::Constraint<double>>     lin_icon = ROL::makePtr<MyLinearInequalityConstraint<double>>();
+    ROL::Ptr<ROL::Vector<double>>         lin_imul = ROL::makePtr<MyLinearInequalityConstraintMultiplier<double>>();
+    ROL::Ptr<ROL:BoundConstraint<double>> lin_ibnd = ROL::makePtr<MyLinearInequalityConstraintBound<double>>();
+    problem.addLinearConstraint("Linear Inequality Constraint",lin_icon,lin_imul,lin_ibnd);
+    // You can set the PolyhedralProjection algorithmic parameters,
+    // by calling setProjectionAlgorithm.
+    ROL::ParameterList polyProjList;
+    problem.setProjectionAlgorithm(polyProjList);
+    
+    // TypeG specification
+    ROL::Ptr<ROL::Constraint<double>> econ = ROL::makePtr<MyEqualityConstraint<double>>();
+    ROL::Ptr<ROL::Vector<double>>     emul = ROL::makePtr<MyEqualityConstraintMultiplier<double>>();
+    problem.addConstraint("Equality Constraint",econ,emul);
+    ROL::Ptr<ROL::Constraint<double>>      icon = ROL::makePtr<MyInequalityConstraint<double>>();
+    ROL::Ptr<ROL:Vector<double>>          imul = ROL::makePtr<MyInequalityConstraintMultiplier<double>>();
+    ROL::Ptr<ROL::BoundConstraint<double>> ibnd = ROL::makePtr<MyInequalityConstraintBound<double>>();
+    problem.addConstraint("Inequality Constraint",icon,imul,ibnd);
+    
+    // Finalize problem (not required, but prints a cool problem
+    // summary if called)
+    bool lumpConstraints = false;
+    bool printToStream   = true;
+    std::ostream outStream;
+    // If lumpConstraints = false, then any linear constraints will be
+    // treated using the TypeU reduction or the TypeB polyhedral projection.
+    // Otherwise, the linear constraints will be treated as nonlinear constraints.
+    problem.finalize(lumpConstraints,printToStream,outStream)
+    
+    // Check problem the vector implementations, the derivatives,
+    // and the linearity of linear constraints (not required)
+    problem.check(printToStream,outStream);
+    
+    // If the problem has been finalized, but you need to add or
+    // remove constraints call the edit function.
     problem.edit();
-    problem.addConstraint();
-    problem.finalize();
+    
+    // TypeE specification
+    // Since we already have equality constraints added, we can remove
+    // the inequality constraints to create a TypeE problem.  Like
+    // TypeU, we can eliminate linear equality constraints.
+    problem.removeConstraint("Inequality Constraint");
+    problem.removeLinearConstraint("Linear Inequality Constraint");
+    
+    // Finalize problem again (not required, but prints a cool problem
+    // summary if called)
+    problem.finalize(lumpConstraints,printToStream,outStream);
 ```
 
 
@@ -63,7 +128,25 @@ Describe the need for changes at a high level.
 #### Basic syntax in Version 2.0
 
 ```cpp
-    ROL::Solver() solver;
+    // Instantiate Problem
+    ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
+    ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
+    ROL::Problem<double> problem(obj,x);
+    // Add constraints if needed
+    
+    // Finalize Problem (not required, but prints a cool problem
+    // summary if you call it)
+    bool lumpConstraints = false;
+    bool printToStream   = true;
+    std::ostream outStream;
+    problem.finalize(lumpConstraints,printToStream,outStream);
+    
+    // Instantiate Solver
+    ROL::ParameterList parlist;
+    ROL::Solver solver(problem,parlist);
+    
+    // Solve optimization problem
+    solver.solve(outStream);
 ```
 
 
