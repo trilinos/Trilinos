@@ -632,7 +632,7 @@ struct BlockCrsMatrixMaker {
     const Int bs, const Int nvec)
   {
     auto mv = Teuchos::rcp(new Tpetra_MultiVector(m->getDomainMap(), nvec));
-    auto v = mv->getLocalViewHost(Tpetra::Access::WriteOnly);
+    auto v = mv->getLocalViewHost(Tpetra::Access::OverwriteAll);
     const auto map = mv->getMap();
     for (GO lid = 0; lid < v.extent_int(0); ++lid)
       for (LO col = 0; col < v.extent_int(1); ++col) {

@@ -175,27 +175,31 @@ namespace Intrepid2 {
   class Basis_HGRAD_LINE_Cn_FEM
     : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
-
-    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+      
+    using HostBasis = Basis_HGRAD_LINE_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>;
+    
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisBase::OrdinalTypeArray3DHost;
+    
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType ;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
 
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
         coefficients of the nodal basis in terms of phis_ */
     Kokkos::DynRankView<typename ScalarViewType::value_type,DeviceType> vinv_;
-
+    EPointType   pointType_;
   public:
     /** \brief  Constructor.
      */
     Basis_HGRAD_LINE_Cn_FEM(const ordinal_type order,
                             const EPointType   pointType = POINTTYPE_EQUISPACED);  
 
-    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
@@ -270,6 +274,16 @@ namespace Intrepid2 {
       return getPnCardinality<1>(this->basisDegree_);
     }
 
+  /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+      
+         \return Pointer to the new Basis object.
+      */
+     virtual HostBasisPtr<outputValueType,pointValueType>
+     getHostBasis() const override {
+       auto hostBasis = Teuchos::rcp(new HostBasis(this->basisDegree_, pointType_));
+       
+       return hostBasis;
+     }
   };
 
 }// namespace Intrepid2

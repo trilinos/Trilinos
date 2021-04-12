@@ -418,7 +418,7 @@ namespace Amesos2 {
     // Special case when number vectors == 1 and single MPI process
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
       // num_vecs = 1; stride does not matter
-      auto mv_view_to_modify_2d = mv_->getLocalViewHost(Tpetra::Access::WriteOnly);
+      auto mv_view_to_modify_2d = mv_->getLocalViewHost(Tpetra::Access::OverwriteAll);
       for ( size_t i = 0; i < lda; ++i ) {
         mv_view_to_modify_2d(i,0) = new_data[i]; // Only one vector
       }
@@ -453,7 +453,7 @@ namespace Amesos2 {
       else {
         multivec_t redist_mv (srcMap, num_vecs); // unused for ROOTED case
         if ( redist_mv.isConstantStride() ) {
-          auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::WriteOnly);
+          auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::OverwriteAll);
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = new_data(lda*j, lda);
             for ( size_t i = 0; i < lda; ++i ) {
@@ -524,7 +524,7 @@ namespace Amesos2 {
       // num_vecs = 1; stride does not matter
 
       // If this is the optimized path then kokkos_new_data will be the dst
-      auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::WriteOnly);
+      auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
       deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
@@ -577,7 +577,7 @@ namespace Amesos2 {
         auto host_kokkos_new_data = Kokkos::create_mirror_view(kokkos_new_data);
         Kokkos::deep_copy(host_kokkos_new_data, kokkos_new_data);
         if ( redist_mv.isConstantStride() ) {
-          auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::WriteOnly);
+          auto contig_local_view_2d = redist_mv.getLocalViewHost(Tpetra::Access::OverwriteAll);
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = Kokkos::subview(host_kokkos_new_data, Kokkos::ALL, j);
             for ( size_t i = 0; i < lda; ++i ) {

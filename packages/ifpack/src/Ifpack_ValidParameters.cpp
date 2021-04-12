@@ -148,6 +148,9 @@ Teuchos::ParameterList Ifpack_GetValidParameters()
   List.sublist("hypre: Solver functions").disableRecursiveValidation();
 
   List.sublist("hypre: Preconditioner functions").disableRecursiveValidation();
+  List.sublist("Operators").disableRecursiveValidation();
+  List.sublist("Coordinates").disableRecursiveValidation();
+  List.set("hypre: Dump", false);
   List.set("hypre: SetPreconditioner", false);
   List.set("hypre: NumFunctions", 0);
 

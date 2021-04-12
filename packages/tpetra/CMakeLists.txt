@@ -508,6 +508,27 @@ ELSE () # NOT Tpetra_INST_CUDA
   ENDIF ()
 ENDIF () # Tpetra_INST_CUDA
 
+# Kokkos::HIP (Kokkos::Compat::KokkosHIPWrapperNode)
+GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT off)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_HIP
+  HAVE_TPETRA_INST_HIP
+  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosHIPWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_HIP_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_HIP_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_HIP ${Tpetra_INST_HIP})
+IF (Tpetra_INST_HIP)
+  IF (NOT Kokkos_ENABLE_HIP)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::HIP execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_HIP=ON.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, you must enable the Kokkos::HIP execution space by setting Kokkos_ENABLE_HIP=ON.")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_HIP
+  IF (HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosHIPWrapperNode is disabled (since Tpetra_INST_HIP=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_HIP:BOOL=ON and Tpetra_INST_HIP:BOOL=ON.  If you are building with a HIP-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable HIP support by default in that case.")
+  ENDIF()
+  IF (Kokkos_ENABLE_HIP)
+    MESSAGE(STATUS "NOTE: Kokkos::HIP is ON (the CMake option Kokkos_ENABLE_HIP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, please also set the CMake option Tpetra_INST_HIP:BOOL=ON.  If you use the Kokkos::HIP version of Tpetra without doing this, you will get link errors!")
+  ENDIF ()
+ENDIF () # Tpetra_INST_HIP
 #
 # Check that users did not attempt to enable both the OpenMP and
 # Pthreads back-ends.
@@ -539,6 +560,13 @@ IF(Tpetra_INST_CUDA)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Cuda, Kokkos::CudaUVMSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosCudaWrapperNode")
 ENDIF()
+IF(Tpetra_INST_HIP)
+  # TpetraCore currently requires UVM, so it doesn't make sense to
+  # instantiate over Kokkos::HIPSpace as well as
+  # Kokkos::HIPHostPinnedSpace.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosHIPWrapperNode")
+ENDIF()
 
 # Tell users what Nodes are enabled.
 MESSAGE(STATUS "Tpetra execution space availability (ON means available): ")
@@ -546,10 +574,11 @@ MESSAGE(STATUS "  - Serial:  ${HAVE_TPETRA_SERIAL}")
 MESSAGE(STATUS "  - Threads: ${HAVE_TPETRA_PTHREAD}")
 MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
+MESSAGE(STATUS "  - HIP:     ${HAVE_TPETRA_HIP}")
 
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
-IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA)
+IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP)
   MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_PTHREAD, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, or Tpetra_INST_CUDA.")
 ENDIF()
 

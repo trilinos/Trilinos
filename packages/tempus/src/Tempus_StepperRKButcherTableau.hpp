@@ -4748,8 +4748,8 @@ createStepperSDIRK_5Stage5thOrder(
  *      & b^{*T}
  *  \end{array}
  *  \;\;\;\;\mbox{ where }\;\;\;\;
- *  \begin{array}{c|cccc}  0 & 0   & \\
- *                         1 & -1  & 1 \\ \hline
+ *  \begin{array}{c|cccc}  1 & 1   & \\
+ *                         0 & -1  & 1 \\ \hline
  *                           & 1/2 & 1/2 \\
  *                           & 1   & 0 \end{array}
  *  \f]

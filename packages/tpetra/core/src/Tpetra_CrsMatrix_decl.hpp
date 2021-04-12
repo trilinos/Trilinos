@@ -42,11 +42,6 @@
 
 /// \file Tpetra_CrsMatrix_decl.hpp
 /// \brief Declaration of the Tpetra::CrsMatrix class
-///
-/// If you want to use Tpetra::CrsMatrix, include
-/// "Tpetra_CrsMatrix.hpp" (a file which CMake generates and installs
-/// for you).  If you only want the declaration of Tpetra::CrsMatrix,
-/// include this file (Tpetra_CrsMatrix_decl.hpp).
 
 #include "Tpetra_CrsMatrix_fwd.hpp"
 #include "Tpetra_LocalCrsMatrixOperator_fwd.hpp"
@@ -57,11 +52,6 @@
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
-
-// localGaussSeidel and reorderedLocalGaussSeidel are templated on
-// DomainScalar and RangeScalar, so we have to include this header
-// file here, rather than in the _def header file, so that we can get
-// the interfaces to the corresponding local computational kernels.
 
 #include <memory> // std::shared_ptr
 
@@ -2712,7 +2702,7 @@ namespace Tpetra {
     rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) override;
 
     //@}
-    //! @name Local apply and Gauss-Seidel
+    //! @name Local apply
     //@{
 
     /// \brief Compute the local part of a sparse matrix-(Multi)Vector
@@ -3698,11 +3688,11 @@ namespace Tpetra {
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
   protected:
-    /// \brief Column Map MultiVector used in apply() and gaussSeidel().
+    /// \brief Column Map MultiVector used in apply().
     ///
     /// This is a column Map MultiVector.  It is used as the target of
-    /// the forward mode Import operation (if necessary) in apply()
-    /// and gaussSeidel(), and the source of the reverse mode Export
+    /// the forward mode Import operation (if necessary) in apply(),
+    /// and the source of the reverse mode Export
     /// operation (if necessary) in these methods.  Both of these
     /// methods create this MultiVector on demand if needed, and reuse
     /// it (if possible) for subsequent calls.
@@ -3715,8 +3705,8 @@ namespace Tpetra {
     /// \brief Row Map MultiVector used in apply().
     ///
     /// This is a row Map MultiVector.  It is uses as the source of
-    /// the forward mode Export operation (if necessary) in apply()
-    /// and gaussSeidel(), and the target of the reverse mode Import
+    /// the forward mode Export operation (if necessary) in apply(),
+    /// and the target of the reverse mode Import
     /// operation (if necessary) in these methods.  Both of these
     /// methods create this MultiVector on demand if needed, and reuse
     /// it (if possible) for subsequent calls.

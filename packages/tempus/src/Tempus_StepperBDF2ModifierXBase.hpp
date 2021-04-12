@@ -28,22 +28,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the BDF2 algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{BDF2 with the locations of the application actions indicated}
- *  \begin{algorithmic}[1]
- *    \State {\it modifierX.execute(solutionHistory, stepper, BEGIN\_STEP)}                                                         
- *    \State Set old values of $x_{n}$, $x_{n-1}$ to the new values of $x_{n-1}$, $x_{n-2}$ respectively.                                             
- *    \State {\it modifierX.execute(solutionHistory, stepper, BEFORE\_SOLVE)}                                              
- *    \State Solve $F( (3 x_{n} - 4 x _{n-1} + x_{n-2})/(3\Delta t),x_{n},t_{n}) for $x_n$                                                            
- *    \State {\it modifierX.execute(solutionHistory, stepper, AFTER\_SOLVE)}                                                                          
- *    \State $\dot{x}_{n} \leftarrow (3 x_{n} - 4 x_{n-1} + x_{n-2})/(3\Delta t)$                                                                     
- *    \State {\it modifierX.execute(solutionHistory, stepper, END\_STEP)}             
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperBDF2ModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperBDF2AppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperBDF2.
  */
 
 template<class Scalar>

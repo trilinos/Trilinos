@@ -126,7 +126,6 @@ namespace Intrepid2 {
       typedef ValueType pointValueType;
       typedef ValueType weightValueType;
       typedef CubatureDirectLineGauss        <DeviceType,pointValueType,weightValueType> CubatureLineType;
-      typedef CubatureDirectLineGaussJacobi20<DeviceType,pointValueType,weightValueType> CubatureLineJacobiType;
       typedef CubatureDirectTriDefault       <DeviceType,pointValueType,weightValueType> CubatureTriType;
       typedef CubatureDirectTetDefault       <DeviceType,pointValueType,weightValueType> CubatureTetType;
       typedef CubatureTensor                 <DeviceType,pointValueType,weightValueType> CubatureTensorType;

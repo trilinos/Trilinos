@@ -122,7 +122,7 @@ initializeSolutionHistory(Teuchos::RCP<SolutionState<Scalar> > state)
   // Construct from Integrator ParameterList
   RCP<ParameterList> shPL =
     Teuchos::sublist(integratorPL_, "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   if (state == Teuchos::null) {
     // Construct default IC from the application model
@@ -163,7 +163,7 @@ initializeSolutionHistory(Scalar t0,
   // Construct from Integrator ParameterList
   RCP<ParameterList> shPL =
     Teuchos::sublist(integratorPL_, "Solution History", true);
-  solutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+  solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   // Create and set xdot and xdotdot.
   RCP<Thyra::VectorBase<Scalar> > xdot    = x0->clone_v();
@@ -213,11 +213,6 @@ void IntegratorBasic<Scalar>::setSolutionHistory(
          "Error - setSolutionHistory requires at least one SolutionState.\n"
       << "        Supplied SolutionHistory has only " << sh->getNumStates()
       << " SolutionStates.\n");
-
-    // Make integratorPL_ consistent with new SolutionHistory.
-    RCP<ParameterList> shPL = sh->getNonconstParameterList();
-    integratorPL_->set("Solution History", shPL->name());
-    integratorPL_->set(shPL->name(), *shPL);
 
     solutionHistory_ = sh;
   }
@@ -308,6 +303,7 @@ void IntegratorBasic<Scalar>::initialize()
   if (Teuchos::as<int>(this->getVerbLevel()) >=
       Teuchos::as<int>(Teuchos::VERB_HIGH)) {
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"IntegratorBasic::IntegratorBasic");
     *out << this->description() << std::endl;
   }
@@ -326,22 +322,24 @@ std::string IntegratorBasic<Scalar>::description() const
 
 template<class Scalar>
 void IntegratorBasic<Scalar>::describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  out << "solutionHistory= " << solutionHistory_->description()<<std::endl;
-  out << "timeStepControl= " << timeStepControl_->description()<<std::endl;
-  out << "stepper        = " << stepper_        ->description()<<std::endl;
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  *out << "solutionHistory= " << solutionHistory_->description()<<std::endl;
+  *out << "timeStepControl= " << timeStepControl_->description()<<std::endl;
+  *out << "stepper        = " << stepper_        ->description()<<std::endl;
 
   if (Teuchos::as<int>(verbLevel) >=
               Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    out << "solutionHistory= " << std::endl;
-    solutionHistory_->describe(out,verbLevel);
-    out << "timeStepControl= " << std::endl;
-    timeStepControl_->describe(out,verbLevel);
-    out << "stepper        = " << std::endl;
-    stepper_        ->describe(out,verbLevel);
+    *out << "solutionHistory= " << std::endl;
+    solutionHistory_->describe(in_out,verbLevel);
+    *out << "timeStepControl= " << std::endl;
+    timeStepControl_->describe(in_out,verbLevel);
+    *out << "stepper        = " << std::endl;
+    stepper_        ->describe(in_out,verbLevel);
   }
 }
 
@@ -360,6 +358,7 @@ template <class Scalar>
 void IntegratorBasic<Scalar>::startIntegrator()
 {
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->setOutputToRootOnly(0);
   if (isInitialized_ == false) {
     Teuchos::OSTab ostab(out,1,"StartIntegrator");
     *out << "Failure - IntegratorBasic is not initialized." << std::endl;
@@ -466,6 +465,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
   // Too many TimeStep failures, Integrator fails.
   if (ws->getNFailures() >= timeStepControl_->getMaxFailures()) {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,2,"checkTimeStep");
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
          << "  (nFailures = "<<ws->getNFailures()<< ") >= (nFailuresMax = "
@@ -476,6 +476,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
   if (ws->getNConsecutiveFailures()
       >= timeStepControl_->getMaxConsecFailures()){
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"checkTimeStep");
     *out << "Failure - Stepper has failed more than the maximum "
          << "consecutive allowed.\n"
@@ -498,6 +499,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
      )
   {
     RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,0,"checkTimeStep");
     *out <<std::scientific
       <<std::setw( 6)<<std::setprecision(3)<<ws->getIndex()

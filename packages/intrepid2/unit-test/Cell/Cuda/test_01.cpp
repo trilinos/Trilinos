@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   const bool verbose = (argc-1) > 0;
   Kokkos::initialize();
 
-  const int r_val = Intrepid2::Test::CellTools_Test01<double,Kokkos::Cuda>(verbose);
+  const int r_val = Intrepid2::Test::CellTools_Test01<double,Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace> >(verbose);
   
   Kokkos::finalize();
   return r_val;

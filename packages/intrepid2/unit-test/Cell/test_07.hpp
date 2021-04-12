@@ -76,17 +76,17 @@ namespace Intrepid2 {
                                                                         \
       const auto order = 3;                                             \
       const auto cellTopo = shards::CellTopology(shards::getCellTopologyData< shardsTopology >()); \
-      auto cub = DefaultCubatureFactory::create<DeviceSpaceType,ValueType,ValueType>(cellTopo, order); \
+      auto cub = DefaultCubatureFactory::create<DeviceType,ValueType,ValueType>(cellTopo, order); \
       const auto P = cub->getNumPoints();                               \
       const auto D = 3;                                                 \
                                                                         \
-      Kokkos::DynRankView<ValueType,DeviceSpaceType> pts("pts", P, D);  \
-      Kokkos::DynRankView<ValueType,DeviceSpaceType> wts("wts", P);     \
-      Kokkos::DynRankView<int,DeviceSpaceType> check("check", P);       \
+      Kokkos::DynRankView<ValueType,DeviceType> pts("pts", P, D);  \
+      Kokkos::DynRankView<ValueType,DeviceType> wts("wts", P);     \
+      Kokkos::DynRankView<int,DeviceType> check("check", P);       \
                                                                         \
       cub->getCubature(pts, wts);                                       \
                                                                         \
-      Kokkos::RangePolicy<DeviceSpaceType> policy(0, P);                \
+      Kokkos::RangePolicy<DeviceType> policy(0, P);                \
       typedef F_checkPointInclusion<CellTopologyTag,decltype(check),decltype(pts)> FunctorType; \
       Kokkos::parallel_for(policy, FunctorType(offset, check, pts));    \
                                                                         \
@@ -131,8 +131,10 @@ namespace Intrepid2 {
       }
     };
         
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int CellTools_Test07(const bool verbose) {
+
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -146,9 +148,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
       *outStream

@@ -58,16 +58,37 @@ class CommSparse;
 class CommNeighbors;
 class CommBroadcast;
 
+template<typename T>
+struct is_pair { static constexpr bool value = false; };
+
+template<template<typename...> class C, typename U, typename V>
+struct is_pair<C<U,V>> { static constexpr bool value = std::is_same<C<U,V>, std::pair<U,V>>::value; };
+
+template <typename T>
+using IsPair = std::enable_if_t<is_pair<T>::value>;
+
+template <typename T>
+using NotPair = std::enable_if_t<!is_pair<T>::value>;
+
 class CommBuffer {
 public:
 
   /** Pack a value to be sent:  buf.pack<type>( value ) */
-  template<typename T> CommBuffer &pack( const T & value );
+  template<typename T,
+           class = NotPair<T>>
+  CommBuffer &pack( const T & value );
 
   CommBuffer &pack( const std::string & value );
 
+  template<typename P,
+           class = IsPair<P>, class = void>
+  CommBuffer &pack(const P & value);
+
   template<typename K, typename V>
   CommBuffer &pack( const std::map<K,V> & value );
+
+  template<typename K>
+  CommBuffer &pack( const std::vector<K> & value );
 
 private:
   /** Do not try to pack a pointer for global communication */
@@ -82,12 +103,21 @@ public:
   template<typename T> CommBuffer &pack( const T * value , size_t number );
 
   /** Unpack a received value:  buf.unpack<type>( value ) */
-  template<typename T> CommBuffer &unpack( T & value );
+  template<typename T,
+           class = NotPair<T>>
+  CommBuffer &unpack( T & value );
 
   CommBuffer &unpack( std::string& value );
 
+  template<typename P,
+           class = IsPair<P>, class = void>
+  CommBuffer &unpack( P & value);
+
   template<typename K, typename V>
   CommBuffer &unpack( std::map<K,V> & value );
+
+  template<typename K>
+  CommBuffer &unpack( std::vector<K> & value );
 
   /** Unpack an array of received values:  buf.unpack<type>( ptr , num ) */
   template<typename T> CommBuffer &unpack( T * value , size_t number );
@@ -104,7 +134,14 @@ public:
   CommBuffer &peek( std::map<K,V> & value );
 
   /** Skip buffer ahead by a number of values. */
-  template<typename T> CommBuffer &skip( size_t number );
+  template<typename T,
+           class = NotPair<T>>
+  CommBuffer &skip( size_t number );
+
+  /** Skip buffer ahead by a number of values. */
+  template<typename T,
+           class = IsPair<T>, class = void>
+  CommBuffer &skip( size_t number );
 
   /** Reset the buffer to the beginning so that size() == 0 */
   void reset();
@@ -135,6 +172,8 @@ public:
 
   ~CommBuffer() {}
   CommBuffer() : m_beg(nullptr), m_ptr(nullptr), m_end(nullptr) { }
+
+  void set_buffer_ptrs(unsigned char* begin, unsigned char* ptr, unsigned char* end);
 
 private:
   friend class CommSparse ;
@@ -206,10 +245,13 @@ struct CommBufferAlign<1> {
   static size_t align( size_t ) { return 0 ; }
 };
 
-template<typename T>
+template<typename T, class>
 inline
 CommBuffer &CommBuffer::pack( const T & value )
 {
+  if (std::is_same<T, std::string>::value) {
+    return pack(value);
+  }
   enum { Size = sizeof(T) };
   size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
   if ( m_beg ) {
@@ -234,6 +276,15 @@ CommBuffer &CommBuffer::pack( const std::string & value )
   return *this;
 }
 
+template<typename P, class, class>
+inline
+CommBuffer &CommBuffer::pack(const P & value)
+{
+  pack(value.first);
+  pack(value.second);
+  return *this;
+}
+
 template<typename K, typename V>
 inline
 CommBuffer &CommBuffer::pack( const std::map<K,V> & value )
@@ -247,6 +298,17 @@ CommBuffer &CommBuffer::pack( const std::map<K,V> & value )
     pack(s.second);
   }
 
+  return *this;
+}
+
+template<typename K>
+inline
+CommBuffer &CommBuffer::pack( const std::vector<K> & value )
+{
+  pack<unsigned>(value.size());
+  for (size_t i=0; i<value.size(); ++i) {
+    pack(value[i]);
+  }
   return *this;
 }
 
@@ -269,7 +331,7 @@ CommBuffer &CommBuffer::pack( const T * value , size_t number )
   return *this;
 }
 
-template<typename T>
+template<typename T, class>
 inline
 CommBuffer &CommBuffer::skip( size_t number )
 {
@@ -279,10 +341,22 @@ CommBuffer &CommBuffer::skip( size_t number )
   return *this;
 }
 
-template<typename T>
+template<typename T, class, class>
+inline
+CommBuffer &CommBuffer::skip( size_t number )
+{
+  skip<typename T::first_type>(number);
+  skip<typename T::second_type>(number);
+  return *this;
+}
+
+template<typename T, class>
 inline
 CommBuffer &CommBuffer::unpack( T & value )
 {
+  if (std::is_same<T,std::string>::value) {
+    return unpack(value);
+  }
   enum { Size = sizeof(T) };
   const size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
   T * tmp = reinterpret_cast<T*>( m_ptr + nalign );
@@ -300,6 +374,16 @@ CommBuffer &CommBuffer::unpack( std::string & value )
   std::vector<char> chars(length);
   unpack(chars.data(), length);
   value.assign(chars.data(), length);
+  return *this;
+}
+
+template<typename P,
+         class, class>
+inline
+CommBuffer &CommBuffer::unpack( P & value)
+{
+  unpack(value.first);
+  unpack(value.second);
   return *this;
 }
 
@@ -321,6 +405,21 @@ CommBuffer &CommBuffer::unpack( std::map<K,V> & value )
     unpack(val);
 
     value[key] = val;
+  }
+  return *this;
+}
+
+template<typename K>
+inline
+CommBuffer &CommBuffer::unpack( std::vector<K> & value )
+{
+  unsigned num_items = 0;
+  unpack<unsigned>(num_items);
+  value.resize(num_items);
+  for (unsigned i=0;i<num_items;++i) {
+    K val;
+    unpack(val);
+    value[i] = val;
   }
   return *this;
 }
@@ -350,11 +449,9 @@ template<typename T>
 inline
 CommBuffer &CommBuffer::peek( T & value )
 {
-  enum { Size = sizeof(T) };
-  const size_t nalign = CommBufferAlign<Size>::align( m_ptr - m_beg );
-  T * tmp = reinterpret_cast<T*>( m_ptr + nalign );
-  value = *tmp ;
-  if ( m_end < reinterpret_cast<ucharp>(++tmp) ) { unpack_overflow(); }
+  ucharp oldPtr = m_ptr;
+  unpack<T>(value);
+  m_ptr = oldPtr;
   return *this;
 }
 

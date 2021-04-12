@@ -289,7 +289,7 @@ public:
     for (size_t i = 0; i < lastFieldModLocation.extent(0); ++i) {
       for (size_t j = 0; j < lastFieldModLocation.extent(1); ++j) {
         for (size_t k = 0; k < lastFieldModLocation.extent(2); ++k) {
-          if (data_is_stale_on_device_from_host(i, ORDER_INDICES(j, k))) {
+          if (!(lastFieldModLocation(i,j,k) & LastModLocation::DEVICE)) {
             print_stale_data_warning_without_field_values(i, ORDER_INDICES(j, k), fileName, lineNumber);
           }
         }
@@ -320,25 +320,26 @@ public:
 
     const stk::mesh::BulkData & bulk = *ngpField->hostBulk;
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
-    const stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+    stk::mesh::Selector fieldSelector(*(ngpField->hostField));
 
     UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceNumComponentsPerEntity;
     FieldDataDeviceViewType<T> & localDeviceData = ngpField->deviceData;
     FieldDataDeviceViewType<T> & localLastFieldValue = lastFieldValue;
     LastFieldModLocationType & localLastFieldModLocation = lastFieldModLocation;
     ScalarUvmType<bool> & localLostDeviceFieldData = lostDeviceFieldData;
+    UnsignedViewType & localDebugDeviceSelectedBucketOffset = debugDeviceSelectedBucketOffset;
     const bool inModCycle = bulk.in_modifiable_state();
 
-    stk::mesh::for_each_entity_run(ngpMesh, ngpField->rank, meta.locally_owned_part(),
+    stk::mesh::for_each_entity_run(ngpMesh, ngpField->rank, fieldSelector,
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& index)
     {
-      const unsigned bucketId = index.bucket_id;
-      const unsigned numComponents = localDeviceNumComponentsPerEntity(bucketId);
+      const unsigned offsetBucketId = localDebugDeviceSelectedBucketOffset(index.bucket_id);
+      const unsigned numComponents = localDeviceNumComponentsPerEntity(index.bucket_id);
       for (unsigned component = 0; component < numComponents; ++component) {
-        if (localDeviceData(index.bucket_id, ORDER_INDICES(index.bucket_ord, component)) !=
-            localLastFieldValue(index.bucket_id, ORDER_INDICES(index.bucket_ord, component)))
+        if (localDeviceData(offsetBucketId, ORDER_INDICES(index.bucket_ord, component)) !=
+            localLastFieldValue(offsetBucketId, ORDER_INDICES(index.bucket_ord, component)))
         {
-          localLastFieldModLocation(index.bucket_id, ORDER_INDICES(index.bucket_ord, component)) = LastModLocation::DEVICE;
+          localLastFieldModLocation(offsetBucketId, ORDER_INDICES(index.bucket_ord, component)) = LastModLocation::DEVICE;
           if (inModCycle) {
             localLostDeviceFieldData() = true;
           }
@@ -432,11 +433,6 @@ private:
   STK_INLINE_FUNCTION
   bool data_is_stale_on_device(int bucketId, int bucketOrdinal, int component) const {
     return !(lastFieldModLocation(debugDeviceSelectedBucketOffset(bucketId),
-                                  ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
-  }
-
-  bool data_is_stale_on_device_from_host(int bucketId, int bucketOrdinal, int component) const {
-    return !(lastFieldModLocation(debugHostSelectedBucketOffset(bucketId),
                                   ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
   }
 

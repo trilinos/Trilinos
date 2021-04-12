@@ -365,7 +365,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostViewSync, LO, GO, Scalar , N
 
   //localViewHost writeOnly should set need_sync_device(), but not need_sync_host()
   {
-    auto data = defaultVec.getLocalViewHost(Tpetra::Access::WriteOnly);
+    auto data = defaultVec.getLocalViewHost(Tpetra::Access::OverwriteAll);
     if (defaultVec.need_sync_host()) {
       ierr++;
     }
@@ -427,7 +427,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar ,
 
   //localViewDevice writeOnly should set need_sync_host(), but not need_sync_device()
   {
-    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::WriteOnly);
+    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::OverwriteAll);
     if (defaultVec.need_sync_device()) {
       ierr++;
     }

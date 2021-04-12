@@ -41,7 +41,6 @@ public:
   {
     switch(modType) {
       case StepperLeapfrogModifierXBase<Scalar>::X_BEGIN_STEP:
-      case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_XDOT_UPDATE_INITIALIZE:
       case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_X_UPDATE:
       case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_EXPLICIT_EVAL:
       case StepperLeapfrogModifierXBase<Scalar>::X_BEFORE_XDOT_UPDATE:

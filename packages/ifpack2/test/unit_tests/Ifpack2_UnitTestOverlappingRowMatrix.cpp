@@ -231,7 +231,7 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   auto undA_lcl = undA->getLocalMatrix ();
   auto extA_lcl = extA->getLocalMatrix ();
   auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
-  auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::WriteOnly);
+  auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   
   // Do the "Local part"
   auto numLocalRows = undA->getNodeNumRows();
@@ -626,7 +626,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2OverlappingRowMatrix, reducedMatvec, Sc
     reducedMatvec(ovA,temp1,1,temp2);
     reducedMatvec(ovA,temp2,0,ovY);
 
-    auto Y_lcl = y_overlap.getLocalViewDevice(Tpetra::Access::WriteOnly);
+    auto Y_lcl = y_overlap.getLocalViewDevice(Tpetra::Access::OverwriteAll);
     auto ovY_lcl = ovY.getLocalViewDevice(Tpetra::Access::ReadOnly);
     auto ovYsub = Kokkos::subview(ovY_lcl, std::make_pair<int, int>(0, Y_lcl.extent(0)), Kokkos::ALL);
     Kokkos::deep_copy(Y_lcl,ovYsub);

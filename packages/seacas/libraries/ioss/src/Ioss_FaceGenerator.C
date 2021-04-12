@@ -18,7 +18,6 @@
 #include <Ioss_Region.h>
 
 #include <algorithm>
-#include <numeric>
 #include <chrono>
 #include <fmt/format.h>
 #include <fmt/ostream.h>
@@ -31,7 +30,7 @@
 #define USE_MURMUR
 //#define USE_RANDOM
 
-#define DO_TIMING 1
+#define DO_TIMING 0
 
 #if defined(__GNUC__) && __GNUC__ >= 7 && !__INTEL_COMPILER
 #define FALL_THROUGH [[gnu::fallthrough]]
@@ -66,7 +65,7 @@ namespace {
   template <typename INT>
   void internal_generate_faces(Ioss::ElementBlock *eb, Ioss::FaceUnorderedSet &faces,
                                const std::vector<INT> &ids, const std::vector<size_t> &hash_ids,
-                               INT /*dummy*/)
+                               bool local_ids, INT /*dummy*/)
   {
     const Ioss::ElementTopology *topo = eb->topology();
 
@@ -79,7 +78,13 @@ namespace {
     eb->get_field_data("connectivity_raw", connectivity);
 
     std::vector<INT> elem_ids;
-    eb->get_field_data("ids", elem_ids);
+    if (local_ids) {
+      elem_ids.resize(eb->entity_count());
+      std::iota(elem_ids.begin(), elem_ids.end(), eb->get_offset() + 1);
+    }
+    else {
+      eb->get_field_data("ids", elem_ids);
+    }
 
     int num_face_per_elem = topo->number_faces();
     assert(num_face_per_elem <= 6);
@@ -331,16 +336,17 @@ namespace Ioss {
 
   FaceGenerator::FaceGenerator(Ioss::Region &region) : region_(region) {}
 
-  template void FaceGenerator::generate_faces(int, bool);
-  template void FaceGenerator::generate_faces(int64_t, bool);
+  template void FaceGenerator::generate_faces(int, bool, bool);
+  template void FaceGenerator::generate_faces(int64_t, bool, bool);
 
-  template <typename INT> void FaceGenerator::generate_faces(INT /*dummy*/, bool block_by_block)
+  template <typename INT>
+  void FaceGenerator::generate_faces(INT /*dummy*/, bool block_by_block, bool local_ids)
   {
     if (block_by_block) {
-      generate_block_faces(INT(0));
+      generate_block_faces(INT(0), local_ids);
     }
     else {
-      generate_model_faces(INT(0));
+      generate_model_faces(INT(0), local_ids);
     }
   }
 
@@ -352,13 +358,19 @@ namespace Ioss {
     }
   }
 
-  template <typename INT> void FaceGenerator::generate_block_faces(INT /*dummy*/)
+  template <typename INT> void FaceGenerator::generate_block_faces(INT /*dummy*/, bool local_ids)
   {
     // Convert ids into hashed-ids
     Ioss::NodeBlock *nb = region_.get_node_blocks()[0];
 
     std::vector<INT> ids;
-    nb->get_field_data("ids", ids);
+    if (local_ids) {
+      ids.resize(nb->entity_count());
+      std::iota(ids.begin(), ids.end(), 1);
+    }
+    else {
+      nb->get_field_data("ids", ids);
+    }
 #if DO_TIMING
     auto starth = std::chrono::steady_clock::now();
 #endif
@@ -373,7 +385,7 @@ namespace Ioss {
       size_t             numel   = eb->entity_count();
       size_t             reserve = 3.2 * numel;
       faces_[name].reserve(reserve);
-      internal_generate_faces(eb, faces_[name], ids, hashIds_, (INT)0);
+      internal_generate_faces(eb, faces_[name], ids, hashIds_, local_ids, (INT)0);
     }
 
 #if DO_TIMING
@@ -409,13 +421,19 @@ namespace Ioss {
 #endif
   }
 
-  template <typename INT> void FaceGenerator::generate_model_faces(INT /*dummy*/)
+  template <typename INT> void FaceGenerator::generate_model_faces(INT /*dummy*/, bool local_ids)
   {
     // Convert ids into hashed-ids
     Ioss::NodeBlock *nb = region_.get_node_blocks()[0];
 
     std::vector<INT> ids;
-    nb->get_field_data("ids", ids);
+    if (local_ids) {
+      ids.resize(nb->entity_count());
+      std::iota(ids.begin(), ids.end(), 1);
+    }
+    else {
+      nb->get_field_data("ids", ids);
+    }
 #if DO_TIMING
     auto starth = std::chrono::steady_clock::now();
 #endif
@@ -431,7 +449,7 @@ namespace Ioss {
     my_faces.reserve(reserve);
     const Ioss::ElementBlockContainer &ebs = region_.get_element_blocks();
     for (auto eb : ebs) {
-      internal_generate_faces(eb, my_faces, ids, hashIds_, (INT)0);
+      internal_generate_faces(eb, my_faces, ids, hashIds_, local_ids, (INT)0);
     }
 
 #if DO_TIMING

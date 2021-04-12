@@ -28,6 +28,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
+ *  The locations of the StepperOperatorSplitModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperOperatorSplitAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperOperatorSplit.
  */
 
 template<class Scalar>

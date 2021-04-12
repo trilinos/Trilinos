@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-
 #include <Ionit_Initializer.h>
 #include <Ioss_Assembly.h>
 #include <Ioss_Blob.h>
@@ -76,7 +75,7 @@
 
 namespace {
   std::string codename;
-  std::string version = "0.94 (2020-10-12)";
+  std::string version = "1.00 (2021-03-04)";
 
   std::vector<Ioss::GroupingEntity *> attributes_modified;
 

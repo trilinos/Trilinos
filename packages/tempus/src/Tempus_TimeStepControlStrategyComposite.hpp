@@ -69,23 +69,25 @@ public:
     std::string description() const override
     { return "Tempus::TimeStepControlComposite"; }
 
-    void describe(Teuchos::FancyOStream          &out,
+    void describe(Teuchos::FancyOStream          &in_out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      Teuchos::OSTab ostab(out,2,"describe");
-      out << description() << "::describe:" << std::endl
-          << "Strategy Type = " << this->getStrategyType()<< std::endl
-          << "Step Type     = " << this->getStepType()<< std::endl;
+      auto out = Teuchos::fancyOStream( in_out.getOStream() );
+      out->setOutputToRootOnly(0);
+      Teuchos::OSTab ostab(*out,2,"describe");
+      *out << description() << "::describe:" << std::endl
+           << "Strategy Type = " << this->getStrategyType()<< std::endl
+           << "Step Type     = " << this->getStepType()<< std::endl;
 
       std::stringstream sList;
       for(std::size_t i = 0; i < strategies_.size(); ++i) {
         sList << strategies_[i]->getStrategyType();
         if (i < strategies_.size()-1) sList << ", ";
       }
-      out << "Strategy List = " << sList.str() << std::endl;
+      *out << "Strategy List = " << sList.str() << std::endl;
 
       for(auto& s : strategies_)
-        s->describe(out, verbLevel);
+        s->describe(*out, verbLevel);
     }
   //@}
 
@@ -237,6 +239,7 @@ createTimeStepControlStrategyComposite(
     } else {
       RCP<Teuchos::FancyOStream> out =
         Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1, "createTimeStepControlStrategyComposite()");
       *out << "Warning -- Unknown strategy type!\n"
            << "'Strategy Type' = '" << strategyType << "'\n"
@@ -251,6 +254,7 @@ createTimeStepControlStrategyComposite(
   if (tscsc->size() == 0) {
     RCP<Teuchos::FancyOStream> out =
       Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1, "createTimeStepControlStrategyComposite()");
     *out << "Warning -- Did not find a Tempus strategy to create!\n"
          << "Should call addStrategy() with (app-specific?) strategy(ies),\n"

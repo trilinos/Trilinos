@@ -29,22 +29,9 @@ namespace Tempus {
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
  *
- *  Below is the NewmarkImplicitAForm algorithm with the locations of the modify calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Newmark Implicit-A with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State \quad {\it modifier.modify(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations for these AppAction calls
+ *  (StepperNewmarkImplicitAFormAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperNewmarkImplicitAForm.
  */
 template<class Scalar>
 class StepperNewmarkImplicitAFormModifierBase

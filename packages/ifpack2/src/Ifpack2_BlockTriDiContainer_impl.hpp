@@ -3811,9 +3811,9 @@ namespace Ifpack2 {
 
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
-      const auto XX = X.template getLocalView<node_memory_space>(Tpetra::Access::ReadOnly);
-      const auto YY = Y.template getLocalView<node_memory_space>(Tpetra::Access::ReadWrite);
-      const auto ZZ = Z.template getLocalView<node_memory_space>(Tpetra::Access::ReadWrite);
+      const auto XX = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      const auto YY = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+      const auto ZZ = Z.getLocalViewDevice(Tpetra::Access::ReadWrite);
       if (is_y_zero) Kokkos::deep_copy(YY, zero);
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);

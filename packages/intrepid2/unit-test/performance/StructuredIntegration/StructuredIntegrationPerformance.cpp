@@ -410,6 +410,8 @@ void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spac
   jacobianCellMeasureFlopCount += numCells * flopsPerJacobianDetPerCell; // determinant
   jacobianCellMeasureFlopCount += numCells * numPoints; // cell measure: (C,P) gets weighted with cubature weights of shape (P)
   
+  auto refData = geometry.getJacobianRefData(tensorCubaturePoints);
+  
   initialSetupTimer->stop();
   while (cellOffset < numCells)
   {
@@ -430,7 +432,7 @@ void performStructuredQuadratureHypercubeGRADGRAD(CellGeometry<PointScalar, spac
       cellMeasures.setFirstComponentExtentInDimension0(numCellsInWorkset);
     }
     
-    geometry.setJacobian(jacobian, tensorCubaturePoints, startCell, endCell);
+    geometry.setJacobian(jacobian, tensorCubaturePoints, refData, startCell, endCell);
     CellTools<ExecSpaceType>::setJacobianDet(jacobianDet, jacobian);
     CellTools<ExecSpaceType>::setJacobianInv(jacobianInv, jacobian);
     

@@ -117,19 +117,9 @@ bool BalanceSettings::isMultiCriteriaRebalance() const
     return false;
 }
 
-bool BalanceSettings::areVertexWeightsProvidedInAVector() const
-{
-    return false;
-}
-
 bool BalanceSettings::areVertexWeightsProvidedViaFields() const
 {
     return false;
-}
-
-std::vector<double> BalanceSettings::getVertexWeightsViaVector() const
-{
-    return std::vector<double>();
 }
 
 double BalanceSettings::getImbalanceTolerance() const
@@ -216,7 +206,7 @@ const stk::mesh::Field<int> * BalanceSettings::getSpiderVolumeConnectivityCountF
     return nullptr;
 }
 
-bool BalanceSettings::useLocalIds() const
+bool BalanceSettings::usingColoring() const
 {
     return getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH ||
            getGraphOption() == stk::balance::BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||

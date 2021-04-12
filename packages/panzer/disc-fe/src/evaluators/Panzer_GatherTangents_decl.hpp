@@ -52,6 +52,7 @@
 #include "Panzer_Traits.hpp"
 #include "Panzer_CloneableEvaluator.hpp"
 #include "Panzer_PointValues2.hpp"
+#include "Intrepid2_CellTools.hpp"
 
 namespace panzer {
 
@@ -92,7 +93,7 @@ private:
   Teuchos::RCP<const PointRule> pointRule;
   Kokkos::DynRankView<ScalarT,PHX::Device> edgeTan; // edge tangents
   Kokkos::DynRankView<ScalarT,PHX::Device> refEdgeTan; // reference edge tangents
-  Kokkos::DynRankView<double,PHX::Device> edgeParam; //edgeParametrization
+  Intrepid2::RefSubcellParametrization<PHX::Device>::ConstViewType edgeParam; //edgeParametrization
 
   PointValues2<double> pointValues;
   PHX::MDField<const double,Cell,IP,Dim,Dim> constJac_;

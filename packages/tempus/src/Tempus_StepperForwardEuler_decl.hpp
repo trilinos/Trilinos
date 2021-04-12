@@ -33,23 +33,30 @@ namespace Tempus {
  *
  *  <b> Algorithm </b>
  *  The single-timestep algorithm for Forward Euler is
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Forward Euler}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \If { Not ``Use FSAL'' or (previous step failed)}
- *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \State $\dot{x}_{n-1} \leftarrow \bar{f}(x_{n-1},t_{n-1})$
- *    \EndIf
- *    \State $x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}$
- *        \Comment{Forward Euler update.}
- *    \If { ``Use FSAL'' }
- *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \State $\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})$
- *    \EndIf
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *
+ *  \f{center}
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Forward Euler \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf if (Not ``Use FSAL'' or (previous step failed)) then}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $\dot{x}_{n-1} \leftarrow \bar{f}(x_{n-1},t_{n-1})$
+ *      \item {\bf endif}
+ *      \item $x_{n} \leftarrow x_{n-1} + \Delta t\, \dot{x}_{n-1}$
+ *            \hfill {\it * Forward Euler update.}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *      \item {\bf if (``Use FSAL'') then}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $\dot{x}_n \leftarrow \bar{f}(x_{n},t_{n})$
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
  *  \f}
  *
  *  Note that with useFSAL=false \f$x_n\f$ and \f$\dot{x}_{n-1}\f$ are not

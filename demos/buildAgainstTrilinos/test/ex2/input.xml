@@ -1,7 +1,0 @@
-<ParameterList>
-  <ParameterList name="Application">
-    <Parameter name="Name" type="string" value="Room Temperature Superconductivity"/>
-  </ParameterList>
-</ParameterList>
-
-

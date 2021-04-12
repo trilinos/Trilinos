@@ -39,12 +39,12 @@
 #include <map>                                    // for map<>::mapped_type
 
 
-namespace sierra {
+namespace stk {
 
 const char *
 get_product_name()
 {
-  return "UtilityLib";
+  return "Sandia Toolkit (STK)";
 }
 
 void
@@ -53,11 +53,11 @@ register_product()
   // Register utility
   stk::ProductRegistry::AttributeMap &attr_map = stk::ProductRegistry::instance().addProduct(get_product_name());
   attr_map[stk::ProductRegistry::VERSION]      = stk::ProductRegistry::version();
-  attr_map[stk::ProductRegistry::TITLE] = "Utility library routines";
-  attr_map[stk::ProductRegistry::CONTACT] = "sierra-help@sandia.gov";
+  attr_map[stk::ProductRegistry::TITLE] = get_product_name();
+  attr_map[stk::ProductRegistry::CONTACT] = "STK-NGPTeam@sandia.gov";
 
   // Register TPL's and other things which may not be properly registered but used directly.
 
 }
 
-} // namespace sierra
+} // namespace stk

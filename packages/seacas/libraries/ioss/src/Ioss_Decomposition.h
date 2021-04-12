@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -205,8 +205,8 @@ namespace Ioss {
         std::vector<BlockDecompositionData> &element_blocks);
 
     void simple_decompose();
-
     void simple_node_decompose();
+    void guided_decompose();
 
     void calculate_element_centroids(const std::vector<double> &x, const std::vector<double> &y,
                                      const std::vector<double> &z);
@@ -549,10 +549,12 @@ namespace Ioss {
       }
     }
 
-    MPI_Comm    m_comm;
-    int         m_processor{};
-    int         m_processorCount{};
-    std::string m_method;
+    MPI_Comm            m_comm;
+    Ioss::ParallelUtils m_pu;
+    int                 m_processor{};
+    int                 m_processorCount{};
+    std::string         m_method{};
+    std::string         m_decompExtra{};
 
     // Values for the file decomposition
     int    m_spatialDimension{3};
@@ -571,6 +573,7 @@ namespace Ioss {
     bool m_showProgress{false};
     bool m_showHWM{false};
 
+    std::vector<INT>    m_elementToProc; // Used by "MAP" scheme...
     std::vector<double> m_centroids;
     std::vector<INT>    m_pointer;   // Index into adjacency, processor list for each element...
     std::vector<INT>    m_adjacency; // Size is sum of element connectivity sizes
@@ -585,17 +588,17 @@ namespace Ioss {
 
   private:
     // This processor "manages" the elements on the exodus mesh file from
-    // element_offset to element_offset+count (0-based). This is
+    // m_elementOffset to m_elementOffset+m_elementCount (0-based). This is
     // 'file' data
     //
     // This processor also appears to the Ioss clients to own other
     // element and node data based on the decomposition.  This is the
     // 'ioss' data.
     //
-    // The indices in 'local_element_map' are the elements that are
+    // The indices in `localElementMap` are the elements that are
     // common to both the 'file' data and the 'ioss' data.
-    // local_element_map[i] contains the location in 'file' data for
-    // the 'ioss' data at location 'i+import_pre_local_elem_index'
+    // `localElementMap[i]` contains the location in 'file' data for
+    // the 'ioss' data at location `i+m_importPreLocalElemIndex`
     //
     // local_element_map[i]+m_elementOffset is the 0-based global index
     //
@@ -629,8 +632,11 @@ namespace Ioss {
     std::vector<INT> importElementCount;
     std::vector<INT> importElementIndex;
 
+    // The list of my `file decomp` elements that will be exported to some other rank.
     std::vector<INT> exportElementMap;
+    // The number of elements that I will export to each other rank.
     std::vector<INT> exportElementCount;
+    // The index into `exportElementMap` for the elements that will be exported to each rank.
     std::vector<INT> exportElementIndex;
 
     std::vector<INT> nodeIndex;

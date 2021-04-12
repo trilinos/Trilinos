@@ -3,6 +3,10 @@
 exe() {
   stdbuf -o0 -e0 echo "% $@" ;
   eval "$@" ;
+  if [ $? -ne 0 ] ; then
+    echo "'$@' failed.";
+    exit 1;
+  fi
 }
 
 sierra_proj=${SIERRA_PROJ:-${PWD}}
@@ -24,7 +28,7 @@ fi
 if [ ! -d ${trilinos_dir} ] ; then
   exe git clone -b develop https://github.com/trilinos/Trilinos.git ${trilinos_dir}
 else
-  exe cd ${trilinos_dir}
+  exe cd "${trilinos_dir}"
   exe git reset --hard develop
   exe git pull
 fi
@@ -45,8 +49,6 @@ printf "CUDA: ${cuda_on_or_off}\n";
 printf "Putting output and logs here: ${output_dir}\n";
 
 exe cd $sierra_proj
-
-exe rm -rf objs/tpls/trilinos_tpls/*
 
 bake_log=${output_dir}/bake-stk_balance.out.$date_suffix
 stk_config_log=${output_dir}/stk-config.out.$date_suffix
@@ -75,28 +77,15 @@ exe cd ${stk_build_dir}
 printf "\nGenerating pre-requisite TPL paths in ${stk_build_dir}/tpl_paths\n";
 exe ${stk_cmake_testing}/generate_tpl_paths_from_sierra_proj ${sierra_proj} ${output_dir} ${stk_build_dir}/tpl_paths
 printf "Configuring trilinos/stk (running cmake)...\n";
-exe 'TRILINOS_DIR=${trilinos_dir} \
+exe "TRILINOS_DIR=${trilinos_dir} \
      TRILINOS_INSTALL_DIR=${trilinos_install_dir} \
      CMAKE_BUILD_TYPE=${build_type} \
      CUDA=${cuda_on_or_off} \
-     ./run_cmake_stk ${stk_build_dir}/tpl_paths >& ${stk_config_log}'
-if [ $? -ne 0 ] ; then
-  echo "!! error in stk/trilinos config, check output in ${stk_config_log} !!";
-  exit 1;
-fi
+     ./run_cmake_stk ${stk_build_dir}/tpl_paths >& ${stk_config_log}"
 
 printf "Now building trilinos/stk using make...\n";
-exe 'make VERBOSE=1 -j8 >& ${stk_make_log}';
-if [ $? -ne 0 ] ; then
-  echo "!! error in make, check output in ${stk_make_log} !!";
-  exit 1;
-fi
-
-exe 'ctest -j8 >& ${stk_ctest_log}';
-if [ $? -ne 0 ] ; then
-  echo "!! error in ctest, check output in ${stk_ctest_log} !!";
-  exit 1;
-fi
+exe "make VERBOSE=1 -j8 >& ${stk_make_log}";
+exe "ctest -j8 >& ${stk_ctest_log}";
 
 echo "all done, SUCCESS!";
 exit 0;

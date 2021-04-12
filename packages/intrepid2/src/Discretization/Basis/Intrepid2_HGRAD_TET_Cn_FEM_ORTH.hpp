@@ -131,7 +131,7 @@ public:
                const ordinal_type   order);
   };
 
-  template<typename Devicetype, ordinal_type numPtsPerEval,
+  template<typename DeviceType, ordinal_type numPtsPerEval,
   typename outputValueValueType, class ...outputValueProperties,
   typename inputPointValueType,  class ...inputPointProperties>
   static void
@@ -210,26 +210,26 @@ public:
 
 }
 
-template<typename Devicetype = void,
+template<typename DeviceType = void,
     typename outputValueType = double,
     typename pointValueType = double>
 class Basis_HGRAD_TET_Cn_FEM_ORTH
-    : public Basis<Devicetype,outputValueType,pointValueType> {
+    : public Basis<DeviceType,outputValueType,pointValueType> {
     public:
   typedef double value_type;
-  typedef typename Basis<Devicetype,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
-  typedef typename Basis<Devicetype,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
-  typedef typename Basis<Devicetype,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
+  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost OrdinalTypeArray1DHost;
+  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost OrdinalTypeArray2DHost;
+  typedef typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost OrdinalTypeArray3DHost;
 
   /** \brief  Constructor.
    */
   Basis_HGRAD_TET_Cn_FEM_ORTH( const ordinal_type order );
 
-  using OutputViewType = typename Basis<Devicetype,outputValueType,pointValueType>::OutputViewType;
-  using PointViewType  = typename Basis<Devicetype,outputValueType,pointValueType>::PointViewType;
-  using ScalarViewType = typename Basis<Devicetype,outputValueType,pointValueType>::ScalarViewType;
+  using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
+  using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
+  using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
   
-  using Basis<Devicetype,outputValueType,pointValueType>::getValues;
+  using Basis<DeviceType,outputValueType,pointValueType>::getValues;
 
   virtual
   void
@@ -245,7 +245,7 @@ class Basis_HGRAD_TET_Cn_FEM_ORTH
     #endif
     constexpr ordinal_type numPtsPerEval = Parameters::MaxNumPtsPerBasisEval;
     Impl::Basis_HGRAD_TET_Cn_FEM_ORTH::
-    getValues<Devicetype,numPtsPerEval>( outputValues,
+    getValues<DeviceType,numPtsPerEval>( outputValues,
         inputPoints,
         this->getDegree(),
         operatorType );

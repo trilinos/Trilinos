@@ -28,6 +28,9 @@ namespace Tempus {
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
  *
+ *  The locations for these AppAction calls
+ *  (StepperOperatorSplitAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperOperatorSplit.
  */
   template<class Scalar>
 class StepperOperatorSplitModifierBase

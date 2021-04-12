@@ -333,7 +333,7 @@ namespace phalanx_test {
     TEST_EQUALITY(f3.get(),6);
   }
 
-  // yes we could do thsi with deep copy, but want to experiment with
+  // yes we could do this with deep copy, but want to experiment with
   // wrapping tasks to insert functions into all PHX nodes
   template <typename Scalar,typename Device>
   class InitializeView {

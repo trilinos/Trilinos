@@ -217,7 +217,7 @@ void issue46Test (bool& success, Teuchos::FancyOStream& out)
   // it belongs.
   out << "Fill \"parent\" MultiVector X0 with entries" << endl;
   {
-    auto X0_lcl = X0.getLocalViewHost (Tpetra::Access::WriteOnly);
+    auto X0_lcl = X0.getLocalViewHost (Tpetra::Access::OverwriteAll);
     for (LO j = 0; j < numVecs; ++j) {
       auto X0_lcl_j = Kokkos::subview (X0_lcl, Kokkos::ALL (), j);
       for (LO i = 0; i < lclNumRows; ++i) {

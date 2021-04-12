@@ -1,6 +1,7 @@
 #include <stk_balance/internal/SubdomainFileWriter.hpp>
 #include <test_utils/MeshFixtureMxNRebalance.hpp>
 #include <stk_balance/internal/MtoNRebalancer.hpp>
+#include <stk_balance/internal/M2NDecomposer.hpp>
 
 #include "stk_unit_test_utils/getOption.h"
 #include "stk_mesh/base/Comm.hpp"
@@ -52,7 +53,8 @@ TEST_F(TestBalanceMtoM, DISABLED_MxM_decompositionWithoutAura)
 {
     if(stk::parallel_machine_size(get_comm()) == static_cast<int>(get_num_procs_initial_decomp())) {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        EXPECT_FALSE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename()));
+        stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
+        EXPECT_FALSE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, parsedOptions));
     }
 }
 
@@ -81,7 +83,11 @@ TEST_F(Mesh1x1x4, read2procsWrite4procsFilesUsingGeneratedMesh)
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
         stk::balance::BasicZoltan2Settings graphSettings;
-        stk::balance::internal::MtoNRebalancer rebalancer(get_bulk(), *targetDecompField, graphSettings, get_num_procs_target_decomp());
+        stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
+        stk::balance::internal::M2NDecomposer decomposer(get_bulk(), graphSettings, parsedOptions);
+        stk::balance::internal::MtoNRebalancer rebalancer(get_bulk(), *targetDecompField, decomposer, parsedOptions);
+
+        rebalancer.decompose_mesh();
 
         std::vector<size_t> counts;
         stk::mesh::comm_mesh_counts(get_bulk(), counts);
@@ -95,7 +101,7 @@ TEST_F(Mesh1x1x4, read2procsWrite4procsFilesUsingGeneratedMesh)
             if(rebalancer.does_this_proc_own_subdomain(targetProc_to_startingProc[subdomain]))
             {
                 stk::io::EntitySharingInfo nodeSharingInfo = rebalancer.get_node_sharing_info(subdomain);
-                EXPECT_TRUE(goldSharedNodesPerSubdomain[subdomain] == nodeSharingInfo);
+                EXPECT_EQ(goldSharedNodesPerSubdomain[subdomain], nodeSharingInfo);
                 rebalancer.create_subdomain_and_write("testing.g", subdomain, global_num_nodes, global_num_elems, nodeSharingInfo);
             }
         }

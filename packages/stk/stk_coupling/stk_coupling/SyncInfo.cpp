@@ -8,7 +8,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <stk_coupling/SyncInfo.hpp>
-#include <stk_coupling/CommSplitting.hpp>
+#include <stk_coupling/SplitComms.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 
 namespace stk
@@ -20,25 +20,20 @@ void SyncInfo::pack(stk::CommBuffer & b) const
 {
   // pack and unpack calls must be in the same order
   b.pack(m_name);
-  b.pack(bvals);
-  b.pack(ivals);
-  b.pack(dvals);
-  b.pack(svals);
+  m_vals.pack(b);
 }
 
 void SyncInfo::unpack(stk::CommBuffer & b)
 {
   // pack and unpack calls must be in the same order
   b.unpack(m_name);
-  b.unpack(bvals);
-  b.unpack(ivals);
-  b.unpack(dvals);
-  b.unpack(svals);
+  m_vals.unpack(b);
 }
 
-SyncInfo
-SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
+SyncInfo SyncInfo::exchange(const SplitComms & splitComms, int otherColor) const
 {
+  MPI_Comm global = splitComms.get_pairwise_comm(otherColor);
+  MPI_Comm local = splitComms.get_split_comm();
 
   int globalRank = -1;
   MPI_Comm_rank(global, &globalRank);
@@ -46,9 +41,9 @@ SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
   int localRank = -1;
   MPI_Comm_rank(local, &localRank);
 
-  int myRootProc;
-  int otherRootProc;
-  std::tie(myRootProc, otherRootProc) = stk::coupling::calc_my_root_and_other_root_ranks(global, local);
+  PairwiseRanks rootRanks = splitComms.get_pairwise_root_ranks(otherColor);
+  int myRootProc = rootRanks.localColorRoot;
+  int otherRootProc = rootRanks.otherColorRoot;
 
   if (globalRank == myRootProc)
   {
@@ -97,6 +92,16 @@ SyncInfo::exchange(stk::ParallelMachine global, stk::ParallelMachine local)
   }
 
   return recvInfo;
+}
+
+SyncInfo::ColorToSyncInfoMap SyncInfo::exchange(const SplitComms & splitComms) const
+{
+  ColorToSyncInfoMap otherInfos;
+  std::vector<int> otherColors = splitComms.get_other_colors();
+  for(int otherColor : otherColors) {
+    otherInfos[otherColor] = exchange(splitComms, otherColor);
+  }
+  return otherInfos;
 }
 
 }

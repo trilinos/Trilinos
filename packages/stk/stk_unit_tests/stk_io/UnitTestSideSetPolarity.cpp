@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_unit_test_utils/ioUtils.hpp>
 #include "stk_mesh/base/GetEntities.hpp"
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData

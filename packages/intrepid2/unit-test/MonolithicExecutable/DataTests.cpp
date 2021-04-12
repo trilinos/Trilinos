@@ -62,8 +62,9 @@ namespace
  */
   TEUCHOS_UNIT_TEST( Data, EmptyDataMarkedAsInvalid )
   {
+    using DeviceType = DefaultTestDeviceType;
     // check the new default constructor for Data
-    Data<double> emptyData;
+    Data<double,DeviceType> emptyData;
     TEST_EQUALITY(emptyData.isValid(), false); // empty data container should return false from isValid()
   }
 
@@ -73,7 +74,7 @@ namespace
   TEUCHOS_UNIT_TEST( Data, GetWritableEntry )
   {
     using Scalar = double;
-    using ExecSpaceType = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     
     // no arithmetic, so comparisons should be exact
     double relTol = 0.0;
@@ -82,10 +83,11 @@ namespace
     const int numRows = 3;
     const int numCols = 3;
     const Scalar lastValueToSet = 18;
-    auto zeroView = getView<Scalar>("GetWritableEntry view", numRows, numCols);
+    auto zeroView = getView<Scalar,DeviceType>("GetWritableEntry view", numRows, numCols);
     Kokkos::deep_copy(zeroView,0);
-    Data<double> data(zeroView);
+    Data<double,DeviceType> data(zeroView);
     
+    using ExecSpaceType = typename DeviceType::execution_space;
     Kokkos::RangePolicy<ExecSpaceType> policy(0,1); // trivial policy: 1 entry
     Kokkos::parallel_for("set lastVal", policy,
     KOKKOS_LAMBDA (const int &i) {
@@ -93,7 +95,7 @@ namespace
       lastVal = lastValueToSet;
     });
     
-    auto expectedView = getView<Scalar>("GetWritableEntry expected view", numRows, numCols);
+    auto expectedView = getView<Scalar,DeviceType>("GetWritableEntry expected view", numRows, numCols);
     auto expectedViewHost = Kokkos::create_mirror_view(expectedView);
     Kokkos::deep_copy(expectedViewHost,0);
     expectedViewHost(numRows-1,numCols-1) = lastValueToSet;
@@ -110,22 +112,23 @@ namespace
     double relTol = 1e-13;
     double absTol = 1e-13;
     
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
     const int spaceDim = 2;
-    auto matrixView = getView<Scalar>("full matrix", spaceDim, spaceDim);
+    auto matrixView = getView<Scalar,DeviceType>("full matrix", spaceDim, spaceDim);
     auto matrixViewHost = Kokkos::create_mirror(matrixView);
     matrixViewHost(0,0) =  1.0;  matrixViewHost(0,1) =  2.0;
     matrixViewHost(1,0) = -1.0;  matrixViewHost(1,1) =  3.0;
     Kokkos::deep_copy(matrixView, matrixViewHost);
     
-    auto vecView = getView<Scalar>("vector", spaceDim);
+    auto vecView = getView<Scalar,DeviceType>("vector", spaceDim);
     auto vecViewHost = Kokkos::create_mirror(vecView);
     
     vecViewHost(0) = 1.0;
     vecViewHost(1) = 2.0;
     Kokkos::deep_copy(vecView, vecViewHost);
     
-    auto expectedResultView = getView<Scalar>("result vector", spaceDim);
+    auto expectedResultView = getView<Scalar,DeviceType>("result vector", spaceDim);
     auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     expectedResultViewHost(0) = matrixViewHost(0,0) * vecViewHost(0) + matrixViewHost(0,1) * vecViewHost(1);
@@ -133,9 +136,9 @@ namespace
     
     Kokkos::deep_copy(expectedResultView, expectedResultViewHost);
     
-    Data<Scalar> matData(matrixView);
-    Data<Scalar> vecData(vecView);
-    auto actualResultData = Data<Scalar>::allocateMatVecResult(matData, vecData);
+    Data<Scalar,DeviceType> matData(matrixView);
+    Data<Scalar,DeviceType> vecData(vecView);
+    auto actualResultData = Data<Scalar,DeviceType>::allocateMatVecResult(matData, vecData);
     actualResultData.storeMatVec(matData, vecData);
     
     testFloatingEquality1(expectedResultView, actualResultData.getUnderlyingView1(), relTol, absTol, out, success);
@@ -149,22 +152,23 @@ namespace
     double relTol = 1e-13;
     double absTol = 1e-13;
     
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
     const int spaceDim = 2;
     const int cellCount = 1;
-    auto leftMatrixView = getView<Scalar>("left matrix", cellCount, spaceDim, spaceDim);
+    auto leftMatrixView = getView<Scalar,DeviceType>("left matrix", cellCount, spaceDim, spaceDim);
     auto leftMatrixViewHost = Kokkos::create_mirror(leftMatrixView);
     leftMatrixViewHost(0,0,0) =  1.0;  leftMatrixViewHost(0,0,1) =  2.0;
     leftMatrixViewHost(0,1,0) = -1.0;  leftMatrixViewHost(0,1,1) =  3.0;
     Kokkos::deep_copy(leftMatrixView, leftMatrixViewHost);
     
-    auto rightMatrixView = getView<Scalar>("right matrix", cellCount, spaceDim, spaceDim);
+    auto rightMatrixView = getView<Scalar,DeviceType>("right matrix", cellCount, spaceDim, spaceDim);
     auto rightMatrixViewHost = Kokkos::create_mirror(rightMatrixView);
     rightMatrixViewHost(0,0,0) =  1.0;  rightMatrixViewHost(0,0,1) =  2.0;
     rightMatrixViewHost(0,1,0) = -1.0;  rightMatrixViewHost(0,1,1) =  3.0;
     Kokkos::deep_copy(rightMatrixView, rightMatrixViewHost);
     
-    auto expectedResultView = getView<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
+    auto expectedResultView = getView<Scalar,DeviceType>("result matrix", cellCount, spaceDim, spaceDim);
     auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
     
     const int cellOrdinal = 0;
@@ -188,9 +192,9 @@ namespace
     const bool transposeA = false;
     const bool transposeB = false;
     
-    Data<Scalar> A_data(leftMatrixView);
-    Data<Scalar> B_data(rightMatrixView);
-    auto actualResultData = Data<Scalar>::allocateMatMatResult(transposeA, A_data, transposeB, B_data);
+    Data<Scalar,DeviceType> A_data(leftMatrixView);
+    Data<Scalar,DeviceType> B_data(rightMatrixView);
+    auto actualResultData = Data<Scalar,DeviceType>::allocateMatMatResult(transposeA, A_data, transposeB, B_data);
     
     TEST_EQUALITY(       3,  actualResultData.rank());
     TEST_EQUALITY(cellCount, actualResultData.extent_int(0));
@@ -210,6 +214,8 @@ namespace
 TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; notionally (C,P,D,D)
 {
   // tests that identity * identity = identity
+  using DeviceType = DefaultTestDeviceType;
+  
   double relTol = 1e-13;
   double absTol = 1e-13;
   
@@ -236,7 +242,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
   Kokkos::Array<int,4> transformationExtents {cellCount, numPoints, spaceDim, spaceDim};
   Kokkos::Array<DataVariationType,4> transformationVariationType {CONSTANT, GENERAL, GENERAL, GENERAL};
   
-  Data<Scalar> explicitIdentityMatrix(identityMatrixView, transformationExtents, transformationVariationType);
+  Data<Scalar,DeviceType> explicitIdentityMatrix(identityMatrixView, transformationExtents, transformationVariationType);
   
   using std::vector;
   using std::pair;
@@ -257,7 +263,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     const string transposeBString = transposeB ? "true" : "false";
   
     out << "*** Testing transposeA = " << transposeAString << ", transposeB = " << transposeBString << " ***\n";
-    auto actualResultData = Data<Scalar>::allocateMatMatResult(transposeA, explicitIdentityMatrix, transposeB, explicitIdentityMatrix);
+    auto actualResultData = Data<Scalar,DeviceType>::allocateMatMatResult(transposeA, explicitIdentityMatrix, transposeB, explicitIdentityMatrix);
     
     TEST_EQUALITY(       4,  actualResultData.rank());
     TEST_EQUALITY(cellCount, actualResultData.extent_int(0));
@@ -278,6 +284,8 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
 */
   TEUCHOS_UNIT_TEST( Data, MatMatBlockPlusDiagonal )
   {
+    using DeviceType = DefaultTestDeviceType;
+    
     double relTol = 1e-13;
     double absTol = 1e-13;
     
@@ -285,7 +293,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     const int spaceDim = 3;
     const int leftLastNonDiagonal = 1;
     const int cellCount = 1;
-    auto leftMatrixView = getView<Scalar>("left matrix", cellCount, (leftLastNonDiagonal+1) * (leftLastNonDiagonal+1) + (spaceDim - leftLastNonDiagonal - 1));
+    auto leftMatrixView = getView<Scalar,DeviceType>("left matrix", cellCount, (leftLastNonDiagonal+1) * (leftLastNonDiagonal+1) + (spaceDim - leftLastNonDiagonal - 1));
     auto leftMatrixViewHost = Kokkos::create_mirror(leftMatrixView);
     int entryIndex = 0;
     // Block:
@@ -296,7 +304,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     Kokkos::deep_copy(leftMatrixView, leftMatrixViewHost);
     
     const int rightLastNonDiagonal = 0;
-    auto rightMatrixView = getView<Scalar>("right matrix", cellCount, (rightLastNonDiagonal+1) * (rightLastNonDiagonal+1) + (spaceDim - rightLastNonDiagonal - 1));
+    auto rightMatrixView = getView<Scalar,DeviceType>("right matrix", cellCount, (rightLastNonDiagonal+1) * (rightLastNonDiagonal+1) + (spaceDim - rightLastNonDiagonal - 1));
     auto rightMatrixViewHost = Kokkos::create_mirror(rightMatrixView);
     entryIndex = 0;
     // Diagonal:
@@ -313,31 +321,27 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
     Kokkos::Array<int,7> extents {cellCount,spaceDim,spaceDim,0,0,0,0};
     Kokkos::Array<DataVariationType,7> variationTypes {GENERAL,BLOCK_PLUS_DIAGONAL,BLOCK_PLUS_DIAGONAL,CONSTANT,CONSTANT,CONSTANT,CONSTANT};
     
-    Data<Scalar> A( leftMatrixView, rank, extents, variationTypes, leftLastNonDiagonal);
-    Data<Scalar> B(rightMatrixView, rank, extents, variationTypes, rightLastNonDiagonal);
+    Data<Scalar,DeviceType> A( leftMatrixView, rank, extents, variationTypes, leftLastNonDiagonal);
+    Data<Scalar,DeviceType> B(rightMatrixView, rank, extents, variationTypes, rightLastNonDiagonal);
     
-    auto expectedResultView = getView<Scalar>("result matrix", cellCount, spaceDim, spaceDim);
-    auto expectedResultViewHost = Kokkos::create_mirror(expectedResultView);
+    auto expectedResultView = getView<Scalar,DeviceType>("result matrix", cellCount, spaceDim, spaceDim);
     
     const int cellOrdinal = 0;
-    for (int i=0; i<spaceDim; i++)
+    auto policy = Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<2>>({0,0},{spaceDim,spaceDim});
+    Kokkos::parallel_for("compute first-order simplex Jacobians", policy,
+    KOKKOS_LAMBDA(const int &i, const int &j)
     {
-      for (int j=0; j<spaceDim; j++)
+      Scalar result =  0;
+      for (int k=0; k<spaceDim; k++)
       {
-        Scalar result =  0;
-        for (int k=0; k<spaceDim; k++)
-        {
-          Scalar left  = transposeA ? A(cellOrdinal,k,i) : A(cellOrdinal,i,k);
-          Scalar right = transposeB ? B(cellOrdinal,j,k) : B(cellOrdinal,k,j);
-          result += left * right;
-        }
-        expectedResultViewHost(cellOrdinal, i, j) = result;
+        Scalar left  = transposeA ? A(cellOrdinal,k,i) : A(cellOrdinal,i,k);
+        Scalar right = transposeB ? B(cellOrdinal,j,k) : B(cellOrdinal,k,j);
+        result += left * right;
       }
-    }
-    
-    Kokkos::deep_copy(expectedResultView, expectedResultViewHost);
-    
-    auto actualResultData = Data<Scalar>::allocateMatMatResult(transposeA, A, transposeB, B);
+      expectedResultView(cellOrdinal, i, j) = result;
+    });
+        
+    auto actualResultData = Data<Scalar,DeviceType>::allocateMatMatResult(transposeA, A, transposeB, B);
     
     TEST_EQUALITY(       3,  actualResultData.rank());
     TEST_EQUALITY(cellCount, actualResultData.extent_int(0));
@@ -355,11 +359,11 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
   }
   
   // test statically that Data supports all 7 rank operators
-  static_assert(supports_rank<Data<double>,1>::value, "Data is expected to support up to rank 7");
-  static_assert(supports_rank<Data<double>,2>::value, "Data is expected to support up to rank 7");
-  static_assert(supports_rank<Data<double>,3>::value, "Data is expected to support up to rank 7");
-  static_assert(supports_rank<Data<double>,4>::value, "Data is expected to support up to rank 7");
-  static_assert(supports_rank<Data<double>,5>::value, "Data is expected to support up to rank 7");
-  static_assert(supports_rank<Data<double>,6>::value, "Data is expected to support up to rank 7");
-  static_assert(supports_rank<Data<double>,7>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,1>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,2>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,3>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,4>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,5>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,6>::value, "Data is expected to support up to rank 7");
+  static_assert(supports_rank<Data<double,DefaultTestDeviceType>,7>::value, "Data is expected to support up to rank 7");
 } // anonymous namespace

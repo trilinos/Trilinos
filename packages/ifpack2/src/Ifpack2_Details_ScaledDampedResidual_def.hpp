@@ -389,7 +389,7 @@ fusedCase (vector_type& W,
   auto B_lcl = Kokkos::subview(B.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   auto X_lcl = Kokkos::subview(X_colMap.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   if (beta == STS::zero ()) {
-    auto W_lcl = Kokkos::subview(W.getLocalViewDevice(Tpetra::Access::WriteOnly), Kokkos::ALL(), 0);
+    auto W_lcl = Kokkos::subview(W.getLocalViewDevice(Tpetra::Access::OverwriteAll), Kokkos::ALL(), 0);
     scaled_damped_residual_vector (alpha, W_lcl, Dinv_lcl,
         B_lcl, A_lcl, X_lcl, beta);
   }

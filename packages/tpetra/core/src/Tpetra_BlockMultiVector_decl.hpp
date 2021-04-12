@@ -608,7 +608,7 @@ public:
   little_host_vec_type getLocalBlock(
     const LO localRowIndex, 
     const LO colIndex, 
-    Access::WriteOnlyStruct);
+    Access::OverwriteAllStruct);
   //@}
 
 protected:

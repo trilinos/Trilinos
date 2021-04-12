@@ -74,7 +74,7 @@
 #include <Thyra_VectorSpaceBase_decl.hpp>
 
 // Stratimikos includes
-#include <Stratimikos_FROSchXpetra.hpp>
+#include <Stratimikos_FROSch_def.hpp>
 
 #include <Tpetra_Core.hpp>
 
@@ -115,7 +115,7 @@ int main(int argc, char *argv[])
 
     RCP<FancyOStream> out = VerboseObjectBase::getDefaultOStream();
 
-    int M = 4;
+    int M = 3;
     My_CLP.setOption("M",&M,"H / h.");
     int Dimension = 2;
     My_CLP.setOption("DIM",&Dimension,"Dimension.");
@@ -264,7 +264,7 @@ int main(int argc, char *argv[])
             RepeatedMaps[block] = BuildRepeatedMapNonConst<LO,GO,NO>(K[block]->getCrsGraph()); //RCP<FancyOStream> fancy = fancyOStream(rcpFromRef(cout)); RepeatedMaps[block]->describe(*fancy,VERB_EXTREME);
         }
 
-        Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Monolythic System #\n##############################\n" << endl;
+        Comm->barrier(); if (Comm->getRank()==0) cout << "##############################\n# Assembly Monolithic System #\n##############################\n" << endl;
 
         RCP<Matrix<SC,LO,GO,NO> > KMonolithic;
         if (NumberOfBlocks>1) {

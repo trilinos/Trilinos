@@ -43,32 +43,8 @@ void Info::Interface::enroll_options()
 
   options_.enroll("help", Ioss::GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
-  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
-
-  options_.enroll("check_node_status", Ioss::GetLongOption::NoValue,
-                  "Check whether there are any nodes not connected to any elements", nullptr);
-  options_.enroll("adjacencies", Ioss::GetLongOption::NoValue,
-                  "Calculate which element blocks touch which surfaces and other element blocks",
-                  nullptr);
-  options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "True if using 64-bit integers", nullptr);
-  options_.enroll("compute_volume", Ioss::GetLongOption::NoValue,
-                  "Compute the volume of all hex elements in the mesh. Outputs min/max and count",
-                  nullptr);
-  options_.enroll("compute_bbox", Ioss::GetLongOption::NoValue,
-                  "Compute the bounding box of all element blocks in the mesh.", nullptr);
-
-  options_.enroll("list_groups", Ioss::GetLongOption::NoValue,
-                  "Print a list of the names of all groups in this file and then exit.", nullptr);
-
-  options_.enroll("disable_field_recognition", Ioss::GetLongOption::NoValue,
-                  "Do not combine fields into vector, tensor fields based on basename and suffix.\n"
-                  "\t\tKeep all fields on database as scalars",
-                  nullptr);
-
-  options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
-                  "Character used to separate a field suffix from the field basename\n"
-                  "\t\t when recognizing vector, tensor fields. Enter '0' for no separaor",
-                  "_");
+  options_.enroll("configuration", Ioss::GetLongOption::NoValue,
+                  "Show configuration of IOSS library (TPL versions)", nullptr);
 
   options_.enroll("db_type", Ioss::GetLongOption::MandatoryValue,
                   "Database Type: generated"
@@ -81,32 +57,46 @@ void Info::Interface::enroll_options()
 #if defined(SEACAS_HAVE_CGNS)
                   ", cgns"
 #endif
-#if defined(SEACAS_HAVE_DATAWAREHOUSE)
-                  ", data_warehouse"
+#if defined(SEACAS_HAVE_FAODEL)
+                  ", faodel"
 #endif
                   ".",
                   "unknown");
-  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr);
-
-  options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
-                  "List information only for the specified group.", nullptr);
-
-  options_.enroll("use_generic_names", Ioss::GetLongOption::NoValue,
-                  "True to use generic names (type_id) instead of names in database", nullptr);
+  options_.enroll("in_type", Ioss::GetLongOption::MandatoryValue, "(alias for db_type)", nullptr,
+                  nullptr, true);
 
   options_.enroll("summary", Ioss::GetLongOption::NoValue,
                   "Only output counts of nodes, elements, and entities", nullptr);
 
-  options_.enroll("configuration", Ioss::GetLongOption::NoValue,
-                  "Show configuration of IOSS library (TPL versions)", nullptr);
+  options_.enroll("check_node_status", Ioss::GetLongOption::NoValue,
+                  "Check whether there are any nodes not connected to any elements", nullptr);
+  options_.enroll("adjacencies", Ioss::GetLongOption::NoValue,
+                  "Calculate which element blocks touch which surfaces and other element blocks",
+                  nullptr);
+  options_.enroll("compute_volume", Ioss::GetLongOption::NoValue,
+                  "Compute the volume of all hex elements in the mesh. Outputs min/max and count",
+                  nullptr);
+  options_.enroll("compute_bbox", Ioss::GetLongOption::NoValue,
+                  "Compute the bounding box of all element blocks in the mesh.", nullptr, nullptr,
+                  true);
+
+  options_.enroll("disable_field_recognition", Ioss::GetLongOption::NoValue,
+                  "Do not combine fields into vector, tensor fields based on basename and suffix.\n"
+                  "\t\tKeep all fields on database as scalars",
+                  nullptr);
+
+  options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
+                  "Character used to separate a field suffix from the field basename\n"
+                  "\t\t when recognizing vector, tensor fields. Enter '0' for no separaor",
+                  "_");
+
+  options_.enroll("use_generic_names", Ioss::GetLongOption::NoValue,
+                  "Use generic names (type_id) instead of names in database", nullptr);
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
                   "Method used to split sidesets into homogeneous blocks\n"
                   "\t\tOptions are: TOPOLOGY, BLOCK, NOSPLIT",
-                  "TOPOLOGY");
-
-  options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
-                  nullptr);
+                  "TOPOLOGY", nullptr, true);
 
 #if defined(SEACAS_HAVE_MPI)
 #if !defined(NO_ZOLTAN_SUPPORT)
@@ -160,8 +150,20 @@ void Info::Interface::enroll_options()
   options_.enroll("serialize_io_size", Ioss::GetLongOption::MandatoryValue,
                   "Number of processors that can perform simultaneous IO operations in "
                   "a parallel run; 0 to disable",
-                  nullptr);
+                  nullptr, nullptr, true);
+
 #endif
+  options_.enroll("list_groups", Ioss::GetLongOption::NoValue,
+                  "Print a list of the names of all groups in this file and then exit.", nullptr);
+
+  options_.enroll("group_name", Ioss::GetLongOption::MandatoryValue,
+                  "List information only for the specified group.", nullptr, nullptr, true);
+
+  options_.enroll("64-bit", Ioss::GetLongOption::NoValue, "Use 64-bit integers", nullptr);
+  options_.enroll("version", Ioss::GetLongOption::NoValue, "Print version and exit", nullptr);
+
+  options_.enroll("copyright", Ioss::GetLongOption::NoValue, "Show copyright and license data.",
+                  nullptr);
 }
 
 bool Info::Interface::parse_options(int argc, char **argv)
@@ -196,62 +198,19 @@ bool Info::Interface::parse_options(int argc, char **argv)
     exit(0);
   }
 
-  if (options_.retrieve("check_node_status") != nullptr) {
-    checkNodeStatus_ = true;
-  }
+  checkNodeStatus_ = options_.retrieve("check_node_status") != nullptr;
+  adjacencies_     = options_.retrieve("adjacencies") != nullptr;
+  ints64Bit_       = options_.retrieve("64-bit") != nullptr;
+  computeVolume_   = options_.retrieve("compute_volume") != nullptr;
+  computeBBox_     = options_.retrieve("compute_bbox") != nullptr;
+  listGroups_      = options_.retrieve("list_groups") != nullptr;
+  useGenericNames_ = options_.retrieve("use_generic_names") != nullptr;
+  summary_         = options_.retrieve("summary") != nullptr;
+  showConfig_      = options_.retrieve("configuration") != nullptr;
 
-  if (options_.retrieve("adjacencies") != nullptr) {
-    adjacencies_ = true;
-  }
-
-  if (options_.retrieve("64-bit") != nullptr) {
-    ints64Bit_ = true;
-  }
-
-  if (options_.retrieve("compute_volume") != nullptr) {
-    computeVolume_ = true;
-  }
-
-  if (options_.retrieve("compute_bbox") != nullptr) {
-    computeBBox_ = true;
-  }
-
-  if (options_.retrieve("list_groups") != nullptr) {
-    listGroups_ = true;
-  }
-
-  if (options_.retrieve("use_generic_names") != nullptr) {
-    useGenericNames_ = true;
-  }
-
-  if (options_.retrieve("summary") != nullptr) {
-    summary_ = true;
-  }
-
-  if (options_.retrieve("configuration") != nullptr) {
-    showConfig_ = true;
-  }
-
-  {
-    const char *temp = options_.retrieve("db_type");
-    if (temp != nullptr) {
-      filetype_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("in_type");
-    if (temp != nullptr) {
-      filetype_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("group_name");
-    if (temp != nullptr) {
-      groupname_ = temp;
-    }
-  }
+  filetype_  = options_.get_option_value("db_type", filetype_);
+  filetype_  = options_.get_option_value("in_type", filetype_);
+  groupname_ = options_.get_option_value("group_name", groupname_);
 
   {
     const char *temp = options_.retrieve("surface_split_scheme");
@@ -271,9 +230,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
     }
   }
 
-  if (options_.retrieve("disable_field_recognition") != nullptr) {
-    disableFieldRecognition_ = true;
-  }
+  disableFieldRecognition_ = options_.retrieve("disable_field_recognition") != nullptr;
 
   {
     const char *temp = options_.retrieve("field_suffix_separator");
@@ -326,7 +283,7 @@ bool Info::Interface::parse_options(int argc, char **argv)
 
   if (options_.retrieve("copyright") != nullptr) {
     fmt::print(stderr, "\n"
-                       "Copyright(C) 1999-2017 National Technology & Engineering Solutions\n"
+                       "Copyright(C) 1999-2021 National Technology & Engineering Solutions\n"
                        "of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with\n"
                        "NTESS, the U.S. Government retains certain rights in this software.\n\n"
                        "Redistribution and use in source and binary forms, with or without\n"

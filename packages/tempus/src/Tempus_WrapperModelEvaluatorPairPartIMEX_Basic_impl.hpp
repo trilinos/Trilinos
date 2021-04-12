@@ -317,6 +317,7 @@ setParameterIndex(int parameterIndex)
   if (implicitModel_->Np() == 0) {
     if (parameterIndex >= 0) {
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1,
         "WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()");
       *out << "Warning -- \n"
@@ -326,6 +327,7 @@ setParameterIndex(int parameterIndex)
     }
     if (parameterIndex_ >= 0) {
       Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1,
         "WrapperModelEvaluatorPairPartIMEX_Basic::setParameterIndex()");
       *out << "Warning -- \n"

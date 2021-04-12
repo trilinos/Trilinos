@@ -218,7 +218,7 @@ namespace Thyra {
         return true;
       }
       else {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter M1 has wrong type.");
+        TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "Parameter " << parameterName << " has wrong type.");
         return false;
       }
     } else

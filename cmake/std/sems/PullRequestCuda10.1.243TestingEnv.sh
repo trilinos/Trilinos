@@ -16,6 +16,10 @@ export OMPI_FC=`which gfortran`
 export CUDA_LAUNCH_BLOCKING=1
 export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
 
+## Set the cuda_aware_mpi in the environment as the shell script
+## will not get the CMake variable settings.
+export TPETRA_ASSUME_CUDA_AWARE_MPI=1
+
 # Use manually installed cmake and ninja to try to avoid module loading
 # problems (see TRIL-208)
 export PATH=/projects/atdm_devops/vortex/cmake-3.17.2/bin:$PATH

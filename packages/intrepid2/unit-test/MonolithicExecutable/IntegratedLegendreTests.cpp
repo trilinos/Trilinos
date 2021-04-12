@@ -61,12 +61,15 @@ namespace
   // x and t values used across these tests
   std::vector<double> t_values = {{0.0, 0.2, 0.4, 0.6, 0.8, 1.0}};
   std::vector<double> x_values = {{-1.0,-0.5,-1.0/3.0,0.0,1.0/3.0,0.50,1.0}};
+
+  using DeviceType = DefaultTestDeviceType;
+  using ExecutionSpace = typename DeviceType::execution_space;
   
   void testIntegratedLegendreTwoPathsMatch(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
-    Kokkos::View<double*> integrated_legendre_values("integrated legendre values",polyOrder+1);
-    Kokkos::View<double*> shifted_scaled_legendre_values("shifted scaled legendre values",polyOrder+1);
-    Kokkos::View<double*> integrated_legendre_values_second_path("integrated legendre values (second path)",polyOrder+1);
+    Kokkos::View<double*,DeviceType> integrated_legendre_values("integrated legendre values",polyOrder+1);
+    Kokkos::View<double*,DeviceType> shifted_scaled_legendre_values("shifted scaled legendre values",polyOrder+1);
+    Kokkos::View<double*,DeviceType> integrated_legendre_values_second_path("integrated legendre values (second path)",polyOrder+1);
     
     for (auto x : x_values)
     {
@@ -75,8 +78,9 @@ namespace
         using Intrepid2::Polynomials::shiftedScaledIntegratedLegendreValues;
         using Intrepid2::Polynomials::shiftedScaledLegendreValues;
         
-        // wrap polynomial invocations in parallel_for just to ensure execution on device (for CUDA)
-        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+        // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
+        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
           shiftedScaledIntegratedLegendreValues(integrated_legendre_values, polyOrder, x, t);
           shiftedScaledLegendreValues(shifted_scaled_legendre_values, polyOrder, x, t);
@@ -108,9 +112,9 @@ namespace
   
   void testIntegratedLegendre_dtTwoPathsMatch(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
-    Kokkos::View<double*> integrated_legendre_values_dt("d/dt(integrated legendre) values",polyOrder+1);
-    Kokkos::View<double*> shifted_scaled_legendre_values("shifted scaled legendre values",polyOrder+1);
-    Kokkos::View<double*> integrated_legendre_values_dt_second_path("d/dt(integrated legendre) values (second path)",polyOrder+1);
+    Kokkos::View<double*,DeviceType> integrated_legendre_values_dt("d/dt(integrated legendre) values",polyOrder+1);
+    Kokkos::View<double*,DeviceType> shifted_scaled_legendre_values("shifted scaled legendre values",polyOrder+1);
+    Kokkos::View<double*,DeviceType> integrated_legendre_values_dt_second_path("d/dt(integrated legendre) values (second path)",polyOrder+1);
     
     for (auto x : x_values)
     {
@@ -119,8 +123,9 @@ namespace
         using Intrepid2::Polynomials::shiftedScaledIntegratedLegendreValues_dt;
         using Intrepid2::Polynomials::shiftedScaledLegendreValues;
         
-        // wrap polynomial invocations in parallel_for just to ensure execution on device (for CUDA)
-        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+        // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
+        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
           shiftedScaledIntegratedLegendreValues_dt(integrated_legendre_values_dt, polyOrder, x, t);
           shiftedScaledLegendreValues(shifted_scaled_legendre_values, polyOrder, x, t);
@@ -151,8 +156,8 @@ namespace
   
   void testIntegratedLegendreMatchesFormula(const int polyOrder, const double tol, Teuchos::FancyOStream &out, bool &success)
   {
-    Kokkos::View<double*> integrated_legendre_values("integrated legendre values",polyOrder+1);
-    Kokkos::View<double*> shifted_scaled_legendre_values("shifted scaled legendre values",polyOrder+1);
+    Kokkos::View<double*,DeviceType> integrated_legendre_values("integrated legendre values",polyOrder+1);
+    Kokkos::View<double*,DeviceType> shifted_scaled_legendre_values("shifted scaled legendre values",polyOrder+1);
     
     for (auto x : x_values)
     {
@@ -161,8 +166,9 @@ namespace
         using Intrepid2::Polynomials::shiftedScaledIntegratedLegendreValues;
         using Intrepid2::Polynomials::shiftedScaledLegendreValues;
         
-        // wrap polynomial invocations in parallel_for just to ensure execution on device (for CUDA)
-        Kokkos::parallel_for(1, KOKKOS_LAMBDA(const int dummy_index)
+        // wrap invocation in parallel_for just to ensure execution on device (for CUDA)
+        auto policy = Kokkos::RangePolicy<>(ExecutionSpace(),0,1);
+        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const int dummy_index)
         {
           shiftedScaledIntegratedLegendreValues(integrated_legendre_values, polyOrder, x, t);
           shiftedScaledLegendreValues(shifted_scaled_legendre_values, polyOrder, x, t);
@@ -216,7 +222,7 @@ namespace
   //{
   //  bool success = true;
   //
-  //  Kokkos::View<double*> integrated_legendre_values("integrated legendre values",polyOrder+1);
+  //  Kokkos::View<double*,DeviceType> integrated_legendre_values("integrated legendre values",polyOrder+1);
   //
   //  using Intrepid2::PolyLib::integratedLegendreValues;
   //  using Intrepid2::PolyLib::shiftedScaledIntegratedLegendreValues;
@@ -224,7 +230,7 @@ namespace
   //
   //  integratedLegendreValues(integrated_legendre_values, polyOrder, x);
   //
-  //  Kokkos::View<double*> shifted_scaled_integrated_legendre_values("shifted scaled integrated legendre values",polyOrder+1);
+  //  Kokkos::View<double*,DeviceType> shifted_scaled_integrated_legendre_values("shifted scaled integrated legendre values",polyOrder+1);
   //  using Intrepid2::PolyLib::shiftedScaledIntegratedLegendreValues;
   //
   //  const double x_scaled = (x + 1.0) / 2.0;

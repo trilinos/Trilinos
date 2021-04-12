@@ -53,6 +53,13 @@ void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
                                   const stk::mesh::EntityVector& killedElements,
                                   const stk::mesh::PartVector& removeParts);
 
+struct ElementAndPart {
+  stk::mesh::EntityId id;
+  std::string partName;
+};
+
+void put_elements_into_part(stk::mesh::BulkData& bulkData, const std::vector<ElementAndPart> & entries);
+
 } // namespace unit_test_util
 } // namespace stk
 

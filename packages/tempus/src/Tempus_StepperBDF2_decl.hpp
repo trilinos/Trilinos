@@ -24,23 +24,47 @@ namespace Tempus {
  *  for a variable time-step, \f$\Delta t\f$.  It is a 2-step method.
  *
  *  <b> Algorithm </b>
- *   - For \f$n=0\f$, set the initial condition, \f$x_0\f$.
- *   - For \f$n=1\f$, use a one-step startup stepper, e.g., Backward Euler
- *     or RK4.  The default startup stepper is 'IRK 1 Stage Theta Method'
- *     which second order.
- *   - For \f$n>1\f$, solve for \f$x_n\f$ via
- *       \f$ f\left(x_n, \dot{x}_n, t_n\right) = 0\f$
- *  where \f$
- *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *  The single-timestep algorithm for BDF2 is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} BDF2 \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\bf if ( "Startup", i.e., number of states $<$ 3) then}
+ *      \item \quad {\bf Take timestep with startup Stepper.}
+ *      \item \quad {\bf return}
+ *      \item {\bf endif}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf Get old states $x_{n-1}$ and $x_{n-2}$.}
+ *      \item {\bf Set ODE parameters.}
+ *      \item \quad {\bf Time derivative: }
+ *            $\dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
  *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
  *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
- *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
- *  and \f$\Delta t_n = \tau_n = t_n - t_{n-1}\f$.
- *   - \f$\dot{x}_n \leftarrow
- *    \dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right]$
+ *      \item \quad {\bf Alpha: $\alpha = \frac{2\tau_n + \tau_{n-1}}{(\tau_n + \tau_{n-1})\tau_n}$}
+ *      \item \quad {\bf Beta: $\beta = 1$}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item {\bf Solve $\mathcal{F}(\dot{x}_n,x_n,t_n) = 0$ for $x_n$.}
+ *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item {\bf Update} $\dot{x}_{n} = \frac{2\tau_n + \tau_{n-1}}{\tau_n + \tau_{n-1}}
  *                  \left[ \frac{x_n-x_{n-1}}{\tau_n}\right]
  *                -  \frac{\tau_n}{\tau_n + \tau_{n-1}}
- *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right], \f$
+ *                   \left[ \frac{x_{n-1}-x_{n-2}}{\tau_{n-1}}\right]$
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
+ *
+ *  The startup stepper allows BDF2 to use user-specified Stepper for the
+ *  first timestep in order to populate the SolutionHistory with past states.
+ *  A one-step startup stepper is perfect for this situation, e.g., Backward
+ *  Euler or RK4.  The default startup stepper is 'IRK 1 Stage Theta Method',
+ *  which is second order accurate and allows an overall second-order solution.
  *
  *  The First-Same-As-Last (FSAL) principle is not needed for BDF2.
  *  The default is to set useFSAL=false, however useFSAL=true will also work

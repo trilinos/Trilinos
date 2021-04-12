@@ -42,10 +42,11 @@ void objMulti(void *data, int ngid, int nlid,
 {
   *ierr = ZOLTAN_OK;
   struct Mesh *mesh = (struct Mesh *) data;
-  for (int i = 0; i < mesh->nMyCoords; i++) {
+  int i, j;
+  for (i = 0; i < mesh->nMyCoords; i++) {
     lid[i*nlid] = i+mesh->myFirstCoord;
     gid[i*ngid] = i+mesh->myFirstCoord; 
-    for (int j = 0; j < wdim; j++) wgt[i*wdim+j] = 1.;
+    for (j = 0; j < wdim; j++) wgt[i*wdim+j] = 1.;
   }
 }
 
@@ -56,8 +57,8 @@ void geomMulti(void *data, int ngid, int nlid, int nobj,
                double *coords, int *ierr)
 {
   struct Mesh *mesh = (struct Mesh *) data;
-
-  for (int i = 0; i < nobj; i++) {
+  int i;
+  for (i = 0; i < nobj; i++) {
     coords[i*ndim]   = mesh->x[lid[i*nlid]];
     coords[i*ndim+1] = mesh->y[lid[i*nlid]];
     coords[i*ndim+2] = mesh->z[lid[i*nlid]];
@@ -202,7 +203,8 @@ int run_test(       /* Test options relevant to serialization, such as... */
 
   int answer[nTwo];
   if (me == 0) {
-    for (int i = 0; i < nTwo; i++) {
+    int i;
+    for (i = 0; i < nTwo; i++) {
       double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
       Zoltan_LB_Point_PP_Assign(zz, tmp, NULL, &answer[i]);
       printf("Point (%f %f %f) on part %d\n", 
@@ -214,7 +216,8 @@ int run_test(       /* Test options relevant to serialization, such as... */
   /* Each processor computes answer using new struct newZZ */
 
   int errCnt = 0;
-  for (int i = 0; i < nTwo; i++) {
+  int i;
+  for (i = 0; i < nTwo; i++) {
     int newAnswer;
     double tmp[3]; tmp[0] = xTwo[i]; tmp[1] = yTwo[i]; tmp[2] = zTwo[i];
     Zoltan_LB_Point_PP_Assign(newZZ, tmp, NULL, &newAnswer);

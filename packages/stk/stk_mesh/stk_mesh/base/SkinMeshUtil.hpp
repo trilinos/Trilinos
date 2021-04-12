@@ -67,7 +67,8 @@ private:
 
     std::vector<SideSetEntry> extract_all_sides_sideset(bool includeAuraElementSides = false);
 
-    std::vector<int> get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement);
+    void get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSidesThisElement,
+                           std::vector<int>& exposedSides);
 
     void add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides);
 
@@ -77,12 +78,14 @@ private:
 
     bool is_element_selected_and_can_have_side(const stk::mesh::Selector& selector, stk::mesh::Entity otherElement);
 
-    std::vector<int> get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId,
-                                                      int numElemSides);
+    void get_sides_exposed_on_other_procs(stk::mesh::impl::LocalId localId,
+                                          int numElemSides,
+                                          std::vector<int>& exposedSides);
 
-    std::vector<int> get_sides_for_skinning(const stk::mesh::Bucket& bucket,
-                                            stk::mesh::Entity element,
-                                            stk::mesh::impl::LocalId localId);
+    void get_sides_for_skinning(const stk::mesh::Bucket& bucket,
+                                stk::mesh::Entity element,
+                                stk::mesh::impl::LocalId localId,
+                                std::vector<int>& exposedSides);
 
     void mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
                                 std::vector<bool> &isOnlyConnectedRemotely);

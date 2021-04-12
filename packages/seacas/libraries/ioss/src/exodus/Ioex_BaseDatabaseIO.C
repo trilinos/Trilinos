@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -72,6 +72,8 @@
 // Static internal helper functions
 // ========================================================================
 namespace {
+  static bool sixty_four_bit_message_output = false;
+
   std::vector<ex_entity_type> exodus_types({EX_GLOBAL, EX_BLOB, EX_ASSEMBLY, EX_NODE_BLOCK,
                                             EX_EDGE_BLOCK, EX_FACE_BLOCK, EX_ELEM_BLOCK,
                                             EX_NODE_SET, EX_EDGE_SET, EX_FACE_SET, EX_ELEM_SET,
@@ -361,10 +363,11 @@ namespace Ioex {
     assert(m_exodusFilePtr >= 0);
     // Check byte-size of integers stored on the database...
     if ((ex_int64_status(m_exodusFilePtr) & EX_ALL_INT64_DB) != 0) {
-      if (myProcessor == 0) {
+      if (myProcessor == 0 && !sixty_four_bit_message_output) {
         fmt::print(Ioss::OUTPUT(),
                    "IOSS: Input database contains 8-byte integers. Setting Ioss to use "
                    "8-byte integers.\n");
+        sixty_four_bit_message_output = true;
       }
       ex_set_int64_status(m_exodusFilePtr, EX_ALL_INT64_API);
       set_int_byte_size_api(Ioss::USE_INT64_API);
@@ -1609,34 +1612,34 @@ namespace Ioex {
 
       const Ioss::NodeBlockContainer &node_blocks = get_region()->get_node_blocks();
       assert(node_blocks.size() <= 1);
-      internal_write_results_metadata(EX_NODE_BLOCK, node_blocks);
+      internal_gather_results_metadata(EX_NODE_BLOCK, node_blocks);
 
       const Ioss::EdgeBlockContainer &edge_blocks = get_region()->get_edge_blocks();
-      internal_write_results_metadata(EX_EDGE_BLOCK, edge_blocks);
+      internal_gather_results_metadata(EX_EDGE_BLOCK, edge_blocks);
 
       const Ioss::FaceBlockContainer &face_blocks = get_region()->get_face_blocks();
-      internal_write_results_metadata(EX_FACE_BLOCK, face_blocks);
+      internal_gather_results_metadata(EX_FACE_BLOCK, face_blocks);
 
       const Ioss::ElementBlockContainer &element_blocks = get_region()->get_element_blocks();
-      internal_write_results_metadata(EX_ELEM_BLOCK, element_blocks);
+      internal_gather_results_metadata(EX_ELEM_BLOCK, element_blocks);
 
       const Ioss::NodeSetContainer &nodesets = get_region()->get_nodesets();
-      internal_write_results_metadata(EX_NODE_SET, nodesets);
+      internal_gather_results_metadata(EX_NODE_SET, nodesets);
 
       const Ioss::EdgeSetContainer &edgesets = get_region()->get_edgesets();
-      internal_write_results_metadata(EX_EDGE_SET, edgesets);
+      internal_gather_results_metadata(EX_EDGE_SET, edgesets);
 
       const Ioss::FaceSetContainer &facesets = get_region()->get_facesets();
-      internal_write_results_metadata(EX_FACE_SET, facesets);
+      internal_gather_results_metadata(EX_FACE_SET, facesets);
 
       const Ioss::ElementSetContainer &elementsets = get_region()->get_elementsets();
-      internal_write_results_metadata(EX_ELEM_SET, elementsets);
+      internal_gather_results_metadata(EX_ELEM_SET, elementsets);
 
       const auto &blobs = get_region()->get_blobs();
-      internal_write_results_metadata(EX_BLOB, blobs);
+      internal_gather_results_metadata(EX_BLOB, blobs);
 
       const auto &assemblies = get_region()->get_assemblies();
-      internal_write_results_metadata(EX_ASSEMBLY, assemblies);
+      internal_gather_results_metadata(EX_ASSEMBLY, assemblies);
 
       {
         int                           index    = 0;
@@ -1719,8 +1722,8 @@ namespace Ioex {
 
   // common
   template <typename T>
-  void BaseDatabaseIO::internal_write_results_metadata(ex_entity_type   type,
-                                                       std::vector<T *> entities)
+  void BaseDatabaseIO::internal_gather_results_metadata(ex_entity_type   type,
+							std::vector<T *> entities)
   {
     int index     = 0;
     int red_index = 0;
@@ -2292,7 +2295,7 @@ namespace Ioex {
     }
   }
 
-  void BaseDatabaseIO::common_write_meta_data()
+  void BaseDatabaseIO::common_write_meta_data(bool appending)
   {
     Ioss::Region *region = get_region();
 
@@ -2389,7 +2392,6 @@ namespace Ioex {
       for (auto &element_block : element_blocks) {
         Ioex::set_id(element_block, EX_ELEM_BLOCK, &ids_);
       }
-
       elementCount = 0;
       Ioss::Int64Vector element_counts;
       element_counts.reserve(element_blocks.size());
@@ -2397,7 +2399,7 @@ namespace Ioex {
         elementCount += element_block->entity_count();
         element_counts.push_back(element_block->entity_count());
         // Set ids of all entities that do not have "id" property...
-        Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
+	Ioex::get_id(element_block, EX_ELEM_BLOCK, &ids_);
       }
       m_groupCount[EX_ELEM_BLOCK] = element_blocks.size();
 
@@ -2471,7 +2473,6 @@ namespace Ioex {
       for (auto &set : ssets) {
         Ioex::set_id(set, EX_SIDE_SET, &ids_);
       }
-
       // Get entity counts for all face sets... Create SideSets.
       for (auto &set : ssets) {
         Ioex::get_id(set, EX_SIDE_SET, &ids_);

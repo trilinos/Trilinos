@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -218,7 +218,7 @@ namespace Ioex {
     void put_info();
 
     template <typename T>
-    void internal_write_results_metadata(ex_entity_type type, std::vector<T *> entities);
+    void internal_gather_results_metadata(ex_entity_type type, std::vector<T *> entities);
 
     void generate_sideset_truth_table();
 
@@ -234,7 +234,7 @@ namespace Ioex {
     void add_attribute_fields(ex_entity_type entity_type, Ioss::GroupingEntity *block,
                               int attribute_count, const std::string &type);
 
-    void common_write_meta_data();
+    void common_write_meta_data(bool appending);
     void output_other_meta_data();
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,

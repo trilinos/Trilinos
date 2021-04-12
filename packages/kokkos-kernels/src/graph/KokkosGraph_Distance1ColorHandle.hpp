@@ -240,7 +240,7 @@ private:
     {
       this->coloring_algorithm_type = COLORING_SERIAL;
 #ifdef VERBOSE
-      std:cout << "Serial Execution Space, Default Algorithm: COLORING_SERIAL\n";
+      std::cout << "Serial Execution Space, Default Algorithm: COLORING_SERIAL\n";
 #endif
     }
     else if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())

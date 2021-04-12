@@ -580,10 +580,12 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
   tmLocal = Teuchos::null;
   tmLocal = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("Driver: 3.4 - Build QuasiRegion Matrix")));
 
+  std::cout << "About to create quasi region matrix" << std::endl;
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > quasiRegionMats;
   MakeQuasiregionMatrices(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(A),
                           regionsPerGIDWithGhosts, rowMap, colMap, rowImport,
-                          quasiRegionMats);
+                          quasiRegionMats, regionMatVecLIDs);
+  std::cout << "Done creating quasi region matrix" << std::endl;
 
   comm->barrier();
   tmLocal = Teuchos::null;

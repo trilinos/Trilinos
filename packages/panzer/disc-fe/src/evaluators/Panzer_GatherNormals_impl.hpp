@@ -50,7 +50,6 @@
 #include "Kokkos_ViewFactory.hpp"
 
 #include "Intrepid2_Kernels.hpp"
-#include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
@@ -107,7 +106,7 @@ postRegistrationSetup(typename Traits::SetupData d,
 
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   int sideDim = parentCell.getDimension()-1;
-  Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(sideParam, sideDim, parentCell);
+  sideParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(sideDim, parentCell.getKey());
 }
 
 // **********************************************************************

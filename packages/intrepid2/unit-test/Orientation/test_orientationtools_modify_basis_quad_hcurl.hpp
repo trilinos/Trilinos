@@ -74,7 +74,7 @@ namespace Intrepid2 {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
     
-    template<typename QuadBasisType, typename DeviceSpaceType>
+    template<typename QuadBasisType, typename DeviceType>
     int OrientationToolsModifyBasis_QUAD_HCURL(const bool verbose) {
 
       Teuchos::RCP<std::ostream> outStream;
@@ -87,7 +87,7 @@ namespace Intrepid2 {
 
       Teuchos::oblackholestream oldFormatState;
       oldFormatState.copyfmt(std::cout);
-
+      using DeviceSpaceType = typename DeviceType::execution_space;
       typedef typename
         Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -107,7 +107,7 @@ namespace Intrepid2 {
       //const double tol = tolerence();
       constexpr ordinal_type maxOrder = Parameters::MaxOrder ;
 
-      typedef OrientationTools<DeviceSpaceType> ots;
+      typedef OrientationTools<DeviceType> ots;
       try {
         constexpr ordinal_type order = 3;
         if(order <= maxOrder)
@@ -142,19 +142,19 @@ namespace Intrepid2 {
           // view to import refMesh from host          
           Kokkos::DynRankView<ordinal_type,Kokkos::LayoutRight,HostSpaceType> 
             elemNodesHost(&refMesh[0][0], numCells, numVerts);
-          auto elemNodes = Kokkos::create_mirror_view(typename DeviceSpaceType::memory_space(), elemNodesHost);
+          auto elemNodes = Kokkos::create_mirror_view(typename DeviceType::memory_space(), elemNodesHost);
           Kokkos::deep_copy(elemNodes, elemNodesHost);
           
           // compute orientations for cells (one time computation)
-          Kokkos::DynRankView<Orientation,DeviceSpaceType> elemOrts("elemOrts", numCells);
+          Kokkos::DynRankView<Orientation,DeviceType> elemOrts("elemOrts", numCells);
           ots::getOrientation(elemOrts, elemNodes, cellTopo);
 
           auto elemOrtsHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), elemOrts);
           Kokkos::deep_copy(elemOrtsHost, elemOrts);
           
           // cell specific modified basis 
-          Kokkos::DynRankView<double,DeviceSpaceType> outValues("outValues", numCells, ndofBasis);
-          Kokkos::DynRankView<double,DeviceSpaceType> refValues("refValues", numCells, ndofBasis);
+          Kokkos::DynRankView<double,DeviceType> outValues("outValues", numCells, ndofBasis);
+          Kokkos::DynRankView<double,DeviceType> refValues("refValues", numCells, ndofBasis);
           
           auto refValuesHost = Kokkos::create_mirror_view(typename HostSpaceType::memory_space(), refValues);
           for (ordinal_type cell=0;cell<numCells;++cell)           

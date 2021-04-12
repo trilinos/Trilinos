@@ -105,7 +105,11 @@ elif [[ "$ATDM_CONFIG_COMPILER" == *"XL"* ]]; then
   # Don't use ninja as the fortran compiler test is broken.
   export ATDM_CONFIG_USE_NINJA=OFF
 
-  export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
+  if [[ "CUDA" == "$ATDM_CONFIG_NODE_TYPE" ]]; then
+    export ATDM_CONFIG_CXX_FLAGS="-ccbin xlc++ -qxflag=disable__cplusplusOverride"
+  else
+    export ATDM_CONFIG_CXX_FLAGS="-qxflag=disable__cplusplusOverride"
+  fi
 
   # set the gcc compiler XL  will use for backend to one that handles c++14
   export XLC_USR_CONFIG=/opt/ibm/xlC/16.1.1/etc/xlc.cfg.rhel.7.6.gcc.7.3.1.cuda.10.1.243
@@ -180,6 +184,12 @@ export ATDM_CONFIG_MPI_EXEC=${ATDM_SCRIPT_DIR}/ats2/trilinos_jsrun
 
 export ATDM_CONFIG_MPI_POST_FLAGS="--rs_per_socket;4"
 export ATDM_CONFIG_MPI_EXEC_NUMPROCS_FLAG="-p"
+
+if [[ "${ATDM_CONFIG_COMPLEX}" == "ON" ]] ; then
+  export ATDM_CONFIG_MPI_PRE_FLAGS="-M;-mca coll ^ibm"
+  # NOTE: We have to use the '-M' option name and not '--smpiarg' since
+  # 'trilinos_jsrun' has special logic
+fi
 
 # NOTE: We used to check for the launch node but at one point that changed
 # from 'vortex59' to 'vortex5' without warning.  That caused all of the tests

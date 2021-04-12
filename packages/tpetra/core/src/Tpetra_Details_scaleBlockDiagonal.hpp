@@ -85,7 +85,7 @@ void inverseScaleBlockDiagonal(MultiVectorType & blockDiagonal, bool doTranspose
 
   // Get Kokkos versions of objects
 
-  auto blockDiag = blockDiagonal.getLocalViewDevice(Access::WriteOnly);
+  auto blockDiag = blockDiagonal.getLocalViewDevice(Access::OverwriteAll);
   auto toScale   = multiVectorToBeScaled.getLocalViewDevice(Access::ReadWrite);
   
   typedef Algo::Level3::Unblocked algo_type;

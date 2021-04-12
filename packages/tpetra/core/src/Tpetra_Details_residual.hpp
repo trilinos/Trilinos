@@ -144,7 +144,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   auto A_lcl = A.getLocalMatrix (); 
   auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
   auto B_lcl = B.getLocalViewDevice(Access::ReadOnly);
-  auto R_lcl = R.getLocalViewDevice(Access::WriteOnly);
+  auto R_lcl = R.getLocalViewDevice(Access::OverwriteAll);
   auto lclMatrix_ = A.getLocalMatrix ();
 
   const bool debug = ::Tpetra::Details::Behavior::debug ();

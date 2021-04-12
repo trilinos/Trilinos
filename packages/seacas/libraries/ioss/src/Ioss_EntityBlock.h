@@ -88,6 +88,10 @@ namespace Ioss {
      */
     size_t get_offset() const { return idOffset; }
 
+    bool operator==(const Ioss::EntityBlock &rhs) const;
+    bool operator!=(const Ioss::EntityBlock &rhs) const;
+    bool equal(const Ioss::EntityBlock &rhs) const;
+
   protected:
     EntityBlock(DatabaseIO *io_database, const std::string &my_name, const std::string &entity_type,
                 size_t entity_cnt);
@@ -98,6 +102,8 @@ namespace Ioss {
 
   protected:
     size_t idOffset{0};
+
+    bool equal_(const Ioss::EntityBlock &rhs, const bool quiet) const;
   };
 } // namespace Ioss
 #endif

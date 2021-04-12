@@ -20,9 +20,9 @@ C     THIS PROGRAM TESTS THE SUPES MEMORY MANAGER.
       CALL GSUPEV(VERSN)
       WRITE (*,'(A, A)') ' SUPES Version ', VERSN
 
-      CALL EXNAME (6, CV(1), LEN)
+c      CALL EXNAME (6, CV(1), LEN)
 c      OPEN (6, STATUS='unknown',FILE=CV(1)(1:LEN))
-      CALL EXNAME (8, CV(1), LEN)
+c      CALL EXNAME (8, CV(1), LEN)
 c      OPEN (8, STATUS='unknown',FILE=CV(1)(1:LEN))
   100 CALL FREFLD( 0,8,'FUNC: ',MFIELD,IOSTAT,N,KV,CV,IV,RV )
       IF ( IOSTAT .NE. 0 ) CV(1) = 'EXIT'

@@ -1,5 +1,5 @@
 """
-exodus.py v 1.20.1 (seacas-beta) is a python wrapper of some of the exodus library
+exodus.py v 1.20.2 (seacas-beta) is a python wrapper of some of the exodus library
 (Python 3 Version)
 
 Exodus is a common database for multiple application codes (mesh
@@ -51,7 +51,7 @@ of global variables. Although these examples correspond to typical FE
 applications, the data format is flexible enough to accommodate a
 spectrum of uses.
 
-Copyright(C) 1999-2020 National Technology & Engineering Solutions
+Copyright(C) 1999-2021 National Technology & Engineering Solutions
 of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 NTESS, the U.S. Government retains certain rights in this software.
 
@@ -70,12 +70,12 @@ from enum import Enum
 
 EXODUS_PY_COPYRIGHT_AND_LICENSE = __doc__
 
-EXODUS_PY_VERSION = "1.20.1 (seacas-py3)"
+EXODUS_PY_VERSION = "1.20.2 (seacas-py3)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.20.1 (seacas-py3), a python wrapper of some of the exodus library.
+You are using exodus.py v 1.20.2 (seacas-py3), a python wrapper of some of the exodus library.
 
-Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 National Technology &
+Copyright (c) 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021 National Technology &
 Engineering Solutions of Sandia, LLC (NTESS).  Under the terms of
 Contract DE-NA0003525 with NTESS, the U.S. Government retains certain
 rights in this software.
@@ -332,9 +332,7 @@ def ex_obj_to_inq(objType):
         'EX_ELEM_MAP': 'EX_INQ_ELEM',
     }
 
-    if objType in entity_dictionary:
-        return entity_dictionary[objType]
-    return -1  # Invalid request
+    return entity_dictionary.get(objType, -1)
 
 
 def ex_entity_type_to_objType(entity_type):
@@ -357,9 +355,7 @@ def ex_entity_type_to_objType(entity_type):
         get_entity_type('EX_ELEM_MAP'): "element map"
     }
 
-    if entity_type in entity_dictionary:
-        return entity_dictionary[entity_type]
-    return 'EX_INVALID'  # Invalid request
+    return entity_dictionary.get(entity_type, 'EX_INVALID')
 
 class ex_entity_type(Enum):
     """
@@ -529,6 +525,14 @@ class ex_assembly(ctypes.Structure):
                 ("entity_count", ctypes.c_int),
                 ("entity_list", ctypes.POINTER(ctypes.c_longlong))]
 
+class blob(object):
+    def __init__(self, name, id, num_entry):
+        self.name = name
+        self.id = id
+        self.num_entry = num_entry
+
+    def __repr__(self):
+        return "blob(name=%r, id=%r, num_entry=%r)" % (self.name,self.id,self.num_entry)
 
 class ex_blob(ctypes.Structure):
     """

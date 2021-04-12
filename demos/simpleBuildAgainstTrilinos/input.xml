@@ -1,0 +1,6 @@
+<ParameterList>
+  <ParameterList name="Application">
+    <Parameter name="my local vector size" type="int" value="10"/>
+  </ParameterList>
+</ParameterList>
+

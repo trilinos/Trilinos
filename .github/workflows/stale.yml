@@ -20,7 +20,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v3.0.14
+    - uses: actions/stale@v3.0.18
       with:
         debug-only: false
         ascending: true
@@ -35,7 +35,7 @@ jobs:
         # We specifically DO NOT exempt PR's from autoclosing.
         #exempt-pr-labels: ''
         remove-stale-when-updated: true
-        operations-per-run: 50
+        operations-per-run: 55
         stale-issue-message: >
           This issue has had no activity for **365** days and is marked for
           closure. It will be closed after an additional **30** days of inactivity.
@@ -63,6 +63,7 @@ jobs:
         close-pr-message: >
           This Pull Request has been automatically closed due to **395** days of inactivity.
 
-
+        # start-date : only consider issues/PR's created after this date.
+        start-date: '2001-01-01T00:00:00Z'
 
 

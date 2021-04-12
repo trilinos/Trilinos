@@ -238,7 +238,8 @@ template<class Scalar>
 void StepperBDF2<Scalar>::computeStartUp(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
 {
-  Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  auto out = Teuchos::fancyOStream( this->getOStream() );
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,1,"StepperBDF2::computeStartUp()");
   *out << "Warning -- Taking a startup step for BDF2 using '"
        << startUpStepper_->getStepperType()<<"'!" << std::endl;
@@ -271,24 +272,26 @@ void StepperBDF2<Scalar>::describe(
   Teuchos::FancyOStream               &out,
   const Teuchos::EVerbosityLevel      verbLevel ) const
 {
-  out << std::endl;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  l_out->setOutputToRootOnly(0);
+  *l_out << std::endl;
   Stepper<Scalar>::describe(out, verbLevel);
   StepperImplicit<Scalar>::describe(out, verbLevel);
 
-  out << "--- StepperBDF2 ---\n";
+  *l_out << "--- StepperBDF2 ---\n";
   if (startUpStepper_ != Teuchos::null) {
-    out << "  startup stepper type             = "
-        << startUpStepper_->description() << std::endl;
+    *l_out << "  startup stepper type             = "
+           << startUpStepper_->description() << std::endl;
   }
-  out << "  startUpStepper_                  = "
-      << startUpStepper_ << std::endl;
-  out << "  startUpStepper_->isInitialized() = "
-      << Teuchos::toString(startUpStepper_->isInitialized()) << std::endl;
-  out << "  stepperBDF2AppAction_            = "
-      << stepperBDF2AppAction_ << std::endl;
-  out << "----------------------------" << std::endl;
-  out << "  order_                           = " << order_ << std::endl;
-  out << "-------------------" << std::endl;
+  *l_out << "  startUpStepper_                  = "
+         << startUpStepper_ << std::endl;
+  *l_out << "  startUpStepper_->isInitialized() = "
+         << Teuchos::toString(startUpStepper_->isInitialized()) << std::endl;
+  *l_out << "  stepperBDF2AppAction_            = "
+         << stepperBDF2AppAction_ << std::endl;
+  *l_out << "----------------------------" << std::endl;
+  *l_out << "  order_                           = " << order_ << std::endl;
+  *l_out << "-------------------" << std::endl;
 }
 
 
@@ -296,17 +299,19 @@ template<class Scalar>
 bool StepperBDF2<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
   bool isValidSetup = true;
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  l_out->setOutputToRootOnly(0);
 
   if ( !Stepper<Scalar>::isValidSetup(out) ) isValidSetup = false;
   if ( !StepperImplicit<Scalar>::isValidSetup(out) ) isValidSetup = false;
 
   if ( !this->startUpStepper_->isInitialized() ) {
     isValidSetup = false;
-    out << "The startup stepper is not initialized!\n";
+    *l_out << "The startup stepper is not initialized!\n";
   }
   if (stepperBDF2AppAction_ == Teuchos::null) {
     isValidSetup = false;
-    out << "The BDF2 AppAction is not set!\n";
+    *l_out << "The BDF2 AppAction is not set!\n";
   }
   return isValidSetup;
 }

@@ -11,6 +11,7 @@
 #include <stk_balance/internal/MxNutils.hpp>
 #include <stk_balance/internal/balanceMtoN.hpp>
 #include <stk_balance/internal/StkBalanceUtils.hpp>
+#include <stk_balance/setup/M2NParser.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 
 #include <stk_balance/internal/MtoNRebalancer.hpp>
@@ -149,7 +150,8 @@ TEST_F(TestBalanceMxNRebalanceUsingInputFiles, MxN_decompositionWithoutAura)
 {
     set_options();
     setup_initial_mesh_from_last_time_step(stk::mesh::BulkData::NO_AUTO_AURA);
-    stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, get_num_procs_target_decomp(), get_output_filename(), numSteps, maxTime);
+    stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
+    stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, parsedOptions, numSteps, maxTime);
 }
 
 class BulkDataForBalance : public stk::mesh::BulkData

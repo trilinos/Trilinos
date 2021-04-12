@@ -28,22 +28,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the NewmarkImplicitDForm algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Newmark Implicit-A with modify calls indicated.}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State \quad {\it modifierX.modify(x, time, dt, X\_END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperNewmarkImplicitDFormModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperNewmarkImplicitDFormAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperNewmarkImplicitDForm.
  */
 template<class Scalar>
 class StepperNewmarkImplicitDFormModifierXBase

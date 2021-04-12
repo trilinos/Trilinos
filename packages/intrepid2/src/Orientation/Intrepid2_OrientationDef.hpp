@@ -68,6 +68,9 @@ namespace Intrepid2 {
                                  const elemNodeViewType elemNodes,
                                  const ordinal_type subCellDim,
                                  const ordinal_type subCellOrd) {
+    static_assert(Kokkos::Impl::MemorySpaceAccess
+                  <Kokkos::HostSpace,typename elemNodeViewType::device_type::memory_space>::accessible,
+                  "host space cannot access elemNodeViewType");
     switch (subCellDim) {
     case 0: {
       numVerts = 1;
@@ -153,6 +156,10 @@ namespace Intrepid2 {
   Orientation
   Orientation::getOrientation(const shards::CellTopology cellTopo,
                               const elemNodeViewType elemNodes) {
+    static_assert(Kokkos::Impl::MemorySpaceAccess
+                  <Kokkos::HostSpace,typename elemNodeViewType::device_type::memory_space>::accessible,
+                  "host space cannot access elemNodeViewType");
+
     Orientation ort;
     const ordinal_type nedge = cellTopo.getEdgeCount();
 

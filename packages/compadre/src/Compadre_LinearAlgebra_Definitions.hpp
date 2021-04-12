@@ -7,51 +7,6 @@ namespace Compadre {
 namespace GMLS_LinearAlgebra {
 
 KOKKOS_INLINE_FUNCTION
-void createM(const member_type& teamMember, scratch_matrix_right_type M_data, scratch_matrix_right_type weighted_P, const int columns, const int rows) {
-    /*
-     * Creates M = P^T * W * P
-     */
-
-    for (int i=0; i<columns; ++i) {
-        // offdiagonal entries
-        for (int j=0; j<i; ++j) {
-            double M_data_entry_i_j = 0;
-            teamMember.team_barrier();
-
-            Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember,rows), [=] (const int k, double &entry_val) {
-                // assumes layout left input matrix
-                double val_i = weighted_P(k, i);
-                double val_j = weighted_P(k, j);
-                entry_val += val_i*val_j;
-            }, M_data_entry_i_j );
-
-            Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-                M_data(i,j) = M_data_entry_i_j;
-                M_data(j,i) = M_data_entry_i_j;
-            });
-            teamMember.team_barrier();
-        }
-        // diagonal entries
-        double M_data_entry_i_j = 0;
-        teamMember.team_barrier();
-
-        Kokkos::parallel_reduce(Kokkos::TeamThreadRange(teamMember,rows), [=] (const int k, double &entry_val) {
-            // assumes layout left input matrix
-            double val = weighted_P(k, i);
-            entry_val += val*val;
-        }, M_data_entry_i_j );
-
-        Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {
-            M_data(i,i) = M_data_entry_i_j;
-        });
-        teamMember.team_barrier();
-    }
-    teamMember.team_barrier();
-
-}
-
-
-KOKKOS_INLINE_FUNCTION
 void largestTwoEigenvectorsThreeByThreeSymmetric(const member_type& teamMember, scratch_matrix_right_type V, scratch_matrix_right_type PtP, const int dimensions, pool_type& random_number_pool) {
 
     Kokkos::single(Kokkos::PerTeam(teamMember), [&] () {

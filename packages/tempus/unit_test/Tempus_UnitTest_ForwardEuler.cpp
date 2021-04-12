@@ -110,14 +110,14 @@ public:
 
   /// Observe ForwardEuler Stepper at end of takeStep.
   virtual void modify(
-		      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-		      Teuchos::RCP<Tempus::StepperForwardEuler<double> > stepper,
-		      const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<Tempus::StepperForwardEuler<double> > stepper,
+    const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperForwardEulerAppAction<double>::BEGIN_STEP:
       {
-	testBEGIN_STEP = true;
+        testBEGIN_STEP = true;
         auto x = sh->getCurrentState()->getX();
         testCurrentValue = get_ele(*(x), 0);
         break;
@@ -140,7 +140,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testBEGIN_STEP;
@@ -223,9 +223,9 @@ public:
 
   /// Observe ForwardEuler Stepper at end of takeStep.
   virtual void observe(
-		       Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-		       Teuchos::RCP<const Tempus::StepperForwardEuler<double> > stepper,
-		       const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<const Tempus::StepperForwardEuler<double> > stepper,
+    const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperForwardEulerAppAction<double>::BEGIN_STEP:
@@ -251,7 +251,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
 
@@ -334,9 +334,9 @@ public:
 
   /// Observe BackwardEuler Stepper at end of takeStep.
   virtual void modify(
-		      Teuchos::RCP<Thyra::VectorBase<double> > x,
-		      const double time, const double dt,
-		      const typename Tempus::StepperForwardEulerModifierXBase<double>::MODIFIER_TYPE modType)
+    Teuchos::RCP<Thyra::VectorBase<double> > x,
+    const double time, const double dt,
+    const typename Tempus::StepperForwardEulerModifierXBase<double>::MODIFIER_TYPE modType)
   {
     switch(modType) {
     case StepperForwardEulerModifierXBase<double>::X_BEGIN_STEP:
@@ -360,7 +360,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testX_BEGIN_STEP;

@@ -9,6 +9,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ParallelUtils.h>
 #include <Ioss_SmartAssert.h>
+#include <Ioss_Sort.h>
 #include <Ioss_StructuredBlock.h>
 #include <Ioss_Utils.h>
 #include <cgns/Iocgns_DecompositionData.h>
@@ -251,13 +252,13 @@ namespace Iocgns {
     if (!m_lineDecomposition.empty()) {
       // See if the ordinal is specified as "__ordinal_{ijk}" which is used for testing...
       if (m_lineDecomposition.find("__ordinal_") == 0) {
-	auto sub = m_lineDecomposition.substr(10);
-	unsigned int ord = 0;
-	for (size_t i = 0; i < sub.size(); i++) {
-	  char ordinal = sub[i];
-	  ord |= ordinal == 'i' ? Ordinal::I : ordinal == 'j' ? Ordinal::J : Ordinal::K;
-	}
-	for (auto zone : m_structuredZones) {
+        auto         sub = m_lineDecomposition.substr(10);
+        unsigned int ord = 0;
+        for (size_t i = 0; i < sub.size(); i++) {
+          char ordinal = sub[i];
+          ord |= ordinal == 'i' ? Ordinal::I : ordinal == 'j' ? Ordinal::J : Ordinal::K;
+        }
+        for (auto zone : m_structuredZones) {
           if (zone->is_active()) {
             zone->m_lineOrdinal |= ord;
           }
@@ -273,10 +274,10 @@ namespace Iocgns {
     Utils::decompose_model(m_structuredZones, m_decomposition.m_processorCount, rank,
                            m_loadBalanceThreshold, verbose);
 
-    std::sort(m_structuredZones.begin(), m_structuredZones.end(),
-              [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-                return a->m_zone < b->m_zone;
-              });
+    Ioss::sort(m_structuredZones.begin(), m_structuredZones.end(),
+               [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+                 return a->m_zone < b->m_zone;
+               });
 
     for (auto zone : m_structuredZones) {
       if (zone->is_active()) {
@@ -318,10 +319,10 @@ namespace Iocgns {
           Ioss::OUTPUT(),
           "     n    proc  parent    imin    imax    jmin    jmax    kmin    kmax          work\n");
       auto tmp_zone(m_structuredZones);
-      std::sort(tmp_zone.begin(), tmp_zone.end(),
-                [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-                  return a->m_proc < b->m_proc;
-                });
+      Ioss::sort(tmp_zone.begin(), tmp_zone.end(),
+                 [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+                   return a->m_proc < b->m_proc;
+                 });
 
       for (auto &zone : tmp_zone) {
         if (zone->is_active()) {

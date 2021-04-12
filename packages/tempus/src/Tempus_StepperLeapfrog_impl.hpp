@@ -117,11 +117,12 @@ void StepperLeapfrog<Scalar>::takeStep(
 
     RCP<StepperLeapfrog<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
 
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     // Perform half-step startup if working state is synced
     // (i.e., xDot and x are at the same time level).
     if (workingState->getIsSynced() == true) {
-      stepperLFAppAction_->execute(solutionHistory, thisStepper,
-        StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
       // Half-step startup: xDot_{n+1/2} = xDot_n + 0.5*dt*xDotDot_n
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
         *(currentState->getXDot()),0.5*dt,*(currentState->getXDotDot()));
@@ -157,6 +158,9 @@ void StepperLeapfrog<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
+
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }

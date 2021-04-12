@@ -120,18 +120,20 @@ namespace MueLu {
     std::string mode = pL.get<std::string>("aggregate qualities: mode");
     GetOStream(Statistics1) << "AggregateQuality: mode "<<mode << std::endl;
 
+    RCP<Xpetra::MultiVector<magnitudeType,LO,GO,NO>> aggregate_qualities;
     if(mode == "eigenvalue" || mode == "both") {
-      RCP<Xpetra::MultiVector<magnitudeType,LO,GO,NO>> aggregate_qualities = Xpetra::MultiVectorFactory<magnitudeType,LO,GO,NO>::Build(map, 1);
+      aggregate_qualities = Xpetra::MultiVectorFactory<magnitudeType,LO,GO,NO>::Build(map, 1);
       ComputeAggregateQualities(A, aggregates, aggregate_qualities);
-      Set(currentLevel, "AggregateQualities", aggregate_qualities);
       OutputAggQualities(currentLevel, aggregate_qualities);
     }
     if(mode == "size" || mode =="both") {
       RCP<LocalOrdinalVector> aggregate_sizes = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(map);
-      ComputeAggregateSizes(A,aggregates,aggregate_sizes);
+      ComputeAggregateSizes(A,aggregates,aggregate_sizes);      
       Set(currentLevel, "AggregateSizes",aggregate_sizes);
       OutputAggSizes(currentLevel, aggregate_sizes);
     }
+      Set(currentLevel, "AggregateQualities", aggregate_qualities);
+
 
   }
 

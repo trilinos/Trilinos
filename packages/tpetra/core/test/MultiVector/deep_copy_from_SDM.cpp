@@ -228,10 +228,10 @@ namespace { // (anonymous)
             MV X (map, numCols);
 
             if (modify_MV_on_host) {
-              Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::WriteOnly), flagValue);
+              Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::OverwriteAll), flagValue);
             }
             else {
-              Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::WriteOnly), flagValue);
+              Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::OverwriteAll), flagValue);
             }
             Tpetra::deep_copy (X, Y);
             TEST_ASSERT( serialDenseMatrix_multiVector_same (X, Y) );
@@ -259,10 +259,10 @@ namespace { // (anonymous)
 
       for (bool modify_MV_on_host : {false, true}) {
         if (modify_MV_on_host) {
-          Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::WriteOnly), flagValue);
+          Kokkos::deep_copy (X.getLocalViewHost(Tpetra::Access::OverwriteAll), flagValue);
         }
         else {
-          Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::WriteOnly), flagValue);
+          Kokkos::deep_copy (X.getLocalViewDevice(Tpetra::Access::OverwriteAll), flagValue);
         }
         Teuchos::SerialDenseMatrix<int, ST> Y (lclNumRows, numCols);
         serialDenseMatrixIota (Y, startValue);

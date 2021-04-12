@@ -44,12 +44,6 @@
 
 /// \file Tpetra_MultiVector_decl.hpp
 /// \brief Declaration of the Tpetra::MultiVector class
-///
-/// If you want to use Tpetra::MultiVector, include
-/// "Tpetra_MultiVector.hpp" (a file which CMake generates and
-/// installs for you).  If you only want the declaration of
-/// Tpetra::MultiVector, include this file
-/// (Tpetra_MultiVector_decl.hpp).
 
 #include "Tpetra_MultiVector_fwd.hpp"
 #include "Tpetra_Vector_fwd.hpp"
@@ -1425,7 +1419,7 @@ namespace Tpetra {
 
     /// \brief Return a mutable view of this MultiVector's local data on host, assuming all existing data will be overwritten.
     /// This requires that there are no live device-space views.
-    typename dual_view_type::t_host getLocalViewHost(Access::WriteOnlyStruct);
+    typename dual_view_type::t_host getLocalViewHost(Access::OverwriteAllStruct);
 
     /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
     /// This requires that there are no live host-space views.
@@ -1437,7 +1431,7 @@ namespace Tpetra {
 
     /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
     /// This requires that there are no live host-space views.
-    typename dual_view_type::t_dev getLocalViewDevice(Access::WriteOnlyStruct);
+    typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Clear "modified" flags on both host and device sides.
@@ -1627,7 +1621,7 @@ namespace Tpetra {
 
     template<class TargetDeviceType>
     typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
-    getLocalView (Access::WriteOnlyStruct)
+    getLocalView (Access::OverwriteAllStruct)
     {
       if (owningView_.h_view != view_.h_view) {
         // view_ is a subview of owningView_; for safety, need to use ReadWrite
@@ -2412,7 +2406,7 @@ namespace Tpetra {
     /// of rows.  At some point, we might like to get all of the rows
     /// back, by taking another view of a <i>super</i>set of rows.
     /// For example, we might like to get a column Map view of a
-    /// (domain Map view of a (column Map MultiVector)).  Tpetra's
+    /// (domain Map view of a (column Map MultiVector)).  Ifpack2's
     /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
     /// this functionality.  However, Kokkos (rightfully) forbids us
     /// from taking a superset of rows of the current view.
@@ -2630,12 +2624,12 @@ namespace Tpetra {
     if (src.isConstantStride () && dst.isConstantStride ()) {
       if (srcMostUpToDateOnDevice) {
         Details::localDeepCopyConstStride (
-                 dst.getLocalViewDevice (Access::WriteOnly),
+                 dst.getLocalViewDevice (Access::OverwriteAll),
                  src.getLocalViewDevice (Access::ReadOnly));
       }
       else {
         Details::localDeepCopyConstStride (
-                 dst.getLocalViewDevice (Access::WriteOnly),
+                 dst.getLocalViewDevice (Access::OverwriteAll),
                  src.getLocalViewHost (Access::ReadOnly));
       }
     }
@@ -2644,7 +2638,7 @@ namespace Tpetra {
       auto srcWhichVecs = getMultiVectorWhichVectors (src);
 
       if (srcMostUpToDateOnDevice) {
-        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::OverwriteAll),
                                 src.getLocalViewDevice (Access::ReadOnly),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
@@ -2652,7 +2646,7 @@ namespace Tpetra {
                                 srcWhichVecs);
       }
       else {
-        Details::localDeepCopy (dst.getLocalViewDevice (Access::WriteOnly),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::OverwriteAll),
                                 src.getLocalViewHost (Access::ReadOnly),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),

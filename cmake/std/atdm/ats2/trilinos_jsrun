@@ -191,8 +191,6 @@ if [[ "$TPETRA_ASSUME_CUDA_AWARE_MPI" == "1" ]] && [[ "$np_is_one" == "false" ]]
     args=("-M -gpu" "${args[@]}")
   fi
 
-  # Point jsrun to pami
-  args=("-E LD_PRELOAD=$OPAL_PREFIX/lib/pami_451/libpami.so" "${args[@]}")
 fi
 
 evaluate_jsrun_command

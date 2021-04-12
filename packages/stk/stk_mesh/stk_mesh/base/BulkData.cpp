@@ -88,6 +88,7 @@
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
 #include <stk_util/util/string_case_compare.hpp>
@@ -4939,7 +4940,6 @@ void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const Ent
 {
     part_storage.induced_part_ordinals.clear();
     induced_part_membership(*this, entity, part_storage.induced_part_ordinals);
-
     impl::unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     impl::filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
 
@@ -4992,28 +4992,48 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
     PartStorage part_storage;
 
 #ifndef NDEBUG
-    bool allOk = true;
+    bool localOk = true;
+#endif
+    std::string errorMsg;
     try
     {
-#endif
+        std::vector<bool> shouldProcess(get_size_of_entity_index_space(), false);
         for(const EntityCommListInfo& info : m_entity_comm_list)
         {
             const int owner = parallel_owner_rank(info.entity);
             bool i_own_this_entity = (owner == p_rank);
+            
             if(i_own_this_entity && state(info.entity) != Unchanged)
             {
+                shouldProcess[info.entity.local_offset()] = true;
+            }
+        }
+        for(const EntityCommListInfo& info : m_entity_comm_list)
+        {
+            if (shouldProcess[info.entity.local_offset()]) {
                 remove_unneeded_induced_parts(info.entity, info.entity_comm->comm_map, part_storage,  comm);
             }
         }
-#ifndef NDEBUG
     }
-    catch(...) { allOk = false; }
+    catch(std::exception& e) {
+      errorMsg = "P"+std::to_string(parallel_rank())
+               + " stk::mesh::BulkData::internal_resolve_shared_membership exception: "
+               + e.what();
+#ifndef NDEBUG
+      localOk = false;
+#else
+      std::ostringstream os;
+      os<<errorMsg<<std::endl;
+      os<<"Run a debug build to get parallel-consistent catch and shutdown."<<std::endl;
+      std::cerr<<os.str();
+#endif
+    }
 
-    int numericAllOk = allOk;
-    int minAllOk = 0;
-    stk::all_reduce_min(this->parallel(), &numericAllOk, &minAllOk, 1);
-    allOk = minAllOk == 1;
-    ThrowRequireWithSierraHelpMsg(allOk);
+#ifndef NDEBUG
+    if (!stk::is_true_on_all_procs(this->parallel(), localOk)) {
+      std::string msg = localOk ? "error on another proc" : errorMsg;
+      ThrowErrorMsg(msg);
+    }
 #endif
 
     OrdinalVector scratch, scratch2;

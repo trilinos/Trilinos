@@ -166,10 +166,9 @@ struct GlobalReciprocalThreshold<TpetraVectorType, false> {
            const typename TpetraVectorType::scalar_type& minVal)
   {
     typedef typename TpetraVectorType::impl_scalar_type value_type;
-    typedef typename TpetraVectorType::device_type::memory_space memory_space;
 
     const value_type minValS = static_cast<value_type> (minVal);
-    auto X_0 = Kokkos::subview (X.template getLocalView<memory_space> (Tpetra::Access::ReadWrite),
+    auto X_0 = Kokkos::subview (X.getLocalViewDevice (Tpetra::Access::ReadWrite),
                                 Kokkos::ALL (), 0);
     LocalReciprocalThreshold<decltype (X_0) >::compute (X_0, minValS);
   }
@@ -1431,13 +1430,12 @@ Chebyshev<ScalarType, MV>::
 computeInitialGuessForPowerMethod (V& x, const bool nonnegativeRealParts) const
 {
   typedef typename MV::device_type::execution_space dev_execution_space;
-  typedef typename MV::device_type::memory_space dev_memory_space;
   typedef typename MV::local_ordinal_type LO;
 
   x.randomize ();
 
   if (nonnegativeRealParts) {
-    auto x_lcl = x.template getLocalView<dev_memory_space> (Tpetra::Access::ReadWrite);
+    auto x_lcl = x.getLocalViewDevice (Tpetra::Access::ReadWrite);
     auto x_lcl_1d = Kokkos::subview (x_lcl, Kokkos::ALL (), 0);
 
     const LO lclNumRows = static_cast<LO> (x.getLocalLength ());

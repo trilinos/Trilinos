@@ -66,9 +66,9 @@ void Vertices::fillVertexWeights(const stk::mesh::BulkData& bulkData,
 }
 
 void Vertices::fillFieldVertexWeights(const stk::balance::BalanceSettings& balanceSettings,
-                            const stk::mesh::BulkData& stkMeshBulkData,
-                            const std::vector<stk::mesh::Selector>& selectors,
-                            const stk::mesh::EntityVector &entitiesToBalance)
+                                      const stk::mesh::BulkData& stkMeshBulkData,
+                                      const std::vector<stk::mesh::Selector>& selectors,
+                                      const stk::mesh::EntityVector &entitiesToBalance)
 {
     unsigned numSelectors = selectors.size();
     unsigned numEntities = entitiesToBalance.size();

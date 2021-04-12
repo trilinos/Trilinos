@@ -242,11 +242,13 @@ template<class Scalar>
 void
 IntegratorForwardSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  integrator_->describe(out, verbLevel);
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  integrator_->describe(in_out, verbLevel);
 }
 
 template<class Scalar>

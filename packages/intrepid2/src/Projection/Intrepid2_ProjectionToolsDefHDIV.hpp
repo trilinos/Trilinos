@@ -261,10 +261,9 @@ ProjectionTools<SpT>::getHDivEvaluationPoints(typename BasisType::ScalarViewType
 
   ordinal_type numCells = orts.extent(0);
 
-  CellTools<SpT>::setSubcellParametrization();
-  typename CellTools<SpT>::subcellParamViewType subcellParamSide;
+  typename RefSubcellParametrization<SpT>::ConstViewType subcellParamSide;
   if(numSides>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamSide,  sideDim, cellBasis->getBaseCellTopology());
+    subcellParamSide = RefSubcellParametrization<SpT>::get(sideDim, cellBasis->getBaseCellTopology().getKey());
 
   auto evalPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getPointsRange(evalPointType));
 

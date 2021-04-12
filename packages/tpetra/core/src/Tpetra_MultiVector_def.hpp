@@ -822,7 +822,7 @@ namespace Tpetra {
 
     this->view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
     //Note: X_out will be completely overwritten
-    auto X_out = this->getLocalViewDevice(Access::WriteOnly);
+    auto X_out = this->getLocalViewDevice(Access::OverwriteAll);
     origView_ = view_;
     owningView_ = view_;
 
@@ -2374,7 +2374,7 @@ namespace Tpetra {
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
-    auto thisView = this->getLocalViewDevice(Access::WriteOnly);
+    auto thisView = this->getLocalViewDevice(Access::OverwriteAll);
 
     if (isConstantStride ()) {
       Kokkos::fill_random (thisView, rand_pool, min, max);
@@ -2413,7 +2413,7 @@ namespace Tpetra {
     // If we need sync to device, then host has the most recent version.
     const bool runOnHost = runKernelOnHost(*this);
     if (! runOnHost) {
-      auto X = this->getLocalViewDevice(Access::WriteOnly);
+      auto X = this->getLocalViewDevice(Access::OverwriteAll);
       if (this->isConstantStride ()) {
         fill (DES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2423,7 +2423,7 @@ namespace Tpetra {
       }
     }
     else { // last modified in host memory, so modify data there.
-      auto X = this->getLocalViewHost(Access::WriteOnly);
+      auto X = this->getLocalViewHost(Access::OverwriteAll);
       if (this->isConstantStride ()) {
         fill (HES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2563,7 +2563,7 @@ namespace Tpetra {
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = isConstantStride () ? k : whichVectors_[k];
+          const size_t Y_col = whichVectors_[k];
           auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
@@ -3127,7 +3127,7 @@ namespace Tpetra {
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
     // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
-    // CrsMatrix's Gauss-Seidel implementation (which assumes the
+    // Ifpack2's Gauss-Seidel implementation (which assumes the
     // ability to create domain Map views of column Map MultiVectors,
     // and then get the original column Map MultiVector out again).
     // If we just use X.origView_ here, it breaks the fix for #46.
@@ -3723,7 +3723,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewHost(Access::WriteOnlyStruct)
+  getLocalViewHost(Access::OverwriteAllStruct)
   {
     //returning dual_view_type::t_host::type
     if (owningView_.h_view != view_.h_view) {
@@ -3790,7 +3790,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  getLocalViewDevice(Access::WriteOnlyStruct)
+  getLocalViewDevice(Access::OverwriteAllStruct)
   {
     //returning dual_view_type::t_dev::type
     if (owningView_.h_view != view_.h_view) {
@@ -4641,7 +4641,7 @@ namespace Tpetra {
     const bool src_last_updated_on_host = src.need_sync_device ();
 
     if (src_last_updated_on_host) {
-      localDeepCopy (this->getLocalViewDevice(Access::ReadWrite),
+      localDeepCopy (this->getLocalViewHost(Access::ReadWrite),
                      src.getLocalViewHost(Access::ReadOnly),
                      this->isConstantStride (),
                      src.isConstantStride (),

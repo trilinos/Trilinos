@@ -108,6 +108,34 @@ TEST(ParallelComm, comm_recv_procs_and_msg_sizes)
   }
 }
 
+TEST(ParallelComm, CommSparse_pair_with_string)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  if (stk::parallel_machine_size(comm) != 2) { return; }
+  int myRank = stk::parallel_machine_rank(comm);
+  int otherRank = 1 - myRank;
+
+  stk::CommSparse commSparse(comm);
+
+
+  const bool needToUnpackRecvdMessage =
+    stk::pack_and_communicate(commSparse, [&commSparse, &myRank, &otherRank]() {
+      std::string str = "message from "+std::to_string(myRank)+" to "+std::to_string(otherRank);
+      std::pair<std::string,int> pairToSend(str,myRank);
+      commSparse.send_buffer(otherRank).pack(pairToSend);
+    });
+
+  EXPECT_TRUE(needToUnpackRecvdMessage);
+
+  stk::CommBuffer& buf = commSparse.recv_buffer(otherRank);
+  EXPECT_TRUE(buf.remaining() > 0);
+
+  std::pair<std::string,int> expected("message from "+std::to_string(otherRank)+" to "+std::to_string(myRank),otherRank);
+  std::pair<std::string,int> recvdPair;
+  buf.unpack(recvdPair);
+  EXPECT_EQ(expected, recvdPair);
+}
+
 TEST(ParallelComm, CommSparse)
 {
   stk::ParallelMachine comm = MPI_COMM_WORLD;
@@ -224,6 +252,52 @@ TEST(ParallelComm, CommSparse_set_procs)
       EXPECT_EQ(0, remaining);
     }
   }
+}
+
+TEST(ParallelComm, CommSparse_pack_and_communicate)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
+  const int numProcs = commSparse.parallel_size();
+  if (numProcs == 1) { GTEST_SKIP(); }
+  const int myProc = commSparse.parallel_rank();
+  const int destProc = myProc+1 == numProcs ? 0 : myProc+1;
+  const int srcProc = myProc-1 < 0 ? numProcs-1 : myProc-1;
+
+  stk::pack_and_communicate(commSparse, [&commSparse, &destProc, &myProc]() {
+    commSparse.send_buffer(destProc).pack(myProc);
+  });
+
+  stk::unpack_communications(commSparse, [&commSparse, &srcProc](int fromProc) {
+    if (fromProc == srcProc) {
+      int recvData = -1;
+      commSparse.recv_buffer(fromProc).unpack(recvData);
+      EXPECT_EQ(srcProc, recvData);
+    }
+  });
+}
+
+TEST(ParallelComm, CommSparse_communicate_with_unpack)
+{
+  stk::ParallelMachine comm = MPI_COMM_WORLD;
+  stk::CommSparse commSparse(comm);
+  const int numProcs = commSparse.parallel_size();
+  if (numProcs == 1) { GTEST_SKIP(); }
+  const int myProc = commSparse.parallel_rank();
+  const int destProc = myProc+1 == numProcs ? 0 : myProc+1;
+  const int srcProc = myProc-1 < 0 ? numProcs-1 : myProc-1;
+
+  commSparse.send_buffer(destProc).pack(myProc);
+  commSparse.allocate_buffers();
+  commSparse.send_buffer(destProc).pack(myProc);
+
+  commSparse.communicate_with_unpack([&srcProc](int fromProc, stk::CommBuffer& buf) {
+    if (fromProc == srcProc) {
+      int recvData = -1;
+      buf.unpack(recvData);
+      EXPECT_EQ(srcProc, recvData);
+    }
+  });
 }
 
 #endif

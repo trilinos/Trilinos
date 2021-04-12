@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -33,7 +33,7 @@
  * \param    map_type
  * \param    start_entity_num
  * \param    num_entities
- * \param    map                element numbering map array
+ * \param    map                numbering map array
  */
 
 int ex_put_partial_id_map(int exoid, ex_entity_type map_type, int64_t start_entity_num,

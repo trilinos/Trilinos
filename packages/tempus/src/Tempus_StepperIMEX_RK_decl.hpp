@@ -148,46 +148,53 @@ namespace Tempus {
  *
  *  The single-timestep algorithm for IMEX-RK is
  *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{IMEX RK with the application-action locations indicated.}
- *  \begin{algorithmic}[1]
- *    \State $X \leftarrow x_{n-1}$ \Comment Set initial guess to last timestep.
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \For {$i = 0 \ldots s-1$}
- *      \State $\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
- *            \hat{a}_{ij}\, f_j + a_{ij}\, g_j \right)$
- *      \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
- *      \State \Comment Implicit Tableau
- *      \If {$a_{ii} = 0$}
- *        \State $X \leftarrow \tilde{X}$
- *        \If {$a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$}
- *          \State $g_i \leftarrow 0$ \Comment{Not needed for later calculations.}
- *        \Else
- *          \State $g_i \leftarrow M(X, t_i)^{-1}\, G(X, t_i)$
- *        \EndIf
- *      \Else
- *        \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *        \If {``Zero initial guess.''}
- *          \State $X \leftarrow 0$
- *            \Comment{Else use previous stage value as initial guess.}
- *        \EndIf
- *        \State Solve $\mathcal{G}\left(\tilde{\dot{X}}
- *            = \frac{X-\tilde{X}}{a_{ii} \Delta t},X,t_i\right) = 0$ for $X$
- *        \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *        \State $\tilde{\dot{X}} \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
- *        \State $g_i \leftarrow - \tilde{\dot{X}}$
- *      \EndIf
- *      \State \Comment Explicit Tableau
- *      \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *      \State $f_i \leftarrow M(X,\hat{t}_i)^{-1}\, F(X,\hat{t}_i)$
- *      \State $\dot{X} \leftarrow - g_i - f_i$ [Optionally]
- *      \State {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
- *    \EndFor
- *    \State $x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
- *                                   - \Delta t\,\sum_{i=1}^{s}     b_i \,g_i$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} IMEX-RK \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item $X \leftarrow x_{n-1}$
+ *               \hfill {\it * Reset initial guess to last timestep.}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf for {$i = 0 \ldots s-1$}}
+ *      \item \quad  $\tilde{X} \leftarrow x_{n-1} - \Delta t\,\sum_{j=1}^{i-1} \left(
+ *                                           \hat{a}_{ij}\, f_j + a_{ij}\, g_j \right)$
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEGIN\_STAGE)}
+ *      \item \quad  \hfill {\bf Implicit Tableau}
+ *      \item \quad  {\bf if ($a_{ii} = 0$) then}
+ *      \item \qquad   $X \leftarrow \tilde{X}$
+ *      \item \qquad  {\bf if ($a_{k,i} = 0 \;\forall k = (i+1,\ldots, s-1)$, $b(i) = 0$, $b^\ast(i) = 0$) then}
+ *      \item \qquad \quad  $g_i \leftarrow 0$
+ *                          \hfill {\it * Not needed for later calculations.}
+ *      \item \qquad  {\bf else}
+ *      \item \qquad \quad  $g_i \leftarrow M(X, t_i)^{-1}\, G(X, t_i)$
+ *      \item \qquad  {\bf endif}
+ *      \item \quad  {\bf else}
+ *      \item \qquad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item \qquad  {\bf if (``Zero initial guess.'') then}
+ *      \item \qquad \quad  $X \leftarrow 0$
+ *                          \hfill {\it * Else use previous stage value as initial guess.}
+ *      \item \qquad  {\bf endif}
+ *      \item \qquad  {\bf Solve $\mathcal{G}\left(\tilde{\dot{X}}
+ *                    = \frac{X-\tilde{X}}{a_{ii} \Delta t},X,t_i\right) = 0$ for $X$}
+ *      \item \qquad  {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item \qquad  $\tilde{\dot{X}} \leftarrow \frac{X - \tilde{X}}{a_{ii} \Delta t}$
+ *      \item \qquad  $g_i \leftarrow - \tilde{\dot{X}}$
+ *      \item \quad  {\bf endif}
+ *      \item \quad  \hfill {\bf Explicit Tableau}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
+ *      \item \quad  $f_i \leftarrow M(X,\hat{t}_i)^{-1}\, F(X,\hat{t}_i)$
+ *      \item \quad  $\dot{X} \leftarrow - g_i - f_i$ [Optionally]
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, END\_STAGE)}
+ *      \item {\bf end for}
+ *      \item $x_n \leftarrow x_{n-1} - \Delta t\,\sum_{i=1}^{s}\hat{b}_i\,f_i
+ *                                    - \Delta t\,\sum_{i=1}^{s}     b_i \,g_i$
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
  *  \f}
  *
  *  The following table contains the pre-coded IMEX-RK tableaus.
