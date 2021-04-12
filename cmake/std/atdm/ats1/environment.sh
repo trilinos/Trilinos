@@ -30,12 +30,12 @@ export ATDM_CONFIG_BUILD_COUNT=32
 # ATDV-361)
 
 if [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "HSW" ]]; then
-  module load sparc-dev/intel-19.0.4_mpich-7.7.15_hsw
+  atdm_config_load_sparc_dev_module sparc-dev/intel-19.0.4_mpich-7.7.15_hsw
   export ATDM_CONFIG_CTEST_PARALLEL_LEVEL=16
   export OMP_NUM_THREADS=2
   unset OMP_PLACES
 elif [[ "$ATDM_CONFIG_KOKKOS_ARCH" == "KNL" ]]; then
-  module load sparc-dev/intel-19.0.4_mpich-7.7.15_knl
+  atdm_config_load_sparc_dev_module sparc-dev/intel-19.0.4_mpich-7.7.15_knl
   export SLURM_TASKS_PER_NODE=16
   # Ensure that no more than 8 tasks, per srun command, are launched.
   export ATDM_CONFIG_MPI_PRE_FLAGS="--mpi=pmi2;--ntasks-per-node=8"
@@ -56,6 +56,11 @@ else
   echo "*** Combinations that are supported: "
   echo "*** > intel-19.0.4_mpich-7.7.15"
   echo "***"
+  return
+fi
+
+if [[ "${SPARC_MODULE}" == "" ]] ; then
+  echo "No SPARC_MODULE loaded so exiting!"
   return
 fi
 
