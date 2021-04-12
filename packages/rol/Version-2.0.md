@@ -27,27 +27,37 @@ to ___Version 2.0___.
 
 ## Optimization problem
 
-Describe the need for changes at a high level.
+For user convenience, ROL supports the definition of a "problem," which is subsequently sent to a "solver."  ___Version 2.0___ allows the user to modify the problem through several convenience functions.  Additionally, ___Version 2.0___ enables an explicit specification of **linear constraints**, which can be handled more efficiently by ROL's algorithms.  In contrast, ___Version 1.0___ only supports special treatment of bound constraints.. 
 
 #### Basic syntax in Version 1.0
 
 ```cpp
-    ROL::OptimizationProblem() problem;
+    // Instantiate objective function and initial guess vector.
+    ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
+    ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
+    // Instantiate OptimizationProblem.
+    ROL::OptimizationProblem<double> problem(obj,x);
 ```
 
 #### Basic syntax in Version 2.0
 
 ```cpp
-    ROL::Problem() problem;
+    // Instantiate objective function and initial guess vector.
+    ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
+    ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
+    // Instantiate Problem.
+    ROL::Problem<double> problem(obj,x);
 ```
 
 #### Added features in Version 2.0
+
+In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) are as described in [Algorithms](#algorithms).
 
 ```cpp
     // TypeU (unconstrained) specification
     ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
     ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
-    ROL::Problem problem(obj,x);
+    ROL::Problem<double> problem(obj,x);
     // TypeU can now handle linear equality constraints.  If a linear
     // equality constraint is added to the problem, the TypeU problem
     // will eliminite the equality constraint using the change of variables
@@ -87,7 +97,7 @@ Describe the need for changes at a high level.
     problem.addConstraint("Inequality Constraint",icon,imul,ibnd);
     
     // Finalize problem (not required, but prints a cool problem
-    // summary if called)
+    // summary if called).
     bool lumpConstraints = false;
     bool printToStream   = true;
     std::ostream outStream;
@@ -97,7 +107,7 @@ Describe the need for changes at a high level.
     problem.finalize(lumpConstraints,printToStream,outStream)
     
     // Check problem the vector implementations, the derivatives,
-    // and the linearity of linear constraints (not required)
+    // and the linearity of linear constraints (not required).
     problem.check(printToStream,outStream);
     
     // If the problem has been finalized, but you need to add or
@@ -113,7 +123,7 @@ Describe the need for changes at a high level.
     problem.removeLinearConstraint("Linear Inequality Constraint");
     
     // Finalize problem again (not required, but prints a cool problem
-    // summary if called)
+    // summary if called).
     problem.finalize(lumpConstraints,printToStream,outStream);
 ```
 
@@ -124,30 +134,45 @@ Describe the need for changes at a high level.
 #### Basic syntax in Version 1.0
 
 ```cpp
-    ROL::OptimizationSolver() solver;
+    // Instantiate Problem.
+    ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
+    ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
+    ROL::Problem<double> problem(obj,x);
+    ... // add constraints if needed
+    
+    // Instantiate Solver.
+    ROL::ParameterList parlist;
+    ... // fill parameter list with desired algorithmic options
+    ROL::OptimizationSolver<double> solver(problem,parlist);
+    
+    // Solve optimization problem.
+    std::ostream outStream;
+    solver.solve(outStream);
 ```
 
 #### Basic syntax in Version 2.0
 
 ```cpp
-    // Instantiate Problem
+    // Instantiate Problem.
     ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
     ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
     ROL::Problem<double> problem(obj,x);
-    ... // Add constraints if needed
+    ... // add constraints if needed
     
     // Finalize Problem (not required, but prints a cool problem
-    // summary if you call it)
+    // summary if you call it).
     bool lumpConstraints = false;
     bool printToStream   = true;
     std::ostream outStream;
     problem.finalize(lumpConstraints,printToStream,outStream);
     
-    // Instantiate Solver
+    // Instantiate Solver.
     ROL::ParameterList parlist;
-    ROL::Solver solver(problem,parlist);
+    ... // fill parameter list with desired algorithmic options
+    ROL::Solver<double> solver(problem,parlist);
     
-    // Solve optimization problem
+    // Solve optimization problem.
+    std::ostream outStream;
     solver.solve(outStream);
 ```
 
