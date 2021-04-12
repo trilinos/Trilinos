@@ -44,7 +44,7 @@ Describe the need for changes at a high level.
 #### Added features in Version 2.0
 
 ```cpp
-    // TypeU specification
+    // TypeU (unconstrained) specification
     ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
     ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
     ROL::Problem problem(obj,x);
@@ -59,13 +59,13 @@ Describe the need for changes at a high level.
     ROL::Ptr<ROL::Vector<double>      lin_emul = ROL::makePtr<MyLinearEqualityConstraintMultiplier<double>>();
     problem.addLinearConstraint("Linear Equality Constraint",lin_econ,lin_mul);
 
-    // TypeB specification
+    // TypeB (bound constrained) specification
     ROL::Ptr<ROL::BoundConstraint<double>> bnd = ROL::makePtr<MyBoundConstraint<double>>();
     problem.addBoundConstraint(bnd)    
     // TypeB can now handle polyhedral constraints specified by
     // a bound constraint and linear equality/inequality constraints.
     // If a linear equality/inequality constraint is added to the problem,
-    // the typeB problem will create a PolyhedralProjection object to
+    // the TypeB problem will create a PolyhedralProjection object to
     // handle the linear constraints.
     ROL::Ptr<ROL::Constraint<double>>     lin_icon = ROL::makePtr<MyLinearInequalityConstraint<double>>();
     ROL::Ptr<ROL::Vector<double>>         lin_imul = ROL::makePtr<MyLinearInequalityConstraintMultiplier<double>>();
@@ -74,9 +74,10 @@ Describe the need for changes at a high level.
     // You can set the PolyhedralProjection algorithmic parameters,
     // by calling setProjectionAlgorithm.
     ROL::ParameterList polyProjList;
+    ... // fill parameter list with desired polyhedral projection options
     problem.setProjectionAlgorithm(polyProjList);
     
-    // TypeG specification
+    // TypeG (generally constrained) specification
     ROL::Ptr<ROL::Constraint<double>> econ = ROL::makePtr<MyEqualityConstraint<double>>();
     ROL::Ptr<ROL::Vector<double>>     emul = ROL::makePtr<MyEqualityConstraintMultiplier<double>>();
     problem.addConstraint("Equality Constraint",econ,emul);
@@ -103,7 +104,7 @@ Describe the need for changes at a high level.
     // remove constraints call the edit function.
     problem.edit();
     
-    // TypeE specification
+    // TypeE (equality constrained) specification
     // Since we already have equality constraints added, we can remove
     // the inequality constraints to create a TypeE problem.  Like
     // TypeU, Problem will eliminate the linear equality constraints
@@ -133,7 +134,7 @@ Describe the need for changes at a high level.
     ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
     ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
     ROL::Problem<double> problem(obj,x);
-    // Add constraints if needed
+    ... // Add constraints if needed
     
     // Finalize Problem (not required, but prints a cool problem
     // summary if you call it)
