@@ -3989,6 +3989,7 @@ LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
           while (*done != p2p_done_value) ;
         }
       }
+      // Flush (acquire) the global to the local view of x.
 #ifdef _OPENMP
 #     pragma omp flush
 #endif
@@ -4001,6 +4002,7 @@ LevelSetTri::solve (const Sclr* b, Sclr* x, const Int ldx,
           a -= x[jc[j]] * d[j];
         x[r] = a * d[j++];
       }
+      // Flush (release) the local to the global view of x.
 #ifdef _OPENMP
 #     pragma omp flush
 #endif
