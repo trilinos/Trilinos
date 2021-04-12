@@ -106,7 +106,8 @@ Describe the need for changes at a high level.
     // TypeE specification
     // Since we already have equality constraints added, we can remove
     // the inequality constraints to create a TypeE problem.  Like
-    // TypeU, we can eliminate linear equality constraints.
+    // TypeU, Problem will eliminate the linear equality constraints
+    // using the change of variables described in the TypeU section.
     problem.removeConstraint("Inequality Constraint");
     problem.removeLinearConstraint("Linear Inequality Constraint");
     
