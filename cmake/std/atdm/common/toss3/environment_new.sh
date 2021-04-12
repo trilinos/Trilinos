@@ -15,10 +15,16 @@ export ATDM_CONFIG_BUILD_COUNT=8
 # NOTE: Above, currently setting CMAKE_JOB_POOL_LINK results in a build
 # failures with Ninja.  See https://gitlab.kitware.com/snl/project-1/issues/60
 
-# We do this twice since sems modules are wacked and we get errors to the screen on a purge
-# The second purge will catch any real errors with purging ...
-module purge &> /dev/null
-module purge
+if [[ "${ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE}" != "1" ]] ; then
+  # We do this twice since sems modules are wacked and we get errors to the
+  # screen on a purge The second purge will catch any real errors with purging
+  # ...
+  module purge &> /dev/null
+  module purge
+else
+  echo "NOTE: ATDM_CONFIG_DONT_LOAD_SPARC_MODULES_PLEASE=1 is set so using pre-loaded sparc-dev module!"
+fi
+
 . /projects/sems/modulefiles/utils/sems-modules-init.sh
 module load sems-env
 module load sems-git/2.10.1
@@ -26,7 +32,7 @@ module load sems-git/2.10.1
 # Common paths and modules for both intel-1{8,9}
 module load sems-cmake/3.19.1
 
-module load sparc-dev/intel-19.0.4_openmpi-4.0.3
+atdm_config_load_sparc_dev_module sparc-dev/intel-19.0.4_openmpi-4.0.3
 
 if [ "$ATDM_CONFIG_COMPILER" == "INTEL-19.0.4_OPENMPI-4.0.3" ]; then
   # Correct module already loaded above
