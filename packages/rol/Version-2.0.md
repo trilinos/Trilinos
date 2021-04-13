@@ -184,9 +184,9 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
 
 ## Algorithms
 
-ROL ___Version 2.0___ maintains a fine-grained interface to directly use
-specific algorithmic objects.  This is done through a variety of
-`ROL::Type___::___Algorithm` classes, which replace the `ROL::Step` classes.
+ROL ___Version 2.0___ maintains a fine-grained interface to directly use specific algorithmic objects.
+This is done through a variety of `ROL::Type___::___Algorithm` classes, which replace the `ROL::Step` and
+`ROL::Algorithm` classes.
 ROL ___Version 2.0___ explicitly categorizes all algorithms into four
 groups, based on the problem type:
 1. `TypeU`: algorithms for _unconstrained_ problems, e.g., `min f(x)`;
@@ -194,7 +194,7 @@ groups, based on the problem type:
 3. `TypeE`: algorithms for _equality-constrained_ problems, e.g., `min f(x) s.t. c(x) = 0`; and
 4. `TypeG`: algorithms for problems with _general constraints_, e.g., `min f(x) s.t. c(x) >= 0`.
 
-**Key change**: `ROL::Step` classes are rewritten as `ROL::Type___::___Algorithm` classes.
+**Key change**: `ROL::Step` and `ROL::Algorithm` are rewritten as `ROL::Type___::___Algorithm`.
 For instance, the `ROL::TrustRegionStep` based on the Lin-More method corresponds to `ROL::TypeB::LinMoreAlgorithm`.
 
 Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
