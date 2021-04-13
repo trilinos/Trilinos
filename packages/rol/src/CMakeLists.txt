@@ -178,6 +178,14 @@ APPEND_GLOB(HEADERS ${DIR}/*.hpp
                     ${DIR}/TypeU/trustregion/*.hpp)
 
 #
+# parameterlist headers
+#
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/parameterlist)
+INCLUDE_DIRECTORIES(${DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+
+#
 # status test headers
 #
 
