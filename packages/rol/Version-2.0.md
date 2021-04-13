@@ -186,7 +186,7 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
 
 ROL ___Version 2.0___ maintains a fine-grained interface to directly use
 specific algorithmic objects.  This is done through a variety of
-`ROL::Algorithm` classes, which replace the `ROL::Step` classes.
+`ROL::TypeX::YAlgorithm` classes, which replace the `ROL::Step` classes.
 ROL ___Version 2.0___ explicitly categorizes all algorithms into four
 groups, based on the problem type:
 1. `TypeU`: algorithms for _unconstrained_ problems, e.g., `min f(x)`;
@@ -194,9 +194,10 @@ groups, based on the problem type:
 3. `TypeE`: algorithms for _equality-constrained_ problems, e.g., `min f(x) s.t. c(x) = 0`; and
 4. `TypeG`: algorithms for problems with _general constraints_, e.g., `min f(x) s.t. c(x) >= 0`.
 
-**Key change**: `ROL::Step` classes are rewritten as `ROL::Algorithm` classes and moved into appropriate namespaces.
+**Key change**: `ROL::Step` classes are rewritten as `ROL::TypeX:YAlgorithm` classes.
+For instance, the `ROL::TrustRegionStep` based on the Lin-More method is now called `ROL::TypeB::LinMoreAlgorithm`.
 
-Here are a few examples of ___Version 1.0___ and ___Version 2.0___ usage.
+Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
 
 #### Example: Trust-region algorithm for bound-constrained problems
 
@@ -206,13 +207,13 @@ Here are a few examples of ___Version 1.0___ and ___Version 2.0___ usage.
     // Instantiate parameter list.
     ROL::ParameterList parlist;
     ... // fill parameter list with desired algorithmic options (e.g., selecting the Lin-More step)
-    // Instantiate step and status test.
-    ROL::Ptr<ROL::Step<double>>         step = ROL::makePtr<ROL::TrustRegionStep<double>>(parlist);
-    ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(parlist);
     // Instantiate objective function, initial guess vector and bound constraint.
     ROL::MyObjective<double>        obj;
     ROL::MyVector<double>           x;
     ROL::MyBoundConstraint<double>  bnd;
+    // Instantiate step and status test.
+    ROL::Ptr<ROL::Step<double>>         step = ROL::makePtr<ROL::TrustRegionStep<double>>(parlist);
+    ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(parlist);
     // Instantiate algorithm, and run it.
     ROL::Algorithm<double> algo(step,status,false);
     std::outstream outStream;
