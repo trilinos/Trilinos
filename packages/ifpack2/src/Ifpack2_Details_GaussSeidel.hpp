@@ -266,7 +266,7 @@ namespace Details
         Kokkos::deep_copy(dinv_accum, KAT::zero());
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v);
+          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
           for(LO br = 0; br < blockSize; br++)
           {
             accum(br, v) = bRow(br) - accum(br, v);
