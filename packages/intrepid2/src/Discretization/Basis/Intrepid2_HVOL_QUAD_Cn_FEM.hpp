@@ -243,10 +243,16 @@ namespace Intrepid2 {
       return false;
     }
 
+    virtual HostBasisPtr<outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HVOL_QUAD_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_,pointType_));
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix (isotropic order) */
     Kokkos::DynRankView<typename ScalarViewType::value_type,DeviceType> vinv_;
+    EPointType   pointType_;
   };
 
 }// namespace Intrepid2

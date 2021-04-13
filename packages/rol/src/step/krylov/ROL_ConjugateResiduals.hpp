@@ -108,12 +108,14 @@ public:
     iter = 0; 
     flag = 0;
     Real kappa(0), beta(0), alpha(0), tmp(0);
-    Real gHg   = r_->dot(v_->dual()); 
+    //Real gHg   = r_->dot(v_->dual()); 
+    Real gHg   = r_->apply(*v_); 
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
       itol = std::sqrt(ROL_EPSILON<Real>());
       M.applyInverse(*MAp_, *Ap_, itol);
-      kappa = MAp_->dot(Ap_->dual());
+      //kappa = MAp_->dot(Ap_->dual());
+      kappa = MAp_->apply(*Ap_);
       //if ( gHg <= 0.0 || kappa <= 0.0 ) { 
         //flag = 2;
         //break;
@@ -133,7 +135,8 @@ public:
       }
       A.apply(*v_, *r_, itol);
       tmp  = gHg;
-      gHg  = r_->dot(v_->dual());
+      //gHg  = r_->dot(v_->dual());
+      gHg  = r_->apply(*v_);
       beta = gHg/tmp;
 
       p_->scale(beta);

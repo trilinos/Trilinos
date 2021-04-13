@@ -81,6 +81,7 @@ struct VectorFunctionCalls {
   Ordinal dimension_;
   Ordinal set_;
   Ordinal dual_; 
+  Ordinal apply_;
   Ordinal applyUnary_;
   Ordinal applyBinary_;
   Ordinal reduce_;
@@ -88,8 +89,8 @@ struct VectorFunctionCalls {
   Ordinal randomize_;
   VectorFunctionCalls() :
     constructor_(0), destructor_(0), plus_(0), scale_(0), dot_(0), norm_(0), clone_(0),
-    axpy_(0), zero_(0), basis_(0), dimension_(0), set_(0), dual_(0), applyUnary_(0),
-    applyBinary_(0), reduce_(0), setScalar_(0), randomize_(0) {}
+    axpy_(0), zero_(0), basis_(0), dimension_(0), set_(0), dual_(0), apply_(0),
+    applyUnary_(0), applyBinary_(0), reduce_(0), setScalar_(0), randomize_(0) {}
 
 }; // struct VectorFunctionCalls
 
@@ -119,6 +120,7 @@ void printVectorFunctionCalls( const ProfiledVector<Ordinal,Real> &x, std::ostre
   outStream << "clone       : " << x.functionCalls_.clone_        << std::endl;
   outStream << "basis       : " << x.functionCalls_.basis_        << std::endl;
   outStream << "dual        : " << x.functionCalls_.dual_         << std::endl;
+  outStream << "apply       : " << x.functionCalls_.apply_        << std::endl;
   outStream << "dimension   : " << x.functionCalls_.dimension_    << std::endl;
   outStream << "applyUnary  : " << x.functionCalls_.applyUnary_   << std::endl;
   outStream << "applyBinary : " << x.functionCalls_.applyBinary_  << std::endl;
@@ -214,6 +216,11 @@ public:
   const Vector<Real> & dual() const {
     functionCalls_.dual_++; 
     return *this;
+  }
+
+  Real apply(const Vector<Real> &x) const {
+    functionCalls_.apply_++;
+    return v_->apply(x);
   }
 
   ROL::Ptr<Vector<Real> > getVector() {

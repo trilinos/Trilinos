@@ -1219,7 +1219,7 @@ namespace MueLu {
 
     }
 
-    if(!reuse && !allNodesBoundary_) {
+    if(!reuse && !allNodesBoundary_ && applyBCsTo22_) {
       GetOStream(Runtime0) << "RefMaxwell::compute(): nuking BC edges of D0" << std::endl;
 
       D0_Matrix_->resumeFill();
@@ -2372,7 +2372,7 @@ namespace MueLu {
         Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }
 
-    if (!AH_.is_null() && precList11_.get<bool>("rap: fix zero diagonals", false)) {
+    if (!AH_.is_null() && precList11_.isType<bool>("rap: fix zero diagonals") && precList11_.get<bool>("rap: fix zero diagonals", false)) {
       magnitudeType threshold;
       if (precList11_.isType<magnitudeType>("rap: fix zero diagonals threshold"))
         threshold = precList11_.get<magnitudeType>("rap: fix zero diagonals threshold");

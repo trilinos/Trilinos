@@ -54,6 +54,7 @@
 #include "ROL_Vector.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
+#include "MatrixMarket_Tpetra.hpp"
 
 namespace ROL {
 
@@ -339,7 +340,10 @@ public:
   }
 
   void print( std::ostream &outStream ) const {
-    tpetra_vec_->print(outStream);
+    //tpetra_vec_->print(outStream);
+    Tpetra::MatrixMarket::Writer< Tpetra::CrsMatrix<>> vecWriter;
+    vecWriter.writeDense(outStream, *tpetra_vec_);
+    vecWriter.writeMap(outStream, *tpetra_vec_->getMap());
   }
 
 }; // class TpetraMultiVector

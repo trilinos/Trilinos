@@ -216,14 +216,14 @@ public:
     return stat;
   }
 
-  void setStorage(const Ptr<SampledScalar<Real>> &value_storage,
-                  const Ptr<SampledVector<Real>> &gradient_storage) {
+  void setStorage(const Ptr<ScalarController<Real>> &value_storage,
+                  const Ptr<VectorController<Real>> &gradient_storage) {
     RandVarFunctional<Real>::setStorage(value_storage,gradient_storage);
     mqq_->setStorage(value_storage,gradient_storage);
   }
 
-  void setHessVecStorage(const Ptr<SampledScalar<Real>> &gradvec_storage,
-                         const Ptr<SampledVector<Real>> &hessvec_storage) {
+  void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
+                         const Ptr<VectorController<Real>> &hessvec_storage) {
     RandVarFunctional<Real>::setHessVecStorage(gradvec_storage,hessvec_storage);
     mqq_->setHessVecStorage(gradvec_storage,hessvec_storage);
   }
@@ -236,6 +236,11 @@ public:
   void resetStorage(bool flag = true) {
     RandVarFunctional<Real>::resetStorage(flag);
     mqq_->resetStorage(flag);
+  }
+
+  void resetStorage(UpdateType type) {
+    RandVarFunctional<Real>::resetStorage(type);
+    mqq_->resetStorage(type);
   }
 
   void initialize(const Vector<Real> &x) {

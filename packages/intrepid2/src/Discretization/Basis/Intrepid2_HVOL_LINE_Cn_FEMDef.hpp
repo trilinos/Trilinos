@@ -196,6 +196,7 @@ namespace Intrepid2 {
   Basis_HVOL_LINE_Cn_FEM<DT,OT,PT>::
   Basis_HVOL_LINE_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
+    this->pointType_         = pointType;
     this->basisCardinality_  = order+1;
     this->basisDegree_       = order;
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );

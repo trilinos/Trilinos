@@ -48,59 +48,38 @@
 #include "ROL_Constraint.hpp"
 
 /** @ingroup func_group
-    \class ROL::ObjectiveFromConstraint
+    \class ObjectiveFromConstraint
     \brief Form an objective function from a ROL::Constraint and a
            vector in the dual constraint space \f$\lambda\in \mathcal{C}^\ast\f$
 
     \f[ f(x;\lambda) = \langle \lambda, c(x)\rangle_{\mathcal{C}^*,\mathcal{C}} \f]
 */
 
-
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class ObjectiveFromConstraint : public Objective<Real> {
-
 private:
-
-  ROL::Ptr<Constraint<Real> > con_;
-  ROL::Ptr<Vector<Real> >     l_;      // Lagrange multiplier 
-  ROL::Ptr<Vector<Real> >     c_;      // Constraint vector
-
+  Ptr<Constraint<Real>> con_;
+  Ptr<Vector<Real>>     l_;      // Lagrange multiplier 
+  Ptr<Vector<Real>>     c_;      // Constraint vector
 
 public:
-
-  ObjectiveFromConstraint( const ROL::Ptr<Constraint<Real> > &con, 
-                           const Vector<Real> &l ) :
-    con_(con), l_(l.clone()), c_(l.dual().clone()) {
-    l_->set(l);
-  }
-
   virtual ~ObjectiveFromConstraint() {}
+  ObjectiveFromConstraint( const Ptr<Constraint<Real>> &con, 
+                           const Vector<Real> &l );
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    con_->update(x,flag,iter);
-  }
-
-  Real value( const Vector<Real> &x, Real &tol ) {
-    con_->value(*c_,x,tol);
-    return l_->dot(c_->dual());  
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    con_->applyAdjointJacobian(g,*l_,x,tol);
-  }
-
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    con_->applyAdjointHessian(hv,*l_,v,x,tol);
-  }
-
-  void updateMultiplier( const Vector<Real> &l ) {
-    l_->set(l);
-  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void updateMultiplier( const Vector<Real> &l );
 
 }; // class ObjectiveFromConstraint
 
 } // namespace ROL
+
+#include "ROL_ObjectiveFromConstraint_Def.hpp"
 
 #endif // ROL_OBJECTIVE_FROM_CONSTRAINT_H

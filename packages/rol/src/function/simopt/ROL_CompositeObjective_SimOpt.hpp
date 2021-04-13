@@ -139,7 +139,8 @@ private:
     computeGradient1(u,z,tol);
     int size = obj_vec_.size();
     for (int i = 0; i < size; ++i) {
-      (*obj_gv_)[i] = vec_grad1_[i]->dot(v.dual());
+      //(*obj_gv_)[i] = vec_grad1_[i]->dot(v.dual());
+      (*obj_gv_)[i] = vec_grad1_[i]->apply(v);
       obj_vec_[i]->hessVec_11(*(vec_hess1_[i]),v,u,z,tol);
     }
     std_obj_->hessVec(*(obj_hess_vec_),*(obj_gv_vec_),*(obj_value_vec_),tol);
@@ -150,7 +151,8 @@ private:
     computeGradient2(u,z,tol);
     int size = obj_vec_.size();
     for (int i = 0; i < size; ++i) {
-      (*obj_gv_)[i] = vec_grad2_[i]->dot(v.dual());
+      //(*obj_gv_)[i] = vec_grad2_[i]->dot(v.dual());
+      (*obj_gv_)[i] = vec_grad2_[i]->apply(v);
       obj_vec_[i]->hessVec_12(*(vec_hess1_[i]),v,u,z,tol);
     }
     std_obj_->hessVec(*(obj_hess_vec_),*(obj_gv_vec_),*(obj_value_vec_),tol);
@@ -161,7 +163,8 @@ private:
     computeGradient2(u,z,tol);
     int size = obj_vec_.size();
     for (int i = 0; i < size; ++i) {
-      (*obj_gv_)[i] = vec_grad1_[i]->dot(v.dual());
+      //(*obj_gv_)[i] = vec_grad1_[i]->dot(v.dual());
+      (*obj_gv_)[i] = vec_grad1_[i]->apply(v);
       obj_vec_[i]->hessVec_21(*(vec_hess2_[i]),v,u,z,tol);
     }
     std_obj_->hessVec(*(obj_hess_vec_),*(obj_gv_vec_),*(obj_value_vec_),tol);
@@ -171,7 +174,8 @@ private:
     computeGradient2(u,z,tol);
     int size = obj_vec_.size();
     for (int i = 0; i < size; ++i) {
-      (*obj_gv_)[i] = vec_grad2_[i]->dot(v.dual());
+      //(*obj_gv_)[i] = vec_grad2_[i]->dot(v.dual());
+      (*obj_gv_)[i] = vec_grad2_[i]->apply(v);
       obj_vec_[i]->hessVec_22(*(vec_hess2_[i]),v,u,z,tol);
     }
     std_obj_->hessVec(*(obj_hess_vec_),*(obj_gv_vec_),*(obj_value_vec_),tol);
@@ -202,6 +206,18 @@ public:
     isGradientComputed_  = (flag ? false : isGradientComputed_);
     isGradient1Computed_ = (flag ? false : isGradient1Computed_);
     isGradient2Computed_ = (flag ? false : isGradient2Computed_);
+  }
+
+  void update( const Vector<Real> &u, const Vector<Real> &z, UpdateType type, int iter = -1 ) {
+    int size = obj_vec_.size();
+    for (int i = 0; i < size; ++i) {
+      obj_vec_[i]->update(u,z,type,iter);
+    }
+    // Do something smarter here
+    isValueComputed_     = false;
+    isGradientComputed_  = false;
+    isGradient1Computed_ = false;
+    isGradient2Computed_ = false;
   }
 
   Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {

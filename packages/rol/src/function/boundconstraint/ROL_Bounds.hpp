@@ -55,15 +55,16 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class Bounds : public BoundConstraint<Real> {
 private:
-  const ROL::Ptr<Vector<Real>> x_lo_;
-  const ROL::Ptr<Vector<Real>> x_up_;
   const Real scale_;
   const Real feasTol_;
 
-  ROL::Ptr<Vector<Real>> mask_;
+  using BoundConstraint<Real>::lower_;
+  using BoundConstraint<Real>::upper_;
+
+  Ptr<Vector<Real>> mask_;
 
   Real min_diff_;
 
@@ -81,22 +82,22 @@ private:
 
   class UpperBinding : public Elementwise::BinaryFunction<Real> {
     public:
-    UpperBinding(Real offset) : offset_(offset) {}
+    UpperBinding(Real xeps, Real geps) : xeps_(xeps), geps_(geps) {}
     Real apply( const Real &x, const Real &y ) const {
-      return ((y < 0 && x <= offset_) ? 0 : 1);
+      return ((y < -geps_ && x <= xeps_) ? 0 : 1);
     }
     private:
-    Real offset_;
+    Real xeps_, geps_;
   };
 
   class LowerBinding : public Elementwise::BinaryFunction<Real> {
     public:
-    LowerBinding(Real offset) : offset_(offset) {}
+    LowerBinding(Real xeps, Real geps) : xeps_(xeps), geps_(geps) {}
     Real apply( const Real &x, const Real &y ) const {
-      return ((y > 0 && x <= offset_) ? 0 : 1);
+      return ((y > geps_ && x <= xeps_) ? 0 : 1);
     }
     private:
-    Real offset_;
+    Real xeps_, geps_;
   };
 
   class PruneBinding : public Elementwise::BinaryFunction<Real> {
@@ -111,182 +112,31 @@ public:
   Bounds(const Vector<Real> &x,
          bool isLower = true,
          Real scale = 1,
-         Real feasTol = 1e-2)
-    : x_lo_(x.clone()),  x_up_(x.clone()),
-      scale_(scale), feasTol_(feasTol), mask_(x.clone()),
-      min_diff_(ROL_INF<Real>()) {
-    if (isLower) {
-      x_lo_->set(x);
-      x_up_->applyUnary(Elementwise::Fill<Real>(ROL_INF<Real>()));
-      BoundConstraint<Real>::activateLower();
-    }
-    else {
-      x_lo_->applyUnary(Elementwise::Fill<Real>(ROL_NINF<Real>()));
-      x_up_->set(x);
-      BoundConstraint<Real>::activateUpper();
-    }
-  }
+         Real feasTol = 1e-2);
 
-  Bounds(const ROL::Ptr<Vector<Real>> &x_lo,
-         const ROL::Ptr<Vector<Real>> &x_up,
+  Bounds(const Ptr<Vector<Real>> &x_lo,
+         const Ptr<Vector<Real>> &x_up,
          const Real scale = 1,
-         const Real feasTol = 1e-2)
-    : x_lo_(x_lo), x_up_(x_up),
-      scale_(scale), feasTol_(feasTol),
-      mask_(x_lo->clone()) {
-    const Real half(0.5), one(1);
-    // Compute difference between upper and lower bounds
-    mask_->set(*x_up_);
-    mask_->axpy(-one,*x_lo_);
-    // Compute minimum difference
-    min_diff_ = mask_->reduce(minimum_);
-    min_diff_ *= half;
-  }
+         const Real feasTol = 1e-2);
 
-  virtual void project( Vector<Real> &x ) {
-    struct Lesser : public Elementwise::BinaryFunction<Real> {
-      Real apply(const Real &xc, const Real &yc) const { return xc<yc ? xc : yc; }
-    } lesser;
+  void project( Vector<Real> &x ) override;
 
-    struct Greater : public Elementwise::BinaryFunction<Real> {
-      Real apply(const Real &xc, const Real &yc) const { return xc>yc ? xc : yc; }
-    } greater;
+  void projectInterior( Vector<Real> &x ) override;
 
-    if (BoundConstraint<Real>::isUpperActivated()) {
-      x.applyBinary(lesser, *x_up_); // Set x to the elementwise minimum of x and x_up_
-    }
-    if (BoundConstraint<Real>::isLowerActivated()) {
-      x.applyBinary(greater,*x_lo_); // Set x to the elementwise maximum of x and x_lo_
-    }
-  }
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) override;
 
-  virtual void projectInterior( Vector<Real> &x ) {
-    // Make vector strictly feasible
-    // Lower feasibility
-    if (BoundConstraint<Real>::isLowerActivated()) {
-      class LowerFeasible : public Elementwise::BinaryFunction<Real> {
-      private:
-        const Real eps_;
-        const Real diff_;
-      public:
-        LowerFeasible(const Real eps, const Real diff)
-          : eps_(eps), diff_(diff) {}
-        Real apply( const Real &xc, const Real &yc ) const {
-          const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
-          const Real one(1);
-          Real val = ((yc <-tol) ? yc*(one-eps_)
-                   : ((yc > tol) ? yc*(one+eps_)
-                   : yc+eps_));
-          val = std::min(yc+eps_*diff_, val);
-          return (xc < yc+tol) ? val : xc;
-        }
-      };
-      x.applyBinary(LowerFeasible(feasTol_,min_diff_), *x_lo_);
-    }
-    // Upper feasibility
-    if (BoundConstraint<Real>::isUpperActivated()) {
-      class UpperFeasible : public Elementwise::BinaryFunction<Real> {
-      private:
-        const Real eps_;
-        const Real diff_;
-      public:
-        UpperFeasible(const Real eps, const Real diff)
-          : eps_(eps), diff_(diff) {}
-        Real apply( const Real &xc, const Real &yc ) const {
-          const Real tol = static_cast<Real>(100)*ROL_EPSILON<Real>();
-          const Real one(1);
-          Real val = ((yc <-tol) ? yc*(one+eps_)
-                   : ((yc > tol) ? yc*(one-eps_)
-                   : yc-eps_));
-          val = std::max(yc-eps_*diff_, val);
-          return (xc > yc-tol) ? val : xc;
-        }
-      };
-      x.applyBinary(UpperFeasible(feasTol_,min_diff_), *x_up_);
-    }
-  }
+  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) override;
 
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
-    if (BoundConstraint<Real>::isUpperActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0) ) override;
 
-      mask_->set(*x_up_);
-      mask_->axpy(-one,x);
+  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0) ) override;
 
-      Active op(epsn);
-      v.applyBinary(op,*mask_);
-    }
-  }
-
-  void pruneUpperActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
-    if (BoundConstraint<Real>::isUpperActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
-
-      mask_->set(*x_up_);
-      mask_->axpy(-one,x);
-
-      UpperBinding op(epsn);
-      mask_->applyBinary(op,g);
-
-      v.applyBinary(prune_,*mask_);
-    }
-  }
-
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0 ) {
-    if (BoundConstraint<Real>::isLowerActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
-
-      mask_->set(x);
-      mask_->axpy(-one,*x_lo_);
-
-      Active op(epsn);
-      v.applyBinary(op,*mask_);
-    }
-  }
-
-  void pruneLowerActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0 ) {
-    if (BoundConstraint<Real>::isLowerActivated()) {
-      Real one(1), epsn(std::min(scale_*eps,min_diff_));
-
-      mask_->set(x);
-      mask_->axpy(-one,*x_lo_);
-
-      LowerBinding op(epsn);
-      mask_->applyBinary(op,g);
-
-      v.applyBinary(prune_,*mask_);
-    }
-  }
-
-  const ROL::Ptr<const Vector<Real>> getLowerBound( void ) const {
-    return x_lo_;
-  }
-
-  const ROL::Ptr<const Vector<Real>> getUpperBound( void ) const {
-    return x_up_;
-  }
-
-  virtual bool isFeasible( const Vector<Real> &v ) { 
-    const Real one(1);
-    bool flagU = false, flagL = false;
-    if (BoundConstraint<Real>::isUpperActivated()) {
-      mask_->set(*x_up_);
-      mask_->axpy(-one,v);
-      Real uminusv = mask_->reduce(minimum_);
-      flagU = ((uminusv<0) ? true : false);
-    }
-    if (BoundConstraint<Real>::isLowerActivated()) {
-      mask_->set(v);
-      mask_->axpy(-one,*x_lo_);
-      Real vminusl = mask_->reduce(minimum_);
-
-      flagL = ((vminusl<0) ? true : false);
-    }
-    return ((flagU || flagL) ? false : true);
-  }
+  bool isFeasible( const Vector<Real> &v ) override;
 
 }; // class Bounds
 
 } // namespace ROL
+
+#include "ROL_Bounds_Def.hpp"
 
 #endif
