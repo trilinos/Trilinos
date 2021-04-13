@@ -141,7 +141,7 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
     // Instantiate Problem.
     ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
     ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
-    ROL::Problem<double> problem(obj,x);
+    ROL::OptimizationProblem<double> problem(obj,x);
     ... // add constraints if needed
     
     // Instantiate Solver.
