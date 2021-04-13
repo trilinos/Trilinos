@@ -165,6 +165,15 @@ namespace Tpetra {
     //! Declare the end of a phase of owned+shared modifications.
     void endFill ();
 
+    //! Declare the beginning of a phase of owned+shared modifications.
+    void beginAssembly ();
+
+    //! Declare the end of a phase of owned+shared modifications.
+    void endAssembly ();
+
+    void beginModify ();
+    void endModify ();
+
     /// \brief Declare the end of a phase of owned+shared
     ///   modifications; same as endFill().
     void globalAssemble ();
@@ -198,6 +207,14 @@ namespace Tpetra {
       FE_ACTIVE_OWNED_PLUS_SHARED,
       FE_ACTIVE_OWNED
     };
+
+    enum class FillState
+    {
+      open,  // matrix is "open".  Values can freely summed in to and replaced
+      modify,  // matrix is open for modification.  *local* values can be replaced
+      closed
+    };
+    Teuchos::RCP<FillState> fillState_;
 
     //! Whichever MultiVector is <i>not</i> currently active.
     Teuchos::RCP<base_type> inactiveMultiVector_;
