@@ -27,7 +27,9 @@ to ___Version 2.0___.
 
 ## Optimization problem
 
-For user convenience, ROL supports the definition of a "problem," which is subsequently sent to a "solver."  ___Version 2.0___ allows the user to modify the problem through several convenience functions.  Additionally, ___Version 2.0___ enables an explicit specification of **linear constraints**, which can be handled more efficiently by ROL's algorithms.  In contrast, ___Version 1.0___ only supports special treatment of bound constraints.. 
+For user convenience, ROL supports the definition of a "problem," which is subsequently sent to a "solver."  ___Version 2.0___ allows the user to modify the problem through several convenience functions.  Additionally, ___Version 2.0___ enables an explicit specification of **linear constraints**, which can be handled more efficiently by ROL's algorithms.  In contrast, ___Version 1.0___ only supports special treatment of bound constraints.
+
+**Key change**: `ROL::OptimizationProblem` becomes `ROL::Problem`.
 
 #### Basic syntax in Version 1.0
 
@@ -131,6 +133,8 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
 
 ## Optimization solver
 
+**Key change**: `ROL::OptimizationSolver` becomes `ROL::Solver`.
+
 #### Basic syntax in Version 1.0
 
 ```cpp
@@ -180,59 +184,65 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
 
 ## Algorithms
 
-ROL Version 2.0 maintains a fine-grained interface to directly use
+ROL ___Version 2.0___ maintains a fine-grained interface to directly use
 specific algorithmic objects.  This is done through a variety of
 `ROL::Algorithm` classes, which replace the `ROL::Step` classes.
-ROL Version 2.0 explicitly categorizes all algorithms into four
+ROL ___Version 2.0___ explicitly categorizes all algorithms into four
 groups, based on the problem type:
 1. `TypeU`: algorithms for _unconstrained_ problems, e.g., `min f(x)`;
 2. `TypeB`: algorithms for _bound-constrained_ problems, e.g., `min f(x) s.t. a <= x <= b`;
 3. `TypeE`: algorithms for _equality-constrained_ problems, e.g., `min f(x) s.t. c(x) = 0`; and
 4. `TypeG`: algorithms for problems with _general constraints_, e.g., `min f(x) s.t. c(x) >= 0`.
 
-Here are a few examples of Version 1.0 and Version 2.0 usage.
+**Key change**: `ROL::Step` classes are rewritten as `ROL::Algorithm` classes and moved into appropriate namespaces.
 
-#### Example 1: Trust-region algorithm for unconstrained problems
+Here are a few examples of ___Version 1.0___ and ___Version 2.0___ usage.
+
+#### Example: Trust-region algorithm for bound-constrained problems
 
 ##### Version 1.0
 
 ```cpp
-    ROL::TrustRegionStep() step;
-    more_detail();
+    // Instantiate parameter list.
+    ROL::ParameterList parlist;
+    ... // fill parameter list with desired algorithmic options (e.g., selecting the Lin-More step)
+    // Instantiate step and status test.
+    ROL::Ptr<ROL::Step<double>>         step = ROL::makePtr<ROL::TrustRegionStep<double>>(parlist);
+    ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(parlist);
+    // Instantiate objective function, initial guess vector and bound constraint.
+    ROL::MyObjective<double>        obj;
+    ROL::MyVector<double>           x;
+    ROL::MyBoundConstraint<double>  bnd;
+    // Instantiate algorithm, and run it.
+    ROL::Algorithm<double> algo(step,status,false);
+    std::outstream outStream;
+    algo.run(x, obj, bnd, true, outStream);
 ```
 
 ##### Version 2.0
 
 ```cpp
-    ROL::TypeU::TrustRegionAlgorithm() algorithm;
-    more_detail();
-```
-
-#### Example 2: Trust-region algorithm for bound-constrained problems
-
-##### Version 1.0
-
-```cpp
-    ROL::TrustRegionStep() step;
-    parlist_selection();
-    more_detail();
-```
-
-##### Version 2.0
-
-```cpp
+    // Instantiate parameter list.
     ROL::ParameterList parlist;
     ... // fill parameter list with desired algorithmic options
+    // Instantiate objective function, initial guess vector and bound constraint.
+    ROL::MyObjective<double>        obj;
+    ROL::MyVector<double>           x;
+    ROL::MyBoundConstraint<double>  bnd;
+    // Instantiate status test.
+    ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(parlist);
+    // Instantiate the Lin-More trust-region algorithm, and run it.
     ROL::TypeB::LinMoreAlgorithm<double> algo(parlist);
-    ... // define ROL::Vector 'x', ROL::Objective 'f' and ROL::BoundConstraint 'bnd'
-    algo.run(x, f, bnd);
+    algo.setStatusTest(status);
+    std::outstream outStream;
+    algo.run(x, obj, bnd, outStream);
 ```
 
 
 
 ## Input XML files
 
-There are minor changes in the naming of steps/algorithms and models.
+There are a few minor changes in the naming of steps/algorithms and optimization models.
 
 
 
