@@ -259,6 +259,8 @@ public:
       true;
 #endif // KOKKOS_ENABLE_SERIAL
 
+  protected:
+
     //! Overloads of modification methods
     LocalOrdinal
     replaceGlobalValuesImpl (impl_scalar_type rowVals[],
