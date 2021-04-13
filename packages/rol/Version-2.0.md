@@ -186,7 +186,7 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
 
 ROL ___Version 2.0___ maintains a fine-grained interface to directly use
 specific algorithmic objects.  This is done through a variety of
-`ROL::TypeX::YAlgorithm` classes, which replace the `ROL::Step` classes.
+`ROL::Type___::___Algorithm` classes, which replace the `ROL::Step` classes.
 ROL ___Version 2.0___ explicitly categorizes all algorithms into four
 groups, based on the problem type:
 1. `TypeU`: algorithms for _unconstrained_ problems, e.g., `min f(x)`;
@@ -194,8 +194,8 @@ groups, based on the problem type:
 3. `TypeE`: algorithms for _equality-constrained_ problems, e.g., `min f(x) s.t. c(x) = 0`; and
 4. `TypeG`: algorithms for problems with _general constraints_, e.g., `min f(x) s.t. c(x) >= 0`.
 
-**Key change**: `ROL::Step` classes are rewritten as `ROL::TypeX:YAlgorithm` classes.
-For instance, the `ROL::TrustRegionStep` based on the Lin-More method is now called `ROL::TypeB::LinMoreAlgorithm`.
+**Key change**: `ROL::Step` classes are rewritten as `ROL::Type___::___Algorithm` classes.
+For instance, the `ROL::TrustRegionStep` based on the Lin-More method corresponds to `ROL::TypeB::LinMoreAlgorithm`.
 
 Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
 
@@ -230,11 +230,13 @@ Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
     ROL::MyObjective<double>        obj;
     ROL::MyVector<double>           x;
     ROL::MyBoundConstraint<double>  bnd;
-    // Instantiate status test.
-    ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::StatusTest<double>>(parlist);
-    // Instantiate the Lin-More trust-region algorithm, and run it.
+    // Instantiate the Lin-More trust-region algorithm.
     ROL::TypeB::LinMoreAlgorithm<double> algo(parlist);
+    // OPTIONAL: Instantiate and set user-defined status test; otherwise, algo will
+    // use a default status test with parameters provided in parlist.
+    ROL::Ptr<ROL::StatusTest<double>> status = ROL::makePtr<ROL::MySpecialStatusTest<double>>();
     algo.setStatusTest(status);
+    // Run algorithm.
     std::outstream outStream;
     algo.run(x, obj, bnd, outStream);
 ```
