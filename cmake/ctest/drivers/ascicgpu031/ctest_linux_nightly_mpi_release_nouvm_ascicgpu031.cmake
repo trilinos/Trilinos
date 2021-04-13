@@ -87,10 +87,6 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-D Kokkos_ENABLE_CUDA_UVM=OFF"
   "-D Tpetra_ENABLE_DEPRECATED_CODE=OFF"
 
-  ### Zoltan tests do not build correctly in this framework; unknown reason
-  ### But we don't need them in UVM-removal testing, so disable them
-  "-D Zoltan_ENABLE_TESTS=OFF"
-  "-D Zoltan_ENABLE_EXAMPLES=OFF"
 )
 
 #
