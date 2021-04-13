@@ -2,6 +2,7 @@ Clearing old data (if any)
 Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
+ relaxation: inner damping factor = 1
 
 --------------------------------------------------------------------------------
 ---                            Multigrid Summary                             ---

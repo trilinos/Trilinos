@@ -5,6 +5,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ relaxation: inner damping factor = 1
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -56,6 +57,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ relaxation: inner damping factor = 1
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)
@@ -130,6 +132,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ relaxation: inner damping factor = 1
 Level 1
 Build (MueLu::RebalanceTransferFactory)
 Prolongator smoothing (MueLu::SaPFactory)
@@ -169,6 +172,7 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
+ relaxation: inner damping factor = 1
 Level 2
 Build (MueLu::RebalanceTransferFactory)
 Build (MueLu::RepartitionFactory)

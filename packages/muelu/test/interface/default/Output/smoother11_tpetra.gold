@@ -3,9 +3,11 @@ Level 0
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 3
+ relaxation: inner damping factor = 1
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 0
+ relaxation: inner damping factor = 1
 Level 1
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -38,9 +40,11 @@ matrixmatrix: kernel params ->
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 3
+ relaxation: inner damping factor = 1
 Setup Smoother (MueLu::Ifpack2Smoother{type = RELAXATION})
 smoother -> 
  relaxation: sweeps = 0
+ relaxation: inner damping factor = 1
 Level 2
 Prolongator smoothing (MueLu::SaPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
