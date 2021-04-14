@@ -8,10 +8,8 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
- relaxation: outer sweeps = 1   [default]
  relaxation: inner sweeps = 1   [default]
  relaxation: inner sparse-triangular solve = 0   [default]
- relaxation: compact form = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -23,7 +21,6 @@ smoother ->
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
  relaxation: mtgs cluster size = 1   [default]
- relaxation: inner damping factor = 1
 
 Level 1
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
@@ -110,10 +107,8 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
- relaxation: outer sweeps = 1   [default]
  relaxation: inner sweeps = 1   [default]
  relaxation: inner sparse-triangular solve = 0   [default]
- relaxation: compact form = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -125,7 +120,6 @@ smoother ->
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
  relaxation: mtgs cluster size = 1   [default]
- relaxation: inner damping factor = 1
 
 Level 2
 Prolongator smoothing (MueLu::SaPFactory_kokkos)
@@ -212,10 +206,8 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
- relaxation: outer sweeps = 1   [default]
  relaxation: inner sweeps = 1   [default]
  relaxation: inner sparse-triangular solve = 0   [default]
- relaxation: compact form = 0   [default]
  relaxation: zero starting solution = 1   [default]
  relaxation: backward mode = 0   [default]
  relaxation: use l1 = 0   [default]
@@ -227,7 +219,6 @@ smoother ->
  relaxation: symmetric matrix structure = 0   [default]
  relaxation: ifpack2 dump matrix = 0   [default]
  relaxation: mtgs cluster size = 1   [default]
- relaxation: inner damping factor = 1
 
 Level 3
 Prolongator smoothing (MueLu::SaPFactory_kokkos)

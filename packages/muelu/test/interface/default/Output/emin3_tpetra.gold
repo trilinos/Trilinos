@@ -5,7 +5,6 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
- relaxation: inner damping factor = 1
 Level 1
 Prolongator minimization (MueLu::EminPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
@@ -45,7 +44,6 @@ smoother ->
  relaxation: type = Symmetric Gauss-Seidel
  relaxation: sweeps = 1
  relaxation: damping factor = 1
- relaxation: inner damping factor = 1
 Level 2
 Prolongator minimization (MueLu::EminPFactory)
 Matrix filtering (MueLu::FilteredAFactory)
