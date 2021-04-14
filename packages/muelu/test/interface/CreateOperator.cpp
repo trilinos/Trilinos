@@ -374,7 +374,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::srand(12345);
 
       ParameterList mueluList;
-      mueluList.set("verbosity",                           "test");
+      mueluList.set("verbosity",                           "interfacetest");
       mueluList.set("coarse: max size",                    100);
       mueluList.set("use kokkos refactor",                 useKokkos);
       mueluList.set("aggregation: deterministic",          useKokkos);
@@ -419,7 +419,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::srand(12345);
 
       ParameterList mueluList;
-      mueluList.set("verbosity",          "test");
+      mueluList.set("verbosity",          "interfacetest");
       mueluList.set("coarse: max size",   100);
       mueluList.set("use kokkos refactor", useKokkos);
       mueluList.set("aggregation: deterministic", useKokkos);
@@ -449,7 +449,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::srand(12345);
 
       ParameterList mueluList;
-      mueluList.set("verbosity",                  "test");
+      mueluList.set("verbosity",                  "interfacetest");
       mueluList.set("transpose: use implicit",    false);
       mueluList.set("max levels",                 4);
       mueluList.set("coarse: max size",           100);
@@ -480,7 +480,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
       std::srand(12345);
 
       ParameterList mueluList;
-      mueluList.set("verbosity",                  "test");
+      mueluList.set("verbosity",                  "interfacetest");
       mueluList.set("coarse: max size",           100);
       mueluList.set("transpose: use implicit",    true);
       mueluList.set("max levels",                 2);
