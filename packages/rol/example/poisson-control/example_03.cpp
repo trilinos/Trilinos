@@ -7,7 +7,8 @@
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
+#include "ROL_Solver.hpp"
+#include "ROL_StochasticProblem.hpp"
 #include "ROL_PrimalDualRisk.hpp"
 
 // Teuchos includes
@@ -91,20 +92,21 @@ int main( int argc, char *argv[] ) {
     // Solve using bundle
     if (runBundle) {
       z->zero();
-      ROL::Ptr<ROL::OptimizationProblem<double>> problem2
-        = ROL::makePtr<ROL::OptimizationProblem<double>>(robj, z);
-      problem2->setStochasticObjective(*parlist, sampler);
+      ROL::Ptr<ROL::StochasticProblem<double>> problem2
+        = ROL::makePtr<ROL::StochasticProblem<double>>(robj, z);
+      problem2->makeObjectiveStochastic(*parlist, sampler);
+      problem2->finalize(false,true,*outStream);
       parlist->sublist("Step").set("Type","Bundle");
       parlist->sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
-      ROL::OptimizationSolver<double> solver2(*problem2,*parlist);
+      ROL::Solver<double> solver2(problem2,*parlist);
       solver2.solve(*outStream);
     }
     
-    ROL::Ptr<ROL::OptimizationProblem<double>> problem
-      = ROL::makePtr<ROL::OptimizationProblem<double>>(robj, z);
+    ROL::Ptr<ROL::Problem<double>> problem
+      = ROL::makePtr<ROL::Problem<double>>(robj, z);
     ROL::PrimalDualRisk<double> solver(problem, sampler, *parlist);
     if (parlist->sublist("Problem Data").get("Run Derivative Check",false)) {
-      problem->check(*outStream);
+      problem->check(true,*outStream);
       solver.check(*outStream);
     }
     solver.run(*outStream);

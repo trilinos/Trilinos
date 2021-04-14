@@ -135,6 +135,8 @@ public:
 
   void setA(ROL::Ptr<Tpetra::CrsMatrix<>> &A);
 
+  void setParameters(Teuchos::ParameterList & parlist);
+
   void solve(const ROL::Ptr<Tpetra::MultiVector<>> &x,
              const ROL::Ptr<const Tpetra::MultiVector<>> &b,
              const bool transpose = false);

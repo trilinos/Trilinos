@@ -219,13 +219,25 @@ namespace
     TEST_EQUALITY(numPoints, vectorData.extent_int(1)); // (F,P,D)
     TEST_EQUALITY( spaceDim, vectorData.extent_int(2)); // (F,P,D)
     
+    Kokkos::View<bool*,DeviceType> vectorDataBools("vectorDataBools", 2);
+    Kokkos::View<double*,DeviceType> vectorDataValues("vectorDataValues", 2);
+
+    using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+    Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceType::execution_space>(0,2),
+    KOKKOS_LAMBDA (const int &i) {
+      vectorDataBools(i) = vectorData.getComponent(0,i).isValid();
+      vectorDataValues(i) = vectorData(0,0,i);
+    });
+    auto vectorDataBoolsHost = Kokkos::create_mirror_view_and_copy(HostSpaceType(), vectorDataBools);
+    auto vectorDataValuesHost = Kokkos::create_mirror_view_and_copy(HostSpaceType(), vectorDataValues);
+
     // check that the first component is identically zero (indicated by invalidity)
-    TEST_EQUALITY( false, vectorData.getComponent(0,0).isValid() ); // getComponent(familyOrdinal, componentOrdinal)
-    TEST_EQUALITY(  true, vectorData.getComponent(0,1).isValid() ); // getComponent(familyOrdinal, componentOrdinal)
-    
+    TEST_EQUALITY( false, vectorDataBoolsHost(0) ); // getComponent(familyOrdinal, componentOrdinal)
+    TEST_EQUALITY( true,  vectorDataBoolsHost(1) ); // getComponent(familyOrdinal, componentOrdinal)
+
     // test values
-    TEST_EQUALITY(                          0.0, vectorData(0,0,0)); // (F,P,D)
-    TEST_EQUALITY(fieldComponentDataViewHost(0), vectorData(0,0,1)); // (F,P,D)
+    TEST_EQUALITY(                          0.0, vectorDataValuesHost(0)); // (F,P,D)
+    TEST_EQUALITY(fieldComponentDataViewHost(0), vectorDataValuesHost(1)); // (F,P,D)
   }
 
 } // anonymous namespace

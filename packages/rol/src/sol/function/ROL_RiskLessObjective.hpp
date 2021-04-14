@@ -49,57 +49,27 @@
 
 namespace ROL {
 
-template<class Real>
+template<typename Real>
 class RiskLessObjective : public Objective<Real> {
 private:
-  const ROL::Ptr<Objective<Real> > obj_;
+  const Ptr<Objective<Real>> obj_;
 
 public:
-  RiskLessObjective(const ROL::Ptr<Objective<Real> > &obj) : obj_(obj) {}
+  RiskLessObjective(const Ptr<Objective<Real>> &obj);
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    ROL::Ptr<const Vector<Real> > x0
-      = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    obj_->update(*x0,flag,iter);
-  }
-
-  Real value( const Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<const Vector<Real> > x0
-      = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    return obj_->value(*x0,tol);
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<Vector<Real> > g0
-      = dynamic_cast<RiskVector<Real>&>(g).getVector();
-    ROL::Ptr<const Vector<Real> > x0
-      = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    obj_->gradient(*g0,*x0,tol);
-  }
-
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
   void hessVec( Vector<Real> &hv, const Vector<Real> &v,
-                const Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<Vector<Real> > hv0
-      = dynamic_cast<RiskVector<Real>&>(hv).getVector();
-    ROL::Ptr<const Vector<Real> > v0
-      = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-    ROL::Ptr<const Vector<Real> > x0
-      = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    obj_->hessVec(*hv0,*v0,*x0,tol);
-  }
-
+                const Vector<Real> &x, Real &tol ) override;
   void precond( Vector<Real> &Pv, const Vector<Real> &v,
-                const Vector<Real> &x, Real &tol ) {
-    ROL::Ptr<Vector<Real> > Pv0
-      = dynamic_cast<RiskVector<Real>&>(Pv).getVector();
-    ROL::Ptr<const Vector<Real> > v0
-      = dynamic_cast<const RiskVector<Real>&>(v).getVector();
-    ROL::Ptr<const Vector<Real> > x0
-      = dynamic_cast<const RiskVector<Real>&>(x).getVector();
-    obj_->precond(*Pv0,*v0,*x0,tol);
-  }
+                const Vector<Real> &x, Real &tol ) override;
+  void setParameter(const std::vector<Real> &param) override;
 };
 
 }
+
+#include "ROL_RiskLessObjective_Def.hpp"
 
 #endif

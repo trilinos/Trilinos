@@ -4,6 +4,11 @@
 
 # Try matching against arm-20.1 before arm-20 or arm
 if atdm_match_any_buildname_keyword \
+     arm-20.1-openmpi-4.0.5 \
+     arm-20.1_openmpi-4.0.5 \
+  ; then
+  export ATDM_CONFIG_COMPILER=ARM-20.1_OPENMPI-4.0.5
+elif atdm_match_any_buildname_keyword \
      arm-20.1-openmpi-4.0.3 \
      arm-20.1_openmpi-4.0.3 \
      arm-20.1 \
@@ -27,6 +32,7 @@ else
   echo "***"
   echo "****  arm-20.0-openmpi-4.0.2    (arm-20.0, default)"
   echo "****  arm-20.1-openmpi-4.0.3    (arm-20.1)"
+  echo "****  arm-20.1-openmpi-4.0.5"
   echo "***"
   return
 

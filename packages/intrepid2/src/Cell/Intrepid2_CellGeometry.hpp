@@ -76,7 +76,7 @@ namespace Intrepid2
       
    \note Conceptually, it would make sense to use class inheritance and have different member data for each type of geometry supported.  We instead glom all the options together into one multi-modal class; this is basically to avoid certain difficulties with vtables under CUDA.
    */
-  template<class PointScalar, int spaceDim, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class PointScalar, int spaceDim, typename DeviceType>
   class CellGeometry
   {
     public:

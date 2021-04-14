@@ -83,23 +83,23 @@ range_size(const Kokkos::pair<ordinal_type, ordinal_type>& range) {
   return range.second - range.first;
 }
 
-template<typename SpT, typename ValueType>
+template<typename DeviceType, typename ValueType>
 class ProjectionStruct {
 public:
 
   enum EvalPointsType {BASIS, TARGET};
 
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
-  typedef typename Kokkos::Impl::is_space<SpT>::host_mirror_space::execution_space host_space_type;
-  typedef Kokkos::DynRankView<ValueType,host_space_type> view_type;
-  typedef Kokkos::View<range_type**,host_space_type> range_tag;
+  typedef typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType;
+  typedef Kokkos::DynRankView<ValueType,HostSpaceType> view_type;
+  typedef Kokkos::View<range_type**,HostSpaceType> range_tag;
   static constexpr int numberSubCellDims = 4; //{0 for vertex, 1 for edges, 2 for faces, 3 for volumes}
   //max of numVertices, numEdges, numFaces for a reference cell.
   //12 is the number of edges in a Hexahderon.
   //We'll need to change this if we consider generic polyhedra
   static constexpr int maxSubCellsCount = 12;
   typedef std::array<std::array<view_type, maxSubCellsCount>, numberSubCellDims> view_tag;
-  typedef Kokkos::View<unsigned**,host_space_type> key_tag;
+  typedef Kokkos::View<unsigned**,HostSpaceType> key_tag;
 
   /** \brief  Returns number of basis evaluation points
    */

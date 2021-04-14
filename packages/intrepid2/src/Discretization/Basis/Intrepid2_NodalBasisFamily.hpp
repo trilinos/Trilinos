@@ -77,7 +77,7 @@
 namespace Intrepid2 {
 
   // the following defines a family of nodal basis functions for the reference Triangle
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename ExecutionSpace,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>
@@ -91,7 +91,7 @@ namespace Intrepid2 {
   };
 
   // the following defines a family of nodal basis functions for the reference Tetrahedron
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename ExecutionSpace,
   typename OutputScalar = double,
   typename PointScalar  = double,
   bool defineVertexFunctions = true>
@@ -116,7 +116,7 @@ namespace Intrepid2 {
    
    At present, only hypercube topologies (line, quadrilateral, hexahedron) are supported, but other topologies will be supported in the future.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename ExecutionSpace,
            typename OutputScalar = double,
            typename PointScalar  = double>
   using DerivedNodalBasisFamily = DerivedBasisFamily< Basis_HGRAD_LINE_Cn_FEM<ExecutionSpace,OutputScalar,PointScalar>,
@@ -129,7 +129,7 @@ namespace Intrepid2 {
    
    This family is defined with reference to the higher-order implementations (the "Cn" and "In" bases).
   */
-  template<typename ExecSpace=Kokkos::DefaultExecutionSpace,
+  template<typename ExecSpace,
            typename OutputScalar = double,
            typename PointScalar  = double>
   class NodalBasisFamily

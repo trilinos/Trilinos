@@ -119,7 +119,7 @@ private:
   Real ub_;
 
   void parseParameterList(ROL::ParameterList &parlist) {
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
+    std::string type = parlist.sublist("SOL").get("Type","Risk Averse");
     ROL::ParameterList list;
     if (type == "Risk Averse") {
       list = parlist.sublist("SOL").sublist("Risk Measure").sublist("Generalized Moreau-Yosida CVaR");

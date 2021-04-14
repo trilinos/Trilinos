@@ -50,6 +50,7 @@
 
 #include "../../TOOLS/pde.hpp"
 #include "../../TOOLS/fe.hpp"
+#include "../../TOOLS/Intrepid_HGRAD_C0_FEM.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
@@ -115,19 +116,37 @@ public:
     Intrepid::DefaultCubatureFactory<Real> cubFactory;                       // create cubature factory
     cellCub_ = cubFactory.create(cellType, cubDegree);                       // create default cubature
 
-    nx_ = parlist.sublist("Problem").get("Number of X-Cells", 4);
-    ny_ = parlist.sublist("Problem").get("Number of Y-Cells", 2);
-    XL_ = parlist.sublist("Geometry").get("X0", 0.0);
-    YL_ = parlist.sublist("Geometry").get("Y0", 0.0);
-    XU_ = XL_ + parlist.sublist("Geometry").get("Width",  2.0);
-    YU_ = YL_ + parlist.sublist("Geometry").get("Height", 1.0);
+    nx_    = parlist.sublist("Problem").get("Number of X-Cells", 4);
+    ny_    = parlist.sublist("Problem").get("Number of Y-Cells", 2);
+    XL_    = parlist.sublist("Geometry").get("X0", 0.0);
+    YL_    = parlist.sublist("Geometry").get("Y0", 0.0);
+    XU_    = XL_ + parlist.sublist("Geometry").get("Width",  2.0);
+    YU_    = YL_ + parlist.sublist("Geometry").get("Height", 1.0);
     usePC_ = parlist.sublist("Problem").get("Piecewise Constant Controls", true);
+
+    int basisOrderCtrl = parlist.sublist("Problem").get("Order of Control Discretization",0);
     if (!usePC_) {
       if (probDim == 2) {
-        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        if (basisOrderCtrl == 1) {
+          basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        }
+        else if (basisOrderCtrl == 2) {
+          basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        }
+        else {
+          basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        }
       }
       else if (probDim == 3) {
-        basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        if (basisOrderCtrl == 1) {
+          basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        }
+        else if (basisOrderCtrl == 2) {
+          basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        }
+        else {
+          basisPtr2_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+        }
       }
       basisPtrs2_.clear(); basisPtrs2_.push_back(basisPtr2_);
     }
@@ -445,7 +464,7 @@ public:
     // Finite element definition.
     fe_vol_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
     if (!usePC_) {
-      fe_ctrl_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr2_,cellCub_);
+      fe_ctrl_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr2_,cellCub_,false);
     }
     // Set local boundary DOFs.
     fidx_ = fe_vol_->getBoundaryDofs();
@@ -482,7 +501,7 @@ public:
     return fe_vol_;
   }
 
-  const ROL::Ptr<FE<Real>> getFE2(void) const {
+  const ROL::Ptr<FE<Real>> getControlFE(void) const {
     return fe_ctrl_;
   }
 
