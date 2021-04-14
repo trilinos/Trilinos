@@ -10,7 +10,7 @@ if [[ "${SALLOC_CTEST_LIMIT_MINUTES}" == "" ]] ; then
 fi
 
 if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
-  export Trilinos_ENABLE_BUILD_STATS=ON
+  export Trilinos_ENABLE_BUILD_STATS=OFF
 fi
 
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
