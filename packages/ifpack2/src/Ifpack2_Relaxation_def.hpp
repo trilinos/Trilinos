@@ -373,7 +373,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
 
   // for Two-stage Gauss-Seidel
-  if (pl.isType<double>("relaxation: inner damping factor")) {
+  if (!std::is_same<double, ST>::value && pl.isType<double>("relaxation: inner damping factor")) {
     // Make sure that ST=complex can run with a damping factor that is
     // a double.
     ST df = pl.get<double>("relaxation: inner damping factor");
