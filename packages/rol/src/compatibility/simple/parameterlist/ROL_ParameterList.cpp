@@ -1,4 +1,4 @@
-#include "ROL_ParList.hpp"
+#include "ROL_ParameterList.hpp"
 
 namespace ROL {
 
@@ -12,12 +12,12 @@ template class PList<std::vector<double>>;
 template class PList<std::vector<std::string>>;
 } // namespace detail
 
-ParList& 
-ParList::sublist( ParList::key_type key, 
-                  bool              mustAlreadyExist ) {
+ParameterList& 
+ParameterList::sublist( ParameterList::key_type key, 
+                        bool                    mustAlreadyExist ) {
   if( !mustAlreadyExist ) 
     if( !sublists_.count(key) ) 
-      sublists_[key] = std::make_unique<ParList>(1+get_level());
+      sublists_[key] = std::make_unique<ParameterList>(1+get_level());
   
   return *(sublists_.at(key));
 }
