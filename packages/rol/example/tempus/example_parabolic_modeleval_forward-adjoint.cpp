@@ -78,11 +78,11 @@
 #include "ROL_TempusDynamicConstraint.hpp"
 
 #include <iostream>
-#include <fenv.h>
+//#include <fenv.h>
 #include <ctime>
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
   using RealT = double;
   using uint  = std::vector<RealT>::size_type;
 
