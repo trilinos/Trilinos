@@ -293,7 +293,7 @@ private:
 public:
   void update(const ROL::Vector<Real> &x, ROL::UpdateType type, int iter) {
     Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
-    if (type == ROL::Initial)  {
+    if (type == ROL::UpdateType::Initial)  {
       // This is the first call to update
       ucache_ = ROL::makePtr<MyStateVector<Real>>();
       utemp_  = ROL::makePtr<MyStateVector<Real>>();
