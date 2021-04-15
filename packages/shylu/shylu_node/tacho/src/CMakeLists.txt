@@ -57,18 +57,18 @@ APPEND_SET(SOURCES
   # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_Cuda.cpp
   # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_OpenMP.cpp
   # eti/Tacho_Solver_ETI_ChseLevTaskScheduler_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_double_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_double_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_double_Serial.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_float_Cuda.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_float_OpenMP.cpp
-  # eti/Tacho_Solver_ETI_TaskScheduler_float_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_double_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_complex_float_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_double_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_double_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_double_Serial.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_float_Cuda.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_float_OpenMP.cpp
+  eti/Tacho_Solver_ETI_TaskScheduler_float_Serial.cpp
   eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_Cuda.cpp
   eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_OpenMP.cpp
   eti/Tacho_Solver_ETI_TaskSchedulerMultiple_complex_double_Serial.cpp

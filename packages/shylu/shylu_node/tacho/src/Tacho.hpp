@@ -42,28 +42,39 @@ namespace Tacho {
   ///
   template<typename ExecSpace>
   struct UseThisDevice {
-    using default_exec_space = Kokkos::DefaultExecutionSpace;
-    using default_memory_space = typename default_exec_space::memory_space;
-    using type = Kokkos::Device<default_exec_space,default_memory_space>;
+    using exec_space = ExecSpace;
+    using memory_space = typename exec_space::memory_space;
+    using type = Kokkos::Device<exec_space,memory_space>;
+    using device_type = type;
   };
 
   template<typename ExecSpace>
   struct UseThisScheduler {
     using type = Kokkos::TaskSchedulerMultiple<ExecSpace>;
+    using scheduler_type = type;
   };
 
   /// until kokkos dual view issue is resolved, we follow the default space in Trilinos (uvm)
 #if defined(KOKKOS_ENABLE_CUDA)
   template<>
-  struct UseThisDevice<Kokkos::Cuda> { using type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; };
+  struct UseThisDevice<Kokkos::Cuda> { 
+    using type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; 
+    using device_type = type;
+  };
 #endif
 #if defined(KOKKOS_ENABLE_OPENMP)
   template<>
-  struct UseThisDevice<Kokkos::OpenMP> { using type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; };
+  struct UseThisDevice<Kokkos::OpenMP> { 
+    using type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; 
+    using device_type = type; 
+  };
 #endif
 #if defined(KOKKOS_ENABLE_SERIAL)
   template<>
-  struct UseThisDevice<Kokkos::Serial> { using type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>; };
+  struct UseThisDevice<Kokkos::Serial> { 
+    using type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>;
+    using device_type = type;
+  };
 #endif
 
   ///
