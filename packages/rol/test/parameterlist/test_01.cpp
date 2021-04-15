@@ -1,11 +1,14 @@
 #include "ROL_ParameterList.hpp"
 #include <iostream>
 
+
 int main( int argc, char* argv[] ) {
 
   auto os_ptr = ROL::makeStreamPtr(std::cout, argc);
   auto& os = *os_ptr;
   int errorFlag = 0;
+
+  using ROL::detail::operator<<;
 
   try {
 
