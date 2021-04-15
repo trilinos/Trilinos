@@ -172,7 +172,7 @@ namespace Tacho {
     ///
     void setVerbose(const ordinal_type verbose = 1);
     void setSmallProblemThresholdsize(const ordinal_type small_problem_thres = 1024);
-    void setTransposeSolve(const bool transpose);
+    //void setTransposeSolve(const bool transpose);
     void setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric, 3 - hermitian
                        const bool is_positive_definite);
 

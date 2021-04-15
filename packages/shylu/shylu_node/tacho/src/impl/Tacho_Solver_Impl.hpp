@@ -60,12 +60,12 @@ namespace Tacho {
     _small_problem_thres = small_problem_thres;
   }
   
-  template<typename VT, typename ST>  
-  void 
-  Solver<VT,ST>
-  ::setTransposeSolve(const bool transpose) {
-    _transpose = transpose; // this option is not used yet
-  }
+  // template<typename VT, typename ST>  
+  // void 
+  // Solver<VT,ST>
+  // ::setTransposeSolve(const bool transpose) {
+  //   _transpose = transpose; // this option is not used yet
+  // }
   
   template<typename VT, typename ST>  
   void 

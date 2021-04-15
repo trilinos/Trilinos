@@ -7,8 +7,16 @@
 #include "Tacho.hpp"
 #include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_MatrixMarket.hpp"
+
+#define TACHO_TEST_REFACTOR_DRIVER
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+#include "Tacho_Driver.hpp"
+#else
 #include "Tacho_Solver.hpp"
+#endif
 #include "Tacho_CommandLineParser.hpp"
+
+
 
 namespace tacho {
 
@@ -16,6 +24,8 @@ namespace tacho {
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
      SMALLPROBLEMTHRESHOLDSIZE,
+     MATRIX_SYMMETRIC,
+     MATRIX_POSITIVE_DEFINITE,
      TASKING_OPTION_BLOCKSIZE,
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
@@ -41,7 +51,12 @@ namespace tacho {
   {
   public:
     using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+    using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;  
+    typedef Tacho::Driver<SX,device_type> solver_type;
+#else
     typedef Tacho::Solver<SX,sched_type> solver_type;
+#endif
 
     typedef Tacho::ordinal_type ordinal_type;
     typedef Tacho::size_type size_type;
@@ -222,6 +237,9 @@ namespace tacho {
       // common options
       m_Solver.setVerbose                       (solverParams[VERBOSITY]);
       m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
+
+      // matrix type
+      m_Solver.setMatrixType(solverParams[MATRIX_SYMMETRIC], solverParams[MATRIX_POSITIVE_DEFINITE]);
 
       // tasking options
       m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);

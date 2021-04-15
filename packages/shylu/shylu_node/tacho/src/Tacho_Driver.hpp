@@ -177,11 +177,11 @@ namespace Tacho {
     ///
     /// tasking options
     ///
-    // void setSerialThresholdsize(const ordinal_type serial_thres_size = -1);
-    // void setBlocksize(const ordinal_type mb = -1);
-    // void setPanelsize(const ordinal_type nb = -1);
-    // void setFrontUpdateMode(const ordinal_type front_update_mode = 1);
-    // void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1);
+    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1) {}
+    void setBlocksize(const ordinal_type mb = -1) {}
+    void setPanelsize(const ordinal_type nb = -1) {}
+    void setFrontUpdateMode(const ordinal_type front_update_mode = 1) {}
+    void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {}
 
     ///
     /// Level set tools options
