@@ -72,7 +72,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 		       typename Kokkos::View<lno_t*, device_type>::HostMirror vertex_list,
 		       size_t vertex_list_size = 0,
                        bool recolor=false) = 0;
-
+  public:
     virtual void detectConflicts(const size_t n_local,
 		                 Kokkos::View<offset_t*, device_type > dist_offsets_dev,
 		                 Kokkos::View<lno_t*, device_type > dist_adjs_dev,

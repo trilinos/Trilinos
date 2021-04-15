@@ -105,7 +105,7 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
       if(this->verbose) std::cout<<"\nKokkosKernels Coloring: "<<kh.get_distance2_graph_coloring_handle()->get_overall_coloring_time()<<"\n";
 
     }
-
+  public:
     virtual void detectConflicts(const size_t n_local,
                                  Kokkos::View<offset_t*, device_type > dist_offsets_dev,
                                  Kokkos::View<lno_t*, device_type > dist_adjs_dev,
