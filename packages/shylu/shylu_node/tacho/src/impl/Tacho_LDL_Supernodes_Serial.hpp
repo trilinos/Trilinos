@@ -261,7 +261,7 @@ namespace Tacho {
           
           const ordinal_type n = s.n - s.m;
 
-          const ordinal_type mm = m > 32 ? m : 32;
+          const ordinal_type mm = m < 32 ? m : 32;
           const ordinal_type mn = mm > n ? mm : n;
 
           const size_type bufsize_required = (n*n + m*mn)*sizeof(value_type);

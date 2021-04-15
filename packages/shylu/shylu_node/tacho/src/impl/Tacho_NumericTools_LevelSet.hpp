@@ -476,7 +476,7 @@ namespace Tacho {
 
     inline
     void
-    release(const ordinal_type verbose = 0) {
+    release(const ordinal_type verbose = 0) override {
       base_type::release(false);
       track_free(_buf_factor_ptr.span()*sizeof(size_type));
       track_free(_buf_solve_ptr.span()*sizeof(size_type));
@@ -485,7 +485,7 @@ namespace Tacho {
       track_free(_factorize_mode.span()*sizeof(ordinal_type));
       track_free(_solve_mode.span()*sizeof(ordinal_type));
       track_free(_level_sids.span()*sizeof(ordinal_type));
-      if (verbose) {
+      if (verbose || true) {
         printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
         printf("============================================\n");
         print_stat_memory();
@@ -585,10 +585,10 @@ namespace Tacho {
     ///
     inline
     void
-    factorizeOnDeviceVar0(const ordinal_type pbeg, 
-                          const ordinal_type pend,
-                          const size_type_array_host &h_buf_factor_ptr,
-                          const value_type_array &work) {
+    factorizeCholeskyOnDeviceVar0(const ordinal_type pbeg, 
+                                  const ordinal_type pend,
+                                  const size_type_array_host &h_buf_factor_ptr,
+                                  const value_type_array &work) {
       const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
@@ -639,10 +639,10 @@ namespace Tacho {
 
     inline
     void
-    factorizeOnDeviceVar1(const ordinal_type pbeg, 
-                          const ordinal_type pend,
-                          const size_type_array_host &h_buf_factor_ptr,
-                          const value_type_array &work) {
+    factorizeCholeskyOnDeviceVar1(const ordinal_type pbeg, 
+                                  const ordinal_type pend,
+                                  const size_type_array_host &h_buf_factor_ptr,
+                                  const value_type_array &work) {
       const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
@@ -705,10 +705,10 @@ namespace Tacho {
 
     inline
     void
-    factorizeOnDeviceVar2(const ordinal_type pbeg, 
-                          const ordinal_type pend,
-                          const size_type_array_host &h_buf_factor_ptr,
-                          const value_type_array &work) {
+    factorizeCholeskyOnDeviceVar2(const ordinal_type pbeg, 
+                                  const ordinal_type pend,
+                                  const size_type_array_host &h_buf_factor_ptr,
+                                  const value_type_array &work) {
       const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
@@ -783,19 +783,19 @@ namespace Tacho {
 
     inline
     void
-    factorizeOnDevice(const ordinal_type pbeg, 
-                      const ordinal_type pend,
-                      const size_type_array_host &h_buf_factor_ptr,
-                      const value_type_array &work) {
+    factorizeCholeskyOnDevice(const ordinal_type pbeg, 
+                              const ordinal_type pend,
+                              const size_type_array_host &h_buf_factor_ptr,
+                              const value_type_array &work) {
       if      (variant == 0) 
-        factorizeOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work); 
+        factorizeCholeskyOnDeviceVar0(pbeg, pend, h_buf_factor_ptr, work); 
       else if (variant == 1)
-        factorizeOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work); 
+        factorizeCholeskyOnDeviceVar1(pbeg, pend, h_buf_factor_ptr, work); 
       else if (variant == 2)
-        factorizeOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work); 
+        factorizeCholeskyOnDeviceVar2(pbeg, pend, h_buf_factor_ptr, work); 
       else {
         TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
-                                 "LevelSetTools::factorizeOnDevice, algorithm variant is not supported");
+                                 "LevelSetTools::factorizeCholeskyOnDevice, algorithm variant is not supported");
       }
     }
 
@@ -893,7 +893,7 @@ namespace Tacho {
               }
 
               const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
-              factorizeOnDevice(pbeg, pend, h_buf_factor_ptr, work); 
+              factorizeCholeskyOnDevice(pbeg, pend, h_buf_factor_ptr, work); 
               Kokkos::fence();
 
               Kokkos::parallel_for("update factor", policy_update, functor); 
@@ -916,19 +916,18 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools-Variant-%d (Factorize)\n", variant);
-        printf("==============================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (CholeskyFactorize)\n", variant);
+        printf("=====================================================\n");
         print_stat_factorize_level();
       }
-
     }
 
     inline
     void
-    solveLowerOnDeviceVar0(const ordinal_type pbeg, 
-                           const ordinal_type pend,
-                           const size_type_array_host &h_buf_solve_ptr,
-                           const value_type_matrix &t) {
+    solveCholeskyLowerOnDeviceVar0(const ordinal_type pbeg, 
+                                   const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr,
+                                   const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -969,10 +968,10 @@ namespace Tacho {
 
     inline
     void
-    solveLowerOnDeviceVar1(const ordinal_type pbeg, 
-                           const ordinal_type pend,
-                           const size_type_array_host &h_buf_solve_ptr,
-                           const value_type_matrix &t) {
+    solveCholeskyLowerOnDeviceVar1(const ordinal_type pbeg, 
+                                   const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr,
+                                   const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type one(1), minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1017,10 +1016,10 @@ namespace Tacho {
 
     inline
     void
-    solveLowerOnDeviceVar2(const ordinal_type pbeg, 
-                           const ordinal_type pend,
-                           const size_type_array_host &h_buf_solve_ptr,
-                           const value_type_matrix &t) {
+    solveCholeskyLowerOnDeviceVar2(const ordinal_type pbeg, 
+                                   const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr,
+                                   const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1056,28 +1055,28 @@ namespace Tacho {
 
     inline
     void
-    solveLowerOnDevice(const ordinal_type pbeg, 
-                       const ordinal_type pend,
-                       const size_type_array_host &h_buf_solve_ptr,
-                       const value_type_matrix &t) {
+    solveCholeskyLowerOnDevice(const ordinal_type pbeg, 
+                               const ordinal_type pend,
+                               const size_type_array_host &h_buf_solve_ptr,
+                               const value_type_matrix &t) {
       if (variant == 0) 
-        solveLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+        solveCholeskyLowerOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
       else if (variant == 1)
-        solveLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+        solveCholeskyLowerOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
       else if (variant == 2)
-        solveLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+        solveCholeskyLowerOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
       else {
         TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
-                                 "LevelSetTools::solveLowerOnDevice, algorithm variant is not supported");
+                                 "LevelSetTools::solveCholeskyLowerOnDevice, algorithm variant is not supported");
       }
     }
 
     inline
     void
-    solveUpperOnDeviceVar0(const ordinal_type pbeg,
-                           const ordinal_type pend,
-                           const size_type_array_host &h_buf_solve_ptr,
-                           const value_type_matrix &t) {
+    solveCholeskyUpperOnDeviceVar0(const ordinal_type pbeg,
+                                   const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr,
+                                   const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1121,10 +1120,10 @@ namespace Tacho {
 
     inline
     void
-    solveUpperOnDeviceVar1(const ordinal_type pbeg,
-                           const ordinal_type pend,
-                           const size_type_array_host &h_buf_solve_ptr,
-                           const value_type_matrix &t) {
+    solveCholeskyUpperOnDeviceVar1(const ordinal_type pbeg,
+                                   const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr,
+                                   const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type minus_one(-1), one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1174,10 +1173,10 @@ namespace Tacho {
 
     inline
     void
-    solveUpperOnDeviceVar2(const ordinal_type pbeg,
-                           const ordinal_type pend,
-                           const size_type_array_host &h_buf_solve_ptr,
-                           const value_type_matrix &t) {
+    solveCholeskyUpperOnDeviceVar2(const ordinal_type pbeg,
+                                   const ordinal_type pend,
+                                   const size_type_array_host &h_buf_solve_ptr,
+                                   const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
       const value_type one(1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
@@ -1213,19 +1212,19 @@ namespace Tacho {
 
     inline
     void
-    solveUpperOnDevice(const ordinal_type pbeg,
-                       const ordinal_type pend,
-                       const size_type_array_host &h_buf_solve_ptr,
-                       const value_type_matrix &t) {
+    solveCholeskyUpperOnDevice(const ordinal_type pbeg,
+                               const ordinal_type pend,
+                               const size_type_array_host &h_buf_solve_ptr,
+                               const value_type_matrix &t) {
       if (variant == 0) 
-        solveUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
+        solveCholeskyUpperOnDeviceVar0(pbeg, pend, h_buf_solve_ptr, t);
       else if (variant == 1) 
-        solveUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
+        solveCholeskyUpperOnDeviceVar1(pbeg, pend, h_buf_solve_ptr, t);
       else if (variant == 2) 
-        solveUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
+        solveCholeskyUpperOnDeviceVar2(pbeg, pend, h_buf_solve_ptr, t);
       else {
         TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
-                                 "LevelSetTools::solveUpperOnDevice, algorithm variant is not supported");
+                                 "LevelSetTools::solveCholeskyUpperOnDevice, algorithm variant is not supported");
       }
     }
 
@@ -1350,7 +1349,7 @@ namespace Tacho {
                 ++stat_level.n_kernel_launching;
               }
               const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);              
-              solveLowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
+              solveCholeskyLowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
               Kokkos::fence();
               
               Kokkos::parallel_for("update lower", 
@@ -1428,7 +1427,7 @@ namespace Tacho {
               }
 
               const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-              solveUpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
+              solveCholeskyUpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
               Kokkos::fence();
             }
           }
@@ -1443,8 +1442,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools-Variant-%d (ParallelSolve: %3d)\n", variant, nrhs);
-        printf("=====================================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
+        printf("==============================================================\n");
         print_stat_solve_level();
       }
     }
@@ -1453,7 +1452,122 @@ namespace Tacho {
     void
     factorizeLDL(const value_type_array &ax,
                  const ordinal_type verbose = 0) override {
-      printf("Not yet implemented\n");
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      Kokkos::Impl::Timer timer;
+
+      timer.reset();
+      value_type_array work;
+      {
+        _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
+        track_alloc(_buf.span()*sizeof(value_type));
+        
+#if defined (KOKKOS_ENABLE_CUDA)
+        value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
+        ordinal_type_array P(NULL, _info.max_supernode_size);
+        const size_type worksize = LDL<Uplo::Lower,Algo::OnDevice>
+          ::invoke(_handle_lapack, T, P, work); 
+        work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams+1));
+#else
+        const size_type worksize = 32*_info.max_supernode_size;
+        work = value_type_array(do_not_initialize_tag("work"), worksize);
+#endif
+        track_alloc(work.span()*sizeof(value_type));
+      }
+      stat.t_extra = timer.seconds();
+      
+      timer.reset();
+      {
+        _ax = ax; // matrix values
+        _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+      }
+      stat.t_copy = timer.seconds();
+
+      stat_level.n_kernel_launching = 0;
+      timer.reset();
+      { 
+        // this should be considered with average problem sizes in levels
+        const ordinal_type half_level = _nlevel/2;
+        //const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
+        //const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
+        const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
+        const ordinal_type team_size_update[2] = { 16, 8 }, vector_size_update[2] = { 32, 32};
+        {
+          typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_factorize;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::template FactorizeTag> team_policy_factor;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::UpdateTag> team_policy_update;
+#endif
+          functor_type functor(_info, 
+                               _factorize_mode,
+                               _level_sids,
+                               _buf);
+
+          team_policy_factor policy_factor(1,1,1);
+          team_policy_update policy_update(1,1,1);
+
+          {
+            for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
+              const ordinal_type 
+                pbeg = _h_level_ptr(lvl), 
+                pend = _h_level_ptr(lvl+1),
+                pcnt = pend - pbeg;
+
+              const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+
+              const auto buf_factor_ptr = Kokkos::subview(_buf_factor_ptr, range_buf_factor_ptr);
+              functor.setRange(pbeg, pend);
+              functor.setBufferPtr(buf_factor_ptr);
+              if (is_host) {
+                policy_factor = team_policy_factor(pcnt, 1, 1);
+                policy_update = team_policy_update(pcnt, 1, 1);
+              } else {
+                const ordinal_type idx = lvl > half_level;
+                policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
+                policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              }
+              if (lvl < _device_level_cut) {
+                // do nothing
+                //Kokkos::parallel_for("factor lower", policy_factor, functor);
+              } else {
+                Kokkos::parallel_for("factor", policy_factor, functor);
+                ++stat_level.n_kernel_launching;
+              }
+
+              const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
+              factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
+              Kokkos::fence();
+
+              Kokkos::parallel_for("update factor", policy_update, functor); 
+              ++stat_level.n_kernel_launching;
+              exec_space().fence(); //Kokkos::fence();
+            }
+          }
+        } // end of lower tri solve
+      } // end of solve
+      stat.t_factor = timer.seconds();
+
+      timer.reset();
+      {
+#if defined (KOKKOS_ENABLE_CUDA)
+        track_free(work.span()*sizeof(value_type));
+#endif
+        track_free(_buf.span()*sizeof(value_type));
+        _buf = value_type_array();
+      }
+      stat.t_extra += timer.seconds();
+
+      if (verbose) {
+        printf("Summary: LevelSetTools-Variant-%d (CholeskyFactorize)\n", variant);
+        printf("=====================================================\n");
+        print_stat_factorize_level();
+      }
     }
 
     inline
@@ -1462,7 +1576,197 @@ namespace Tacho {
              const value_type_matrix &b,   // right hand side
              const value_type_matrix &t,   // temporary workspace (store permuted vectors)
              const ordinal_type verbose = 0) override {
-      printf("Not yet implemented\n");
+      TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
+                               x.extent(1) != b.extent(1) ||
+                               x.extent(0) != t.extent(0) ||
+                               x.extent(1) != t.extent(1), std::logic_error,
+                               "x, b, t, and w dimensions do not match");
+
+      TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
+                               x.data() == t.data(), std::logic_error,
+                               "x, b, t, and w have the same data pointer");
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+
+      // solve L D L^{H} x = b 
+      const ordinal_type nrhs = x.extent(1);
+      Kokkos::Impl::Timer timer;
+
+      stat_level.n_kernel_launching = 0;
+
+      // one-time operation when nrhs is changed
+      timer.reset();
+      allocateWorkspaceSolve(nrhs);
+
+      // 0. permute and copy b -> t
+      applyRowPermutationToDenseMatrix(t, b, _perm);      
+      stat.t_extra = timer.seconds();
+
+      timer.reset();
+      { 
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+        const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+#endif
+        // this should be considered with average problem sizes in levels
+        const ordinal_type half_level = _nlevel/2;
+        const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
+        const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
+        {
+          typedef TeamFunctor_SolveLowerLDL<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::template SolveTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::template UpdateTag> team_policy_update;
+#endif          
+          functor_type functor(_info, 
+                               _solve_mode,
+                               _level_sids,
+                               t,
+                               _buf);
+
+          team_policy_solve policy_solve(1,1,1);
+          team_policy_update policy_update(1,1,1);
+
+          //  1. L w = t
+          {
+            for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
+              const ordinal_type 
+                pbeg = _h_level_ptr(lvl), 
+                pend = _h_level_ptr(lvl+1),
+                pcnt = pend - pbeg;
+
+              const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+
+              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
+              functor.setRange(pbeg, pend);
+              functor.setBufferPtr(solve_buf_ptr);
+              if (is_host) {
+                policy_solve  = team_policy_solve(pcnt, 1, 1);
+                policy_update = team_policy_update(pcnt, 1, 1);
+              } else {
+                const ordinal_type idx = lvl > half_level;
+                policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
+                policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              }
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
+              if (lvl < _device_level_cut) {
+                // do nothing
+                //Kokkos::parallel_for("solve lower", policy_solve, functor);
+              } else {
+                Kokkos::parallel_for("solve lower", 
+                                     policy_solve_with_work_property, 
+                                     functor);
+                ++stat_level.n_kernel_launching;
+              }
+              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);              
+              solveCholeskyLowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
+              Kokkos::fence();
+              
+              Kokkos::parallel_for("update lower", 
+                                   policy_update_with_work_property, 
+                                   functor); 
+              ++stat_level.n_kernel_launching;
+              exec_space().fence(); //Kokkos::fence();
+            }
+          }
+        } // end of lower tri solve
+        
+        {
+          typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::template SolveTag<variant> > team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::template UpdateTag<variant> > team_policy_update;
+#endif
+          functor_type functor(_info, 
+                               _solve_mode,
+                               _level_sids,
+                               t,
+                               _buf);
+          
+          team_policy_solve policy_solve(1,1,1);
+          team_policy_update policy_update(1,1,1);
+          
+          //  2. U t = w;
+          {
+            for (ordinal_type lvl=0;lvl<_team_serial_level_cut;++lvl) {
+              const ordinal_type 
+                pbeg = _h_level_ptr(lvl), 
+                pend = _h_level_ptr(lvl+1),
+                pcnt = pend - pbeg;
+              
+              const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
+              functor.setRange(pbeg, pend);
+              functor.setBufferPtr(solve_buf_ptr);
+              if (is_host) {
+                policy_solve  = team_policy_solve(pcnt, 1, 1);
+                policy_update = team_policy_update(pcnt, 1, 1);
+              } else {
+                const ordinal_type idx = lvl > half_level;
+                policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
+                policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              }
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
+              Kokkos::parallel_for("update upper", 
+                                   policy_update_with_work_property,
+                                   functor);
+              ++stat_level.n_kernel_launching;
+              exec_space().fence(); //Kokkos::fence();
+
+              if (lvl < _device_level_cut) {
+                // do nothing
+                //Kokkos::parallel_for("solve upper", policy_solve, functor); 
+              } else {
+                Kokkos::parallel_for("solve upper", 
+                                     policy_solve_with_work_property,
+                                     functor);
+                ++stat_level.n_kernel_launching;
+              }
+
+              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
+              solveCholeskyUpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
+              Kokkos::fence();
+            }
+          }
+        }/// end of upper tri solve
+
+      } // end of solve
+      stat.t_solve = timer.seconds();
+
+      // permute and copy t -> x
+      timer.reset();
+      applyRowPermutationToDenseMatrix(x, t, _peri);
+      stat.t_extra += timer.seconds();
+
+      if (verbose) {
+        printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
+        printf("==============================================================\n");
+        print_stat_solve_level();
+      }
     }    
   };
 

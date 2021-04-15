@@ -273,7 +273,7 @@ namespace Tacho {
     }
 
     inline
-    void
+    virtual void
     release(const ordinal_type verbose = 0) {
       // release diagonal blocks and pivots
       track_free(_piv.span()*sizeof(ordinal_type));
