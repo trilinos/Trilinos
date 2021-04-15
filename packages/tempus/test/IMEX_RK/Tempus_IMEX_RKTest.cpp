@@ -246,7 +246,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 
       // Output finest temporal solution for plotting
       // This only works for ONE MPI process
-      if ((n == 0) or (n == nTimeStepSizes-1)) {
+      if ((n == 0) || (n == nTimeStepSizes-1)) {
         std::string fname = "Tempus_"+stepperName+"_VanDerPol-Ref.dat";
         if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol.dat";
         RCP<const SolutionHistory<double> > solutionHistory =

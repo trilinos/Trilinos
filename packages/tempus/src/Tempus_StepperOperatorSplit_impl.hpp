@@ -286,7 +286,7 @@ void StepperOperatorSplit<Scalar>::takeStep(
     bool pass = true;
     typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::iterator
       subStepperIter = subStepperList_.begin();
-    for (; subStepperIter < subStepperList_.end() and pass; subStepperIter++) {
+    for (; subStepperIter < subStepperList_.end() && pass; subStepperIter++) {
 
       stepperOSAppAction_->execute(solutionHistory, thisStepper,
         StepperOperatorSplitAppAction<Scalar>::ACTION_LOCATION::BEFORE_STEPPER);

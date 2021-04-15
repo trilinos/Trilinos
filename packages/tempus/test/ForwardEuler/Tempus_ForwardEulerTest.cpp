@@ -379,7 +379,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, VanDerPol)
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == 0) or (n == nTimeStepSizes-1)) {
+    if ((n == 0) || (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_ForwardEuler_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_ForwardEuler_VanDerPol.dat";
       RCP<const SolutionHistory<double> > solutionHistory =

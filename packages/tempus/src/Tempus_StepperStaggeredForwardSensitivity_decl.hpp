@@ -108,14 +108,14 @@ public:
       {return Scalar(1.0e+99);}
 
     virtual bool isExplicit()         const
-      {return stateStepper_->isExplicit() or sensitivityStepper_->isExplicit();}
+      {return stateStepper_->isExplicit() || sensitivityStepper_->isExplicit();}
     virtual bool isImplicit()         const
-      {return stateStepper_->isImplicit() or sensitivityStepper_->isImplicit();}
+      {return stateStepper_->isImplicit() || sensitivityStepper_->isImplicit();}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
 
     virtual bool isOneStepMethod()   const
-      {return stateStepper_->isOneStepMethod() and
+      {return stateStepper_->isOneStepMethod() &&
               sensitivityStepper_->isOneStepMethod();}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
