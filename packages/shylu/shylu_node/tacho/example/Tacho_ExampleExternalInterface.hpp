@@ -24,8 +24,10 @@ namespace tacho {
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
      SMALLPROBLEMTHRESHOLDSIZE,
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
      MATRIX_SYMMETRIC,
      MATRIX_POSITIVE_DEFINITE,
+#endif
      TASKING_OPTION_BLOCKSIZE,
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
@@ -50,11 +52,12 @@ namespace tacho {
   template <class SX> class tachoSolver
   {
   public:
-    using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
+
 #if defined(TACHO_TEST_REFACTOR_DRIVER)
     using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;  
     typedef Tacho::Driver<SX,device_type> solver_type;
 #else
+    using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
     typedef Tacho::Solver<SX,sched_type> solver_type;
 #endif
 
@@ -239,7 +242,9 @@ namespace tacho {
       m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
 
       // matrix type
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
       m_Solver.setMatrixType(solverParams[MATRIX_SYMMETRIC], solverParams[MATRIX_POSITIVE_DEFINITE]);
+#endif
 
       // tasking options
       m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);
