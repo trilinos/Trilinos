@@ -251,7 +251,7 @@ void validExplicitODE(
   typedef Thyra::ModelEvaluatorBase MEB;
   const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
   const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
-  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) &&
                         outArgs.supports(MEB::OUT_ARG_f);
 
   TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
@@ -278,8 +278,8 @@ void validSecondOrderExplicitODE(
   typedef Thyra::ModelEvaluatorBase MEB;
   const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
   const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
-  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
-                        inArgs.supports(MEB::IN_ARG_x_dot) and
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) &&
+                        inArgs.supports(MEB::IN_ARG_x_dot) &&
                         outArgs.supports(MEB::OUT_ARG_f);
 
   TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
@@ -309,12 +309,12 @@ void validImplicitODE_DAE(
   typedef Thyra::ModelEvaluatorBase MEB;
   const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
   const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
-  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
-                        inArgs.supports(MEB::IN_ARG_x_dot) and
-                        inArgs.supports(MEB::IN_ARG_alpha) and
-                        inArgs.supports(MEB::IN_ARG_beta) and
-                       !inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
-                        outArgs.supports(MEB::OUT_ARG_f) and
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) &&
+                        inArgs.supports(MEB::IN_ARG_x_dot) &&
+                        inArgs.supports(MEB::IN_ARG_alpha) &&
+                        inArgs.supports(MEB::IN_ARG_beta) &&
+                       !inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) &&
+                        outArgs.supports(MEB::OUT_ARG_f) &&
                         outArgs.supports(MEB::OUT_ARG_W);
 
   TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,
@@ -354,13 +354,13 @@ void validSecondOrderODE_DAE(
   typedef Thyra::ModelEvaluatorBase MEB;
   const MEB::InArgs<Scalar>  inArgs  = model->createInArgs();
   const MEB::OutArgs<Scalar> outArgs = model->createOutArgs();
-  const bool supports = inArgs.supports(MEB::IN_ARG_x) and
-                        inArgs.supports(MEB::IN_ARG_x_dot) and
-                        inArgs.supports(MEB::IN_ARG_x_dot_dot) and
-                        inArgs.supports(MEB::IN_ARG_alpha) and
-                        inArgs.supports(MEB::IN_ARG_beta) and
-                        inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) and
-                        outArgs.supports(MEB::OUT_ARG_f) and
+  const bool supports = inArgs.supports(MEB::IN_ARG_x) &&
+                        inArgs.supports(MEB::IN_ARG_x_dot) &&
+                        inArgs.supports(MEB::IN_ARG_x_dot_dot) &&
+                        inArgs.supports(MEB::IN_ARG_alpha) &&
+                        inArgs.supports(MEB::IN_ARG_beta) &&
+                        inArgs.supports(MEB::IN_ARG_W_x_dot_dot_coeff) &&
+                        outArgs.supports(MEB::OUT_ARG_f) &&
                         outArgs.supports(MEB::OUT_ARG_W);
 
   TEUCHOS_TEST_FOR_EXCEPTION( supports == false, std::logic_error,

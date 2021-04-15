@@ -138,7 +138,7 @@ public:
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
     virtual void setUseFSAL(bool a) { this->useFSAL_ = a; this->isInitialized_ = false; }
