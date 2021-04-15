@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -157,7 +157,7 @@ bool:     sexp LT sexp          { $$ = (strcmp($1,$3) <  0 ? 1 : 0);    }
         | sexp EQ  sexp         { $$ = (strcmp($1,$3) == 0 ? 1 : 0);    }
         | sexp NE  sexp         { $$ = (strcmp($1,$3) != 0 ? 1 : 0);    }
 
-aexp:   AVAR                    { $$ = new array(*($1->value.avar));}
+aexp:   AVAR                    { $$ = aprepro->make_array(*($1->value.avar)); }
         | AFNCT LPAR sexp RPAR  {
           if (arg_check($1, $1->value.arrfnct_c == NULL))
             $$ = (*($1->value.arrfnct_c))($3);
