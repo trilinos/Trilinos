@@ -457,19 +457,19 @@ public:
   ///   it, by calling the modify() method with the appropriate
   ///   template parameter.
   template<class TargetMemorySpace>
-  TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED
   void sync () {
     mv_.template sync<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Update data to the host
-  TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED
   void sync_host() {
     mv_.sync_host();
   }
 
   /// \brief Update data to the device
-  TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED
   void sync_device() {
     mv_.sync_device();
   }
@@ -500,19 +500,19 @@ public:
   /// object's memory space, then mark the device's data as modified.
   /// Otherwise, mark the host's data as modified.
   template<class TargetMemorySpace>
-  TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED
   void modify () {
     mv_.template modify<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Mark data as modified on the host
-  TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED
   void modify_host() {
     mv_.modify_host();
   }
 
   /// \brief Mark data as modified on the device
-  TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED
   void modify_device() {
     mv_.modify_device();
   }
@@ -589,8 +589,9 @@ public:
   /// \c little_vec_type typedef to deduce the correct return type;
   /// don't try to hard-code the return type yourself.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
-#endif // TPETRA_DEPRECATED
+  //TPETRA_DEPRECATED 
+  little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
+#endif //TPETRA_DEPRECATED
 
   const_little_host_vec_type getLocalBlock(
     const LO localRowIndex, 

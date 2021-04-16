@@ -1435,7 +1435,7 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Clear "modified" flags on both host and device sides.
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void clear_sync_state ();
 
     /// \brief Update data on device or host only if data in the other
@@ -1457,17 +1457,17 @@ namespace Tpetra {
     ///   it, by calling the modify() method with the appropriate
     ///   template parameter.
     template<class TargetDeviceType>
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void sync () {
       view_.template sync<TargetDeviceType> ();
     }
 
     //! Synchronize to Host
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void sync_host ();
 
     //! Synchronize to Device
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void sync_device ();
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -1491,17 +1491,17 @@ namespace Tpetra {
     /// device type, then mark the device's data as modified.
     /// Otherwise, mark the host's data as modified.
     template<class TargetDeviceType>
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void modify () {
       view_.template modify<TargetDeviceType> ();
     }
 
     //! Mark data as modified on the device side.
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void modify_device ();
 
     //! Mark data as modified on the host side.
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void modify_host ();
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
 
@@ -1700,17 +1700,20 @@ namespace Tpetra {
     /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
     /// \endcode
     template<class TargetDeviceType>
-    TPETRA_DEPRECATED typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    //TPETRA_DEPRECATED 
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
     getLocalView () const
     {
       return view_.template view<TargetDeviceType>();
     }
 
     //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
-    TPETRA_DEPRECATED typename dual_view_type::t_host getLocalViewHost () const;
+    //TPETRA_DEPRECATED 
+    typename dual_view_type::t_host getLocalViewHost () const;
 
     //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
-    TPETRA_DEPRECATED typename dual_view_type::t_dev getLocalViewDevice () const;
+    //TPETRA_DEPRECATED 
+    typename dual_view_type::t_dev getLocalViewDevice () const;
 #endif
 
     //@}
