@@ -2534,13 +2534,11 @@ public:
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type &ii) const {
       //set colors based on their indices.
-      //color_t tmp1 = 1;
       if(kokcolors(ii) > 0){
         color_t colorsize = sizeof(color_t) * 8 - 1;
 	color_set(ii) = (kokcolors(ii) - 1) / colorsize;
 	kokcolors(ii) = 1 << ((kokcolors(ii) - 1) % colorsize);
       }
-      //kokcolors(ii) = tmp1 << (ii % hash);
       color_ban(ii) = color_ban_init_val;
     }
   };

@@ -732,32 +732,8 @@ class GraphColorDistance2
       }
       const lno_t numVerts = this->nr;
       const lno_t numCols = this->nc;
-      //color_type max_color = 0;
-      //for(int i = 0; i < numCols; i++) if(colors_out(i) > max_color) max_color = colors_out(i);
       //note: initializing forbidden to account for previously-colored vertices
       forbidden_view forbidden("Forbidden", batch * numCols);
-      /*for(color_type colorBase = 1; colorBase < max_color; colorBase += 32 * batch){
-        switch(batch)
-        {
-          case 1:
-            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<1>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-            break;
-          case 2:
-            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<2>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-            break;
-          case 4:
-            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<4>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-            break;
-          case 8:
-            Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                NB_RefreshForbidden<8>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-            break;
-          default:;
-        }
-      }*/
       int iter = 0;
       Kokkos::Impl::Timer timer;
       lno_t currentWork = this->nr;
@@ -775,6 +751,7 @@ class GraphColorDistance2
           lno_t workBatches = (currentWork + vertsPerThread - 1) / vertsPerThread;
           timer.reset();
 	  //refresh forbidden before coloring, to ensure previously-colored vertices do not get recolored unnecessarily.
+          //This avoids using too many colors, by relying on forbidden from before conflict resolution (which is now stale).
           switch(batch)
           {
             case 1:
@@ -848,33 +825,6 @@ class GraphColorDistance2
               NB_Worklist(colors_out, worklist, worklen, numVerts), currentWork);
           worklistTime += timer.seconds();
           timer.reset();
-          //if still using this color set, refresh forbidden.
-          //This avoids using too many colors, by relying on forbidden from before conflict resolution (which is now stale).
-          /*if(currentWork)
-          {
-            switch(batch)
-            {
-              case 1:
-                Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                    NB_RefreshForbidden<1>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-                break;
-              case 2:
-                Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                    NB_RefreshForbidden<2>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-                break;
-              case 4:
-                Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                    NB_RefreshForbidden<4>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-                break;
-              case 8:
-                Kokkos::parallel_for("NB D2 Forbidden", range_policy_type(0, numCols),
-                    NB_RefreshForbidden<8>(colorBase, forbidden, colors_out, this->t_xadj, this->t_adj, numVerts));
-                break;
-              default:;
-            }
-            forbiddenTime += timer.seconds();
-            timer.reset();
-          }*/
           iter++;
         }
         //Will need to run with a different color base, so rebuild the work list
