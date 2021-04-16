@@ -86,15 +86,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   set (Trilinos_ENABLE_Gtest OFF CACHE BOOL "Gtest just does not build" FORCE)
   set (Trilinos_ENABLE_ShyLU_NodeTacho OFF CACHE BOOL "Can't test Tacho with CUDA without RDC" FORCE)
   set (Trilinos_ENABLE_Shards OFF CACHE BOOL "Shards does not build" FORCE)
-  set (Trilinos_ENABLE_Zoltan OFF CACHE BOOL "Zoltan does not build" FORCE)
   set (Trilinos_ENABLE_Epetra OFF CACHE BOOL "We do not want Epetra" FORCE)
 
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
 
-      "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
       # Adding the following as a possible fix for github issue #2115.
-      "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
+      #KDD This flag appears to be unnecessary in April 2021, and it
+      #KDD breaks building of Zoltan tests
+      #KDD "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
 
       ### ALWAYS AND EVERYWHERE ###
       "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
@@ -141,8 +141,6 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTrilinos_ENABLE_ShyLU_DD:BOOL=OFF"
       "-DAmesos2_ENABLE_ShyLU_NodeTacho:BOOL=OFF"
       "-DAmesos2_ENABLE_ShyLU_NodeBasker:BOOL=OFF"
-
-      "-DTrilinos_ENABLE_Zoltan:BOOL=OFF"
 
       ### MISC ###
       "-DCMAKE_VERBOSE_MAKEFILE:BOOL=ON"

@@ -114,6 +114,11 @@ class PrimalScaledThyraVector : public ThyraVector<Real> {
       return *dual_vec_;
     }
 
+    Real apply( const Vector<Real> &x ) const {
+      const DualScaledThyraVector<Real> &ex = dynamic_cast<const DualScaledThyraVector<Real>&>(x);
+      return ThyraVector<Real>::dot(ex);
+    }
+
 }; // class PrimalScaledThyraVector
 
 template <class Real>
@@ -167,6 +172,11 @@ class DualScaledThyraVector : public ThyraVector<Real> {
       // Scale this with scaling_vec_ and place in dual vector
       applyScaling(primal_vec_->getVector(),ThyraVector<Real>::getVector());
       return *primal_vec_;
+    }
+
+    Real apply( const Vector<Real> &x ) const {
+      const PrimalScaledThyraVector<Real> &ex = dynamic_cast<const PrimalScaledThyraVector<Real>&>(x);
+      return ThyraVector<Real>::dot(ex);
     }
 
 }; // class DualScaledThyraVector

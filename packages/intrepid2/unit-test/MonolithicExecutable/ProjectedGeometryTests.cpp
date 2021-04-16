@@ -202,7 +202,7 @@ namespace
       cellCount[d] = meshWidth;
     }
     
-    CellGeometry<PointScalar, spaceDim> flatCellGeometry(origin,extent,cellCount);
+    CellGeometry<PointScalar, spaceDim,DeviceType> flatCellGeometry(origin,extent,cellCount);
     
     using BasisPtr = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
     

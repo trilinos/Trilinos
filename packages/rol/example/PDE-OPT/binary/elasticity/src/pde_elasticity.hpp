@@ -52,6 +52,7 @@
 #include "../../../TOOLS/pde.hpp"
 #include "../../../TOOLS/fe.hpp"
 #include "../../../TOOLS/fieldhelper.hpp"
+#include "../../../TOOLS/Intrepid_HGRAD_C0_FEM.hpp"
 
 #include "dirichlet.hpp"
 #include "traction.hpp"
@@ -74,6 +75,8 @@ private:
   // Finite element basis information
   ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtr_;
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrs_;
+  ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>> basisPtrDens_;
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> basisPtrsDens_;
   // Cell cubature information
   ROL::Ptr<Intrepid::Cubature<Real>> cellCub_;
   ROL::Ptr<Intrepid::Cubature<Real>> bdryCub_;
@@ -82,7 +85,7 @@ private:
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellNodes_;
   std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   // Finite element definition
-  ROL::Ptr<FE<Real>> fe_;
+  ROL::Ptr<FE<Real>> fe_, feDens_;
   std::vector<std::vector<ROL::Ptr<FE<Real>>>> feBdry_;
   // Local degrees of freedom on boundary, for each side of the reference cell (first index).
   std::vector<std::vector<int>> fidx_;
@@ -90,103 +93,33 @@ private:
   // Indexing:  [sideset number][local side id](cell number, value at dof)
   std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellDofValues_;
   // Field pattern, offsets, etc.
-  std::vector<std::vector<int>> fieldPattern_;  // local Field/DOF pattern; set from DOF manager 
-  int numFields_;                                // number of fields (equations in the PDE)
-  int numDofs_;                                  // total number of degrees of freedom for all (local) fields
-  std::vector<int> offset_;                      // for each field, a counting offset
-  std::vector<int> numFieldDofs_;                // for each field, number of degrees of freedom
+  std::vector<std::vector<int>> fieldPattern_; // local Field/DOF pattern; set from DOF manager 
+  int numFields_;                              // number of fields (equations in the PDE)
+  int numDofs_;                                // total number of degrees of freedom for all (local) fields
+  std::vector<int> offset_;                    // for each field, a counting offset
+  std::vector<int> numFieldDofs_;              // for each field, number of degrees of freedom
+  std::vector<std::vector<int>> fieldPatternDens_; // local Field/DOF pattern; set from DOF manager 
+  int numFieldsDens_;                              // number of fields (equations in the PDE)
+  int numDofsDens_;                                // total number of degrees of freedom for all (local) fields
+  std::vector<int> offsetDens_;                    // for each field, a counting offset
+  std::vector<int> numFieldDofsDens_;              // for each field, number of degrees of freedom
 
   ROL::Ptr<Load<Real>>                        load_; 
   std::vector<ROL::Ptr<MaterialTensor<Real>>> matTensor_;
   ROL::Ptr<Dirichlet<Real>>                   dirichlet_;
   ROL::Ptr<Traction<Real>>                    traction_;
-  ROL::Ptr<FieldHelper<Real>>                 fieldHelper_;
-  Real minDensity_, maxDensity_;
-
-  int M_, N_;
-  Real xlbnd_, xubnd_, ylbnd_, yubnd_;
-  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> weights_;
-
-  void computeWeight(void) {
-    const int c = fe_->gradN()->dimension(0);
-    const int p = fe_->gradN()->dimension(2);
-    const int d = fe_->gradN()->dimension(3);
-
-    Real x0(0), x1(0), y0(0), y1(0);
-    std::vector<Real> pt(d);
-    weights_.clear(); weights_.resize(M_);
-    for (int i = 0; i < M_; ++i) {
-      x0 = (xubnd_-xlbnd_)*static_cast<Real>(i)/static_cast<Real>(M_)+xlbnd_;
-      x1 = (xubnd_-xlbnd_)*static_cast<Real>(i+1)/static_cast<Real>(M_)+xlbnd_;
-      weights_[i].resize(N_);
-      for (int j = 0; j < N_; ++j) {
-        y0 = (yubnd_-ylbnd_)*static_cast<Real>(j)/static_cast<Real>(N_)+ylbnd_;
-        y1 = (yubnd_-ylbnd_)*static_cast<Real>(j+1)/static_cast<Real>(N_)+ylbnd_;
-        weights_[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,p);
-        for (int k = 0; k < c; ++k) {
-          for (int l = 0; l < p; ++l) {
-            for (int m = 0; m < d; ++m) {
-              pt[m] = (*fe_->cubPts())(k,l,m);
-            }
-            // is x in ij region?
-            (*weights_[i][j])(k,l) = static_cast<Real>(0);
-            if ((pt[0] >= x0 && pt[0] < x1) || (i == M_-1 && pt[0] == x1)) {
-              if ((pt[1] >= y0 && pt[1] < y1) || (j == N_-1 && pt[1] == y1)) {
-                (*weights_[i][j])(k,l) = static_cast<Real>(1);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
+  ROL::Ptr<FieldUtils::FieldInfo>             fieldInfo_, fieldInfoDens_;
+  bool getFields2called_, setCellNodes_, setFieldPattern_;
 
 public:
-  PDE_Elasticity(Teuchos::ParameterList &parlist) {
-    // Finite element fields.
-    int basisOrder    = parlist.sublist("Problem").get("Basis Order",1);
-    int cubDegree     = parlist.sublist("Problem").get("Cubature Degree",4);
-    int bdryCubDegree = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
-    int probDim       = parlist.sublist("Problem").get("Problem Dimension",2);
-    if (probDim> 3 || probDim < 2) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/poisson/pde_poisson.hpp: Problem dimension is not 2 or 3!");
-    }
-    if (basisOrder> 2 || basisOrder < 1) {
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
-        ">>> PDE-OPT/poisson/pde_poisson.hpp: Basis order is not 1 or 2!");
-    }
-    if (probDim == 2) {
-      if (basisOrder == 1) {
-        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-      else if (basisOrder == 2) {
-        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-    }
-    else if (probDim == 3) {
-      if (basisOrder == 1) {
-        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-      else if (basisOrder == 2) {
-        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
-      }
-    }
-    basisPtrs_.clear();
-    for (int i=0; i<probDim; ++i) {
-      basisPtrs_.push_back(basisPtr_);  // Displacement component
-    }
-
-    // Quadrature rules.
-    shards::CellTopology cellType = basisPtr_->getBaseCellTopology(); // get cell type from basis
-    Intrepid::DefaultCubatureFactory<Real> cubFactory;                // create cubature factory
-    cellCub_ = cubFactory.create(cellType, cubDegree);                // create default cubature
-
-    shards::CellTopology bdryCellType = cellType.getCellTopologyData(probDim-1, 0);
-    bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
-
+  PDE_Elasticity(Teuchos::ParameterList &parlist)
+    : getFields2called_(false), setCellNodes_(true), setFieldPattern_(true) {
+    // Material properties
     ROL::ParameterList list;
     list.set("Use Plain Stress", parlist.sublist("Problem").get("Use Plain Stress", true));
+    list.set("SIMP Power",       parlist.sublist("Problem").get("SIMP Power",       1.0));
+    list.set("Minimum Density",  parlist.sublist("Problem").get("Minimum Density",  1e-4));
+    list.set("Maximum Density",  parlist.sublist("Problem").get("Maximum Density",  1e-4));
     std::vector<Real> ym = ROL::getArrayFromStringParameter<Real>(parlist.sublist("Problem"), "Young's Modulus");
     std::vector<Real> pr = ROL::getArrayFromStringParameter<Real>(parlist.sublist("Problem"), "Poisson Ratio");
     int T = ym.size();
@@ -197,9 +130,72 @@ public:
       matTensor_[t] = ROL::makePtr<MaterialTensor<Real>>(list);
     }
     std::string example = parlist.sublist("Problem").get("Example","Default");
-    load_    = ROL::makePtr<Load<Real>>(parlist.sublist("Problem"),example);
-    traction_= ROL::makePtr<Traction<Real>>(parlist.sublist("Problem"),example);
+    load_      = ROL::makePtr<Load<Real>>(parlist.sublist("Problem"),example);
+    traction_  = ROL::makePtr<Traction<Real>>(parlist.sublist("Problem"),example);
     dirichlet_ = ROL::makePtr<Dirichlet<Real>>(parlist.sublist("Problem"),example);
+
+    // Finite element fields.
+    int basisOrder     = parlist.sublist("Problem").get("Basis Order",1);
+    int basisOrderDens = parlist.sublist("Problem").get("Density Basis Order",0);
+    int cubDegree      = parlist.sublist("Problem").get("Cubature Degree",4);
+    int bdryCubDegree  = parlist.sublist("Problem").get("Boundary Cubature Degree",2);
+    int probDim        = parlist.sublist("Problem").get("Problem Dimension",2);
+    if (probDim> 3 || probDim < 2) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> PDE-OPT/binary/elasticity/pde_elasticity.hpp: Problem dimension is not 2 or 3!");
+    }
+    if (basisOrder> 2 || basisOrder < 1) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> PDE-OPT/binary/elasticity/pde_elasticity.hpp: Basis order is not 1 or 2!");
+    }
+    if (basisOrderDens > 1 || basisOrderDens < 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument,
+        ">>> PDE-OPT/binary/elasticity/pde_elasticity.hpp: Density basis order is not 0 1!");
+    }
+    if (probDim == 2) {
+      if (basisOrder == 1) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (basisOrder == 2) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      if (basisOrderDens == 0) {
+        basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (basisOrderDens == 1) {
+        basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_QUAD_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+    }
+    else if (probDim == 3) {
+      if (basisOrder == 1) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (basisOrder == 2) {
+        basisPtr_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C2_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      if (basisOrderDens == 0) {
+        // This does not work in 3D
+        basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_C0_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+      else if (basisOrderDens == 1) {
+        basisPtrDens_ = ROL::makePtr<Intrepid::Basis_HGRAD_HEX_C1_FEM<Real, Intrepid::FieldContainer<Real>>>();
+      }
+    }
+    basisPtrs_.clear(); basisPtrsDens_.clear();
+    for (int i=0; i<probDim; ++i) {
+      basisPtrs_.push_back(basisPtr_);  // Displacement component
+    }
+    for (int i=0; i<T; ++i) {
+      basisPtrsDens_.push_back(basisPtrDens_); // Density components
+    }
+
+    // Quadrature rules.
+    shards::CellTopology cellType = basisPtr_->getBaseCellTopology(); // get cell type from basis
+    Intrepid::DefaultCubatureFactory<Real> cubFactory;                // create cubature factory
+    cellCub_ = cubFactory.create(cellType, cubDegree);                // create default cubature
+
+    shards::CellTopology bdryCellType = cellType.getCellTopologyData(probDim-1, 0);
+    bdryCub_ = cubFactory.create(bdryCellType, bdryCubDegree);
 
     numDofs_ = 0;
     numFields_ = basisPtrs_.size();
@@ -216,15 +212,20 @@ public:
       numDofs_ += numFieldDofs_[i];
     }
 
-    xlbnd_ = parlist.sublist("Geometry").get("X0",0.0);
-    xubnd_ = xlbnd_ + parlist.sublist("Geometry").get("Width",2.0);
-    ylbnd_ = parlist.sublist("Geometry").get("Y0",0.0);
-    yubnd_ = ylbnd_ + parlist.sublist("Geometry").get("Height",1.0);
-    M_     = parlist.sublist("Problem").get("Number of Horizontal Cells",10);
-    N_     = parlist.sublist("Problem").get("Number of Vertical Cells",20);
-
-    minDensity_ = static_cast<Real>(1e-4)/static_cast<Real>(T);
-    maxDensity_ = static_cast<Real>(1);
+    numDofsDens_ = 0;
+    numFieldsDens_ = basisPtrsDens_.size();
+    offsetDens_.resize(numFieldsDens_);
+    numFieldDofsDens_.resize(numFieldsDens_);
+    for (int i=0; i<numFieldsDens_; ++i) {
+      if (i==0) {
+        offsetDens_[i]  = 0;
+      }
+      else {
+        offsetDens_[i]  = offsetDens_[i-1] + basisPtrsDens_[i-1]->getCardinality();
+      }
+      numFieldDofsDens_[i] = basisPtrsDens_[i]->getCardinality();
+      numDofsDens_ += numFieldDofsDens_[i];
+    }
   }
 
   void residual(ROL::Ptr<Intrepid::FieldContainer<Real>> & res,
@@ -246,48 +247,33 @@ public:
     }
 
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
-    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, Z;
+    FieldUtils::splitFieldCoeff<Real>(U, u_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
 
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real>> UMat, rhoCUMat, tmp;
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> CUMat(T), gradDisp_eval(d);
-    rhoCUMat = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
-    tmp      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> UMat, rho, valZ_eval, rhoUMat;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoUMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
     for (int i=0; i<d; ++i) {
       gradDisp_eval[i] =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
       fe_->evaluateGradient(gradDisp_eval[i], U[i]);
     }
-
     matTensor_[0]->computeUmat(UMat, gradDisp_eval);
     for (int t=0; t<T; ++t) {
-      CUMat[t] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
-      matTensor_[t]->applyTensor(CUMat[t],UMat);
-    }
-    
-    Real z(0);
-    for (int i=0; i<M_; ++i) {
-      for (int j=0; j<N_; ++j) {
-        for (int t=0; t<T; ++t) {
-          z = (*z_param)[i+M_*(j+N_*t)];
-          Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*tmp, *weights_[i][j], *CUMat[t]);
-          for (int k=0; k<c; ++k) {
-            for (int l=0; l<p; ++l) {
-              for (int m=0; m<matd; ++m) {
-                (*rhoCUMat)(k,l,m) += (minDensity_ + (maxDensity_-minDensity_)*z) * (*tmp)(k,l,m);
-              }
-            }
-          }
-        }
+      valZ_eval->initialize(); rho->initialize(); rhoUMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
+      for (int i=0; i<d; ++i) {
+        Intrepid::FunctionSpaceTools::integrate<Real>(*R[i],
+                                                      *rhoUMat,                  // C B U
+                                                      *matTensor_[t]->CBdetJ(i), // B'
+                                                      Intrepid::COMP_CPP,
+                                                      true);
       }
-    }
-
-    for (int i=0; i<d; ++i) {
-      Intrepid::FunctionSpaceTools::integrate<Real>(*R[i],
-                                                    *rhoCUMat,                // C B U
-                                                    *matTensor_[0]->BdetJ(i), // B'
-                                                    Intrepid::COMP_CPP,
-                                                    false);
     }
 
     // EVALUATE LOAD
@@ -312,10 +298,10 @@ public:
     }
 
     // APPLY DIRICHLET CONDITIONS
-    dirichlet_->applyResidual(R,U);
+    dirichlet_->applyResidual(R, U);
 
     // Combine the residuals.
-    fieldHelper_->combineFieldCoeff(res, R);
+    FieldUtils::combineFieldCoeff<Real>(res, R, fieldInfo_);
   }
 
   void Jacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & jac,
@@ -338,50 +324,31 @@ public:
       }
     }
 
+    // Split z_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> Z;
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real>> tmp;
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> rhoCBMat(d);
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> CBMat(T);
-    tmp = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p, matd);
-
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, rhoBMat;
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoBMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p, matd);
     for (int t=0; t<T; ++t) {
-      CBMat[t].resize(d);
-      for (int i=0; i<d; ++i) {
-        CBMat[t][i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p, matd);
-        matTensor_[t]->applyTensor(CBMat[t][i],matTensor_[t]->B(i));
-      }
-    }
-    
-    Real z(0);
-    for (int o=0; o<d; ++o) {
-      rhoCBMat[o] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p, matd);
-      for (int i=0; i<M_; ++i) {
-        for (int j=0; j<N_; ++j) {
-          for (int t=0; t<T; ++t) {
-            z = (*z_param)[i+M_*(j+N_*t)];
-            Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*tmp, *weights_[i][j], *CBMat[t][o]);
-            for (int k=0; k<c; ++k) {
-              for (int l=0; l<f; ++l) {
-                for (int m=0; m<p; ++m) {
-                  for (int n=0; n<matd; ++n) {
-                    (*rhoCBMat[o])(k,l,m,n) += (minDensity_ + (maxDensity_-minDensity_)*z) * (*tmp)(k,l,m,n);
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
+      valZ_eval->initialize(); rho->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval);
 
-    /*** Evaluate weak form of the Jacobian. ***/
-    for (int i=0; i<d; ++i) {
-      for (int j=0; j<d; ++j) {
-        Intrepid::FunctionSpaceTools::integrate<Real>(*J[i][j],
-                                                      *rhoCBMat[i],            // rho B
-                                                      *matTensor_[0]->BdetJ(j), // B' C
-                                                      Intrepid::COMP_CPP,
-                                                      false);
+      /*** Evaluate weak form of the Jacobian. ***/
+      for (int i=0; i<d; ++i) {
+        rhoBMat->initialize();
+        Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*rhoBMat, *rho, *matTensor_[t]->B(i));
+        for (int j=0; j<d; ++j) {
+          Intrepid::FunctionSpaceTools::integrate<Real>(*J[i][j],
+                                                        *rhoBMat,                  // rho B
+                                                        *matTensor_[t]->CBdetJ(j), // B' C
+                                                        Intrepid::COMP_CPP,
+                                                        true);
+        }
       }
     }
 
@@ -389,8 +356,7 @@ public:
     dirichlet_->applyJacobian1(J);
 
     // Combine the jacobians.
-    fieldHelper_->combineFieldCoeff(jac, J);
-
+    FieldUtils::combineFieldCoeff<Real>(jac, J, fieldInfo_, fieldInfo_);
   }
 
 
@@ -398,13 +364,70 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Jacobian_2): Jacobian is zero.");
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int f  = fe_->gradN()->dimension(1);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Jacobians.
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(d);
+    for (int i=0; i<d; ++i) {
+      for (int j=0; j<T; ++j) {
+        J[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,fd));
+      }
+    }
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, Z;
+    FieldUtils::splitFieldCoeff<Real>(U, u_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, UMat, rhoUMat, CBrhoUMat;
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoUMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CBrhoUMat = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p);
+    for (int i=0; i<d; ++i) {
+      gradDisp_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDisp_eval[i], U[i]);
+    }
+    matTensor_[0]->computeUmat(UMat, gradDisp_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoUMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1);  // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rho, *UMat);
+
+      for (int i=0; i<d; ++i) {
+        CBrhoUMat->initialize();
+        Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*CBrhoUMat, *rhoUMat, *matTensor_[t]->CBdetJ(i));
+        /*** Evaluate weak form of the residual. ***/
+        Intrepid::FunctionSpaceTools::integrate<Real>(*J[i][t],
+                                                      *CBrhoUMat,        // B' C drho B U
+                                                      *feDens_->N(),     // N
+                                                      Intrepid::COMP_CPP,
+                                                      false);
+      }
+    }
+
+    // APPLY DIRICHLET CONDITIONS
+    dirichlet_->applyJacobian2(J);
+
+    // Combine the jacobians.
+    FieldUtils::combineFieldCoeff<Real>(jac, J, fieldInfo_, fieldInfoDens_);
   }
 
-  void Jacobian_3(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & jac,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+  void applyJacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & jv,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                       const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
@@ -414,61 +437,180 @@ public:
     int T    = matTensor_.size(); 
  
     // Initialize residuals.
-    int size = z_param->size();
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(size);
-    jac.resize(size);
-    for (int i=0; i<size; ++i) {
-      jac[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
-      J[i].resize(d);
-      for (int j=0; j<d; ++j) {
-        J[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J(d);
+    for (int i=0; i<d; ++i)
+      J[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f);
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V, Z;
+    FieldUtils::splitFieldCoeff<Real>(V, v_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // Evaluate/interpolate finite element fields on cells.
+    ROL::Ptr<Intrepid::FieldContainer<Real>> VMat, rho, valZ_eval, rhoVMat;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoVMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    for (int i=0; i<d; ++i) {
+      gradDisp_eval[i] =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDisp_eval[i], V[i]);
+    }
+    matTensor_[0]->computeUmat(VMat, gradDisp_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoVMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoVMat, *rho, *VMat);
+      for (int i=0; i<d; ++i) {
+        Intrepid::FunctionSpaceTools::integrate<Real>(*J[i],
+                                                      *rhoVMat,                  // C B V
+                                                      *matTensor_[t]->CBdetJ(i), // B'
+                                                      Intrepid::COMP_CPP,
+                                                      true);
       }
     }
 
+    // APPLY DIRICHLET CONDITIONS
+    dirichlet_->applyMultiplier(J);
+
+    // Combine the residuals.
+    FieldUtils::combineFieldCoeff<Real>(jv, J, fieldInfo_);
+  }
+
+  void applyAdjointJacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & jv,
+                              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                              const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    applyJacobian_1(jv,v_coeff,u_coeff,z_coeff,z_param);
+  }
+
+  void applyJacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & jv,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                       const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Retrieve dimensions.
+    int c = fe_->gradN()->dimension(0);
+    int f = fe_->gradN()->dimension(1);
+    int p = fe_->gradN()->dimension(2);
+    int d = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size(); 
+ 
+    // Initialize residuals.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J(d);
+    for (int i=0; i<d; ++i)
+      J[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f);
+
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U;
-    fieldHelper_->splitFieldCoeff(U, u_coeff);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V, U, Z;
+    FieldUtils::splitFieldCoeff<Real>(V, v_coeff, fieldInfoDens_);
+    FieldUtils::splitFieldCoeff<Real>(U, u_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
 
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real>> UMat;
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> CUMat(T), rhoCUMat(size), gradDisp_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> UMat, rho, valV_eval, valZ_eval, rhoV, rhoUMat;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valV_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoV      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoUMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
     for (int i=0; i<d; ++i) {
       gradDisp_eval[i] =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
       fe_->evaluateGradient(gradDisp_eval[i], U[i]);
     }
-
     matTensor_[0]->computeUmat(UMat, gradDisp_eval);
     for (int t=0; t<T; ++t) {
-      CUMat[t] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
-      matTensor_[t]->applyTensor(CUMat[t],UMat);
-    }
-    
-    for (int i=0; i<M_; ++i) {
-      for (int j=0; j<N_; ++j) {
-        for (int t=0; t<T; ++t) {
-          rhoCUMat[i+M_*(j+N_*t)] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
-          Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoCUMat[i+M_*(j+N_*t)], *weights_[i][j], *CUMat[t]);
-          Intrepid::RealSpaceTools<Real>::scale(*rhoCUMat[i+M_*(j+N_*t)],maxDensity_-minDensity_);
-        }
-      }
-    }
-
-    for (int i=0; i<size; ++i) {
-      for (int j=0; j<d; ++j) {
-        Intrepid::FunctionSpaceTools::integrate<Real>(*J[i][j],
-                                                      *rhoCUMat[i],             // C B U
-                                                      *matTensor_[0]->BdetJ(j), // B'
+      valV_eval->initialize(); valZ_eval->initialize();
+      rho->initialize(); rhoV->initialize(); rhoUMat->initialize();
+      feDens_->evaluateValue(valV_eval, V[t]);
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1);  // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoV, *rho, *valV_eval);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoUMat, *rhoV, *UMat);
+      for (int i=0; i<d; ++i) {
+        Intrepid::FunctionSpaceTools::integrate<Real>(*J[i],
+                                                      *rhoUMat,                  // C B U
+                                                      *matTensor_[t]->CBdetJ(i), // B'
                                                       Intrepid::COMP_CPP,
-                                                      false);
+                                                      true);
       }
     }
 
-    // Combine the jacobians.
-    for (int i=0; i<size; ++i) {
-      // APPLY DIRICHLET CONDITIONS
-      dirichlet_->applyJacobian_3(J[i]);
-      fieldHelper_->combineFieldCoeff(jac[i], J[i]);
+    // APPLY DIRICHLET CONDITIONS
+    dirichlet_->applyMultiplier(J);
+
+    // Combine the residuals.
+    FieldUtils::combineFieldCoeff<Real>(jv, J, fieldInfo_);
+  }
+
+  void applyAdjointJacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & jv,
+                              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                              const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                              const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int f  = fe_->gradN()->dimension(1);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Hessians.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> J(T);
+    for (int t=0; t<T; ++t)
+      J[t] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,fd);
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V, U, Z;
+    FieldUtils::splitFieldCoeff<Real>(V, v_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(U, u_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // APPLY DIRICHLET CONDITIONS
+    dirichlet_->applyMultiplier(V);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDispU_eval(d), gradDispV_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, UMat, VMat, rhoVMat, CUMat, CUrhoVMat;
+    rho        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoVMat    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CUMat      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CUrhoVMat  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    for (int i=0; i<d; ++i) {
+      gradDispU_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispU_eval[i], U[i]);
+      gradDispV_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispV_eval[i], V[i]);
     }
+    matTensor_[0]->computeUmat(UMat, gradDispU_eval);
+    matTensor_[0]->computeUmat(VMat, gradDispV_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoVMat->initialize();
+      CUMat->initialize(); CUrhoVMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1);  // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoVMat, *rho, *VMat);
+      matTensor_[t]->applyTensor(CUMat, UMat);
+
+      Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*CUrhoVMat, *rhoVMat, *CUMat);
+
+      /*** Evaluate weak form of the residual. ***/
+      Intrepid::FunctionSpaceTools::integrate<Real>(*J[t],
+                                                    *CUrhoVMat,        // L' B' C ddrho B U
+                                                    *feDens_->NdetJ(), // N
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
+
+    // Combine the Hessians.
+    FieldUtils::combineFieldCoeff(jv, J, fieldInfoDens_);
   }
 
   void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
@@ -484,14 +626,281 @@ public:
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Hessian_12): Hessian is zero.");
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int f  = fe_->gradN()->dimension(1);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Hessians.
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(T);
+    for (int t=0; t<T; ++t) {
+      for (int i=0; i<d; ++i) {
+        J[t].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,fd,f));
+      }
+    }
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> L, Z;
+    FieldUtils::splitFieldCoeff<Real>(L, l_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // Apply Dirichlet conditions to the multipliers.
+    dirichlet_->applyMultiplier(L);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, LMat, rhoLMat, CBrhoLMat;
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoLMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CBrhoLMat = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p);
+    for (int i=0; i<d; ++i) {
+      gradDisp_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDisp_eval[i], L[i]);
+    }
+    matTensor_[0]->computeUmat(LMat, gradDisp_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoLMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1);  // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoLMat, *rho, *LMat);
+
+      for (int i=0; i<d; ++i) {
+        CBrhoLMat->initialize();
+        Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*CBrhoLMat, *rhoLMat, *matTensor_[t]->CBdetJ(i));
+        /*** Evaluate weak form of the residual. ***/
+        Intrepid::FunctionSpaceTools::integrate<Real>(*J[t][i],
+                                                      *feDens_->N(), // N
+                                                      *CBrhoLMat,    // B' C drho B U
+                                                      Intrepid::COMP_CPP,
+                                                      false);
+      }
+    }
+
+    // Combine the Hessians.
+    FieldUtils::combineFieldCoeff<Real>(hess, J, fieldInfoDens_, fieldInfo_);
   }
 
-  void Hessian_13(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
+  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
                   const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
                   const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int f  = fe_->gradN()->dimension(1);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Hessians.
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(d);
+    for (int i=0; i<d; ++i) {
+      for (int t=0; t<T; ++t) {
+        J[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,fd));
+      }
+    }
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> L, Z;
+    FieldUtils::splitFieldCoeff<Real>(L, l_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // Apply Dirichlet conditions to the multipliers.
+    dirichlet_->applyMultiplier(L);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, LMat, rhoLMat, CBrhoLMat;
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoLMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CBrhoLMat = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, f, p);
+    for (int i=0; i<d; ++i) {
+      gradDisp_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDisp_eval[i], L[i]);
+    }
+    matTensor_[0]->computeUmat(LMat, gradDisp_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoLMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1);  // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoLMat, *rho, *LMat);
+
+      for (int i=0; i<d; ++i) {
+        CBrhoLMat->initialize();
+        Intrepid::FunctionSpaceTools::dotMultiplyDataField<Real>(*CBrhoLMat, *rhoLMat, *matTensor_[t]->CBdetJ(i));
+        /*** Evaluate weak form of the residual. ***/
+        Intrepid::FunctionSpaceTools::integrate<Real>(*J[i][t],
+                                                      *CBrhoLMat,    // B' C drho B U
+                                                      *feDens_->N(), // N
+                                                      Intrepid::COMP_CPP,
+                                                      false);
+      }
+    }
+
+    // Combine the Hessians.
+    FieldUtils::combineFieldCoeff(hess, J, fieldInfo_, fieldInfoDens_);
+  }
+
+  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Hessians.
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(T);
+    for (int t=0; t<T; ++t) {
+      for (int s=0; s<T; ++s) {
+        J[t].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,fd,fd));
+      }
+    }
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> U, L, Z;
+    FieldUtils::splitFieldCoeff<Real>(U, u_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(L, l_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // Apply Dirichlet conditions to the multipliers.
+    dirichlet_->applyMultiplier(L);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDispU_eval(d), gradDispL_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, UMat, LMat, rhoLMat, CUMat, CUrhoLMat, NCUrhoLMat;
+    rho        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoLMat    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CUMat      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CUrhoLMat  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    NCUrhoLMat = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, fd, p);
+    for (int i=0; i<d; ++i) {
+      gradDispU_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispU_eval[i], U[i]);
+      gradDispL_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispL_eval[i], L[i]);
+    }
+    matTensor_[0]->computeUmat(UMat, gradDispU_eval);
+    matTensor_[0]->computeUmat(LMat, gradDispL_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoLMat->initialize();
+      CUMat->initialize(); CUrhoLMat->initialize(); NCUrhoLMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 2);  // second derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoLMat, *rho, *LMat);
+      matTensor_[t]->applyTensor(CUMat, UMat);
+
+      Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*CUrhoLMat, *rhoLMat, *CUMat);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataField<Real>(*NCUrhoLMat, *CUrhoLMat, *feDens_->N());
+
+      /*** Evaluate weak form of the residual. ***/
+      Intrepid::FunctionSpaceTools::integrate<Real>(*J[t][t],
+                                                    *NCUrhoLMat,        // N L' B' C ddrho B U
+                                                    *feDens_->NdetJ(),  // N
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
+
+    // Combine the Hessians.
+    FieldUtils::combineFieldCoeff(hess, J, fieldInfoDens_, fieldInfoDens_);
+  }
+
+  void applyHessian_11(ROL::Ptr<Intrepid::FieldContainer<Real>> & Hv,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                       const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::Zero(">>> (PDE_TopoOpt::applyHessian_11): Hessian is zero.");
+  }
+
+  void applyHessian_12(ROL::Ptr<Intrepid::FieldContainer<Real>> & Hv,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                       const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int f  = fe_->gradN()->dimension(1);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Hessians.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(T);
+    for (int t=0; t<T; ++t)
+      H[t] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,fd);
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V, L, Z;
+    FieldUtils::splitFieldCoeff<Real>(V, v_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(L, l_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // APPLY DIRICHLET CONDITIONS
+    dirichlet_->applyMultiplier(L);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDispL_eval(d), gradDispV_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, valZ_eval, LMat, VMat, rhoVMat, CLMat, CLrhoVMat;
+    rho        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoVMat    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CLMat      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CLrhoVMat  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    for (int i=0; i<d; ++i) {
+      gradDispL_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispL_eval[i], L[i]);
+      gradDispV_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispV_eval[i], V[i]);
+    }
+    matTensor_[0]->computeUmat(LMat, gradDispL_eval);
+    matTensor_[0]->computeUmat(VMat, gradDispV_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoVMat->initialize();
+      CLMat->initialize(); CLrhoVMat->initialize();
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1);  // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoVMat, *rho, *VMat);
+      matTensor_[t]->applyTensor(CLMat, LMat);
+
+      Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*CLrhoVMat, *rhoVMat, *CLMat);
+
+      /*** Evaluate weak form of the residual. ***/
+      Intrepid::FunctionSpaceTools::integrate<Real>(*H[t],
+                                                    *CLrhoVMat,        // L' B' C ddrho B U
+                                                    *feDens_->NdetJ(), // N
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
+
+    // Combine the Hessians.
+    FieldUtils::combineFieldCoeff(Hv, H, fieldInfoDens_);
+  }
+
+  void applyHessian_21(ROL::Ptr<Intrepid::FieldContainer<Real>> & Hv,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                       const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
     // Retrieve dimensions.
     int c = fe_->gradN()->dimension(0);
     int f = fe_->gradN()->dimension(1);
@@ -501,110 +910,123 @@ public:
     int T    = matTensor_.size(); 
  
     // Initialize residuals.
-    int size = z_param->size();
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> H(size);
-    hess.resize(size);
-    for (int i=0; i<size; ++i) {
-      hess[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, numDofs_);
-      H[i].resize(d);
-      for (int j=0; j<d; ++j) {
-        H[i][j] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f);
-      }
-    }
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(d);
+    for (int i=0; i<d; ++i)
+      H[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f);
 
     // Split u_coeff into components.
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> L;
-    fieldHelper_->splitFieldCoeff(L, l_coeff);
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V, L, Z;
+    FieldUtils::splitFieldCoeff<Real>(V, v_coeff, fieldInfoDens_);
+    FieldUtils::splitFieldCoeff<Real>(L, l_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // APPLY DIRICHLET CONDITIONS
     dirichlet_->applyMultiplier(L);
 
     // Evaluate/interpolate finite element fields on cells.
-    ROL::Ptr<Intrepid::FieldContainer<Real>> LMat;
-    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> CLMat(T), rhoCLMat(size), gradDisp_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> LMat, rho, rhoV, valV_eval, valZ_eval, rhoLMat;
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDisp_eval(d);
+    rho       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoV      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valV_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoLMat   = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
     for (int i=0; i<d; ++i) {
       gradDisp_eval[i] =  ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
       fe_->evaluateGradient(gradDisp_eval[i], L[i]);
     }
-
     matTensor_[0]->computeUmat(LMat, gradDisp_eval);
     for (int t=0; t<T; ++t) {
-      CLMat[t] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
-      matTensor_[t]->applyTensor(CLMat[t],LMat);
-    }
-    
-    for (int i=0; i<M_; ++i) {
-      for (int j=0; j<N_; ++j) {
-        for (int t=0; t<T; ++t) {
-          rhoCLMat[i+M_*(j+N_*t)] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
-          Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoCLMat[i+M_*(j+N_*t)], *weights_[i][j], *CLMat[t]);
-          Intrepid::RealSpaceTools<Real>::scale(*rhoCLMat[i+M_*(j+N_*t)],maxDensity_-minDensity_);
-        }
-      }
-    }
-
-    for (int i=0; i<size; ++i) {
-      for (int j=0; j<d; ++j) {
-        Intrepid::FunctionSpaceTools::integrate<Real>(*H[i][j],
-                                                      *rhoCLMat[i],             // C B U
-                                                      *matTensor_[0]->BdetJ(j), // B'
+      valZ_eval->initialize(); valV_eval->initialize();
+      rho->initialize(); rhoV->initialize(); rhoLMat->initialize();
+      feDens_->evaluateValue(valV_eval, V[t]);
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 1); // first derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoV, *rho, *valV_eval);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoLMat, *rhoV, *LMat);
+      for (int i=0; i<d; ++i) {
+        Intrepid::FunctionSpaceTools::integrate<Real>(*H[i],
+                                                      *rhoLMat,                  // C B V
+                                                      *matTensor_[t]->CBdetJ(i), // B'
                                                       Intrepid::COMP_CPP,
-                                                      false);
+                                                      true);
       }
     }
 
-    // Combine the jacobians.
-    for (int i=0; i<size; ++i) {
-      // APPLY DIRICHLET CONDITIONS
-      dirichlet_->applyJacobian_3(H[i]);
-      fieldHelper_->combineFieldCoeff(hess[i], H[i]);
+    // Combine the residuals.
+    FieldUtils::combineFieldCoeff<Real>(Hv, H, fieldInfo_);
+  }
+
+  void applyHessian_22(ROL::Ptr<Intrepid::FieldContainer<Real>> & Hv,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                       const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                       const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    // Retrieve dimensions.
+    int c  = fe_->gradN()->dimension(0);
+    int f  = fe_->gradN()->dimension(1);
+    int fd = feDens_->gradN()->dimension(1);
+    int p  = fe_->gradN()->dimension(2);
+    int d  = fe_->gradN()->dimension(3);
+    int matd = matTensor_[0]->getMatrixDim();
+    int T    = matTensor_.size();
+
+    // Initialize Hessians.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> H(T);
+    for (int t=0; t<T; ++t)
+      H[t] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c,fd);
+
+    // Split u_coeff into components.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> V, L, U, Z;
+    FieldUtils::splitFieldCoeff<Real>(V, v_coeff, fieldInfoDens_);
+    FieldUtils::splitFieldCoeff<Real>(L, l_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(U, u_coeff, fieldInfo_);
+    FieldUtils::splitFieldCoeff<Real>(Z, z_coeff, fieldInfoDens_);
+
+    // APPLY DIRICHLET CONDITIONS
+    dirichlet_->applyMultiplier(L);
+
+    // Evaluate/interpolate finite element fields on cells.
+    std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> gradDispU_eval(d), gradDispL_eval(d);
+    ROL::Ptr<Intrepid::FieldContainer<Real>> rho, rhoV, valV_eval, valZ_eval, UMat, LMat, rhoLMat, CUMat, CUrhoLMat;
+    rho        = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoV       = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valV_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    valZ_eval  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    rhoLMat    = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CUMat      = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, matd);
+    CUrhoLMat  = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p);
+    for (int i=0; i<d; ++i) {
+      gradDispU_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispU_eval[i], U[i]);
+      gradDispL_eval[i] = ROL::makePtr<Intrepid::FieldContainer<Real>>(c, p, d);
+      fe_->evaluateGradient(gradDispL_eval[i], L[i]);
     }
-  }
+    matTensor_[0]->computeUmat(UMat, gradDispU_eval);
+    matTensor_[0]->computeUmat(LMat, gradDispL_eval);
+    for (int t=0; t<T; ++t) {
+      valZ_eval->initialize(); rho->initialize(); rhoLMat->initialize();
+      CUMat->initialize(); CUrhoLMat->initialize();
+      feDens_->evaluateValue(valV_eval, V[t]);
+      feDens_->evaluateValue(valZ_eval, Z[t]);
+      matTensor_[t]->computeDensity(rho, valZ_eval, 2);  // second derivative
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoV, *rho, *valV_eval);
+      Intrepid::FunctionSpaceTools::scalarMultiplyDataData<Real>(*rhoLMat, *rhoV, *LMat);
+      matTensor_[t]->applyTensor(CUMat, UMat);
 
-  void Hessian_21(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Hessian_21): Hessian is zero.");
-  }
+      Intrepid::FunctionSpaceTools::dotMultiplyDataData<Real>(*CUrhoLMat, *rhoLMat, *CUMat);
 
-  void Hessian_22(ROL::Ptr<Intrepid::FieldContainer<Real>> & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Hessian_22): Hessian is zero.");
-  }
+      /*** Evaluate weak form of the residual. ***/
+      Intrepid::FunctionSpaceTools::integrate<Real>(*H[t],
+                                                    *CUrhoLMat,        // L' B' C ddrho B U
+                                                    *feDens_->NdetJ(), // N
+                                                    Intrepid::COMP_CPP,
+                                                    false);
+    }
 
-  void Hessian_23(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Hessian_23): Hessian is zero.");
-  }
-
-  void Hessian_31(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    Hessian_13(hess,l_coeff,u_coeff,z_coeff,z_param);
-  }
-
-  void Hessian_32(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Hessian_32): Hessian is zero.");
-  }
-
-  void Hessian_33(std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> & hess,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & l_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
-                  const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
-                  const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
-    throw Exception::Zero(">>> (PDE_TopoOpt::Hessian_33): Hessian is zero.");
+    // Combine the Hessians.
+    FieldUtils::combineFieldCoeff(Hv, H, fieldInfoDens_);
   }
 
   void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
@@ -615,72 +1037,132 @@ public:
     int f = fe_->gradN()->dimension(1);
     int d = fe_->gradN()->dimension(3);
  
-    // Initialize Jacobians.
-    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> J(d);
+    // Initialize Riesz maps.
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> R(d);
     for (int i=0; i<d; ++i) {
       for (int j=0; j<d; ++j) {
-        J[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,f));
+        R[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,f));
       }
     }
 
     for (int i=0; i<d; ++i) {
-      *(J[i][i]) = *(fe_->stiffMat());
-      Intrepid::RealSpaceTools<Real>::add(*(J[i][i]),*(fe_->massMat()));
+      *(R[i][i]) = *(fe_->stiffMat());
+      Intrepid::RealSpaceTools<Real>::add(*(R[i][i]),*(fe_->massMat()));
     }
 
-    // Combine the jacobians.
-    fieldHelper_->combineFieldCoeff(riesz, J);
+    // Combine the Riesz maps.
+    FieldUtils::combineFieldCoeff<Real>(riesz, R, fieldInfo_, fieldInfo_);
   }
 
   void RieszMap_2(ROL::Ptr<Intrepid::FieldContainer<Real>> & riesz) {
-    throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_2): Not implemented.");
+    //throw Exception::NotImplemented(">>> (PDE_TopoOpt::RieszMap_2): Not implemented.");
+
+    // Retrieve dimensions.
+    int c = feDens_->gradN()->dimension(0);
+    int f = feDens_->gradN()->dimension(1);
+    int d = feDens_->gradN()->dimension(3);
+    int T = matTensor_.size();
+ 
+    // Initialize Riesz maps.
+    std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> R(T);
+    for (int i=0; i<T; ++i) {
+      for (int j=0; j<T; ++j) {
+        R[i].push_back(ROL::makePtr<Intrepid::FieldContainer<Real>>(c,f,f));
+      }
+    }
+
+    for (int i=0; i<T; ++i) *(R[i][i]) = *(feDens_->massMat());
+
+    // Combine the Riesz maps.
+    FieldUtils::combineFieldCoeff<Real>(riesz, R, fieldInfoDens_, fieldInfoDens_);
+  }
+
+  // This must be called before getFields2
+  void setDensityFields(const std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> &basisPtrs) {
+    TEUCHOS_TEST_FOR_EXCEPTION(getFields2called_, std::invalid_argument,
+      ">>> PDE-OPT/topo-opt/elasticity/src/pde_elasticity.hpp: Must call before getFields2!");
+    basisPtrDens_  = basisPtrs[0];
+    basisPtrsDens_ = basisPtrs;
+
+    numDofsDens_ = 0;
+    numFieldsDens_ = basisPtrsDens_.size();
+    offsetDens_.resize(numFieldsDens_);
+    numFieldDofsDens_.resize(numFieldsDens_);
+    for (int i=0; i<numFieldsDens_; ++i) {
+      if (i==0) {
+        offsetDens_[i]  = 0;
+      }
+      else {
+        offsetDens_[i]  = offsetDens_[i-1] + basisPtrsDens_[i-1]->getCardinality();
+      }
+      numFieldDofsDens_[i] = basisPtrsDens_[i]->getCardinality();
+      numDofsDens_ += numFieldDofsDens_[i];
+    }
   }
 
   std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields() {
     return basisPtrs_;
   }
 
+  std::vector<ROL::Ptr<Intrepid::Basis<Real, Intrepid::FieldContainer<Real>>>> getFields2() {
+    getFields2called_ = true;
+    return basisPtrsDens_;
+  }
+
   void setCellNodes(const ROL::Ptr<Intrepid::FieldContainer<Real>> &volCellNodes,
                     const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
                     const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
-    volCellNodes_ = volCellNodes;
-    bdryCellNodes_ = bdryCellNodes;
-    bdryCellLocIds_ = bdryCellLocIds;
-    // Finite element definition.
-    fe_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
-    fidx_ = fe_->getBoundaryDofs();
-    if (!traction_->isNull()) {
-      traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
-    }
-    dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
-    int T = matTensor_.size();
-    for (int t=0; t<T; ++t) {
-      matTensor_[t]->setFE(fe_);
-    }
-    // Construct boundary FE
-    int numSideSets = bdryCellLocIds_.size();
-    if (numSideSets> 0) {
-      feBdry_.resize(numSideSets);
-      for (int i = 0; i < numSideSets; ++i) {
-        int numLocSides = bdryCellNodes[i].size();
-        feBdry_[i].resize(numLocSides);
-        for (int j = 0; j < numLocSides; ++j) {
-          if (bdryCellNodes[i][j] != ROL::nullPtr) {
-            feBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtr_,bdryCub_,j);
+    if (setCellNodes_) {
+      volCellNodes_ = volCellNodes;
+      bdryCellNodes_ = bdryCellNodes;
+      bdryCellLocIds_ = bdryCellLocIds;
+      // Finite element definition.
+      fe_     = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtr_,cellCub_);
+      feDens_ = ROL::makePtr<FE<Real>>(volCellNodes_,basisPtrDens_,cellCub_,false);
+      fidx_   = fe_->getBoundaryDofs();
+      if (!traction_->isNull()) {
+        traction_->setCellNodes(bdryCellNodes_,bdryCellLocIds_);
+      }
+      dirichlet_->setCellNodes(bdryCellNodes_,bdryCellLocIds_,fidx_);
+      int T = matTensor_.size();
+      for (int t=0; t<T; ++t) {
+        matTensor_[t]->setFE(fe_);
+      }
+      // Construct boundary FE
+      int numSideSets = bdryCellLocIds_.size();
+      if (numSideSets> 0) {
+        feBdry_.resize(numSideSets);
+        for (int i = 0; i < numSideSets; ++i) {
+          int numLocSides = bdryCellNodes[i].size();
+          feBdry_[i].resize(numLocSides);
+          for (int j = 0; j < numLocSides; ++j) {
+            if (bdryCellNodes[i][j] != ROL::nullPtr) {
+              feBdry_[i][j] = ROL::makePtr<FE<Real>>(bdryCellNodes[i][j],basisPtr_,bdryCub_,j);
+            }
           }
         }
       }
+      setCellNodes_ = false;
     }
-    computeWeight();
   }
 
-  void setFieldPattern(const std::vector<std::vector<int>> & fieldPattern) {
-    fieldPattern_ = fieldPattern;
-    fieldHelper_ = ROL::makePtr<FieldHelper<Real>>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
+  void setFieldPattern(const std::vector<std::vector<int>> &fieldPattern,
+                       const std::vector<std::vector<int>> &fieldPattern2) {
+    if (setFieldPattern_) {
+      fieldPattern_     = fieldPattern;
+      fieldPatternDens_ = fieldPattern2;
+      fieldInfo_     = ROL::makePtr<FieldUtils::FieldInfo>(numFields_, numDofs_, numFieldDofs_, fieldPattern_);
+      fieldInfoDens_ = ROL::makePtr<FieldUtils::FieldInfo>(numFieldsDens_, numDofsDens_, numFieldDofsDens_, fieldPatternDens_);
+      setFieldPattern_ = false;
+    }
   }
 
   const ROL::Ptr<FE<Real>> getFE(void) const {
     return fe_;
+  }
+
+  const ROL::Ptr<FE<Real>> getDensityFE(void) const {
+    return feDens_;
   }
 
   const std::vector<std::vector<ROL::Ptr<FE<Real>>>> getBdryFE(void) const {
@@ -691,8 +1173,12 @@ public:
     return bdryCellLocIds_;
   }
 
-  const ROL::Ptr<FieldHelper<Real>> getFieldHelper(void) const {
-    return fieldHelper_;
+  const ROL::Ptr<FieldUtils::FieldInfo> getFieldInfo(void) const {
+    return fieldInfo_;
+  }
+
+  const ROL::Ptr<FieldUtils::FieldInfo> getDensityFieldInfo(void) const {
+    return fieldInfoDens_;
   }
 
   const ROL::Ptr<Load<Real>> getLoad(void) const {

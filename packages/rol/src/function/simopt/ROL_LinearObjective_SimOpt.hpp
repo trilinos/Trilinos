@@ -75,10 +75,12 @@ public:
   Real value( const Vector<Real> &u, const Vector<Real> &z, Real &tol ) {
     Real valu(0), valz(0);
     if (simcost_ != nullPtr) {
-      valu = u.dot(simcost_->dual());
+      //valu = u.dot(simcost_->dual());
+      valu = u.apply(*simcost_);
     }
     if (optcost_ != nullPtr) {
-      valz = z.dot(optcost_->dual());
+      //valz = z.dot(optcost_->dual());
+      valz = z.apply(*optcost_);
     }
     return valu + valz;
   }

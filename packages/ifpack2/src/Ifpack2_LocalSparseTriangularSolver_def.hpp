@@ -123,6 +123,7 @@ public:
     Teuchos::ArrayRCP<const local_ordinal_type> colidx;
     Teuchos::ArrayRCP<const scalar_type> val;
     T_in.getAllValues(rowptr, colidx, val);
+    Kokkos::fence();
 
     Teuchos::RCP<HtsCrsMatrix> T_hts = Teuchos::rcpWithDealloc(
       HTST::make_CrsMatrix(rowptr.size() - 1,

@@ -63,7 +63,13 @@ public:
                      const ROL::Ptr<Objective_SimOpt<Real> > & pobj)
     : sampler_(sampler), pobj_(pobj) {}
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    pobj_->update(x,flag,iter);
+  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    pobj_->update(x,type,iter);
+  }
+
 
   Real value(const Vector<Real> &x,
              Real &tol) {

@@ -178,7 +178,7 @@ namespace Intrepid2
                Computers & Mathematics with Applications, Volume 70, Issue 4, 2015, Pages 353-458, ISSN 0898-1221.
                https://doi.org/10.1016/j.camwa.2015.04.027.
   */
-  template<typename DeviceType=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
   class LegendreBasis_HVOL_LINE

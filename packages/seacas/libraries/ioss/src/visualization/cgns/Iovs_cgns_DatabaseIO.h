@@ -8,7 +8,7 @@
 #define Iovs_cgns_DatabaseIO_h
 
 #include <Ioss_DatabaseIO.h>
-#include <visualization/utils/Iovs_Utils.h>
+#include <Iovs_Utils.h>
 
 namespace Iovs_cgns {
 
