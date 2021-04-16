@@ -54,9 +54,9 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_PEBBL_Driver.hpp"
-#include "ROL_TeuchosBranchHelper_PEBBL.hpp"
+#include "ROL_Solver.hpp"
+#include "ROL_PEBBL_BranchAndBound.hpp"
+#include "ROL_PEBBL_TeuchosBranchHelper.hpp"
 #include "opfactory.hpp"
 #include "extractQP.hpp"
 #include "branchHelper.hpp"
@@ -89,10 +89,10 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** BUILD OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
-    ROL::Ptr<BinaryAdvDiffFactory<RealT>>     factory;
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
-    ROL::Ptr<ROL::Vector<RealT>>              z, u;
+    ROL::Ptr<BinaryAdvDiffFactory<RealT>>       factory;
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem;
+    ROL::Ptr<ROL::Solver<RealT>> solver;
+    ROL::Ptr<ROL::Vector<RealT>>                z, u;
     int nx = parlist->sublist("Problem").get("Number of X-Cells",64);
     int ny = parlist->sublist("Problem").get("Number of Y-Cells",32);
     factory = ROL::makePtr<BinaryAdvDiffFactory<RealT>>(*parlist,comm,outStream);
@@ -103,7 +103,8 @@ int main(int argc, char *argv[]) {
     /***************** SOLVE OPTIMIZATION PROBLEM ****************************/
     /*************************************************************************/
     problem = factory->build();
-    if (checkDeriv) problem->check(*outStream);
+    problem->finalize(false,true,*outStream);
+    if (checkDeriv) problem->check(true,*outStream);
     factory->getAssembler()->printMeshData(*outStream);
     factory->print(*outStream);
     bool solveQP = parlist->sublist("Problem").get("Solve as QP",false);
@@ -114,22 +115,26 @@ int main(int argc, char *argv[]) {
       int method    = parlist->sublist("Problem").get("Branching Method",0);
       int incheur   = parlist->sublist("Problem").get("Incumbent Heuristic",0);
       int verbosity = parlist->sublist("Problem").get("BB Output Level",0);
-      ROL::Ptr<ROL::BranchHelper_PEBBL<RealT>> bHelper
-        = ROL::makePtr<PDEOPT_BranchHelper_PEBBL<RealT>>(intTol,method);
-      ROL::Ptr<ADVDIFF_Branching<RealT>> branching
-        = ROL::makePtr<ADVDIFF_Branching<RealT>>(factory,parlist,bHelper,verbosity,outStream,incheur);
-      ROL::ROL_PEBBL_Driver<RealT> pebbl(branching);
+      ROL::Ptr<ROL::PEBBL::BranchHelper<RealT>> bHelper;
+      if (factory->controlType())
+        bHelper = ROL::makePtr<TpetraAdvDiffBranchHelper<RealT>>(intTol,method);
+      else
+        bHelper = ROL::makePtr<StdAdvDiffBranchHelper<RealT>>(intTol,method);
+      ROL::Ptr<AdvDiffBranching<RealT>> branching
+        = ROL::makePtr<AdvDiffBranching<RealT>>(factory,parlist,bHelper,verbosity,outStream,incheur);
+      ROL::PEBBL::BranchAndBound<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
-      z = pebbl.getSolution();
+      z = pebbl.getSolution()->clone();
+      z->set(*pebbl.getSolution());
     }
     else {
       if (solveQP) {
-        extractQP<RealT> qp(problem->getObjective(), problem->getSolutionVector(), problem->getBoundConstraint());
+        extractQP<RealT> qp(problem->getObjective(), problem->getPrimalOptimizationVector(), problem->getBoundConstraint());
         problem = qp();
       }
-      solver = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem, *parlist);
+      solver = ROL::makePtr<ROL::Solver<RealT>>(problem, *parlist);
       solver->solve(*outStream);
-      z = problem->getSolutionVector();
+      z = problem->getPrimalOptimizationVector();
     }
     factory->getState(u,z);
 

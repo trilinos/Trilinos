@@ -91,7 +91,8 @@ public:
     flag = 0;
 
     Real kappa(0), beta(0), alpha(0), tmp(0), zero(0);
-    Real gv    = v_->dot(r_->dual());
+    //Real gv    = v_->dot(r_->dual());
+    Real gv    = v_->apply(*r_);
 
     for (iter = 0; iter < (int)Krylov<Real>::getMaximumIteration(); iter++) {
       if ( useInexact_ ) {
@@ -99,7 +100,8 @@ public:
       }
       A.apply(*Ap_, *p_, itol);
 
-      kappa = p_->dot(Ap_->dual());
+      //kappa = p_->dot(Ap_->dual());
+      kappa = p_->apply(*Ap_);
       if ( kappa <= zero ) {
         flag = 2;
         break;
@@ -117,7 +119,8 @@ public:
       itol = std::sqrt(ROL_EPSILON<Real>());
       M.applyInverse(*v_, *r_, itol);
       tmp  = gv;
-      gv   = v_->dot(r_->dual());
+      //gv   = v_->dot(r_->dual());
+      gv   = v_->apply(*r_);
       beta = gv/tmp;
  
       p_->scale(beta);

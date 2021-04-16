@@ -54,126 +54,41 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class CompositeObjective : public Objective<Real> {
 private:
-  const std::vector<ROL::Ptr<Objective<Real> > > obj_vec_;
-  const ROL::Ptr<StdObjective<Real> > std_obj_;
+  const std::vector<Ptr<Objective<Real>>> obj_vec_;
+  const Ptr<StdObjective<Real>> std_obj_;
 
-  ROL::Ptr<std::vector<Real> > obj_value_, obj_grad_, obj_gv_, obj_hess_;
-  ROL::Ptr<StdVector<Real> > obj_value_vec_, obj_grad_vec_, obj_gv_vec_, obj_hess_vec_;
-  std::vector<ROL::Ptr<Vector<Real> > > vec_grad_, vec_hess_;
+  Ptr<std::vector<Real>> obj_value_, obj_grad_, obj_gv_, obj_hess_;
+  Ptr<StdVector<Real>> obj_value_vec_, obj_grad_vec_, obj_gv_vec_, obj_hess_vec_;
+  std::vector<Ptr<Vector<Real>>> vec_grad_, vec_hess_;
 
   bool isInitialized_, isValueComputed_, isGradientComputed_;
 
-  void initialize(const Vector<Real> &x) {
-    if (!isInitialized_){
-      int size = obj_vec_.size();
-      vec_grad_.clear(); vec_grad_.resize(size,ROL::nullPtr);
-      vec_hess_.clear(); vec_hess_.resize(size,ROL::nullPtr);
-      for (int i = 0; i < size; ++i) {
-        vec_grad_[i] = x.dual().clone();
-        vec_hess_[i] = x.dual().clone();
-      }
-      isInitialized_ = true;
-    }
-  }
-
-  void computeValue(const Vector<Real> &x, Real &tol) {
-    initialize(x);
-    if (!isValueComputed_) {
-      int size = obj_vec_.size();
-      for (int i = 0; i < size; ++i) {
-        (*obj_value_)[i] = obj_vec_[i]->value(x,tol);
-      }
-      isValueComputed_ = true;
-    }
-  }
-
-  void computeGradient(const Vector<Real> &x, Real &tol) {
-    computeValue(x,tol);
-    if (!isGradientComputed_) {
-      std_obj_->gradient(*(obj_grad_vec_),*(obj_value_vec_),tol);
-      int size = obj_vec_.size();
-      for (int i = 0; i < size; ++i) {
-        obj_vec_[i]->gradient(*(vec_grad_[i]),x,tol);
-      }
-      isGradientComputed_ = true;
-    }
-  }
-
-  void computeHessVec(const Vector<Real> &v, const Vector<Real> &x, Real &tol) {
-    computeGradient(x,tol);
-    int size = obj_vec_.size();
-    for (int i = 0; i < size; ++i) {
-      (*obj_gv_)[i] = vec_grad_[i]->dot(v.dual());
-      obj_vec_[i]->hessVec(*(vec_hess_[i]),v,x,tol);
-    }
-    std_obj_->hessVec(*(obj_hess_vec_),*(obj_gv_vec_),*(obj_value_vec_),tol);
-  }
-
 public:
-  CompositeObjective(const std::vector<ROL::Ptr<Objective<Real> > > &obj_vec,
-                     const ROL::Ptr<StdObjective<Real> > &std_obj)
-    : obj_vec_(obj_vec), std_obj_(std_obj), isInitialized_(false),
-      isValueComputed_(false), isGradientComputed_(false) {
-    obj_value_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
-    obj_value_vec_ = ROL::makePtr<StdVector<Real>>(obj_value_);
-    obj_grad_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
-    obj_grad_vec_ = ROL::makePtr<StdVector<Real>>(obj_grad_);
-    obj_gv_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
-    obj_gv_vec_ = ROL::makePtr<StdVector<Real>>(obj_gv_);
-    obj_hess_ = ROL::makePtr<std::vector<Real>>(obj_vec_.size(),0);
-    obj_hess_vec_ = ROL::makePtr<StdVector<Real>>(obj_hess_);
-  }
+  CompositeObjective(const std::vector<Ptr<Objective<Real>>> &obj_vec,
+                     const Ptr<StdObjective<Real>> &std_obj);
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    int size = obj_vec_.size();
-    for (int i = 0; i < size; ++i) {
-      obj_vec_[i]->update(x,flag,iter);
-    }
-    isValueComputed_ = false;
-    isGradientComputed_ = (flag ? false : isGradientComputed_);
-  }
-
-  Real value( const Vector<Real> &x, Real &tol ) {
-    computeValue(x,tol);
-    return std_obj_->value(*obj_value_vec_,tol);
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    g.zero();
-    computeGradient(x,tol);
-    int size = obj_vec_.size();
-    for (int i = 0; i < size; ++i) {
-      g.axpy((*obj_grad_)[i],*(vec_grad_[i]));
-    }
-  }
-
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    hv.zero();
-    computeHessVec(v,x,tol);
-    int size = obj_vec_.size();
-    for (int i = 0; i < size; ++i) {
-      hv.axpy((*obj_grad_)[i],*(vec_hess_[i]));
-      hv.axpy((*obj_hess_)[i],*(vec_grad_[i]));
-    }
-  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
 // Definitions for parametrized (stochastic) objective functions
 public:
-  void setParameter(const std::vector<Real> &param) {
-    Objective<Real>::setParameter(param);
-    const int size = obj_vec_.size();
-    for (int i = 0; i < size; ++i) {
-      obj_vec_[i]->setParameter(param);
-    }
-    std_obj_->setParameter(param);
-    isValueComputed_ = false;    // Recompute value every time
-    isGradientComputed_ = false; // Recompute gradient every time
-  }
+  void setParameter(const std::vector<Real> &param) override;
+
+private:
+  void initialize(const Vector<Real> &x);
+  void computeValue(const Vector<Real> &x, Real &tol);
+  void computeGradient(const Vector<Real> &x, Real &tol);
+  void computeHessVec(const Vector<Real> &v, const Vector<Real> &x, Real &tol);
 };
 
 } // namespace ROL
+
+#include "ROL_CompositeObjective_Def.hpp"
 
 #endif

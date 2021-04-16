@@ -332,7 +332,8 @@ namespace Iocgns {
     if (m_child1->m_ordinal[ordinal] == 0) {
       m_child1->m_ordinal[ordinal] = 1;
     }
-    SMART_ASSERT(!enforce_1cell_constraint || m_child1->m_ordinal[ordinal] != 1)(!enforce_1cell_constraint)(m_child1->m_ordinal[ordinal] != 1);
+    SMART_ASSERT(!enforce_1cell_constraint || m_child1->m_ordinal[ordinal] != 1)
+    (!enforce_1cell_constraint)(m_child1->m_ordinal[ordinal] != 1);
 
     m_child1->m_offset = m_offset; // Child1 offsets the same as parent;
 

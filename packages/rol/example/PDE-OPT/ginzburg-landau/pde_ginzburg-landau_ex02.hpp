@@ -57,25 +57,23 @@ class PDE_GinzburgLandau_ex02 : public PDE_GinzburgLandau<Real> {
 public:
   PDE_GinzburgLandau_ex02(Teuchos::ParameterList &parlist) : PDE_GinzburgLandau<Real>(parlist) {}
 
-  void evaluateMagneticPotential(std::vector<Real> &Ax, const std::vector<Real> &x) const {
+  void evaluateMagneticPotential(std::vector<Real> &Ax, const std::vector<Real> &x) const override {
     const Real pi(M_PI);
     Ax[0] =  std::sin(pi*x[0])*std::cos(pi*x[1]);
     Ax[1] = -std::cos(pi*x[0])*std::sin(pi*x[1]);
   }
 
-  Real evaluateNeumann(const std::vector<Real> &x, const int component) const {
+  Real evaluateNeumann(const std::vector<Real> &x, const int component) const override {
     return static_cast<Real>(0);
   }
 
-  Real evaluateForce(const std::vector<Real> &x, const int component) const {
+  Real evaluateForce(const std::vector<Real> &x, const int component) const override {
     const Real pi(M_PI), one(1), two(2);
     const Real cx = std::cos(pi*x[0]), sx = std::sin(pi*x[0]);
     const Real cy = std::cos(pi*x[1]), sy = std::sin(pi*x[1]);
     const Real pi2 = pi*pi, cx2 = cx*cx, cy2 = cy*cy, sx2 = sx*sx, sy2 = sy*sy;
-    return (component == 0) ? pi2*cx + (sx2*cy2 + cx2*sy2 - one)*cx
-                              -two*pi*cx*sy2 + (cx2 + cy2)*cx
-                            : pi2*cy + (sx2*cy2 + cx2*sy2 - one)*cy
-                              -two*pi*sx2*cy + (cx2 + cy2)*cy;
+    const Real rhs = pi2 + sx2*cy2 + cx2*sy2 - one + cx2 + cy2;
+    return (component == 0) ? cx*(rhs - two*pi*sy2) : cy*(rhs - two*pi*sx2);
   }
 
 }; // PDE_GinzburgLandau_ex01

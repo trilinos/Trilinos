@@ -53,18 +53,18 @@
 template <class Real>
 class QoI_GinzburgLandau_StateTracking_ex01 : public QoI_GinzburgLandau_StateTracking<Real> {
 public:
-  QoI_GinzburgLandau_StateTracking_ex01(const ROL::Ptr<FE<Real> > &fe,
-                                        const ROL::Ptr<FieldHelper<Real> > &fieldHelper,
-                                        Teuchos::ParameterList &parlist)
+  QoI_GinzburgLandau_StateTracking_ex01(const ROL::Ptr<FE<Real>> &fe,
+                                        const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
+                                        ROL::ParameterList &parlist)
     : QoI_GinzburgLandau_StateTracking<Real>(fe,fieldHelper,parlist) {
     QoI_GinzburgLandau_StateTracking<Real>::computeTarget();
   }
 
-  virtual Real evaluateRealTarget(const std::vector<Real> &x) const {
+  Real evaluateRealTarget(const std::vector<Real> &x) const override {
     return static_cast<Real>(0.8);
   }
 
-  virtual Real evaluateImagTarget(const std::vector<Real> &x) const {
+  Real evaluateImagTarget(const std::vector<Real> &x) const override {
     return static_cast<Real>(0.6);
   }
 }; // QoI_GinzburgLandau_StateTracking_ex01

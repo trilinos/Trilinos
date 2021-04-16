@@ -76,7 +76,7 @@ public:
     : xbar_(nullPtr), w_(nullPtr), xprimal_(nullPtr),
       penaltyParam_(penaltyParam) {
     xprimal_ = x->clone();
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Neutral");
+    std::string type = parlist.sublist("SOL").get("Type","Risk Neutral");
     if (type == "Risk Averse") {
       obj_ = makePtr<PH_RiskObjective<Real>>(obj,parlist);
     }

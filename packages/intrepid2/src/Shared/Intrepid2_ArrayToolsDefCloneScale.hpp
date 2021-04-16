@@ -128,10 +128,10 @@ namespace Intrepid2 {
     };
   } 
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
-  void ArrayTools<SpT>::
+  void ArrayTools<DeviceType>::
   cloneFields(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
                const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -149,8 +149,7 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
-    typedef typename SpT::execution_space ExecSpaceType;
-    
+
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<3>, Kokkos::IndexType<ordinal_type> >;
 
@@ -176,10 +175,10 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType, class ...outputProperties,
            typename inputValueType,  class ...inputProperties>
-  void ArrayTools<SpT>::
+  void ArrayTools<DeviceType>::
   cloneData(       Kokkos::DynRankView<outputValueType,outputProperties...> output,
              const Kokkos::DynRankView<inputValueType, inputProperties...>  input ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -197,7 +196,6 @@ namespace Intrepid2 {
 
     typedef Kokkos::DynRankView<outputValueType,outputProperties...> OutputViewType;
     typedef Kokkos::DynRankView<inputValueType, inputProperties...>  inputViewType; 
-    typedef typename SpT::execution_space ExecSpaceType;
     
     using range_policy_type = Kokkos::MDRangePolicy
       < ExecSpaceType, Kokkos::Rank<2>, Kokkos::IndexType<ordinal_type> >;

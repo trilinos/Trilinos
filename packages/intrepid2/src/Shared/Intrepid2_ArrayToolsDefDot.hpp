@@ -113,12 +113,12 @@ namespace Intrepid2 {
     };
     } //namespace
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename outputValueType,     class ...outputProperties,
            typename leftInputValueType,  class ...leftInputProperties,
            typename rightInputValueType, class ...rightInputProperties>
   void
-  ArrayTools<SpT>::Internal::
+  ArrayTools<DeviceType>::Internal::
   dotMultiply(       Kokkos::DynRankView<outputValueType,    outputProperties...>      output,
                const Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInput,
                const Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInput, 
@@ -128,7 +128,6 @@ namespace Intrepid2 {
     typedef Kokkos::DynRankView<leftInputValueType, leftInputProperties...>   leftInputViewType;
     typedef Kokkos::DynRankView<rightInputValueType,rightInputProperties...>  rightInputViewType;
     typedef FunctorArrayTools::F_dotMultiply<OutputViewType, leftInputViewType, rightInputViewType> FunctorType;
-    typedef typename SpT::execution_space ExecSpaceType; 
 
     const size_type loopSize = ( hasField ? output.extent(0)*output.extent(1)*output.extent(2) :
                                             output.extent(0)*output.extent(1) );
@@ -138,12 +137,12 @@ namespace Intrepid2 {
 
 
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   template<typename outputFieldValueType, class ...outputFieldProperties,
            typename inputDataValueType,   class ...inputDataProperties,
            typename inputFieldValueType,  class ...inputFieldProperties>
   void
-  ArrayTools<ExecSpaceType>::
+  ArrayTools<DeviceType>::
   dotMultiplyDataField(       Kokkos::DynRankView<outputFieldValueType,outputFieldProperties...> outputFields,
                         const Kokkos::DynRankView<inputDataValueType,  inputDataProperties...>   inputData,
                         const Kokkos::DynRankView<inputFieldValueType, inputFieldProperties...> inputFields ) {
@@ -194,7 +193,7 @@ namespace Intrepid2 {
     }
 #endif
 
-    ArrayTools<ExecSpaceType>::Internal::dotMultiply( outputFields,
+    ArrayTools<DeviceType>::Internal::dotMultiply( outputFields,
                                                       inputData,
                                                       inputFields,
                                                       true );
@@ -202,12 +201,12 @@ namespace Intrepid2 {
 
 
 
-  template<typename ExecSpaceType>
+  template<typename DeviceType>
   template<typename outputDataValueType,     class ...outputDataProperties,
            typename inputDataLeftValueType,  class ...inputDataLeftProperties,
            typename inputDataRightValueType, class ...inputDataRightProperties>
   void
-  ArrayTools<ExecSpaceType>::
+  ArrayTools<DeviceType>::
   dotMultiplyDataData(       Kokkos::DynRankView<outputDataValueType,    outputDataProperties...>     outputData,
                        const Kokkos::DynRankView<inputDataLeftValueType, inputDataLeftProperties...>  inputDataLeft,
                        const Kokkos::DynRankView<inputDataRightValueType,inputDataRightProperties...> inputDataRight ) {
@@ -256,7 +255,7 @@ namespace Intrepid2 {
     }
 #endif
 
-    ArrayTools<ExecSpaceType>::Internal::dotMultiply( outputData,
+    ArrayTools<DeviceType>::Internal::dotMultiply( outputData,
                                                       inputDataLeft,
                                                       inputDataRight,
                                                       false );

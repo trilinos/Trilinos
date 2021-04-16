@@ -60,7 +60,7 @@ namespace Intrepid2
   /** \class Intrepid2::TensorData
       \brief View-like interface to tensor data; tensor components are stored separately and multiplied together at access time.
   */
-  template<class Scalar, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename DeviceType>
   class TensorData {
   protected:
     Kokkos::Array< Data<Scalar,DeviceType>, Parameters::MaxTensorComponents> tensorComponents_;

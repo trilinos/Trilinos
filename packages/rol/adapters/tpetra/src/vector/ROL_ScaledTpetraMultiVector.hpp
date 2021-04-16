@@ -133,6 +133,11 @@ class PrimalScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> 
       return *dual_vec_;
     }
 
+    Real apply(const Vector<Real> &x) const {
+      const DualScaledTpetraMultiVector<Real,LO,GO,Node> & ex = dynamic_cast<const DualScaledTpetraMultiVector<Real,LO,GO,Node>&>(x);
+      return TpetraMultiVector<Real,LO,GO,Node>::dot(ex);
+    }
+
 }; // class PrimalScaledTpetraMultiVector
 
 template <class Real, class LO, class GO, class Node>
@@ -202,6 +207,11 @@ class DualScaledTpetraMultiVector : public TpetraMultiVector<Real,LO,GO,Node> {
       // Scale *this with scale_vec_ and place in dual vector
       applyScaling(*(primal_vec_->getVector()),*(TpetraMultiVector<Real,LO,GO,Node>::getVector()));
       return *primal_vec_;
+    }
+
+    Real apply(const Vector<Real> &x) const {
+      const PrimalScaledTpetraMultiVector<Real,LO,GO,Node> & ex = dynamic_cast<const PrimalScaledTpetraMultiVector<Real,LO,GO,Node>&>(x);
+      return TpetraMultiVector<Real,LO,GO,Node>::dot(ex);
     }
 
 }; // class DualScaledTpetraMultiVector
