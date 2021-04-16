@@ -282,7 +282,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
 	for(size_t col_idx=0; col_idx<4; col_idx++) {
 	  column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
 	}
-      
+
 	fe_matrix->sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
 	rhs->sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
