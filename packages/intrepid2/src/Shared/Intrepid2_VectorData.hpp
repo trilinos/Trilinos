@@ -61,7 +61,7 @@ namespace Intrepid2 {
  
  Typically, HDIV and HCURL bases have multiple families corresponding to the nonzero structure of the vector components.  VectorData therefore supports multiple families.  (Gradients of H^1 are expressed as a single family.)
 */
-  template<class Scalar, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename DeviceType>
   class VectorData
   {
   public:

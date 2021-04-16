@@ -54,67 +54,73 @@ namespace ROL {
 
 template<class Real>
 class lBFGS : public Secant<Real> {
+private:
+  using Secant<Real>::state_;
+
 public:
-  lBFGS(int M) : Secant<Real>(M) {}
+  lBFGS(int M, bool useDefaultScaling = true, Real Bscaling = Real(1))
+    : Secant<Real>(M,useDefaultScaling,Bscaling) {}
 
   // Apply lBFGS Approximate Inverse Hessian
   void applyH( Vector<Real> &Hv, const Vector<Real> &v ) const {
-    // Get Generic Secant State
-    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
-    Real zero(0);
+    const Real zero(0);
 
     Hv.set(v.dual());
-    std::vector<Real> alpha(state->current+1,zero);
-    for (int i = state->current; i>=0; i--) {
-      alpha[i]  = state->iterDiff[i]->dot(Hv);
-      alpha[i] /= state->product[i];
-      Hv.axpy(-alpha[i],(state->gradDiff[i])->dual());
+    std::vector<Real> alpha(state_->current+1,zero);
+    for (int i = state_->current; i>=0; i--) {
+      alpha[i]  = state_->iterDiff[i]->dot(Hv);
+      alpha[i] /= state_->product[i];
+      Hv.axpy(-alpha[i],(state_->gradDiff[i])->dual());
     }
 
     // Apply initial inverse Hessian approximation to v
-    ROL::Ptr<Vector<Real> > tmp = Hv.clone();
+    Ptr<Vector<Real>> tmp = Hv.clone();
     Secant<Real>::applyH0(*tmp,Hv.dual());
     Hv.set(*tmp);
 
     Real beta(0);
-    for (int i = 0; i <= state->current; i++) {
-      beta  = Hv.dot((state->gradDiff[i])->dual());
-      beta /= state->product[i];
-      Hv.axpy((alpha[i]-beta),*(state->iterDiff[i]));
+    for (int i = 0; i <= state_->current; i++) {
+      //beta  = Hv.dot((state_->gradDiff[i])->dual());
+      beta  = Hv.apply(*state_->gradDiff[i]);
+      beta /= state_->product[i];
+      Hv.axpy((alpha[i]-beta),*(state_->iterDiff[i]));
     }
   }
 
   // Apply lBFGS Approximate Hessian
   void applyB( Vector<Real> &Bv, const Vector<Real> &v ) const {
-    // Get Generic Secant State
-    const ROL::Ptr<SecantState<Real> >& state = Secant<Real>::get_state();
-    Real one(1);
+    const Real one(1);
 
     // Apply initial Hessian approximation to v
     Secant<Real>::applyB0(Bv,v);
 
-    std::vector<ROL::Ptr<Vector<Real> > > a(state->current+1);
-    std::vector<ROL::Ptr<Vector<Real> > > b(state->current+1);
+    std::vector<Ptr<Vector<Real>>> a(state_->current+1);
+    std::vector<Ptr<Vector<Real>>> b(state_->current+1);
     Real bv(0), av(0), bs(0), as(0);
-    for (int i = 0; i <= state->current; i++) {
+    for (int i = 0; i <= state_->current; i++) {
       b[i] = Bv.clone();
-      b[i]->set(*(state->gradDiff[i]));
-      b[i]->scale(one/sqrt(state->product[i]));
-      bv = v.dot(b[i]->dual());
+      b[i]->set(*(state_->gradDiff[i]));
+      b[i]->scale(one/sqrt(state_->product[i]));
+      //bv = v.dot(b[i]->dual());
+      bv = v.apply(*b[i]);
       Bv.axpy(bv,*b[i]);
 
       a[i] = Bv.clone();
-      Secant<Real>::applyB0(*a[i],*(state->iterDiff[i]));
+      Secant<Real>::applyB0(*a[i],*(state_->iterDiff[i]));
 
       for (int j = 0; j < i; j++) {
-        bs = (state->iterDiff[i])->dot(b[j]->dual());
+        //bs = (state_->iterDiff[i])->dot(b[j]->dual());
+        bs = (state_->iterDiff[i])->apply(*b[j]);
         a[i]->axpy(bs,*b[j]);
-        as = (state->iterDiff[i])->dot(a[j]->dual());
+        //as = (state_->iterDiff[i])->dot(a[j]->dual());
+        as = (state_->iterDiff[i])->apply(*a[j]);
         a[i]->axpy(-as,*a[j]);
       }
-      as = (state->iterDiff[i])->dot(a[i]->dual());
+      //as = (state_->iterDiff[i])->dot(a[i]->dual());
+      as = (state_->iterDiff[i])->apply(*a[i]);
       a[i]->scale(one/sqrt(as));
-      av = v.dot(a[i]->dual());
+      //av = v.dot(a[i]->dual());
+      av = v.apply(*a[i]);
       Bv.axpy(-av,*a[i]);
     }
   }

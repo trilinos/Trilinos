@@ -54,10 +54,10 @@ private:
   Real coeff_;
   Real target_;
 
-  Ptr<SampledScalar<Real>> values_;
-  Ptr<SampledScalar<Real>> gradvecs_;
-  Ptr<SampledVector<Real>> gradients_;
-  Ptr<SampledVector<Real>> hessvecs_;
+  Ptr<ScalarController<Real>> values_;
+  Ptr<ScalarController<Real>> gradvecs_;
+  Ptr<VectorController<Real>> gradients_;
+  Ptr<VectorController<Real>> hessvecs_;
 
   using RandVarFunctional<Real>::val_;
   using RandVarFunctional<Real>::g_;
@@ -79,18 +79,18 @@ private:
   using PD_RandVarFunctional<Real>::ppf;
 
   void initializeStorage(void) {
-    values_    = makePtr<SampledScalar<Real>>();
-    gradvecs_  = makePtr<SampledScalar<Real>>();
-    gradients_ = makePtr<SampledVector<Real>>();
-    hessvecs_  = makePtr<SampledVector<Real>>();
+    values_    = makePtr<ScalarController<Real>>();
+    gradvecs_  = makePtr<ScalarController<Real>>();
+    gradients_ = makePtr<VectorController<Real>>();
+    hessvecs_  = makePtr<VectorController<Real>>();
 
     RandVarFunctional<Real>::setStorage(values_,gradients_);
     RandVarFunctional<Real>::setHessVecStorage(gradvecs_,hessvecs_);
   }
 
   void clear(void) {
-    gradvecs_->update();
-    hessvecs_->update();
+    gradvecs_->reset();
+    hessvecs_->reset();
   }
 
   void checkInputs(void) {
@@ -106,15 +106,15 @@ public:
     checkInputs();
   }
 
-  void setStorage(const Ptr<SampledScalar<Real>> &value_storage,
-                  const Ptr<SampledVector<Real>> &gradient_storage) {
+  void setStorage(const Ptr<ScalarController<Real>> &value_storage,
+                  const Ptr<VectorController<Real>> &gradient_storage) {
     values_    = value_storage;
     gradients_ = gradient_storage;
     PD_RandVarFunctional<Real>::setStorage(values_,gradients_);
   }
 
-  void setHessVecStorage(const Ptr<SampledScalar<Real>> &gradvec_storage,
-                         const Ptr<SampledVector<Real>> &hessvec_storage) {
+  void setHessVecStorage(const Ptr<ScalarController<Real>> &gradvec_storage,
+                         const Ptr<VectorController<Real>> &hessvec_storage) {
     gradvecs_ = gradvec_storage;
     hessvecs_ = hessvec_storage;
     PD_RandVarFunctional<Real>::setHessVecStorage(gradvecs_,hessvecs_);

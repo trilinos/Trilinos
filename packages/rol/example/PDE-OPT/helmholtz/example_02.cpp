@@ -57,9 +57,7 @@
 #include <iostream>
 #include <algorithm>
 
-#include "ROL_Algorithm.hpp"
-#include "ROL_TrustRegionStep.hpp"
-#include "ROL_StatusTest.hpp"
+#include "ROL_Solver.hpp"
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 
 #include "../TOOLS/linearpdeconstraint.hpp"
@@ -326,13 +324,11 @@ int main(int argc, char *argv[]) {
     schurTimer.stop();
     *outStream << "Schur complement factorization time = " << schurTimer.totalElapsedTime() << " seconds.\n";
 
-    ROL::Ptr<ROL::Step<RealT>>
-      step = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
-    ROL::Ptr<ROL::StatusTest<RealT>>
-      status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-    ROL::Algorithm<RealT> algo(step,status,false);
+    ROL::Ptr<ROL::Problem<RealT>>
+      prob = ROL::makePtr<ROL::Problem<RealT>>(robj,zp);
+    ROL::Solver<RealT> solver(prob,*parlist);
     Teuchos::Time algoTimer("Algorithm Time", true);
-    algo.run(*zp,*robj,true,*outStream);
+    solver.solve(*outStream);
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 

@@ -1,28 +1,31 @@
 <ParameterList name="Inputs">
   <!-- ===========  PROBLEM INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="Problem">
-    <Parameter name="Check Derivatives"           type="bool"    value="false"      />
-    <Parameter name="Use Storage"                 type="bool"    value="true"       />
-    <Parameter name="Piecewise Constant Controls" type="bool"    value="true"       />
-    <Parameter name="Solve as QP"                 type="bool"    value="false"      />
-    <Parameter name="Solve using BB"              type="bool"    value="true"       />
-    <Parameter name="BB Output Level"             type="int"     value="2"          />
-    <Parameter name="Incumbent Heuristic"         type="int"     value="1"          />
-    <Parameter name="Number of X-Cells"           type="int"     value="16"         />
-    <Parameter name="Number of Y-Cells"           type="int"     value="8"          />
-    <Parameter name="Control Cost Type"           type="string"  value="TV"         />
-    <Parameter name="Control Cost"                type="double"  value="8.531e-3"   />
+    <Parameter name="Check Derivatives"               type="bool"    value="false"     />
+    <Parameter name="Use Storage"                     type="bool"    value="true"      />
+    <Parameter name="Piecewise Constant Controls"     type="bool"    value="false"     />
+    <Parameter name="Solve as QP"                     type="bool"    value="false"     />
+    <Parameter name="Solve using BB"                  type="bool"    value="true"      />
+    <Parameter name="BB Output Level"                 type="int"     value="0"         />
+    <Parameter name="Incumbent Heuristic"             type="int"     value="2"         />
+    <Parameter name="Number of X-Cells"               type="int"     value="16"        />
+    <Parameter name="Number of Y-Cells"               type="int"     value="8"         />
 <!--
-    <Parameter name="Control Cost"                type="double"  value="1e-2"       />
+    <Parameter name="Control Cost Type"               type="string"  value="L1"         />
+    <Parameter name="Control Cost Type"               type="string"  value="L2"         />
+    <Parameter name="Control Cost"                    type="double"  value="1e0"        />
 -->
-    <Parameter name="State Cost"                 type="double"  value="1e0"        />
-    <Parameter name="Integrality Cost"           type="double"  value="0e0"        />
-    <Parameter name="Sensor Width"               type="double"  value="3e-3"       />
-    <Parameter name="Sensor File Name"           type="string"  value="sensor.txt" />
-    <Parameter name="Number of Sensors"          type="int"     value="200"        />
-    <Parameter name="Order of FE Discretization" type="int"     value="1"          />
-    <Parameter name="Cubature Degree"            type="int"     value="8"          />
-    <Parameter name="Problem Dimension"          type="int"     value="2"          />
+    <Parameter name="Control Cost Type"               type="string"  value="TV"         />
+    <Parameter name="Control Cost"                    type="double"  value="8.531e-3"   />
+    <Parameter name="State Cost"                      type="double"  value="1e0"        />
+    <Parameter name="Integrality Cost"                type="double"  value="0e0"        />
+    <Parameter name="Sensor Width"                    type="double"  value="3e-3"       />
+    <Parameter name="Sensor File Name"                type="string"  value="sensor.txt" />
+    <Parameter name="Number of Sensors"               type="int"     value="200"        />
+    <Parameter name="Order of FE Discretization"      type="int"     value="1"          />
+    <Parameter name="Order of Control Discretization" type="int"     value="0"          />
+    <Parameter name="Cubature Degree"                 type="int"     value="8"          />
+    <Parameter name="Problem Dimension"               type="int"     value="2"          />
   </ParameterList>
 
   <!-- ===========  GEOMETRY INPUT PARAMETER SUBLIST  =========== -->
@@ -31,8 +34,8 @@
     <Parameter name="Height"                     type="double"  value="1.0"  />
     <Parameter name="X0"                         type="double"  value="0.0"  />
     <Parameter name="Y0"                         type="double"  value="0.0"  />
-    <Parameter name="NX"                         type="int"     value="128"  />
-    <Parameter name="NY"                         type="int"     value="64"   />
+    <Parameter name="NX"                         type="int"     value="16"   />
+    <Parameter name="NY"                         type="int"     value="8"   />
     <Parameter name="Partition type"             type="int"     value="1"    />
   </ParameterList>
 
@@ -43,7 +46,7 @@
       <Parameter name="Lump Riesz Map" type="bool" value="false" />
     </ParameterList>
     <ParameterList name="Opt">
-      <Parameter name="Use Riesz Map"  type="bool" value="true" />
+      <Parameter name="Use Riesz Map"  type="bool" value="false" />
       <Parameter name="Lump Riesz Map" type="bool" value="true" />
     </ParameterList>
   </ParameterList>
@@ -56,7 +59,7 @@
     </ParameterList>
     <ParameterList name="MueLu">
       <Parameter name="verbosity"                 type="string"  value="none"          />
-      <Parameter name="number of equations"       type="int"     value="2"             />
+      <Parameter name="number of equations"       type="int"     value="1"             />
       <Parameter name="problem: symmetric"        type="bool"    value="false"         />
       <Parameter name="multigrid algorithm"       type="string"  value="sa"            />
       <Parameter name="coarse: type"              type="string"  value="KLU2"          />
@@ -88,7 +91,7 @@
   <ParameterList name="General">
     <Parameter name="Variable Objective Function"            type="bool"   value="false" />
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
-    <Parameter name="Print Verbosity"                        type="int"    value="0"     />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />
@@ -160,12 +163,11 @@
 
     <!-- ===========  TRUST REGION  =========== -->
     <ParameterList name="Trust Region">
-      <Parameter name="Subproblem Solver"                    type="string" value="Lin-More" />
-      <Parameter name="Subproblem Model"                     type="string" value="Lin-More" />
-<!--
       <Parameter name="Subproblem Solver"                    type="string" value="Truncated CG" />
+      <Parameter name="Subproblem Model"                     type="string" value="Lin-More"     />
+<!--
       <Parameter name="Subproblem Model"                     type="string" value="Kelley-Sachs" />
-      <Parameter name="Subproblem Model"                     type="string" value="Coleman-Li" />
+      <Parameter name="Subproblem Model"                     type="string" value="Coleman-Li"   />
 -->
       <Parameter name="Initial Radius"                       type="double" value="1e3"          />
       <Parameter name="Maximum Radius"                       type="double" value="1.e8"         />
@@ -259,7 +261,7 @@
 
   <!-- ===========  STATUS TEST SUBLIST  =========== -->
   <ParameterList name="Status Test">
-    <Parameter name="Gradient Tolerance"   type="double" value="1.e-6"  />
+    <Parameter name="Gradient Tolerance"   type="double" value="1.e-4"  />
     <Parameter name="Constraint Tolerance" type="double" value="1.e-8"  />
     <Parameter name="Step Tolerance"       type="double" value="1.e-16" />
     <Parameter name="Iteration Limit"      type="int"    value="10000"  />

@@ -252,7 +252,7 @@ iallreduceImpl (const InputViewType& sendbuf,
 #else
 
 //No MPI: reduction is always the same as input.
-template<class InputViewType, class OutputViewType>
+template<class InputViewType, class OutputViewType, bool assumeGPUAwareMPI>
 std::shared_ptr<CommRequest>
 iallreduceImpl (const InputViewType& sendbuf,
             const OutputViewType& recvbuf,
@@ -260,6 +260,7 @@ iallreduceImpl (const InputViewType& sendbuf,
             const ::Teuchos::Comm<int>&)
 {
   Kokkos::deep_copy(recvbuf, sendbuf);
+  return emptyCommRequest();
 }
 
 #endif // HAVE_TPETRACORE_MPI

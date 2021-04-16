@@ -63,8 +63,8 @@ private:
   std::vector<int> sidesets_, sideids_;
   std::vector<Real> loadMagnitude_;
   std::vector<Real> loadPolar_, loadAzimuth_;
-  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > bdryCellNodes_;
-  std::vector<std::vector<std::vector<int> > > bdryCellLocIds_;
+  std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> bdryCellNodes_;
+  std::vector<std::vector<std::vector<int>>> bdryCellLocIds_;
   int dim_, offset_;
 
 protected:
@@ -148,6 +148,15 @@ public:
       loadPolar_.clear();
       loadAzimuth_.clear();
     }
+    else if (ex == "3D L Beam") {
+      dim_ = 3;
+      offset_ = 0;
+      sidesets_.push_back(1);
+      sideids_.push_back(1);
+      loadMagnitude_.push_back(static_cast<Real>(100));
+      loadPolar_.push_back(static_cast<Real>(270));
+      loadAzimuth_.push_back(static_cast<Real>(90));
+    }
     else {
       if (parlist.isSublist("Traction")) {
         // Grab problem dimension
@@ -204,8 +213,8 @@ public:
     return (sidesets_.size()==0);
   }
 
-  void setCellNodes(const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > &bdryCellNodes,
-                    const std::vector<std::vector<std::vector<int> > > &bdryCellLocIds) {
+  void setCellNodes(const std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>> &bdryCellNodes,
+                    const std::vector<std::vector<std::vector<int>>> &bdryCellLocIds) {
     bdryCellNodes_  = bdryCellNodes;
     bdryCellLocIds_ = bdryCellLocIds;
   }
@@ -254,26 +263,29 @@ public:
     return val;
   }
 
-  void compute(std::vector<std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > > > &traction,
-               const std::vector<std::vector<ROL::Ptr<FE<Real> > > >                               &fe,
-               const std::vector<Real>                                                                 &param,
-               const Real                                                                               scale = 1) const {
+  void compute(std::vector<std::vector<std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>>>> &traction,
+               const std::vector<std::vector<ROL::Ptr<FE<Real>>>>                              &fe,
+               const std::vector<Real>                                                         &param,
+               const Real                                                                       scale = Real(1)) const {
     traction.clear();
     traction.resize(bdryCellLocIds_.size());
     const int numSideSets = sidesets_.size();
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        traction[sidesets_[i]].resize(bdryCellLocIds_[sidesets_[i]].size());
-        const int numCellsSide = bdryCellLocIds_[sidesets_[i]][sideids_[i]].size();
-        if (numCellsSide > 0) {
-          traction[sidesets_[i]][sideids_[i]].resize(dim_);
-          const int numCubPerSide = fe[0][0]->gradN()->dimension(2);
-          for (int k = 0; k < dim_; ++k) {
-            traction[sidesets_[i]][sideids_[i]][k]
-              = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
-            for (int c = 0; c < numCellsSide; ++c) {
-              for (int p = 0; p < numCubPerSide; ++p) {
-                (*traction[sidesets_[i]][sideids_[i]][k])(c,p) = scale*evaluate(k,i,param);
+        const int numLocalSideIds = bdryCellLocIds_[sidesets_[i]].size();
+        traction[sidesets_[i]].resize(numLocalSideIds);
+        for (int j = 0; j < numLocalSideIds; ++j) {
+          const int numCellsSide = bdryCellLocIds_[sidesets_[i]][j].size();
+          if (numCellsSide > 0) {
+            const int numCubPerSide = fe[sidesets_[i]][j]->cubPts()->dimension(1);
+            traction[sidesets_[i]][j].resize(dim_);
+            for (int k = 0; k < dim_; ++k) {
+              traction[sidesets_[i]][j][k]
+                = ROL::makePtr<Intrepid::FieldContainer<Real>>(numCellsSide, numCubPerSide);
+              for (int c = 0; c < numCellsSide; ++c) {
+                for (int p = 0; p < numCubPerSide; ++p) {
+                  (*traction[sidesets_[i]][j][k])(c,p) = scale*evaluate(k,i,param);
+                }
               }
             }
           }
@@ -282,34 +294,37 @@ public:
     }
   }
 
-  void apply(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real> > > &R,
-             const std::vector<std::vector<ROL::Ptr<FE<Real> > > >   &fe,
-             const std::vector<Real>                                     &param,
-             const Real                                                   scale = 1) const {
+  void apply(std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> &R,
+             const std::vector<std::vector<ROL::Ptr<FE<Real>>>>    &fe,
+             const std::vector<Real>                               &param,
+             const Real                                             scale = Real(1)) const {
     const int numSideSets = sidesets_.size();
     const int nf          = R[0]->dimension(1);
     if (numSideSets > 0) {
       for (int i = 0; i < numSideSets; ++i) {
-        const int numCellsSide = bdryCellLocIds_[sidesets_[i]][sideids_[i]].size();
-        if (numCellsSide > 0) {
-          const int numCubPerSide = fe[0][0]->gradN()->dimension(2);
-          for (int k = 0; k < dim_; ++k) {
-            Intrepid::FieldContainer<Real> traction(numCellsSide, numCubPerSide);
-            for (int c = 0; c < numCellsSide; ++c) {
-              for (int p = 0; p < numCubPerSide; ++p) {
-                traction(c,p) = scale*evaluate(k,i,param);
+        const int numLocalSideIds = bdryCellLocIds_[sidesets_[i]].size();
+        for (int j = 0; j < numLocalSideIds; ++j) {
+          const int numCellsSide = bdryCellLocIds_[sidesets_[i]][j].size();
+          if (numCellsSide > 0) {
+            const int numCubPerSide = fe[sidesets_[i]][j]->cubPts()->dimension(1);
+            for (int k = 0; k < dim_; ++k) {
+              Intrepid::FieldContainer<Real> traction(numCellsSide, numCubPerSide);
+              for (int c = 0; c < numCellsSide; ++c) {
+                for (int p = 0; p < numCubPerSide; ++p) {
+                  traction(c,p) = scale*evaluate(k,i,param);
+                }
               }
-            }
-            Intrepid::FieldContainer<Real> tractionResidual(numCellsSide, nf);
-            Intrepid::FunctionSpaceTools::integrate<Real>(tractionResidual,
-                                                          traction,
-                                                          *(fe[sidesets_[i]][sideids_[i]]->NdetJ()),
-                                                          Intrepid::COMP_CPP, false);
-            // Add Robin residual to volume residual
-            for (int l = 0; l < numCellsSide; ++l) {
-              int cidx = bdryCellLocIds_[sidesets_[i]][sideids_[i]][l];
-              for (int m = 0; m < nf; ++m) { 
-                (*R[k])(cidx,m) += tractionResidual(l,m);
+              Intrepid::FieldContainer<Real> tractionResidual(numCellsSide, nf);
+              Intrepid::FunctionSpaceTools::integrate<Real>(tractionResidual,
+                                                            traction,
+                                                            *fe[sidesets_[i]][j]->NdetJ(),
+                                                            Intrepid::COMP_CPP, false);
+              // Add traction residual to volume residual
+              for (int l = 0; l < numCellsSide; ++l) {
+                int cidx = bdryCellLocIds_[sidesets_[i]][j][l];
+                for (int m = 0; m < nf; ++m) {
+                  (*R[k])(cidx,m) += tractionResidual(l,m);
+                }
               }
             }
           }

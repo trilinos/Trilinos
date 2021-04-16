@@ -92,7 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   // Initialize matrix and expected value of SpMV product
   {
     expected.putScalar(0.);
-    auto expectedData = expected.getDataNonConst();
+    auto expectedData = Kokkos::subview(expected.getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
     for (size_t i = 0; i < map->getNodeNumElements(); i++) {
 
       GO gid = map->getGlobalElement(i);
@@ -150,9 +150,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
 
   // Initialize domain vector for SpMV
   {
-    auto xData = x.getDataNonConst();
+    auto xData = x.getLocalViewHost(Tpetra::Access::OverwriteAll);
     for (size_t i = 0; i < map->getNodeNumElements(); i++) 
-      xData[i] = map->getGlobalElement(i);
+      xData(i, 0) = map->getGlobalElement(i);
   }
 
   Amat.apply(x, y);
@@ -160,13 +160,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
   // Test product for correctness
   int ierr = 0;
   {
-    auto expectedData = expected.getData();
-    auto yData = y.getData();
+    auto expectedData = expected.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto yData = y.getLocalViewHost(Tpetra::Access::ReadOnly);
 
     for (size_t i = 0; i < map->getNodeNumElements(); i++) {
-      if (yData[i] != expectedData[i]) {
+      if (yData(i, 0) != expectedData(i, 0)) {
         std::cout << me << " of " << np << ": y[" << map->getGlobalElement(i)
-                  << "] " << yData[i] << " != " << expectedData[i]
+                  << "] " << yData(i, 0) << " != " << expectedData(i, 0)
                   << " expected" << std::endl;
         ierr++;
       }

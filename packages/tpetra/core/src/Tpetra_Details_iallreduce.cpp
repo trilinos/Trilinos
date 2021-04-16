@@ -149,7 +149,7 @@ iallreduce (const int localValue,
   localView(0) = localValue;
   Kokkos::View<int*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
     globalView(&globalValue, 1);
-  return ::Tpetra::Details::Impl::iallreduceImpl<decltype(localView), decltype(globalView), false>(localView, globalView, op, comm);
+  return ::Tpetra::Details::iallreduce<decltype(localView), decltype(globalView)>(localView, globalView, op, comm);
 }
 
 } // namespace Details

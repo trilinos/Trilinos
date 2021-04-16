@@ -433,7 +433,8 @@ struct OperatorTensorDecomposition
     
     bool tensorPoints_; // if true, input1 and input2 refer to values at decomposed points, and P = P1 * P2.  If false, then the two inputs refer to points in the full-dimensional space, and their point lengths are the same as that of the final output.
     
-    Kokkos::vector<RankCombinationType> rank_combinations_; // indicates the policy by which the input views will be combined in output view
+    using RankCombinationViewType = typename TensorViewIteratorType::RankCombinationViewType;
+    RankCombinationViewType rank_combinations_;// indicates the policy by which the input views will be combined in output view
     
     double weight_;
     
@@ -470,17 +471,18 @@ struct OperatorTensorDecomposition
       
       const ordinal_type outputRank = output.rank();
       INTREPID2_TEST_FOR_EXCEPTION(outputRank > max_rank, std::invalid_argument, "Unsupported view combination.");
-      rank_combinations_ = Kokkos::vector<RankCombinationType>(max_rank);
+      rank_combinations_ = RankCombinationViewType("Rank_combinations_", max_rank);
+      auto rank_combinations_host = Kokkos::create_mirror_view(rank_combinations_);
       
-      rank_combinations_[0] = TensorViewIteratorType::TENSOR_PRODUCT; // field combination is always tensor product
-      rank_combinations_[1] = tensorPoints ? TensorViewIteratorType::TENSOR_PRODUCT : TensorViewIteratorType::DIMENSION_MATCH; // tensorPoints controls interpretation of the point dimension
+      rank_combinations_host[0] = TensorViewIteratorType::TENSOR_PRODUCT; // field combination is always tensor product
+      rank_combinations_host[1] = tensorPoints ? TensorViewIteratorType::TENSOR_PRODUCT : TensorViewIteratorType::DIMENSION_MATCH; // tensorPoints controls interpretation of the point dimension
       for (ordinal_type d=2; d<max_rank; d++)
       {
         // d >= 2 have the interpretation of spatial dimensions (gradients, etc.)
         // we let the extents of the containers determine what we're doing here
         if ((inputValues1.extent_int(d) == inputValues2.extent_int(d)) && (output.extent_int(d) == 1))
         {
-          rank_combinations_[d] = TensorViewIteratorType::TENSOR_CONTRACTION;
+          rank_combinations_host[d] = TensorViewIteratorType::TENSOR_CONTRACTION;
         }
         else if (((inputValues1.extent_int(d) == output.extent_int(d)) && (inputValues2.extent_int(d) == 1))
                  || ((inputValues2.extent_int(d) == output.extent_int(d)) && (inputValues1.extent_int(d) == 1))
@@ -488,18 +490,18 @@ struct OperatorTensorDecomposition
         {
           // this looks like multiplication of a vector by a scalar, resulting in a vector
           // this can be understood as a tensor product
-          rank_combinations_[d] = TensorViewIteratorType::TENSOR_PRODUCT;
+          rank_combinations_host[d] = TensorViewIteratorType::TENSOR_PRODUCT;
         }
         else if ((inputValues1.extent_int(d) == inputValues2.extent_int(d)) && (output.extent_int(d) == inputValues1.extent_int(d) * inputValues2.extent_int(d)))
         {
           // this is actually a generalization of the above case: a tensor product, something like a vector outer product
-          rank_combinations_[d] = TensorViewIteratorType::TENSOR_PRODUCT;
+          rank_combinations_host[d] = TensorViewIteratorType::TENSOR_PRODUCT;
         }
         else if ((inputValues1.extent_int(d) == inputValues2.extent_int(d)) && (output.extent_int(d) == inputValues1.extent_int(d)))
         {
           // it's a bit weird (I'm not aware of the use case, in the present context), but we can handle this case by adopting DIMENSION_MATCH here
           // this is something like MATLAB's .* and .+ operators, which operate entry-wise
-          rank_combinations_[d] = TensorViewIteratorType::DIMENSION_MATCH;
+          rank_combinations_host[d] = TensorViewIteratorType::DIMENSION_MATCH;
         }
         else
         {
@@ -509,6 +511,7 @@ struct OperatorTensorDecomposition
           INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "unable to find an interpretation for this combination of views");
         }
       }
+      Kokkos::deep_copy(rank_combinations_,rank_combinations_host);
     }
     
     KOKKOS_INLINE_FUNCTION

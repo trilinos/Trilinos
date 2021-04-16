@@ -67,6 +67,7 @@ Assembler<Real>::Assembler(
   setDiscretization(parlist,ROL::nullPtr,outStream);
   setParallelStructure(parlist,outStream);
   setCellNodes(outStream);
+  store_ = parlist.sublist("Assembler").get("Store Overlap Vectors",true);
 }
 
 // Constructor: Discretization set from MeshManager input
@@ -84,6 +85,7 @@ Assembler<Real>::Assembler(
   setDiscretization(parlist,meshMgr,outStream);
   setParallelStructure(parlist,outStream);
   setCellNodes(outStream);
+  store_ = parlist.sublist("Assembler").get("Store Overlap Vectors",true);
 }
 // Constuctor: Discretization set from ParameterList
 template<class Real>
@@ -100,6 +102,7 @@ Assembler<Real>::Assembler(
   setDiscretization(parlist,ROL::nullPtr,outStream);
   setParallelStructure(parlist,outStream);
   setCellNodes(outStream);
+  store_ = parlist.sublist("Assembler").get("Store Overlap Vectors",true);
 }
 
 // Constructor: Discretization set from MeshManager input
@@ -118,6 +121,7 @@ Assembler<Real>::Assembler(
   setDiscretization(parlist,meshMgr,outStream);
   setParallelStructure(parlist,outStream);
   setCellNodes(outStream);
+  store_ = parlist.sublist("Assembler").get("Store Overlap Vectors",true);
 }
 
 template<class Real>
@@ -147,11 +151,16 @@ void Assembler<Real>::assemblePDEResidual(ROL::Ptr<Tpetra::MultiVector<>> &r,
     Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEResidual);
   #endif
   // Initialize residual vectors if not done so
-  if ( r == ROL::nullPtr ) { // Unique components of residual vector
+  if ( r == ROL::nullPtr ) // Unique components of residual vector
     r = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, 1, true);
+  ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+  if ( store_ ) {
+    if ( pde_vecR_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+      pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+    overlapVec = pde_vecR_overlap_;
   }
-  if ( pde_vecR_overlap_ == ROL::nullPtr ) { // Overlapping components of residual vector
-    pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+  else {
+    overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
   }
   // Get u_coeff from u and z_coeff from z
   ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
@@ -160,7 +169,7 @@ void Assembler<Real>::assemblePDEResidual(ROL::Ptr<Tpetra::MultiVector<>> &r,
   // Assemble
   ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
   pde->residual(localVal,u_coeff,z_coeff,z_param);
-  assembleFieldVector( r, localVal, pde_vecR_overlap_, dofMgr1_ );
+  assembleFieldVector( r, localVal, overlapVec, dofMgr1_ );
 }
 
 template<class Real>
@@ -241,22 +250,27 @@ void Assembler<Real>::assemblePDEJacobian3(ROL::Ptr<Tpetra::MultiVector<>> &J3,
   #endif
   if ( z_param != ROL::nullPtr ) {
     try {
-      int size = static_cast<int>(z_param->size());
+      const int size = static_cast<int>(z_param->size());
+      // Initialize Jacobian storage if not done so already
+      if (J3 == ROL::nullPtr)
+        J3 = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, size, true);
+      ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+      if ( store_ ) {
+        if ( pde_vecJ3_overlap_ == ROL::nullPtr)
+          pde_vecJ3_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, size, true);
+        overlapVec = pde_vecJ3_overlap_;
+      }
+      else {
+        overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, size, true);
+      }
       // Get u_coeff from u and z_coeff from z
       ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff, z_coeff;
       getCoeffFromStateVector(u_coeff,u);
       getCoeffFromControlVector(z_coeff,z);
-      // Initialize Jacobian storage if not done so already
-      if (J3 == ROL::nullPtr) {
-        J3 = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, size, true);
-      }
-      if ( pde_vecJ3_overlap_ == ROL::nullPtr) {
-        pde_vecJ3_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, size, true);
-      }
       // Assemble
       std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> localVal(size,ROL::nullPtr);
       pde->Jacobian_3(localVal,u_coeff,z_coeff,z_param);
-      assembleParamFieldMatrix( J3, localVal, pde_vecJ3_overlap_, dofMgr1_ );
+      assembleParamFieldMatrix( J3, localVal, overlapVec, dofMgr1_ );
     }
     catch ( Exception::Zero & ez ) {
       throw Exception::Zero(">>> (Assembler::assemblePDEJacobian3): Jacobian is zero.");
@@ -267,6 +281,170 @@ void Assembler<Real>::assemblePDEJacobian3(ROL::Ptr<Tpetra::MultiVector<>> &J3,
   }
   else {
     throw Exception::NotImplemented(">>> (Assembler::assemblePDEJacobian3): Jacobian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyJacobian1(ROL::Ptr<Tpetra::MultiVector<>> &Jv1,
+                                                const ROL::Ptr<PDE<Real>> &pde,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyJacobian1);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Jv1 == ROL::nullPtr ) // Unique components of residual vector
+      Jv1 = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecR_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+      overlapVec = pde_vecR_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, u_coeff, z_coeff;
+    getCoeffFromStateVector(v_coeff,v);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyJacobian_1(localVal,v_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Jv1, localVal, pde_vecR_overlap_, dofMgr1_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyJacobian1): Jacobian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyJacobian1): Jacobian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyAdjointJacobian1(ROL::Ptr<Tpetra::MultiVector<>> &Jv1,
+                                                       const ROL::Ptr<PDE<Real>> &pde,
+                                                       const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                       const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                       const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                       const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyAdjointJacobian1);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Jv1 == ROL::nullPtr ) // Unique components of residual vector
+      Jv1 = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecR_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+      overlapVec = pde_vecR_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, u_coeff, z_coeff;
+    getCoeffFromStateVector(v_coeff,v);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyAdjointJacobian_1(localVal,v_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Jv1, localVal, overlapVec, dofMgr1_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyAdjointJacobian1): Jacobian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyAdjointJacobian1): Jacobian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyJacobian2(ROL::Ptr<Tpetra::MultiVector<>> &Jv2,
+                                                const ROL::Ptr<PDE<Real>> &pde,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyJacobian2);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Jv2 == ROL::nullPtr ) // Unique components of residual vector
+      Jv2 = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecR_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+      overlapVec = pde_vecR_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, u_coeff, z_coeff;
+    getCoeffFromControlVector(v_coeff,v);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyJacobian_2(localVal,v_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Jv2, localVal, overlapVec, dofMgr1_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyJacobian2): Jacobian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyJacobian2): Jacobian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyAdjointJacobian2(ROL::Ptr<Tpetra::MultiVector<>> &Jv2,
+                                                       const ROL::Ptr<PDE<Real>> &pde,
+                                                       const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                       const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                       const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                       const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyAdjointJacobian2);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Jv2 == ROL::nullPtr ) // Unique components of residual vector
+      Jv2 = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueControlMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecJ2_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecJ2_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapControlMap_, 1, true);
+      overlapVec = pde_vecJ2_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapControlMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, u_coeff, z_coeff;
+    getCoeffFromStateVector(v_coeff,v);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyAdjointJacobian_2(localVal,v_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Jv2, localVal, overlapVec, dofMgr2_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyAdjointJacobian2): Jacobian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyAdjointJacobian2): Jacobian not implemented.");
   }
 }
 
@@ -550,6 +728,178 @@ void Assembler<Real>::assemblePDEHessian33(ROL::Ptr<std::vector<std::vector<Real
   }
   else {
     throw Exception::NotImplemented(">>> (Assembler::assemblePDEHessian33): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyHessian11(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                                const ROL::Ptr<PDE<Real>> &pde,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyJacobian2);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Hv == ROL::nullPtr ) // Unique components of residual vector
+      Hv = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecR_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+      overlapVec = pde_vecR_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, l_coeff, u_coeff, z_coeff;
+    getCoeffFromStateVector(v_coeff,v);
+    getCoeffFromStateVector(l_coeff,l);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyHessian_11(localVal,v_coeff,l_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Hv, localVal, overlapVec, dofMgr1_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyHessian11): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyHessian11): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyHessian12(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                                const ROL::Ptr<PDE<Real>> &pde,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyJacobian2);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Hv == ROL::nullPtr ) // Unique components of residual vector
+      Hv = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueControlMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecJ2_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecJ2_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapControlMap_, 1, true);
+      overlapVec = pde_vecJ2_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapControlMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, l_coeff, u_coeff, z_coeff;
+    getCoeffFromStateVector(v_coeff,v);
+    getCoeffFromStateVector(l_coeff,l);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyHessian_12(localVal,v_coeff,l_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Hv, localVal, overlapVec, dofMgr2_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyHessian12): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyHessian12): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyHessian21(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                                const ROL::Ptr<PDE<Real>> &pde,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyJacobian2);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Hv == ROL::nullPtr ) // Unique components of residual vector
+      Hv = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueResidualMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecR_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecR_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+      overlapVec = pde_vecR_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapResidualMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, l_coeff, u_coeff, z_coeff;
+    getCoeffFromControlVector(v_coeff,v);
+    getCoeffFromStateVector(l_coeff,l);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyHessian_21(localVal,v_coeff,l_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Hv, localVal, overlapVec, dofMgr2_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyHessian21): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyHessian21): Hessian not implemented.");
+  }
+}
+
+template<class Real>
+void Assembler<Real>::assemblePDEapplyHessian22(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                                const ROL::Ptr<PDE<Real>> &pde,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                                const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                                const ROL::Ptr<const std::vector<Real>> & z_param) {
+//  #ifdef ROL_TIMERS
+//    Teuchos::TimeMonitor LocalTimer(*ROL::PDEOPT::AssemblePDEapplyJacobian2);
+//  #endif
+  try {
+    // Initialize residual vectors if not done so
+    if ( Hv == ROL::nullPtr ) // Unique components of residual vector
+      Hv = ROL::makePtr<Tpetra::MultiVector<>>(myUniqueControlMap_, 1, true);
+    ROL::Ptr<Tpetra::MultiVector<>> overlapVec;
+    if ( store_ ) {
+      if ( pde_vecJ2_overlap_ == ROL::nullPtr ) // Overlapping components of residual vector
+        pde_vecJ2_overlap_ = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapControlMap_, 1, true);
+      overlapVec = pde_vecJ2_overlap_;
+    }
+    else {
+      overlapVec = ROL::makePtr<Tpetra::MultiVector<>>(myOverlapControlMap_, 1, true);
+    }
+    // Get u_coeff from u and z_coeff from z
+    ROL::Ptr<Intrepid::FieldContainer<Real>> v_coeff, l_coeff, u_coeff, z_coeff;
+    getCoeffFromControlVector(v_coeff,v);
+    getCoeffFromStateVector(l_coeff,l);
+    getCoeffFromStateVector(u_coeff,u);
+    getCoeffFromControlVector(z_coeff,z);
+    // Assemble
+    ROL::Ptr<Intrepid::FieldContainer<Real>> localVal;
+    pde->applyHessian_22(localVal,v_coeff,l_coeff,u_coeff,z_coeff,z_param);
+    assembleFieldVector( Hv, localVal, overlapVec, dofMgr2_ );
+  }
+  catch ( Exception::Zero & ez ) {
+    throw Exception::Zero(">>> (Assembler::assemblePDEapplyHessian22): Hessian is zero.");
+  }
+  catch ( Exception::NotImplemented & eni ) {
+    throw Exception::NotImplemented(">>> (Assembler::assemblePDEapplyHessian22): Hessian not implemented.");
   }
 }
 /***************************************************************************/
@@ -2207,6 +2557,24 @@ void Assembler<Real>::inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
 }
 
 template<class Real>
+void Assembler<Real>::printDataPDE(const ROL::Ptr<PDE<Real>> &pde,
+                                   const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                   const ROL::Ptr<const Tpetra::MultiVector<>> &z,
+                                   const ROL::Ptr<const std::vector<Real>> &z_param) const {
+  std::stringstream tag;
+  if (numProcs_==1) tag << "";
+  else              tag << "_" << myRank_ << "_" << numProcs_;
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> u_coeff;
+  getCoeffFromStateVector(u_coeff,u);
+
+  ROL::Ptr<Intrepid::FieldContainer<Real>> z_coeff;
+  getCoeffFromControlVector(z_coeff,z);
+
+  pde->printData(tag.str(),u_coeff,z_coeff,z_param);
+}
+
+template<class Real>
 void Assembler<Real>::serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                                 const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                                 const std::string &filename,
@@ -2837,11 +3205,11 @@ void Assembler<Real>::assembleParamMatrix(ROL::Ptr<std::vector<std::vector<Real>
   int size = M->size();
   std::vector<ROL::Ptr<Intrepid::FieldContainer<Real>>> tmp(size,ROL::nullPtr);
   // Compute local matrix
-  for (int i = 0; i < size; ++i) {
-    for (int j = 0; j < size; ++j) {
-      transformToFieldPattern(val[i][j],dofMgr);
-    }
-  }
+  //for (int i = 0; i < size; ++i) {
+  //  for (int j = 0; j < size; ++j) {
+  //    transformToFieldPattern(val[i][j],dofMgr);
+  //  }
+  //}
   // Assemble PDE Jacobian wrt parametric controls
   int cnt = 0, matSize = static_cast<int>(0.5*static_cast<Real>((size+1)*size));
   std::vector<Real> myMat(matSize,static_cast<Real>(0));

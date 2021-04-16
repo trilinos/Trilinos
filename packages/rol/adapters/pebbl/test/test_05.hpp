@@ -41,139 +41,13 @@
 // ************************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
-#include "Teuchos_oblackholestream.hpp"
-#include "Teuchos_LAPACK.hpp"
-#include "Teuchos_GlobalMPISession.hpp"
-#include "Teuchos_Comm.hpp"
-#include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_CommHelpers.hpp"
+#include "test_01.hpp"
 
 // ROL_Types contains predefined constants and objects
-#include "ROL_StdVector.hpp"
-#include "ROL_Bounds.hpp"
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_Constraint_PEBBL.hpp"
-#include "ROL_OptimizationProblemFactory.hpp"
+#include "ROL_PEBBL_IntegerProblemFactory.hpp"
 
 template<class Real>
-class Constraint_SimpleBinary : public ROL::Constraint<Real> {
-private:
-  const Real budget_;
-
-  ROL::Ptr<std::vector<Real>> getVector(ROL::Vector<Real> &x) const {
-    return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
-  }
-
-  ROL::Ptr<const std::vector<Real>> getConstVector(const ROL::Vector<Real> &x) const {
-    return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-  }
-
-public:
-  Constraint_SimpleBinary(int budget = 4) : budget_(budget) {}
-
-  void value(ROL::Vector<Real> &c,
-       const ROL::Vector<Real> &x, 
-             Real &tol) {
-    ROL::Ptr<std::vector<Real> >       cp = getVector(c);
-    ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
-    int dim(xp->size());
-    (*cp)[0] = static_cast<Real>(0);
-    for (int i = 0; i < dim; ++i) {
-      (*cp)[0] += (*xp)[i];
-    }
-    (*cp)[0] -= static_cast<Real>(budget_);
-  }
-
-  void applyJacobian(ROL::Vector<Real> &jv,
-               const ROL::Vector<Real> &v,
-               const ROL::Vector<Real> &x, 
-                     Real &tol) {
-    ROL::Ptr<std::vector<Real> >      jvp = getVector(jv);
-    ROL::Ptr<const std::vector<Real> > vp = getConstVector(v);
-    (*jvp)[0] = static_cast<Real>(0);
-    int dim(vp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*jvp)[0] += (*vp)[i];
-    }
-  }
-
-  void applyAdjointJacobian(ROL::Vector<Real> &ajv,
-                      const ROL::Vector<Real> &v,
-                      const ROL::Vector<Real> &x, 
-                            Real &tol) {
-    ROL::Ptr<std::vector<Real> >      jvp = getVector(ajv);
-    ROL::Ptr<const std::vector<Real> > vp = getConstVector(v);
-    int dim(jvp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*jvp)[i] = (*vp)[0];
-    }
-  }
-
-  void applyAdjointHessian(ROL::Vector<Real> &ahwv,
-                     const ROL::Vector<Real> &w,
-                     const ROL::Vector<Real> &v,
-                     const ROL::Vector<Real> &x,
-                           Real &tol) {
-    ahwv.zero();
-  }
-};
-
-template<class Real>
-class Objective_SimpleBinary : public ROL::Objective<Real> {
-private:
-  const std::vector<Real> alpha_, beta_;
-
-  ROL::Ptr<std::vector<Real>> getVector(ROL::Vector<Real> &x) const {
-    return dynamic_cast<ROL::StdVector<Real>&>(x).getVector();
-  }
-
-  ROL::Ptr<const std::vector<Real>> getConstVector(const ROL::Vector<Real> &x) const {
-    return dynamic_cast<const ROL::StdVector<Real>&>(x).getVector();
-  }
-
-public:
-  Objective_SimpleBinary(const std::vector<Real> &alpha, const std::vector<Real> &beta)
-    : alpha_(alpha), beta_(beta) {}
-
-  Real value(const ROL::Vector<Real> &x, Real &tol) {
-    ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
-    const Real half(0.5);
-    int dim(xp->size());
-    Real val(0);
-    for (int i = 0; i < dim; ++i) {
-      val += half * alpha_[i] * (*xp)[i] * (*xp)[i] - beta_[i] * (*xp)[i];
-    }
-    return val;
-  }
-
-  void gradient(ROL::Vector<Real> &g,
-          const ROL::Vector<Real> &x,
-                Real &tol) {
-    ROL::Ptr<std::vector<Real> >       gp = getVector(g);
-    ROL::Ptr<const std::vector<Real> > xp = getConstVector(x);
-    int dim(xp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*gp)[i] = alpha_[i] * (*xp)[i] - beta_[i];
-    }
-  }
-
-  void hessVec(ROL::Vector<Real> &hv,
-         const ROL::Vector<Real> &v,
-         const ROL::Vector<Real> &x,
-               Real &tol ) {
-    ROL::Ptr<std::vector<Real> >      hvp = getVector(hv);
-    ROL::Ptr<const std::vector<Real> > vp = getConstVector(v);
-    int dim(vp->size());
-    for (int i = 0; i < dim; ++i) {
-      (*hvp)[i] = alpha_[i] * (*vp)[i];
-    }
-  }
-};
-
-template<class Real>
-class Test05Factory : public ROL::OptimizationProblemFactory<Real> {
+class Test05Factory : public ROL::PEBBL::IntegerProblemFactory<Real> {
 private:
   std::vector<Real> alpha_, beta_;
   const int N_;
@@ -188,60 +62,27 @@ public:
       alpha_[i] = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
       beta_[i]  = static_cast<Real>(rand())/static_cast<Real>(RAND_MAX);
     }
+    std::cout << std::endl;
     useIneq_ = pl.get("Use Inequality", true);
     budget_  = static_cast<Real>(pl.get("Budget", 3));
     xl_  = ROL::makePtr<ROL::StdVector<Real>>(N_,0.0);
     xu_  = ROL::makePtr<ROL::StdVector<Real>>(N_,1.0);
-    ilo_ = ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
-    iup_ = ROL::makePtr<ROL::StdVector<Real>>(1,budget_);
+    ilo_ = ROL::makePtr<ROL::StdVector<Real>>(1,-budget_);
+    iup_ = ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
   }
 
-  void update(void) {}
-
-  ROL::Ptr<ROL::Objective<Real>> buildObjective(void) {
-    return ROL::makePtr<Objective_SimpleBinary<Real>>(alpha_,beta_);
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildSolutionVector(void) {
-    return ROL::makePtr<ROL::StdVector<Real>>(N_,0.0);
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildBoundConstraint(void) {
-    return ROL::makePtr<ROL::Bounds<Real>>(xl_,xu_);
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildEqualityConstraint(void) {
-    if (!useIneq_) {
-      return ROL::makePtr<Constraint_SimpleBinary<Real>>(static_cast<int>(budget_));
-    }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildEqualityMultiplier(void) {
-    if (!useIneq_) {
-      return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
-    }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Constraint<Real>> buildInequalityConstraint(void) {
-    if (useIneq_) {
-      return ROL::makePtr<Constraint_SimpleBinary<Real>>(0);
-    }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::Vector<Real>> buildInequalityMultiplier(void) {
-    if (useIneq_) {
-      return ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
-    }
-    return ROL::nullPtr;
-  }
-
-  ROL::Ptr<ROL::BoundConstraint<Real>> buildInequalityBoundConstraint(void) {
-    if (useIneq_) {
-      return ROL::makePtr<ROL::Bounds<Real>>(ilo_,iup_);
-    }
-    return ROL::nullPtr;
+  ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>> build(void) {
+    ROL::Ptr<ROL::Objective<Real>>        obj = ROL::makePtr<Objective_SimpleBinary<Real>>(alpha_,beta_);
+    ROL::Ptr<ROL::Vector<Real>>             x = ROL::makePtr<ROL::StdVector<Real>>(N_,0.0);
+    ROL::Ptr<ROL::BoundConstraint<Real>>  bnd = ROL::makePtr<ROL::Bounds<Real>>(xl_,xu_);
+    ROL::Ptr<ROL::Constraint<Real>>      icon = ROL::makePtr<Constraint_SimpleBinary<Real>>(static_cast<int>(budget_));
+    ROL::Ptr<ROL::Vector<Real>>          imul = ROL::makePtr<ROL::StdVector<Real>>(1,0.0);
+    ROL::Ptr<ROL::BoundConstraint<Real>> ibnd = ROL::makePtr<ROL::Bounds<Real>>(ilo_,iup_);
+    ROL::Ptr<ROL::PEBBL::IntegerProblem<Real>>
+      problem = ROL::makePtr<ROL::PEBBL::IntegerProblem<Real>>(obj,x);
+    problem->addBoundConstraint(bnd);
+    if (useIneq_) problem->addLinearConstraint("Linear",icon,imul,ibnd);
+    else          problem->addLinearConstraint("Linear",icon,imul);
+    return problem;
   }
 };

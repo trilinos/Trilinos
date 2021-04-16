@@ -88,13 +88,13 @@ int main(int argc, char* argv[]) {
       *outStream << "  " << alpha[i];
     }
     *outStream << std::endl << std::endl;
-    ROL::Ptr<ROL::Objective<RealT> > obj
+    ROL::Ptr<ROL::Objective<RealT>> obj
       = ROL::makePtr<Objective_SimpleBinary<RealT>>(alpha);
     /**********************************************************************************************/
     /************************* CONSTRUCT CONSTRAINT ***********************************************/
     /**********************************************************************************************/
     int budget = 3;
-    ROL::Ptr<ROL::Constraint<RealT> > econ
+    ROL::Ptr<ROL::Constraint<RealT>> econ
       = ROL::makePtr<Constraint_SimpleBinary<RealT>>(budget);
     /**********************************************************************************************/
     /************************* CONSTRUCT BOUND CONSTRAINT *****************************************/
@@ -108,9 +108,13 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* SOLVE **************************************************************/
     /**********************************************************************************************/
-    ROL::OptimizationProblem<RealT> problem(obj,x,bnd,econ,emul);
-    problem.check(*outStream);
-    ROL::OptimizationSolver<RealT> solver(problem,*parlist);
+    ROL::Ptr<ROL::Problem<RealT>>
+      problem = ROL::makePtr<ROL::Problem<RealT>>(obj,x);
+    problem->addBoundConstraint(bnd);
+    problem->addLinearConstraint("Linear",econ,emul);
+    problem->finalize(false,true,*outStream);
+    problem->check(true,*outStream);
+    ROL::Solver<RealT> solver(problem,*parlist);
     *outStream << "Solve problem with no fixed binary variables"
                << std::endl << std::endl;
     clock_t start = clock();
@@ -131,23 +135,21 @@ int main(int argc, char* argv[]) {
     /**********************************************************************************************/
     /************************* ADD BINARY CONSTRAINTS AND SOLVE ***********************************/
     /**********************************************************************************************/
-    ROL::Ptr<ROL::Constraint_PEBBL<RealT>> econ_bin
-      = ROL::makePtr<ROL::Constraint_PEBBL<RealT>>();
     std::map<int,RealT> fixed;
     fixed.insert(std::pair<int,RealT>(2,0.0));
     fixed.insert(std::pair<int,RealT>(5,0.0));
     fixed.insert(std::pair<int,RealT>(3,1.0));
     fixed.insert(std::pair<int,RealT>(9,1.0));
+    ROL::Ptr<ROL::PEBBL::IntegerConstraint<RealT>> econ_bin
+      = ROL::makePtr<ROL::PEBBL::IntegerConstraint<RealT>>();
     econ_bin->add(fixed);
-    std::vector<ROL::Ptr<ROL::Constraint<RealT>>> econ_vec(2,ROL::nullPtr);
-    econ_vec[0] = econ;
-    econ_vec[1] = econ_bin;
-    std::vector<ROL::Ptr<ROL::Vector<RealT>>> emul_vec(2,ROL::nullPtr);
-    emul_vec[0] = emul;
-    emul_vec[1] = econ_bin->makeConstraintVector();
-    ROL::OptimizationProblem<RealT> problem_bin(obj,x,bnd,econ_vec,emul_vec);
-    problem_bin.check(*outStream);
-    ROL::OptimizationSolver<RealT> solver_bin(problem_bin,*parlist);
+    ROL::Ptr<ROL::Vector<RealT>> emul_bin
+      = econ_bin->makeConstraintVector();
+    problem->edit();
+    problem->addLinearConstraint("Integer",econ_bin,emul_bin);
+    problem->finalize(false,true,*outStream);
+    problem->check(true,*outStream);
+    ROL::Solver<RealT> solver_bin(problem,*parlist);
     *outStream << "Solve problem with {2,5} set to 0 and {3,9} set to 1"
                << std::endl << std::endl;
     clock_t start_bin = clock();
@@ -166,10 +168,10 @@ int main(int argc, char* argv[]) {
     *outStream << "Sum(x) = " << sum_bin << "  Budget = " << budget;
     *outStream << std::endl << std::endl;
 
-    errorFlag += ((*x_ptr)[2]==0.0 ? 0 : 1);
-    errorFlag += ((*x_ptr)[5]==0.0 ? 0 : 1);
-    errorFlag += ((*x_ptr)[3]==1.0 ? 0 : 1);
-    errorFlag += ((*x_ptr)[9]==1.0 ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[2]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[5]-0.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[3]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
+    errorFlag += (std::abs((*x_ptr)[9]-1.0)<std::sqrt(ROL::ROL_EPSILON<RealT>()) ? 0 : 1);
   }
   catch (std::logic_error& err) {
     *outStream << err.what() << "\n";

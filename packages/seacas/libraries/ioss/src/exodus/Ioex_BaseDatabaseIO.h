@@ -192,8 +192,8 @@ namespace Ioex {
     int64_t put_field_internal(const Ioss::Blob *blob, const Ioss::Field &field, void *data,
                                size_t data_size) const override             = 0;
 
-    virtual void write_meta_data(bool appending) = 0;
-    void         write_results_metadata(bool gather_data, bool appending);
+    virtual void write_meta_data(Ioss::IfDatabaseExistsBehavior behavior) = 0;
+    void         write_results_metadata(bool gather_data, Ioss::IfDatabaseExistsBehavior behavior);
 
     void openDatabase__() const override { get_file_pointer(); }
 
@@ -234,7 +234,7 @@ namespace Ioex {
     void add_attribute_fields(ex_entity_type entity_type, Ioss::GroupingEntity *block,
                               int attribute_count, const std::string &type);
 
-    void common_write_meta_data(bool appending);
+    void common_write_meta_data(Ioss::IfDatabaseExistsBehavior behavior);
     void output_other_meta_data();
 
     int64_t internal_add_results_fields(ex_entity_type type, Ioss::GroupingEntity *entity,

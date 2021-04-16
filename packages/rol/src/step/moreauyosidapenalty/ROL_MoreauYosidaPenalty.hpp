@@ -65,7 +65,7 @@ template <class Real>
 class MoreauYosidaPenalty : public Objective<Real> {
 private:
   const ROL::Ptr<Objective<Real> > obj_;
-  const ROL::Ptr<BoundConstraint<Real> > con_;
+  const ROL::Ptr<BoundConstraint<Real> > bnd_;
 
   ROL::Ptr<Vector<Real> > g_;
   ROL::Ptr<Vector<Real> > l_;
@@ -90,38 +90,38 @@ private:
   bool updatePenalty_;
 
   void computePenalty(const Vector<Real> &x) {
-    if ( con_->isActivated() ) {
+    if ( bnd_->isActivated() ) {
       Real one = 1.0;
       if ( !isConEvaluated_ ) {
         xlam_->set(x);
         xlam_->axpy(one/mu_,*lam_);
 
-        if ( con_->isFeasible(*xlam_) ) {
+        if ( bnd_->isFeasible(*xlam_) ) {
           l1_->zero(); dl1_->zero();
           u1_->zero(); du1_->zero();
         }
         else {
           // Compute lower penalty component
           l1_->set(*l_);
-          con_->pruneLowerInactive(*l1_,*xlam_);
+          bnd_->pruneLowerInactive(*l1_,*xlam_);
           tmp_->set(*xlam_);
-          con_->pruneLowerInactive(*tmp_,*xlam_);
+          bnd_->pruneLowerInactive(*tmp_,*xlam_);
           l1_->axpy(-one,*tmp_);
 
           // Compute upper penalty component
           u1_->set(*xlam_);
-          con_->pruneUpperInactive(*u1_,*xlam_);
+          bnd_->pruneUpperInactive(*u1_,*xlam_);
           tmp_->set(*u_);
-          con_->pruneUpperInactive(*tmp_,*xlam_);
+          bnd_->pruneUpperInactive(*tmp_,*xlam_);
           u1_->axpy(-one,*tmp_);
 
           // Compute derivative of lower penalty component
           dl1_->set(l1_->dual());
-          con_->pruneLowerInactive(*dl1_,*xlam_);
+          bnd_->pruneLowerInactive(*dl1_,*xlam_);
 
           // Compute derivative of upper penalty component
           du1_->set(u1_->dual());
-          con_->pruneUpperInactive(*du1_,*xlam_);
+          bnd_->pruneUpperInactive(*du1_,*xlam_);
         }
 
         isConEvaluated_ = true;
@@ -130,7 +130,7 @@ private:
   }
 
   void initialize(const ROL::Vector<Real> &x,
-                  const ROL::Ptr<ROL::BoundConstraint<Real> > &con) {
+                  const ROL::Ptr<ROL::BoundConstraint<Real> > &bnd) {
     g_    = x.dual().clone();
     l_    = x.clone();
     l1_   = x.clone();
@@ -145,8 +145,8 @@ private:
     lam_  = x.clone();
     tmp_  = x.clone();
 
-    l_->set(*con_->getLowerBound());
-    u_->set(*con_->getUpperBound());
+    l_->set(*bnd_->getLowerBound());
+    u_->set(*bnd_->getUpperBound());
 
     lam_->zero();
     //lam_->set(*u_);
@@ -158,22 +158,24 @@ public:
   ~MoreauYosidaPenalty() {}
 
   MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
-                      const ROL::Ptr<BoundConstraint<Real> > &con, 
+                      const ROL::Ptr<BoundConstraint<Real> > &bnd, 
                       const ROL::Vector<Real> &x,
-                      const Real mu = 1e1)
-    : obj_(obj), con_(con), mu_(mu),
+                      const Real mu = 1e1,
+                      const bool updateMultiplier = true,
+                      const bool updatePenalty = true)
+    : obj_(obj), bnd_(bnd), mu_(mu),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0),
-      updateMultiplier_(true), updatePenalty_(true) {
-    initialize(x,con);
+      updateMultiplier_(updateMultiplier), updatePenalty_(updatePenalty) {
+    initialize(x,bnd);
   }
 
   MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
-                      const ROL::Ptr<BoundConstraint<Real> > &con, 
+                      const ROL::Ptr<BoundConstraint<Real> > &bnd, 
                       const ROL::Vector<Real> &x,
                       ROL::ParameterList &parlist)
-    : obj_(obj), con_(con),
+    : obj_(obj), bnd_(bnd),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
-    initialize(x,con);
+    initialize(x,bnd);
     ROL::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     updateMultiplier_ = list.get("Update Multiplier",true);
     updatePenalty_    = list.get("Update Penalty",true);
@@ -181,13 +183,13 @@ public:
   }
 
   MoreauYosidaPenalty(const ROL::Ptr<Objective<Real> > &obj,
-                      const ROL::Ptr<BoundConstraint<Real> > &con, 
+                      const ROL::Ptr<BoundConstraint<Real> > &bnd, 
                       const ROL::Vector<Real> &x,
                       const ROL::Vector<Real> &lam,
                       ROL::ParameterList &parlist)
-    : obj_(obj), con_(con),
+    : obj_(obj), bnd_(bnd),
       fval_(0), isConEvaluated_(false), nfval_(0), ngval_(0) {
-    initialize(x,con);
+    initialize(x,bnd);
     lam_->set(lam);
     ROL::ParameterList &list = parlist.sublist("Step").sublist("Moreau-Yosida Penalty");
     updateMultiplier_ = list.get("Update Multiplier",true);
@@ -196,7 +198,7 @@ public:
   }
 
   void updateMultipliers(Real mu, const ROL::Vector<Real> &x) {
-    if ( con_->isActivated() ) {
+    if ( bnd_->isActivated() ) {
       if ( updateMultiplier_ ) {
         const Real one(1);
         computePenalty(x);
@@ -221,7 +223,7 @@ public:
 
   Real testComplementarity(const ROL::Vector<Real> &x) {
     Real val(0);
-    if (con_->isActivated()) {
+    if (bnd_->isActivated()) {
       computePenalty(x);
 
       tmp_->set(x);
@@ -233,7 +235,7 @@ public:
       Real upper = mu_*std::abs(tmp_->dot(*u1_));
 
       tmp_->set(x);
-      con_->project(*tmp_);
+      bnd_->project(*tmp_);
       tmp_->axpy(static_cast<Real>(-1), x);
       Real xnorm = tmp_->norm();
 
@@ -267,7 +269,6 @@ public:
   */
   void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
     obj_->update(x,flag,iter);
-    con_->update(x,flag,iter);
     isConEvaluated_ = false;
   }
 
@@ -284,7 +285,7 @@ public:
     nfval_++;
     // Add value of the Moreau-Yosida penalty
     Real fval = fval_;
-    if ( con_->isActivated() ) {
+    if ( bnd_->isActivated() ) {
       computePenalty(x);
       fval += half*mu_*(l1_->dot(*l1_) + u1_->dot(*u1_));
     }
@@ -304,7 +305,7 @@ public:
     ngval_++;
     g.set(*g_);
     // Add gradient of the Moreau-Yosida penalty
-    if ( con_->isActivated() ) {
+    if ( bnd_->isActivated() ) {
       computePenalty(x);
       g.axpy(-mu_,*dl1_);
       g.axpy(mu_,*du1_);
@@ -323,28 +324,28 @@ public:
     // Apply objective Hessian to a vector
     obj_->hessVec(hv,v,x,tol);
     // Add Hessian of the Moreau-Yosida penalty
-    if ( con_->isActivated() ) {
+    if ( bnd_->isActivated() ) {
       Real one = 1.0;
       computePenalty(x);
 
       v_->set(v);
-      con_->pruneLowerActive(*v_,*xlam_);
+      bnd_->pruneLowerActive(*v_,*xlam_);
       v_->scale(-one);
       v_->plus(v);
       dv_->set(v_->dual());
       dv2_->set(*dv_);
-      con_->pruneLowerActive(*dv_,*xlam_);
+      bnd_->pruneLowerActive(*dv_,*xlam_);
       dv_->scale(-one);
       dv_->plus(*dv2_);
       hv.axpy(mu_,*dv_);
 
       v_->set(v);
-      con_->pruneUpperActive(*v_,*xlam_);
+      bnd_->pruneUpperActive(*v_,*xlam_);
       v_->scale(-one);
       v_->plus(v);
       dv_->set(v_->dual());
       dv2_->set(*dv_);
-      con_->pruneUpperActive(*dv_,*xlam_);
+      bnd_->pruneUpperActive(*dv_,*xlam_);
       dv_->scale(-one);
       dv_->plus(*dv2_);
       hv.axpy(mu_,*dv_);

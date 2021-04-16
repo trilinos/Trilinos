@@ -42,9 +42,23 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve an optimal control problem constrained by 
+    \brief Shows how to solve an optimal control problem constrained by
            steady Burgers' equation with bound constraints.
 */
+
+#include "ROL_TypeB_PrimalDualActiveSetAlgorithm.hpp"
+#include "ROL_TypeB_LinMoreAlgorithm.hpp"
+#include "ROL_Bounds.hpp"
+
+#include "Teuchos_GlobalMPISession.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_LAPACK.hpp"
+
+#include <iostream>
+#include <fstream>
+#include <algorithm>
+
+#include "ROL_Stream.hpp"
 
 #include "example_01.hpp"
 
@@ -55,10 +69,8 @@ int main(int argc, char *argv[]) {
   typedef std::vector<RealT>    vector;
   typedef ROL::Vector<RealT>    V;
   typedef ROL::StdVector<RealT> SV;
-  
-  typedef typename vector::size_type uint;
 
-    
+  typedef typename vector::size_type uint;
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
@@ -91,7 +103,7 @@ int main(int argc, char *argv[]) {
     SV x(x_ptr);
     SV y(y_ptr);
 
-    // Check deriatives.
+    // Check derivatives.
     obj.checkGradient(x,x,y,true,*outStream);
     obj.checkHessVec(x,x,y,true,*outStream);
 
@@ -99,14 +111,9 @@ int main(int argc, char *argv[]) {
     ROL::Ptr<vector> l_ptr = ROL::makePtr<vector>(nx+2,0.0);
     ROL::Ptr<vector> u_ptr = ROL::makePtr<vector>(nx+2,1.0);
     ROL::Ptr<V> lo = ROL::makePtr<SV>(l_ptr);
-    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr); 
-      
-    ROL::Bounds<RealT> icon(lo,up);
+    ROL::Ptr<V> up = ROL::makePtr<SV>(u_ptr);
 
-    // ROL components.
-    ROL::Ptr<ROL::Algorithm<RealT>>  algo;
-    ROL::Ptr<ROL::Step<RealT>>       step;
-    ROL::Ptr<ROL::StatusTest<RealT>> status;
+    ROL::Bounds<RealT> bcon(lo,up);
 
     // Primal dual active set.
     std::string filename = "input.xml";
@@ -125,13 +132,14 @@ int main(int argc, char *argv[]) {
     parlist->sublist("Status Test").set("Gradient Tolerance",1.e-12);
     parlist->sublist("Status Test").set("Step Tolerance",1.e-16);
     parlist->sublist("Status Test").set("Iteration Limit",100);
-    // Define algorithm.
-    step   = ROL::makePtr<ROL::PrimalDualActiveSetStep<RealT>>(*parlist);
-    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
-    // Run algorithm.
+    // Set initial guess.
     x.zero();
-    algo->run(x, obj, icon, true, *outStream);
+    {
+      // Define algorithm.
+      ROL::TypeB::PrimalDualActiveSetAlgorithm<RealT> algo(*parlist);
+      // Run algorithm.
+      algo.run(x, obj, bcon, *outStream);
+    }
     // Output control to file.
     std::ofstream file_pdas;
     file_pdas.open("control_PDAS.txt");
@@ -144,13 +152,14 @@ int main(int argc, char *argv[]) {
     parlist->sublist("General").sublist("Krylov").set("Absolute Tolerance",1.e-4);
     parlist->sublist("General").sublist("Krylov").set("Relative Tolerance",1.e-2);
     parlist->sublist("General").sublist("Krylov").set("Iteration Limit",50);
-    // Define algorithm.
-    step   = ROL::makePtr<ROL::TrustRegionStep<RealT>>(*parlist);
-    status = ROL::makePtr<ROL::StatusTest<RealT>>(*parlist);
-    algo   = ROL::makePtr<ROL::Algorithm<RealT>>(step,status,false);
-    // Run Algorithm
+    // Set initial guess.
     y.zero();
-    algo->run(y,obj,icon,true,*outStream);
+    {
+      // Define algorithm.
+      ROL::TypeB::LinMoreAlgorithm<RealT> algo(*parlist);
+      // Run Algorithm
+      algo.run(y,obj,bcon,*outStream);
+    }
     // Output control to file.
     std::ofstream file_tr;
     file_tr.open("control_TR.txt");
@@ -168,7 +177,8 @@ int main(int argc, char *argv[]) {
       file << i/((RealT)(nx+1)) << "  " << u[i] << "\n";
     }
     file.close();
-    // Compute error 
+
+    // Compute error between PDAS and Lin-More solutions.
     ROL::Ptr<ROL::Vector<RealT> > diff = x.clone();
     diff->set(x);
     diff->axpy(-1.0,y);

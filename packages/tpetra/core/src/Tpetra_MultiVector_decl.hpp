@@ -2406,7 +2406,7 @@ namespace Tpetra {
     /// of rows.  At some point, we might like to get all of the rows
     /// back, by taking another view of a <i>super</i>set of rows.
     /// For example, we might like to get a column Map view of a
-    /// (domain Map view of a (column Map MultiVector)).  Tpetra's
+    /// (domain Map view of a (column Map MultiVector)).  Ifpack2's
     /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
     /// this functionality.  However, Kokkos (rightfully) forbids us
     /// from taking a superset of rows of the current view.
