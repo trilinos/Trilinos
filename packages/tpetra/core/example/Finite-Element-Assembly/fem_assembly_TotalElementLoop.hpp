@@ -149,8 +149,8 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
-  auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
+  auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
@@ -167,9 +167,9 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     // - Copy the global node ids for current owned element into an array.
     // - Since each element's contribution is a clique, we can re-use this for
     //   each row associated with this element's contribution.
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-      global_ids_in_row[element_node_idx] = owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+      global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
     }
 
     // Add the contributions from the current row into the graph if the node is owned.
@@ -179,11 +179,11 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     //   - node 1 <skip>
     //   - node 4 inserts [0, 1, 4, 5]
     //   - node 5 <skip>
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
@@ -191,18 +191,19 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Insert the node contributions for every GHOST element:
   for(size_t element_gidx=0; element_gidx<mesh.getNumGhostElements(); element_gidx++)
   {
-    for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
-      global_ids_in_row[element_node_idx] = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+      global_ids_in_row[element_node_idx] = ghost_element_to_node_ids(element_gidx, element_node_idx);
     }
-    for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
+
 
   timerElementLoopGraph = Teuchos::null;
 
@@ -285,10 +286,10 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
 
     // Fill the global column ids array for this element
     for (size_t element_node_idx = 0;
-         element_node_idx < owned_element_to_node_ids.extent(1);
-         ++element_node_idx) {
+	 element_node_idx < owned_element_to_node_ids.extent(1);
+	 ++element_node_idx) {
       column_global_ids[element_node_idx] =
-        owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+	owned_element_to_node_ids(element_gidx, element_node_idx);
     }
 
     // For each node (row) on the current element:
@@ -296,19 +297,19 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     // - add values to crs_matrix if the row is owned.
     //   Note: hardcoded 4 here because we're using quads.
     for (size_t element_node_idx = 0; element_node_idx < 4;
-         ++element_node_idx) {
+	 ++element_node_idx) {
       const global_ordinal_type global_row_id =
-        owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+	owned_element_to_node_ids(element_gidx, element_node_idx);
       if (mesh.nodeIsOwned (global_row_id)) {
-        for (size_t col_idx = 0; col_idx < 4; ++col_idx) {
-          column_scalar_values[col_idx] =
-            element_matrix(element_node_idx, col_idx);
-        }
-        crs_matrix.sumIntoGlobalValues (global_row_id,
-                                        column_global_ids,
-                                        column_scalar_values);
-        rhs.sumIntoGlobalValue (global_row_id, 0,
-                                element_rhs[element_node_idx]);
+	for (size_t col_idx = 0; col_idx < 4; ++col_idx) {
+	  column_scalar_values[col_idx] =
+	    element_matrix(element_node_idx, col_idx);
+	}
+	crs_matrix.sumIntoGlobalValues (global_row_id,
+					column_global_ids,
+					column_scalar_values);
+	rhs.sumIntoGlobalValue (global_row_id, 0,
+				element_rhs[element_node_idx]);
       }
     }
   }
@@ -323,20 +324,20 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
 
     for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
-      column_global_ids[element_node_idx] = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+      column_global_ids[element_node_idx] = ghost_element_to_node_ids(element_gidx, element_node_idx);
     }
 
     for(size_t element_node_idx=0; element_node_idx<4; element_node_idx++)
     {
-      global_ordinal_type global_row_id = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+      global_ordinal_type global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
       if(mesh.nodeIsOwned(global_row_id))
       {
-        for(size_t col_idx=0; col_idx<4; col_idx++)
+	for(size_t col_idx=0; col_idx<4; col_idx++)
         {
-          column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
-        }
-        crs_matrix.sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-        rhs.sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+	  column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
+	}
+	crs_matrix.sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+	rhs.sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   }
@@ -428,8 +429,8 @@ executeTotalElementLoopSPKokkos_
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
-  auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
+  auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
@@ -446,9 +447,9 @@ executeTotalElementLoopSPKokkos_
     // - Copy the global node ids for current owned element into an array.
     // - Since each element's contribution is a clique, we can re-use this for
     //   each row associated with this element's contribution.
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
-      global_ids_in_row[element_node_idx] = owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+      global_ids_in_row[element_node_idx] = owned_element_to_node_ids(element_gidx, element_node_idx);
     }
 
     // Add the contributions from the current row into the graph if the node is owned.
@@ -458,11 +459,11 @@ executeTotalElementLoopSPKokkos_
     //   - node 1 <skip>
     //   - node 4 inserts [0, 1, 4, 5]
     //   - node 5 <skip>
-    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<owned_element_to_node_ids.extent(1); element_node_idx++)
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
@@ -470,15 +471,15 @@ executeTotalElementLoopSPKokkos_
   // Insert the node contributions for every GHOST element:
   for(size_t element_gidx=0; element_gidx<mesh.getNumGhostElements(); element_gidx++)
   {
-    for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly).extent(1); element_node_idx++)
+    for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
-      global_ids_in_row[element_node_idx] = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly)(element_gidx, element_node_idx);
+      global_ids_in_row[element_node_idx] = ghost_element_to_node_ids(element_gidx, element_node_idx);
     }
     for(size_t element_node_idx=0; element_node_idx<ghost_element_to_node_ids.extent(1); element_node_idx++)
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
@@ -565,7 +566,6 @@ executeTotalElementLoopSPKokkos_
 
   timerElementLoopMemory = Teuchos::null;
   RCP<TimeMonitor> timerElementLoopMatrix = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("3.3) ElementLoop  (Matrix)")));
-  auto owned_elt_to_node_ids = owned_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly);
 
   // Loop over owned elements:
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numOwnedElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
@@ -581,7 +581,7 @@ executeTotalElementLoopSPKokkos_
 
       // Get the local column ids array for this element
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {
-        element_lcids(element_node_idx) = localColMap.getLocalElement(owned_elt_to_node_ids(element_gidx, element_node_idx));
+        element_lcids(element_node_idx) = localColMap.getLocalElement(owned_element_to_node_ids(element_gidx, element_node_idx));
       }
 
       // For each node (row) on the current element:
@@ -589,7 +589,7 @@ executeTotalElementLoopSPKokkos_
       // - add the values to the fe_matrix.
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
         {
-          global_ordinal_type global_row_id = owned_elt_to_node_ids(element_gidx, element_node_idx);
+          global_ordinal_type global_row_id = owned_element_to_node_ids(element_gidx, element_node_idx);
           local_ordinal_type local_row_id = localRowMap.getLocalElement(global_row_id);
           if(local_row_id != LO_INVALID) {
             // Force atomics on sums
@@ -604,7 +604,6 @@ executeTotalElementLoopSPKokkos_
   // Loop over ghost elements:
   // - This loop is the same as the element loop for owned elements, but this one
   //   is for ghost elements.
-  auto ghost_elt_to_node_ids = ghost_element_to_node_ids.getHostView(Tpetra::Access::ReadOnly);
   Kokkos::parallel_for(Kokkos::RangePolicy<execution_space>(0, numGhostElements),KOKKOS_LAMBDA(const size_t& element_gidx) {
       // Get subviews
       pair_type location_pair = pair_type(nperel*element_gidx,nperel*(element_gidx+1));
@@ -618,12 +617,12 @@ executeTotalElementLoopSPKokkos_
 
       // Get the local column ids array for this element
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++) {
-        element_lcids(element_node_idx) = localColMap.getLocalElement(ghost_elt_to_node_ids(element_gidx, element_node_idx));
+        element_lcids(element_node_idx) = localColMap.getLocalElement(ghost_element_to_node_ids(element_gidx, element_node_idx));
       }
 
       for(int element_node_idx=0; element_node_idx<nperel; element_node_idx++)
         {
-          global_ordinal_type global_row_id = ghost_elt_to_node_ids(element_gidx, element_node_idx);
+          global_ordinal_type global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
           local_ordinal_type local_row_id = localRowMap.getLocalElement(global_row_id);
           if(local_row_id != LO_INVALID) {
             // Force atomics on sums
