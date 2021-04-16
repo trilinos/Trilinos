@@ -288,7 +288,7 @@ public:
       std::cout << "    Trust-region radius before update:       " << del   << std::endl;
     }
     if ((rho < eta0_ && flagTR == TRUSTREGION_FLAG_SUCCESS) || flagTR >= 2 || !decr ) { // Step Rejected
-      fnew = fold1;
+      fnew = fold1; // This is a bug if rho < zero...
       if (rho < zero) { // Negative reduction, interpolate to find new trust-region radius
         Real gs(0);
         if ( bnd.isActivated() ) {

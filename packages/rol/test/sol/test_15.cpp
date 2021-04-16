@@ -179,8 +179,9 @@ int main(int argc, char* argv[]) {
     pObj->checkGradient(*x,*d,true,*outStream);
     pObj->checkHessVec(*x,*d,true,*outStream);
     // Solve using progressive hedging
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem
-      = ROL::makePtr<ROL::OptimizationProblem<RealT>>(pObj,x,bnd);
+    ROL::Ptr<ROL::Problem<RealT>> problem
+      = ROL::makePtr<ROL::Problem<RealT>>(pObj,x);
+    problem->addBoundConstraint(bnd);
     ROL::PrimalDualRisk<RealT> pd_solver(problem,sampler,*parlist);
     pd_solver.check(*outStream);
     pd_solver.run(*outStream);

@@ -89,7 +89,7 @@ initialize()
 
   int numBlocks = zPVector->productSpace()->numBlocks();
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !(0 <= numExplicitOnlyBlocks_ and
+  TEUCHOS_TEST_FOR_EXCEPTION( !(0 <= numExplicitOnlyBlocks_ &&
                                    numExplicitOnlyBlocks_ < numBlocks),
     std::logic_error,
     "Error - WrapperModelEvaluatorPairPartIMEX_Basic::initialize()\n"
@@ -437,7 +437,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  & inArgs,
   appImplicitInArgs.set_x_dot(x_dot);
   for (int i=0; i<implicitModel_->Np(); ++i) {
     // Copy over parameters except for the parameter for explicit-only vector!
-    if ((inArgs.get_p(i) != Teuchos::null) and (i != parameterIndex_))
+    if ((inArgs.get_p(i) != Teuchos::null) && (i != parameterIndex_))
       appImplicitInArgs.set_p(i, inArgs.get_p(i));
   }
 

@@ -69,13 +69,13 @@
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class NonlinearLeastSquaresObjective : public Objective<Real> {
 private:
-  const ROL::Ptr<Constraint<Real> > con_;
+  const Ptr<Constraint<Real> > con_;
   const bool GaussNewtonHessian_;
 
-  ROL::Ptr<Vector<Real> > c1_, c2_, c1dual_, x_;
+  Ptr<Vector<Real> > c1_, c2_, c1dual_, x_;
 
 public:
   /** \brief Constructor. 
@@ -85,49 +85,25 @@ public:
       @param[in]          vec   is a constraint space vector used for cloning.
       @param[in]          GHN   is a flag dictating whether or not to use the Gauss-Newton Hessian.
   */
-  NonlinearLeastSquaresObjective(const ROL::Ptr<Constraint<Real> > &con,
+  NonlinearLeastSquaresObjective(const Ptr<Constraint<Real> > &con,
                                  const Vector<Real> &optvec,
                                  const Vector<Real> &convec,
-                                 const bool GNH = false)
-    : con_(con), GaussNewtonHessian_(GNH) {
-    c1_ = convec.clone(); c1dual_ = c1_->dual().clone();
-    c2_ = convec.clone();
-    x_  = optvec.dual().clone();
-  }
+                                 const bool GNH = false);
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    Real tol = std::sqrt(ROL_EPSILON<Real>());
-    con_->update(x,flag,iter);
-    con_->value(*c1_,x,tol);
-    c1dual_->set(c1_->dual());
-  }
-
-  Real value( const Vector<Real> &x, Real &tol ) {
-    Real half(0.5);
-    return half*(c1_->dot(*c1dual_));
-  }
-
-  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) {
-    con_->applyAdjointJacobian(g,*c1dual_,x,tol);
-  }
-
-  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    con_->applyJacobian(*c2_,v,x,tol);
-    con_->applyAdjointJacobian(hv,c2_->dual(),x,tol);
-    if ( !GaussNewtonHessian_ ) {
-      con_->applyAdjointHessian(*x_,*c1dual_,v,x,tol);
-      hv.plus(*x_);
-    }
-  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  Real value( const Vector<Real> &x, Real &tol ) override;
+  void gradient( Vector<Real> &g, const Vector<Real> &x, Real &tol ) override;
+  void hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
 // Definitions for parametrized (stochastic) equality constraints
 public:
-  void setParameter(const std::vector<Real> &param) {
-    Objective<Real>::setParameter(param);
-    con_->setParameter(param);
-  }
+  void setParameter(const std::vector<Real> &param) override;
 };
 
 } // namespace ROL
+
+#include "ROL_NonlinearLeastSquaresObjective_Def.hpp"
 
 #endif

@@ -196,6 +196,7 @@ private:
 
   // Finite element vectors and matrices for PDE.
   ROL::Ptr<Tpetra::MultiVector<>> pde_vecR_overlap_;
+  ROL::Ptr<Tpetra::MultiVector<>> pde_vecJ2_overlap_;
   ROL::Ptr<Tpetra::MultiVector<>> pde_vecJ3_overlap_;
   ROL::Ptr<Tpetra::MultiVector<>> pde_vecH13_overlap_;
   ROL::Ptr<Tpetra::MultiVector<>> pde_vecH23_overlap_;
@@ -209,6 +210,8 @@ private:
   ROL::Ptr<Tpetra::MultiVector<>> qoi_vecH21_overlap_;
   ROL::Ptr<Tpetra::MultiVector<>> qoi_vecH22_overlap_;
   ROL::Ptr<Tpetra::MultiVector<>> qoi_vecH23_overlap_;
+
+  bool store_;
 
 private:
 
@@ -310,6 +313,30 @@ public:
                             const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                             const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
                             const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyJacobian1(ROL::Ptr<Tpetra::MultiVector<>> &Jv1,
+                                 const ROL::Ptr<PDE<Real>> &pde,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                 const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyAdjointJacobian1(ROL::Ptr<Tpetra::MultiVector<>> &Jv1,
+                                        const ROL::Ptr<PDE<Real>> &pde,
+                                        const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                        const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                        const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                        const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyJacobian2(ROL::Ptr<Tpetra::MultiVector<>> &Jv2,
+                                 const ROL::Ptr<PDE<Real>> &pde,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                 const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyAdjointJacobian2(ROL::Ptr<Tpetra::MultiVector<>> &Jv2,
+                                        const ROL::Ptr<PDE<Real>> &pde,
+                                        const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                        const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                        const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                        const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
   void assemblePDEHessian11(ROL::Ptr<Tpetra::CrsMatrix<>> &H11,
                             const ROL::Ptr<PDE<Real>> &pde,
                             const ROL::Ptr<const Tpetra::MultiVector<>> &l,
@@ -364,6 +391,34 @@ public:
                             const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                             const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
                             const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyHessian11(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                 const ROL::Ptr<PDE<Real>> &pde,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                 const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyHessian12(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                 const ROL::Ptr<PDE<Real>> &pde,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                 const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyHessian21(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                 const ROL::Ptr<PDE<Real>> &pde,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                 const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
+  void assemblePDEapplyHessian22(ROL::Ptr<Tpetra::MultiVector<>> &Hv,
+                                 const ROL::Ptr<PDE<Real>> &pde,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &v,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &l,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                                 const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                                 const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr);
   /***************************************************************************/
   /* End of PDE assembly routines.                                           */
   /***************************************************************************/
@@ -684,6 +739,10 @@ public:
                           const std::string &filename) const;
   void inputTpetraVector(ROL::Ptr<Tpetra::MultiVector<>> &vec,
                          const std::string &filename) const;
+  void printDataPDE(const ROL::Ptr<PDE<Real>> &pde,
+                    const ROL::Ptr<const Tpetra::MultiVector<>> &u,
+                    const ROL::Ptr<const Tpetra::MultiVector<>> &z = ROL::nullPtr,
+                    const ROL::Ptr<const std::vector<Real>> &z_param = ROL::nullPtr) const;
   void serialPrintStateEdgeField(const ROL::Ptr<const Tpetra::MultiVector<>> &u,
                                  const ROL::Ptr<FieldHelper<Real>> &fieldHelper,
                                  const std::string &filename,

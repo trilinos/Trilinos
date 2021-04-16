@@ -89,7 +89,7 @@ void StepperDIRK<Scalar>::initialize()
   xTilde_    = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
 
-  if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
+  if (this->tableau_->isEmbedded() && this->getUseEmbedded()) {
     this->ee_    = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->abs_u0 = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
@@ -236,7 +236,7 @@ void StepperDIRK<Scalar>::takeStep(
       }
     }
 
-    if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
+    if (this->tableau_->isEmbedded() && this->getUseEmbedded()) {
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
 

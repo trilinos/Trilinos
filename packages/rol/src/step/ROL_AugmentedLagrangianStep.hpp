@@ -302,7 +302,6 @@ public:
     // Project x onto the feasible set
     if ( bnd.isActivated() ) {
       bnd.project(x);
-      bnd.update(x,true,algo_state.iter);
     }
     // Update objective and constraint.
     augLag.update(x,true,algo_state.iter);
@@ -464,7 +463,6 @@ public:
     algo_state.ncval += augLag.getNumberConstraintEvaluations();
     // Update objective function and constraints
     augLag.update(x,true,algo_state.iter);
-    bnd.update(x,true,algo_state.iter);
     // Update multipliers
     minPenaltyReciprocal_ = std::min(one/state->searchSize,minPenaltyLowerBound_);
     if ( cscale_*algo_state.cnorm < feasTolerance_ ) {

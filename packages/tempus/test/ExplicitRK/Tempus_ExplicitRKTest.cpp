@@ -577,7 +577,7 @@ TEUCHOS_UNIT_TEST(ExplicitRK, EmbeddedVanDerPol)
      const double L2norm = Thyra::norm_2(*xdiff);
 
      // Test number of steps, failures, and accuracy
-     if ((integratorChoice == "Embedded_Integrator_PID") or
+     if ((integratorChoice == "Embedded_Integrator_PID") ||
            (integratorChoice == "Embedded_Integrator_PID_General")) {
 
         const double absTol = pl->sublist(integratorChoice).

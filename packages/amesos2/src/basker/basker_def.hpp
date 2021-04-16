@@ -96,7 +96,7 @@ namespace BaskerClassicNS{
       {
         free_factor();
         //BASKERFREE(pinv);
-        delete pinv;
+        delete [] pinv;
       }
     if(perm_flag)
       {
@@ -211,6 +211,14 @@ namespace BaskerClassicNS{
     A->val = val;
     /*End initalize A*/
 
+    //free factor
+    if(been_fact)
+      {
+        free_factor();
+        //BASKERFREE(pinv);
+        delete [] pinv;
+      }
+
     /*Creating space for L and U*/
     L->nrow = nrow;
     L->ncol = ncol;
@@ -247,17 +255,18 @@ namespace BaskerClassicNS{
     /*End creating space for L and U*/
 
     /*Creating working space*/
-    Int *tptr;
+    Int *color, *pattern, *stack; 
     Entry *X;
-    //tptr = (Int *)   BASKERCALLOC( (ncol)+(4*nrow), sizeof(Int));
-    tptr = new Int[(ncol)+(4*nrow)]();
+    color = new Int[ncol]();
+    pattern = new Int[nrow]();
+    stack = new Int[2*nrow]();
     //X =    (Entry *) BASKERCALLOC(2*nrow, sizeof(Entry));
     X = new Entry[2*nrow]();
     //pinv = (Int * )  BASKERCALLOC(ncol+1, sizeof(Int)); //Note extra pad
     pinv = new Int[ncol+1]();
 
 
-    if( (tptr == nullptr) || (X == nullptr) || (pinv == nullptr) )
+    if( (color == nullptr) || (pattern == nullptr) || (stack == nullptr) || (X == nullptr) || (pinv == nullptr) )
       {
         ierr = -2;
         return ierr;
@@ -267,7 +276,6 @@ namespace BaskerClassicNS{
 
     /*Defining Variables Used*/
     Int i, j, k;
-    Int *color, *pattern, *stack; // pointers into the work space
     Int top, top1, maxindex, t; // j1, j2;
     Int lnnz, unnz, xnnz, lcnt, ucnt;
     Int cu_ltop, cu_utop;
@@ -275,15 +283,6 @@ namespace BaskerClassicNS{
     Int newsize;
     Entry pivot, value, xj;
     Entry absv, maxv;
-
-    color = tptr;
-    tptr += ncol;
-
-    pattern = tptr;
-    tptr += nrow;
-
-    stack = tptr;
-    tptr += 2*(nrow);
 
     cu_ltop = 0;
     cu_utop = 0;
@@ -603,6 +602,8 @@ namespace BaskerClassicNS{
     // Cleanup workspace allocations
     delete [] X;
     delete [] color;
+    delete [] pattern;
+    delete [] stack;
 
     actual_lnnz = lnnz;
     actual_unnz = unnz;
@@ -734,6 +735,7 @@ namespace BaskerClassicNS{
     //BASKERFREE(U->val);
     delete[] U->val;
 
+    been_fact = false;
   }
   template <class Int, class Entry>
   void BaskerClassic<Int, Entry>::free_perm_matrix()

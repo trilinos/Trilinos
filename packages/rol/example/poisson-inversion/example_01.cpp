@@ -185,7 +185,7 @@ int main(int argc, char *argv[]) {
 
     // Use Newton algorithm with line search.
     stepname = "Line Search";
-    parlist.sublist("Step").sublist(stepname).sublist("Descent Method").set("Type", "Newton-Krylov");
+    parlist.sublist("Step").sublist(stepname).sublist("Descent Method").set("Type", "Newton's Method");
     ROL::Ptr<ROL::Step<RealT>>
       newton_step = ROL::makePtr<ROL::LineSearchStep<RealT>>(parlist);
     ROL::Ptr<ROL::StatusTest<RealT>>

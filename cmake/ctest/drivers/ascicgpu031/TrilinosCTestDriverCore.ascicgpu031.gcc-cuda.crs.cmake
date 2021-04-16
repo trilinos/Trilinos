@@ -91,9 +91,10 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   SET(EXTRA_SYSTEM_CONFIGURE_OPTIONS
       "-DCMAKE_BUILD_TYPE:STRING=${BUILD_TYPE}"
 
-      "-DTrilinos_ENABLE_COMPLEX:BOOL=OFF"
       # Adding the following as a possible fix for github issue #2115.
-      "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
+      #KDD This flag appears to be unnecessary in April 2021, and it
+      #KDD breaks building of Zoltan tests
+      #KDD "-DCMAKE_CXX_USE_RESPONSE_FILE_FOR_OBJECTS:BOOL=ON"
 
       ### ALWAYS AND EVERYWHERE ###
       "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
