@@ -156,7 +156,7 @@ public:
       return isImplicit;
     }
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const
     {
       bool isOneStepMethod = true;

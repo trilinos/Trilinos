@@ -5,7 +5,7 @@ Release Notes for TriBITS
 2021/03/12:
 
 (*) MAJOR: Upgrade minimum required CMake version from 3.10 to 3.17.  Existing
-    TriBITG projects that have already upgraded to require CMake 3.17+ should not
+    TriBITS projects that have already upgraded to require CMake 3.17+ should not
     notice any major changes due to this change.
 
 2020/11/12:

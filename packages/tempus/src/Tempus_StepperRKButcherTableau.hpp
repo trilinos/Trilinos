@@ -2518,8 +2518,8 @@ public:
   void setGammaType(std::string gammaType)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
-      !(gammaType == "3rd Order A-stable" or
-        gammaType == "2nd Order L-stable" or
+      !(gammaType == "3rd Order A-stable" ||
+        gammaType == "2nd Order L-stable" ||
         gammaType == "gamma"), std::logic_error,
       "gammaType needs to be '3rd Order A-stable', '2nd Order L-stable' "
       "or 'gamma'.");

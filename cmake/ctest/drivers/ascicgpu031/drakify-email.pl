@@ -50,8 +50,9 @@ my @entries, my @entriesNightly, my @entriesExperimental, my@entriesSpecialized;
 my $gitFailure = "";
 
 my %testType;
-$testType = "Nightly";
+$mytestType = "Nightly";
 my $pastSummary = 0;
+
 
 for ($i=0; $i<$numLines; $i++)
 {
@@ -66,21 +67,23 @@ for ($i=0; $i<$numLines; $i++)
     }
     if ($line =~ /\++ Nightly \++/)
     {
-      $testType = "Nightly";
+      $mytestType = "Nightly";
     }
     elsif ($line =~ /\++ Experimental \++/)
     {
-      $testType = "Experimental";
+      $mytestType = "Experimental";
     }
     elsif ($line =~ /\++ Specialized \++/)
     {
-      $testType = "Specialized";
+      $mytestType = "Specialized";
     }
     
     if ($line =~ /(.*)\s+\.\.\. [pF]/)
     {
       $testName = trim $1;
-      $testType{$testName} = $testType;
+      $testType{$testName} = $mytestType;
+      #print "testType[$testName] = $mytestType\n"
+      
     }
     else
     {
@@ -110,7 +113,7 @@ for ($i=0; $i<$numLines; $i++)
     $entry->name($name); #trim gets rid of any leading/trailing whitespace
     $i++;
     $line = $LINES[$i]; # timing/overall result line -- for now, we ignore
-    my $numEntryLines = 4;
+    my $numEntryLines = 2 * $num_packages;
     for (my $j=0; $j<$numEntryLines; $j++) {
         $i++;
         $line = $LINES[$i];

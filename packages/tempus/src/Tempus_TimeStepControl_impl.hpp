@@ -148,7 +148,7 @@ void TimeStepControl<Scalar>::initialize() const
     <<getMaxRelError()<<")\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (getStepType() != "Constant" and getStepType() != "Variable"),
+    (getStepType() != "Constant" && getStepType() != "Variable"),
     std::out_of_range,
       "Error - 'Step Type' does not equal one of these:\n"
     << "  'Constant' - Integrator will take constant time step sizes.\n"
@@ -403,14 +403,14 @@ bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const
   const bool test1 = getInitTime() - absTolInit <= time;
   const bool test2 = time < getFinalTime() - absTolFinal;
 
-  return (test1 and test2);
+  return (test1 && test2);
 }
 
 
 /// Test if index is within range: include initIndex and exclude finalIndex.
 template<class Scalar>
 bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
-  bool iir = (getInitIndex() <= iStep and iStep < getFinalIndex());
+  bool iir = (getInitIndex() <= iStep && iStep < getFinalIndex());
   return iir;
 }
 

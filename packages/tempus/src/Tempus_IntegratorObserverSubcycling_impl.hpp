@@ -58,8 +58,8 @@ observeEndTimeStep(const Integrator<Scalar>& integrator){
   using Teuchos::RCP;
   auto cs = integrator.getSolutionHistory()->getCurrentState();
 
-  if ((cs->getOutputScreen() == true) or
-      (cs->getOutput() == true) or
+  if ((cs->getOutputScreen() == true) ||
+      (cs->getOutput() == true) ||
       (cs->getTime() == integrator.getTimeStepControl()->getFinalTime())) {
 
      const Scalar steppertime = integrator.getStepperTimer()->totalElapsedTime();

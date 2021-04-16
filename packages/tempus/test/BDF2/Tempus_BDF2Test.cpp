@@ -695,7 +695,7 @@ TEUCHOS_UNIT_TEST(BDF2, VanDerPol)
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == 0) or (n == nTimeStepSizes-1)) {
+    if ((n == 0) || (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_BDF2_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_BDF2_VanDerPol.dat";
       std::ofstream ftmp(fname);
