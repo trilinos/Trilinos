@@ -44,9 +44,6 @@ function(generate_build_stats_wrappers)
     generate_build_stats_wrapper_for_op(AR "CMAKE_AR")
     generate_build_stats_wrapper_for_op(RANLIB "CMAKE_RANLIB")
 
-    set(gather_build_status "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh")
-    configure_file("${BUILD_STATS_SRC_DIR}/gather_build_stats.sh"
-      "${gather_build_status}" COPYONLY)
   endif()
 
 endfunction()
@@ -185,11 +182,6 @@ endfunction()
 function(install_build_stats_scripts)
 
   if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
-
-    set(gather_build_status "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh")
-    install(PROGRAMS "${gather_build_status}" 
-      DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
-
     install_build_stats_wrapper_for_lang(C)
     install_build_stats_wrapper_for_lang(CXX)
     if (${PROJECT_NAME}_ENABLE_Fortran)
@@ -225,15 +217,13 @@ function(add_target_gather_build_stats)
 
   if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
 
-    set(buildStatsCsvFile "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
-
     add_custom_command(
-      OUTPUT "${buildStatsCsvFile}"
-      COMMAND "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh"
+      OUTPUT "${BUILD_STATS_CSV_FILE}"
+      COMMAND "${BUILD_STATS_SRC_DIR}/gather_build_stats.py"
       WORKING_DIRECTORY "${${PROJECT_NAME}_BINARY_DIR}" )
 
     add_custom_target(gather-build-stats ALL
-      DEPENDS "${buildStatsCsvFile}")
+      DEPENDS "${BUILD_STATS_CSV_FILE}")
 
     get_all_build_targets_including_in_subdirs("${${PROJECT_NAME}_SOURCE_DIR}"
       projectBuildTargetsList)

@@ -17,14 +17,14 @@ tribits_add_advanced_test( Results
   OVERALL_NUM_MPI_PROCS 1
   TEST_0
     MESSAGE "Gather up the build stats in case the build failed"
-    CMND "${${PROJECT_NAME}_BINARY_DIR}/gather_build_stats.sh"
+    CMND "${CMAKE_CURRENT_LIST_DIR}/gather_build_stats.py"
     WORKING_DIRECTORY "${${PROJECT_NAME}_BINARY_DIR}"
     SKIP_CLEAN_WORKING_DIRECTORY  # Critical or you delete the entire working dir!
     ALWAYS_FAIL_ON_NONZERO_RETURN
   TEST_1
     MESSAGE "Sumarize the build stats from the already created build_stats.csv file"
     CMND "${${PROJECT_NAME}_SOURCE_DIR}/commonTools/build_stats/summarize_build_stats.py"
-      --bin-by-subdirs-under-dirs=commonTools,packages
+    ARGS --bin-by-subdirs-under-dirs=commonTools,packages
       "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv"
     ALWAYS_FAIL_ON_NONZERO_RETURN
   ADDED_TEST_NAME_OUT Results_TEST_NAME
