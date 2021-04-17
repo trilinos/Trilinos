@@ -1,7 +1,7 @@
 /* -*- Mode: c++ -*- */
 
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -742,13 +742,13 @@ integer {D}+({E})?
     }
 
     if (aprepro.ap_options.interactive && yyin == &std::cin && isatty(0) != 0 && isatty(1) != 0) {
-      char *line = getline_int(nullptr);
+      char *line = ap_getline_int(nullptr);
 
       if (strlen(line) == 0) {
         return 0;
       }
 
-      gl_histadd(line);
+      ap_gl_histadd(line);
 
       if (strlen(line) > (size_t)max_size - 2) {
         yyerror("input line is too long");

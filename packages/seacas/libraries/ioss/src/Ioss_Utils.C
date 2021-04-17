@@ -41,9 +41,12 @@
 
 // For memory utilities...
 #if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#if 0
 #include <psapi.h>
+#endif
 #include <windows.h>
-#undef max
 
 #elif defined(__unix__) || defined(__unix) || defined(unix) ||                                     \
     (defined(__APPLE__) && defined(__MACH__))
