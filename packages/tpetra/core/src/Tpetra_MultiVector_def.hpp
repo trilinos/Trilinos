@@ -4331,7 +4331,6 @@ namespace Tpetra {
   sync_device () {
     owningView_.sync_device ();
   }
-#endif // TPETRA_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -4347,7 +4346,6 @@ namespace Tpetra {
     return owningView_.need_sync_device ();
   }
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::

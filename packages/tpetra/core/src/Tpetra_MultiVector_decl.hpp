@@ -1469,21 +1469,21 @@ namespace Tpetra {
     //! Synchronize to Device
     //TPETRA_DEPRECATED
     void sync_device ();
-#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
+    //TPETRA_DEPRECATED
     bool need_sync () const {
       return view_.template need_sync<TargetDeviceType> ();
     }
 
     //! Whether this MultiVector needs synchronization to the host.
+    //TPETRA_DEPRECATED
     bool need_sync_host () const;
 
     //! Whether this MultiVector needs synchronization to the device.
+    //TPETRA_DEPRECATED
     bool need_sync_device () const;
-
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
     ///
