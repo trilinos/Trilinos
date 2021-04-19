@@ -57,6 +57,7 @@
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
 #include "MueLu_GraphBase.hpp"
+#include "MueLu_Graph.hpp"
 #include "MueLu_LWGraph.hpp"
 #include "MueLu_LWGraph_kokkos.hpp"
 

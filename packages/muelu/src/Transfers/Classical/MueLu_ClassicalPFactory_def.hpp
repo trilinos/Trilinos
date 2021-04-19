@@ -680,8 +680,9 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   // Create device views for graph rowptrs/colinds
   size_t numRows = graph.GetNodeNumVertices();
   auto graphLWK = dynamic_cast<const LWGraph_kokkos*>(&graph);
-  auto graphLW = dynamic_cast<const LWGraph*>(&graph);
-  TEUCHOS_TEST_FOR_EXCEPTION(!graphLW && !graphLWK,std::invalid_argument,"Graph is not a LWGraph or LWGraph_kokkos object");
+  auto graphLW  = dynamic_cast<const LWGraph*>(&graph);
+  auto graphG   = dynamic_cast<const Graph*>(&graph);
+  TEUCHOS_TEST_FOR_EXCEPTION(!graphLW && !graphLWK && !graphG,std::invalid_argument,"Graph is not a LWGraph or LWGraph_kokkos object");
     // Run d1 graph coloring
     // Assume that the graph is symmetric so row map/entries and col map/entries are the same
 
@@ -707,6 +708,25 @@ template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
                                            rowptrs_v,
                                            entries_v,
                                            true);    
+  }
+  else if(graphG) {  
+    // FIXME:  This is a terrible, terrible hack, based on 0-based local indexing.
+    RCP<const CrsGraph> graphC = graphG->GetGraph();
+    size_t numEntries = graphC->getNodeNumEntries();
+    ArrayView<const LO> indices;
+    graphC->getLocalRowView(0,indices);
+    Kokkos::View<size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v("rowptrs_v",graphC->getNodeNumRows()+1);
+    rowptrs_v[0]=0;
+    for(LO i=0; i<(LO)graphC->getNodeNumRows()+1; i++) 
+      rowptrs_v[i+1] = rowptrs_v[i] + graphC->getNumEntriesInLocalRow(i);
+    Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(&indices[0],numEntries);    
+    KokkosGraph::Experimental::graph_color(&kh, 
+                                           numRows, 
+                                           numRows, // FIXME: This should be the number of columns
+                                           rowptrs_v,
+                                           entries_v,
+                                           true);   
+    
   }
 
   

@@ -94,6 +94,8 @@ namespace MueLu {
     //! Returns overlapping import map (nodes).
     const RCP<const Map> GetImportMap() const                                { return graph_->getColMap();    }
 
+    const RCP<const CrsGraph> GetGraph() const {return graph_;}
+
     //! Set map with local ids of boundary nodes.
     void SetBoundaryNodeMap(const ArrayRCP<const bool>& localDirichletNodes) { localDirichletNodes_ = localDirichletNodes; }
 
