@@ -37,7 +37,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=Hybrid"
+  "--inputFile=simple --colorMethod=D1"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -48,7 +48,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-  "--inputFile=simple --colorMethod=Hybrid --recolorDegrees"
+  "--inputFile=simple --colorMethod=D1 --recolorDegrees"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -59,7 +59,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=Hybrid --serialThreshold=25"
+  "--inputFile=simple --colorMethod=D1 --serialThreshold=25"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -72,7 +72,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=Hybrid --prepartition=rows"
+  "--inputFile=simple --colorMethod=D1 --prepartition=rows"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -83,7 +83,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=Hybrid --prepartition=nonzeros"
+  "--inputFile=simple --colorMethod=D1 --prepartition=nonzeros"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -96,7 +96,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=commanche_dual --colorMethod=Hybrid"
+  "--inputFile=commanche_dual --colorMethod=D1"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -109,7 +109,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=commanche_dual --colorMethod=Hybrid --prepartition=rows"
+  "--inputFile=commanche_dual --colorMethod=D1 --prepartition=rows"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -120,7 +120,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=commanche_dual --colorMethod=Hybrid --prepartition=nonzeros"
+  "--inputFile=commanche_dual --colorMethod=D1 --prepartition=nonzeros"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -133,7 +133,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=noedges --colorMethod=Hybrid"
+  "--inputFile=noedges --colorMethod=D1"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -144,7 +144,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=complete --colorMethod=Hybrid"
+  "--inputFile=complete --colorMethod=D1"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -155,7 +155,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=2GL"
+  "--inputFile=simple --colorMethod=D1-2GL"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -166,7 +166,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-  "--inputFile=simple --colorMethod=2GL --recolorDegrees"
+  "--inputFile=simple --colorMethod=D1-2GL --recolorDegrees"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -177,7 +177,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=2GL --serialThreshold=25"
+  "--inputFile=simple --colorMethod=D1-2GL --serialThreshold=25"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -190,7 +190,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=2GL --prepartition=rows"
+  "--inputFile=simple --colorMethod=D1-2GL --prepartition=rows"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -201,7 +201,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=simple --colorMethod=2GL --prepartition=nonzeros"
+  "--inputFile=simple --colorMethod=D1-2GL --prepartition=nonzeros"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -214,7 +214,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=commanche_dual --colorMethod=2GL"
+  "--inputFile=commanche_dual --colorMethod=D1-2GL"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -227,7 +227,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=commanche_dual --colorMethod=2GL --prepartition=rows"
+  "--inputFile=commanche_dual --colorMethod=D1-2GL --prepartition=rows"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -238,7 +238,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=commanche_dual --colorMethod=2GL --prepartition=nonzeros"
+  "--inputFile=commanche_dual --colorMethod=D1-2GL --prepartition=nonzeros"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -251,7 +251,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=noedges --colorMethod=2GL"
+  "--inputFile=noedges --colorMethod=D1-2GL"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -261,7 +261,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-   "--inputFile=complete --colorMethod=2GL"
+  "--inputFile=complete --colorMethod=D1-2GL"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

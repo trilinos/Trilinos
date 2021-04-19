@@ -131,7 +131,8 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
   for(size_t i = 0; i < n; i++){
     A->getLocalRowView(i, indices, values);
     for(Teuchos_Ordinal j = 0; j < indices.size(); j++){
-      if( ((size_t)indices[j] != i) && (color[i] == colorData[indices[j]]) ){
+      if(values[j] == 0) continue; //this catches removed entries.
+      if( (rowMap->getGlobalElement(i) != colMap->getGlobalElement(indices[j])) && (color[i] == colorData[indices[j]]) ){
         nconflicts++;
       }
     }
@@ -141,76 +142,14 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
 }
 
 int validateDistributedDistance2Coloring(RCP<SparseMatrix> A, int* color){
-  int nconflicts = 0;
 
+
+  //To check distance-2 conflicts, we square the input matrix and check
+  //for distance-1 conflicts on the squared matrix.
   RCP<SparseMatrix> S = rcp(new SparseMatrix(A->getRowMap(), 0));
-  //std::cout<<"S.isFillComplete() = "<<S->isFillComplete()<<"\n";
   Tpetra::MatrixMatrix::Multiply(*A, true, *A, false, *S);
-  
-  RCP<const SparseMatrix::map_type> rowMap = S->getRowMap();
-  //std::cout<<"rowMap contains\n\t";
-  auto rowIndices = rowMap->getMyGlobalIndices();
-  /*for(int i = 0; i < rowMap->getNodeNumElements(); i++){
-    std::cout<<rowIndices[i]<<" ";
-  }
-  std::cout<<"\n";*/
-  RCP<const SparseMatrix::map_type> colMap = S->getColMap();
-  //std::cout<<"colMap contains\n\t";
-  auto colIndices = colMap->getMyGlobalIndices();
-  /*for(int i = 0; i < colMap->getNodeNumElements(); i++){
-    std::cout<<colIndices[i]<<" ";
-  }
-  std::cout<<"\n";*
-  for(int i = 0; i < colMap->getNodeNumElements(); i++){
-    std::cout<<colMap->getLocalElement(colIndices[i])<<" ";
-  }
-  std::cout<<"\n";*/
-  Vector R = Vector(rowMap);
-  //put the colors in the scalar entries of R.
-  for(size_t i = 0; i < S->getNodeNumRows(); i++){
-    R.replaceLocalValue(i, color[i]);
-  }
 
-  Vector C = Vector(colMap);
-  Import imp = Import(rowMap, colMap);
-  C.doImport(R, imp, Tpetra::REPLACE);
-
-  Teuchos::ArrayView<const zlno_t> indices;
-  Teuchos::ArrayView<const zscalar_t> values; //not used
-
-  //count conflicts in the graph
-  //loop over local rows, treat local column indices as edges
-  size_t n = S->getNodeNumRows();
-  auto colorData = C.getData();
-  for(size_t i = 0; i < n; i++){
-    S->getLocalRowView(i, indices, values);
-    for(Teuchos_Ordinal j = 0; j < indices.size(); j++){
-      if(values[j] == 0) continue;
-      //std::cout<<"vertex "<<indices[j]<<" is color "<<colorData[indices[j]]<<"\n";
-      int rowColor = color[i];
-      int adjColor = 0;
-
-      zgno_t gidx;
-      if(rowMap->getGlobalElement(indices[j]) != Teuchos::OrdinalTraits<zgno_t>::invalid()){
-        gidx = rowMap->getGlobalElement(indices[j]);
-      } else {
-        gidx = colMap->getGlobalElement(indices[j]);
-      }
-      if(colMap->getLocalElement(indices[j]) != Teuchos::OrdinalTraits<zlno_t>::invalid()){
-        adjColor = colorData[colMap->getLocalElement(gidx)];
-      } else {
-        adjColor = color[rowMap->getLocalElement(gidx)];
-      }
-      //std::cout<<"checking for conflicts between vertex "<<i<<" color "<<rowColor<<", and vertex "<<gidx<<"(value "<<values[j]<<") color "<<adjColor<<"\n";
-      if(rowColor == 0) continue;
-      if( ((size_t)indices[j] != i) && (rowColor == adjColor) ){
-        nconflicts++;
-	//std::cout<<"conflict found between vertex "<<indices[j]<<" color "<<adjColor<<" and vertex "<<i<<" color "<<rowColor<<"\n";
-      }
-    }
-  }
-
-  return nconflicts;
+  return validateDistributedColoring(S,color);
 }
 
 int checkBalance(zlno_t n, int *color)
@@ -288,8 +227,8 @@ int main(int narg, char** arg)
 		  "valid values are rows and nonzeros");
   cmdp.setOption("serialThreshold", &serialThreshold,
 		 "number of vertices to recolor in serial");
-  cmdp.setOption("recolorDegrees","quiet",&recolorDegrees,
-		 "recolor based on vertex degrees");
+  cmdp.setOption("recolorDegrees","recolorRandom",&recolorDegrees,
+		 "recolor based on vertex degrees or random numbers");
   std::cout << "Starting everything" << std::endl;
 
   //////////////////////////////////
@@ -453,31 +392,37 @@ int main(int narg, char** arg)
   std::cout << "Going to validate the soln" << std::endl;
   auto rowInds = Matrix->getRowMap()->getMyGlobalIndices();
   Matrix->resumeFill();
+
+  //We use a squared matrix to validated distance-2 colorings.
+  //If any diagonals are present in the input matrix before we 
+  //square the matrix, the resultant matrix may have both distance-1
+  //and distance-2 paths. By removing the diagonals before squaring,
+  //we ensure that our distance-2 validation only checks distance-2
+  //paths. This makes it suitable for validating partial distance-2 colorings.
+
   std::cout<<"Got row indices, replacing diagonals\n";
+  //loop through all rows
   for(size_t i = 0; i < rowInds.size(); i++){
-    //std::cout<<"making views\n";
-    Kokkos::View<zgno_t*> idx("idx",1);// = rowInds[i];
-    Kokkos::View<zscalar_t*> val("val",1);// = 0;
-    //std::cout<<"assigning views\n";
+    Kokkos::View<zgno_t*> idx("idx",1);
+    Kokkos::View<zscalar_t*> val("val",1);
     idx(0) = rowInds[i];
     val(0) = 0;
-    //std::cout<<"finding diagonal\n";
+    //get the entries in the current row
     size_t numEntries = Matrix->getNumEntriesInGlobalRow(rowInds[i]);
     Teuchos::ArrayRCP<zgno_t> inds(numEntries);
     Teuchos::ArrayRCP<zscalar_t> vals(numEntries);
-    //Teuchos::ArrayView<zgno_t> inds = Teuchos::arrayViewFromVector(std::vector<zgno_t>(0,numEntries));
-    //Teuchos::ArrayView<zscalar_t> vals = Teuchos::arrayViewFromVector(std::vector<zscalar_t>(0,numEntries));
     Matrix->getGlobalRowCopy(rowInds[i], inds(), vals(),numEntries);
+    //check to see if this row has a diagonal
     bool hasDiagonal = false;
     for(int j = 0; j < inds.size(); j++){
       if(inds[j] == rowInds[i]) hasDiagonal = true;
     }
+    //replace the diagonal if it exists.
     if(hasDiagonal) {
-      //std::cout<<"replacing diagonal\n";
       if(Matrix->replaceGlobalValues(rowInds[i],idx,val) == Teuchos::OrdinalTraits<zlno_t>::invalid()){
-        //std::cout<<"*******Either !isFillActive() or inds.extent != vals.extent()\n";
+        std::cout<<"Either !isFillActive() or inds.extent != vals.extent()\n";
       } else {
-        //std::cout<<"*******DIAGONAL NOT REPLACED*********\n";
+        std::cout<<"*******DIAGONAL REPLACED*********\n";
       }
     }
   }

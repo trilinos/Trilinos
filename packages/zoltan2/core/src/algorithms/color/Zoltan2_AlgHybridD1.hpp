@@ -34,7 +34,7 @@
 namespace Zoltan2 {
 
 template <typename Adapter>
-class AlgHybridGMB : public Algorithm<Adapter>
+class AlgDistance1 : public Algorithm<Adapter>
 {
   public:
   
@@ -185,7 +185,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
     std::unordered_map<lno_t, std::vector<int>> procs_to_send;
   public:
     //constructor for the  hybrid distributed distance-1 algorithm
-    AlgHybridGMB(
+    AlgDistance1(
       const RCP<const base_adapter_t> &adapter_, 
       const RCP<Teuchos::ParameterList> &pl_,
       const RCP<Environment> &env_,
@@ -967,7 +967,7 @@ class AlgHybridGMB : public Algorithm<Adapter>
 };
 
 template <typename Adapter>
-void AlgHybridGMB<Adapter>::buildModel(modelFlag_t &flags){
+void AlgDistance1<Adapter>::buildModel(modelFlag_t &flags){
   flags.set(REMOVE_SELF_EDGES);
     
   this->env->debug(DETAILED_STATUS, "   building graph model");

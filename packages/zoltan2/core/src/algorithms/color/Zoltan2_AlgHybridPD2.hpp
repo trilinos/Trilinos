@@ -35,7 +35,7 @@
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgPDistance2 : public AlgTwoGhostLayer<Adapter> {
+class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 
   public:
     
@@ -334,7 +334,7 @@ class AlgPDistance2 : public AlgTwoGhostLayer<Adapter> {
 
 
   public:
-    AlgPDistance2(
+    AlgPartialDistance2(
       const RCP<const base_adapter_t> &adapter_,
       const RCP<Teuchos::ParameterList> &pl_,
       const RCP<Environment> &env_,

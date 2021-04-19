@@ -135,12 +135,12 @@ public:
   {
     RCP<Teuchos::StringValidator> color_method_Validator = Teuchos::rcp(
       new Teuchos::StringValidator(
-        Teuchos::tuple<std::string>( "SerialGreedy","Hybrid","2GL","D2","PD2" )));
+        Teuchos::tuple<std::string>( "SerialGreedy","D1","D1-2GL","D2","PD2" )));
     pl.set("color_method", "SerialGreedy", "coloring algorithm",
      color_method_Validator);
     pl.set("verbose", false, "print all output", Environment::getBoolValidator());
     pl.set("serial_threshold",0,"vertices to recolor in serial",Environment::getAnyIntValidator());
-    pl.set("recolor_degrees",false,"recolor based on vertex degrees",Environment::getBoolValidator());
+    pl.set("recolor_degrees",true,"recolor based on vertex degrees",Environment::getBoolValidator());
   }
 
   //!  \brief Direct the problem to create a solution.
@@ -205,13 +205,13 @@ void ColoringProblem<Adapter>::solve(bool newData)
                                    this->env_, this->comm_);
       alg.color(this->solution_);
   }
-  else if (method.compare("Hybrid") == 0)
+  else if (method.compare("D1") == 0)
   {
-      AlgHybridGMB<Adapter> alg(this->inputAdapter_, this->params_,
+      AlgDistance1<Adapter> alg(this->inputAdapter_, this->params_,
 		                this->env_, this->comm_);
       alg.color(this->solution_);
   }
-  else if (method.compare("2GL") == 0)
+  else if (method.compare("D1-2GL") == 0)
   {
       AlgDistance1TwoGhostLayer<Adapter> alg(this->inputAdapter_,this->params_,
 		                             this->env_, this->comm_);
@@ -223,7 +223,7 @@ void ColoringProblem<Adapter>::solve(bool newData)
       alg.color(this->solution_);
   } else if (method.compare("PD2") == 0)
   {
-      AlgPDistance2<Adapter> alg(this->inputAdapter_, this->params_,
+      AlgPartialDistance2<Adapter> alg(this->inputAdapter_, this->params_,
 		                       this->env_, this->comm_);
       alg.color(this->solution_);
   }
