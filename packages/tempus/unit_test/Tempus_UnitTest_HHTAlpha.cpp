@@ -121,7 +121,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -151,8 +151,8 @@ public:
     case StepperHHTAlphaAppAction<double>::AFTER_SOLVE:
       {
         testAFTER_SOLVE = true;
-        testType = "HHT Alpha - Modifier";
-        stepper->setStepperType(testType);
+        testName = "HHT Alpha - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperHHTAlphaAppAction<double>::END_STEP:
@@ -174,7 +174,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Modifier)
@@ -212,7 +212,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Modifier)
   TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
-  TEST_COMPARE(modifier->testType, ==, "HHT Alpha - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "HHT Alpha - Modifier");
 }
 
   // ************************************************************
@@ -226,7 +226,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -255,7 +255,7 @@ public:
     case StepperHHTAlphaAppAction<double>::AFTER_SOLVE:
     {
       testAFTER_SOLVE = true;
-      testType = stepper->getStepperType();
+      testName = stepper->getStepperType();
       break;
     }
     case StepperHHTAlphaAppAction<double>::END_STEP:
@@ -278,7 +278,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Observer)
@@ -315,7 +315,7 @@ TEUCHOS_UNIT_TEST(HHTAlpha, AppAction_Observer)
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "HHT-Alpha");
+  TEST_COMPARE(observer->testName, ==, "HHT-Alpha");
 }
 
 // ************************************************************

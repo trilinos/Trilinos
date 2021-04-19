@@ -476,8 +476,6 @@ TEUCHOS_UNIT_TEST(TimeStepControl, getValidParameters)
       "WARNING: Parameter \"Time Step Control Strategy\"    [unused] is unused\n");
   }
 
-  std::cout << "\n pl = \n" << *pl << std::endl;
-
   auto tscs_PL = pl->sublist("Time Step Control Strategy");
   TEST_COMPARE          ( tscs_PL.get<std::string>("Strategy Type")  , ==, "Constant");
   TEST_FLOATING_EQUALITY( tscs_PL.get<double>("Time Step"), 0.0, 1.0e-14);
@@ -533,7 +531,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Variable)
 {
   // Setup the SolutionHistory --------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX<double>(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
@@ -598,7 +596,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, SetDtAfterOutput_Constant)
 {
   // Setup the SolutionHistory --------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX<double>(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
@@ -660,7 +658,7 @@ TEUCHOS_UNIT_TEST(TimeStepControl, ConstantTimeStep_Roundoff)
 {
   // Setup the SolutionHistory --------------------------------
   auto model   = rcp(new Tempus_Test::SinCosModel<double>());
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =model->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =rcp_const_cast<Thyra::VectorBase<double> >(inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX<double>(icSolution);
   auto solutionHistory = rcp(new Tempus::SolutionHistory<double>());
