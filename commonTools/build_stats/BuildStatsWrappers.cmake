@@ -34,10 +34,10 @@ function(generate_build_stats_wrappers)
   # Generate the build-stats compiler wrappers
   get_base_build_dir_for_python()
   if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
-    generate_build_stats_wrapper_for_lang(C)
-    generate_build_stats_wrapper_for_lang(CXX)
+    generate_build_stats_wrapper_for_op(C "CMAKE_C_COMPILER")
+    generate_build_stats_wrapper_for_op(CXX "CMAKE_CXX_COMPILER")
     if (${PROJECT_NAME}_ENABLE_Fortran)
-      generate_build_stats_wrapper_for_lang(Fortran)
+      generate_build_stats_wrapper_for_op(Fortran "CMAKE_Fortran_COMPILER")
     endif()
 
     generate_build_stats_wrapper_for_op(LD "CMAKE_LD")
@@ -51,38 +51,64 @@ function(generate_build_stats_wrappers)
 
 endfunction()
 
-# Generate the build stats compiler wrapper for a ar/ld/ranlib
+
+# Generate the build stats compiler wrapper for a given CMake variable.
 #
 # the only difference between this and lang, is setting the proper
 # Cmake variable name, e.g., CMAKE_LANG_COMPILER  vs CMAKE_OP
 # we can resolve this by taking in name of the variable to set
+#
+# The intent of this function is pass in arbitrary cmake variables that
+# map to commands and generate suitable wrappers.
+#
+# Supported functions are C, CXX, Fortran, AR, LD, and RANLIB
+#
+#  TODO: wrap MPIEXEC!
 function(generate_build_stats_wrapper_for_op op_name variable_to_set)
 
+  # 'op_name' is the short name, like C, CXX, Fortran, LD, AR, RANLIB
+  # this is will give us a lowercase 
   string(TOLOWER "${op_name}" op_lc)
-  set(compiler_wrapper
+  set(op_wrapper
     "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${op_lc}_wrapper.sh")
 
-  # Override the compiler with the wrapper but remember the original compiler
-  if ("${${variable_to_set}_ORIG}" STREQUAL "")
-    set(${variable_to_set}_ORIG "${op_lc}"
-      CACHE FILEPATH "Original non-wrappeed ${op_name}" FORCE )
-    set(${variable_to_set} "${compiler_wrapper}"
-      CACHE FILEPATH "Overwritten build stats ${op_name} compiler wrapper" FORCE )
+  # there's an issue here - if CMAKE_FOO is unset (whatever `variable_to_set` is)
+  # we need a to know the command - but CMake hasn't chosen one yet...
+  if ("${${variable_to_set}}" STREQUAL "")
+    message("-- " "${variable_to_set} is not set, but a wrapper has been requested. Setting to ${op_lc}")
+    set(${variable_to_set} "${op_lc}"
+      CACHE FILEPATH "Guessed default for ${op_name} in build stats wrapper" FORCE )
+    print_var(${variable_to_set})
   endif()
 
-  message("-- " "Generate build stats compiler wrapper for ${op_name}")
-  set(BUILD_STAT_COMPILER_WRAPPER_INNER_COMPILER "${${variable_to_set}_ORIG}")
+  # Override the compiler with the wrapper but remember the original compiler
+  # we take as a paramter a CMake variable to set, e.g., CMAKE_CXX_COMPILER
+  if ("${${variable_to_set}_ORIG}" STREQUAL "")
+    # we want to set CMAKE_C_COMPILER_ORIG to CMAKE_C_COMPILER
+    # variable to set is a string, so we need the value of the string evaluated
+    set(${variable_to_set}_ORIG ${${variable_to_set}}
+      CACHE FILEPATH "Original non-wrappeed ${op_name}" FORCE )
+    set(${variable_to_set} "${op_wrapper}"
+      CACHE FILEPATH "Overwritten build stats ${op_name} wrapper" FORCE )
+  endif()
+
+  # write the wrapper file
+  message("-- " "Generate build stats wrapper for ${op_name}")
+  set(BUILD_STAT_COMPILER_WRAPPER_INNER_OP "${${variable_to_set}_ORIG}")
   configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
-    "${compiler_wrapper}" @ONLY)
-  print_var(${variable_to_set})
+    "${op_wrapper}" @ONLY)
 
   # Use the orginal compiler for the installed <XXX>Config.cmake files
   # doubt this works w/AR/LD/RANLIB
-  set(${variable_to_set}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR
+  set(${variable_to_set}_OP_FOR_CONFIG_FILE_INSTALL_DIR
     "${${variable_to_set}_ORIG}" CACHE INTERNAL "")
-  print_var(${variable_to_set}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
 
 endfunction()
+# NOTE: The above implementation will make sure the compiler wrapper will get
+# updated if the *.sh.in template file changes and just reconfiguring.
+# Actaully, you should be able to fix the wrapper and just type 'make' and it
+# should reconfigure and update automatically.
+
 
 # Get the var BASE_BUILD_DIR_FOR_PYTHON
 #
@@ -102,40 +128,6 @@ endmacro()
 # on are some systems at SNL with the mounted home directories.  By using the
 # same Python code, we ensure that we get the same base directory, which is
 # needed when computing relative paths.
-
-
-# Generate the build stats compiler wrapper for a single language.
-#
-function(generate_build_stats_wrapper_for_lang  lang)
-
-  string(TOLOWER "${lang}" lang_lc)
-  set(compiler_wrapper
-    "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${lang_lc}_wrapper.sh")
-
-  # Override the compiler with the wrapper but remember the original compiler
-  if ("${CMAKE_${lang}_COMPILER_ORIG}" STREQUAL "")
-    set(CMAKE_${lang}_COMPILER_ORIG "${CMAKE_${lang}_COMPILER}"
-      CACHE FILEPATH "Original non-wrappeed ${lang} compiler" FORCE )
-    set(CMAKE_${lang}_COMPILER "${compiler_wrapper}"
-      CACHE FILEPATH "Overwritten build stats ${lang} compiler wrapper" FORCE )
-  endif()
-
-  message("-- " "Generate build stats compiler wrapper for ${lang}")
-  set(BUILD_STAT_COMPILER_WRAPPER_INNER_COMPILER "${CMAKE_${lang}_COMPILER_ORIG}")
-  configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
-    "${compiler_wrapper}" @ONLY)
-
-  # Use the orginal compiler for the installed <XXX>Config.cmake files
-  set(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR
-    "${CMAKE_${lang}_COMPILER_ORIG}" CACHE INTERNAL "")
-  #print_var(CMAKE_${lang}_COMPILER_FOR_CONFIG_FILE_INSTALL_DIR)
-
-endfunction()
-
-# NOTE: The above implementation will make sure the compiler wrapper will get
-# updated if the *.sh.in template file changes and just reconfiguring.
-# Actaully, you should be able to fix the wrapper and just type 'make' and it
-# should reconfigure and update automatically.
 
 
 # Remove the build stats file on configure if asked to do so.
@@ -205,6 +197,9 @@ function(install_build_stats_scripts)
       install_build_stats_wrapper_for_lang(Fortran)
     endif()
 
+    install_build_stats_wrapper_for_lang(AR)
+    install_build_stats_wrapper_for_lang(LD)
+    install_build_stats_wrapper_for_lang(RANLIB)
   endif()
 
 endfunction()
@@ -213,10 +208,11 @@ endfunction()
 # Install the build stats compiler wrapper for a single language.
 #
 function(install_build_stats_wrapper_for_lang  lang)
-  string(TOLOWER "${lang}" lang_lc)
-  set(compiler_wrapper
-    "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${lang_lc}_wrapper.sh")
-  install(PROGRAMS "${compiler_wrapper}"
+  string(TOLOWER "${op_name}" op_lc)
+  set(op_wrapper
+    "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${op_lc}_wrapper.sh")
+
+  install(PROGRAMS "${op_wrapper}"
     DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}")
 endfunction()
 

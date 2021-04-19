@@ -1,5 +1,5 @@
 #!/bin/bash
-cmd="@BUILD_STAT_COMPILER_WRAPPER_INNER_COMPILER@"
+cmd="@BUILD_STAT_COMPILER_WRAPPER_INNER_OP@"
 base_build_dir="@BASE_BUILD_DIR_FOR_PYTHON@"
 if [ "${CMAKE_IS_IN_CONFIGURE_MODE}" == "1" ]; then
   ${cmd} "$@"
