@@ -114,6 +114,7 @@ namespace MueLu {
     void GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong) const;
 
     // Coarsening algorithms
+    void Coarsen_Direct(const Matrix & A,const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const;
     void Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const;
 
     //@}

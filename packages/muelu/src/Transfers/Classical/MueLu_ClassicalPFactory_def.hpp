@@ -90,6 +90,13 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: deterministic");
     SET_VALID_ENTRY("aggregation: coloring algorithm");
+    SET_VALID_ENTRY("aggregation: classical scheme");
+    {
+      typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
+      validParamList->getEntry("aggregation: classical scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("direct","ext+i"), "aggregation: classical scheme")));
+                                                                        
+    }
+
 #undef SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
@@ -134,6 +141,7 @@ namespace MueLu {
     RCP<Matrix> P;
     SC SC_ZERO = STS::zero();
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    const ParameterList& pL = GetParameterList();
 
     // FIXME: This guy doesn't work right now for NumPDEs != 1
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
@@ -206,7 +214,12 @@ namespace MueLu {
     // FIXME: coarseColMap needs to ghosted
     RCP<const Map> coarseColMap = coarseMap;
     RCP<const Map> coarseDomainMap = coarseMap;
-    Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType,cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+
+    std::string scheme = pL.get<std::string>("aggregation: classical scheme");
+    if(scheme == "ext+i" || scheme == "classical")
+      Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType,cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+    else if(scheme == "direct")
+      Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType,cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
 
     //    Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat", *P);
     Set(coarseLevel, "P", P);
@@ -225,7 +238,217 @@ namespace MueLu {
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+
+    /* ============================================================= */
+    /* Phase 3 : Direct Interpolation                                */
+    /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
+    /* here.  Instead we follow:                                     */
+    /* Trottenberg, Oosterlee and Schueller, Multigrid, 2001.        */
+    /* ============================================================= */    
+    /* Definitions:                                                        */
+    /* F = F-points                                                        */
+    /* C = C-points                                                        */
+    /* N_i = non-zero neighbors of node i                                  */
+    /* S_i = {j\in N_i | j strongly influences i } [strong neighbors of i] */
+    /* F_i^s = F \cap S_i [strong F-neighbors of i]                        */
+    /* C_i^s = C \cap S_i [strong C-neighbors of i]                        */
+    /* P_i = Set of interpolatory variables for row i [here = C_i^s]       */
+
+    /* (A.2.17) from p. 426                                                */ 
+    /* a_ij^- = {  a_ij,  if a_ij < 0                                      */ 
+    /*          {     0,  otherwise                                        */ 
+    /* a_ij^+ = {  a_ij,  if a_ij > 0                                      */ 
+    /*          {     0,  otherwise                                        */ 
+    /* P_i^- =  P_i \cap {k | a_ij^- != 0 and a_ij^- = a_ij}               */
+    /*          [strong C-neighbors with negative edges]                   */
+    /* P_i^+ =  P_i \cap {k | a_ij^+ != 0 and a_ij^+ = a_ij}               */
+    /*          [strong C-neighbors with positive edges]                   */
+
+
+    /* de Sterck et al., gives us this:                                                      */
+    /* Rewritten Equation (6) on p. 119                                                      */
+    /* w_ij = - a_ji / a_ii \frac{\sum_{k\in N_i} a_ik} {\sum k\inC_i^s} a_ik},   j\in C_i^s */
+
+    /* Trottenberg et al. (A.7.6) and (A.7.7) on p. 479 gives this:                          */
+    /* alpha_i = \frac{ \sum_{j\in N_i} a_ij^- }{ \sum_{k\in P_i} a_ik^- }                   */
+    /* beta_i  = \frac{ \sum_{j\in N_i} a_ij^+ }{ \sum_{k\in P_i} a_ik^+ }                   */
+    /* w_ik    = { - alpha_i (a_ik / a_ii),   if k\in P_i^-                                  */
+    /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */  
+    /* NOTE: The text says to modify, if  P_i^+ is zero but it isn't entirely clear how that */
+    /* works.  We'll follow the PyAMG implementation in a few important ways.                */
+    
+   
+
+    // Initial (estimated) allocation
+    // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
+    // needs to be a copy below.
+    using STS = typename Teuchos::ScalarTraits<SC>;
+    size_t Nrows = A.getNodeNumRows();
+    double c_point_density = (double)num_c_points / (num_c_points+num_f_points);
+    double mean_strong_neighbors_per_row = (double) graph.GetNodeNumEdges() / graph.GetNodeNumVertices();
+    //    double mean_neighbors_per_row = (double)A.getNodeNumEntries() / Nrows;
+    double nnz_per_row_est = c_point_density*mean_strong_neighbors_per_row;
+
+    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getNodeNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
+    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+    Array<size_t> tmp_rowptr(Nrows+1);
+    Array<LO> tmp_colind(nnz_est);
+
+    // Algorithm (count+realloc)
+    // For each row, i, 
+    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]   
+    size_t ct=0;
+    for(LO row=0; row < (LO) Nrows; row++) {
+      size_t row_start = eis_rowptr[row];
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      std::set<LO> C_hat;
+
+      if(myPointType[row] == C_PT) {
+        // C-Points get a single 1 in their row
+        C_hat.insert(cpoint2pcol[row]);
+      }
+      else {
+        // C-neighbors of row 
+        A.getLocalRowView(row, indices, vals);
+        for(LO j=0; j<indices.size(); j++)
+          if(myPointType[indices[j]] == C_PT && edgeIsStrong[row_start + j])
+            C_hat.insert(cpoint2pcol[indices[j]]);
+      }// end else 
+      
+      // Realloc if needed
+      if(ct + (size_t)C_hat.size() > (size_t)tmp_colind.size()) {
+        tmp_colind.resize(std::max(ct+(size_t)C_hat.size(),(size_t)2*tmp_colind.size()));
+      }
+      
+      // Copy
+      std::copy(C_hat.begin(), C_hat.end(),tmp_colind.begin()+ct);
+      ct+=C_hat.size();
+      tmp_rowptr[row+1] = tmp_rowptr[row] + C_hat.size();
+    }
+    // Resize down
+    tmp_colind.resize(tmp_rowptr[Nrows]);  
+
+    // Allocate memory & copy
+    P = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
+    RCP<CrsMatrix> PCrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    ArrayRCP<size_t>  P_rowptr;
+    ArrayRCP<LO>      P_colind;
+    ArrayRCP<SC>      P_values;
+    PCrs->allocateAllValues(tmp_rowptr[Nrows], P_rowptr, P_colind, P_values);
+    TEUCHOS_TEST_FOR_EXCEPTION(tmp_rowptr.size() !=P_rowptr.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (rowptr)");
+    TEUCHOS_TEST_FOR_EXCEPTION(tmp_colind.size() !=P_colind.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (colind)");
+
+    // FIXME:  This can be short-circuited for Tpetra, if we decide we care
+    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
+    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
+
+
+    // Algorithm (numeric)
+    for(LO i=0; i < (LO)Nrows; i++) {
+      if (myPointType[i] == C_PT) {
+        // C Points get a single 1 in their row
+        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("** A(%d,:) is a C-Point.\n",i);
+#endif
+      }
+      else {
+        /* Trottenberg et al. (A.7.6) and (A.7.7) on p. 479 gives this:                          */
+        /* alpha_i = \frac{ \sum_{j\in N_i} a_ij^- }{ \sum_{k\in P_i} a_ik^- }                   */
+        /* beta_i  = \frac{ \sum_{j\in N_i} a_ij^+ }{ \sum_{k\in P_i} a_ik^+ }                   */
+        /* w_ik    = { - alpha_i (a_ik / a_ii),   if k\in P_i^-                                  */
+        /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */  
+        ArrayView<const LO> A_indices_i, A_incides_k;
+        ArrayView<const SC> A_vals_i, A_indices_k;
+        A.getLocalRowView(i, A_indices_i, A_vals_i);
+        size_t row_start = eis_rowptr[i];
+        
+        ArrayView<LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        
+#ifdef CMS_DEBUG          
+        // DEBUG
+        {
+          char mylabel[5]="UFCD";
+          char sw[3]="ws";
+          printf("** A(%d,:) = ",i);
+          for(LO j=0; j<(LO)A_indices_i.size(); j++){  
+            printf("%6.4e(%d-%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]]);
+          }
+          printf("\n");
+        }
+#endif        
+        
+        
+        SC a_ii            = SC_ZERO;
+        SC pos_numerator   = SC_ZERO, neg_numerator   = SC_ZERO;
+        SC pos_denominator = SC_ZERO, neg_denominator = SC_ZERO;
+        // Find the diagonal and compute the sum ratio
+        for(LO j=0; j<(LO)A_indices_i.size(); j++) {
+          SC a_ik = A_vals_i[j]; 
+          LO k = A_indices_i[j];
+          
+          // Diagonal
+          if(i == k) { 
+            a_ii = a_ik;
+          }          
+          // Only strong C-neighbors are in the denomintor
+          // FIXME: myPointType needs to be ghosted
+          if(myPointType[k] == C_PT && edgeIsStrong[row_start + j]) {
+            if(STS::real(a_ik) > SC_ZERO) pos_denominator += a_ik;
+            else neg_denominator += a_ik;
+          }  
+          
+          // All neighbors are in the numerator
+          // NOTE: As per PyAMG, this does not include the diagonal
+          if(i != k) {
+            if(STS::real(a_ik) > SC_ZERO) pos_numerator += a_ik;
+            else neg_numerator += a_ik;
+          }   
+        }
+        SC alpha = (neg_denominator == SC_ZERO) ? SC_ZERO : (neg_numerator / neg_denominator);
+        SC beta  = (pos_denominator == SC_ZERO) ? SC_ZERO : (pos_numerator / pos_denominator);
+        alpha /= -a_ii;        
+        beta  /= -a_ii;
+
+        // Loop over the entries
+        for(LO p_j=0; p_j<(LO)P_indices_i.size(); p_j++){  
+          LO P_col = pcol2cpoint[P_indices_i[p_j]];
+          SC a_ij = SC_ZERO;
+          
+          // Find A_ij (if it is there)
+          // FIXME: We can optimize this if we assume sorting
+          for(LO a_j =0; a_j<(LO)A_indices_i.size(); a_j++) {
+            if(A_indices_i[a_j] == P_col) {
+              a_ij = A_vals_i[a_j];
+              break;
+            }
+          }
+          SC w_ij = (STS::real(a_ij) < 0 ) ? (alpha * a_ij) : (beta * a_ij);
+#ifdef CMS_DEBUG
+          SC alpha_or_beta = (STS::real(a_ij) < 0 ) ? alpha : beta;
+          printf("P(%d,%d/%d) =  - %6.4e  * %6.4e  = %6.4e\n",i,P_indices_i[p_j],pcol2cpoint[P_indices_i[p_j]],alpha_or_beta,a_ij,w_ij);
+#endif
+          P_vals_i[p_j] = w_ij;          
+        }//end for A_indices_i
+      }//end else C_PT
+    }//end for Numrows
+
+    // Finish up
+    PCrs->setAllValues(P_rowptr, P_colind, P_values);
+    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
+
+}
+
+
+/* ************************************************************************* */
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+
     /* ============================================================= */
     /* Phase 3 : Extended+i Interpolation                            */
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -359,7 +582,6 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
       if (myPointType[i] == C_PT) {
         // C Points get a single 1 in their row
         P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();
-
 #ifdef CMS_DEBUG        
         // DEBUG
         printf("** A(%d,:) is a C-Point.\n",i);

@@ -412,6 +412,15 @@
     </parameter>
 
     <parameter>
+      <name>aggregation: classical scheme</name>
+      <type>string</type>
+      <default>"direct"</default>
+      <description>Prolongator formation option for classical coarsening.</description>
+      <visible>false</visible>
+      <comment-ML>parameter not existing in ML</comment-ML>
+    </parameter>
+
+    <parameter>
       <name>aggregation: block diagonal: interleaved blocksize</name>
       <type>int</type>
       <default>3</default>
