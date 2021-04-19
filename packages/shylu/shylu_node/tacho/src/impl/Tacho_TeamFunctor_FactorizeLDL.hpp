@@ -231,10 +231,18 @@ namespace Tacho {
       if (p < _pend && mode == 1) {
         const auto &s = _info.supernodes(sid);
         const ordinal_type m = s.m, n = s.n, n_m = n-m;
-        const auto bufptr = _buf.data()+_buf_ptr(lid);
+        const ordinal_type offm = s.row_begin;
 
-        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
-        factorize(member, s, ABR);
+        UnmanagedViewType<ordinal_type_array> P(_piv.data()+offm*4, m*4);
+        UnmanagedViewType<value_type_matrix> D(_diag.data()+offm*2, m, 2);
+
+        const int bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid+1);
+        value_type * bufptr = _buf.data()+bufbeg;
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m); bufptr += ABR.span();
+        UnmanagedViewType<value_type_array> W(bufptr, int(bufend-bufptr)); 
+        
+        /// check the span does not go more than buf_ptr(lid+1)
+        factorize(member, s, P, D, W, ABR);
       } else if (mode == -1) {
         printf("Error: TeamFunctorFactorizeChol, computing mode is not determined\n");
       } else {
@@ -251,7 +259,8 @@ namespace Tacho {
         const ordinal_type sid = _level_sids(p);
         const auto &s = _info.supernodes(sid);
         const ordinal_type n_m = s.n-s.m;
-        UnmanagedViewType<value_type_matrix> ABR(_buf.data()+_buf_ptr(lid), n_m, n_m);
+        value_type * bufptr = _buf.data()+_buf_ptr(lid);
+        UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m);
         update(member, s, ABR);
       } else {
         // skip
