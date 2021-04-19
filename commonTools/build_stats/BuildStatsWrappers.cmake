@@ -75,9 +75,8 @@ function(generate_build_stats_wrapper_for_op op_name variable_to_set)
   # there's an issue here - if CMAKE_FOO is unset (whatever `variable_to_set` is)
   # we need a to know the command - but CMake hasn't chosen one yet...
   if ("${${variable_to_set}}" STREQUAL "")
-    message("-- " "${variable_to_set} is not set, but a wrapper has been requested. Setting to ${op_lc}")
-    set(${variable_to_set} "${op_lc}"
-      CACHE FILEPATH "Guessed default for ${op_name} in build stats wrapper" FORCE )
+    message("-- " "${variable_to_set} is not set, but a wrapper has been requested. Asking CMake to find ${op_lc}")
+    find_program(${variable_to_set} "${op_lc}")
     print_var(${variable_to_set})
   endif()
 
