@@ -62,6 +62,7 @@
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
+#include "MueLu_ClassicalPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
@@ -553,7 +554,7 @@ namespace MueLu {
         Exceptions::RuntimeError, "Unknown \"reuse: type\" value: \"" << reuseType << "\". Please consult User's Guide.");
 
     MUELU_SET_VAR_2LIST(paramList, defaultList, "multigrid algorithm", std::string, multigridAlgo);
-    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen"}).count(multigridAlgo) == 0,
+    TEUCHOS_TEST_FOR_EXCEPTION(strings({"unsmoothed", "sa", "pg", "emin", "matlab", "pcoarsen","classical"}).count(multigridAlgo) == 0,
         Exceptions::RuntimeError, "Unknown \"multigrid algorithm\" value: \"" << multigridAlgo << "\". Please consult User's Guide.");
 #ifndef HAVE_MUELU_MATLAB
     TEUCHOS_TEST_FOR_EXCEPTION(multigridAlgo == "matlab", Exceptions::RuntimeError,
@@ -613,6 +614,10 @@ namespace MueLu {
 
     } else if (multigridAlgo == "unsmoothed") {
       // Unsmoothed aggregation
+      manager.SetFactory("P", manager.GetFactory("Ptent"));
+
+    } else if (multigridAlgo == "classical") {
+      // Classical AMG
       manager.SetFactory("P", manager.GetFactory("Ptent"));
 
     } else if (multigridAlgo == "sa") {
@@ -1020,7 +1025,7 @@ namespace MueLu {
 
     // Aggregation scheme
     MUELU_SET_VAR_2LIST(paramList, defaultList, "aggregation: type", std::string, aggType);
-    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay"}).count(aggType),
+    TEUCHOS_TEST_FOR_EXCEPTION(!strings({"uncoupled", "coupled", "brick", "matlab","notay","classical"}).count(aggType),
         Exceptions::RuntimeError, "Unknown aggregation algorithm: \"" << aggType << "\". Please consult User's Guide.");
     #ifndef HAVE_MUELU_MATLAB
     if (aggType == "matlab")
@@ -1078,6 +1083,26 @@ namespace MueLu {
         aggFactory->SetFactory("Coordinates", this->GetFactoryManager(levelID-1)->GetFactory("Coordinates"));
       }
     }
+    else if (aggType == "classical") {
+      aggFactory = rcp(new ClassicalPFactory());
+      ParameterList aggParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, aggParams);
+      
+      aggFactory->SetParameterList(aggParams);
+      aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
+      aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
+
+      // Now we short-circuit, because we neither need nor want TentativePFactory here      
+      manager.SetFactory("Ptent",     aggFactory);
+      manager.SetFactory("CoarseMap", aggFactory);
+      
+      if (reuseType == "tP" && levelID) {
+        //        keeps.push_back(keep_pair("Nullspace", Ptent.get()));
+        keeps.push_back(keep_pair("Ptent",aggFactory.get()));
+      }
+      return;
+    }
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
     else if (aggType == "notay") {
       aggFactory = rcp(new NotayAggregationFactory());
@@ -1099,6 +1124,7 @@ namespace MueLu {
       aggFactory->SetParameterList(aggParams);
     }
 #endif
+
 
 
     manager.SetFactory("Aggregates", aggFactory);

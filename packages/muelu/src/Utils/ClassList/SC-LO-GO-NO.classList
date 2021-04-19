@@ -17,6 +17,7 @@ BlockedRAPFactory
 BrickAggregationFactory
 BraessSarazinSmoother
 CGSolver
+ClassicalPFactory
 CloneRepartitionInterface
 CoalesceDropFactory
 CoalesceDropFactory_kokkos - #if defined(HAVE_MUELU_KOKKOS_REFACTOR)
