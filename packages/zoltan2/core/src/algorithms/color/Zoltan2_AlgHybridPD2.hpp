@@ -47,9 +47,9 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
     using map_t = Tpetra::Map<lno_t,gno_t>;
     using femv_scalar_t = int;
     using femv_t = Tpetra::FEMultiVector<femv_scalar_t, lno_t, gno_t>; 
-    using device_type = Tpetra::Map<>::device_type;//Kokkos::Device<Kokkos::Cuda, Kokkos::Cuda::memory_space>;
-    using execution_space = Tpetra::Map<>::execution_space;//Kokkos::Cuda;
-    using memory_space = Tpetra::Map<>::memory_space;//Kokkos::Cuda::memory_space;
+    using device_type = Tpetra::Map<>::device_type;
+    using execution_space = Tpetra::Map<>::execution_space;
+    using memory_space = Tpetra::Map<>::memory_space;
   private:
     
     virtual void colorInterior(const size_t nVtx,
@@ -69,8 +69,8 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       if(vertex_list_size != 0){
         kh.get_distance2_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
       }
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-      Kokkos::View<int*, device_type> sv = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->template getLocalView<memory_space>();
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_distance2_graph_coloring_handle()->set_verbose(this->verbose);
       kh.get_distance2_graph_coloring_handle()->set_vertex_colors(sv);
       KokkosGraph::Experimental::bipartite_color_rows(&kh, nVtx, nVtx, offset_view, adjs_view,true);
@@ -86,7 +86,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
                        size_t vertex_list_size = 0,
                        bool recolor=false) {
       using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
-          <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, memory_space, memory_space>;
+          <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace, Kokkos::HostSpace>;
   
       KernelHandle kh;
   
@@ -95,8 +95,8 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       if(vertex_list_size != 0){
         kh.get_distance2_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
       }
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-      Kokkos::View<int*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, memory_space>> sv = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->getLocalViewHost();
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_distance2_graph_coloring_handle()->set_verbose(this->verbose);
       kh.get_distance2_graph_coloring_handle()->set_vertex_colors(sv);
       KokkosGraph::Experimental::bipartite_color_rows(&kh, nVtx, nVtx, offset_view, adjs_view,true);

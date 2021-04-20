@@ -96,8 +96,8 @@ class AlgDistance1 : public Algorithm<Adapter>
 
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<MemorySpace>();
-      Kokkos::View<int*, Kokkos::Device<ExecutionSpace, MemorySpace>>  sv = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->template getLocalView<MemorySpace>();
+      auto  sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       kh.get_graph_coloring_handle()->set_tictoc(verbose);
       KokkosGraph::Experimental::graph_color_symbolic<KernelHandle, lno_row_view_t, lno_nnz_view_t>

@@ -79,8 +79,8 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
       kh.set_verbose(this->verbose);
   
       //set the initial coloring to be the colors from femv.
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-      Kokkos::View<int*, device_type> sv = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->template getLocalView<memory_space>();
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       kh.get_graph_coloring_handle()->set_tictoc(this->verbose);
   
@@ -102,9 +102,9 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
                        bool recolor=false) {
         //fill in colorInterior_serial
 	using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
-            <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, memory_space, memory_space>;
-	using lno_row_view_t = Kokkos::View<offset_t*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, memory_space>>;
-	using lno_nnz_view_t = Kokkos::View<lno_t*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, memory_space>>;
+            <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace, Kokkos::HostSpace>;
+	using lno_row_view_t = Kokkos::View<offset_t*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>>;
+	using lno_nnz_view_t = Kokkos::View<lno_t*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>>;
 	KernelHandle kh;
 
 	if(recolor){
@@ -119,8 +119,8 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 
 	kh.set_verbose(this->verbose);
 
-	Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-	Kokkos::View<int*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, memory_space> > sv = subview(femvColors, Kokkos::ALL, 0);
+	auto femvColors = femv->getLocalViewHost();
+	auto sv = subview(femvColors, Kokkos::ALL, 0);
 	kh.get_graph_coloring_handle()->set_vertex_colors(sv);
 	kh.get_graph_coloring_handle()->set_tictoc(this->verbose);
 

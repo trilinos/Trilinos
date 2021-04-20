@@ -154,7 +154,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       buildModel(flags);
     }
     
-
+  private:
     void constructSecondGhostLayer(std::vector<gno_t>& ownedPlusGhosts, //this argument changes
                                    const std::vector<int>& owners,
                                    ArrayView<const gno_t> adjs,
@@ -451,6 +451,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       return comm_total;
     }   
 
+  public:
     //Main entry point for graph coloring
     void color( const RCP<ColoringSolution<Adapter> > &solution){
       //convert from global graph to local graph
@@ -649,7 +650,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       }
 
     }
-
+  private:
     void twoGhostLayer(const size_t n_local, const size_t n_total,
                        const Teuchos::ArrayView<const lno_t>& adjs,
                        const Teuchos::ArrayView<const offset_t>& offsets,
@@ -778,8 +779,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //this view represents how many conflicts were found
       Kokkos::View<gno_t[1], device_type> recoloringSize("Recoloring Queue Size");
       recoloringSize(0) = 0;
-      //keep an atomic version so that we can increment from multiple threads
-      Kokkos::View<gno_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > recoloringSize_atomic = recoloringSize;
 
       //create views for the ghost adjacencies, as they can detect all conflicts.
       if(verbose) std::cout<<comm->getRank()<<": constructing ghost connectivity views\n";

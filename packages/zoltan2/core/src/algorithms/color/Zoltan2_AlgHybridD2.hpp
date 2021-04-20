@@ -69,8 +69,8 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
       if(vertex_list_size != 0){
         kh.get_distance2_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
       }
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-      Kokkos::View<int*, Kokkos::Device<execution_space,memory_space>> sv = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->template getLocalView<memory_space>();
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_distance2_graph_coloring_handle()->set_vertex_colors(sv);
 
       KokkosGraph::Experimental::graph_color_distance2(&kh, nVtx, offset_view, adjs_view);
@@ -87,7 +87,7 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
 		       size_t vertex_list_size = 0,
 		       bool recolor=false){
       using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
-          <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, memory_space, memory_space>;
+          <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace, Kokkos::HostSpace>;
 
       KernelHandle kh;
       kh.set_verbose(this->verbose);
@@ -96,8 +96,8 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
       if(vertex_list_size != 0){
         kh.get_distance2_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
       }
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-      Kokkos::View<int*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace,memory_space>> sv = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->getLocalViewHost();
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_distance2_graph_coloring_handle()->set_vertex_colors(sv);
 
       KokkosGraph::Experimental::graph_color_distance2(&kh, nVtx, offset_view, adjs_view);
