@@ -130,6 +130,7 @@ set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
   CACHE STRING "Temporary disable for CUDA PR testing")
 
 # Disable a few failing tests for initial release of Cuda 10.1.243 PR build
+# these fail due to a bug in spectrum-mpi : see issue #8798 for details
 set (Zoltan_ch_simple_zoltan_parallel_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Zoltan_hg_simple_zoltan_parallel_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Zoltan_mpiMinLoc_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
