@@ -163,12 +163,6 @@ set (Zoltan2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 
 # Tpetra UVM = OFF tests
 set (TpetraCore_BlockCrsMatrix_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_iallreduce_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_idot_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_FEMAssembly_InsertGlobalIndicesFESP_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_FEMAssembly_InsertGlobalIndicesFESPKokkos_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_FEMAssembly_TotalElementLoopSP_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_FEMAssembly_TotalElementLoopSPKokkos_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 set (TpetraCore_BlockCrsPerfTest_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
 
 # ShyLU_DD UVM = OFF tests
