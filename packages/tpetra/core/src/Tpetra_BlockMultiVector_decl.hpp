@@ -474,24 +474,25 @@ public:
     mv_.sync_device();
   }
 
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
-  //TPETRA_DEPRECATED
   bool need_sync () const {
     return mv_.template need_sync<typename TargetMemorySpace::memory_space> ();
   }
 
   //! Whether this object needs synchronization to the host
-  //TPETRA_DEPRECATED
   bool need_sync_host() const {
     return mv_.need_sync_host();
   }
 
   //! Whether this object needs synchronization to the device
-  //TPETRA_DEPRECATED
   bool need_sync_device() const {
     return mv_.need_sync_device();
   }
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
   /// \brief Mark data as modified on the given memory space.
   ///
