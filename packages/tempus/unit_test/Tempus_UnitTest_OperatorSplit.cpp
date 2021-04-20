@@ -143,7 +143,7 @@ public:
   StepperOperatorSplitModifierTest()
     : testBEGIN_STEP(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -173,8 +173,8 @@ public:
       case StepperOperatorSplitAppAction<double>::AFTER_STEPPER:
       {
         testAFTER_STEPPER = true;
-        testType = "OperatorSplit - Modifier";
-        stepper->setStepperType(testType);
+        testName = "OperatorSplit - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
       case StepperOperatorSplitAppAction<double>::END_STEP:
@@ -197,7 +197,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
@@ -217,8 +217,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icState = Tempus::createSolutionStateX(icX, icXDot);
@@ -255,7 +254,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
-  TEST_COMPARE(modifier->testType, ==, "OperatorSplit - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "OperatorSplit - Modifier");
 }
 
 // ************************************************************
@@ -270,7 +269,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_STEPPER(false),
       testAFTER_STEPPER(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("Operator Split")
+      testDt(-1.5), testName("Operator Split")
   {}
 
   /// Destructor
@@ -299,7 +298,7 @@ public:
     case StepperOperatorSplitAppAction<double>::AFTER_STEPPER:
       {
         testAFTER_STEPPER = true;
-        testType = stepper->getStepperType();
+        testName = stepper->getStepperType();
         break;
       }
     case StepperOperatorSplitAppAction<double>::END_STEP:
@@ -322,7 +321,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
@@ -342,8 +341,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icState = Tempus::createSolutionStateX(icX, icXDot);
@@ -379,7 +377,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_Observer)
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, -1.5, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "Operator Split");
+  TEST_COMPARE(observer->testName, ==, "Operator Split");
 }
 
 // ************************************************************
@@ -464,8 +462,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, AppAction_ModifierX)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icState = Tempus::createSolutionStateX(icX, icXDot);

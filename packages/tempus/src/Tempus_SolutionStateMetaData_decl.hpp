@@ -160,6 +160,8 @@ protected:
   Scalar accuracy_;       ///< Interpolation accuracy of solution
 
 };
+
+
 } // namespace Tempus
 
 #endif // Tempus_SolutionStateMetaData_decl_hpp
