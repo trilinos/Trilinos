@@ -192,7 +192,6 @@ void reduceMultiVector2 (MV& Z)
                Z_j_lcl.data (), Z2_j_lcl.data ());
     Kokkos::deep_copy (Z_j_lcl, Z2_j_lcl);
   }
-  Z.sync_device ();
 }
 
 //
@@ -240,7 +239,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
       Z0.getVectorNonConst (j)->putScalar (curVal);
       curVal += STS::one ();
     }
-    Z0.sync_device ();
   }
 
   MV Z1 (Z0, Teuchos::Copy);
