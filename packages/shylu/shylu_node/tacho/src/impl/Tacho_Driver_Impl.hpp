@@ -371,12 +371,13 @@ namespace Tacho {
       ///
       if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
         const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
-        if (nthreads == 1) {
+        if (nthreads == 1 && false) {
           /// single threaded case
           if (_N == nullptr) 
             _N = (numeric_tools_base_type*) ::operator new (sizeof(numeric_tools_serial_type));
           
-          new (_N) numeric_tools_serial_type(_m, _ap, _aj,
+          new (_N) numeric_tools_serial_type(_mode, 
+                                             _m, _ap, _aj,
                                              _perm, _peri,
                                              _nsupernodes, _supernodes,
                                              _gid_super_panel_ptr, _gid_super_panel_colidx,
@@ -392,7 +393,8 @@ namespace Tacho {
             do {                                                        \
               if (_N == nullptr)                                        \
                 _N = (numeric_tools_base_type*) ::operator new (sizeof(numeric_tools_levelset_name)); \
-              new (_N) numeric_tools_levelset_name(_m, _ap, _aj,        \
+              new (_N) numeric_tools_levelset_name(_mode,               \
+                                                   _m, _ap, _aj,        \
                                                    _perm, _peri,        \
                                                    _nsupernodes, _supernodes, \
                                                    _gid_super_panel_ptr, _gid_super_panel_colidx, \
@@ -430,11 +432,25 @@ namespace Tacho {
   int
   Driver<VT,DT>      
   ::factorize(const value_type_array &ax) {
-    switch (_mode) {
-    case Cholesky: factorize_chol(ax); break;
-    case LDL:      factorize_ldl (ax); break;
-    default:
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
+    if (_verbose) {
+      switch (_mode) {
+      case Cholesky: {
+        printf("TachoSolver: Factorize Cholesky\n");
+        printf("===============================\n");
+        break;
+      } 
+      case LDL: {
+        printf("TachoSolver: Factorize LDL\n");
+        printf("==========================\n");
+        break;
+      }
+      }
+    }
+
+    if (_m < _small_problem_thres) {
+      factorize_small_host(ax);
+    } else {
+      _N->factorize(ax, _verbose);
     }
     return 0;
   }
@@ -442,90 +458,58 @@ namespace Tacho {
   template<typename VT, typename DT>  
   int
   Driver<VT,DT>      
-  ::factorize_chol(const value_type_array &ax) {
-    if (_verbose) {
-      printf("TachoSolver: Factorize Cholesky\n");
-      printf("===============================\n");
-    }
-    if (_m < _small_problem_thres) {
+  ::factorize_small_host(const value_type_array &ax) {
+    double t_copy(0), t_factor(0);
+    {
       Kokkos::Impl::Timer timer;
 
       timer.reset();
       _A = value_type_matrix_host("A", _m, _m);
-      auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
+      auto h_ax = Kokkos::create_mirror_view_and_copy(host_memory_space(), ax); 
       for (ordinal_type i=0;i<_m;++i) {
         const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
         for (size_type j=jbeg;j<jend;++j) {
           const ordinal_type col = _h_aj(j);
-          if (i <= col) 
+          const bool flag = ((_mode == Cholesky && i <= col) || /// upper  
+                             (_mode == LDL      && i >= col));  /// lower
+          if (flag) 
             _A(i, col) = h_ax(j);
         }
       }
-      const double t_copy = timer.seconds();
+      t_copy = timer.seconds();
         
       timer.reset();
-      Tacho::Chol<Uplo::Upper,Algo::External>::invoke(_A);
-      const double t_factor = timer.seconds();
-
-      if (_verbose) {
-        printf("Summary: NumericTools (SmallDenseFactorization)\n");
-        printf("===============================================\n");
-        printf("  Time\n");
-        printf("             time for copying A into supernodes:              %10.6f s\n", t_copy);
-        printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
-        printf("             total time spent:                                %10.6f s\n", (t_copy+t_factor));
-        printf("\n");
+      switch (_mode) {
+      case Cholesky: {
+        Tacho::Chol<Uplo::Upper,Algo::External>::invoke(_A);
+        break;
       }
-    } else {
-      _N->factorizeCholesky(ax, _verbose);
+      case LDL: {
+        _P = ordinal_type_array_host("P", 4*_m);
+        _D = value_type_matrix_host("D", _m, 2);
+        auto W = value_type_array_host("W", 32*_m);
+        Tacho::LDL<Uplo::Lower,Algo::External>::invoke(_A, _P, W);
+        Tacho::LDL<Uplo::Lower,Algo::External>::modify(_A, _P, _D);
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Solution method is not implemented");        
+        break;
+      }
+      }
+      t_factor = timer.seconds();
     }
-    return 0;
-  }
 
-  template<typename VT, typename DT>  
-  int
-  Driver<VT,DT>      
-  ::factorize_ldl(const value_type_array &ax) {
     if (_verbose) {
-      printf("TachoSolver: Factorize LDL\n");
-      printf("==========================\n");
+      printf("Summary: NumericTools (SmallDenseFactorization)\n");
+      printf("===============================================\n");
+      printf("  Time\n");
+      printf("             time for copying A into supernodes:              %10.6f s\n", t_copy);
+      printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
+      printf("             total time spent:                                %10.6f s\n", (t_copy+t_factor));
+      printf("\n");
     }
-    if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
 
-      timer.reset();
-      _A = value_type_matrix_host("A", _m, _m);
-      auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
-      for (ordinal_type i=0;i<_m;++i) {
-        const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
-        for (size_type j=jbeg;j<jend;++j) {
-          const ordinal_type col = _h_aj(j);
-          if (i >= col) 
-            _A(i, col) = h_ax(j);
-        }
-      }
-      const double t_copy = timer.seconds();
-        
-      timer.reset();
-      _P = ordinal_type_array_host("P", 4*_m);
-      _D = value_type_matrix_host("D", _m, 2);
-      auto W = value_type_array_host("W", 32*_m);
-      Tacho::LDL<Uplo::Lower,Algo::External>::invoke(_A, _P, W);
-      Tacho::LDL<Uplo::Lower,Algo::External>::modify(_A, _P, _D);
-      const double t_factor = timer.seconds();
-      
-      if (_verbose) {
-        printf("Summary: NumericTools (SmallDenseFactorization)\n");
-        printf("===============================================\n");
-        printf("  Time\n");
-        printf("             time for copying A into supernodes:              %10.6f s\n", t_copy);
-        printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
-        printf("             total time spent:                                %10.6f s\n", (t_copy+t_factor));
-        printf("\n");
-      }
-    } else {
-      _N->factorizeLDL(ax, _verbose);
-    }
     return 0;
   }
 
@@ -535,121 +519,92 @@ namespace Tacho {
   ::solve(const value_type_matrix &x,
           const value_type_matrix &b,
           const value_type_matrix &t) {
-    switch (_mode) {
-    case Cholesky: solve_chol(x, b, t); break;
-    case LDL:      solve_ldl (x, b, t); break;
-    default:
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
-    }      
+    if (_verbose) {
+      switch (_mode) {
+      case Cholesky: {
+        printf("TachoSolver: Solve Cholesky\n");
+        printf("===========================\n");
+        break;
+      } 
+      case LDL: {
+        printf("TachoSolver: Solve LDL\n");
+        printf("======================\n");
+        break;
+      }
+      }
+    }
+    
+    if (_m < _small_problem_thres) {
+      solve_small_host(x, b, t);
+    } else {
+      TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
+                               t.extent(1) < x.extent(1), 
+                               std::logic_error, 
+                               "Temporary rhs vector t is smaller than x");
+      auto tt = Kokkos::subview(t, 
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
+      _N->solve(x, b, tt, _verbose);
+    }
     return 0;
   }    
 
   template<typename VT, typename DT>  
   int
   Driver<VT,DT>      
-  ::solve_chol(const value_type_matrix &x,
-               const value_type_matrix &b,
-               const value_type_matrix &t) {
-    if (_verbose) {
-      printf("TachoSolver: Solve Cholesky\n");
-      printf("===========================\n");
-    }
-
-    if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
-
+  ::solve_small_host(const value_type_matrix &x,
+                     const value_type_matrix &b,
+                     const value_type_matrix &t) {
+    Kokkos::Impl::Timer timer;
+    double t_copy(0), t_solve(0);
+    {
       timer.reset();
       Kokkos::deep_copy(x, b);
-      const double t_copy = timer.seconds();
-
+      t_copy = timer.seconds();
+      
       timer.reset();
-      auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
-      Kokkos::deep_copy(h_x, x);
-      Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-        ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
-      Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-        ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
-      Kokkos::deep_copy(x, h_x);         
-      const double t_solve = timer.seconds();
-
-      if (_verbose) {
-        printf("Summary: NumericTools (SmallDenseSolve)\n");
-        printf("=======================================\n");
-        printf("  Time\n");
-        printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", t_copy);
-        printf("             time for numeric solve:                          %10.6f s\n", t_solve);
-        printf("             total time spent:                                %10.6f s\n", (t_solve+t_copy));
-        printf("\n");
+      switch (_mode) {
+      case Cholesky: {
+        auto h_x = Kokkos::create_mirror_view_and_copy(host_memory_space(), x); 
+        Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
+          ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
+        Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
+          ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
+        Kokkos::deep_copy(x, h_x);
+        break;
       }
-    } else {
-      TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
-                               t.extent(1) < x.extent(1), 
-                               std::logic_error, 
-                               "Temporary rhs vector t is smaller than x");
-      auto tt = Kokkos::subview(t, 
-                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
-                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
-      _N->solveCholesky(x, b, tt, _verbose);
+      case LDL: {
+        auto perm = ordinal_type_array_host(_P.data()+2*_m, _m);
+        auto peri = ordinal_type_array_host(_P.data()+3*_m, _m);
+        auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
+        auto h_t = Kokkos::create_mirror_view(host_memory_space(), t); 
+        
+        ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+          ::invoke(h_x, perm, h_t);              
+        Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::External>
+          ::invoke(Diag::Unit(), 1.0, _A, h_t);
+        Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal>
+          ::invoke(_P, _D, h_t);
+        Trsm<Side::Left,Uplo::Lower,Trans::Transpose,Algo::External>
+          ::invoke(Diag::Unit(), 1.0, _A, h_t);
+        ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+          ::invoke(h_t, peri, h_x);        
+        Kokkos::deep_copy(x, h_x);         
+        break;
+      }
+      }
+      t_solve = timer.seconds();
     }
-    return 0;
-  }
 
-  template<typename VT, typename DT>  
-  int
-  Driver<VT,DT>      
-  ::solve_ldl(const value_type_matrix &x,
-              const value_type_matrix &b,
-              const value_type_matrix &t) {
     if (_verbose) {
-      printf("TachoSolver: Solve LDL\n");
-      printf("======================\n");
-    }
-
-    if (_m < _small_problem_thres) {
-      Kokkos::Impl::Timer timer;
-
-      timer.reset();
-      Kokkos::deep_copy(x, b);
-      const double t_copy = timer.seconds();
-
-      timer.reset();
-      auto perm = ordinal_type_array_host(_P.data()+2*_m, _m);
-      auto peri = ordinal_type_array_host(_P.data()+3*_m, _m);
-      auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
-      auto h_t = Kokkos::create_mirror_view(host_memory_space(), t); 
-
-      ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
-        ::invoke(h_x, perm, h_t);              
-      Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::External>
-        ::invoke(Diag::Unit(), 1.0, _A, h_t);
-      Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal>
-        ::invoke(_P, _D, h_t);
-      Trsm<Side::Left,Uplo::Lower,Trans::Transpose,Algo::External>
-        ::invoke(Diag::Unit(), 1.0, _A, h_t);
-      ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
-        ::invoke(h_t, peri, h_x);        
-      Kokkos::deep_copy(x, h_x);         
-      const double t_solve = timer.seconds();
-
-      if (_verbose) {
-        printf("Summary: NumericTools (SmallDenseSolve)\n");
-        printf("=======================================\n");
-        printf("  Time\n");
-        printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", t_copy);
-        printf("             time for numeric solve:                          %10.6f s\n", t_solve);
-        printf("             total time spent:                                %10.6f s\n", (t_solve+t_copy));
-        printf("\n");
-      }
-    } else {
-      TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
-                               t.extent(1) < x.extent(1), 
-                               std::logic_error, 
-                               "Temporary rhs vector t is smaller than x");
-      auto tt = Kokkos::subview(t, 
-                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
-                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
-      _N->solveLDL(x, b, tt, _verbose);
-    }
+      printf("Summary: NumericTools (SmallDenseSolve)\n");
+      printf("=======================================\n");
+      printf("  Time\n");
+      printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", t_copy);
+      printf("             time for numeric solve:                          %10.6f s\n", t_solve);
+      printf("             total time spent:                                %10.6f s\n", (t_solve+t_copy));
+      printf("\n");
+    }   
     return 0;
   }
 

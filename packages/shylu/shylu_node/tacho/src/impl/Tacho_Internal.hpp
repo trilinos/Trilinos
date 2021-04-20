@@ -99,7 +99,7 @@
 #include "Tacho_TriSolveTools.hpp"
 
 // refactoring
-#include "Tacho_NumericToolsBase.hpp"
+#include "Tacho_NumericTools_Base.hpp"
 #include "Tacho_NumericTools_Serial.hpp"
 #include "Tacho_NumericTools_LevelSet.hpp"
 

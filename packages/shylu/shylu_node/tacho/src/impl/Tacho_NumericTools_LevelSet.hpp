@@ -4,7 +4,7 @@
 /// \file Tacho_NumericTools_LevelSet.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Tacho_NumericToolsBase.hpp"
+#include "Tacho_NumericTools_Base.hpp"
 
 #include "Tacho_DenseFlopCount.hpp"
 #include "Tacho_SupernodeInfo.hpp"
@@ -35,6 +35,10 @@
 #include "Tacho_TeamFunctor_FactorizeChol.hpp"
 #include "Tacho_TeamFunctor_SolveLowerChol.hpp"
 #include "Tacho_TeamFunctor_SolveUpperChol.hpp"
+
+#include "Tacho_TeamFunctor_FactorizeLDL.hpp"
+#include "Tacho_TeamFunctor_SolveLowerLDL.hpp"
+#include "Tacho_TeamFunctor_SolveUpperLDL.hpp"
 
 //#define TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD
 //#define TACHO_ENABLE_LEVELSET_TOOLS_USE_LIGHT_KERNEL
@@ -67,7 +71,7 @@ namespace Tacho {
     using typename base_type::size_type_array_host;    
     using typename base_type::supernode_type_array_host;    
 
-    //using base_type::base_type;
+    using base_type::base_type;
 
   private:
     using base_type::_m;
@@ -81,6 +85,7 @@ namespace Tacho {
     using base_type::_diag; 
     using base_type::_info;
     using base_type::_nsupernodes;
+    using base_type::_stree_level;
 
     using base_type::stat;
     using base_type::track_alloc;
@@ -90,7 +95,6 @@ namespace Tacho {
     
     // supernode host information for level kernels launching
     supernode_type_array_host _h_supernodes;
-    ConstUnmanagedViewType<ordinal_type_array_host> _h_stree_level; /// later change this
 
     ///
     /// level set infrastructure and tuning parameters
@@ -130,8 +134,8 @@ namespace Tacho {
     int _status;
 
     // cuda stream
-#if defined(KOKKOS_ENABLE_CUDA)
     int _nstreams;
+#if defined(KOKKOS_ENABLE_CUDA)
     bool _is_cublas_created, _is_cusolver_dn_created;
     cublasHandle_t _handle_blas;
     cusolverDnHandle_t _handle_lapack;
@@ -141,7 +145,7 @@ namespace Tacho {
     using exec_instance_array_host = std::vector<exec_space>;
     exec_instance_array_host _exec_instances;
 #else 
-    int _nstreams, _handle_blas, _handle_lapack; // dummy handle for convenience
+    int _handle_blas, _handle_lapack; // dummy handle for convenience
 #endif
 
     ///
@@ -192,7 +196,8 @@ namespace Tacho {
 
     inline
     void
-    print_stat_init() {
+    print_stat_init() override {
+      base_type::print_stat_init();
       const double kilo(1024);
       printf("  Time\n");
       printf("             time for initialization:                         %10.6f s\n", stat.t_init);
@@ -217,55 +222,57 @@ namespace Tacho {
 
     inline
     void
-    print_stat_factorize_level() {
+    print_stat_factor() override {
+      base_type::print_stat_factor();
       double flop = 0;
-      for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-        auto &s = _h_supernodes(sid);
-        const ordinal_type m = s.m, n = s.n - s.m;
-        flop += DenseFlopCount<value_type>::Chol(m);
-        if (variant == 1) { 
-          flop += DenseFlopCount<value_type>::Trsm(true,  m, m);
-        } 
-        else if (variant == 2) {
-          flop += DenseFlopCount<value_type>::Trsm(true,  m, m);
+      switch (this->getSolutionMethod()) {
+      case 1: {
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          auto &s = _h_supernodes(sid);
+          const ordinal_type m = s.m, n = s.n - s.m;
+          flop += DenseFlopCount<value_type>::Chol(m);
+          if (variant == 1) { 
+            flop += DenseFlopCount<value_type>::Trsm(true,  m, m);
+          } 
+          else if (variant == 2) {
+            flop += DenseFlopCount<value_type>::Trsm(true,  m, m);
+            flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+          }
           flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+          flop += DenseFlopCount<value_type>::Syrk(m, n);
         }
-        flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
-        flop += DenseFlopCount<value_type>::Syrk(m, n);
+        break;
+      }
+      case 2: {
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          auto &s = _h_supernodes(sid);
+          const ordinal_type m = s.m, n = s.n - s.m;
+          flop += DenseFlopCount<value_type>::LDL(m);
+          flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+          flop += DenseFlopCount<value_type>::Syrk(m, n);
+        }
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(false,
+                                 std::logic_error,
+                                 "The solution method is not supported");
+      }
       }
       const double kilo(1024);
-      printf("  Time\n");
-      printf("             time for extra work e.g.,workspace allocation:   %10.6f s\n", stat.t_extra);
-      printf("             time for copying A into U:                       %10.6f s\n", stat.t_copy);
-      printf("             time for factorization:                          %10.6f s\n", stat.t_factor);
-      printf("             total time spent:                                %10.6f s\n", (stat.t_extra+stat.t_copy+stat.t_factor));
-      printf("\n");
-      printf("  Memory\n");
-      printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used/kilo/kilo);
-      printf("             peak memory used in factorization:               %10.3f MB\n", stat.m_peak/kilo/kilo);
+      printf("  FLOPs\n");
+      printf("             gflop   for numeric factorization wrt. Chol:     %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
       printf("\n");
       printf("  Kernels\n");
       printf("             # of kernels launching:                          %6d\n", stat_level.n_kernel_launching);
       printf("\n");
-      printf("  FLOPs\n");
-      printf("             gflop   for numeric factorization:               %10.3f GFLOP\n", flop/kilo/kilo/kilo);
-      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
-      printf("\n");
-
     }
 
     inline
     void
-    print_stat_solve_level() {
-      const double kilo(1024);
-      printf("  Time\n");
-      printf("             time for extra work e.g.,workspace and permute:  %10.6f s\n", stat.t_extra);
-      printf("             time for solve:                                  %10.6f s\n", stat.t_solve);
-      printf("             total time spent:                                %10.6f s\n", (stat.t_solve+stat.t_extra));
-      printf("\n");
-      printf("  Memory\n");
-      printf("             memory used in solve:                            %10.3f MB\n", stat.m_used/kilo/kilo);
-      printf("\n");
+    print_stat_solve() override {
+      base_type::print_stat_solve();
       printf("  Kernels\n");
       printf("             # of kernels launching:                          %6d\n", stat_level.n_kernel_launching);
       printf("\n");
@@ -296,14 +303,13 @@ namespace Tacho {
       _nsupernodes = _info.supernodes.extent(0);
 
       // local host supernodes info 
-      _h_supernodes = Kokkos::create_mirror_view(host_memory_space(), _info.supernodes);
-      Kokkos::deep_copy(_h_supernodes, _info.supernodes);
+      _h_supernodes = Kokkos::create_mirror_view_and_copy(host_memory_space(), _info.supernodes);
 
       // # of levels
       _nlevel = 0;
       {
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
-          _nlevel = max(_h_stree_level(sid), _nlevel);
+          _nlevel = max(_stree_level(sid), _nlevel);
         ++_nlevel;
       }
 
@@ -312,7 +318,7 @@ namespace Tacho {
       {
         // first count # of supernodes in each level
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) 
-          ++_h_level_ptr(_h_stree_level(sid)+1);
+          ++_h_level_ptr(_stree_level(sid)+1);
 
         // scan 
         for (ordinal_type i=0;i<_nlevel;++i) 
@@ -325,12 +331,11 @@ namespace Tacho {
         size_type_array_host tmp_level_ptr(do_not_initialize_tag("tmp_level_ptr"), _h_level_ptr.extent(0));
         Kokkos::deep_copy(tmp_level_ptr, _h_level_ptr);
         for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-          const ordinal_type lvl = _h_stree_level(sid);
+          const ordinal_type lvl = _stree_level(sid);
           _h_level_sids(tmp_level_ptr(lvl)++) = sid;
         }
       }
-      _level_sids = Kokkos::create_mirror_view(exec_memory_space(), _h_level_sids); 
-      Kokkos::deep_copy(_level_sids, _h_level_sids);
+      _level_sids = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_level_sids); 
       track_alloc(_level_sids.span()*sizeof(ordinal_type));
 
       ///
@@ -362,9 +367,19 @@ namespace Tacho {
             const auto s = _h_supernodes(sid); 
             const ordinal_type m = s.m, n = s.n, n_m = n-m;
             const ordinal_type schur_work_size = n_m*(n_m+max_factor_team_size);            
-            const ordinal_type factor_work_size_variants[3] = { schur_work_size, std::max(m*m, schur_work_size), m*m+schur_work_size };
-            const ordinal_type factor_work_size = factor_work_size_variants[variant];
-            const ordinal_type solve_work_size = variant == 0 ? n_m : n;
+            const ordinal_type chol_factor_work_size_variants[3] = { schur_work_size, max(m*m, schur_work_size), m*m+schur_work_size };
+            const ordinal_type chol_factor_work_size = chol_factor_work_size_variants[variant];
+            const ordinal_type ldl_factor_work_size = chol_factor_work_size_variants[0] + max(32*m, m*n);
+            const ordinal_type factor_work_size_variants[2] = { chol_factor_work_size, ldl_factor_work_size };
+
+            const ordinal_type chol_solve_work_size = (variant == 0 ? n_m : n);
+            const ordinal_type ldl_solve_work_size = n_m;
+            const ordinal_type solve_work_size_variants[2] = { chol_solve_work_size, ldl_solve_work_size };
+
+            const ordinal_type index_work_size = this->getSolutionMethod()-1;
+            const ordinal_type factor_work_size = factor_work_size_variants[index_work_size];
+            const ordinal_type solve_work_size = solve_work_size_variants[index_work_size];
+
             _h_buf_factor_ptr(k) = factor_work_size + _h_buf_factor_ptr(k-1);
             _h_buf_solve_ptr(k) = solve_work_size + _h_buf_solve_ptr(k-1);
           }
@@ -374,12 +389,10 @@ namespace Tacho {
         }
       }
 
-      _buf_factor_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_factor_ptr);
-      Kokkos::deep_copy(_buf_factor_ptr, _h_buf_factor_ptr);
+      _buf_factor_ptr = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_buf_factor_ptr);
       track_alloc(_buf_factor_ptr.span()*sizeof(size_type));
 
-      _buf_solve_ptr = Kokkos::create_mirror_view(exec_memory_space(), _h_buf_solve_ptr);
-      Kokkos::deep_copy(_buf_solve_ptr, _h_buf_solve_ptr);
+      _buf_solve_ptr = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_buf_solve_ptr);
       track_alloc(_buf_solve_ptr.span()*sizeof(size_type));
 
       _h_buf_solve_nrhs_ptr = size_type_array_host(do_not_initialize_tag("h_buf_solve_nrhs_ptr"), _h_buf_solve_ptr.extent(0));
@@ -457,19 +470,26 @@ namespace Tacho {
         }
       }
 
-      _factorize_mode = Kokkos::create_mirror_view(exec_memory_space(), _h_factorize_mode);
-      Kokkos::deep_copy(_factorize_mode, _h_factorize_mode);
+      _factorize_mode = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_factorize_mode);
       track_alloc(_factorize_mode.span()*sizeof(ordinal_type));
 
-      _solve_mode = Kokkos::create_mirror_view(exec_memory_space(), _h_solve_mode);
-      Kokkos::deep_copy(_solve_mode, _h_solve_mode);
+      _solve_mode = Kokkos::create_mirror_view_and_copy(exec_memory_space(), _h_solve_mode);
       track_alloc(_solve_mode.span()*sizeof(ordinal_type));
 
       stat.t_mode_classification = timer.seconds();
-
       if (verbose) {
-        printf("Summary: LevelSetTools-Variant-%d (Initialize)\n", variant);
-        printf("===============================================\n");
+        switch (this->getSolutionMethod()) {
+        case 1: {
+          printf("Summary: LevelSetTools-Variant-%d (InitializeCholesky)\n", variant);
+          printf("======================================================\n");
+          break;
+        } 
+        case 2: {
+          printf("Summary: LevelSetTools (InitializeLDL)\n");
+          printf("======================================================\n");          
+          break;
+        }
+        }
         print_stat_init();
       }
     }
@@ -501,7 +521,8 @@ namespace Tacho {
     }
     NumericToolsLevelSet(const NumericToolsLevelSet &b) = default;
 
-    NumericToolsLevelSet(// input matrix A
+    NumericToolsLevelSet(const ordinal_type method,
+                         // input matrix A
                          const ordinal_type m,
                          const    size_type_array &ap,
                          const ordinal_type_array &aj,
@@ -521,16 +542,15 @@ namespace Tacho {
                          const ordinal_type_array &stree_children,
                          const ordinal_type_array_host &stree_level,
                          const ordinal_type_array_host &stree_roots)
-    : base_type(m, ap, aj,
+    : base_type(method, 
+                m, ap, aj,
                 perm,peri,
                 nsupernodes, supernodes,
                 gid_ptr, gid_colidx, 
                 sid_ptr, sid_colidx, blk_colidx,
                 stree_parent, stree_ptr, stree_children,
                 stree_level, stree_roots) {
-      _h_stree_level = stree_level;
       _nstreams = 0;
-
 #if defined(KOKKOS_ENABLE_CUDA)
       _is_cublas_created = 0;
       _is_cusolver_dn_created = 0;
@@ -805,7 +825,7 @@ namespace Tacho {
     inline 
     void
     factorizeCholesky(const value_type_array &ax,
-                      const ordinal_type verbose = 0) override {
+                      const ordinal_type verbose = 0) {
       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       Kokkos::Impl::Timer timer;
 
@@ -918,7 +938,7 @@ namespace Tacho {
       if (verbose) {
         printf("Summary: LevelSetTools-Variant-%d (CholeskyFactorize)\n", variant);
         printf("=====================================================\n");
-        print_stat_factorize_level();
+        print_stat_factor();
       }
     }
 
@@ -1254,7 +1274,7 @@ namespace Tacho {
     solveCholesky(const value_type_matrix &x,   // solution
                   const value_type_matrix &b,   // right hand side
                   const value_type_matrix &t,
-                  const ordinal_type verbose = 0) override { // temporary workspace (store permuted vectors)
+                  const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
       TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
                                x.extent(1) != b.extent(1) ||
                                x.extent(0) != t.extent(0) ||
@@ -1444,14 +1464,14 @@ namespace Tacho {
       if (verbose) {
         printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
         printf("==============================================================\n");
-        print_stat_solve_level();
+        print_stat_solve();
       }
     }
 
     inline
     void
     factorizeLDL(const value_type_array &ax,
-                 const ordinal_type verbose = 0) override {
+                 const ordinal_type verbose = 0) {
 //       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
 //       Kokkos::Impl::Timer timer;
 
@@ -1500,7 +1520,7 @@ namespace Tacho {
 //                                      typename functor_type::DummyTag> team_policy_update;
 // #else
 //           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::template FactorizeTag> team_policy_factor;
+//                                      typename functor_type::FactorizeTag> team_policy_factor;
 //           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
 //                                      typename functor_type::UpdateTag> team_policy_update;
 // #endif
@@ -1541,7 +1561,7 @@ namespace Tacho {
 //               }
 
 //               const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
-//               factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
+//               //factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
 //               Kokkos::fence();
 
 //               Kokkos::parallel_for("update factor", policy_update, functor); 
@@ -1575,7 +1595,7 @@ namespace Tacho {
     solveLDL(const value_type_matrix &x,   // solution
              const value_type_matrix &b,   // right hand side
              const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-             const ordinal_type verbose = 0) override {
+             const ordinal_type verbose = 0) {
 //       TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
 //                                x.extent(1) != b.extent(1) ||
 //                                x.extent(0) != t.extent(0) ||
@@ -1768,6 +1788,53 @@ namespace Tacho {
 //         print_stat_solve_level();
 //       }
     }
+
+    inline
+    void
+    factorize(const value_type_array &ax,
+              const ordinal_type verbose = 0) override {
+      switch (this->getSolutionMethod()) {
+      case 1: { /// Cholesky
+        factorizeCholesky(ax, verbose);
+        break;
+      }
+      case 2: { /// LDL
+        factorizeLDL(ax, verbose);
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(false,
+                                 std::logic_error,
+                                 "The solution method is not supported");
+        break;
+      }
+      }
+    }
+
+    inline
+    void
+    solve(const value_type_matrix &x,   // solution
+          const value_type_matrix &b,   // right hand side
+          const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+          const ordinal_type verbose = 0) override {
+      switch (this->getSolutionMethod()) {
+      case 1: { /// Cholesky
+        solveCholesky(x, b, t, verbose);
+        break;
+      }
+      case 2: { /// LDL
+        solveLDL(x, b, t, verbose);
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(false,
+                                 std::logic_error,
+                                 "The solution method is not supported");
+        break;
+      }
+      }
+    }
+    
   };
 
 }

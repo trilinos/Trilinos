@@ -4,7 +4,7 @@
 /// \file Tacho_NumericTools_Serial.hpp
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
-#include "Tacho_NumericToolsBase.hpp"
+#include "Tacho_NumericTools_Base.hpp"
 
 #include "Tacho_DenseFlopCount.hpp"
 #include "Tacho_SupernodeInfo.hpp"
@@ -29,6 +29,7 @@ namespace Tacho {
     using typename base_type::device_type;
     using typename base_type::exec_space;
     using typename base_type::exec_memory_space;
+    using typename base_type::host_memory_space;
     using typename base_type::ordinal_type_array;    
     using typename base_type::size_type_array;    
     using typename base_type::value_type_array;    
@@ -44,6 +45,8 @@ namespace Tacho {
     using base_type::_ax;
     using base_type::_perm;
     using base_type::_peri;
+    using base_type::_nsupernodes;
+    using base_type::_supernodes;
     using base_type::_stree_roots;
     using base_type::_piv;
     using base_type::_diag; 
@@ -53,11 +56,51 @@ namespace Tacho {
     using base_type::track_alloc;
     using base_type::track_free;
     using base_type::reset_stat;
-    using base_type::print_stat_factor;
+    //using base_type::print_stat_factor;
     using base_type::print_stat_solve;
     using base_type::print_stat_memory;
     
   public:
+
+    inline
+    void
+    print_stat_factor() override {
+      base_type::print_stat_factor();
+      double flop = 0;
+      auto h_supernodes = Kokkos::create_mirror_view_and_copy(host_memory_space(), _supernodes); 
+      switch (this->getSolutionMethod()) {
+      case 1: {
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          auto &s = h_supernodes(sid);
+          const ordinal_type m = s.m, n = s.n - s.m;
+          flop += DenseFlopCount<value_type>::Chol(m);
+          flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+          flop += DenseFlopCount<value_type>::Syrk(m, n);
+        }
+        break;
+      }
+      case 2: {
+        for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
+          auto &s = h_supernodes(sid);
+          const ordinal_type m = s.m, n = s.n - s.m;
+          flop += DenseFlopCount<value_type>::LDL(m);
+          flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
+          flop += DenseFlopCount<value_type>::Syrk(m, n);
+        }
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(false,
+                                 std::logic_error,
+                                 "The solution method is not supported");
+      }
+      }
+      const double kilo(1024);
+      printf("  FLOPs\n");
+      printf("             gflop   for numeric factorization wrt. Chol:     %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
+      printf("\n");
+    }
 
     ///
     /// Choleksy
@@ -324,28 +367,59 @@ namespace Tacho {
     /// 
     inline
     void
-    factorizeCholesky(const value_type_array &ax,
-                      const ordinal_type verbose = 0) override {
+    factorize(const value_type_array &ax,
+              const ordinal_type verbose = 0) override {
       {
         const bool test = !std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
         TACHO_TEST_FOR_EXCEPTION(test,
                                  std::logic_error, 
                                  "Serial interface works on host device only");
       }
-      // if (_nb > 0) {
-      //   factorizeCholesky_SerialPanel(ax, _nb, verbose);
-      // } else {
-      //   factorizeCholesky_Serial(ax, verbose);
-      // }        
-      factorizeCholesky_Serial(ax, verbose);
+      switch (this->getSolutionMethod()) {
+      case 1: { /// Cholesky
+        // if (_nb > 0) {
+        //   factorizeCholesky_SerialPanel(ax, _nb, verbose);
+        // } else {
+        //   factorizeCholesky_Serial(ax, verbose);
+        // }        
+        factorizeCholesky_Serial(ax, verbose);
+        break;
+      }
+      case 2: { /// LDL
+        {
+          const ordinal_type rlen = 4*_m, plen = _piv.span();
+          if (plen < rlen) {
+            track_free(this->_piv.span()*sizeof(ordinal_type));
+            this->_piv = ordinal_type_array("piv", rlen);
+            track_alloc(this->_piv.span()*sizeof(ordinal_type));
+          }
+        }
+        {
+          const ordinal_type rlen = 2*_m, dlen = _diag.span();
+          if (dlen < rlen) {        
+            track_free(this->_diag.span()*sizeof(value_type));
+            this->_diag = value_type_array("diag", rlen);
+            track_alloc(this->_diag.span()*sizeof(value_type));
+          }
+        }
+        factorizeLDL_Serial(ax, verbose);
+        break;
+      }
+      default: {
+        TACHO_TEST_FOR_EXCEPTION(false,
+                                 std::logic_error,
+                                 "The solution method is not supported");
+        break;
+      }
+      }
     }
 
     inline
     void
-    solveCholesky(const value_type_matrix &x,   // solution
-                  const value_type_matrix &b,   // right hand side
-                  const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-                  const ordinal_type verbose = 0) override {
+    solve(const value_type_matrix &x,   // solution
+          const value_type_matrix &b,   // right hand side
+          const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+          const ordinal_type verbose = 0) override {
       {
         const bool test = !std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
         TACHO_TEST_FOR_EXCEPTION(test,
@@ -361,65 +435,20 @@ namespace Tacho {
                                  t.data() == b.data(), std::logic_error,
                                  "Input x, b and t have the same data pointer");
       }
-      solveCholesky_Serial(x, b, t, verbose);
+      
+      switch (this->getSolutionMethod()) {
+      case 1: {
+        solveCholesky_Serial(x, b, t, verbose);
+        break;
+      }
+      case 2: { 
+        solveLDL_Serial(x, b, t, verbose);
+        break;
+      }
+      default: {
+      }
+      }
     }
-
-    /// 
-    /// LDL main interface 
-    /// 
-    inline
-    void
-    factorizeLDL(const value_type_array &ax,
-                 const ordinal_type verbose = 0) override {
-      {
-        const bool test = !std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
-        TACHO_TEST_FOR_EXCEPTION(test,
-                                 std::logic_error, 
-                                 "Serial interface works on host device only");
-      }
-      {
-        const ordinal_type rlen = 4*_m, plen = _piv.span();
-        if (plen < rlen) {
-          track_free(this->_piv.span()*sizeof(ordinal_type));
-          this->_piv = ordinal_type_array("piv", rlen);
-          track_alloc(this->_piv.span()*sizeof(ordinal_type));
-        }
-      }
-      {
-        const ordinal_type rlen = 2*_m, dlen = _diag.span();
-        if (dlen < rlen) {        
-          track_free(this->_diag.span()*sizeof(value_type));
-          this->_diag = value_type_array("diag", rlen);
-          track_alloc(this->_diag.span()*sizeof(value_type));
-        }
-      }
-      factorizeLDL_Serial(ax, verbose);
-    }
-
-    inline
-    void
-    solveLDL(const value_type_matrix &x,   // solution
-             const value_type_matrix &b,   // right hand side
-             const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-             const ordinal_type verbose = 0) override {
-      {
-        const bool test = !std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
-        TACHO_TEST_FOR_EXCEPTION(test,
-                                 std::logic_error, 
-                                 "Serial interface works on host device only");
-        TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
-                                 x.extent(1) != b.extent(1) ||
-                                 x.extent(0) != t.extent(0) ||
-                                 x.extent(1) != t.extent(1), std::logic_error,
-                                 "Input x, b and t dimensions are not compatible");
-        TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
-                                 x.data() == t.data() ||
-                                 t.data() == b.data(), std::logic_error,
-                                 "Input x, b and t have the same data pointer");
-      }
-      solveLDL_Serial(x, b, t, verbose);
-    }
-
 
   };
 

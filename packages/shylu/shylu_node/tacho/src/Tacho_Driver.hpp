@@ -308,18 +308,14 @@ namespace Tacho {
     int initialize();
 
     int factorize(const value_type_array &ax);
-    int factorize_chol(const value_type_array &ax);
-    int factorize_ldl(const value_type_array &ax);
+    int factorize_small_host(const value_type_array &ax);
 
     int solve(const value_type_matrix &x,
               const value_type_matrix &b,
               const value_type_matrix &t);
-    int solve_chol(const value_type_matrix &x,
-                   const value_type_matrix &b,
-                   const value_type_matrix &t);    
-    int solve_ldl(const value_type_matrix &x,
-                  const value_type_matrix &b,
-                  const value_type_matrix &t);
+    int solve_small_host(const value_type_matrix &x,
+                         const value_type_matrix &b,
+                         const value_type_matrix &t);    
 
     double computeRelativeResidual(const value_type_array &ax,
                                    const value_type_matrix &x,

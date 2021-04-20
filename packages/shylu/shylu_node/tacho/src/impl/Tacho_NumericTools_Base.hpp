@@ -50,6 +50,9 @@ namespace Tacho {
     /// this holds all necessary connectivity data
     ///
 
+    // solution method
+    ordinal_type _method; // 1 - cholesky, 2 - LDL
+    
     // matrix input
     ordinal_type _m;
     size_type_array _ap;
@@ -118,16 +121,12 @@ namespace Tacho {
     }
 
     virtual void
+    print_stat_init() {
+      /// nothing
+    }
+
+    virtual void
     print_stat_factor() {
-      double flop = 0;
-      auto h_supernodes = Kokkos::create_mirror_view_and_copy(host_memory_space(), _supernodes);
-      for (ordinal_type sid=0;sid<_nsupernodes;++sid) {
-        auto &s = h_supernodes(sid);
-        const ordinal_type m = s.m, n = s.n - s.m;
-        flop += DenseFlopCount<value_type>::Chol(m);
-        flop += DenseFlopCount<value_type>::Trsm(true,  m, n);
-        flop += DenseFlopCount<value_type>::Syrk(m, n);
-      }
       const double kilo(1024);
       printf("  Time\n");
       printf("             time for copying A into supernodes:              %10.6f s\n", stat.t_copy);
@@ -138,14 +137,9 @@ namespace Tacho {
       printf("             memory used in factorization:                    %10.3f MB\n", stat.m_used/kilo/kilo);
       printf("             peak memory used in factorization:               %10.3f MB\n", stat.m_peak/kilo/kilo);
       printf("\n");
-      printf("  FLOPs\n");
-      printf("             gflop   for numeric factorization wrt. Chol:     %10.3f GFLOP\n", flop/kilo/kilo/kilo);
-      printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
-      printf("\n");
     }
       
-    inline
-    void
+    virtual void
     print_stat_solve() {
       const double kilo(1024);
       printf("  Time\n");
@@ -169,7 +163,8 @@ namespace Tacho {
 
   public:
     NumericToolsBase() 
-      : _m(0),
+      : _method(0), 
+        _m(0),
         stat() {}
 
     NumericToolsBase(const NumericToolsBase &b) = default;
@@ -177,7 +172,8 @@ namespace Tacho {
     ///
     /// construction (assume input matrix and symbolic are from host)
     ///
-    NumericToolsBase(// input matrix A
+    NumericToolsBase(const ordinal_type method,
+                     // input matrix A
                      const ordinal_type m,
                      const    size_type_array &ap,
                      const ordinal_type_array &aj,
@@ -197,7 +193,8 @@ namespace Tacho {
                      const ordinal_type_array &stree_children,
                      const ordinal_type_array_host &stree_level,
                      const ordinal_type_array_host &stree_roots)
-    : _m(m), _ap(ap), _aj(aj),
+    : _method(method), 
+      _m(m), _ap(ap), _aj(aj),
       _perm(perm), _peri(peri),
       _nsupernodes(nsupernodes),
       _gid_colidx(gid_colidx),
@@ -231,6 +228,11 @@ namespace Tacho {
     }
 
     virtual~NumericToolsBase() {}
+
+    inline
+    ordinal_type getSolutionMethod() const {
+      return _method;
+    }
 
     inline
     ordinal_type getNumRows() const {
@@ -314,40 +316,22 @@ namespace Tacho {
 
     inline
     virtual void
-    factorizeCholesky(const value_type_array &ax,
-                              const ordinal_type verbose = 0) {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "The function should be overriden by derived classes");
-    }
-
-    inline
-    virtual void
-    solveCholesky(const value_type_matrix &x,   // solution
-                  const value_type_matrix &b,   // right hand side
-                  const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-                  const ordinal_type verbose = 0) {
+    factorize(const value_type_array &ax,
+              const ordinal_type verbose = 0) {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "The function should be overriden by derived classes");
     }
     
     inline
     virtual void
-    factorizeLDL(const value_type_array &ax,
-                 const ordinal_type verbose = 0) {
+    solve(const value_type_matrix &x,   // solution
+          const value_type_matrix &b,   // right hand side
+          const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+          const ordinal_type verbose = 0) {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
                                "The function should be overriden by derived classes");
     }
     
-    inline
-    virtual void
-    solveLDL(const value_type_matrix &x,   // solution
-             const value_type_matrix &b,   // right hand side
-             const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-             const ordinal_type verbose = 0) {
-      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error,
-                               "The function should be overriden by derived classes");
-    }
-
     ///
     /// Utility on device
     ///
