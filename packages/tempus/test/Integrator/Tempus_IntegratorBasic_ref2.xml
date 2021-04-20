@@ -1,10 +1,10 @@
 <ParameterList name="Tempus">
-  <Parameter docString="" id="0" isDefault="false" isUsed="true" name="Integrator Name" type="string" value="Default Integrator"/>
-  <ParameterList id="28" name="Default Integrator">
+  <Parameter docString="" id="0" isDefault="false" isUsed="true" name="Integrator Name" type="string" value="Integrator Basic"/>
+  <ParameterList id="28" name="Integrator Basic">
     <Parameter docString="'Integrator Type' must be 'Integrator Basic'." id="1" isDefault="false" isUsed="true" name="Integrator Type" type="string" value="Integrator Basic"/>
     <Parameter docString="'Integrator Type' must be 'Integrator Basic'.Screen Output Index List.  Required to be in TimeStepControl range ['Minimum Time Step Index', 'Maximum Time Step Index']" id="2" isDefault="false" isUsed="true" name="Screen Output Index List" type="string" value=""/>
     <Parameter docString="Screen Output Index Interval (e.g., every 100 time steps" id="3" isDefault="false" isUsed="true" name="Screen Output Index Interval" type="int" value="1000000"/>
-    <Parameter docString="'Stepper Name' selects the Stepper block to construct (Required)." id="4" isDefault="false" isUsed="true" name="Stepper Name" type="string" value="Demo Stepper"/>
+    <Parameter docString="'Stepper Name' selects the Stepper block to construct (Required)." id="4" isDefault="false" isUsed="true" name="Stepper Name" type="string" value="Forward Euler"/>
     <ParameterList id="7" name="Solution History">
       <Parameter docString="" id="5" isDefault="true" isUsed="true" name="Storage Type" type="string" value="Undo"/>
       <Parameter docString="" id="6" isDefault="true" isUsed="true" name="Storage Limit" type="int" value="2"/>
@@ -38,7 +38,7 @@
       </ParameterList>
     </ParameterList>
   </ParameterList>
-  <ParameterList id="30" name="Demo Stepper">
+  <ParameterList id="30" name="Forward Euler">
     <Parameter docString="" id="29" isDefault="false" isUsed="true" name="Stepper Type" type="string" value="Forward Euler"/>
     <Parameter docString="" id="34" isDefault="false" isUsed="true" name="Use FSAL" type="bool" value="true"/>
     <Parameter docString="" id="35" isDefault="false" isUsed="true" name="Initial Condition Consistency" type="string" value="Consistent"/>

@@ -66,7 +66,7 @@ public:
 
 };
 
-/// Nonmember constructor
+/// Nonmember functions
 template<class Scalar>
 void interpolate(const Interpolator<Scalar>& interpolator,
                  const Scalar& t,
@@ -75,7 +75,7 @@ void interpolate(const Interpolator<Scalar>& interpolator,
   interpolator.interpolate(t, state_out);
 }
 
-/// Nonmember constructor
+/// Nonmember functions
 template<class Scalar>
 void interpolate(Interpolator<Scalar>& interpolator,
                  const Teuchos::RCP<const std::vector<Teuchos::RCP<SolutionState<Scalar> > > >&  nodes,

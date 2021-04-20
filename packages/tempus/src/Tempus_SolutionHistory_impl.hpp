@@ -282,6 +282,26 @@ void SolutionHistory<Scalar>::promoteWorkingState()
 
 
 template<class Scalar>
+void SolutionHistory<Scalar>::copy(Teuchos::RCP<const SolutionHistory<Scalar> > sh)
+{
+  this->setName(sh->getName());
+
+  this->clear();
+  auto sh_history = sh->getHistory();
+  typename std::vector<Teuchos::RCP<SolutionState<Scalar> > >::iterator
+    state_it = sh_history->begin();
+  for (; state_it < sh_history->end(); state_it++)
+    this->addState( *state_it );
+
+  auto interpolator = Teuchos::rcp_const_cast<Interpolator<Scalar> >(sh->getInterpolator());
+  this->setInterpolator(interpolator);
+
+  this->setStorageType(sh->getStorageType());
+  this->setStorageLimit(sh->getStorageLimit());
+}
+
+
+template<class Scalar>
 void SolutionHistory<Scalar>::setStorageLimit(int storage_limit)
 {
   storageLimit_ = std::max(1,storage_limit);
@@ -565,12 +585,6 @@ void SolutionHistory<Scalar>::setInterpolator(
     interpolator_ = InterpolatorFactory<Scalar>::createInterpolator();
   } else {
     interpolator_ = interpolator;
-  }
-  if (Teuchos::as<int>(this->getVerbLevel()) >=
-      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
-    *out << "interpolator = " << interpolator_->description() << std::endl;
   }
   isInitialized_ = false;
 }
