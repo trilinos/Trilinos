@@ -328,7 +328,8 @@ public:
   /// porting strategy to move from "classic" Tpetra to the Kokkos
   /// refactor version.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
-  TPETRA_DEPRECATED little_host_vec_type getLocalBlock (const LO localRowIndex) const;
+  //TPETRA_DEPRECATED 
+  little_host_vec_type getLocalBlock (const LO localRowIndex) const;
 #endif
   const_little_host_vec_type getLocalBlock (const LO localRowIndex,
                                             Access::ReadOnlyStruct) const;
