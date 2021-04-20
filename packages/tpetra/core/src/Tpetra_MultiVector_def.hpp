@@ -4331,7 +4331,7 @@ namespace Tpetra {
   sync_device () {
     owningView_.sync_device ();
   }
-#endif // TPETRA_DEPRECATED_CODE
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
