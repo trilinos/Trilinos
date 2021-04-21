@@ -80,15 +80,17 @@ protected:
     get_bulk().modification_end();
   }
 
-  stk::mesh::Selector create_subset_selector(stk::mesh::Part* blockToExclude = nullptr)
+  stk::mesh::Selector create_subset_selector(const stk::mesh::PartVector& blocksToExclude)
   {
     stk::mesh::Selector meshSubsetSelector = get_meta().universal_part();
-    if (blockToExclude != nullptr) {
+    if (!blocksToExclude.empty()) {
       stk::mesh::PartVector elemBlocks;
       stk::mesh::fill_element_block_parts(get_meta(), stk::topology::INVALID_TOPOLOGY, elemBlocks);
-      auto foundBlock = std::find(elemBlocks.begin(), elemBlocks.end(), blockToExclude);
-      ThrowRequire(foundBlock != elemBlocks.end());
-      elemBlocks.erase(foundBlock);
+      for(const stk::mesh::Part* excludedBlock : blocksToExclude) {
+        auto foundBlock = std::find(elemBlocks.begin(), elemBlocks.end(), excludedBlock);
+        ThrowRequire(foundBlock != elemBlocks.end());
+        elemBlocks.erase(foundBlock);
+      }
       meshSubsetSelector = stk::mesh::selectUnion(elemBlocks);
     }
 

@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,62 +30,32 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-#ifndef M2NDECOMPOSER_HPP
-#define M2NDECOMPOSER_HPP
+// 
 
-#include <stk_mesh/base/Types.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, ASSERT_TRUE, etc
+#include <stk_util/parallel/Parallel.hpp>
+#include <stk_coupling/SplitComms.hpp>
+#include <stk_coupling/SplitCommsSingleton.hpp>
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace balance { class BalanceSettings; } }
-namespace stk { namespace balance { class M2NParsedOptions; } }
+namespace {
 
-namespace stk {
-namespace balance {
-namespace internal {
-
-class M2NDecomposer
+void unset_split_comms_for_testing()
 {
-public:
-  M2NDecomposer(stk::mesh::BulkData & bulkData,
-                const stk::balance::BalanceSettings & balanceSettings,
-                const stk::balance::M2NParsedOptions & parsedOptions);
-  virtual ~M2NDecomposer() = default;
+  stk::coupling::set_split_comms_singleton(stk::coupling::SplitComms());
+}
 
-  virtual stk::mesh::EntityProcVec get_partition();
-
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors();
-
-  unsigned num_required_subdomains_for_each_proc();
-
-protected:
-  stk::mesh::BulkData & m_bulkData;
-  const stk::balance::BalanceSettings & m_balanceSettings;
-  const stk::balance::M2NParsedOptions & m_parsedOptions;
-};
-
-class M2NDecomposerNested : public M2NDecomposer
+TEST(UnitTestSplitCommSingleton, get_uninitialized)
 {
-public:
-  M2NDecomposerNested(stk::mesh::BulkData & bulkData,
-                      const stk::balance::BalanceSettings & balanceSettings,
-                      const stk::balance::M2NParsedOptions & parsedOptions);
-  virtual ~M2NDecomposerNested() override = default;
+  unset_split_comms_for_testing();
+  const stk::coupling::SplitComms& splitComms = stk::coupling::get_split_comms_singleton();
+  EXPECT_FALSE(splitComms.is_initialized());
+}
 
-  virtual stk::mesh::EntityProcVec get_partition() override;
-
-  virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
-
-private:
-  stk::mesh::EntityProcVec get_partition_for_subdomain(int subdomainId);
-  std::string get_initial_subdomain_part_name(int subdomainId);
-  void declare_all_initial_subdomain_parts();
-  void move_entities_into_initial_subdomain_part();
-
-  int m_numFinalSubdomainsPerProc;
-};
+TEST(UnitTestSplitCommSingleton, set_split_comms_singleton)
+{
+  int color = 0;
+  stk::coupling::set_split_comms_singleton(stk::coupling::SplitComms(MPI_COMM_WORLD, color));
+  EXPECT_TRUE(stk::coupling::get_split_comms_singleton().is_initialized());
+}
 
 }
-}
-}
-#endif // M2NDECOMPOSER_HPP
