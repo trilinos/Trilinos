@@ -102,7 +102,6 @@ namespace MueLu {
   void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(Level &currentLevel) const
   {
     FactoryMonitor m(*this, "Build", currentLevel);
-    const ParameterList& pL = GetParameterList();
     RCP<const GraphBase> graph = Get<RCP<GraphBase> >(currentLevel,"Graph");
     RCP<const Matrix> A = Get<RCP<Matrix> >(currentLevel,"A");
 
@@ -115,7 +114,13 @@ namespace MueLu {
     // boundaries, so that'll need to get cleaned up lated
     {
       SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
-      DoGraphColoring(*graph,myColors,numColors);
+
+#ifdef HAVE_MUELU_KOKKOSCORE  
+      if(graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
+        DoGraphColoring(*graph,myColors,numColors);
+      else
+#endif
+        DoMISNaive(*graph,myColors,numColors);
     }
     // FIXME: This coloring will either need to be done MPI parallel, or
     // there needs to be a cleanup phase to fix mistakes
@@ -299,6 +304,39 @@ DoGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numCo
   
 }// end DoGraphColoring
     
+
+/* ************************************************************************* */
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+DoMISNaive(const GraphBase & graph, ArrayRCP<LO> & myColors, LO & numColors) const {
+  // This is a fall-back routine for when we don't have Kokkos or when it isn't initialized
+  // We just do greedy MIS because this is easy to write.
+
+  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+  LO MIS = Teuchos::ScalarTraits<LO>::one();
+
+  //FIXME: Not efficient
+  myColors.resize(0);
+  myColors.resize(graph.GetNodeNumVertices(),LO_INVALID);
+
+  LO Nrows = (LO)graph.GetNodeNumVertices();
+
+  
+  for(LO row=0; row < Nrows; row++) {
+    ArrayView<const LO> indices;
+    graph.getNeighborVertices(row);
+    bool has_colored_neighbor=false;
+    for(LO j=0; !has_colored_neighbor && j<(LO)indices.size(); j++) {
+      // FIXME: This does not handle ghosting correctly
+      if(myColors[indices[j]] == MIS) 
+        has_colored_neighbor=true;
+    }
+    if(!has_colored_neighbor)
+      myColors[row] = MIS;   
+  } 
+  numColors=1;
+}
+
 
 } //namespace MueLu
 

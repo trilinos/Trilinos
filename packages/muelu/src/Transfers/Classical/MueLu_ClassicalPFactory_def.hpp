@@ -138,6 +138,8 @@ namespace MueLu {
     // We begin by getting a MIS (from a graph coloring) and then at that point we need
     // to start generating entries for the prolongator.   
     RCP<const Matrix>      A        = Get< RCP<Matrix> >      (fineLevel, "A");
+    RCP<const Map> coarseMap        = Get<RCP<const Map> >(fineLevel,"CoarseMap");
+    RCP<const LocalOrdinalVector> fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
     RCP<const GraphBase> graph      = Get< RCP<GraphBase> >(fineLevel, "Graph");
     LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
     RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
@@ -145,6 +147,7 @@ namespace MueLu {
     RCP<Matrix> P;
     SC SC_ZERO = STS::zero();
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
     const ParameterList& pL = GetParameterList();
 
     // DEBUG
@@ -160,11 +163,6 @@ namespace MueLu {
     // FIXME: This does not work in parallel yet
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
     
-    /* Get the CoarseMap and FC Splitting */
-    RCP<const Map> coarseMap = Get<RCP<const Map> >(fineLevel,"CoarseMap");
-    RCP<const LocalOrdinalVector> fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
-    const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
-
 
     /* Generate reindexing arrays */
     // FIXME: cpoint2ccol needs to get ghosted... athough if myPointType is ghosted, then this

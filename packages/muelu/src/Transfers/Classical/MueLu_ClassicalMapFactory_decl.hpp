@@ -134,6 +134,7 @@ namespace MueLu {
 
     virtual void DoGraphColoring(const GraphBase & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;    
 
+    virtual void DoMISNaive(const GraphBase & graph, Teuchos::ArrayRCP<LO> & myColors, LO & numColors) const;    
 
   }; //class ClassicalMapFactory
 
