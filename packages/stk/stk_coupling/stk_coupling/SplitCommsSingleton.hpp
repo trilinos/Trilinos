@@ -7,31 +7,21 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef STK_COUPLING_CONSTANTS_HPP
-#define STK_COUPLING_CONSTANTS_HPP
+#ifndef STK_COUPLING_SPLITCOMMS_SINGLETON_HPP
+#define STK_COUPLING_SPLITCOMMS_SINGLETON_HPP
 
-#include <string>
+#include <stk_coupling/SplitComms.hpp>
 
 namespace stk
 {
 namespace coupling
 {
 
-enum SyncMode {
-  Minimum = 0,
-  Receive,
-  Send,
-  Any
-};
+const SplitComms& get_split_comms_singleton();
 
-static const std::string AppName = "Application Name";
-static const std::string TimeSyncMode = "Time Sync Mode";
-static const std::string InitialTime = "Initial Time";
-static const std::string CurrentTime = "Current Time";
-static const std::string TimeStep = "Time Step";
-static const std::string FinalTime = "Final Time";
+void set_split_comms_singleton(const SplitComms& splitComms);
 
 }
 }
 
-#endif /* STK_COUPLING_CONSTANTS_HPP */
+#endif /* STK_COUPLING_SPLITCOMMS_SINGLETON_HPP */

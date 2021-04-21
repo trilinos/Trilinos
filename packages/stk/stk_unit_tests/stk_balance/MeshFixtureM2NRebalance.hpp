@@ -39,6 +39,7 @@
 #include <stk_balance/balanceUtils.hpp>
 #include <stk_balance/setup/M2NParser.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_io/StkMeshIoBroker.hpp>
 #include <vector>
 #include <unistd.h>
 
@@ -53,10 +54,31 @@ protected:
 
   std::string get_output_file_name() { return "junk.g"; }
 
-  void setup_initial_mesh(const std::string & inputMeshFile)
+  void setup_initial_mesh(const std::string & inputMeshSpec)
   {
+    const std::string tempInputFilename = "TemporaryInputMesh.g";
+    stk::unit_test_util::generated_mesh_to_file_in_serial(inputMeshSpec, tempInputFilename);
+
+    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
     create_target_decomp_field_on_entire_mesh();
-    setup_mesh(inputMeshFile, stk::mesh::BulkData::NO_AUTO_AURA);
+    m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+    stk::io::fill_mesh_preexisting(m_ioBroker, tempInputFilename, get_bulk());
+  }
+
+  void setup_initial_mesh_with_transient_field_data(const std::string & inputMeshSpec)
+  {
+    const std::string tempInputFilename = "TemporaryTransientInputMesh.g";
+    stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
+                                                                              tempInputFilename,
+                                                                              "transient_field",
+                                                                              "global_variable",
+                                                                              {0.0, 1.0, 2.0},
+                                                                              stk::unit_test_util::IdAndTimeFieldValueSetter());
+
+    allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
+    create_target_decomp_field_on_entire_mesh();
+    m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+    stk::io::fill_mesh_preexisting(m_ioBroker, tempInputFilename, get_bulk());
   }
 
   virtual void rebalance_mesh_m2n(int numFinalProcs) = 0;
@@ -106,14 +128,18 @@ protected:
 
   std::string get_subdomain_filename(unsigned numProcs, unsigned subdomainId)
   {
-    unsigned numberWidth = get_number_width(numProcs);
     std::ostringstream os;
-    os << get_output_file_name() << "." << std::setfill('0') << std::setw(numberWidth) << numProcs << "." << subdomainId;
+    os << get_output_file_name();
+    if (numProcs > 1) {
+      int numberWidth = static_cast<int>(get_number_width(numProcs));
+      os << "." << std::setfill('0') << std::setw(numberWidth) << numProcs << "." << subdomainId;
+    }
     return os.str();
   }
 
   unsigned m_numFinalProcs;
   stk::mesh::Field<double> *m_targetDecompField;
+  stk::io::StkMeshIoBroker m_ioBroker;
 };
 
 #endif // MESHFIXTUREM2NREBALANCE_HPP

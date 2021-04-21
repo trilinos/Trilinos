@@ -45,10 +45,10 @@
 #include <vector>                       // for vector
 #include <unordered_map>
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
+#include "stk_mesh/base/Ghosting.hpp"
 #include "stk_util/util/NamedPair.hpp"
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
 
@@ -125,6 +125,26 @@ PairIterEntityComm shared_comm_info_range(const EntityCommInfoVector& comm_info_
     }
 
     return PairIterEntityComm( i , e );
+}
+
+inline
+PairIterEntityComm ghost_info_range(const EntityCommInfoVector& commInfo, const Ghosting & ghosting)
+{
+  EntityCommInfoVector::const_iterator ghostBegin = commInfo.begin();
+  EntityCommInfoVector::const_iterator ghostEnd, end = commInfo.end();
+  while(ghostBegin != end && ghostBegin->ghost_id != ghosting.ordinal()) {
+    ++ghostBegin;
+  } 
+  
+  if (ghostBegin != end) {
+    ghostEnd = ghostBegin+1;
+    while(ghostEnd != end && ghostEnd->ghost_id == ghosting.ordinal()) {
+      ++ghostEnd;
+    } 
+    return PairIterEntityComm( ghostBegin , ghostEnd );
+  } 
+
+  return PairIterEntityComm( ghostBegin , end );
 }
 
 void pack_entity_info(const BulkData& mesh, CommBuffer & buf , const Entity entity );
