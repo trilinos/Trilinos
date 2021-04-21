@@ -109,12 +109,79 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
     }
     
+    template <class ExecutionSpace, typename MemorySpace>
+    void detectConflicts(const size_t n_local, const size_t n_ghosts,
+		         Kokkos::View<offset_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> dist_offsets,
+			 Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> dist_adjs,
+			 Kokkos::View<int*, Kokkos::Device<ExecutionSpace, MemorySpace>> femv_colors,
+			 Kokkos::View<lno_t*,
+			              Kokkos::Device<ExecutionSpace, MemorySpace>,
+				      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic,
+		         Kokkos::View<size_t[1],
+			              Kokkos::Device<ExecutionSpace, MemorySpace>,
+				      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
+			 Kokkos::View<gno_t[1], Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
+			 Kokkos::View<int*,
+			              Kokkos::Device<ExecutionSpace, MemorySpace>> rand,
+			 Kokkos::View<gno_t*,
+			              Kokkos::Device<ExecutionSpace, MemorySpace>> gid,
+                         Kokkos::View<gno_t*,
+			              Kokkos::Device<ExecutionSpace, MemorySpace>> ghost_degrees,
+			 bool recolor_degrees){
+      Kokkos::parallel_reduce("Conflict Detection",
+		              Kokkos::RangePolicy<ExecutionSpace>(0,n_ghosts), 
+		              KOKKOS_LAMBDA(const int& i,
+				            gno_t& recoloring_size){
+        lno_t lid = i+n_local;
+        int currColor = femv_colors(lid);
+	int currDegree = ghost_degrees(i);
+        for(offset_t j = dist_offsets(lid); j < dist_offsets(lid+1); j++){
+          int nborColor = femv_colors(dist_adjs(j));
+	  int nborDegree = 0;
+	  if((size_t)dist_adjs(j) < n_local) nborDegree = dist_offsets(dist_adjs(j)+1) - dist_offsets(dist_adjs(j));
+	  else nborDegree = ghost_degrees(dist_adjs(j) - n_local); 
+          if(currColor == nborColor ){
+	    if(currDegree < nborDegree && recolor_degrees){
+	      femv_colors(lid) = 0;
+	      recoloring_size++;
+	    }else if (nborDegree < currDegree && recolor_degrees){
+	      femv_colors(dist_adjs(j)) = 0;
+	      recoloring_size++;
+            }else if(rand(lid) > rand(dist_adjs(j))){
+              femv_colors(lid) = 0;
+              recoloring_size++;
+              break;
+            }else if (rand(dist_adjs(j)) > rand(lid)){
+              femv_colors(dist_adjs(j)) = 0;
+              recoloring_size++;
+            } else {
+              if (gid(lid) >= gid(dist_adjs(j))){
+                femv_colors(lid) = 0;
+                recoloring_size++;
+                break;
+              } else {
+                femv_colors(dist_adjs(j)) = 0;
+                recoloring_size++;
+              }
+            }
+          }
+        }
+      },recoloringSize(0));
+      Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
+        if(femv_colors(i) == 0){
+          verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+        }
+      });
+    }
+
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                          size_t nVtx,
 			 typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send,
-			 Kokkos::View<size_t[1], device_type>& verts_to_send_size,
-                         Kokkos::View<int*, device_type>& colors,
-                         gno_t& recv, gno_t& send){
+			 typename Kokkos::View<size_t[1], device_type>::HostMirror& verts_to_send_size,
+                         Teuchos::RCP<femv_t> femv,//typename Kokkos::View<int*, device_type>::HostMirror& colors,
+                         gno_t& recv, gno_t& send){ 
+      auto femvColors = femv->getLocalViewHost();
+      auto colors = subview(femvColors, Kokkos::ALL, 0);
       int nprocs = comm->getSize();
       
       std::vector<int> sendcnts(comm->getSize(), 0);
@@ -450,7 +517,9 @@ class AlgDistance1 : public Algorithm<Adapter>
       
       //counter in UVM memory for how many vertices need recoloring.
       Kokkos::View<gno_t[1], device_type> recoloringSize("Recoloring Queue Size");
-      recoloringSize(0) = 0;
+      typename Kokkos::View<gno_t[1], device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
+      recoloringSize_host(0) = 0;
+      Kokkos::deep_copy(recoloringSize, recoloringSize_host);
 
       //device copy of the random tie-breakers
       Kokkos::View<int*,device_type> rand_dev("randVec",rand.size());
@@ -493,13 +562,17 @@ class AlgDistance1 : public Algorithm<Adapter>
       
       //size information for the list of vertices to send. Also includes an atomic copy
       Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
-      verts_to_send_size(0) = 0;
       Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic = verts_to_send_size;
+      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = create_mirror(verts_to_send_view);
+      typename Kokkos::View<size_t[1],device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
+      //initialize the device view with a value of zero
+      verts_to_send_size_host(0) = 0;
+      deep_copy(verts_to_send_size, verts_to_send_size_host);
 
       if(verbose)std::cout<<comm->getRank()<<": Done creating send views, initializing...\n";
       if(verbose)std::cout<<comm->getRank()<<": boundary_size = "<<boundary_size<<" verts_to_send_size_atomic(0) = "<<verts_to_send_size_atomic(0)<<"\n";
       //initially the verts to send include all boundary vertices.
-      Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int&i){
+      Kokkos::parallel_for("Initialize verts_to_send",nVtx, KOKKOS_LAMBDA(const int&i){
         for(offset_t j = dist_offsets(i); j < dist_offsets(i+1); j++){
 	  if((size_t)dist_adjs(j) >= nVtx){
 	    verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
@@ -531,7 +604,7 @@ class AlgDistance1 : public Algorithm<Adapter>
         comp_time = interior_time;
         std::cout<<comm->getRank()<<": Going to recolor\n";
       }
-      bool recolor_degrees = this->pl->template get<bool>("recolor_degrees", false);
+      bool recolor_degrees = this->pl->template get<bool>("recolor_degrees", true);
 
       //if there is more than a single process, check distributed conflicts and recolor
       if(comm->getSize() > 1){
@@ -542,13 +615,21 @@ class AlgDistance1 : public Algorithm<Adapter>
         if(verbose)std::cout<<comm->getRank()<<": going to communicate\n";
 
 	//communicate
+        Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
+	Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
         gno_t recv, sent;
-        comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,nVtx,verts_to_send_view,verts_to_send_size,femv_colors,recv,sent);
+        comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,
+			            nVtx,
+				    verts_to_send_host,
+				    verts_to_send_size_host,
+				    femv,
+				    recv,
+				    sent);
         sentPerRound[0] = sent;
         recvPerRound[0] = recv;
         if(verbose) std::cout<<comm->getRank()<<": done communicating\n";
-	verts_to_send_size(0) = 0;
-
+	verts_to_send_size_host(0) = 0;
+        deep_copy(verts_to_send_size, verts_to_send_size_host);
         //set the old ghost colors
         Kokkos::parallel_for(rand.size()-nVtx,KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+nVtx);
@@ -556,53 +637,20 @@ class AlgDistance1 : public Algorithm<Adapter>
 	Kokkos::fence();
 	//detect conflicts on the device, uncolor conflicts consistently.
         double temp = timer();
-        Kokkos::parallel_reduce(rand.size()-nVtx, KOKKOS_LAMBDA(const int& i,gno_t& recoloring_size){
-          lno_t lid = i+nVtx;
-          int currColor = femv_colors(lid);
-	  int currDegree = ghost_degrees_dev(i);
-          for(offset_t j = dist_offsets(lid); j < dist_offsets(lid+1); j++){
-            int nborColor = femv_colors(dist_adjs(j));
-	    int nborDegree = 0;
-	    if((size_t)dist_adjs(j) < nVtx) nborDegree = dist_offsets(dist_adjs(j)+1) - dist_offsets(dist_adjs(j));
-	    else nborDegree = ghost_degrees_dev(dist_adjs(j) - nVtx); 
-            if(currColor == nborColor ){
-	      if(currDegree < nborDegree && recolor_degrees){
-	        femv_colors(lid) = 0;
-		recoloring_size++;
-	      }else if (nborDegree < currDegree && recolor_degrees){
-	        femv_colors(dist_adjs(j)) = 0;
-		recoloring_size++;
-	      }else if(rand_dev(lid) > rand_dev(dist_adjs(j))){
-                femv_colors(lid) = 0;
-                recoloring_size++;
-                break;
-              }else if (rand_dev(dist_adjs(j)) > rand_dev(lid)){
-                femv_colors(dist_adjs(j)) = 0;
-                recoloring_size++;
-              } else {
-                if (gid_dev(lid) >= gid_dev(dist_adjs(j))){
-                  femv_colors(lid) = 0;
-                  recoloring_size++;
-                  break;
-                } else {
-                  femv_colors(dist_adjs(j)) = 0;
-                  recoloring_size++;
-                }
-              }
-            }
-          }
-        },recoloringSize(0));
-        Kokkos::fence();
-	//build the verts to send list.
-        Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int& i){
-          if(femv_colors(i) == 0){
-            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
-	  }
-        });
-        //ensure the parallel_for has completed before continuing.
-        Kokkos::fence();
+	detectConflicts<execution_space, memory_space>(nVtx,
+			                               rand.size()-nVtx,
+						       dist_offsets,
+						       dist_adjs,
+						       femv_colors,
+						       verts_to_send_atomic,
+						       verts_to_send_size_atomic,
+						       recoloringSize,
+						       rand_dev,
+						       gid_dev,
+						       ghost_degrees_dev,
+						       recolor_degrees);
+        deep_copy(recoloringSize_host, recoloringSize);
         conflict_detection += timer() - temp;
-        //total_time += conflict_detection;
         comp_time += conflict_detection;
       }
       //end the initial recoloring
@@ -627,30 +675,35 @@ class AlgDistance1 : public Algorithm<Adapter>
       int serial_threshold = this->pl->template get<int>("serial_threshold",0);
       
       Kokkos::View<lno_t*, device_type> verts_to_recolor("verts_to_recolor", boundary_size);
-      typename Kokkos::View<int*, device_type>::HostMirror colors_host;
-      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_recolor_host;
       typename Kokkos::View<int*, device_type>::HostMirror ghost_colors_host;
       //while the queue is not empty
-      while(recoloringSize(0) > 0 || !done){
-	if(recoloringSize(0) < serial_threshold) break;
+      while(recoloringSize_host(0) > 0 || !done){
+	if(recoloringSize_host(0) < serial_threshold) break;
         //get a subview of the colors:
-        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-        Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
+        auto femvColors = femv->getLocalViewDevice();
+        auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
         //color everything in the recoloring queue, put everything on conflict queue
         if(distributedRounds < 100) {
-          vertsPerRound[distributedRounds] = recoloringSize(0);
+          vertsPerRound[distributedRounds] = recoloringSize_host(0);
         }
         if(verbose) std::cout<<comm->getRank()<<": starting to recolor\n";
 	
-	Kokkos::deep_copy(verts_to_recolor, verts_to_send_view);
+	//copying the send view to the recolor view is necessary because
+	//KokkosKernels can change the view passed in, and we need the send view
+	//intact for communication.
+	Kokkos::deep_copy(verts_to_recolor, verts_to_send_view); 
 
         double recolor_temp = timer();
         //use KokkosKernels to recolor the conflicting vertices.  
 	if(verts_to_send_size(0) > 0){
             this->colorInterior<execution_space,
                                 memory_space,
-                                memory_space>
-                               (femv_colors.size(),dist_adjs,dist_offsets,femv,verts_to_recolor,verts_to_send_size(0),use_vbbit);
+                                memory_space>(femv_colors.size(),
+					      dist_adjs,dist_offsets,
+					      femv,
+					      verts_to_recolor,
+					      verts_to_send_size_host(0),
+					      use_vbbit);
 	}
         recoloringPerRound[distributedRounds] = timer() - recolor_temp;
         recoloring_time += recoloringPerRound[distributedRounds];
@@ -660,17 +713,28 @@ class AlgDistance1 : public Algorithm<Adapter>
 	
         
         if(verbose) std::cout<<comm->getRank()<<": done recoloring\n";
-        recoloringSize(0) = 0;
+	//reset the recoloringSize device host and device views
+	//to zero
+        recoloringSize_host(0) = 0;
+        Kokkos::deep_copy(recoloringSize,recoloringSize_host);
 
         Kokkos::parallel_for(rand.size()-nVtx, KOKKOS_LAMBDA(const int& i){
           femv_colors(i+nVtx) = ghost_colors(i);
         });
         Kokkos::fence();
         //communicate
-        typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = Kokkos::create_mirror(verts_to_send_view);
         Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
+	Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
+	auto femvColors_host = femv->getLocalViewHost();
+	auto femv_colors_host = subview(femvColors_host, Kokkos::ALL, 0);
 	gno_t sent,recv;
-        commPerRound[distributedRounds] = doOwnedToGhosts(mapOwnedPlusGhosts,nVtx,verts_to_send_host, verts_to_send_size,femv_colors,recv,sent); 	
+        commPerRound[distributedRounds] = doOwnedToGhosts(mapOwnedPlusGhosts,
+			                                  nVtx, 
+							  verts_to_send_host, 
+							  verts_to_send_size_host,
+							  femv,
+							  recv,
+							  sent); 	
         if(verbose){
           std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
           std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
@@ -687,53 +751,24 @@ class AlgDistance1 : public Algorithm<Adapter>
           ghost_colors(i) = femv_colors(i+nVtx);
         });
         Kokkos::fence();
-	verts_to_send_size(0) = 0;
+	verts_to_send_size_host(0) = 0;
+	deep_copy(verts_to_send_size, verts_to_send_size_host);
         double detection_temp = timer();
-        Kokkos::parallel_reduce(rand.size()-nVtx, KOKKOS_LAMBDA(const int& i,gno_t& recoloring_size){
-          lno_t lid = i+nVtx;
-          int currColor = femv_colors(lid);
-	  int currDegree = ghost_degrees_dev(i);
-          for(offset_t j = dist_offsets(lid); j < dist_offsets(lid+1); j++){
-            int nborColor = femv_colors(dist_adjs(j));
-	    int nborDegree = 0;
-	    if((size_t)dist_adjs(j) < nVtx) nborDegree = dist_offsets(dist_adjs(j)+1) - dist_offsets(dist_adjs(j));
-	    else nborDegree = ghost_degrees_dev(dist_adjs(j) - nVtx); 
-            if(currColor == nborColor ){
-	      if(currDegree < nborDegree && recolor_degrees){
-	        femv_colors(lid) = 0;
-		recoloring_size++;
-	      }else if (nborDegree < currDegree && recolor_degrees){
-	        femv_colors(dist_adjs(j)) = 0;
-		recoloring_size++;
-	      }else if(rand_dev(lid) > rand_dev(dist_adjs(j))){
-                femv_colors(lid) = 0;
-                recoloring_size++;
-                break;
-              }else if (rand_dev(dist_adjs(j)) > rand_dev(lid)){
-                femv_colors(dist_adjs(j)) = 0;
-                recoloring_size++;
-              } else {
-                if (gid_dev(lid) >= gid_dev(dist_adjs(j))){
-                  femv_colors(lid) = 0;
-                  recoloring_size++;
-                  break;
-                } else {
-                  femv_colors(dist_adjs(j)) = 0;
-                  recoloring_size++;
-                }
-              }
-            }
-          }
-        },recoloringSize(0));
-        Kokkos::parallel_for(nVtx, KOKKOS_LAMBDA(const int& i){
-          if(femv_colors(i) == 0){
-            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
-          }
-        });
-        
-        //For Cuda, this fence is necessary to ensure the Kokkos::parallel_for is finished
-        //before continuing with the coloring. 
-        Kokkos::fence();
+	detectConflicts<execution_space, memory_space>(nVtx,
+			                               rand.size()-nVtx,
+						       dist_offsets,
+						       dist_adjs,
+						       femv_colors,
+						       verts_to_send_atomic,
+						       verts_to_send_size_atomic,
+						       recoloringSize,
+						       rand_dev,
+						       gid_dev,
+						       ghost_degrees_dev,
+						       recolor_degrees);
+
+	Kokkos::deep_copy(recoloringSize_host, recoloringSize);
+
         conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
         conflict_detection += conflictDetectionPerRound[distributedRounds];
         compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
@@ -750,23 +785,21 @@ class AlgDistance1 : public Algorithm<Adapter>
         done = !globalDone;
       }
 
-      if(recoloringSize(0) > 0 || !done){
-        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-	Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
-	colors_host = Kokkos::create_mirror_view(femv_colors);
-	deep_copy(colors_host, femv_colors);
+      if(recoloringSize_host(0) > 0 || !done){
 	ghost_colors_host = Kokkos::create_mirror_view(ghost_colors);
 	deep_copy(ghost_colors_host, ghost_colors);
-	verts_to_recolor_host = Kokkos::create_mirror_view(verts_to_send_view);
-	deep_copy(verts_to_recolor_host, verts_to_send_view);
+	deep_copy(verts_to_send_host, verts_to_send_view);
+	deep_copy(verts_to_send_size_host, verts_to_send_size);
       }
+
       
       //finish the local coloring in serial on the host
-      while(recoloringSize(0) > 0 || !done){
-	Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-	Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
+      while(recoloringSize_host(0) > 0 || !done){
+	//Use non-templated call to get the Host view
+	auto femvColors = femv-> getLocalViewHost();
+	auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
         if(distributedRounds < 100){
-	  vertsPerRound[distributedRounds] = recoloringSize(0);
+	  vertsPerRound[distributedRounds] = recoloringSize_host(0);
 	}
 	if(verbose) std::cout<<comm->getRank()<<": starting to recolor, serial\n";
 
@@ -774,9 +807,9 @@ class AlgDistance1 : public Algorithm<Adapter>
 	//use KokkosKernels to recolor the conflicting vertices
 	if(verts_to_send_size(0) > 0){
 	  this->colorInterior<Kokkos::DefaultHostExecutionSpace,
-		              memory_space,
-			      memory_space>
-			      (femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, verts_to_recolor_host, verts_to_send_size(0), true);
+		              Kokkos::HostSpace,
+			      Kokkos::HostSpace>
+			      (femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, verts_to_send_host, verts_to_send_size_host(0), true);
 	}
 	recoloringPerRound[distributedRounds] = timer() - recolor_temp;
 	recoloring_time += recoloringPerRound[distributedRounds];
@@ -785,14 +818,20 @@ class AlgDistance1 : public Algorithm<Adapter>
 	totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
 
 	if(verbose) std::cout<<comm->getRank()<<": done recoloring\n";
-	recoloringSize(0) = 0;
+	recoloringSize_host(0) = 0;
 
 	for(size_t i = 0; i < rand.size() -nVtx; i++){
 	  femv_colors(i+nVtx) = ghost_colors_host(i);
 	}
 
 	gno_t sent,recv;
-	commPerRound[distributedRounds] = doOwnedToGhosts(mapOwnedPlusGhosts,nVtx, verts_to_recolor_host, verts_to_send_size, femv_colors, recv, sent);
+	commPerRound[distributedRounds] = doOwnedToGhosts(mapOwnedPlusGhosts,
+			                                  nVtx, 
+							  verts_to_send_host, 
+							  verts_to_send_size_host, 
+							  femv, 
+							  recv, 
+							  sent);
 	if(verbose){
 	  std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
 	  std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
@@ -805,58 +844,21 @@ class AlgDistance1 : public Algorithm<Adapter>
 	  ghost_colors_host(i) = femv_colors(i+nVtx);
 	}
 
-	verts_to_send_size(0) = 0;
+	verts_to_send_size_host(0) = 0;
 	double detection_temp = timer();
-	for(size_t i = 0; i < rand.size()-nVtx; i++){
-	  lno_t lid = i+nVtx;
-	  int currColor = femv_colors(lid);
-	  int currDegree = ghost_degrees_host(i);
-	  for(offset_t j = dist_offsets_host(lid); j < dist_offsets_host(lid+1); j++){
-	    lno_t nbor = dist_adjs_host(j);
-	    int nborColor = femv_colors(nbor);
-	    int nborDegree = 0;
-	    if((size_t)dist_adjs_host(j) < nVtx) {
-	      nborDegree = dist_offsets_host(nbor+1) - dist_offsets_host(nbor);
-	    } else {
-	      nborDegree = ghost_degrees_host(nbor-nVtx);
-	    }
-	    if(currColor == nborColor){
-	      if(currDegree < nborDegree && recolor_degrees){
-	        femv_colors(lid) = 0;
-		recoloringSize(0)++;
-		//verts_to_recolor_host(verts_to_send_size(0)++) = lid;
-		break;
-	      } else if(nborDegree < currDegree && recolor_degrees){
-	        femv_colors(nbor) = 0;
-		recoloringSize(0)++;
-		//verts_to_recolor_host(verts_to_send_size(0)++) = nbor;
-	      } else if (rand_host(lid) > rand_host(nbor)){
-	        femv_colors(lid) = 0;
-		recoloringSize(0)++;
-		//verts_to_recolor_host(verts_to_send_size(0)++) = lid;
-		break;
-	      } else if (rand_host(nbor) > rand_host(lid)){
-	        femv_colors(nbor) = 0;
-		recoloringSize(0)++;
-		//verts_to_recolor_host(verts_to_send_size(0)++) = nbor;
-	      } else {
-	        if(gid_host(lid) >= gid_host(nbor)){
-		  femv_colors(lid) = 0;
-		  recoloringSize(0)++;
-		  //verts_to_recolor_host(verts_to_send_size(0)++) = lid;
-		  break;
-		} else {
-		  femv_colors(nbor) = 0;
-		  recoloringSize(0)++;
-		  //verts_to_recolor_host(verts_to_send_size(0)++) = nbor;
-		}
-	      }
-	    }
-	  } 
-	}
-        for(size_t i = 0; i < nVtx; i++){
-	  if(femv_colors(i) == 0)verts_to_recolor_host(verts_to_send_size(0)++) = i;
-	}
+	detectConflicts<Kokkos::Serial, Kokkos::HostSpace>(nVtx,
+			                                   rand.size()-nVtx,
+						           dist_offsets_host,
+						           dist_adjs_host,
+						           femv_colors,
+						           verts_to_send_host,
+						           verts_to_send_size_host,
+						           recoloringSize_host,
+						           rand_host,
+						           gid_host,
+						           ghost_degrees_host,
+						           recolor_degrees);
+
 	conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
 	conflict_detection += conflictDetectionPerRound[distributedRounds];
 	compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
@@ -865,7 +867,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 
 	//do a reduction to determine if we're done
 	int globalDone = 0;
-	int localDone = recoloringSize(0);
+	int localDone = recoloringSize_host(0);
 	Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_SUM,1, &localDone, &globalDone);
 	distributedRounds++;
 	done = !globalDone;
