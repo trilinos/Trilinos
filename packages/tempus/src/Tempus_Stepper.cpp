@@ -16,10 +16,6 @@ namespace Tempus {
 
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(Stepper)
 
-  // Provide basic parameters to Steppers.
-  void getValidParametersBasic(
-    Teuchos::RCP<Teuchos::ParameterList> pl, std::string stepperType);
-
   // Validate that the model supports explicit ODE evaluation, f(x,t) [=xdot]
   template void validExplicitODE(
     const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model);

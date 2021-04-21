@@ -49,7 +49,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_IntegratorForwardSensitivity.hpp"
 #include "Tempus_IntegratorAdjointSensitivity.hpp"
 #include "Tempus_IntegratorPseudoTransientForwardSensitivity.hpp"
@@ -425,7 +425,7 @@ run_tempus(const Thyra::ModelEvaluatorBase::InArgs<Real>&  inArgs,
       << " and Pseudotransient Adjoint.");
   }
   else {
-    RCP<Tempus::IntegratorBasic<Real> > integrator =
+    RCP<Tempus::IntegratorBasicOld<Real> > integrator =
       Tempus::integratorBasic<Real>(tempus_params_, wrapped_model);
     const bool integratorStatus = integrator->advanceTime();
     TEUCHOS_TEST_FOR_EXCEPTION(

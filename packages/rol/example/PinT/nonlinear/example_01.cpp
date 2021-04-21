@@ -42,7 +42,7 @@
 // @HEADER
 
 /*! \file  example_01.cpp
-    \brief Shows how to solve a control problem governed by a semilinear 
+    \brief Shows how to solve a control problem governed by a semilinear
            parabolic equation,
            \f[
               \min_{u,z} \;\sum_{n=1}^N frac{\delta_t}{2} (u_{n-1}-1)^2 (u_n-1)^2 (z_n-1)^2

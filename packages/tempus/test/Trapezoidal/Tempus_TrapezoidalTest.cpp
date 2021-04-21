@@ -64,13 +64,13 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
   // Test constructor IntegratorBasic(tempusPL, model)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(tempusPL, model);
+      Tempus::createIntegratorBasic<double>(tempusPL, model);
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
 
     RCP<const ParameterList> defaultPL =
       integrator->getStepper()->getValidParameters();
-    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
     if (!pass) {
       std::cout << std::endl;
       std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
@@ -82,13 +82,13 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ParameterList)
   // Test constructor IntegratorBasic(model, stepperType)
   {
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(model, "Trapezoidal Method");
+      Tempus::createIntegratorBasic<double>(model, "Trapezoidal Method");
 
     RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
     RCP<const ParameterList> defaultPL =
       integrator->getStepper()->getValidParameters();
 
-    bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+    bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
     if (!pass) {
       std::cout << std::endl;
       std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
@@ -153,8 +153,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
     timeStepControl->initialize();
 
     // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+    auto inArgsIC = model->getNominalValues();
     auto icSoln = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icSolnDot =
       rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
@@ -174,8 +173,8 @@ TEUCHOS_UNIT_TEST(Trapezoidal, ConstructingFromDefaults)
 
     // Setup Integrator -----------------------------------------
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>();
-    integrator->setStepperWStepper(stepper);
+      Tempus::createIntegratorBasic<double>();
+    integrator->setStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
     //integrator->setObserver(...);
@@ -253,7 +252,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, SinCos)
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Initial Conditions
     // During the Integrator construction, the initial SolutionState
@@ -366,7 +365,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, VanDerPol)
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -390,7 +389,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, VanDerPol)
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == 0) or (n == nTimeStepSizes-1)) {
+    if ((n == 0) || (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_Trapezoidal_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_Trapezoidal_VanDerPol.dat";
       RCP<const SolutionHistory<double> > solutionHistory =

@@ -56,11 +56,11 @@
         <Parameter name="Use Embedded" type="bool" value="false"/>
         <ParameterList name="Tableau">
             <Parameter name="A" type="string"
-                value="0.0 0.0 0.0 0.0; 0.5 0.0 0.0 0.0; 0.0 0.5 0.0 0.0; 0.0 0.0 1.0 0.0"/>
+                value="0 0 0 0; 0.5 0 0 0; 0 0.5 0 0; 0 0 1 0"/>
             <Parameter name="b" type="string"
                 value="0.166666666666667 0.333333333333333 0.333333333333333 0.166666666666667"/>
             <Parameter name="c" type="string"
-                value="0.0 0.5 0.5 1.0"/>
+                value="0 0.5 0.5 1"/>
             <Parameter name="order" type="int" value="4"/>
             <Parameter name="bstar" type="string" value=""/>
         </ParameterList>
@@ -74,14 +74,14 @@
         <Parameter name="Use Embedded" type="bool" value="false"/>
         <ParameterList name="Tableau">
             <Parameter name="A" type="string"
-                value="0.0 0.0 0.0 0.0;
-                0.5 0.0 0.0 0.0;
-                0.0 0.75 0.0 0.0;
-                0.222222222222222 0.333333333333333 0.444444444444444 0.0"/>
+                value="0 0 0 0;
+                0.5 0 0 0;
+                0 0.75 0 0;
+                0.222222222222222 0.333333333333333 0.444444444444444 0"/>
             <Parameter name="b" type="string"
-                value="0.222222222222222 0.333333333333333 0.444444444444444 0.0"/>
+                value="0.222222222222222 0.333333333333333 0.444444444444444 0"/>
             <Parameter name="c" type="string"
-                value="0.0 0.5 0.75 1.0"/>
+                value="0 0.5 0.75 1"/>
             <Parameter name="bstar" type="string"
                 value="0.29166666666 0.25 0.333333333333333 0.125"/>
             <Parameter name="order" type="int" value="3"/>

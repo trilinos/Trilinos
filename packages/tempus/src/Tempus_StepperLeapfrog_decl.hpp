@@ -140,13 +140,11 @@ public:
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
   //@}
-
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{

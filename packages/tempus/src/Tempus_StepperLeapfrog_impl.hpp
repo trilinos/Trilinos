@@ -20,6 +20,7 @@ namespace Tempus {
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog()
 {
+  this->setStepperName(        "Leapfrog");
   this->setStepperType(        "Leapfrog");
   this->setUseFSAL(            false);
   this->setICConsistency(      "Consistent");
@@ -36,6 +37,7 @@ StepperLeapfrog<Scalar>::StepperLeapfrog(
   bool ICConsistencyCheck,
   const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction)
   {
+    this->setStepperName(        "Leapfrog");
     this->setStepperType(        "Leapfrog");
     this->setUseFSAL(            useFSAL);
     this->setICConsistency(      ICConsistency);
@@ -212,17 +214,6 @@ bool StepperLeapfrog<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 
 
   return isValidSetup;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperLeapfrog<Scalar>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  return pl;
 }
 
 

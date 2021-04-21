@@ -296,7 +296,7 @@ public:
    *  Requires subsequent setModel(), setSolver() and initialize()
    *  calls before calling takeStep().
   */
-  StepperIMEX_RK();
+  StepperIMEX_RK(std::string stepperType = "IMEX RK SSP2");
 
   /// Constructor for all member data.
   StepperIMEX_RK(
@@ -376,7 +376,7 @@ public:
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return true;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
