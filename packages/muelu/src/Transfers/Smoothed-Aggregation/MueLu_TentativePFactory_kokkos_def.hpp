@@ -101,11 +101,12 @@ namespace MueLu {
       typedef SCType SC;
 
       typedef typename DeviceType::execution_space execution_space;
-      typedef Kokkos::ArithTraits<SC> ATS;
-      typedef typename ATS::magnitudeType Magnitude;
+      typedef typename Kokkos::ArithTraits<SC>::val_type impl_SC;
+      typedef Kokkos::ArithTraits<impl_SC> impl_ATS;
+      typedef typename impl_ATS::magnitudeType Magnitude;
 
-      typedef Kokkos::View<SC**,typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_matrix;
-      typedef Kokkos::View<SC* ,typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_vector;
+      typedef Kokkos::View<impl_SC**,typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_matrix;
+      typedef Kokkos::View<impl_SC* ,typename execution_space::scratch_memory_space, Kokkos::MemoryUnmanaged> shared_vector;
 
     private:
 
@@ -142,10 +143,10 @@ namespace MueLu {
         // size of aggregate: number of DOFs in aggregate
         auto aggSize = aggRows(agg+1) - aggRows(agg);
 
-        const SC one     = ATS::one();
-        const SC two     = one + one;
-        const SC zero    = ATS::zero();
-        const auto zeroM = ATS::magnitude(zero);
+        const impl_SC one     = impl_ATS::one();
+        const impl_SC two     = one + one;
+        const impl_SC zero    = impl_ATS::zero();
+        const auto zeroM = impl_ATS::magnitude(zero);
 
         int m = aggSize;
         int n = fineNS.extent(1);
@@ -186,8 +187,8 @@ namespace MueLu {
               // FIXME_KOKKOS: use team
               Magnitude s = zeroM, norm, norm_x;
               for (int i = k+1; i < m; i++)
-                s += pow(ATS::magnitude(r(i,k)), 2);
-              norm = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
+                s += pow(impl_ATS::magnitude(r(i,k)), 2);
+              norm = sqrt(pow(impl_ATS::magnitude(r(k,k)), 2) + s);
 
               if (norm == zero) {
                 isSingular = true;
@@ -196,7 +197,7 @@ namespace MueLu {
 
               r(k,k) -= norm*one;
 
-              norm_x = sqrt(pow(ATS::magnitude(r(k,k)), 2) + s);
+              norm_x = sqrt(pow(impl_ATS::magnitude(r(k,k)), 2) + s);
               if (norm_x == zeroM) {
                 // We have a single diagonal element in the column.
                 // No reflections required. Just need to restor r(k,k).
@@ -211,7 +212,7 @@ namespace MueLu {
               // Update R(k:m,k+1:n)
               for (int j = k+1; j < n; j++) {
                 // FIXME_KOKKOS: use team in the loops
-                SC si = zero;
+                impl_SC si = zero;
                 for (int i = k; i < m; i++)
                   si += r(i,k) * r(i,j);
                 for (int i = k; i < m; i++)
@@ -221,7 +222,7 @@ namespace MueLu {
               // Update Q^T (k:m,k:m)
               for (int j = k; j < m; j++) {
                 // FIXME_KOKKOS: use team in the loops
-                SC si = zero;
+                impl_SC si = zero;
                 for (int i = k; i < m; i++)
                   si += r(i,k) * qt(i,j);
                 for (int i = k; i < m; i++)
@@ -238,7 +239,7 @@ namespace MueLu {
             // Q = (Q^T)^T
             for (int i = 0; i < m; i++)
               for (int j = 0; j < i; j++) {
-                SC tmp  = qt(i,j);
+                impl_SC tmp  = qt(i,j);
                 qt(i,j) = qt(j,i);
                 qt(j,i) = tmp;
               }
@@ -345,7 +346,7 @@ namespace MueLu {
             size_t rowStart = rowsAux(localRow);
             size_t lnnz = 0;
             for (int k = 0; k < n; k++) {
-              const SC qr_jk = fineNS(localRow,k);
+              const impl_SC qr_jk = fineNS(localRow,k);
               // skip zeros
               if (qr_jk != zero) {
                 colsAux(rowStart+lnnz) = offset + k;
@@ -574,8 +575,9 @@ namespace MueLu {
     const size_t NSDim    = fineNullspace->getNumVectors();
 
     typedef Kokkos::ArithTraits<SC>     ATS;
-    using impl_ATS = Kokkos::ArithTraits<typename ATS::val_type>;
-    const SC zero = ATS::zero(), one = ATS::one();
+    using impl_SC = typename ATS::val_type;
+    using impl_ATS = Kokkos::ArithTraits<impl_SC>;
+    const impl_SC zero = impl_ATS::zero(), one = impl_ATS::one();
 
     const LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
@@ -802,7 +804,7 @@ namespace MueLu {
             // Q = localQR(:,0)/norm
             for (decltype(aggSize) k = 0; k < aggSize; k++) {
               LO localRow = agg2RowMapLO(aggRows(agg)+k);
-              SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
+              impl_SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0) / norm;
 
               rows(localRow+1) = 1;
               colsAux(localRow) = agg;
@@ -838,7 +840,7 @@ namespace MueLu {
             // Q = localQR(:,0)/norm
             for (decltype(aggSize) k = 0; k < aggSize; k++) {
               LO localRow = agg2RowMapLO(aggRows(agg)+k);
-              SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0);
+              impl_SC localVal = fineNSRandom(agg2RowMapLO(aggRows(agg)+k),0);
 
               rows(localRow+1) = 1;
               colsAux(localRow) = agg;

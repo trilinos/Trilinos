@@ -375,7 +375,8 @@ namespace MueLu {
   DetectDirichletRows(const Xpetra::Matrix<SC,LO,GO,NO>& A,
                       const typename Teuchos::ScalarTraits<SC>::magnitudeType& tol,
                       const bool count_twos_as_dirichlet) {
-    using ATS        = Kokkos::ArithTraits<SC>;
+    using impl_scalar_type = typename Kokkos::ArithTraits<SC>::val_type;
+    using ATS        = Kokkos::ArithTraits<impl_scalar_type>;
     using range_type = Kokkos::RangePolicy<LO, typename NO::execution_space>;
 
     auto localMatrix = A.getLocalMatrix();
