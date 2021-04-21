@@ -53,14 +53,11 @@
 #include "MueLu_PerfUtils_fwd.hpp"
 #include "MueLu_PFactory.hpp"
 #include "MueLu_ClassicalPFactory_fwd.hpp"
+#include "MueLu_ClassicalMapFactory_fwd.hpp"
 #include "MueLu_Utilities_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-#include "MueLu_GraphBase.hpp"
-#include "MueLu_Graph.hpp"
-#include "MueLu_LWGraph.hpp"
-#include "MueLu_LWGraph_kokkos.hpp"
-
+#include "MueLu_GraphBase_fwd.hpp"
 #include "MueLu_Level_fwd.hpp"
 
 namespace MueLu {
@@ -75,10 +72,7 @@ namespace MueLu {
 
   public:
     // Defining types that require the short names included above
-    using local_graph_type = typename LWGraph_kokkos::local_graph_type;
-    using colors_view_type = Kokkos::View<typename local_graph_type::entries_type::data_type,
-                                          typename local_graph_type::device_type::memory_space>;
-
+    using point_type = typename ClassicalMapFactory::point_type;
 
     //! @name Constructors/Destructors.
     //@{
@@ -106,16 +100,14 @@ namespace MueLu {
     void BuildP(Level& fineLevel, Level& coarseLevel) const;
     
   private:
-    typedef enum {UNASSIGNED=0, F_PT, C_PT, DIRICHLET_PT} point_type;
+
 
     // Utility algorithms
-    void GenerateCoarseMap(const Map & fineMap, const Teuchos::Array<point_type> & fc_splitting, RCP<const Map> & coarseMap, Array<LO> & cpoint2pcol, Teuchos::Array<LO> & pcol2cpoint) const;
-    void DoGraphColoring(const GraphBase & graph, colors_view_type & myColors, LO & numColors) const;    
     void GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong) const;
 
     // Coarsening algorithms
-    void Coarsen_Direct(const Matrix & A,const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const;
-    void Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const;
+    void Coarsen_Direct(const Matrix & A,const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const;
+    void Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph, RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const;
 
     //@}
 

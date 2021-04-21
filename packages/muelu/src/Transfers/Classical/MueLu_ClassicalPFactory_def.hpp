@@ -57,11 +57,10 @@
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
 #include "MueLu_ClassicalPFactory.hpp"
+#include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
-
-#include "KokkosGraph_Distance1ColorHandle.hpp"
-#include "KokkosGraph_Distance1Color.hpp"
+#include "MueLu_GraphBase.hpp"
 
 
 //#define CMS_DEBUG
@@ -102,6 +101,8 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory of UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Graph",       null, "Generating factory of the graph");
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
+    validParamList->set< RCP<const FactoryBase> >("CoarseMap",         Teuchos::null, "Generating factory of the CoarseMap");
+    validParamList->set< RCP<const FactoryBase> >("FC Splitting",         Teuchos::null, "Generating factory of the FC Splitting");
 
     //    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
 
@@ -114,6 +115,9 @@ namespace MueLu {
     Input(fineLevel, "Graph");
     Input(fineLevel, "DofsPerNode");    
     Input(fineLevel, "UnAmalgamationInfo");
+    Input(fineLevel, "DofsPerNode");
+    Input(fineLevel, "CoarseMap");
+    Input(fineLevel, "FC Splitting");
 
     //    Input(fineLevel, "Nullspace");
   }
@@ -133,7 +137,7 @@ namespace MueLu {
 
     // We begin by getting a MIS (from a graph coloring) and then at that point we need
     // to start generating entries for the prolongator.   
-    RCP<Matrix>      A              = Get< RCP<Matrix> >      (fineLevel, "A");
+    RCP<const Matrix>      A        = Get< RCP<Matrix> >      (fineLevel, "A");
     RCP<const GraphBase> graph      = Get< RCP<GraphBase> >(fineLevel, "Graph");
     LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
     RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
@@ -143,64 +147,47 @@ namespace MueLu {
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     const ParameterList& pL = GetParameterList();
 
+    // DEBUG
+    {
+      std::ofstream ofs(std::string("dropped_graph_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat"),std::ofstream::out);
+      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+      graph->print(*fancy,Debug);
+    }
+
     // FIXME: This guy doesn't work right now for NumPDEs != 1
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
 
     // FIXME: This does not work in parallel yet
     TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
+    
+    /* Get the CoarseMap and FC Splitting */
+    RCP<const Map> coarseMap = Get<RCP<const Map> >(fineLevel,"CoarseMap");
+    RCP<const LocalOrdinalVector> fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
+    const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
 
 
-    /* ============================================================= */
-    /* Phase 1 : Compute an initial MIS                              */
-    /* ============================================================= */
-    colors_view_type myColors_d;
-    LO numColors=0;
-    // FIXME:  This is not going to respect coloring at or near processor
-    // boundaries, so that'll need to get cleaned up lated
-    {
-      SubFactoryMonitor sfm(*this,"GraphColoring",coarseLevel);
-      DoGraphColoring(*graph,myColors_d,numColors);
-    }
-    auto myColors_h = Kokkos::create_mirror_view(myColors_d);
-    Kokkos::deep_copy(myColors_h ,myColors_d);
+    /* Generate reindexing arrays */
+    // FIXME: cpoint2ccol needs to get ghosted... athough if myPointType is ghosted, then this
+    // guy will be too.
+    const point_type C_PT = ClassicalMapFactory::C_PT;
+    const point_type F_PT = ClassicalMapFactory::F_PT;
 
-    // FIXME: This coloring will either need to be done MPI parallel, or
-    // there needs to be a cleanup phase to fix mistakes
-
-    /* ============================================================= */
-    /* Phase 2 : Mark the C-Points                                   */
-    /* ============================================================= */
-    auto boundaryNodes = graph->GetBoundaryNodeMap();
-    Teuchos::Array<point_type> myPointType(myColors_h.size());
-    LO num_c_points = 0, num_d_points=0;
-    for(LO i=0; i<(LO)myColors_h.size(); i++) {
-      if(boundaryNodes[i]) {
-        myPointType[i] = DIRICHLET_PT;
-        num_d_points++;
-      }
-      else if ((LO)myColors_h[i] == 1) {
-        myPointType[i] = C_PT;
+    Array<LO> cpoint2pcol(myPointType.size(),LO_INVALID);
+    Array<LO> pcol2cpoint(coarseMap->getNodeNumElements(),LO_INVALID);   
+    LO num_c_points = 0;
+    LO num_f_points =0;
+    for(LO i=0; i<(LO) myPointType.size(); i++) {
+        if(myPointType[i] == C_PT) {
+        cpoint2pcol[i] = num_c_points;
         num_c_points++;
       }
-      else
-        myPointType[i] = F_PT;
+      else if (myPointType[i] == F_PT)
+        num_f_points++;
     }
-    LO num_f_points = (LO)myColors_h.size() - num_d_points - num_c_points;
-    // FIXME: This array will need to be ghosted so we can get the point_types
-    // of the neighbors
-
-    // FIXME:  These stats will need to be reduced
-    GetOStream(Statistics1) << "ClassicalPFactory: C/F/D = "<<num_c_points<<"/"<<num_f_points<<"/"<<num_d_points<<std::endl;
-
-    /* Generate the Coarse map */
-    RCP<const Map> coarseMap;
-    Array<LO> cpoint2pcol, pcol2cpoint;
-    {
-      SubFactoryMonitor sfm(*this,"Coarse Map",coarseLevel);
-      GenerateCoarseMap(*A->getRowMap(),myPointType,coarseMap,cpoint2pcol,pcol2cpoint);
-      Set(fineLevel, "CoarseMap", coarseMap);
+    for(LO i=0; i<(LO)cpoint2pcol.size(); i++) {
+      if(cpoint2pcol[i] != LO_INVALID)
+        pcol2cpoint[cpoint2pcol[i]] =i;
     }
-    // FIXME: cpoint2ccol needs to get ghosted
 
     // Generate edge strength flags (this will make everything easier later)
     Teuchos::Array<size_t> eis_rowptr;
@@ -217,9 +204,9 @@ namespace MueLu {
 
     std::string scheme = pL.get<std::string>("aggregation: classical scheme");
     if(scheme == "ext+i" || scheme == "classical")
-      Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType,cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+      Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
     else if(scheme == "direct")
-      Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType,cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+      Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
 
     //    Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat", *P);
     Set(coarseLevel, "P", P);
@@ -238,8 +225,7 @@ namespace MueLu {
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
-
+Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Direct Interpolation                                */
     /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
@@ -277,9 +263,9 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
     /*           { -  beta_i (a_ik / a_ii),   if k\in P_i^+                                  */  
     /* NOTE: The text says to modify, if  P_i^+ is zero but it isn't entirely clear how that */
     /* works.  We'll follow the PyAMG implementation in a few important ways.                */
-    
+     
+    const point_type C_PT = ClassicalMapFactory::C_PT;
    
-
     // Initial (estimated) allocation
     // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
     // needs to be a copy below.
@@ -447,7 +433,7 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, Teuchos::Array<point_type> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
 
     /* ============================================================= */
     /* Phase 3 : Extended+i Interpolation                            */
@@ -480,7 +466,8 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
     /* Rewritten Equation (20) on p. 124 [for the lumped diagonal]                                  */
     /* g_ik = \frac{\bar{a}_ki}{\sum{l\in \hat{C}_i\cup {i}} \bar{a}_kl                             */    
     /* \tilde{a}_ii = a_ii + \sum_{n\inN_i^w\setminus \hat{C}_i} a_in + \sum_{k\inF_i^s} a_ik g_ik  */
-
+    const point_type F_PT = ClassicalMapFactory::F_PT;
+    const point_type C_PT = ClassicalMapFactory::C_PT;
     using STS=Teuchos::ScalarTraits<SC>;
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     SC SC_ZERO = STS::zero();
@@ -759,42 +746,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
 }
 
 
-/* ************************************************************************* */
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  GenerateCoarseMap(const Map & fineMap, const Teuchos::Array<point_type> & fc_splitting, RCP<const Map> & coarseMap, Array<LO> & cpoint2pcol, Array<LO> & pcol2cpoint) const {
-  LO num_c_points = 0;
-  LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
 
-  // We need to make sure all non-C points are LO_INVALID
-  cpoint2pcol.resize(0);
-  cpoint2pcol.resize(fc_splitting.size(),LO_INVALID);
-  
-  for(LO i=0; i<(LO) fc_splitting.size(); i++)
-    if(fc_splitting[i] == C_PT) {
-      cpoint2pcol[i] = num_c_points;
-      num_c_points++;
-    }
-
-  pcol2cpoint.resize(0);
-  pcol2cpoint.resize(num_c_points);
-    for(LO i=0; i<(LO)cpoint2pcol.size(); i++)
-      if(cpoint2pcol[i] != LO_INVALID)
-        pcol2cpoint[cpoint2pcol[i]] =i;
-
-  // FIXME: Assumes scalar PDE
-  std::vector<size_t> stridingInfo_(1);
-  stridingInfo_[0]=1;
-  GO domainGIDOffset = 0;
-
-  coarseMap = StridedMapFactory::Build(fineMap.lib(),
-                                       Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                       num_c_points,
-                                       fineMap.getIndexBase(),
-                                       stridingInfo_,
-                                       fineMap.getComm(),
-                                       domainGIDOffset); 
-}
 
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -845,129 +797,7 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
     eis_rowptr[i+1] = eis_rowptr[i] + A_size;
   }
 }
-
-
-
-/* ************************************************************************* */
-template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  DoGraphColoring(const GraphBase & graph, colors_view_type & myColors, LO & numColors) const {
-  const ParameterList& pL = GetParameterList();
-  
-  using graph_t = typename LWGraph_kokkos::local_graph_type;
-  using KernelHandle = KokkosKernels::Experimental::
-    KokkosKernelsHandle<typename graph_t::row_map_type::value_type,
-                        typename graph_t::entries_type::value_type,
-                        typename graph_t::entries_type::value_type,
-                        typename graph_t::device_type::execution_space,
-                        typename graph_t::device_type::memory_space,
-                        typename graph_t::device_type::memory_space>;
-  KernelHandle kh;
-
-  // Leave gc algorithm choice as the default
-  kh.create_graph_coloring_handle();
-  
-  // Get the distance-1 graph coloring handle
-  auto coloringHandle = kh.get_graph_coloring_handle();      
-  
-  // Set the distance-1 coloring algorithm to use
-  if(pL.get<bool>("aggregation: deterministic") == true) {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_SERIAL );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "serial") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_SERIAL );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: serial" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_VB );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based bit array") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_VBBIT );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based bit array" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based color set") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_VBCS );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based color set" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based deterministic") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_VBD );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based deterministic" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "vertex based deterministic bit array") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_VBDBIT );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: vertex based deterministic bit array" << std::endl;
-  } else if(pL.get<std::string>("aggregation: coloring algorithm") == "edge based") {
-    coloringHandle->set_algorithm( KokkosGraph::COLORING_EB );
-    if(IsPrint(Statistics1)) GetOStream(Statistics1) << "  algorithm: edge based" << std::endl;
-  } else {
-    TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 1 coloring algorithm");
-  }
-  
-  // Create device views for graph rowptrs/colinds
-  size_t numRows = graph.GetNodeNumVertices();
-  auto graphLWK = dynamic_cast<const LWGraph_kokkos*>(&graph);
-  auto graphLW  = dynamic_cast<const LWGraph*>(&graph);
-  auto graphG   = dynamic_cast<const Graph*>(&graph);
-  TEUCHOS_TEST_FOR_EXCEPTION(!graphLW && !graphLWK && !graphG,std::invalid_argument,"Graph is not a LWGraph or LWGraph_kokkos object");
-    // Run d1 graph coloring
-    // Assume that the graph is symmetric so row map/entries and col map/entries are the same
-
-  if(graphLWK) {
-    KokkosGraph::Experimental::graph_color(&kh, 
-                                           numRows, 
-                                           numRows, // FIXME: This should be the number of columns
-                                           graphLWK->getRowPtrs(),
-                                           graphLWK->getEntries(),
-                                         true);
-  }
-  else if(graphLW) {
-    auto rowptrs = graphLW->getRowPtrs();
-    auto entries = graphLW->getEntries();
-    // Copy rowptrs to a size_t, because kokkos-kernels doesn't like rowptrs as LO's
-    Teuchos::Array<size_t> rowptrs_s(rowptrs.size());
-    std::copy(rowptrs.begin(),rowptrs.end(),rowptrs_s.begin());
-    Kokkos::View<const size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v(rowptrs_s.data(),(size_t)rowptrs.size());
-    Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(entries.getRawPtr(),(size_t)entries.size());
-    KokkosGraph::Experimental::graph_color(&kh, 
-                                           numRows, 
-                                           numRows, // FIXME: This should be the number of columns
-                                           rowptrs_v,
-                                           entries_v,
-                                           true);    
-  }
-  else if(graphG) {  
-    // FIXME:  This is a terrible, terrible hack, based on 0-based local indexing.
-    RCP<const CrsGraph> graphC = graphG->GetGraph();
-    size_t numEntries = graphC->getNodeNumEntries();
-    ArrayView<const LO> indices;
-    graphC->getLocalRowView(0,indices);
-    Kokkos::View<size_t*,Kokkos::LayoutLeft,Kokkos::HostSpace> rowptrs_v("rowptrs_v",graphC->getNodeNumRows()+1);
-    rowptrs_v[0]=0;
-    for(LO i=0; i<(LO)graphC->getNodeNumRows()+1; i++) 
-      rowptrs_v[i+1] = rowptrs_v[i] + graphC->getNumEntriesInLocalRow(i);
-    Kokkos::View<const LO*,Kokkos::LayoutLeft,Kokkos::HostSpace> entries_v(&indices[0],numEntries);    
-    KokkosGraph::Experimental::graph_color(&kh, 
-                                           numRows, 
-                                           numRows, // FIXME: This should be the number of columns
-                                           rowptrs_v,
-                                           entries_v,
-                                           true);   
-    
-  }
-
-  
-  // Extract the colors and store them in the aggregates
-  myColors = coloringHandle->get_vertex_colors();
-  numColors = static_cast<LO>(coloringHandle->get_num_colors());
-  
-  //clean up coloring handle
-  kh.destroy_graph_coloring_handle();
-
-  
-}// end DoGraphColoring
-    
-    
-
-
-
-
-
+   
 
 } //namespace MueLu
 

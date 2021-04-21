@@ -62,6 +62,7 @@
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AggregateQualityEstimateFactory.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
+#include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_ClassicalPFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
@@ -1084,18 +1085,27 @@ namespace MueLu {
       }
     }
     else if (aggType == "classical") {
-      aggFactory = rcp(new ClassicalPFactory());
+      // Map and coloring
+      RCP<Factory> mapFact = rcp(new ClassicalMapFactory());
+      ParameterList mapParams;
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, mapParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, mapParams);
+      mapFact->SetParameterList(mapParams);
+      manager.SetFactory("FC Splitting", mapFact);
+      manager.SetFactory("CoarseMap", mapFact);
+
+      aggFactory = rcp(new ClassicalPFactory());      
       ParameterList aggParams;
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: deterministic",             bool, aggParams);
-      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: coloring algorithm", std::string, aggParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical scheme", std::string, aggParams);
       aggFactory->SetParameterList(aggParams);
+      aggFactory->SetFactory("FC Splitting",manager.GetFactory("FC Splitting"));
+      aggFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
 
       // Now we short-circuit, because we neither need nor want TentativePFactory here      
       manager.SetFactory("Ptent",     aggFactory);
-      manager.SetFactory("CoarseMap", aggFactory);
+
       
       if (reuseType == "tP" && levelID) {
         //        keeps.push_back(keep_pair("Nullspace", Ptent.get()));

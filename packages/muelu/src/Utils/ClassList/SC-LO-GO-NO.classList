@@ -17,6 +17,7 @@ BlockedRAPFactory
 BrickAggregationFactory
 BraessSarazinSmoother
 CGSolver
+ClassicalMapFactory
 ClassicalPFactory
 CloneRepartitionInterface
 CoalesceDropFactory
