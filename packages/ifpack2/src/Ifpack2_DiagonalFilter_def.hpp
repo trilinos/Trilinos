@@ -262,8 +262,9 @@ getGlobalRowCopy (GlobalOrdinal GlobalRow,
                   const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                   const Teuchos::ArrayView<Scalar> &Values,
                   size_t &NumEntries) const {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
   getGlobalRowCopy(GlobalRow,ind_in,val_in,NumEntries); 
 }
 #endif
@@ -292,8 +293,9 @@ getLocalRowCopy (LocalOrdinal LocalRow,
                  const Teuchos::ArrayView<Scalar> &Values,
              size_t &NumEntries) const
 {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
   getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
 }
 #endif
