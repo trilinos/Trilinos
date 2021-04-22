@@ -183,7 +183,7 @@ function(generate_build_stats_wrapper_for_op op_name)
                          (NOT ${variable_to_set}) ))
     message("-- " "${variable_to_set} is not set, but a wrapper has been requested. Asking CMake to find ${op_lc}")
     find_program(${variable_to_set} "${op_lc}")
-    print_var(${variable_to_set})
+    print_var(DEBUG ${variable_to_set})
   endif()
 
   # Override the op with the wrapper but remember the original command
