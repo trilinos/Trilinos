@@ -324,8 +324,10 @@ getGlobalRowCopy (global_ordinal_type globalRow,
                   const Teuchos::ArrayView<scalar_type>& Values,
                   size_t& numEntries) const
 {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  IST* values_p = (IST*)Values.data();
+  nonconst_values_host_view_type val_in(values_p,Values.size());
   getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
 }
 #endif
