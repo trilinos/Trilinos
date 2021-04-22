@@ -68,7 +68,7 @@ class AlgDistance1 : public Algorithm<Adapter>
                        Teuchos::RCP<femv_t> femv,
 		       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace> > vertex_list,
 		       size_t vertex_list_size = 0,
-                       bool recolor=false){
+                       bool recolor=false){ //TODO: RENAME RECOLOR
       
       //set up types to be used by KokkosKernels
       using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle

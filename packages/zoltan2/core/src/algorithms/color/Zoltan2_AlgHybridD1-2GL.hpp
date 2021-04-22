@@ -48,7 +48,67 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
     using memory_space = Tpetra::Map<>::memory_space;
 
   private:
-    
+   
+    template <class ExecutionSpace, typename MemorySpace>
+    void localColoring(const size_t nVtx,
+		       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> adjs_view,
+		       Kokkos::View<offset_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> offset_view,
+		       Teuchos::RCP<femv_t> femv,
+		       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace> > vertex_list,
+		       size_t vertex_list_size = 0,
+		       bool use_vertex_based_coloring=false){		//TODO: RENAME THIS ARGUMENT IN ALL COLORING METHODS
+      using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
+	  <offset_t, lno_t, lno_t, ExecutionSpace, MemorySpace, MemorySpace>;
+      using lno_row_view_t = Kokkos::View<offset_t*,Kokkos::Device<ExecutionSpace, MemorySpace>>;
+      using lno_nnz_view_t = Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>>;
+      KernelHandle kh;
+
+      //pick which KokkosKernels algorithm to use.
+      //this boolean's value is based on max degree.
+      if(use_vertex_based_coloring){
+        kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
+      } else {
+        kh.create_graph_coloring_handle(KokkosGraph::COLORING_EB);
+      }
+
+      //vertex_list_size indicates whether we have provided a list of vertices to recolor
+      //only makes a difference if the algorithm to be used is VBBIT
+      if(vertex_list_size != 0){
+        kh.get_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
+      }
+      
+      //the verbose argument should carry through the local coloring
+      kh.set_verbose(this->verbose);
+
+      //set initial colors to be the colors from the femv
+      auto femvColors = femv->template getLocalView<MemorySpace>();
+      auto sv = subview(femvColors, Kokkos::ALL, 0);
+      kh.get_graph_coloring_handle()->set_vertex_colors(sv);
+      
+      //if running verbosely, also report local color timing breakdown
+      kh.get_graph_coloring_handle()->set_tictoc(this->verbose);
+      
+      //call coloring
+      KokkosGraph::Experimental::graph_color_symbolic
+	      <KernelHandle, lno_row_view_t, lno_nnz_view_t> (&kh, 
+			                                      nVtx, 
+							      nVtx, 
+							      offset_view, 
+							      adjs_view);
+
+      //set numColors based on the local coloring
+      this->numColors = kh.get_graph_coloring_handle()->get_num_colors();
+      
+      //output total time and #iterations
+      if(this->verbose){
+        std::cout<<"\nKokkosKernels Coloring: "
+		 <<kh.get_graph_coloring_handle()->get_overall_coloring_time()
+		 <<" iterations: "
+		 <<kh.get_graph_coloring_handle()->get_num_phases()
+		 <<"\n\n";
+      }
+    }
+
     virtual void colorInterior(const size_t nVtx,
                        Kokkos::View<lno_t*,device_type > adjs_view,
                        Kokkos::View<offset_t*,device_type > offset_view,
@@ -57,40 +117,13 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 		       size_t vertex_list_size = 0,
                        bool recolor=false){
 
-      //setup types to be used by KokkosKernels
-      using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
-          <offset_t, lno_t, lno_t, execution_space, memory_space, memory_space>;
-      using lno_row_view_t = Kokkos::View<offset_t*, device_type>;
-      using lno_nnz_view_t = Kokkos::View<lno_t*, device_type>;
-      KernelHandle kh;
-  
-      //pick which KokkosKernels algorithm to use, based on max graph degree
-      if(recolor){
-        kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
-      } else {
-        kh.create_graph_coloring_handle(KokkosGraph::COLORING_EB);
-      }
-      //vertex_list_size indicates whether we have provided a list of vertices to recolor.
-      //Only makes a difference if the algorithm to be used is VBBIT
-      if(vertex_list_size != 0){
-        kh.get_graph_coloring_handle()->set_vertex_list(vertex_list,vertex_list_size);
-      }
-  
-      kh.set_verbose(this->verbose);
-  
-      //set the initial coloring to be the colors from femv.
-      auto femvColors = femv->template getLocalView<memory_space>();
-      auto sv = subview(femvColors, Kokkos::ALL, 0);
-      kh.get_graph_coloring_handle()->set_vertex_colors(sv);
-      kh.get_graph_coloring_handle()->set_tictoc(this->verbose);
-  
-      KokkosGraph::Experimental::graph_color_symbolic<KernelHandle, lno_row_view_t, lno_nnz_view_t> (&kh, nVtx,nVtx, offset_view, adjs_view);
-
-      this->numColors = kh.get_graph_coloring_handle()->get_num_colors();
-
-      if(this->verbose){
-        std::cout<<"\nKokkosKernels Coloring: "<<kh.get_graph_coloring_handle()->get_overall_coloring_time()<<" iterations: "<<kh.get_graph_coloring_handle()->get_num_phases()<<"\n\n";
-      }
+      this->localColoring<execution_space, memory_space>(nVtx,
+		                                         adjs_view,
+							 offset_view,
+							 femv,
+							 vertex_list,
+							 vertex_list_size,
+							 recolor);
     }
    
     virtual void colorInterior_serial(const size_t nVtx,
@@ -100,43 +133,103 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
                        typename Kokkos::View<lno_t*, device_type>::HostMirror vertex_list,
                        size_t vertex_list_size = 0,
                        bool recolor=false) {
-        //fill in colorInterior_serial
-	using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
-            <offset_t, lno_t, lno_t, Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace, Kokkos::HostSpace>;
-	using lno_row_view_t = Kokkos::View<offset_t*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>>;
-	using lno_nnz_view_t = Kokkos::View<lno_t*, Kokkos::Device<Kokkos::DefaultHostExecutionSpace, Kokkos::HostSpace>>;
-	KernelHandle kh;
 
-	if(recolor){
-	  kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
-	} else {
-	  kh.create_graph_coloring_handle(KokkosGraph::COLORING_EB);
-	}
-
-	if(vertex_list_size != 0){
-	  kh.get_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
-	}
-
-	kh.set_verbose(this->verbose);
-
-	auto femvColors = femv->getLocalViewHost();
-	auto sv = subview(femvColors, Kokkos::ALL, 0);
-	kh.get_graph_coloring_handle()->set_vertex_colors(sv);
-	kh.get_graph_coloring_handle()->set_tictoc(this->verbose);
-
-	KokkosGraph::Experimental::graph_color_symbolic<KernelHandle, lno_row_view_t, lno_nnz_view_t>(&kh, nVtx, nVtx, offset_view, adjs_view);
-
-	this->numColors = kh.get_graph_coloring_handle()->get_num_colors();
-
-	if(this->verbose){
-	  std::cout<<"\nKokkosKernels Coloring: "<<kh.get_graph_coloring_handle()->get_overall_coloring_time()<<" iterations: "<<kh.get_graph_coloring_handle()->get_num_phases()<<"\n\n";
-	}
+	this->localColoring<Kokkos::Serial, Kokkos::HostSpace>(nVtx,
+		                                               adjs_view,
+							       offset_view,
+							       femv,
+							       vertex_list,
+							       vertex_list_size,
+							       recolor);	    
     }
+
   public:
+    template <class ExecutionSpace, typename MemorySpace>
+    void detectD1Conflicts(const size_t n_local,
+	                   Kokkos::View<offset_t*, 
+                                        Kokkos::Device<ExecutionSpace, MemorySpace>> dist_offsets,
+                           Kokkos::View<lno_t*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace>> dist_adjs,
+			   Kokkos::View<int*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace>> femv_colors, //this may need to change...
+			   Kokkos::View<lno_t*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace>> boundary_verts_view,
+			   gno_t boundary_size,
+			   Kokkos::View<lno_t*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace>,
+					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
+			   Kokkos::View<int[1],
+			                Kokkos::Device<ExecutionSpace, MemorySpace>,
+					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_size_atomic,
+			   Kokkos::View<lno_t*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace>,
+					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
+			   Kokkos::View<size_t[1],
+			                Kokkos::Device<ExecutionSpace, MemorySpace>,
+					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic,
+			   Kokkos::View<gno_t[1], Kokkos::Device<ExecutionSpace, MemorySpace> > recoloringSize,
+			   Kokkos::View<int*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace> > rand,
+			   Kokkos::View<gno_t*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace> > gid,
+			   Kokkos::View<gno_t*,
+			                Kokkos::Device<ExecutionSpace, MemorySpace> > ghost_degrees,
+			   bool recolor_degrees){
+      Kokkos::RangePolicy<ExecutionSpace> policy(n_local,rand.size());
+      Kokkos::parallel_reduce("D1-2GL Conflict Detection",policy, KOKKOS_LAMBDA (const int& i, gno_t& recoloring_size){
+        lno_t localIdx = i;
+        int currColor = femv_colors(localIdx);
+        int currDegree = ghost_degrees(i-n_local);
+        for(offset_t j = dist_offsets(i); j < dist_offsets(i+1); j++){
+          int nborColor = femv_colors(dist_adjs(j));
+          int nborDegree = 0;
+          if((size_t)dist_adjs(j) < n_local) nborDegree = dist_offsets(dist_adjs(j)+1) - dist_offsets(dist_adjs(j));
+          else nborDegree = ghost_degrees(dist_adjs(j) - n_local);
+          if(currColor == nborColor ){
+            if(currDegree < nborDegree && recolor_degrees){
+              femv_colors(localIdx) = 0;
+              recoloring_size++;
+              break;
+            }else if(nborDegree < currDegree && recolor_degrees){
+              femv_colors(dist_adjs(j)) = 0;
+              recoloring_size++;
+            }else if(rand(localIdx) > rand(dist_adjs(j))){
+              recoloring_size++;
+              femv_colors(localIdx) = 0;
+              break;
+            }else if(rand(dist_adjs(j)) > rand(localIdx)){
+                recoloring_size++;
+                femv_colors(dist_adjs(j)) = 0;
+            } else {
+              if (gid(localIdx) >= gid(dist_adjs(j))){
+                femv_colors(localIdx) = 0;
+                recoloring_size++;
+                break;
+              } else {
+                  femv_colors(dist_adjs(j)) = 0;
+                  recoloring_size++;
+              }
+            }
+          }
+        }
+      },recoloringSize(0));
+      Kokkos::fence();
+      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const size_t& i){
+        if(femv_colors(i) == 0){
+          if(i < n_local){
+            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+          }
+          verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+        }
+      });
+      Kokkos::fence();
+      			   
+    }
+			   
     virtual void detectConflicts(const size_t n_local,
                                  Kokkos::View<offset_t*, device_type > dist_offsets_dev,
                                  Kokkos::View<lno_t*, device_type > dist_adjs_dev,
-                                 Kokkos::View<int*,device_type > femv_colors,
+                                 Kokkos::View<int*,device_type > femv_colors,  //might need to change
                                  Kokkos::View<lno_t*, device_type > boundary_verts_view,
                                  gno_t boundary_size,
                                  Kokkos::View<lno_t*,
@@ -159,60 +252,27 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
                                  Kokkos::View<gno_t*,
                                               device_type> ghost_degrees,
 				 bool recolor_degrees){
-      Kokkos::RangePolicy<execution_space> policy(n_local,rand.size());
-      Kokkos::parallel_reduce("conflict detection",policy, KOKKOS_LAMBDA (const int& i, gno_t& recoloring_size){
-        lno_t localIdx = i;
-        int currColor = femv_colors(localIdx);
-        int currDegree = ghost_degrees(i-n_local);
-        for(offset_t j = dist_offsets_dev(i); j < dist_offsets_dev(i+1); j++){
-          int nborColor = femv_colors(dist_adjs_dev(j));
-          int nborDegree = 0;
-          if((size_t)dist_adjs_dev(j) < n_local) nborDegree = dist_offsets_dev(dist_adjs_dev(j)+1) - dist_offsets_dev(dist_adjs_dev(j));
-          else nborDegree = ghost_degrees(dist_adjs_dev(j) - n_local);
-          if(currColor == nborColor ){
-            if(currDegree < nborDegree && recolor_degrees){
-              femv_colors(localIdx) = 0;
-              recoloring_size++;
-              break;
-            }else if(nborDegree < currDegree && recolor_degrees){
-              femv_colors(dist_adjs_dev(j)) = 0;
-              recoloring_size++;
-            }else if(rand(localIdx) > rand(dist_adjs_dev(j))){
-              recoloring_size++;
-              femv_colors(localIdx) = 0;
-              break;
-            }else if(rand(dist_adjs_dev(j)) > rand(localIdx)){
-                recoloring_size++;
-                femv_colors(dist_adjs_dev(j)) = 0;
-            } else {
-              if (gid(localIdx) >= gid(dist_adjs_dev(j))){
-                femv_colors(localIdx) = 0;
-                recoloring_size++;
-                break;
-              } else {
-                  femv_colors(dist_adjs_dev(j)) = 0;
-                  recoloring_size++;
-              }
-            }
-          }
-        }
-      },recoloringSize(0));
-      Kokkos::fence();
-      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const size_t& i){
-        if(femv_colors(i) == 0){
-          if(i < n_local){
-            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
-          }
-          verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
-        }
-      });
-      Kokkos::fence();
+      this->detectD1Conflicts<execution_space, memory_space>(n_local,
+		                                             dist_offsets_dev,
+							     dist_adjs_dev,
+							     femv_colors,
+							     boundary_verts_view,
+							     boundary_size,
+							     verts_to_recolor_atomic,
+							     verts_to_recolor_size_atomic,
+							     verts_to_send_atomic,
+							     verts_to_send_size_atomic,
+							     recoloringSize,
+							     rand,
+							     gid,
+							     ghost_degrees,
+							     recolor_degrees);
     }
 
     virtual void detectConflicts_serial(const size_t n_local,
                                  typename Kokkos::View<offset_t*, device_type >::HostMirror dist_offsets_host,
                                  typename Kokkos::View<lno_t*, device_type >::HostMirror dist_adjs_host,
-                                 typename Kokkos::View<int*,device_type >::HostMirror femv_colors,
+                                 typename Kokkos::View<int*,device_type >::HostMirror femv_colors, //might need to change
                                  typename Kokkos::View<lno_t*, device_type >::HostMirror boundary_verts_view,
                                  gno_t boundary_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_recolor,
@@ -224,55 +284,21 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,
 				 bool recolor_degrees) {
-        //fill in detectConflicts_serial
-	for(size_t i = n_local; i < rand.size(); i++){
-          lno_t localIdx = i;
-          int currColor = femv_colors(localIdx);
-          int currDegree = ghost_degrees(i-n_local);
-          for(offset_t j = dist_offsets_host(i); j < dist_offsets_host(i+1); j++){
-            int nborColor = femv_colors(dist_adjs_host(j));
-            int nborDegree = 0;
-            if((size_t)dist_adjs_host(j) < n_local){
-              nborDegree = dist_offsets_host(dist_adjs_host(j)+1) - dist_offsets_host(dist_adjs_host(j));
-            } else {
-              nborDegree = ghost_degrees(dist_adjs_host(j) - n_local);
-            }
-            if(currColor == nborColor) {
-              if(currDegree < nborDegree && recolor_degrees){
-                femv_colors(localIdx) = 0;
-                recoloringSize(0)++;
-                break;
-              }else if(nborDegree < currDegree && recolor_degrees){
-                femv_colors(dist_adjs_host(j)) = 0;
-                recoloringSize(0)++;
-              }else if(rand(localIdx) > rand(dist_adjs_host(j))){
-                femv_colors(localIdx) = 0;
-                recoloringSize(0)++;
-                break;
-              } else if (rand(dist_adjs_host(j)) > rand(localIdx)) {
-                femv_colors(dist_adjs_host(j)) = 0;
-                recoloringSize(0)++;
-              } else {
-                if(gid(localIdx) >= gid(dist_adjs_host(j))){
-                  femv_colors(localIdx) = 0;
-                  recoloringSize(0)++;
-                  break;
-                } else {
-                  femv_colors(dist_adjs_host(j)) = 0;
-                  recoloringSize(0)++;
-                }
-              }
-            }
-          }
-        }
-        for(size_t i = 0; i < femv_colors.size(); i++){
-          if(femv_colors(i) == 0){
-            if(i < n_local){
-              verts_to_send(verts_to_send_size(0)++) = i;
-            }
-            verts_to_recolor(verts_to_recolor_size(0)++) = i;
-          }
-        }
+      this->detectD1Conflicts<Kokkos::Serial, Kokkos::HostSpace>(n_local,
+		                                             dist_offsets_host,
+							     dist_adjs_host,
+							     femv_colors,
+							     boundary_verts_view,
+							     boundary_size,
+							     verts_to_recolor,
+							     verts_to_recolor_size,
+							     verts_to_send,
+							     verts_to_send_size,
+							     recoloringSize,
+							     rand,
+							     gid,
+							     ghost_degrees,
+							     recolor_degrees);
 
     }
 
