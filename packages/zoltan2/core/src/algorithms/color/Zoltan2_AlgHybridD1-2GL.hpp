@@ -96,8 +96,6 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 							      offset_view, 
 							      adjs_view);
 
-      //set numColors based on the local coloring
-      this->numColors = kh.get_graph_coloring_handle()->get_num_colors();
       
       //output total time and #iterations
       if(this->verbose){

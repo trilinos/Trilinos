@@ -90,8 +90,6 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       //call coloring
       KokkosGraph::Experimental::bipartite_color_rows(&kh, nVtx, nVtx, offset_view, adjs_view, true);
       
-      //set numColors based on the local coloring
-      this->numColors = kh.get_distance2_graph_coloring_handle()->get_num_colors();
 
       //output total time
       if(this->verbose){

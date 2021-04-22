@@ -91,8 +91,6 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
       //call coloring
       KokkosGraph::Experimental::graph_color_distance2(&kh, nVtx, offset_view, adjs_view);
       
-      //set numColors based on the local coloring
-      this->numColors = kh.get_distance2_graph_coloring_handle()->get_num_colors();
       
       //output total time
       if(this->verbose){
