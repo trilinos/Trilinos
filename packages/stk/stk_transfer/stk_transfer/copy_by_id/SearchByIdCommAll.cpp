@@ -43,8 +43,7 @@ namespace transfer {
 
 void SearchByIdCommAll::do_search(const TransferCopyByIdMeshAdapter & mesha,
                                   const TransferCopyByIdMeshAdapter & meshb,
-                                  KeyToTargetProcessor & key_to_target_processor
-                                  )
+                                  KeyToTargetProcessor & key_to_target_processor)
 {
   key_to_target_processor.clear();
   m_remote_keys.clear();
@@ -53,45 +52,36 @@ void SearchByIdCommAll::do_search(const TransferCopyByIdMeshAdapter & mesha,
   const int my_proc = parallel_machine_rank(comm);
   const int num_proc = parallel_machine_size(comm);
   stk::CommSparse commSparse(comm);
-  for (int phase=0;phase<2;++phase)
-  {
-    for (size_t id_index=0 ; id_index<meshb_ids.size() ; ++id_index)
-    {
+
+  for (int phase = 0; phase < 2; ++phase) {
+    for (size_t id_index = 0; id_index < meshb_ids.size(); ++id_index) {
       const Mesh_ID key = meshb_ids[id_index];
-      if (mesha.is_locally_owned(key))
-      {
-        key_to_target_processor[key]=my_proc;
+      if (mesha.is_locally_owned(key)) {
+        key_to_target_processor.emplace_back(key, my_proc);
         continue;
       }
       m_remote_keys.insert(key);
-      for (int send_proc = 0 ; send_proc < num_proc ; ++send_proc)
-      {
+      for (int send_proc = 0; send_proc < num_proc; ++send_proc) {
         if (my_proc == send_proc) { continue; }
         commSparse.send_buffer(send_proc).pack<Mesh_ID>(key);
       }
     }
 
-    if (phase == 0 )
-    {
+    if (phase == 0) {
       commSparse.allocate_buffers();
     }
-    else
-    {
+    else {
       commSparse.communicate();
     }
   }
 
-  for (int recv_proc=0;recv_proc<num_proc;++recv_proc)
-  {
-    if ( my_proc != recv_proc )
-    {
-      while(commSparse.recv_buffer(recv_proc).remaining())
-      {
+  for (int recv_proc = 0; recv_proc < num_proc; ++recv_proc) {
+    if (my_proc != recv_proc) {
+      while (commSparse.recv_buffer(recv_proc).remaining()) {
         Mesh_ID key;
         commSparse.recv_buffer(recv_proc).unpack<Mesh_ID>(key);
-        if (mesha.is_locally_owned(key))
-        {
-          key_to_target_processor[key] = recv_proc;
+        if (mesha.is_locally_owned(key)) {
+          key_to_target_processor.emplace_back(key, recv_proc);
         }
       }
     }

@@ -55,10 +55,6 @@ namespace internal {
 class MtoNRebalancer
 {
 public:
-    MtoNRebalancer(stk::mesh::BulkData &bulkData,
-                   stk::mesh::Field<double> &targetField,
-                   M2NDecomposer &decomposer,
-                   const stk::balance::M2NParsedOptions &num_target_procs);
     MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker,
                    stk::mesh::Field<double> &targetField,
                    M2NDecomposer &decomposer,
@@ -67,26 +63,21 @@ public:
 
     void decompose_mesh();
     std::vector<unsigned> map_new_subdomains_to_original_processors();
+    std::vector<unsigned> get_final_subdomains_for_this_processor();
 
-    void move_subdomains_such_that_entire_subdomain_doesnt_span_proc_boundaries(const std::vector<unsigned>& target_proc_to_starting_proc);
-    stk::io::EntitySharingInfo get_node_sharing_info(unsigned subdomain);
-    void create_subdomain_and_write(const std::string &filename,
-                                    unsigned subdomain,
-                                    int global_num_nodes,
-                                    int global_num_elems,
-                                    const stk::io::EntitySharingInfo &nodeSharingInfo,
-                                    int numSteps = -1,
-                                    double timeStep = 0.0);
-    bool does_this_proc_own_subdomain(unsigned subdomainOwner);
+    void move_final_subdomains_onto_this_processor(const std::vector<unsigned>& finalSubdomainsForThisProcessor);
+    void create_subdomain_and_write(const std::string &filename, unsigned subdomain,
+                                    int global_num_nodes, int global_num_elems,
+                                    int numSteps = -1, double timeStep = 0.0);
 
     stk::mesh::MetaData& get_meta();
     stk::mesh::BulkData& get_bulk();
+    SubdomainCreator& get_subdomain_creator();
 
     int get_num_target_subdomains();
 
 private:
     void move_entities_into_mapped_subdomain_parts(const std::vector<unsigned>& mappings);
-    void change_parts_on_entities_on_all_subdomains(const std::vector<unsigned>& subdomain_proc_mapping);
     std::vector<stk::mesh::Entity> get_entities_for_subdomain(size_t subdomain_num);
     stk::mesh::EntityVector get_entitites_for_subdomain_using_field_from_buckets(size_t subdomain_num,
                                                                                  const stk::mesh::BucketVector& buckets);

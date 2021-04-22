@@ -51,6 +51,14 @@ M2NDecomposer::M2NDecomposer(stk::mesh::BulkData & bulkData,
 {
 }
 
+unsigned
+M2NDecomposer::num_required_subdomains_for_each_proc()
+{
+  const unsigned numInitialSubdomains = m_bulkData.parallel_size();
+  const unsigned numFinalSubdomains = m_parsedOptions.targetNumProcs;
+  return (numFinalSubdomains / numInitialSubdomains) + (numFinalSubdomains % numInitialSubdomains > 0);
+}
+
 stk::mesh::EntityProcVec
 M2NDecomposer::get_partition()
 {
@@ -74,7 +82,6 @@ M2NDecomposer::map_new_subdomains_to_original_processors()
   }
   return targetSubdomainsToProc;
 }
-
 
 M2NDecomposerNested::M2NDecomposerNested(stk::mesh::BulkData & bulkData,
                                          const stk::balance::BalanceSettings & balanceSettings,
