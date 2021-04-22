@@ -226,8 +226,8 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
         },recoloringSize(0));
         Kokkos::fence();
 	//update the verts_to_send and verts_to_recolor views
-        verts_to_send_size_atomic(0) = 0;
-        verts_to_recolor_size_atomic(0) = 0;
+        //verts_to_send_size_atomic(0) = 0;
+        //verts_to_recolor_size_atomic(0) = 0;
         Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA(const uint64_t& i){
           if(femv_colors(i) == 0){
             if(i < n_local){

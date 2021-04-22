@@ -522,10 +522,13 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                            size_t nVtx,
-			   Kokkos::View<lno_t*,device_type> verts_to_send, //TODO: make this a hostmirror
-			   Kokkos::View<size_t[1],device_type> verts_to_send_size,//TODO: make this a hostmirror
-                           Kokkos::View<int*, device_type>& colors, //TODO: make this a hostmirror
+			   typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send,
+			   typename Kokkos::View<size_t[1],device_type>::HostMirror verts_to_send_size,
+                           Teuchos::RCP<femv_t> femv,
                            gno_t& total_sent, gno_t& total_recvd){
+      
+      auto femvColors = femv->getLocalViewHost();
+      auto colors = subview(femvColors, Kokkos::ALL, 0);
       //create vectors to hold send information
       int nprocs = comm->getSize();
       std::vector<int> sendcnts(comm->getSize(), 0);
@@ -823,6 +826,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       double comp_time = 0.0;
       double recoloring_time=0.0;
       double conflict_detection = 0.0;
+      
+      const int numStatisticRecordingRounds = 100;
 
       //get the degrees of all ghost vertices
       std::vector<int> deg_send_cnts(comm->getSize(),0);
@@ -933,7 +938,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       
       //this view represents how many conflicts were found
       Kokkos::View<gno_t[1], device_type> recoloringSize("Recoloring Queue Size");
-      recoloringSize(0) = 0;
+      typename Kokkos::View<gno_t[1], device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
+      recoloringSize_host(0) = 0;
+      Kokkos::deep_copy(recoloringSize, recoloringSize_host);
 
       //create views for the ghost adjacencies, as they can detect all conflicts.
       if(verbose) std::cout<<comm->getRank()<<": constructing ghost connectivity views\n";
@@ -965,18 +972,28 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       if(verbose) std::cout<<comm->getRank()<<": constructing communication and recoloring lists\n";
       
       Kokkos::View<lno_t*, device_type> verts_to_recolor_view("verts to recolor", rand.size());
+      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_recolor_host = create_mirror(verts_to_recolor_view);
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_atomic = verts_to_recolor_view;
       
       Kokkos::View<int[1], device_type> verts_to_recolor_size("verts to recolor size");
-      verts_to_recolor_size(0) = 0;
       Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic = verts_to_recolor_size;
+      typename Kokkos::View<int[1], device_type>::HostMirror verts_to_recolor_size_host = create_mirror(verts_to_recolor_size);
+
+      verts_to_recolor_size_host(0) = 0;
+      Kokkos::deep_copy(verts_to_recolor_size, verts_to_recolor_size_host);
+
 
       Kokkos::View<lno_t*, device_type> verts_to_send_view("verts to send", rand.size());
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
+      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = create_mirror(verts_to_send_view);
       
+
       Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
-      verts_to_send_size(0) = 0;
       Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
+      typename Kokkos::View<size_t[1], device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
+      verts_to_send_size_host(0) = 0;
+      Kokkos::deep_copy(verts_to_send_size, verts_to_send_size_host);
+
       if(verbose) std::cout<<comm->getRank()<<": initializing the list of vertices to send\n";
       
       constructBoundary(n_local, dist_offsets_dev, dist_adjs_dev, dist_offsets_host, dist_adjs_host, boundary_verts_dev, 
@@ -988,7 +1005,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       interior_time = timer();
       total_time = timer();
       //give the entire local graph to KokkosKernels to color
-      //this->colorInterior(n_local, adjs_dev, offsets_dev, femv,verts_to_recolor_view,verts_to_recolor_size(0),use_vbbit);
       this->colorInterior(n_local, adjs_dev, offsets_dev, femv,adjs_dev,0,use_vbbit);
       interior_time = timer() - interior_time;
       comp_time = interior_time;
@@ -1000,8 +1016,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 
       //communicate the initial coloring.
       if(verbose) std::cout<<comm->getRank()<<": communicating\n";
+      
+      //update the host views for the verts to send,
+      //doOwnedToGhosts needs host memory views, but doesn't
+      //change the values in them, so no need to copy afterwards
+      Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
+      Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
       gno_t recv,sent;
-      comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_view,verts_to_send_size,femv_colors,sent,recv);
+      comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_host,verts_to_send_size_host,femv,sent,recv);
       sentPerRound[0] = sent;
       recvPerRound[0] = recv; 
 
@@ -1010,15 +1032,29 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       });
       Kokkos::fence();
       
-      verts_to_send_size(0) = 0;
       double temp = timer();
       //detect conflicts only for ghost vertices
       bool recolor_degrees = this->pl->template get<bool>("recolor_degrees",false);
       if(verbose) std::cout<<comm->getRank()<<": detecting conflicts\n";
 
+      //these sizes will be updated by detectConflicts, zero them out beforehand
+      verts_to_send_size_host(0) = 0;
+      verts_to_recolor_size_host(0) = 0;
+      recoloringSize_host(0) = 0;
+      Kokkos::deep_copy(verts_to_send_size, verts_to_send_size_host);
+      Kokkos::deep_copy(verts_to_recolor_size, verts_to_recolor_size_host);
+      Kokkos::deep_copy(recoloringSize, recoloringSize_host);
+      
       detectConflicts(n_local, dist_offsets_dev, dist_adjs_dev, femv_colors, boundary_verts_dev, boundary_size,
 	       verts_to_recolor_atomic, verts_to_recolor_size_atomic, verts_to_send_atomic, verts_to_send_size_atomic,
 	       recoloringSize, rand_dev, gid_dev, ghost_degrees_dev, recolor_degrees);
+      
+      //these sizes were updated by detectConflicts,
+      //copy the device views back into host memory
+      Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
+      Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
+      Kokkos::deep_copy(recoloringSize_host, recoloringSize);
+      Kokkos::deep_copy(verts_to_recolor_size_host, verts_to_recolor_size);
 
       if(comm->getSize() > 1){
         conflict_detection = timer() - temp;
@@ -1027,13 +1063,13 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //all conflicts detected!
       if(verbose) std::cout<<comm->getRank()<<": starting to recolor\n";
       //variables for statistics
-      double totalPerRound[100];
-      double commPerRound[100];
-      double compPerRound[100];
-      double recoloringPerRound[100];
-      double conflictDetectionPerRound[100];
-      uint64_t vertsPerRound[100];
-      uint64_t incorrectGhostsPerRound[100];
+      double totalPerRound[numStatisticRecordingRounds];
+      double commPerRound[numStatisticRecordingRounds];
+      double compPerRound[numStatisticRecordingRounds];
+      double recoloringPerRound[numStatisticRecordingRounds];
+      double conflictDetectionPerRound[numStatisticRecordingRounds];
+      uint64_t vertsPerRound[numStatisticRecordingRounds];
+      uint64_t incorrectGhostsPerRound[numStatisticRecordingRounds];
       int distributedRounds = 1;
       totalPerRound[0] = interior_time + comm_time + conflict_detection;
       recoloringPerRound[0] = 0;
@@ -1043,149 +1079,180 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       recoloringPerRound[0] = 0;
       vertsPerRound[0] = 0;
       incorrectGhostsPerRound[0]=0;
-      typename Kokkos::View<int*, device_type>::HostMirror colors_host;
-      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_recolor_host;
-      typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host;
       typename Kokkos::View<int*, device_type>::HostMirror ghost_colors_host;
       typename Kokkos::View<lno_t*, device_type>::HostMirror boundary_verts_host;
       int serial_threshold = this->pl->template get<int>("serial_threshold",0);
       //see if recoloring is necessary.
       gno_t totalConflicts = 0;
-      gno_t localConflicts = recoloringSize(0);
+      gno_t localConflicts = recoloringSize_host(0);
       Teuchos::reduceAll<int,gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &localConflicts, &totalConflicts);
       bool done = !totalConflicts;
       if(comm->getSize()==1) done = true;
       
       //recolor until no conflicts are left
       while(!done){
-	if(recoloringSize(0) < serial_threshold) break;
-        if(distributedRounds < 100) {
-          vertsPerRound[distributedRounds] = verts_to_recolor_size(0);
+	if(recoloringSize_host(0) < serial_threshold) break;
+        if(distributedRounds < numStatisticRecordingRounds) {
+          vertsPerRound[distributedRounds] = verts_to_recolor_size_host(0);
         }
         
         comm->barrier();
         double recolor_temp = timer();
         //recolor using KokkosKernels' coloring function 
-        if(verts_to_recolor_size(0) > 0){
-	  this->colorInterior(femv_colors.size(), dist_adjs_dev, dist_offsets_dev,femv,verts_to_recolor_view,verts_to_recolor_size(0),use_vbbit);
+        if(verts_to_recolor_size_host(0) > 0){
+	  this->colorInterior(femv_colors.size(), dist_adjs_dev, dist_offsets_dev,femv,verts_to_recolor_view,verts_to_recolor_size_host(0),use_vbbit);
 	}
-        recoloringPerRound[distributedRounds] = timer() - recolor_temp;
-        recoloring_time += recoloringPerRound[distributedRounds];
-        total_time += recoloringPerRound[distributedRounds];
-        comp_time += recoloringPerRound[distributedRounds];
-        compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
-        totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
-        recoloringSize(0) = 0;
-        verts_to_recolor_size(0) = 0;
-        Kokkos::parallel_for(rand.size() - n_local, KOKKOS_LAMBDA(const int& i){
+
+	if(distributedRounds < numStatisticRecordingRounds){
+          recoloringPerRound[distributedRounds] = timer() - recolor_temp;
+          recoloring_time += recoloringPerRound[distributedRounds];
+          total_time += recoloringPerRound[distributedRounds];
+          comp_time += recoloringPerRound[distributedRounds];
+          compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
+          totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
+	}
+
+	Kokkos::parallel_for(rand.size() - n_local, KOKKOS_LAMBDA(const int& i){
           femv_colors(i+n_local) = ghost_colors(i);
         });
         Kokkos::fence();
         
 	comm->barrier();
+	//send views are up-to-date, they were copied after conflict detection.
         //communicate the new colors
-        commPerRound[distributedRounds] = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_view,verts_to_send_size,femv_colors,sent,recv);
-        recvPerRound[distributedRounds] = recv;
-        sentPerRound[distributedRounds] = sent;
-	if(verbose) {
-          std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
-          std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
+        double curr_comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_host,verts_to_send_size_host,femv,sent,recv);
+	comm_time += curr_comm_time;
+
+        if(distributedRounds < numStatisticRecordingRounds){
+          commPerRound[distributedRounds] = curr_comm_time;
+	  recvPerRound[distributedRounds] = recv;
+          sentPerRound[distributedRounds] = sent;
+	  if(verbose) {
+            std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
+            std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
+	  }
+          totalPerRound[distributedRounds] += commPerRound[distributedRounds];
 	}
-        
-	comm_time += commPerRound[distributedRounds];
-        totalPerRound[distributedRounds] += commPerRound[distributedRounds];
-        
-	verts_to_send_size(0) = 0;
+
         Kokkos::parallel_for(rand.size() - n_local, KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+n_local);
         });
         Kokkos::fence();
         comm->barrier();
+
+        //these views will change in detectConflicts, they need
+	//to be zeroed out beforehand
+        verts_to_send_size_host(0) = 0;
+	verts_to_recolor_size_host(0) = 0;
+	recoloringSize_host(0) = 0;
+	Kokkos::deep_copy(verts_to_send_size, verts_to_send_size_host);
+	Kokkos::deep_copy(verts_to_recolor_size, verts_to_recolor_size_host);
+	Kokkos::deep_copy(recoloringSize, recoloringSize_host);
+
         //check for further conflicts
         double detection_temp = timer();
 
         detectConflicts(n_local, dist_offsets_dev, dist_adjs_dev,femv_colors, boundary_verts_dev, boundary_size,
 	         verts_to_recolor_atomic, verts_to_recolor_size_atomic, verts_to_send_atomic, verts_to_send_size_atomic, 
 		 recoloringSize, rand_dev, gid_dev, ghost_degrees_dev, recolor_degrees);
+
+        //copy the updated device views back into host memory where necessary
+        Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
+        Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
+	//we only use the list of verts to recolor on device, no need to copy to host.
+        Kokkos::deep_copy(verts_to_recolor_size_host, verts_to_recolor_size);
+	Kokkos::deep_copy(recoloringSize_host, recoloringSize);
         
-	conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
-        conflict_detection += conflictDetectionPerRound[distributedRounds];
-        compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
-        totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
-        comp_time += conflictDetectionPerRound[distributedRounds];
+	if(distributedRounds < numStatisticRecordingRounds){
+	  conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
+          conflict_detection += conflictDetectionPerRound[distributedRounds];
+          compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
+          totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
+          comp_time += conflictDetectionPerRound[distributedRounds];
+        }
 
         distributedRounds++;
-        int localDone = recoloringSize(0);
+        int localDone = recoloringSize_host(0);
         int globalDone = 0;
         Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
         done = !globalDone;
         
       }//end device coloring
       
-      if(recoloringSize(0) > 0 || !done){
-	colors_host = Kokkos::create_mirror_view(femv_colors);
-	deep_copy(colors_host, femv_colors);
+      if(recoloringSize_host(0) > 0 || !done){
+
 	ghost_colors_host = Kokkos::create_mirror_view(ghost_colors);
 	deep_copy(ghost_colors_host, ghost_colors);
-        verts_to_recolor_host = Kokkos::create_mirror_view(verts_to_recolor_view);
-	deep_copy(verts_to_recolor_host, verts_to_recolor_view);
-	verts_to_send_host = Kokkos::create_mirror_view(verts_to_send_view);
-	deep_copy(verts_to_send_host, verts_to_send_view);
+
 	boundary_verts_host = Kokkos::create_mirror_view(boundary_verts_dev);
 	deep_copy(boundary_verts_host, boundary_verts_dev);
       }
 
-      while(recoloringSize(0) > 0 || !done){
-	if(distributedRounds < 100){
-	  vertsPerRound[distributedRounds] = recoloringSize(0);
+      while(recoloringSize_host(0) > 0 || !done){
+	auto femvColors_host = femv->getLocalViewHost();
+	auto colors_host = subview(femvColors_host, Kokkos::ALL, 0);
+	if(distributedRounds < numStatisticRecordingRounds){
+	  vertsPerRound[distributedRounds] = recoloringSize_host(0);
 	}
 	if(verbose) std::cout<<comm->getRank()<<": starting to recolor, serial\n";
         comm->barrier();
 	double recolor_temp = timer();
-	if(verts_to_recolor_size(0) > 0){
+	if(verts_to_recolor_size_host(0) > 0){
 	  this->colorInterior_serial(femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, 
 			             verts_to_recolor_host, verts_to_recolor_size(0), true);
 	}
-	recoloringPerRound[distributedRounds] = timer() - recolor_temp;
-	recoloring_time += recoloringPerRound[distributedRounds];
-	total_time += recoloringPerRound[distributedRounds];
-	comp_time += recoloringPerRound[distributedRounds];
-	compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
-	totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
-        recoloringSize(0) = 0;
-	verts_to_recolor_size(0) = 0;
+	if(distributedRounds < numStatisticRecordingRounds){
+	  recoloringPerRound[distributedRounds] = timer() - recolor_temp;
+	  recoloring_time += recoloringPerRound[distributedRounds];
+	  total_time += recoloringPerRound[distributedRounds];
+	  comp_time += recoloringPerRound[distributedRounds];
+	  compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
+	  totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
+	}
 	for(size_t i = 0; i < rand.size() - n_local; i++){
-	  femv_colors(i+n_local) = ghost_colors_host(i);
+	  colors_host(i+n_local) = ghost_colors_host(i);
 	}
         comm->barrier();
-	commPerRound[distributedRounds] = doOwnedToGhosts(mapOwnedPlusGhosts, n_local,verts_to_send_view, verts_to_send_size, femv_colors, sent,recv);
-	recvPerRound[distributedRounds] = recv;
-	sentPerRound[distributedRounds] = sent;
-	if(verbose) {
-	  std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
-	  std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
+	double curr_comm_time = doOwnedToGhosts(mapOwnedPlusGhosts, n_local,verts_to_send_host, verts_to_send_size_host, femv, sent,recv);
+	comm_time += curr_comm_time;
+	
+	if(distributedRounds < numStatisticRecordingRounds){
+	  commPerRound[distributedRounds] = curr_comm_time;
+	  recvPerRound[distributedRounds] = recv;
+	  sentPerRound[distributedRounds] = sent;
+	  if(verbose) {
+	    std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
+	    std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
+	  }
+	  totalPerRound[distributedRounds] += commPerRound[distributedRounds];
 	}
-        comm_time += commPerRound[distributedRounds];
-	totalPerRound[distributedRounds] += commPerRound[distributedRounds];
-	verts_to_send_size(0) = 0;
+
 	for(size_t i = 0; i < rand.size() - n_local; i++){
-	  ghost_colors_host(i) = femv_colors(i+n_local);
+	  ghost_colors_host(i) = colors_host(i+n_local);
 	}
 	comm->barrier();
 	double detection_temp = timer();
+        
+	//zero these out, they'll be updated by detectConflicts_serial
+        verts_to_recolor_size_host(0) = 0;
+	verts_to_send_size_host(0) = 0;
+	recoloringSize_host(0) = 0;
 
         detectConflicts_serial(n_local,dist_offsets_host, dist_adjs_host, colors_host, boundary_verts_host, boundary_size,
-	                       verts_to_recolor_host, verts_to_recolor_size_atomic, verts_to_send_host, verts_to_send_size_atomic,
-		               recoloringSize, rand_host, gid_host, ghost_degrees_host, recolor_degrees);
+	                       verts_to_recolor_host, verts_to_recolor_size_host, verts_to_send_host, verts_to_send_size_host,
+		               recoloringSize_host, rand_host, gid_host, ghost_degrees_host, recolor_degrees);
 	
-	conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
-	conflict_detection += conflictDetectionPerRound[distributedRounds];
-	compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
-	totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
-	comp_time += conflictDetectionPerRound[distributedRounds];
-
+	//no need to update the host views, we're only using host views now.
+	
+        if(distributedRounds < numStatisticRecordingRounds){
+	  conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
+	  conflict_detection += conflictDetectionPerRound[distributedRounds];
+	  compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
+	  totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
+	  comp_time += conflictDetectionPerRound[distributedRounds];
+        }
 	int globalDone = 0;
-	int localDone = recoloringSize(0);
+	int localDone = recoloringSize_host(0);
 	Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
 	distributedRounds++;
 	done = !globalDone;
@@ -1205,18 +1272,18 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         }      
         
         if(comm->getRank() == 0) printf("did %d rounds of distributed coloring\n", distributedRounds);
-        uint64_t totalVertsPerRound[100];
+        uint64_t totalVertsPerRound[numStatisticRecordingRounds];
         uint64_t totalBoundarySize = 0;
-        uint64_t totalIncorrectGhostsPerRound[100];
-        double finalTotalPerRound[100];
-        double maxRecoloringPerRound[100];
-        double minRecoloringPerRound[100];
-        double finalCommPerRound[100];
-        double finalCompPerRound[100];
-        double finalConflictDetectionPerRound[100];
-        gno_t finalRecvPerRound[100];
-        gno_t finalSentPerRound[100];
-        for(int i = 0; i < 100; i++){
+        uint64_t totalIncorrectGhostsPerRound[numStatisticRecordingRounds];
+        double finalTotalPerRound[numStatisticRecordingRounds];
+        double maxRecoloringPerRound[numStatisticRecordingRounds];
+        double minRecoloringPerRound[numStatisticRecordingRounds];
+        double finalCommPerRound[numStatisticRecordingRounds];
+        double finalCompPerRound[numStatisticRecordingRounds];
+        double finalConflictDetectionPerRound[numStatisticRecordingRounds];
+        gno_t finalRecvPerRound[numStatisticRecordingRounds];
+        gno_t finalSentPerRound[numStatisticRecordingRounds];
+        for(int i = 0; i < numStatisticRecordingRounds; i++){
           totalVertsPerRound[i] = 0;
           finalTotalPerRound[i] = 0.0;
           maxRecoloringPerRound[i] = 0.0;
@@ -1228,18 +1295,19 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
           finalSentPerRound[i] = 0;
         }
         Teuchos::reduceAll<int,uint64_t>(*comm, Teuchos::REDUCE_SUM,1,&localBoundaryVertices, &totalBoundarySize);
-        Teuchos::reduceAll<int,uint64_t>(*comm, Teuchos::REDUCE_SUM,100,vertsPerRound,totalVertsPerRound);
-        Teuchos::reduceAll<int,uint64_t>(*comm, Teuchos::REDUCE_SUM,100,incorrectGhostsPerRound,totalIncorrectGhostsPerRound);
-        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,totalPerRound, finalTotalPerRound);
-        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,recoloringPerRound,maxRecoloringPerRound);
-        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MIN,100,recoloringPerRound,minRecoloringPerRound);
-        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,commPerRound,finalCommPerRound);
-        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,compPerRound,finalCompPerRound);
-        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,100,conflictDetectionPerRound, finalConflictDetectionPerRound);
-        Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,100,recvPerRound,finalRecvPerRound);
-        Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,100,sentPerRound,finalSentPerRound);
+        Teuchos::reduceAll<int,uint64_t>(*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,vertsPerRound,totalVertsPerRound);
+        Teuchos::reduceAll<int,uint64_t>(*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,incorrectGhostsPerRound,totalIncorrectGhostsPerRound);
+        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,numStatisticRecordingRounds,totalPerRound, finalTotalPerRound);
+        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,numStatisticRecordingRounds,recoloringPerRound,maxRecoloringPerRound);
+        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MIN,numStatisticRecordingRounds,recoloringPerRound,minRecoloringPerRound);
+        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,numStatisticRecordingRounds,commPerRound,finalCommPerRound);
+        Teuchos::reduceAll<int,double>(*comm, Teuchos::REDUCE_MAX,numStatisticRecordingRounds,compPerRound,finalCompPerRound);
+        Teuchos::reduceAll<int,double>(*comm, 
+			               Teuchos::REDUCE_MAX,numStatisticRecordingRounds,conflictDetectionPerRound,finalConflictDetectionPerRound);
+        Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,recvPerRound,finalRecvPerRound);
+        Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,sentPerRound,finalSentPerRound);
         printf("Rank %d: boundary size: %ld\n",comm->getRank(),localBoundaryVertices);
-        for(int i = 0; i < std::min((int)distributedRounds,100); i++){
+        for(int i = 0; i < std::min((int)distributedRounds,numStatisticRecordingRounds); i++){
           printf("Rank %d: recolor %ld vertices in round %d\n",comm->getRank(), vertsPerRound[i],i);
           printf("Rank %d: sentbuf had %lld entries in round %d\n", comm->getRank(), sentPerRound[i],i);
           if(comm->getRank()==0){
