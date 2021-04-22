@@ -21,8 +21,10 @@ from BuildStatsData import *
 # This robustly deals with *.timing files and discards any *.timing files that
 # have any problems.
 #
-def readAllValidTimingFiles(baseDir, printErrMsg=True):
+def readAllValidTimingFiles(baseDir, printErrMsg=True, printStats=False):
   listOfAllTimingFiles = getListOfAllTimingFiles(baseDir)
+  if printStats:
+    print("Number of *.timing files found = "+str(len(listOfAllTimingFiles)))
   allValidTimingFilesLOD = []
   for timingFile in listOfAllTimingFiles:
     timingFileFullPath = baseDir+"/"+timingFile
@@ -32,6 +34,8 @@ def readAllValidTimingFiles(baseDir, printErrMsg=True):
       print(errMsg)
     if not buildStatsTimingDict == None:
       allValidTimingFilesLOD.append(buildStatsTimingDict)
+  if printStats:
+    print("Number of valid *.timing files found = "+str(len(allValidTimingFilesLOD)))
   return allValidTimingFilesLOD
 
 
@@ -174,9 +178,13 @@ def getListOfAllTimingFiles(baseDir):
 # input dicts in the listOfDicts and any non-existent values will be given the
 # empty string "" instead of `None`.
 #
-def getDictOfListsFromListOfDicts(listOfDicts):
+def getDictOfListsFromListOfDicts(listOfDicts, printStats=False):
   numTotalRows = len(listOfDicts)
   supersetOfFieldNamesList = getSupersetOfFieldNamesList(listOfDicts)
+  if printStats:
+    print(
+      "Combined build-stats keys sorted:\n"+\
+      "  "+str(supersetOfFieldNamesList) )
   dictOfLists = {}
   # Create dict of lists with all empty values
   for keyName in supersetOfFieldNamesList:
@@ -196,7 +204,7 @@ def getSupersetOfFieldNamesList(listOfDicts):
   supersetOfFieldNames = set()
   for aDict in listOfDicts:
     supersetOfFieldNames = supersetOfFieldNames.union(aDict.keys())
-  return list(supersetOfFieldNames)
+  return sorted(list(supersetOfFieldNames))
 
 
 # Write a dict of lists to a CSV File
@@ -205,7 +213,10 @@ def getSupersetOfFieldNamesList(listOfDicts):
 #
 def writeDictOfListsToCsvFile(dictOfLists, csvFile):
   keysList = sorted(dictOfLists.keys())
-  numTotalRows = len(dictOfLists.get(keysList[0]))  # All lists are same length
+  if len(keysList) > 0:
+    numTotalRows = len(dictOfLists.get(keysList[0]))  # All lists are same length
+  else:
+    numTotalRows = 0
   numTotalKeys = len(keysList)
   with open(csvFile, "w") as csvFileHandle:
     csvWriter = csv.writer(csvFileHandle, delimiter=",", lineterminator="\n")
@@ -289,8 +300,10 @@ def getCmndLineOptions():
 if __name__ == '__main__':
   inOptions = getCmndLineOptions()
   print("Reading all *.timing files from under '"+inOptions.baseDir+"' ...")
-  allValidTimingFilesListOfDicts = readAllValidTimingFiles(inOptions.baseDir)
+  allValidTimingFilesListOfDicts = readAllValidTimingFiles(inOptions.baseDir,
+    printStats=True)
   allValidTimingFilesDictOfLists = \
-    getDictOfListsFromListOfDicts(allValidTimingFilesListOfDicts)
+    getDictOfListsFromListOfDicts(allValidTimingFilesListOfDicts, printStats=True)
   writeDictOfListsToCsvFile(allValidTimingFilesDictOfLists,
     inOptions.buildStatsCsvFile)
+  print("Wrote file '"+inOptions.buildStatsCsvFile+"'")

@@ -289,9 +289,15 @@ csvFileText_expected = \
   "packages/pkga/src/target2.lib,870000,1.38,1.5,180000,,\n"
 
 
-output_expected = \
-  "Reading all *.timing files from under '"+g_testBaseDir+"/dummy_build_dir' ...\n"+\
-  g_testBaseDir+"/dummy_build_dir/some/base/target3.timing: ERROR: Contains 0 != 1 data rows!\n"
+def gather_build_stats_py_expected_output(csvFile):
+  return \
+    "Reading all *.timing files from under '"+g_testBaseDir+"/dummy_build_dir' ...\n"+\
+    "Number of *.timing files found = 4\n"+\
+    g_testBaseDir+"/dummy_build_dir/some/base/target3.timing: ERROR: Contains 0 != 1 data rows!\n"+\
+    "Number of valid *.timing files found = 3\n"+\
+    "Combined build-stats keys sorted:\n"+\
+    "  ['FileName', 'FileSize', 'cpu_sec_user_mode', 'elapsed_real_time_sec', 'max_resident_size_Kb', 'num_filesystem_outputs', 'num_involuntary_context_switch']\n"+\
+    "Wrote file '"+csvFile+"'\n"
 
 
 def sortCsvFileTextList(csvFileText):
@@ -304,12 +310,15 @@ def sortCsvFileTextList(csvFileText):
 
 def test_gather_build_stats_py_body(testObj, csvFile, cmnd):
   output = GSS.getCmndOutput(cmnd)
+  #print("output:\n"+output)
   with open(csvFile, 'r') as csvFileHandle:
     csvFileText = csvFileHandle.read()
   testObj.assertEqual(
     sortCsvFileTextList(csvFileText),
     sortCsvFileTextList(csvFileText_expected))
-  testObj.assertEqual(output, output_expected)
+  testObj.assertEqual(
+    output.split('\n'),
+    gather_build_stats_py_expected_output(csvFile).split('\n'))
 
 
 class test_gather_build_stats_py(unittest.TestCase):
