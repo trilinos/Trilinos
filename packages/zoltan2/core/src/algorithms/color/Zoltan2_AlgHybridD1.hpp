@@ -1,5 +1,5 @@
-#ifndef _ZOLTAN2_ALGHYBRIDGMB_HPP_
-#define _ZOLTAN2_ALGHYBRIDGMB_HPP_
+#ifndef _ZOLTAN2_ALGHYBRIDD1_HPP_
+#define _ZOLTAN2_ALGHYBRIDD1_HPP_
 
 #include <vector>
 #include <unordered_map>
@@ -28,8 +28,8 @@
 #include <stdlib.h>
 
 //////////////////////////////////////////////
-//! \file Zoltan2_AlgHybridGMB.hpp
-//! \brief A hybrid version of the framework proposed by Gebremedhin and Manne
+//! \file Zoltan2_AlgHybridD1.hpp
+//! \brief A hybrid MPI+Kokkos version of the framework proposed by Gebremedhin and Manne
 
 namespace Zoltan2 {
 
@@ -79,7 +79,9 @@ class AlgDistance1 : public Algorithm<Adapter>
 
       KernelHandle kh;
       
-      //pick which KokkosKernels algorithm to use. Typically based on max graph degree.
+      //pick which KokkosKernels algorithm to use.
+      //VBBIT is more efficient for inputs with max degree < ~6000
+      //EB is more efficient for inputs with max degree > ~6000
       if(recolor){
         kh.create_graph_coloring_handle(KokkosGraph::COLORING_VBBIT);
       } else {
