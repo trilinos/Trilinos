@@ -42,7 +42,9 @@
 #ifdef STK_HAVE_BOOST
 #include "boost/version.hpp"
 #if BOOST_VERSION >= 106500
+#ifndef STK_NO_BOOST_STACKTRACE
 #define STK_HAVE_BOOST_STACKTRACE
+#endif
 #endif
 #endif
 
@@ -80,7 +82,7 @@ void default_handler_req(const char* expr,
 
   throw EXCEPTION(
     std::string("Requirement( ") + expr + " ) FAILED\n" +
-    "Error occured at: " + location + "\n" + error_msg);
+    "Error occurred at: " + location + "\n" + error_msg);
 }
 
 
@@ -100,7 +102,7 @@ void default_handler_exc(const char* expr,
   }
 
   throw EXCEPTION(
-    expr_msg + "Error occured at: " + location + "\n" + error_msg);
+    expr_msg + "Error occurred at: " + location + "\n" + error_msg);
 }
 
 

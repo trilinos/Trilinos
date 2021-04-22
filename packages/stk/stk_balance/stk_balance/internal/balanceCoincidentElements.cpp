@@ -39,12 +39,12 @@ void set_all_coincidents_to_min_destination(const stk::mesh::ElemElemGraph& grap
                                             stk::mesh::impl::LocalId minCoinLocalId,
                                             DecompositionChangeList& changeList)
 {
-    stk::mesh::Entity minCoinElem = graph.get_entity_from_local_id(minCoinLocalId);
+    stk::mesh::Entity minCoinElem = graph.get_entity(minCoinLocalId);
     int minCoinDestination = changeList.get_entity_destination(minCoinElem);
     modify_list_to_keep_on_same_proc(elem, minCoinElem, minCoinDestination, changeList);
     for(stk::mesh::impl::LocalId coin : coincidents)
     {
-        stk::mesh::Entity coinElem = graph.get_entity_from_local_id(coin);
+        stk::mesh::Entity coinElem = graph.get_entity(coin);
         modify_list_to_keep_on_same_proc(coinElem, minCoinElem, minCoinDestination, changeList);
     }
 }

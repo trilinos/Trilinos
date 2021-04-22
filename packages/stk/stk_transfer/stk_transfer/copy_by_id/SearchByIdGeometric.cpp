@@ -41,11 +41,9 @@
 namespace stk {
 namespace transfer {
 
-
 void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
                                     const TransferCopyByIdMeshAdapter & meshb,
-                                    KeyToTargetProcessor & key_to_target_processor
-                                    )
+                                    KeyToTargetProcessor & key_to_target_processor)
 {
   const ParallelMachine comm = mesha.comm();
   const int p_rank = parallel_machine_rank(comm);
@@ -53,22 +51,21 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   key_to_target_processor.clear();
   m_remote_keys.clear();
 
-  typedef TransferCopyByIdMeshAdapter::MeshIDVector MeshIDVector;
-  typedef stk::search::Point<float>  Point;
-  typedef stk::search::Sphere<float> Sphere;
-  typedef std::pair<stk::search::Sphere<float>,MeshIDProc> BoundingBox;
+  using MeshIDVector = TransferCopyByIdMeshAdapter::MeshIDVector;
+  using Point = stk::search::Point<float>;
+  using Sphere = stk::search::Sphere<float>;
+  using BoundingBox = std::pair<stk::search::Sphere<float>,MeshIDProc>;
 
   std::vector<BoundingBox> source_bbox_vector;
   std::vector<BoundingBox> target_bbox_vector;
 
   {
     const MeshIDVector & source_ids = mesha.get_mesh_ids();
-    for (size_t id_index=0 ; id_index<source_ids.size() ; ++id_index) {
+    for (size_t id_index = 0; id_index < source_ids.size(); ++id_index) {
       double coords[3] = {0.0,0.0,0.0};
       mesha.centroid(source_ids[id_index],coords);
       Point center;
-      for (int i=0 ; i<3 ; ++i)
-      {
+      for (int i = 0; i < 3; ++i) {
         center[i] = static_cast<float>(coords[i]);
       }
       source_bbox_vector.emplace_back(Sphere(center,m_radius), MeshIDProc(source_ids[id_index],p_rank));
@@ -76,43 +73,41 @@ void SearchByIdGeometric::do_search(const TransferCopyByIdMeshAdapter & mesha,
   }
   {
     const MeshIDVector & target_ids = meshb.get_mesh_ids();
-    for (size_t id_index=0 ; id_index<target_ids.size() ; ++id_index) {
+    for (size_t id_index = 0; id_index < target_ids.size(); ++id_index) {
       if (mesha.is_locally_owned(target_ids[id_index])) {
-        key_to_target_processor[target_ids[id_index]] = p_rank;
+        key_to_target_processor.emplace_back(target_ids[id_index], p_rank);
       } else {
         m_remote_keys.insert(target_ids[id_index]);
 
         double coords[3] = {0.0,0.0,0.0};
         meshb.centroid(target_ids[id_index],coords);
         Point center;
-        for (int i=0 ; i<3 ; ++i) { center[i] = coords[i]; }
+        for (int i = 0; i < 3; ++i) { center[i] = coords[i]; }
         target_bbox_vector.emplace_back(Sphere(center,m_radius), MeshIDProc(target_ids[id_index],p_rank));
       }
     }
   }
 
-  std::sort(source_bbox_vector.begin(),source_bbox_vector.end(),BoundingBoxCompare<BoundingBox>());
-  std::sort(target_bbox_vector.begin(),target_bbox_vector.end(),BoundingBoxCompare<BoundingBox>());
+  std::sort(source_bbox_vector.begin(), source_bbox_vector.end(), BoundingBoxCompare<BoundingBox>());
+  std::sort(target_bbox_vector.begin(), target_bbox_vector.end(), BoundingBoxCompare<BoundingBox>());
 
-  typedef std::pair<MeshIDProc, MeshIDProc> EntityProcRelation;
-  typedef std::vector<EntityProcRelation>   EntityProcRelationVec;
+  using EntityProcRelation = std::pair<MeshIDProc, MeshIDProc>;
+  using EntityProcRelationVec = std::vector<EntityProcRelation>;
 
   EntityProcRelationVec source_to_target_vector;
   stk::search::coarse_search(source_bbox_vector,
                              target_bbox_vector,
                              stk::search::KDTREE,
                              mesha.comm(),
-                             source_to_target_vector
-                             );
+                             source_to_target_vector);
 
   // Match on Mesh_ID only and store in our special data structure.
-  EntityProcRelationVec::const_iterator s2t_vec_iter = source_to_target_vector.begin();
-  for ( ; s2t_vec_iter != source_to_target_vector.end() ; ++s2t_vec_iter ) {
-    Mesh_ID id = s2t_vec_iter->first.id();
-    if (s2t_vec_iter->second.id() == id) {
-      const bool id_in_my_source_mesh = (p_rank == s2t_vec_iter->first.proc());
-      if (id_in_my_source_mesh) {
-        key_to_target_processor[id] = s2t_vec_iter->second.proc();
+  for (const auto & s2tEntry : source_to_target_vector) {
+    Mesh_ID id = s2tEntry.first.id();
+    if (s2tEntry.second.id() == id) {
+      const bool idInMySourceMesh = (p_rank == s2tEntry.first.proc());
+      if (idInMySourceMesh) {
+        key_to_target_processor.emplace_back(id, s2tEntry.second.proc());
       }
     }
   }

@@ -601,47 +601,34 @@ TEST(StkIoFieldType, testFieldRepresentationAndSize)
 
 std::string get_role_string(Ioss::Field::RoleType role)
 {
+  std::string str("");
   switch(role) {
-    case Ioss::Field::RoleType::INTERNAL:
-      return "INTERNAL";
-    case Ioss::Field::RoleType::MESH:
-      return "MESH";
-    case Ioss::Field::RoleType::ATTRIBUTE:
-      return "ATTRIBUTE";
-    case Ioss::Field::RoleType::COMMUNICATION:
-      return "COMMUNICATION";
-    case Ioss::Field::RoleType::MESH_REDUCTION:
-      return "MESH_REDUCTION";
-    case Ioss::Field::RoleType::REDUCTION:
-      return "REDUCTION";
-    case Ioss::Field::RoleType::TRANSIENT:
-      return "TRANSIENT";
+    case Ioss::Field::RoleType::INTERNAL: str = "INTERNAL"; break;
+    case Ioss::Field::RoleType::MESH: str = "MESH"; break;
+    case Ioss::Field::RoleType::ATTRIBUTE: str = "ATTRIBUTE"; break;
+    case Ioss::Field::RoleType::COMMUNICATION: str = "COMMUNICATION"; break;
+    case Ioss::Field::RoleType::MESH_REDUCTION: str = "MESH_REDUCTION"; break;
+    case Ioss::Field::RoleType::REDUCTION: str = "REDUCTION"; break;
+    case Ioss::Field::RoleType::TRANSIENT: str = "TRANSIENT"; break;
     default:break;
   }
-  return "";
+  return str;
 }
 
 std::string get_type_string(Ioss::Field::BasicType type)
 {
+  std::string str("");
   switch(type) {
-    case Ioss::Field::BasicType::INVALID:
-      return "INVALID";
-    case Ioss::Field::BasicType::DOUBLE:
-      return "DOUBLE";
-    case Ioss::Field::BasicType::INTEGER:
-      return "INTEGER";
-    case Ioss::Field::BasicType::INT64:
-      return "INT64";
-    case Ioss::Field::BasicType::COMPLEX:
-      return "COMPLEX";
-    case Ioss::Field::BasicType::STRING:
-      return "STRING";
-    case Ioss::Field::BasicType::CHARACTER:
-      return "CHARACTER";
-    default:
-      return "";
+    case Ioss::Field::BasicType::INVALID: str = "INVALID"; break;
+    case Ioss::Field::BasicType::DOUBLE: str = "DOUBLE"; break;
+    case Ioss::Field::BasicType::INTEGER: str = "INTEGER"; break;
+    case Ioss::Field::BasicType::INT64: str = "INT64"; break;
+    case Ioss::Field::BasicType::COMPLEX: str = "COMPLEX"; break;
+    case Ioss::Field::BasicType::STRING: str = "STRING"; break;
+    case Ioss::Field::BasicType::CHARACTER: str = "CHARACTER"; break;
+    default: break;
   }
-  return "";
+  return str;
 }
 
 void describe_fields(const Ioss::GroupingEntity* entity)
