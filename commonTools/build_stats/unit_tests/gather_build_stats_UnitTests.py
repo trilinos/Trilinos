@@ -281,6 +281,32 @@ class test_getSupersetOfFieldNamesList(unittest.TestCase):
 #
 #############################################################################
 
+
+csvFileText_expected = \
+  "FileName,FileSize,cpu_sec_user_mode,elapsed_real_time_sec,max_resident_size_Kb,num_filesystem_outputs,num_involuntary_context_switch\n"+\
+  "target4.o,260000,,1.9,2000,,\n"+\
+  "some/base/dir/target1.o,3300000,,3.5,240000,20368,46\n"+\
+  "packages/pkga/src/target2.lib,870000,1.38,1.5,180000,,\n"
+
+
+def sortCsvFileTextList(csvFileText):
+  csvFileTextList_orig = csvFileText.split('\n')
+  csvFileTextList = []
+  csvFileTextList.append(csvFileTextList_orig[0]) # Headers
+  csvFileTextList.extend(sorted(csvFileTextList_orig[1:])) # Rows
+  return csvFileTextList
+
+
+def test_gather_build_stats_py_body(testObj, csvFile, cmnd):
+  output = GSS.getCmndOutput(cmnd)
+  with open(csvFile, 'r') as csvFileHandle:
+    csvFileText = csvFileHandle.read()
+  testObj.assertEqual(
+    sortCsvFileTextList(csvFileText),
+    sortCsvFileTextList(csvFileText_expected))
+
+
+
 class test_gather_build_stats_py(unittest.TestCase):
 
   def test_help(self):
@@ -294,31 +320,15 @@ class test_gather_build_stats_py(unittest.TestCase):
 
   def test_default_out_file(self):
     csvFile = "build_stats.csv"
-    csvFileText_expected = \
-      "FileName,FileSize,cpu_sec_user_mode,elapsed_real_time_sec,max_resident_size_Kb,num_filesystem_outputs,num_involuntary_context_switch\n"+\
-      "target4.o,260000,,1.9,2000,,\n"+\
-      "packages/pkga/src/target2.lib,870000,1.38,1.5,180000,,\n"+\
-      "some/base/dir/target1.o,3300000,,3.5,240000,20368,46\n"
     cmnd = thisScriptsDir+"/../gather_build_stats.py"+\
       " -d "+g_testBaseDir+"/dummy_build_dir"
-    output = GSS.getCmndOutput(cmnd)
-    with open(csvFile, 'r') as csvFileHandle:
-      csvFileText = csvFileHandle.read()
-    self.assertEqual(csvFileText, csvFileText_expected)
+    test_gather_build_stats_py_body(self, csvFile, cmnd)
 
   def test_explicit_out_file(self):
     csvFile = "test_gather_build_stats_py_build_stats.csv"
-    csvFileText_expected = \
-      "FileName,FileSize,cpu_sec_user_mode,elapsed_real_time_sec,max_resident_size_Kb,num_filesystem_outputs,num_involuntary_context_switch\n"+\
-      "target4.o,260000,,1.9,2000,,\n"+\
-      "packages/pkga/src/target2.lib,870000,1.38,1.5,180000,,\n"+\
-      "some/base/dir/target1.o,3300000,,3.5,240000,20368,46\n"
     cmnd = thisScriptsDir+"/../gather_build_stats.py"+\
       " -d "+g_testBaseDir+"/dummy_build_dir "+csvFile
-    output = GSS.getCmndOutput(cmnd)
-    with open(csvFile, 'r') as csvFileHandle:
-      csvFileText = csvFileHandle.read()
-    self.assertEqual(csvFileText, csvFileText_expected)
+    test_gather_build_stats_py_body(self, csvFile, cmnd)
 
 
 #
