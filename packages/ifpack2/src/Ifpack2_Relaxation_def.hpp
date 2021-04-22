@@ -866,12 +866,13 @@ void Relaxation<MatrixType>::computeBlockCrs ()
       const scalar_type two = one + one;
       const size_t maxLength = A_->getNodeMaxNumRowEntries ();
       nonconst_local_inds_host_view_type indices ("indices",maxLength);
-      nonconst_values_host_view_type values ("values",maxLength * blockSize * blockSize);
+      nonconst_values_host_view_type values_ ("values",maxLength * blockSize * blockSize);
       size_t numEntries = 0;
 
       for (LO i = 0; i < lclNumMeshRows; ++i) {
         // FIXME (mfh 16 Dec 2015) Get views instead of copies.
-        blockCrsA->getLocalRowCopy (i, indices, values, numEntries);
+        blockCrsA->getLocalRowCopy (i, indices, values_, numEntries);
+        scalar_type * values = reinterpret_cast<scalar_type*>(values_.data());
 
         auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
         for (LO subRow = 0; subRow < blockSize; ++subRow) {
