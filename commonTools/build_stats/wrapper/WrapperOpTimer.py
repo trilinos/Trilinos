@@ -160,7 +160,7 @@ class WrapperOpTimer:
     returncode = 0
     for cmd in wcp.commands:
       if cmdcount == 0:
-        cmd = [ '/usr/bin/time',
+        cmd = [ wcp.time_cmd,
                 # '--append',
                 '--output=' + wcp.output_stats_file,
                 field_arg,

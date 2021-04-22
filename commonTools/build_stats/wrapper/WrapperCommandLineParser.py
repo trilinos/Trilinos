@@ -27,6 +27,8 @@ class WrapperCommandLineParser:
     self.parse_nm = True
     self.output_fields = None
 
+    self.time_cmd = '/usr/bin/time'
+    # we must parse envs first, because they contain required parameters
     self.parse_env_controls()
     # finally parse the args
     self.parse_cmdline_args(cmdline_args)
@@ -34,15 +36,69 @@ class WrapperCommandLineParser:
   def parse_env_controls(self):
     """Parse control variables from the ENV (rather than command line)
 
-       TRILINOS_BUILD_STATS_OUTPUT_FIELDS : control what gets written to timing files
-        Can enable only some fields
-           e.g.,
-           FileName,FileSize,op
+       # REQUIRED
+       TRILINOS_BUILD_STATS_TIME_CMD points to a valid GNU Time executable
+
+       # REQUIRED
+       TRILINOS_BUILD_STATS_INNER_OP: is the command we are wrapping
+
+       # REQUIRED
+       TRILINOS_BUILD_STATS_BASE_DIR : We need to know the `root` of the build
+                              tree so we annotate paths correctly (see github
+                              PR 8638 for an issue with Makefile builds)
+       # OPTIONAL
+       TRILINOS_BUILD_STATS_OUTPUT_FIELDS : control what gets written to timing
+                               files Can enable only some fields
+                               e.g.,
+                                     FileName,FileSize,op
+
+
     """
     # optional, control which fields we write to a file
     # This does not promise we will not parse all possible fields
     # (That is to say, this does not promise any performance benefits)
     self.output_fields = os.environ.get('TRILINOS_BUILD_STATS_OUTPUT_FIELDS')
+
+    err_msg=''
+    # required : TRILINOS_BUILD_STATS_TIME_CMD
+    #            TRILINOS_BUILD_STATS_INNER_OP
+    #            TRILINOS_BUILD_STATS_BASE_DIR
+    if 'TRILINOS_BUILD_STATS_TIME_CMD' not in os.environ:
+      err_msg+=os.linesep
+      err_msg+=('TRILINOS_BUILD_STATS_TIME_CMD (ENV) is required. CMake should '
+                '`find` and set this, if using the build tools manually, locate '
+                'GNU Time (typically /usr/bin/time) verify it supports `--format` '
+                'and `--output`. Then set TRILINOS_BUILD_STATS_TIME_CMD=/path/to/time')
+
+    if 'TRILINOS_BUILD_STATS_INNER_OP' not in os.environ:
+      err_msg+=os.linesep
+      err_msg+=('TRILINOS_BUILD_STATS_INNER_OP (ENV) is required. CMake should '
+                'set this to a specific operations, e.g., ${CMAKE_C_COMPILER}. '
+                'If you are using the tools independently, please see the docs '
+                'for examples of how to write the wrapper scripts. E.g., '
+                'export TRILINOS_BUILD_STATS_INNER_OP=mpicc')
+ 
+    if 'TRILINOS_BUILD_STATS_BASE_DIR' not in os.environ:
+      err_msg+=os.linesep
+      err_msg+=('TRILINOS_BUILD_STATS_BASE_DIR (ENV) is required. CMake should '
+                'set this to the build directory (top level). If using the '
+                'manually, set this to your build directory (full path). E.g., '
+                'export TRILINOS_BUILD_STATS_BASE_DIR=/path/to/build')
+
+    if err_msg:
+      sys.stderr.write(err_msg)
+      exit(-1)
+
+    # set the required parameters - the dict will throw if these aren't defined
+    # but we should have exit() if any errors.
+    self.time_cmd = os.environ['TRILINOS_BUILD_STATS_TIME_CMD']
+    self.op = os.environ['TRILINOS_BUILD_STATS_INNER_OP']
+    self.base_build_dir = os.environ['TRILINOS_BUILD_STATS_BASE_DIR']
+
+    # we name the output as: blah.o.op.timing
+    # this will result in blah.ar.timing, blah.mpicc.timing blah.ld.timing...
+    self.short_op = os.path.basename(self.op)
+    self.output_stats_file = self.short_op + '.timing'
 
     parse_nm = os.environ.get('TRILINOS_BUILD_STATS_PARSE_NM', "True")
     if parse_nm.lower() == 'true':
@@ -140,36 +196,23 @@ class WrapperCommandLineParser:
 
 
   def parse_cmdline_args(self, cmdline_args):
-    base_build_dir_arg_prefix = '----base-build-dir='
     wrapper_header_arg = '----get_header'
-    wrapper_op_arg_prefix = '----op='
     print_csv_header=False
-    have_op=False
     # require that any wrapper arg be the first
     try:
       wrapper_arg_idx = 1
       wrapper_arg = cmdline_args[wrapper_arg_idx]
-      if wrapper_arg.startswith(base_build_dir_arg_prefix):
-        self.base_build_dir = wrapper_arg.split('=', 1)[1]
-        wrapper_arg_idx += 1
-      wrapper_arg = cmdline_args[wrapper_arg_idx]
       if wrapper_arg == wrapper_header_arg:
         self.print_csv_banner=True
-      elif wrapper_arg.startswith(wrapper_op_arg_prefix):
-        self.op = wrapper_arg.split('=', 1)[1]
+        # this isn't implemented....
+        sys.stderr.write('----get_header was requested, but is not implemented'
+                         '. Doing nothing.')
+        exit(0)
 
-        # we name the output as: blah.o.op.timing
-        # this will result in blah.ar.timing, blah.mpicc.timing blah.ld.timing...
-        self.short_op = os.path.basename(self.op)
-        self.output_stats_file = self.short_op + '.timing'
+      self.parse_cmdline_arg_helper(cmdline_args)
 
-        self.parse_cmdline_arg_helper(cmdline_args)
-
-      else:
-        raise Exception('unparseable arguments')
-
-      # Remove the first wrapper_arg_idx+1 args (script name + wrapper args)
-      self.op_args = cmdline_args[wrapper_arg_idx+1:]
+      # Remove the script name
+      self.op_args = cmdline_args[1:]
       # we could clean this whole thing up some..
       self.generate_commandlets([self.op] + self.op_args)
 
