@@ -91,7 +91,7 @@ private:
     int rank = 1;
     if (input.orthoType != "CGS") {
       vec_type Qn  = * (Q.getVectorNonConst (n));
-      if (input.needToReortho) {
+      if (input.delayedNorm) {
         // compute norm
         real_type newNorm (0.0);
         {
@@ -191,7 +191,7 @@ private:
     // ----------------------------------------------------------
     Teuchos::Range1D index_new (n+1, n+1);
     MV Qnew = * (Q.subView (index_new));
-    if (input.needToReortho) {
+    if (input.delayedNorm) {
       // check
       real_type prevNorm = STS::real (T(n, n));
       TEUCHOS_TEST_FOR_EXCEPTION
@@ -294,7 +294,7 @@ private:
 
     real_type newNorm = STS::real (H(n+1, n));
     if (newNorm <= oldNorm * tolOrtho) {
-      if (input.needToReortho) {
+      if (input.delayedNorm) {
         // something might have gone wrong, and let re-norm take care of
         if (outPtr != nullptr) {
           *outPtr << " > newNorm = " << newNorm << " -> H(" << n+1 << ", " << n << ") = one"
@@ -382,7 +382,7 @@ private:
     real_type oldNorm = STS::real (H(n+1, n));
 
     // reorthogonalize if requested
-    if (input.needToReortho) {
+    if (input.delayedNorm) {
       // Q(:,0:j+1)'*Q(:,j+1)
       dense_matrix_type w_all (Teuchos::View, WORK, n+2, 1, 0, n);
       dense_matrix_type w_prev (Teuchos::View, WORK, n+1, 1, 0, n);
@@ -575,7 +575,7 @@ private:
     y[0] = SC {r_norm};
     const int s = getStepSize ();
     // main loop
-    bool delayed_ortho = ((input.orthoType == "MGS" && input.needToReortho) ||
+    bool delayed_ortho = ((input.orthoType == "MGS" && input.delayedNorm) ||
                           (input.orthoType == "CGS2"));
     int iter = 0;
     while (output.numIters < input.maxNumIters && ! output.converged) {
