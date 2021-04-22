@@ -183,7 +183,7 @@ function(generate_build_stats_wrapper_for_op op_name)
                          (NOT ${variable_to_set}) ))
     message("-- " "${variable_to_set} is not set, but a wrapper has been requested. Asking CMake to find ${op_lc}")
     find_program(${variable_to_set} "${op_lc}")
-    print_var(DEBUG ${variable_to_set})
+    print_var(${variable_to_set})
   endif()
 
   # Override the op with the wrapper but remember the original command
@@ -232,7 +232,6 @@ macro(get_base_build_dir_for_python)
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
     OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-  print_var(BASE_BUILD_DIR_FOR_PYTHON)
 endmacro()
 # NOTE: We need this function to get the value of os.getcwd() from Python so
 # that it matches the value returned inside of magic_wapper.py.  The issue is
