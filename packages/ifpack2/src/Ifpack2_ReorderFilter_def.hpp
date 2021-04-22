@@ -480,24 +480,25 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
     getLocalRowCopy (i, Indices_ , Values_ , Nnz);
+    scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
     if (mode == Teuchos::NO_TRANS) {
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
+          y_ptr[k][i] += Values[j] * x_ptr[k][Indices_[j]];
         }
       }
     }
     else if (mode == Teuchos::TRANS) {
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += Values[j] * x_ptr[k][i];
         }
       }
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][Indices_[j]] += STS::conjugate(Values_[j]) * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += STS::conjugate(Values[j]) * x_ptr[k][i];
         }
       }
     }
