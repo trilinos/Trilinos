@@ -289,6 +289,11 @@ csvFileText_expected = \
   "packages/pkga/src/target2.lib,870000,1.38,1.5,180000,,\n"
 
 
+output_expected = \
+  "Reading all *.timing files from under '"+g_testBaseDir+"/dummy_build_dir' ...\n"+\
+  g_testBaseDir+"/dummy_build_dir/some/base/target3.timing: ERROR: Contains 0 != 1 data rows!\n"
+
+
 def sortCsvFileTextList(csvFileText):
   csvFileTextList_orig = csvFileText.split('\n')
   csvFileTextList = []
@@ -304,7 +309,7 @@ def test_gather_build_stats_py_body(testObj, csvFile, cmnd):
   testObj.assertEqual(
     sortCsvFileTextList(csvFileText),
     sortCsvFileTextList(csvFileText_expected))
-
+  testObj.assertEqual(output, output_expected)
 
 
 class test_gather_build_stats_py(unittest.TestCase):
