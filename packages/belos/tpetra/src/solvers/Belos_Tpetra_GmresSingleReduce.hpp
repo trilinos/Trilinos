@@ -28,7 +28,6 @@ public:
     base_type::Gmres (),
     stepSize_ (1)
   {
-    //this->input_.computeRitzValues = true;
     this->input_.computeRitzValues = false;
   }
 
@@ -36,7 +35,6 @@ public:
     base_type::Gmres (A),
     stepSize_ (1)
   {
-    //this->input_.computeRitzValues = true;
     this->input_.computeRitzValues = false;
   }
 
@@ -67,7 +65,7 @@ protected:
     if (ortho == "MGS" || ortho == "CGS" || ortho == "CGS2") {
       this->input_.orthoType = ortho;
     } else {
-      this->input_.orthoType = "CGS";
+      this->input_.orthoType = "MGS";
       //base_type::setOrthogonalizer (ortho);
     }
   }
