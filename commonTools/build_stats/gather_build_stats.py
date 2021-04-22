@@ -204,8 +204,7 @@ def getSupersetOfFieldNamesList(listOfDicts):
 # Note, this writes the column names (keys) in sorted order.
 #
 def writeDictOfListsToCsvFile(dictOfLists, csvFile):
-  keysList = dictOfLists.keys()
-  keysList.sort()
+  keysList = sorted(dictOfLists.keys())
   numTotalRows = len(dictOfLists.get(keysList[0]))  # All lists are same length
   numTotalKeys = len(keysList)
   with open(csvFile, "w") as csvFileHandle:

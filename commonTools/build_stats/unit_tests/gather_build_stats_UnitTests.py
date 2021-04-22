@@ -91,8 +91,8 @@ class test_readAllValidTimingFiles(unittest.TestCase):
        'num_involuntary_context_switch': '46'}]
     # NOTE: The bad timign file 'some/base/target3.timing' was gracefully
     # skipped!
-    allValidTimingFiles.sort() # Avoid system-dependent behavior
-    allValidTimingFiles_expected.sort()
+    allValidTimingFiles.sort(key=lambda item: item.get('FileName')) # Avoid system-dependent behavior
+    allValidTimingFiles_expected.sort(key=lambda item: item.get('FileName'))
     self.assertEqual(allValidTimingFiles, allValidTimingFiles_expected)
 
 
