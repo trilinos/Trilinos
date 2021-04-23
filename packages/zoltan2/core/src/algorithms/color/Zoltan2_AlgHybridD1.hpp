@@ -59,16 +59,39 @@ class AlgDistance1 : public Algorithm<Adapter>
 
     void buildModel(modelFlag_t &flags); 
 
-    //function to invoke KokkosKernels distance-1 coloring    
-    template <class ExecutionSpace, typename TempMemorySpace, 
-              typename MemorySpace>
+    //function to invoke KokkosKernels distance-1 coloring
+    //
+    //OUTPUT ARG:
+    //  
+    //  femv: FEMultiVector containing dual-view of colors.
+    //        After this call each vertex will have a locally-valid color.
+    //
+    //INPUT ARGS:
+    //  
+    //  nVtx: number of local owned vertices
+    //
+    //  adjs_view: CSR adjacencies for the local graph
+    //
+    //  offset_view: CSR offsets for indexing adjs_view
+    //
+    //  vertex_list: list of local IDs of vertices that 
+    //               need to be recolored
+    //
+    //  vertex_list_size: 0 means no vertex list given,
+    //                    otherwise it simply is the size
+    //                    of the vertex_list
+    //
+    //  recolor: switches between VB_BIT and EB KokkosKernels
+    //           algorithms
+    //
+    template <class ExecutionSpace, typename MemorySpace>
     void colorInterior(const size_t nVtx, 
                        Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace,MemorySpace> > adjs_view,
                        Kokkos::View<offset_t*, Kokkos::Device<ExecutionSpace, MemorySpace> > offset_view, 
                        Teuchos::RCP<femv_t> femv,
 		       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace> > vertex_list,
 		       size_t vertex_list_size = 0,
-                       bool recolor=false){ //TODO: RENAME RECOLOR
+                       bool recolor=false){
       
       //set up types to be used by KokkosKernels
       using KernelHandle =  KokkosKernels::Experimental::KokkosKernelsHandle
@@ -111,6 +134,47 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
     }
     
+
+    //contains all distance-1 conflict detection logic
+    //
+    //OUTPUT ARGS:
+    //  
+    //  femv_colors: This function uncolors vertices that have
+    //               distance-1 conflicts, so these colors will
+    //               change if there are any conflicts present
+    //
+    //INPUT ARGS:
+    //
+    //  n_local: number of locally owned vertices
+    //
+    //  n_ghosts: number of ghosts on this process
+    //
+    //  dist_offsets: CSR offsets of the local graph
+    //
+    //  dist_adjs: CSR adjacencies of the local graph
+    //
+    //  verts_to_send_atomic: atomic version of the verts_to_send view.
+    //                        Used to construct a list on device,
+    //                        the atomic is necessary for correctness.
+    //
+    //  verts_to_send_size_atomic: atomic version of the verts_to_send_size view
+    //                             Used to construct a list on device,
+    //                             the atomic is necessary for correctness.
+    //
+    //  recoloringSize: holds the total amount of recoloring that will be done
+    //                  locally. Does not need to be atomic.
+    //
+    //  rand: view that holds the tie-breaking random numbers indexed by LID.
+    //
+    //  gid: view that holds GIDs, for tie breaking in the case that rand
+    //       numbers are the same for two vertices. 
+    //
+    //  ghost_degrees: view that holds degrees only for ghost vertices.
+    //                 LID n_local corresponds to ghost_degrees(0).
+    //
+    //  recolor_degrees: if true, we factor degrees into the conflict detection
+    //                   if false, we resolve using only consistent random numbers.
+    //
     template <class ExecutionSpace, typename MemorySpace>
     void detectConflicts(const size_t n_local, const size_t n_ghosts,
 		         Kokkos::View<offset_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> dist_offsets,
@@ -176,6 +240,38 @@ class AlgDistance1 : public Algorithm<Adapter>
       });
     }
 
+
+    //Communicates owned vertex colors to ghost copies.
+    //
+    //RETURN VALUE:
+    //
+    //  returns the time it took for the communication call to complete
+    //
+    //OUTPUT ARGS:
+    //  
+    //  femv: FEMultivector that holds the dual-view of the colors
+    //        After this call, ghost colors will be up-to-date.
+    //
+    //  recv: returns the size of the recv buffer
+    //
+    //  send: returns the size of the send buffer
+    //  
+    //INPUT ARGS:
+    //
+    //  mapOwnedPlusGhosts: a Tpetra map that translates between
+    //                      LID and GID for any vertex on this process.
+    //
+    //  nVtx: the number of locally owned vertices.
+    //
+    //  verts_to_send: hostmirror of verts to send. This function sends
+    //                 all vertices in this list to their ghost copies.
+    //
+    //  verts_to_send_size: hostmirror of verts_to_send_size, holds the
+    //                      size of verts_to_send.
+    //
+    //  procs_to_send: map that translates LID into a list of processes that
+    //                 have a ghost copy of the vertex. 
+    //
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                          size_t nVtx,
 			 typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send,
@@ -227,7 +323,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       double comm_total = 0.0;
       double comm_temp = timer();
 
-      /*Zoltan2::*/AlltoAllv<gno_t>(*comm, *env, sendbuf_view, sendcnts_view, recvbuf, recvcnts_view);
+      AlltoAllv<gno_t>(*comm, *env, sendbuf_view, sendcnts_view, recvbuf, recvcnts_view);
       comm_total += timer() - comm_temp;
       
       gno_t recvsize = 0;
@@ -251,8 +347,7 @@ class AlgDistance1 : public Algorithm<Adapter>
     RCP<Environment> env;
     RCP<const Teuchos::Comm<int> > comm;
     bool verbose;
-    //int numColors;
-//    std::unordered_map<lno_t, std::vector<int>> procs_to_send;
+
   public:
     //constructor for the  hybrid distributed distance-1 algorithm
     AlgDistance1(
@@ -263,7 +358,6 @@ class AlgDistance1 : public Algorithm<Adapter>
     : adapter(adapter_), pl(pl_), env(env_), comm(comm_) {
       verbose = pl->get<bool>("verbose",false);
       if(verbose) std::cout<<comm->getRank()<<": inside coloring constructor\n";
-  //    numColors = 4;
       modelFlag_t flags;
       flags.reset();
       buildModel(flags);
@@ -297,7 +391,6 @@ class AlgDistance1 : public Algorithm<Adapter>
       std::vector<offset_t> finalOffset_vec;
       std::vector<lno_t> finalAdjs_vec;      
 
-      lno_t nInterior = 0;
       std::vector<lno_t> reorderToLocal;
       for(size_t i = 0;  i< nVtx; i++) reorderToLocal.push_back(i);
       if(verbose) std::cout<<comm->getRank()<<": Setting up local datastructures\n";
@@ -363,7 +456,8 @@ class AlgDistance1 : public Algorithm<Adapter>
         std::srand(finalGIDs[i]);
         rand[i] = std::rand();
       }
-
+      
+      //find out who owns the ghosts on this process
       std::vector<int> ghostOwners(finalGIDs.size() - nVtx);
       std::vector<gno_t> ghosts(finalGIDs.size() - nVtx);
       for(size_t i = nVtx; i < finalGIDs.size(); i++) ghosts[i-nVtx] = finalGIDs[i];
@@ -371,23 +465,22 @@ class AlgDistance1 : public Algorithm<Adapter>
       ArrayView<const gno_t> ghostGIDs = Teuchos::arrayViewFromVector(ghosts);
       mapOwned->getRemoteIndexList(ghostGIDs, owners);
       
-      for(size_t i = 0; i < finalOffset_vec.size()-1; i++){
-        std::sort(finalAdjs_vec.begin()+finalOffset_vec[i],finalAdjs_vec.begin()+finalOffset_vec[i+1]);
-      }
-      
+     //create const views of the CSR representation of the local graph 
       ArrayView<const offset_t> finalOffsets = Teuchos::arrayViewFromVector(finalOffset_vec);
       ArrayView<const lno_t> finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
       
+      //find out which remote processes have a ghost copy of a local owned vertex.
       Teuchos::ArrayView<const lno_t> exportLIDs = importer->getExportLIDs();
       Teuchos::ArrayView<const int> exportPIDs = importer->getExportPIDs();
       
+      //create a quick lookup from LID -> remote processes with a ghost copy
       std::unordered_map<lno_t, std::vector<int>> procs_to_send; 
       for(int i = 0; i < exportLIDs.size(); i++){
         procs_to_send[exportLIDs[i]].push_back(exportPIDs[i]);  
       }
 
       // call coloring function
-      hybridGMB(nVtx, nInterior, finalAdjs, finalOffsets,colors,femv,finalGIDs,rand,owners,mapWithCopies, procs_to_send);
+      hybridGMB(nVtx, finalAdjs, finalOffsets,femv,finalGIDs,rand,owners,mapWithCopies, procs_to_send);
       
       //copy colors to the output array.
       auto femvdata = femv->getData(0);
@@ -396,11 +489,44 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
     
     }
-     
-    void hybridGMB(const size_t nVtx,lno_t nInterior, Teuchos::ArrayView<const lno_t> adjs, 
+    
+  private:
+    //This function contains all coloring logic.
+    //
+    //OUTPUT ARGS:
+    //
+    //  femv: FEMultiVector with a dual-view of the vertex colors.
+    //        The colors will be a valid distance-1 coloring after this
+    //        function returns.
+    //
+    //INPUT ARGS: 
+    //  
+    //  nVtx: number of locally owned vertices
+    //
+    //  adjs: CSR adjacencies for the local graph
+    //
+    //  offsets: CSR offsets into adjs for the local graph
+    //
+    //  gids: global IDs for every vertex on this process.
+    //        indexed by local ID
+    //
+    //  rand: random number generated for every vertex on 
+    //        this process. Indexed by local ID
+    //
+    //  owners: owners of each ghost vertex,
+    //          indexed by localID - nVtx
+    //
+    //  mapOwnedPlusGhosts: Tpetra map that translates between LIDs and GIDs
+    //
+    //  procs_to_send: maps from LIDs to Process IDs.
+    //                 procs_to_send[LID] gives a list of processes that have
+    //                 a ghost copy of LID. 
+    //
+    void hybridGMB(const size_t nVtx,
+		   Teuchos::ArrayView<const lno_t> adjs, 
                    Teuchos::ArrayView<const offset_t> offsets, 
-                   Teuchos::ArrayRCP<int> colors, Teuchos::RCP<femv_t> femv,
-                   std::vector<gno_t> reorderGIDs,
+                   Teuchos::RCP<femv_t> femv,
+                   std::vector<gno_t> gids,
                    std::vector<int> rand,
                    ArrayView<int> owners,
                    RCP<const map_t> mapOwnedPlusGhosts,
@@ -537,10 +663,10 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
 
       //device copy of global IDs
-      Kokkos::View<gno_t*, device_type> gid_dev("GIDs",reorderGIDs.size());
+      Kokkos::View<gno_t*, device_type> gid_dev("GIDs",gids.size());
       typename Kokkos::View<gno_t*,device_type>::HostMirror gid_host = Kokkos::create_mirror(gid_dev);
-      for(size_t i = 0; i < reorderGIDs.size(); i++){
-        gid_host(i) = reorderGIDs[i];
+      for(size_t i = 0; i < gids.size(); i++){
+        gid_host(i) = gids[i];
       }
 
       //copy host views to device memory
@@ -605,7 +731,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       total_time = timer();
       //call the KokkosKernels coloring function with the Tpetra default spaces.
       bool use_vbbit = (global_max_degree < 6000);
-      this->colorInterior<execution_space, memory_space,memory_space>
+      this->colorInterior<execution_space,memory_space>
                  (nVtx, dist_adjs, dist_offsets, femv,dist_adjs,0,use_vbbit);
       if(verbose){
         interior_time = timer() - interior_time;
@@ -706,7 +832,6 @@ class AlgDistance1 : public Algorithm<Adapter>
         //use KokkosKernels to recolor the conflicting vertices.  
 	if(verts_to_send_size(0) > 0){
             this->colorInterior<execution_space,
-                                memory_space,
                                 memory_space>(femv_colors.size(),
 					      dist_adjs,dist_offsets,
 					      femv,
@@ -823,7 +948,6 @@ class AlgDistance1 : public Algorithm<Adapter>
 	//use KokkosKernels to recolor the conflicting vertices
 	if(verts_to_send_size(0) > 0){
 	  this->colorInterior<Kokkos::DefaultHostExecutionSpace,
-		              Kokkos::HostSpace,
 			      Kokkos::HostSpace>
 			      (femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, verts_to_send_host, verts_to_send_size_host(0), true);
 	}
