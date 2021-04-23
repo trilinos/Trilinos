@@ -324,8 +324,9 @@ getGlobalRowCopy (global_ordinal_type globalRow,
                   const Teuchos::ArrayView<scalar_type>& Values,
                   size_t& numEntries) const
 {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
   getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
 }
 #endif
@@ -377,8 +378,9 @@ void ReorderFilter<MatrixType>::getLocalRowCopy (local_ordinal_type LocalRow,
                  const Teuchos::ArrayView<scalar_type> &Values,
                  size_t &NumEntries) const
 {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
   getLocalRowCopy(LocalRow,ind_in,val_in,NumEntries);  
 }
 #endif
@@ -478,24 +480,25 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
     getLocalRowCopy (i, Indices_ , Values_ , Nnz);
+    scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
     if (mode == Teuchos::NO_TRANS) {
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
+          y_ptr[k][i] += Values[j] * x_ptr[k][Indices_[j]];
         }
       }
     }
     else if (mode == Teuchos::TRANS) {
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += Values[j] * x_ptr[k][i];
         }
       }
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0; j < Nnz; ++j) {
         for (size_t k = 0; k < NumVectors; ++k) {
-          y_ptr[k][Indices_[j]] += STS::conjugate(Values_[j]) * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += STS::conjugate(Values[j]) * x_ptr[k][i];
         }
       }
     }

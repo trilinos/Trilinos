@@ -88,8 +88,8 @@ public:
   typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
 
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-
-  typedef typename Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
+  typedef Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
+  typedef typename row_matrix_type::mag_type mag_type;
 
   static_assert(std::is_same<MatrixType, Tpetra::RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >::value, "Ifpack2::DiagonalFilter: The template parameter MatrixType must be a Tpetra::RowMatrix specialization.  Please don't use Tpetra::CrsMatrix (a subclass of Tpetra::RowMatrix) here anymore.  The constructor can take either a RowMatrix or a CrsMatrix just fine.");
 

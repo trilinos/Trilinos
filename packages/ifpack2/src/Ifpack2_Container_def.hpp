@@ -851,7 +851,8 @@ getInputRowView(LO row) const
 
   typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
   typedef typename MatrixType::values_host_view_type values_host_view_type;
-  
+  using IST = typename row_matrix_type::impl_scalar_type;
+
   if(this->hasBlockCrs_)
   {
     const LO* colinds;
@@ -866,7 +867,7 @@ getInputRowView(LO row) const
     Teuchos::Array<LO> inds(maxEntries);
     Teuchos::Array<SC> vals(maxEntries);
     nonconst_local_inds_host_view_type inds_v(inds.data(),maxEntries);
-    nonconst_values_host_view_type vals_v(vals.data(),maxEntries);
+    nonconst_values_host_view_type vals_v(reinterpret_cast<IST*>(vals.data()),maxEntries);
     size_t numEntries;
     this->inputMatrix_->getLocalRowCopy(row, inds_v, vals_v, numEntries);
     vals.resize(numEntries); inds.resize(numEntries);
@@ -878,7 +879,7 @@ getInputRowView(LO row) const
     local_inds_host_view_type colinds;
     values_host_view_type values;
     this->inputMatrix_->getLocalRowView(row, colinds, values);
-    return StridedRowView(values.data(), colinds.data(), 1, colinds.size());
+    return StridedRowView(reinterpret_cast<const SC*>(values.data()), colinds.data(), 1, colinds.size());
   }
 }
 

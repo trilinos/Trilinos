@@ -529,7 +529,7 @@ void RILUK<MatrixType>::initialize ()
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
           A_local_->getLocalRowCopy(i, indices, values, numEntries);
-          A_local_crs_nc->insertLocalValues(i, numEntries, values.data(), indices.data());
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()), indices.data());
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
@@ -782,7 +782,7 @@ void RILUK<MatrixType>::compute ()
     for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
     }
-
+    using IST = typename row_matrix_type::impl_scalar_type;
     for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
       local_ordinal_type local_row = i;
 
@@ -790,7 +790,7 @@ void RILUK<MatrixType>::compute ()
 
       NumIn = MaxNumEntries;
       nonconst_local_inds_host_view_type InI_v(InI.data(),MaxNumEntries);
-      nonconst_values_host_view_type     InV_v(InV.data(),MaxNumEntries);
+      nonconst_values_host_view_type     InV_v(reinterpret_cast<IST*>(InV.data()),MaxNumEntries);
 
       L_->getLocalRowCopy (local_row, InI_v , InV_v, NumL);
 
@@ -798,7 +798,7 @@ void RILUK<MatrixType>::compute ()
       InI[NumL] = local_row;
 
       nonconst_local_inds_host_view_type InI_sub(InI.data()+NumL+1,MaxNumEntries-NumL-1);
-      nonconst_values_host_view_type     InV_sub(InV.data()+NumL+1,MaxNumEntries-NumL-1);
+      nonconst_values_host_view_type     InV_sub(reinterpret_cast<IST*>(InV.data())+NumL+1,MaxNumEntries-NumL-1);
   
       U_->getLocalRowCopy (local_row, InI_sub,InV_sub, NumU);
       NumIn = NumL+NumU+1;
@@ -812,7 +812,7 @@ void RILUK<MatrixType>::compute ()
 
       for (size_t jj = 0; jj < NumL; ++jj) {
         local_ordinal_type j = InI[jj];
-        scalar_type multiplier = InV[jj]; // current_mults++;
+        IST multiplier = InV[jj]; // current_mults++;
         
         InV[jj] *= static_cast<scalar_type>(DV(j));
         
@@ -826,7 +826,7 @@ void RILUK<MatrixType>::compute ()
             // colflag above using size_t (which is generally unsigned),
             // but now we're querying it using int (which is signed).
             if (kk > -1) {
-              InV[kk] -= multiplier * UUV[k];
+              InV[kk] -= static_cast<scalar_type>(multiplier * UUV[k]);
             }
           }
 
@@ -838,10 +838,10 @@ void RILUK<MatrixType>::compute ()
             // but now we're querying it using int (which is signed).
             const int kk = colflag[UUI[k]];
             if (kk > -1) {
-              InV[kk] -= multiplier*UUV[k];
+              InV[kk] -= static_cast<scalar_type>(multiplier*UUV[k]);
             }
             else {
-              diagmod -= multiplier*UUV[k];
+              diagmod -= static_cast<scalar_type>(multiplier*UUV[k]);
             }
           }
         }
@@ -921,7 +921,7 @@ void RILUK<MatrixType>::compute ()
         for(local_ordinal_type i = 0; i < numRows; i++) {
           size_t numEntries = 0;
           A_local_->getLocalRowCopy(i, indices, values, numEntries);
-          A_local_crs_nc->insertLocalValues(i, numEntries, values.data(),indices.data());
+          A_local_crs_nc->insertLocalValues(i, numEntries, reinterpret_cast<scalar_type*>(values.data()),indices.data());
         }
         A_local_crs_nc->fillComplete (A_local_->getDomainMap (), A_local_->getRangeMap ());
         A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);

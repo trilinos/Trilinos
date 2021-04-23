@@ -477,8 +477,9 @@ getGlobalRowCopy (global_ordinal_type globalRow,
                   const Teuchos::ArrayView<global_ordinal_type>& Indices,
                   const Teuchos::ArrayView<scalar_type>& Values,
                   size_t& numEntries) const {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_global_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
   getGlobalRowCopy(globalRow,ind_in,val_in,numEntries);  
 }
 #endif
@@ -597,8 +598,9 @@ getLocalRowCopy (local_ordinal_type globalRow,
                  const Teuchos::ArrayView<scalar_type> &Values,
              size_t &NumEntries) const
 {
+  using IST = typename row_matrix_type::impl_scalar_type;
   nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
-  nonconst_values_host_view_type val_in(Values.data(),Values.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
   getLocalRowCopy(globalRow,ind_in,val_in,NumEntries);  
 }
 #endif
@@ -795,12 +797,13 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
       size_t Nnz;
       // Use this class's getrow to make the below code simpler
       getLocalRowCopy (i, localIndices_ , Values_ , Nnz);
+      scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
       if (mode == Teuchos::NO_TRANS) {
         for (size_t j = 0; j < Nnz; ++j) {
           const local_ordinal_type col = localIndices_[j];
           for (size_t k = 0; k < NumVectors; ++k) {
             y_ptr[i + y_stride*k] +=
-              alpha * Values_[j] * x_ptr[col + x_stride*k];
+              alpha * Values[j] * x_ptr[col + x_stride*k];
           }
         }
       }
@@ -809,7 +812,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           const local_ordinal_type col = localIndices_[j];
           for (size_t k = 0; k < NumVectors; ++k) {
             y_ptr[col + y_stride*k] +=
-              alpha * Values_[j] * x_ptr[i + x_stride*k];
+              alpha * Values[j] * x_ptr[i + x_stride*k];
           }
         }
       }
@@ -818,7 +821,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           const local_ordinal_type col = localIndices_[j];
           for (size_t k = 0; k < NumVectors; ++k) {
             y_ptr[col + y_stride*k] +=
-              alpha * STS::conjugate (Values_[j]) * x_ptr[i + x_stride*k];
+              alpha * STS::conjugate (Values[j]) * x_ptr[i + x_stride*k];
           }
         }
       }
@@ -834,12 +837,13 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
       size_t Nnz;
       // Use this class's getrow to make the below code simpler
       getLocalRowCopy (i, localIndices_ , Values_ , Nnz);
+      scalar_type* Values = reinterpret_cast<scalar_type*>(Values_.data());
       if (mode == Teuchos::NO_TRANS) {
         for (size_t k = 0; k < NumVectors; ++k) {
           ArrayView<const scalar_type> x_local = (x_ptr())[k]();
           ArrayView<scalar_type>       y_local = (y_ptr())[k]();
           for (size_t j = 0; j < Nnz; ++j) {
-            y_local[i] += alpha * Values_[j] * x_local[localIndices_[j]];
+            y_local[i] += alpha * Values[j] * x_local[localIndices_[j]];
           }
         }
       }
@@ -848,7 +852,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           ArrayView<const scalar_type> x_local = (x_ptr())[k]();
           ArrayView<scalar_type>       y_local = (y_ptr())[k]();
           for (size_t j = 0; j < Nnz; ++j) {
-            y_local[localIndices_[j]] += alpha * Values_[j] * x_local[i];
+            y_local[localIndices_[j]] += alpha * Values[j] * x_local[i];
           }
         }
       }
@@ -858,7 +862,7 @@ applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global
           ArrayView<scalar_type>       y_local = (y_ptr())[k]();
           for (size_t j = 0; j < Nnz; ++j) {
             y_local[localIndices_[j]] +=
-              alpha * STS::conjugate (Values_[j]) * x_local[i];
+              alpha * STS::conjugate (Values[j]) * x_local[i];
           }
         }
       }
