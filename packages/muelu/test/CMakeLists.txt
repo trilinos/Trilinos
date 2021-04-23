@@ -40,11 +40,7 @@ ENDIF()
 TRIBITS_ADD_TEST_DIRECTORIES(permutation)
 TRIBITS_ADD_TEST_DIRECTORIES(profiling)
 TRIBITS_ADD_TEST_DIRECTORIES(simple1D)
-IF(NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
-  # AggregationExportFactory can't work with
-  # Aggregates_kokkos (yet)
-  TRIBITS_ADD_TEST_DIRECTORIES(viz)
-ENDIF()
+TRIBITS_ADD_TEST_DIRECTORIES(viz)
 TRIBITS_ADD_TEST_DIRECTORIES(toggletransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(perf_tests)
 
