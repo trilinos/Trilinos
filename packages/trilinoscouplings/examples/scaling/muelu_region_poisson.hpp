@@ -101,12 +101,12 @@
 // Sacado headers
 #include "Sacado_mpl_apply.hpp"
 
-void perceptrenumbertest()
+void perceptrenumbertest(const unsigned int num_levels_refinement)
 {
   std::cout << "Starting perceptrenumber..." << std::endl;
 
   const unsigned int d = 2; // spatial dimension (only 2 or 3 makes sense)... I only really care about the 2D case since it's where the ccw rotation lies
-  const unsigned int r = 4; // levels of recursion/refinement
+  const unsigned int r = num_levels_refinement; // levels of recursion/refinement
   const unsigned int cells_per_dim = (1 << r); // number of cells per dim is 2^(r-1), i.e. 1<<r
   const unsigned int points_per_dim = cells_per_dim + 1; // number of points per spatial dimension is just 1 higher
   const unsigned int num_cells = (d<3)? cells_per_dim*cells_per_dim : cells_per_dim*cells_per_dim*cells_per_dim; // evil ternary op code
