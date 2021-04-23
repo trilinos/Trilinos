@@ -1989,7 +1989,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef typename dual_view_type::t_dev_const XMV;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
@@ -2688,7 +2687,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "scale: ";
 
     const size_t lclNumRows = getLocalLength ();
@@ -2735,7 +2733,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "reciprocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2775,7 +2772,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "abs";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2820,7 +2816,6 @@ namespace Tpetra {
     const char tfecfFuncName[] = "update: ";
     using Kokkos::subview;
     using Kokkos::ALL;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
 
@@ -2874,7 +2869,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
@@ -2938,7 +2932,6 @@ namespace Tpetra {
   getData (size_t j) const
   {
     using Kokkos::ALL;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getData: ";
 
@@ -2970,7 +2963,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getDataNonConst: ";
 
@@ -3623,7 +3615,6 @@ namespace Tpetra {
       // Since get1dView() is and was always marked const, I have to
       // cast away const here in order not to break backwards
       // compatibility.
-      using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
       auto X_lcl = getLocalViewHost(Access::ReadOnly);
       Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
@@ -3821,7 +3812,6 @@ namespace Tpetra {
     // Since get2dView() is and was always marked const, I have to
     // cast away const here in order not to break backwards
     // compatibility.
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     auto X_lcl = getLocalViewHost(Access::ReadOnly);
 
     // Don't use the row range here on the outside, in order to avoid
@@ -4092,8 +4082,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using V = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "elementWiseMultiply: ";
 
     const size_t lclNumRows = this->getLocalLength ();
@@ -4331,7 +4319,7 @@ namespace Tpetra {
   sync_device () {
     owningView_.sync_device ();
   }
-#endif // TPETRA_DEPRECATED_CODE
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
@@ -4417,6 +4405,47 @@ namespace Tpetra {
     return this->descriptionImpl ("Tpetra::MultiVector");
   }
 
+  namespace Details
+  {
+    template<typename ViewType>
+    void print_vector(Teuchos::FancyOStream & out, const char* prefix, const ViewType& v)
+    {
+      using std::endl;
+      static_assert(Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename ViewType::memory_space>::accessible,
+          "Tpetra::MultiVector::localDescribeToString: Details::print_vector should be given a host-accessible view.");
+      static_assert(ViewType::rank == 2,
+          "Tpetra::MultiVector::localDescribeToString: Details::print_vector should be given a rank-2 view.");
+      // The square braces [] and their contents are in Matlab
+      // format, so users may copy and paste directly into Matlab.
+      out << "Values("<<prefix<<"): " << std::endl
+          << "[";
+      const size_t numRows = v.extent(0);
+      const size_t numCols = v.extent(1);
+      if (numCols == 1) {
+        for (size_t i = 0; i < numRows; ++i) {
+          out << v(i,0);
+          if (i + 1 < numRows) {
+            out << "; ";
+          }
+        }
+      }
+      else {
+        for (size_t i = 0; i < numRows; ++i) {
+          for (size_t j = 0; j < numCols; ++j) {
+            out << v(i,j);
+            if (j + 1 < numCols) {
+              out << ", ";
+            }
+          }
+          if (i + 1 < numRows) {
+            out << "; ";
+          }
+        }
+      }
+      out << "]" << endl;
+    }
+  }
+
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4461,38 +4490,6 @@ namespace Tpetra {
         /// want to print both the host and device views, *without chaging state*,
         // so we can't use our regular accessor functins
 
-        auto print_vector = [](Teuchos::FancyOStream & out, const char* prefix, typename dual_view_type::t_host & v) {
-          // The square braces [] and their contents are in Matlab
-          // format, so users may copy and paste directly into Matlab.
-          out << "Values("<<prefix<<"): " << std::endl
-              << "[";
-          const size_t numRows = v.extent(0);
-          const size_t numCols = v.extent(1);
-          if (numCols == 1) {
-            for (size_t i = 0; i < numRows; ++i) {
-              out << v(i,0);
-              if (i + 1 < numRows) {
-                out << "; ";
-              }
-            }
-          }
-          else {
-            for (size_t i = 0; i < numRows; ++i) {
-              for (size_t j = 0; j < numCols; ++j) {
-                out << v(i,j);
-                if (j + 1 < numCols) {
-                  out << ", ";
-                }
-              }
-              if (i + 1 < numRows) {
-                out << "; ";
-              }
-            }
-          }
-          out << "]" << endl;
-        };//end function
-
-
         // NOTE: This is an occasion where we do *not* want the auto-sync stuff
         // to trigger (since this function is conceptually const)                
         auto X_dev  = view_.view_device();
@@ -4500,15 +4497,22 @@ namespace Tpetra {
 
         if(X_dev.data() == X_host.data()) {
           // One single allocation
-          print_vector(out,"unified",X_host);
+          Details::print_vector(out,"unified",X_host);
         }
         else {          
-          auto X_dev_on_host = Kokkos::create_mirror_view (X_dev);
-          Kokkos::deep_copy (X_dev_on_host, X_dev);
-          print_vector(out,"host",X_host);
-          print_vector(out,"dev",X_dev_on_host);
+          Details::print_vector(out,"host",X_host);
+          if(X_dev.span_is_contiguous())
+          {
+            auto X_dev_on_host = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), X_dev);
+            Details::print_vector(out,"dev",X_dev_on_host);
+          }
+          else
+          {
+            auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
+            auto X_dev_on_host = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), X_contig);
+            Details::print_vector(out,"dev",X_dev_on_host);
+          }
         }
-
       }
     }    
     out.flush (); // make sure the ostringstream got everything

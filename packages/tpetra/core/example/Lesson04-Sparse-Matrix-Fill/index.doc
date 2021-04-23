@@ -233,7 +233,7 @@ and local indices.
 In the sparse matrix's final state, it represents column indices as
 local indices.  This is faster for operations like sparse
 matrix-vector multiply.  It saves storage as well, especially if
-<tt>sizeof(LocalOrdinal) < sizeof(GlobalOrdinal)<tt>.  However,
+<tt>sizeof(LocalOrdinal) < sizeof(GlobalOrdinal)</tt>.  However,
 accessing or inserting entries by local index is only allowed under
 certain conditions.  In particular, the matrix must have a column Map,
 which tells it how to convert between global and local indices for the

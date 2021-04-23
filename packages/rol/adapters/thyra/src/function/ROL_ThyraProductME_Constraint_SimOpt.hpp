@@ -740,6 +740,10 @@ public:
     }
   }
 
+  void solve_update(const Vector<Real> &u, const Vector<Real> &z, EUpdateType type, int iter = -1) {
+    this->update(u,z,type,iter);
+  }
+
   void solve(Vector<Real> &c,
       Vector<Real> &u,
       const Vector<Real> &z,
@@ -1158,12 +1162,53 @@ public:
       params->set<int>("Optimizer Iteration Number", iter);
   }
 
+  void update_1( const Vector<Real> &u, EUpdateType type, int iter = -1 ) {
+    if(u_hasChanged(u)) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Constraint_SimOpt::update_1, The State Changed" << std::endl;
+      computeValue = computeJacobian1 = true;
+
+      if (Teuchos::is_null(rol_u_ptr))
+        rol_u_ptr = u.clone();
+      rol_u_ptr->set(u);
+    }
+
+    if(params != Teuchos::null)
+      params->set<int>("Optimizer Iteration Number", iter);
+  }
+
   /** \brief Update constraint functions with respect to Opt variable.
                 x is the optimization variable,
                 flag = ??,
                 iter is the outer algorithm iterations count.
    */
   void update_2( const Vector<Real> &z, bool /*flag*/ = true, int iter = -1 ) {
+    if(z_hasChanged(z)) {
+      if(verbosityLevel >= Teuchos::VERB_HIGH)
+        *out << "ROL::ThyraProductME_Constraint_SimOpt::update_2, The Parameter Changed" << std::endl;
+      computeValue = computeJacobian1 = solveConstraint = true;
+
+      if (Teuchos::is_null(rol_z_ptr))
+        rol_z_ptr = z.clone();
+      rol_z_ptr->set(z);
+    }
+
+    if(Teuchos::nonnull(params)) {
+      auto& z_stored_ptr = params->get<Teuchos::RCP<Vector<Real> > >("Optimization Variable");
+      if(Teuchos::is_null(z_stored_ptr) || z_hasChanged(*z_stored_ptr)) {
+        if(verbosityLevel >= Teuchos::VERB_HIGH)
+          *out << "ROL::ThyraProductME_Constraint_SimOpt::update_2, Signaling That Parameter Changed" << std::endl;
+        params->set<bool>("Optimization Variables Changed", true);
+        if(Teuchos::is_null(z_stored_ptr))
+          z_stored_ptr = z.clone();
+        z_stored_ptr->set(z);
+      }
+
+      params->set<int>("Optimizer Iteration Number", iter);
+    }
+  }
+
+  void update_2( const Vector<Real> &z, EUpdateType type, int iter = -1 ) {
     if(z_hasChanged(z)) {
       if(verbosityLevel >= Teuchos::VERB_HIGH)
         *out << "ROL::ThyraProductME_Constraint_SimOpt::update_2, The Parameter Changed" << std::endl;

@@ -318,8 +318,8 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
     using container_exec_space = typename ContainerImpl<MatrixType, LocalScalarType>::crs_matrix_type::execution_space;
     container_exec_space().fence();
-    auto localA = this->inputCrsMatrix_->getLocalMatrix();
-    using size_type = typename crs_matrix_type::local_matrix_type::size_type;
+    auto localA = this->inputCrsMatrix_->getLocalMatrixHost();
+    using size_type = typename crs_matrix_type::local_matrix_host_type::size_type;
     const auto& rowmap = localA.graph.row_map;
     const auto& entries = localA.graph.entries;
     const auto& values = localA.values;
@@ -844,7 +844,15 @@ Details::StridedRowView<
   typename ContainerImpl<MatrixType, LocalScalarType>::NO>
 ContainerImpl<MatrixType, LocalScalarType>::
 getInputRowView(LO row) const
-{
+{  
+
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+  typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename MatrixType::values_host_view_type values_host_view_type;
+  using IST = typename row_matrix_type::impl_scalar_type;
+
   if(this->hasBlockCrs_)
   {
     const LO* colinds;
@@ -856,21 +864,22 @@ getInputRowView(LO row) const
   else if(!this->inputMatrix_->supportsRowViews())
   {
     size_t maxEntries = this->inputMatrix_->getNodeMaxNumRowEntries();
-    Teuchos::Array<LO> indsCopy(maxEntries);
-    Teuchos::Array<SC> valsCopy(maxEntries);
+    Teuchos::Array<LO> inds(maxEntries);
+    Teuchos::Array<SC> vals(maxEntries);
+    nonconst_local_inds_host_view_type inds_v(inds.data(),maxEntries);
+    nonconst_values_host_view_type vals_v(reinterpret_cast<IST*>(vals.data()),maxEntries);
     size_t numEntries;
-    this->inputMatrix_->getLocalRowCopy(row, indsCopy, valsCopy, numEntries);
-    indsCopy.resize(numEntries);
-    valsCopy.resize(numEntries);
-    return StridedRowView(valsCopy, indsCopy);
+    this->inputMatrix_->getLocalRowCopy(row, inds_v, vals_v, numEntries);
+    vals.resize(numEntries); inds.resize(numEntries);
+    return StridedRowView(vals, inds);
   }
   else
   {
-    const LO* colinds;
-    const SC* values;
-    LO numEntries;
-    this->inputMatrix_->getLocalRowViewRaw(row, numEntries, colinds, values);
-    return StridedRowView(values, colinds, 1, numEntries);
+    // CMS - This is dangerous and might not work.
+    local_inds_host_view_type colinds;
+    values_host_view_type values;
+    this->inputMatrix_->getLocalRowView(row, colinds, values);
+    return StridedRowView(reinterpret_cast<const SC*>(values.data()), colinds.data(), 1, colinds.size());
   }
 }
 

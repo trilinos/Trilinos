@@ -322,131 +322,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceHostView, LO, GO, Scalar ,
   TEST_ASSERT(gerr == 0);
 }
 
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, HostViewSync, LO, GO, Scalar , Node )
-{
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int me = comm->getRank();
-  int np = comm->getSize();
-  int ierr = 0;
-
-  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
-  using map_t = Tpetra::Map<LO,GO,Node>;
-
-  const size_t nGlobalEntries = 8 * np;
-  const Scalar scalar = 100. * (me+1);
-  Teuchos::Array<GO> myEntries(nGlobalEntries); 
-
-  // Default one-to-one linear block map in Trilinos
-  Teuchos::RCP<const map_t> defaultMap = 
-           rcp(new map_t(nGlobalEntries, 0, comm));
-
-  // Create vector
-  vector_t defaultVec(defaultMap);
-  defaultVec.putScalar(scalar);
-
-  //localViewHost readOnly shouldn't set "need_sync_host"
-  {
-    auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadOnly);
-    if (defaultVec.need_sync_host()) {
-      ierr++;
-    }
-  }
-
-  //localVewHost readWrite should set need_sync_device(), but not need_sync_host()
-  {
-    auto data = defaultVec.getLocalViewHost(Tpetra::Access::ReadWrite);
-    if (defaultVec.need_sync_host()) {
-      ierr++;
-    }
-    if (!defaultVec.need_sync_device()) {
-      ierr++;
-    }
-  }
-
-  //localViewHost writeOnly should set need_sync_device(), but not need_sync_host()
-  {
-    auto data = defaultVec.getLocalViewHost(Tpetra::Access::OverwriteAll);
-    if (defaultVec.need_sync_host()) {
-      ierr++;
-    }
-    if (!defaultVec.need_sync_device()) {
-      ierr++;
-    }
-  }
-
-  if (ierr > 0) 
-    std::cout << "TEST FAILED:  HostViewSync TEST HAD " << ierr 
-              << " FAILURES ON RANK " << me << std::endl;
-
-  int gerr;
-  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-
-  TEST_ASSERT(gerr == 0);
-}
-
-TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar , Node )
-{
-  Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::getDefaultComm();
-  int me = comm->getRank();
-  int np = comm->getSize();
-  int ierr = 0;
-
-  using vector_t = Tpetra::Vector<Scalar,LO,GO,Node>;
-  using map_t = Tpetra::Map<LO,GO,Node>;
-
-  const size_t nGlobalEntries = 8 * np;
-  const Scalar scalar = 100. * (me+1);
-  Teuchos::Array<GO> myEntries(nGlobalEntries); 
-
-  // Default one-to-one linear block map in Trilinos
-  Teuchos::RCP<const map_t> defaultMap = 
-           rcp(new map_t(nGlobalEntries, 0, comm));
-
-  // Create vector
-  vector_t defaultVec(defaultMap);
-  defaultVec.putScalar(scalar);
-
-  //localViewDevice readOnly shouldn't set "need_sync_device"
-  {
-    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadOnly);
-    if (defaultVec.need_sync_device()) {
-      ierr++;
-    }
-  }
-
-  //localVewDevice readWrite should set need_sync_host(), but not need_sync_device()
-  {
-    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::ReadWrite);
-    if (defaultVec.need_sync_device()) {
-      ierr++;
-    }
-    if (!defaultVec.need_sync_host()) {
-      ierr++;
-    }
-  }
-
-  //localViewDevice writeOnly should set need_sync_host(), but not need_sync_device()
-  {
-    auto data = defaultVec.getLocalViewDevice(Tpetra::Access::OverwriteAll);
-    if (defaultVec.need_sync_device()) {
-      ierr++;
-    }
-    if (!defaultVec.need_sync_host()) {
-      ierr++;
-    }
-  }
-
-  if (ierr > 0) 
-    std::cout << "TEST FAILED:  DeviceViewSync TEST HAD " << ierr 
-              << " FAILURES ON RANK " << me << std::endl;
-
-  int gerr;
-  Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &ierr, &gerr);
-
-  TEST_ASSERT(gerr == 0);
-}
-
-
 //
 // INSTANTIATIONS
 //
@@ -456,9 +331,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, DeviceViewSync, LO, GO, Scalar ,
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostView, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceView, LO, GO, SCALAR, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostDeviceView, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceHostView, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, HostViewSync, LO, GO, SCALAR, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceViewSync, LO, GO, SCALAR, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( MultiVector, DeviceHostView, LO, GO, SCALAR, NODE ) 
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

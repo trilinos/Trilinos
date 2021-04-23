@@ -173,8 +173,8 @@ int main(int argc, char *argv[]) {
     }
     else {
       econ->setSolveParameters(*parlist);
-      ROL::Ptr<ROL::SimController<RealT> > stateStore
-        = ROL::makePtr<ROL::SimController<RealT>>();
+      ROL::Ptr<ROL::VectorController<RealT> > stateStore
+        = ROL::makePtr<ROL::VectorController<RealT>>();
       ROL::Ptr<ROL::Objective<RealT> > robj
         = ROL::makePtr<ROL::Reduced_Objective_SimOpt<RealT>>(obj,econ,stateStore,up,zp,emul,true,false);
       problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(robj,zp);

@@ -146,9 +146,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
               << "  nnz       " << Amat.getNodeNumEntries() << "\n"
               << "  maxPerRow " << Amat.getNodeMaxNumRowEntries() << "\n"
               << std::endl;
-
-    Teuchos::FancyOStream foo(Teuchos::rcp(&std::cout,false));
-    Amat.describe(foo, Teuchos::VERB_EXTREME);
   }
 
   // Initialize domain vector for SpMV

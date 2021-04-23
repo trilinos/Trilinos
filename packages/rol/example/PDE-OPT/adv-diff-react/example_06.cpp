@@ -60,7 +60,6 @@
 #include "ROL_Reduced_Objective_SimOpt.hpp"
 #include "ROL_MonteCarloGenerator.hpp"
 #include "ROL_PrimalDualRisk.hpp"
-#include "ROL_OptimizationSolver.hpp"
 #include "ROL_TpetraTeuchosBatchManager.hpp"
 
 #include "../TOOLS/meshmanager.hpp"
@@ -174,26 +173,14 @@ int main(int argc, char *argv[]) {
     /*************************************************************************/
     /***************** SOLVE STOCHASTIC PROBLEM ******************************/
     /*************************************************************************/
-    //bool runBundle = parlist->sublist("Problem").get("Run Bundle",false);
-    //// Solve using bundle
-    //if (runBundle) {
-    //  z->zero();
-    //  ROL::Ptr<ROL::OptimizationProblem<RealT>> problem2
-    //    = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objReduced, z, bnd);
-    //  problem2->setStochasticObjective(*parlist, sampler);
-    //  parlist->sublist("Step").set("Type","Bundle");
-    //  parlist->sublist("Step").sublist("Bundle").set("Distance Measure Coefficient",0.0);
-    //  ROL::OptimizationSolver<RealT> solver2(*problem2,*parlist);
-    //  solver2.solve(*outStream);
-    //}
-
     z->zero();
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem
-      = ROL::makePtr<ROL::OptimizationProblem<RealT>>(objReduced, z, bnd);
+    ROL::Ptr<ROL::Problem<RealT>> problem
+      = ROL::makePtr<ROL::Problem<RealT>>(objReduced, z);
+    problem->addBoundConstraint(bnd);
     ROL::PrimalDualRisk<RealT> solver(problem, sampler, *parlist);
     bool checkDeriv = parlist->sublist("Problem").get("Check Derivatives",false);
     if ( checkDeriv ) {
-      problem->check(*outStream);
+      problem->check(true,*outStream);
       solver.check(*outStream);
     }
     solver.run(*outStream);

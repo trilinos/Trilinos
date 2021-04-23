@@ -285,7 +285,7 @@ namespace {
       }
       row = 0;
       for (size_t i = 0; i < tgt_map->getNodeNumElements (); ++i, ++row) {
-        ArrayView<const LO> rowview;
+        typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
         tgt_graph->getLocalRowView( row, rowview );
         TEST_EQUALITY(rowview.size(), 1);
         TEST_EQUALITY(rowview[0], row);
@@ -358,9 +358,9 @@ namespace {
              globalrow <= tgt_map->getMaxGlobalIndex ();
              ++globalrow) {
           LO localrow = tgt_map->getLocalElement (globalrow);
-          ArrayView<const LO> rowview;
+          typename CrsGraph<LO,GO>::local_inds_host_view_type rowview;
           tgt_graph->getLocalRowView (localrow, rowview);
-          TEST_EQUALITY(rowview.size(), globalrow+1);
+          TEST_EQUALITY((size_t)rowview.size(), (size_t)globalrow+1);
 
           // The target graph doesn't necessarily promise sorted
           // order.  Thus, we copy out the local row view, convert to
@@ -396,6 +396,7 @@ namespace {
   {
     typedef Tpetra::global_size_t GST;
     typedef Map<LO, GO> map_type;
+    typedef CrsMatrix<Scalar, LO, GO> crs_type;
 
     out << "(CrsMatrixImportExport,doImport) test" << endl;
     OSTab tab1 (out); // Add one tab level
@@ -475,8 +476,8 @@ namespace {
              ++gblRow) {
           const LO lclRow = tgt_map->getLocalElement (gblRow);
 
-          ArrayView<const LO> lclInds;
-          ArrayView<const Scalar> lclVals;
+          typename crs_type::local_inds_host_view_type lclInds;
+          typename crs_type::values_host_view_type lclVals;
           tgt_mat->getLocalRowView (lclRow, lclInds, lclVals);
           TEST_EQUALITY_CONST(lclInds.size(), 1);
           TEST_EQUALITY_CONST(lclVals.size(), 1);
@@ -523,11 +524,13 @@ namespace {
       // together, so we make a rough guess.
       const magnitude_type tol =
           as<magnitude_type> (10) * ScalarTraits<magnitude_type>::eps ();
-
-      Array<LO> tgtRowInds;
-      Array<Scalar>  tgtRowVals;
-      Array<LO> tgt2RowInds;
-      Array<Scalar>  tgt2RowVals;
+      typedef typename CrsMatrix<Scalar, LO, GO>::nonconst_local_inds_host_view_type lids_type;
+      typedef typename CrsMatrix<Scalar,LO,GO>::nonconst_values_host_view_type vals_type;
+ 
+      lids_type tgtRowInds;
+      vals_type tgtRowVals;
+      lids_type tgt2RowInds;
+      vals_type tgt2RowVals;
       for (LO localrow = tgt_map->getMinLocalIndex();
            localrow <= tgt_map->getMaxLocalIndex();
            ++localrow)
@@ -539,21 +542,21 @@ namespace {
         TEST_EQUALITY(tgtNumEntries, tgt2NumEntries);
 
         if (tgtNumEntries > as<size_t> (tgtRowInds.size ())) {
-          tgtRowInds.resize (tgtNumEntries);
-          tgtRowVals.resize (tgtNumEntries);
+          Kokkos::resize(tgtRowInds,tgtNumEntries);
+          Kokkos::resize(tgtRowVals,tgtNumEntries);
         }
         if (tgt2NumEntries > as<size_t> (tgt2RowInds.size ())) {
-          tgt2RowInds.resize (tgt2NumEntries);
-          tgt2RowVals.resize (tgt2NumEntries);
+          Kokkos::resize(tgt2RowInds,tgt2NumEntries);
+          Kokkos::resize(tgt2RowVals,tgt2NumEntries);
         }
-        tgt_mat->getLocalRowCopy (localrow, tgtRowInds(), tgtRowVals(), tgtNumEntries);
-        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds(), tgt2RowVals(), tgt2NumEntries);
+        tgt_mat->getLocalRowCopy (localrow, tgtRowInds, tgtRowVals, tgtNumEntries);
+        A_tgt2->getLocalRowCopy (localrow, tgt2RowInds, tgt2RowVals, tgt2NumEntries);
 
         // Entries should be sorted, but let's sort them by column
         // index just in case.  This is why we got a row copy instead
         // of a row view.
-        Tpetra::sort2 (tgtRowInds.begin(), tgtRowInds.end(), tgtRowVals.begin());
-        Tpetra::sort2 (tgt2RowInds.begin(), tgt2RowInds.end(), tgt2RowVals.begin());
+        Tpetra::sort2 (tgtRowInds, tgtRowInds.extent(0), tgtRowVals);
+        Tpetra::sort2 (tgt2RowInds, tgt2RowInds.extent(0), tgt2RowVals);
 
         // Now that the entries are sorted, compare to make sure they
         // have the same column indices and values.  In the fully
@@ -634,11 +637,12 @@ namespace {
         for (GO globalrow=tgt_map->getMinGlobalIndex();
              globalrow<=tgt_map->getMaxGlobalIndex(); ++globalrow) {
           LO localrow = tgt_map->getLocalElement(globalrow);
-          ArrayView<const LO> rowinds;
-          ArrayView<const Scalar> rowvals;
+          typename CrsMatrix<Scalar,LO,GO>::local_inds_host_view_type rowinds;
+          typename CrsMatrix<Scalar,LO,GO>::values_host_view_type rowvals;
+
           tgt_mat->getLocalRowView(localrow, rowinds, rowvals);
-          TEST_EQUALITY(rowinds.size(), globalrow);
-          TEST_EQUALITY(rowvals.size(), globalrow);
+          TEST_EQUALITY(rowinds.extent(0), (size_t)globalrow);
+          TEST_EQUALITY(rowvals.extent(0), (size_t)globalrow);
 
           // The target graph doesn't necessarily promise sorted
           // order.  Thus, we copy out the local row view, convert to
@@ -721,7 +725,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
   if (errors != 0) return false;
 
   for (LO i=0; i<static_cast<LO>(G1->getNodeNumRows()); i++) {
-    ArrayView<const LO> V1, V2;
+    typename Graph::local_inds_host_view_type V1, V2;
     G1->getLocalRowView(i, V1);
     G2->getLocalRowView(i, V2);
     if (V1.size() != V2.size()) {
@@ -731,7 +735,7 @@ bool graphs_are_same(const RCP<Graph>& G1, const RCP<const Graph>& G2)
       continue;
     }
     int jerr = 0;
-    for (LO j=0; static_cast<LO>(j<V1.size()); j++) {
+    for (LO j=0; j<static_cast<LO>(V1.size()); j++) {
       if (V1[j] != V2[j])
         jerr++;
     }
@@ -2515,11 +2519,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Import, AdvancedConstructors, LO, GO )  {
     // Build R
     Tpetra::RowMatrixTransposer<Scalar, LO, GO, Node> transposer(P);
     R = transposer.createTranspose();
-
-    ArrayRCP<const size_t> rowptr;
-    ArrayRCP<const LO> colind;
-    ArrayRCP<const Scalar> vals;
-    R->getAllValues(rowptr,colind,vals);
 
     // Form AP
     AP = rcp (new CrsMatrixType(A->getRowMap(),0));

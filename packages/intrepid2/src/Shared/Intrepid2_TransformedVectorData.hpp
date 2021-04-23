@@ -60,7 +60,7 @@ namespace Intrepid2 {
  
  TransformedVectorData provides a View-like interface of rank 4, with shape (C,F,P,D).  When the corresponding accessor is used, the transformed value is determined from corresponding reference space values and the transformation.
 */
-  template<class Scalar, typename DeviceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename DeviceType>
   class TransformedVectorData
   {
   public:

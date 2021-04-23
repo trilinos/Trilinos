@@ -157,7 +157,8 @@ public:
     }
     if (std::abs(prob2) > ROL_EPSILON<Real>()) {
       getGradient(x,tol);
-      Real gv    = v.dot(g_->dual());
+      //Real gv    = v.dot(g_->dual());
+      Real gv    = v.apply(*g_);
       hv.axpy(prob2*gv,*g_);
     }
   }

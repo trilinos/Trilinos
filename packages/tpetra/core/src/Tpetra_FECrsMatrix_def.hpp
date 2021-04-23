@@ -57,7 +57,7 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
 
 {
   const char tfecfFuncName[] = "FECrsMatrix(RCP<const FECrsGraph>[, RCP<ParameterList>]): ";
-  typedef typename local_matrix_type::values_type values_type;
+  typedef typename local_matrix_device_type::values_type values_type;
 
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
     (graph.is_null (), std::runtime_error, "Input graph is null.");
@@ -78,10 +78,7 @@ FECrsMatrix(const Teuchos::RCP<const fe_crs_graph_type>& graph,
   if(!graph->inactiveCrsGraph_.is_null() ) {
     // We are *requiring* memory aliasing here, so we'll grab the first chunk of the Owned+Shared matrix's values array to make the 
     // guy for the Owned matrix.
-    values_type myvals = this->getLocalMatrix().values;
-
-    size_t numOwnedVals = graph->getLocalGraph().entries.extent(0); // OwnedVals
-    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(graph,Kokkos::subview(myvals,Kokkos::pair<size_t,size_t>(0,numOwnedVals))));
+    inactiveCrsMatrix_ = Teuchos::rcp(new crs_matrix_type(*this,graph));
   }
 }
 

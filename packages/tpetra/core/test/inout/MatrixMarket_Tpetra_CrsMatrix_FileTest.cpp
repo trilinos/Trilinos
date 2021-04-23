@@ -43,10 +43,13 @@
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_Util.hpp> // sort2
+#include <Tpetra_TestingUtilities.hpp> 
 #include <Teuchos_UnitTestHarness.hpp>
 
 using Tpetra::global_size_t;
+using Tpetra::TestingUtilities::arcp_from_view;
 using Teuchos::Array;
+using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
 using Teuchos::as;
 using Teuchos::Comm;
@@ -135,6 +138,8 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   typedef typename CrsMatrixType::scalar_type ST;
   typedef typename CrsMatrixType::global_ordinal_type GO;
   typedef typename ArrayView<const GO>::size_type size_type;
+  typedef typename CrsMatrixType::nonconst_global_inds_host_view_type gids_type;
+  typedef typename CrsMatrixType::nonconst_values_host_view_type vals_type;
 
   OSTab tab (out);
   int localEqual = 1;
@@ -142,8 +147,8 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
   //
   // Are my local matrices equal?
   //
-  Array<GO> indOrig, ind;
-  Array<ST> valOrig, val;
+  gids_type indOrig, ind;
+  vals_type valOrig, val;
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
@@ -158,17 +163,17 @@ compareCrsMatrix (const CrsMatrixType& A_orig, const CrsMatrixType& A, Teuchos::
       localEqual = 0;
       break;
     }
-    indOrig.resize (numEntriesOrig);
-    valOrig.resize (numEntriesOrig);
-    A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
-    ind.resize (numEntries);
-    val.resize (numEntries);
-    A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+    Kokkos::resize(indOrig,numEntriesOrig);
+    Kokkos::resize(valOrig,numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig, valOrig, numEntriesOrig);
+    Kokkos::resize(ind,numEntries);
+    Kokkos::resize(val,numEntries);
+    A.getGlobalRowCopy (globalRow, ind, val, numEntries);
 
     // Global row entries are not necessarily sorted.  Sort them so
     // we can compare them.
-    Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
-    Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+    Tpetra::sort2 (indOrig, indOrig.extent(0), valOrig);
+    Tpetra::sort2 (ind, ind.extent(0), val);
 
     for (size_t k = 0; k < numEntries; ++k) {
       // Values should be _exactly_ equal.
@@ -199,13 +204,16 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef typename STS::magnitudeType MT;
   typedef Teuchos::ScalarTraits<MT> STM;
+  typedef typename CrsMatrixType::nonconst_global_inds_host_view_type gids_type;
+  typedef typename CrsMatrixType::nonconst_values_host_view_type vals_type;
 
   OSTab tab (out);
   //
   // Are my local matrices equal?
   //
-  Array<GO> indOrig, ind;
-  Array<ST> valOrig, val;
+
+  gids_type indOrig_v, ind_v;
+  vals_type valOrig_v, val_v;
   size_t numEntriesOrig = 0;
   size_t numEntries = 0;
 
@@ -217,31 +225,35 @@ compareCrsMatrixValues (const CrsMatrixType& A_orig,
     numEntriesOrig = A_orig.getNumEntriesInGlobalRow (globalRow);
     numEntries = A.getNumEntriesInGlobalRow (globalRow);
 
-    indOrig.resize (numEntriesOrig);
-    valOrig.resize (numEntriesOrig);
-    A_orig.getGlobalRowCopy (globalRow, indOrig (), valOrig (), numEntriesOrig);
-    ind.resize (numEntries);
-    val.resize (numEntries);
-    A.getGlobalRowCopy (globalRow, ind (), val (), numEntries);
+    Kokkos::resize(indOrig_v,numEntriesOrig);
+    Kokkos::resize(valOrig_v,numEntriesOrig);
+    A_orig.getGlobalRowCopy (globalRow, indOrig_v, valOrig_v, numEntriesOrig);
+    Kokkos::resize(ind_v,numEntries);
+    Kokkos::resize(val_v,numEntries);
+    A.getGlobalRowCopy (globalRow, ind_v, val_v, numEntries);
 
     // Global row entries are not necessarily sorted.  Sort them
     // (and their values with them) so we can merge their values.
-    Tpetra::sort2 (indOrig.begin (), indOrig.end (), valOrig.begin ());
-    Tpetra::sort2 (ind.begin (), ind.end (), val.begin ());
+    Tpetra::sort2 (indOrig_v, indOrig_v.extent(0), valOrig_v);
+    Tpetra::sort2 (ind_v, ind_v.extent(0), val_v);
+    auto indOrig = arcp_from_view(indOrig_v);
+    auto ind = arcp_from_view(ind_v);
+    auto valOrig = arcp_from_view(valOrig_v);
+    auto val = arcp_from_view(val_v);
 
     //
     // Merge repeated values in each set of indices and values.
     //
-    typename Array<GO>::iterator indOrigIter = indOrig.begin ();
-    typename Array<ST>::iterator valOrigIter = valOrig.begin ();
-    typename Array<GO>::iterator indOrigEnd = indOrig.end ();
-    typename Array<ST>::iterator valOrigEnd = valOrig.end ();
+    typename ArrayRCP<GO>::iterator indOrigIter = indOrig.begin ();
+    typename ArrayRCP<ST>::iterator valOrigIter = valOrig.begin ();
+    typename ArrayRCP<GO>::iterator indOrigEnd = indOrig.end ();
+    typename ArrayRCP<ST>::iterator valOrigEnd = valOrig.end ();
     Tpetra::merge2 (indOrigEnd, valOrigEnd, indOrigIter, indOrigEnd, valOrigIter, valOrigEnd);
 
-    typename Array<GO>::iterator indIter = ind.begin ();
-    typename Array<ST>::iterator valIter = val.begin ();
-    typename Array<GO>::iterator indEnd = ind.end ();
-    typename Array<ST>::iterator valEnd = val.end ();
+    typename ArrayRCP<GO>::iterator indIter = ind.begin ();
+    typename ArrayRCP<ST>::iterator valIter = val.begin ();
+    typename ArrayRCP<GO>::iterator indEnd = ind.end ();
+    typename ArrayRCP<ST>::iterator valEnd = val.end ();
     Tpetra::merge2 (indEnd, valEnd, indIter, indEnd, valIter, valEnd);
 
     //

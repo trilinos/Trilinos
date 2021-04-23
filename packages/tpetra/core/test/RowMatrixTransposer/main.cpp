@@ -52,12 +52,10 @@ typename CrsMatrix_t::scalar_type getNorm(CrsMatrix_t& matrix){
   typedef typename CrsMatrix_t::scalar_type Scalar;
   Scalar mySum = 0;
 
-  Teuchos::Array<LO> inds(matrix.getNodeMaxNumRowEntries());
-  Teuchos::Array<Scalar> vals(matrix.getNodeMaxNumRowEntries());
   for(int i =0; ((size_t)i)<matrix.getNodeNumRows(); ++i){
     size_t numRowEnts = matrix.getNumEntriesInLocalRow(i);
-    Teuchos::ArrayView<const LO> indsView = inds();
-    Teuchos::ArrayView<const Scalar> valsView = vals();
+    typename CrsMatrix_t::local_inds_host_view_type indsView;
+    typename CrsMatrix_t::values_host_view_type valsView;
     matrix.getLocalRowView(i, indsView, valsView);
     for(size_t j=0; ((size_t)j)<numRowEnts; ++j){
       mySum += valsView[j]*valsView[j];

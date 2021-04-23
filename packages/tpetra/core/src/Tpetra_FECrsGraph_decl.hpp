@@ -145,7 +145,7 @@ namespace Tpetra {
     typedef typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::execution_space execution_space;
 
     //! The type of the part of the sparse graph on each MPI process.
-    typedef  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_type local_graph_type;
+    typedef  typename CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::local_graph_device_type local_graph_device_type;
 
     //! The Map specialization used by this class.
     using map_type = ::Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>;

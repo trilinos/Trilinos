@@ -66,7 +66,12 @@ public:
                               const bool useWeights = true)
     : sampler_(sampler), pcon_(pcon), useWeights_(useWeights) {}
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    pcon_->update(x,flag,iter);
+  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    pcon_->update(x,type,iter);
+  }
 
   void value(Vector<Real> &c,
              const Vector<Real> &x,

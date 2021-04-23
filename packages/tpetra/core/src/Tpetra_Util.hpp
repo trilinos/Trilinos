@@ -51,6 +51,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Kokkos_DualView.hpp"
+#include "KokkosCompat_View.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
@@ -545,6 +546,71 @@ namespace Tpetra {
     }
 #endif
   }
+
+
+/**
+   * \brief Sort the first array, and apply the resulting permutation to the second array.
+   *
+   * Sort the values in the first array (of length size)
+   * in ascending order.  Apply the
+   * permutation resulting from the sort to the second array
+   *
+   * @param view1 A host-accessible 1D Kokkos::View
+   *   of the first array.
+   * @param size Length of the first array.
+   * @param view2 A host-accessible 1D Kokkos::View
+   *   of the second array.  The second array must have no fewer
+   *   elements than the first array.  If the first array has N
+   *   elements, then the permutation will only be applied to the
+   *   first N elements of the second array.
+   */
+  template<class View1, class View2>
+  void sort2(View1 &view1, const size_t &size, View2 &view2) {
+    // NOTE: This assumes the view is host-accessible.
+
+    // Wrap the views as rcps (this happens to preserve the reference counting, but that doesn't really matter here)
+    Teuchos::ArrayRCP<typename View1::non_const_value_type> view1_rcp =  Kokkos::Compat::persistingView(view1, 0, size);
+    Teuchos::ArrayRCP<typename View2::non_const_value_type> view2_rcp =  Kokkos::Compat::persistingView(view2, 0, size);
+
+    sort2(view1_rcp.begin(),view1_rcp.end(),view2_rcp.begin());    
+  }
+
+/**
+   * \brief Convenience wrapper for std::sort for host-accessible views
+   *
+   * Sort the values in the array (of length size) in ascending order.
+
+   * @param view A host-accessible 1D Kokkos::View.
+   * @param size Length of the first array (or portion of which to sort).
+   */
+  template<class View>
+  void sort(View &view, const size_t &size) {
+    // NOTE: This assumes the view is host-accessible.
+
+    // Wrap the view as rcps (this happens to preserve the reference counting, but that doesn't really matter here)
+    Teuchos::ArrayRCP<typename View::non_const_value_type> view_rcp =  Kokkos::Compat::persistingView(view, 0, size);
+
+    std::sort(view_rcp.begin(),view_rcp.end());    
+  }
+
+  /**
+   * \brief Convenience wrapper for a reversed std::sort for host-accessible views
+   *
+   * Reverse Sort the values in the array (of length size) in ascending order.
+
+   * @param view A host-accessible 1D Kokkos::View.
+   * @param size Length of the array (or portion of which to sort, from the *end*)
+   */
+  template<class View>
+  void reverse_sort(View &view, const size_t &size) {
+    // NOTE: This assumes the view is host-accessible.
+    // Wrap the view as rcps (this happens to preserve the reference counting, but that doesn't really matter here)
+    Teuchos::ArrayRCP<typename View::non_const_value_type> view_rcp =  Kokkos::Compat::persistingView(view, 0, size);
+
+    std::sort(view_rcp.rbegin(),view_rcp.rend());    
+  }
+  
+
 
 
   /**

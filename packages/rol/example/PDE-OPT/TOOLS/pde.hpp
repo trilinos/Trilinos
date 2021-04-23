@@ -97,6 +97,38 @@ public:
     throw Exception::NotImplemented(">>> Jacobian_3 not implemented.");
   }
 
+  virtual void applyJacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> &jv,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff,
+                               const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyJacobian_1 not implemented.");
+  }
+
+  virtual void applyAdjointJacobian_1(ROL::Ptr<Intrepid::FieldContainer<Real>> &jv,
+                                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff,
+                                      const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyAdjointJacobian_1 not implemented.");
+  }
+
+  virtual void applyJacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> &jv,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff,
+                               const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyJacobian_2 not implemented.");
+  }
+
+  virtual void applyAdjointJacobian_2(ROL::Ptr<Intrepid::FieldContainer<Real>> &jv,
+                                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & v_coeff,
+                                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                                      const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff,
+                                      const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyAdjointJacobian_2 not implemented.");
+  }
+
   virtual void Hessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
                           const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
                           const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
@@ -169,6 +201,42 @@ public:
     throw Exception::NotImplemented(">>> Hessian_33 not implemented.");
   }
 
+  virtual void applyHessian_11(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                               const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyHessian_11 not implemented.");
+  }
+
+  virtual void applyHessian_12(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                               const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyHessian_12 not implemented.");
+  }
+
+  virtual void applyHessian_21(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                               const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyHessian_21 not implemented.");
+  }
+
+  virtual void applyHessian_22(ROL::Ptr<Intrepid::FieldContainer<Real> > & hess,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & v_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & l_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & u_coeff,
+                               const ROL::Ptr<const Intrepid::FieldContainer<Real> > & z_coeff = ROL::nullPtr,
+                               const ROL::Ptr<const std::vector<Real> > & z_param = ROL::nullPtr) {
+    throw Exception::NotImplemented(">>> applyHessian_22 not implemented.");
+  }
+
   virtual void RieszMap_1(ROL::Ptr<Intrepid::FieldContainer<Real>> &riesz) {
     throw Exception::NotImplemented(">>> RieszMap_1 not implemented.");
   }
@@ -191,6 +259,11 @@ public:
                                const std::vector<std::vector<int>> &fieldPattern2) {
     setFieldPattern(fieldPattern1);
   }
+
+  virtual void printData(std::string tag,
+                         const ROL::Ptr<const Intrepid::FieldContainer<Real>> & u_coeff,
+                         const ROL::Ptr<const Intrepid::FieldContainer<Real>> & z_coeff = ROL::nullPtr,
+                         const ROL::Ptr<const std::vector<Real>> & z_param = ROL::nullPtr) {}
 
 private:
   Real time_;

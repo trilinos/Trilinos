@@ -271,11 +271,17 @@ namespace Intrepid2 {
       return false;
     }
 
+    virtual HostBasisPtr<outputValueType,pointValueType>
+    getHostBasis() const override{
+      return Teuchos::rcp(new Basis_HVOL_TRI_Cn_FEM<typename Kokkos::HostSpace::device_type,outputValueType,pointValueType>(this->basisDegree_,pointType_));
+    }
+
   private:
 
     /** \brief inverse of Generalized Vandermonde matrix, whose columns store the expansion
         coefficients of the nodal basis in terms of phis_ */
     Kokkos::DynRankView<scalarType,DeviceType> vinv_;
+    EPointType   pointType_;
 
   };
 

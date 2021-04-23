@@ -203,6 +203,27 @@ public:
   typedef typename BMV::const_little_vec_type const_little_vec_type;
   typedef typename BMV::const_little_host_vec_type const_host_little_vec_type;
 
+  using row_matrix_type = RowMatrix<Scalar, LO, GO, node_type>;
+  using local_inds_device_view_type =
+        typename row_matrix_type::local_inds_device_view_type;
+  using local_inds_host_view_type =
+        typename row_matrix_type::local_inds_host_view_type;
+  using nonconst_local_inds_host_view_type =
+        typename row_matrix_type::nonconst_local_inds_host_view_type;
+
+  using global_inds_device_view_type =
+        typename row_matrix_type::global_inds_device_view_type;
+  using global_inds_host_view_type =
+        typename row_matrix_type::global_inds_host_view_type;
+  using nonconst_global_inds_host_view_type =
+        typename row_matrix_type::nonconst_global_inds_host_view_type;
+
+  using values_device_view_type =
+        typename row_matrix_type::values_device_view_type;
+  using values_host_view_type =
+        typename row_matrix_type::values_host_view_type;
+  using nonconst_values_host_view_type =
+        typename row_matrix_type::nonconst_values_host_view_type;
 
   //@}
   //! \name Constructors and destructor
@@ -444,18 +465,32 @@ public:
                    Scalar*& vals,
                    LO& numInds) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Not implemented.
   void
   getLocalRowView (LO LocalRow,
                    Teuchos::ArrayView<const LO> &indices,
                    Teuchos::ArrayView<const Scalar> &values) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  /// \brief Not yet implemented.
+  void
+  getLocalRowView (LO LocalRow,
+                   local_inds_host_view_type &indices,
+                   values_host_view_type &values) const override;
 
   /// \brief Not implemented.
-  void
+  virtual void
+  getLocalRowCopy (LO LocalRow,
+                   nonconst_local_inds_host_view_type &Indices,
+                   nonconst_values_host_view_type &Values,
+                   size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
   getLocalRowCopy (LO LocalRow,
                    const Teuchos::ArrayView<LO> &Indices,
                    const Teuchos::ArrayView<Scalar> &Values,
                    size_t &NumEntries) const;
+#endif
 
   little_block_type
   getLocalBlock (const LO localRowInd, const LO localColInd) const;
@@ -740,14 +775,18 @@ private:
   /// Kokkos::DualView has extra Views in it for the "modified" flags,
   /// and we don't want the (modest) overhead of creating and storing
   /// those.
-  typename crs_graph_type::local_graph_type::row_map_type::HostMirror ptrHost_;
+     // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+     // KDDUVM This will be bad news for our reference counting
+  typename crs_graph_type::local_graph_device_type::row_map_type::HostMirror ptrHost_;
 
   /// \brief Host version of the graph's array of column indices.
   ///
   /// The device version of this is already stored in the graph.  We
   /// need the host version here, because this class' interface needs
   /// to access it on host.  See notes on ptrHost_ above.
-  typename crs_graph_type::local_graph_type::entries_type::HostMirror indHost_;
+      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
+      // KDDUVM This will be bad news for our reference counting
+  typename crs_graph_type::local_graph_device_type::entries_type::HostMirror indHost_;
 
   /// \brief The array of values in the matrix.
   ///
@@ -1165,9 +1204,16 @@ public:
   /// not modify Indices or Values.
   virtual void
   getGlobalRowCopy (GO GlobalRow,
+                    nonconst_global_inds_host_view_type &Indices,
+                    nonconst_values_host_view_type &Values,
+                    size_t& NumEntries) const;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowCopy (GO GlobalRow,
                     const Teuchos::ArrayView<GO> &Indices,
                     const Teuchos::ArrayView<Scalar> &Values,
                     size_t& NumEntries) const;
+#endif
 
   /// \brief Get a constant, nonpersisting, globally indexed view of
   ///   the given row of the matrix.
@@ -1193,10 +1239,16 @@ public:
   ///
   /// If \c GlobalRow does not belong to this node, then \c indices
   /// is set to \c null.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   virtual void
   getGlobalRowView (GO GlobalRow,
                     Teuchos::ArrayView<const GO>& indices,
                     Teuchos::ArrayView<const Scalar>& values) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+  virtual void
+  getGlobalRowView (GO GlobalRow,
+                    global_inds_host_view_type & indices,
+                    values_host_view_type & values) const;
 
   /// \brief Get a copy of the diagonal entries, distributed by the row Map.
   ///

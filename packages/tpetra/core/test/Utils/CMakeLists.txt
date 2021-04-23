@@ -1,5 +1,23 @@
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_WrappedDualView
+  SOURCES
+    TpetraUtils_WrappedDualView
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  TpetraUtils_WrappedDualViewNull
+  SOURCES
+    TpetraUtils_WrappedDualViewNull
+  ARGS ${ARGS}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
   TpetraUtils_UnitTests
   SOURCES
     TpetraUtils_UnitTests
