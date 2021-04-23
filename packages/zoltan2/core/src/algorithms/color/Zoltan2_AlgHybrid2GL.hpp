@@ -851,7 +851,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       }
 
     }
-  private:
+//  private:
 
     //This is the coloring logic for all 2GL-based methods.
     //
