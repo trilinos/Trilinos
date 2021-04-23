@@ -318,13 +318,14 @@ DoMISNaive(const GraphBase & graph, ArrayRCP<LO> & myColors, LO & numColors) con
   //FIXME: Not efficient
   myColors.resize(0);
   myColors.resize(graph.GetNodeNumVertices(),LO_INVALID);
-
+  auto boundaryNodes = graph.GetBoundaryNodeMap();
   LO Nrows = (LO)graph.GetNodeNumVertices();
 
   
   for(LO row=0; row < Nrows; row++) {
-    ArrayView<const LO> indices;
-    graph.getNeighborVertices(row);
+    if(boundaryNodes[row]) 
+      continue;
+    ArrayView<const LO> indices = graph.getNeighborVertices(row);
     bool has_colored_neighbor=false;
     for(LO j=0; !has_colored_neighbor && j<(LO)indices.size(); j++) {
       // FIXME: This does not handle ghosting correctly

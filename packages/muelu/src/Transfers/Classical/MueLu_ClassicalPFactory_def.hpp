@@ -150,12 +150,13 @@ namespace MueLu {
     const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
     const ParameterList& pL = GetParameterList();
 
-    // DEBUG
+#ifdef CMS_DEBUG
     {
       std::ofstream ofs(std::string("dropped_graph_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat"),std::ofstream::out);
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
       graph->print(*fancy,Debug);
     }
+#endif
 
     // FIXME: This guy doesn't work right now for NumPDEs != 1
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
@@ -206,8 +207,11 @@ namespace MueLu {
     else if(scheme == "direct")
       Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
 
-    //    Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat", *P);
-    Set(coarseLevel, "P", P);
+    Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat", *P);
+    Set(coarseLevel,"P",P);
+    RCP<const CrsGraph> pg = P->getCrsGraph();
+    Set(coarseLevel,"P Graph",pg);
+
 
     //RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
     //    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
@@ -263,6 +267,7 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
     /* works.  We'll follow the PyAMG implementation in a few important ways.                */
      
     const point_type C_PT = ClassicalMapFactory::C_PT;
+    const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
    
     // Initial (estimated) allocation
     // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
@@ -288,12 +293,16 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
       std::set<LO> C_hat;
-
-      if(myPointType[row] == C_PT) {
+      if(myPointType[row] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+      }
+      else if(myPointType[row] == C_PT) {
         // C-Points get a single 1 in their row
         C_hat.insert(cpoint2pcol[row]);
       }
       else {
+        // F-Points have a more complicated interpolation
+
         // C-neighbors of row 
         A.getLocalRowView(row, indices, vals);
         for(LO j=0; j<indices.size(); j++)
@@ -315,23 +324,40 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
     tmp_colind.resize(tmp_rowptr[Nrows]);  
 
     // Allocate memory & copy
+    printf("CMS: Allocating memory w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     P = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
     RCP<CrsMatrix> PCrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
     ArrayRCP<size_t>  P_rowptr;
     ArrayRCP<LO>      P_colind;
     ArrayRCP<SC>      P_values;
+
+#ifdef CMS_DEBUG
+printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
+#endif
     PCrs->allocateAllValues(tmp_rowptr[Nrows], P_rowptr, P_colind, P_values);
     TEUCHOS_TEST_FOR_EXCEPTION(tmp_rowptr.size() !=P_rowptr.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (rowptr)");
     TEUCHOS_TEST_FOR_EXCEPTION(tmp_colind.size() !=P_colind.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (colind)");
-
     // FIXME:  This can be short-circuited for Tpetra, if we decide we care
-    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
-    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
+    for(LO i=0; i<(LO)Nrows+1; i++)
+      P_rowptr[i] = tmp_rowptr[i];
+    for(LO i=0; i<(LO)tmp_rowptr[Nrows]; i++)
+      P_colind[i] = tmp_colind[i];
+
+    
+    //    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
+    //    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
 
 
     // Algorithm (numeric)
     for(LO i=0; i < (LO)Nrows; i++) {
-      if (myPointType[i] == C_PT) {
+      if(myPointType[i] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("** A(%d,:) is a Dirichlet-Point.\n",i);
+#endif
+      }
+      else if (myPointType[i] == C_PT) {
         // C Points get a single 1 in their row
         P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
 #ifdef CMS_DEBUG        
@@ -365,8 +391,7 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
           printf("\n");
         }
 #endif        
-        
-        
+                      
         SC a_ii            = SC_ZERO;
         SC pos_numerator   = SC_ZERO, neg_numerator   = SC_ZERO;
         SC pos_denominator = SC_ZERO, neg_denominator = SC_ZERO;
@@ -423,7 +448,41 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
 
     // Finish up
     PCrs->setAllValues(P_rowptr, P_colind, P_values);
-    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
+    //    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
+    //    RCP<const Export> dummy_e;
+    //    RCP<const Import> dummy_i;
+    //    RCP<Teuchos::ParameterList> FCparams;
+    PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+
+
+#ifdef CMS_DEBUG
+    {
+      printf("****** Final P ******\n");
+      ArrayRCP<const size_t> rp;
+      ArrayRCP<const LO> ci;
+      ArrayRCP<const SC> vv;
+      PCrs->getAllValues(rp,ci,vv);
+      printf("tmp_rowptr = ");
+      for(LO i=Nrows-20;i<Nrows+1; i++)
+        printf("%d ",(int)tmp_rowptr[i]);
+      printf("\n");
+
+      printf("P_rowptr = ");
+      for(LO i=Nrows-20;i<Nrows+1; i++)
+        printf("%d ",(int)P_rowptr[i]);
+      printf("\n");
+
+      printf("rp = ");
+      for(LO i=Nrows-20;i<Nrows+1; i++)
+        printf("%d ",(int)rp[i]);
+      printf("\n");
+      
+      //      for(LO i=0;i<(LO)rp.size()-1; i++) {
+      //        for(size_t j=rp[i]; j<rp[i+1]; j++)
+      //          printf("%d %d %6.4e\n",i,ci[j],vv[j]);
+      //      }      
+    }
+#endif
 
 }
 
@@ -740,7 +799,8 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
 
     // Finish up
     PCrs->setAllValues(P_rowptr, P_colind, P_values);
-    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
+    PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+    //    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
 }
 
 

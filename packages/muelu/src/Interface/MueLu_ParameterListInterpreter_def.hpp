@@ -653,7 +653,7 @@ namespace MueLu {
 
     // == BlockNumber Transfer ==
     if(useBlockNumber_)
-      UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber",paramList,defaultList,manager,levelID,keeps);
+      UpdateFactoryManager_LocalOrdinalTransfer("BlockNumber",multigridAlgo,paramList,defaultList,manager,levelID,keeps);
 
     // === Coordinates ===
     UpdateFactoryManager_Coordinates(paramList, defaultList, manager, levelID, keeps);
@@ -1105,6 +1105,7 @@ namespace MueLu {
 
       // Now we short-circuit, because we neither need nor want TentativePFactory here      
       manager.SetFactory("Ptent",     aggFactory);
+      manager.SetFactory("P Graph",     aggFactory);
 
       
       if (reuseType == "tP" && levelID) {
@@ -1343,12 +1344,15 @@ namespace MueLu {
   // =====================================================================================================
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void ParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  UpdateFactoryManager_LocalOrdinalTransfer(const std::string VarName, ParameterList& paramList, const ParameterList& /* defaultList */,
+  UpdateFactoryManager_LocalOrdinalTransfer(const std::string & VarName, const std::string &multigridAlgo,ParameterList& paramList, const ParameterList& /* defaultList */,
                                             FactoryManager& manager, int levelID, std::vector<keep_pair>& /* keeps */) const
   {    
     if(levelID >= 1){
-      RCP<Factory> fact = rcp(new LocalOrdinalTransferFactory(VarName));
-      fact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
+      RCP<Factory> fact = rcp(new LocalOrdinalTransferFactory(VarName,multigridAlgo));
+      if(multigridAlgo == "classical") 
+        fact->SetFactory("P Graph", manager.GetFactory("P Graph"));
+      else 
+        fact->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
       fact->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
       fact->SetFactory(VarName, this->GetFactoryManager(levelID-1)->GetFactory(VarName));
 
