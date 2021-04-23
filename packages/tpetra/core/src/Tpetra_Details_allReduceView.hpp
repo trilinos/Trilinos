@@ -71,8 +71,11 @@ allReduceRawContiguous (const OutputViewType& output,
   if(isInterComm(comm) && input.data() == output.data())
   {
     //Can't do in-place collective on an intercomm,
-    //so use a separate 1D copy as the input.
-    auto tempInput = TempView::make1DHostCopy(input);
+    //so use a separate copy as the input.
+    typename InputViewType::array_layout layout(input.extent(0), input.extent(1), input.extent(2), input.extent(3), input.extent(4), input.extent(5), input.extent(6), input.extent(7)); 
+    Kokkos::View<typename InputViewType::non_const_data_type, typename InputViewType::array_layout, typename InputViewType::device_type>
+      tempInput(Kokkos::ViewAllocateWithoutInitializing("tempInput"), layout);
+    Kokkos::deep_copy(tempInput, input);
     reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
         tempInput.data(), output.data());
   }
