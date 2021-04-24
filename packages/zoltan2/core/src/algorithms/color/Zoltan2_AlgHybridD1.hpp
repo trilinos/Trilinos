@@ -134,7 +134,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
     }
     
-
+  public:
     //contains all distance-1 conflict detection logic
     //
     //OUTPUT ARGS:
@@ -240,7 +240,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       });
     }
 
-
+  private:
     //Communicates owned vertex colors to ghost copies.
     //
     //RETURN VALUE:
@@ -490,7 +490,6 @@ class AlgDistance1 : public Algorithm<Adapter>
     
     }
     
-  private:
     //This function contains all coloring logic.
     //
     //OUTPUT ARGS:
