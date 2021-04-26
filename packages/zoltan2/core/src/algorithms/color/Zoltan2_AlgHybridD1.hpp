@@ -49,6 +49,8 @@ class AlgDistance1 : public Algorithm<Adapter>
     using device_type = Tpetra::Map<>::device_type;
     using execution_space = Tpetra::Map<>::execution_space;
     using memory_space = Tpetra::Map<>::memory_space;
+    using host_exec = Kokkos::DefaultHostExecutionSpace;
+    using host_mem = Kokkos::DefaultHostExecutionSpace::memory_space;
     double timer() {
       struct timeval tp;
       gettimeofday(&tp, NULL);
@@ -936,9 +938,11 @@ class AlgDistance1 : public Algorithm<Adapter>
       //finish the local coloring in serial on the host
       while(recoloringSize_host(0) > 0 || !done){
 	//Use non-templated call to get the Host view
-	auto femvColors = femv-> getLocalViewHost();
+	auto femvColors = femv->getLocalViewHost();
 	auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
-        if(distributedRounds < 100){
+	/*Kokkos::View<int*, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>femv_colors_host = create_mirror(femv_colors);
+	Kokkos::deep_copy(femv_colors_host, femv_colors);*/
+	if(distributedRounds < 100){
 	  vertsPerRound[distributedRounds] = recoloringSize_host(0);
 	}
 	if(verbose) std::cout<<comm->getRank()<<": starting to recolor, serial\n";
@@ -946,8 +950,8 @@ class AlgDistance1 : public Algorithm<Adapter>
 	double recolor_temp = timer();
 	//use KokkosKernels to recolor the conflicting vertices
 	if(verts_to_send_size(0) > 0){
-	  this->colorInterior<Kokkos::DefaultHostExecutionSpace,
-			      Kokkos::HostSpace>
+	  this->colorInterior<host_exec,
+			      host_mem>
 			      (femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, verts_to_send_host, verts_to_send_size_host(0), true);
 	}
 
@@ -993,18 +997,18 @@ class AlgDistance1 : public Algorithm<Adapter>
 
 	verts_to_send_size_host(0) = 0;
 	double detection_temp = timer();
-	detectConflicts<Kokkos::Serial, Kokkos::HostSpace>(nVtx,
-			                                   rand.size()-nVtx,
-						           dist_offsets_host,
-						           dist_adjs_host,
-						           femv_colors,
-						           verts_to_send_host,
-						           verts_to_send_size_host,
-						           recoloringSize_host,
-						           rand_host,
-						           gid_host,
-						           ghost_degrees_host,
-						           recolor_degrees);
+	detectConflicts<host_exec, host_mem>(nVtx,
+			                     rand.size()-nVtx,
+					     dist_offsets_host,
+					     dist_adjs_host,
+					     femv_colors,
+					     verts_to_send_host,
+					     verts_to_send_size_host,
+					     recoloringSize_host,
+					     rand_host,
+					     gid_host,
+					     ghost_degrees_host,
+					     recolor_degrees);
         if(distributedRounds < numStatisticRecordingRounds){
 	  conflictDetectionPerRound[distributedRounds] = timer() - detection_temp;
 	  conflict_detection += conflictDetectionPerRound[distributedRounds];

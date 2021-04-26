@@ -50,6 +50,8 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
     using device_type = Tpetra::Map<>::device_type;
     using execution_space = Tpetra::Map<>::execution_space;
     using memory_space = Tpetra::Map<>::memory_space;
+    using host_exec = Kokkos::DefaultHostExecutionSpace;
+    using host_mem = Kokkos::DefaultHostExecutionSpace::memory_space;
   private:
 
     //This is both the serial and parallel local coloring.
@@ -126,13 +128,13 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
 		       typename Kokkos::View<lno_t*, device_type>::HostMirror vertex_list,
 		       size_t vertex_list_size = 0,
 		       bool recolor=false){
-      this->localColoring<Kokkos::Serial, Kokkos::HostSpace>(nVtx,
-		                                         adjs_view,
-							 offset_view,
-							 femv,
-							 vertex_list,
-							 vertex_list_size,
-							 recolor);
+      this->localColoring<host_exec, host_mem>(nVtx,
+		                               adjs_view,
+					       offset_view,
+					       femv,
+					       vertex_list,
+					       vertex_list_size,
+					       recolor);
     }
   public:
     //this function must be public due to Cuda Lambda restrictions.
@@ -260,8 +262,6 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
       Kokkos::fence();
 
       //update the verts_to_send and verts_to_recolor views.
-     // verts_to_send_size_atomic(0) = 0;
-     // verts_to_recolor_size_atomic(0) = 0;
       Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA(const uint64_t& i){
         if(femv_colors(i) == 0){
 	  //we only send vertices owned by the current process
@@ -336,21 +336,21 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,
                                  bool recolor_degrees) {
-      this->detectD2Conflicts<Kokkos::Serial, Kokkos::HostSpace>(n_local,
-		                                             dist_offsets_host,
-							     dist_adjs_host,
-							     femv_colors,
-							     boundary_verts_view,
-							     boundary_size,
-							     verts_to_recolor,
-							     verts_to_recolor_size,
-							     verts_to_send,
-							     verts_to_send_size,
-							     recoloringSize,
-							     rand,
-							     gid,
-							     ghost_degrees,
-							     recolor_degrees);
+      this->detectD2Conflicts<host_exec, host_mem>(n_local,
+		                                   dist_offsets_host,
+						   dist_adjs_host,
+						   femv_colors,
+						   boundary_verts_view,
+						   boundary_size,
+						   verts_to_recolor,
+						   verts_to_recolor_size,
+						   verts_to_send,
+						   verts_to_send_size,
+						   recoloringSize,
+						   rand,
+						   gid,
+						   ghost_degrees,
+						   recolor_degrees);
     
   }
 

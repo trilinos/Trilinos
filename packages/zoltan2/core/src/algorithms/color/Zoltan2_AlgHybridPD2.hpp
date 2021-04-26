@@ -50,6 +50,8 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
     using device_type = Tpetra::Map<>::device_type;
     using execution_space = Tpetra::Map<>::execution_space;
     using memory_space = Tpetra::Map<>::memory_space;
+    using host_exec = Kokkos::DefaultHostExecutionSpace;
+    using host_mem = Kokkos::DefaultHostExecutionSpace::memory_space;      
   private:
     //serial and parallel local partial distance-2 coloring function 
     template<class ExecutionSpace, typename MemorySpace>
@@ -123,14 +125,13 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
                        typename Kokkos::View<lno_t*, device_type>::HostMirror vertex_list,
                        size_t vertex_list_size = 0,
                        bool recolor=false) {
-      
-      this->localColoring<Kokkos::Serial, Kokkos::HostSpace>(nVtx,
-		                                         adjs_view,
-							 offset_view,
-							 femv,
-							 vertex_list,
-							 vertex_list_size,
-							 recolor);
+      this->localColoring<host_exec, host_mem>(nVtx,
+		                               adjs_view,
+					       offset_view,
+					       femv,
+					       vertex_list,
+					       vertex_list_size,
+					       recolor);
       
     }
   public:
@@ -299,21 +300,22 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,
                                  bool recolor_degrees) {
-      this->detectPD2Conflicts<Kokkos::Serial, Kokkos::HostSpace>(n_local,
-		                                              dist_offsets_host,
-							      dist_adjs_host,
-							      femv_colors,
-							      boundary_verts_view,
-							      boundary_size,
-							      verts_to_recolor,
-							      verts_to_recolor_size,
-							      verts_to_send,
-							      verts_to_send_size,
-							      recoloringSize,
-							      rand,
-							      gid,
-							      ghost_degrees,
-							      recolor_degrees);
+
+      this->detectPD2Conflicts<host_exec, host_mem>(n_local,
+		                                    dist_offsets_host,
+					            dist_adjs_host,
+					            femv_colors,
+					            boundary_verts_view,
+					            boundary_size,
+					            verts_to_recolor,
+					            verts_to_recolor_size,
+					            verts_to_send,
+					            verts_to_send_size,
+					            recoloringSize,
+					            rand,
+					            gid,
+					            ghost_degrees,
+					            recolor_degrees);
     }
     //Entry point for boundary construction
     virtual void constructBoundary(const size_t n_local,
