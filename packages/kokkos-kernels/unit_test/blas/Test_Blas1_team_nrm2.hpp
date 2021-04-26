@@ -33,8 +33,6 @@ namespace Test {
 
     Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
 
-    Kokkos::fence();
-
     Kokkos::deep_copy(h_b_a,b_a);
 
     typename ViewTypeA::const_type c_a = a;

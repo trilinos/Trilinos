@@ -78,6 +78,64 @@ void (*do_trtri_invoke[LOOP_N][TEST_N])(options_t) = {
 /*************************** Test types and defaults **************************/
 #define DEFAULT_TRTRI_ARGS "UU"
 
+  /**
+   * The KokkosBatched::SerialTrtri implementation performs trmm and scal on subblocks
+   * of the A matrix. a_m subblocks are selected.
+   */
+static inline double __trtri_impl_flop_count(double a_m, double a_n) {
+  double flop_count = 0;
+  double flops_per_div, flops_per_mul, flops_per_add;
+
+    if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+      flops_per_div = 1;
+      flops_per_mul = 1;
+      flops_per_add = 1;
+    } else {
+      // For complex, we need to count 2 flops for each add and 6 flops for each multiply or divide.
+      flops_per_div = 6;
+      flops_per_mul = 6;
+      flops_per_add = 2;
+    }
+
+  for (int i = 0; i < a_m; i++) {
+    flop_count += flops_per_div;                                         // 1 / A[i,j]
+    flop_count += ((i * (i + 1)) / 2) * (flops_per_mul + flops_per_add); // TRMM FLOPS
+    flop_count += i * flops_per_mul;                                     // SCAL FLOPS
+  }
+
+  return flop_count;
+}
+
+// Flop count formula from lapack working note 41: http://www.icl.utk.edu/~mgates3/docs/lawn41.pdf
+static inline double __trtri_flop_count(double a_m, double a_n) {
+  double flops;
+  double flops_per_mul;
+  double flops_per_add;
+
+  if (a_m != a_n) {
+    fprintf(stderr, "%s:%d:ERROR: a_m != a_n.\n", __FILE__, __LINE__);
+    exit(255);
+  }
+
+  if (std::is_same<double, default_scalar>::value ||
+        std::is_same<float, default_scalar>::value ||
+        std::is_same<Kokkos::Experimental::half_t, default_scalar>::value) {
+    flops_per_mul = 1;
+    flops_per_add = 1;
+  } else {
+    // For complex, we need to count 2 flops for each add and 6 flops for each multiply.
+    flops_per_mul = 6;
+    flops_per_add = 2;
+  }
+
+  flops = (1./6.*a_n*a_n*a_n + 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_mul +
+          (1./6.*a_n*a_n*a_n - 1./2.*a_n*a_n + 1./3.*a_n) * flops_per_add;
+
+  return flops;
+}
+
 using view_type_3d =
     Kokkos::View<default_scalar***, default_layout, default_device>;
 struct trtri_args {
@@ -87,18 +145,25 @@ struct trtri_args {
 typedef struct trtri_args trtri_args_t;
 
 static std::string trtri_csv_header_str =
-    "algorithm,side-uplo-trans-diag,alpha,loop_type,A_dims,warm_up_n,iter,"
-    "total_time(s),average_time(s)";
+    "algorithm,side-uplo-trans-diag,loop_type,A_dims,warm_up_n,iter,"
+    "total_time(s),average_time(s),FLOPS,GFLOP/average_time(s)";
 
 /*************************** Internal helper fns **************************/
 static void __trtri_output_csv_row(options_t options, trtri_args_t trtri_args,
                                    double time_in_seconds) {
+  double flops = trtri_args.A.extent(0) * __trtri_flop_count(trtri_args.A.extent(1), trtri_args.A.extent(2));
+  double gflops = flops / 1e9;
+  double average_time = time_in_seconds / options.n;
+
   options.out[0] << test_e_str[options.test] << ","
                  << options.blas_args.trtri.trtri_args << ","
-                 << loop_e_str[options.loop] << "," << trtri_args.A.extent(1)
+                 << loop_e_str[options.loop] << "," << trtri_args.A.extent(0) << "x" << trtri_args.A.extent(1)
                  << "x" << trtri_args.A.extent(2) << "," << options.warm_up_n
                  << "," << options.n << "," << time_in_seconds << ","
-                 << time_in_seconds / options.n << std::endl;
+                 << average_time << ","
+                 << flops << ","
+                 << gflops / average_time
+                 << std::endl;
 }
 
 static void __print_trtri_perf_test_options(options_t options) {
@@ -133,19 +198,26 @@ void __do_trtri_serial_blas(options_t options, trtri_args_t trtri_args) {
 
   STATUS;
 
-  for (uint32_t i = 0; i < warm_up_n; ++i) {
-    auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+  for (uint32_t j = 0; j < warm_up_n; ++j) {
+    for (int i = 0; i < options.start.a.k; ++i) {
+      auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::trtri(&trtri_args.uplo, &trtri_args.diag, A);
+      KokkosBlas::trtri(&trtri_args.uplo, &trtri_args.diag, A);
+    }
+    // Fence after each batch operation
+    Kokkos::fence();
   }
 
   timer.reset();
-  for (uint32_t i = 0; i < n; ++i) {
-    auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+  for (uint32_t j = 0; j < n; ++j) {
+    for (int i = 0; i < options.start.a.k; ++i) {
+      auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-    KokkosBlas::trtri(&trtri_args.uplo, &trtri_args.diag, A);
+      KokkosBlas::trtri(&trtri_args.uplo, &trtri_args.diag, A);
+    }
+    // Fence after each batch operation
+    Kokkos::fence();
   }
-  Kokkos::fence();
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
@@ -164,19 +236,26 @@ void __do_trtri_serial_batched_template(options_t options,
   Kokkos::Timer timer;
   using tag = Algo::Trtri::Unblocked;
 
-  for (uint32_t i = 0; i < warm_up_n; ++i) {
-    auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+  for (uint32_t j = 0; j < warm_up_n; ++j) {
+    for (int i = 0; i < options.start.a.k; ++i) {
+      auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-    SerialTrtri<uplo, diag, tag>::invoke(A);
+      SerialTrtri<uplo, diag, tag>::invoke(A);
+    }
+    // Fence after each batch operation
+    Kokkos::fence();
   }
 
   timer.reset();
-  for (uint32_t i = 0; i < n; ++i) {
-    auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
+  for (uint32_t j = 0; j < n; ++j) {
+    for (int i = 0; i < options.start.a.k; ++i) {
+      auto A = Kokkos::subview(trtri_args.A, i, Kokkos::ALL(), Kokkos::ALL());
 
-    SerialTrtri<uplo, diag, tag>::invoke(A);
+      SerialTrtri<uplo, diag, tag>::invoke(A);
+    }
+    // Fence after each batch operation
+    Kokkos::fence();
   }
-  Kokkos::fence();
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
@@ -241,16 +320,22 @@ void __do_trtri_parallel_blas(options_t options, trtri_args_t trtri_args) {
 
   STATUS;
 
-  Kokkos::parallel_for("parallelBlasWarmUpLoopTrtri",
-                       Kokkos::RangePolicy<execution_space>(0, warm_up_n),
-                       parallel_blas_trtri_functor);
-  Kokkos::fence();
+  for (uint32_t i = 0; i < warm_up_n; ++i) {
+    Kokkos::parallel_for("parallelBlasWarmUpLoopTrtri",
+                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+                        parallel_blas_trtri_functor);
+    // Fence after each batch operation
+    Kokkos::fence();
+  }
 
   timer.reset();
-  Kokkos::parallel_for("parallelBlasTimedLoopTrtri",
-                       Kokkos::RangePolicy<execution_space>(0, n),
-                       parallel_blas_trtri_functor);
-  Kokkos::fence();
+  for (uint32_t i = 0; i < n; ++i) {
+    Kokkos::parallel_for("parallelBlasTimedLoopTrtri",
+                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+                        parallel_blas_trtri_functor);
+    // Fence after each batch operation
+    Kokkos::fence();
+  }
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
 #else
   std::cerr << std::string(__func__)
@@ -287,16 +372,23 @@ void __do_trtri_parallel_batched_template(options_t options,
 
   STATUS;
 
-  Kokkos::parallel_for("parallelBatchedWarmUpLoopTrtri",
-                       Kokkos::RangePolicy<execution_space>(0, warm_up_n),
-                       parallel_batched_trtri_functor);
-  Kokkos::fence();
+  for (uint32_t i = 0; i < warm_up_n; ++i) {
+    Kokkos::parallel_for("parallelBatchedWarmUpLoopTrtri",
+                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+                        parallel_batched_trtri_functor);
+    // Fence after each batch operation
+    Kokkos::fence();
+  }
 
   timer.reset();
-  Kokkos::parallel_for("parallelBatchedTimedLoopTrtri",
-                       Kokkos::RangePolicy<execution_space>(0, n),
-                       parallel_batched_trtri_functor);
-  Kokkos::fence();
+
+  for (uint32_t i = 0; i < n; ++i) {
+    Kokkos::parallel_for("parallelBatchedTimedLoopTrtri",
+                        Kokkos::RangePolicy<execution_space>(0, options.start.a.k),
+                        parallel_batched_trtri_functor);
+    // Fence after each batch operation
+    Kokkos::fence();
+  }
   __trtri_output_csv_row(options, trtri_args, timer.seconds());
 
   return;
@@ -345,7 +437,7 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
 
   trtri_args.uplo = options.blas_args.trtri.trtri_args.c_str()[0];
   trtri_args.diag = options.blas_args.trtri.trtri_args.c_str()[1];
-  trtri_args.A    = vta("trtri_args.A", options.n, dim.a.m, dim.a.n);
+  trtri_args.A    = vta("trtri_args.A", dim.a.k, dim.a.m, dim.a.n);
   host_A          = Kokkos::create_mirror_view(trtri_args.A);
 
   Kokkos::fill_random(trtri_args.A, rand_pool,
@@ -355,7 +447,7 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
 
   if (trtri_args.uplo == 'U' || trtri_args.uplo == 'u') {
     // Make A upper triangular
-    for (uint32_t k = 0; k < options.n; ++k) {
+    for (int k = 0; k < dim.a.k; ++k) {
       auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 1; i < dim.a.m; i++) {
         for (int j = 0; j < i; j++) {
@@ -367,7 +459,7 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
     // Make A lower triangular
     // Kokkos::parallel_for("toLowerLoop", options.n, KOKKOS_LAMBDA (const int&
     // i) {
-    for (uint32_t k = 0; k < options.n; ++k) {
+    for (int k = 0; k < dim.a.k; ++k) {
       auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < dim.a.m - 1; i++) {
         for (int j = i + 1; j < dim.a.n; j++) {
@@ -378,7 +470,7 @@ trtri_args_t __do_setup(options_t options, matrix_dims_t dim) {
   }
 
   if (trtri_args.diag == 'U' || trtri_args.diag == 'u') {
-    for (uint32_t k = 0; k < options.n; ++k) {
+    for (int k = 0; k < dim.a.k; ++k) {
       auto A = Kokkos::subview(host_A, k, Kokkos::ALL(), Kokkos::ALL());
       for (int i = 0; i < min_dim; i++) {
         A(i, i) = scalar_type(1);
@@ -408,8 +500,8 @@ void __do_loop_and_invoke(options_t options,
   for (cur_dims = options.start;
        cur_dims.a.m <= options.stop.a.m && cur_dims.a.n <= options.stop.a.n &&
        cur_dims.b.m <= options.stop.b.m && cur_dims.b.n <= options.stop.b.n;
-       cur_dims.a.m *= options.step, cur_dims.a.n *= options.step,
-      cur_dims.b.m *= options.step, cur_dims.b.n *= options.step) {
+       cur_dims.a.m += options.step, cur_dims.a.n += options.step,
+      cur_dims.b.m += options.step, cur_dims.b.n += options.step) {
     trtri_args = __do_setup<default_scalar, view_type_3d, default_device>(
         options, cur_dims);
     fn(options, trtri_args);

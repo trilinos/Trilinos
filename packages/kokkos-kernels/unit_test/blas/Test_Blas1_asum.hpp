@@ -10,6 +10,7 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+    typedef Kokkos::ArithTraits<typename AT::mag_type> MAT;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -27,8 +28,10 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
+
     Kokkos::deep_copy(h_b_a,b_a);
 
     typename ViewTypeA::const_type c_a = a;
@@ -36,7 +39,13 @@ namespace Test {
 
     typename AT::mag_type expected_result = 0;
     for(int i=0;i<N;i++)
-      expected_result += AT::abs(h_a(i));
+    {
+      //note: for complex, BLAS asum (see netlib, MKL, CUBLAS documentation) is _not_
+      //the sum of magnitudes - it's the sum of absolute real and imaginary parts.
+      //
+      //This is safe; ArithTraits<T>::imag is 0 if T is real.
+      expected_result += MAT::abs(AT::real(h_a(i))) + MAT::abs(AT::imag(h_a(i)));
+    }
 
     typename AT::mag_type nonconst_result = KokkosBlas::asum(a);
     EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);

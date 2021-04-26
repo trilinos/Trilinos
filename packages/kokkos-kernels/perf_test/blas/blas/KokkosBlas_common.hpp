@@ -56,6 +56,7 @@
 #define DEFAULT_STEP 3
 #define DEFAULT_WARM_UP_N 100
 #define DEFAULT_N 100
+#define DEFAULT_K 10
 #define DEFAULT_OUT &std::cout
 #define DEFAULT_BLAS_ROUTINES "trtri,"
 
@@ -117,7 +118,7 @@ static std::string test_e_str[TEST_N]{"BLAS", "BATCHED"};
  * @var n: Number of columns.
  */
 struct matrix_dim {
-  int m, n;
+  int k, m, n;
 };
 typedef struct matrix_dim matrix_dim_t;
 
