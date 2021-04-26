@@ -220,7 +220,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
 
   {
     auto x_lcl_host = x.getLocalViewHost(Tpetra::Access::ReadOnly);
-    auto y_lcl_host = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto y_lcl_host = y.getLocalViewHost(Tpetra::Access::ReadOnly);
 
     TEST_EQUALITY( x_lcl_host.data (), y_lcl_host.data () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
   }
