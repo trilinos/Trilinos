@@ -27,9 +27,9 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
@@ -70,9 +70,9 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
@@ -98,13 +98,12 @@ namespace Test {
       EXPECT_NEAR_KK( nonconst_result, exp_result, eps*exp_result);
     }
 
-   /* KokkosBlas::nrminf(r,c_a);
+    KokkosBlas::nrminf(r,c_a);
     for(int k=0;k<K;k++) {
       typename AT::mag_type const_result = r(k);
       typename AT::mag_type exp_result = expected_result[k];
       EXPECT_NEAR_KK( const_result, exp_result, eps*exp_result);
     }
-*/
     delete [] expected_result;
   }
 }

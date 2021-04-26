@@ -1045,10 +1045,10 @@ void deep_copy
   typedef typename src_type::memory_space     src_memory_space ;
 
   enum { DstExecCanAccessSrc =
-   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename dst_execution_space::memory_space , src_memory_space >::value };
+   Kokkos::Impl::SpaceAccessibility< typename dst_execution_space::memory_space, src_memory_space >::accessible };
 
   enum { SrcExecCanAccessDst =
-   Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< typename src_execution_space::memory_space , dst_memory_space >::value };
+   Kokkos::Impl::SpaceAccessibility< typename src_execution_space::memory_space, dst_memory_space >::accessible };
 
   if ( (void *) dst.data() != (void*) src.data() ) {
 

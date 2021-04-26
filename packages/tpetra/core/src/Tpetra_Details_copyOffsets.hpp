@@ -234,12 +234,9 @@ namespace { // (anonymous)
     CopyOffsetsFunctor (const OutputViewType& dst, const InputViewType& src) :
       dst_ (dst), src_ (src)
     {
-      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
-      // a memory space, rather than an execution space, as the first
-      // argument of VerifyExecutionCanAccessMemorySpace.
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+      static_assert (Kokkos::Impl::SpaceAccessibility<
                        typename OutputViewType::memory_space,
-                       typename InputViewType::memory_space>::value,
+                       typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsFunctor (implements copyOffsets): Output "
                      "View's space must be able to access the input View's "
                      "memory space.");
@@ -288,12 +285,9 @@ namespace { // (anonymous)
       dst_ (dst),
       src_ (src)
     {
-      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
-      // a memory space, rather than an execution space, as the first
-      // argument of VerifyExecutionCanAccessMemorySpace.
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+      static_assert (Kokkos::Impl::SpaceAccessibility<
                        typename OutputViewType::memory_space,
-                       typename InputViewType::memory_space>::value,
+                       typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsFunctor (implements copyOffsets): Output "
                      "View's space must be able to access the input View's "
                      "memory space.");
@@ -340,9 +334,6 @@ namespace { // (anonymous)
   // directly.  Otherwise, we have to copy the input View into the
   // output View's memory space, before we can use the functor.
   //
-  // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use a
-  // memory space, rather than an execution space, as the first
-  // argument of VerifyExecutionCanAccessMemorySpace.
   template<class OutputViewType,
            class InputViewType,
            const bool sameLayoutsSameOffsetTypes =
@@ -351,9 +342,9 @@ namespace { // (anonymous)
              std::is_same<typename OutputViewType::non_const_value_type,
                           typename InputViewType::non_const_value_type>::value,
            const bool outputExecSpaceCanAccessInputMemSpace =
-             Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+             Kokkos::Impl::SpaceAccessibility<
                typename OutputViewType::memory_space,
-               typename InputViewType::memory_space>::value>
+               typename InputViewType::memory_space>::accessible>
   struct CopyOffsetsImpl {
     static void run (const OutputViewType& dst, const InputViewType& src);
   };
@@ -422,12 +413,9 @@ namespace { // (anonymous)
                      "must be false.  That is, either the input and output "
                      "must have different array layouts, or their value types "
                      "must differ.");
-      // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
-      // a memory space, rather than an execution space, as the first
-      // argument of VerifyExecutionCanAccessMemorySpace.
-      static_assert (Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+      static_assert (Kokkos::Impl::SpaceAccessibility<
                        typename OutputViewType::memory_space,
-                       typename InputViewType::memory_space>::value,
+                       typename InputViewType::memory_space>::accessible,
                      "CopyOffsetsImpl (implements copyOffsets): In order to "
                      "call this specialization, the output View's space must "
                      "be able to access the input View's memory space.");

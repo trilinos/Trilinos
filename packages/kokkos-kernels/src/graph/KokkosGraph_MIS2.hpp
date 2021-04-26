@@ -94,6 +94,7 @@ graph_mis2_coarsen(const rowmap_t& rowmap, const colinds_t& colinds, typename co
   if(rowmap.extent(0) <= 1)
   {
     //there are no vertices to label
+    numClusters = 0;
     return labels_t();
   }
   labels_t mis2 = graph_d2_mis<device_t, rowmap_t, colinds_t, labels_t>(rowmap, colinds, algo);

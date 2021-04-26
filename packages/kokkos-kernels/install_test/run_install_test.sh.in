@@ -1,0 +1,37 @@
+#!/bin/bash
+
+KOKKOSKERNELS_INTALL="@CMAKE_BINARY_DIR@"
+INSTALL_TEST_SOURCE="@CMAKE_CURRENT_BINARY_DIR@/source"
+INSTALL_TEST_BUILD="@CMAKE_CURRENT_BINARY_DIR@/build"
+
+cd "${INSTALL_TEST_BUILD}"
+rm -rf CMake*
+
+cmake "${INSTALL_TEST_SOURCE}" \
+  -D CMAKE_CXX_COMPILER="@CMAKE_CXX_COMPILER@" \
+  -D KokkosKernels_ROOT:PATH="@CMAKE_BINARY_DIR@/@CMAKE_INSTALL_LIBDIR@/cmake/KokkosKernels"
+
+if [ $? -eq 0 ]; then
+    echo "*** install test: cmake configure SUCCESSFUL ***"
+else
+    echo "*** install test: cmake configure FAILED ***"
+    exit 1;
+fi
+
+make -j 4
+
+if [ $? -eq 0 ]; then
+    echo "*** install test: build SUCCESSFUL ***"
+else
+    echo "*** install test: build FAILED ***"
+    exit 1;
+fi
+
+ctest -V -R
+
+if [ $? -eq 0 ]; then
+    echo "*** install test: run SUCCESSFUL ***"
+else
+    echo "*** install test: run FAILED ***"
+    exit 1;
+fi
