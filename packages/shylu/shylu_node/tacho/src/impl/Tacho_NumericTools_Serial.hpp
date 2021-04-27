@@ -107,8 +107,8 @@ namespace Tacho {
     ///
     inline
     void
-    factorizeCholesky_Serial(const value_type_array &ax,
-                             const ordinal_type verbose = 0) {
+    factorizeCholesky(const value_type_array &ax,
+                      const ordinal_type verbose) {
       Kokkos::Impl::Timer timer;
       {
         timer.reset();
@@ -151,9 +151,9 @@ namespace Tacho {
 
     inline
     void
-    factorizeCholesky_SerialPanel(const value_type_array &ax,
-                                  const ordinal_type panelsize,
-                                  const ordinal_type verbose = 0) {
+    factorizeCholesky(const value_type_array &ax,
+                      const ordinal_type panelsize,
+                      const ordinal_type verbose) {
       Kokkos::Impl::Timer timer;
       {
         timer.reset();
@@ -199,10 +199,10 @@ namespace Tacho {
 
     inline
     void
-    solveCholesky_Serial(const value_type_matrix &x,   // solution
-                         const value_type_matrix &b,   // right hand side
-                         const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-                         const ordinal_type verbose = 0) {
+    solveCholesky(const value_type_matrix &x,   // solution
+                  const value_type_matrix &b,   // right hand side
+                  const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+                  const ordinal_type verbose) {
       Kokkos::Impl::Timer timer;
 
       _info.x = t;
@@ -246,8 +246,8 @@ namespace Tacho {
 
     inline
     void
-    factorizeLDL_Serial(const value_type_array &ax,
-                        const ordinal_type verbose = 0) {
+    factorizeLDL(const value_type_array &ax,
+                 const ordinal_type verbose) {
       {
         const bool test = !std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
         TACHO_TEST_FOR_EXCEPTION(test,
@@ -301,10 +301,10 @@ namespace Tacho {
 
     inline
     void
-    solveLDL_Serial(const value_type_matrix &x,   // solution
-                    const value_type_matrix &b,   // right hand side
-                    const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-                    const ordinal_type verbose = 0) {
+    solveLDL(const value_type_matrix &x,   // solution
+             const value_type_matrix &b,   // right hand side
+             const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+             const ordinal_type verbose) {
       {
         const bool test = !std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
         TACHO_TEST_FOR_EXCEPTION(test,
@@ -378,11 +378,11 @@ namespace Tacho {
       switch (this->getSolutionMethod()) {
       case 1: { /// Cholesky
         // if (_nb > 0) {
-        //   factorizeCholesky_SerialPanel(ax, _nb, verbose);
+        //   factorizeCholesky(ax, _nb, verbose);
         // } else {
-        //   factorizeCholesky_Serial(ax, verbose);
+        //   factorizeCholesky(ax, verbose);
         // }        
-        factorizeCholesky_Serial(ax, verbose);
+        factorizeCholesky(ax, verbose);
         break;
       }
       case 2: { /// LDL
@@ -402,7 +402,7 @@ namespace Tacho {
             track_alloc(this->_diag.span()*sizeof(value_type));
           }
         }
-        factorizeLDL_Serial(ax, verbose);
+        factorizeLDL(ax, verbose);
         break;
       }
       default: {
@@ -438,11 +438,11 @@ namespace Tacho {
       
       switch (this->getSolutionMethod()) {
       case 1: {
-        solveCholesky_Serial(x, b, t, verbose);
+        solveCholesky(x, b, t, verbose);
         break;
       }
       case 2: { 
-        solveLDL_Serial(x, b, t, verbose);
+        solveLDL(x, b, t, verbose);
         break;
       }
       default: {

@@ -239,7 +239,7 @@ namespace Tacho {
         const int bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid+1);
         value_type * bufptr = _buf.data()+bufbeg;
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m); bufptr += ABR.span();
-        UnmanagedViewType<value_type_array> W(bufptr, int(bufend-bufptr)); 
+        UnmanagedViewType<value_type_array> W(bufptr, int(bufend-bufbeg)); 
         
         /// check the span does not go more than buf_ptr(lid+1)
         factorize(member, s, P, D, W, ABR);

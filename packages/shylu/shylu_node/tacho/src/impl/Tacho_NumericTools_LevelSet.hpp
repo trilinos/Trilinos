@@ -15,8 +15,20 @@
 #include "Tacho_SetIdentity.hpp"
 #include "Tacho_SetIdentity_OnDevice.hpp"
 
+#include "Tacho_Symmetrize.hpp"
+#include "Tacho_Symmetrize_OnDevice.hpp"
+
+#include "Tacho_ApplyPivots.hpp"
+#include "Tacho_ApplyPivots_OnDevice.hpp"
+
+#include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
+#include "Tacho_Scale2x2_BlockInverseDiagonals_OnDevice.hpp"
+
 #include "Tacho_Chol.hpp"
 #include "Tacho_Chol_OnDevice.hpp"
+
+#include "Tacho_LDL.hpp"
+#include "Tacho_LDL_OnDevice.hpp"
 
 #include "Tacho_Trsm.hpp"
 #include "Tacho_Trsm_OnDevice.hpp"
@@ -29,6 +41,9 @@
 
 #include "Tacho_Gemv.hpp"
 #include "Tacho_Gemv_OnDevice.hpp"
+
+#include "Tacho_Gemm.hpp"
+#include "Tacho_Gemm_OnDevice.hpp"
 
 #include "Tacho_SupernodeInfo.hpp"
 
@@ -819,13 +834,93 @@ namespace Tacho {
       }
     }
 
+    inline
+    void
+    factorizeLDL_OnDevice(const ordinal_type pbeg, 
+                          const ordinal_type pend,
+                          const size_type_array_host &h_buf_factor_ptr,
+                          const value_type_array &work) {
+      const value_type one(1), minus_one(-1), zero(0);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif
+      exec_space exec_instance;
+      for (ordinal_type p=pbeg;p<pend;++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        if (_h_factorize_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceBlasStatus("cublasSetStream");
+          _status = cusolverDnSetStream(_handle_lapack, mystream); checkDeviceLapackStatus("cusolverDnSetStream");
+
+          exec_instance = _exec_instances[qid];
+
+          const size_type worksize = work.extent(0)/_nstreams;
+          value_type_array W(work.data() + worksize*qid, worksize);
+          ++q;
+#else
+          value_type_array W = work;
+#endif          
+          const auto &s = _h_supernodes(sid);
+          {
+            const ordinal_type offs = s.row_begin, m = s.m, n = s.n, n_m = n-m;
+            if (m > 0) {
+              value_type *aptr = s.buf;
+              UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
+              _status = Symmetrize<Uplo::Upper,Algo::OnDevice>::invoke(exec_instance, ATL); 
+              exec_instance.fence();
+
+              ordinal_type *pivptr = _piv.data() + 4*offs;
+              UnmanagedViewType<ordinal_type_array> P(pivptr, 4*m);
+              _status = LDL<Uplo::Lower,Algo::OnDevice>::invoke(_handle_lapack, ATL, P, W); checkDeviceLapackStatus("ldl::invoke");
+              exec_instance.fence();
+
+              value_type * dptr = _diag.data() + 2*offs;
+              UnmanagedViewType<value_type_matrix> D(dptr, m, 2);              
+              _status = LDL<Uplo::Lower,Algo::OnDevice>::modify(exec_instance, ATL, P, D); checkDeviceLapackStatus("ldl::modify");
+
+              if (n_m > 0) {
+                exec_instance.fence();
+                UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
+                UnmanagedViewType<value_type_matrix> ABR(_buf.data()+h_buf_factor_ptr(p-pbeg), n_m, n_m); 
+                UnmanagedViewType<value_type_matrix> STR(ABR.data()+ABR.span(), m, n_m); 
+
+                auto fpiv = ordinal_type_array(P.data()+m, m);
+                _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::OnDevice>
+                  ::invoke(exec_instance, fpiv, ATR); 
+                exec_instance.fence();
+
+                _status = Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, Diag::Unit(), one, ATL, ATR); checkDeviceBlasStatus("trsm");
+                exec_instance.fence();
+
+                _status = Copy<Algo::OnDevice>
+                  ::invoke(exec_instance, STR, ATR);
+                exec_instance.fence();
+
+                _status = Scale2x2_BlockInverseDiagonals<Side::Left,Algo::OnDevice>
+                  ::invoke(exec_instance, P, D, ATR);
+                exec_instance.fence();
+
+                _status = Gemm<Trans::Transpose,Trans::NoTranspose,Algo::OnDevice>
+                ::invoke(_handle_blas, minus_one, ATR, STR, zero, ABR);
+                exec_instance.fence(); checkDeviceBlasStatus("gemm");
+              }
+            }
+          }
+        }
+      }
+    }
+
+
     ///
     /// Level set factorize
     ///
     inline 
     void
     factorizeCholesky(const value_type_array &ax,
-                      const ordinal_type verbose = 0) {
+                      const ordinal_type verbose) {
       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
       Kokkos::Impl::Timer timer;
 
@@ -834,13 +929,13 @@ namespace Tacho {
       {
         _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
         track_alloc(_buf.span()*sizeof(value_type));
-
+        
 #if defined (KOKKOS_ENABLE_CUDA)
         value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
         const size_type worksize = Chol<Uplo::Upper,Algo::OnDevice>
           ::invoke(_handle_lapack, T, work); 
-
-        work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams+1));
+        
+        work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams/*+1*/));
         track_alloc(work.span()*sizeof(value_type));
 #endif
       }
@@ -921,8 +1016,8 @@ namespace Tacho {
               exec_space().fence(); //Kokkos::fence();
             }
           }
-        } // end of lower tri solve
-      } // end of solve
+        } 
+      } // end of Cholesky
       stat.t_factor = timer.seconds();
 
       timer.reset();
@@ -1274,7 +1369,7 @@ namespace Tacho {
     solveCholesky(const value_type_matrix &x,   // solution
                   const value_type_matrix &b,   // right hand side
                   const value_type_matrix &t,
-                  const ordinal_type verbose = 0) { // temporary workspace (store permuted vectors)
+                  const ordinal_type verbose) { // temporary workspace (store permuted vectors)
       TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
                                x.extent(1) != b.extent(1) ||
                                x.extent(0) != t.extent(0) ||
@@ -1471,123 +1566,125 @@ namespace Tacho {
     inline
     void
     factorizeLDL(const value_type_array &ax,
-                 const ordinal_type verbose = 0) {
-//       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
-//       Kokkos::Impl::Timer timer;
-
-//       timer.reset();
-//       value_type_array work;
-//       {
-//         _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
-//         track_alloc(_buf.span()*sizeof(value_type));
-        
-// #if defined (KOKKOS_ENABLE_CUDA)
-//         value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
-//         ordinal_type_array P(NULL, _info.max_supernode_size);
-//         const size_type worksize = LDL<Uplo::Lower,Algo::OnDevice>
-//           ::invoke(_handle_lapack, T, P, work); 
-//         work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams+1));
-// #else
-//         const size_type worksize = 32*_info.max_supernode_size;
-//         work = value_type_array(do_not_initialize_tag("work"), worksize);
-// #endif
-//         track_alloc(work.span()*sizeof(value_type));
-//       }
-//       stat.t_extra = timer.seconds();
+                 const ordinal_type verbose) {
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      Kokkos::Impl::Timer timer;
       
-//       timer.reset();
-//       {
-//         _ax = ax; // matrix values
-//         _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
-//       }
-//       stat.t_copy = timer.seconds();
+      timer.reset();
+      value_type_array work;
+      {
+        _buf = value_type_array(do_not_initialize_tag("buf"), _bufsize_factorize);
+        track_alloc(_buf.span()*sizeof(value_type));
+        
+#if defined (KOKKOS_ENABLE_CUDA)
+        value_type_matrix T(NULL, _info.max_supernode_size, _info.max_supernode_size);
+        ordinal_type_array P(NULL, _info.max_supernode_size);
+        const size_type worksize = LDL<Uplo::Lower,Algo::OnDevice>
+          ::invoke(_handle_lapack, T, P, work); 
+        work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams/*+1*/));
+#else
+        const size_type worksize = 32*_info.max_supernode_size;
+        work = value_type_array(do_not_initialize_tag("work"), worksize);
+#endif
+        track_alloc(work.span()*sizeof(value_type));
+      }
+      stat.t_extra = timer.seconds();
+      
+      timer.reset();
+      {
+        _ax = ax; // matrix values
+        _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+      }
+      stat.t_copy = timer.seconds();
 
-//       stat_level.n_kernel_launching = 0;
-//       timer.reset();
-//       { 
-//         // this should be considered with average problem sizes in levels
-//         const ordinal_type half_level = _nlevel/2;
-//         //const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
-//         //const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
-//         const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
-//         const ordinal_type team_size_update[2] = { 16, 8 }, vector_size_update[2] = { 32, 32};
-//         {
-//           typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
-// #if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::DummyTag> team_policy_factorize;
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::DummyTag> team_policy_update;
-// #else
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::FactorizeTag> team_policy_factor;
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::UpdateTag> team_policy_update;
-// #endif
-//           functor_type functor(_info, 
-//                                _factorize_mode,
-//                                _level_sids,
-//                                _buf);
+      stat_level.n_kernel_launching = 0;
+      timer.reset();
+      { 
+        // this should be considered with average problem sizes in levels
+        const ordinal_type half_level = _nlevel/2;
+        //const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
+        //const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
+        const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
+        const ordinal_type team_size_update[2] = { 16, 8 }, vector_size_update[2] = { 32, 32};
+        {
+          typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_LEVELSET_TOOLS_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_factorize;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::FactorizeTag> team_policy_factor;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::UpdateTag> team_policy_update;
+#endif
+          functor_type functor(_info, 
+                               _factorize_mode,
+                               _level_sids,
+                               _piv,
+                               _diag,
+                               _buf);
 
-//           team_policy_factor policy_factor(1,1,1);
-//           team_policy_update policy_update(1,1,1);
+          team_policy_factor policy_factor(1,1,1);
+          team_policy_update policy_update(1,1,1);
 
-//           {
-//             for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
-//               const ordinal_type 
-//                 pbeg = _h_level_ptr(lvl), 
-//                 pend = _h_level_ptr(lvl+1),
-//                 pcnt = pend - pbeg;
+          {
+            for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
+              const ordinal_type 
+                pbeg = _h_level_ptr(lvl), 
+                pend = _h_level_ptr(lvl+1),
+                pcnt = pend - pbeg;
 
-//               const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+              const range_type range_buf_factor_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
 
-//               const auto buf_factor_ptr = Kokkos::subview(_buf_factor_ptr, range_buf_factor_ptr);
-//               functor.setRange(pbeg, pend);
-//               functor.setBufferPtr(buf_factor_ptr);
-//               if (is_host) {
-//                 policy_factor = team_policy_factor(pcnt, 1, 1);
-//                 policy_update = team_policy_update(pcnt, 1, 1);
-//               } else {
-//                 const ordinal_type idx = lvl > half_level;
-//                 policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
-//                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
-//               }
-//               if (lvl < _device_level_cut) {
-//                 // do nothing
-//                 //Kokkos::parallel_for("factor lower", policy_factor, functor);
-//               } else {
-//                 Kokkos::parallel_for("factor", policy_factor, functor);
-//                 ++stat_level.n_kernel_launching;
-//               }
+              const auto buf_factor_ptr = Kokkos::subview(_buf_factor_ptr, range_buf_factor_ptr);
+              functor.setRange(pbeg, pend);
+              functor.setBufferPtr(buf_factor_ptr);
+              if (is_host) {
+                policy_factor = team_policy_factor(pcnt, 1, 1);
+                policy_update = team_policy_update(pcnt, 1, 1);
+              } else {
+                const ordinal_type idx = lvl > half_level;
+                policy_factor = team_policy_factor(pcnt, team_size_factor[idx], vector_size_factor[idx]);
+                policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              }
+              if (lvl < _device_level_cut) {
+                // do nothing
+                //Kokkos::parallel_for("factor lower", policy_factor, functor);
+              } else {
+                Kokkos::parallel_for("factor", policy_factor, functor);
+                ++stat_level.n_kernel_launching;
+              }
 
-//               const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
-//               //factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
-//               Kokkos::fence();
+              const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
+              factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
+              Kokkos::fence();
 
-//               Kokkos::parallel_for("update factor", policy_update, functor); 
-//               ++stat_level.n_kernel_launching;
-//               exec_space().fence(); //Kokkos::fence();
-//             }
-//           }
-//         } // end of lower tri solve
-//       } // end of solve
-//       stat.t_factor = timer.seconds();
+              Kokkos::parallel_for("update factor", policy_update, functor); 
+              ++stat_level.n_kernel_launching;
+              exec_space().fence(); //Kokkos::fence();
+            }
+          }
+        }
+      } // end of LDL
+      stat.t_factor = timer.seconds();
 
-//       timer.reset();
-//       {
-// #if defined (KOKKOS_ENABLE_CUDA)
-//         track_free(work.span()*sizeof(value_type));
-// #endif
-//         track_free(_buf.span()*sizeof(value_type));
-//         _buf = value_type_array();
-//       }
-//       stat.t_extra += timer.seconds();
+      timer.reset();
+      {
+#if defined (KOKKOS_ENABLE_CUDA)
+        track_free(work.span()*sizeof(value_type));
+#endif
+        track_free(_buf.span()*sizeof(value_type));
+        _buf = value_type_array();
+      }
+      stat.t_extra += timer.seconds();
 
-//       if (verbose) {
-//         printf("Summary: LevelSetTools-Variant-%d (CholeskyFactorize)\n", variant);
-//         printf("=====================================================\n");
-//         print_stat_factorize_level();
-//       }
+      if (verbose) {
+        printf("Summary: LevelSetTools (LDL Factorize)\n");
+        printf("======================================\n");
+        print_stat_factor();
+      }
     }
 
     inline
@@ -1595,7 +1692,7 @@ namespace Tacho {
     solveLDL(const value_type_matrix &x,   // solution
              const value_type_matrix &b,   // right hand side
              const value_type_matrix &t,   // temporary workspace (store permuted vectors)
-             const ordinal_type verbose = 0) {
+             const ordinal_type verbose) {
 //       TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
 //                                x.extent(1) != b.extent(1) ||
 //                                x.extent(0) != t.extent(0) ||
@@ -1799,6 +1896,22 @@ namespace Tacho {
         break;
       }
       case 2: { /// LDL
+        {
+          const ordinal_type rlen = 4*_m, plen = _piv.span();
+          if (plen < rlen) {
+            track_free(_piv.span()*sizeof(ordinal_type));
+            _piv = ordinal_type_array("piv", rlen);
+            track_alloc(_piv.span()*sizeof(ordinal_type));
+          }
+        }
+        {
+          const ordinal_type rlen = 2*_m, dlen = _diag.span();
+          if (dlen < rlen) {        
+            track_free(_diag.span()*sizeof(value_type));
+            _diag = value_type_array("diag", rlen);
+            track_alloc(_diag.span()*sizeof(value_type));
+          }
+        }
         factorizeLDL(ax, verbose);
         break;
       }

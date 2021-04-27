@@ -16,7 +16,7 @@ namespace Tacho {
     static int
     invoke(MemberType &member,
            const ViewTypeA &A) {
-      typedef typename ViewTypeA::non_const_value_type value_type;
+      //typedef typename ViewTypeA::non_const_value_type value_type;
 
       static_assert(ViewTypeA::rank == 2,"A is not rank 2 view.");
 

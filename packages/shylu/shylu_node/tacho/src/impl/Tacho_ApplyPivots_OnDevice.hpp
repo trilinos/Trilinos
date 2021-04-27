@@ -8,7 +8,8 @@
 
 namespace Tacho {
 
-  struct ApplyPivots<PivotMode::Lapack,Side::Left,Direct::Forward,,Algo::OnDevice> {
+  template<>
+  struct ApplyPivots<PivotMode::Lapack,Side::Left,Direct::Forward,Algo::OnDevice> {
     template<typename MemberType,
              typename ViewTypeP,
              typename ViewTypeA>
@@ -62,8 +63,8 @@ namespace Tacho {
     }
   };
 
-
-  struct ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,,Algo::OnDevice> {
+  template<>
+  struct ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::OnDevice> {
     template<typename MemberType,
              typename ViewTypeP,
              typename ViewTypeA>
@@ -76,9 +77,10 @@ namespace Tacho {
 
       const ordinal_type
         m = A.extent(0),
-        n = A.extent(1);
+        n = A.extent(1),
+        plen = P.extent(0);
       
-      if (m == P.extent(0)) {
+      if (m == plen) {
         if (A.span() > 0) {
           using exec_space = MemberType;
           using policy_type = Kokkos::RangePolicy<exec_space>;
