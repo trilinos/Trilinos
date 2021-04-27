@@ -1,31 +1,6 @@
 TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  RELEASE_CUDA_NOUVM_NODEPRECATED_DUALVIEW
-  ctest_linux_nightly_mpi_release_nouvm_ascicgpu031.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 420
-  )
-
-
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  RELEASE_CUDA_UVM_NODEPRECATED_DUALVIEW
-  ctest_linux_nightly_mpi_release_uvm_nodeprecated_ascicgpu031.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 420
-  )
-
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  RELEASE_CUDA_UVM_DEPRECATED_DUALVIEW
-  ctest_linux_nightly_mpi_release_uvm_deprecated_ascicgpu031.cmake
-  CTEST_INSTALLER_TYPE release
-  RUN_SERIAL
-  TIMEOUT_MINUTES 420
-  )
-
-TRILINOS_DRIVER_ADD_DASHBOARD(
   DEBUG_CUDA_NOUVM_NODEPRECATED_CRS
   ctest_linux_nightly_mpi_debug_nouvm_ascicgpu031_crs.cmake
   CTEST_INSTALLER_TYPE debug
