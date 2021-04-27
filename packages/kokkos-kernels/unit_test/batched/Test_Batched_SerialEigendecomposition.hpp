@@ -1,5 +1,6 @@
 /// \author Kyungjoo Kim (kyukim@sandia.gov)
 
+/*
 #include "gtest/gtest.h"
 #include "Kokkos_Core.hpp"
 #include "Kokkos_Random.hpp"
@@ -111,3 +112,4 @@ int test_batched_serial_eigendecomposition() {
   
   return 0;
 }
+*/

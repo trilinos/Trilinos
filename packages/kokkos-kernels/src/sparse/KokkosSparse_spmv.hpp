@@ -157,12 +157,23 @@ spmv (KokkosKernels::Experimental::Controls controls,
 
 #ifdef KOKKOSKERNELS_ENABLE_TPL_CUSPARSE
   //cuSPARSE does not support the conjugate mode (C), and cuSPARSE 9 only supports the normal (N) mode.
+  if(std::is_same<typename AMatrix_Internal::memory_space, Kokkos::CudaSpace>::value ||
+      std::is_same<typename AMatrix_Internal::memory_space, Kokkos::CudaUVMSpace>::value)
+  {
 #if (9000 <= CUDA_VERSION)
-  useFallback = useFallback || (mode[0] != NoTranspose[0]);
+    useFallback = useFallback || (mode[0] != NoTranspose[0]);
 #endif
 #if defined(CUSPARSE_VERSION) && (10300 <= CUSPARSE_VERSION)
-  useFallback = useFallback || (mode[0] == Conjugate[0]);
+    useFallback = useFallback || (mode[0] == Conjugate[0]);
 #endif
+  }
+#endif
+
+#ifdef KOKKOSKERNELS_ENABLE_TPL_MKL
+  if(std::is_same<typename AMatrix_Internal::memory_space, Kokkos::HostSpace>::value)
+  {
+    useFallback = useFallback || (mode[0] == Conjugate[0]);
+  }
 #endif
 
   if(useFallback)

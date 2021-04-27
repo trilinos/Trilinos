@@ -52,10 +52,10 @@ namespace KokkosBlas {
 namespace Impl {
 
 //
-// nrm1_squared
+// nrm1
 //
 
-/// \brief 2-norm (squared) functor for single vectors.
+/// \brief 1-norm functor for single vectors.
 ///
 /// \tparam RV 0-D output View
 /// \tparam XV 1-D input View
@@ -63,12 +63,12 @@ namespace Impl {
 template<class RV, class XV, class SizeType = typename XV::size_type>
 struct V_Nrm1_Functor
 {
-  typedef typename XV::execution_space              execution_space;
-  typedef SizeType                                        size_type;
-  typedef typename XV::non_const_value_type             xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
-  typedef typename IPT::mag_type                         value_type;
+  typedef typename XV::execution_space      execution_space;
+  typedef SizeType                          size_type;
+  typedef typename XV::non_const_value_type xvalue_type;
+  typedef Kokkos::ArithTraits<xvalue_type>  XAT;
+  typedef typename XAT::mag_type            value_type;
+  typedef Kokkos::ArithTraits<value_type>   MAT;
 
   typename XV::const_type m_x;
 
@@ -94,12 +94,13 @@ struct V_Nrm1_Functor
   KOKKOS_INLINE_FUNCTION
   void operator() (const size_type& i, value_type& sum) const
   {
-    sum += IPT::norm (m_x(i));
+    xvalue_type val = m_x(i);
+    sum += MAT::abs(XAT::real(val)) + MAT::abs(XAT::imag(val));
   }
 
   KOKKOS_INLINE_FUNCTION void init (value_type& update) const
   {
-    update = AT::zero ();
+    update = MAT::zero ();
   }
 
   KOKKOS_INLINE_FUNCTION void
@@ -117,7 +118,7 @@ struct V_Nrm1_Functor
   }
 };
 
-/// \brief Column-wise 2-norm functor for multivectors; works for
+/// \brief Column-wise 1-norm functor for multivectors; works for
 ///   any layout, but best performance with LayoutRight.
 ///
 /// \tparam RV 1-D output View
@@ -126,12 +127,12 @@ struct V_Nrm1_Functor
 template<class RV, class XMV, class SizeType = typename XMV::size_type>
 struct MV_Nrm1_Right_FunctorVector
 {
-  typedef typename XMV::execution_space             execution_space;
-  typedef SizeType                                        size_type;
-  typedef typename XMV::non_const_value_type            xvalue_type;
-  typedef Kokkos::Details::InnerProductSpaceTraits<xvalue_type> IPT;
-  typedef Kokkos::Details::ArithTraits<typename IPT::mag_type>   AT;
-  typedef typename IPT::mag_type                       value_type[];
+  typedef typename XMV::execution_space               execution_space;
+  typedef SizeType                                    size_type;
+  typedef typename XMV::non_const_value_type          xvalue_type;
+  typedef Kokkos::ArithTraits<xvalue_type>            XAT;
+  typedef Kokkos::ArithTraits<typename XAT::mag_type> MAT;
+  typedef typename XAT::mag_type                      value_type[];
 
   size_type value_count;
   typename XMV::const_type m_x;
@@ -166,7 +167,8 @@ struct MV_Nrm1_Right_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      sum[j] += IPT::norm (m_x(i,j));
+      xvalue_type val = m_x(i, j);
+      sum[j] += MAT::abs(XAT::real(val)) + MAT::abs(XAT::imag(val));
     }
   }
 
@@ -181,7 +183,7 @@ struct MV_Nrm1_Right_FunctorVector
 #pragma vector always
 #endif
     for (size_type j = 0; j < numVecs; ++j) {
-      update[j] = AT::zero ();
+      update[j] = MAT::zero ();
     }
   }
 

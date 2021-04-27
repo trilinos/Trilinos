@@ -167,6 +167,7 @@ template < class TriSolveHandle, class RowMapType, class EntriesType >
 void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, const EntriesType dentries) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_lowertri_total;
+  Kokkos::Timer timer;
 #endif
 
  using namespace KokkosSparse::Experimental;
@@ -397,6 +398,23 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
       work_offset_host (s) = 0;
     }
   } else {
+    //#define profile_supernodal_etree
+    #ifdef profile_supernodal_etree
+    // min, max, tot size of supernodes
+    signed_integral_t max_nsrow = 0;
+    signed_integral_t min_nsrow = 0;
+    signed_integral_t tot_nsrow = 0;
+
+    signed_integral_t max_nscol = 0;
+    signed_integral_t min_nscol = 0;
+    signed_integral_t tot_nscol = 0;
+
+    // min, max, tot num of leaves
+    signed_integral_t max_nleave = 0;
+    signed_integral_t min_nleave = 0;
+    signed_integral_t tot_nleave = 0;
+    #endif
+
     /* initialize the ready tasks with leaves */
     const int *parents = thandle.get_etree_parents ();
     integer_view_host_t check ("check", nsuper);
@@ -421,22 +439,6 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
 
     size_type num_done = 0;
     size_type level = 0;
-    //#define profile_supernodal_etree
-    #ifdef profile_supernodal_etree
-    // min, max, tot size of supernodes
-    signed_integral_t max_nsrow = 0;
-    signed_integral_t min_nsrow = 0;
-    signed_integral_t tot_nsrow = 0;
-
-    signed_integral_t max_nscol = 0;
-    signed_integral_t min_nscol = 0;
-    signed_integral_t tot_nscol = 0;
-
-    // min, max, tot num of leaves
-    signed_integral_t max_nleave = 0;
-    signed_integral_t min_nleave = 0;
-    signed_integral_t tot_nleave = 0;
-    #endif
     while (num_done < nsuper) {
       nodes_per_level (level) = 0; 
       // look for ready-tasks
@@ -564,9 +566,15 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
     std::cout << "   * numer of leaves: min = " << min_nleave << "\t max = " << max_nleave << "\t avg = " << tot_nleave/level << std::endl;
     std::cout << "   * level = " << level << std::endl;
     #endif
+    #ifdef TRISOLVE_SYMB_TIMERS
+    std::cout << "   + scheduling time = " << timer.seconds() << std::endl;
+    #endif
     // Set number of level equal to be the number of supernodal columns
     thandle.set_num_levels (level);
   }
+  #ifdef TRISOLVE_SYMB_TIMERS
+  timer.reset();
+  #endif
   // workspace size
   if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
       thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
@@ -590,6 +598,10 @@ void lower_tri_symbolic (TriSolveHandle &thandle, const RowMapType drow_map, con
   Kokkos::deep_copy (dnodes_per_level, nodes_per_level);
   Kokkos::deep_copy (dlevel_list, level_list);
 
+  #ifdef TRISOLVE_SYMB_TIMERS
+  std::cout << "   + workspace  time = " << timer.seconds() << std::endl;
+  #endif
+
   thandle.set_symbolic_complete();
  }
 #endif
@@ -604,6 +616,7 @@ template < class TriSolveHandle, class RowMapType, class EntriesType >
 void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, const EntriesType dentries ) {
 #ifdef TRISOLVE_SYMB_TIMERS
   Kokkos::Timer timer_sym_uppertri_total;
+  Kokkos::Timer timer;
 #endif
 
  using namespace KokkosSparse::Experimental;
@@ -826,6 +839,21 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   else {
     /* schduling from bottom to top (as for L-solve) *
      * then reverse it for U-solve                   */
+    #ifdef profile_supernodal_etree
+    // min, max, tot size of supernodes
+    signed_integral_t max_nsrow = 0;
+    signed_integral_t min_nsrow = 0;
+    signed_integral_t tot_nsrow = 0;
+
+    signed_integral_t max_nscol = 0;
+    signed_integral_t min_nscol = 0;
+    signed_integral_t tot_nscol = 0;
+
+    // min, max, tot num of leaves
+    signed_integral_t max_nleave = 0;
+    signed_integral_t min_nleave = 0;
+    signed_integral_t tot_nleave = 0;
+    #endif
 
     /* initialize the ready tasks with leaves */
     const int *parents = thandle.get_etree_parents ();
@@ -860,21 +888,6 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
 
     size_type num_done = 0;
     size_type level = 0;
-    #ifdef profile_supernodal_etree
-    // min, max, tot size of supernodes
-    signed_integral_t max_nsrow = 0;
-    signed_integral_t min_nsrow = 0;
-    signed_integral_t tot_nsrow = 0;
-
-    signed_integral_t max_nscol = 0;
-    signed_integral_t min_nscol = 0;
-    signed_integral_t tot_nscol = 0;
-
-    // min, max, tot num of leaves
-    signed_integral_t max_nleave = 0;
-    signed_integral_t min_nleave = 0;
-    signed_integral_t tot_nleave = 0;
-    #endif
     while (num_done < nsuper) {
       nodes_per_level (level) = 0; 
       // look for ready-tasks
@@ -1013,10 +1026,16 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
         diag_kernel_type_by_level (level) = 3;
       }
     }
+    #ifdef TRISOLVE_SYMB_TIMERS
+    std::cout << "   + scheduling time = " << timer.seconds() << std::endl;
+    #endif
 
     // Set number of levels
     thandle.set_num_levels (num_level);
   }
+  #ifdef TRISOLVE_SYMB_TIMERS
+  timer.reset();
+  #endif
   // workspace size
   if (thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV  ||
       thandle.get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
@@ -1039,6 +1058,9 @@ void upper_tri_symbolic ( TriSolveHandle &thandle, const RowMapType drow_map, co
   Kokkos::deep_copy (dnodes_grouped_by_level, nodes_grouped_by_level);
   Kokkos::deep_copy (dnodes_per_level, nodes_per_level);
   Kokkos::deep_copy (dlevel_list, level_list);
+  #ifdef TRISOLVE_SYMB_TIMERS
+  std::cout << "   + workspace  time = " << timer.seconds() << std::endl;
+  #endif
 
   thandle.set_symbolic_complete ();
  }

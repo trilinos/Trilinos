@@ -27,9 +27,9 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(1));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(1.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
@@ -68,9 +68,9 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(1));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(1.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 

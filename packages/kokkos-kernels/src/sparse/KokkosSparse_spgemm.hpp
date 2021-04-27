@@ -53,7 +53,6 @@ namespace KokkosSparse {
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
 void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
                      const BMatrix& B, const bool Bmode, CMatrix& C) {
-  using graph_type   = typename CMatrix::staticcrsgraph_type;
   using row_map_type = typename CMatrix::row_map_type::non_const_type;
   using entries_type = typename CMatrix::index_type::non_const_type;
   using values_type  = typename CMatrix::values_type::non_const_type;
@@ -77,8 +76,7 @@ void spgemm_symbolic(KernelHandle& kh, const AMatrix& A, const bool Amode,
                           c_nnz_size);
   }
 
-  graph_type graphC(entriesC, row_mapC);
-  C = CMatrix("matrix", graphC);
+  C = CMatrix("C=AB", A.numRows(), B.numCols(), c_nnz_size, valuesC, row_mapC, entriesC);
 }
 
 template <class KernelHandle, class AMatrix, class BMatrix, class CMatrix>
