@@ -250,7 +250,7 @@ TEST_F(ParallelGraphUpdate, deleteBothSolidElementsOnParallelEdge)
 
         if(get_bulk().parallel_rank() == 0) {
           stk::mesh::impl::LocalId localId = graphEdge.elem1();
-          stk::mesh::Entity localElem = graph.get_entity_from_local_id(localId);
+          stk::mesh::Entity localElem = graph.get_entity(localId);
           EXPECT_EQ(2u, get_bulk().identifier(localElem));
           EXPECT_EQ(5, graphEdge.side1());
           EXPECT_EQ(-3, graphEdge.elem2());
@@ -258,7 +258,7 @@ TEST_F(ParallelGraphUpdate, deleteBothSolidElementsOnParallelEdge)
         }
         if(get_bulk().parallel_rank() == 1) {
           stk::mesh::impl::LocalId localId = graphEdge.elem1();
-          stk::mesh::Entity localElem = graph.get_entity_from_local_id(localId);
+          stk::mesh::Entity localElem = graph.get_entity(localId);
           EXPECT_EQ(3u, get_bulk().identifier(localElem));
           EXPECT_EQ(4, graphEdge.side1());
           EXPECT_EQ(-2, graphEdge.elem2());

@@ -26,6 +26,7 @@ template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity()
 {
+  this->setStepperName(        "StaggeredForwardSensitivity");
   this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(Teuchos::null, Teuchos::null);
 }
@@ -39,6 +40,7 @@ StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
 {
   // Set all the input parameters and call initialize
+  this->setStepperName(        "StaggeredForwardSensitivity");
   this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(pList, sens_pList);
   this->setModel(appModel);

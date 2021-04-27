@@ -152,7 +152,7 @@ public:
   virtual bool isExplicit()         const {return false;}
   virtual bool isImplicit()         const {return true;}
   virtual bool isExplicitImplicit() const
-  {return isExplicit() and isImplicit();}
+  {return isExplicit() && isImplicit();}
   virtual bool isOneStepMethod()   const {return false;}
   virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
   virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}

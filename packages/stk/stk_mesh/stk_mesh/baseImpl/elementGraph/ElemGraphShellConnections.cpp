@@ -17,7 +17,7 @@ bool is_other_element_shell(const stk::mesh::GraphEdge& graphEdge,
     if(stk::mesh::impl::is_local_element(graphEdge.elem2()))
         topo = elementTopologies[graphEdge.elem2()];
     else
-        topo = parGraphInfo.get_parallel_info_for_graph_edge(graphEdge).m_remote_element_toplogy;
+        topo = parGraphInfo.get_parallel_info_for_graph_edge(graphEdge).m_remote_element_topology;
     return stk::mesh::impl::is_shell_or_beam2(topo);
 }
 

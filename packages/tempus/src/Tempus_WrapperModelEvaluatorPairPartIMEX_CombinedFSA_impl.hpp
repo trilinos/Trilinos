@@ -98,7 +98,7 @@ initialize()
 
   int numBlocks = zPVector->productSpace()->numBlocks();
 
-  TEUCHOS_TEST_FOR_EXCEPTION( !(0 <= this->numExplicitOnlyBlocks_ and
+  TEUCHOS_TEST_FOR_EXCEPTION( !(0 <= this->numExplicitOnlyBlocks_ &&
                                 this->numExplicitOnlyBlocks_ < numBlocks),
     std::logic_error,
     "Error - WrapperModelEvaluatorPairPartIMEX_CombinedFSA::initialize()\n"
@@ -351,7 +351,7 @@ evalModelImpl(const Thyra::ModelEvaluatorBase::InArgs<Scalar>  & inArgs,
   fsaImplicitInArgs.set_x_dot(x_dot);
   for (int i=0; i<fsaImplicitModel_->Np(); ++i) {
     // Copy over parameters except for the parameter for explicit-only vector!
-    if ((inArgs.get_p(i) != Teuchos::null) and (i != p_index))
+    if ((inArgs.get_p(i) != Teuchos::null) && (i != p_index))
       fsaImplicitInArgs.set_p(i, inArgs.get_p(i));
   }
 

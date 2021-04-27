@@ -292,26 +292,35 @@ void FieldBaseImpl::verify_and_clean_restrictions(const Part& superset, const Pa
   //with another restriction.
   //If they are, make sure they are compatible and remove the subset restrictions.
   PartVector scratch1, scratch2;
+  const FieldRestriction* restrData = restrs.data();
+  std::vector<unsigned> scratch;
   for (size_t r = 0; r < restrs.size(); ++r) {
-    FieldRestriction const& curr_restriction = restrs[r];
+    FieldRestriction const& curr_restriction = restrData[r];
 
     if (curr_restriction.selector()(subset)) {
-      bool delete_me = false;
-      for (size_t i = 0, ie = restrs.size(); i < ie; ++i) {
-        FieldRestriction const& check_restriction = restrs[i];
-        if (i != r &&
-            check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity() &&
-            check_restriction.selector()(subset) &&
-            is_subset(curr_restriction.selector(), check_restriction.selector(), scratch1, scratch2)) {
-          ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
-                           "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
-          delete_me = true;
-          break;
-        }
+      scratch.push_back(r);
+    }
+  }
+
+  for (size_t r = 0; r < scratch.size(); ++r) {
+    FieldRestriction const& curr_restriction = restrData[scratch[r]];
+
+    bool delete_me = false;
+    for (size_t i = 0, ie = scratch.size(); i < ie; ++i) {
+      FieldRestriction const& check_restriction = restrData[scratch[i]];
+      if (i != r &&
+          check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity() &&
+          is_subset(curr_restriction.selector(), check_restriction.selector(), scratch1, scratch2)) {
+        ThrowErrorMsgIf( check_restriction.num_scalars_per_entity() != curr_restriction.num_scalars_per_entity(),
+                         "Incompatible field restrictions for parts "<< superset.name() << " and "<< subset.name());
+        delete_me = true;
+        break;
       }
-      if (delete_me) {
-        restrs.erase(restrs.begin() + r);
-        --r;
+    }
+    if (delete_me) {
+      restrs.erase(restrs.begin() + scratch[r]);
+      for(unsigned j=r+1; j<scratch.size(); ++j) {
+        --scratch[j];
       }
     }
   }

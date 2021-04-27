@@ -32,21 +32,27 @@ unsigned get_num_local_elems(const stk::mesh::BulkData& bulkData)
         return count_selected_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData.buckets(stk::topology::ELEM_RANK));
 }
 
-bool fill_topologies(const stk::mesh::BulkData& bulkData,
+bool fill_topologies(stk::mesh::ElemElemGraph& eeGraph,
                      const stk::mesh::impl::ElementLocalIdMapper & localMapper,
                      std::vector<stk::topology>& element_topologies)
 {
-    bool areAnyElementsShells = false;
-    const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
-    for(const stk::mesh::Bucket* bucket : elemBuckets) {
-        if (bucket->topology().is_shell()) {
-            areAnyElementsShells = true;
-        }
-        for(stk::mesh::Entity element : *bucket) {
-            element_topologies[localMapper.entity_to_local(element)] = bucket->topology();
-        }
+  const stk::mesh::BulkData& bulkData = eeGraph.get_mesh();
+  stk::mesh::Graph& graph = eeGraph.get_graph();
+
+  bool areAnyElementsShells = false;
+  const stk::mesh::BucketVector & elemBuckets = bulkData.get_buckets(stk::topology::ELEM_RANK, bulkData.mesh_meta_data().locally_owned_part());
+  for(const stk::mesh::Bucket* bucket : elemBuckets) {
+    areAnyElementsShells |= bucket->topology().is_shell();
+
+    stk::topology elemTopology = bucket->topology();
+    unsigned numSides = elemTopology.num_sides();
+    for(stk::mesh::Entity element : *bucket) {
+      impl::LocalId elemLocalId = localMapper.entity_to_local(element);
+      element_topologies[elemLocalId] = elemTopology;
+      graph.reserve_edges(elemLocalId, numSides);
     }
-    return areAnyElementsShells;
+  }
+  return areAnyElementsShells;
 }
 
 ElemSideToProcAndFaceId build_element_side_ids_to_proc_map(const stk::mesh::BulkData& bulkData,

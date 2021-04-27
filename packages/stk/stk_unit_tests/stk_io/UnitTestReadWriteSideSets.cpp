@@ -20,7 +20,7 @@ protected:
                             stk::mesh::Part* blockToExclude = nullptr)
   {
     const std::string fileName("meshSubset.g");
-    stk::mesh::Selector meshSubsetSelector = create_subset_selector(blockToExclude);
+    stk::mesh::Selector meshSubsetSelector = create_subset_selector({blockToExclude});
     stk::io::StkMeshIoBroker stkIo;
     stkIo.set_bulk_data(get_bulk());
     size_t outputFileIndex = stkIo.create_output_mesh(fileName, stk::io::WRITE_RESULTS);

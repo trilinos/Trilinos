@@ -250,6 +250,13 @@ private:
       std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_EB\n";
 #endif
     }
+    else if(KokkosKernels::Impl::kk_is_gpu_exec_space<ExecutionSpace>())
+    {
+      this->coloring_algorithm_type = COLORING_EB;
+#ifdef VERBOSE
+      std::cout << ExecutionSpace::name() << " Execution Space, Default Algorithm: COLORING_EB\n";
+#endif
+    }
     else
     {
       this->coloring_algorithm_type = COLORING_VB;

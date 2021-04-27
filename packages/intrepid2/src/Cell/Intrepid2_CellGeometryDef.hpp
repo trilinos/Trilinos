@@ -95,6 +95,30 @@ namespace Intrepid2
     template< class PointScalar, int spaceDim, typename DeviceType > typename std::map<const CellGeometry<PointScalar,spaceDim,DeviceType> *, shards::CellTopology> CellGeometryHostMembers< PointScalar,spaceDim,DeviceType>::cellTopology_;
   
     template< class PointScalar, int spaceDim, typename DeviceType > typename std::map<const CellGeometry<PointScalar,spaceDim,DeviceType> *, Teuchos::RCP<Intrepid2::Basis<DeviceType,PointScalar,PointScalar> >> CellGeometryHostMembers< PointScalar,spaceDim,DeviceType>::basisForNodes_;
+
+    /** \brief Functor for full (C,P) Jacobian determinant container.  CUDA compiler issues led us to avoid lambdas for this one.
+      */
+    template<class PointScalar, int spaceDim, typename DeviceType>
+    class CellMeasureFunctor
+    {
+      Kokkos::View<PointScalar**, DeviceType> cellMeasures_; // (C,P)
+      Kokkos::View<PointScalar**, DeviceType> detData_;      // (C,P)
+      TensorData<PointScalar,DeviceType> cubatureWeights_;   // (P)
+    public:
+      CellMeasureFunctor(Kokkos::View<PointScalar**, DeviceType> cellMeasures,
+                         Kokkos::View<PointScalar**, DeviceType> detData, TensorData<PointScalar,DeviceType> cubatureWeights)
+      :
+      cellMeasures_(cellMeasures),
+      detData_(detData),
+      cubatureWeights_(cubatureWeights)
+      {}
+      
+      KOKKOS_INLINE_FUNCTION void
+      operator () (const ordinal_type cellOrdinal, const ordinal_type pointOrdinal) const
+      {
+        cellMeasures_(cellOrdinal,pointOrdinal) = detData_(cellOrdinal,pointOrdinal) * cubatureWeights_(pointOrdinal);
+      }
+    };
   }
 
   template<class PointScalar, int spaceDim, typename DeviceType>
@@ -357,6 +381,8 @@ namespace Intrepid2
         else
         {
           auto dataView = jacobianData.getUnderlyingView(); // (numCellsWorkset, pointsPerCell, spaceDim, spaceDim) allocated in allocateJacobianDataPrivate()
+          TEUCHOS_TEST_FOR_EXCEPTION(basisForNodes == Teuchos::null, std::invalid_argument, "basisForNodes must not be null");
+          TEUCHOS_TEST_FOR_EXCEPTION(dataView.size() == 0, std::invalid_argument, "underlying view is not valid");
           
           // refData should contain the basis gradients; shape is (F,P,D)
           INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(!refData.isValid(), std::invalid_argument, "refData should be a valid container for cases with non-affine geometry");
@@ -648,13 +674,15 @@ namespace Intrepid2
         auto detData = jacobianDet.getUnderlyingView2();
         const int numCells = detData.extent_int(0);
         const int numPoints = detData.extent_int(1);
-        // This lambda rewritten using single-dimension RangePolicy instead of MDRangePolicy to work around an apparent CUDA 10.1.243 compiler bug
-        Kokkos::parallel_for( numCells * numPoints,
-        KOKKOS_LAMBDA (const int &cellPointOrdinal) {
-          const int cellOrdinal  = cellPointOrdinal / numPoints;
-          const int pointOrdinal = cellPointOrdinal % numPoints;
-          cellMeasureData(cellOrdinal,pointOrdinal) = detData(cellOrdinal,pointOrdinal) * cubatureWeights(pointOrdinal);
-        });
+        INTREPID2_TEST_FOR_EXCEPTION(numCells != cellMeasureData.extent_int(0), std::invalid_argument, "cellMeasureData doesn't match jacobianDet in cell dimension");
+        INTREPID2_TEST_FOR_EXCEPTION(numPoints != cellMeasureData.extent_int(1), std::invalid_argument, "cellMeasureData doesn't match jacobianDet in point dimension");
+
+        // We implement this case as a functor (rather than a lambda) to work around an apparent CUDA 10.1.243 compiler bug
+        Impl::CellMeasureFunctor<PointScalar,spaceDim,DeviceType> cellMeasureFunctor(cellMeasureData, detData, cubatureWeights);
+        
+        using ExecutionSpace = typename DeviceType::execution_space;
+        Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> rangePolicy({0,0},{numCells,numPoints});
+        Kokkos::parallel_for(rangePolicy, cellMeasureFunctor);
       }
       else if (detCellVaries && !detPointVaries)
       {

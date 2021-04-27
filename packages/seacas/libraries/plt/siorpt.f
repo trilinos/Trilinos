@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -30,8 +30,6 @@ C=======================================================================
      *            ' at '//ERRORT(1:LT)
          WRITE (6,10) LOCLIN
 
-   10    FORMAT (1X,A)
-
          LOCLIN = '#Error message: '//ERRMSG
          WRITE (6,10) LOCLIN
 
@@ -56,6 +54,8 @@ C=======================================================================
          LOCLIN = '#Error message: '//ERRMSG
          WRITE (6,10) LOCLIN
       END IF
+
+ 10   FORMAT (1X,A)
 
       RETURN
 

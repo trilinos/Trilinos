@@ -69,7 +69,7 @@ void spmv_raw_openmp_no_transpose(typename YVector::const_value_type& s_a, AMatr
   typename YVector::const_value_type zero = 0;
   #pragma omp parallel
   {
-#ifdef KOKKOS_COMPILER_INTEL
+#if defined(KOKKOS_COMPILER_INTEL) && !defined(__clang__)
     __assume_aligned(x_ptr, 64);
     __assume_aligned(y_ptr, 64);
 #endif

@@ -44,7 +44,7 @@
 #define IFPACK2_HYPRE_DECL_HPP
 
 #include "Ifpack2_ConfigDefs.hpp"
-#ifdef HAVE_IFPACK2_HYPRE
+#if defined(HAVE_IFPACK2_HYPRE) && defined(HAVE_IFPACK2_MPI)
 
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
@@ -58,6 +58,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
+#include "Ifpack2_Hypre_FunctionParameters.hpp"
 
 #include <map>
 
@@ -101,9 +102,6 @@ namespace Ifpack2 {
     Hypre_Is_Preconditioner
   };
 #endif //HYPRE_ENUMS
-  
-  class FunctionParameter;
-  
 
 
 //! Ifpack2::Hypre: A class for constructing and using an ILU factorization of a given Tpetra::RowMatrix, using the Hypre library by Lawrence Livermore National Laboratories.
@@ -711,5 +709,5 @@ private:
 
 }//end Ifpack2 namespace
 
-#endif // HAVE_IFAPCK2_HYPRE
+#endif // HAVE_IFPACK2_HYPRE && HAVE_IFPACK2_MPI
 #endif /* IFPACK2_HYPRE_DECL_HPP */

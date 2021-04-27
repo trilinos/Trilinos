@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -243,8 +243,8 @@ namespace SEAMS {
     std::string str_name;
 
     if (num_elemblks > 0) {
-      auto array_data       = new array(num_elemblks, 1);
-      auto array_block_info = new array(num_elemblks, 4);
+      auto array_data       = aprepro->make_array(num_elemblks, 1);
+      auto array_block_info = aprepro->make_array(num_elemblks, 4);
 
       std::vector<int64_t> ids(num_elemblks);
       ex_get_ids(exoid, EX_ELEM_BLOCK, ids.data());
@@ -282,8 +282,8 @@ namespace SEAMS {
 
     // Nodesets...
     if (num_nodesets > 0) {
-      auto array_data     = new array(num_nodesets, 1);
-      auto array_set_info = new array(num_nodesets, 3);
+      auto array_data     = aprepro->make_array(num_nodesets, 1);
+      auto array_set_info = aprepro->make_array(num_nodesets, 3);
 
       std::vector<int64_t> ids(num_nodesets);
       ex_get_ids(exoid, EX_NODE_SET, ids.data());
@@ -309,8 +309,8 @@ namespace SEAMS {
 
     // Sidesets...
     if (num_sidesets > 0) {
-      auto array_data     = new array(num_sidesets, 1);
-      auto array_set_info = new array(num_sidesets, 3);
+      auto array_data     = aprepro->make_array(num_sidesets, 1);
+      auto array_set_info = aprepro->make_array(num_sidesets, 3);
 
       std::vector<int64_t> ids(num_sidesets);
       ex_get_ids(exoid, EX_SIDE_SET, ids.data());
@@ -342,7 +342,7 @@ namespace SEAMS {
       std::vector<double> timesteps(ts_count);
       ex_get_all_times(exoid, timesteps.data());
 
-      auto ts_array_data = new array(ts_count, 1);
+      auto ts_array_data = aprepro->make_array(ts_count, 1);
       for (int64_t i = 0; i < ts_count; i++) {
         ts_array_data->data[i] = timesteps[i];
       }
@@ -363,7 +363,7 @@ namespace SEAMS {
       }
       aprepro->add_variable("ex_global_var_names", names);
 
-      auto                glo_array_data = new array(ts_count, num_global);
+      auto                glo_array_data = aprepro->make_array(ts_count, num_global);
       std::vector<double> globals(num_global);
       int                 index = 0;
       for (int64_t i = 0; i < ts_count; i++) {

@@ -9,6 +9,9 @@
 #ifndef Tempus_IntegratorBasic_decl_hpp
 #define Tempus_IntegratorBasic_decl_hpp
 
+
+#include "Teuchos_Time.hpp"
+
 #include "Thyra_ModelEvaluator.hpp"
 
 #include "Tempus_config.hpp"
@@ -16,7 +19,6 @@
 #include "Tempus_Integrator.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include "Tempus_IntegratorObserverBasic.hpp"
-#include "Tempus_IntegratorObserverComposite.hpp"
 
 
 namespace Tempus {
@@ -29,23 +31,17 @@ class IntegratorBasic : virtual public Tempus::Integrator<Scalar>
 {
 public:
 
-  /// Constructor with ParameterList and model, and will be fully initialized.
-  IntegratorBasic(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
-
-  /// Constructor with model and "Stepper Type" and is fully initialized with default settings.
-  IntegratorBasic(
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
-    std::string stepperType);
-
-  /// Constructor that requires a subsequent setParameterList, setStepper, and initialize calls.
+  /// Default constructor that requires a subsequent, ??? , setStepper, and initialize calls.
   IntegratorBasic();
 
-  /// Constructor with ParameterList and models, and will be fully initialized.
+  /// Full constructor
   IntegratorBasic(
-    Teuchos::RCP<Teuchos::ParameterList>                pList,
-    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
+    Teuchos::RCP<Stepper<Scalar> >            stepper,
+    Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory,
+    Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl,
+    Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver,
+    std::vector<int>                          outputScreenIndices,
+    int                                       outputScreenInterval);
 
   /// Destructor
   virtual ~IntegratorBasic() {}
@@ -64,15 +60,14 @@ public:
     virtual void checkTimeStep();
     /// Perform tasks after end of integrator.
     virtual void endIntegrator();
-    /// Return a copy of the Tempus ParameterList
+    /// Return a copy of the Tempus ParameterList DEPRECATED!
     virtual Teuchos::RCP<Teuchos::ParameterList> getTempusParameterList()
-      override { return tempusPL_; }
+      override { return Teuchos::rcp_const_cast<Teuchos::ParameterList> (this->getValidParameters()); }
     virtual void setTempusParameterList(
       Teuchos::RCP<Teuchos::ParameterList> pl) override
     {
-      if (tempusPL_==Teuchos::null) tempusPL_=Teuchos::parameterList("Tempus");
-      if (pl != Teuchos::null) *tempusPL_ = *pl;
-      this->setParameterList(Teuchos::null);
+      TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+        "  IntegratorBasic::setTempusParameterList() --  Deprecated!\n");
     }
   //@}
 
@@ -90,13 +85,10 @@ public:
     /// Get the Stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}
+    /// Set the model on the stepper.
+    virtual void setModel(Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model);
     /// Set the Stepper
-    virtual void setStepper(Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model);
-    /// Set the Stepper
-    virtual void setStepper(
-      std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
-    /// Set the Stepper
-    virtual void setStepperWStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
+    virtual void setStepper(Teuchos::RCP<Stepper<Scalar> > stepper);
     /// Set the initial state which has the initial conditions
     virtual void initializeSolutionHistory(
       Teuchos::RCP<SolutionState<Scalar> > state = Teuchos::null);
@@ -120,7 +112,7 @@ public:
     virtual void setTimeStepControl(
       Teuchos::RCP<TimeStepControl<Scalar> > tsc = Teuchos::null);
     /// Get the Observer
-    virtual Teuchos::RCP<IntegratorObserverComposite<Scalar> > getObserver()
+    virtual Teuchos::RCP<IntegratorObserver<Scalar> > getObserver()
       {return integratorObserver_;}
     /// Set the Observer
     virtual void setObserver(
@@ -148,37 +140,30 @@ public:
     virtual Teuchos::RCP<SolutionState<Scalar> > getCurrentState()
       {return solutionHistory_->getCurrentState();}
 
-    Teuchos::RCP<Teuchos::ParameterList> getIntegratorParameterList()
-      { return integratorPL_; }
-
-    //virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const
-      //{return integratorTimer_;}
-
     virtual void setScreenOutputIndexInterval(int i)
-    { integratorPL_->set("Screen Output Index Interval", i); }
+    { outputScreenInterval_ = i; }
 
     virtual int getScreenOutputIndexInterval() const
-    { return integratorPL_->get<int>("Screen Output Index Interval"); }
+    { return outputScreenInterval_; }
 
-    virtual void setScreenOutputIndexList(std::string s)
-    { integratorPL_->set("Screen Output Index List", s); }
+    virtual void setScreenOutputIndexList(std::vector<int> indices)
+    { outputScreenIndices_ = indices; }
 
-    virtual std::string getScreenOutputIndexList() const
-    { return integratorPL_->get<std::string>("Screen Output Index List", ""); }
+    /// Parse when screen output should be executed
+    virtual void setScreenOutputIndexList(std::string str);
+
+    virtual std::vector<int> getScreenOutputIndexList() const
+    { return outputScreenIndices_; }
+
+    virtual std::string getScreenOutputIndexListString() const;
   //@}
 
-  /// Parse when screen output should be executed
-  void parseScreenOutput();
+  void parseScreenOutput()
+  {  TEUCHOS_TEST_FOR_EXCEPTION( true, std::logic_error,
+       "  IntegratorBasic::parseScreenOutput() --  Should call setScreenOutputIndexList()\n");
+  }
 
-  /// \name Overridden from Teuchos::ParameterListAcceptor
-  //@{
-    void setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & pl)
-      override;
-    Teuchos::RCP<Teuchos::ParameterList> getNonconstParameterList() override;
-    Teuchos::RCP<Teuchos::ParameterList> unsetParameterList() override;
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters()
-      const override;
-  //@}
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -187,20 +172,28 @@ public:
                   const Teuchos::EVerbosityLevel verbLevel) const override;
   //@}
 
+  /// Set the Integrator Name
+  void setIntegratorName(std::string i) { integratorName_ = i; }
+  /// Get the Integrator Name.
+  std::string getIntegratorName() const { return integratorName_; }
+
+  /// Get the Integrator Type.
+  std::string getIntegratorType() const { return integratorType_; }
+
 protected:
 
-  Teuchos::RCP<Teuchos::ParameterList>      tempusPL_;
-  Teuchos::RCP<Teuchos::ParameterList>      integratorPL_;
+  /// Set the Integrator Type
+  void setIntegratorType(std::string i);
+  std::string      integratorName_;        ///< integrator name used for I/O.
+  std::string      integratorType_;        ///< the integrator type.
+
+  Teuchos::RCP<Stepper<Scalar> >            stepper_;
   Teuchos::RCP<SolutionHistory<Scalar> >    solutionHistory_;
   Teuchos::RCP<TimeStepControl<Scalar> >    timeStepControl_;
-  Teuchos::RCP<IntegratorObserverComposite<Scalar> > integratorObserver_;
-  Teuchos::RCP<Stepper<Scalar> >            stepper_;
+  Teuchos::RCP<IntegratorObserver<Scalar> > integratorObserver_;
 
-  Teuchos::RCP<Teuchos::Time> integratorTimer_;
-  Teuchos::RCP<Teuchos::Time> stepperTimer_;
-  Scalar runtime_;
-
-  std::vector<int> outputScreenIndices_;  ///< Vector of screen output indices.
+  std::vector<int> outputScreenIndices_;   ///< Vector of screen output indices.
+  int              outputScreenInterval_;  ///< screen output interval.
 
   /** The integratorStatus is primarily in the WORKING Status, and
    *  PASSED/FAILED are noted at the end of the run.  A FAILED value
@@ -208,27 +201,35 @@ protected:
    */
   Status integratorStatus_;
   bool isInitialized_;
+
+  Teuchos::RCP<Teuchos::Time> integratorTimer_;
+  Teuchos::RCP<Teuchos::Time> stepperTimer_;
+
 };
+
 
 /// Nonmember constructor
 template<class Scalar>
-Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
 
+
 /// Nonmember constructor
 template<class Scalar>
-Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model,
   std::string stepperType);
 
-/// Nonmember constructor
-template<class Scalar>
-Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic();
 
 /// Nonmember constructor
 template<class Scalar>
-Teuchos::RCP<IntegratorBasic<Scalar> > integratorBasic(
+Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic();
+
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                pList,
   std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > models);
 
