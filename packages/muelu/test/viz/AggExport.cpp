@@ -70,16 +70,6 @@
 
 #include <MueLu_MutuallyExclusiveTime.hpp>
 
-#ifdef HAVE_MUELU_BELOS
-#include <BelosConfigDefs.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#endif
-
 bool compare_to_gold_all_ranks(int myRank, const std::string & baseFile) {
   bool failed=false;
 
@@ -136,7 +126,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     // Convenient definitions
     // =========================================================================
     typedef Teuchos::ScalarTraits<SC> STS;
-    SC zero = STS::zero(), one = STS::one();
+    SC one = STS::one();
 
     // =========================================================================
     // Parameters initialization
@@ -146,8 +136,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
     std::string xmlFileName       = "viztest.xml";     clp.setOption("xml",                   &xmlFileName,       "read parameters from a file");
-    bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,      "print timings to screen");
-    int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT,  "write matrices to file (-1 means all; i>=0 means level i)");
 
     std::string mapFile;                               clp.setOption("map",                   &mapFile,           "map data file");
     std::string colMapFile;                            clp.setOption("colmap",                &colMapFile,        "colmap data file");
@@ -156,9 +144,6 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,        "matrix data file");
     std::string coordFile;                             clp.setOption("coords",                &coordFile,         "coordinates data file");
     std::string nullFile;                              clp.setOption("nullspace",             &nullFile,          "nullspace data file");
-    int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,       "#times to rebuild hierarchy");
-    int         maxIts            = 200;               clp.setOption("its",                   &maxIts,            "maximum number of solver iterations");
-    bool        scaleResidualHist = true;              clp.setOption("scale", "noscale",      &scaleResidualHist, "scaled Krylov residual history");
 
     switch (clp.parse(argc, argv)) {
       case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -354,16 +339,14 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib& lib, int ar
     tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
     RCP<Hierarchy> H;
-    for (int i = 0; i <= numRebuilds; i++) {
-      A->SetMaxEigenvalueEstimate(-one);
+    A->SetMaxEigenvalueEstimate(-one);
 
-      H = mueLuFactory->CreateHierarchy();
-      H->GetLevel(0)->Set("A",           A);
-      H->GetLevel(0)->Set("Nullspace",   nullspace);
-      if (!coordinates.is_null())
-        H->GetLevel(0)->Set("Coordinates", coordinates);
-      mueLuFactory->SetupHierarchy(*H);
-    }
+    H = mueLuFactory->CreateHierarchy();
+    H->GetLevel(0)->Set("A",           A);
+    H->GetLevel(0)->Set("Nullspace",   nullspace);
+    if (!coordinates.is_null())
+      H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueLuFactory->SetupHierarchy(*H);
 
     comm->barrier();
     tm = Teuchos::null;
