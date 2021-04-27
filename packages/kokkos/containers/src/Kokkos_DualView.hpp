@@ -362,55 +362,6 @@ class DualView : public ViewTraits<DataType, Arg1Type, Arg2Type, Arg3Type> {
     };
   };
 
-
-  // does the DualView have only one device
-  struct impl_dualview_is_single_device {
-    enum : bool {
-      value = std::is_same<typename t_dev::device_type,
-                           typename t_host::device_type>::value
-    };
-  };
-
-  // does the given device match the device of t_dev?
-  template <typename Device>
-  struct impl_device_matches_tdev_device {
-    enum : bool {
-      value = std::is_same<typename t_dev::device_type, Device>::value
-    };
-  };
-  // does the given device match the device of t_host?
-  template <typename Device>
-  struct impl_device_matches_thost_device {
-    enum : bool {
-      value = std::is_same<typename t_host::device_type, Device>::value
-    };
-  };
-
-  // does the given device match the execution space of t_host?
-  template <typename Device>
-  struct impl_device_matches_thost_exec {
-    enum : bool {
-      value = std::is_same<typename t_host::execution_space, Device>::value
-    };
-  };
-
-  // does the given device match the execution space of t_dev?
-  template <typename Device>
-  struct impl_device_matches_tdev_exec {
-    enum : bool {
-      value = std::is_same<typename t_dev::execution_space, Device>::value
-    };
-  };
-
-  // does the given device's memory space match the memory space of t_dev?
-  template <typename Device>
-  struct impl_device_matches_tdev_memory_space {
-    enum : bool {
-      value = std::is_same<typename t_dev::memory_space,
-                           typename Device::memory_space>::value
-    };
-  };
-
   //@}
   //! \name Methods for synchronizing, marking as modified, and getting Views.
   //@{
