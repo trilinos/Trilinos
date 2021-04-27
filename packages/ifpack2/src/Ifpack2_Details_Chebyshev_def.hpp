@@ -778,7 +778,7 @@ Chebyshev<ScalarType, MV>::compute ()
       Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
 
     if (D_.is_null ()) { // We haven't computed D_ before
-      if (! A_crsMat.is_null () && A_crsMat->isStaticGraph ()) {
+      if (! A_crsMat.is_null () && A_crsMat->isFillComplete ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets.
         const size_t lclNumRows = A_crsMat->getNodeNumRows ();
         if (diagOffsets_.extent (0) < lclNumRows) {
@@ -794,7 +794,7 @@ Chebyshev<ScalarType, MV>::compute ()
       }
     }
     else if (! assumeMatrixUnchanged_) { // D_ exists but A_ may have changed
-      if (! A_crsMat.is_null () && A_crsMat->isStaticGraph ()) {
+      if (! A_crsMat.is_null () && A_crsMat->isFillComplete ()) {
         // It's a CrsMatrix with a const graph; cache diagonal offsets
         // if we haven't already.
         if (! savedDiagOffsets_) {

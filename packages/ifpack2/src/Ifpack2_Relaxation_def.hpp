@@ -1048,7 +1048,7 @@ void Relaxation<MatrixType>::compute ()
       // method (not inherited from RowMatrix's interface).  It's
       // perfectly valid to do relaxation on a RowMatrix which is not
       // a CrsMatrix.
-      if (crsMat == nullptr || ! crsMat->isStaticGraph ()) {
+      if (crsMat == nullptr || ! crsMat->isFillComplete ()) {
         A_->getLocalDiagCopy (*Diagonal_); // slow path
       }
       else {
