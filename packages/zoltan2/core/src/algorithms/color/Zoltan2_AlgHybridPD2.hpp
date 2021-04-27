@@ -146,16 +146,16 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
 			    Kokkos::View<lno_t*,
 			                 Kokkos::Device<ExecutionSpace, MemorySpace>,
 					 Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
-			    Kokkos::View<int[1],
+			    Kokkos::View<int*,
 			                 Kokkos::Device<ExecutionSpace, MemorySpace>,
 					 Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_size_atomic,
 			    Kokkos::View<lno_t*,
 			                 Kokkos::Device<ExecutionSpace, MemorySpace>,
 					 Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
-			    Kokkos::View<size_t[1],
+			    Kokkos::View<size_t*,
 			                 Kokkos::Device<ExecutionSpace, MemorySpace>,
 					 Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic,
-			    Kokkos::View<gno_t[1], Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
+			    Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
 			    Kokkos::View<int*, Kokkos::Device<ExecutionSpace, MemorySpace>> rand,
 			    Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> gid,
 			    Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> ghost_degrees,
@@ -225,8 +225,6 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
         },recoloringSize(0));
         Kokkos::fence();
 	//update the verts_to_send and verts_to_recolor views
-        //verts_to_send_size_atomic(0) = 0;
-        //verts_to_recolor_size_atomic(0) = 0;
         Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA(const uint64_t& i){
           if(femv_colors(i) == 0){
             if(i < n_local){
@@ -250,16 +248,16 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
                                  Kokkos::View<lno_t*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
-                                 Kokkos::View<int[1],
+                                 Kokkos::View<int*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic,
                                  Kokkos::View<lno_t*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
-                                 Kokkos::View<size_t[1],
+                                 Kokkos::View<size_t*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
-                                 Kokkos::View<gno_t[1], device_type> recoloringSize,
+                                 Kokkos::View<gno_t*, device_type> recoloringSize,
                                  Kokkos::View<int*,
                                               device_type> rand,
                                  Kokkos::View<gno_t*,
@@ -292,10 +290,10 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
                                  typename Kokkos::View<lno_t*, device_type >::HostMirror boundary_verts_view,
                                  gno_t boundary_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_recolor,
-                                 typename Kokkos::View<int[1],device_type>::HostMirror verts_to_recolor_size,
+                                 typename Kokkos::View<int*,device_type>::HostMirror verts_to_recolor_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send,
-                                 typename Kokkos::View<size_t[1],device_type>::HostMirror verts_to_send_size,
-                                 typename Kokkos::View<gno_t[1], device_type>::HostMirror recoloringSize,
+                                 typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size,
+                                 typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize,
                                  typename Kokkos::View<int*,  device_type>::HostMirror rand,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,
@@ -328,7 +326,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
                                    Kokkos::View<lno_t*,
                                                 device_type,
                                                 Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
-                                   Kokkos::View<size_t[1],
+                                   Kokkos::View<size_t*,
                                                 device_type,
                                                 Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic){
       //Initialize the boundary on host

@@ -185,10 +185,10 @@ class AlgDistance1 : public Algorithm<Adapter>
 			 Kokkos::View<lno_t*,
 			              Kokkos::Device<ExecutionSpace, MemorySpace>,
 				      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic,
-		         Kokkos::View<size_t[1],
+		         Kokkos::View<size_t*,
 			              Kokkos::Device<ExecutionSpace, MemorySpace>,
 				      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
-			 Kokkos::View<gno_t[1], Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
+			 Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
 			 Kokkos::View<int*,
 			              Kokkos::Device<ExecutionSpace, MemorySpace>> rand,
 			 Kokkos::View<gno_t*,
@@ -277,7 +277,7 @@ class AlgDistance1 : public Algorithm<Adapter>
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                          size_t nVtx,
 			 typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send,
-			 typename Kokkos::View<size_t[1], device_type>::HostMirror& verts_to_send_size,
+			 typename Kokkos::View<size_t*, device_type>::HostMirror& verts_to_send_size,
                          Teuchos::RCP<femv_t> femv,
 			 std::unordered_map<lno_t, std::vector<int>> procs_to_send,
                          gno_t& recv, gno_t& send){ 
@@ -651,8 +651,8 @@ class AlgDistance1 : public Algorithm<Adapter>
       if(verbose) std::cout<<comm->getRank()<<": done copying to device\n";
       
       //counter in UVM memory for how many vertices need recoloring.
-      Kokkos::View<gno_t[1], device_type> recoloringSize("Recoloring Queue Size");
-      typename Kokkos::View<gno_t[1], device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
+      Kokkos::View<gno_t*, device_type> recoloringSize("Recoloring Queue Size",1);
+      typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
       recoloringSize_host(0) = 0;
       Kokkos::deep_copy(recoloringSize, recoloringSize_host);
 
@@ -696,10 +696,10 @@ class AlgDistance1 : public Algorithm<Adapter>
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
       
       //size information for the list of vertices to send. Also includes an atomic copy
-      Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
-      Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic = verts_to_send_size;
+      Kokkos::View<size_t*, device_type> verts_to_send_size("verts to send size",1);
+      Kokkos::View<size_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic = verts_to_send_size;
       typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = create_mirror(verts_to_send_view);
-      typename Kokkos::View<size_t[1],device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
+      typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
       //initialize the device view with a value of zero
       verts_to_send_size_host(0) = 0;
       deep_copy(verts_to_send_size, verts_to_send_size_host);

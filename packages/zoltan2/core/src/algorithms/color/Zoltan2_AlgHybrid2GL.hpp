@@ -141,16 +141,16 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                                  Kokkos::View<lno_t*,
 				              device_type, 
 					      Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
-				 Kokkos::View<int[1], 
+				 Kokkos::View<int*, 
 				              device_type, 
 					      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic,
 				 Kokkos::View<lno_t*,
 				              device_type,
 					      Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
-				 Kokkos::View<size_t[1], 
+				 Kokkos::View<size_t*, 
 				              device_type, 
 					      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
-			         Kokkos::View<gno_t[1], device_type> recoloringSize,
+			         Kokkos::View<gno_t*, device_type> recoloringSize,
 				 Kokkos::View<int*,
 				              device_type> rand,
 			         Kokkos::View<gno_t*,
@@ -167,10 +167,10 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 				 typename Kokkos::View<lno_t*, device_type >::HostMirror boundary_verts_view,
 				 gno_t boundary_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_recolor_atomic,
-				 typename Kokkos::View<int[1],device_type>::HostMirror verts_to_recolor_size_atomic,
+				 typename Kokkos::View<int*,device_type>::HostMirror verts_to_recolor_size_atomic,
 				 typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send_atomic,
-				 typename Kokkos::View<size_t[1],device_type>::HostMirror verts_to_send_size_atomic,
-				 typename Kokkos::View<gno_t[1], device_type>::HostMirror recoloringSize,
+				 typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size_atomic,
+				 typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize,
 			         typename Kokkos::View<int*,  device_type>::HostMirror rand,
 			         typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,
@@ -208,7 +208,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 				   Kokkos::View<lno_t*, 
 				                device_type, 
 						Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
-				   Kokkos::View<size_t[1], 
+				   Kokkos::View<size_t*, 
 				                device_type, 
 						Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic) = 0;
 				   
@@ -521,7 +521,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     double doOwnedToGhosts(RCP<const map_t> mapOwnedPlusGhosts,
                            size_t nVtx,
 			   typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send,
-			   typename Kokkos::View<size_t[1],device_type>::HostMirror verts_to_send_size,
+			   typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size,
                            Teuchos::RCP<femv_t> femv,
 			   std::unordered_map<lno_t, std::vector<int>> procs_to_send,
                            gno_t& total_sent, gno_t& total_recvd){
@@ -1085,8 +1085,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::deep_copy(dist_adjs_dev, dist_adjs_host);
       
       //this view represents how many conflicts were found
-      Kokkos::View<gno_t[1], device_type> recoloringSize("Recoloring Queue Size");
-      typename Kokkos::View<gno_t[1], device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
+      Kokkos::View<gno_t*, device_type> recoloringSize("Recoloring Queue Size",1);
+      typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
       recoloringSize_host(0) = 0;
       Kokkos::deep_copy(recoloringSize, recoloringSize_host);
 
@@ -1121,9 +1121,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_atomic = verts_to_recolor_view;
       
       //This view keeps track of the size of the list of vertices to recolor.
-      Kokkos::View<int[1], device_type> verts_to_recolor_size("verts to recolor size");
-      Kokkos::View<int[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic = verts_to_recolor_size;
-      typename Kokkos::View<int[1], device_type>::HostMirror verts_to_recolor_size_host = create_mirror(verts_to_recolor_size);
+      Kokkos::View<int*, device_type> verts_to_recolor_size("verts to recolor size",1);
+      Kokkos::View<int*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic = verts_to_recolor_size;
+      typename Kokkos::View<int*, device_type>::HostMirror verts_to_recolor_size_host = create_mirror(verts_to_recolor_size);
       
       //initialize the host view
       verts_to_recolor_size_host(0) = 0;
@@ -1140,9 +1140,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = create_mirror(verts_to_send_view);
       
       //this view keeps track of the size of verts_to_send.
-      Kokkos::View<size_t[1], device_type> verts_to_send_size("verts to send size");
-      Kokkos::View<size_t[1], device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
-      typename Kokkos::View<size_t[1], device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
+      Kokkos::View<size_t*, device_type> verts_to_send_size("verts to send size",1);
+      Kokkos::View<size_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic = verts_to_send_size;
+      typename Kokkos::View<size_t*, device_type>::HostMirror verts_to_send_size_host = create_mirror(verts_to_send_size);
 
       verts_to_send_size_host(0) = 0;
       Kokkos::deep_copy(verts_to_send_size, verts_to_send_size_host);
