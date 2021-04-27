@@ -88,13 +88,9 @@ FEMultiVector (const Teuchos::RCP<const map_type>& map,
          "source Map.");
     }
 
-    using range_type = Kokkos::pair<size_t, size_t>;
-    auto dv = Kokkos::subview (this->view_,
-                               range_type (0, map->getNodeNumElements ()),
-                               Kokkos::ALL ());
     // Memory aliasing is required for FEMultiVector
     inactiveMultiVector_ =
-      Teuchos::rcp (new base_type (importer_->getSourceMap (), dv));
+             Teuchos::rcp (new base_type (*this, importer_->getSourceMap(), 0));
   }
 }
 

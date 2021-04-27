@@ -126,17 +126,9 @@ localSolve (Tpetra::MultiVector<
 
   auto A_lcl = A.getLocalMatrix ();
 
-  // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
-  // sequential, host-only code.  See
-  // https://github.com/kokkos/kokkos-kernels/issues/48.  This means
-  // that we need to sync to host, then sync back to device when done.
-  X.sync_host ();
-  const_cast<MV&> (Y).sync_host ();
-  X.modify_host (); // we will write to X
-
   if (X.isConstantStride () && Y.isConstantStride ()) {
-    auto X_lcl = X.getLocalViewHost ();
-    auto Y_lcl = Y.getLocalViewHost ();
+    auto X_lcl = X.getLocalViewHost (Tpetra::Access::OverwriteAll);
+    auto Y_lcl = Y.getLocalViewHost (Tpetra::Access::ReadOnly);
     KokkosSparse::trsv (uplo.c_str (), trans.c_str (), diag.c_str (),
                         A_lcl, Y_lcl, X_lcl);
   }
@@ -144,17 +136,14 @@ localSolve (Tpetra::MultiVector<
     const size_t numVecs =
       std::min (X.getNumVectors (), Y.getNumVectors ());
     for (size_t j = 0; j < numVecs; ++j) {
-      auto X_j = X.getVector (j);
-      auto Y_j = X.getVector (j);
-      auto X_lcl = X_j->getLocalViewHost ();
-      auto Y_lcl = Y_j->getLocalViewHost ();
+      auto X_j = X.getVectorNonConst (j);
+      auto Y_j = Y.getVector (j);
+      auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::OverwriteAll);
+      auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
       KokkosSparse::trsv (uplo.c_str (), trans.c_str (),
                           diag.c_str (), A_lcl, Y_lcl, X_lcl);
     }
   }
-
-  X.template sync<dev_memory_space> ();
-  const_cast<MV&> (Y).template sync<dev_memory_space> ();
 }
 
 template<class CrsMatrixType, class MultiVectorType>
@@ -1077,9 +1066,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   // Set up the right-hand side b.
   vec_type b (ranMap);
   {
-    b.sync_host ();
-    b.modify_host ();
-    auto b_lcl_2d = b.getLocalViewHost ();
+    auto b_lcl_2d = b.getLocalViewHost (Tpetra::Access::OverwriteAll);
     auto b_lcl_1d = Kokkos::subview (b_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i < lclNumRows; ++i) {
@@ -1093,7 +1080,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
         b_lcl_1d(i) = K;
       }
     }
-    b.template sync<typename device_type::memory_space> ();
   }
 
   // We solve Ax=b (with A = LU) by first solving Lc = b, and then
@@ -1149,8 +1135,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    c.sync_host ();
-    auto c_lcl_2d = c.getLocalViewHost ();
+    auto c_lcl_2d = c.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1161,7 +1146,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
       TEST_EQUALITY( c_lcl_1d(i), c_i_expected );
     }
     TEST_EQUALITY( c_lcl_1d(lclNumRows-1), c_n_expected );
-    c.template sync<typename device_type::memory_space> ();
   }
   // lclSuccess = success ? 1 : 0;
   // gblSuccess = 0; // to be revised
@@ -1194,8 +1178,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    x.sync_host ();
-    auto x_lcl_2d = x.getLocalViewHost ();
+    auto x_lcl_2d = x.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1222,8 +1205,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    c.sync_host ();
-    auto c_lcl_2d = c.getLocalViewHost ();
+    auto c_lcl_2d = c.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto c_lcl_1d = Kokkos::subview (c_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
@@ -1234,7 +1216,6 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
       TEST_EQUALITY( c_lcl_1d(i), c_i_expected );
     }
     TEST_EQUALITY( c_lcl_1d(lclNumRows-1), c_n_expected );
-    c.template sync<typename device_type::memory_space> ();
   }
 
   localSolve (x, *U, c, true, false, Teuchos::NO_TRANS);
@@ -1242,8 +1223,7 @@ void testArrowMatrix (bool& success, Teuchos::FancyOStream& out)
   {
     Teuchos::OSTab tab2 (out);
 
-    x.sync_host ();
-    auto x_lcl_2d = x.getLocalViewHost ();
+    auto x_lcl_2d = x.getLocalViewHost (Tpetra::Access::ReadOnly);
     auto x_lcl_1d = Kokkos::subview (x_lcl_2d, Kokkos::ALL (), 0);
 
     for (LO i = 0; i + 1 < lclNumRows; ++i) {
