@@ -127,7 +127,6 @@ set (EpetraExt_inout_test_LL_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for 
 set (EpetraExt_inout_test_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
-set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
 
 # UVM = OFF
@@ -135,7 +134,6 @@ set (Kokkos_ENABLE_CUDA_UVM OFF CACHE BOOL "Set by default for CUDA PR testing")
 set (Tpetra_ENABLE_CUDA_UVM OFF CACHE BOOL "Set by default for CUDA PR testing")
 
 # Turn off packages currently failing with UVM = OFF
-set (Trilinos_ENABLE_Intrepid2 OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_Panzer OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_Stokhos OFF CACHE BOOL "Turn off packages for non-UVM build")
 set (Trilinos_ENABLE_TrilinosCouplings OFF CACHE BOOL "Turn off packages for non-UVM build")
