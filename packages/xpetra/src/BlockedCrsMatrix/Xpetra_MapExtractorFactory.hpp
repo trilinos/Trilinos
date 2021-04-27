@@ -68,7 +68,7 @@ namespace Xpetra {
 
   public:
     /*!
-      @brief Build MapExtrasctor from a given set of partial maps.
+      @brief Build MapExtractor from a given set of partial maps.
 
       The Maps indirectly specify the linear algebra library to use (Tpetra or Epetra).
     */
@@ -81,7 +81,7 @@ namespace Xpetra {
     }
 
     /*!
-      @brief Build MapExtrasctor from a given BlockedMap.
+      @brief Build MapExtractor from a given BlockedMap.
 
       The Maps indirectly specify the linear algebra library to use (Tpetra or Epetra).
     */
