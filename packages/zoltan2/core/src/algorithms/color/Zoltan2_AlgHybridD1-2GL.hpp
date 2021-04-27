@@ -46,8 +46,8 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
     using device_type = Tpetra::Map<>::device_type;
     using execution_space = Tpetra::Map<>::execution_space;
     using memory_space = Tpetra::Map<>::memory_space;
-    using host_exec = Kokkos::DefaultHostExecutionSpace;
-    using host_mem = Kokkos::DefaultHostExecutionSpace::memory_space;
+    using host_exec = typename Kokkos::View<device_type>::HostMirror::execution_space;
+    using host_mem = typename Kokkos::View<device_type>::HostMirror::memory_space;
 
   private:
    
@@ -58,7 +58,7 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 		       Teuchos::RCP<femv_t> femv,
 		       Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace> > vertex_list,
 		       size_t vertex_list_size = 0,
-		       bool use_vertex_based_coloring=false){		//TODO: RENAME THIS ARGUMENT IN ALL COLORING METHODS
+		       bool use_vertex_based_coloring=false){
       using KernelHandle = KokkosKernels::Experimental::KokkosKernelsHandle
 	  <offset_t, lno_t, lno_t, ExecutionSpace, MemorySpace, MemorySpace>;
       using lno_row_view_t = Kokkos::View<offset_t*,Kokkos::Device<ExecutionSpace, MemorySpace>>;

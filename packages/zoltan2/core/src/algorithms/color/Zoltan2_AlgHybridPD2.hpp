@@ -50,8 +50,8 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
     using device_type = Tpetra::Map<>::device_type;
     using execution_space = Tpetra::Map<>::execution_space;
     using memory_space = Tpetra::Map<>::memory_space;
-    using host_exec = Kokkos::DefaultHostExecutionSpace;
-    using host_mem = Kokkos::DefaultHostExecutionSpace::memory_space;      
+    using host_exec = typename Kokkos::View<device_type>::HostMirror::execution_space;
+    using host_mem = typename Kokkos::View<device_type>::HostMirror::memory_space;      
   private:
     //serial and parallel local partial distance-2 coloring function 
     template<class ExecutionSpace, typename MemorySpace>
