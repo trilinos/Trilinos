@@ -63,7 +63,7 @@
 #include "MueLu_GraphBase.hpp"
 
 
-//#define CMS_DEBUG
+#define CMS_DEBUG
 
 namespace { 
 
@@ -92,7 +92,7 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: classical scheme");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: classical scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("direct","ext+i"), "aggregation: classical scheme")));
+      validParamList->getEntry("aggregation: classical scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("direct","ext+i","classical modified"), "aggregation: classical scheme")));
                                                                         
     }
 
@@ -202,16 +202,28 @@ namespace MueLu {
     RCP<const Map> coarseDomainMap = coarseMap;
 
     std::string scheme = pL.get<std::string>("aggregation: classical scheme");
-    if(scheme == "ext+i" || scheme == "classical")
+    if(scheme == "ext+i") {
+      SubFactoryMonitor sfm(*this,"Ext+i Interpolation",coarseLevel);
       Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
-    else if(scheme == "direct")
+    }
+    else if(scheme == "direct") {
+      SubFactoryMonitor sfm(*this,"Direct Interpolation",coarseLevel);
       Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+    }
+    else if(scheme == "classical modified") {
+      SubFactoryMonitor sfm(*this,"Classical Modified Interpolation",coarseLevel);
+      Coarsen_ClassicalModified(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+    }
+    // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
+#ifdef CMS_DEBUG
     Xpetra::IO<SC,LO,GO,NO>::Write("classical_p.mat", *P);
+#endif
+
+    // Save output
     Set(coarseLevel,"P",P);
     RCP<const CrsGraph> pg = P->getCrsGraph();
     Set(coarseLevel,"P Graph",pg);
-
 
     //RCP<MultiVector> coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
     //    P->apply(*fineNullspace, *coarseNullspace, Teuchos::TRANS, Teuchos::ScalarTraits<SC>::one(), Teuchos::ScalarTraits<SC>::zero());
@@ -223,6 +235,337 @@ namespace MueLu {
       GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
     }
   }
+/* ************************************************************************* */
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+Coarsen_ClassicalModified(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+    /* ============================================================= */
+    /* Phase 3 : Classical Modified Interpolation                    */
+    /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
+    /* interpolation for parallel algebraic multigrid", NLAA 2008    */
+    /* 15:115-139                                                    */
+    /* ============================================================= */    
+    /* Definitions:                                                        */
+    /* F = F-points                                                        */
+    /* C = C-points                                                        */
+    /* N_i = non-zero neighbors of node i                                  */
+    /* S_i = {j\in N_i | j strongly influences i } [strong neighbors of i] */
+    /* F_i^s = F \cap S_i [strong F-neighbors of i]                        */
+    /* C_i^s = C \cap S_i [strong C-neighbors of i]                        */
+
+    /* N_i^w = N_i\ (F_i^s \cup C_i^s) [weak neighbors of i]               */
+    /*         This guy has a typo.  The paper had a \cap instead of \cup  */
+    /*         I would note that this set can contain both F-points and    */
+    /*         C-points.  They're just weak neighbors of this guy.         */
+    /*         Note that N_i^w \cup F_i^s \cup C_i^s = N_i by construction */
+
+
+    /* \bar{a}_ij = {    0, if sign(a_ij) == sign(a_ii)                    */
+    /*              { a_ij, otherwise                                      */
+
+    /* F_i^s\star = {k\in N_i | C_i^s \cap C_k^s = \emptyset}              */
+    /*              [set of F-neighbors of i that do not share a strong    */
+    /*               C-neighbor with i]                                    */
+
+
+    /* Rewritten Equation (9) on p. 120                                    */
+    /* \tilde{a}_ii =  (a_ij + \sum_{k\in{N_i^w \cup F_i^s\star}} a_ik     */
+    /*                                                                     */ 
+    /* f_ij = \sum_{k\in{F_i^s\setminusF_i^s*}} \frac{a_ik \bar{a}_kj}{\sum_{m\inC_i^s \bar{a}_km}}    */ 
+    /*                                                                     */ 
+    /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
+  
+    const point_type F_PT = ClassicalMapFactory::F_PT;
+    const point_type C_PT = ClassicalMapFactory::C_PT;
+    const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
+    using STS = typename Teuchos::ScalarTraits<SC>;
+    LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    SC SC_ZERO = STS::zero();
+
+    // Initial (estimated) allocation
+    // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
+    // needs to be a copy below.
+    size_t Nrows = A.getNodeNumRows();
+    double c_point_density = (double)num_c_points / (num_c_points+num_f_points);
+    double mean_strong_neighbors_per_row = (double) graph.GetNodeNumEdges() / graph.GetNodeNumVertices();
+    //    double mean_neighbors_per_row = (double)A.getNodeNumEntries() / Nrows;
+    double nnz_per_row_est = c_point_density*mean_strong_neighbors_per_row;
+
+    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getNodeNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
+    Array<size_t> tmp_rowptr(Nrows+1);
+    Array<LO> tmp_colind(nnz_est);
+
+    // Algorithm (count+realloc)
+    // For each row, i, 
+    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]   
+    size_t ct=0;
+    for(LO row=0; row < (LO) Nrows; row++) {
+      size_t row_start = eis_rowptr[row];
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      std::set<LO> C_hat;
+      if(myPointType[row] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+      }
+      else if(myPointType[row] == C_PT) {
+        // C-Points get a single 1 in their row
+        C_hat.insert(cpoint2pcol[row]);
+      }
+      else {
+        // F-Points have a more complicated interpolation
+
+        // C-neighbors of row 
+        A.getLocalRowView(row, indices, vals);
+        for(LO j=0; j<indices.size(); j++)
+          if(myPointType[indices[j]] == C_PT && edgeIsStrong[row_start + j])
+            C_hat.insert(cpoint2pcol[indices[j]]);
+      }// end else 
+      
+      // Realloc if needed
+      if(ct + (size_t)C_hat.size() > (size_t)tmp_colind.size()) {
+        tmp_colind.resize(std::max(ct+(size_t)C_hat.size(),(size_t)2*tmp_colind.size()));
+      }
+      
+      // Copy
+      std::copy(C_hat.begin(), C_hat.end(),tmp_colind.begin()+ct);
+      ct+=C_hat.size();
+      tmp_rowptr[row+1] = tmp_rowptr[row] + C_hat.size();
+    }
+    // Resize down
+    tmp_colind.resize(tmp_rowptr[Nrows]);  
+
+    // Allocate memory & copy
+    P = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
+    RCP<CrsMatrix> PCrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    ArrayRCP<size_t>  P_rowptr;
+    ArrayRCP<LO>      P_colind;
+    ArrayRCP<SC>      P_values;
+
+#ifdef CMS_DEBUG
+printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
+#endif
+    PCrs->allocateAllValues(tmp_rowptr[Nrows], P_rowptr, P_colind, P_values);
+    TEUCHOS_TEST_FOR_EXCEPTION(tmp_rowptr.size() !=P_rowptr.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (rowptr)");
+    TEUCHOS_TEST_FOR_EXCEPTION(tmp_colind.size() !=P_colind.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (colind)");
+    // FIXME:  This can be short-circuited for Tpetra, if we decide we care
+    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
+    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
+
+    // Algorithm (numeric)
+    for(LO i=0; i < (LO)Nrows; i++) {
+      if(myPointType[i] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("** A(%d,:) is a Dirichlet-Point.\n",i);
+#endif
+      }
+      else if (myPointType[i] == C_PT) {
+        // C Points get a single 1 in their row
+        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("** A(%d,:) is a C-Point.\n",i);
+#endif
+      }
+      else {
+        /* Rewritten Equation (9) on p. 120                                    */
+        /* \tilde{a}_ii =  (a_ij + \sum_{k\in{N_i^w \cup F_i^s\star}} a_ik     */
+        /*                                                                     */ 
+        /* f_ij = \sum_{k\in{F_i^s\setminusF_i^s*}} \frac{a_ik \bar{a}_kj}{\sum_{m\inC_i^s \bar{a}_km}}    */ 
+        /*                                                                     */ 
+        /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
+        ArrayView<const LO> A_indices_i, A_indices_k;
+        ArrayView<const SC> A_vals_i, A_vals_k;
+        A.getLocalRowView(i, A_indices_i, A_vals_i);
+        size_t row_start = eis_rowptr[i];
+        
+
+        ArrayView<LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+
+        // Compute the diagonal (and flag F_i^s\star)
+        SC a_ii = SC_ZERO;
+        SC diagonal_sum = SC_ZERO;
+        std::vector<bool> in_fis_star(A_indices_i.size(),false);
+        for(LO j=0; j<(LO)A_indices_i.size(); j++) {
+          SC a_ik = A_vals_i[j]; 
+          LO k = A_indices_i[j];
+          
+          if(k == i) {
+            // Diagonal
+            a_ii = a_ik;
+          }
+          else if (!edgeIsStrong[row_start + j]) {
+            // Weak neighbors
+            // FIXME: Ghosting
+            diagonal_sum += a_ik;
+          }
+          else if(myPointType[k] == F_PT && edgeIsStrong[row_start+j]) {
+            // Strong F-neighbors
+            // FIXME: Ghosting
+
+            // We want strong F-neighbors with no common strong C-Points with i.  P has the strong C-points
+            // FIXME: Ghosting
+            ArrayView<LO> P_indices_k = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
+
+            // std::sets are sorted, so...
+            in_fis_star[j] = true;
+            for(LO idx_i=0,idx_k=0; idx_i<(LO)P_indices_i.size() && idx_k<(LO)P_indices_k.size(); idx_i++) {
+              while (idx_k < (LO)P_indices_k.size() && P_indices_i[idx_i] > P_indices_k[idx_k])
+                idx_k++;
+              if(P_indices_i[idx_i] == P_indices_k[idx_k]) { in_fis_star[j] = false; break;}
+            }//end for std_set
+            
+            if(in_fis_star[j]) {
+              // Point is in F_i^s\star
+              diagonal_sum +=a_ik;
+            }
+            
+          }//end else F_PT                 
+        }//end for A_indicies_i
+
+#ifdef CMS_DEBUG          
+        // DEBUG
+        printf("** A(%d,:) is an F-Point.\n",i);
+        {
+          char mylabel[5]="UFCD";
+          char sw[3]="ws";
+          char start[3]=" *";
+          printf("** A(%d,:) = ",i);
+          for(LO j=0; j<(LO)A_indices_i.size(); j++){  
+            printf("%6.4e(%d-%c%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]],
+                   start[(int)in_fis_star[j]]);
+          }
+          printf("\n");
+        }
+#endif
+
+
+
+        // Compute the second denominator
+        std::vector<SC> second_denominator(A_indices_i.size(), SC_ZERO);
+        for(LO j=0; j<(LO)A_indices_i.size(); j++) {
+          //          SC a_ik = A_vals_i[j]; 
+          LO k = A_indices_i[j];
+          if(k==i) continue; // No self-sums
+
+          // FIXME: Ghosting
+          size_t k_row_start = eis_rowptr[k];
+          // FIXME: Ghosting
+          if(myPointType[k] == F_PT && !in_fis_star[j])  {
+            // Strong F-point neighbor and not in F_i^s\star
+            A.getLocalRowView(k, A_indices_k, A_vals_k);
+
+            // Find the diagonal
+            SC a_kk = SC_ZERO;
+            for(LO l=0; l<(LO)A_indices_k.size(); l++) {
+              LO m = A_indices_k[l];
+              if(m == k) {
+                a_kk = A_vals_k[l];
+                break;
+              }           
+            }//end for A_indices_k
+
+            int sign_akk = Sign(a_kk);
+
+            // Second denominator terms
+            for(LO l=0; l<(LO)A_indices_k.size(); l++) {
+              LO m    = A_indices_k[l];
+
+              SC a_km = A_vals_k[l];
+
+#ifdef CMS_DEBUG
+              char mylabel[5]="UFCD";
+              char sw[3]="ws";
+              printf(" - - A(%d,%d)%c%c = %6.4e (a_kk = %6.4e)\n",k,m,mylabel[myPointType[m]],sw[(int)edgeIsStrong[k_row_start+k]],a_km,a_kk);
+#endif
+              // FIXME: Ghosting
+              if(myPointType[m] == C_PT && edgeIsStrong[k_row_start + l]) {
+                second_denominator[j] += (Sign(a_km) == sign_akk) ? SC_ZERO : a_km;
+              }//end if C_PT
+            }//end for A_indices_k
+          }//end if F_PT && not F_i^s\star          
+        }//end for A_indices_i
+
+#ifdef CMS_DEBUG
+        {
+          printf("- second_denominator = ");
+          for(LO j=0; j<(LO)A_indices_i.size(); j++) {
+            printf("%6.4e[%d] ",second_denominator[j],A_indices_i[j]);
+          }
+          printf("\n");
+        }
+#endif
+
+
+        // Compute the entire second term       
+        for(LO p_j=0; p_j<(LO)P_indices_i.size(); p_j++) {
+          LO P_col = pcol2cpoint[P_indices_i[p_j]];
+          SC a_ij = SC_ZERO;
+          
+          // Find A_ij (should be there)
+          // FIXME: We can optimize this if we assume sorting
+          for(LO a_j =0; a_j<(LO)A_indices_i.size(); a_j++) {
+            if(A_indices_i[a_j] == P_col) {
+              a_ij = A_vals_i[a_j];
+              break;
+            }
+          }//end for A_indices_i
+          
+          // Compute the second term
+          SC f_ij = SC_ZERO;
+          for(LO a_j =0; a_j<(LO)A_indices_i.size(); a_j++) {            
+            LO k    = A_indices_i[a_j];
+            SC a_ik = A_vals_i[a_j];
+            if(k==i) continue; // No self-sums
+            if(myPointType[k] == F_PT && edgeIsStrong[row_start+a_j] && !in_fis_star[a_j]) {       
+              // Strong F-neighbors that are not in F_i^s\star
+#ifdef CMS_DEBUG
+              printf(" - A(%d,%d) is a strong F-neighbor and has a common C-Point\n",i,k);
+#endif
+              A.getLocalRowView(k, A_indices_k, A_vals_k);
+              
+              // Find the diagonal and a_kj
+              SC a_kk = SC_ZERO;
+              SC a_kj = SC_ZERO;
+              bool have_akk = false, have_akj=false;
+              for(LO l=0; !have_akk && !have_akj && l<(LO)A_indices_k.size(); l++) {
+                LO m = A_indices_k[l];
+                if(m == k) {
+                  a_kk = A_vals_k[l];
+                  have_akk = true;
+                }           
+                if(m==P_col) {
+                  a_kj = A_vals_k[l];
+                  have_akj = true;
+                }
+              }//end for A_indices_k
+              int sign_akk = Sign(a_kk);
+              SC a_kj_bar = (Sign(a_kj) == sign_akk) ? SC_ZERO : a_kj;
+              if (a_ik != SC_ZERO)
+                f_ij += a_ik * a_kj_bar / second_denominator[a_j];
+
+
+             }//end if F_PT \ F_i^s\star
+          }//end for A_indices_i          
+          SC w_ij = - (a_ij + f_ij) / (a_ii + diagonal_sum);
+#ifdef CMS_DEBUG
+          printf("P(%d,%d/%d) = (%6.4e + %6.4e) / (%6.4e + %6.4e) = %6.4e\n",i,P_indices_i[p_j],pcol2cpoint[P_indices_i[p_j]],a_ij,f_ij,a_ii,diagonal_sum,w_ij);
+#endif
+          P_vals_i[p_j] = w_ij;
+
+        }//end for P_indicies_i
+        
+
+      }//end else F-Point
+    }//end for numRows
+
+    // Finish up
+    PCrs->setAllValues(P_rowptr, P_colind, P_values);
+    PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+}
+
 
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -324,7 +667,6 @@ Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coars
     tmp_colind.resize(tmp_rowptr[Nrows]);  
 
     // Allocate memory & copy
-    printf("CMS: Allocating memory w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     P = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
     RCP<CrsMatrix> PCrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
     ArrayRCP<size_t>  P_rowptr;
@@ -515,6 +857,10 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
     /*         [C-neighbors and C-neighbors of strong F-neighbors of i]    */
     /*                                                                     */
 
+    /* \bar{a}_ij = {    0, if sign(a_ij) == sign(a_ii)                    */
+    /*              { a_ij, otherwise                                      */
+
+
     /* Rewritten Equation (19) on p. 123                                   */
     /* f_ik = \frac{\bar{a}_kj}{\sum{l\in \hat{C}_i\cup {i}} \bar{a}_kl    */
     /* w_ij = -\tilde{a}_ii^{-1} (a_ij + \sum_{k\inF_i^s} a_ik f_ik        */
@@ -525,6 +871,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
     /* \tilde{a}_ii = a_ii + \sum_{n\inN_i^w\setminus \hat{C}_i} a_in + \sum_{k\inF_i^s} a_ik g_ik  */
     const point_type F_PT = ClassicalMapFactory::F_PT;
     const point_type C_PT = ClassicalMapFactory::C_PT;
+    const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
     using STS=Teuchos::ScalarTraits<SC>;
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     SC SC_ZERO = STS::zero();
@@ -550,8 +897,10 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
       ArrayView<const LO> indices;
       ArrayView<const SC> vals;
       std::set<LO> C_hat;
-
-      if(myPointType[row] == C_PT) {
+      if(myPointType[row] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+      }
+      else if(myPointType[row] == C_PT) {
         // C-Points get a single 1 in their row
         C_hat.insert(cpoint2pcol[row]);
       }
@@ -610,8 +959,6 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
     // - Pass though the row to compute the lumped diagonal.
     // - Pass through the row a second time to compute the entries
     
-    /* \bar{a}_ij = {    0, if sign(a_ij) == sign(a_ii)                    */
-    /*              { a_ij, otherwise                                      */
 
 
     // - Pass though the row to compute the lumped diagonal and the denominator of the last term
@@ -622,8 +969,10 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
       /* Rewritten Equation (20) on p. 124 [for the lumped diagonal]                        */
       /* g_ik = \frac{\bar{a}_ki}{\sum{l\in \hat{C}_i\cup {i}} \bar{a}_kl                   */    
       /* \tilde{a}_ii = a_ii + \sum_{n\inN_i^w\setminus \hat{C}_i} a_in + \sum_{k\inF_i^s} a_ik g_ik  */
-
-      if (myPointType[i] == C_PT) {
+      if(myPointType[i] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+      }
+      else if (myPointType[i] == C_PT) {
         // C Points get a single 1 in their row
         P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();
 #ifdef CMS_DEBUG        

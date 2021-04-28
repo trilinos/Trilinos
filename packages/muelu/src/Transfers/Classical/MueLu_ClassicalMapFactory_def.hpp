@@ -104,7 +104,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Build", currentLevel);
     RCP<const GraphBase> graph = Get<RCP<GraphBase> >(currentLevel,"Graph");
     RCP<const Matrix> A = Get<RCP<Matrix> >(currentLevel,"A");
-
+    const ParameterList& pL = GetParameterList();
     /* ============================================================= */
     /* Phase 1 : Compute an initial MIS                              */
     /* ============================================================= */
@@ -112,15 +112,18 @@ namespace MueLu {
     LO numColors=0;
     // FIXME:  This is not going to respect coloring at or near processor
     // boundaries, so that'll need to get cleaned up lated
-    {
-      SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
 
+    std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
 #ifdef HAVE_MUELU_KOKKOSCORE  
-      if(graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
-        DoGraphColoring(*graph,myColors,numColors);
-      else
+    if(coloringAlgo != "MIS" && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
+      SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
+      DoGraphColoring(*graph,myColors,numColors);
+    }
+    else 
 #endif
-        DoMISNaive(*graph,myColors,numColors);
+    { 
+      SubFactoryMonitor sfm(*this,"MIS",currentLevel);
+      DoMISNaive(*graph,myColors,numColors);
     }
     // FIXME: This coloring will either need to be done MPI parallel, or
     // there needs to be a cleanup phase to fix mistakes
