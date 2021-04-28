@@ -869,6 +869,7 @@ namespace Tacho {
             if (m > 0) {
               value_type *aptr = s.buf;
               UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
+
               _status = Symmetrize<Uplo::Upper,Algo::OnDevice>::invoke(exec_instance, ATL); 
               exec_instance.fence();
 
@@ -1671,8 +1672,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
-        printf("==============================================================\n");
+        printf("Summary: LevelSetTools-Variant-%d (Cholesky Solve: %3d)\n", variant, nrhs);
+        printf("=======================================================\n");
         print_stat_solve();
       }
     }
@@ -1772,6 +1773,7 @@ namespace Tacho {
               }
 
               const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
+              printf("level = %d\n", lvl);
               factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
               Kokkos::fence();
 
@@ -1997,8 +1999,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
-        printf("==============================================================\n");
+        printf("Summary: LevelSetTools (LDL Solve: %3d)\n", nrhs);
+        printf("=======================================\n");
         print_stat_solve();
       }
     }

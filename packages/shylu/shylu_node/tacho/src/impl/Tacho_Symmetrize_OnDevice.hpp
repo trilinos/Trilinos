@@ -37,7 +37,7 @@ namespace Tacho {
               Kokkos::parallel_for
                 (Kokkos::TeamVectorRange(member, m),
                  [&, A, j](const ordinal_type &i) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
-                  A(i,j) = i < j ? A(j,i) : A(i,j);
+                  A(i,j) = i > j ? A(j,i) : A(i,j);
                 });
             });
         }
