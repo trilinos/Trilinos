@@ -38,11 +38,11 @@
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_io/IossBridge.hpp>
+#include <stk_tools/transfer_utils/MtoNTransientFieldTransferById.hpp>
 
 namespace stk { namespace mesh { class MetaData; }}
 namespace stk { namespace mesh { class BulkData; }}
 namespace stk { namespace io { class StkMeshIoBroker; }}
-namespace stk { namespace transfer_utils { class MtoNTransientFieldTransferById; }}
 
 namespace stk {
 namespace balance {
@@ -56,13 +56,15 @@ public:
     ~SubdomainCreator();
 
     int get_num_final_subdomains() const { return mNumFinalSubdomains; }
-    void declare_all_final_subdomain_parts();
+    stk::mesh::PartVector declare_all_final_subdomain_parts();
     void move_entities_into_final_subdomain_part(size_t i, const stk::mesh::EntityVector &entities);
 
     stk::io::EntitySharingInfo get_node_sharing_info(unsigned subdomain);
-    void create_subdomain_and_write(const std::string &filename, unsigned subdomain, int global_num_nodes,
-                                    int global_num_elems, const stk::io::EntitySharingInfo &nodeSharingInfo,
+    void create_subdomain_and_write(const std::string &filename, unsigned subdomain,
+                                    int global_num_nodes, int global_num_elems,
                                     int numSteps = -1, double timeStep = 0.0);
+
+    static constexpr unsigned INVALID_SUBDOMAIN = stk::transfer_utils::INVALID_SUBDOMAIN;
 
 private:
     std::string getSubdomainPartName(int subdomainId);

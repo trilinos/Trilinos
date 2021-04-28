@@ -53,7 +53,15 @@ namespace KokkosKernels{
 
 namespace Impl{
 
-enum ExecSpaceType{Exec_SERIAL, Exec_OMP, Exec_PTHREADS, Exec_QTHREADS, Exec_CUDA, Exec_HIP};
+enum ExecSpaceType {
+  Exec_SERIAL,
+  Exec_OMP,
+  Exec_PTHREADS,
+  Exec_QTHREADS,
+  Exec_CUDA,
+  Exec_HIP,
+  Exec_SYCL
+};
 template <typename ExecutionSpace>
 KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
   ExecSpaceType exec_space = Exec_SERIAL;
@@ -87,6 +95,12 @@ KOKKOS_FORCEINLINE_FUNCTION ExecSpaceType kk_get_exec_space_type(){
   }
 #endif
 
+#if defined(KOKKOS_ENABLE_SYCL)
+  if (std::is_same<Kokkos::Experimental::SYCL, ExecutionSpace>::value) {
+    exec_space = Exec_SYCL;
+  }
+#endif
+
 #if defined( KOKKOS_ENABLE_QTHREAD)
   if (std::is_same< Kokkos::Qthread, ExecutionSpace >::value){
     exec_space = Exec_QTHREADS;
@@ -111,6 +125,14 @@ constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Cuda>() {
 #ifdef KOKKOS_ENABLE_HIP
 template <>
 constexpr KOKKOS_INLINE_FUNCTION bool kk_is_gpu_exec_space<Kokkos::Experimental::HIP>() {
+  return true;
+}
+#endif
+
+#ifdef KOKKOS_ENABLE_SYCL
+template <>
+constexpr KOKKOS_INLINE_FUNCTION bool
+kk_is_gpu_exec_space<Kokkos::Experimental::SYCL>() {
   return true;
 }
 #endif

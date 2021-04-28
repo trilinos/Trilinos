@@ -61,6 +61,9 @@
 #define DEFAULT_BLAS_ROUTINES "trmm,gemm,"
 #define DEFAULT_TEAM_SIZE 1
 #define DEFAULT_VECTOR_LEN 1
+#define DEFAULT_USE_AUTO 0
+#define DEFAULT_BATCH_SIZE_LAST_DIM 0
+#define DEFAULT_VERIFY 1
 
 /************************ blas routine structure definitions **********/
 struct perf_test_trmm_args {
@@ -83,6 +86,7 @@ struct blas_args {
   // ADD MORE BLAS3 ROUTINES HERE
   int team_size;
   int vector_len;
+  bool use_auto, batch_size_last_dim;
   // ADD MORE COMMON BLAS3 OPTIONS HERE
 };
 typedef struct blas_args blas_args_t;
@@ -116,13 +120,19 @@ static std::string loop_e_str[LOOP_N] = {"serial", "parallel"};
 
 /**
  * @var BLAS:                          Run the blas routine through the
- * KokkosBlas namespace.
+ *                                     KokkosBlas namespace.
  * @var BATCHED_SERIAL{_BLOCKED}:      Run the serial blas routine through the
  *                                     KokkosBatched namespace.
+ * @var BATCHED_SERIAL_SIMD{_BLOCKED}: Run the serial blas routine through the
+ *                                     KokkosBatched namespace using SIMD views.
+ * @var BATCHED_SERIAL_COMPACT_MKL:    Run the serial blas mkl routine through
+ *                                     the KokkosBatched namespace.
  * @var BATCHED_TEAM{_BLOCKED}:        Run the team blas routine through the
- * KokkosBatched namespace.
+ *                                     KokkosBatched namespace.
  * @var BATCHED_TEAM_VECTOR{_BLOCKED}: Run the team vector blas routine through
- * the KokkosBatched namespace.
+ *                                     the KokkosBatched namespace.
+ * @var BATCHED_TEAM_SIMD{_BLOCKED}:   Run the team vector blas routine through
+ * the KokkosBatched namespace using SIMD views.
  * @var EXPERIMENT:                    Run the blas routine as a custom
  * experiment.
  */
@@ -130,19 +140,26 @@ typedef enum TEST {
   BLAS,
   BATCHED_SERIAL,
   BATCHED_SERIAL_BLOCKED,
+  BATCHED_SERIAL_SIMD,
+  BATCHED_SERIAL_SIMD_BLOCKED,
+  BATCHED_SERIAL_COMPACT_MKL,
   BATCHED_TEAM,
   BATCHED_TEAM_BLOCKED,
   BATCHED_TEAM_VECTOR,
   BATCHED_TEAM_VECTOR_BLOCKED,
+  BATCHED_TEAM_SIMD,
+  BATCHED_TEAM_SIMD_BLOCKED,
   // ADD MORE TEST TYPES HERE
   EXPERIMENT,
   TEST_N
 } test_e;
 
 static std::string test_e_str[TEST_N]{
-    "blas", "batched_serial", "batched_serial_blocked", "batched_team",
+    "blas", "batched_serial", "batched_serial_blocked", "batched_serial_simd",
+    "batched_serial_simd_blocked", "batched_serial_compact_mkl", "batched_team",
     "batched_team_blocked", "batched_team_vector",
-    "batched_team_vector_blocked",
+    "batched_team_vector_blocked", "batched_team_simd",
+    "batched_team_simd_blocked",
     // ADD MORE TEST TYPES HERE
     "experiment"};
 
@@ -176,6 +193,8 @@ typedef struct matrix_dims matrix_dims_t;
  * @var out_file:      The file to write csv data to. Defaults to stdout.
  * @var blas_args:     Arguments for each supported blas routine.
  * @var blas_routines: Selects which supported blas routines to test.
+ * @var verify:        Performs verification of the blas routine for each input
+ *                     before timing it.
  */
 struct perf_test_options {
   test_e test;
@@ -189,6 +208,7 @@ struct perf_test_options {
   std::string out_file;
   blas_args_t blas_args;
   std::string blas_routines;
+  bool verify;
 };
 typedef struct perf_test_options options_t;
 

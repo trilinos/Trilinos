@@ -1636,11 +1636,12 @@ public:
 
     auto X_mv = X.getMultiVectorView ();
     auto Y_mv = Y.getMultiVectorView ();
-    Y_mv.template modify<device_type> ();
 
-    auto X_lcl = X_mv.template getLocalView<device_type> ();
-    auto Y_lcl = Y_mv.template getLocalView<device_type> ();
-    auto val = this->val_.template view<device_type> ();
+    //auto X_lcl = X_mv.template getLocalView<device_type> (Access::ReadOnly);
+    //auto Y_lcl = Y_mv.template getLocalView<device_type> (Access::ReadWrite);
+    auto X_lcl = X_mv.getLocalViewDevice (Access::ReadOnly);
+    auto Y_lcl = Y_mv.getLocalViewDevice (Access::ReadWrite);
+    auto val = this->val_.view_device ();
 
     bcrsLocalApplyNoTrans (alpha_impl, graph, val, blockSize, X_lcl,
                            beta_impl, Y_lcl);
@@ -3602,7 +3603,7 @@ public:
     auto diagOffsetsHost = Kokkos::create_mirror_view (diagOffsets);
     Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
     // We're filling diag on host for now.
-    diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
+    //diag.template modify<typename decltype (diagOffsetsHost)::memory_space> ();
 
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -3633,7 +3634,7 @@ public:
       rowOffset += getNumEntriesInLocalRow(r)*bs*bs;
     }
 
-    diag.template sync<memory_space> (); // sync vec of diag entries back to dev
+    //diag.template sync<memory_space> (); // sync vec of diag entries back to dev
   }
 
   template<class Scalar, class LO, class GO, class Node>

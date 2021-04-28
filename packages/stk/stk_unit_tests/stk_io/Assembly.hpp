@@ -41,6 +41,7 @@
 #include <stk_topology/topology.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include "IOMeshFixture.hpp"
+#include <algorithm>
 #include <fstream>
 
 class Assembly : public IOMeshFixture
@@ -144,9 +145,15 @@ protected:
     }
   }
 
+  bool find_by_name(const stk::mesh::PartVector& parts, const std::string& partName)
+  {
+    auto nameMatches = [&](const stk::mesh::Part* part){return partName==part->name();};
+    return parts.end() != std::find_if(parts.begin(), parts.end(), nameMatches);
+  }
+
   void compare_assemblies(const stk::mesh::MetaData& meta1,
                           const stk::mesh::MetaData& meta2,
-                          stk::mesh::Part* excludedBlock = nullptr)
+                          const stk::mesh::PartVector& excludedBlocks = stk::mesh::PartVector())
   {
     std::vector<std::string> assemblyNames1 = stk::io::get_assembly_names(meta1);
     std::vector<std::string> assemblyNames2 = stk::io::get_assembly_names(meta2);
@@ -169,7 +176,7 @@ protected:
       stk::mesh::PartVector leafParts2 = stk::io::get_unique_leaf_parts(meta2, assemblyNames2[i]);
       ASSERT_GE(leafParts1.size(), leafParts2.size());
       for(size_t j=0; j<leafParts1.size(); ++j) {
-        if (excludedBlock == nullptr || leafParts1[j]->name() != excludedBlock->name()) {
+        if (excludedBlocks.empty() || !find_by_name(excludedBlocks, leafParts1[j]->name())) {
           EXPECT_TRUE(stk::mesh::find(leafParts2, leafParts1[j]->name()) != nullptr);
         }
       }
@@ -177,10 +184,10 @@ protected:
   }
 
   void test_write_then_read_assemblies(size_t expectedNumAssemblies,
-                                       stk::mesh::Part* blockToExclude = nullptr)
+                                       const stk::mesh::PartVector& blocksToExclude = stk::mesh::PartVector())
   {
     const std::string fileName("meshWithAssemblies.e");
-    stk::mesh::Selector meshSubsetSelector = create_subset_selector(blockToExclude);
+    stk::mesh::Selector meshSubsetSelector = create_subset_selector(blocksToExclude);
     stk::io::write_mesh_subset(fileName, get_bulk(), meshSubsetSelector);
 
     stk::mesh::MetaData meta;
@@ -188,7 +195,9 @@ protected:
     stk::io::fill_mesh(fileName, bulk);
 
     EXPECT_EQ(expectedNumAssemblies, stk::io::get_assembly_names(meta).size());
-    compare_assemblies(get_meta(), meta, blockToExclude);
+    if (expectedNumAssemblies > 0) {
+      compare_assemblies(get_meta(), meta, blocksToExclude);
+    }
 
     unlink(fileName.c_str());
   }

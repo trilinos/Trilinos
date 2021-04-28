@@ -186,7 +186,8 @@ namespace MueLu {
       dims_ = coords->getNumVectors();  //2D or 3D?
       if(numProcs > 1)
       {
-        {
+        if (aggregates->AggregatesCrossProcessors())
+        { // Do we want to use the map from aggregates here instead of the map from A? Using the map from A seems to be problematic with multiple dofs per node
           RCP<Import> coordImporter = Xpetra::ImportFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(coords->getMap(), Amat->getColMap());
           RCP<Xpetra::MultiVector<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node> > ghostedCoords = Xpetra::MultiVectorFactory<typename Teuchos::ScalarTraits<Scalar>::coordinateType, LocalOrdinal, GlobalOrdinal, Node>::Build(Amat->getColMap(), dims_);
           ghostedCoords->doImport(*coords, *coordImporter, Xpetra::INSERT);
@@ -844,7 +845,10 @@ namespace MueLu {
     fout << indent;
     for(size_t i = 0; i < uniqueFine.size(); i++)
     {
-      fout << aggsOffset_ + vertex2AggId_[uniqueFine[i]] << " ";
+      if(vertex2AggId_[uniqueFine[i]]==-1)
+        fout << vertex2AggId_[uniqueFine[i]] << " ";
+      else
+        fout << aggsOffset_ + vertex2AggId_[uniqueFine[i]] << " ";
       if(i % 10 == 9)
         fout << endl << indent;
     }

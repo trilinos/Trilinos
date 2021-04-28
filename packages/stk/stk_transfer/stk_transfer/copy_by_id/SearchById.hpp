@@ -37,7 +37,7 @@
 #define  STK_COPYSEARCHBASE_HPP
 
 #include <set>
-#include <map>
+#include <vector>
 
 #include "TransferCopyByIdMeshAdapter.hpp"
 
@@ -46,9 +46,9 @@ namespace transfer {
 
 class SearchById {
 public:
-  typedef TransferCopyByIdMeshAdapter::Mesh_ID Mesh_ID;
-  typedef std::map<Mesh_ID,int> KeyToTargetProcessor;
-  typedef std::set<Mesh_ID> MeshIDSet;
+  using Mesh_ID = TransferCopyByIdMeshAdapter::Mesh_ID;
+  using KeyToTargetProcessor = std::vector<std::pair<Mesh_ID, int>>;
+  using MeshIDSet = std::set<Mesh_ID>;
 
   virtual void intialize(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb) =0;
   virtual void do_search(const TransferCopyByIdMeshAdapter & mesha,

@@ -119,8 +119,8 @@ namespace tools {
                              const stk::mesh::EntityVector& nodesToSearchAround,
                              stk::mesh::EntityVector& nodesInRings,
                              const int num_rings,
+                             const stk::mesh::Selector& insideSelection,
                              int currentRing = 0){
-
     stk::mesh::EntityVector newlyAddedNodes;
     for (unsigned int iSource=0; iSource<nodesToSearchAround.size(); ++iSource){
       auto& sourceNode = nodesToSearchAround[iSource];
@@ -133,7 +133,8 @@ namespace tools {
         for (unsigned int iNode=0; iNode<numConnNodes; ++iNode){
           stk::mesh::Entity connectedNode = connectedNodes[iNode];
           auto foundIter = std::find(nodesInRings.begin(), nodesInRings.end(), connectedNode);
-          if (foundIter != nodesInRings.end()){ continue;}
+          if (foundIter != nodesInRings.end()){ continue;}  // Already found
+          if ( !insideSelection(bulk.bucket(connectedNode)) ) { continue; } // Not insideSelection
           newlyAddedNodes.emplace_back(connectedNode);
           nodesInRings.emplace_back(connectedNode);
         }
@@ -144,16 +145,17 @@ namespace tools {
 
     if ( currentRing >= num_rings || newlyAddedNodes.size() == 0 ) { return; }
 
-    nodes_in_rings(bulk, newlyAddedNodes, nodesInRings, num_rings, currentRing );
+    nodes_in_rings(bulk, newlyAddedNodes, nodesInRings, num_rings, insideSelection, currentRing );
 
   }
 
   inline std::set<int> procs_in_rings(stk::mesh::BulkData& bulkData,
                                       stk::mesh::Entity& node,
                                       const SymmCommMap& symmNodeMap,
-                                      int numRings) {
+                                      int numRings,
+                                      const stk::mesh::Selector& insideSelection) {
     stk::mesh::EntityVector nodesInRings;
-    nodes_in_rings(bulkData,{node},nodesInRings,numRings);
+    nodes_in_rings(bulkData,{node},nodesInRings,numRings,insideSelection);
     std::set<int> procs;
     for(auto& ringNode: nodesInRings) {
       stk::mesh::EntityKey ringKey = bulkData.entity_key(ringNode);
@@ -184,7 +186,7 @@ namespace tools {
     {
       for(stk::mesh::Entity node : *bucket)
       {
-        std::set<int> proc_list = procs_in_rings(bulkData,node,symmNodeMap,numRings);
+        std::set<int> proc_list = procs_in_rings(bulkData,node,symmNodeMap,numRings,selector);
         unsigned num_elements = bulkData.num_elements(node);
         const stk::mesh::Entity* elements = bulkData.begin_elements(node);
         for(unsigned i=0;i<num_elements;++i)

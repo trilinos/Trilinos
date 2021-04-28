@@ -124,17 +124,18 @@ public:
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
 
     virtual OrderODE getOrderODE()   const {return FIRST_ORDER_ODE;}
 
-    void getValidParametersBasicERK(Teuchos::RCP<Teuchos::ParameterList> pl) const;
     virtual std::string getDescription() const = 0;
   //@}
 
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  Teuchos::RCP<Teuchos::ParameterList> getValidParametersBasicERK() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{

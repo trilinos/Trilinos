@@ -148,7 +148,7 @@ public:
 
     Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
 
-    reset_last_modification_state(LastModLocation::HOST_OR_DEVICE);
+    reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
 
     hostSynchronizedCount() = bulk.synchronized_count();
     isFieldLayoutConsistent = true;
@@ -164,7 +164,7 @@ public:
       Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
 
       if (needToSyncAllDataToDevice) {
-        reset_last_modification_state(LastModLocation::HOST_OR_DEVICE);
+        reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
       }
 
       hostSynchronizedCount() = ngpField->hostBulk->synchronized_count();
@@ -176,13 +176,8 @@ public:
   template <typename NgpField>
   void clear_sync_state(NgpField* ngpField)
   {
-    if (ngpField->hostBulk->synchronized_count() != ngpField->synchronizedCount) {
-      ngpField->update_field(ngpField->need_sync_to_device());
-    }
-    Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
-    lostDeviceFieldData() = false;
-    anyPotentialDeviceFieldModification() = false;
-    reset_last_modification_state(LastModLocation::HOST_OR_DEVICE);
+    clear_host_sync_state(ngpField);
+    clear_device_sync_state(ngpField);
   }
 
   template <typename NgpField>
@@ -207,7 +202,7 @@ public:
   void sync_to_host(NgpField* ngpField)
   {
     Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
-    reset_last_modification_state(LastModLocation::HOST_OR_DEVICE);
+    reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
     lostDeviceFieldData() = false;
     anyPotentialDeviceFieldModification() = false;
   }
@@ -216,7 +211,7 @@ public:
   void sync_to_device(NgpField* ngpField)
   {
     Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
-    reset_last_modification_state(LastModLocation::HOST_OR_DEVICE);
+    reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
     lostDeviceFieldData() = false;
     anyPotentialDeviceFieldModification() = false;
   }
@@ -322,7 +317,7 @@ public:
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
     stk::mesh::Selector fieldSelector(*(ngpField->hostField));
 
-    UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceNumComponentsPerEntity;
+    UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceAllFieldsBucketsNumComponentsPerEntity;
     FieldDataDeviceViewType<T> & localDeviceData = ngpField->deviceData;
     FieldDataDeviceViewType<T> & localLastFieldValue = lastFieldValue;
     LastFieldModLocationType & localLastFieldModLocation = lastFieldModLocation;
@@ -401,8 +396,26 @@ private:
     m_stkFieldSyncDebugger->mark_data_initialized();
   }
 
-  void reset_last_modification_state(LastModLocation value) {
-    Kokkos::deep_copy(lastFieldModLocation, value);
+  template <typename NgpField>
+  void reset_last_modification_state(NgpField* ngpField, LastModLocation value) {
+    const stk::mesh::FieldBase & stkField = *ngpField->hostField;
+    const stk::mesh::BulkData & bulk = *ngpField->hostBulk;
+
+    if (ngpField->userSpecifiedSelector) {
+      const stk::mesh::BucketVector & buckets = bulk.get_buckets(stkField.entity_rank(), *ngpField->syncSelector);
+
+      for (auto bucket : buckets) {
+        for (size_t j = 0; j < lastFieldModLocation.extent(1); ++j) {
+          for (size_t k = 0; k < lastFieldModLocation.extent(2); ++k) {
+            unsigned offsetBucketId = debugHostSelectedBucketOffset(bucket->bucket_id());
+            lastFieldModLocation(offsetBucketId, j, k) = value;
+          }
+        }
+      }
+    }
+    else {
+      Kokkos::deep_copy(lastFieldModLocation, value);
+    }
   }
 
   void set_last_modification_state_bit(LastModLocation value) {

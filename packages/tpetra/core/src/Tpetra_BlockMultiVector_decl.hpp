@@ -84,11 +84,7 @@ namespace Tpetra {
 /// constants or pointers (e.g., they do not reallocate memory).
 ///
 /// BlockMultiVector stores entries in a column corresponding to
-/// degrees of freedom for the same mesh point contiguously.  This is
-/// not strictly necessary; we could generalize so that they are
-/// stored in a strided fashion, or even take away the layout
-/// assumption and only allow access to entries by copy (e.g.,
-/// getLocalRowCopy() instead of getLocalRowView()).
+/// degrees of freedom for the same mesh point contiguously. 
 ///
 /// Here is how you are supposed to use this class:
 ///
@@ -193,24 +189,21 @@ public:
   /// little_vec_type or const_little_vec_type.  This was our porting
   /// strategy circa 2014 to move from "classic" Tpetra to the Kokkos
   /// refactor version.
-  typedef Kokkos::View<impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-          little_vec_type;
-  typedef typename little_vec_type::HostMirror
-          little_host_vec_type;
+  typedef Kokkos::View<impl_scalar_type *, device_type> little_vec_type;
+  typedef typename little_vec_type::HostMirror little_host_vec_type;
 
   /// \brief "Const block view" of all degrees of freedom at a mesh point,
   ///   for a single column of the MultiVector.
   ///
   /// This is just like little_vec_type, except that you can't modify
   /// its entries.
-  typedef Kokkos::View<const impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
+  typedef Kokkos::View<const impl_scalar_type *, device_type>
           const_little_vec_type;
+
+  typedef typename mv_type::dual_view_type::t_host::device_type
+          host_device_type;
+  typedef Kokkos::View<const impl_scalar_type*, host_device_type>
+          const_little_host_vec_type;
 
   //@}
   //! \name Constructors
@@ -440,6 +433,7 @@ public:
                      BlockMultiVector<Scalar, LO, GO, Node>& Z,
                      const Scalar& beta);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //@}
   //! \name Implementation of "dual view semantics"
   //@{
@@ -463,19 +457,24 @@ public:
   ///   it, by calling the modify() method with the appropriate
   ///   template parameter.
   template<class TargetMemorySpace>
+  //TPETRA_DEPRECATED
   void sync () {
     mv_.template sync<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Update data to the host
+  //TPETRA_DEPRECATED
   void sync_host() {
     mv_.sync_host();
   }
 
   /// \brief Update data to the device
+  //TPETRA_DEPRECATED
   void sync_device() {
     mv_.sync_device();
   }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Whether this object needs synchronization to the given memory space.
   template<class TargetMemorySpace>
@@ -493,25 +492,32 @@ public:
     return mv_.need_sync_device();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
   /// \brief Mark data as modified on the given memory space.
   ///
   /// If <tt>TargetDeviceType::memory_space</tt> is the same as this
   /// object's memory space, then mark the device's data as modified.
   /// Otherwise, mark the host's data as modified.
   template<class TargetMemorySpace>
+  //TPETRA_DEPRECATED
   void modify () {
     mv_.template modify<typename TargetMemorySpace::memory_space> ();
   }
 
   /// \brief Mark data as modified on the host
+  //TPETRA_DEPRECATED
   void modify_host() {
     mv_.modify_host();
   }
 
   /// \brief Mark data as modified on the device
+  //TPETRA_DEPRECATED
   void modify_device() {
     mv_.modify_device();
   }
+
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   //@}
   //! \name Fine-grained data access
   //@{
@@ -533,7 +539,7 @@ public:
   ///   do not change pointers.  They do, of course, change the values
   ///   in the BlockMultiVector, but that does not require marking the
   ///   methods as nonconst.
-  bool replaceLocalValues (const LO localRowIndex, const LO colIndex, const Scalar vals[]) const;
+  bool replaceLocalValues (const LO localRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Replace all values at the given mesh point, using a global index.
   ///
@@ -545,7 +551,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  bool replaceGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]) const;
+  bool replaceGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Sum into all values at the given mesh point, using a local index.
   ///
@@ -557,7 +563,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given local index of the mesh point
   ///   is invalid on the calling process.
-  bool sumIntoLocalValues (const LO localRowIndex, const LO colIndex, const Scalar vals[]) const;
+  bool sumIntoLocalValues (const LO localRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Sum into all values at the given mesh point, using a global index.
   ///
@@ -569,31 +575,7 @@ public:
   /// \return true if successful, else false.  This method will
   ///   <i>not</i> succeed if the given global index of the mesh point
   ///   is invalid on the calling process.
-  bool sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]) const;
-
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a local index.
-  ///
-  /// \param localRowIndex [in] Local index of the mesh point.
-  /// \param colIndex [in] Column (vector) to view.
-  /// \param vals [out] View of the entries at the given mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given local index of the mesh point
-  ///   is invalid on the calling process.
-  bool getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const;
-
-  /// \brief Get a writeable view of the entries at the given mesh
-  ///   point, using a global index.
-  ///
-  /// \param globalRowIndex [in] Global index of the mesh point.
-  /// \param colIndex [in] Column (vector) to view.
-  /// \param vals [out] View of the entries at the given mesh point.
-  ///
-  /// \return true if successful, else false.  This method will
-  ///   <i>not</i> succeed if the given global index of the mesh point
-  ///   is invalid on the calling process.
-  bool getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) const;
+  bool sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
   /// \brief Get a host view of the degrees of freedom at the given
   ///   mesh point.
@@ -606,7 +588,28 @@ public:
   /// future.  If you insist not to use \c auto, then please use the
   /// \c little_vec_type typedef to deduce the correct return type;
   /// don't try to hard-code the return type yourself.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  //TPETRA_DEPRECATED 
   little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
+#endif //TPETRA_DEPRECATED
+
+  const_little_host_vec_type getLocalBlock(
+    const LO localRowIndex, 
+    const LO colIndex, 
+    Access::ReadOnlyStruct) const;
+
+  little_host_vec_type getLocalBlock(
+    const LO localRowIndex, 
+    const LO colIndex, 
+    Access::ReadWriteStruct);
+
+  /// \brief Get a local block on host, with the intent to overwrite all blocks in the BlockMultiVector
+  ///   before accessing the data on device. If you only intend to modify some blocks on host, use ReadWrite
+  ///   instead (otherwise, previous changes on device may be lost)
+  little_host_vec_type getLocalBlock(
+    const LO localRowIndex, 
+    const LO colIndex, 
+    Access::OverwriteAllStruct);
   //@}
 
 protected:
@@ -656,10 +659,12 @@ protected:
   //@}
 
 protected:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //! Raw pointer to the MultiVector's data.
   impl_scalar_type* getRawPtr () const {
     return mvData_;
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! Stride between consecutive local entries in the same column.
   size_t getStrideX () const {
@@ -691,6 +696,7 @@ protected:
   mv_type mv_;
 
 private:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Raw pointer to the above Tpetra::MultiVector's data.
   ///
   /// Keeping this is a temporary measure that ensures that the
@@ -700,6 +706,7 @@ private:
   /// because the data belong to the Vector, which we keep for the
   /// lifetime of the BlockMultiVector.
   impl_scalar_type* mvData_;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   //! The number of degrees of freedom per mesh point.
   LO blockSize_;
@@ -708,12 +715,12 @@ private:
   void
   replaceLocalValuesImpl (const LO localRowIndex,
                           const LO colIndex,
-                          const Scalar vals[]) const;
+                          const Scalar vals[]);
   //! Implementation of sumIntoLocalValues; does not check localRowIndex.
   void
   sumIntoLocalValuesImpl (const LO localRowIndex,
                           const LO colIndex,
-                          const Scalar vals[]) const;
+                          const Scalar vals[]);
 
   static Teuchos::RCP<const mv_type>
   getMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject&);

@@ -128,11 +128,10 @@ void TransferCopyById::pack_commsparse()
 {
   const int myProc = m_commSparse.parallel_rank();
 
-  KeyToTargetProcessor::const_iterator map_it = m_key_to_target_processor.begin();
-  for ( ; map_it!=m_key_to_target_processor.end() ;  ++map_it) {
-    const int targetProc = map_it->second;
+  for (const auto & k2tEntry : m_key_to_target_processor) {
+    const int targetProc = k2tEntry.second;
     if (targetProc != myProc) {
-      const Mesh_ID key = map_it->first;
+      const Mesh_ID key = k2tEntry.first;
       pack_fields(targetProc, key, m_commSparse);
     }
   }
@@ -143,11 +142,9 @@ void TransferCopyById::pack_send_fields(CommSparse& commSparse)
   const ParallelMachine comm = m_mesha.comm();
   const int my_proc = parallel_machine_rank(comm);
 
-  KeyToTargetProcessor::const_iterator map_it = m_key_to_target_processor.begin();
-
-  for ( ; map_it!=m_key_to_target_processor.end() ;  ++map_it) {
-    const Mesh_ID key = map_it->first;
-    const int target_proc = map_it->second;
+  for (const auto & k2tEntry : m_key_to_target_processor) {
+    const Mesh_ID key = k2tEntry.first;
+    const int target_proc = k2tEntry.second;
 
     if (target_proc == my_proc) {
       local_copy(key);

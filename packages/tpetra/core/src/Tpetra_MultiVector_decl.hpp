@@ -50,6 +50,7 @@
 #include "Tpetra_FEMultiVector_fwd.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map_fwd.hpp"
+#include "Tpetra_Details_Behavior.hpp"
 #include "Kokkos_DualView.hpp"
 #include "Teuchos_BLAS_types.hpp"
 #include "Teuchos_DataAccess.hpp"
@@ -57,6 +58,7 @@
 #include "Kokkos_ArithTraits.hpp"
 #include "Kokkos_InnerProductSpaceTraits.hpp"
 #include "Tpetra_KokkosRefactor_Details_MultiVectorLocalDeepCopy.hpp"
+#include "Tpetra_Access.hpp"
 #include <type_traits>
 
 #ifdef HAVE_TPETRACORE_TEUCHOSNUMERICS
@@ -67,6 +69,7 @@ namespace Teuchos {
 }
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
+
 
 namespace Tpetra {
 
@@ -1406,8 +1409,33 @@ namespace Tpetra {
     //! Return non-const persisting pointers to values.
     Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > get2dViewNonConst ();
 
+    /// \brief Return a read-only, up-to-date view of this MultiVector's local data on host.
+    /// This requires that there are no live device-space views.
+    typename dual_view_type::t_host::const_type getLocalViewHost(Access::ReadOnlyStruct) const;
 
+    /// \brief Return a mutable, up-to-date view of this MultiVector's local data on host.
+    /// This requires that there are no live device-space views.
+    typename dual_view_type::t_host getLocalViewHost(Access::ReadWriteStruct);
+
+    /// \brief Return a mutable view of this MultiVector's local data on host, assuming all existing data will be overwritten.
+    /// This requires that there are no live device-space views.
+    typename dual_view_type::t_host getLocalViewHost(Access::OverwriteAllStruct);
+
+    /// \brief Return a read-only, up-to-date view of this MultiVector's local data on device.
+    /// This requires that there are no live host-space views.
+    typename dual_view_type::t_dev::const_type getLocalViewDevice(Access::ReadOnlyStruct) const;
+
+    /// \brief Return a mutable, up-to-date view of this MultiVector's local data on device.
+    /// This requires that there are no live host-space views.
+    typename dual_view_type::t_dev getLocalViewDevice(Access::ReadWriteStruct);
+
+    /// \brief Return a mutable view of this MultiVector's local data on device, assuming all existing data will be overwritten.
+    /// This requires that there are no live host-space views.
+    typename dual_view_type::t_dev getLocalViewDevice(Access::OverwriteAllStruct);
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     //! Clear "modified" flags on both host and device sides.
+    //TPETRA_DEPRECATED
     void clear_sync_state ();
 
     /// \brief Update data on device or host only if data in the other
@@ -1429,15 +1457,19 @@ namespace Tpetra {
     ///   it, by calling the modify() method with the appropriate
     ///   template parameter.
     template<class TargetDeviceType>
+    //TPETRA_DEPRECATED
     void sync () {
       view_.template sync<TargetDeviceType> ();
     }
 
     //! Synchronize to Host
+    //TPETRA_DEPRECATED
     void sync_host ();
 
     //! Synchronize to Device
+    //TPETRA_DEPRECATED
     void sync_device ();
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     //! Whether this MultiVector needs synchronization to the given space.
     template<class TargetDeviceType>
@@ -1451,30 +1483,199 @@ namespace Tpetra {
     //! Whether this MultiVector needs synchronization to the device.
     bool need_sync_device () const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
     /// \brief Mark data as modified on the given device \c TargetDeviceType.
     ///
     /// If \c TargetDeviceType is the same as this MultiVector's
     /// device type, then mark the device's data as modified.
     /// Otherwise, mark the host's data as modified.
     template<class TargetDeviceType>
+    //TPETRA_DEPRECATED
     void modify () {
       view_.template modify<TargetDeviceType> ();
     }
 
     //! Mark data as modified on the device side.
+    //TPETRA_DEPRECATED
     void modify_device ();
 
     //! Mark data as modified on the host side.
+    //TPETRA_DEPRECATED
     void modify_host ();
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
-    /// \brief Return a view of the local data on a specific device.
+    /// \brief Return a view of the local data on a specific device, with the given access mode.
+    ///   The return type is either dual_view_type::t_dev, dual_view_type::t_host, or the const_type of
+    ///   one of those.
+    ///
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
-    /// Please don't be afraid of the if_c expression in the return
-    /// value's type.  That just tells the method what the return type
-    /// should be: dual_view_type::t_dev if the \c TargetDeviceType
-    /// template parameter matches this Tpetra object's device type,
-    /// else dual_view_type::t_host.
+    /// For example, suppose you create a Tpetra::MultiVector for the
+    /// Kokkos::Cuda device, like this:
+    /// \code
+    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
+    /// typedef Tpetra::Map<int, int, node_type> map_type;
+    /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
+    ///
+    /// RCP<const map_type> map = ...;
+    /// mv_type DV (map, 3);
+    /// \endcode
+    /// If you want to get the CUDA device Kokkos::View as read-write, do this:
+    /// \code
+    /// typedef typename mv_type::dual_view_type dual_view_type;
+    /// typedef typename dual_view_type::t_dev device_view_type;
+    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> (Access::ReadWrite);
+    /// \endcode
+    /// and if you want to get the host mirror of that View, do this:
+    /// \code
+    /// typedef typename dual_view_type::host_mirror_space host_execution_space;
+    /// typedef typename dual_view_type::t_host host_view_type;
+    /// host_view_type hostView = DV.getLocalView<host_execution_space> (Access::ReadWrite);
+    /// \endcode
+    template<class TargetDeviceType>
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type::const_type
+    getLocalView (Access::ReadOnlyStruct) const
+    {
+      bool returnDevice = true;
+      {
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice)
+      {
+        //returning dual_view_type::t_dev::const_type
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " device while a host view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
+        owningView_.sync_device();
+      }
+      else
+      {
+        //returning dual_view_type::t_host::const_type
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " host while a device view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
+        owningView_.sync_host();
+      }
+      return view_.template view<TargetDeviceType>();
+    }
+
+    template<class TargetDeviceType>
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    getLocalView (Access::ReadWriteStruct)
+    {
+      bool returnDevice = true;
+      {
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice) 
+      {
+        //returning dual_view_type::t_dev::type
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " device while a host view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
+        owningView_.sync_device();
+        owningView_.modify_device();
+      }
+      else
+      {
+        //returning dual_view_type::t_host::type
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " host while a device view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
+        owningView_.sync_host();
+        owningView_.modify_host();
+      }
+      return view_.template view<TargetDeviceType>();
+    }
+
+    template<class TargetDeviceType>
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    getLocalView (Access::OverwriteAllStruct)
+    {
+      if (owningView_.h_view != view_.h_view) {
+        // view_ is a subview of owningView_; for safety, need to use ReadWrite
+        return getLocalView<TargetDeviceType>(Access::ReadWrite);
+      }
+      bool returnDevice = true;
+      {
+        auto tmp = view_.template view<TargetDeviceType>();
+        if (tmp == this->view_.view_host()) returnDevice = false;
+      }
+      if (returnDevice)
+      {
+        //returning dual_view_type::t_dev::type
+        if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " device while a host view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
+        owningView_.clear_sync_state();
+        owningView_.modify_device();
+      }
+      else
+      {
+        //returning dual_view_type::t_host::type
+        if(owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+          const bool debug = Details::Behavior::debug();
+          const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                             " host while a device view is alive";
+          if (debug) {
+            std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                      << ":  " << msg << std::endl;
+          }
+          throw std::runtime_error(msg);
+        }
+        owningView_.clear_sync_state();
+        owningView_.modify_host();
+      }
+      return view_.template view<TargetDeviceType>();
+    }
+
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    /// \brief Return a view of the local data on a specific device. This is a
+    ///   generalization of getLocalViewHost() and getLocalViewDevice(). The
+    ///   returned view has type dual_view_type::t_dev or dual_view_type::t_host,
+    ///   depending on which one has a device, memory space or execution space
+    ///   matching that of TargetDeviceType.
+    ///
+    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
     /// For example, suppose you create a Tpetra::MultiVector for the
     /// Kokkos::Cuda device, like this:
@@ -1499,21 +1700,21 @@ namespace Tpetra {
     /// host_view_type hostView = DV.getLocalView<host_execution_space> ();
     /// \endcode
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<
-      std::is_same<
-        typename device_type::memory_space,
-        typename TargetDeviceType::memory_space>::value,
-      typename dual_view_type::t_dev,
-      typename dual_view_type::t_host>::type
-    getLocalView () const {
-      return view_.template view<TargetDeviceType> ();
+    //TPETRA_DEPRECATED 
+    typename std::remove_reference<decltype(std::declval<dual_view_type>().template view<TargetDeviceType>())>::type
+    getLocalView () const
+    {
+      return view_.template view<TargetDeviceType>();
     }
 
-    //! A local Kokkos::View of host memory
+    //! A local Kokkos::View of host memory. This is a low-level expert function - it requires you to call sync_host() and modify_host() on this MultiVector as needed.
+    //TPETRA_DEPRECATED 
     typename dual_view_type::t_host getLocalViewHost () const;
 
-    //! A local Kokkos::View of device memory
+    //! A local Kokkos::View of device memory. This is a low-level expert function - it requires you to call sync_device() and modify_device() on this MultiVector as needed.
+    //TPETRA_DEPRECATED 
     typename dual_view_type::t_dev getLocalViewDevice () const;
+#endif
 
     //@}
     //! @name Mathematical methods
@@ -2060,6 +2261,11 @@ namespace Tpetra {
     /// \warning This may be different on different processes.
     bool isConstantStride() const;
 
+    /// \brief Whether this multivector's memory might alias other. This is conservative: if either this or other
+    ///     is not constant stride, then it simply checks whether the contiguous memory allocations overlap. It
+    ///     doesn't check whether the sets of columns overlap. This is a symmetric relation: X.aliases(Y) == Y.aliases(X).
+    bool aliases(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& other) const;
+
     //@}
 
     //! @name Overridden from Teuchos::Describable
@@ -2203,7 +2409,7 @@ namespace Tpetra {
     /// of rows.  At some point, we might like to get all of the rows
     /// back, by taking another view of a <i>super</i>set of rows.
     /// For example, we might like to get a column Map view of a
-    /// (domain Map view of a (column Map MultiVector)).  Tpetra's
+    /// (domain Map view of a (column Map MultiVector)).  Ifpack2's
     /// implementation of Gauss-Seidel and SOR in CrsMatrix relies on
     /// this functionality.  However, Kokkos (rightfully) forbids us
     /// from taking a superset of rows of the current view.
@@ -2227,6 +2433,10 @@ namespace Tpetra {
     /// MultiVector has constant stride.  This special case does not
     /// affect correctness of offsetView and related methods.
     mutable dual_view_type origView_;
+
+    /// \brief The true original DualView - it owns the memory of this
+    ///  MultiVector, and was not constructed as a subview of any other DualView.
+    mutable dual_view_type owningView_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///
@@ -2413,17 +2623,17 @@ namespace Tpetra {
       << " and dst has " << dst.getLocalLength () << " row(s).");
 
     const bool srcMostUpToDateOnDevice = ! src.need_sync_device ();
-    dst.clear_sync_state ();
-    dst.modify_device ();
 
     if (src.isConstantStride () && dst.isConstantStride ()) {
       if (srcMostUpToDateOnDevice) {
-        Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
-                                           src.getLocalViewDevice ());
+        Details::localDeepCopyConstStride (
+                 dst.getLocalViewDevice (Access::OverwriteAll),
+                 src.getLocalViewDevice (Access::ReadOnly));
       }
       else {
-        Details::localDeepCopyConstStride (dst.getLocalViewDevice (),
-                                           src.getLocalViewHost ());
+        Details::localDeepCopyConstStride (
+                 dst.getLocalViewDevice (Access::OverwriteAll),
+                 src.getLocalViewHost (Access::ReadOnly));
       }
     }
     else {
@@ -2431,16 +2641,16 @@ namespace Tpetra {
       auto srcWhichVecs = getMultiVectorWhichVectors (src);
 
       if (srcMostUpToDateOnDevice) {
-        Details::localDeepCopy (dst.getLocalViewDevice (),
-                                src.getLocalViewDevice (),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::OverwriteAll),
+                                src.getLocalViewDevice (Access::ReadOnly),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
                                 dstWhichVecs,
                                 srcWhichVecs);
       }
       else {
-        Details::localDeepCopy (dst.getLocalViewDevice (),
-                                src.getLocalViewHost (),
+        Details::localDeepCopy (dst.getLocalViewDevice (Access::OverwriteAll),
+                                src.getLocalViewHost (Access::ReadOnly),
                                 dst.isConstantStride (),
                                 src.isConstantStride (),
                                 dstWhichVecs,

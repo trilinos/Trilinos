@@ -115,7 +115,7 @@ private:
     {
         EXPECT_EQ(1-get_bulk().parallel_rank(), p_info.get_proc_rank_of_neighbor());
         EXPECT_EQ(4, p_info.m_permutation);
-        EXPECT_EQ(stk::topology::HEXAHEDRON_8, p_info.m_remote_element_toplogy);
+        EXPECT_EQ(stk::topology::HEXAHEDRON_8, p_info.m_remote_element_topology);
     }
 };
 

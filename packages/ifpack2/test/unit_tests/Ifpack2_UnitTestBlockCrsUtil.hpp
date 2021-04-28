@@ -259,24 +259,26 @@ struct BlockCrsMatrixMaker {
       new Tpetra_Map(Tpetra_BlockMultiVector::makePointMap(*col_map, bs)));
     Tpetra_MultiVector_Magnitude colsum_mv(cpm, 1);
     colsum_mv.putScalar(0);
-    auto colsum = colsum_mv.getLocalViewHost();
+    {
+      auto colsum = colsum_mv.getLocalViewHost(Tpetra::Access::ReadWrite);
 
-    // Get off-diag 1-norms.
-    Kokkos::fence(); // uvm access
-    for (LO r = 0; r < nrows; ++r) {
-      const auto rgid = row_map->getGlobalElement(r);
-      for (size_t j = rowptr(r); j < rowptr(r+1); ++j) {
-        const LO c = colidx(j);
-        const auto cgid = col_map->getGlobalElement(c);
-        const bool diag_block = cgid == rgid;
-        auto* const block = &values(j*bs2);
-        for (Int bi = 0; bi < bs; ++bi)
-          for (Int bj = 0; bj < bs; ++bj) {
-            if (diag_block && bj == bi) continue;
-            const auto e = abs(block[bi*bs + bj]);
-            rowsum[bs*r + bi] += e;
-            colsum(bs*c + bj, 0) += e;
-          }
+      // Get off-diag 1-norms.
+      Kokkos::fence(); // uvm access
+      for (LO r = 0; r < nrows; ++r) {
+        const auto rgid = row_map->getGlobalElement(r);
+        for (size_t j = rowptr(r); j < rowptr(r+1); ++j) {
+          const LO c = colidx(j);
+          const auto cgid = col_map->getGlobalElement(c);
+          const bool diag_block = cgid == rgid;
+          auto* const block = &values(j*bs2);
+          for (Int bi = 0; bi < bs; ++bi)
+            for (Int bj = 0; bj < bs; ++bj) {
+              if (diag_block && bj == bi) continue;
+              const auto e = abs(block[bi*bs + bj]);
+              rowsum[bs*r + bi] += e;
+              colsum(bs*c + bj, 0) += e;
+            }
+        }
       }
     }
 
@@ -291,18 +293,21 @@ struct BlockCrsMatrixMaker {
       colsum_mv.doImport(d, importer, Tpetra::REPLACE);
     }
 
-    // Modify diag entries.
-    for (LO r = 0; r < nrows; ++r) {
-      const auto rgid = row_map->getGlobalElement(r);
-      for (size_t j = rowptr(r); j < rowptr(r+1); ++j) {
-        const LO c = colidx(j);
-        const auto cgid = col_map->getGlobalElement(c);
-        const bool diag_block = cgid == rgid;
-        if ( ! diag_block) continue;
-        auto* const block = &values(j*bs2);
-        for (Int bi = 0; bi < bs; ++bi) {
-          auto& e = block[bi*bs + bi];
-          e = Magnitude(1.01)*std::max(rowsum[bs*r + bi], colsum(bs*c + bi, 0))*signof(e);
+    {
+      auto colsum = colsum_mv.getLocalViewHost(Tpetra::Access::ReadOnly);
+      // Modify diag entries.
+      for (LO r = 0; r < nrows; ++r) {
+        const auto rgid = row_map->getGlobalElement(r);
+        for (size_t j = rowptr(r); j < rowptr(r+1); ++j) {
+          const LO c = colidx(j);
+          const auto cgid = col_map->getGlobalElement(c);
+          const bool diag_block = cgid == rgid;
+          if ( ! diag_block) continue;
+          auto* const block = &values(j*bs2);
+          for (Int bi = 0; bi < bs; ++bi) {
+            auto& e = block[bi*bs + bi];
+            e = Magnitude(1.01)*std::max(rowsum[bs*r + bi], colsum(bs*c + bi, 0))*signof(e);
+          }
         }
       }
     }
@@ -627,7 +632,7 @@ struct BlockCrsMatrixMaker {
     const Int bs, const Int nvec)
   {
     auto mv = Teuchos::rcp(new Tpetra_MultiVector(m->getDomainMap(), nvec));
-    const auto v = mv->template getLocalView<typename Tpetra_MultiVector::dual_view_type::t_host>();
+    auto v = mv->getLocalViewHost(Tpetra::Access::OverwriteAll);
     const auto map = mv->getMap();
     for (GO lid = 0; lid < v.extent_int(0); ++lid)
       for (LO col = 0; col < v.extent_int(1); ++col) {

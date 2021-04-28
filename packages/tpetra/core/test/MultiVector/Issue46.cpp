@@ -54,7 +54,7 @@ namespace { // (anonymous)
 // FIXME (mfh 29 Sep 2016) Return type is only correct if LayoutLeft.
 template<class VectorType>
 auto getHostViewOfVector (const VectorType& X) ->
-  decltype (Kokkos::subview (X.template getLocalView<Kokkos::HostSpace> (), Kokkos::ALL (), 0))
+  decltype (Kokkos::subview (X.getLocalViewHost (Tpetra::Access::ReadOnly), Kokkos::ALL (), 0))
 {
   // Don't change the sync status of the input Vector.  If it needs
   // sync to device, then the host version is the current one, so we
@@ -71,28 +71,26 @@ auto getHostViewOfVector (const VectorType& X) ->
     device_type>::HostMirror host_view_type;
   typedef typename host_view_type::memory_space host_memory_space;
 
-  host_view_type X_lcl_host_1d;
   if (std::is_same<dev_memory_space, host_memory_space>::value ||
       X.template need_sync<dev_memory_space> () ||
       ! X.template need_sync<host_memory_space> ()) {
     // Can use host version of the MultiVector directly.
-    auto X_lcl_host = X.template getLocalView<host_memory_space> ();
-    X_lcl_host_1d = Kokkos::subview (X_lcl_host, Kokkos::ALL (), 0);
+    auto X_lcl_host = X.getLocalViewHost(Tpetra::Access::ReadOnly);
+    return Kokkos::subview (X_lcl_host, Kokkos::ALL (), 0);
   }
   else { // need to copy from device to host (see above discussion)
-    auto X_lcl_dev = X.template getLocalView<dev_memory_space> ();
+    auto X_lcl_dev = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
     auto X_lcl_dev_1d = Kokkos::subview (X_lcl_dev, Kokkos::ALL (), 0);
+    host_view_type X_lcl_host_1d;
     X_lcl_host_1d = Kokkos::create_mirror_view (X_lcl_dev_1d);
     Kokkos::deep_copy (X_lcl_host_1d, X_lcl_dev_1d);
+    return X_lcl_host_1d;
   }
-  return X_lcl_host_1d;
 }
 
 template<class MultiVectorType>
-typename Kokkos::View<typename MultiVectorType::impl_scalar_type**,
-                      typename MultiVectorType::dual_view_type::t_host::array_layout,
-                      typename MultiVectorType::device_type>::HostMirror
-getHostViewOfMultiVector (const MultiVectorType& X)
+auto getHostViewOfMultiVector (const MultiVectorType& X) ->
+  decltype (X.getLocalViewHost (Tpetra::Access::ReadOnly))
 {
   // Don't change the sync status of the input MultiVector.  If it
   // needs sync to device, then the host version is the current one,
@@ -109,19 +107,19 @@ getHostViewOfMultiVector (const MultiVectorType& X)
     device_type>::HostMirror::memory_space host_memory_space;
   typedef typename MultiVectorType::dual_view_type::t_host host_view_type;
 
-  host_view_type X_lcl_host;
   if (std::is_same<dev_memory_space, host_memory_space>::value ||
       X.template need_sync<dev_memory_space> () ||
       ! X.template need_sync<host_memory_space> ()) {
     // Can use host version of the MultiVector directly.
-    X_lcl_host = X.template getLocalView<host_memory_space> ();
+    return X.getLocalViewHost (Tpetra::Access::ReadOnly);
   }
   else { // need to copy from device to host (see above discussion)
-    auto X_lcl_dev = X.template getLocalView<dev_memory_space> ();
+    host_view_type X_lcl_host;
+    auto X_lcl_dev = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
     X_lcl_host = Kokkos::create_mirror_view (X_lcl_dev);
     Kokkos::deep_copy (X_lcl_host, X_lcl_dev);
+    return X_lcl_host;
   }
-  return X_lcl_host;
 }
 
 
@@ -219,16 +217,13 @@ void issue46Test (bool& success, Teuchos::FancyOStream& out)
   // it belongs.
   out << "Fill \"parent\" MultiVector X0 with entries" << endl;
   {
-    X0.template sync<host_memory_space> ();
-    X0.template modify<host_memory_space> ();
-    auto X0_lcl = X0.template getLocalView<host_memory_space> ();
+    auto X0_lcl = X0.getLocalViewHost (Tpetra::Access::OverwriteAll);
     for (LO j = 0; j < numVecs; ++j) {
       auto X0_lcl_j = Kokkos::subview (X0_lcl, Kokkos::ALL (), j);
       for (LO i = 0; i < lclNumRows; ++i) {
         X0_lcl_j(i) = static_cast<SC> (i + 0.1*j);
       }
     }
-    X0.template sync<dev_memory_space> ();
   }
 
   // Create X1, a view of X0 with row offset=offset1

@@ -272,7 +272,7 @@ namespace {
        RCP<const Xpetra::Matrix<Scalar, LO, GO, Node> > eye2x(new CrsMatrixWrap(eye2));
        
        // Just extract & scale; don't test correctness (Tpetra does this)
-       RCP<const MV> diag5c = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,5);  
+       RCP<MV> diag5c = Xpetra::MultiVectorFactory<Scalar,LO,GO,Node>::Build(map,5);  
        RCP<MV> diag5 = rcp_const_cast<MV>(diag5c);
        diag5->putScalar(SC_one);
 

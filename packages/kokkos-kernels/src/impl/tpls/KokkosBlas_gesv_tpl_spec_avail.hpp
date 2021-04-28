@@ -66,22 +66,10 @@ struct gesv_tpl_spec_avail< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
      >  { enum : bool { value = true }; };
 
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( double,                  Kokkos::LayoutLeft, Kokkos::HostSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( float,                   Kokkos::LayoutLeft, Kokkos::HostSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::HostSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_BLAS( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::HostSpace)
-#endif
 /*
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
  && defined (KOKKOSKERNELS_INST_LAYOUTRIGHT)
@@ -114,22 +102,10 @@ struct gesv_tpl_spec_avail< \
                   Kokkos::MemoryTraits<Kokkos::Unmanaged> > \
      >  { enum : bool { value = true }; };
 
-#if defined (KOKKOSKERNELS_INST_DOUBLE) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( double,                  Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_FLOAT) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( float,                   Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_DOUBLE_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<double>, Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
-#if defined (KOKKOSKERNELS_INST_KOKKOS_COMPLEX_FLOAT_) \
- && defined (KOKKOSKERNELS_INST_LAYOUTLEFT)
  KOKKOSBLAS_GESV_TPL_SPEC_AVAIL_MAGMA( Kokkos::complex<float>,  Kokkos::LayoutLeft, Kokkos::CudaSpace)
-#endif
 
 /*
 #if defined (KOKKOSKERNELS_INST_DOUBLE) \
