@@ -812,6 +812,7 @@ int Ifpack_Hypre::Compute(){
         HYPRE_ParCSRMatrixPrint(P_array[k], ofs);
 
         // CF
+        // Note: Hypre outputs "-1" for F Points and "1" for C Points
         HYPRE_Int local_size = hypre_CSRMatrixNumRows(hypre_ParCSRMatrixDiag(A_array[k]));
         sprintf(ofs,"cf_marker.bmg.%d.dat.%d",k,Comm().MyPID());
         FILE * f = fopen(ofs,"w");
