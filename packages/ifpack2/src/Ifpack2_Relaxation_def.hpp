@@ -907,7 +907,7 @@ void Relaxation<MatrixType>::computeBlockCrs ()
         for (LO subRow = 0; subRow < blockSize; ++subRow) {
           magnitude_type diagonal_boost = STM::zero ();
           for (size_t k = 0 ; k < numEntries ; ++k) {
-            if (indices[k] > lclNumMeshRows) {
+            if (indices[k] >= lclNumMeshRows) {
               const size_t offset = blockSize*blockSize*k + subRow*blockSize;
               for (LO subCol = 0; subCol < blockSize; ++subCol) {
                 diagonal_boost += STS::magnitude (values[offset+subCol] / two);
@@ -1119,7 +1119,7 @@ void Relaxation<MatrixType>::compute ()
         A_row.getLocalRowCopy (i, indices (), values (), numEntries);
         magnitude_type diagonal_boost = STM::zero ();
         for (size_t k = 0 ; k < numEntries; ++k) {
-          if (indices[k] > numMyRows) {
+          if (indices[k] >= numMyRows) {
             diagonal_boost += STS::magnitude (values[k] / two);
           }
         }
