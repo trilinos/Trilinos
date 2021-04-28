@@ -10,26 +10,22 @@
 
 // Teuchos headers
 #include "Teuchos_CommandLineProcessor.hpp"
-#include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_DefaultComm.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-// Teuchos headers (copied from MueLu side)
-#include <Teuchos_YamlParameterListHelpers.hpp>
-#include <Teuchos_StandardCatchMacros.hpp>
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_YamlParameterListHelpers.hpp"
 
 // Belos headers
+#include "BelosBiCGStabSolMgr.hpp"
+#include "BelosBlockCGSolMgr.hpp"
+#include "BelosBlockGmresSolMgr.hpp"
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
+#include "BelosMueLuAdapter.hpp"      // => This header defines Belos::MueLuOp
+#include "BelosPseudoBlockCGSolMgr.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
-// Belos headers (copied from MueLu side)
-#include <BelosConfigDefs.hpp>
-#include <BelosBiCGStabSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
 #ifdef HAVE_MUELU_TPETRA
 #include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
 #endif
@@ -43,18 +39,27 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_Utilities.hpp"
-// MueLu headers (copied from MueLu side)
-#include <MueLu.hpp>
-#include <MueLu_BaseClass.hpp>
+
 #ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
 #include <MueLu_ExplicitInstantiation.hpp>
 #endif
-#include <MueLu_Level.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_Utilities.hpp>
+
 #ifdef HAVE_MUELU_CUDA
 #include "cuda_profiler_api.h"
+#endif
+
+// MueLu and Xpetra Tpetra stack
+#ifdef HAVE_MUELU_TPETRA
+#include <MueLu_TpetraOperator.hpp>
+#include <MueLu_CreateTpetraPreconditioner.hpp>
+#include <KokkosBlas1_abs.hpp>
+#include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
+#include <Tpetra_computeRowAndColumnOneNorms.hpp>
+#endif
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+#include <Amesos2_config.h>
+#include <Amesos2.hpp>
 #endif
 
 // Region MG headers
@@ -103,28 +108,6 @@
 #include "Tpetra_Import.hpp"
 #include "MatrixMarket_Tpetra.hpp"
 
-/////////////////////////////////////////////////////////////////////////
-// Headers copied from MueLu driver
-
-// This is only going to be based on the Tpetra stack...
-// TODO: be careful about use of Xpetra in the MueLu side vs the use of Tpetra on this side
-
-// MueLu and Xpetra Tpetra stack
-#ifdef HAVE_MUELU_TPETRA
-#include <MueLu_TpetraOperator.hpp>
-#include <MueLu_CreateTpetraPreconditioner.hpp>
-#include <KokkosBlas1_abs.hpp>
-#include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
-#include <Tpetra_computeRowAndColumnOneNorms.hpp>
-#endif
-
-#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
-#include <Amesos2_config.h>
-#include <Amesos2.hpp>
-#endif
-
-/////////////////////////////////////////////////////////////////////////
-
 // Include factories for boundary conditions and other Panzer setup
 // Most of which is taken from PoissonExample in Panzer_STK
 #include "muelu_region_poisson.hpp"
@@ -133,7 +116,8 @@
 int main(int argc, char *argv[]) {
 
   // The following typedefs are used so that the two codes will work together.
-  // TODO: change everything to use the same types... i.e. check what Drekar does first before making the final decision
+  // TODO: change everything to use the same types to avoid the following silly code...
+  // i.e. check what Drekar does first before making changes
   // Panzer types
   using ST = double;
   using LO = panzer::LocalOrdinal;
@@ -148,6 +132,8 @@ int main(int argc, char *argv[]) {
   using GlobalOrdinal = GO;
   using Node = NT;
 
+#include <MueLu_UseShortNames.hpp>
+
   Kokkos::initialize(argc,argv);
   { // Kokkos scope
 
@@ -158,7 +144,12 @@ int main(int argc, char *argv[]) {
 
 
     // Setup output stream, MPI, and grab info
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::FancyOStream& out = *fancy;
+    out.setOutputToRootOnly(0); // use out on rank 0
+
+    Teuchos::RCP<Teuchos::FancyOStream> fancydebug = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+    Teuchos::FancyOStream& debug = *fancydebug; // use on all ranks
 
     // TODO: comb back through everything and make sure I'm using MPI comms properly when necessary
     Teuchos::GlobalMPISession mpiSession(&argc, &argv,0);
@@ -167,35 +158,66 @@ int main(int argc, char *argv[]) {
     const int numRanks = comm->getSize();
     const int myRank = comm->getRank();
 
-    if (myRank == 0) {
-      *out << "Running MueLu region driver on " << numRanks << " ranks... \n";
-    }
+    out << "Running TrilinosCouplings region multigrid driver on " << numRanks << " ranks... \n";
 
     // Parse command line arguments
     Teuchos::CommandLineProcessor clp(false);
     std::string exodusFileName        = "";                  clp.setOption("exodus-mesh",           &exodusFileName,          "Exodus hex mesh filename (overrides a pamgen-mesh if both specified)");
     std::string pamgenFileName        = "cylinder.rtp";      clp.setOption("pamgen-mesh",           &pamgenFileName,          "Pamgen hex mesh filename");
-    std::string xmlFileName           = "";                  clp.setOption("xml",                   &xmlFileName,             "MueLu parameters file");
+    std::string xmlFileName           = "";                  clp.setOption("xml",                   &xmlFileName,             "MueLu parameters from an xml file");
+    std::string yamlFileName          = "";                  clp.setOption("yaml",                  &yamlFileName,            "MueLu parameters from a yaml file");
     int mesh_refinements              = 1;                   clp.setOption("mesh-refinements",      &mesh_refinements,        "Uniform mesh refinements");
-    bool delete_parent_elements       = false;                clp.setOption("delete-parent-elements", "keep-parent-elements", &delete_parent_elements,"Save the parent elements in the perceptMesh");
+    bool delete_parent_elements       = false;               clp.setOption("delete-parent-elements", "keep-parent-elements", &delete_parent_elements,"Save the parent elements in the perceptMesh");
+
+    // Multigrid options
+    std::string convergenceLog        = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,        "file in which the convergence history of the linear solver is stored");
+    int         maxIts                = 200;                 clp.setOption("its",                   &maxIts,                "maximum number of solver iterations");
+    std::string smootherType          = "Jacobi";            clp.setOption("smootherType",          &smootherType,          "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
+    int         smootherIts           = 2;                   clp.setOption("smootherIts",           &smootherIts,           "number of smoother iterations");
+    double      smootherDamp          = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,          "damping parameter for the level smoother");
+    double      smootherChebyEigRatio = 2.0;                 clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
+    double      smootherChebyBoostFactor = 1.1;              clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
+    double      tol                   = 1e-12;               clp.setOption("tol",                   &tol,                   "solver convergence tolerance");
+    bool        scaleResidualHist     = true;                clp.setOption("scale", "noscale",      &scaleResidualHist,     "scaled Krylov residual history");
+    bool        serialRandom          = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
+    bool        keepCoarseCoords      = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
+    bool        coarseSolverRebalance = false;               clp.setOption("rebalance-coarse", "no-rebalance-coarse", &coarseSolverRebalance, "rebalance before AMG coarse grid solve");
+    int         rebalanceNumPartitions = -1;                 clp.setOption("numPartitions",         &rebalanceNumPartitions, "number of partitions for rebalancing the coarse grid AMG solve");
+    std::string coarseSolverType      = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,      "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
+    std::string unstructured          = "{}";                clp.setOption("unstructured",          &unstructured,          "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
+    std::string coarseAmgXmlFile      = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,      "Read parameters for AMG as coarse level solve from this xml file.");
+    std::string coarseSmootherXMLFile = "";                  clp.setOption("coarseSmootherXML",     &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
+    int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)"); // what does this do?
+    std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
+#ifdef HAVE_MUELU_TPETRA
+    std::string equilibrate = "no" ;                         clp.setOption("equilibrate",           &equilibrate,           "equilibrate the system (no | diag | 1-norm)");
+#endif
+#ifdef HAVE_MUELU_CUDA
+    bool profileSetup = false;                               clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
+    bool profileSolve = false;                               clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
+#endif
 
     // debug options
-    bool print_percept_mesh           = false;                clp.setOption("print-percept-mesh", "no-print-percept-mesh", &print_percept_mesh, "Calls perceptMesh's print_info routine");
-    bool print_debug_info             = false;                clp.setOption("print-debug-info", "no-print-debug-info", &print_debug_info, "Print more debugging information");
-    bool dump_element_vertices        = false;                clp.setOption("dump-element-vertices", "no-dump-element-vertices", &dump_element_vertices, "Dump the panzer_stk mesh vertices, element-by-element");
+    bool print_percept_mesh           = false;               clp.setOption("print-percept-mesh", "no-print-percept-mesh", &print_percept_mesh, "Calls perceptMesh's print_info routine");
+    bool print_debug_info             = false;               clp.setOption("print-debug-info", "no-print-debug-info", &print_debug_info, "Print more debugging information");
+    bool dump_element_vertices        = false;               clp.setOption("dump-element-vertices", "no-dump-element-vertices", &dump_element_vertices, "Dump the panzer_stk mesh vertices, element-by-element");
 
     // timer options
-    bool useStackedTimer              = false;                clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
-    bool showTimerSummary             = false;                clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
+    bool useStackedTimer              = false;               clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
+    bool showTimerSummary             = false;               clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
+
+    TEUCHOS_ASSERT(mesh_refinements >= 0); // temporarily do this instead of typing as unsigned int to get around the expected 7 arguments error for clp.setOption(...unsigned int...)
 
     clp.recogniseAllOptions(true);
     switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
     }
-    TEUCHOS_ASSERT(mesh_refinements >= 0); // get around the expected 7 arguments error for clp.setOption(...unsigned int...) for now
+
+    TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
+                               "Cannot provide both xml and yaml input files");
 
     // get xml file from command line if provided, otherwise use default
     std::string  xmlSolverInFileName(xmlFileName);
@@ -204,18 +226,18 @@ int main(int argc, char *argv[]) {
     Teuchos::ParameterList inputSolverList;
 
     if(xmlSolverInFileName.length()) {
-      if (myRank == 0)
-        *out << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n" << std::endl;
+        out << "\nReading parameter list from the XML file \""<<xmlSolverInFileName<<"\" ...\n" << std::endl;
       Teuchos::updateParametersFromXmlFile (xmlSolverInFileName, Teuchos::ptr(&inputSolverList));
     }
-    else if (myRank == 0)
-      *out << "Using default solver values ..." << std::endl;
-
+    else {
+      out << "Using default solver values ..." << std::endl;
+    }
 
     /**********************************************************************************/
     /******************************* MESH AND WORKSETS ********************************/
     /**********************************************************************************/
 
+    // TODO: due to #8475, we may need to create two meshes while we explore ways to correct it
 
     Teuchos::RCP<Teuchos::Time> meshTimer = Teuchos::TimeMonitor::getNewCounter("Step 1: Mesh generation");
     Teuchos::RCP<Teuchos::StackedTimer> stacked_timer;
@@ -227,7 +249,7 @@ int main(int argc, char *argv[]) {
 
     Teuchos::RCP<panzer_stk::STK_MeshFactory> mesh_factory;
     Teuchos::RCP<Teuchos::ParameterList> mesh_pl = Teuchos::rcp(new Teuchos::ParameterList);
-    std::string celltype = "Hex";
+
 
     if(exodusFileName.length())
     {
@@ -277,7 +299,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> eBlocks;
     mesh->getElementBlockNames(eBlocks);
     std::vector<bool> unstructured_eBlocks(eBlocks.size(), false);
-    // TODO: set unstructured blocks based on some sort of input information
+    // TODO: set unstructured blocks based on some sort of input information; for example, using the Exodus ex_get_var* functions
 
     // grab the number and names of sidesets
     std::vector<std::string> sidesets;
@@ -313,7 +335,7 @@ int main(int argc, char *argv[]) {
           std::string dof_name = "TEMPERATURE";
           std::string strategy = "Constant";
           double value = 0.0;
-	  Teuchos::ParameterList p; // this is how the official example does it, so I'll leave it alone
+	        Teuchos::ParameterList p; // this is how the official example does it, so I'll leave it alone for now
           p.set("Value",value);
           panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
                         strategy, p);
@@ -364,9 +386,9 @@ int main(int argc, char *argv[]) {
     }
     mesh_factory->completeMeshConstruction(*mesh,MPI_COMM_WORLD); // this is where the mesh refinements are applied
 
-    unsigned int dimension = mesh->getDimension();
+    unsigned int numDimensions = mesh->getDimension();
     if(print_debug_info)
-      std::cout << "Using dimension = " << dimension << std::endl;
+      out << "Using dimension = " << numDimensions << std::endl;
 
     // build DOF Manager and linear object factory
     /////////////////////////////////////////////////////////////
@@ -374,24 +396,20 @@ int main(int argc, char *argv[]) {
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 2 - Build DOF Manager and Worksets")));
     // build the connection manager
-    const Teuchos::RCP<panzer::ConnManager> conn_manager
-    = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
+    const Teuchos::RCP<panzer::ConnManager> conn_manager = Teuchos::rcp(new panzer_stk::STKConnManager(mesh));
 
     panzer::DOFManagerFactory globalIndexerFactory;
-    Teuchos::RCP<panzer::GlobalIndexer> dofManager
-    = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
+    Teuchos::RCP<panzer::GlobalIndexer> dofManager = globalIndexerFactory.buildGlobalIndexer(Teuchos::opaqueWrapper(MPI_COMM_WORLD),physicsBlocks,conn_manager);
 
     // construct some linear algebra object, build object to pass to evaluators
-    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory
-    = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,ST,LO,GO>(comm.getConst(),dofManager));
+    Teuchos::RCP<panzer::LinearObjFactory<panzer::Traits> > linObjFactory = Teuchos::rcp(new panzer::TpetraLinearObjFactory<panzer::Traits,ST,LO,GO>(comm.getConst(),dofManager));
 
     // build worksets
     ////////////////////////////////////////////////////////
 
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-    = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-    = Teuchos::rcp(new panzer::WorksetContainer);
+    // build STK workset factory and attach it to a workset container (uses lazy evaluation)
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh));
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer = Teuchos::rcp(new panzer::WorksetContainer);
     wkstContainer->setFactory(wkstFactory);
     for(size_t i=0;i<physicsBlocks.size();i++)
       wkstContainer->setNeeds(physicsBlocks[i]->elementBlockID(),physicsBlocks[i]->getWorksetNeeds());
@@ -405,7 +423,7 @@ int main(int argc, char *argv[]) {
 
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 3 - Setup Region Information")));
-    unsigned int children_per_element = 1 << (dimension*mesh_refinements);
+    unsigned int children_per_element = 1 << (numDimensions*mesh_refinements);
     if(print_debug_info)
       std::cout << "Number of mesh children = " << children_per_element << std::endl;
 
@@ -419,11 +437,7 @@ int main(int argc, char *argv[]) {
       // get the Percept mesh from Panzer
       Teuchos::RCP<percept::PerceptMesh> refinedMesh = mesh->getRefinedMesh();
       if(print_percept_mesh)
-        refinedMesh->print_info(*out,"",1,true);
-
-      //    Teuchos::RCP<percept::URP_Heterogeneous_3D> breakPattern = Teuchos::rcp(new percept::URP_Heterogeneous_3D(*refinedMesh));
-      //    percept::UniformRefiner breaker(*refinedMesh,*breakPattern);
-      //    breaker.deleteParentElements();
+        refinedMesh->print_info(out,"",1,true);
 
       // ids are linear within stk, but we need an offset because the original mesh info comes first
       size_t node_id_start = 0;
@@ -502,25 +516,25 @@ int main(int argc, char *argv[]) {
     panzer_stk::workset_utils::getIdsAndVertices(*mesh,eBlocks[0],localIds,vertices);
     //mesh->getElementVertices(elements,0,vertices);
 
-    if(dump_element_vertices && myRank == 0)
+    if(dump_element_vertices)
     {
       for(unsigned int ielem=0; ielem<vertices.extent(0); ++ielem)
         for(unsigned int ivert=0; ivert<vertices.extent(1); ++ivert)
         {
-          std::cout << "element " << ielem << " vertex " << ivert << " = (" << vertices(ielem,ivert,0);
+          out << "element " << ielem << " vertex " << ivert << " = (" << vertices(ielem,ivert,0);
           for(unsigned int idim=1; idim<vertices.extent(2); ++idim) // fenceposting the output
-            std::cout << ", " << vertices(ielem,ivert,idim);
-          std::cout << ")" << std::endl;
+            out << ", " << vertices(ielem,ivert,idim);
+          out << ")" << std::endl;
         }
     }
 
 
 
-    if(print_debug_info && myRank == 0)
+    if(print_debug_info)
     {
       for(unsigned int i=0; i<child_element_gids.size(); ++i)
       {
-        std::cout << "child= " << child_element_gids[i] << " parent= " << child_element_region_gids[i] << std::endl;
+        out << "child= " << child_element_gids[i] << " parent= " << child_element_region_gids[i] << std::endl;
       }
     }
 
@@ -529,13 +543,12 @@ int main(int argc, char *argv[]) {
 
     // next we need to get the LIDs
 
-    // Setup response library for checking the error in this manufactered solution
+    // Setup response library for checking the error in this manufactured solution
     ////////////////////////////////////////////////////////////////////////
 
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 4 - Other Panzer Setup")));
-    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary
-    = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
+    Teuchos::RCP<panzer::ResponseLibrary<panzer::Traits> > errorResponseLibrary = Teuchos::rcp(new panzer::ResponseLibrary<panzer::Traits>(wkstContainer,dofManager,linObjFactory));
 
     {
       const int integration_order = 10;
@@ -640,9 +653,13 @@ int main(int argc, char *argv[]) {
     // evaluate physics: This does both the Jacobian and residual at once
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
-    // solve the linear system
-    /////////////////////////////////////////////////////////////
 
+
+    /**********************************************************************************/
+    /************************************ LINEAR SOLVER *******************************/
+    /**********************************************************************************/
+
+    // TODO: this goes away once we finish getting the runtime errors in the region driver section sorted
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 5 - Linear Solver")));
 
@@ -652,14 +669,20 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<MueLu::TpetraOperator<ST,LO,GO,NT> > mueLuPreconditioner;
 
     if(xmlFileName.size())
+    {
       mueLuPreconditioner = MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST,LO,GO,NT> >(tp_container->get_A()), xmlFileName);
+    }
     else
     {
       Teuchos::ParameterList mueLuParamList;
       if(print_debug_info)
+      {
         mueLuParamList.set("verbosity", "high");
+      }
       else
+      {
         mueLuParamList.set("verbosity", "low");
+      }
       mueLuParamList.set("max levels", 3);
       mueLuParamList.set("coarse: max size", 10);
       mueLuParamList.set("multigrid algorithm", "sa");
@@ -683,27 +706,23 @@ int main(int argc, char *argv[]) {
 
     // scale by -1 since we solved a residual correction
     tp_container->get_x()->scale(-1.0);
-    std::cout << "Solution local length: " << tp_container->get_x()->getLocalLength() << std::endl;
-    std::cout << "Solution norm: " << tp_container->get_x()->norm2() << std::endl;
+    if(print_debug_info)
+    {
+      debug << "Solution local length: " << tp_container->get_x()->getLocalLength() << std::endl;
+      out << "Solution norm: " << tp_container->get_x()->norm2() << std::endl;
+    }
 
     /**********************************************************************************/
     /************************************ REGION DRIVER *******************************/
     /**********************************************************************************/
     {
-
-      #include <MueLu_UseShortNames.hpp>
       using Teuchos::RCP;
       using Teuchos::rcp;
       using Teuchos::ArrayRCP;
       using Teuchos::TimeMonitor;
       using Teuchos::ParameterList;
 
-      // =========================================================================
-      // MPI initialization using Teuchos
-      // =========================================================================
-      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
-      // const int numRanks = comm->getSize();
-      const int myRank   = comm->getRank();
+      RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm(); // TODO: the use of Teuchos::Comm and Teuchos::MpiComm is conflicting, even though everything builds fine
 
       // =========================================================================
       // Convenient definitions
@@ -713,62 +732,6 @@ int main(int argc, char *argv[]) {
       using magnitude_type = typename Teuchos::ScalarTraits<Scalar>::magnitudeType;
       using real_type = typename STS::coordinateType;
       using RealValuedMultiVector = Xpetra::MultiVector<real_type,LO,GO,NO>;
-
-      // =========================================================================
-      // Parameters initialization
-      // =========================================================================
-      //GO nx = 10, ny = 10, nz = 10;
-      //Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
-      //Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
-
-      std::string xmlFileName           = "";                  clp.setOption("xml",                   &xmlFileName,           "read parameters from an xml file");
-      std::string yamlFileName          = "";                  clp.setOption("yaml",                  &yamlFileName,          "read parameters from a yaml file");
-      std::string convergenceLog        = "residual_norm.txt"; clp.setOption("convergence-log",       &convergenceLog,        "file in which the convergence history of the linear solver is stored");
-      int         maxIts                = 200;                 clp.setOption("its",                   &maxIts,                "maximum number of solver iterations");
-      std::string smootherType          = "Jacobi";            clp.setOption("smootherType",          &smootherType,          "smoother to be used: (None | Jacobi | Gauss | Chebyshev)");
-      int         smootherIts           = 2;                   clp.setOption("smootherIts",           &smootherIts,           "number of smoother iterations");
-      double      smootherDamp          = 0.67;                clp.setOption("smootherDamp",          &smootherDamp,          "damping parameter for the level smoother");
-      double      smootherChebyEigRatio = 2.0;                 clp.setOption("smootherChebyEigRatio", &smootherChebyEigRatio, "eigenvalue ratio max/min used to approximate the smallest eigenvalue for Chebyshev relaxation");
-      double      smootherChebyBoostFactor = 1.1;              clp.setOption("smootherChebyBoostFactor", &smootherChebyBoostFactor, "boost factor for Chebyshev smoother");
-      double      tol                   = 1e-12;               clp.setOption("tol",                   &tol,                   "solver convergence tolerance");
-      bool        scaleResidualHist     = true;                clp.setOption("scale", "noscale",      &scaleResidualHist,     "scaled Krylov residual history");
-      bool        serialRandom          = false;               clp.setOption("use-serial-random", "no-use-serial-random", &serialRandom, "generate the random vector serially and then broadcast it");
-      bool        keepCoarseCoords      = false;               clp.setOption("keep-coarse-coords", "no-keep-coarse-coords", &keepCoarseCoords, "keep coordinates on coarsest level of region hierarchy");
-      bool        coarseSolverRebalance = false;               clp.setOption("rebalance-coarse", "no-rebalance-coarse", &coarseSolverRebalance, "rebalance before AMG coarse grid solve");
-      int         rebalanceNumPartitions = -1;                   clp.setOption("numPartitions",         &rebalanceNumPartitions, "number of partitions for rebalancing the coarse grid AMG solve");
-      std::string coarseSolverType      = "direct";            clp.setOption("coarseSolverType",      &coarseSolverType,      "Type of solver for (composite) coarse level operator (smoother | direct | amg)");
-      std::string unstructured          = "{}";                clp.setOption("unstructured",          &unstructured,          "List of ranks to be treated as unstructured, e.g. {0, 2, 5}");
-      std::string coarseAmgXmlFile      = "";                  clp.setOption("coarseAmgXml",          &coarseAmgXmlFile,      "Read parameters for AMG as coarse level solve from this xml file.");
-      std::string coarseSmootherXMLFile = "";                  clp.setOption("coarseSmootherXML",     &coarseSmootherXMLFile, "File containing the parameters to use with the coarse level smoother.");
-#ifdef HAVE_MUELU_TPETRA
-      std::string equilibrate = "no" ;                         clp.setOption("equilibrate",           &equilibrate,           "equilibrate the system (no | diag | 1-norm)");
-#endif
-#ifdef HAVE_MUELU_CUDA
-      bool profileSetup = false;                               clp.setOption("cuda-profile-setup", "no-cuda-profile-setup", &profileSetup, "enable CUDA profiling for setup");
-      bool profileSolve = false;                               clp.setOption("cuda-profile-solve", "no-cuda-profile-solve", &profileSolve, "enable CUDA profiling for solve");
-#endif
-      int  cacheSize = 0;                                      clp.setOption("cachesize",               &cacheSize,           "cache size (in KB)");
-      bool useStackedTimer   = false;                          clp.setOption("stacked-timer","no-stacked-timer", &useStackedTimer, "use stacked timer");
-      bool showTimerSummary = true;                            clp.setOption("show-timer-summary", "no-show-timer-summary", &showTimerSummary, "Switch on/off the timer summary at the end of the run.");
-      std::string cycleType = "V";                             clp.setOption("cycleType", &cycleType, "{Multigrid cycle type. Possible values: V, W.");
-
-      clp.recogniseAllOptions(true);
-      switch (clp.parse(argc, argv)) {
-      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
-      case Teuchos::CommandLineProcessor::PARSE_ERROR:
-      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
-      }
-
-      
-      TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
-                                 "Cannot provide both xml and yaml input files");
-      
-
-      // Instead of checking each time for rank, create a rank 0 stream
-      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-      Teuchos::FancyOStream& out = *fancy;
-      out.setOutputToRootOnly(0);
 
       ParameterList paramList;
       //auto inst = xpetraParameters.GetInstantiation();
@@ -827,64 +790,20 @@ int main(int argc, char *argv[]) {
       RCP<MultiVector>           nullspace;
       RCP<RealValuedMultiVector> coordinates;
 
-      //galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
-
-      // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
-      //                                 d1  d2  d3
-      //                                 d4  d5  d6
-      //                                 d7  d8  d9
-      //                                 d10 d11 d12
-      // A perfect distribution is only possible when the #processors is a perfect square.
-      // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
-      // size. For example, np=14 will give a 7-by-2 distribution.
-      // If you don't want Galeri to do this, specify mx or my on the galeriList.
-      //std::string matrixType = galeriParameters.GetMatrixType();
-      int numDimensions  = 0;
-      int numDofsPerNode = 0;
-      Teuchos::Array<GO> procsPerDim(3);
-      Teuchos::Array<GO> gNodesPerDim(3);
-      Teuchos::Array<LO> lNodesPerDim(3);
+      const int numDofsPerNode = 1;
+      Teuchos::Array<LO> lNodesPerDim(3); // TODO: this can't be removed so easily yet...
 
       // Create map and coordinates
-      // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
-      // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-      //if (matrixType == "Laplace1D") {
-      //  numDimensions = 1;
-      //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-      //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", nodeMap, galeriList);
-
-      //} else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
-      //    matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-      //  numDimensions = 2;
-      //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-      //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
-
-      //} else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+      // TODO: get a nodeMap and coordinates from Panzer
+      // if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
       //  numDimensions = 3;
       //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
       //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
       // }
-
-      // Expand map to do multiple DOF per node for block problems
-      //if (matrixType == "Elasticity2D") {
-      //  numDofsPerNode = 2;
-      //} else if (matrixType == "Elasticity3D") {
-      //  numDofsPerNode = 3;
-      //} else {
-      //  numDofsPerNode = 1;
-      //}
       
       dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
-      
-
-      //RCP<Tpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-      //    Tpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
-      //A = Pr->BuildMatrix();
-      
       //A = tp_container->get_A(); // TODO: convert this
-      //A->SetFixedBlockSize(numDofsPerNode);
-
-      //nullspace = Pr->BuildNullspace(); // TODO: double-check this
+      //nullspace = Pr->BuildNullspace(); // TODO: get a nullspace
 
       X = VectorFactory::Build(dofMap);
       B = VectorFactory::Build(dofMap);
@@ -911,13 +830,11 @@ int main(int argc, char *argv[]) {
         X->randomize();
       }
 
-
       A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
       Teuchos::Array<typename STS::magnitudeType> norms(1);
       B->norm2(norms);
       B->scale(one/norms[0]);
-      //galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
 #ifdef MATLAB_COMPARE
       Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("Ax.mm",*B);
@@ -926,7 +843,6 @@ int main(int argc, char *argv[]) {
       Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
       Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
 #endif
-      //out << galeriStream.str();
 
       comm->barrier();
       tm = Teuchos::null;
@@ -941,45 +857,6 @@ int main(int argc, char *argv[]) {
       } else {
         aggregationRegionType = "structured";
       }
-
-      // Loading geometric info from galeri
-//      if(numDimensions == 1) {
-//        gNodesPerDim[0] = galeriList.get<GO>("nx");
-//        gNodesPerDim[1] = 1;
-//        gNodesPerDim[2] = 1;
-//
-//        lNodesPerDim[0] = galeriList.get<LO>("lnx");
-//        lNodesPerDim[1] = 1;
-//        lNodesPerDim[2] = 1;
-//
-//        procsPerDim[0] = galeriList.get<GO>("mx");
-//        procsPerDim[1] = 1;
-//        procsPerDim[2] = 1;
-//      } else if(numDimensions == 2) {
-//        gNodesPerDim[0] = galeriList.get<GO>("nx");
-//        gNodesPerDim[1] = galeriList.get<GO>("ny");
-//        gNodesPerDim[2] = 1;
-//
-//        lNodesPerDim[0] = galeriList.get<LO>("lnx");
-//        lNodesPerDim[1] = galeriList.get<LO>("lny");
-//        lNodesPerDim[2] = 1;
-//
-//        procsPerDim[0] = galeriList.get<GO>("mx");
-//        procsPerDim[1] = galeriList.get<GO>("my");
-//        procsPerDim[2] = 1;
-//      } else if(numDimensions == 3) {
-//        gNodesPerDim[0] = galeriList.get<GO>("nx");
-//        gNodesPerDim[1] = galeriList.get<GO>("ny");
-//        gNodesPerDim[2] = galeriList.get<GO>("nz");
-//
-//        lNodesPerDim[0] = galeriList.get<LO>("lnx");
-//        lNodesPerDim[1] = galeriList.get<LO>("lny");
-//        lNodesPerDim[2] = galeriList.get<LO>("lnz");
-//
-//        procsPerDim[0] = galeriList.get<GO>("mx");
-//        procsPerDim[1] = galeriList.get<GO>("my");
-//        procsPerDim[2] = galeriList.get<GO>("mz");
-//      }
 
       const LO numLocalCompositeNodes = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
 
@@ -1016,6 +893,7 @@ int main(int argc, char *argv[]) {
       Array<GO>  interfaceGIDs;
       Array<LO>  interfaceLIDsData;
 
+      // TODO: finish generating the appropriate data that this function typically generates
 //      createRegionData(numDimensions, useUnstructured, numDofsPerNode,
 //                       gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
 //                       maxRegPerGID, numLocalRegionNodes, boundaryConditions,
@@ -1453,15 +1331,13 @@ int main(int argc, char *argv[]) {
     }
     
     /**********************************************************************************/
-    /*********************************** END REGION DRIVER*****************************/
+    /************************************ OUTPUT RESULTS ******************************/
     /**********************************************************************************/
-
-    // output data (optional)
-    /////////////////////////////////////////////////////////////
 
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 6 - Output Data")));
 
+    // TODO: MueLu ordering and Panzer ordering will likely not match here... we'll need to run a conversion
     // write the solution to matrix
     {
       // redistribute solution vector to ghosted vector
@@ -1469,55 +1345,44 @@ int main(int argc, char *argv[]) {
                                             | panzer::TpetraLinearObjContainer<ST,LO,GO>::DxDt);
 
       // get X Tpetra_Vector from ghosted container
+      // TODO: there is some magic here with Tpetra objects that needs to be fixed
       //Teuchos::RCP<panzer::TpetraLinearObjContainer<ST,LO,GO> > tp_ghostCont = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<ST,LO,GO> >(ghostCont);
       //panzer_stk::write_solution_data(*dofManager,*mesh,*tp_ghostCont->get_x());
 
-      // Due to multiple instances of this test being run at the same
-      // time (one for each celltype and each order), we need to
-      // differentiate output to prevent race conditions on output
-      // file. Multiple runs for different mesh refinement levels for
-      // the same celltype/order are ok as they are staged one after
-      // another in the ADD_ADVANCED_TEST cmake macro.
       std::ostringstream filename;
-      filename << "output_" << celltype << "_p" << discretization_order << ".exo";
+      filename << "regionMG_output" << discretization_order << ".exo";
       mesh->writeToExodus(filename.str());
     }
 
     // compute the error of the finite element solution
     /////////////////////////////////////////////////////////////
 
-    if(true)
     {
       panzer::AssemblyEngineInArgs respInput(ghostCont,container);
       respInput.alpha = 0;
       respInput.beta = 1;
 
       Teuchos::RCP<panzer::ResponseBase> l2_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("L2 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func
-      = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(l2_resp);
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > l2_resp_func = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(l2_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > l2_respVec = Thyra::createMember(l2_resp_func->getVectorSpace());
       l2_resp_func->setVector(l2_respVec);
 
       /*
       Teuchos::RCP<panzer::ResponseBase> h1_resp = errorResponseLibrary->getResponse<panzer::Traits::Residual>("H1 Error");
-      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func
-        = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
+      Teuchos::RCP<panzer::Response_Functional<panzer::Traits::Residual> > h1_resp_func = Teuchos::rcp_dynamic_cast<panzer::Response_Functional<panzer::Traits::Residual> >(h1_resp);
       Teuchos::RCP<Thyra::VectorBase<double> > h1_respVec = Thyra::createMember(h1_resp_func->getVectorSpace());
       h1_resp_func->setVector(h1_respVec);
-       */
+      */
 
       errorResponseLibrary->addResponsesToInArgs<panzer::Traits::Residual>(respInput);
       errorResponseLibrary->evaluate<panzer::Traits::Residual>(respInput);
 
-      if(myRank == 0)
-      {
-        *out << "This is the Basis Order" << std::endl;
-        *out << "Basis Order = " << discretization_order << std::endl;
-        *out << "This is the L2 Error" << std::endl;
-        *out << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
-        //*out << "This is the H1 Error" << std::endl;
-        //*out << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
-      }
+      out << "This is the Basis Order" << std::endl;
+      out << "Basis Order = " << discretization_order << std::endl;
+      out << "This is the L2 Error" << std::endl;
+      out << "L2 Error = " << sqrt(l2_resp_func->value) << std::endl;
+      //out << "This is the H1 Error" << std::endl;
+      //out << "H1 Error = " << sqrt(h1_resp_func->value) << std::endl;
     }
 
     tm = Teuchos::null;
@@ -1527,14 +1392,17 @@ int main(int argc, char *argv[]) {
     {
       RCP<ParameterList> reportParams = rcp(new ParameterList);
       const std::string filter = "";
-      if (useStackedTimer) {
+      if (useStackedTimer)
+      {
         Teuchos::StackedTimer::OutputOptions options;
         options.output_fraction = options.output_histogram = options.output_minmax = true;
-        stacked_timer->report(*out, comm, options);
-      } else {
-        std::ios_base::fmtflags ff(out->flags());
-        Teuchos::TimeMonitor::report(comm.ptr(), *out, filter, reportParams);
-        *out << std::setiosflags(ff);
+        stacked_timer->report(out, comm, options);
+      }
+      else
+      {
+        std::ios_base::fmtflags ff(out.flags());
+        Teuchos::TimeMonitor::report(comm.ptr(), out, filter, reportParams);
+        out << std::setiosflags(ff);
       }
     }
 
