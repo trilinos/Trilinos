@@ -1,6 +1,8 @@
 // Standard headers
 #include <cstdio>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
 #include <unistd.h>
 
 // TrilinosCouplings headers
@@ -11,12 +13,26 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+// Teuchos headers (copied from MueLu side)
+#include <Teuchos_YamlParameterListHelpers.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // Belos headers
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosTpetraAdapter.hpp"
+// Belos headers (copied from MueLu side)
+#include <BelosConfigDefs.hpp>
+#include <BelosBiCGStabSolMgr.hpp>
+#include <BelosBlockCGSolMgr.hpp>
+#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosLinearProblem.hpp>
+#include <BelosPseudoBlockCGSolMgr.hpp>
+#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
+#ifdef HAVE_MUELU_TPETRA
+#include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
+#endif
 
 // MueLu headers
 #include "MueLu.hpp"
@@ -27,6 +43,19 @@
 #include "MueLu_ParameterListInterpreter.hpp"
 #include "MueLu_TpetraOperator.hpp"
 #include "MueLu_Utilities.hpp"
+// MueLu headers (copied from MueLu side)
+#include <MueLu.hpp>
+#include <MueLu_BaseClass.hpp>
+#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
+#include <MueLu_ExplicitInstantiation.hpp>
+#endif
+#include <MueLu_Level.hpp>
+#include <MueLu_MutuallyExclusiveTime.hpp>
+#include <MueLu_ParameterListInterpreter.hpp>
+#include <MueLu_Utilities.hpp>
+#ifdef HAVE_MUELU_CUDA
+#include "cuda_profiler_api.h"
+#endif
 
 // Region MG headers
 #include "SetupRegionUtilities.hpp"
@@ -76,91 +105,24 @@
 
 /////////////////////////////////////////////////////////////////////////
 // Headers copied from MueLu driver
-#include <cstdio>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
-#include <unistd.h>
 
-// Teuchos
-#include <Teuchos_XMLParameterListHelpers.hpp>
-#include <Teuchos_YamlParameterListHelpers.hpp>
-#include <Teuchos_StandardCatchMacros.hpp>
-
-// Xpetra
-#include <Xpetra_MultiVectorFactory.hpp>
-#include <Xpetra_ImportFactory.hpp>
-#include <Xpetra_Operator.hpp>
-#include <Xpetra_Map.hpp>
-#include <Xpetra_MultiVector.hpp>
-#include <Xpetra_IO.hpp>
-
-// Galeri
-#include <Galeri_XpetraParameters.hpp>
-#include <Galeri_XpetraProblemFactory.hpp>
-#include <Galeri_XpetraUtils.hpp>
-#include <Galeri_XpetraMaps.hpp>
-
-// MueLu
-#include <MueLu.hpp>
-
-#include <MueLu_BaseClass.hpp>
-#ifdef HAVE_MUELU_EXPLICIT_INSTANTIATION
-#include <MueLu_ExplicitInstantiation.hpp>
-#endif
-#include <MueLu_Level.hpp>
-#include <MueLu_MutuallyExclusiveTime.hpp>
-#include <MueLu_ParameterListInterpreter.hpp>
-#include <MueLu_Utilities.hpp>
-
-// Belos
-#ifdef HAVE_MUELU_BELOS
-#include <BelosConfigDefs.hpp>
-#include <BelosBiCGStabSolMgr.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosLinearProblem.hpp>
-#include <BelosPseudoBlockCGSolMgr.hpp>
-#include <BelosXpetraAdapter.hpp>     // => This header defines Belos::XpetraOp
-#include <BelosMueLuAdapter.hpp>      // => This header defines Belos::MueLuOp
-#ifdef HAVE_MUELU_TPETRA
-#include <BelosTpetraAdapter.hpp>    // => This header defines Belos::TpetraOp
-#endif
-#endif
-
-
-#ifdef HAVE_MUELU_CUDA
-#include "cuda_profiler_api.h"
-#endif
+// This is only going to be based on the Tpetra stack...
+// TODO: be careful about use of Xpetra in the MueLu side vs the use of Tpetra on this side
 
 // MueLu and Xpetra Tpetra stack
 #ifdef HAVE_MUELU_TPETRA
 #include <MueLu_TpetraOperator.hpp>
 #include <MueLu_CreateTpetraPreconditioner.hpp>
-#include <Xpetra_TpetraOperator.hpp>
-#include "Xpetra_TpetraMultiVector.hpp"
 #include <KokkosBlas1_abs.hpp>
 #include <Tpetra_leftAndOrRightScaleCrsMatrix.hpp>
 #include <Tpetra_computeRowAndColumnOneNorms.hpp>
 #endif
-
-// Xpetra Epetra stack
-#ifdef HAVE_MUELU_EPETRA
-#include "Xpetra_EpetraMultiVector.hpp"
-#endif
-
-#include <MueLu_CreateXpetraPreconditioner.hpp>
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 #include <Amesos2_config.h>
 #include <Amesos2.hpp>
 #endif
 
-// Region MG headers
-#include "SetupRegionUtilities.hpp"
-#include "SetupRegionVector_def.hpp"
-#include "SetupRegionMatrix_def.hpp"
-#include "SetupRegionHierarchy_def.hpp"
 /////////////////////////////////////////////////////////////////////////
 
 // Include factories for boundary conditions and other Panzer setup
@@ -170,12 +132,21 @@
 
 int main(int argc, char *argv[]) {
 
+  // The following typedefs are used so that the two codes will work together.
+  // TODO: change everything to use the same types... i.e. check what Drekar does first before making the final decision
+  // Panzer types
   using ST = double;
   using LO = panzer::LocalOrdinal;
   using GO = panzer::GlobalOrdinal;
   using NT = panzer::TpetraNodeType;
   using OP = Tpetra::Operator<ST,LO,GO,NT>;
   using MV = Tpetra::MultiVector<ST,LO,GO,NT>; 
+
+  // MueLu types
+  using Scalar = ST; 
+  using LocalOrdinal = LO; 
+  using GlobalOrdinal = GO;
+  using Node = NT;
 
   Kokkos::initialize(argc,argv);
   { // Kokkos scope
@@ -335,14 +306,14 @@ int main(int argc, char *argv[]) {
       {
         for(size_t j=0; j<sidesets.size(); ++j)
         {
-          std::size_t bc_id = i;
+          std::size_t bc_id = j;
           panzer::BCType bctype = panzer::BCT_Dirichlet;
           std::string sideset_id = sidesets[j];
           std::string element_block_id = eBlocks[i];
           std::string dof_name = "TEMPERATURE";
           std::string strategy = "Constant";
           double value = 0.0;
-	  //          Teuchos::ParameterList p; // TODO: why is this here?
+	  Teuchos::ParameterList p; // this is how the official example does it, so I'll leave it alone
           p.set("Value",value);
           panzer::BC bc(bc_id, bctype, sideset_id, element_block_id, dof_name,
                         strategy, p);
@@ -369,8 +340,8 @@ int main(int argc, char *argv[]) {
         // we can have more than one physics block, one per element block
         physicsBlocks.push_back(pb);
       }
-      panzer::checkBCConsistency(eBlocks,sidesets,bcs);
     }
+    panzer::checkBCConsistency(eBlocks,sidesets,bcs);
 
 
     // finish building mesh, set required field variables and mesh bulk data
@@ -669,13 +640,58 @@ int main(int argc, char *argv[]) {
     // evaluate physics: This does both the Jacobian and residual at once
     ae_tm.getAsObject<panzer::Traits::Jacobian>()->evaluate(input);
 
+    // solve the linear system
+    /////////////////////////////////////////////////////////////
 
+    tm = Teuchos::null;
+    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 5 - Linear Solver")));
+
+    // convert generic linear object container to tpetra container
+    Teuchos::RCP<panzer::TpetraLinearObjContainer<ST,LO,GO> > tp_container = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<ST,LO,GO> >(container);
+
+    Teuchos::RCP<MueLu::TpetraOperator<ST,LO,GO,NT> > mueLuPreconditioner;
+
+    if(xmlFileName.size())
+      mueLuPreconditioner = MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST,LO,GO,NT> >(tp_container->get_A()), xmlFileName);
+    else
+    {
+      Teuchos::ParameterList mueLuParamList;
+      if(print_debug_info)
+        mueLuParamList.set("verbosity", "high");
+      else
+        mueLuParamList.set("verbosity", "low");
+      mueLuParamList.set("max levels", 3);
+      mueLuParamList.set("coarse: max size", 10);
+      mueLuParamList.set("multigrid algorithm", "sa");
+      mueLuPreconditioner = MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST,LO,GO,NT> >(tp_container->get_A()), mueLuParamList);
+    }
+
+    // Setup the linear solve
+    Belos::LinearProblem<ST,MV,OP> problem(tp_container->get_A(), tp_container->get_x(), tp_container->get_f());
+    problem.setLeftPrec(mueLuPreconditioner);
+    problem.setProblem();
+
+    Teuchos::RCP<Teuchos::ParameterList> pl_belos = Teuchos::rcp(new Teuchos::ParameterList());
+    pl_belos->set("Maximum Iterations", 1000);
+    pl_belos->set("Convergence Tolerance", 1e-9);
+
+    // build the solver
+    Belos::PseudoBlockGmresSolMgr<ST,MV,OP> solver(Teuchos::rcpFromRef(problem), pl_belos);
+
+    // solve the linear system
+    solver.solve();
+
+    // scale by -1 since we solved a residual correction
+    tp_container->get_x()->scale(-1.0);
+    std::cout << "Solution local length: " << tp_container->get_x()->getLocalLength() << std::endl;
+    std::cout << "Solution norm: " << tp_container->get_x()->norm2() << std::endl;
 
     /**********************************************************************************/
     /************************************ REGION DRIVER *******************************/
     /**********************************************************************************/
     {
-#include <MueLu_UseShortNames.hpp>
+
+      #include <MueLu_UseShortNames.hpp>
       using Teuchos::RCP;
       using Teuchos::rcp;
       using Teuchos::ArrayRCP;
@@ -701,9 +717,9 @@ int main(int argc, char *argv[]) {
       // =========================================================================
       // Parameters initialization
       // =========================================================================
-      GO nx = 10, ny = 10, nz = 10;
-      Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
-      Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
+      //GO nx = 10, ny = 10, nz = 10;
+      //Galeri::Xpetra::Parameters<GO> galeriParameters(clp, nx, ny, nz, "Laplace2D"); // manage parameters of the test case
+      //Xpetra::Parameters             xpetraParameters(clp);                          // manage parameters of Xpetra
 
       std::string xmlFileName           = "";                  clp.setOption("xml",                   &xmlFileName,           "read parameters from an xml file");
       std::string yamlFileName          = "";                  clp.setOption("yaml",                  &yamlFileName,          "read parameters from a yaml file");
@@ -738,14 +754,16 @@ int main(int argc, char *argv[]) {
 
       clp.recogniseAllOptions(true);
       switch (clp.parse(argc, argv)) {
-        case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
-        case Teuchos::CommandLineProcessor::PARSE_ERROR:
-        case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
-        case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+      case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
+      case Teuchos::CommandLineProcessor::PARSE_ERROR:
+      case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+      case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
       }
 
+      
       TEUCHOS_TEST_FOR_EXCEPTION(xmlFileName != "" && yamlFileName != "", std::runtime_error,
                                  "Cannot provide both xml and yaml input files");
+      
 
       // Instead of checking each time for rank, create a rank 0 stream
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
@@ -753,14 +771,14 @@ int main(int argc, char *argv[]) {
       out.setOutputToRootOnly(0);
 
       ParameterList paramList;
-      auto inst = xpetraParameters.GetInstantiation();
+      //auto inst = xpetraParameters.GetInstantiation();
 
       if (yamlFileName != "") {
         Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
       } else {
-        if (inst == Xpetra::COMPLEX_INT_INT)
-          xmlFileName = (xmlFileName != "" ? xmlFileName : "structured_1dof-complex.xml");
-        else
+        //if (inst == Xpetra::COMPLEX_INT_INT)
+        //  xmlFileName = (xmlFileName != "" ? xmlFileName : "structured_1dof-complex.xml");
+        //else
           xmlFileName = (xmlFileName != "" ? xmlFileName : "structured_1dof.xml");
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
       }
@@ -778,19 +796,19 @@ int main(int argc, char *argv[]) {
       for(int idx = 0; idx < unstructuredRanks.size(); ++idx) {
         if(unstructuredRanks[idx] == myRank) {useUnstructured = true;}
       }
-
+      
       // Retrieve matrix parameters (they may have been changed on the command line)
       // [for instance, if we changed matrix type from 2D to 3D we need to update nz]
-      ParameterList galeriList = galeriParameters.GetParameterList();
+      //ParameterList galeriList = galeriParameters.GetParameterList();
 
       // =========================================================================
       // Problem construction
       // =========================================================================
-      std::ostringstream galeriStream;
+      //std::ostringstream galeriStream;
 #ifdef HAVE_MUELU_OPENMP
-      std::string node_name = Node::name();
-      if(!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
-        galeriStream<<"OpenMP Max Threads = "<<omp_get_max_threads()<<std::endl;
+      //std::string node_name = Node::name();
+      //if(!comm->getRank() && !node_name.compare("OpenMP/Wrapper"))
+      //  galeriStream<<"OpenMP Max Threads = "<<omp_get_max_threads()<<std::endl;
 #endif
 
 
@@ -809,7 +827,7 @@ int main(int argc, char *argv[]) {
       RCP<MultiVector>           nullspace;
       RCP<RealValuedMultiVector> coordinates;
 
-      galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
+      //galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
       // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
       //                                 d1  d2  d3
@@ -820,7 +838,7 @@ int main(int argc, char *argv[]) {
       // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
       // size. For example, np=14 will give a 7-by-2 distribution.
       // If you don't want Galeri to do this, specify mx or my on the galeriList.
-      std::string matrixType = galeriParameters.GetMatrixType();
+      //std::string matrixType = galeriParameters.GetMatrixType();
       int numDimensions  = 0;
       int numDofsPerNode = 0;
       Teuchos::Array<GO> procsPerDim(3);
@@ -830,54 +848,43 @@ int main(int argc, char *argv[]) {
       // Create map and coordinates
       // In the future, we hope to be able to first create a Galeri problem, and then request map and coordinates from it
       // At the moment, however, things are fragile as we hope that the Problem uses same map and coordinates inside
-      if (matrixType == "Laplace1D") {
-        numDimensions = 1;
-        nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", nodeMap, galeriList);
+      //if (matrixType == "Laplace1D") {
+      //  numDimensions = 1;
+      //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian1D", comm, galeriList);
+      //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("1D", nodeMap, galeriList);
 
-      } else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
-          matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
-        numDimensions = 2;
-        nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
+      //} else if (matrixType == "Laplace2D" || matrixType == "Star2D" ||
+      //    matrixType == "BigStar2D" || matrixType == "Elasticity2D") {
+      //  numDimensions = 2;
+      //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian2D", comm, galeriList);
+      //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("2D", nodeMap, galeriList);
 
-      } else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
-        numDimensions = 3;
-        nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
-        coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
-      }
+      //} else if (matrixType == "Laplace3D" || matrixType == "Brick3D" || matrixType == "Elasticity3D") {
+      //  numDimensions = 3;
+      //  nodeMap = Galeri::Xpetra::CreateMap<LO, GO, Node>(xpetraParameters.GetLib(), "Cartesian3D", comm, galeriList);
+      //  coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<double,LO,GO,Map,RealValuedMultiVector>("3D", nodeMap, galeriList);
+      // }
 
       // Expand map to do multiple DOF per node for block problems
-      if (matrixType == "Elasticity2D") {
-        numDofsPerNode = 2;
-      } else if (matrixType == "Elasticity3D") {
-        numDofsPerNode = 3;
-      } else {
-        numDofsPerNode = 1;
-      }
+      //if (matrixType == "Elasticity2D") {
+      //  numDofsPerNode = 2;
+      //} else if (matrixType == "Elasticity3D") {
+      //  numDofsPerNode = 3;
+      //} else {
+      //  numDofsPerNode = 1;
+      //}
+      
       dofMap = Xpetra::MapFactory<LO,GO,Node>::Build(nodeMap, numDofsPerNode);
+      
 
-      galeriStream << "Processor subdomains in x direction: " << galeriList.get<GO>("mx") << std::endl
-          << "Processor subdomains in y direction: " << galeriList.get<GO>("my") << std::endl
-          << "Processor subdomains in z direction: " << galeriList.get<GO>("mz") << std::endl
-          << "========================================================" << std::endl;
+      //RCP<Tpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+      //    Tpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
+      //A = Pr->BuildMatrix();
+      
+      //A = tp_container->get_A(); // TODO: convert this
+      //A->SetFixedBlockSize(numDofsPerNode);
 
-      if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
-        // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
-        galeriList.set("right boundary" , "Neumann");
-        galeriList.set("bottom boundary", "Neumann");
-        galeriList.set("top boundary"   , "Neumann");
-        galeriList.set("front boundary" , "Neumann");
-        galeriList.set("back boundary"  , "Neumann");
-      }
-
-      RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-          Galeri::Xpetra::BuildProblem<SC,LO,GO,Map,CrsMatrixWrap,MultiVector>(galeriParameters.GetMatrixType(), dofMap, galeriList);
-      A = Pr->BuildMatrix();
-
-      A->SetFixedBlockSize(numDofsPerNode);
-
-      nullspace = Pr->BuildNullspace();
+      //nullspace = Pr->BuildNullspace(); // TODO: double-check this
 
       X = VectorFactory::Build(dofMap);
       B = VectorFactory::Build(dofMap);
@@ -903,12 +910,14 @@ int main(int argc, char *argv[]) {
         Utilities::SetRandomSeed(*comm);
         X->randomize();
       }
+
+
       A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
       Teuchos::Array<typename STS::magnitudeType> norms(1);
       B->norm2(norms);
       B->scale(one/norms[0]);
-      galeriStream << "Galeri complete.\n========================================================" << std::endl;
+      //galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
 #ifdef MATLAB_COMPARE
       Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("Ax.mm",*B);
@@ -917,7 +926,7 @@ int main(int argc, char *argv[]) {
       Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("rhs.mm",*B);
       Xpetra::IO<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Write("x.mm",*X);
 #endif
-      out << galeriStream.str();
+      //out << galeriStream.str();
 
       comm->barrier();
       tm = Teuchos::null;
@@ -934,43 +943,43 @@ int main(int argc, char *argv[]) {
       }
 
       // Loading geometric info from galeri
-      if(numDimensions == 1) {
-        gNodesPerDim[0] = galeriList.get<GO>("nx");
-        gNodesPerDim[1] = 1;
-        gNodesPerDim[2] = 1;
-
-        lNodesPerDim[0] = galeriList.get<LO>("lnx");
-        lNodesPerDim[1] = 1;
-        lNodesPerDim[2] = 1;
-
-        procsPerDim[0] = galeriList.get<GO>("mx");
-        procsPerDim[1] = 1;
-        procsPerDim[2] = 1;
-      } else if(numDimensions == 2) {
-        gNodesPerDim[0] = galeriList.get<GO>("nx");
-        gNodesPerDim[1] = galeriList.get<GO>("ny");
-        gNodesPerDim[2] = 1;
-
-        lNodesPerDim[0] = galeriList.get<LO>("lnx");
-        lNodesPerDim[1] = galeriList.get<LO>("lny");
-        lNodesPerDim[2] = 1;
-
-        procsPerDim[0] = galeriList.get<GO>("mx");
-        procsPerDim[1] = galeriList.get<GO>("my");
-        procsPerDim[2] = 1;
-      } else if(numDimensions == 3) {
-        gNodesPerDim[0] = galeriList.get<GO>("nx");
-        gNodesPerDim[1] = galeriList.get<GO>("ny");
-        gNodesPerDim[2] = galeriList.get<GO>("nz");
-
-        lNodesPerDim[0] = galeriList.get<LO>("lnx");
-        lNodesPerDim[1] = galeriList.get<LO>("lny");
-        lNodesPerDim[2] = galeriList.get<LO>("lnz");
-
-        procsPerDim[0] = galeriList.get<GO>("mx");
-        procsPerDim[1] = galeriList.get<GO>("my");
-        procsPerDim[2] = galeriList.get<GO>("mz");
-      }
+//      if(numDimensions == 1) {
+//        gNodesPerDim[0] = galeriList.get<GO>("nx");
+//        gNodesPerDim[1] = 1;
+//        gNodesPerDim[2] = 1;
+//
+//        lNodesPerDim[0] = galeriList.get<LO>("lnx");
+//        lNodesPerDim[1] = 1;
+//        lNodesPerDim[2] = 1;
+//
+//        procsPerDim[0] = galeriList.get<GO>("mx");
+//        procsPerDim[1] = 1;
+//        procsPerDim[2] = 1;
+//      } else if(numDimensions == 2) {
+//        gNodesPerDim[0] = galeriList.get<GO>("nx");
+//        gNodesPerDim[1] = galeriList.get<GO>("ny");
+//        gNodesPerDim[2] = 1;
+//
+//        lNodesPerDim[0] = galeriList.get<LO>("lnx");
+//        lNodesPerDim[1] = galeriList.get<LO>("lny");
+//        lNodesPerDim[2] = 1;
+//
+//        procsPerDim[0] = galeriList.get<GO>("mx");
+//        procsPerDim[1] = galeriList.get<GO>("my");
+//        procsPerDim[2] = 1;
+//      } else if(numDimensions == 3) {
+//        gNodesPerDim[0] = galeriList.get<GO>("nx");
+//        gNodesPerDim[1] = galeriList.get<GO>("ny");
+//        gNodesPerDim[2] = galeriList.get<GO>("nz");
+//
+//        lNodesPerDim[0] = galeriList.get<LO>("lnx");
+//        lNodesPerDim[1] = galeriList.get<LO>("lny");
+//        lNodesPerDim[2] = galeriList.get<LO>("lnz");
+//
+//        procsPerDim[0] = galeriList.get<GO>("mx");
+//        procsPerDim[1] = galeriList.get<GO>("my");
+//        procsPerDim[2] = galeriList.get<GO>("mz");
+//      }
 
       const LO numLocalCompositeNodes = lNodesPerDim[0]*lNodesPerDim[1]*lNodesPerDim[2];
 
@@ -1007,12 +1016,12 @@ int main(int argc, char *argv[]) {
       Array<GO>  interfaceGIDs;
       Array<LO>  interfaceLIDsData;
 
-      createRegionData(numDimensions, useUnstructured, numDofsPerNode,
-                       gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
-                       maxRegPerGID, numLocalRegionNodes, boundaryConditions,
-                       sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
-                       quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
-                       interfaceGIDs, interfaceLIDsData);
+//      createRegionData(numDimensions, useUnstructured, numDofsPerNode,
+//                       gNodesPerDim(), lNodesPerDim(), procsPerDim(), nodeMap, dofMap,
+//                       maxRegPerGID, numLocalRegionNodes, boundaryConditions,
+//                       sendGIDs, sendPIDs, numInterfaces, rNodesPerDim,
+//                       quasiRegionGIDs, quasiRegionCoordGIDs, compositeToRegionLIDs,
+//                       interfaceGIDs, interfaceLIDsData);
 
       const LO numSend = static_cast<LO>(sendGIDs.size());
 
@@ -1165,7 +1174,7 @@ int main(int argc, char *argv[]) {
       regionNullspace->replaceMap(revisedRowMap);
 
       // create region coordinates vector
-      regionCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap,
+      regionCoordinates = Xpetra::MultiVectorFactory<real_type,LO,GO,NO>::Build(quasiRegCoordMap, // TODO: this can't remain commented
                                                                                 coordinates->getNumVectors());
       regionCoordinates->doImport(*coordinates, *coordImporter, Xpetra::INSERT);
       regionCoordinates->replaceMap(regCoordMap);
@@ -1173,15 +1182,15 @@ int main(int argc, char *argv[]) {
       using Tpetra_CrsMatrix = Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
       using Tpetra_MultiVector = Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
-      /* Stuff for multi-level algorithm
-       *
-       * To allow for multi-level schemes with more than two levels, we need to store
-       * maps, matrices, vectors, and stuff like that on each level. Since we call the
-       * multi-level scheme recursively, this should be reflected in the design of
-       * variables.
-       *
-       * We use MueLu::Hierarchy and MueLu:Level to store each quantity on each level.
-       */
+      // Stuff for multi-level algorithm
+      //
+      // To allow for multi-level schemes with more than two levels, we need to store
+      // maps, matrices, vectors, and stuff like that on each level. Since we call the
+      // multi-level scheme recursively, this should be reflected in the design of
+      // variables.
+      //
+      // We use MueLu::Hierarchy and MueLu:Level to store each quantity on each level.
+      //
       RCP<ParameterList> coarseSolverData = rcp(new ParameterList());
       coarseSolverData->set<std::string>("coarse solver type", coarseSolverType);
       coarseSolverData->set<bool>("coarse solver rebalance", coarseSolverRebalance);
@@ -1277,13 +1286,13 @@ int main(int argc, char *argv[]) {
 
         TEUCHOS_TEST_FOR_EXCEPT_MSG(!(numLevels>0), "We require numLevel > 0. Probably, numLevel has not been set, yet.");
 
-        /* We first use the non-level container variables to setup the fine grid problem.
-         * This is ok since the initial setup just mimics the application and the outer
-         * Krylov method.
-         *
-         * We switch to using the level container variables as soon as we enter the
-         * recursive part of the algorithm.
-         */
+        // We first use the non-level container variables to setup the fine grid problem.
+        // This is ok since the initial setup just mimics the application and the outer
+        // Krylov method.
+        //
+        // We switch to using the level container variables as soon as we enter the
+        // recursive part of the algorithm.
+        //
 
         // Composite residual vector
         RCP<Vector> compRes = VectorFactory::Build(dofMap, true);
@@ -1440,56 +1449,12 @@ int main(int argc, char *argv[]) {
       TimeMonitor::clearCounters();
 
       return EXIT_SUCCESS;
+      /**/
     }
+    
     /**********************************************************************************/
     /*********************************** END REGION DRIVER*****************************/
     /**********************************************************************************/
-
-    // solve the linear system
-    /////////////////////////////////////////////////////////////
-
-    tm = Teuchos::null;
-    tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 5 - Linear Solver")));
-
-    // convert generic linear object container to tpetra container
-    Teuchos::RCP<panzer::TpetraLinearObjContainer<ST,LO,GO> > tp_container = Teuchos::rcp_dynamic_cast<panzer::TpetraLinearObjContainer<ST,LO,GO> >(container);
-
-    Teuchos::RCP<MueLu::TpetraOperator<ST,LO,GO,NT> > mueLuPreconditioner;
-
-    if(xmlFileName.size())
-      mueLuPreconditioner = MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST,LO,GO,NT> >(tp_container->get_A()), xmlFileName);
-    else
-    {
-      Teuchos::ParameterList mueLuParamList;
-      if(print_debug_info)
-        mueLuParamList.set("verbosity", "high");
-      else
-        mueLuParamList.set("verbosity", "low");
-      mueLuParamList.set("max levels", 3);
-      mueLuParamList.set("coarse: max size", 10);
-      mueLuParamList.set("multigrid algorithm", "sa");
-      mueLuPreconditioner = MueLu::CreateTpetraPreconditioner(Teuchos::rcp_dynamic_cast<Tpetra::Operator<ST,LO,GO,NT> >(tp_container->get_A()), mueLuParamList);
-    }
-
-    // Setup the linear solve
-    Belos::LinearProblem<ST,MV,OP> problem(tp_container->get_A(), tp_container->get_x(), tp_container->get_f());
-    problem.setLeftPrec(mueLuPreconditioner);
-    problem.setProblem();
-
-    Teuchos::RCP<Teuchos::ParameterList> pl_belos = Teuchos::rcp(new Teuchos::ParameterList());
-    pl_belos->set("Maximum Iterations", 1000);
-    pl_belos->set("Convergence Tolerance", 1e-9);
-
-    // build the solver
-    Belos::PseudoBlockGmresSolMgr<ST,MV,OP> solver(Teuchos::rcpFromRef(problem), pl_belos);
-
-    // solve the linear system
-    solver.solve();
-
-    // scale by -1 since we solved a residual correction
-    tp_container->get_x()->scale(-1.0);
-    std::cout << "Solution local length: " << tp_container->get_x()->getLocalLength() << std::endl;
-    std::cout << "Solution norm: " << tp_container->get_x()->norm2() << std::endl;
 
     // output data (optional)
     /////////////////////////////////////////////////////////////
