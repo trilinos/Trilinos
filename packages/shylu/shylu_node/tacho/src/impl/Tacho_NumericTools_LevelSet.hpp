@@ -19,7 +19,6 @@
 #include "Tacho_Symmetrize_OnDevice.hpp"
 
 #include "Tacho_ApplyPivots.hpp"
-#include "Tacho_ApplyPivots_Internal.hpp"
 #include "Tacho_ApplyPivots_OnDevice.hpp"
 
 #include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
@@ -889,8 +888,8 @@ namespace Tacho {
                 UnmanagedViewType<value_type_matrix> STR(ABR.data()+ABR.span(), m, n_m); 
 
                 auto fpiv = ordinal_type_array(P.data()+m, m);
-                _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal>
-                  ::invoke(fpiv, ATR); 
+                _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::OnDevice>
+                  ::invoke(exec_instance, fpiv, ATR); 
                 exec_instance.fence();
 
                 _status = Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::OnDevice>
@@ -1379,8 +1378,8 @@ namespace Tacho {
               const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
               const auto fpiv = ordinal_type_array(_piv.data()+4*offm+m, m);
               
-              _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
-                ::invoke(fpiv, tT);
+              _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
               exec_instance.fence();
 
               _status = Trsv<Uplo::Lower,Trans::NoTranspose,Algo::OnDevice>
@@ -1447,8 +1446,8 @@ namespace Tacho {
                 ::invoke(_handle_blas, Diag::Unit(), AL, tT); checkDeviceBlasStatus("trsv");
 
               const auto fpiv = ordinal_type_array(P.data()+m, m);
-              _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
-                ::invoke(fpiv, tT);
+              _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::OnDevice> /// row inter-change
+                ::invoke(exec_instance, fpiv, tT);
             }
           }
         }
