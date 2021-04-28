@@ -434,8 +434,8 @@ namespace Tacho {
       timer.reset();
 
       _device_level_cut = min(device_level_cut, _nlevel);
-      _device_factorize_thres = 0; //device_factorize_thres;
-      _device_solve_thres = 0; //device_solve_thres;
+      _device_factorize_thres = device_factorize_thres;
+      _device_solve_thres = device_solve_thres;
 
       _h_factorize_mode = ordinal_type_array_host(do_not_initialize_tag("h_factorize_mode"), _nsupernodes);
       Kokkos::deep_copy(_h_factorize_mode, -1);
@@ -1223,7 +1223,7 @@ namespace Tacho {
 
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-                Gemv<Trans::NoTranspose,Algo::OnDevice>
+                _status = Gemv<Trans::NoTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
                 exec_instance.fence();
               }
@@ -1271,7 +1271,7 @@ namespace Tacho {
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
                 const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs); 
-                Gemv<Trans::NoTranspose,Algo::OnDevice>
+                _status = Gemv<Trans::NoTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
                 exec_instance.fence();
               }
@@ -1319,7 +1319,7 @@ namespace Tacho {
               const ordinal_type offm = s.row_begin;
               const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
                
-              Gemv<Trans::NoTranspose,Algo::OnDevice>
+              _status = Gemv<Trans::NoTranspose,Algo::OnDevice>
                 ::invoke(_handle_blas, one, A, b, zero, tT); checkDeviceBlasStatus("gemv");
             }
           }
@@ -1352,7 +1352,7 @@ namespace Tacho {
                            const size_type_array_host &h_buf_solve_ptr,
                            const value_type_matrix &t) {
       const ordinal_type nrhs = t.extent(1);
-      const value_type minus_one(-1), zero(1);
+      const value_type minus_one(-1), zero(0);
 #if defined(KOKKOS_ENABLE_CUDA)
       ordinal_type q(0);
 #endif 
@@ -1434,12 +1434,12 @@ namespace Tacho {
               const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
               const auto P = ordinal_type_array(_piv.data()+4*offm, 4*m);
               const auto D = value_type_matrix(_diag.data()+2*offm, m, 2);
-              Scale2x2_BlockInverseDiagonals<Side::Left,Algo::OnDevice> /// row scaling
+              _status = Scale2x2_BlockInverseDiagonals<Side::Left,Algo::OnDevice> /// row scaling
                 ::invoke(exec_instance, P, D, tT);
 
               if (n_m > 0) {
                 const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
-                Gemv<Trans::NoTranspose,Algo::OnDevice>
+                _status = Gemv<Trans::NoTranspose,Algo::OnDevice>
                   ::invoke(_handle_blas, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
                 exec_instance.fence();
               }
@@ -1447,7 +1447,7 @@ namespace Tacho {
                 ::invoke(_handle_blas, Diag::Unit(), AL, tT); checkDeviceBlasStatus("trsv");
 
               const auto fpiv = ordinal_type_array(P.data()+m, m);
-              ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
+              _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
                 ::invoke(fpiv, tT);
             }
           }
@@ -1466,7 +1466,7 @@ namespace Tacho {
         _buf = value_type_array(do_not_initialize_tag("buf"), buf_extent);
         track_free(buf_span*sizeof(value_type));
         track_alloc(_buf.span()*sizeof(value_type));
-        if (nrhs > 1) {
+        {
           const Kokkos::RangePolicy<exec_space> policy(0,_buf_solve_ptr.extent(0));
           const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
           const auto buf_solve_ptr = _buf_solve_ptr;
@@ -1773,7 +1773,7 @@ namespace Tacho {
               }
 
               const auto h_buf_factor_ptr = Kokkos::subview(_h_buf_factor_ptr, range_buf_factor_ptr);
-              printf("level = %d\n", lvl);
+
               factorizeLDL_OnDevice(pbeg, pend, h_buf_factor_ptr, work); 
               Kokkos::fence();
 
