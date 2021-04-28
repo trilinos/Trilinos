@@ -139,7 +139,7 @@ int driver_chol (const int m, const bool verbose) {
       Tacho::Lapack<value_type>::potrf_buffersize(handle_lapack, 
                                                   CUBLAS_FILL_MODE_UPPER,
                                                   m, 
-                                                  A_ptr, m, 
+                                                  A.data(), m, 
                                                   &lwork);
       printf("Cholesky lwork %d\n", lwork);
 #endif

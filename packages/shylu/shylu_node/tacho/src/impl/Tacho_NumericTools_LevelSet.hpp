@@ -434,7 +434,7 @@ namespace Tacho {
 
       _device_level_cut = min(device_level_cut, _nlevel);
       _device_factorize_thres = device_factorize_thres;
-      _device_solve_thres = device_solve_thres;
+      _device_solve_thres =     device_solve_thres;
 
       _h_factorize_mode = ordinal_type_array_host(do_not_initialize_tag("h_factorize_mode"), _nsupernodes);
       Kokkos::deep_copy(_h_factorize_mode, -1);

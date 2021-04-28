@@ -180,6 +180,7 @@ namespace Tacho {
     }
 
     /// \brief Copy constructor (shallow copy), for deep-copy use a method copy
+    KOKKOS_INLINE_FUNCTION
     CrsMatrixBase(const CrsMatrixBase &b) 
       : _m(b._m),
         _n(b._n),

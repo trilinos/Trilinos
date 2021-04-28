@@ -15,7 +15,7 @@ namespace Tacho {
              typename ViewTypeP,
              typename ViewTypeD,
              typename ViewTypeA>
-    KOKKOS_INLINE_FUNCTION
+    inline
     static int
     invoke(MemberType &member,
            const ViewTypeP &P,

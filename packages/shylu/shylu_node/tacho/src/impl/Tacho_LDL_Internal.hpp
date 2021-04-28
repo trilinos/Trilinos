@@ -30,8 +30,8 @@ namespace Tacho {
       static_assert(ViewTypeP::rank == 1,"P is not rank 1 view.");
       static_assert(ViewTypeW::rank == 1,"W is not rank 1 view.");
 
-      TACHO_TEST_FOR_EXCEPTION(P.extent(0) < 4*A.extent(0), std::runtime_error,
-                               "P should be 4*A.extent(0) .");
+      TACHO_TEST_FOR_ABORT(P.extent(0) < 4*A.extent(0), 
+                           "P should be 4*A.extent(0) .");
 
       int r_val(0);
       const ordinal_type m = A.extent(0);
@@ -52,7 +52,7 @@ namespace Tacho {
              typename ViewTypeA,
              typename ViewTypeP,
              typename ViewTypeD>
-    inline
+    KOKKOS_INLINE_FUNCTION
     static int
     modify(MemberType &member,
            const ViewTypeA &A,
@@ -79,7 +79,7 @@ namespace Tacho {
           *__restrict__ fpiv = ipiv + m, 
           *__restrict__ perm = fpiv + m, 
           *__restrict__ peri = perm + m;
-        constexpr value_type one(1);
+        const value_type one(1);
         Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
             D(i,0) = A(i,i);
             A(i,i) = one;

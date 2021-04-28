@@ -369,6 +369,7 @@ namespace Tacho {
       ///
       /// create numeric tools serial for host space 
       ///
+#if !defined(__CUDA_ARCH__)
       if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
         const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
         if (nthreads == 1 && false) {
@@ -385,7 +386,7 @@ namespace Tacho {
                                              _stree_parent, _stree_ptr, _stree_children, 
                                              _stree_level, _stree_roots);
         } else {
-          /// multi threaded case
+          /// multi threaded case for test only
           if (_levelset || true) {
             /// level schedule
 
@@ -416,14 +417,38 @@ namespace Tacho {
             /// tasking 
           }
         }
-      } 
+      }
+#endif 
 #if defined(KOKKOS_ENABLE_CUDA)
-      else if (std::is_same<exec_space,Kokkos::Cuda>::value) {
+      if (std::is_same<exec_space,Kokkos::Cuda>::value) {
+        if (_levelset || true) {
+          /// level schedule
+#define TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_name) \
+          do {                                                          \
+            if (_N == nullptr)                                          \
+              _N = (numeric_tools_base_type*) ::operator new (sizeof(numeric_tools_levelset_name)); \
+            new (_N) numeric_tools_levelset_name(_mode,                 \
+                                                 _m, _ap, _aj,          \
+                                                 _perm, _peri,          \
+                                                 _nsupernodes, _supernodes, \
+                                                 _gid_super_panel_ptr, _gid_super_panel_colidx, \
+                                                 _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx, \
+                                                 _stree_parent, _stree_ptr, _stree_children, \
+                                                 _stree_level, _stree_roots); \
+            numeric_tools_levelset_name * N = dynamic_cast<numeric_tools_levelset_name*>(_N); \
+            N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose); \
+            N->createStream(_nstreams);                                 \
+          } while (false)
+          
+          switch (_variant) {
+          case 0: { TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_var0_type); break;  }
+          case 1: { TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_var1_type); break;  } 
+          case 2: { TACHO_CREATE_NUMERICTOOLS_LEVELSET(numeric_tools_levelset_var2_type); break;  }
+          }
+#undef TACHO_CREATE_NUMERICTOOLS_LEVELSET
+        }
       }
 #endif
-      else {
-        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Device type is not supported");        
-      }
     }
     return 0;
   }

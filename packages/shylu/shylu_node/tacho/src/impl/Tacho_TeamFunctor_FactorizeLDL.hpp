@@ -112,7 +112,7 @@ namespace Tacho {
             ::invoke(member, P, D, ATR);
           member.team_barrier();
           Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
-            ::invoke(member, -one, ATR, STR, zero, ABR);
+            ::invoke(member, minus_one, ATR, STR, zero, ABR);
         }
       }
     }

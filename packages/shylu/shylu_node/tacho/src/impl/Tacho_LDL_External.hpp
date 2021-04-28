@@ -21,6 +21,7 @@ namespace Tacho {
     invoke(const ViewTypeA &A,
            const ViewTypeP &P,
            const ViewTypeW &W) {
+      int r_val = 0;      
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       typedef typename ViewTypeA::non_const_value_type value_type;
         
@@ -31,7 +32,6 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(P.extent(0) < 4*A.extent(0), std::runtime_error,
                                "P should be 4*A.extent(0) .");
 
-      int r_val = 0;      
       const ordinal_type m = A.extent(0);
       if (m > 0) {
         /// factorize LDL
@@ -77,6 +77,7 @@ namespace Tacho {
     modify(const ViewTypeA &A,
            const ViewTypeP &P,
            const ViewTypeD &D) {
+      int r_val = 0;      
 #if defined( KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST )
       typedef typename ViewTypeA::non_const_value_type value_type;
         
@@ -91,7 +92,6 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(P.extent(0) < 4*A.extent(0), std::runtime_error,
                                "P should be 4*A.extent(0) .");
 
-      int r_val = 0;      
       const ordinal_type m = A.extent(0);
       if (m > 0) {
         value_type 

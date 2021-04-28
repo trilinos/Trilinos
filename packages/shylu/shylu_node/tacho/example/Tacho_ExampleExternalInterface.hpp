@@ -54,7 +54,6 @@ namespace tacho {
   public:
 
 #if defined(TACHO_TEST_REFACTOR_DRIVER)
-    using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;  
     typedef Tacho::Driver<SX,device_type> solver_type;
 #else
     using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
