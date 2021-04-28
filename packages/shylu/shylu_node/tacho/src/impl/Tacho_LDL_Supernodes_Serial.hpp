@@ -115,16 +115,14 @@ namespace Tacho {
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
            Algo::External,Algo::Internal>::type;
 
-        using TrsmAlgoType = MainAlgoType;
         using TrsvAlgoType = MainAlgoType;
-        using GemmAlgoType = MainAlgoType;
         using GemvAlgoType = MainAlgoType;
 
         // get panel pointer
         value_type *ptr = s.buf; 
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
+        const ordinal_type m = s.m, n = s.n - s.m; //, nrhs = info.x.extent(1);
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -137,21 +135,13 @@ namespace Tacho {
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, xT);
           
-          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-            Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
-              ::invoke(member, Diag::Unit(), one, AL, xT);
-          else
-            Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
-              ::invoke(member, Diag::Unit(), AL, xT);
+          Trsv<Uplo::Lower,Trans::NoTranspose,TrsvAlgoType>
+            ::invoke(member, Diag::Unit(), AL, xT);
             
           if (n > 0) {
             UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-              Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
-                ::invoke(member, -one, AR, xT, zero, xB);
-            else
-              Gemv<Trans::Transpose,GemvAlgoType>
-                ::invoke(member, -one, AR, xT, zero, xB);
+            Gemv<Trans::Transpose,GemvAlgoType>
+              ::invoke(member, -one, AR, xT, zero, xB);
           }
         }
         return 0;
@@ -178,9 +168,7 @@ namespace Tacho {
         using MainAlgoType = typename std::conditional
           <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
            Algo::External,Algo::Internal>::type;
-        using GemmAlgoType = MainAlgoType;
         using GemvAlgoType = MainAlgoType;
-        using TrsmAlgoType = MainAlgoType;
         using TrsvAlgoType = MainAlgoType;
 
         // get current supernode
@@ -190,7 +178,7 @@ namespace Tacho {
         value_type *ptr = s.buf;
 
         // panel is divided into diagonal and interface block
-        const ordinal_type m = s.m, n = s.n - s.m, nrhs = info.x.extent(1);
+        const ordinal_type m = s.m, n = s.n - s.m;//, nrhs = info.x.extent(1);
 
         // m and n are available, then factorize the supernode block
         if (m > 0) {
@@ -206,19 +194,11 @@ namespace Tacho {
 
           if (n > 0) {
             const UnmanagedViewType<value_type_matrix> AR(ptr, m, n); // ptr += m*n;
-            if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-              Gemm<Trans::NoTranspose,Trans::NoTranspose,GemmAlgoType>
-                ::invoke(member, -one, AR, xB, one, xT);
-            else
-              Gemv<Trans::NoTranspose,GemvAlgoType>
-                ::invoke(member, -one, AR, xB, one, xT);
+            Gemv<Trans::NoTranspose,GemvAlgoType>
+              ::invoke(member, -one, AR, xB, one, xT);
           }
-          if (nrhs >= ThresholdSolvePhaseUsingBlas3)
-            Trsm<Side::Left,Uplo::Lower,Trans::Transpose,TrsmAlgoType>
-              ::invoke(member, Diag::Unit(), one, AL, xT);
-          else
-            Trsv<Uplo::Lower,Trans::Transpose,TrsvAlgoType>
-              ::invoke(member, Diag::Unit(), AL, xT);
+          Trsv<Uplo::Lower,Trans::Transpose,TrsvAlgoType>
+            ::invoke(member, Diag::Unit(), AL, xT);
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, xT);
         }

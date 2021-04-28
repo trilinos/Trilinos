@@ -100,7 +100,7 @@ namespace Tacho {
 
           const ordinal_type offm = s.row_begin;
           auto tT = Kokkos::subview(_t, range_type(offm, offm+m), Kokkos::ALL());
-          auto fpiv = ordinal_type_array(_piv.data()+4*offm+m, m);
+          auto fpiv = ConstUnmanagedViewType<ordinal_type_array>(_piv.data()+4*offm+m, m);
 
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
             ::invoke(member, fpiv, tT);

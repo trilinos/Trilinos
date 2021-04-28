@@ -19,6 +19,7 @@
 #include "Tacho_Symmetrize_OnDevice.hpp"
 
 #include "Tacho_ApplyPivots.hpp"
+#include "Tacho_ApplyPivots_Internal.hpp"
 #include "Tacho_ApplyPivots_OnDevice.hpp"
 
 #include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
@@ -433,8 +434,8 @@ namespace Tacho {
       timer.reset();
 
       _device_level_cut = min(device_level_cut, _nlevel);
-      _device_factorize_thres = device_factorize_thres;
-      _device_solve_thres = device_solve_thres;
+      _device_factorize_thres = 0; //device_factorize_thres;
+      _device_solve_thres = 0; //device_solve_thres;
 
       _h_factorize_mode = ordinal_type_array_host(do_not_initialize_tag("h_factorize_mode"), _nsupernodes);
       Kokkos::deep_copy(_h_factorize_mode, -1);
@@ -887,8 +888,8 @@ namespace Tacho {
                 UnmanagedViewType<value_type_matrix> STR(ABR.data()+ABR.span(), m, n_m); 
 
                 auto fpiv = ordinal_type_array(P.data()+m, m);
-                _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::OnDevice>
-                  ::invoke(exec_instance, fpiv, ATR); 
+                _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal>
+                  ::invoke(fpiv, ATR); 
                 exec_instance.fence();
 
                 _status = Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::OnDevice>
@@ -1345,6 +1346,117 @@ namespace Tacho {
 
     inline
     void
+    solveLDL_LowerOnDevice(const ordinal_type pbeg, 
+                           const ordinal_type pend,
+                           const size_type_array_host &h_buf_solve_ptr,
+                           const value_type_matrix &t) {
+      const ordinal_type nrhs = t.extent(1);
+      const value_type minus_one(-1), zero(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif 
+      exec_space exec_instance;
+      for (ordinal_type p=pbeg;p<pend;++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceStatus("cublasSetStream");
+          exec_instance = _exec_instances[qid];
+          ++q;
+#endif          
+          const auto &s = _h_supernodes(sid);
+          {
+            const ordinal_type m = s.m, n = s.n, n_m = n-m;
+            if (m > 0) {
+              value_type *aptr = s.buf;
+              UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
+
+              const ordinal_type offm = s.row_begin;
+
+              const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
+              const auto fpiv = ordinal_type_array(_piv.data()+4*offm+m, m);
+              
+              _status = ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal> /// row inter-change
+                ::invoke(fpiv, tT);
+              exec_instance.fence();
+
+              _status = Trsv<Uplo::Lower,Trans::NoTranspose,Algo::OnDevice>
+                ::invoke(_handle_blas, Diag::Unit(), AL, tT); checkDeviceBlasStatus("trsv");
+              exec_instance.fence();
+              if (n_m > 0) {
+                value_type *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);
+                UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // ptr += m*n_m;
+                UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs);
+                _status = Gemv<Trans::Transpose,Algo::OnDevice>
+                  ::invoke(_handle_blas, minus_one, AR, tT, zero, bB); checkDeviceBlasStatus("gemv");
+              }
+            }
+          }
+        }
+      }
+    }
+
+
+    inline
+    void
+    solveLDL_UpperOnDevice(const ordinal_type pbeg,
+                           const ordinal_type pend,
+                           const size_type_array_host &h_buf_solve_ptr,
+                           const value_type_matrix &t) {
+      const ordinal_type nrhs = t.extent(1);
+      const value_type minus_one(-1), one(1);
+#if defined(KOKKOS_ENABLE_CUDA)
+      ordinal_type q(0);
+#endif 
+      exec_space exec_instance;
+      for (ordinal_type p=pbeg;p<pend;++p) {
+        const ordinal_type sid = _h_level_sids(p);
+        if (_h_solve_mode(sid) == 0) {
+#if defined(KOKKOS_ENABLE_CUDA)
+          const ordinal_type qid = q%_nstreams;
+          const auto mystream = _cuda_streams[qid];
+          _status = cublasSetStream(_handle_blas, mystream); checkDeviceStatus("cublasSetStream");
+          exec_instance = _exec_instances[qid];
+          ++q;
+#endif          
+          const auto &s = _h_supernodes(sid);
+          {
+            const ordinal_type m = s.m, n = s.n, n_m = n-m;
+            if (m > 0) {
+              value_type *aptr = s.buf, *bptr = _buf.data()+h_buf_solve_ptr(p-pbeg);; 
+              const UnmanagedViewType<value_type_matrix> AL(aptr, m, m); aptr += m*m;
+              const UnmanagedViewType<value_type_matrix> bB(bptr, n_m, nrhs); 
+
+              const ordinal_type offm = s.row_begin;
+              const auto tT = Kokkos::subview(t, range_type(offm, offm+m), Kokkos::ALL());
+              const auto P = ordinal_type_array(_piv.data()+4*offm, 4*m);
+              const auto D = value_type_matrix(_diag.data()+2*offm, m, 2);
+              Scale2x2_BlockInverseDiagonals<Side::Left,Algo::OnDevice> /// row scaling
+                ::invoke(exec_instance, P, D, tT);
+
+              if (n_m > 0) {
+                const UnmanagedViewType<value_type_matrix> AR(aptr, m, n_m); // aptr += m*n;
+                Gemv<Trans::NoTranspose,Algo::OnDevice>
+                  ::invoke(_handle_blas, minus_one, AR, bB, one, tT); checkDeviceBlasStatus("gemv");
+                exec_instance.fence();
+              }
+              _status = Trsv<Uplo::Lower,Trans::Transpose,Algo::OnDevice>
+                ::invoke(_handle_blas, Diag::Unit(), AL, tT); checkDeviceBlasStatus("trsv");
+
+              const auto fpiv = ordinal_type_array(P.data()+m, m);
+              ApplyPivots<PivotMode::Flame,Side::Left,Direct::Backward,Algo::Internal> /// row inter-change
+                ::invoke(fpiv, tT);
+            }
+          }
+        }
+      }
+    }
+
+
+    inline
+    void
     allocateWorkspaceSolve(const ordinal_type nrhs) {
       const size_type buf_extent = _bufsize_solve*nrhs;
       const size_type buf_span = _buf.span();
@@ -1353,12 +1465,14 @@ namespace Tacho {
         _buf = value_type_array(do_not_initialize_tag("buf"), buf_extent);
         track_free(buf_span*sizeof(value_type));
         track_alloc(_buf.span()*sizeof(value_type));
-        const Kokkos::RangePolicy<exec_space> policy(0,_buf_solve_ptr.extent(0));
-        const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
-        const auto buf_solve_ptr = _buf_solve_ptr;
-        Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
-            buf_solve_nrhs_ptr(i) = nrhs*buf_solve_ptr(i);
-          });
+        if (nrhs > 1) {
+          const Kokkos::RangePolicy<exec_space> policy(0,_buf_solve_ptr.extent(0));
+          const auto buf_solve_nrhs_ptr = _buf_solve_nrhs_ptr;
+          const auto buf_solve_ptr = _buf_solve_ptr;
+          Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const ordinal_type &i) {
+              buf_solve_nrhs_ptr(i) = nrhs*buf_solve_ptr(i);
+            });
+        }
         Kokkos::deep_copy(_h_buf_solve_nrhs_ptr, _buf_solve_nrhs_ptr);
       }
     }
@@ -1693,197 +1807,200 @@ namespace Tacho {
              const value_type_matrix &b,   // right hand side
              const value_type_matrix &t,   // temporary workspace (store permuted vectors)
              const ordinal_type verbose) {
-//       TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
-//                                x.extent(1) != b.extent(1) ||
-//                                x.extent(0) != t.extent(0) ||
-//                                x.extent(1) != t.extent(1), std::logic_error,
-//                                "x, b, t, and w dimensions do not match");
+      TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
+                               x.extent(1) != b.extent(1) ||
+                               x.extent(0) != t.extent(0) ||
+                               x.extent(1) != t.extent(1), std::logic_error,
+                               "x, b, t, and w dimensions do not match");
 
-//       TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
-//                                x.data() == t.data(), std::logic_error,
-//                                "x, b, t, and w have the same data pointer");
-//       constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
+      TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
+                               x.data() == t.data(), std::logic_error,
+                               "x, b, t, and w have the same data pointer");
+      constexpr bool is_host = std::is_same<exec_memory_space,Kokkos::HostSpace>::value;
 
-//       // solve L D L^{H} x = b 
-//       const ordinal_type nrhs = x.extent(1);
-//       Kokkos::Impl::Timer timer;
+      // solve L D L^{H} x = b 
+      const ordinal_type nrhs = x.extent(1);
+      Kokkos::Impl::Timer timer;
 
-//       stat_level.n_kernel_launching = 0;
+      stat_level.n_kernel_launching = 0;
 
-//       // one-time operation when nrhs is changed
-//       timer.reset();
-//       allocateWorkspaceSolve(nrhs);
+      // one-time operation when nrhs is changed
+      timer.reset();
+      allocateWorkspaceSolve(nrhs);
 
-//       // 0. permute and copy b -> t
-//       applyRowPermutationToDenseMatrix(t, b, _perm);      
-//       stat.t_extra = timer.seconds();
+      // 0. permute and copy b -> t
+      applyRowPermutationToDenseMatrix(t, b, _perm);      
+      stat.t_extra = timer.seconds();
 
-//       timer.reset();
-//       { 
-// #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
-//         const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
-// #endif
-//         // this should be considered with average problem sizes in levels
-//         const ordinal_type half_level = _nlevel/2;
-//         const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
-//         const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
-//         {
-//           typedef TeamFunctor_SolveLowerLDL<supernode_info_type> functor_type;
-// #if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::DummyTag> team_policy_solve;
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::DummyTag> team_policy_update;
-// #else
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::template SolveTag> team_policy_solve;
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::template UpdateTag> team_policy_update;
-// #endif          
-//           functor_type functor(_info, 
-//                                _solve_mode,
-//                                _level_sids,
-//                                t,
-//                                _buf);
+      timer.reset();
+      { 
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+        const auto work_item_property = Kokkos::Experimental::WorkItemProperty::HintLightWeight;
+#endif
+        // this should be considered with average problem sizes in levels
+        const ordinal_type half_level = _nlevel/2;
+        const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
+        const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
+        {
+          typedef TeamFunctor_SolveLowerLDL<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::SolveTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::UpdateTag> team_policy_update;
+#endif          
+          functor_type functor(_info, 
+                               _solve_mode,
+                               _level_sids,
+                               _piv,
+                               t,
+                               _buf);
 
-//           team_policy_solve policy_solve(1,1,1);
-//           team_policy_update policy_update(1,1,1);
+          team_policy_solve policy_solve(1,1,1);
+          team_policy_update policy_update(1,1,1);
 
-//           //  1. L w = t
-//           {
-//             for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
-//               const ordinal_type 
-//                 pbeg = _h_level_ptr(lvl), 
-//                 pend = _h_level_ptr(lvl+1),
-//                 pcnt = pend - pbeg;
+          //  1. L w = t
+          {
+            for (ordinal_type lvl=(_team_serial_level_cut-1);lvl>=0;--lvl) {
+              const ordinal_type 
+                pbeg = _h_level_ptr(lvl), 
+                pend = _h_level_ptr(lvl+1),
+                pcnt = pend - pbeg;
 
-//               const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+              const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
 
-//               const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-//               functor.setRange(pbeg, pend);
-//               functor.setBufferPtr(solve_buf_ptr);
-//               if (is_host) {
-//                 policy_solve  = team_policy_solve(pcnt, 1, 1);
-//                 policy_update = team_policy_update(pcnt, 1, 1);
-//               } else {
-//                 const ordinal_type idx = lvl > half_level;
-//                 policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
-//                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
-//               }
-// #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
-//               const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
-//               const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
-// #else
-//               const auto policy_solve_with_work_property = policy_solve;
-//               const auto policy_update_with_work_property = policy_update;
-// #endif
-//               if (lvl < _device_level_cut) {
-//                 // do nothing
-//                 //Kokkos::parallel_for("solve lower", policy_solve, functor);
-//               } else {
-//                 Kokkos::parallel_for("solve lower", 
-//                                      policy_solve_with_work_property, 
-//                                      functor);
-//                 ++stat_level.n_kernel_launching;
-//               }
-//               const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);              
-//               solveCholeskyLowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
-//               Kokkos::fence();
+              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
+              functor.setRange(pbeg, pend);
+              functor.setBufferPtr(solve_buf_ptr);
+              if (is_host) {
+                policy_solve  = team_policy_solve(pcnt, 1, 1);
+                policy_update = team_policy_update(pcnt, 1, 1);
+              } else {
+                const ordinal_type idx = lvl > half_level;
+                policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
+                policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              }
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
+              if (lvl < _device_level_cut) {
+                // do nothing
+                //Kokkos::parallel_for("solve lower", policy_solve, functor);
+              } else {
+                Kokkos::parallel_for("solve lower", 
+                                     policy_solve_with_work_property, 
+                                     functor);
+                ++stat_level.n_kernel_launching;
+              }
+              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);              
+              solveLDL_LowerOnDevice(pbeg, pend, h_buf_solve_ptr, t); 
+              Kokkos::fence();
               
-//               Kokkos::parallel_for("update lower", 
-//                                    policy_update_with_work_property, 
-//                                    functor); 
-//               ++stat_level.n_kernel_launching;
-//               exec_space().fence(); //Kokkos::fence();
-//             }
-//           }
-//         } // end of lower tri solve
+              Kokkos::parallel_for("update lower", 
+                                   policy_update_with_work_property, 
+                                   functor); 
+              ++stat_level.n_kernel_launching;
+              exec_space().fence(); //Kokkos::fence();
+            }
+          }
+        } // end of lower tri solve
         
-//         {
-//           typedef TeamFunctor_SolveUpperChol<supernode_info_type> functor_type;
-// #if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::DummyTag> team_policy_solve;
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::DummyTag> team_policy_update;
-// #else
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::template SolveTag<variant> > team_policy_solve;
-//           typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
-//                                      typename functor_type::template UpdateTag<variant> > team_policy_update;
-// #endif
-//           functor_type functor(_info, 
-//                                _solve_mode,
-//                                _level_sids,
-//                                t,
-//                                _buf);
+        {
+          typedef TeamFunctor_SolveUpperLDL<supernode_info_type> functor_type;
+#if defined(TACHO_TEST_SOLVE_CHOLESKY_KERNEL_OVERHEAD)
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::DummyTag> team_policy_update;
+#else
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::SolveTag> team_policy_solve;
+          typedef Kokkos::TeamPolicy<Kokkos::Schedule<Kokkos::Static>,exec_space,
+                                     typename functor_type::UpdateTag> team_policy_update;
+#endif
+          functor_type functor(_info, 
+                               _solve_mode,
+                               _level_sids,
+                               _piv,
+                               _diag,
+                               t,
+                               _buf);
           
-//           team_policy_solve policy_solve(1,1,1);
-//           team_policy_update policy_update(1,1,1);
+          team_policy_solve policy_solve(1,1,1);
+          team_policy_update policy_update(1,1,1);
           
-//           //  2. U t = w;
-//           {
-//             for (ordinal_type lvl=0;lvl<_team_serial_level_cut;++lvl) {
-//               const ordinal_type 
-//                 pbeg = _h_level_ptr(lvl), 
-//                 pend = _h_level_ptr(lvl+1),
-//                 pcnt = pend - pbeg;
+          //  2. U t = w;
+          {
+            for (ordinal_type lvl=0;lvl<_team_serial_level_cut;++lvl) {
+              const ordinal_type 
+                pbeg = _h_level_ptr(lvl), 
+                pend = _h_level_ptr(lvl+1),
+                pcnt = pend - pbeg;
               
-//               const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
-//               const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-//               functor.setRange(pbeg, pend);
-//               functor.setBufferPtr(solve_buf_ptr);
-//               if (is_host) {
-//                 policy_solve  = team_policy_solve(pcnt, 1, 1);
-//                 policy_update = team_policy_update(pcnt, 1, 1);
-//               } else {
-//                 const ordinal_type idx = lvl > half_level;
-//                 policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
-//                 policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
-//               }
-// #if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
-//               const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
-//               const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
-// #else
-//               const auto policy_solve_with_work_property = policy_solve;
-//               const auto policy_update_with_work_property = policy_update;
-// #endif
-//               Kokkos::parallel_for("update upper", 
-//                                    policy_update_with_work_property,
-//                                    functor);
-//               ++stat_level.n_kernel_launching;
-//               exec_space().fence(); //Kokkos::fence();
+              const range_type range_solve_buf_ptr(_h_buf_level_ptr(lvl), _h_buf_level_ptr(lvl+1));
+              const auto solve_buf_ptr = Kokkos::subview(_buf_solve_nrhs_ptr, range_solve_buf_ptr);
+              functor.setRange(pbeg, pend);
+              functor.setBufferPtr(solve_buf_ptr);
+              if (is_host) {
+                policy_solve  = team_policy_solve(pcnt, 1, 1);
+                policy_update = team_policy_update(pcnt, 1, 1);
+              } else {
+                const ordinal_type idx = lvl > half_level;
+                policy_solve  = team_policy_solve(pcnt, team_size_solve[idx],  vector_size_solve[idx]);
+                policy_update = team_policy_update(pcnt, team_size_update[idx], vector_size_update[idx]);
+              }
+#if defined(TACHO_ENABLE_SOLVE_CHOLESKY_USE_LIGHT_KERNEL)
+              const auto policy_solve_with_work_property = Kokkos::Experimental::require(policy_solve, work_item_property);
+              const auto policy_update_with_work_property = Kokkos::Experimental::require(policy_update, work_item_property);
+#else
+              const auto policy_solve_with_work_property = policy_solve;
+              const auto policy_update_with_work_property = policy_update;
+#endif
+              Kokkos::parallel_for("update upper", 
+                                   policy_update_with_work_property,
+                                   functor);
+              ++stat_level.n_kernel_launching;
+              exec_space().fence(); //Kokkos::fence();
 
-//               if (lvl < _device_level_cut) {
-//                 // do nothing
-//                 //Kokkos::parallel_for("solve upper", policy_solve, functor); 
-//               } else {
-//                 Kokkos::parallel_for("solve upper", 
-//                                      policy_solve_with_work_property,
-//                                      functor);
-//                 ++stat_level.n_kernel_launching;
-//               }
+              if (lvl < _device_level_cut) {
+                // do nothing
+                //Kokkos::parallel_for("solve upper", policy_solve, functor); 
+              } else {
+                Kokkos::parallel_for("solve upper", 
+                                     policy_solve_with_work_property,
+                                     functor);
+                ++stat_level.n_kernel_launching;
+              }
 
-//               const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
-//               solveCholeskyUpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
-//               Kokkos::fence();
-//             }
-//           }
-//         }/// end of upper tri solve
+              const auto h_buf_solve_ptr = Kokkos::subview(_h_buf_solve_nrhs_ptr, range_solve_buf_ptr);
+              solveLDL_UpperOnDevice(pbeg, pend, h_buf_solve_ptr, t);
+              Kokkos::fence();
+            }
+          }
+        }/// end of upper tri solve
 
-//       } // end of solve
-//       stat.t_solve = timer.seconds();
+      } // end of solve
+      stat.t_solve = timer.seconds();
 
-//       // permute and copy t -> x
-//       timer.reset();
-//       applyRowPermutationToDenseMatrix(x, t, _peri);
-//       stat.t_extra += timer.seconds();
+      // permute and copy t -> x
+      timer.reset();
+      applyRowPermutationToDenseMatrix(x, t, _peri);
+      stat.t_extra += timer.seconds();
 
-//       if (verbose) {
-//         printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
-//         printf("==============================================================\n");
-//         print_stat_solve_level();
-//       }
+      if (verbose) {
+        printf("Summary: LevelSetTools-Variant-%d (ParallelCholeskySolve: %3d)\n", variant, nrhs);
+        printf("==============================================================\n");
+        print_stat_solve();
+      }
     }
 
     inline

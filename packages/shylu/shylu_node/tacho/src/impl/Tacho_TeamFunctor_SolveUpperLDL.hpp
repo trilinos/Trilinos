@@ -42,7 +42,7 @@ namespace Tacho {
     ordinal_type _pbeg, _pend;
 
     ConstUnmanagedViewType<ordinal_type_array> _piv;
-    ConstUnmanagedViewType<value_type_matrix> _diag;
+    ConstUnmanagedViewType<value_type_array> _diag;
     UnmanagedViewType<value_type_matrix> _t;
     ordinal_type _nrhs;
 
@@ -58,7 +58,7 @@ namespace Tacho {
                               const ordinal_type_array &compute_mode,
                               const ordinal_type_array &level_sids,
                               const ordinal_type_array &piv,
-                              const value_type_matrix &diag,
+                              const value_type_array &diag,
                               const value_type_matrix &t,
                               const value_type_array &buf)
       :
