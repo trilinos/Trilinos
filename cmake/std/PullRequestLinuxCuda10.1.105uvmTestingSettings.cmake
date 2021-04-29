@@ -169,6 +169,7 @@ set (TpetraCore_CrsGraph_UnitTests0_MPI_4_DISABLE ON CACHE BOOL "Turn off tests 
 set (TpetraCore_CrsGraph_UnitTests1_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsGraph_UnitTests_Swap_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsGraph_ReindexColumns_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (TpetraCore_Issue601_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_Issue601_MPI_8_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsGraph_insertGlobalIndicesFiltered_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsGraph_PackUnpack_MPI_1_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
@@ -205,8 +206,10 @@ set (TpetraCore_sumIntoStaticProfileExtraSpace_MPI_1_DISABLE ON CACHE BOOL "Turn
 set (TpetraCore_CrsMatrix_createDeepCopy_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsMatrix_UnpackMerge_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsMatrix_Bug7745_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (TpetraCore_CrsMatrix_Bug8794_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_CrsMatrix_RemoveEmptyProcesses_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_Albany182_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (TpetraCore_Distributor_CreateFromSendsAndRecvs_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_Distributor_CreateFromSendsAndRecvs_MPI_8_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_Issue1752_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_FECrsGraph_UnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
@@ -276,6 +279,7 @@ set (TpetraCore_NewReaderExample_rmat_MPI_4_DISABLE ON CACHE BOOL "Turn off test
 set (TpetraCore_guide_power_method_1_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_guide_matrix_fill_1_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (TpetraCore_guide_data_redist_1_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (TpetraCore_EpetraRowMatrix_UnitTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 
 
 # ShyLU_DD UVM = OFF tests
