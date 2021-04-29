@@ -210,6 +210,7 @@ int main(int argc, char *argv[])
         if(Dimension == 2){
           {
             FullRepeatedMap = BuildRepeatedMapGaleriStruct2D<SC,LO,GO,NO>(K,M,Dimension);
+            RepeatedMap = FullRepeatedMap;
           }
         }else if(Dimension == 3){
           {
