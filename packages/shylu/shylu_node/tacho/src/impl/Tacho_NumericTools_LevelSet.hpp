@@ -45,6 +45,9 @@
 #include "Tacho_Gemm.hpp"
 #include "Tacho_Gemm_OnDevice.hpp"
 
+#include "Tacho_GemmTriangular.hpp"
+#include "Tacho_GemmTriangular_OnDevice.hpp"
+
 #include "Tacho_SupernodeInfo.hpp"
 
 #include "Tacho_TeamFunctor_FactorizeChol.hpp"
@@ -904,8 +907,8 @@ namespace Tacho {
                   ::invoke(exec_instance, P, D, ATR);
                 exec_instance.fence();
 
-                _status = Gemm<Trans::Transpose,Trans::NoTranspose,Algo::OnDevice>
-                ::invoke(_handle_blas, minus_one, ATR, STR, zero, ABR);
+                _status = GemmTriangular<Trans::Transpose,Trans::NoTranspose,Uplo::Upper,Algo::OnDevice>
+                  ::invoke(_handle_blas, minus_one, ATR, STR, zero, ABR);
                 exec_instance.fence(); checkDeviceBlasStatus("gemm");
               }
             }
