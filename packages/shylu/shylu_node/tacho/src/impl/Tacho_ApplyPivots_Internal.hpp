@@ -39,7 +39,7 @@ namespace Tacho {
           }
         }
       } else {
-        printf("Error: Symmetrize<Algo::Internal> A is not square\n");
+        printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
       }
       return 0;
     }
@@ -76,7 +76,7 @@ namespace Tacho {
             });
         }
       } else {
-        printf("Error: Symmetrize<Algo::Internal> A is not square\n");
+        printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
       }
 #else
       invoke(P, A);
@@ -116,7 +116,7 @@ namespace Tacho {
           }
         }
       } else {
-        printf("Error: Symmetrize<Algo::Internal> A is not square\n");
+        printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
       }
       return 0;
     }
@@ -153,7 +153,7 @@ namespace Tacho {
             });
         }
       } else {
-        printf("Error: Symmetrize<Algo::Internal> A is not square\n");
+        printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
       }
 #else
       invoke(P, A);
@@ -203,7 +203,7 @@ namespace Tacho {
 //           }
 //         }
 //       } else {
-//         printf("Error: Symmetrize<Algo::Internal> A is not square\n");
+//         printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
 //       }
 //       return 0;
 //     }
@@ -249,7 +249,7 @@ namespace Tacho {
 //             });
 //         }
 //       } else {
-//         printf("Error: Symmetrize<Algo::Internal> A is not square\n");
+//         printf("Error: ApplyPivots<Algo::Internal> A is not square\n");
 //       }
 // #else
 //       invoke(P, A);
