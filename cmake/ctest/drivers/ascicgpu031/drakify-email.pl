@@ -16,7 +16,7 @@ $numLines = scalar @LINES;
 
 # If you want to reuse this script somewhere else,
 # this should be the only line you need to change
-@packages=("Tpetra", "Amesos2","Ifpack2","Xpetra","MueLu","Zoltan2");
+@packages=("Tpetra", "Amesos2","Belos","Ifpack2","Xpetra","MueLu","Zoltan2","Thyra");
 
 $num_packages = scalar @packages;
 
