@@ -15,7 +15,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_GDSWP_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -23,7 +23,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_GDSWP_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -33,7 +33,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_GDSWP_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -41,7 +41,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_GDSWP_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_GDSWPreconditioner_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -54,7 +54,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_RGDSWP_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -62,7 +62,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_RGDSWP_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -72,7 +72,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_RGDSWP_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -80,7 +80,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_RGDSWP_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_RGDSWPreconditioner_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -89,11 +89,11 @@ NUM_MPI_PROCS 8
 # TwoLevelPreconditioner_GDSW #
 ###############################
 ## Epetra
-IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode --useGeoMap")
+IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compat::KokkosCudaWrapperNode --useAlgMap")
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_GDSW_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -101,7 +101,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_GDSW_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -111,7 +111,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_GDSW_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -119,7 +119,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_GDSW_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -132,7 +132,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_RGDSW_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -140,7 +140,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_RGDSW_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -150,7 +150,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_RGDSW_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -158,7 +158,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_RGDSW_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_RGDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -171,7 +171,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -179,7 +179,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -189,7 +189,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -197,7 +197,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -206,7 +206,7 @@ IF(HAVE_SHYLU_DDFROSCH_ZOLTAN2)
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_ML_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -214,7 +214,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_ML_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml  --USETPETRA--useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml  --USETPETRA--useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -228,7 +228,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSWStar_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -236,7 +236,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSWStar_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -246,7 +246,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSWStar_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -254,7 +254,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSWStar_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSWStar_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -267,7 +267,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_EPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -275,7 +275,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM3_EPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -285,7 +285,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -293,7 +293,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -302,7 +302,7 @@ IF(HAVE_SHYLU_DDFROSCH_ZOLTAN2)
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_ML_DIM2_TPETRA
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_ML.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_ML.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -313,7 +313,7 @@ IF(HAVE_SHYLU_DDFROSCH_EPETRA AND NOT Tpetra_DefaultNode STREQUAL "Kokkos::Compa
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_EPETRA_DropCoupling
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -321,7 +321,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM3_EPETRA_DropCoupling
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml --USEEPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml --USEEPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
@@ -331,7 +331,7 @@ ENDIF()
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM2_TPETRA_DropCoupling
-ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=2 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_2D.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 4
 )
@@ -339,7 +339,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_RGDSW_DIM3_TPETRA_DropCoupling
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml --USETPETRA --useGeoMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_RGDSW_Klu_Drop_Coupling_3D.xml --USETPETRA --useAlgMap"
 COMM mpi
 NUM_MPI_PROCS 8
 )
