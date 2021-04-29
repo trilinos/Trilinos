@@ -565,6 +565,7 @@ IF(${PACKAGE_NAME}_ENABLE_Belos AND
 
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TestCopyMueLuRegionFiles
     SOURCE_FILES muelu_region_poisson_input.xml
+                 muelu_region_poisson_input_coarse.xml
                  unit_cube_10int_hex.exo
     SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
     DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
