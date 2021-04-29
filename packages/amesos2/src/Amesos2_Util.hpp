@@ -274,6 +274,7 @@ namespace Amesos2 {
      * effectively inlined.
      */
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_gs_helper
     {
@@ -321,7 +322,9 @@ namespace Amesos2 {
         nnz = Teuchos::as<GS>(nnz_tmp);
       }
     };
+    #endif
 
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template <class M, typename S, typename GO, typename GS, class Op>
     struct same_go_helper
     {
@@ -433,6 +436,7 @@ namespace Amesos2 {
         }
       }
     };
+    #endif
 
 #endif  // DOXYGEN_SHOULD_SKIP_THIS
 
@@ -448,6 +452,7 @@ namespace Amesos2 {
      *
      * \ingroup amesos2_util
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Matrix, typename S, typename GO, typename GS, class Op>
     struct get_cxs_helper
     {
@@ -521,6 +526,7 @@ namespace Amesos2 {
                                                                 distribution, ordering);
       }
     };
+    #endif
 
     template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS, class Op>
     struct get_cxs_helper_kokkos_view
@@ -605,6 +611,7 @@ namespace Amesos2 {
     template<class Matrix>
     struct get_ccs_func
     {
+      #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       static void apply(const Teuchos::Ptr<const Matrix> mat,
                         const ArrayView<typename Matrix::scalar_t> nzvals,
                         const ArrayView<typename Matrix::global_ordinal_t> rowind,
@@ -620,6 +627,7 @@ namespace Amesos2 {
         mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering, distribution);
         //mat->getCcs(nzvals, rowind, colptr, nnz, map, ordering);
       }
+      #endif
 
       template<typename KV_S, typename KV_GO, typename KV_GS>
       static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
@@ -666,6 +674,7 @@ namespace Amesos2 {
     template<class Matrix>
     struct get_crs_func
     {
+      #ifdef TPETRA_ENABLE_DEPRECATED_CODE
       static void apply(const Teuchos::Ptr<const Matrix> mat,
                         const ArrayView<typename Matrix::scalar_t> nzvals,
                         const ArrayView<typename Matrix::global_ordinal_t> colind,
@@ -680,6 +689,7 @@ namespace Amesos2 {
       {
         mat->getCrs(nzvals, colind, rowptr, nnz, map, ordering, distribution);
       }
+      #endif
 
       template<typename KV_S, typename KV_GO, typename KV_GS>
       static void apply_kokkos_view(const Teuchos::Ptr<const Matrix> mat,
@@ -761,9 +771,11 @@ namespace Amesos2 {
      * \sa \ref get_crs_helper
      * \ingroup amesos2_util
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_ccs_helper : get_cxs_helper<Matrix,S,GO,GS,get_ccs_func<Matrix> >
     {};
+    #endif
 
     template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
     struct get_ccs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_ccs_func<Matrix> >
@@ -776,9 +788,11 @@ namespace Amesos2 {
      * \sa \ref get_ccs_helper
      * \ingroup amesos2_util
      */
+    #ifdef TPETRA_ENABLE_DEPRECATED_CODE
     template<class Matrix, typename S, typename GO, typename GS>
     struct get_crs_helper : get_cxs_helper<Matrix,S,GO,GS,get_crs_func<Matrix> >
     {};
+    #endif
 
     template<class Matrix, typename KV_S, typename KV_GO, typename KV_GS>
     struct get_crs_helper_kokkos_view : get_cxs_helper_kokkos_view<Matrix,KV_S,KV_GO,KV_GS,get_crs_func<Matrix> >

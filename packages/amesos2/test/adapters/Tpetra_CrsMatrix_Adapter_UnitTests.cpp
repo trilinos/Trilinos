@@ -108,7 +108,10 @@ namespace {
   using Amesos2::Meta::is_same;
 
   using Amesos2::ROOTED;
+  using Amesos2::ARBITRARY;
+  using Amesos2::SORTED_INDICES;
   using Amesos2::GLOBALLY_REPLICATED;
+  using Amesos2::DISTRIBUTED;
 
 
   typedef Tpetra::Map<>::node_type Node;
@@ -274,16 +277,20 @@ namespace {
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
     Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
 
-    Array<Scalar> nzvals(adapter->getGlobalNNZ());
-    Array<GO> colind(adapter->getGlobalNNZ());
-    Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    //Array<Scalar> nzvals(adapter->getGlobalNNZ());
+    //Array<GO> colind(adapter->getGlobalNNZ());
+    //Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    typename MAT::nonconst_values_host_view_type       nzvals ("nzvals", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  colind ("colind", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  rowptr ("rowptr", adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
     ///////////////////////////////////////////
     // Check getting a rooted representation //
     ///////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED);
+    //adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED);
+    adapter->getCrs_kokkos_view(nzvals,colind,rowptr,nnz,ROOTED);
 
     if ( rank == 0 ){
       // getCrs() does not guarantee a permutation of the non-zero
@@ -296,10 +303,16 @@ namespace {
         global_size_t row_nnz = nrp - rp;
         TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
         TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
+        //const RCP<Array<my_pair_t> > expected_pairs
+        //  = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
+        //const RCP<Array<my_pair_t> > got_pairs
+        //  = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+        ArrayView<Scalar> nzvals_array (&(nzvals(rp)), row_nnz);
+        ArrayView<GO>     colind_array (&(colind(rp)), row_nnz);
         const RCP<Array<my_pair_t> > expected_pairs
           = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
         const RCP<Array<my_pair_t> > got_pairs
-          = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+          = zip(nzvals_array, colind_array);
         for ( global_size_t i = 0; i < row_nnz; ++i ){
           TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
         }
@@ -312,7 +325,8 @@ namespace {
     // Check now a rooted, sorted-indices repr //
     /////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED,Amesos2::SORTED_INDICES);
+    //adapter->getCrs(nzvals,colind,rowptr,nnz,ROOTED,SORTED_INDICES);
+    adapter->getCrs_kokkos_view(nzvals,colind,rowptr,nnz,ROOTED,SORTED_INDICES);
 
     if ( rank == 0 ){
       // Now the arrays should compare directly
@@ -356,16 +370,20 @@ namespace {
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
     Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
 
-    Array<Scalar> nzvals(adapter->getGlobalNNZ());
-    Array<GO> colind(adapter->getGlobalNNZ());
-    Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    //Array<Scalar> nzvals(adapter->getGlobalNNZ());
+    //Array<GO> colind(adapter->getGlobalNNZ());
+    //Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    typename MAT::nonconst_values_host_view_type       nzvals ("nzvals", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  colind ("colind", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  rowptr ("rowptr", adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
     ////////////////////////////////////////////////////
     // Now check a globally replicated representation //
     ////////////////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
+    //adapter->getCrs(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
+    adapter->getCrs_kokkos_view(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED);
 
     // All processes check
 
@@ -379,10 +397,16 @@ namespace {
       global_size_t row_nnz = nrp - rp;
       TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
       TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
+      //const RCP<Array<my_pair_t> > expected_pairs
+      //  = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
+      //const RCP<Array<my_pair_t> > got_pairs
+      //  = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+      ArrayView<Scalar> nzvals_array (&(nzvals(rp)), row_nnz);
+      ArrayView<GO>     colind_array (&(colind(rp)), row_nnz);
       const RCP<Array<my_pair_t> > expected_pairs
         = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
       const RCP<Array<my_pair_t> > got_pairs
-        = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
+        = zip(nzvals_array, colind_array);
       for ( global_size_t i = 0; i < row_nnz; ++i ){
         TEST_ASSERT( contains((*got_pairs)(), (*expected_pairs)[i]) );
       }
@@ -394,8 +418,9 @@ namespace {
     // Check globally-repl, with sorted indx //
     ///////////////////////////////////////////
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz,
-                    GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
+    //adapter->getCrs(nzvals,colind,rowptr,nnz,
+    //                GLOBALLY_REPLICATED,Amesos2::SORTED_INDICES);
+    adapter->getCrs_kokkos_view(nzvals,colind,rowptr,nnz,GLOBALLY_REPLICATED,SORTED_INDICES);
 
     TEST_COMPARE_ARRAYS(nzvals, nzvals_test);
     TEST_COMPARE_ARRAYS(colind, colind_test);
@@ -437,9 +462,12 @@ namespace {
     Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
     Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
 
-    Array<Scalar> nzvals(adapter->getGlobalNNZ());
-    Array<GO> colind(adapter->getGlobalNNZ());
-    Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    //Array<Scalar> nzvals(adapter->getGlobalNNZ());
+    //Array<GO> colind(adapter->getGlobalNNZ());
+    //Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
+    typename MAT::nonconst_values_host_view_type       nzvals ("nzvals", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  colind ("colind", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  rowptr ("rowptr", adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
     /**
@@ -457,7 +485,8 @@ namespace {
     }
     const Map<LO,GO,Node> half_map(6, my_num_rows, 0, comm);
 
-    adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
+    //adapter->getCrs(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), Amesos2::SORTED_INDICES, Amesos2::DISTRIBUTED); // ROOTED = default distribution
+    adapter->getCrs_kokkos_view(nzvals,colind,rowptr,nnz, Teuchos::ptrInArg(half_map), SORTED_INDICES, DISTRIBUTED); // ROOTED = default distribution
 
     /*
      * Check that you got the entries you'd expect
@@ -466,21 +495,28 @@ namespace {
      * found in the top half of the rows, and the other half are found
      * in the bottom half of the rows.
      */
+    ArrayView<Scalar> nzvals_array (&(nzvals(0)), 6);
+    ArrayView<GO>     colind_array (&(colind(0)), 6);
     if(rank == 0) {
-      TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(0,6));
-      TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(0,6));
+      //TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(0,6));
+      //TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(0,6));
+      TEST_COMPARE_ARRAYS(nzvals_array, nzvals_test.view(0,6));
+      TEST_COMPARE_ARRAYS(colind_array, colind_test.view(0,6));
       for(int i = 0; i < 4; i++) {
-        TEST_EQUALITY_CONST(rowptr[i], rowptr_test[i]);
+        //TEST_EQUALITY_CONST(rowptr[i], rowptr_test[i]);
+        TEST_EQUALITY_CONST(rowptr(i), rowptr_test[i]);
       }
     } else if(rank == 1) {
-      TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(6,6));
-      TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(6,6));
+      //TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(6,6));
+      //TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(6,6));
+      TEST_COMPARE_ARRAYS(nzvals_array, nzvals_test.view(6,6));
+      TEST_COMPARE_ARRAYS(colind_array, colind_test.view(6,6));
       for(int i = 0; i < 4; i++) {
-        TEST_EQUALITY_CONST(rowptr[i], rowptr_test[3 + i] - rowptr_test[3]);
+        //TEST_EQUALITY_CONST(rowptr[i], rowptr_test[3 + i] - rowptr_test[3]);
+        TEST_EQUALITY_CONST(rowptr(i), rowptr_test[3 + i] - rowptr_test[3]);
       }
     }
   }
-
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, CCS, Scalar, LO, GO )
   {
@@ -512,21 +548,28 @@ namespace {
     Array<GO> rowind_test(tuple<GO>(0,1,3,1,4,0,2,3,5,0,4,5));
     Array<global_size_t> colptr_test(tuple<global_size_t>(0,3,5,7,9,11,12));
 
-    Array<Scalar> nzvals(adapter->getGlobalNNZ());
-    Array<GO> rowind(adapter->getGlobalNNZ());
-    Array<global_size_t> colptr(adapter->getGlobalNumRows() + 1);
+    //Array<Scalar> nzvals(adapter->getGlobalNNZ());
+    //Array<GO> rowind(adapter->getGlobalNNZ());
+    //Array<global_size_t> colptr(adapter->getGlobalNumRows() + 1);
+    typename MAT::nonconst_values_host_view_type       nzvals ("nzvals", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  rowind ("rowind", adapter->getGlobalNNZ());
+    typename MAT::nonconst_global_inds_host_view_type  colptr ("colptr", adapter->getGlobalNumRows() + 1);
     size_t nnz;
 
-    adapter->getCcs(nzvals,rowind,colptr,nnz,ROOTED);
+    //adapter->getCcs(nzvals,rowind,colptr,nnz,ROOTED);
+    adapter->getCcs_kokkos_view(nzvals,rowind,colptr,nnz,ROOTED);
 
     // Only rank 0 gets the CRS representation
     if( rank == 0 ){
       // getCCS() does guarantee an increasing row permutation for
       // rowind, so we can just compare the expected and received
       // straight-up
-      TEST_COMPARE_ARRAYS(nzvals,nzvals_test);
-      TEST_COMPARE_ARRAYS(rowind,rowind_test);
-      TEST_COMPARE_ARRAYS(colptr,colptr_test);
+      ArrayView<Scalar> nzvals_array (&(nzvals(0)), adapter->getGlobalNNZ());
+      ArrayView<GO>     rowind_array (&(rowind(0)), adapter->getGlobalNNZ());
+      ArrayView<GO>     colptr_array (&(colptr(0)), adapter->getGlobalNumRows() + 1);
+      TEST_COMPARE_ARRAYS(nzvals_array,nzvals_test);
+      TEST_COMPARE_ARRAYS(rowind_array,rowind_test);
+      TEST_COMPARE_ARRAYS(colptr_array,colptr_test);
       TEST_EQUALITY_CONST(nnz,12);
     }
   }

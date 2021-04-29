@@ -97,7 +97,7 @@ namespace Amesos2 {
 
         auto myRank = map->getComm()->getRank();
 
-        auto local_matrix = t_mat->getLocalMatrix();
+        auto local_matrix = t_mat->getLocalMatrixDevice();
         const size_t global_num_contiguous_entries = t_mat->getGlobalNumRows();
         const size_t local_num_contiguous_entries = (myRank == 0) ? t_mat->getGlobalNumRows() : 0;
 
