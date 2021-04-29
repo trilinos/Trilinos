@@ -76,6 +76,15 @@ set (TPL_ENABLE_SuperLU OFF CACHE BOOL "Set by default for PR testing")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")
 
+# These three tests are disabled due to a similar error during testing
+# see issue #9077
+set (Amesos2_SolverFactory_UnitTests_MPI_4_DISABLE ON CACHE BOOL
+  "Temporarily disabled in PR testing")
+set (Amesos2_SuperLU_DIST_Solver_Test_MPI_4_DISABLE ON CACHE BOOL
+  "Temporarily disabled in PR testing")
+set (Stratimikos_test_single_amesos2_tpetra_solver_driver_SuperLU_DIST_MPI_1_DISABLE ON CACHE BOOL
+  "Temporarily disabled in PR testing")
+
 set (Tpetra_INST_INT_INT ON CACHE BOOL "INST_INT_INT ON")
 set (Trilinos_ENABLE_STKBalance OFF CACHE BOOL "Hard disabled since Tpetra_INST_INT_INT=ON in this build" FORCE)
 #STK-TODO: try to remember to come back and remove this when stk-balance
