@@ -101,26 +101,36 @@
 // Sacado headers
 #include "Sacado_mpl_apply.hpp"
 
-void perceptrenumbertest(const unsigned int num_levels_refinement)
+// because Percept's breakers order things in a counter-clockwise fashion,
+// this function recreates percept's
+std::vector<unsigned int> perceptrenumbertest(const unsigned int num_levels_refinement)
 {
+
+  std::vector<unsigned int> renumber;
+
+  const bool print_info = true;
+
   std::cout << "Starting perceptrenumber..." << std::endl;
 
-  const unsigned int d = 2; // spatial dimension (only 2 or 3 makes sense)... I only really care about the 2D case since it's where the ccw rotation lies
+  const unsigned int d = 3; // spatial dimension (only 2 or 3 makes sense)... I only really care about the 2D case since it's where the ccw rotation lies
   const unsigned int r = num_levels_refinement; // levels of recursion/refinement
   const unsigned int cells_per_dim = (1 << r); // number of cells per dim is 2^(r-1), i.e. 1<<r
   const unsigned int points_per_dim = cells_per_dim + 1; // number of points per spatial dimension is just 1 higher
-  const unsigned int num_cells = (d<3)? cells_per_dim*cells_per_dim : cells_per_dim*cells_per_dim*cells_per_dim; // evil ternary op code
-  const unsigned int num_points = (d<3)? points_per_dim*points_per_dim : points_per_dim*points_per_dim*points_per_dim; // evil ternary op code
+  const unsigned int num_cells = (d<3)? cells_per_dim*cells_per_dim : cells_per_dim*cells_per_dim*cells_per_dim; // evil ternary op code to avoid using pow
+  const unsigned int num_points = (d<3)? points_per_dim*points_per_dim : points_per_dim*points_per_dim*points_per_dim; // evil ternary op code to avoid using pow
 
-  std::cout << "Parameters: " << std::endl;
-  std::cout << "   Dimension = " << d << std::endl;
-  std::cout << "      Levels = " << r << std::endl;
-  std::cout << "   Cells/dim = " << cells_per_dim << std::endl;
-  std::cout << "       Cells = " << num_cells << std::endl;
-  std::cout << "  Points/dim = " << points_per_dim << std::endl;
-  std::cout << "      Points = " << num_points << std::endl;
-  std::cout << std::endl;
-  std::cout << "Running re-ordering scheme..." << std::endl;
+  if(print_info)
+  {
+    std::cout << "Parameters: " << std::endl;
+    std::cout << "   Dimension = " << d << std::endl;
+    std::cout << "      Levels = " << r << std::endl;
+    std::cout << "   Cells/dim = " << cells_per_dim << std::endl;
+    std::cout << "       Cells = " << num_cells << std::endl;
+    std::cout << "  Points/dim = " << points_per_dim << std::endl;
+    std::cout << "      Points = " << num_points << std::endl;
+    std::cout << std::endl;
+    std::cout << "Running re-ordering scheme..." << std::endl;
+  }
 
   unsigned int percept[2][2][2];
 
@@ -157,27 +167,73 @@ void perceptrenumbertest(const unsigned int num_levels_refinement)
         for(unsigned int k=0; k<cells_per_dim; ++k)
           outputorder[i][j][k] = outputorder[i][j][k] + (1<<(d*(r-1)))*percept[i/(cells_per_dim/2)][j/(cells_per_dim/2)][k/(cells_per_dim/2)];
 
-
-    std::cout << "Outputting Percept's order in 2D... " << std::endl;
-    for(int j=cells_per_dim-1; j>=0; --j)
+    // note: there's a lot of nonsense here to prettily format the output and make sure things look correct
+    if(d==2)
     {
-      std::cout << outputorder[0][j][0];
-      for(unsigned int i=1; i<cells_per_dim; ++i)
+      if(print_info)
       {
-        std::cout << " " << outputorder[i][j][0];
-      }
-      std::cout << std::endl;
-    }
+        std::cout << "Outputting Percept's order in 2D... " << std::endl;
+        for(int j=cells_per_dim-1; j>=0; --j)
+        {
+          std::cout << outputorder[0][j][0];
+          for(unsigned int i=1; i<cells_per_dim; ++i)
+          {
+            std::cout << " " << outputorder[i][j][0];
+          }
+          std::cout << std::endl;
+        }
 
-    std::cout << "Outputting the lexicographic reordering..." << std::endl;
-    for(unsigned int j=0; j<cells_per_dim; ++j)
-      for(unsigned int i=0; i<cells_per_dim; ++i)
-        std::cout << " " << outputorder[i][j][0];
-    std::cout << std::endl;
+        std::cout << "Outputting the lexicographic reordering..." << std::endl;
+        for(unsigned int j=0; j<cells_per_dim; ++j)
+          for(unsigned int i=0; i<cells_per_dim; ++i)
+            std::cout << " " << outputorder[i][j][0];
+        std::cout << std::endl;
+      }
+
+      // fill the renumber lexicographically
+      for(unsigned int j=0; j<cells_per_dim; ++j)
+        for(unsigned int i=0; i<cells_per_dim; ++i)
+          renumber.push_back(outputorder[i][j][0]);
+    }
+    else
+    {
+      if(print_info)
+      {
+        std::cout << "Outputting Percept's order in 3D... " << std::endl;
+        for(int k=cells_per_dim-1; k>=0; --k)
+        {
+          for(int j=cells_per_dim-1; j>=0; --j)
+          {
+            std::cout << outputorder[0][j][k];
+            for(unsigned int i=1; i<cells_per_dim; ++i)
+            {
+              std::cout << " " << outputorder[i][j][k];
+            }
+            std::cout << std::endl;
+          }
+          std::cout << std::endl;
+        }
+
+        std::cout << "Outputting the lexicographic reordering..." << std::endl;
+        for(unsigned int k=0; k<cells_per_dim; ++k)
+          for(unsigned int j=0; j<cells_per_dim; ++j)
+            for(unsigned int i=0; i<cells_per_dim; ++i)
+              std::cout << " " << outputorder[i][j][k];
+        std::cout << std::endl;
+      }
+
+      // fill the renumber lexicographically
+      for(unsigned int k=0; k<cells_per_dim; ++k)
+        for(unsigned int j=0; j<cells_per_dim; ++j)
+          for(unsigned int i=0; i<cells_per_dim; ++i)
+            renumber.push_back(outputorder[i][j][k]);
+    }
   }
 
   std::cout << "Done!" << std::endl;
   std::cout << std::endl;
+
+  return renumber;
 }
 
 

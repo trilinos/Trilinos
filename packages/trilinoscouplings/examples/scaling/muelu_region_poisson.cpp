@@ -421,16 +421,26 @@ int main(int argc, char *argv[]) {
     /********************************** CONSTRUCT REGIONS *****************************/
     /**********************************************************************************/
 
+    // The code in this section assumes that a region hierarchy can be established with Percept. 
+    // In the case where a region hierarchy is constructed from an exodus data input, for example, 
+    // this implementation will need to be updated.
+    // TODO: Assign MPI rank p to region p and collect element IDs. If this region is assigned via
+    // percept, reorder the element IDs lexicographically using the utility in the header. 
+    // Then collect mesh->identifier(node) for the nodes in lexicographic order for region p, 
+    // and put those in quasiRegionGIDs. Coordinates should be able to be extracted from the 
+    // stk::mesh::entity node as well.
+
     tm = Teuchos::null;
     tm = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer("Driver: 3 - Setup Region Information")));
+
     unsigned int children_per_element = 1 << (numDimensions*mesh_refinements);
     if(print_debug_info)
-      std::cout << "Number of mesh children = " << children_per_element << std::endl;
+      out << "Number of mesh children = " << children_per_element << std::endl;
 
     // initialize data here that we will use for the region MG solver
     std::vector<GO> child_element_gids; // these don't always start at 0, and changes I'm making to Panzer keep changing this, so I'll store them for now
     std::vector<GO> child_element_region_gids;
-
+    Array<GO>  quasiRegionGIDs;
     // do not run region MG if we delete parent elements or if we do not refine the mesh regularly
     if(mesh_refinements>0 && !delete_parent_elements)
     {
@@ -442,20 +452,22 @@ int main(int argc, char *argv[]) {
       // ids are linear within stk, but we need an offset because the original mesh info comes first
       size_t node_id_start = 0;
       {
-        const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->node_rank());
-        stk::mesh::Bucket & bucket = **buckets.begin() ;
+        const stk::mesh::BucketVector & local_buckets = refinedMesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,refinedMesh->get_fem_meta_data()->locally_owned_part());
+        //const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->node_rank());
+        stk::mesh::Bucket & bucket = **local_buckets.begin() ;
         node_id_start = refinedMesh->id(bucket[0]);
         if(print_debug_info)
-          std::cout << "Starting node id = " << node_id_start << std::endl;
+          debug << "Starting node id = " << node_id_start << std::endl;
       }
 
       size_t elem_id_start = 0;
       {
-        const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->element_rank());
-        stk::mesh::Bucket & bucket = **buckets.begin() ;
+        const stk::mesh::BucketVector & local_buckets = refinedMesh->get_bulk_data()->get_buckets(stk::topology::ELEM_RANK,refinedMesh->get_fem_meta_data()->locally_owned_part());
+        //const stk::mesh::BucketVector & buckets = refinedMesh->get_bulk_data()->buckets(refinedMesh->element_rank());
+        stk::mesh::Bucket & bucket = **local_buckets.begin() ;
         elem_id_start = refinedMesh->id(bucket[0]);
         if(print_debug_info)
-          std::cout << "Starting element id = " << elem_id_start << std::endl;
+          debug << "Starting element id = " << elem_id_start << std::endl;
       }
       //panzer_stk::workset_utils::getIdsAndVertices
 
@@ -467,7 +479,7 @@ int main(int argc, char *argv[]) {
         {
           stk::mesh::Bucket & bucket = **k ;
           if(print_debug_info)
-            std::cout << "New bucket" << std::endl;
+            debug << "New bucket" << std::endl;
 
           const unsigned num_elements_in_bucket = bucket.size();
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
@@ -482,7 +494,7 @@ int main(int argc, char *argv[]) {
               child_element_region_gids.push_back(refinedMesh->id(refinedMesh->rootOfTree(element)));
 
               if(print_debug_info)
-                std::cout << "Stk Element = " << element << std::endl;
+                debug << "Stk Element = " << element << std::endl;
 
               percept::MyPairIterRelation elem_nodes ( *refinedMesh, element,  stk::topology::NODE_RANK);
 
@@ -490,7 +502,7 @@ int main(int argc, char *argv[]) {
               {
                 stk::mesh::Entity node = elem_nodes[i_node].entity();
                 if(print_debug_info)
-                  std::cout << "Stk Node = " << node << std::endl;
+                  debug << "Stk Node = " << node << std::endl;
 
 
 
@@ -499,7 +511,7 @@ int main(int argc, char *argv[]) {
             else
             {
               if(print_debug_info)
-                std::cout << "parent= " << refinedMesh->id(element) << std::endl;
+                debug << "parent= " << refinedMesh->id(element) << std::endl;
             }
           }
         }
@@ -740,9 +752,9 @@ int main(int argc, char *argv[]) {
         Teuchos::updateParametersFromYamlFileAndBroadcast(yamlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
       } else {
         //if (inst == Xpetra::COMPLEX_INT_INT)
-        //  xmlFileName = (xmlFileName != "" ? xmlFileName : "structured_1dof-complex.xml");
+        //  xmlFileName = (xmlFileName != "" ? xmlFileName : "muelu_region_poisson_input-complex.xml");
         //else
-          xmlFileName = (xmlFileName != "" ? xmlFileName : "structured_1dof.xml");
+          xmlFileName = (xmlFileName != "" ? xmlFileName : "muelu_region_poisson_input.xml");
         Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
       }
 
