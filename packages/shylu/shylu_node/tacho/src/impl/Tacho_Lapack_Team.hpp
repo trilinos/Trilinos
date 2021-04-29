@@ -46,6 +46,7 @@ namespace Tacho {
                     A22[i*as0+j*as1] -= aa*bb;
                   });
               });
+            member.team_barrier();
           }
         }
 
@@ -81,7 +82,7 @@ namespace Tacho {
                     A22[i*as0+j*as1] -= alpha*aa*bb;
                   });
               });
-
+            member.team_barrier();
           }
         }
       };

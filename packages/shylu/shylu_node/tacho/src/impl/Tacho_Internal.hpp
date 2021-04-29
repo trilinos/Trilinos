@@ -74,6 +74,11 @@
 #include "Tacho_Gemm_Internal.hpp"
 #include "Tacho_Gemm_ByBlocks.hpp"
 
+#include "Tacho_GemmTriangular.hpp"
+#include "Tacho_GemmTriangular_External.hpp"
+#include "Tacho_GemmTriangular_Internal.hpp"
+//#include "Tacho_GemmTriangular_OnDevice.hpp"
+
 #include "Tacho_Trsv.hpp"
 #include "Tacho_Trsv_External.hpp"
 #include "Tacho_Trsv_Internal.hpp"

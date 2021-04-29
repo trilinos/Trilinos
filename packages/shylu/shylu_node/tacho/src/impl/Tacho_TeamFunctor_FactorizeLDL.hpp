@@ -30,6 +30,8 @@ namespace Tacho {
     using MainAlgoType = typename std::conditional
       <std::is_same<Kokkos::Impl::ActiveExecutionMemorySpace,Kokkos::HostSpace>::value,
        Algo::External,Algo::Internal>::type;
+    /// testing purpose
+    /// using MainAlgoType = Algo::Internal;
     using LDL_AlgoType = MainAlgoType;
     using TrsmAlgoType = MainAlgoType;
     using GemmAlgoType = MainAlgoType;
@@ -91,9 +93,12 @@ namespace Tacho {
         value_type *aptr = s.buf;
         UnmanagedViewType<value_type_matrix> ATL(aptr, m, m); aptr += m*m;
         Symmetrize<Uplo::Upper,Algo::Internal>::invoke(member, ATL);
+        member.team_barrier();
         LDL<Uplo::Lower,LDL_AlgoType>::invoke(member, ATL, P, W);
+        member.team_barrier();
         LDL<Uplo::Lower,LDL_AlgoType>::modify(member, ATL, P, D);
-        
+        member.team_barrier();
+
         if (n_m > 0) {
           member.team_barrier();
           const value_type one(1), minus_one(-1), zero(0);
@@ -103,15 +108,17 @@ namespace Tacho {
           auto fpiv = ordinal_type_array(P.data()+m, m);
           ApplyPivots<PivotMode::Flame,Side::Left,Direct::Forward,Algo::Internal>
             ::invoke(member, fpiv, ATR);
+          member.team_barrier();
           Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,TrsmAlgoType>
             ::invoke(member, Diag::Unit(), one, ATL, ATR);
           member.team_barrier();
           Copy<Algo::Internal>
             ::invoke(member, STR, ATR);
+          member.team_barrier();
           Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal> /// row scaling
             ::invoke(member, P, D, ATR);
           member.team_barrier();
-          Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
+          GemmTriangular<Trans::Transpose,Trans::NoTranspose,Uplo::Upper,GemmAlgoType>
             ::invoke(member, minus_one, ATR, STR, zero, ABR);
         }
       }
@@ -146,7 +153,7 @@ namespace Tacho {
           
           Kokkos::parallel_for
             (Kokkos::TeamThreadRange(member, srcsize), 
-            [&, srcsize, src, tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
+             [&, srcsize, src, tgt](const ordinal_type &j) { // Value capture is a workaround for cuda + gcc-7.2 compiler bug w/c++14
               const value_type *__restrict__ ss = src + j*srcsize;
               /* */ value_type *__restrict__ tt = tgt + j*srcsize;
               Kokkos::parallel_for

@@ -22,6 +22,10 @@
 #include "Tacho_LDL_External.hpp"
 #include "Tacho_LDL_Internal.hpp"
 
+#include "Tacho_GemmTriangular.hpp"
+#include "Tacho_GemmTriangular_External.hpp"
+#include "Tacho_GemmTriangular_Internal.hpp"
+
 namespace Tacho {
 
     template<>
@@ -86,7 +90,7 @@ namespace Tacho {
             TACHO_TEST_FOR_ABORT(static_cast<ordinal_type>(ABR.extent(0)) != n ||
                                  static_cast<ordinal_type>(ABR.extent(1)) != n,
                                  "ABR dimension does not match to supernodes");
-            Gemm<Trans::Transpose,Trans::NoTranspose,GemmAlgoType>
+            GemmTriangular<Trans::Transpose,Trans::NoTranspose,Uplo::Upper,GemmAlgoType>
               ::invoke(member, -one, ATR, STR, zero, ABR);
           }
         }
