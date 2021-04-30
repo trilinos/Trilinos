@@ -22,13 +22,14 @@ class ExplicitODEParameters
     ExplicitODEParameters()
       : timeStepSize_(Scalar(0.0)), stageNumber_(0)
     {}
+
     /// Constructor
     ExplicitODEParameters(Scalar timeStepSize, int stageNumber = 0)
       : timeStepSize_(timeStepSize), stageNumber_(stageNumber)
     {}
 
-    Scalar                                timeStepSize_;
-    int                                   stageNumber_;
+    Scalar timeStepSize_;
+    int    stageNumber_;
 };
 
 
@@ -73,7 +74,7 @@ public:
     virtual bool isExplicit()         const {return true;}
     virtual bool isImplicit()         const {return false;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()    const {return true;}
     virtual bool isMultiStepMethod()  const {return !isOneStepMethod();}
 

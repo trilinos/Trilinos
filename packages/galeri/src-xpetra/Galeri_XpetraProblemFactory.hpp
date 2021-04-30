@@ -72,6 +72,7 @@ namespace Galeri {
       else if (MatrixType == "Laplace2D")    P.reset(new Laplace2DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "Star2D")       P.reset(new Star2DProblem      <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "BigStar2D")    P.reset(new BigStar2DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
+      else if (MatrixType == "AnisotropicDiffusion")    P.reset(new AnisotropicDiffusion2DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "Laplace3D")    P.reset(new Laplace3DProblem   <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "Brick3D")      P.reset(new Brick3DProblem     <Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));
       else if (MatrixType == "Elasticity2D") P.reset(new Elasticity2DProblem<Scalar,LocalOrdinal,GlobalOrdinal,Map,Matrix,MultiVector>(list, map));

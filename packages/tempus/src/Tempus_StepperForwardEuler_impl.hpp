@@ -19,6 +19,7 @@ namespace Tempus {
 template<class Scalar>
 StepperForwardEuler<Scalar>::StepperForwardEuler()
 {
+  this->setStepperName(        "Forward Euler");
   this->setStepperType(        "Forward Euler");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -34,6 +35,7 @@ StepperForwardEuler<Scalar>::StepperForwardEuler(
   bool ICConsistencyCheck,
   const Teuchos::RCP<StepperForwardEulerAppAction<Scalar> >& stepperFEAppAction)
 {
+  this->setStepperName(        "Forward Euler");
   this->setStepperType(        "Forward Euler");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -204,18 +206,6 @@ bool StepperForwardEuler<Scalar>::isValidSetup(Teuchos::FancyOStream & out) cons
     out << "The Forward Euler AppAction is not set!\n";
   }
   return isValidSetup;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperForwardEuler<Scalar>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  return pl;
 }
 
 

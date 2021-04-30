@@ -808,6 +808,8 @@ namespace MueLu {
           coarseLevel.Set("A",AH_);
           coarseLevel.Set("P",P11_);
           coarseLevel.Set("Coordinates",CoordsH_);
+          if (!NullspaceH_.is_null())
+            coarseLevel.Set("Nullspace",NullspaceH_);
           coarseLevel.Set("number of partitions", numProcsAH);
           coarseLevel.Set("repartition: heuristic target rows per process", 1000);
 
@@ -858,8 +860,10 @@ namespace MueLu {
           newPparams.set("type", "Interpolation");
           newPparams.set("repartition: rebalance P and R", precList11_.get<bool>("repartition: rebalance P and R", false));
           newPparams.set("repartition: use subcommunicators", true);
-          newPparams.set("repartition: rebalance Nullspace", false);
+          newPparams.set("repartition: rebalance Nullspace", !NullspaceH_.is_null());
           newP->SetFactory("Coordinates", NoFactory::getRCP());
+          if (!NullspaceH_.is_null())
+            newP->SetFactory("Nullspace", NoFactory::getRCP());
           newP->SetParameterList(newPparams);
           newP->SetFactory("Importer", repartFactory);
 
@@ -873,6 +877,8 @@ namespace MueLu {
           coarseLevel.Request("Importer", repartFactory.get());
           coarseLevel.Request("A", newA.get());
           coarseLevel.Request("Coordinates", newP.get());
+          if (!NullspaceH_.is_null())
+            coarseLevel.Request("Nullspace", newP.get());
           repartFactory->Build(coarseLevel);
 
           if (!precList11_.get<bool>("repartition: rebalance P and R", false))
@@ -880,6 +886,8 @@ namespace MueLu {
           P11_ = coarseLevel.Get< RCP<Matrix> >("P", newP.get());
           AH_ = coarseLevel.Get< RCP<Matrix> >("A", newA.get());
           CoordsH_ = coarseLevel.Get< RCP<RealValuedMultiVector> >("Coordinates", newP.get());
+          if (!NullspaceH_.is_null())
+            NullspaceH_ = coarseLevel.Get< RCP<MultiVector> >("Nullspace", newP.get());
 
           AH_AP_reuse_data_ = Teuchos::null;
           AH_RAP_reuse_data_ = Teuchos::null;
@@ -949,8 +957,12 @@ namespace MueLu {
 
           if (!reuse) {
             dumpCoords(*CoordsH_, "coordsH.m");
+            if (!NullspaceH_.is_null())
+              dump(*NullspaceH_, "NullspaceH.m");
             ParameterList& userParamList = precList11_.sublist("user data");
             userParamList.set<RCP<RealValuedMultiVector> >("Coordinates", CoordsH_);
+            if (!NullspaceH_.is_null())
+              userParamList.set<RCP<MultiVector> >("Nullspace", NullspaceH_);
             HierarchyH_ = MueLu::CreateXpetraPreconditioner(AH_, precList11_);
           } else {
             RCP<MueLu::Level> level0 = HierarchyH_->GetLevel(0);
@@ -1555,6 +1567,7 @@ namespace MueLu {
 
     RCP<Matrix> P_nodal;
     RCP<CrsMatrix> P_nodal_imported;
+    RCP<MultiVector> Nullspace_nodal;
     if (skipFirstLevel_) {
       // build prolongator: algorithm 1 in the reference paper
       // First, build nodal unsmoothed prolongator using the matrix A_nodal
@@ -1642,6 +1655,7 @@ namespace MueLu {
           coarseLevel.Request("P", SaPFact.get());
         } else
           coarseLevel.Request("P",TentativePFact.get());
+        coarseLevel.Request("Nullspace",TentativePFact.get());
         coarseLevel.Request("Coordinates",Tfact.get());
 
         RCP<AggregationExportFactory> aggExport;
@@ -1662,12 +1676,15 @@ namespace MueLu {
           coarseLevel.Get("P",P_nodal,SaPFact.get());
         else
           coarseLevel.Get("P",P_nodal,TentativePFact.get());
+        coarseLevel.Get("Nullspace",Nullspace_nodal,TentativePFact.get());
         coarseLevel.Get("Coordinates",CoordsH_,Tfact.get());
+
 
         if (parameterList_.get("aggregation: export visualization data",false))
           aggExport->Build(fineLevel, coarseLevel);
       }
       dump(*P_nodal, "P_nodal.m");
+      dump(*Nullspace_nodal, "Nullspace_nodal.m");
 
 
       RCP<CrsMatrix> D0Crs = rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix_)->getCrsMatrix();
@@ -1820,6 +1837,18 @@ namespace MueLu {
 
         } else
           TEUCHOS_TEST_FOR_EXCEPTION(false,std::invalid_argument,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
+
+        NullspaceH_ = MultiVectorFactory::Build(P11_->getDomainMap(), dim);
+
+        auto localNullspace_nodal = Nullspace_nodal->getDeviceLocalView();
+        auto localNullspaceH = NullspaceH_->getDeviceLocalView();
+        Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_nullspace", range_type(0,Nullspace_nodal->getLocalLength()),
+                             KOKKOS_LAMBDA(const size_t i) {
+                               Scalar val = localNullspace_nodal(i,0);
+                               for (size_t j = 0; j < dim; j++)
+                                 localNullspaceH(dim*i+j, j) = val;
+                             });
+
       } else { // !skipFirstLevel_
 
         CoordsH_ = Coords_;
@@ -2174,6 +2203,18 @@ namespace MueLu {
             P11Crs->expertStaticFillComplete(blockDomainMap, SM_Matrix_->getRangeMap());
           } else
             TEUCHOS_TEST_FOR_EXCEPTION(false,std::invalid_argument,algo << " is not a valid option for \"refmaxwell: prolongator compute algorithm\"");
+
+          NullspaceH_ = MultiVectorFactory::Build(P11_->getDomainMap(), dim);
+
+          ArrayRCP<const Scalar> ns_rcp = Nullspace_nodal->getData(0);
+          ArrayView<const Scalar> ns_view = ns_rcp();
+          for (size_t i = 0; i < Nullspace_nodal->getLocalLength(); i++) {
+            Scalar val = ns_view[i];
+            for (size_t j = 0; j < dim; j++)
+              NullspaceH_->replaceLocalValue(dim*i+j, j, val);
+          }
+
+
         } else { // !skipFirstLevel_
 
           CoordsH_ = Coords_;

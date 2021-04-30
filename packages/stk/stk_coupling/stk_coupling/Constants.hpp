@@ -20,7 +20,8 @@ namespace coupling
 enum SyncMode {
   Minimum = 0,
   Receive,
-  Send
+  Send,
+  Any
 };
 
 static const std::string AppName = "Application Name";

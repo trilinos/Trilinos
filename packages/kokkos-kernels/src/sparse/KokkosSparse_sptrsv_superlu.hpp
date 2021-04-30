@@ -296,6 +296,7 @@ void sptrsv_symbolic(
   #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
   double time_seconds = tic.seconds ();
   std::cout << "   Conversion Time (from SuperLU to CSR): " << time_seconds << std::endl;
+  tic.reset();
   #endif
 
   // ===================================================================
@@ -313,6 +314,10 @@ void sptrsv_symbolic(
   sptrsv_supernodal_symbolic (nsuper, supercols, etree,
                               graphL_host, kernelHandleL,
                               graphU_host, kernelHandleU);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = tic.seconds ();
+  std::cout << "   SpTRSV Supernodal Symbolic Time      : " << time_seconds << std::endl;
+  #endif
 }
 
 

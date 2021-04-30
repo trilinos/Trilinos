@@ -238,7 +238,7 @@ namespace Intrepid2 {
           const int numDiagonals = data.extent_int(2) - blockWidth * blockWidth;
           const int spaceDim     = blockWidth + numDiagonals;
           
-          PointScalar det;
+          PointScalar det = 1.0;
           switch (blockWidth)
           {
             case 0:
@@ -321,7 +321,7 @@ namespace Intrepid2 {
           const int numDiagonals = data.extent_int(2) - blockWidth * blockWidth;
           const int spaceDim     = blockWidth + numDiagonals;
           
-          PointScalar det;
+          PointScalar det = 1.0;
           switch (blockWidth)
           {
             case 0:
@@ -381,7 +381,7 @@ namespace Intrepid2 {
           const int numDiagonals = jacobian.extent_int(2) - blockWidth * blockWidth;
           const int spaceDim     = blockWidth + numDiagonals;
                   
-          PointScalar det;
+          PointScalar det = 1.0;
           switch (blockWidth)
           {
             case 0:

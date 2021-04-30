@@ -261,7 +261,7 @@ public:
         throw std::runtime_error(std::string("Problem fixture setup failed"));
       }
 
-      print_flag = use_print && Kokkos::Impl::VerifyExecutionCanAccessMemorySpace< Kokkos::HostSpace::execution_space , typename Device::memory_space >::value ;
+      print_flag = use_print && Kokkos::Impl::SpaceAccessibility< Kokkos::HostSpace::execution_space , typename Device::memory_space >::accessible ;
 
       perf.global_elem_count  = fixture.elem_count_global();
       perf.global_node_count  = fixture.node_count_global();

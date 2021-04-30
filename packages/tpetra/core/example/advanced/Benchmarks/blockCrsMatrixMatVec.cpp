@@ -113,7 +113,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-      auto Y_cur = Y.getLocalBlock (lclRow, j, Tpetra::Access::OverwriteAll);
+      auto Y_cur = Y.getLocalBlock (lclRow, j, Tpetra::Access::ReadWrite);
       if (beta == zero) {
         FILL (Y_lcl, zero);
       } else if (beta == one) {

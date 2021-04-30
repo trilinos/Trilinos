@@ -74,7 +74,7 @@ void SkinMeshUtil::get_exposed_sides(stk::mesh::impl::LocalId localId, int maxSi
 void SkinMeshUtil::add_exposed_sides_due_to_air_selector(impl::LocalId local_id, std::vector<int> &exposedSides)
 {
     std::vector<int> exposedSidesDueToAirSelector;
-    stk::mesh::Entity element = eeGraph.get_entity_from_local_id(local_id);
+    stk::mesh::Entity element = eeGraph.get_entity(local_id);
     std::vector<bool> areAllConnectedElemsAir(eeGraph.get_mesh().bucket(element).topology().num_sides(), true);
 
     const GraphEdgesForElement& graphEdges = eeGraph.get_edges_for_element(local_id);
@@ -99,7 +99,7 @@ bool SkinMeshUtil::is_remote_element_air(const ParallelInfoForGraphEdges &parall
 bool SkinMeshUtil::is_connected_element_air(const stk::mesh::GraphEdge &graphEdge)
 {
     if(impl::is_local_element(graphEdge.elem2()))
-        return is_element_selected_and_can_have_side(airSelector, eeGraph.get_entity_from_local_id(graphEdge.elem2()));
+        return is_element_selected_and_can_have_side(airSelector, eeGraph.get_entity(graphEdge.elem2()));
     else
         return is_remote_element_air(eeGraph.get_parallel_info_for_graph_edges(), graphEdge);
 }
@@ -114,7 +114,7 @@ void SkinMeshUtil::mark_local_connections(const stk::mesh::GraphEdge &graphEdge,
 {
     if(impl::is_local_element(graphEdge.elem2()))
     {
-        stk::mesh::Entity other_element = eeGraph.get_entity_from_local_id(graphEdge.elem2());
+        stk::mesh::Entity other_element = eeGraph.get_entity(graphEdge.elem2());
         if(is_element_selected_and_can_have_side(skinSelector, other_element))
             isOnlyConnectedRemotely[graphEdge.side1()] = false;
     }
@@ -276,7 +276,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_interior_sideset()
                     }
                     else
                     {
-                        otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2());
+                        otherElement = eeGraph.get_entity(graphEdge.elem2());
                         otherEntityId = bulkData.identifier(otherElement);
                         isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
                         if(!isElement2InSelector) continue;
@@ -395,7 +395,7 @@ std::vector<SideSetEntry> SkinMeshUtil::extract_all_sides_sideset(bool includeAu
                     }
                 }
                 else {
-                    otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2());
+                    otherElement = eeGraph.get_entity(graphEdge.elem2());
                     otherEntityId = bulkData.identifier(otherElement);
                     isElement2InSelector = skinSelector(bulkData.bucket(otherElement));
                     if (!isElement1InSelector && !isElement2InSelector) continue;

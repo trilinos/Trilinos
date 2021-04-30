@@ -15,7 +15,11 @@
 
 // For Sleep...
 #if defined(_WIN32)
-#include <windows.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+#include <Windows.h>
+#undef IN
+#undef OUT
 #endif
 
 // For copy_database...

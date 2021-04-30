@@ -443,6 +443,8 @@ namespace MueLu {
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates
     Teuchos::RCP<RealValuedMultiVector> Coords_, CoordsH_;
+    //! Nullspace for (1,1) problem
+    Teuchos::RCP<MultiVector> NullspaceH_;
     //! Importer to coarse (1,1) hierarchy
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
     bool D0_T_R11_colMapsMatch_;

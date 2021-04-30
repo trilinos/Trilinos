@@ -60,22 +60,6 @@ bool are_side_nodes_degenerate(const stk::mesh::EntityVector &sideNodes)
     return returnVal;
 }
 
-struct TopologyChecker
-{
-    bool are_both_shells() const
-    {
-        return is_shell_or_beam2(localTopology) && is_shell_or_beam2(remoteTopology);
-    }
-
-    bool are_both_not_shells() const
-    {
-        return !is_shell_or_beam2(localTopology) && !is_shell_or_beam2(remoteTopology);
-    }
-
-    stk::topology localTopology;
-    stk::topology remoteTopology;
-};
-
 bool is_side_node_permutation_positive(const stk::mesh::BulkData &bulkData, stk::mesh::Entity localElem, const stk::mesh::EntityVector& localElemSideNodes, unsigned sideIndex, const stk::mesh::EntityVector &otherElemSideNodes)
 {
     EquivAndPositive result = stk::mesh::is_side_equivalent_and_positive(bulkData, localElem, sideIndex, otherElemSideNodes);

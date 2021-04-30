@@ -108,11 +108,17 @@ namespace Experimental {
           Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Entries_Internal;
 
 
+    #ifdef  KK_TRISOLVE_TIMERS
+    Kokkos::Timer timer_sptrsv;
+    #endif
     RowMap_Internal rowmap_i = rowmap;
     Entries_Internal entries_i = entries;
 
     KokkosSparse::Impl::SPTRSV_SYMBOLIC<const_handle_type, RowMap_Internal, Entries_Internal>::sptrsv_symbolic (&tmp_handle, rowmap_i, entries_i);
 
+    #ifdef KK_TRISOLVE_TIMERS
+    std::cout << "     > sptrsv_symbolic time = " << timer_sptrsv.seconds() << std::endl;
+    #endif
   } // sptrsv_symbolic
 
   template <typename KernelHandle,
@@ -167,6 +173,9 @@ namespace Experimental {
           typename scalar_nnz_view_t_::device_type,
           Kokkos::MemoryTraits<Kokkos::Unmanaged|Kokkos::RandomAccess> > Values_Internal;
 
+    #ifdef KK_TRISOLVE_TIMERS
+    Kokkos::Timer timer_sptrsv;
+    #endif
     auto sptrsv_handle = handle->get_sptrsv_handle();
     if (sptrsv_handle->get_algorithm() == KokkosSparse::Experimental::SPTRSVAlgorithm::SPTRSV_CUSPARSE) {
       RowMap_Internal rowmap_i = rowmap;
@@ -189,7 +198,9 @@ namespace Experimental {
     else {
       KokkosSparse::Experimental::sptrsv_symbolic (handle, rowmap, entries);
     }
-
+    #ifdef KK_TRISOLVE_TIMERS
+    std::cout << "     + sptrsv_symbolic time = " << timer_sptrsv.seconds() << std::endl;
+    #endif
   } // sptrsv_symbolic
 
   template <typename KernelHandle,

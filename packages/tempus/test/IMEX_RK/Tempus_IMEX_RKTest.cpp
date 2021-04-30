@@ -76,8 +76,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
   icState->setTime    (timeStepControl->getInitTime());
@@ -95,8 +94,8 @@ TEUCHOS_UNIT_TEST(IMEX_RK, ConstructingFromDefaults)
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
   integrator->initialize();
@@ -222,7 +221,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
       // Setup the Integrator and reset initial time step
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
-      integrator = Tempus::integratorBasic<double>(pl, model);
+      integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
       // Integrate to timeMax
       bool integratorStatus = integrator->advanceTime();
@@ -246,7 +245,7 @@ TEUCHOS_UNIT_TEST(IMEX_RK, VanDerPol)
 
       // Output finest temporal solution for plotting
       // This only works for ONE MPI process
-      if ((n == 0) or (n == nTimeStepSizes-1)) {
+      if ((n == 0) || (n == nTimeStepSizes-1)) {
         std::string fname = "Tempus_"+stepperName+"_VanDerPol-Ref.dat";
         if (n == 0) fname = "Tempus_"+stepperName+"_VanDerPol.dat";
         RCP<const SolutionHistory<double> > solutionHistory =

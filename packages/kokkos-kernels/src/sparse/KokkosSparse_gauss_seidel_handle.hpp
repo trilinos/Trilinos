@@ -573,8 +573,13 @@ namespace KokkosSparse{
     nrhs (1),
     direction (GS_SYMMETRIC),
     two_stage (true),
-    num_inner_sweeps (1)
-    {}
+    compact_form (false),
+    num_inner_sweeps (1),
+    num_outer_sweeps (1)
+    {
+      const scalar_t one (1.0);
+      inner_omega = one;
+    }
 
     // Sweep direction
     void setSweepDirection (GSDirection direction_) {
@@ -592,6 +597,22 @@ namespace KokkosSparse{
       return this->two_stage;
     }
 
+    // specify whether to use compact form of recurrence
+    void setCompactForm (bool compact_form_) {
+      this->compact_form = compact_form_;
+    }
+    bool isCompactForm () {
+      return this->compact_form;
+    }
+
+    // Number of outer sweeps
+    void setNumOuterSweeps (int num_outer_sweeps_) {
+      this->num_outer_sweeps = num_outer_sweeps_;
+    }
+    int getNumOuterSweeps () {
+      return this->num_outer_sweeps;
+    }
+
     // Number of inner sweeps
     void setNumInnerSweeps (int num_inner_sweeps_) {
       this->num_inner_sweeps = num_inner_sweeps_;
@@ -600,26 +621,56 @@ namespace KokkosSparse{
       return this->num_inner_sweeps;
     }
 
-    // workspaces
+    // Inner damping factor
+    void setInnerDampFactor (scalar_t inner_omega_) {
+      this->inner_omega = inner_omega_;
+    }
+    scalar_t getInnerDampFactor () {
+      return this->inner_omega;
+    }
+
+    // Workspaces
+    // > diagonal (inverse)
     void setD (values_view_t D_) {
       this->D = D_;
     }
     values_view_t getD () {
       return this->D;
     }
-
+    // > Lower part of diagonal block
     void setL (crsmat_t L) {
       this->crsmatL = L;
     }
     crsmat_t getL () {
       return this->crsmatL;
     }
-
+    // > Upper part of diagonal block
     void setU (crsmat_t U) {
       this->crsmatU = U;
     }
     crsmat_t getU () {
       return this->crsmatU;
+    }
+    // > Complement of U
+    void setLa (crsmat_t La) {
+      this->crsmatLa = La;
+    }
+    crsmat_t getLa () {
+      return this->crsmatLa;
+    }
+    // > Complement of L
+    void setUa (crsmat_t Ua) {
+      this->crsmatUa = Ua;
+    }
+    crsmat_t getUa () {
+      return this->crsmatUa;
+    }
+    // > diagonal (not-inverse)
+    void setDa (values_view_t Da_) {
+      this->Da = Da_;
+    }
+    values_view_t getDa () {
+      return this->Da;
     }
 
     void initVectors (int nrows_, int nrhs_) {
@@ -650,6 +701,11 @@ namespace KokkosSparse{
     values_view_t D;
     crsmat_t crsmatL;
     crsmat_t crsmatU;
+    // > complements for compact form of recurrence
+    //   where La = A - U and Ua = A - L
+    values_view_t Da;
+    crsmat_t crsmatLa;
+    crsmat_t crsmatUa;
 
     // > residual vector for outer GS, Rk = B-A*Xk
     vector_view_t localR;
@@ -661,7 +717,10 @@ namespace KokkosSparse{
     // solver parameters
     GSDirection direction;
     bool two_stage;
+    bool compact_form;
     int num_inner_sweeps;
+    int num_outer_sweeps;
+    scalar_t inner_omega;
   };
   // -------------------------------------
 }

@@ -58,21 +58,18 @@ void StepperDIRK<Scalar>::setup(
 
 
 template<class Scalar>
-void StepperDIRK<Scalar>::getValidParametersBasicDIRK(
-  Teuchos::RCP<Teuchos::ParameterList> pl) const
+Teuchos::RCP<Teuchos::ParameterList>
+StepperDIRK<Scalar>::getValidParametersBasicDIRK() const
 {
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use Embedded", false,
+  auto pl = this->getValidParametersBasicImplicit();
+  pl->template set<bool>("Use Embedded", this->getUseEmbedded(),
     "'Whether to use Embedded Stepper (if available) or not\n"
     "  'true' - Stepper will compute embedded solution and is adaptive.\n"
     "  'false' - Stepper is not embedded(adaptive).\n");
-  pl->set<std::string>("Description", this->getDescription());
-  pl->set<std::string>("Solver Name", "Default Solver",
-    "Name of ParameterList containing the solver specifications.");
-  pl->set<bool>("Zero Initial Guess", false);
-  pl->set<bool>("Reset Initial Guess", true);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  pl->template set<std::string>("Description", this->getDescription());
+  pl->template set<bool>("Reset Initial Guess", this->getResetInitialGuess());
+
+  return pl;
 }
 
 
@@ -89,7 +86,7 @@ void StepperDIRK<Scalar>::initialize()
   xTilde_    = Thyra::createMember(this->wrapperModel_->get_x_space());
   assign(xTilde_.ptr(),    Teuchos::ScalarTraits<Scalar>::zero());
 
-  if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
+  if (this->tableau_->isEmbedded() && this->getUseEmbedded()) {
     this->ee_    = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->abs_u0 = Thyra::createMember(this->wrapperModel_->get_f_space());
     this->abs_u  = Thyra::createMember(this->wrapperModel_->get_f_space());
@@ -236,7 +233,7 @@ void StepperDIRK<Scalar>::takeStep(
       }
     }
 
-    if (this->tableau_->isEmbedded() and this->getUseEmbedded()) {
+    if (this->tableau_->isEmbedded() && this->getUseEmbedded()) {
       const Scalar tolRel = workingState->getTolRel();
       const Scalar tolAbs = workingState->getTolAbs();
 
@@ -354,10 +351,7 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperDIRK<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  this->getValidParametersBasicDIRK(pl);
-
-  return pl;
+  return this->getValidParametersBasicDIRK();
 }
 
 

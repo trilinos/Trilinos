@@ -67,13 +67,13 @@ TEUCHOS_UNIT_TEST(PhysicsState, SinCos)
     pl->sublist("Demo Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>(pl, model);
+      Tempus::createIntegratorBasic<double>(pl, model);
 
     // Replace Tempus::StepperForwardEuler with
     // Tempus_Test::StepperPhysicsStateTest
     Teuchos::RCP<Tempus::Stepper<double> > physicsStepper = Teuchos::rcp(
       new StepperPhysicsStateTest<double>(model));
-    integrator->setStepperWStepper(physicsStepper);
+    integrator->setStepper(physicsStepper);
     order = integrator->getStepper()->getOrder();
 
     // Initial Conditions

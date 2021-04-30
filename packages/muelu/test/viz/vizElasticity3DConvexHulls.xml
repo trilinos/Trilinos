@@ -1,0 +1,24 @@
+<ParameterList name="MueLu">
+  <Parameter        name="verbosity"                            type="string"   value="high"/>
+  <Parameter        name="number of equations"                  type="int"      value="3"/>
+  <Parameter        name="coarse: max size"                     type="int"      value="500"/>
+  <Parameter        name="multigrid algorithm"                  type="string"   value="unsmoothed"/>
+  <Parameter        name="use kokkos refactor"                  type="bool"     value="false"/>
+
+  <!-- ===========  AGGREGATION  =========== -->
+  <Parameter        name="aggregation: type"                            type="string"   value="uncoupled"/>
+  <Parameter        name="aggregation: drop scheme"                     type="string"   value="classical"/>
+  <Parameter        name="aggregation: drop tol"                        type="double"   value="0.0"/>
+  <Parameter        name="aggregation: export visualization data"       type="bool"     value="true"/>
+  <!--
+  <Parameter        name="aggregation: output filename"                 type="string"   value="Viz-Level%LEVELID.vtu"/>
+  -->
+  <Parameter        name="aggregation: output file: agg style"          type="string"   value="Convex Hulls"/>
+  <Parameter        name="aggregation: output file: fine graph edges"   type="bool"     value="false"/>
+  <Parameter        name="aggregation: output file: coarse graph edges" type="bool"     value="false"/>
+  <Parameter        name="aggregation: output file: build colormap"     type="bool"     value="false"/>
+
+  <!-- ===========  REPARTITIONING  =========== -->
+  <Parameter        name="repartition: enable"                  type="bool"     value="false"/>
+
+</ParameterList>
