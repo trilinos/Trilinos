@@ -103,7 +103,7 @@ namespace MueLu {
 
   public:
     //! F/C/Dirichlet point type
-    typedef enum {UNASSIGNED=0, F_PT, C_PT, DIRICHLET_PT} point_type;
+    typedef enum {F_PT=-1, UNASSIGNED=0, C_PT=1, DIRICHLET_PT=2} point_type;
 
     //! @name Input
     //@{

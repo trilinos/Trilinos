@@ -280,6 +280,7 @@ Coarsen_ClassicalModified(const Matrix & A,const GraphBase & graph,  RCP<const M
     const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
     using STS = typename Teuchos::ScalarTraits<SC>;
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    //    size_t ST_INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
     SC SC_ZERO = STS::zero();
 
     // Initial (estimated) allocation
@@ -351,7 +352,11 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
     std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
 
-    // Algorithm (numeric)
+
+    // Gustavson-style perfect hashes
+    //    ArrayRCP<size_t> A_column_to_index(A.getColMap()->getNodeNumElements(),LO_INVALID);
+    
+    // Algorithm (numeric)    
     for(LO i=0; i < (LO)Nrows; i++) {
       if(myPointType[i] == DIRICHLET_PT) {
         // Dirichlet points get ignored completely
@@ -380,11 +385,15 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
         A.getLocalRowView(i, A_indices_i, A_vals_i);
         size_t row_start = eis_rowptr[i];
         
-
         ArrayView<LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
         ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
 
-        // Compute the diagonal (and flag F_i^s\star)
+        // Stash the hash
+        // NOTE: Assumes the eis_rowptr matches A's.
+        //        for(LO j=0; j<(LO)A_indices_i.size(); j++)
+        //          A_column_to_index[A_indices_i[j]] = row_start + j;
+
+        // Compute the diagonal (flag F_i^s\star, and pcol list)
         SC a_ii = SC_ZERO;
         SC diagonal_sum = SC_ZERO;
         std::vector<bool> in_fis_star(A_indices_i.size(),false);
@@ -408,14 +417,23 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
             // We want strong F-neighbors with no common strong C-Points with i.  P has the strong C-points
             // FIXME: Ghosting
             ArrayView<LO> P_indices_k = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
-
+            
             // std::sets are sorted, so...
-            in_fis_star[j] = true;
-            for(LO idx_i=0,idx_k=0; idx_i<(LO)P_indices_i.size() && idx_k<(LO)P_indices_k.size(); idx_i++) {
+            /*
+              in_fis_star[j] = true;
+              for(LO idx_i=0,idx_k=0; idx_i<(LO)P_indices_i.size() && idx_k<(LO)P_indices_k.size(); idx_i++) {
               while (idx_k < (LO)P_indices_k.size() && P_indices_i[idx_i] > P_indices_k[idx_k])
                 idx_k++;
               if(P_indices_i[idx_i] == P_indices_k[idx_k]) { in_fis_star[j] = false; break;}
             }//end for std_set
+            */
+            // Less efficient, but more likely to be correct
+            std::vector<LO> intersection;
+            std::set_intersection(P_indices_i.begin(),P_indices_i.end(),
+                                  P_indices_k.begin(),P_indices_k.end(), std::back_inserter(intersection));
+            if(intersection.size() == 0) in_fis_star[j]=true;
+            else in_fis_star[j]=false;
+             
             
             if(in_fis_star[j]) {
               // Point is in F_i^s\star
@@ -429,19 +447,17 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
         // DEBUG
         printf("** A(%d,:) is an F-Point.\n",i);
         {
-          char mylabel[5]="UFCD";
+          char mylabel[5]="FUCD";
           char sw[3]="ws";
           char start[3]=" *";
           printf("** A(%d,:) = ",i);
           for(LO j=0; j<(LO)A_indices_i.size(); j++){  
-            printf("%6.4e(%d-%c%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]],
+            printf("%6.4e(%d-%c%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[1+myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]],
                    start[(int)in_fis_star[j]]);
           }
           printf("\n");
         }
 #endif
-
-
 
         // Compute the second denominator
         std::vector<SC> second_denominator(A_indices_i.size(), SC_ZERO);
@@ -472,19 +488,33 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
             // Second denominator terms
             for(LO l=0; l<(LO)A_indices_k.size(); l++) {
               LO m    = A_indices_k[l];
-
               SC a_km = A_vals_k[l];
 
 #ifdef CMS_DEBUG
-              char mylabel[5]="UFCD";
+              char mylabel[5]="FUCD";
               char sw[3]="ws";
-              printf(" - - A(%d,%d)%c%c = %6.4e (a_kk = %6.4e)\n",k,m,mylabel[myPointType[m]],sw[(int)edgeIsStrong[k_row_start+k]],a_km,a_kk);
+              printf(" - - A(%d,%d)%c%c = %6.4e (a_kk = %6.4e)\n",k,m,mylabel[1+myPointType[m]],sw[(int)edgeIsStrong[k_row_start+k]],a_km,a_kk);
 #endif
-              // FIXME: Ghosting
-              if(myPointType[m] == C_PT && edgeIsStrong[k_row_start + l]) {
-                second_denominator[j] += (Sign(a_km) == sign_akk) ? SC_ZERO : a_km;
+
+              // Is a_im \in C_i^s? If so, we can add the a_km term to the denominator
+              /*
+              size_t a_im_offset = A_column_to_index[m];
+              if(a_im_offset != ST_INVALID && a_im_offset > row_start) {
+                if(myPointType[m] == C_PT && edgeIsStrong[a_im_offset]){
+                  second_denominator[j] += (Sign(a_km) == sign_akk) ? SC_ZERO : a_km;
+                }//end C_PT              
+              }//end if a_im_offset
+              */
+              if(myPointType[m] == C_PT) {
+                for(LO a_j =0; a_j<(LO)A_indices_i.size(); a_j++) {
+                  if(A_indices_i[a_j] == m && edgeIsStrong[row_start+a_j]) {
+                    second_denominator[j] += (Sign(a_km) == sign_akk) ? SC_ZERO : a_km;
+                  }//end if
+                }//end for A_indices_size
               }//end if C_PT
             }//end for A_indices_k
+
+
           }//end if F_PT && not F_i^s\star          
         }//end for A_indices_i
 
@@ -512,6 +542,13 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
               break;
             }
           }//end for A_indices_i
+
+          // Find A_ij (should be there)
+          /*
+          size_t a_ij_offset = A_column_to_index[P_col];
+          if(a_ij_offset != ST_INVALID && a_ij_offset > row_start)
+            a_ij = A_vals_i[a_ij_offset - row_start];
+          */
           
           // Compute the second term
           SC f_ij = SC_ZERO;
@@ -530,7 +567,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
               SC a_kk = SC_ZERO;
               SC a_kj = SC_ZERO;
               bool have_akk = false, have_akj=false;
-              for(LO l=0; !have_akk && !have_akj && l<(LO)A_indices_k.size(); l++) {
+              for(LO l=0; (!have_akk || !have_akj) && l<(LO)A_indices_k.size(); l++) {
                 LO m = A_indices_k[l];
                 if(m == k) {
                   a_kk = A_vals_k[l];
@@ -541,11 +578,17 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
                   have_akj = true;
                 }
               }//end for A_indices_k
+#ifdef CMS_DEBUG
+              printf(" - - - Found Aik(%d,%d) = %6.4e Akk(%d,%d) = %6.4e Akj(%d,%d) = %6.4e\n",i,k,a_ik,k,k,a_kk,k,P_col,a_kj);
+#endif
               int sign_akk = Sign(a_kk);
               SC a_kj_bar = (Sign(a_kj) == sign_akk) ? SC_ZERO : a_kj;
               if (a_ik != SC_ZERO)
                 f_ij += a_ik * a_kj_bar / second_denominator[a_j];
-
+#ifdef CMS_DEBUG
+              if (a_ik != SC_ZERO)
+                printf(" - - - f_ij(%d,%d) +=  (%6.4e = %6.4e * %6.4e / %6.4e)\n",i,P_col,a_ik*a_kj_bar / second_denominator[a_j],a_ik,a_kj_bar,second_denominator[a_j]);
+#endif
 
              }//end if F_PT \ F_i^s\star
           }//end for A_indices_i          
@@ -555,9 +598,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 #endif
           P_vals_i[p_j] = w_ij;
 
-        }//end for P_indicies_i
-        
-
+        }//end for P_indicies_i       
       }//end else F-Point
     }//end for numRows
 
@@ -724,11 +765,11 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 #ifdef CMS_DEBUG          
         // DEBUG
         {
-          char mylabel[5]="UFCD";
+          char mylabel[5]="FUCD";
           char sw[3]="ws";
           printf("** A(%d,:) = ",i);
           for(LO j=0; j<(LO)A_indices_i.size(); j++){  
-            printf("%6.4e(%d-%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]]);
+            printf("%6.4e(%d-%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[1+myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]]);
           }
           printf("\n");
         }
@@ -990,11 +1031,11 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
 #ifdef CMS_DEBUG          
         // DEBUG
         {
-          char mylabel[5]="UFCD";
+          char mylabel[5]="FUCD";
           char sw[3]="ws";
           printf("** A(%d,:) = ",i);
           for(LO j=0; j<(LO)A_indices_i.size(); j++){  
-            printf("%6.4e(%d-%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]]);
+            printf("%6.4e(%d-%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[1+myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]]);
           }
           printf("\n");
         }

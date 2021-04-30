@@ -53,6 +53,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_IO.hpp>
 
 #include "MueLu_ClassicalMapFactory_decl.hpp"
 #include "MueLu_Level.hpp"
@@ -111,43 +112,94 @@ namespace MueLu {
     ArrayRCP<LO> myColors;
     LO numColors=0;
     // FIXME:  This is not going to respect coloring at or near processor
-    // boundaries, so that'll need to get cleaned up lated
-
+    // boundaries, so that'll need to get cleaned up later
+    RCP<LocalOrdinalVector> fc_splitting;
     std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
+    if(coloringAlgo == "file") {
+      // Read the CF splitting from disk
+      // NOTE: For interoperability reasons, this is dependent on the point_type enum not changing
+      std::string map_file   = std::string("map_fcsplitting_") + std::to_string(currentLevel.GetLevelID()) + std::string(".m");
+      std::string color_file = std::string("fcsplitting_")     + std::to_string(currentLevel.GetLevelID()) + std::string(".m");
+        
+      FILE * mapfile = fopen(map_file.c_str(),"r");
+      using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+      using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
+      RCP<RealValuedMultiVector> mv;
+
+      if(mapfile) {
+        fclose(mapfile);
+        RCP<const Map> colorMap = Xpetra::IO<Scalar, LocalOrdinal, GlobalOrdinal, Node>::ReadMap(map_file, A->getRowMap()->lib(), A->getRowMap()->getComm());
+        TEUCHOS_TEST_FOR_EXCEPTION(!colorMap->isCompatible(*A->getRowMap()),std::invalid_argument,"Coloring on disk has incompatible map with A");
+
+        mv = Xpetra::IO<real_type, LocalOrdinal, GlobalOrdinal, Node>::ReadMultiVector(color_file,colorMap);
+      }
+      else {
+        // Use A's rowmap and hope it matches
+        mv = Xpetra::IO<real_type, LocalOrdinal, GlobalOrdinal, Node>::ReadMultiVector(color_file,A->getRowMap());
+      }
+      TEUCHOS_TEST_FOR_EXCEPTION(mv.is_null(),std::invalid_argument,"Coloring on disk cannot be read");      
+      fc_splitting = LocalOrdinalVectorFactory::Build(A->getRowMap());
+      TEUCHOS_TEST_FOR_EXCEPTION(mv->getLocalLength() != fc_splitting->getLocalLength(),std::invalid_argument,"Coloring map mismatch");
+      ArrayRCP<const real_type> mv_data= mv->getData(0);
+      ArrayRCP<LO> fc_data= fc_splitting->getDataNonConst(0);
+      
+      for(LO i=0; i<(LO)fc_data.size(); i++)
+        fc_data[i] = (LO) mv_data[i];
+
+    }
 #ifdef HAVE_MUELU_KOKKOSCORE  
-    if(coloringAlgo != "MIS" && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
+    else if(coloringAlgo != "MIS" && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
       SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
       DoGraphColoring(*graph,myColors,numColors);
     }
-    else 
 #endif
-    { 
+    else if(coloringAlgo == "MIS") { 
       SubFactoryMonitor sfm(*this,"MIS",currentLevel);
       DoMISNaive(*graph,myColors,numColors);
     }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 1 coloring algorithm");
+    }
+
     // FIXME: This coloring will either need to be done MPI parallel, or
     // there needs to be a cleanup phase to fix mistakes
 
     /* ============================================================= */
     /* Phase 2 : Mark the C-Points                                   */
     /* ============================================================= */
-    auto boundaryNodes = graph->GetBoundaryNodeMap();
-    RCP<LocalOrdinalVector> fc_splitting = LocalOrdinalVectorFactory::Build(A->getRowMap());
-    ArrayRCP<LO> myPointType = fc_splitting->getDataNonConst(0);
-    LO num_c_points = 0, num_d_points=0;
-    for(LO i=0; i<(LO)myColors.size(); i++) {
-      if(boundaryNodes[i]) {
-        myPointType[i] = DIRICHLET_PT;
-        num_d_points++;
-      }
-      else if ((LO)myColors[i] == 1) {
+    LO num_c_points = 0, num_d_points=0, num_f_points = 0;
+    if(fc_splitting.is_null()) {
+      // We just have a coloring, so we need to generate a splitting
+      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      fc_splitting = LocalOrdinalVectorFactory::Build(A->getRowMap());
+      ArrayRCP<LO> myPointType = fc_splitting->getDataNonConst(0);
+      for(LO i=0; i<(LO)myColors.size(); i++) {
+        if(boundaryNodes[i]) {
+          myPointType[i] = DIRICHLET_PT;
+          num_d_points++;
+        }
+        else if ((LO)myColors[i] == 1) {
         myPointType[i] = C_PT;
         num_c_points++;
+        }
+        else
+          myPointType[i] = F_PT;
       }
-      else
-        myPointType[i] = F_PT;
+      num_f_points = (LO)myColors.size() - num_d_points - num_c_points;
     }
-    LO num_f_points = (LO)myColors.size() - num_d_points - num_c_points;
+    else {
+      // If we read the splitting off disk, we just need to count
+      ArrayRCP<LO> myPointType = fc_splitting->getDataNonConst(0);
+
+      for(LO i=0; i<(LO)myPointType.size(); i++) {
+        if(myPointType[i] == DIRICHLET_PT)
+          num_d_points++;
+        else if (myPointType[i] == C_PT)
+          num_c_points++;
+      }
+      num_f_points = (LO)myPointType.size() - num_d_points - num_c_points;
+    }
+
     // FIXME: This array will need to be ghosted so we can get the point_types
     // of the neighbors
 
