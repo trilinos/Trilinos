@@ -95,21 +95,33 @@ namespace Tacho {
 
       if (m > 0 && n > 0 && k > 0) {
         if (m == n) {
-          const ordinal_type b = 64;
+          const ordinal_type b = 256;
           value_type * aptr = A.data(), * bptr = B.data(), * cptr = C.data();
           const int as1 = A.stride_1(), bs1 = B.stride_1(), cs1 = C.stride_1();
-          for (ordinal_type i=0;i<m;i+=b) {
-            const ordinal_type m2 = i+b, mm = (m2 > m ? m : m2), nn = mm-i;
-            value_type * aaptr = aptr, * bbptr = bptr+i*bs1, * ccptr = cptr+i*cs1;
+          if (m < 2*b) {
             Blas<value_type>::gemm(handle,
                                    Trans::Transpose::cublas_param, 
                                    Trans::NoTranspose::cublas_param, 
-                                   mm, nn, k,
+                                   m, n, k,
                                    value_type(alpha),
-                                   aaptr, as1,
-                                   bbptr, bs1,
+                                   aptr, as1,
+                                   bptr, bs1,
                                    value_type(beta),
-                                   ccptr, cs1);
+                                   cptr, cs1);            
+          } else {
+            for (ordinal_type i=0;i<m;i+=b) {
+              const ordinal_type m2 = i+b, mm = (m2 > m ? m : m2), nn = mm-i;
+              value_type * aaptr = aptr, * bbptr = bptr+i*bs1, * ccptr = cptr+i*cs1;
+              Blas<value_type>::gemm(handle,
+                                     Trans::Transpose::cublas_param, 
+                                     Trans::NoTranspose::cublas_param, 
+                                     mm, nn, k,
+                                     value_type(alpha),
+                                     aaptr, as1,
+                                     bbptr, bs1,
+                                     value_type(beta),
+                                     ccptr, cs1);
+            }
           }
         } else {
           TACHO_TEST_FOR_ABORT(true, "C is not a square matrix");
