@@ -78,7 +78,9 @@ namespace BlockCrsTest {
   typedef Tpetra::RowMatrix<value_type> tpetra_rowmatrix_type;
   typedef Tpetra::BlockCrsMatrix<value_type> tpetra_blockcrs_matrix_type;
 
-  typedef Kokkos::DefaultExecutionSpace exec_space;
+  typedef typename node_type::device_type device_type;
+  typedef typename node_type::execution_space exec_space;
+  typedef typename node_type::memory_space mem_space;
   typedef Kokkos::DefaultHostExecutionSpace host_space;
 
   typedef Kokkos::pair<local_ordinal_type,local_ordinal_type> local_ordinal_range_type;
@@ -314,7 +316,7 @@ namespace BlockCrsTest {
     StructuredProcGrid _grid;
     StructuredBlockPart _owned;
 
-    typedef Kokkos::View<GO*,exec_space> global_ordinal_view_type;
+    typedef Kokkos::View<GO*,device_type> global_ordinal_view_type;
     typedef Kokkos::View<GO*,host_space> global_ordinal_view_host_type;
 
     global_ordinal_view_host_type _element_gids;

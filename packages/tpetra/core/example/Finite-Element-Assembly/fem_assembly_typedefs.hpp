@@ -80,23 +80,18 @@ using scalar2DArrayDualViewType = Kokkos::DualView<Scalar*[4], deviceType>;
 using boolDualViewType = Kokkos::DualView<bool*, execution_space>;
 
 using global_ordinal_view_type =
-  Tpetra::Details::WrappedDualView<globalDualViewType>;
+  Kokkos::View<global_ordinal_type*, deviceType>;
 using local_ordinal_view_type =
-  Tpetra::Details::WrappedDualView<localDualViewType>;
-using local_ordinal_single_view_type = 
-  Kokkos::View<local_ordinal_type*, execution_space>;
-using scalar_1d_array_type = 
-  Kokkos::View<Scalar*, execution_space>;
-using bool_1d_array_type = 
-  Tpetra::Details::WrappedDualView<boolDualViewType>;
+  Kokkos::View<local_ordinal_type*, deviceType>;
+using scalar_1d_array_type = Kokkos::View<Scalar*, deviceType>;
+using bool_1d_array_type = Kokkos::View<bool*, deviceType>;
 
 // NOTE: Arrays are hardwired for QUAD4
 using local_ordinal_2d_array_type =
-  Tpetra::Details::WrappedDualView<local2DArrayDualViewType>;
+  Kokkos::View<local_ordinal_type*[4], deviceType>;
 using global_ordinal_2d_array_type =
-  Tpetra::Details::WrappedDualView<global2DArrayDualViewType>;
-using scalar_2d_array_type = 
-  Kokkos::View<Scalar*[4], execution_space>;
+  Kokkos::View<global_ordinal_type*[4], deviceType>;
+using scalar_2d_array_type = Kokkos::View<Scalar*[4], deviceType>;
 
 
 }

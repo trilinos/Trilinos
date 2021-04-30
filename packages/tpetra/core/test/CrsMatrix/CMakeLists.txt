@@ -88,17 +88,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-IF(NOT Tpetra_INST_HIP)
-  # This test causes AMD MI25 to permanently crash (until reboot)
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    CrsMatrix_2DRandomDist
-    SOURCES
-      CrsMatrix_2DRandomDist.cpp
-    COMM serial mpi
-    PASS_REGULAR_EXPRESSION "PASS"
-    FAIL_REGULAR_EXPRESSION "FAIL"
-    )
-ENDIF()
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_2DRandomDist
+  SOURCES
+    CrsMatrix_2DRandomDist.cpp
+  COMM serial mpi
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
 
 # We split the CrsMatrix_WithGraph test by execution space.
 # This speeds up the build.
