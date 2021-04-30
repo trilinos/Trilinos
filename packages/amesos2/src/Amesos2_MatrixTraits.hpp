@@ -160,7 +160,8 @@ namespace Amesos2 {
   struct MatrixTraits<Epetra_RowMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef int global_ordinal_t;
+    //typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
     typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_RowMatrix matrix_type;
@@ -169,6 +170,9 @@ namespace Amesos2 {
     typedef int* sparse_idx_type;
     typedef double* sparse_values_type;
 
+    typedef Kokkos::View<int*,    Kokkos::HostSpace> global_host_idx_type;
+    typedef Kokkos::View<double*, Kokkos::HostSpace> global_host_val_type;
+
     typedef row_access major_access;
   };
 
@@ -176,7 +180,8 @@ namespace Amesos2 {
   struct MatrixTraits<Epetra_CrsMatrix> {
     typedef double scalar_t;
     typedef int local_ordinal_t;
-    typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
+    typedef int global_ordinal_t;
+    //typedef Tpetra::Map<>::global_ordinal_type global_ordinal_t;
     typedef Tpetra::Map<>::node_type node_t;
 
     typedef Epetra_CrsMatrix matrix_type;
@@ -184,6 +189,9 @@ namespace Amesos2 {
     typedef int* sparse_ptr_type;
     typedef int* sparse_idx_type;
     typedef double* sparse_values_type;
+
+    typedef Kokkos::View<int*,    Kokkos::HostSpace> global_host_idx_type;
+    typedef Kokkos::View<double*, Kokkos::HostSpace> global_host_val_type;
 
     typedef row_access major_access;
   };

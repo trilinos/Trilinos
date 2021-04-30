@@ -178,6 +178,7 @@ EpetraRowMatrix<TpetraMatrixType>::EpetraRowMatrix(
   this->SetMaps (epetraRowMap, epetraColMap);
 }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class TpetraMatrixType>
 int EpetraRowMatrix<TpetraMatrixType>::ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const
 {
@@ -192,6 +193,7 @@ int EpetraRowMatrix<TpetraMatrixType>::ExtractMyRowCopy(int MyRow, int Length, i
   NumEntries = num_entries;
   return 0;
 }
+#endif
 
 template<class TpetraMatrixType>
 int EpetraRowMatrix<TpetraMatrixType>::ExtractMyEntryView(int CurEntry, double * & Value, int & RowIndex, int & ColIndex)
