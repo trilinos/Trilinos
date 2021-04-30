@@ -4,7 +4,6 @@
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/util/SortAndUnique.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequire
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <algorithm>
 #include <vector>                       // for allocator, vector

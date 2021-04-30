@@ -80,7 +80,7 @@ namespace Test {
     }
 
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HCURL_TET_In_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -94,11 +94,12 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
 
+  using DeviceSpaceType = typename DeviceType::execution_space;   
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
-
-  //  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
-  //  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
+  
+  *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+  *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
   *outStream
   << "===============================================================================\n"
@@ -114,10 +115,10 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;
   typedef Kokkos::DynRankView<scalar_type, HostSpaceType> DynRankViewHostScalarValueType;
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
@@ -129,7 +130,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
   typedef OutValueType outputValueType;
   typedef PointValueType pointValueType;
 
-  typedef Basis_HCURL_TET_In_FEM<DeviceSpaceType,outputValueType,pointValueType> TetBasisType;
+  typedef Basis_HCURL_TET_In_FEM<DeviceType,outputValueType,pointValueType> TetBasisType;
 
   constexpr ordinal_type maxOrder = Parameters::MaxOrder;
   constexpr ordinal_type dim = 3;
@@ -151,7 +152,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     tetBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords, dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords, dofCoords_scalar);
 
     DynRankViewScalarValueType ConstructWithLabelScalar(dofCoeffs, cardinality , dim);
     tetBasis.getDofCoeffs(dofCoeffs);
@@ -211,7 +212,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     tetBasis.getDofCoords(dofCoords_scalar);
 
     DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, cardinality , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(dofCoords, dofCoords_scalar);
+    RealSpaceTools<DeviceType>::clone(dofCoords, dofCoords_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtDofCoords, cardinality , cardinality, dim);
     tetBasis.getValues(basisAtDofCoords, dofCoords, OPERATOR_VALUE);
@@ -311,7 +312,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+    RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(basisAtLattice, cardinality , np_lattice, dim);
     tetBasis.getValues(basisAtLattice, lattice, OPERATOR_VALUE);
@@ -397,7 +398,7 @@ int HCURL_TET_In_FEM_Test01(const bool verbose) {
     DynRankViewScalarValueType ConstructWithLabelScalar(lattice_scalar, np_lattice , dim);
     PointTools::getLattice(lattice_scalar, tet_4, order, 0, POINTTYPE_EQUISPACED);
     DynRankViewPointValueType ConstructWithLabelPointView(lattice, np_lattice , dim);
-    RealSpaceTools<DeviceSpaceType>::clone(lattice,lattice_scalar);
+    RealSpaceTools<DeviceType>::clone(lattice,lattice_scalar);
 
     DynRankViewOutValueType ConstructWithLabelOutView(curlBasisAtLattice, cardinality , np_lattice, dim);
     tetBasis.getValues(curlBasisAtLattice, lattice, OPERATOR_CURL);

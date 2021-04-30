@@ -116,8 +116,8 @@ TEST_F(NgpFieldAccess, Centroid)
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 400;
-  const int ELEMS_PER_DIM = 100;
+  const int NUM_RUNS = 1000;
+  const int ELEMS_PER_DIM = 120;
 
   declare_centroid_field();
   setup_mesh(stk::unit_test_util::get_mesh_spec(ELEMS_PER_DIM), stk::mesh::BulkData::NO_AUTO_AURA);

@@ -52,7 +52,6 @@
 
 #include <Zoltan2_Standards.hpp>
 #include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_CommGraphModel.hpp>
 #include <Zoltan2_IdentifierModel.hpp>
 #include <Zoltan2_CoordinateModel.hpp>
 #include <Zoltan2_Algorithm.hpp>
@@ -201,7 +200,6 @@ protected:
   RCP<const base_adapter_t> baseInputAdapter_;
 
   RCP<GraphModel<base_adapter_t> > graphModel_;
-  RCP<CommGraphModel<base_adapter_t> > commGraphModel_;  
   RCP<IdentifierModel<base_adapter_t> > identifierModel_;  
   RCP<CoordinateModel<base_adapter_t> > coordinateModel_;  
 

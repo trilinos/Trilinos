@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-SCRIPTFILE=$(realpath $BASH_SOURCE)
+SCRIPTFILE=$(realpath ${WORKSPACE:?}/Trilinos/cmake/std/PullRequestLinuxDriver.sh)
 SCRIPTPATH=$(dirname $SCRIPTFILE)
 source ${SCRIPTPATH:?}/common.bash
 # set -x  # echo commands
@@ -13,6 +13,7 @@ function bootstrap_modules() {
 
     cuda_regex=".*(_cuda_).*"
     ride_regex=".*(ride).*"
+    vortex_regex=".*(vortex).*"
     if [[ ${JOB_BASE_NAME:?} =~ ${cuda_regex} ]]; then
         if [[ ${NODE_NAME:?} =~ ${ride_regex} ]]; then
             message_std "PRDriver> " "Job is CUDA"
@@ -20,6 +21,12 @@ function bootstrap_modules() {
             module unload python
             module load git/2.10.1
             module load python/3.7.3
+            get_python_packages pip3
+            export PYTHON_EXE=python3
+        elif [[ ${NODE_NAME:?} =~ ${vortex_regex} ]]; then
+            echo -e "Job is CUDA node is vortex"
+            module load git/2.20.0
+            module load python/3.7.2 
             get_python_packages pip3
             export PYTHON_EXE=python3
         else
@@ -72,13 +79,14 @@ bootstrap_modules
 
 # Identify the path to the trilinos repository root
 REPO_ROOT=`readlink -f ${SCRIPTPATH:?}/../..`
+test -d ${REPO_ROOT:?}/.git || REPO_ROOT=`readlink -f ${WORKSPACE:?}/Trilinos`
 message_std "PRDriver> " "REPO_ROOT : ${REPO_ROOT}"
 
 # Get the md5 checksum of this script:
-sig_script_old=$(get_md5sum ${SCRIPTFILE:?})
+sig_script_old=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriver.sh)
 
 # Get the md5 checksum of the Merge script
-sig_merge_old=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
+sig_merge_old=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverMerge.py)
 
 
 print_banner "Merge Source into Target"
@@ -92,7 +100,7 @@ merge_cmd_options=(
     ${TRILINOS_SOURCE_SHA:?}
     ${WORKSPACE:?}
     )
-merge_cmd="${PYTHON_EXE:?} ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
+merge_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverMerge.py ${merge_cmd_options[@]}"
 
 
 # Call the script to handle merging the incoming branch into
@@ -110,13 +118,13 @@ print_banner "Merge completed"
 
 
 # Get the md5 checksum of this script:
-sig_script_new=$(get_md5sum ${SCRIPTFILE:?})
+sig_script_new=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriver.sh)
 message_std "PRDriver> " "Old md5 checksum ${sig_script_old:?} for ${SCRIPTFILE:?}"
 message_std "PRDriver> " "New md5 checksum ${sig_script_new:?} for ${SCRIPTFILE:?}"
 message_std "PRDriver> " ""
 
 # Get the md5 checksum of the Merge script
-sig_merge_new=$(get_md5sum ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py)
+sig_merge_new=$(get_md5sum ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverMerge.py)
 message_std "PRDriver> " "Old md5 checksum ${sig_merge_old:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
 message_std "PRDriver> " "New md5 checksum ${sig_merge_new:?} for ${SCRIPTPATH}/PullRequestLinuxDriverMerge.py"
 
@@ -125,7 +133,7 @@ then
     message_std "PRDriver> " ""
     message_std "PRDriver> " "Driver or Merge script change detected. Re-launching PR Driver"
     message_std "PRDriver> " ""
-    ${SCRIPTFILE:?}
+    ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriver.sh
     exit $?
 fi
 
@@ -135,7 +143,7 @@ message_std "PRDriver> " ""
 
 # determine what MODE we are using
 mode="standard"
-if [[ "${JOB_BASE_NAME}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testing" ]]; then
+if [[ "${JOB_BASE_NAME:?}" == "Trilinos_pullrequest_gcc_8.3.0_installation_testing" ]]; then
     mode="installation"
 fi
 
@@ -161,7 +169,7 @@ test_cmd_options=(
 )
 
 # Execute the TEST operation
-test_cmd="${PYTHON_EXE:?} ${SCRIPTPATH}/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
+test_cmd="${PYTHON_EXE:?} ${REPO_ROOT:?}/cmake/std/PullRequestLinuxDriverTest.py ${test_cmd_options[@]}"
 
 
 # Call the script to launch the tests

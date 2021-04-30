@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -41,7 +41,7 @@ C      --A - the dynamic memory base array
       LOGICAL EXODUS
       LOGICAL WHOTIM
 
-      data (qainfo(i), i=1,3) / 'ex1ex2v2', '20200903', 'v 2.12  ' /
+      data (qainfo(i), i=1,3) / 'ex1ex2v2', '20210128', 'v 2.13  ' /
       data iin,iout/5,6/
       data nsteps /0/
       data cpuws,wsout /0,0/
@@ -574,7 +574,7 @@ c            write whole time step
 
   140 CONTINUE
 
-  150 call exclos (idexo, ierr)
+  150 if (idexo .gt. 0) call exclos (idexo, ierr)
 
       IF (NDB .NE. 0) CLOSE (NDB, IOSTAT=K)
 

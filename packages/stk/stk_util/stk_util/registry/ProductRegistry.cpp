@@ -37,14 +37,12 @@
 #include "stk_util/registry/product_registry.h"  // for product_registry_add, product_registry_a...
 #include <utility>                               // for pair, make_pair
 
-#ifdef STK_BUILT_IN_SIERRA
-#include "stk_util/registry/stk_version.hpp"
-#else
-#define STK_VERSION "0.2a"
-#endif
-
-#ifndef STK_VERSION
-#define STK_VERSION "0.2a"
+#ifndef STK_VERSION_STRING
+//Note to our future stk-team selves:
+//In Sierra, STK_VERSION_STRING is provided on the compile line by bake.
+//For Trilinos stk snapshots, the following macro definition gets populated with
+//the real version string by the trilinos_snapshot.sh script.
+#define STK_VERSION_STRING "5.1.1-276-gd2ca9ba1"
 #endif
 
 namespace stk {
@@ -101,9 +99,7 @@ ProductRegistry::instance()
 const char *
 ProductRegistry::version()
 {
-  // STK_VERSION should be a build-time define (i.e. -D flag) passed on
-  // the compilation command line
-  static const char *s_version = STK_VERSION;
+  static const char *s_version = STK_VERSION_STRING;
   
   return s_version;
 }

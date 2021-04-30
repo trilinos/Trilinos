@@ -102,9 +102,9 @@ public:
      *
      * \param[in] parallelMach Descriptor for machine to build this mesh on.
      *
-     * \returns Pointer to <code>STK_Interface</code> object with 
+     * \returns Pointer to <code>STK_Interface</code> object with
      *          <code>isModifiable()==false</code>.
-     */ 
+     */
    virtual Teuchos::RCP<STK_Interface> buildMesh(stk::ParallelMachine parallelMach) const;
 
    /** This builds all the meta data of the mesh. Does not call metaData->commit.
@@ -132,6 +132,13 @@ protected:
    void registerElementBlocks(STK_Interface & mesh,stk::io::StkMeshIoBroker & meshData) const;
    void registerSidesets(STK_Interface & mesh) const;
    void registerNodesets(STK_Interface & mesh) const;
+   void registerEdgeBlocks(STK_Interface & mesh) const;
+   void registerFaceBlocks(STK_Interface & mesh) const;
+
+   void addEdgeBlocks(STK_Interface & mesh) const;
+   void addFaceBlocks(STK_Interface & mesh) const;
+
+   void buildMetaData(stk::ParallelMachine parallelMach, STK_Interface & mesh) const;
 
    std::string fileName_;
    int restartIndex_;
@@ -153,6 +160,12 @@ private:
 
   //! Number of levels of inline uniform mesh refinement to be applied to exodus mesh
   int levelsOfRefinement_;
+
+  //! Did the user request to create missing edge blocks
+  bool createEdgeBlocks_;
+
+  //! Did the user request to create missing face blocks
+  bool createFaceBlocks_;
 };
 
 }

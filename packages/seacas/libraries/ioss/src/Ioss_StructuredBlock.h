@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,6 +45,11 @@ namespace Ioss {
     {
     }
 
+    // cereal requires a default constructor when de-serializing vectors of objects.  Because
+    // StructuredBlock contains a vector of BoundaryCondition objects, this default constructor is
+    // necessary.
+    BoundaryCondition() = default;
+
     BoundaryCondition(const BoundaryCondition &copy_from) = default;
 
     // Determine which "face" of the parent block this BC is applied to.
@@ -56,6 +61,10 @@ namespace Ioss {
     // Return number of cell faces in the BC
     size_t get_face_count() const;
 
+    bool operator==(const Ioss::BoundaryCondition &rhs) const;
+    bool operator!=(const Ioss::BoundaryCondition &rhs) const;
+    bool equal(const Ioss::BoundaryCondition &rhs) const;
+
     std::string m_bcName{};
     std::string m_famName{};
 
@@ -65,7 +74,15 @@ namespace Ioss {
 
     mutable int m_face{-1};
 
+    template <class Archive> void serialize(Archive &archive)
+    {
+      archive(m_bcName, m_famName, m_rangeBeg, m_rangeEnd, m_face);
+    }
+
     friend std::ostream &operator<<(std::ostream &os, const BoundaryCondition &bc);
+
+  private:
+    bool equal_(const Ioss::BoundaryCondition &rhs, bool quiet) const;
   };
 
   class DatabaseIO;
@@ -288,6 +305,11 @@ namespace Ioss {
               global_offset < m_nodeOffset + get_property("node_count").get_int());
     }
 
+    /* COMPARE two StructuredBlocks */
+    bool operator==(const Ioss::StructuredBlock &rhs) const;
+    bool operator!=(const Ioss::StructuredBlock &rhs) const;
+    bool equal(const Ioss::StructuredBlock &rhs) const;
+
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,
                                     size_t data_size) const override;
@@ -296,9 +318,10 @@ namespace Ioss {
                                     size_t data_size) const override;
 
   private:
-    int m_ni{};
-    int m_nj{};
-    int m_nk{};
+    bool equal_(const Ioss::StructuredBlock &rhs, bool quiet) const;
+    int  m_ni{};
+    int  m_nj{};
+    int  m_nk{};
 
     int m_offsetI{}; // Valid 'i' ordinal runs from m_offsetI+1 to m_offsetI+m_ni
     int m_offsetJ{};
@@ -321,6 +344,11 @@ namespace Ioss {
     std::vector<BoundaryCondition>         m_boundaryConditions;
     std::vector<size_t>                    m_blockLocalNodeIndex;
     std::vector<std::pair<size_t, size_t>> m_globalIdMap;
+
+    template <class Archive> void serialize(Archive &archive)
+    {
+      archive(m_zoneConnectivity, m_boundaryConditions, m_blockLocalNodeIndex, m_globalIdMap);
+    }
   };
 } // namespace Ioss
 #endif

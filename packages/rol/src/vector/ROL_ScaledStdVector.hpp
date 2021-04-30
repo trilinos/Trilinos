@@ -115,6 +115,19 @@ public:
     return *dual_vec_;
   }
 
+  Real apply( const Vector<Real> &x ) const {
+    const DualScaledStdVector<Real> & ex = dynamic_cast<const DualScaledStdVector<Real>&>(x);
+    return StdVector<Real>::dot(ex);
+    //const std::vector<Element>& xval = *ex.getVector();
+    //const std::vector<Element>& yval = *(StdVector<Real>::getVector());
+    //uint dimension = yval.size();
+    //Real val = 0;
+    //for (uint i=0; i<dimension; i++) {
+    //  val += yval[i]*xval[i];
+    //}
+    //return val;
+  }
+
 }; // class PrimalScaledStdVector
 
 
@@ -168,6 +181,19 @@ public:
         = (*StdVector<Real>::getVector())[i]/(*scaling_vec_)[i];
     }
     return *primal_vec_;
+  }
+
+  Real apply( const Vector<Real> &x ) const {
+    const PrimalScaledStdVector<Real> & ex = dynamic_cast<const PrimalScaledStdVector<Real>&>(x);
+    return StdVector<Real>::dot(ex);
+//    const std::vector<Element>& xval = *ex.getVector();
+//    const std::vector<Element>& yval = *(StdVector<Real>::getVector());
+//    uint dimension = yval.size();
+//    Real val = 0;
+//    for (uint i=0; i<dimension; i++) {
+//      val += yval[i]*xval[i];
+//    }
+//    return val;
   }
 
 }; // class DualScaledStdVector

@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperTrapezoidal_decl_hpp
 #define Tempus_StepperTrapezoidal_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Tempus_StepperTrapezoidalAppAction.hpp"
@@ -24,19 +25,29 @@ namespace Tempus {
  *  solver (e.g., a non-linear solver, like NOX).
  *
  *  <b> Algorithm </b>
- *  The single-timestep algorithm for Forward Euler is
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Forward Euler}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State {Get $\dot{x}$ from SolutionHistory or from Stepper}
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0\f$ for \f$x_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
+ *  The single-timestep algorithm for Trapezoidal is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Trapezoidal \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item {\bf Set ODE parameters.}
+ *      \item \quad {\bf Time derivative: }
+ *                  $\dot{x}_{n} = \frac{(x_{n} - x_{n-1})}{(\Delta t_n/2)} - \dot{x}_{n-1}.$
+ *      \item \quad {\bf Alpha: $\alpha = \frac{2}{\Delta t_n}$}
+ *      \item \quad {\bf Beta: $\beta = 1$}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item {\bf Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}, x_n, t_n)=0$ for $x_n$}
+ *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item $\dot{x}_n \leftarrow (x_n-x_{n-1})/(\Delta t_n/2) - \dot{x}_{n-1}$
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
  *  \f}
  *
  *  The First-Same-As-Last (FSAL) principle is required for the Trapezoidal
@@ -115,7 +126,7 @@ public:
     virtual bool isExplicit()         const {return false;}
     virtual bool isImplicit()         const {return true;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
     virtual void setUseFSAL(bool a) { this->setUseFSALTrueOnly(a); }
@@ -126,8 +137,6 @@ public:
   virtual Scalar getAlpha(const Scalar dt) const { return Scalar(2.0)/dt; }
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
-
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -190,6 +199,15 @@ private:
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xOld_;
   Teuchos::RCP<const Thyra::VectorBase<Scalar> > xDotOld_;
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperTrapezoidal<Scalar> >
+createStepperTrapezoidal(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
 
 
 } // namespace Tempus

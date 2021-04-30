@@ -152,6 +152,7 @@ namespace MueLu {
 
       if ( paramList.isParameter("smoother: sweeps") ) { mueluss << "<Parameter name=\"relaxation: sweeps\" type=\"int\" value=\"" << paramList.get<int>("smoother: sweeps") << "\"/>" << std::endl; adaptingParamList.remove("smoother: sweeps",false); }
       if ( paramList.isParameter("smoother: damping factor") ) { mueluss << "<Parameter name=\"relaxation: damping factor\" type=\"double\" value=\"" << paramList.get<double>("smoother: damping factor") << "\"/>" << std::endl; adaptingParamList.remove("smoother: damping factor",false); }
+      if ( paramList.isParameter("smoother: use l1 Gauss-Seidel") ) { mueluss << "<Parameter name=\"relaxation: use l1\" type=\"bool\" value=\"" << paramList.get<bool>("smoother: use l1 Gauss-Seidel") << "\"/>" << std::endl; adaptingParamList.remove("smoother: use l1 Gauss-Seidel",false); }
     }
 
     // Chebyshev
@@ -267,6 +268,22 @@ namespace MueLu {
       // transform ML parameter to corresponding MueLu parameter and generate XML string
       std::string valueInterpreterStr = "\"" + valuestr + "\"";
       std::string ret = MasterList::interpretParameterName(MasterList::ML2MueLu(pname),valueInterpreterStr);
+
+      // special handling for verbosity level
+      if (pname == "ML output") {
+        // Translate verbosity parameter
+        int verbosityLevel = std::stoi(valuestr);
+        std::string eVerbLevel = "none";
+        if (verbosityLevel ==  0) eVerbLevel = "none";
+        if (verbosityLevel >=  1) eVerbLevel = "low";
+        if (verbosityLevel >=  5) eVerbLevel = "medium";
+        if (verbosityLevel >= 10) eVerbLevel = "high";
+        if (verbosityLevel >= 11) eVerbLevel = "extreme";
+        if (verbosityLevel >= 42) eVerbLevel = "test";
+        if (verbosityLevel >= 666) eVerbLevel = "interfacetest";
+        mueluss << "<Parameter name=\"verbosity\" type=\"string\"     value=\"" << eVerbLevel << "\"/>" << std::endl;
+        continue;
+      }
 
       // add XML string
       if (ret != "") {

@@ -37,7 +37,6 @@
 #ifdef STK_HAVE_BOOST
 
 #include "boost/any.hpp"                           // for any_cast
-#include "boost/type_index/type_index_facade.hpp"  // for operator==
 #include <cstddef>                                 // for size_t
 #include <cstdint>                                 // for int64_t
 

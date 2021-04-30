@@ -9,20 +9,13 @@
 #ifndef Tempus_TimeStepControl_impl_hpp
 #define Tempus_TimeStepControl_impl_hpp
 
-// Teuchos
-#include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_StandardParameterEntryValidators.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
-//Step control strategy
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyComposite.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_TimeStepControlStrategyIntegralController.hpp"
 
-//Thyra
-#include "Thyra_VectorStdOps.hpp"
 
 namespace Tempus {
 
@@ -155,7 +148,7 @@ void TimeStepControl<Scalar>::initialize() const
     <<getMaxRelError()<<")\n");
 
   TEUCHOS_TEST_FOR_EXCEPTION(
-    (getStepType() != "Constant" and getStepType() != "Variable"),
+    (getStepType() != "Constant" && getStepType() != "Variable"),
     std::out_of_range,
       "Error - 'Step Type' does not equal one of these:\n"
     << "  'Constant' - Integrator will take constant time step sizes.\n"
@@ -179,6 +172,7 @@ printDtChanges(int istep, Scalar dt_old, Scalar dt_new, std::string reason) cons
   if (!getPrintDtChanges()) return;
 
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+  out->setOutputToRootOnly(0);
   Teuchos::OSTab ostab(out,0,"printDtChanges");
 
   std::stringstream message;
@@ -409,14 +403,14 @@ bool TimeStepControl<Scalar>::timeInRange(const Scalar time) const
   const bool test1 = getInitTime() - absTolInit <= time;
   const bool test2 = time < getFinalTime() - absTolFinal;
 
-  return (test1 and test2);
+  return (test1 && test2);
 }
 
 
 /// Test if index is within range: include initIndex and exclude finalIndex.
 template<class Scalar>
 bool TimeStepControl<Scalar>::indexInRange(const int iStep) const{
-  bool iir = (getInitIndex() <= iStep and iStep < getFinalIndex());
+  bool iir = (getInitIndex() <= iStep && iStep < getFinalIndex());
   return iir;
 }
 
@@ -440,6 +434,7 @@ void TimeStepControl<Scalar>::setNumTimeSteps(int numTimeSteps)
     setMaxTimeStep (initTimeStep);
 
     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
+    out->setOutputToRootOnly(0);
     Teuchos::OSTab ostab(out,1,"setNumTimeSteps");
     *out << "Warning - setNumTimeSteps() Setting 'Number of Time Steps' = " << getNumTimeSteps()
          << "  Set the following parameters: \n"
@@ -481,30 +476,32 @@ void TimeStepControl<Scalar>::describe(
       listTimes << times[times.size()-1];
     }
 
-    out << description() << "::describe:" << std::endl
-        << "stepType           = " << getStepType()            << std::endl
-        << "initTime           = " << getInitTime()            << std::endl
-        << "finalTime          = " << getFinalTime()           << std::endl
-        << "minTimeStep        = " << getMinTimeStep()         << std::endl
-        << "initTimeStep       = " << getInitTimeStep()        << std::endl
-        << "maxTimeStep        = " << getMaxTimeStep()         << std::endl
-        << "initIndex          = " << getInitIndex()           << std::endl
-        << "finalIndex         = " << getFinalIndex()          << std::endl
-        << "maxAbsError        = " << getMaxAbsError()         << std::endl
-        << "maxRelError        = " << getMaxRelError()         << std::endl
-        << "maxFailures        = " << getMaxFailures()         << std::endl
-        << "maxConsecFailures  = " << getMaxConsecFailures()   << std::endl
-        << "numTimeSteps       = " << getNumTimeSteps()        << std::endl
-        << "printDtChanges     = " << getPrintDtChanges()      << std::endl
-        << "outputExactly      = " << getOutputExactly()       << std::endl
-        << "outputIndices      = " << listIdx.str()            << std::endl
-        << "outputTimes        = " << listTimes.str()          << std::endl
-        << "outputIndexInterval= " << getOutputIndexInterval() << std::endl
-        << "outputTimeInterval = " << getOutputTimeInterval()  << std::endl
-        << "outputAdjustedDt   = " << outputAdjustedDt_        << std::endl
-        << "dtAfterOutput      = " << dtAfterOutput_           << std::endl
-        << "stepControlSrategy = " << std::endl;
-        stepControlStrategy_->describe(out, verbLevel);
+    auto l_out = Teuchos::fancyOStream( out.getOStream() );
+    l_out->setOutputToRootOnly(0);
+    *l_out << description() << "::describe:" << std::endl
+           << "stepType           = " << getStepType()            << std::endl
+           << "initTime           = " << getInitTime()            << std::endl
+           << "finalTime          = " << getFinalTime()           << std::endl
+           << "minTimeStep        = " << getMinTimeStep()         << std::endl
+           << "initTimeStep       = " << getInitTimeStep()        << std::endl
+           << "maxTimeStep        = " << getMaxTimeStep()         << std::endl
+           << "initIndex          = " << getInitIndex()           << std::endl
+           << "finalIndex         = " << getFinalIndex()          << std::endl
+           << "maxAbsError        = " << getMaxAbsError()         << std::endl
+           << "maxRelError        = " << getMaxRelError()         << std::endl
+           << "maxFailures        = " << getMaxFailures()         << std::endl
+           << "maxConsecFailures  = " << getMaxConsecFailures()   << std::endl
+           << "numTimeSteps       = " << getNumTimeSteps()        << std::endl
+           << "printDtChanges     = " << getPrintDtChanges()      << std::endl
+           << "outputExactly      = " << getOutputExactly()       << std::endl
+           << "outputIndices      = " << listIdx.str()            << std::endl
+           << "outputTimes        = " << listTimes.str()          << std::endl
+           << "outputIndexInterval= " << getOutputIndexInterval() << std::endl
+           << "outputTimeInterval = " << getOutputTimeInterval()  << std::endl
+           << "outputAdjustedDt   = " << outputAdjustedDt_        << std::endl
+           << "dtAfterOutput      = " << dtAfterOutput_           << std::endl
+           << "stepControlSrategy = " << std::endl;
+           stepControlStrategy_->describe(out, verbLevel);
   }
 }
 
@@ -701,6 +698,7 @@ Teuchos::RCP<TimeStepControl<Scalar> > createTimeStepControl(
     } else {
       RCP<Teuchos::FancyOStream> out =
         Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      out->setOutputToRootOnly(0);
       Teuchos::OSTab ostab(out,1, "createTimeStepControl()");
       *out << "Warning -- Did not find a Tempus strategy to create!\n"
            << "'Strategy Type' = '" << strategyType << "'\n"

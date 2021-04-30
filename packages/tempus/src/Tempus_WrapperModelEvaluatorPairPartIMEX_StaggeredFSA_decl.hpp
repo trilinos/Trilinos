@@ -9,6 +9,7 @@
 #ifndef Tempus_ModelEvaluatorPairPartIMEX_StaggeredFSA_decl_hpp
 #define Tempus_ModelEvaluatorPairPartIMEX_StaggeredFSA_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_SensitivityModelEvaluatorBase.hpp"
 #include "Tempus_WrapperModelEvaluatorPairPartIMEX_Basic.hpp"
 #include "Tempus_StaggeredForwardSensitivityModelEvaluator.hpp"

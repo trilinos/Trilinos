@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -122,18 +122,6 @@ C     values located in dbws.blk
          CALL MLIST()
       END IF
 
-C     Initialize the Memory Manager
-      CALL MDINIT (A)
-      CALL MDFILL(0)
-      CALL MCINIT (C)
-      CALL MDSTAT (NERR, MEM)
-      IF (NERR .GT. 0) THEN
-C        Report dynamic memory error
-         CALL MEMERR
-C        Goto WRAPUP call and exit program
-         GOTO 130
-      END IF
-
 C     Input and Output File ID's
 C     See Algebra script for more details
 C     dbase.blk: COMMON /DBASE/ NDBIN, NDBOUT
@@ -150,12 +138,12 @@ C .. Get filename from command line.  If not specified, emit error message
         CALL PRTERR ('FATAL', 'Filenames not specified.')
         CALL PRTERR ('FATAL',
      *    'Syntax is: "algebra file_in file_out"')
-        GOTO 130
+        GOTO 150
       else if (narg .gt. 2) then
         CALL PRTERR ('FATAL', 'Too many arguments specified.')
         CALL PRTERR ('FATAL',
      *    'Syntax is: "algebra file_in file_out"')
-        GOTO 130
+        GOTO 150
       end if
 
 C     Open the input database; Exit on error
@@ -165,13 +153,25 @@ C     Open the input database; Exit on error
       IF (IERR .NE. 0) THEN
         SCRATCH = 'Database "'//FILNAM(:LFIL)//'" does not exist.'
         CALL PRTERR ('FATAL', SCRATCH(:LENSTR(SCRATCH)))
-        GOTO 130
+        GOTO 150
       END IF
 
       call exinq(ndbin, EXDBMXUSNM, namlen, rdum, cdum, ierr)
       call exmxnm(ndbin, namlen, ierr)
 
       INOPEN = .TRUE.
+
+C     Initialize the Memory Manager
+      CALL MDINIT (A)
+      CALL MDFILL(0)
+      CALL MCINIT (C)
+      CALL MDSTAT (NERR, MEM)
+      IF (NERR .GT. 0) THEN
+C        Report dynamic memory error
+         CALL MEMERR
+C        Goto WRAPUP call and exit program
+         GOTO 150
+      END IF
 
 C     Read the initial parameters from the database
 C     ndbin  - file ID (input)
@@ -545,6 +545,7 @@ C     set of strings of the same length (right justified)
          CALL MEMERR
       END IF
 
+ 150  continue
 C     Exiting programs - close input/output files if they are open
 C     or even if they opened and may have an error
       IF (INOPEN) CALL exclos(NDBIN, IERR)

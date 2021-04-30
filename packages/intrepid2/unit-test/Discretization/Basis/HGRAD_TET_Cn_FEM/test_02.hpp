@@ -62,29 +62,29 @@ namespace Intrepid2 {
   namespace Test {
 
     // This code provides an example to use serial interface of high order elements
-    template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+    template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HGRAD_TET_Cn_FEM_Test02(const bool verbose) {
-
+      using DeviceSpaceType = typename DeviceType::execution_space;
       Kokkos::print_configuration(std::cout, false);
 
       int errorFlag = 0;
 
       try { 
         for (int order=1;order<Parameters::MaxOrder;++order) {
-          Basis_HGRAD_TET_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> basis(order);
+          Basis_HGRAD_TET_Cn_FEM<DeviceType,OutValueType,PointValueType> basis(order);
           
           // problem setup 
           //   let's say we want to evaluate 1000 points in parallel. output values are stored in outputValuesA and B.
           //   A is compuated via serial interface and B is computed with top-level interface.
           const int npts = 1000, ndim = 3;
-          Kokkos::DynRankView<OutValueType,DeviceSpaceType> outputValuesA("outputValuesA", basis.getCardinality(), npts);
-          Kokkos::DynRankView<OutValueType,DeviceSpaceType> outputValuesB("outputValuesB", basis.getCardinality(), npts);
+          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesA("outputValuesA", basis.getCardinality(), npts);
+          Kokkos::DynRankView<OutValueType,DeviceType> outputValuesB("outputValuesB", basis.getCardinality(), npts);
           
-          Kokkos::View<PointValueType**,DeviceSpaceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
-          Kokkos::DynRankView<PointValueType,DeviceSpaceType> inputPoints (inputPointsViewToUseRandom.data(),  npts, ndim);
+          Kokkos::View<PointValueType**,DeviceType> inputPointsViewToUseRandom("inputPoints", npts, ndim);
+          Kokkos::DynRankView<PointValueType,DeviceType> inputPoints (inputPointsViewToUseRandom.data(),  npts, ndim);
           
           // random values between (-1,1) x (-1,1)
-          Kokkos::Random_XorShift64_Pool<DeviceSpaceType> random(13718);
+          Kokkos::Random_XorShift64_Pool<DeviceType> random(13718);
           Kokkos::fill_random(inputPointsViewToUseRandom, random, 1.0);
           
           // compute setup

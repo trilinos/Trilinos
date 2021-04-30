@@ -73,6 +73,11 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+// For writing out residuals/Jacobians
+#include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_BlockedLinearOpBase.hpp"
+#include "Thyra_TpetraVector.hpp"
+#include "Thyra_TpetraLinearOp.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
 // Constructors/Initializers/Accessors
@@ -104,6 +109,7 @@ ModelEvaluator(const Teuchos::RCP<panzer::FieldManagerBuilder>& fmb,
   , build_volume_field_managers_(true)
   , build_bc_field_managers_(true)
   , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , write_matrix_count_(0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -159,6 +165,7 @@ ModelEvaluator(const Teuchos::RCP<const panzer::LinearObjFactory<panzer::Traits>
   , build_volume_field_managers_(true)
   , build_bc_field_managers_(true)
   , active_evaluation_types_(Sacado::mpl::size<panzer::Traits::EvalTypes>::value, true)
+  , write_matrix_count_(0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp_dynamic_cast;
@@ -1629,6 +1636,48 @@ evalModelImpl_basic(const Thyra::ModelEvaluatorBase::InArgs<Scalar> &inArgs,
 
   // reset parameters back to nominal values
   resetParameters();
+
+  const bool writeToFile = false;
+  if (writeToFile && nonnull(W_out)) {
+    const auto check_blocked = Teuchos::rcp_dynamic_cast<::Thyra::BlockedLinearOpBase<double> >(W_out,false);
+    if (check_blocked) {
+      const int numBlocks = check_blocked->productDomain()->numBlocks();
+      const int rangeBlocks = check_blocked->productRange()->numBlocks();
+      TEUCHOS_ASSERT(numBlocks == rangeBlocks); // not true for optimization
+      for (int row=0; row < numBlocks; ++row) {
+        for (int col=0; col < numBlocks; ++col) {
+          using LO = panzer::LocalOrdinal;
+          using GO = panzer::GlobalOrdinal;
+          using NodeT = panzer::TpetraNodeType;
+          const auto thyraTpetraOperator = Teuchos::rcp_dynamic_cast<::Thyra::TpetraLinearOp<double,LO,GO,NodeT>>(check_blocked->getNonconstBlock(row,col),true);
+          const auto tpetraCrsMatrix = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);      
+          tpetraCrsMatrix->print(std::cout);
+          std::stringstream ss;
+          ss << "W_out_" << write_matrix_count_ << ".rank_" << tpetraCrsMatrix->getMap()->getComm()->getRank() << ".block_" << row << "_" << col << ".txt";
+          std::fstream fs(ss.str().c_str(),std::fstream::out|std::fstream::trunc);
+          Teuchos::FancyOStream fos(Teuchos::rcpFromRef(fs));
+          tpetraCrsMatrix->describe(fos,Teuchos::VERB_EXTREME);
+          fs.close();
+        }
+      }
+    }
+    else {
+      using LO = panzer::LocalOrdinal;
+      using GO = panzer::GlobalOrdinal;
+      using NodeT = panzer::TpetraNodeType;
+      const auto thyraTpetraOperator = Teuchos::rcp_dynamic_cast<::Thyra::TpetraLinearOp<double,LO,GO,NodeT>>(W_out,true);
+      const auto tpetraCrsMatrix = Teuchos::rcp_dynamic_cast<Tpetra::CrsMatrix<double,LO,GO,NodeT>>(thyraTpetraOperator->getTpetraOperator(),true);      
+      tpetraCrsMatrix->print(std::cout);
+      std::stringstream ss;
+      ss << "W_out_" << write_matrix_count_ << ".rank_" << tpetraCrsMatrix->getMap()->getComm()->getRank() << ".txt";
+      std::fstream fs(ss.str().c_str(),std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream fos(Teuchos::rcpFromRef(fs));
+      tpetraCrsMatrix->describe(fos,Teuchos::VERB_EXTREME);
+      fs.close();
+    }
+    ++write_matrix_count_;
+  }
+
 }
 
 template <typename Scalar>

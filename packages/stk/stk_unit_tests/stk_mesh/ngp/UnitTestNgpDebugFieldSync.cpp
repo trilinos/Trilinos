@@ -85,15 +85,6 @@ public:
   }
 
   template <typename T>
-  void device_field_set_all(stk::mesh::Field<T> & stkField, T value)
-  {
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
-
-    ngpField.set_all(ngpMesh, value);
-  }
-
-  template <typename T>
   void write_scalar_field_on_host_using_entity_default_debugger(stk::mesh::Field<T> & stkField, T value)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -202,28 +193,6 @@ public:
   }
 
   template <typename T>
-  void read_scalar_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      for (const stk::mesh::Entity & entity : *bucket) {
-        const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, entity);
-        access_for_memory_checking_tool(fieldData);
-      }
-    }
-  }
-
-  template <typename T>
-  void read_scalar_field_on_host_using_bucket(stk::mesh::Field<T> & stkField)
-  {
-    const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
-    for (stk::mesh::Bucket * bucket : buckets) {
-      const T * fieldData = stk::mesh::field_data<stk::mesh::Field<T>, StkDebugger<T>>(stkField, *bucket);
-      access_for_memory_checking_tool(fieldData, bucket->size());
-    }
-  }
-
-  template <typename T>
   void read_vector_field_on_host_using_entity(stk::mesh::Field<T> & stkField)
   {
     const stk::mesh::BucketVector& buckets = get_bulk().buckets(stkField.entity_rank());
@@ -265,20 +234,6 @@ public:
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
     const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
     stk::mesh::NgpField<T> & ngpField = stk::mesh::get_updated_ngp_field<T>(stkField);
-
-    stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
-                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
-                                     ngpField(entity, component) = value;
-                                   });
-  }
-
-  template <typename T>
-  void write_scalar_field_on_device(stk::mesh::Field<T> & stkField, T value)
-  {
-    const int component = 0;
-    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(get_bulk());
-    const stk::mesh::MetaData & meta = get_bulk().mesh_meta_data();
-    stk::mesh::NgpField<T, NgpDebugger> & ngpField = stk::mesh::get_updated_ngp_field<T, NgpDebugger>(stkField);
 
     stk::mesh::for_each_entity_run(ngpMesh, stk::topology::ELEM_RANK, meta.locally_owned_part(),
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& entity) {
@@ -420,24 +375,6 @@ public:
                          });
   }
 
-  struct EntityIdAddRemovePart {
-    stk::mesh::EntityId id;
-    std::string addPart;
-    std::string removePart;
-  };
-
-  void modify_element_part_membership(const std::vector<EntityIdAddRemovePart>& elemAddRemoveParts)
-  {
-    get_bulk().modification_begin();
-    for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
-      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
-      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
-      get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
-    }
-    get_bulk().modification_end();
-  }
-
   template <typename T>
   void create_element(const std::vector<std::pair<stk::mesh::EntityId, std::string>> & elemParts,
                       stk::mesh::Field<T> & stkField)
@@ -467,25 +404,6 @@ public:
     for (const stk::mesh::EntityId & elemId : elemIds) {
       get_bulk().destroy_entity(get_bulk().get_entity(stk::topology::ELEM_RANK, elemId));
     }
-    get_bulk().modification_end();
-  }
-
-  template <typename T>
-  void modify_element_part_membership_with_scalar_field_write_using_entity(
-           const std::vector<EntityIdAddRemovePart> & elemAddRemoveParts,
-           stk::mesh::Field<T> & stkField, T value)
-  {
-    get_bulk().modification_begin();
-
-    write_scalar_field_on_host_using_entity(stkField, value);
-
-    for (const auto & elemAddRemovePart : elemAddRemoveParts) {
-      stk::mesh::EntityVector elemsToChange {get_bulk().get_entity(stk::topology::ELEM_RANK, elemAddRemovePart.id)};
-      stk::mesh::PartVector addParts {get_meta().get_part(elemAddRemovePart.addPart)};
-      stk::mesh::PartVector removeParts {get_meta().get_part(elemAddRemovePart.removePart)};
-      get_bulk().change_entity_parts(elemsToChange, addParts, removeParts);
-    }
-
     get_bulk().modification_end();
   }
 
@@ -1777,7 +1695,7 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MissingAllModifySyncCallsToHos
   read_scalar_field_on_host_using_entity(stkField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
-  check_contains_file_name(stdoutString, "UnitTestNgpDebugFieldSync.cpp");
+  check_contains_file_name(stdoutString, "NgpDebugFieldSync_Fixtures.hpp");
   check_contains_a_line_number(stdoutString);
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=10");
   extract_warning(stdoutString, 1, "WARNING: Accessing stale data on Host for Field doubleScalarField[0]=20");
@@ -3789,9 +3707,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_ChangeBucket_
   testing::internal::CaptureStdout();
   modify_element_part_membership({{2, "Part2", "Part1"}});
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   read_old_scalar_field_on_device(stkField, ngpField);
@@ -3812,9 +3727,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_CreateBucket_
   testing::internal::CaptureStdout();
   create_element({{3, "Part1"}}, stkField);
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
@@ -3836,9 +3748,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_MeshModification_DeleteBucket_
   testing::internal::CaptureStdout();
   delete_element({2});
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
   write_scalar_field_on_host_using_entity(stkField, 3.14);
 
   read_old_scalar_field_on_device(stkField, ngpField);
@@ -3858,10 +3767,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringMeshModification_ChangeB
   testing::internal::CaptureStdout();
   modify_element_part_membership_with_scalar_field_write_using_entity({{2, "Part2", "Part1"}}, stkField, 3.14);
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
-
   read_old_scalar_field_on_device(stkField, ngpField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
@@ -3880,12 +3785,8 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringMeshModification_CreateB
   testing::internal::CaptureStdout();
   create_element_with_scalar_field_write_using_entity({{3, "Part1"}, {4, "Part1"}}, stkField, 3.14);
 
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
-
-  const stk::mesh::EntityId maxIdToRead = 1;  // Avoid memory corruption due to accessing old Field after new bucket allocation
-  read_old_scalar_field_on_device(stkField, ngpField, maxIdToRead);
+  const stk::mesh::EntityId maxEntityIdInOldField = 1;
+  read_old_scalar_field_on_device(stkField, ngpField, maxEntityIdInOldField);
 
   std::string stdoutString = testing::internal::GetCapturedStdout();
   extract_warning(stdoutString, 1, "WARNING: Accessing un-updated Field doubleScalarField on Device after mesh modification");
@@ -3902,10 +3803,6 @@ TEST_F(NgpDebugFieldSync, ScalarAccessUsingEntity_DuringMeshModification_DeleteB
 
   testing::internal::CaptureStdout();
   delete_element_with_scalar_field_write_using_entity({2}, stkField, 3.14);
-
-  // The device Field is currently out-of-date, so our debugging code on the host side needs to not
-  // mysteriously seg-fault before the user does the read on the Device side, where they will get
-  // a useful warning.  Do a host-side write to confirm that we skip over dangerous code properly.
 
   read_old_scalar_field_on_device(stkField, ngpField);
 

@@ -117,7 +117,9 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
    WorksetMap::iterator itr = worksets_.find(wd);
    if(itr==worksets_.end()) {
       // couldn't find workset, build it!
-      const WorksetNeeds & needs = lookupNeeds(wd.getElementBlock());
+      WorksetNeeds needs;
+      if(hasNeeds())
+        needs = lookupNeeds(wd.getElementBlock());
       worksetVector = wkstFactory_->getWorksets(wd,needs);
 
       // apply orientations to the just constructed worksets
@@ -279,7 +281,9 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
   
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
 
-  const WorksetNeeds & needs = lookupNeeds(eBlock);
+  WorksetNeeds needs;
+  if(hasNeeds())
+    needs = lookupNeeds(eBlock);
 
   if(needs.bases.size()>0) {
     // sanity check that we aren't missing something (the old and new "needs" should not be used together)
@@ -319,7 +323,9 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
             TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
             if(layout->getBasis()->requiresOrientations()) {
               // apply orientations for this basis
-              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+              auto & bv = *details.bases[basis_index];
+              if(not bv.orientationsApplied())
+                bv.applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
             }
           }
         }
@@ -353,7 +359,9 @@ applyOrientations(const std::string & eBlock, std::vector<Workset> & worksets) c
   
           for(const auto & id : needs.getIntegrators()) {
             // apply orientations for this basis
-            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
+            auto & bv = details.getBasisValues(bd,id);
+            if(not bv.orientationsApplied())
+              bv.applyOrientations(ortsPerBlock,(int) worksets[i].num_cells);
           }
         }
       }
@@ -386,7 +394,9 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
   //////////////////////////////////////////////////////////////////////////////////
   
   // Note: It may be faster to loop over the basis pairs on the inside (not really sure)
-  const WorksetNeeds & needs = lookupNeeds(desc.getElementBlock());
+  WorksetNeeds needs;
+  if(hasNeeds())
+    needs = lookupNeeds(desc.getElementBlock());
 
   if(needs.bases.size()>0) {
     // sanity check that we aren't missing something (the old and new "needs" should not be used together)
@@ -426,7 +436,9 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
             TEUCHOS_ASSERT(layout->getBasis()!=Teuchos::null);
             if(layout->getBasis()->requiresOrientations()) {
               // apply orientations for this basis
-              details.bases[basis_index]->applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+              auto & bv = *details.bases[basis_index];
+              if(not bv.orientationsApplied())
+                bv.applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
             }
           }
         }
@@ -461,7 +473,9 @@ applyOrientations(const WorksetDescriptor & desc,std::map<unsigned,Workset> & wo
   
           for(const auto & id : needs.getIntegrators()) {
             // apply orientations for this basis
-            details.getBasisValues(bd,id).applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
+            auto & bv = details.getBasisValues(bd,id);
+            if(not bv.orientationsApplied())
+              bv.applyOrientations(ortsPerBlock,(int) itr->second.num_cells);
           }
         }
       }

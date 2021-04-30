@@ -9,6 +9,7 @@
 #include <stk_mesh/base/SkinBoundary.hpp>
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_mesh/base/ForEachEntity.hpp>
+#include <cmath>
 
 namespace {
 
@@ -50,7 +51,7 @@ public:
 
     bool equal(const double& val1, const double& val2) const
     {
-        return (abs(val1 - val2) < tolerance);
+        return (std::fabs(val1 - val2) < tolerance);
     }
 
     bool less_than(const double& val1, const double& val2) const
@@ -58,11 +59,6 @@ public:
         if (equal(val1, val2))
             return false;
         return (val1 < val2);
-    }
-
-    void set_tolerance(double toleranceIn)
-    {
-        tolerance = toleranceIn;
     }
 
 private:

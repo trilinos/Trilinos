@@ -804,16 +804,19 @@ inline void create_hierarchy(ObjectBoundingBoxHierarchy_T<RangeBoxType> *hierarc
   std::vector< std::pair<float,int> > centroid_y(num_boxes);
   std::vector< std::pair<float,int> > centroid_z(num_boxes);
 #ifdef _OPENMP
-#pragma omp parallel for schedule(static) default(none) shared(centroid_x, centroid_y, centroid_z, boxes) firstprivate(num_boxes)
+  #pragma omp parallel for schedule(static) default(none) shared(centroid_x, centroid_y, centroid_z, boxes) firstprivate(num_boxes)
 #endif
   for(int ibox = 0; ibox < num_boxes; ++ibox) {
     float centroid[3];
     centroid[0] = boxes[ibox].GetBox().get_x_min() + boxes[ibox].GetBox().get_x_max();
     centroid[1] = boxes[ibox].GetBox().get_y_min() + boxes[ibox].GetBox().get_y_max();
     centroid[2] = boxes[ibox].GetBox().get_z_min() + boxes[ibox].GetBox().get_z_max();
-    centroid_x[ibox] = std::make_pair(centroid[0],ibox);
-    centroid_y[ibox] = std::make_pair(centroid[1],ibox);
-    centroid_z[ibox] = std::make_pair(centroid[2],ibox);
+    // you might read the next three lines and want to use std::make_pair instead
+    // please do not do this: causes stack use after scope error due to some
+    // behavior of std::make_pair (c++11) that I do not understand
+    centroid_x[ibox].first = centroid[0]; centroid_x[ibox].second = ibox;
+    centroid_y[ibox].first = centroid[1]; centroid_y[ibox].second = ibox;
+    centroid_z[ibox].first = centroid[2]; centroid_z[ibox].second = ibox;
   }
   stk::search::threadedSort(centroid_x);
   stk::search::threadedSort(centroid_y);

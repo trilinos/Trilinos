@@ -161,7 +161,7 @@ namespace Intrepid2 {
       }
     }
     
-    template<typename SpT, ordinal_type numPtsPerEval,
+    template<typename DT, ordinal_type numPtsPerEval,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties,
              typename vinvValueType,        class ...vinvProperties>
@@ -174,7 +174,7 @@ namespace Intrepid2 {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
       typedef          Kokkos::DynRankView<vinvValueType,       vinvProperties...>                vinvViewType;
-      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
       // loopSize corresponds to cardinality
       const auto loopSizeTmp1 = (inputPoints.extent(0)/numPtsPerEval);
@@ -226,8 +226,8 @@ namespace Intrepid2 {
   }
 
   // -------------------------------------------------------------------------------------
-  template<typename SpT, typename OT, typename PT>
-  Basis_HVOL_QUAD_Cn_FEM<SpT,OT,PT>::
+  template<typename DT, typename OT, typename PT>
+  Basis_HVOL_QUAD_Cn_FEM<DT,OT,PT>::
   Basis_HVOL_QUAD_Cn_FEM( const ordinal_type order,
                            const EPointType   pointType ) {
     // INTREPID2_TEST_FOR_EXCEPTION( !(pointType == POINTTYPE_EQUISPACED ||
@@ -235,10 +235,11 @@ namespace Intrepid2 {
     //                               ">>> ERROR (Basis_HVOL_QUAD_Cn_FEM): pointType must be either equispaced or warpblend." );
 
     // this should be in host
-    Basis_HVOL_LINE_Cn_FEM<SpT,OT,PT> lineBasis( order, pointType );
+    Basis_HVOL_LINE_Cn_FEM<DT,OT,PT> lineBasis( order, pointType );
     const auto cardLine = lineBasis.getCardinality();
     
-    this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>("HVOL::Quad::Cn::vinv", cardLine, cardLine);
+    this->pointType_ = pointType;
+    this->vinv_ = Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>("HVOL::Quad::Cn::vinv", cardLine, cardLine);
     lineBasis.getVandermondeInverse(this->vinv_);
 
     this->basisCardinality_  = cardLine*cardLine;
@@ -291,10 +292,10 @@ namespace Intrepid2 {
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoordsHost("dofCoordsHost", this->basisCardinality_, this->basisCellTopology_.getDimension());
 
-    Kokkos::DynRankView<typename ScalarViewType::value_type,SpT>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space>
       dofCoordsLine("dofCoordsLine", cardLine, 1);
 
     lineBasis.getDofCoords(dofCoordsLine);
@@ -310,7 +311,7 @@ namespace Intrepid2 {
       }
     }
 
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoordsHost);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoordsHost);
     Kokkos::deep_copy(this->dofCoords_, dofCoordsHost);
   }
   

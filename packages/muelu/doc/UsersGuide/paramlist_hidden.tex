@@ -79,6 +79,8 @@
         
 \cbb{aggregation: penalty parameters}{Array(double)}{{12.,-.2,0,0,0} }{Defines a polynomial coef[0] + coef[1]*i + coef[2]*i^2 + coef[3]*i^3 + coef[4]*i^4 that models the cost of having i nonzeros per row when  "unsupported vector smoothing" used.}
         
+\cbb{aggregation: distance laplacian directional weights}{Array(double)}{{1,1,1}}{Directional weights for the distance laplacian}
+        
 \cbb{aggregation: distance laplacian algo}{string}{"default"}{Type of sub-algorithm for "distance laplacian" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
         
 \cbb{aggregation: classical algo}{string}{"default"}{Type of sub-algorithm for "classical" dropping. Possible values: "default", "unscaled cut", "scaled cut".}
@@ -123,6 +125,8 @@
 \cbb{aggregation: enable phase 3}{bool}{true}{Turn on/off phase 3 of aggregation}
         
 \cbb{aggregation: phase2a include root}{bool}{true}{Whether the root node should be included in the aggregates formed in phase 2a.}
+        
+\cbb{aggregation: phase2a agg factor}{double}{0.5}{Agg factor for Phase 2a sizes}
         
 \cbb{aggregation: error on nodes with no on-rank neighbors}{bool}{false}{Causes phase 3 aggregation to throw an error for
       non-Dirichlet nodes that have no on-rank neighbors.  This only
@@ -195,9 +199,13 @@
         
 \cbb{aggregate qualities: percentiles}{Array(double)}{{}}{Percentiles of aggregate qualities to report (in a [0,1] range).}
         
+\cbb{aggregate qualities: mode}{string}{eigenvalue}{Whether to compute eigenvalues (``eigenvalue''),
+      aggregates sizes (``size'') or
+      both (``both'').}
+        
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
-      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'', ``Aggregates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in
@@ -241,7 +249,7 @@
         
 \cbb{sa: use rowsumabs diagonal scaling}{bool}{false}{Use the row sums of the absolute values of the matrix as the diagonal wherever inverse(D) is required.}
         
-\cbb{sa: enforce constraints}{bool}{false}{Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa. 
+\cbb{sa: enforce constraints}{bool}{false}{Insure that all interpolation entries are between 0 and 1 while trying to maintain the same rowsum as obtained by sa.
 Only used when tentative: calculate qr is set to false.}
         
 \cbb{sa: max eigenvalue}{double}{-1.0}{If not -1, use this value for lambdaMax(Dinv A) in prolongator smoothing instead of calculating it.}

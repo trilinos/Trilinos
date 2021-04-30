@@ -12,6 +12,7 @@
 #include <Compadre_PointCloudSearch.hpp>
 
 #include "GMLS_Manifold.hpp"
+#include "CommandLineProcessor.hpp"
 
 #ifdef COMPADRE_USE_MPI
 #include <mpi.h>
@@ -68,82 +69,15 @@ Kokkos::initialize(argc, args);
 // code block to reduce scope for all Kokkos View allocations
 // otherwise, Views may be deallocating when we call Kokkos::finalize() later
 {
-    // check if 8 arguments are given from the command line, the first being the program name
-    //  constraint_type used in solving each GMLS problem:
-    //      0 - No constraints used in solving each GMLS problem
-    //      1 - Neumann Gradient Scalar used in solving each GMLS problem
-    int constraint_type = 0; // No constraints by default
-    if (argc >= 8) {
-        int arg8toi = atoi(args[7]);
-        if (arg8toi > 0) {
-            constraint_type = arg8toi;
-        }
-    }
 
-    // check if 7 arguments are given from the command line, the first being the program name
-    // problem_type used in solving each GMLS problem:
-    //      0 - Standard GMLS problem
-    //      1 - Manifold GMLS problem
-    int problem_type = 1; // Manifold for this example
-    if (argc >= 7) {
-        int arg7toi = atoi(args[6]);
-        if (arg7toi > 0) {
-            problem_type = arg7toi;
-        }
-    }
-
-    // check if 6 arguments are given from the command line, the first being the program name
-    //  solver_type used for factorization in solving each GMLS problem:
-    //      0 - SVD used for factorization in solving each GMLS problem
-    //      1 - QR  used for factorization in solving each GMLS problem
-    //      2 - LU  used for factorization in solving each GMLS problem
-    int solver_type = 1; // QR by default
-    if (argc >= 6) {
-        int arg6toi = atoi(args[5]);
-        if (arg6toi >= 0) {
-            solver_type = arg6toi;
-        }
-    }
-
-    // check if 5 arguments are given from the command line, the first being the program name
-    //  N_pts_on_sphere used to determine spatial resolution
-    int N_pts_on_sphere = 1000; // 1000 points by default
-    if (argc >= 5) {
-        int arg5toi = atoi(args[4]);
-        if (arg5toi > 0) {
-            N_pts_on_sphere = arg5toi;
-        }
-    }
-    
-    // check if 4 arguments are given from the command line
-    //  dimension for the coordinates and the solution
-    int dimension = 3; // dimension 3 by default
-    if (argc >= 4) {
-        int arg4toi = atoi(args[3]);
-        if (arg4toi > 0) {
-            dimension = arg4toi;
-        }
-    }
-    
-    // check if 3 arguments are given from the command line
-    //  set the number of target sites where we will reconstruct the target functionals at
-    int number_target_coords = 200; // 200 target sites by default
-    if (argc >= 3) {
-        int arg3toi = atoi(args[2]);
-        if (arg3toi > 0) {
-            number_target_coords = arg3toi;
-        }
-    }
-    
-    // check if 2 arguments are given from the command line
-    //  set the number of target sites where we will reconstruct the target functionals at
-    int order = 3; // 3rd degree polynomial basis by default
-    if (argc >= 2) {
-        int arg2toi = atoi(args[1]);
-        if (arg2toi > 0) {
-            order = arg2toi;
-        }
-    }
+    CommandLineProcessor clp(argc, args);
+    auto order = clp.order;
+    auto dimension = clp.dimension;
+    auto number_target_coords = clp.number_target_coords;
+    auto constraint_name = clp.constraint_name;
+    auto solver_name = clp.solver_name;
+    auto problem_name = clp.problem_name;
+    int N_pts_on_sphere = (clp.number_source_coords>=0) ? clp.number_source_coords : 1000;
     
     // minimum neighbors for unisolvency is the same as the size of the polynomial basis 
     // dimension has one subtracted because it is a D-1 manifold represented in D dimensions
@@ -338,32 +272,6 @@ Kokkos::initialize(argc, args);
     // would be performed in the GMLS class
     Kokkos::deep_copy(neighbor_lists_device, neighbor_lists);
     Kokkos::deep_copy(epsilon_device, epsilon);
-    
-    // solver name for passing into the GMLS class
-    std::string solver_name;
-    if (solver_type == 0) { // SVD
-        solver_name = "SVD";
-    } else if (solver_type == 1) { // QR
-        solver_name = "QR";
-    } else if (solver_type == 2) { // LU
-        solver_name = "LU";
-    }
-
-    // problem name for passing into the GMLS class
-    std::string problem_name;
-    if (problem_type == 0) { // Standard
-        problem_name = "STANDARD";
-    } else if (problem_type == 1) { // Manifold
-        problem_name = "MANIFOLD";
-    }
-
-    // boundary name for passing into the GMLS class
-    std::string constraint_name;
-    if (constraint_type == 0) { // No constraints
-        constraint_name = "NO_CONSTRAINT";
-    } else if (constraint_type == 1) { // Neumann Gradient Scalar
-        constraint_name = "NEUMANN_GRAD_SCALAR";
-    }
     
     // initialize an instance of the GMLS class for problems with a scalar basis and 
     // traditional point sampling as the sampling functional
@@ -644,7 +552,7 @@ Kokkos::initialize(argc, args);
         // get tangent vector and see if orthgonal to coordinate (it should be on a sphere)
         for (int j=0; j<dimension-1; ++j) {
             double tangent_inner_prod = 0;
-            for (int k=0; k<dimension; ++k) {
+            for (int k=0; k<std::min(dimension,3); ++k) {
                 tangent_inner_prod += coord[k] * prestencil_weights(0, i, 0 /* local neighbor index */, j, k);
             }
             tangent_bundle_error += tangent_inner_prod * tangent_inner_prod;

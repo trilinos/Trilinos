@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperOperatorSplitAppActionComposite_hpp
 #define Tempus_StepperOperatorSplitAppActionComposite_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperOperatorSplitAppAction.hpp"
 #include "Tempus_TimeStepControl.hpp"
 #include <vector>

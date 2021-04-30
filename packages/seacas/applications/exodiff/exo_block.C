@@ -12,14 +12,10 @@
 #include <cstdlib>        // for exit, nullptr
 #include <string>         // for string, char_traits
 
-template <typename INT>
-Exo_Block<INT>::Exo_Block() : Exo_Entity(), num_nodes_per_elmt(-1), conn(nullptr)
-{
-}
+template <typename INT> Exo_Block<INT>::Exo_Block() : Exo_Entity() {}
 
 template <typename INT>
-Exo_Block<INT>::Exo_Block(int file_id, size_t exo_block_id)
-    : Exo_Entity(file_id, exo_block_id), num_nodes_per_elmt(-1), conn(nullptr)
+Exo_Block<INT>::Exo_Block(int file_id, size_t exo_block_id) : Exo_Entity(file_id, exo_block_id)
 {
   SMART_ASSERT(file_id >= 0);
   SMART_ASSERT((int)exo_block_id > EX_INVALID_ID);
@@ -29,7 +25,7 @@ Exo_Block<INT>::Exo_Block(int file_id, size_t exo_block_id)
 
 template <typename INT>
 Exo_Block<INT>::Exo_Block(int file_id, size_t id, const char *type, size_t num_e, size_t num_npe)
-    : Exo_Entity(file_id, id, num_e), elmt_type(type), num_nodes_per_elmt(num_npe), conn(nullptr)
+    : Exo_Entity(file_id, id, num_e), elmt_type(type), num_nodes_per_elmt(num_npe)
 {
   SMART_ASSERT(id > 0);
   SMART_ASSERT(elmt_type != "");

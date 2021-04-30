@@ -47,7 +47,6 @@
 #include "Phalanx_DataLayout.hpp"
 
 #include "Intrepid2_Kernels.hpp"
-#include "Intrepid2_CellTools.hpp"
 #include "Intrepid2_OrientationTools.hpp"
 
 #include "Panzer_PureBasis.hpp"
@@ -101,7 +100,7 @@ postRegistrationSetup(typename Traits::SetupData d,
   this->utils.setFieldData(pointValues.jac,fm);
   const shards::CellTopology & parentCell = *basis->getCellTopology();
   int edgeDim = 1;
-  Intrepid2::CellTools<PHX::Device>::getSubcellParametrization(edgeParam, edgeDim, parentCell);
+  edgeParam = Intrepid2::RefSubcellParametrization<PHX::Device>::get(edgeDim, parentCell.getKey());
 }
 
 // **********************************************************************

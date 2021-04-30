@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -44,17 +44,12 @@ void Excn::SystemInterface::enroll_options()
 
   options_.enroll("help", GetLongOption::NoValue, "Print this summary and exit", nullptr);
 
-  options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr);
+  options_.enroll("version", GetLongOption::NoValue, "Print version and exit", nullptr, nullptr,
+                  true);
 
   options_.enroll("auto", GetLongOption::NoValue,
                   "Automatically set Root, Proc, Ext from filename 'Root/basename.ext.#p.00'.",
                   nullptr);
-  options_.enroll("map", GetLongOption::NoValue,
-                  "Map element ids to original order if possible [default]", nullptr);
-
-  options_.enroll("nomap", GetLongOption::NoValue, "Do not map element ids to original order",
-                  nullptr);
-
   options_.enroll("extension", GetLongOption::MandatoryValue,
                   "Exodus database extension for the input files", "e");
 
@@ -68,28 +63,62 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("Root_directory", GetLongOption::MandatoryValue, "Root directory", nullptr);
 
   options_.enroll("Subdirectory", GetLongOption::MandatoryValue,
-                  "subdirectory containing input exodusII files", nullptr);
+                  "subdirectory containing input exodusII files", nullptr, nullptr, true);
 
-  options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
+  options_.enroll("subcycle", GetLongOption::OptionalValue,
+                  "Subcycle. Create $val subparts if $val is specified.\n"
+                  "\t\tOtherwise, create multiple parts each of size 'Part_count'.\n"
+                  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
+                  "\t\tUseful if the maximum number of open files is less\n"
+                  "\t\tthan the processor count.",
+                  nullptr, "0");
+
+  options_.enroll("join_subcycles", GetLongOption::NoValue,
+                  "If -subcycle is specified, then after the subcycle files are processed,\n"
+                  "\t\trun epu one more time and join the subcycle files into a single file.",
                   nullptr);
 
-  options_.enroll("add_processor_id", GetLongOption::NoValue,
-                  "Add 'processor_id' element variable to the output file", nullptr);
+  options_.enroll("Part_count", GetLongOption::MandatoryValue,
+                  "How many pieces (files) of the model should be joined.", "0");
+
+  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {n} (file)", "0");
+
+  options_.enroll("cycle", GetLongOption::MandatoryValue,
+                  "Cycle number. If subcycle # is specified, then only execute\n"
+                  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
+                  "-1");
+
+  options_.enroll("keep_temporary", GetLongOption::NoValue,
+                  "If -join_subcycles is specified, then after joining the subcycle files,\n"
+                  "\t\tthey are automatically deleted unless -keep_temporary is specified.",
+                  nullptr);
+
+  options_.enroll(
+      "add_nodal_communication_map", GetLongOption::NoValue,
+      "In subcycle mode, add the `nodal communication map` data to the output files.\n"
+      "\t\tThe resulting files can then be used as input to a subsequent analysis (N to M)",
+      nullptr, nullptr, true);
+
+  options_.enroll("map", GetLongOption::NoValue,
+                  "Map element ids to original order if possible [default]", nullptr);
+
+  options_.enroll("nomap", GetLongOption::NoValue, "Do not map element ids to original order",
+                  nullptr, nullptr, true);
 
   options_.enroll("netcdf4", GetLongOption::NoValue,
-                  "Create output database using the HDF5-based "
-                  "netcdf which allows for up to 2.1 GB "
+                  "Output database uses HDF5-based netcdf which allows for up to 2.1 billion "
                   "nodes/elements",
                   nullptr);
 
   options_.enroll("netcdf5", GetLongOption::NoValue,
-                  "Create output database using the PnetCDF-based "
-                  "netcdf 5 format which allows for up to 2.1 GB "
+                  "Output database uses PnetCDF netcdf 5 format which allows for up to 2.1 billion "
                   "nodes/elements",
                   nullptr);
 
   options_.enroll("64", GetLongOption::NoValue,
-                  "The output database will be written in the 64-bit integer mode", nullptr);
+                  "The output database will be written in the 64-bit integer mode which allows\n"
+                  "\t\tfor more than 2.1 billion nodes/elements",
+                  nullptr, nullptr, true);
 
   options_.enroll(
       "zlib", GetLongOption::NoValue,
@@ -102,7 +131,7 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("compress_data", GetLongOption::MandatoryValue,
                   "The output database will be written using compression (netcdf-4 mode only).\n"
                   "\t\tValue ranges from 0..9 for zlib/gzip or even values 4..32 for szip.",
-                  nullptr);
+                  nullptr, nullptr, true);
 
   options_.enroll("append", GetLongOption::NoValue,
                   "Append to database instead of opening a new database.\n"
@@ -113,42 +142,19 @@ void Excn::SystemInterface::enroll_options()
                   "Specify subset of timesteps to transfer to output file.\n"
                   "\t\tFormat is beg:end:step. 1:10:2 --> 1,3,5,7,9\n"
                   "\t\tEnter LAST for last step",
-                  "1:");
+                  "1:", nullptr, true);
 
-  options_.enroll("Part_count", GetLongOption::MandatoryValue,
-                  "How many pieces (files) of the model should be joined.", "0");
-
-  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {n} (file)", "0");
-
-  options_.enroll("subcycle", GetLongOption::OptionalValue,
-                  "Subcycle. Create $val subparts if $val is specified.\n"
-                  "\t\tOtherwise, create multiple parts each of size 'Part_count'.\n"
-                  "\t\tThe subparts can then be joined by a subsequent run of epu.\n"
-                  "\t\tUseful if the maximum number of open files is less\n"
-                  "\t\tthan the processor count.",
-                  nullptr, "0");
-
-  options_.enroll("cycle", GetLongOption::MandatoryValue,
-                  "Cycle number. If subcycle # is specified, then only execute\n"
-                  "\t\tcycle $val ($val < #).  The cycle number is 0-based.",
-                  "-1");
-
-  options_.enroll("join_subcycles", GetLongOption::NoValue,
-                  "If -subcycle is specified, then after the subcycle files are processed,\n"
-                  "\t\trun epu one more time and join the subcycle files into a single file.",
+  options_.enroll("add_processor_id", GetLongOption::NoValue,
+                  "Add 'processor_id' element variable to the output file which shows the\n"
+                  "\t\tprocessor that an element was on in the decomposed mesh.\n"
+                  "\t\tCan be used by SLICE or auto-decomp to reproduce decomposition.",
                   nullptr);
 
-  options_.enroll("keep_temporary", GetLongOption::NoValue,
-                  "If -join_subcycles is specified, then after joining the subcycle files, they "
-                  "are automatically\n"
-                  "\t\tdeleted unless -keep_temporary is specified.",
-                  nullptr);
-
-  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
-                  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
-                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
-                  "\t\tThe default behavior assumes that the values are equal.",
-                  nullptr);
+  options_.enroll("add_map_processor_id", GetLongOption::NoValue,
+                  "Add 'processor_id' element map to the output file which shows the\n"
+                  "\t\tprocessor that an element was on in the decomposed mesh.\n"
+                  "\t\tCan be used by SLICE or auto-decomp to reproduce decomposition.",
+                  nullptr, nullptr, true);
 
   options_.enroll("gvar", GetLongOption::MandatoryValue,
                   "Comma-separated list of global variables to be joined or ALL or NONE.", nullptr);
@@ -174,17 +180,12 @@ void Excn::SystemInterface::enroll_options()
                   "Don't transfer nodesets to output file.", nullptr);
 
   options_.enroll("omit_sidesets", GetLongOption::NoValue,
-                  "Don't transfer sidesets to output file.", nullptr);
+                  "Don't transfer sidesets to output file.", nullptr, nullptr, true);
 
-  options_.enroll("output_shared_nodes", GetLongOption::NoValue,
-                  "Output list of shared nodes and the processors they are shared with.", nullptr);
-
-  options_.enroll("max_open_files", GetLongOption::MandatoryValue,
-                  "For testing auto subcycle only.  Sets file limit that triggers auto subcycling.",
-                  "0");
-
-  options_.enroll("large_model", GetLongOption::NoValue,
-                  "(deprecated; use netcdf4 instead)",
+  options_.enroll("sum_shared_nodes", GetLongOption::NoValue,
+                  "The nodal results data on all shared nodes (nodes on processor boundaries)\n"
+                  "\t\twill be the sum of the individual nodal results data on each shared node.\n"
+                  "\t\tThe default behavior assumes that the values are equal.",
                   nullptr);
 
   options_.enroll("debug", GetLongOption::MandatoryValue,
@@ -198,6 +199,20 @@ void Excn::SystemInterface::enroll_options()
                   "\t\t 64 = put exodus library into verbose mode.\n"
                   "\t\t128 = Check consistent global field values between processors.",
                   "0");
+
+  options_.enroll(
+      "output_shared_nodes", GetLongOption::NoValue,
+      "[Debugging] Output list of shared nodes and the processors they are shared with.", nullptr);
+
+  options_.enroll("width", GetLongOption::MandatoryValue, "Width of output screen, default = 80",
+                  nullptr);
+
+  options_.enroll("max_open_files", GetLongOption::MandatoryValue,
+                  "For testing auto subcycle only.  Sets file limit that triggers auto subcycling.",
+                  "0");
+
+  options_.enroll("large_model", GetLongOption::NoValue, "[deprecated; use netcdf4 instead]",
+                  nullptr);
 
   options_.enroll("copyright", GetLongOption::NoValue, "Show copyright and license data.", nullptr);
 }
@@ -238,85 +253,18 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     return false;
   }
 
-  {
-    const char *temp = options_.retrieve("extension");
-    if (temp != nullptr) {
-      inExtension_ = temp;
-    }
-  }
+  inExtension_    = options_.get_option_value("extension", inExtension_);
+  outExtension_   = options_.get_option_value("output_extension", outExtension_);
+  processorCount_ = options_.get_option_value("processor_count", processorCount_);
+  partCount_      = options_.get_option_value("Part_count", partCount_);
+  startPart_      = options_.get_option_value("start_part", startPart_);
+  maxOpenFiles_   = options_.get_option_value("max_open_files", maxOpenFiles_);
+  cwd_            = options_.get_option_value("current_directory", cwd_);
+  rootDirectory_  = options_.get_option_value("Root_directory", rootDirectory_);
+  subDirectory_   = options_.get_option_value("Subdirectory", subDirectory_);
+  debugLevel_     = options_.get_option_value("debug", debugLevel_);
 
-  {
-    const char *temp = options_.retrieve("output_extension");
-    if (temp != nullptr) {
-      outExtension_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("processor_count");
-    if (temp != nullptr) {
-      processorCount_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("Part_count");
-    if (temp != nullptr) {
-      partCount_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("start_part");
-    if (temp != nullptr) {
-      startPart_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("max_open_files");
-    if (temp != nullptr) {
-      maxOpenFiles_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("current_directory");
-    if (temp != nullptr) {
-      cwd_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("Root_directory");
-    if (temp != nullptr) {
-      rootDirectory_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("Subdirectory");
-    if (temp != nullptr) {
-      subDirectory_ = temp;
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("debug");
-    if (temp != nullptr) {
-      debugLevel_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("width");
-    if (temp != nullptr) {
-      screenWidth_ = strtol(temp, nullptr, 10);
-    }
-    else {
-      screenWidth_ = term_width();
-    }
-  }
+  screenWidth_ = options_.get_option_value("width", term_width());
 
   {
     const char *temp = options_.retrieve("steps");
@@ -350,12 +298,9 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     parse_variable_names(temp, &ssetVarNames_);
   }
 
-  if (options_.retrieve("add_processor_id") != nullptr) {
-    addProcessorId_ = true;
-  }
-  else {
-    addProcessorId_ = false;
-  }
+  addProcessorIdField_      = options_.retrieve("add_processor_id") != nullptr;
+  addProcessorIdMap_        = options_.retrieve("add_map_processor_id") != nullptr;
+  addNodalCommunicationMap_ = options_.retrieve("add_nodal_communication_map") != nullptr;
 
   if (options_.retrieve("large_model") != nullptr) {
     useNetcdf4_ = true;
@@ -363,21 +308,10 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
                "\nWARNING: the -large_model option is deprecated; please use -netcdf4 instead.\n");
   }
 
-  if (options_.retrieve("netcdf4") != nullptr) {
-    useNetcdf4_ = true;
-  }
-
-  if (options_.retrieve("netcdf5") != nullptr) {
-    useNetcdf5_ = true;
-  }
-
-  if (options_.retrieve("append") != nullptr) {
-    append_ = true;
-  }
-
-  if (options_.retrieve("64") != nullptr) {
-    intIs64Bit_ = true;
-  }
+  useNetcdf4_ = options_.retrieve("netcdf4") != nullptr;
+  useNetcdf5_ = options_.retrieve("netcdf5") != nullptr;
+  append_     = options_.retrieve("append") != nullptr;
+  intIs64Bit_ = options_.retrieve("64") != nullptr;
 
   if (options_.retrieve("szip") != nullptr) {
     szip_ = true;
@@ -389,42 +323,15 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     fmt::print(stderr, "ERROR: Only one of 'szip' or 'zlib' can be specified.\n");
   }
 
-  {
-    const char *temp = options_.retrieve("compress_data");
-    if (temp != nullptr) {
-      compressData_ = strtol(temp, nullptr, 10);
-    }
-  }
+  compressData_ = options_.get_option_value("compress_data", compressData_);
 
-  if (options_.retrieve("sum_shared_nodes") != nullptr) {
-    sumSharedNodes_ = true;
-  }
+  sumSharedNodes_ = options_.retrieve("sum_shared_nodes") != nullptr;
+  append_         = options_.retrieve("append") != nullptr;
 
-  if (options_.retrieve("append") != nullptr) {
-    append_ = true;
-  }
-
-  {
-    const char *temp = options_.retrieve("subcycle");
-    if (temp != nullptr) {
-      subcycle_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  {
-    const char *temp = options_.retrieve("cycle");
-    if (temp != nullptr) {
-      cycle_ = strtol(temp, nullptr, 10);
-    }
-  }
-
-  if (options_.retrieve("join_subcycles") != nullptr) {
-    subcycleJoin_ = true;
-  }
-
-  if (options_.retrieve("keep_temporary") != nullptr) {
-    keepTemporary_ = true;
-  }
+  subcycle_      = options_.get_option_value("subcycle", subcycle_);
+  cycle_         = options_.get_option_value("cycle", cycle_);
+  subcycleJoin_  = options_.retrieve("join_subcycles") != nullptr;
+  keepTemporary_ = options_.retrieve("keep_temporary") != nullptr;
 
   if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;
@@ -434,27 +341,13 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
     mapIds_ = false;
   }
 
-  if (options_.retrieve("omit_nodesets") != nullptr) {
-    omitNodesets_ = true;
-  }
-  else {
-    omitNodesets_ = false;
-  }
-
-  if (options_.retrieve("omit_sidesets") != nullptr) {
-    omitSidesets_ = true;
-  }
-  else {
-    omitSidesets_ = false;
-  }
-
-  if (options_.retrieve("output_shared_nodes") != nullptr) {
-    outputSharedNodes_ = true;
-  }
+  omitNodesets_      = options_.retrieve("omit_nodesets") != nullptr;
+  omitSidesets_      = options_.retrieve("omit_sidesets") != nullptr;
+  outputSharedNodes_ = options_.retrieve("output_shared_nodes") != nullptr;
 
   if (options_.retrieve("copyright") != nullptr) {
     if (myRank_ == 0) {
-      fmt::print("{}", copyright("2010-2019"));
+      fmt::print("{}", copyright("2010-2021"));
     }
     return false;
   }
@@ -494,6 +387,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
                  subcycle_, processorCount_);
     }
     return false;
+  }
+
+  // If subcycle is specified, but not part_count, then calculate partCount_
+  if (partCount_ <= 0 && subcycle_ > 0) {
+    partCount_ = processorCount_ / subcycle_;
   }
 
   return true;

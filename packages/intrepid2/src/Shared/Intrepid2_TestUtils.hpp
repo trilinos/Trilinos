@@ -67,6 +67,13 @@ namespace Intrepid2
   //! Maximum number of derivatives to track for Fad types in tests.
   constexpr int MAX_FAD_DERIVATIVES_FOR_TESTS = 3;
 
+  //! Default Kokkos::Device to use for tests; depends on platform
+#ifdef KOKKOS_ENABLE_CUDA
+  using DefaultTestDeviceType = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
+#else
+  using DefaultTestDeviceType = typename Kokkos::DefaultExecutionSpace::device_type;
+#endif
+
   //! Use Teuchos small number determination on host; pass this to Intrepid2::relErr() on device.
   template <class Scalar>
   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -101,11 +108,11 @@ namespace Intrepid2
   static const double TEST_TOLERANCE_TIGHT = 1.e2 * std::numeric_limits<double>::epsilon();
 
   // we use DynRankView for both input points and values
-  template<typename ScalarType>
-  using ViewType = Kokkos::DynRankView<ScalarType,Kokkos::DefaultExecutionSpace>;
+  template<typename ScalarType, typename DeviceType>
+  using ViewType = Kokkos::DynRankView<ScalarType,DeviceType>;
 
-  template<typename ScalarType>
-  using FixedRankViewType = Kokkos::View<ScalarType,Kokkos::DefaultExecutionSpace>;
+  template<typename ScalarType, typename DeviceType>
+  using FixedRankViewType = Kokkos::View<ScalarType,DeviceType>;
 
   template<typename ScalarType>
   KOKKOS_INLINE_FUNCTION bool valuesAreSmall(const ScalarType &a, const ScalarType &b, const double &epsilon)
@@ -159,8 +166,8 @@ namespace Intrepid2
   }
 
   template<class BasisFamily>
-  inline Teuchos::RCP< Intrepid2::Basis<Kokkos::DefaultExecutionSpace,double,double> > getBasisUsingFamily(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
-                                                                                                           int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline Teuchos::RCP< Intrepid2::Basis<DefaultTestDeviceType,double,double> > getBasisUsingFamily(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
+                                                                                                   int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
   {
     using BasisPtr = typename BasisFamily::BasisPtr;
     
@@ -198,49 +205,50 @@ namespace Intrepid2
   }
 
   template<bool defineVertexFunctions>
-  inline Teuchos::RCP< Intrepid2::Basis<Kokkos::DefaultExecutionSpace,double,double> > getHierarchicalBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
-                                                                                                            int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
+  inline Teuchos::RCP< Intrepid2::Basis<DefaultTestDeviceType,double,double> > getHierarchicalBasis(shards::CellTopology cellTopo, Intrepid2::EFunctionSpace fs,
+                                                                                                    int polyOrder_x, int polyOrder_y=-1, int polyOrder_z = -1)
   {
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
     using namespace Intrepid2;
     
-    using LineBasisGrad = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<ExecSpace, Scalar, Scalar, defineVertexFunctions, true>;
-    using LineBasisVol  = Intrepid2::LegendreBasis_HVOL_LINE< ExecSpace, Scalar, Scalar>;
-    using TriangleBasisFamily = Intrepid2::HierarchicalTriangleBasisFamily<ExecSpace, Scalar, Scalar, defineVertexFunctions>;
-    using TetrahedronBasisFamily = Intrepid2::HierarchicalTetrahedronBasisFamily<ExecSpace, Scalar, Scalar, defineVertexFunctions>;
+    using LineBasisGrad = Intrepid2::IntegratedLegendreBasis_HGRAD_LINE<DeviceType, Scalar, Scalar, defineVertexFunctions, true>;
+    using LineBasisVol  = Intrepid2::LegendreBasis_HVOL_LINE< DeviceType, Scalar, Scalar>;
+    using TriangleBasisFamily = Intrepid2::HierarchicalTriangleBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
+    using TetrahedronBasisFamily = Intrepid2::HierarchicalTetrahedronBasisFamily<DeviceType, Scalar, Scalar, defineVertexFunctions>;
     
     using BasisFamily = DerivedBasisFamily<LineBasisGrad, LineBasisVol, TriangleBasisFamily, TetrahedronBasisFamily>;
     
     return getBasisUsingFamily<BasisFamily>(cellTopo, fs, polyOrder_x, polyOrder_y, polyOrder_z);
   }
 
-  template<typename ValueType, class ... DimArgs>
-  inline ViewType<ValueType> getView(const std::string &label, DimArgs... dims)
+  template<typename ValueType, typename DeviceType, class ... DimArgs>
+  inline ViewType<ValueType,DeviceType> getView(const std::string &label, DimArgs... dims)
   {
     const bool allocateFadStorage = !std::is_pod<ValueType>::value;
     if (!allocateFadStorage)
     {
-      return ViewType<ValueType>(label,dims...);
+      return ViewType<ValueType,DeviceType>(label,dims...);
     }
     else
     {
-      return ViewType<ValueType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+      return ViewType<ValueType,DeviceType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
     }
   }
 
+  // this method is to allow us to switch tests over incrementally; should collapse with ViewType once everything has been switched
   template<typename ValueType, class ... DimArgs>
-  inline FixedRankViewType< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type > getFixedRankView(const std::string &label, DimArgs... dims)
+  inline FixedRankViewType< typename RankExpander<ValueType, sizeof...(DimArgs) >::value_type, DefaultTestDeviceType > getFixedRankView(const std::string &label, DimArgs... dims)
   {
     const bool allocateFadStorage = !std::is_pod<ValueType>::value;
     using value_type = typename RankExpander<ValueType, sizeof...(dims) >::value_type;
     if (!allocateFadStorage)
     {
-      return FixedRankViewType<value_type>(label,dims...);
+      return FixedRankViewType<value_type,DefaultTestDeviceType>(label,dims...);
     }
     else
     {
-      return FixedRankViewType<value_type>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
+      return FixedRankViewType<value_type,DefaultTestDeviceType>(label,dims...,MAX_FAD_DERIVATIVES_FOR_TESTS+1);
     }
   }
 
@@ -250,29 +258,29 @@ namespace Intrepid2
 
 The total number of points defined will be a triangular number; if n=numPointsBase, then the point count is the nth triangular number, given by n*(n+1)/2.
 */
-  template <typename PointValueType>
-  inline ViewType<PointValueType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
+  template <typename PointValueType, typename DeviceType>
+  inline ViewType<PointValueType,DeviceType> getInputPointsView(shards::CellTopology &cellTopo, int numPoints_1D)
   {
     const ordinal_type order = numPoints_1D - 1;
     ordinal_type numPoints = PointTools::getLatticeSize(cellTopo, order);
     ordinal_type spaceDim  = cellTopo.getDimension();
     
-    ViewType<PointValueType> inputPoints = getView<PointValueType>("input points",numPoints,spaceDim);
+    ViewType<PointValueType,DeviceType> inputPoints = getView<PointValueType,DeviceType>("input points",numPoints,spaceDim);
     PointTools::getLattice(inputPoints, cellTopo, order, 0, POINTTYPE_EQUISPACED );
     
     return inputPoints;
   }
 
-  template<typename OutputValueType>
-  inline ViewType<OutputValueType> getOutputView(Intrepid2::EFunctionSpace fs, Intrepid2::EOperator op, int basisCardinality, int numPoints, int spaceDim)
+  template<typename OutputValueType, typename DeviceType>
+  inline ViewType<OutputValueType,DeviceType> getOutputView(Intrepid2::EFunctionSpace fs, Intrepid2::EOperator op, int basisCardinality, int numPoints, int spaceDim)
   {
     switch (fs) {
       case Intrepid2::FUNCTION_SPACE_HGRAD:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H^1 value output",basisCardinality,numPoints);
+            return getView<OutputValueType,DeviceType>("H^1 value output",basisCardinality,numPoints);
           case Intrepid2::OPERATOR_GRAD:
-            return getView<OutputValueType>("H^1 derivative output",basisCardinality,numPoints,spaceDim);
+            return getView<OutputValueType,DeviceType>("H^1 derivative output",basisCardinality,numPoints,spaceDim);
           case Intrepid2::OPERATOR_D1:
           case Intrepid2::OPERATOR_D2:
           case Intrepid2::OPERATOR_D3:
@@ -285,7 +293,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
           case Intrepid2::OPERATOR_D10:
           {
             const auto dkcard = getDkCardinality(op, spaceDim);
-            return getView<OutputValueType>("H^1 derivative output",basisCardinality,numPoints,dkcard);
+            return getView<OutputValueType,DeviceType>("H^1 derivative output",basisCardinality,numPoints,dkcard);
           }
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
@@ -293,21 +301,21 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       case Intrepid2::FUNCTION_SPACE_HCURL:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H(curl) value output",basisCardinality,numPoints,spaceDim);
+            return getView<OutputValueType,DeviceType>("H(curl) value output",basisCardinality,numPoints,spaceDim);
           case Intrepid2::OPERATOR_CURL:
             if (spaceDim == 2)
-              return getView<OutputValueType>("H(curl) derivative output",basisCardinality,numPoints);
+              return getView<OutputValueType,DeviceType>("H(curl) derivative output",basisCardinality,numPoints);
             else if (spaceDim == 3)
-              return getView<OutputValueType>("H(curl) derivative output",basisCardinality,numPoints,spaceDim);
+              return getView<OutputValueType,DeviceType>("H(curl) derivative output",basisCardinality,numPoints,spaceDim);
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
         }
       case Intrepid2::FUNCTION_SPACE_HDIV:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H(div) value output",basisCardinality,numPoints,spaceDim);
+            return getView<OutputValueType,DeviceType>("H(div) value output",basisCardinality,numPoints,spaceDim);
           case Intrepid2::OPERATOR_DIV:
-            return getView<OutputValueType>("H(div) derivative output",basisCardinality,numPoints);
+            return getView<OutputValueType,DeviceType>("H(div) derivative output",basisCardinality,numPoints);
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
         }
@@ -315,7 +323,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       case Intrepid2::FUNCTION_SPACE_HVOL:
         switch (op) {
           case Intrepid2::OPERATOR_VALUE:
-            return getView<OutputValueType>("H(vol) value output",basisCardinality,numPoints);
+            return getView<OutputValueType,DeviceType>("H(vol) value output",basisCardinality,numPoints);
           case Intrepid2::OPERATOR_D1:
           case Intrepid2::OPERATOR_D2:
           case Intrepid2::OPERATOR_D3:
@@ -328,7 +336,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
           case Intrepid2::OPERATOR_D10:
           {
             const auto dkcard = getDkCardinality(op, spaceDim);
-            return getView<OutputValueType>("H(vol) derivative output",basisCardinality,numPoints,dkcard);
+            return getView<OutputValueType,DeviceType>("H(vol) derivative output",basisCardinality,numPoints,dkcard);
           }
           default:
             INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported op/fs combination");
@@ -370,38 +378,39 @@ The total number of points defined will be a triangular number; if n=numPointsBa
 
   //! Copy the values for the specified functor
   template<class Functor, class Scalar, int rank>
-  typename ViewType<Scalar>::HostMirror copyFunctorToHostView(const Functor &deviceFunctor)
+  typename ViewType<Scalar,DefaultTestDeviceType>::HostMirror copyFunctorToHostView(const Functor &deviceFunctor)
   {
     INTREPID2_TEST_FOR_EXCEPTION(rank != getFunctorRank(deviceFunctor), std::invalid_argument, "functor rank must match the template argument");
     
-    ViewType<Scalar> view;
+    using DeviceType = DefaultTestDeviceType;
+    ViewType<Scalar,DeviceType> view;
     const std::string label = "functor copy";
     const auto &f = deviceFunctor;
     switch (rank)
     {
       case 0:
-        view = getView<Scalar>(label);
+        view = getView<Scalar,DeviceType>(label);
         break;
       case 1:
-        view = getView<Scalar>(label, f.extent_int(0));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0));
         break;
       case 2:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1));
         break;
       case 3:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2));
         break;
       case 4:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3));
         break;
       case 5:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4));
         break;
       case 6:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5));
         break;
       case 7:
-        view = getView<Scalar>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5), f.extent_int(6));
+        view = getView<Scalar,DeviceType>(label, f.extent_int(0), f.extent_int(1), f.extent_int(2), f.extent_int(3), f.extent_int(4), f.extent_int(5), f.extent_int(6));
         break;
       default:
         INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported functor rank");
@@ -409,9 +418,9 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     
     int entryCount = view.size();
     
-    using ExecutionSpace = typename ViewType<Scalar>::execution_space;
+    using ExecutionSpace = typename ViewType<Scalar,DeviceType>::execution_space;
     
-    using ViewIteratorScalar    = Intrepid2::ViewIterator<ViewType<Scalar>, Scalar>;
+    using ViewIteratorScalar    = Intrepid2::ViewIterator<ViewType<Scalar,DeviceType>, Scalar>;
     using FunctorIteratorScalar = FunctorIterator<Functor, Scalar, rank>;
     
     Kokkos::RangePolicy < ExecutionSpace > policy(0,entryCount);
@@ -571,7 +580,6 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     static_assert( supports_rank<FunctorType2,rank>::value, "Both Functor1 and Functor2 must support the specified rank through operator().");
     using Functor1IteratorScalar = FunctorIterator<FunctorType1, Scalar, rank>;
     using Functor2IteratorScalar = FunctorIterator<FunctorType2, Scalar, rank>;
-    using ViewIteratorBool       = Intrepid2::ViewIterator<ViewType<bool>, bool>;
 
     // check that rank/size match
     TEUCHOS_TEST_FOR_EXCEPTION(getFunctorRank(functor1) != rank, std::invalid_argument, "functor1 and functor2 must agree in rank"); // Kokkos::View does not provide rank() method; getFunctorRank() provides common interface
@@ -588,7 +596,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
     }
     if (entryCount == 0) return; // nothing to test
     
-    ViewType<bool> valuesMatch = getView<bool>("valuesMatch", entryCount);
+    ViewType<bool,ExecutionSpace> valuesMatch = getView<bool,ExecutionSpace>("valuesMatch", entryCount);
     
     Kokkos::RangePolicy < ExecutionSpace > policy(0,entryCount);
     Kokkos::parallel_for( policy,
@@ -629,7 +637,7 @@ The total number of points defined will be a triangular number; if n=numPointsBa
       
       FunctorIterator<decltype(functor1CopyHost),Scalar,rank> vi1(functor1CopyHost);
       FunctorIterator<decltype(functor2CopyHost),Scalar,rank> vi2(functor2CopyHost);
-      ViewIteratorBool    viMatch(valuesMatchHost);
+      Intrepid2::ViewIterator<decltype(valuesMatchHost), bool> viMatch(valuesMatchHost);
       
       bool moreEntries = true;
       while (moreEntries)

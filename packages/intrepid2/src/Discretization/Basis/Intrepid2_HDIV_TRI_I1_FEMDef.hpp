@@ -93,7 +93,7 @@ namespace Intrepid2 {
     }
 
 
-    template<typename SpT,
+    template<typename DT,
              typename outputValueValueType, class ...outputValueProperties,
              typename inputPointValueType,  class ...inputPointProperties>
     void
@@ -103,7 +103,7 @@ namespace Intrepid2 {
                const EOperator operatorType ) {
       typedef          Kokkos::DynRankView<outputValueValueType,outputValueProperties...>         outputValueViewType;
       typedef          Kokkos::DynRankView<inputPointValueType, inputPointProperties...>          inputPointViewType;
-      typedef typename ExecSpace<typename inputPointViewType::execution_space,SpT>::ExecSpaceType ExecSpaceType;
+      typedef typename ExecSpace<typename inputPointViewType::execution_space,typename DT::execution_space>::ExecSpaceType ExecSpaceType;
 
       // Number of evaluation points = dim 0 of inputPoints
       const auto loopSize = inputPoints.extent(0);
@@ -178,8 +178,8 @@ namespace Intrepid2 {
   }
   // -------------------------------------------------------------------------------------
 
-  template<typename SpT, typename OT, typename PT>
-  Basis_HDIV_TRI_I1_FEM<SpT,OT,PT>::
+  template<typename DT, typename OT, typename PT>
+  Basis_HDIV_TRI_I1_FEM<DT,OT,PT>::
   Basis_HDIV_TRI_I1_FEM() {
     this->basisCardinality_  = 3;
     this->basisDegree_       = 1;
@@ -216,26 +216,26 @@ namespace Intrepid2 {
                               posScOrd,
                               posDfOrd);
 
-      //this->tagToOrdinal_ = Kokkos::create_mirror_view(typename SpT::memory_space(), tagToOrdinal);
+      //this->tagToOrdinal_ = Kokkos::create_mirror_view(typename DT::memory_space(), tagToOrdinal);
       //Kokkos::deep_copy(this->tagToOrdinal_, tagToOrdinal);
 
-      //this->ordinalToTag_ = Kokkos::create_mirror_view(typename SpT::memory_space(), ordinalToTag);
+      //this->ordinalToTag_ = Kokkos::create_mirror_view(typename DT::memory_space(), ordinalToTag);
       //Kokkos::deep_copy(this->ordinalToTag_, ordinalToTag);
     }
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoords("dofCoordsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     dofCoords(0,0) =  0.5;   dofCoords(0,1) =  0.0;
     dofCoords(1,0) =  0.5;   dofCoords(1,1) =  0.5;
     dofCoords(2,0) =  0.0;   dofCoords(2,1) =  0.5;
 
-    this->dofCoords_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoords);
+    this->dofCoords_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoords);
     Kokkos::deep_copy(this->dofCoords_, dofCoords);
 
     // dofCoords on host and create its mirror view to device
-    Kokkos::DynRankView<typename ScalarViewType::value_type,typename SpT::array_layout,Kokkos::HostSpace>
+    Kokkos::DynRankView<typename ScalarViewType::value_type,typename DT::execution_space::array_layout,Kokkos::HostSpace>
       dofCoeffs("dofCoeffsHost", this->basisCardinality_,this->basisCellTopology_.getDimension());
 
     // dofCoeffs are normals to edges, having magnitude equal to edges' measures
@@ -243,7 +243,7 @@ namespace Intrepid2 {
     dofCoeffs(1,0) =  0.5;   dofCoeffs(1,1) =  0.5;
     dofCoeffs(2,0) = -0.5;   dofCoeffs(2,1) =  0.0;
 
-    this->dofCoeffs_ = Kokkos::create_mirror_view(typename SpT::memory_space(), dofCoeffs);    Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
+    this->dofCoeffs_ = Kokkos::create_mirror_view(typename DT::memory_space(), dofCoeffs);    Kokkos::deep_copy(this->dofCoeffs_, dofCoeffs);
 
   }
 

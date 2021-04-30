@@ -13,7 +13,7 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperTrapezoidal.hpp"
 #include "Tempus_StepperTrapezoidalModifierBase.hpp"
 #include "Tempus_StepperTrapezoidalModifierXBase.hpp"
 #include "Tempus_StepperTrapezoidalObserverBase.hpp"
@@ -38,8 +38,6 @@ using Teuchos::rcp_dynamic_cast;
 using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
-
-using Tempus::StepperFactory;
 
 
 // ************************************************************
@@ -93,8 +91,9 @@ TEUCHOS_UNIT_TEST(Trapezoidal, StepperFactory_Construction)
   auto model = rcp(new Tempus_Test::SinCosModel<double>());
   testFactoryConstruction("Trapezoidal Method", model);
 }
-  // ************************************************************
-  // ************************************************************
+
+// ************************************************************
+// ************************************************************
 class StepperTrapezoidalModifierTest
   : virtual public Tempus::StepperTrapezoidalModifierBase<double>
 {
@@ -104,7 +103,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -112,9 +111,9 @@ public:
 
   /// Modify Trapezoidal Stepper at action location.
   virtual void modify(
-		      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-		      Teuchos::RCP<Tempus::StepperTrapezoidal<double> > stepper,
-		      const typename Tempus::StepperTrapezoidalAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<Tempus::StepperTrapezoidal<double> > stepper,
+    const typename Tempus::StepperTrapezoidalAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperTrapezoidalAppAction<double>::BEGIN_STEP:
@@ -134,8 +133,8 @@ public:
     case StepperTrapezoidalAppAction<double>::AFTER_SOLVE:
       {
         testAFTER_SOLVE = true;
-        testType = "Trapezoidal - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Trapezoidal - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperTrapezoidalAppAction<double>::END_STEP:
@@ -147,7 +146,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
 
@@ -158,7 +157,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
@@ -196,7 +195,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
   TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
-  TEST_COMPARE(modifier->testType, ==, "Trapezoidal - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Trapezoidal - Modifier");
 }
 
 // ************************************************************
@@ -211,7 +210,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -240,7 +239,7 @@ public:
     case StepperTrapezoidalAppAction<double>::AFTER_SOLVE:
     {
       testAFTER_SOLVE = true;
-      testType = stepper->getStepperType();
+      testName = stepper->getStepperType();
       break;
     }
     case StepperTrapezoidalAppAction<double>::END_STEP:
@@ -262,7 +261,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Observer)
@@ -299,7 +298,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Observer)
   x = solutionHistory->getWorkingState()->getX();
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
-  TEST_COMPARE(observer->testType, ==, "Trapezoidal Method");
+  TEST_COMPARE(observer->testName, ==, "Trapezoidal Method");
 }
 
 // ************************************************************
@@ -352,7 +351,7 @@ public:
     }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testX_BEGIN_STEP;

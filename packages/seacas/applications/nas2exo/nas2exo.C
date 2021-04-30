@@ -9,33 +9,32 @@
 #include <string>
 
 using namespace N2EModules;
-using namespace std;
 
-void usageMessage();
-void transferFailureMsg(string componentName);
+namespace {
+  void usageMessage();
+  void transferFailureMsg(const std::string &componentName);
 
-bool inputFileExists(string infile);
-bool outputFileNotExists(string outFile);
+  bool inputFileExists(const std::string &infile);
+  bool outputFileNotExists(const std::string &outFile);
+} // namespace
 
 int main(int argc, char *argv[])
 {
 
-  auto startTime = chrono::high_resolution_clock::now();
+  auto startTime = std::chrono::steady_clock::now();
 
-  string                               inFile;
-  string                               outFile;
-  unique_ptr<NasModules::N2ENasReader> reader;
-  unique_ptr<ExoModules::N2EExoWriter> writer;
+  std::string inFile;
+  std::string outFile;
 
   if (argc == 2 || argc == 3) {
 
-    inFile = string(argv[1]);
+    inFile = std::string(argv[1]);
 
     if (argc == 3) {
-      outFile = string(argv[2]);
+      outFile = std::string(argv[2]);
     }
     else {
-      outFile = string("a.exo");
+      outFile = std::string("a.exo");
     }
   }
   else {
@@ -45,63 +44,59 @@ int main(int argc, char *argv[])
 
   if (!inputFileExists(inFile)) {
 
-    cerr << "Input file does not exist.\n";
-    cerr << "Check paths and permissions.\n";
+    std::cerr << "Input file does not exist.\n";
+    std::cerr << "Check paths and permissions.\n";
     return EXIT_FAILURE;
   }
 
   if (!outputFileNotExists(outFile)) {
-
-    cerr << "Output file already exists.  This utility\n";
-    cerr << "does not clobber existing files.";
+    std::cerr << "Output file already exists.  This utility\ndoes not clobber existing files.";
   }
 
-  auto readStart = chrono::high_resolution_clock::now();
-  reader.reset(new NasModules::N2ENasReader(inFile));
+  auto                                      readStart = std::chrono::steady_clock::now();
+  std::unique_ptr<NasModules::N2ENasReader> reader(new NasModules::N2ENasReader(inFile));
   if (!reader->processFile()) {
 
-    cerr << "Unable to process the BDF file.  Check the file and\n";
-    cerr << "the permissions.  Bailing out.\n";
+    std::cerr
+        << "Unable to process the BDF file.  Check the file and\nthe permissions.  Bailing out.\n";
     return EXIT_FAILURE;
   }
-  auto readEnd = chrono::high_resolution_clock::now();
+  auto readEnd = std::chrono::steady_clock::now();
 
-  unsigned readNodes    = reader->getNumberGridPts();
-  unsigned readElements = reader->getNumberElems();
-  unsigned readSections = reader->getNumberSects();
+  size_t readNodes    = reader->getNumberGridPts();
+  size_t readElements = reader->getNumberElems();
+  size_t readSections = reader->getNumberSects();
 
-  cout << "\n";
-  cout << "Entities read in:\n";
-  cout << "     Number of Nodes: " << readNodes << "\n";
-  cout << "  Number of Elements: " << readElements << "\n";
-  cout << "  Number of Sections: " << readSections << "\n";
-  cout << "           Read time: "
-       << chrono::duration_cast<chrono::milliseconds>(readEnd - readStart).count() << "ms\n\n\n";
+  std::cout << "\n";
+  std::cout << "Entities read in:\n"
+            << "     Number of Nodes: " << readNodes << "\n"
+            << "  Number of Elements: " << readElements << "\n"
+            << "  Number of Sections: " << readSections << "\n"
+            << "           Read time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(readEnd - readStart).count()
+            << "ms\n\n\n";
 
-  auto writeStart = chrono::high_resolution_clock::now();
-  // C++ 14
-  // writer = make_unique<ExoModules::N2EExoWriter>();
-  // C++ 11
-  writer.reset(new ExoModules::N2EExoWriter());
+  auto                     writeStart = std::chrono::steady_clock::now();
+  ExoModules::N2EExoWriter writer;
 
-  if (!writer->createDB(outFile)) {
+  if (!writer.createDB(outFile)) {
 
-    cerr << " Unable to create output ExodisII DB.  Check directory\n";
-    cerr << " permissions and try again.\n";
+    std::cerr << " Unable to create output ExodisII DB.  Check directory\n";
+    std::cerr << " permissions and try again.\n";
     return EXIT_FAILURE;
   }
 
-  if (!writer->setNodes(reader->getGridPoints())) {
+  if (!writer.setNodes(reader->getGridPoints())) {
     transferFailureMsg("grid points");
     return EXIT_FAILURE;
   }
 
-  if (!writer->setElements(reader->getElementList())) {
+  if (!writer.setElements(reader->getElementList())) {
     transferFailureMsg("elements");
     return EXIT_FAILURE;
   }
 
-  if (!writer->setSections(reader->getSections())) {
+  if (!writer.setSections(reader->getSections())) {
 
     transferFailureMsg("blocks/sections");
     return EXIT_FAILURE;
@@ -110,62 +105,66 @@ int main(int argc, char *argv[])
   // Save some memory
   reader.reset(NULL);
 
-  if (!writer->writeFile()) {
+  if (!writer.writeFile()) {
 
-    cerr << "There was problem writing out the ExodusII file.  Do use it for calculations\n";
-    cerr << "Rerun utility. Do not use files from failed writes in calculations.";
+    std::cerr << "There was problem writing out the ExodusII file.  Do use it for calculations\n";
+    std::cerr << "Rerun utility. Do not use files from failed writes in calculations.";
     return EXIT_FAILURE;
   }
-  auto writeEnd = chrono::high_resolution_clock::now();
+  auto writeEnd = std::chrono::steady_clock::now();
 
-  unsigned blocksOut = writer->getBlocksOut();
-  unsigned nodesOut  = writer->getNodesOut();
-  unsigned tetsOut   = writer->getTetsOut();
-  unsigned hexesOut  = writer->getHexesOut();
+  size_t blocksOut = writer.getBlocksOut();
+  size_t nodesOut  = writer.getNodesOut();
+  size_t tetsOut   = writer.getTetsOut();
+  size_t hexesOut  = writer.getHexesOut();
 
-  cout << "Entities written in:\n";
-  cout << "          Number of Nodes: " << nodesOut << "\n";
-  cout << "  Number of TET4 Elements: " << tetsOut << "\n";
-  cout << "  Number of HEX8 Elements: " << hexesOut << "\n";
-  cout << "         Number of Blocks: " << blocksOut << "\n";
-  cout << "               Write time: "
-       << chrono::duration_cast<chrono::milliseconds>(writeEnd - writeStart).count() << "ms\n\n\n";
+  std::cout << "Entities written in:\n";
+  std::cout << "          Number of Nodes: " << nodesOut << "\n";
+  std::cout << "  Number of TET4 Elements: " << tetsOut << "\n";
+  std::cout << "  Number of HEX8 Elements: " << hexesOut << "\n";
+  std::cout << "         Number of Blocks: " << blocksOut << "\n";
+  std::cout << "               Write time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(writeEnd - writeStart).count()
+            << "ms\n\n\n";
 
-  auto endTime = chrono::high_resolution_clock::now();
+  auto endTime = std::chrono::steady_clock::now();
 
-  cout << "Total Run time: "
-       << chrono::duration_cast<chrono::milliseconds>(endTime - startTime).count() << "ms\n\n";
+  std::cout << "Total Run time: "
+            << std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime).count()
+            << "ms\n\n";
 
   return EXIT_SUCCESS;
 }
 
-void usageMessage()
-{
+namespace {
+  void usageMessage()
+  {
 
-  using namespace std;
+    using namespace std;
 
-  cout << "Usage:\n";
-  cout << "nas2exo <pathtofile>/nasname.bdf <pathtoexo>/exoname.exo\n\n";
-  cout << "Notes:\n";
-  cout << "  Output file designation is optional. If omitted a file\n";
-  cout << "  named `a.exo` will be written in the location where this\n";
-  cout << "  utility is invoked\n";
+    std::cout << "Usage:\n";
+    std::cout << "nas2exo <pathtofile>/nasname.bdf <pathtoexo>/exoname.exo\n\n";
+    std::cout << "Notes:\n";
+    std::cout << "  Output file designation is optional. If omitted a file\n";
+    std::cout << "  named `a.exo` will be written in the location where this\n";
+    std::cout << "  utility is invoked\n";
 
-  exit(EXIT_FAILURE);
-}
+    exit(EXIT_FAILURE);
+  }
 
-void transferFailureMsg(string componentName)
-{
+  void transferFailureMsg(const std::string &componentName)
+  {
 
-  cerr << " Unable to set " << componentName << ".  Something is really wrong\n";
-  cerr << " with the input file.  Check a NASTRAN reference to insure\n";
-  cerr << " the BDF format was followed.\n";
-}
+    std::cerr << " Unable to set " << componentName << ".  Something is really wrong\n";
+    std::cerr << " with the input file.  Check a NASTRAN reference to insure\n";
+    std::cerr << " the BDF format was followed.\n";
+  }
 
-bool inputFileExists(string infile)
-{
-  ifstream inf(infile.c_str());
-  return inf.good();
-}
+  bool inputFileExists(const std::string &infile)
+  {
+    std::ifstream inf(infile.c_str());
+    return inf.good();
+  }
 
-bool outputFileNotExists(string outFile) { return !inputFileExists(outFile); }
+  bool outputFileNotExists(const std::string &outFile) { return !inputFileExists(outFile); }
+} // namespace

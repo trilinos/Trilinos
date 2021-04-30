@@ -820,6 +820,103 @@ namespace MueLuTests {
   }
 
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3level_BlockSmooth, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+
+#   if !defined(HAVE_MUELU_AMESOS) || !defined(HAVE_MUELU_IFPACK)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseEpetra, "Amesos, Ifpack");
+#   endif
+#   if !defined(HAVE_MUELU_AMESOS2) || !defined(HAVE_MUELU_IFPACK2)
+    MUELU_TESTING_DO_NOT_TEST(Xpetra::UseTpetra, "Amesos2, Ifpack2");
+#   endif
+
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+    GO nx = 10*comm->getSize();
+    Teuchos::ParameterList galeriList, ifpack2Params;
+    galeriList.set("nx", nx);
+    RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(galeriList,Xpetra::UseTpetra);    
+
+    ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
+
+    // Multigrid Hierarchy
+    Hierarchy H(A);
+    H.setVerbLevel(Teuchos::VERB_HIGH);
+    H.SetMaxCoarseSize(2);
+
+    // Multigrid setup phase (using default parameters)
+    FactoryManager M0; // how to build aggregates and smoother of the first level
+    M0.SetKokkosRefactor(false);
+    M0.SetFactory("Smoother",rcp(new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", ifpack2Params, 0)))));
+
+    FactoryManager M1; // first coarse level (Plain aggregation)
+    M1.SetKokkosRefactor(false);
+    M1.SetFactory("A", rcp(new RAPFactory()));
+    RCP<FactoryBase> P = rcp(new TentativePFactory());
+    M1.SetFactory("P", P);
+    M1.SetFactory("Ptent", P); //FIXME: can it be done automatically in FactoryManager?
+    M1.SetFactory("Smoother",rcp(new SmootherFactory(rcp(new TrilinosSmoother("RELAXATION", ifpack2Params, 0)))));
+
+    FactoryManager M2; // last level (SA)
+    M2.SetKokkosRefactor(false);
+    M2.SetFactory("A", rcp(new RAPFactory()));
+    M2.SetFactory("P", rcp(new SaPFactory()));
+
+    bool r; // cf. bug Teuchos Bug 5214
+    r = H.Setup(0, Teuchos::null,  rcpFromRef(M0), rcpFromRef(M1)); TEST_EQUALITY(r, false);
+    r = H.Setup(1, rcpFromRef(M0), rcpFromRef(M1), rcpFromRef(M2));   TEST_EQUALITY(r, false);
+    r = H.Setup(2, rcpFromRef(M1), rcpFromRef(M2), Teuchos::null ); TEST_EQUALITY(r, true);
+
+    RCP<Level> l0 = H.GetLevel(0);
+    RCP<Level> l1 = H.GetLevel(1);
+    RCP<Level> l2 = H.GetLevel(2);
+
+    TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l1->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l2->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l1->IsAvailable("PostSmoother", MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l2->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
+    TEST_EQUALITY(l1->IsAvailable("P",            MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l2->IsAvailable("P",            MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l1->IsAvailable("R",            MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l2->IsAvailable("R",            MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l1->IsAvailable("A",            MueLu::NoFactory::get()), true);
+    TEST_EQUALITY(l2->IsAvailable("A",            MueLu::NoFactory::get()), true);
+
+    TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
+    TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+
+    TEST_EQUALITY(l1->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l1->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l1->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l1->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l1->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final);
+
+    TEST_EQUALITY(l2->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l2->GetKeepFlag("P",            MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l2->GetKeepFlag("R",            MueLu::NoFactory::get()), MueLu::Final);
+    TEST_EQUALITY(l2->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+    // TEST_EQUALITY(l2->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
+
+    RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
+    RHS->setSeed(846930886);
+    RHS->randomize();
+
+    X->putScalar( (Scalar) 0.0);
+
+    int iterations=10;
+    H.Iterate(*RHS, *X, iterations);
+    }
+  }
+
+
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Hierarchy, SetupHierarchy3level_NoPreSmooth, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
 #   include <MueLu_UseShortNames.hpp>
@@ -1475,6 +1572,7 @@ namespace MueLuTests {
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy1levelv2, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy2level, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3level, Scalar, LO, GO, Node) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3level_BlockSmooth, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3level_NoPreSmooth, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchy3levelFacManagers, Scalar, LO, GO, Node) \
     TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Hierarchy, SetupHierarchyTestBreakCondition, Scalar, LO, GO, Node) \

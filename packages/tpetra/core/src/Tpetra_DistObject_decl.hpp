@@ -42,11 +42,6 @@
 
 /// \file Tpetra_DistObject_decl.hpp
 /// \brief Declaration of the Tpetra::DistObject class
-///
-/// If you want to use Tpetra::DistObject, include
-/// "Tpetra_DistObject.hpp" (a file which CMake generates and installs
-/// for you).  If you only want the declaration of Tpetra::DistObject,
-/// include this file (Tpetra_DistObject_decl.hpp).
 
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Import.hpp"
@@ -72,7 +67,7 @@ namespace KokkosClassic {
   ///   compatibility.
   enum ReadWriteOption {
     ReadWrite = 0, /*!< Indicates that the view may be safely read and written. */
-    WriteOnly = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
+    OverwriteAll = 1 /*!< Indicates that the contents of the view are undefined until set on the host. */
   };
 } // namespace KokkosClassic
 

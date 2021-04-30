@@ -218,12 +218,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, Test2, Scalar, LO, GO)
 
   TEST_INEQUALITY(&x, &y);                                               // vector x and y are different
 
-  x.sync_host ();
-  y.sync_host ();
-  auto x_lcl_host = x.getLocalViewHost ();
-  auto y_lcl_host = x.getLocalViewHost ();
+  {
+    auto x_lcl_host = x.getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto y_lcl_host = y.getLocalViewHost(Tpetra::Access::ReadOnly);
 
-  TEST_EQUALITY( x_lcl_host.data (), y_lcl_host.data () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
+    TEST_EQUALITY( x_lcl_host.data (), y_lcl_host.data () ); // vector x and y are pointing to the same memory location (such test only works if num of local elements != 0)
+  }
 
   prec.apply(x, y);
 
@@ -707,12 +707,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
 
   const Scalar exactSol = 0.2;
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol,1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol, 1e-14);
     }
   }
 }
@@ -1269,13 +1267,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
   exactSol[1] = -0.25;
   exactSol[2] = 0.625;
 
-  yBlock.sync_host();
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(lcl_row,0);
-    Scalar* yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(lcl_row, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }
@@ -1332,12 +1328,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   exactSol[1] = -0.25;
   exactSol[2] = 0.5;
 
-  yBlock.sync_host();
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    typename BMV::little_host_vec_type ylcl = yBlock.getLocalBlock(k,0);
-    auto yb = ylcl.data();
+    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
-      TEST_FLOATING_EQUALITY(yb[j],exactSol[k],1e-14);
+      TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
   }
 }

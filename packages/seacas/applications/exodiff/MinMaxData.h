@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -21,7 +21,7 @@ enum class ToleranceType {
 class DiffData
 {
 public:
-  DiffData() {}
+  DiffData() = default;
 
   void set_max(double d, double val_1, double val_2, size_t id_ = 0, size_t blk_ = 0)
   {
@@ -46,7 +46,7 @@ public:
 class MinMaxData
 {
 public:
-  MinMaxData() : min_val(DBL_MAX) {}
+  MinMaxData() = default;
 
   void spec_min_max(double val, int step, size_t id = 0, size_t blk = 0)
   {
@@ -65,7 +65,7 @@ public:
     }
   }
 
-  double min_val{};
+  double min_val{DBL_MAX};
   int    min_step{0};
   size_t min_id{0};
   size_t min_blk{0};

@@ -150,6 +150,18 @@ public:
     return *dual_pvec_;
   }
 
+  Real apply(const Vector<Real> &x) const {
+   const PV &xs = dynamic_cast<const PV&>(x);
+   ROL_TEST_FOR_EXCEPTION( numVectors() != xs.numVectors(),
+                                std::invalid_argument,
+                                "Error: Vectors must have the same number of subvectors." );
+    Real result = 0;
+    for( size_type i=0; i<vecs_.size(); ++i ) {
+      result += vecs_[i]->apply(*xs.get(i));
+    }
+    return result;
+  }
+
   Vp basis( const int i ) const {
     ROL_TEST_FOR_EXCEPTION( i >= dimension() || i<0,
                                 std::invalid_argument,

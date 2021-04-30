@@ -9,6 +9,7 @@
 #ifndef Tempus_StepperNewmarkImplicitDForm_decl_hpp
 #define Tempus_StepperNewmarkImplicitDForm_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_StepperImplicit.hpp"
 #include "Tempus_WrapperModelEvaluatorSecondOrder.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormAppAction.hpp"
@@ -33,6 +34,36 @@ namespace Tempus {
  *  is first order accurate.  Some additional properties about the Newmark
  *  Beta scheme can be found
  *  <a href="http://opensees.berkeley.edu/wiki/index.php/Newmark_Method">here</a>.
+ *
+ *  <b> Algorithm </b>
+ *  The algorithm for the Newmark implicit D-form with predictors and
+ *  correctors is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Newmark Implicit D-form \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item $\mathbf{d}^{\ast} = \mathbf{d}^{n-1} + \Delta t \mathbf{v}^{n-1}
+ *                               + \Delta t^2 (1-2 \beta) \mathbf{a}^{n-1} / 2$
+ *      \item $\mathbf{v}^{\ast} = \mathbf{v}^{n-1} + \Delta t (1-\gamma) \mathbf{a}^{n-1}$
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
+ *      \item {\bf Solve
+ *            $\mathbf{f}(\mathbf{d}^n, \mathbf{v}^n, \mathbf{a}^n, t^n) = 0$
+ *            for $\mathbf{d}^n$ where} \\
+ *            $\mathbf{a}^n = (\mathbf{d}^n - \mathbf{d}^{\ast})/(\beta \Delta t^2)$ \\
+ *            $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
+ *      \item {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
+ *      \item $\mathbf{a}^n = (\mathbf{d}^n - \mathbf{d}^{\ast})/(\beta \Delta t^2)$
+ *      \item $\mathbf{v}^n = \mathbf{v}^{\ast} + \gamma \Delta t \mathbf{a}^n$
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
  *
  *  The First-Same-As-Last (FSAL) principle is not used with the
  *  Newmark implicit D-Form method.  The default is to set useFSAL=false,
@@ -103,7 +134,7 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
     virtual bool isExplicit()         const {return false;}
     virtual bool isImplicit()         const {return true;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
     virtual OrderODE getOrderODE()   const {return SECOND_ORDER_ODE;}
@@ -168,6 +199,17 @@ class StepperNewmarkImplicitDForm : virtual public Tempus::StepperImplicit<Scala
   Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> > stepperNewmarkImpAppAction_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> >
+createStepperNewmarkImplicitDForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
+
 }  // namespace Tempus
 
 #endif  // Tempus_StepperNewmarkImplicitDForm_decl_hpp

@@ -709,6 +709,8 @@ private: // data members
   bool build_volume_field_managers_;
   bool build_bc_field_managers_;
   std::vector<bool> active_evaluation_types_;
+
+  mutable unsigned long long write_matrix_count_;
 };
 
 // Inline definition of the add response (its template on the builder type)

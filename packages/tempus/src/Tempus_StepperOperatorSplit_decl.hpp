@@ -30,6 +30,33 @@ namespace Tempus {
  *  Operator Split is only defined for one-step methods, so multi-step
  *  methods (e.g., BDF) should not be used with StepperOperatorSplit.
  *
+ *  <b> Algorithm </b>
+ *  The algorithm for operator-split stepper is
+ *
+ *  \f{center}{
+ *    \parbox{5in}{
+ *    \rule{5in}{0.4pt} \\
+ *    {\bf Algorithm} Operator Split \\
+ *    \rule{5in}{0.4pt} \vspace{-15pt}
+ *    \begin{enumerate}
+ *      \setlength{\itemsep}{0pt} \setlength{\parskip}{0pt} \setlength{\parsep}{0pt}
+ *      \item {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
+ *      \item $x^\ast = x^n$
+ *            \hfill {\it * Initialize operator-split solution.}
+ *      \item {\bf for (each subStepper)}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, BEFORE\_STEPPER)}
+ *      \item \quad  {\bf subStepper take time step.}
+ *                   \hfill {\it * Evolve solution, $x^\ast \rightarrow x^{\ast\ast}$.}
+ *      \item \quad  {\it appAction.execute(solutionHistory, stepper, AFTER\_STEPPER)}
+ *      \item \quad  {\bf if (subStep failed) then break.}
+ *      \item \quad  {\bf Promote solution, $ x^\ast \leftarrow x^{\ast\ast}$}
+ *      \item {\bf end for}
+ *      \item {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
+ *    \end{enumerate}
+ *    \vspace{-10pt} \rule{5in}{0.4pt}
+ *    }
+ *  \f}
+ *
  *  Note that steppers in general can not use FSAL (useFSAL=true) with
  *  operator splitting as \f$\dot{x}_{n-1}\f$ will usually be modified
  *  by other operators.
@@ -129,7 +156,7 @@ public:
       return isImplicit;
     }
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const
     {
       bool isOneStepMethod = true;
@@ -146,6 +173,10 @@ public:
    //@}
 
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+
+  void createSubSteppers(
+    std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
 
   /// \name Overridden from Teuchos::Describable
   //@{
@@ -188,6 +219,16 @@ protected:
   Teuchos::RCP<StepperOperatorSplitAppAction<Scalar> > stepperOSAppAction_;
 
 };
+
+
+/// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperOperatorSplit<Scalar> >
+createStepperOperatorSplit(
+  std::vector<Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > > appModels,
+  Teuchos::RCP<Teuchos::ParameterList> pl);
+
 
 } // namespace Tempus
 

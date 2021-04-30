@@ -97,6 +97,8 @@ int run_gauss_seidel(
       <size_type,lno_t, scalar_t,
       typename device::execution_space, typename device::memory_space,typename device::memory_space > KernelHandle;
 
+  scalar_t omega(0.9);
+
   KernelHandle kh;
   kh.set_team_work_size(16);
   kh.set_dynamic_scheduling(true);
@@ -106,6 +108,11 @@ int run_gauss_seidel(
     // test for two-stage/classical gs
     kh.create_gs_handle(gs_algorithm);
     kh.set_gs_twostage(!classic, input_mat.numRows());
+    if (classic) {
+      // two-stage with SpTRSV supports only omega = one
+      const scalar_t one = Kokkos::Details::ArithTraits<scalar_t>::one ();
+      omega = one;
+    }
   }
   else
     kh.create_gs_handle(GS_DEFAULT);
@@ -119,8 +126,6 @@ int run_gauss_seidel(
     (&kh, num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, is_symmetric_graph);
   gauss_seidel_numeric
     (&kh, num_rows_1, num_cols_1, input_mat.graph.row_map, input_mat.graph.entries, input_mat.values, is_symmetric_graph);
-
-  scalar_t omega(0.9);
 
   switch (apply_type){
   case 0:

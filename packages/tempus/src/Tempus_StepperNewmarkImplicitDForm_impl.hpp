@@ -9,20 +9,14 @@
 #ifndef Tempus_StepperNewmarkImplicitDForm_impl_hpp
 #define Tempus_StepperNewmarkImplicitDForm_impl_hpp
 
-#include "NOX_Thyra.H"
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperNewmarkImplicitDFormModifierDefault.hpp"
-#include "Tempus_config.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 
 //#define VERBOSE_DEBUG_OUTPUT
 //#define DEBUG_OUTPUT
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template <class Scalar>
-class StepperFactory;
 
 template <class Scalar>
 void
@@ -181,6 +175,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  this->setStepperName(        "Newmark Implicit d-Form");
   this->setStepperType(        "Newmark Implicit d-Form");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -194,8 +189,8 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
 
 template<class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  & solver,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -206,6 +201,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
     const Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> >& stepperAppAction)
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+  this->setStepperName(        "Newmark Implicit d-Form");
   this->setStepperType(        "Newmark Implicit d-Form");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -231,10 +227,14 @@ StepperNewmarkImplicitDForm<Scalar>::setModel(
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
   validSecondOrderODE_DAE(appModel);
-  Teuchos::RCP<WrapperModelEvaluatorSecondOrder<Scalar> > wrapperModel =
+  this->wrapperModel_ =
     Teuchos::rcp(new WrapperModelEvaluatorSecondOrder<Scalar>(
       appModel, "Newmark Implicit d-Form"));
-  this->wrapperModel_ = wrapperModel;
+
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    this->getSolver() == Teuchos::null, std::logic_error,
+    "Error - Solver is not set!\n");
+  this->getSolver()->setModel(this->wrapperModel_);
 
   this->isInitialized_ = false;
 }
@@ -280,7 +280,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     auto thisStepper = Teuchos::rcpFromRef(*this);
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar>> workingState =solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar>> currentState =solutionHistory->getCurrentState();
@@ -377,7 +377,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     }
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
 
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
@@ -387,7 +387,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
@@ -424,7 +424,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     workingState->computeNorms(currentState);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
@@ -500,18 +500,51 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Scheme Name", "Average Acceleration");
-  pl->set<double>     ("Beta" , 0.25);
-  pl->set<double>     ("Gamma", 0.5 );
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+
+  auto newmarkPL = Teuchos::parameterList("Newmark Parameters");
+  newmarkPL->set<std::string>("Scheme Name", schemeName_);
+  newmarkPL->set<double>     ("Beta",    beta_);
+  newmarkPL->set<double>     ("Gamma",   gamma_ );
+  pl->set("Newmark Parameters", *newmarkPL);
 
   return pl;
 }
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkImplicitDForm<Scalar> >
+createStepperNewmarkImplicitDForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperNewmarkImplicitDForm<Scalar>());
+  stepper->setStepperImplicitValues(pl);
+
+  if (pl != Teuchos::null) {
+    if (pl->isSublist("Newmark Parameters")) {
+      auto newmarkPL = pl->sublist("Newmark Parameters", true);
+      std::string schemeName =
+        newmarkPL.get<std::string>("Scheme Name", "Average Acceleration");
+      stepper->setSchemeName(schemeName);
+      if (schemeName == "User Defined") {
+        stepper->setBeta (newmarkPL.get<double>("Beta",  0.25));
+        stepper->setGamma(newmarkPL.get<double>("Gamma", 0.5 ));
+      }
+    } else {
+      stepper->setSchemeName("Average Acceleration");
+    }
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
 
 }  // namespace Tempus
 #endif  // Tempus_StepperNewmarkImplicitDForm_impl_hpp

@@ -32,6 +32,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 #include <gtest/gtest.h>
+#include <stk_util/util/string_utils.hpp>
 #include <stk_tools/block_extractor/ParseCsv.hpp>
 
 namespace
@@ -44,55 +45,6 @@ void compare_result(const std::vector<T> & result, const std::vector<T> & expect
   for (size_t i = 0; i < result.size(); ++i) {
     EXPECT_EQ(result[i], expected[i]);
   }
-}
-
-TEST(SplitString, emptyString)
-{
-  std::string input = "";
-  std::vector<std::string> separated = stk::tools::split_string(input, ',');
-  compare_result(separated, {});
-}
-
-TEST(SplitString, oneInteger)
-{
-  std::string input = "1";
-  std::vector<std::string> separated = stk::tools::split_string(input, ',');
-  compare_result(separated, {"1"});
-}
-
-TEST(SplitString, twoIntegers)
-{
-  std::string input = "13,2";
-  std::vector<std::string> separated = stk::tools::split_string(input, ',');
-  compare_result(separated, {"13", "2"});
-}
-
-TEST(SplitString, twoIntegersDifferentSeparator)
-{
-  std::string input = "1:4:9";
-  std::vector<std::string> separated = stk::tools::split_string(input, ':');
-  compare_result(separated, {"1", "4", "9"});
-}
-
-TEST(SplitString, tenIntegers)
-{
-  std::string input = "1,2,3,4,5,6,7,8,9,10";
-  std::vector<std::string> separated = stk::tools::split_string(input, ',');
-  compare_result(separated, {"1", "2", "3", "4", "5", "6", "7", "8", "9", "10"});
-}
-
-TEST(SplitString, spacesInString)
-{
-  std::string input = " 5 , 777 ";
-  std::vector<std::string> separated = stk::tools::split_string(input, ',');
-  compare_result(separated, {"5", "777"});
-}
-
-TEST(SplitString, integersAndRanges)
-{
-  std::string input = "1,10:20:2,25";
-  std::vector<std::string> separated = stk::tools::split_string(input, ',');
-  compare_result(separated, {"1", "10:20:2", "25"});
 }
 
 TEST(GetIdsFromStrings, empty)

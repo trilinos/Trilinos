@@ -132,6 +132,14 @@ void Solver<Real>::setA(ROL::Ptr<Tpetra::CrsMatrix<>> &A) {
   }
 }
 
+template<class Real>
+void Solver<Real>::setParameters(Teuchos::ParameterList & parlist) {
+  parlist_ = parlist;
+  if (!useDirectSolver_) {
+    solverBelos_trans_->setParameters(ROL::makePtrFromRef(parlist.sublist("Belos")));
+    solverBelos_->setParameters(ROL::makePtrFromRef(parlist.sublist("Belos")));
+  }
+}
 
 template<class Real>
 void Solver<Real>::solve(const ROL::Ptr<Tpetra::MultiVector<>> &x,

@@ -9,10 +9,10 @@
 #ifndef Tempus_Integrator_hpp
 #define Tempus_Integrator_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_Types.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
 
 #include <string>
 
@@ -61,8 +61,7 @@ namespace Tempus {
 template<class Scalar>
 class Integrator
   : virtual public Teuchos::Describable,
-    virtual public Teuchos::VerboseObject<Tempus::Integrator<Scalar> >,
-    virtual public Teuchos::ParameterListAcceptor
+    virtual public Teuchos::VerboseObject<Tempus::Integrator<Scalar> >
 {
 public:
 
@@ -92,5 +91,7 @@ public:
   //@}
 
 };
+
+
 } // namespace Tempus
 #endif // Tempus_Integrator_hpp

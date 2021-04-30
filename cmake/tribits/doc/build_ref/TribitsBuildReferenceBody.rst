@@ -1353,10 +1353,6 @@ any required TPLs.  The third flag tells the auto-detection routines that
 search for extra required libraries (such as the mpi library and the gfortran
 library for gnu compilers) to locate static versions.
 
-NOTE: The flag ``<Project>_LINK_SEARCH_START_STATIC`` is only supported in
-cmake version 2.8.5 or higher.  The variable will be ignored in prior releases
-of cmake.
-
 
 Enabling the usage of resource files to reduce length of build lines
 --------------------------------------------------------------------
@@ -3842,7 +3838,7 @@ or when running the ``dashboard`` target with::
 Using the ``dashboard`` target, one can also run coverage and memory testing
 and submit to CDash as described below.  But to take full advantage of the
 all-at-once mode and to have results displayed on CDash broken down
-package-by-package, one must be using CMake/CTest 3.10 or newer and be
+package-by-package, one must be using CMake/CTest 3.17 or newer and be
 submitting to a newer CDash version (from about mid 2018 and newer).
 
 For submitting line coverage results, once you configure with

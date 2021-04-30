@@ -27,14 +27,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability.
  *  Thus the user should be careful when accessing data through classes
  *  derived from the default modifier (i.e., USER BEWARE!!).
- * 
- *  \f{algorithm}{                                                                             
- *  \renewcommand{\thealgorithm}{}                                                             
- *  \caption{Leapfrog with the locations of the application actions indicated.}           
- *  \begin{algorithmic}[1]                                                                     
- *    TODO
- *  \end{algorithmic}                                                                         
- *  \f}                                                                                       
+ *
+ *  The locations for these AppAction calls
+ *  (StepperLeapfrogAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperLeapfrog.
  */
 
 template<class Scalar>

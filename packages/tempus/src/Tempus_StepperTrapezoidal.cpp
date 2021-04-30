@@ -13,7 +13,15 @@
 #include "Tempus_StepperTrapezoidal_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperTrapezoidal)
+
+  // Nonmember constructor
+  template Teuchos::RCP<StepperTrapezoidal<double> >
+  createStepperTrapezoidal(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
+
 }
 
 #endif

@@ -52,23 +52,19 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
   // Setup the explicit VanDerPol ModelEvaluator
   RCP<ParameterList> vdpmPL = sublist(pList, "VanDerPolModel", true);
-  auto explicitModel = rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
+  RCP<const Thyra::ModelEvaluator<double> > explicitModel =
+    rcp(new VanDerPol_IMEX_ExplicitModel<double>(vdpmPL));
 
   // Setup the implicit VanDerPol ModelEvaluator (reuse vdpmPL)
-  auto implicitModel = rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
+  RCP<const Thyra::ModelEvaluator<double> > implicitModel =
+    rcp(new VanDerPol_IMEX_ImplicitModel<double>(vdpmPL));
 
 
   // Setup Stepper for field solve ----------------------------
   auto stepper = rcp(new Tempus::StepperOperatorSplit<double>());
 
-  RCP<Tempus::StepperFactory<double> > sf =
-    Teuchos::rcp(new Tempus::StepperFactory<double>());
-
-  auto subStepper1 =
-    sf->createStepperForwardEuler(explicitModel, Teuchos::null);
-
-  auto subStepper2 =
-    sf->createStepperBackwardEuler(implicitModel, Teuchos::null);
+  auto subStepper1 = Tempus::createStepperForwardEuler(explicitModel, Teuchos::null);
+  auto subStepper2 = Tempus::createStepperBackwardEuler(implicitModel, Teuchos::null);
 
   stepper->addStepper(subStepper1);
   stepper->addStepper(subStepper2);
@@ -86,8 +82,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-  stepper->getModel()->getNominalValues();
+  auto inArgsIC = stepper->getModel()->getNominalValues();
   auto icX    = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icState = Tempus::createSolutionStateX(icX, icXDot);
@@ -106,8 +101,8 @@ TEUCHOS_UNIT_TEST(OperatorSplit, ConstructingFromDefaults)
 
   // Setup Integrator -----------------------------------------
   RCP<Tempus::IntegratorBasic<double> > integrator =
-    Tempus::integratorBasic<double>();
-  integrator->setStepperWStepper(stepper);
+    Tempus::createIntegratorBasic<double>();
+  integrator->setStepper(stepper);
   integrator->setTimeStepControl(timeStepControl);
   integrator->setSolutionHistory(solutionHistory);
   //integrator->setObserver(...);
@@ -178,7 +173,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
     RCP<ParameterList> pl = sublist(pList, "Tempus", true);
     pl->sublist("Demo Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, models);
+    integrator = Tempus::createIntegratorBasic<double>(pl, models);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -202,7 +197,7 @@ TEUCHOS_UNIT_TEST(OperatorSplit, VanDerPol)
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == 0) or (n == nTimeStepSizes-1)) {
+    if ((n == 0) || (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_OperatorSplit_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_OperatorSplit_VanDerPol.dat";
       RCP<const SolutionHistory<double> > solutionHistory =

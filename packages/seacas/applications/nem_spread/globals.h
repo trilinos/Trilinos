@@ -1,7 +1,7 @@
 #ifndef GLOBALS_H
 #define GLOBALS_H
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -9,7 +9,9 @@
  */
 
 #include <cstdlib>
+#include <exodusII.h>
 #include <rf_allo.h>
+#include <vector>
 
 /*---------------------------------------------------------------------------*/
 /*      STRUCTURES FOR COMMUNICATION MAPS                                    */
@@ -53,6 +55,7 @@ public:
   int Num_Info_Recs{0}; /* Number of Info records in original file     */
 
   int Num_Coordinate_Frames{0};
+  int Num_Assemblies{0};
 
   /*---------------------------------------------------------------------------*/
   /*    VARIABLES THAT DEAL WITH SPECIFICATION OF LOAD BALANCE PROPERTIES      */
@@ -341,6 +344,8 @@ public:
   INT * Coordinate_Frame_Ids{nullptr};
   T *   Coordinate_Frame_Coordinates{nullptr};
   char *Coordinate_Frame_Tags{nullptr};
+
+  std::vector<ex_assembly> Assemblies{};
 
   Globals() = default;
 

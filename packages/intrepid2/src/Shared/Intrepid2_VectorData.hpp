@@ -61,11 +61,11 @@ namespace Intrepid2 {
  
  Typically, HDIV and HCURL bases have multiple families corresponding to the nonzero structure of the vector components.  VectorData therefore supports multiple families.  (Gradients of H^1 are expressed as a single family.)
 */
-  template<class Scalar, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename DeviceType>
   class VectorData
   {
   public:
-    using VectorArray = Kokkos::Array< TensorData<Scalar,ExecSpaceType>, Parameters::MaxTensorComponents>; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
+    using VectorArray = Kokkos::Array< TensorData<Scalar,DeviceType>, Parameters::MaxTensorComponents>; // for axis-aligned case, these correspond entry-wise to the axis with which the vector values align
     using FamilyVectorArray = Kokkos::Array< VectorArray, Parameters::MaxTensorComponents>;
 
     FamilyVectorArray vectorComponents_; // outer: family ordinal; inner: component/spatial dimension ordinal
@@ -176,7 +176,7 @@ namespace Intrepid2 {
      Outer dimension: number of families; inner dimension: number of components in each vector.  Use empty/invalid TensorData objects to indicate zeroes.  Each family, and each vector component dimension, must have at least one valid entry, and the number of points in each valid entry must agree with each other.  The field count within components of a family must also agree; across families these may differ.  Vector components are allowed to span multiple spatial dimensions, but when they do, any valid TensorData object in that vector position must agree in the dimension across families.
     */
     template<size_t numFamilies, size_t numComponents>
-    VectorData(Kokkos::Array< Kokkos::Array<TensorData<Scalar,ExecSpaceType>, numComponents>, numFamilies> vectorComponents)
+    VectorData(Kokkos::Array< Kokkos::Array<TensorData<Scalar,DeviceType>, numComponents>, numFamilies> vectorComponents)
     :
     numFamilies_(numFamilies),
     numComponents_(numComponents)
@@ -199,7 +199,7 @@ namespace Intrepid2 {
      
      Outer dimension: number of families; inner dimension: number of components in each vector.  Use empty/invalid TensorData objects to indicate zeroes.  Each family, and each vector component dimension, must have at least one valid entry, and the number of points in each valid entry must agree with each other.  The field count within components of a family must also agree; across families these may differ.  Vector components are allowed to span multiple spatial dimensions, but when they do, any valid TensorData object in that vector position must agree in the dimension across families.
     */
-    VectorData(const std::vector< std::vector<TensorData<Scalar,ExecSpaceType> > > &vectorComponents)
+    VectorData(const std::vector< std::vector<TensorData<Scalar,DeviceType> > > &vectorComponents)
     {
       numFamilies_ = vectorComponents.size();
       INTREPID2_TEST_FOR_EXCEPTION(numFamilies_ <= 0, std::invalid_argument, "numFamilies must be at least 1");
@@ -229,7 +229,7 @@ namespace Intrepid2 {
      For the gradient use case, VectorData will have a single family.  For the HDIV and HCURL use cases, will have the same number of families as there are components in the vectorComponents argument; each family will consist of vectors that have one entry filled, the others zeroes; this is what we mean by "axial components."
     */
     template<size_t numComponents>
-    VectorData(Kokkos::Array< TensorData<Scalar,ExecSpaceType>, numComponents> vectorComponents, bool axialComponents)
+    VectorData(Kokkos::Array< TensorData<Scalar,DeviceType>, numComponents> vectorComponents, bool axialComponents)
     {
       if (axialComponents)
       {
@@ -259,7 +259,7 @@ namespace Intrepid2 {
      
      For the gradient use case, VectorData will have a single family.  For the HDIV and HCURL use cases, will have the same number of families as there are components in the vectorComponents argument; each family will consist of vectors that have one entry filled, the others zeroes; this is what we mean by "axial components."
     */
-    VectorData(std::vector< TensorData<Scalar,ExecSpaceType> > vectorComponents, bool axialComponents)
+    VectorData(std::vector< TensorData<Scalar,DeviceType> > vectorComponents, bool axialComponents)
     : numComponents_(vectorComponents.size())
     {
       if (axialComponents)
@@ -281,9 +281,30 @@ namespace Intrepid2 {
       initialize();
     }
     
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    VectorData(const VectorData<Scalar,OtherDeviceType> &vectorData)
+    :
+    numFamilies_(vectorData.numFamilies()),
+    numComponents_(vectorData.numComponents())
+    {
+      if (vectorData.isValid())
+      {
+        for (unsigned i=0; i<numFamilies_; i++)
+        {
+          for (unsigned j=0; j<numComponents_; j++)
+          {
+            vectorComponents_[i][j] = vectorData.getComponent(i, j);
+          }
+        }
+        initialize();
+      }
+    }
+    
     //! copy-like constructor for differing execution spaces.  This does a deep copy of underlying views.
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    VectorData(const VectorData<Scalar,OtherExecSpaceType> &vectorData)
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
+    VectorData(const VectorData<Scalar,OtherDeviceType> &vectorData)
     :
     numFamilies_(vectorData.numFamilies()),
     numComponents_(vectorData.numComponents())
@@ -302,15 +323,15 @@ namespace Intrepid2 {
     }
     
     //! Simple 1-argument constructor for the case of trivial tensor product structure.  The argument should have shape (F,P,D) where D has extent equal to the spatial dimension.
-    VectorData(TensorData<Scalar,ExecSpaceType> data)
+    VectorData(TensorData<Scalar,DeviceType> data)
     :
-    VectorData(Kokkos::Array< TensorData<Scalar,ExecSpaceType>, 1>(data), true)
+    VectorData(Kokkos::Array< TensorData<Scalar,DeviceType>, 1>(data), true)
     {}
     
     //! Simple 1-argument constructor for the case of trivial tensor product structure.  The argument should have shape (F,P,D) where D has extent equal to the spatial dimension.
-    VectorData(Data<Scalar,ExecSpaceType> data)
+    VectorData(Data<Scalar,DeviceType> data)
     :
-    VectorData(Kokkos::Array< TensorData<Scalar,ExecSpaceType>, 1>({TensorData<Scalar,ExecSpaceType>(data)}), true)
+    VectorData(Kokkos::Array< TensorData<Scalar,DeviceType>, 1>({TensorData<Scalar,DeviceType>(data)}), true)
     {}
     
     //! default constructor; results in an invalid container.
@@ -418,7 +439,7 @@ namespace Intrepid2 {
      \param [in] componentOrdinal - the vector component ordinal.
     */
     KOKKOS_INLINE_FUNCTION
-    const TensorData<Scalar,ExecSpaceType> & getComponent(const int &componentOrdinal) const
+    const TensorData<Scalar,DeviceType> & getComponent(const int &componentOrdinal) const
     {
       if (axialComponents_)
       {
@@ -442,7 +463,7 @@ namespace Intrepid2 {
      \param [in] componentOrdinal - the vector component ordinal.
     */
     KOKKOS_INLINE_FUNCTION
-    const TensorData<Scalar,ExecSpaceType> & getComponent(const int &familyOrdinal, const int &componentOrdinal) const
+    const TensorData<Scalar,DeviceType> & getComponent(const int &familyOrdinal, const int &componentOrdinal) const
     {
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(familyOrdinal < 0, std::invalid_argument, "familyOrdinal must be non-negative");
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(static_cast<unsigned>(familyOrdinal) >= numFamilies_, std::invalid_argument, "familyOrdinal out of bounds");

@@ -244,15 +244,15 @@ COMM mpi
 NUM_MPI_PROCS 4
 )
 
-#IF(ShyLU_DDFROSch_ENABLE_MueLu)
-#  TRIBITS_ADD_TEST(
-#  thyra_xpetra_laplace
-#  NAME test_thyra_xpetra_laplace_TLP_GDSW_MUELU_DIM2_DPN2_ORD1_EPETRA
-#  ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_muelu.xml --USEEPETRA"
-#  COMM mpi
-#  NUM_MPI_PROCS 4
-#  )
-#ENDIF() # IF(ShyLU_DDFROSch_ENABLE_MueLu)
+IF(ShyLU_DDFROSch_ENABLE_MueLu)
+  TRIBITS_ADD_TEST(
+  thyra_xpetra_laplace
+  NAME test_thyra_xpetra_laplace_TLP_GDSW_MUELU_DIM2_DPN2_ORD1_EPETRA
+  ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_muelu.xml --USEEPETRA"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  )
+ENDIF() # IF(ShyLU_DDFROSch_ENABLE_MueLu)
 
 TRIBITS_ADD_TEST(
 thyra_xpetra_laplace
@@ -305,15 +305,15 @@ COMM mpi
 NUM_MPI_PROCS 4
 )
 
-#IF(ShyLU_DDFROSch_ENABLE_MueLu)
-#  TRIBITS_ADD_TEST(
-#  thyra_xpetra_laplace
-#  NAME test_thyra_xpetra_laplace_TLP_GDSW_MUELU_DIM2_DPN2_ORD1_TPETRA
-#  ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_muelu.xml --USETPETRA"
-#  COMM mpi
-#  NUM_MPI_PROCS 4
-#  )
-#ENDIF() # IF(ShyLU_DDFROSch_ENABLE_MueLu)
+IF(ShyLU_DDFROSch_ENABLE_MueLu)
+  TRIBITS_ADD_TEST(
+  thyra_xpetra_laplace
+  NAME test_thyra_xpetra_laplace_TLP_GDSW_MUELU_DIM2_DPN2_ORD1_TPETRA
+  ARGS "--M=3 --DIM=2 --O=1 --NB=1 --DPN=2 --ORD=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_GDSW_muelu.xml --USETPETRA"
+  COMM mpi
+  NUM_MPI_PROCS 4
+  )
+ENDIF() # IF(ShyLU_DDFROSch_ENABLE_MueLu)
 
 TRIBITS_ADD_TEST(
 thyra_xpetra_laplace

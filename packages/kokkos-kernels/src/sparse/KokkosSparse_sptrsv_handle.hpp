@@ -222,11 +222,11 @@ public:
   using integer_view_t = Kokkos::View<int*, supercols_memory_space>;
   using integer_view_host_t = Kokkos::View<int*, supercols_host_memory_space>;
 
-  using workspace_t = typename Kokkos::View<scalar_t*, supercols_memory_space>;
+  using workspace_t = typename Kokkos::View<scalar_t*, Kokkos::Device<execution_space, supercols_memory_space>>;
 
   //
   using host_crsmat_t = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, supercols_host_execution_space, void, size_type>;
-  using crsmat_t      = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t,                execution_space, void, size_type>;
+  using crsmat_t      = KokkosSparse::CrsMatrix<scalar_t, nnz_lno_t, Kokkos::Device<execution_space, PersistentMemorySpace>, void, size_type>;
 
   //
   using host_graph_t = typename host_crsmat_t::StaticCrsGraphType;

@@ -168,20 +168,20 @@ namespace Intrepid2 {
      - BLOCK_PLUS_DIAGONAL: the data varies in this notional dimension and one other, corresponding to a square matrix that has some (possibly trivial) full block, with diagonal entries in the remaining dimensions.  The underlying View will have one dimension corresponding to the two notional dimensions, with extent corresponding to the number of nonzeros in the matrix.
      
   */
-  template<class DataScalar,typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class DataScalar,typename DeviceType>
   class Data {
   public:
     using value_type      = DataScalar;
-    using execution_space = ExecSpaceType;
+    using execution_space = typename DeviceType::execution_space;
   private:
     ordinal_type dataRank_;
-    Kokkos::View<DataScalar*,       ExecSpaceType> data1_;  // the rank 1 data that is explicitly stored
-    Kokkos::View<DataScalar**,      ExecSpaceType> data2_;  // the rank 2 data that is explicitly stored
-    Kokkos::View<DataScalar***,     ExecSpaceType> data3_;  // the rank 3 data that is explicitly stored
-    Kokkos::View<DataScalar****,    ExecSpaceType> data4_;  // the rank 4 data that is explicitly stored
-    Kokkos::View<DataScalar*****,   ExecSpaceType> data5_;  // the rank 5 data that is explicitly stored
-    Kokkos::View<DataScalar******,  ExecSpaceType> data6_;  // the rank 6 data that is explicitly stored
-    Kokkos::View<DataScalar*******, ExecSpaceType> data7_;  // the rank 7 data that is explicitly stored
+    Kokkos::View<DataScalar*,       DeviceType> data1_;  // the rank 1 data that is explicitly stored
+    Kokkos::View<DataScalar**,      DeviceType> data2_;  // the rank 2 data that is explicitly stored
+    Kokkos::View<DataScalar***,     DeviceType> data3_;  // the rank 3 data that is explicitly stored
+    Kokkos::View<DataScalar****,    DeviceType> data4_;  // the rank 4 data that is explicitly stored
+    Kokkos::View<DataScalar*****,   DeviceType> data5_;  // the rank 5 data that is explicitly stored
+    Kokkos::View<DataScalar******,  DeviceType> data6_;  // the rank 6 data that is explicitly stored
+    Kokkos::View<DataScalar*******, DeviceType> data7_;  // the rank 7 data that is explicitly stored
     Kokkos::Array<int,7> extents_;                     // logical extents in each dimension
     Kokkos::Array<DataVariationType,7> variationType_; // for each dimension, whether the data varies in that dimension
     Kokkos::Array<int,7> variationModulus_;            // for each dimension, a value by which indices should be modulused (only used when variationType_ is MODULAR)
@@ -194,12 +194,12 @@ namespace Intrepid2 {
     
     ordinal_type rank_;
     
-    using reference_type       = typename ScalarView<DataScalar,ExecSpaceType>::reference_type;
-    using const_reference_type = typename ScalarView<const DataScalar,ExecSpaceType>::reference_type;
+    using reference_type       = typename ScalarView<DataScalar,DeviceType>::reference_type;
+    using const_reference_type = typename ScalarView<const DataScalar,DeviceType>::reference_type;
     // we use reference_type as the return for operator() for performance reasons, especially significant when using Sacado types
     using return_type = const_reference_type;
     
-    ScalarView<DataScalar,ExecSpaceType> zeroView_; // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
+    ScalarView<DataScalar,DeviceType> zeroView_; // one-entry (zero); used to allow getEntry() to return 0 for off-diagonal entries in BLOCK_PLUS_DIAGONAL
     
     //! Returns the number of non-diagonal entries based on the last non-diagonal.  Only applicable for BLOCK_PLUS_DIAGONAL DataVariationType.
     KOKKOS_INLINE_FUNCTION
@@ -249,7 +249,7 @@ namespace Intrepid2 {
       }
       
       // by default, this should initialize with zero -- no need to deep_copy a 0 into it
-      zeroView_ = ScalarView<DataScalar,ExecSpaceType>("zero",1);
+      zeroView_ = ScalarView<DataScalar,DeviceType>("zero",1);
       
       numActiveDims_ = 0;
       int blockPlusDiagonalCount = 0;
@@ -449,7 +449,7 @@ namespace Intrepid2 {
     static void copyContainer(ToContainer to, FromContainer from)
     {
 //      std::cout << "Entered copyContainer().\n";
-      auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<6>>({0,0,0,0,0,0},{from.extent_int(0),from.extent_int(1),from.extent_int(2), from.extent_int(3), from.extent_int(4), from.extent_int(5)});
+      auto policy = Kokkos::MDRangePolicy<execution_space,Kokkos::Rank<6>>({0,0,0,0,0,0},{from.extent_int(0),from.extent_int(1),from.extent_int(2), from.extent_int(3), from.extent_int(4), from.extent_int(5)});
       
       Kokkos::parallel_for("copyContainer", policy,
       KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
@@ -461,18 +461,18 @@ namespace Intrepid2 {
     }
     
     //! allocate an underlying View that matches the provided DynRankView in dimensions, and copy.  Called by constructors that accept a DynRankView as argument.
-    void allocateAndCopyFromDynRankView(ScalarView<DataScalar,ExecSpaceType> data)
+    void allocateAndCopyFromDynRankView(ScalarView<DataScalar,DeviceType> data)
     {
 //      std::cout << "Entered allocateAndCopyFromDynRankView().\n";
       switch (dataRank_)
       {
-        case 1: data1_ = Kokkos::View<DataScalar*,       ExecSpaceType>("Intrepid2 Data", data.extent_int(0)); break;
-        case 2: data2_ = Kokkos::View<DataScalar**,      ExecSpaceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1)); break;
-        case 3: data3_ = Kokkos::View<DataScalar***,     ExecSpaceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2)); break;
-        case 4: data4_ = Kokkos::View<DataScalar****,    ExecSpaceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3)); break;
-        case 5: data5_ = Kokkos::View<DataScalar*****,   ExecSpaceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3), data.extent_int(4)); break;
-        case 6: data6_ = Kokkos::View<DataScalar******,  ExecSpaceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3), data.extent_int(4), data.extent_int(5)); break;
-        case 7: data7_ = Kokkos::View<DataScalar*******, ExecSpaceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3), data.extent_int(4), data.extent_int(5), data.extent_int(6)); break;
+        case 1: data1_ = Kokkos::View<DataScalar*,       DeviceType>("Intrepid2 Data", data.extent_int(0)); break;
+        case 2: data2_ = Kokkos::View<DataScalar**,      DeviceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1)); break;
+        case 3: data3_ = Kokkos::View<DataScalar***,     DeviceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2)); break;
+        case 4: data4_ = Kokkos::View<DataScalar****,    DeviceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3)); break;
+        case 5: data5_ = Kokkos::View<DataScalar*****,   DeviceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3), data.extent_int(4)); break;
+        case 6: data6_ = Kokkos::View<DataScalar******,  DeviceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3), data.extent_int(4), data.extent_int(5)); break;
+        case 7: data7_ = Kokkos::View<DataScalar*******, DeviceType>("Intrepid2 Data", data.extent_int(0), data.extent_int(1), data.extent_int(2), data.extent_int(3), data.extent_int(4), data.extent_int(5), data.extent_int(6)); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
       
@@ -490,7 +490,7 @@ namespace Intrepid2 {
     }
     
     //! DynRankView constructor.  Will copy to a View of appropriate rank.
-    Data(const ScalarView<DataScalar,ExecSpaceType> &data, int rank, Kokkos::Array<int,7> extents, Kokkos::Array<DataVariationType,7> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(const ScalarView<DataScalar,DeviceType> &data, int rank, Kokkos::Array<int,7> extents, Kokkos::Array<DataVariationType,7> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank()), extents_(extents), variationType_(variationType), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -498,9 +498,10 @@ namespace Intrepid2 {
       setActiveDims();
     }
     
-    //! copy-like constructor for differing execution spaces.  This does a deep_copy of the underlying view.
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    Data(const Data<DataScalar,OtherExecSpaceType> &data)
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    Data(const Data<DataScalar,OtherDeviceType> &data)
     :
     dataRank_(data.getUnderlyingViewRank()), extents_(data.getExtents()), variationType_(data.getVariationTypes()), blockPlusDiagonalLastNonDiagonal_(data.blockPlusDiagonalLastNonDiagonal()), rank_(data.rank())
     {
@@ -510,20 +511,45 @@ namespace Intrepid2 {
         const auto view = data.getUnderlyingView();
         switch (dataRank_)
         {
-          case 1: data1_ = Kokkos::View<DataScalar*,       ExecSpaceType>("Intrepid2 Data", view.extent_int(0)); break;
-          case 2: data2_ = Kokkos::View<DataScalar**,      ExecSpaceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1)); break;
-          case 3: data3_ = Kokkos::View<DataScalar***,     ExecSpaceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2)); break;
-          case 4: data4_ = Kokkos::View<DataScalar****,    ExecSpaceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3)); break;
-          case 5: data5_ = Kokkos::View<DataScalar*****,   ExecSpaceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4)); break;
-          case 6: data6_ = Kokkos::View<DataScalar******,  ExecSpaceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5)); break;
-          case 7: data7_ = Kokkos::View<DataScalar*******, ExecSpaceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5), view.extent_int(6)); break;
+          case 1: data1_ = data.getUnderlyingView1(); break;
+          case 2: data2_ = data.getUnderlyingView2(); break;
+          case 3: data3_ = data.getUnderlyingView3(); break;
+          case 4: data4_ = data.getUnderlyingView4(); break;
+          case 5: data5_ = data.getUnderlyingView5(); break;
+          case 6: data6_ = data.getUnderlyingView6(); break;
+          case 7: data7_ = data.getUnderlyingView7(); break;
+          default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
+        }
+      }
+      setActiveDims();
+    }
+    
+    //! copy-like constructor for differing execution spaces.  This does a deep_copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
+    Data(const Data<DataScalar,OtherDeviceType> &data)
+    :
+    dataRank_(data.getUnderlyingViewRank()), extents_(data.getExtents()), variationType_(data.getVariationTypes()), blockPlusDiagonalLastNonDiagonal_(data.blockPlusDiagonalLastNonDiagonal()), rank_(data.rank())
+    {
+//      std::cout << "Entered copy-like Data constructor.\n";
+      if (dataRank_ != 0) // dataRank_ == 0 indicates an invalid Data object (a placeholder, can indicate zero value)
+      {
+        const auto view = data.getUnderlyingView();
+        switch (dataRank_)
+        {
+          case 1: data1_ = Kokkos::View<DataScalar*,       DeviceType>("Intrepid2 Data", view.extent_int(0)); break;
+          case 2: data2_ = Kokkos::View<DataScalar**,      DeviceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1)); break;
+          case 3: data3_ = Kokkos::View<DataScalar***,     DeviceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2)); break;
+          case 4: data4_ = Kokkos::View<DataScalar****,    DeviceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3)); break;
+          case 5: data5_ = Kokkos::View<DataScalar*****,   DeviceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4)); break;
+          case 6: data6_ = Kokkos::View<DataScalar******,  DeviceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5)); break;
+          case 7: data7_ = Kokkos::View<DataScalar*******, DeviceType>("Intrepid2 Data", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5), view.extent_int(6)); break;
           default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
         }
         
         // copy
         // (Note: Kokkos::deep_copy() will not generally work if the layouts are different; that's why we do a manual copy here once we have the data on the host):
         // first, mirror and copy dataView; then copy to the appropriate data_ member
-        using MemorySpace = typename ExecSpaceType::memory_space;
+        using MemorySpace = typename DeviceType::memory_space;
         switch (dataRank_)
         {
           case 1: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView1()); copyContainer(data1_, dataViewMirror);} break;
@@ -550,20 +576,20 @@ namespace Intrepid2 {
 //        const auto view = data.getUnderlyingView();
 //        switch (dataRank_)
 //        {
-//          case 1: data1_ = Kokkos::View<DataScalar*,       ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0)); break;
-//          case 2: data2_ = Kokkos::View<DataScalar**,      ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1)); break;
-//          case 3: data3_ = Kokkos::View<DataScalar***,     ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2)); break;
-//          case 4: data4_ = Kokkos::View<DataScalar****,    ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3)); break;
-//          case 5: data5_ = Kokkos::View<DataScalar*****,   ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4)); break;
-//          case 6: data6_ = Kokkos::View<DataScalar******,  ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5)); break;
-//          case 7: data7_ = Kokkos::View<DataScalar*******, ExecSpaceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5), view.extent_int(6)); break;
+//          case 1: data1_ = Kokkos::View<DataScalar*,       DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0)); break;
+//          case 2: data2_ = Kokkos::View<DataScalar**,      DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1)); break;
+//          case 3: data3_ = Kokkos::View<DataScalar***,     DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2)); break;
+//          case 4: data4_ = Kokkos::View<DataScalar****,    DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3)); break;
+//          case 5: data5_ = Kokkos::View<DataScalar*****,   DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4)); break;
+//          case 6: data6_ = Kokkos::View<DataScalar******,  DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5)); break;
+//          case 7: data7_ = Kokkos::View<DataScalar*******, DeviceType>("Intrepid2 Data - explicit copy constructor(for debugging)", view.extent_int(0), view.extent_int(1), view.extent_int(2), view.extent_int(3), view.extent_int(4), view.extent_int(5), view.extent_int(6)); break;
 //          default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
 //        }
 //
 //        // copy
 //        // (Note: Kokkos::deep_copy() will not generally work if the layouts are different; that's why we do a manual copy here once we have the data on the host):
 //        // first, mirror and copy dataView; then copy to the appropriate data_ member
-//        using MemorySpace = typename ExecSpaceType::memory_space;
+//        using MemorySpace = typename DeviceType::memory_space;
 //        switch (dataRank_)
 //        {
 //          case 1: {auto dataViewMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), data.getUnderlyingView1()); copyContainer(data1_, dataViewMirror);} break;
@@ -581,7 +607,7 @@ namespace Intrepid2 {
 //    }
     
     //! constructor for fully varying data container, no expressed redundancy/repetition.  Copies the data to a new Kokkos::View of matching rank.
-    Data(ScalarView<DataScalar,ExecSpaceType> data)
+    Data(ScalarView<DataScalar,DeviceType> data)
     :
     Data(data,
          data.rank(),
@@ -591,7 +617,7 @@ namespace Intrepid2 {
     
     //! Constructor that accepts a DynRankView as an argument.  The data belonging to the DynRankView will be copied into a new View of matching dimensions.
     template<size_t rank, class ...DynRankViewProperties>
-    Data(const Kokkos::DynRankView<DataScalar,ExecSpaceType, DynRankViewProperties...> &data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(const Kokkos::DynRankView<DataScalar,DeviceType, DynRankViewProperties...> &data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank()), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -606,7 +632,7 @@ namespace Intrepid2 {
     }
         
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar*,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar*,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -620,7 +646,7 @@ namespace Intrepid2 {
     }
     
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar**,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar**,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -634,7 +660,7 @@ namespace Intrepid2 {
     }
     
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar***,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar***,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -648,7 +674,7 @@ namespace Intrepid2 {
     }
     
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar****,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar****,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -662,7 +688,7 @@ namespace Intrepid2 {
     }
     
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar*****,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar*****,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -676,7 +702,7 @@ namespace Intrepid2 {
     }
     
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar******,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar******,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -690,7 +716,7 @@ namespace Intrepid2 {
     }
     
     template<size_t rank, class ...ViewProperties>
-    Data(Kokkos::View<DataScalar*******,ExecSpaceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
+    Data(Kokkos::View<DataScalar*******,DeviceType, ViewProperties...> data, Kokkos::Array<int,rank> extents, Kokkos::Array<DataVariationType,rank> variationType, const int blockPlusDiagonalLastNonDiagonal = -1)
     :
     dataRank_(data.rank), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(blockPlusDiagonalLastNonDiagonal), rank_(rank)
     {
@@ -709,7 +735,7 @@ namespace Intrepid2 {
     :
     dataRank_(1), extents_({1,1,1,1,1,1,1}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(-1), rank_(rank)
     {
-      data1_ = Kokkos::View<DataScalar*,ExecSpaceType>("Constant Data",1);
+      data1_ = Kokkos::View<DataScalar*,DeviceType>("Constant Data",1);
       Kokkos::deep_copy(data1_, constantValue);
       for (unsigned d=0; d<rank; d++)
       {
@@ -771,7 +797,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 1.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==1, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==1, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -783,7 +809,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 2.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==2, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==2, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -795,7 +821,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 3.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==3, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==3, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -807,7 +833,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 4.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==4, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==4, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -819,7 +845,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 5.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==5, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==5, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -831,7 +857,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 6.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==6, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==6, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -843,7 +869,7 @@ namespace Intrepid2 {
     //! Returns the underlying view.  Throws an exception if the underlying view is not rank 7.
     template<int rank>
     KOKKOS_INLINE_FUNCTION
-    enable_if_t<rank==7, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, ExecSpaceType> &>
+    enable_if_t<rank==7, const Kokkos::View<typename RankExpander<DataScalar, rank>::value_type, DeviceType> &>
     getUnderlyingView() const
     {
       #ifdef HAVE_INTREPID2_DEBUG
@@ -854,104 +880,104 @@ namespace Intrepid2 {
     
     //! returns the View that stores the unique data.  For rank-1 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar*, ExecSpaceType> & getUnderlyingView1() const
+    const Kokkos::View<DataScalar*, DeviceType> & getUnderlyingView1() const
     {
       return getUnderlyingView<1>();
     }
     
     //! returns the View that stores the unique data.  For rank-2 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar**, ExecSpaceType> & getUnderlyingView2() const
+    const Kokkos::View<DataScalar**, DeviceType> & getUnderlyingView2() const
     {
       return getUnderlyingView<2>();
     }
     
     //! returns the View that stores the unique data.  For rank-3 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar***, ExecSpaceType> & getUnderlyingView3() const
+    const Kokkos::View<DataScalar***, DeviceType> & getUnderlyingView3() const
     {
       return getUnderlyingView<3>();
     }
     
     //! returns the View that stores the unique data.  For rank-4 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar****, ExecSpaceType> & getUnderlyingView4() const
+    const Kokkos::View<DataScalar****, DeviceType> & getUnderlyingView4() const
     {
       return getUnderlyingView<4>();
     }
     
     //! returns the View that stores the unique data.  For rank-5 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar*****, ExecSpaceType> & getUnderlyingView5() const
+    const Kokkos::View<DataScalar*****, DeviceType> & getUnderlyingView5() const
     {
       return getUnderlyingView<5>();
     }
     
     //! returns the View that stores the unique data.  For rank-6 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar******, ExecSpaceType> & getUnderlyingView6() const
+    const Kokkos::View<DataScalar******, DeviceType> & getUnderlyingView6() const
     {
       return getUnderlyingView<6>();
     }
     
     //! returns the View that stores the unique data.  For rank-7 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    const Kokkos::View<DataScalar*******, ExecSpaceType> & getUnderlyingView7() const
+    const Kokkos::View<DataScalar*******, DeviceType> & getUnderlyingView7() const
     {
       return getUnderlyingView<7>();
     }
     
     //! sets the View that stores the unique data.  For rank-1 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView1(Kokkos::View<DataScalar*, ExecSpaceType> & view) const
+    void setUnderlyingView1(Kokkos::View<DataScalar*, DeviceType> & view) const
     {
       data1_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-2 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView2(Kokkos::View<DataScalar**, ExecSpaceType> & view) const
+    void setUnderlyingView2(Kokkos::View<DataScalar**, DeviceType> & view) const
     {
       data2_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-3 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView3(Kokkos::View<DataScalar***, ExecSpaceType> & view) const
+    void setUnderlyingView3(Kokkos::View<DataScalar***, DeviceType> & view) const
     {
       data3_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-4 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView4(Kokkos::View<DataScalar****, ExecSpaceType> & view) const
+    void setUnderlyingView4(Kokkos::View<DataScalar****, DeviceType> & view) const
     {
       data4_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-5 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView5(Kokkos::View<DataScalar*****, ExecSpaceType> & view) const
+    void setUnderlyingView5(Kokkos::View<DataScalar*****, DeviceType> & view) const
     {
       data5_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-6 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView6(Kokkos::View<DataScalar******, ExecSpaceType> & view) const
+    void setUnderlyingView6(Kokkos::View<DataScalar******, DeviceType> & view) const
     {
       data6_ = view;
     }
     
     //! sets the View that stores the unique data.  For rank-7 underlying containers.
     KOKKOS_INLINE_FUNCTION
-    void setUnderlyingView7(Kokkos::View<DataScalar*******, ExecSpaceType> & view) const
+    void setUnderlyingView7(Kokkos::View<DataScalar*******, DeviceType> & view) const
     {
       data7_ = view;
     }
     
     //! Returns a DynRankView constructed atop the same underlying data as the fixed-rank Kokkos::View used internally.
-    ScalarView<DataScalar,ExecSpaceType> getUnderlyingView() const
+    ScalarView<DataScalar,DeviceType> getUnderlyingView() const
     {
       switch (dataRank_)
       {
@@ -986,7 +1012,7 @@ namespace Intrepid2 {
     }
     
     //! Returns a DynRankView that matches the underlying Kokkos::View object in value_type, layout, and dimension.
-    ScalarView<DataScalar,ExecSpaceType> allocateDynRankViewMatchingUnderlying() const
+    ScalarView<DataScalar,DeviceType> allocateDynRankViewMatchingUnderlying() const
     {
       switch (dataRank_)
       {
@@ -1003,7 +1029,7 @@ namespace Intrepid2 {
     
     //! Returns a DynRankView that matches the underlying Kokkos::View object value_type and layout, but with the specified dimensions.
     template<class ... DimArgs>
-    ScalarView<DataScalar,ExecSpaceType> allocateDynRankViewMatchingUnderlying(DimArgs... dims) const
+    ScalarView<DataScalar,DeviceType> allocateDynRankViewMatchingUnderlying(DimArgs... dims) const
     {
       switch (dataRank_)
       {
@@ -1035,7 +1061,7 @@ namespace Intrepid2 {
     }
     
     //! Copies from the provided DynRankView into the underlying Kokkos::View container storing the unique data.
-    void copyDataFromDynRankViewMatchingUnderlying(const ScalarView<DataScalar,ExecSpaceType> &dynRankView) const
+    void copyDataFromDynRankViewMatchingUnderlying(const ScalarView<DataScalar,DeviceType> &dynRankView) const
     {
 //      std::cout << "Entered copyDataFromDynRankViewMatchingUnderlying().\n";
       switch (dataRank_)
@@ -1306,7 +1332,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION constexpr
     typename std::enable_if<std::is_integral<iType>::value, size_t>::type
     extent(const iType& r) const {
-      return extents_(r);
+      return extents_[r];
     }
     
     //! returns true for containers that have two dimensions marked as BLOCK_PLUS_DIAGONAL for which the non-diagonal block is empty or size 1.
@@ -1332,7 +1358,7 @@ namespace Intrepid2 {
     //! \param transposeA                                          [in] - if true, A will be transposed prior to being multiplied by B (or B's transpose).
     //! \param B_MatData                                            [in] - nominally (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
     //! \param transposeB                                          [in] - if true, B will be transposed prior to the multiplication by A (or A's transpose).
-    static Data<DataScalar,ExecSpaceType> allocateMatMatResult( const bool transposeA, const Data<DataScalar,ExecSpaceType> &A_MatData, const bool transposeB, const Data<DataScalar,ExecSpaceType> &B_MatData )
+    static Data<DataScalar,DeviceType> allocateMatMatResult( const bool transposeA, const Data<DataScalar,DeviceType> &A_MatData, const bool transposeB, const Data<DataScalar,DeviceType> &B_MatData )
     {
       // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A_MatData.rank() != B_MatData.rank(), std::invalid_argument, "AmatData and BmatData have incompatible ranks");
@@ -1468,7 +1494,7 @@ namespace Intrepid2 {
         resultExtents[i]        = 1;
       }
       
-      ScalarView<DataScalar,ExecSpaceType> data;
+      ScalarView<DataScalar,DeviceType> data;
       if (resultNumActiveDims == 1)
       {
         auto viewToMatch = A_MatData.getUnderlyingView1(); // new view will match this one in layout and fad dimension, if any
@@ -1509,12 +1535,12 @@ namespace Intrepid2 {
                                         resultDataDims[3], resultDataDims[4], resultDataDims[5], resultDataDims[6]);
       }
       
-      return Data<DataScalar,ExecSpaceType>(data,resultRank,resultExtents,resultVariationTypes,resultBlockPlusDiagonalLastNonDiagonal);
+      return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes,resultBlockPlusDiagonalLastNonDiagonal);
     }
     
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatVec()
-    static Data<DataScalar,ExecSpaceType> allocateMatVecResult( const Data<DataScalar,ExecSpaceType> &matData, const Data<DataScalar,ExecSpaceType> &vecData )
+    static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
     {
       // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matData.rank() != vecData.rank() + 1, std::invalid_argument, "matData and vecData have incompatible ranks");
@@ -1601,7 +1627,7 @@ namespace Intrepid2 {
         resultExtents[i]        = 1;
       }
       
-      ScalarView<DataScalar,ExecSpaceType> data;
+      ScalarView<DataScalar,DeviceType> data;
       if (resultNumActiveDims == 1)
       {
         data = matData.allocateDynRankViewMatchingUnderlying(resultDataDims[0]);
@@ -1635,11 +1661,11 @@ namespace Intrepid2 {
                                                              resultDataDims[3], resultDataDims[4], resultDataDims[5], resultDataDims[6]);
       }
       
-      return Data<DataScalar,ExecSpaceType>(data,resultRank,resultExtents,resultVariationTypes);
+      return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes);
     }
     
     //! Places the result of a matrix-vector multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatVecResult(), or should match such a container in underlying data extent and variation types.
-    void storeMatVec( const Data<DataScalar,ExecSpaceType> &matData, const Data<DataScalar,ExecSpaceType> &vecData )
+    void storeMatVec( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
     {
       // TODO: add a compile-time (SFINAE-type) guard against DataScalar types that do not support arithmetic operations.  (We support Orientation as a DataScalar type; it might suffice just to compare DataScalar to Orientation, and eliminate this method for that case.)
       // TODO: check for invalidly shaped containers.
@@ -1648,13 +1674,14 @@ namespace Intrepid2 {
       const int matCols = matData.extent_int(matData.rank() - 1);
       
       // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
-      Data<DataScalar,ExecSpaceType> thisData = *this;
+      Data<DataScalar,DeviceType> thisData = *this;
       
+      using ExecutionSpace = typename DeviceType::execution_space;
       // note the use of getDataExtent() below: we only range over the possibly-distinct entries
       if (rank_ == 3)
       {
         // typical case for e.g. gradient data: (C,P,D)
-        auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),matRows});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),matRows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &i) {
           auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i, 0, 0, 0, 0);
@@ -1668,7 +1695,7 @@ namespace Intrepid2 {
       else if (rank_ == 2)
       {
         //
-        auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{getDataExtent(0),matRows});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),matRows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &vectorOrdinal, const int &i) {
           auto & val_i = thisData.getWritableEntry(vectorOrdinal, i, 0, 0, 0, 0, 0);
@@ -1682,7 +1709,7 @@ namespace Intrepid2 {
       else if (rank_ == 1)
       {
         // single-vector case
-        Kokkos::RangePolicy<ExecSpaceType> policy(0,matRows);
+        Kokkos::RangePolicy<ExecutionSpace> policy(0,matRows);
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &i) {
           auto & val_i = thisData.getWritableEntry(i, 0, 0, 0, 0, 0, 0);
@@ -1706,7 +1733,7 @@ namespace Intrepid2 {
     //! \param transposeA                                          [in] - if true, A will be transposed prior to being multiplied by B (or B's transpose).
     //! \param B_MatData                                            [in] - nominally (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
     //! \param transposeB                                          [in] - if true, B will be transposed prior to the multiplication by A (or A's transpose).
-    void storeMatMat( const bool transposeA, const Data<DataScalar,ExecSpaceType> &A_MatData, const bool transposeB, const Data<DataScalar,ExecSpaceType> &B_MatData )
+    void storeMatMat( const bool transposeA, const Data<DataScalar,DeviceType> &A_MatData, const bool transposeB, const Data<DataScalar,DeviceType> &B_MatData )
     {
       // TODO: add a compile-time (SFINAE-type) guard against DataScalar types that do not support arithmetic operations.  (We support Orientation as a DataScalar type; it might suffice just to compare DataScalar to Orientation, and eliminate this method for that case.)
       // TODO: check for invalidly shaped containers.
@@ -1732,14 +1759,16 @@ namespace Intrepid2 {
 #endif
       
       // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
-      Data<DataScalar,ExecSpaceType> thisData = *this;
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      using ExecutionSpace = typename DeviceType::execution_space;
       
       const int diagonalStart = (variationType_[D1_DIM] == BLOCK_PLUS_DIAGONAL) ? blockPlusDiagonalLastNonDiagonal_ + 1 : leftRows;
       // note the use of getDataExtent() below: we only range over the possibly-distinct entries
       if (rank_ == 3)
       {
         // (C,D,D), say
-        auto policy = Kokkos::RangePolicy<ExecSpaceType>(0,getDataExtent(0));
+        auto policy = Kokkos::RangePolicy<ExecutionSpace>(0,getDataExtent(0));
         Kokkos::parallel_for("compute mat-mat", policy,
         KOKKOS_LAMBDA (const int &matrixOrdinal) {
           for (int i=0; i<diagonalStart; i++)
@@ -1768,7 +1797,7 @@ namespace Intrepid2 {
       else if (rank_ == 4)
       {
         // (C,P,D,D), perhaps
-        auto policy = Kokkos::MDRangePolicy<ExecSpaceType, Kokkos::Rank<2> >({0,0},{getDataExtent(0),getDataExtent(1)});
+        auto policy = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<2> >({0,0},{getDataExtent(0),getDataExtent(1)});
         if (underlyingMatchesNotional_) // receiving data object is completely expanded
         {
           Kokkos::parallel_for("compute mat-mat", policy,

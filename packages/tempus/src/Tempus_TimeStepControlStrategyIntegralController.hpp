@@ -9,7 +9,7 @@
 #ifndef Tempus_TimeStepControlStrategy_IntegralController_hpp
 #define Tempus_TimeStepControlStrategy_IntegralController_hpp
 
-#include "Tempus_TimeStepControl.hpp"
+#include "Tempus_config.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionHistory.hpp"
@@ -151,7 +151,7 @@ public:
     // new (optimal) suggested time step
     dt = beta * dt;
 
-    if (workingState->getSolutionStatus() == Status::PASSED or
+    if (workingState->getSolutionStatus() == Status::PASSED ||
         workingState->getSolutionStatus() == Status::WORKING) {
       if(lastStepRejected_){
          dt = std::min(dt, workingState->getTimeStep());
@@ -233,8 +233,8 @@ public:
     "Error - Invalid value of Minimum Safety Factory= " << facMin_ << "!  \n"
     << "Minimum Safety Factor must be > 0.0.\n");
 
-    TEUCHOS_TEST_FOR_EXCEPTION(((controller_ != "I") and
-                                (controller_ != "PI") and
+    TEUCHOS_TEST_FOR_EXCEPTION(((controller_ != "I") &&
+                                (controller_ != "PI") &&
                                 (controller_ != "PID")), std::invalid_argument,
     "Error - Invalid choice of Controller Type = " << controller_ << "!  \n"
     << "Valid Choice are ['I', 'PI', 'PID'].\n");

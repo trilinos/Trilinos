@@ -112,10 +112,6 @@ namespace panzer {
     setup(const LocalMeshPartition & partition,
           const WorksetOptions & options);
 
-//    void setupNeeds(Teuchos::RCP<const shards::CellTopology> cell_topology,
-//                    const Kokkos::View<double***,PHX::Device> & cell_vertices,
-//                    const panzer::WorksetNeeds & needs);
-
     /// DEPRECATED - use: numCells()
     int num_cells;
 

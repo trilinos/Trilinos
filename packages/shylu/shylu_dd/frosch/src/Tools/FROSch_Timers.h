@@ -52,11 +52,11 @@
 
 #if FROSCH_TIMER_DETAILS > 1
     #ifndef FROSCH_TIMER_START
-        #define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
+        #define FROSCH_TIMER_START(A,S) Teuchos::RCP<Teuchos::TimeMonitor> A = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
     #endif
 
     #ifndef FROSCH_TIMER_START_LEVELID
-        #define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
+        #define FROSCH_TIMER_START_LEVELID(A,S) Teuchos::RCP<Teuchos::TimeMonitor> A = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
     #endif
 
     #ifndef FROSCH_TIMER_STOP
@@ -75,16 +75,20 @@
         #define FROSCH_DETAILTIMER_STOP(A) FROSCH_TIMER_STOP(A);
     #endif
 
+    #ifndef FROSCH_TIMER_START_SOLVER
+        #define FROSCH_TIMER_START_SOLVER(A,S) Teuchos::RCP<Teuchos::TimeMonitor> A = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (" + this->Description_ + std::string(")"))));
+    #endif
+
     #ifndef FROSCH_TIMER_START_SUBDOMAINSOLVER
-        #define FROSCH_TIMER_START_SUBDOMAINSOLVER(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (" + this->Description_ + std::string(")"))));
+        #define FROSCH_TIMER_START_SUBDOMAINSOLVER(A,S) Teuchos::RCP<Teuchos::TimeMonitor> A = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (" + this->Description_ + std::string(")"))));
     #endif
 #elif FROSCH_TIMER_DETAILS == 1
     #ifndef FROSCH_TIMER_START
-        #define FROSCH_TIMER_START(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
+        #define FROSCH_TIMER_START(A,S) Teuchos::RCP<Teuchos::TimeMonitor> A = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S))));
     #endif
 
     #ifndef FROSCH_TIMER_START_LEVELID
-        #define FROSCH_TIMER_START_LEVELID(A,S) RCP<TimeMonitor> A = rcp(new TimeMonitor(*TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
+        #define FROSCH_TIMER_START_LEVELID(A,S) Teuchos::RCP<Teuchos::TimeMonitor> A = rcp(new Teuchos::TimeMonitor(*Teuchos::TimeMonitor::getNewTimer(std::string("FROSch: ") + std::string(S) + " (Level " + std::to_string(this->LevelID_) + std::string(")"))));
     #endif
 
     #ifndef FROSCH_TIMER_STOP
@@ -101,6 +105,10 @@
 
     #ifndef FROSCH_DETAILTIMER_STOP
         #define FROSCH_DETAILTIMER_STOP(A)
+    #endif
+
+    #ifndef FROSCH_TIMER_START_SOLVER
+        #define FROSCH_TIMER_START_SOLVER(A,S)
     #endif
 
     #ifndef FROSCH_TIMER_START_SUBDOMAINSOLVER
@@ -129,6 +137,10 @@
 
     #ifndef FROSCH_DETAILTIMER_STOP
         #define FROSCH_DETAILTIMER_STOP(A)
+    #endif
+
+    #ifndef FROSCH_TIMER_START_SOLVER
+        #define FROSCH_TIMER_START_SOLVER(A,S)
     #endif
 
     #ifndef FROSCH_TIMER_START_SUBDOMAINSOLVER

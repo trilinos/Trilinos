@@ -65,15 +65,20 @@
 #include <Xpetra_BlockedCrsMatrix.hpp>
 #include <Xpetra_CrsMatrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
+#include <Xpetra_TpetraBlockCrsMatrix.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
+
+#include <Tpetra_BlockCrsMatrix_Helpers.hpp>
 
 #include "MueLu_Ifpack2Smoother_decl.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+
+
 
 #ifdef HAVE_MUELU_INTREPID2
 #include "MueLu_IntrepidPCoarsenFactory_decl.hpp"
@@ -82,7 +87,6 @@
 #include "Kokkos_DynRankView.hpp"
 #endif
 
-// #define IFPACK2_HAS_PROPER_REUSE
 
 namespace MueLu {
 
@@ -192,6 +196,31 @@ namespace MueLu {
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Setup(Level& currentLevel) {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
+    ParameterList& paramList = const_cast<ParameterList&>(this->GetParameterList());
+
+    // If the user asked us to convert the matrix into BlockCrsMatrix form, we do that now
+    if(paramList.isParameter("smoother: use blockcrsmatrix storage") && paramList.get<bool>("smoother: use blockcrsmatrix storage") && A_->GetFixedBlockSize()) {
+      // NOTE: Don't think you can move this out of the if block.  You can't. The test MueLu_MeshTyingBlocked_SimpleSmoother_2dof_medium_MPI_1 will fail
+      int blocksize = A_->GetFixedBlockSize();
+      using TpetraBlockCrsMatrix = Xpetra::TpetraBlockCrsMatrix<SC,LO,GO,NO>;
+      RCP<CrsMatrixWrap> AcrsWrap = rcp_dynamic_cast<CrsMatrixWrap>(A_);
+      if(AcrsWrap.is_null()) 
+        throw std::runtime_error("Ifpack2Smoother: Cannot convert matrix A to CrsMatrixWrap object.");
+      RCP<CrsMatrix> Acrs =  AcrsWrap->getCrsMatrix();
+      if(Acrs.is_null()) 
+        throw std::runtime_error("Ifpack2Smoother: Cannot extract CrsMatrix from matrix A.");
+      RCP<TpetraCrsMatrix> At = rcp_dynamic_cast<TpetraCrsMatrix>(Acrs);
+      if(At.is_null()) 
+        throw std::runtime_error("Ifpack2Smoother: Cannot extract TpetraCrsMatrix from matrix A.");
+
+      RCP<Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node> > blockCrs = Tpetra::convertToBlockCrsMatrix(*At->getTpetra_CrsMatrix(),blocksize);
+      RCP<CrsMatrix> blockCrs_as_crs  = rcp(new TpetraBlockCrsMatrix(blockCrs));
+      RCP<CrsMatrixWrap> blockWrap = rcp(new CrsMatrixWrap(blockCrs_as_crs));
+      A_ = blockWrap;
+      this->GetOStream(Statistics0) << "Ifpack2Smoother: Using BlockCrsMatrix storage with blocksize "<<blocksize<<std::endl;
+
+      paramList.remove("smoother: use blockcrsmatrix storage");
+    }
 
     if      (type_ == "SCHWARZ")
       SetupSchwarz(currentLevel);
@@ -266,13 +295,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null() && isTRowMatrix) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available "
             "(either failed cast to CanChangeMatrix, or to Tpetra Row Matrix), reverting to full construction" << std::endl;
@@ -543,13 +567,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null()) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupBlockRelaxation(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;
@@ -703,13 +722,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null()) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupGeneric(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;

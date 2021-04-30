@@ -69,7 +69,7 @@ namespace Intrepid2 {
 
 // the following defines a family of hierarchical basis functions that matches the unpermuted ESEAS basis functions
 // each basis member is associated with appropriate subcell topologies, making this suitable for continuous Galerkin finite elements.
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>
@@ -77,24 +77,24 @@ namespace Intrepid2 {
   {
   public:
     // we will fill these in as we implement them
-    using HGRAD = IntegratedLegendreBasis_HGRAD_TRI<ExecutionSpace,OutputScalar,PointScalar,defineVertexFunctions>;
-    using HCURL = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
-    using HDIV  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
-    using HVOL  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
+    using HGRAD = IntegratedLegendreBasis_HGRAD_TRI<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
+    using HCURL = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HDIV  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
   };
   
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
-  typename OutputScalar = double,
-  typename PointScalar  = double,
-  bool defineVertexFunctions = true>
+  template<typename DeviceType,
+           typename OutputScalar = double,
+           typename PointScalar  = double,
+           bool defineVertexFunctions = true>
   class HierarchicalTetrahedronBasisFamily
   {
   public:
     // we will fill these in as we implement them
-    using HGRAD = IntegratedLegendreBasis_HGRAD_TET<ExecutionSpace,OutputScalar,PointScalar,defineVertexFunctions>;
-    using HCURL = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
-    using HDIV  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
-    using HVOL  = dummyBasis<ExecutionSpace,OutputScalar,PointScalar>;
+    using HGRAD = IntegratedLegendreBasis_HGRAD_TET<DeviceType,OutputScalar,PointScalar,defineVertexFunctions>;
+    using HCURL = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HDIV  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
+    using HVOL  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
   };
   
   /** \class Intrepid2::HierarchicalBasisFamily
@@ -117,13 +117,13 @@ namespace Intrepid2 {
    We have offline tests that verify agreement between our implementation and ESEAS.  We hope to add these to the
    Trilinos continuous integration tests in the future.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
-  using HierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<ExecutionSpace,OutputScalar,PointScalar,true>,
-                                                      LegendreBasis_HVOL_LINE<ExecutionSpace,OutputScalar,PointScalar>,
-                                                      HierarchicalTriangleBasisFamily<ExecutionSpace,OutputScalar,PointScalar>,
-                                                      HierarchicalTetrahedronBasisFamily<ExecutionSpace,OutputScalar,PointScalar>
+  using HierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar,true>,
+                                                      LegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>,
+                                                      HierarchicalTriangleBasisFamily<DeviceType,OutputScalar,PointScalar>,
+                                                      HierarchicalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar>
                                                       >;
   
   /** \class Intrepid2::HierarchicalBasisFamily
@@ -134,13 +134,13 @@ namespace Intrepid2 {
    The suitability of this family for DG contexts is primarily due to the fact that the H(grad) basis has a constant member.  Note also that in this family,
    all members are associated with the cell interior; there are no basis functions associated with subcell topologies.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
-  using DGHierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<ExecutionSpace,OutputScalar,PointScalar,false>,
-                                                        LegendreBasis_HVOL_LINE<ExecutionSpace,OutputScalar,PointScalar>,
-                                                        HierarchicalTriangleBasisFamily<ExecutionSpace,OutputScalar,PointScalar,false>,
-                                                        HierarchicalTetrahedronBasisFamily<ExecutionSpace,OutputScalar,PointScalar,false>
+  using DGHierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar,false>,
+                                                        LegendreBasis_HVOL_LINE<DeviceType,OutputScalar,PointScalar>,
+                                                        HierarchicalTriangleBasisFamily<DeviceType,OutputScalar,PointScalar,false>,
+                                                        HierarchicalTetrahedronBasisFamily<DeviceType,OutputScalar,PointScalar,false>
                                                       >;
   
 }

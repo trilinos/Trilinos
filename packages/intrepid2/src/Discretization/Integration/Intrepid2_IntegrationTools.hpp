@@ -74,7 +74,7 @@ namespace Intrepid2 {
   /** \class Intrepid2::IntegrationTools
       \brief Provides support for structure-aware integration.
   */
-  template<typename ExecSpaceType = void>
+  template<typename DeviceType = void>
   class IntegrationTools {
   public:
     /** \brief   Allocates storage for the contraction of \a <b>vectorDataLeft</b> and \a <b>vectorDataRight</b> containers on
@@ -88,9 +88,9 @@ namespace Intrepid2 {
         \return <b>integrals</b>, a container with nominal shape (C,F,F), suitable for passing as the first argument to the integrate() variant that takes an Intrepid2::Data object as its first, <b>integrals</b>, argument.
     */
     template<class Scalar>
-    static Data<Scalar,ExecSpaceType> allocateIntegralData(const TransformedVectorData<Scalar,ExecSpaceType> vectorDataLeft,
-                                                           const TensorData<Scalar,ExecSpaceType> cellMeasures,
-                                                           const TransformedVectorData<Scalar,ExecSpaceType> vectorDataRight);
+    static Data<Scalar,DeviceType> allocateIntegralData(const TransformedVectorData<Scalar,DeviceType> vectorDataLeft,
+                                                        const TensorData<Scalar,DeviceType> cellMeasures,
+                                                        const TransformedVectorData<Scalar,DeviceType> vectorDataRight);
     
     /** \brief   Contracts \a <b>vectorDataLeft</b> and \a <b>vectorDataRight</b> containers on
         point and space dimensions, weighting each point according to <b>cellMeasures</b>,
@@ -104,9 +104,9 @@ namespace Intrepid2 {
         \param  approxFlops               [in] - if not NULL, the double pointed to will be set with an estimated number of floating point operations.  Intended for performance assessment purposes.
     */
     template<class Scalar>
-    static void integrate(Data<Scalar,ExecSpaceType> integrals, const TransformedVectorData<Scalar,ExecSpaceType> &vectorDataLeft,
-                          const TensorData<Scalar,ExecSpaceType> &cellMeasures,
-                          const TransformedVectorData<Scalar,ExecSpaceType> &vectorDataRight, const bool sumInto = false,
+    static void integrate(Data<Scalar,DeviceType> integrals, const TransformedVectorData<Scalar,DeviceType> &vectorDataLeft,
+                          const TensorData<Scalar,DeviceType> &cellMeasures,
+                          const TransformedVectorData<Scalar,DeviceType> &vectorDataRight, const bool sumInto = false,
                           double* approximateFlops = NULL);
   }; // end IntegrationTools class
 

@@ -64,10 +64,11 @@ namespace Intrepid2
    
    This functor is not intended for use outside of IntegratedLegendreBasis_HGRAD_TET.
   */
-  template<class ExecutionSpace, class OutputScalar, class PointScalar,
+  template<class DeviceType, class OutputScalar, class PointScalar,
            class OutputFieldType, class InputPointsType>
   struct Hierarchical_HGRAD_TET_Functor
   {
+    using ExecutionSpace     = typename DeviceType::execution_space;
     using ScratchSpace        = typename ExecutionSpace::scratch_memory_space;
     using OutputScratchView   = Kokkos::View<OutputScalar*,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
     using OutputScratchView2D = Kokkos::View<OutputScalar**,ScratchSpace,Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
@@ -602,22 +603,25 @@ namespace Intrepid2
                is true, then the first basis function will instead be 1.0-x-y, and the basis will be suitable for
                continuous discretizations.
   */
-  template<typename ExecutionSpace=Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>  // if defineVertexFunctions is true, first four basis functions are 1-x-y-z, x, y, and z.  Otherwise, they are 1, x, y, and z.
   class IntegratedLegendreBasis_HGRAD_TET
-  : public Basis<ExecutionSpace,OutputScalar,PointScalar>
+  : public Basis<DeviceType,OutputScalar,PointScalar>
   {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OrdinalTypeArray2DHost;
+    using BasisBase = Basis<DeviceType,OutputScalar,PointScalar>;
     
-    using OutputViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::OutputViewType;
-    using PointViewType  = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::PointViewType;
-    using ScalarViewType = typename Basis<ExecutionSpace,OutputScalar,PointScalar>::ScalarViewType;
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType ;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
   protected:
     int polyOrder_; // the maximum order of the polynomial
+    EPointType pointType_;
   public:
     /** \brief  Constructor.
         \param [in] polyOrder - the polynomial order of the basis.
@@ -631,7 +635,8 @@ namespace Intrepid2
      */
     IntegratedLegendreBasis_HGRAD_TET(int polyOrder, const EPointType pointType=POINTTYPE_DEFAULT)
     :
-    polyOrder_(polyOrder)
+    polyOrder_(polyOrder),
+    pointType_(pointType)
     {
       INTREPID2_TEST_FOR_EXCEPTION(pointType!=POINTTYPE_DEFAULT,std::invalid_argument,"PointType not supported");
       this->basisCardinality_  = ((polyOrder+1) * (polyOrder+2) * (polyOrder+3)) / 6;
@@ -819,7 +824,7 @@ namespace Intrepid2
     // since the getValues() below only overrides the FEM variant, we specify that
     // we use the base class's getValues(), which implements the FVD variant by throwing an exception.
     // (It's an error to use the FVD variant on this basis.)
-    using Basis<ExecutionSpace,OutputScalar,PointScalar>::getValues;
+    using BasisBase::getValues;
     
     /** \brief  Evaluation of a FEM basis on a <strong>reference cell</strong>.
 
@@ -844,7 +849,7 @@ namespace Intrepid2
     {
       auto numPoints = inputPoints.extent_int(0);
       
-      using FunctorType = Hierarchical_HGRAD_TET_Functor<ExecutionSpace, OutputScalar, PointScalar, OutputViewType, PointViewType>;
+      using FunctorType = Hierarchical_HGRAD_TET_Functor<DeviceType, OutputScalar, PointScalar, OutputViewType, PointViewType>;
       
       FunctorType functor(operatorType, outputValues, inputPoints, polyOrder_, defineVertexFunctions);
       
@@ -852,6 +857,8 @@ namespace Intrepid2
       const int pointVectorSize  = getVectorSizeForHierarchicalParallelism<PointScalar>();
       const int vectorSize = std::max(outputVectorSize,pointVectorSize);
       const int teamSize = 1; // because of the way the basis functions are computed, we don't have a second level of parallelism...
+      
+      using ExecutionSpace = typename BasisBase::ExecutionSpace;
       
       auto policy = Kokkos::TeamPolicy<ExecutionSpace>(numPoints,teamSize,vectorSize);
       Kokkos::parallel_for( policy , functor, "Hierarchical_HGRAD_TET_Functor");
@@ -865,20 +872,30 @@ namespace Intrepid2
         \param [in] subCellOrd - position of the subCell among of the subCells having the same dimension
         \return pointer to the subCell basis of dimension subCellDim and position subCellOrd
      */
-    BasisPtr<ExecutionSpace,OutputScalar,PointScalar>
+    BasisPtr<DeviceType,OutputScalar,PointScalar>
     getSubCellRefBasis(const ordinal_type subCellDim, const ordinal_type subCellOrd) const override{
       if(subCellDim == 1) {
         return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_LINE<ExecutionSpace,OutputScalar,PointScalar>
+            IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar>
             (this->basisDegree_));
       } else if(subCellDim == 2) {
         return Teuchos::rcp(new
-            IntegratedLegendreBasis_HGRAD_TRI<ExecutionSpace,OutputScalar,PointScalar>
+            IntegratedLegendreBasis_HGRAD_TRI<DeviceType,OutputScalar,PointScalar>
             (this->basisDegree_));
       }
       INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Input parameters out of bounds");
     }
 
+    /** \brief Creates and returns a Basis object whose DeviceType template argument is Kokkos::HostSpace::device_type, but is otherwise identical to this.
+     
+        \return Pointer to the new Basis object.
+     */
+    virtual BasisPtr<typename Kokkos::HostSpace::device_type, OutputScalar, PointScalar>
+    getHostBasis() const override {
+      using HostDeviceType = typename Kokkos::HostSpace::device_type;
+      using HostBasisType  = IntegratedLegendreBasis_HGRAD_TET<HostDeviceType, OutputScalar, PointScalar, defineVertexFunctions>;
+      return Teuchos::rcp( new HostBasisType(polyOrder_, pointType_) );
+    }
   };
 } // end namespace Intrepid2
 

@@ -144,6 +144,7 @@ exe mock_sparc
         $(stk_integration_tests-root)/mock_apps/mock_sparc.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -154,6 +155,7 @@ exe mock_aria
         $(stk_integration_tests-root)/mock_apps/mock_aria.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -164,6 +166,7 @@ exe mock_salinas
         $(stk_integration_tests-root)/mock_apps/mock_salinas.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;
@@ -174,6 +177,7 @@ exe mock_fuego
         $(stk_integration_tests-root)/mock_apps/mock_fuego.cpp 
     ]
     /sierra/stk_coupling//stk_coupling
+    /sierra/stk_transfer//stk_transfer_impl
     /sierra/stk_util//stk_util_parallel
   : <tag>@sierra-exec-tag
   ;

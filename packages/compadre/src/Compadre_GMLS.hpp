@@ -538,7 +538,7 @@ protected:
     KOKKOS_INLINE_FUNCTION
     double convertLocalToGlobalCoordinate(const XYZ local_coord, const int dim, const scratch_matrix_right_type* V) const {
         // only written for 2d manifold in 3d space
-        double val;
+        double val = 0.0;
         if (dim == 0 && _dimensions==2) { // 2D problem with 1D manifold
             val = local_coord.x * (*V)(0, dim);
         } else if (dim == 0) { // 3D problem with 2D manifold
@@ -577,9 +577,7 @@ protected:
     static DenseSolverType parseSolverType(const std::string& dense_solver_type) {
         std::string solver_type_to_lower = dense_solver_type;
         transform(solver_type_to_lower.begin(), solver_type_to_lower.end(), solver_type_to_lower.begin(), ::tolower);
-        if (solver_type_to_lower == "svd") {
-            return DenseSolverType::SVD;
-        } else if (solver_type_to_lower == "lu") {
+        if (solver_type_to_lower == "lu") {
             return DenseSolverType::LU;
         } else {
             return DenseSolverType::QR;
@@ -940,9 +938,7 @@ public:
                 && "generateAlphas() called with keep_coefficients set to false.");
         host_managed_local_index_type sizes("sizes", 2);
         if ((_constraint_type == ConstraintType::NO_CONSTRAINT) && (_dense_solver_type != DenseSolverType::LU)) {
-            int rhsdim = getRHSSquareDim(_dense_solver_type, _constraint_type, _reconstruction_space, _dimensions, M_by_N[1], M_by_N[0]);
-            sizes(0) = rhsdim;
-            sizes(1) = rhsdim;
+            getRHSDims(_dense_solver_type, _constraint_type, _reconstruction_space, _dimensions, M_by_N[1], M_by_N[0], sizes(0), sizes(1));
         } else {
             getPDims(_dense_solver_type, _constraint_type, _reconstruction_space, _dimensions, M_by_N[1], M_by_N[0], sizes(1), sizes(0));
         }

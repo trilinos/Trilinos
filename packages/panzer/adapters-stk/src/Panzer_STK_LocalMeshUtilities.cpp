@@ -51,12 +51,13 @@
 #include "Panzer_LocalPartitioningUtilities.hpp"
 #include "Panzer_FaceToElement.hpp"
 
-#include "Panzer_ConnManager.hpp"
 #include "Panzer_FieldPattern.hpp"
 #include "Panzer_NodalFieldPattern.hpp"
 #include "Panzer_EdgeFieldPattern.hpp"
 #include "Panzer_FaceFieldPattern.hpp"
 #include "Panzer_ElemFieldPattern.hpp"
+
+#include "Panzer_ConnManager.hpp"
 
 #include "Phalanx_KokkosDeviceTypes.hpp"
 
@@ -64,8 +65,6 @@
 #include "Teuchos_OrdinalTraits.hpp"
 
 #include "Tpetra_Import.hpp"
-#include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_RowMatrixTransposer.hpp"
 
 #include <string>
 #include <map>
@@ -79,331 +78,6 @@ namespace panzer_stk
 namespace
 {
 
-/** Build a Kokkos array of all the global cell IDs from a connection manager.
-  * Note that this is mapping between local IDs to global IDs.
-  */
-void
-buildCellGlobalIDs(panzer::ConnManager & conn,
-                   PHX::View<panzer::GlobalOrdinal*> & globals)
-{
-  // extract topologies, and build global connectivity...currently assuming only one topology
-  std::vector<shards::CellTopology> elementBlockTopologies;
-  conn.getElementBlockTopologies(elementBlockTopologies);
-  const shards::CellTopology & topology = elementBlockTopologies[0];
-
-  // FIXME: We assume that all element blocks have the same topology.
-  for(const auto & other_topology : elementBlockTopologies){
-    TEUCHOS_ASSERT(other_topology.getKey() == topology.getKey());
-  }
-
-  Teuchos::RCP<panzer::FieldPattern> cell_pattern;
-  if(topology.getDimension() == 1){
-    cell_pattern = Teuchos::rcp(new panzer::EdgeFieldPattern(topology));
-  } else if(topology.getDimension() == 2){
-    cell_pattern = Teuchos::rcp(new panzer::FaceFieldPattern(topology));
-  } else if(topology.getDimension() == 3){
-    cell_pattern = Teuchos::rcp(new panzer::ElemFieldPattern(topology));
-  }
-
-//  panzer::EdgeFieldPattern cell_pattern(elementBlockTopologies[0]);
-  conn.buildConnectivity(*cell_pattern);
-
-  // calculate total number of local cells
-  std::vector<std::string> block_ids;
-  conn.getElementBlockIds(block_ids);
-
-  std::size_t totalSize = 0;
-  for (std::size_t which_blk=0;which_blk<block_ids.size();which_blk++) {
-    // get the elem to face mapping
-    const std::vector<int> & localIDs = conn.getElementBlock(block_ids[which_blk]);
-    totalSize += localIDs.size();
-  }
-  globals = PHX::View<panzer::GlobalOrdinal*>("global_cells",totalSize);
-
-  for (std::size_t id=0;id<totalSize; ++id) {
-    // sanity check
-    int n_conn = conn.getConnectivitySize(id);
-    TEUCHOS_ASSERT(n_conn==1);
-
-    const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(id);
-    globals(id) = connectivity[0];
-  }
-
-//  print_view_1D("buildCellGlobalIDs : globals",globals);
-}
-
-/** Build a Kokkos array mapping local cells to global node IDs.
-  * Note that these are 'vertex nodes' and not 'basis nodes', 'quad nodes', or 'dof nodes'
-  */
-void
-buildCellToNodes(panzer::ConnManager & conn, PHX::View<panzer::GlobalOrdinal**> & globals)
-{
-  // extract topologies, and build global connectivity...currently assuming only one topology
-  std::vector<shards::CellTopology> elementBlockTopologies;
-  conn.getElementBlockTopologies(elementBlockTopologies);
-  const shards::CellTopology & topology = elementBlockTopologies[0];
-
-  // FIXME: We assume that all element blocks have the same topology.
-  for(const auto & other_topology : elementBlockTopologies){
-    TEUCHOS_ASSERT(other_topology.getKey() == topology.getKey());
-  }
-
-  panzer::NodalFieldPattern pattern(topology);
-  conn.buildConnectivity(pattern);
-
-  // calculate total number of local cells
-  std::vector<std::string> block_ids;
-  conn.getElementBlockIds(block_ids);
-
-  // compute total cells and maximum nodes
-  std::size_t totalCells=0, maxNodes=0;
-  for (std::size_t which_blk=0;which_blk<block_ids.size();which_blk++) {
-    // get the elem to face mapping
-    const std::vector<int> & localIDs = conn.getElementBlock(block_ids[which_blk]);
-    if ( localIDs.size() == 0 )
-      continue;
-    int thisSize = conn.getConnectivitySize(localIDs[0]);
-
-    totalCells += localIDs.size();
-    maxNodes = maxNodes<Teuchos::as<std::size_t>(thisSize) ? Teuchos::as<std::size_t>(thisSize) : maxNodes;
-  }
-  globals = PHX::View<panzer::GlobalOrdinal**>("cell_to_node",totalCells,maxNodes);
-
-  // build connectivity array
-  for (std::size_t id=0;id<totalCells; ++id) {
-    const panzer::GlobalOrdinal * connectivity = conn.getConnectivity(id);
-    int nodeCnt = conn.getConnectivitySize(id);
-
-    for(int n=0;n<nodeCnt;n++)
-      globals(id,n) = connectivity[n];
-  }
-
-//  print_view("buildCellToNodes : globals",globals);
-}
-
-Teuchos::RCP<const Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
-buildNodeMap(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                    PHX::View<const panzer::GlobalOrdinal**> cells_to_nodes)
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  /*
-
-   This function converts
-
-   cells_to_nodes(local cell, local node) = global node index
-
-   to a map describing which global nodes are found on this process
-
-   Note that we have to ensure that that the global nodes found on this process are unique.
-
-   */
-
-  typedef Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> map_type;
-
-  // get locally unique global ids
-  std::set<panzer::GlobalOrdinal> global_nodes;
-  for(unsigned int i=0;i<cells_to_nodes.extent(0);i++)
-    for(unsigned int j=0;j<cells_to_nodes.extent(1);j++)
-      global_nodes.insert(cells_to_nodes(i,j));
-
-  // build local vector contribution
-  PHX::View<panzer::GlobalOrdinal*> node_ids("global_nodes",global_nodes.size());
-  int i = 0;
-  for(auto itr=global_nodes.begin();itr!=global_nodes.end();++itr,++i)
-    node_ids(i) = *itr;
-
-//  print_view("buildNodeMap : cells_to_nodes",cells_to_nodes);
-//  print_view_1D("buildNodeMap : node_ids",node_ids);
-
-  return rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),node_ids,0,comm));
-}
-
-/** Given a cell to node map in a Kokkos array, build the node
-  * to cell map using a transpose operation.
-  */
-Teuchos::RCP<Tpetra::CrsMatrix<panzer::LocalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> >
-buildNodeToCellMatrix(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                      PHX::View<const panzer::GlobalOrdinal*> owned_cells,
-                      PHX::View<const panzer::GlobalOrdinal**> owned_cells_to_nodes)
-{
-  using Teuchos::RCP;
-  using Teuchos::rcp;
-
-  typedef Tpetra::Map<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> map_type;
-  typedef Tpetra::CrsMatrix<panzer::LocalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> crs_type;
-  typedef Tpetra::Import<panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> import_type;
-
-
-  PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::buildNodeToCellMatrix",BNTCM);
-
-  TEUCHOS_ASSERT(owned_cells.extent(0)==owned_cells_to_nodes.extent(0));
-
-  // build a unque node map to use with fill complete
-
-  // This map identifies all nodes linked to cells on this process
-  auto node_map = buildNodeMap(comm,owned_cells_to_nodes);
-
-  // This map identifies nodes owned by this process
-  auto unique_node_map  = Tpetra::createOneToOne(node_map);
-
-  // This map identifies the cells owned by this process
-  RCP<map_type> cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned_cells,0,comm));
-
-  // Create a CRS matrix that stores a pointless value for every global node that belongs to a global cell
-  // This is essentially another way to store cells_to_nodes
-  RCP<crs_type> cell_to_node;
-  {
-    PANZER_FUNC_TIME_MONITOR_DIFF("Build matrix",BuildMatrix);
-
-    // fill in the cell to node matrix
-    const unsigned int num_local_cells = owned_cells_to_nodes.extent(0);
-    const unsigned int num_nodes_per_cell = owned_cells_to_nodes.extent(1);
-
-    // The matrix is indexed by (global cell, global node) = local node
-    cell_to_node = rcp(new crs_type(cell_map,num_nodes_per_cell,
-                                    Tpetra::StaticProfile));
-
-    std::vector<panzer::LocalOrdinal> local_node_indexes(num_nodes_per_cell);
-    std::vector<panzer::GlobalOrdinal> global_node_indexes(num_nodes_per_cell);
-    for(unsigned int i=0;i<num_local_cells;i++) {
-      const panzer::GlobalOrdinal global_cell_index = owned_cells(i);
-  //    std::vector<panzer::LocalOrdinal> vals(cells_to_nodes.extent(1));
-  //    std::vector<panzer::GlobalOrdinal> cols(cells_to_nodes.extent(1));
-      for(unsigned int j=0;j<num_nodes_per_cell;j++) {
-  //      vals[j] = Teuchos::as<panzer::LocalOrdinal>(j);
-  //      cols[j] = cells_to_nodes(i,j);
-        local_node_indexes[j] = Teuchos::as<panzer::LocalOrdinal>(j);
-        global_node_indexes[j] = owned_cells_to_nodes(i,j);
-      }
-
-  //    cell_to_node_mat->insertGlobalValues(cells(i),cols,vals);
-      cell_to_node->insertGlobalValues(global_cell_index,global_node_indexes,local_node_indexes);
-    }
-    cell_to_node->fillComplete(unique_node_map,cell_map);
-
-  }
-
-  // Transpose the cell_to_node array to create the node_to_cell array
-  RCP<crs_type> node_to_cell;
-  {
-    PANZER_FUNC_TIME_MONITOR_DIFF("Tranpose matrix",TransposeMatrix);
-    // Create an object designed to transpose the (global cell, global node) matrix to give
-    // a (global node, global cell) matrix
-    Tpetra::RowMatrixTransposer<panzer::LocalOrdinal,panzer::LocalOrdinal,panzer::GlobalOrdinal,panzer::TpetraNodeType> transposer(cell_to_node);
-
-    // Create the transpose crs matrix
-    auto trans = transposer.createTranspose();
-
-    // We want to import the portion of the transposed matrix relating to all nodes on this process
-    // The importer must import nodes required by this process (node_map) from the unique nodes (nodes living on a process)
-    RCP<import_type> import = rcp(new import_type(unique_node_map,node_map));
-
-    // Create the crs matrix to store (ghost node, global cell) array
-    // This CRS matrix will have overlapping rows for shared global nodes
-    node_to_cell = rcp(new crs_type(node_map,0));
-
-    // Transfer data from the transpose array (associated with unique_node_map) to node_to_cell (associated with node_map)
-    node_to_cell->doImport(*trans,*import,Tpetra::INSERT);
-
-    // Set the fill - basicially locks down the structured of the CRS matrix - required before doing some operations
-    //node_to_cell->fillComplete();
-    node_to_cell->fillComplete(cell_map,unique_node_map);
-  }
-
-  // Return the node to cell array
-  return node_to_cell;
-}
-
-/** Build ghstd cell one ring based on shared nodes
-  */
-PHX::View<const panzer::GlobalOrdinal*>
-buildGhostedCellOneRing(const Teuchos::RCP<const Teuchos::Comm<int> > & comm,
-                        PHX::View<const panzer::GlobalOrdinal*> cells,
-                        PHX::View<const panzer::GlobalOrdinal**> cells_to_nodes)
-{
-
-  PANZER_FUNC_TIME_MONITOR_DIFF("panzer_stk::buildGhostedCellOneRing",BGCOR);
-  typedef Tpetra::CrsMatrix<int,int,panzer::GlobalOrdinal,panzer::TpetraNodeType> crs_type;
-
-  // cells : (local cell index) -> global cell index
-  // cells_to_nodes : (local cell index, local node_index) -> global node index
-
-  /*
-
-   This function creates a list of global indexes relating to ghost cells
-
-   It is a little misleading how it does this, but the idea is to use the indexing of a CRS matrix to identify
-   what global cells are connected to which global nodes. The values in the CRS matrix are meaningless, however,
-   the fact that they are filled allows us to ping what index combinations exist.
-
-   To do this we are going to use cell 'nodes' which could also be cell 'vertices'. It is unclear.
-
-   First we construct an array that stores that global node indexes make up the connectivity for a given global cell index (order doesn't matter)
-
-   cell_to_node : cell_to_node[global cell index][global node index] = some value (not important, just has to exist)
-
-   We are then going to transpose that array
-
-   node_to_cell : node_to_cell[global node index][global cell index] = some value (not important, just has to exist)
-
-   The coloring of the node_to_cell array tells us what global cells are connected to a given global node.
-
-
-   */
-
-  // the node to cell matrix: Row = Global Node Id, Cell = Global Cell Id, Value = Cell Local Node Id
-  Teuchos::RCP<crs_type> node_to_cell = buildNodeToCellMatrix(comm,cells,cells_to_nodes);
-
-  // the set of cells already known
-  std::unordered_set<panzer::GlobalOrdinal> unique_cells;
-
-  // mark all owned cells as already known, e.g. and not in the list of
-  // ghstd cells to be constructed
-  for(size_t i=0;i<cells.extent(0);i++) {
-    unique_cells.insert(cells(i));
-  }
-
-  // The set of ghost cells that share a global node with an owned cell
-  std::set<panzer::GlobalOrdinal> ghstd_cells_set;
-
-  // Get a list of global node indexes associated with the cells owned by this process
-//  auto node_map = node_to_cell->getRangeMap()->getMyGlobalIndices();
-  auto node_map = node_to_cell->getMap()->getMyGlobalIndices();
-
-  // Iterate through the global node indexes associated with this process
-  for(size_t i=0;i<node_map.extent(0);i++) {
-    const panzer::GlobalOrdinal global_node_index = node_map(i);
-    size_t numEntries = node_to_cell->getNumEntriesInGlobalRow(node_map(i));
-    Teuchos::Array<panzer::GlobalOrdinal> indices(numEntries);
-    Teuchos::Array<int> values(numEntries);
-
-    // Copy the row for a global node index into a local vector
-    node_to_cell->getGlobalRowCopy(global_node_index,indices,values,numEntries);
-
-    for(auto index : indices) {
-      // if this is a new index (not owned, not previously found ghstd index
-      // add it to the list of ghstd cells
-      if(unique_cells.find(index)==unique_cells.end()) {
-        ghstd_cells_set.insert(index);
-        unique_cells.insert(index); // make sure you don't find it again
-      }
-    }
-  }
-
-  // build an array containing only the ghstd cells
-  int indx = 0;
-  PHX::View<panzer::GlobalOrdinal*> ghstd_cells("ghstd_cells",ghstd_cells_set.size());
-  for(auto global_cell_index : ghstd_cells_set) {
-    ghstd_cells(indx) = global_cell_index;
-    indx++;
-  }
-
-//  print_view_1D("ghstd_cells",ghstd_cells);
-
-  return ghstd_cells;
-}
 
 /** This method takes a cell importer (owned to ghstd) and communicates vertices
   * of the ghstd elements.
@@ -790,34 +464,20 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
   RCP<panzer::ConnManager> conn_rcp = rcp(new panzer_stk::STKConnManager(mesh_rcp));
   panzer::ConnManager & conn = *conn_rcp;
 
-  // build cell to node map
-  PHX::View<panzer::GlobalOrdinal**> owned_cell_to_nodes;
-  buildCellToNodes(conn, owned_cell_to_nodes);
-
-  // build the local to global cell ID map
-  ///////////////////////////////////////////////////////////
-  PHX::View<panzer::GlobalOrdinal*> owned_cells;
-  buildCellGlobalIDs(conn, owned_cells);
-
-  // get neighboring cells
-  ///////////////////////////////////////////////////////////
-  PHX::View<const panzer::GlobalOrdinal*> ghstd_cells = buildGhostedCellOneRing(comm,owned_cells,owned_cell_to_nodes);
+  PHX::View<panzer::GlobalOrdinal*> owned_cells, ghost_cells, virtual_cells;
+  panzer::fillLocalCellIDs(comm, conn, owned_cells, ghost_cells, virtual_cells);
 
   // build cell maps
   /////////////////////////////////////////////////////////////////////
 
-  RCP<map_type> owned_cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned_cells,  0,comm));
-  RCP<map_type> ghstd_cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghstd_cells,0,comm));
+  RCP<map_type> owned_cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),owned_cells,0,comm));
+  RCP<map_type> ghstd_cell_map = rcp(new map_type(Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),ghost_cells,0,comm));
 
   // build importer: cell importer, owned to ghstd
   RCP<import_type> cellimport_own2ghst = rcp(new import_type(owned_cell_map,ghstd_cell_map));
 
   // read all the vertices associated with these elements, get ghstd contributions
   /////////////////////////////////////////////////////////////////////
-  std::vector<std::size_t> localCells(owned_cells.extent(0),Teuchos::OrdinalTraits<std::size_t>::invalid());
-  for(size_t i=0;i<localCells.size();i++){
-    localCells[i] = i;
-  }
 
   // TODO: This all needs to be rewritten for when element blocks have different cell topologies
   std::vector<std::string> element_block_names;
@@ -830,8 +490,13 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
   const int faces_per_cell = cell_topology.getSubcellCount(space_dim-1);
 
   // PHX::View<double***> owned_vertices("owned_vertices",localCells.size(),vertices_per_cell,space_dim);
-  Kokkos::DynRankView<double,PHX::Device> owned_vertices("owned_vertices",localCells.size(),vertices_per_cell,space_dim);
-  mesh.getElementVerticesNoResize(localCells,owned_vertices);
+  Kokkos::DynRankView<double,PHX::Device> owned_vertices("owned_vertices",owned_cells.extent(0),vertices_per_cell,space_dim);
+  {
+    std::vector<std::size_t> localCells(owned_cells.extent(0),Teuchos::OrdinalTraits<std::size_t>::invalid());
+    for(size_t i=0;i<localCells.size();i++)
+      localCells[i] = i;
+    mesh.getElementVerticesNoResize(localCells,owned_vertices);
+  }
 
   // this builds a ghstd vertex array
   Kokkos::DynRankView<double,PHX::Device> ghstd_vertices = buildGhostedVertices(*cellimport_own2ghst,owned_vertices);
@@ -843,19 +508,14 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
   global_to_local[-1] = -1; // this is the "no neighbor" flag
   for(size_t i=0;i<owned_cells.extent(0);i++)
     global_to_local[owned_cells(i)] = i;
-  for(size_t i=0;i<ghstd_cells.extent(0);i++)
-    global_to_local[ghstd_cells(i)] = i+Teuchos::as<int>(owned_cells.extent(0));
+  for(size_t i=0;i<ghost_cells.extent(0);i++)
+    global_to_local[ghost_cells(i)] = i+Teuchos::as<int>(owned_cells.extent(0));
 
   // this class comes from Mini-PIC and Matt B
   RCP<panzer::FaceToElement<panzer::LocalOrdinal,panzer::GlobalOrdinal> > faceToElement = rcp(new panzer::FaceToElement<panzer::LocalOrdinal,panzer::GlobalOrdinal>());
   faceToElement->initialize(conn);
   auto elems_by_face = faceToElement->getFaceToElementsMap();
   auto face_to_lidx  = faceToElement->getFaceToCellLocalIdxMap();
-
-  const int num_owned_cells =owned_cells.extent(0);
-  const int num_ghstd_cells =ghstd_cells.extent(0);
-
-//  print_view("elems_by_face",elems_by_face);
 
   // We also need to consider faces that connect to cells that do not exist, but are needed for boundary conditions
   // We dub them virtual cell since there should be no geometry associated with them, or topology really
@@ -866,60 +526,15 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
   // Note - in the future, ghosted cells will also need to connect to virtual cells at boundary conditions, but for the moment we will ignore this.
 
   // Iterate over all faces and identify the faces connected to a potential virtual cell
-  std::vector<int> all_boundary_faces;
-  const int num_faces = elems_by_face.extent(0);
-  for(int face=0;face<num_faces;++face){
-    if(elems_by_face(face,0) < 0 or elems_by_face(face,1) < 0){
-      all_boundary_faces.push_back(face);
-    }
-  }
-  const panzer::LocalOrdinal num_virtual_cells = all_boundary_faces.size();
+
+  const panzer::LocalOrdinal num_owned_cells = owned_cells.extent(0);
+  const panzer::LocalOrdinal num_ghstd_cells = ghost_cells.extent(0);
+  const panzer::LocalOrdinal num_virtual_cells = virtual_cells.extent(0);
 
   // total cells and faces include owned, ghosted, and virtual
   const panzer::LocalOrdinal num_real_cells = num_owned_cells + num_ghstd_cells;
   const panzer::LocalOrdinal num_total_cells = num_real_cells + num_virtual_cells;
   const panzer::LocalOrdinal num_total_faces = elems_by_face.extent(0);
-
-  // Create some global indexes associated with the virtual cells
-  // Note: We are assuming that virtual cells belong to ranks and are not 'shared' - this will change later on
-  PHX::View<panzer::GlobalOrdinal*> virtual_cells = PHX::View<panzer::GlobalOrdinal*>("virtual_cells",num_virtual_cells);
-  {
-    PANZER_FUNC_TIME_MONITOR_DIFF("Initial global index creation",InitialGlobalIndexCreation);
-
-    const int num_ranks = comm->getSize();
-    const int rank = comm->getRank();
-
-    std::vector<panzer::GlobalOrdinal> owned_cell_distribution(num_ranks,0);
-    {
-      std::vector<panzer::GlobalOrdinal> my_owned_cell_distribution(num_ranks,0);
-      my_owned_cell_distribution[rank] = num_owned_cells;
-
-      Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM, num_ranks, my_owned_cell_distribution.data(),owned_cell_distribution.data());
-    }
-
-    std::vector<panzer::GlobalOrdinal> virtual_cell_distribution(num_ranks,0);
-    {
-      std::vector<panzer::GlobalOrdinal> my_virtual_cell_distribution(num_ranks,0);
-      my_virtual_cell_distribution[rank] = num_virtual_cells;
-
-      Teuchos::reduceAll(*comm,Teuchos::REDUCE_SUM, num_ranks, my_virtual_cell_distribution.data(),virtual_cell_distribution.data());
-    }
-
-    panzer::GlobalOrdinal num_global_real_cells=0;
-    for(int i=0;i<num_ranks;++i){
-      num_global_real_cells+=owned_cell_distribution[i];
-    }
-
-    panzer::GlobalOrdinal global_virtual_start_idx = num_global_real_cells;
-    for(int i=0;i<rank;++i){
-      global_virtual_start_idx += virtual_cell_distribution[i];
-    }
-
-    for(int i=0;i<num_virtual_cells;++i){
-      virtual_cells(i) = global_virtual_start_idx + panzer::GlobalOrdinal(i);
-    }
-
-  }
 
   // Lookup cells connected to a face
   PHX::View<panzer::LocalOrdinal*[2]> face_to_cells = PHX::View<panzer::LocalOrdinal*[2]>("face_to_cells",num_total_faces);
@@ -1012,7 +627,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
     mesh_info.has_connectivity        = true;
 
     mesh_info.num_owned_cells = owned_cells.extent(0);
-    mesh_info.num_ghstd_cells = ghstd_cells.extent(0);
+    mesh_info.num_ghstd_cells = ghost_cells.extent(0);
     mesh_info.num_virtual_cells = virtual_cells.extent(0);
 
     mesh_info.global_cells = PHX::View<panzer::GlobalOrdinal*>("global_cell_indices",num_total_cells);
@@ -1024,7 +639,7 @@ generateLocalMeshInfo(const panzer_stk::STK_Interface & mesh)
     }
 
     for(int i=0;i<num_ghstd_cells;++i){
-      mesh_info.global_cells(i+num_owned_cells) = ghstd_cells(i);
+      mesh_info.global_cells(i+num_owned_cells) = ghost_cells(i);
       mesh_info.local_cells(i+num_owned_cells) = i+num_owned_cells;
     }
 

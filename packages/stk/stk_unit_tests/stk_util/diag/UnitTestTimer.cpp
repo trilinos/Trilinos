@@ -353,9 +353,19 @@ TEST(UnitTestTimer, YuugeNumberOfTimers)
     stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }
 
+TEST(UnitTestTimer, lapCount_2start_1stop)
+{
+  stk::diag::TimerSet timerSet(TIMER_APP_3);
+  stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
+  rootTimer.start();
+  rootTimer.start();
+  rootTimer.stop();
+  unsigned expectedLapCount = 1;
+  EXPECT_EQ(expectedLapCount, rootTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap());
+}
+
 TEST(UnitTestTimer, MultipleStarts)
 {
-  // To stk team: This fails also--seems like calling start or stop multiple times shouldn't break timers
   stk::diag::TimerSet timerSet(TIMER_APP_3);
   stk::diag::Timer rootTimer(stk::diag::createRootTimer("Root Timer", timerSet));
   stk::diag::TimeBlock root_time_block(rootTimer);
@@ -365,17 +375,21 @@ TEST(UnitTestTimer, MultipleStarts)
   
   {
     stk::diag::TimeBlock childBlock(childTimer);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   {
     childTimer.start();
     childTimer.start();
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     childTimer.stop();
     childTimer.stop();
   }
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
-  EXPECT_NEAR(childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap(), 0.04, millisecTolerance);
+  double expectedTime = 0.2;
+  double measuredTime = childTimer.getMetric<stk::diag::WallTime>().getAccumulatedLap();
+  double relativeError = (std::abs(expectedTime - measuredTime)/expectedTime);
+  double relativeTolerance = 0.1;
+  EXPECT_TRUE(relativeError < relativeTolerance);
   EXPECT_EQ(childTimer.getMetric<stk::diag::LapCount>().getAccumulatedLap(), 2u);
   stk::diag::printTimersTable(strout, rootTimer, stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 }

@@ -39,8 +39,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
-#define THYRA_FROSCH_XPETRA_FACTORY_DECL_HPP
+#ifndef _THYRA_FROSCH_FACTORY_DECL_HPP
+#define _THYRA_FROSCH_FACTORY_DECL_HPP
 
 #include <ShyLU_DDFROSch_config.h>
 
@@ -83,14 +83,10 @@
 #endif
 
 //FROSch
-#include <FROSch_AlgebraicOverlappingPreconditioner_def.hpp>
-#include <FROSch_GDSWPreconditioner_def.hpp>
-#include <FROSch_RGDSWPreconditioner_def.hpp>
-#include <FROSch_OneLevelPreconditioner_def.hpp>
-#include <FROSch_TwoLevelPreconditioner_def.hpp>
-#include <FROSch_TwoLevelBlockPreconditioner_def.hpp>
 #include <Thyra_FROSchLinearOp_def.hpp>
 #include <FROSch_Tools_def.hpp>
+
+#include <FROSch_SchwarzPreconditioners_fwd.hpp>
 
 
 namespace Thyra {

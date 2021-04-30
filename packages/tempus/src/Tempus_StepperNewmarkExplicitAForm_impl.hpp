@@ -9,9 +9,10 @@
 #ifndef Tempus_StepperNewmarkExplicitAForm_impl_hpp
 #define Tempus_StepperNewmarkExplicitAForm_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
 #include "Tempus_StepperNewmarkExplicitAFormModifierDefault.hpp"
+
 
 //#define DEBUG_OUTPUT
 
@@ -61,6 +62,7 @@ template<class Scalar>
 StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm()
   : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
 {
+  this->setStepperName(        "Newmark Explicit a-Form");
   this->setStepperType(        "Newmark Explicit a-Form");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -78,6 +80,7 @@ StepperNewmarkExplicitAForm<Scalar>::StepperNewmarkExplicitAForm(
   const Teuchos::RCP<StepperNewmarkExplicitAFormAppAction<Scalar> >& stepperAppAction)
   : gammaDefault_(Scalar(0.5)), gamma_(Scalar(0.5))
 {
+  this->setStepperName(        "Newmark Explicit a-Form");
   this->setStepperType(        "Newmark Explicit a-Form");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -366,13 +369,10 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperNewmarkExplicitAForm<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
+  auto pl = this->getValidParametersBasic();
   pl->sublist("Newmark Explicit Parameters", false, "");
   pl->sublist("Newmark Explicit Parameters", false, "").set("Gamma",
-               0.5, "Newmark Explicit parameter");
+               gamma_, "Newmark Explicit parameter");
   return pl;
 }
 
@@ -391,6 +391,33 @@ void StepperNewmarkExplicitAForm<Scalar>::setAppAction(
 
   this->isInitialized_ = false;
 }
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperNewmarkExplicitAForm<Scalar> >
+createStepperNewmarkExplicitAForm(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperNewmarkExplicitAForm<Scalar>());
+  stepper->setStepperExplicitValues(pl);
+
+  if (pl != Teuchos::null) {
+    Scalar gamma = pl->sublist("Newmark Explicit Parameters")
+                                 .template get<double>("Gamma", 0.5);
+    stepper->setGamma(gamma);
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
+}
+
 
 } // namespace Tempus
 #endif // Tempus_StepperNewmarkExplicitAForm_impl_hpp

@@ -79,7 +79,7 @@ namespace Test {
       *outStream << "-------------------------------------------------------------------------------" << "\n\n"; \
     }
 
-template<typename OutValueType, typename PointValueType, typename DeviceSpaceType>
+template<typename OutValueType, typename PointValueType, typename DeviceType>
 int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
 
   Teuchos::RCP<std::ostream> outStream;
@@ -92,7 +92,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
 
   Teuchos::oblackholestream oldFormatState;
   oldFormatState.copyfmt(std::cout);
-
+  using DeviceSpaceType = typename DeviceType::execution_space;
   typedef typename
       Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
 
@@ -118,17 +118,17 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
   << "|                                                                             |\n"
   << "===============================================================================\n";
 
-  typedef Kokkos::DynRankView<PointValueType,DeviceSpaceType> DynRankViewPointValueType;
-  typedef Kokkos::DynRankView<OutValueType,DeviceSpaceType> DynRankViewOutValueType;
+  typedef Kokkos::DynRankView<PointValueType,DeviceType> DynRankViewPointValueType;
+  typedef Kokkos::DynRankView<OutValueType,DeviceType> DynRankViewOutValueType;
   typedef typename ScalarTraits<OutValueType>::scalar_type scalar_type;
-  typedef Kokkos::DynRankView<scalar_type, DeviceSpaceType> DynRankViewScalarValueType;     
+  typedef Kokkos::DynRankView<scalar_type, DeviceType> DynRankViewScalarValueType;     
 
 #define ConstructWithLabelScalar(obj, ...) obj(#obj, __VA_ARGS__)
 
   const scalar_type tol = tolerence();
   int errorFlag = 0;
 
-  typedef Basis_HVOL_HEX_Cn_FEM<DeviceSpaceType,OutValueType,PointValueType> HexBasisType;
+  typedef Basis_HVOL_HEX_Cn_FEM<DeviceType,OutValueType,PointValueType> HexBasisType;
   constexpr ordinal_type maxOrder = Parameters::MaxOrder;
 
 
@@ -327,7 +327,7 @@ int HVOL_HEX_Cn_FEM_Test01(const bool verbose) {
         DynRankViewScalarValueType ConstructWithLabelScalar(dofCoords_scalar, numPoints , dim);
         DynRankViewPointValueType ConstructWithLabelPointView(dofCoords, numPoints , dim);
         hexBasis.getDofCoords(dofCoords_scalar);
-        RealSpaceTools<DeviceSpaceType>::clone(dofCoords,dofCoords_scalar);
+        RealSpaceTools<DeviceType>::clone(dofCoords,dofCoords_scalar);
 
         DynRankViewOutValueType ConstructWithLabelOutView(vals, numDofs, numPoints);
         hexBasis.getValues(vals, dofCoords, OPERATOR_VALUE);

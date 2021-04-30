@@ -271,7 +271,7 @@ setMatrixBlocks(const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>
 
     // Get linear system, and jacobian
     //ROGER linSys = grp->getLinearSystem();
-    using ttlop = ::Thyra::TpetraLinearOp<NOX::Scalar,NOX::LocalOrdinal,NOX::GlobalOrdinal>;
+    using ttlop = ::Thyra::TpetraLinearOp<NOX::Scalar,NOX::LocalOrdinal,NOX::GlobalOrdinal,NOX::NodeType>;
     auto constTpetraOperator = Teuchos::rcp_dynamic_cast<const ttlop>(grp->getJacobianOperator(),true);
     tpetraOp = Teuchos::rcp_const_cast<ttlop>(constTpetraOperator)->getTpetraOperator();
   }

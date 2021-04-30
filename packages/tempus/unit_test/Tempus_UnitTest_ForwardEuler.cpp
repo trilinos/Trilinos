@@ -13,10 +13,10 @@
 
 #include "Thyra_VectorStdOps.hpp"
 
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_UnitTest_Utils.hpp"
 #include "Tempus_StepperRKButcherTableau.hpp"
 
+#include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperForwardEulerModifierBase.hpp"
 #include "Tempus_StepperForwardEulerModifierXBase.hpp"
 #include "Tempus_StepperForwardEulerObserverBase.hpp"
@@ -41,7 +41,6 @@ using Teuchos::ParameterList;
 using Teuchos::sublist;
 using Teuchos::getParametersFromXmlFile;
 
-using Tempus::StepperFactory;
 using Tempus::StepperExplicitRK;
 
 // Comment out any of the following tests to exclude from build/run.
@@ -103,7 +102,7 @@ public:
   StepperForwardEulerModifierTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testEND_STEP(false), testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -111,14 +110,14 @@ public:
 
   /// Observe ForwardEuler Stepper at end of takeStep.
   virtual void modify(
-		      Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
-		      Teuchos::RCP<Tempus::StepperForwardEuler<double> > stepper,
-		      const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<Tempus::StepperForwardEuler<double> > stepper,
+    const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperForwardEulerAppAction<double>::BEGIN_STEP:
       {
-	testBEGIN_STEP = true;
+        testBEGIN_STEP = true;
         auto x = sh->getCurrentState()->getX();
         testCurrentValue = get_ele(*(x), 0);
         break;
@@ -128,8 +127,8 @@ public:
         testBEFORE_EXPLICIT_EVAL = true;
         testDt = sh->getWorkingState()->getTimeStep()/10.0;
         sh->getWorkingState()->setTimeStep(testDt);
-        testType = "Forward Euler - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Forward Euler - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperForwardEulerAppAction<double>::END_STEP:
@@ -141,7 +140,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testBEGIN_STEP;
@@ -150,7 +149,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
@@ -165,8 +164,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -201,11 +199,12 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
-  TEST_COMPARE(modifier->testType, ==, "Forward Euler - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Forward Euler - Modifier");
 }
 
-  // ************************************************************
-  // ************************************************************
+
+// ************************************************************
+// ************************************************************
 class StepperForwardEulerObserverTest
   : virtual public Tempus::StepperForwardEulerObserverBase<double>
 {
@@ -215,7 +214,7 @@ public:
   StepperForwardEulerObserverTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testEND_STEP(false), testCurrentValue(-0.99),
-      testWorkingValue(-0.99),testDt(-1.5), testType("")
+      testWorkingValue(-0.99),testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -223,9 +222,9 @@ public:
 
   /// Observe ForwardEuler Stepper at end of takeStep.
   virtual void observe(
-		       Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-		       Teuchos::RCP<const Tempus::StepperForwardEuler<double> > stepper,
-		       const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<const Tempus::StepperForwardEuler<double> > stepper,
+    const typename Tempus::StepperForwardEulerAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperForwardEulerAppAction<double>::BEGIN_STEP:
@@ -239,7 +238,7 @@ public:
       {
         testBEFORE_EXPLICIT_EVAL = true;
         testDt = sh->getWorkingState()->getTimeStep();
-        testType = stepper->getStepperType();
+        testName = stepper->getStepperName();
         break;
       }
     case StepperForwardEulerAppAction<double>::END_STEP:
@@ -251,7 +250,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
 
@@ -261,23 +260,22 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
-  TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
-    stepper->setModel(model);
-    auto observer = rcp(new StepperForwardEulerObserverTest());
-    stepper->setAppAction(observer);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  auto observer = rcp(new StepperForwardEulerObserverTest());
+  stepper->setAppAction(observer);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -311,11 +309,12 @@ public:
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "Forward Euler");
+  TEST_COMPARE(observer->testName, ==, "Forward Euler");
 }
 
-  // ************************************************************
-  // ************************************************************
+
+// ************************************************************
+// ************************************************************
 class StepperForwardEulerModifierXTest
   : virtual public Tempus::StepperForwardEulerModifierXBase<double>
 {
@@ -333,9 +332,9 @@ public:
 
   /// Observe BackwardEuler Stepper at end of takeStep.
   virtual void modify(
-		      Teuchos::RCP<Thyra::VectorBase<double> > x,
-		      const double time, const double dt,
-		      const typename Tempus::StepperForwardEulerModifierXBase<double>::MODIFIER_TYPE modType)
+    Teuchos::RCP<Thyra::VectorBase<double> > x,
+    const double time, const double dt,
+    const typename Tempus::StepperForwardEulerModifierXBase<double>::MODIFIER_TYPE modType)
   {
     switch(modType) {
     case StepperForwardEulerModifierXBase<double>::X_BEGIN_STEP:
@@ -359,7 +358,7 @@ public:
       }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testX_BEGIN_STEP;
@@ -371,20 +370,19 @@ public:
   double testTime;
 };
 
-  TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
-    stepper->setModel(model);
-    auto modifierX = rcp(new StepperForwardEulerModifierXTest());
-    stepper->setAppAction(modifierX);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  auto modifierX = rcp(new StepperForwardEulerModifierXTest());
+  stepper->setAppAction(modifierX);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);

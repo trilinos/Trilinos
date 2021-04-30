@@ -42,11 +42,6 @@
 
 /// \file Tpetra_CrsGraph_def.hpp
 /// \brief Definition of the Tpetra::CrsGraph class
-///
-/// If you want to use Tpetra::CrsGraph, include "Tpetra_CrsGraph.hpp"
-/// (a file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::CrsGraph, include
-/// "Tpetra_CrsGraph_decl.hpp".
 
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_computeOffsets.hpp"
@@ -1933,39 +1928,6 @@ namespace Tpetra {
          << ".  Please report this bug to the Tpetra developers.");
     }
   }
-
-
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  CrsGraph<LocalOrdinal, GlobalOrdinal, Node>::
-  findLocalIndices(const RowInfo& rowInfo,
-                   const Teuchos::ArrayView<const LocalOrdinal>& indices,
-                   std::function<void(const size_t, const size_t, const size_t)> fun) const
-  {
-    using LO = LocalOrdinal;
-    using inp_view_type = Kokkos::View<const LO*, Kokkos::HostSpace,
-      Kokkos::MemoryUnmanaged>;
-    inp_view_type inputInds(indices.getRawPtr(), indices.size());
-
-    size_t numFound = 0;
-    LO lclRow = rowInfo.localRow;
-    if (this->isLocallyIndexed())
-    {
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
-        this->k_lclInds1D_, inputInds, fun);
-    }
-    else if (this->isGloballyIndexed())
-    {
-      if (this->colMap_.is_null())
-        return Teuchos::OrdinalTraits<size_t>::invalid();
-      const auto& colMap = *(this->colMap_);
-      auto map = [&](LO const lclInd){return colMap.getGlobalElement(lclInd);};
-      numFound = Details::findCrsIndices(lclRow, k_rowPtrs_, rowInfo.numEntries,
-        this->k_gblInds1D_, inputInds, map, fun);
-    }
-    return numFound;
-  }
-
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   size_t

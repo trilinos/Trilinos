@@ -9,12 +9,13 @@
 #ifndef Tempus_IntegratorForwardSensitivity_impl_hpp
 #define Tempus_IntegratorForwardSensitivity_impl_hpp
 
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+
 #include "Tempus_CombinedForwardSensitivityModelEvaluator.hpp"
 #include "Tempus_WrapCombinedFSAModelEvaluator.hpp"
+
 
 namespace Tempus {
 
@@ -241,11 +242,13 @@ template<class Scalar>
 void
 IntegratorForwardSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &out,
+  Teuchos::FancyOStream          &in_out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  out << description() << "::describe" << std::endl;
-  integrator_->describe(out, verbLevel);
+  auto out = Teuchos::fancyOStream( in_out.getOStream() );
+  out->setOutputToRootOnly(0);
+  *out << description() << "::describe" << std::endl;
+  integrator_->describe(in_out, verbLevel);
 }
 
 template<class Scalar>

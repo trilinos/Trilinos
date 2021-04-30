@@ -67,10 +67,14 @@ namespace Galeri {
     public:
 
       Parameters(Teuchos::CommandLineProcessor& clp, GO nx = 16, GO ny = -1, GO nz = -1, const std::string& matrixType = "Laplace1D",
-                 int keepBCs = 0, double stretchx = 1.0, double stretchy = 1.0, double stretchz = 1.0, double h = 1.0, double delta = 0.0,
+                 int keepBCs = 0, double stretchx = 1.0, double stretchy = 1.0, double stretchz = 1.0,
+                 double Kxx = 1.0, double Kxy = 0.0, double Kyy = 1.0, double dt = 1.0, const std::string& meshType = "tri",
+                 double h = 1.0, double delta = 0.0,
                  int PMLXL = 0, int PMLXR = 0, int PMLYL = 0, int PMLYR = 0, int PMLZL = 0, int PMLZR = 0,
                  double omega = 2.0*M_PI, double shift = 0.5, GO mx = -1, GO my = -1, GO mz = -1, int model = 0)
-	: nx_(nx), ny_(ny), nz_(nz), mx_(mx), my_(my), mz_(mz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz), matrixType_(matrixType), keepBCs_(keepBCs),
+	: nx_(nx), ny_(ny), nz_(nz), mx_(mx), my_(my), mz_(mz), stretchx_(stretchx), stretchy_(stretchy), stretchz_(stretchz),
+          Kxx_(Kxx), Kxy_(Kxy), Kyy_(Kyy), dt_(dt), meshType_(meshType),
+          matrixType_(matrixType), keepBCs_(keepBCs),
       h_(h), delta_(delta), PMLx_left(PMLXL), PMLx_right(PMLXR), PMLy_left(PMLYL), PMLy_right(PMLYR), PMLz_left(PMLZL), PMLz_right(PMLZR),
       omega_(omega), shift_(shift), model_(model) {
         clp.setOption("nx",         &nx_,           "mesh points in x-direction.");
@@ -82,6 +86,11 @@ namespace Galeri {
         clp.setOption("stretchx",   &stretchx_,     "stretch mesh in x-direction.");
         clp.setOption("stretchy",   &stretchy_,     "stretch mesh in y-direction.");
         clp.setOption("stretchz",   &stretchz_,     "stretch mesh in z-direction.");
+        clp.setOption("Kxx",        &Kxx_,          "diffusion coefficient in xx-direction.");
+        clp.setOption("Kxy",        &Kxy_,          "diffusion coefficient in xy-direction.");
+        clp.setOption("Kyy",        &Kyy_,          "diffusion coefficient in yy-direction.");
+        clp.setOption("dt",         &dt_,           "time step size.");
+        clp.setOption("meshType",   &meshType_,     "meshType.");
         clp.setOption("keepBCs",    &keepBCs_,      "keep Dirichlet boundary rows in matrix (0=false,1=true)");
         clp.setOption("matrixType", &matrixType_,   "matrix type: Laplace1D, Laplace2D, Laplace3D, ..."); //TODO: Star2D, numGlobalElements=...
         clp.setOption("h",          &h_,            "mesh width for uniform h");
@@ -125,6 +134,7 @@ namespace Galeri {
         else if (matrixType == "Laplace2D"    ||
                  matrixType == "Star2D"       ||
                  matrixType == "BigStar2D"    ||
+                 matrixType == "AnisotropicDiffusion" ||
                  matrixType == "Elasticity2D" ||
                  matrixType == "Helmholtz2D")
           numGlobalElements = nx*ny;
@@ -165,6 +175,11 @@ namespace Galeri {
         paramList_->set("stretchx",    stretchx_);
         paramList_->set("stretchy",    stretchy_);
         paramList_->set("stretchz",    stretchz_);
+        paramList_->set("Kxx",         Kxx_);
+        paramList_->set("Kxy",         Kxy_);
+        paramList_->set("Kyy",         Kyy_);
+        paramList_->set("dt",          dt_);
+        paramList_->set("meshType",    meshType_);
         paramList_->set("keepBCs",     static_cast<bool>(keepBCs_));
         paramList_->set("matrixType",  matrixType_);
         paramList_->set("h",           h_);
@@ -228,10 +243,19 @@ namespace Galeri {
           out << "Matrix type: "  << matrixType << std::endl
               << "Problem size: " << GetNumGlobalElements();
 
-          if      (matrixType == "Laplace2D" || matrixType == "Elasticity2D" || matrixType == "Helmholtz2D")  out << " (" << nx << "x" << ny << ")";
+          if      (matrixType == "Laplace2D" || matrixType == "AnisotropicDiffusion" || matrixType == "Elasticity2D" || matrixType == "Helmholtz2D")  out << " (" << nx << "x" << ny << ")";
           else if (matrixType == "Laplace3D" || matrixType == "Elasticity3D" || matrixType == "Helmholtz3D")  out << " (" << nx << "x" << ny << "x" << nz << ")";
 
           out << std::endl;
+
+          if (matrixType == "AnisotropicDiffusion") {
+            double Kxx = paramList.get<double>("Kxx");
+            double Kxy = paramList.get<double>("Kxy");
+            double Kyy = paramList.get<double>("Kyy");
+            double dt = paramList.get<double>("dt");
+            out << "K  = [[ " << Kxx << ", " << Kxy << " ], [ " << Kxy << ", " << Kyy << " ]]" << std::endl;
+            out << "dt = " << dt << std::endl;
+          }
         }
       }
 
@@ -242,6 +266,9 @@ namespace Galeri {
       mutable GO     nx_, ny_, nz_;
       mutable GO     mx_, my_, mz_;
       mutable double stretchx_, stretchy_, stretchz_;
+      mutable double Kxx_, Kxy_, Kyy_;
+      mutable double dt_;
+      mutable std::string meshType_;
 
       std::string    matrixType_;
 

@@ -125,27 +125,30 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   //This relies on the fact that sensitivities are always called by ROL at each iteration to asses whether the solver is converged
   //TODO: when write_interval>1, at the moment there is no guarantee that the final iteration of the optimization (i.e. the converged solution) gets printed
 
-  if(appParams->isSublist("Analysis")){
-    auto analysisParams = appParams->sublist("Analysis");
-    if(analysisParams.isSublist("Optimization Status")){
-      auto optimizationParams = analysisParams.sublist("Optimization Status");
-      if(optimizationParams.isParameter("Optimizer Iteration Number"))
-        observeFinalSolution = false;
+  if(appParams->isSublist("Optimization Status")){
+    auto optimizationParams = appParams->sublist("Optimization Status");
+    if(optimizationParams.isParameter("Optimizer Iteration Number"))
+      observeFinalSolution = false;
 
-      solveState = optimizationParams.isParameter("Compute State") ? optimizationParams.template get<bool>("Compute State") : true;
-    }
+    solveState = optimizationParams.isParameter("Compute State") ? optimizationParams.template get<bool>("Compute State") : true;
   }
 
   // Forward all parameters to underlying model
   Thyra::ModelEvaluatorBase::InArgs<Scalar> modelInArgs = this->getModel().createInArgs();
   for (int l = 0; l < num_p; ++l) {
-    modelInArgs.set_p(l, inArgs.get_p(l));
+    if (Teuchos::nonnull(inArgs.get_p(l)))
+      modelInArgs.set_p(l, inArgs.get_p(l));
+    else
+      modelInArgs.set_p(l, this->getModel().getNominalValues().get_p(l));
+
     modelInArgs.set_p_direction(l, inArgs.get_p_direction(l));
   }
 
   // Find the solution of the implicit underlying model
   Thyra::SolveStatus<Scalar> solve_status;
   const Thyra::SolveCriteria<Scalar> solve_criteria;
+
+  Teuchos::ParameterList analysisParams;
 
   if(solveState)
   {
@@ -180,12 +183,9 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
           "Nonlinear solver failed to converge");
     }
 
-    if(appParams->isSublist("Analysis")){
-      Teuchos::ParameterList& analysisParams = appParams->sublist("Analysis");
-      if(analysisParams.isSublist("Optimization Status")) {
-        analysisParams.sublist("Optimization Status").set("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
-        analysisParams.sublist("Optimization Status").set("Compute State", false);
-      }
+    if(appParams->isSublist("Optimization Status")){
+      appParams->sublist("Optimization Status").set("State Solve Converged", solve_status.solveStatus==Thyra::SOLVE_STATUS_CONVERGED);
+      appParams->sublist("Optimization Status").set("Compute State", false);
     }
 
     auto final_point = model->createInArgs();
@@ -201,7 +201,7 @@ void Piro::NOXSolver<Scalar>::evalModelImpl(
   const RCP<const Thyra::VectorBase<Scalar> > finalSolution = solver->get_current_x();
   modelInArgs.set_x(finalSolution);
 
-  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
+  this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, analysisParams);
   
   bool computeReducedHessian = false;
   for (int g_index=0; g_index<this->num_g(); ++g_index) {

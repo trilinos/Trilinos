@@ -97,7 +97,7 @@ namespace Intrepid2 {
 
       };
 
-      template<typename ExecSpaceType,
+      template<typename DeviceType,
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
@@ -149,25 +149,27 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
   class Basis_HGRAD_LINE_C1_FEM
-    : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+    : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
-
+    using BasisBase = Basis<DeviceType,outputValueType,pointValueType>;
+    
+    using OrdinalTypeArray1DHost = typename BasisBase::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename BasisBase::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename BasisBase::OrdinalTypeArray3DHost;
+    
+    using OutputViewType = typename BasisBase::OutputViewType;
+    using PointViewType  = typename BasisBase::PointViewType ;
+    using ScalarViewType = typename BasisBase::ScalarViewType;
+      
     /** \brief  Constructor.
      */
     Basis_HGRAD_LINE_C1_FEM();
 
-    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
-
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+    using BasisBase::getValues;
 
     virtual
     void
@@ -183,7 +185,7 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_LINE_C1_FEM::
-        getValues<ExecSpaceType>( outputValues,
+        getValues<DeviceType>( outputValues,
                                   inputPoints,
                                   operatorType );
     }

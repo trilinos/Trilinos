@@ -10,6 +10,7 @@
 #define Tempus_WrapperModelEvaluatorBasic_decl_hpp
 
 #include <functional>
+#include "Tempus_config.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 
 namespace Tempus {

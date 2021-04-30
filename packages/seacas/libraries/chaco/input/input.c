@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -50,7 +50,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("Graph input file: ");
     }
-    (void)scanf("%256s", inname);
+    scanf("%256s", inname);
 
     *fin = fopen(inname, "r");
     if (*fin == NULL) {
@@ -63,7 +63,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("Assignment output file: ");
     }
-    (void)scanf("%256s", outassignname);
+    scanf("%256s", outassignname);
   }
 
   /* Name output results file. */
@@ -71,7 +71,7 @@ void input_queries(FILE **fin,           /* input file */
     if (PROMPT) {
       printf("File name for saving run results: ");
     }
-    (void)scanf("%256s", outfilename);
+    scanf("%256s", outfilename);
   }
 
   /* Initialize the method flags */
@@ -105,7 +105,7 @@ void input_queries(FILE **fin,           /* input file */
       if (PROMPT) {
         printf("Assignment input file: ");
       }
-      (void)scanf("%256s", inassignname);
+      scanf("%256s", inassignname);
 
       *finassign = fopen(inassignname, "r");
       if (*finassign == NULL) {
@@ -119,7 +119,7 @@ void input_queries(FILE **fin,           /* input file */
       if (PROMPT) {
         printf("Geometry input file name: ");
       }
-      (void)scanf("%256s", geomname);
+      scanf("%256s", geomname);
 
       *fingeom = fopen(geomname, "r");
       if (*fingeom == NULL) {
@@ -143,7 +143,7 @@ void input_queries(FILE **fin,           /* input file */
           if (PROMPT) {
             printf("Geometry input file name: ");
           }
-          (void)scanf("%256s", geomname);
+          scanf("%256s", geomname);
 
           *fingeom = fopen(geomname, "r");
           if (*fingeom == NULL) {
@@ -167,7 +167,7 @@ void input_queries(FILE **fin,           /* input file */
         if (PROMPT) {
           printf("Geometry input file name: ");
         }
-        (void)scanf("%256s", geomname);
+        scanf("%256s", geomname);
 
         *fingeom = fopen(geomname, "r");
         if (*fingeom == NULL) {

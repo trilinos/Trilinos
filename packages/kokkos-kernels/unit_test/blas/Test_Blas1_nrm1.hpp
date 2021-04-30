@@ -9,7 +9,9 @@ namespace Test {
   void impl_test_nrm1(int N) {
 
     typedef typename ViewTypeA::value_type ScalarA;
-    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+    typedef Kokkos::ArithTraits<ScalarA> AT;
+    typedef typename AT::mag_type mag_type;
+    typedef Kokkos::ArithTraits<mag_type> MAT;
 
     typedef Kokkos::View<ScalarA*[2],
        typename std::conditional<
@@ -27,25 +29,31 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
     typename ViewTypeA::const_type c_a = a;
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 : 1e-7);
 
-    typename AT::mag_type expected_result = 0;
+    mag_type expected_result = 0;
     for(int i=0;i<N;i++)
-      expected_result += AT::abs(h_a(i));
+    {
+      //note: for complex, BLAS asum (aka our nrm1) is _not_
+      //the sum of magnitudes - it's the sum of absolute real and imaginary parts.
+      //See netlib, MKL, and CUBLAS documentation.
+      //
+      //This is safe; ArithTraits<T>::imag is 0 if T is real.
+      expected_result += MAT::abs(AT::real(h_a(i))) + MAT::abs(AT::imag(h_a(i)));
+    }
 
-    typename AT::mag_type nonconst_result = KokkosBlas::nrm1(a);
-    EXPECT_NEAR_KK( nonconst_result, expected_result, eps*expected_result);
+    mag_type nonconst_result = KokkosBlas::nrm1(a);
+    EXPECT_NEAR_KK( nonconst_result, expected_result, eps * expected_result );
 
-    typename AT::mag_type const_result = KokkosBlas::nrm1(c_a);
-    EXPECT_NEAR_KK( const_result, expected_result, eps*expected_result);
-
+    mag_type const_result = KokkosBlas::nrm1(c_a);
+    EXPECT_NEAR_KK( const_result, expected_result, eps * expected_result );
   }
 
   template<class ViewTypeA, class Device>
@@ -53,6 +61,8 @@ namespace Test {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef Kokkos::Details::ArithTraits<ScalarA> AT;
+    typedef typename AT::mag_type mag_type;
+    typedef Kokkos::ArithTraits<mag_type> MAT;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
@@ -68,38 +78,36 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
     typename ViewTypeA::const_type c_a = a;
 
-    typename AT::mag_type* expected_result = new typename AT::mag_type[K];
-    for(int j=0;j<K;j++) {
-      expected_result[j] = typename AT::mag_type();
+    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarA>::mag_type, float>::value ? 1e-4 : 1e-7);
+
+    Kokkos::View<mag_type*, Kokkos::HostSpace> expected_result("Expected Nrm1", K);
+    for(int k = 0; k < K; k++)
+    {
+      expected_result(k) = MAT::zero();
       for(int i=0;i<N;i++)
-        expected_result[j] += AT::abs(h_a(i,j));
+      {
+        expected_result(k) += MAT::abs(AT::real(h_a(i, k))) + MAT::abs(AT::imag(h_a(i, k)));
+      }
     }
 
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    Kokkos::View<mag_type*,Kokkos::HostSpace> r("Nrm1::Result",K);
+    Kokkos::View<mag_type*,Kokkos::HostSpace> c_r("Nrm1::ConstResult",K);
 
-    Kokkos::View<typename AT::mag_type*,Kokkos::HostSpace> r("Dot::Result",K);
-
-    KokkosBlas::nrm1(r,a);
-    for(int k=0;k<K;k++) {
-      typename AT::mag_type nonconst_result = r(k);
-      EXPECT_NEAR_KK( nonconst_result, expected_result[k], eps*expected_result[k]);
+    KokkosBlas::nrm1(r, a);
+    KokkosBlas::nrm1(c_r, a);
+    for(int k = 0; k < K; k++)
+    {
+      EXPECT_NEAR_KK( r(k), expected_result(k), eps * expected_result(k) );
+      EXPECT_NEAR_KK( c_r(k), expected_result(k), eps * expected_result(k) );
     }
-
-    KokkosBlas::nrm1(r,c_a);
-    for(int k=0;k<K;k++) {
-      typename AT::mag_type const_result = r(k);
-      EXPECT_NEAR_KK( const_result, expected_result[k], eps*expected_result[k]);
-    }
-
-    delete [] expected_result;
   }
 }
 

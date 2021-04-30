@@ -112,9 +112,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n" \
         << "===============================================================================\n";      
 
-      typedef RealSpaceTools<DeviceSpaceType> rst;
-      typedef ArrayTools<DeviceSpaceType> art; 
-      typedef Kokkos::DynRankView<value_type,DeviceSpaceType> DynRankView;
+      typedef RealSpaceTools<DeviceType> rst;
+      typedef ArrayTools<DeviceType> art;
+      typedef Kokkos::DynRankView<value_type,DeviceType> DynRankView;
 
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
 
@@ -202,11 +202,11 @@ namespace Intrepid2 {
           // fill with random numbers
           for (int i=0; i < f; i++)
             for (int j=0; j < p; j++) {
-              in_f_p(i, j) = Teuchos::ScalarTraits<value_type>::random();
+              in_f_p_host(i, j) = Teuchos::ScalarTraits<value_type>::random();
               for (int m=0; m<d1; m++) {
-                in_f_p_d(i, j, m) = Teuchos::ScalarTraits<value_type>::random();
+                in_f_p_d_host(i, j, m) = Teuchos::ScalarTraits<value_type>::random();
                 for (int n=0; n<d2; n++)
-                  in_f_p_d_d(i, j, m, n)  = Teuchos::ScalarTraits<value_type>::random();
+                  in_f_p_d_d_host(i, j, m, n)  = Teuchos::ScalarTraits<value_type>::random();
               }
             }
 

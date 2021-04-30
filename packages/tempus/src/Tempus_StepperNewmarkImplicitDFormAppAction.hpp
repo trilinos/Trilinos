@@ -15,7 +15,7 @@
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperNewmarkImplicitDForm;
 
 /** \brief Application Action for StepperNewmarkImplicitDForm.
@@ -23,25 +23,12 @@ template<class Scalar> class StepperNewmarkImplicitDForm;
  *  This class provides a means to apply various actions with the NewmarkImplicitDForm time step.
  *  The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
- *  the application to just observe this data (i.e., use but not change the
- *  data) to change any of it (USER BEWARE!).
+ *  the application to just observe this data, i.e., use but not change
+ *  any of it (USER BEWARE!).
  *
- *  Below is the NewmarkImplicitDForm algorithm and includes the locations where the
- *  application can take actions (in italicized).
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Newmark Implicit-D with application-action locations indicated.}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute the predictor (e.g., apply stepper to $x_n$).
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_SOLVE)}
- *    \State Solve $\mathcal{F}_n(\dot{x}=(x_n-x_{n-1})/\Delta t_n, x_n, t_n)=0$ for $x_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_SOLVE)}
- *    \State $\dot{x}_n \leftarrow (x_n-x_{n-1})/\Delta t_n$
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations for these AppAction calls
+ *  (StepperNewmarkImplicitDFormAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperNewmarkImplicitDForm.
  */
 template<class Scalar>
 class StepperNewmarkImplicitDFormAppAction

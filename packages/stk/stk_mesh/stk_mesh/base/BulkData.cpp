@@ -88,6 +88,7 @@
 #include <stk_util/parallel/CommSparse.hpp>  // for CommSparse
 #include <stk_util/parallel/GenerateParallelUniqueIDs.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
+#include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
 #include <stk_util/util/string_case_compare.hpp>
@@ -478,24 +479,6 @@ BulkData::unregister_device_mesh() const
       bucket->set_ngp_bucket_id(INVALID_BUCKET_ID);
     }
   }
-}
-
-uint8_t *
-BulkData::get_ngp_field_sync_buffer() const
-{
-  if (m_ngpFieldSyncBufferModCount != synchronized_count()) {
-    const size_t maxNgpFieldAllocationBytes = get_max_ngp_field_allocation_bytes(mesh_meta_data());
-
-    if (maxNgpFieldAllocationBytes > m_ngpFieldSyncBuffer.extent(0)) {
-      constexpr double BUFFER_OVERSIZE_FACTOR = 1.1;
-      m_ngpFieldSyncBuffer = Kokkos::View<uint8_t*, MemSpace>(Kokkos::view_alloc(Kokkos::WithoutInitializing, "FieldSyncBuffer"),
-                                                              static_cast<unsigned>(maxNgpFieldAllocationBytes * BUFFER_OVERSIZE_FACTOR));
-    }
-
-    m_ngpFieldSyncBufferModCount = synchronized_count();
-  }
-
-  return m_ngpFieldSyncBuffer.data();
 }
 
 void BulkData::set_automatic_aura_option(AutomaticAuraOption auraOption, bool applyImmediately)
@@ -3529,47 +3512,52 @@ void BulkData::internal_change_ghosting( Ghosting & ghosting,
   std::vector<EntityCommInfo> comm_ghost ;
   for ( EntityCommListInfoVector::reverse_iterator
         i = m_entity_comm_list.rbegin() ; i != m_entity_comm_list.rend() ; ++i) {
-
-    if (!i->entity_comm || !i->entity_comm->isGhost) {
+    
+    if (!i->entity_comm) {
       continue;
     }
 
-    const bool is_owner = parallel_owner_rank(i->entity) == parallel_rank() ;
-    const bool remove_recv = ( ! is_owner ) &&
-                             !ghostStatus[i->entity.local_offset()] && in_receive_ghost(ghosting, i->entity);
+    EntityCommListInfo& entityComm = *i;
+    if (!entityComm.entity_comm->isGhost) {
+      continue;
+    }
 
-    if(is_valid(i->entity))
+    const bool is_owner = parallel_owner_rank(entityComm.entity) == parallel_rank() ;
+    const bool remove_recv = ( ! is_owner ) &&
+                             !ghostStatus[entityComm.entity.local_offset()] && in_receive_ghost(ghosting, entityComm.entity);
+
+    if(is_valid(entityComm.entity))
     {
       if ( is_owner ) {
         // Is owner, potentially removing ghost-sends
         // Have to make a copy
 
-          const PairIterEntityComm ec = internal_entity_comm_map(i->entity, ghosting);
+          const PairIterEntityComm ec = ghost_info_range(entityComm.entity_comm->comm_map, ghosting);
           comm_ghost.assign( ec.first , ec.second );
   
           for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
             const EntityCommInfo tmp = comm_ghost.back();
 
-            if (!entityProcMapping.find(i->entity, tmp.proc) ) {
-              entity_comm_map_erase(i->key, tmp);
+            if (!entityProcMapping.find(entityComm.entity, tmp.proc) ) {
+              entity_comm_map_erase(entityComm.key, tmp);
             }
             else {
-              entityProcMapping.eraseEntityProc(i->entity, tmp.proc);
+              entityProcMapping.eraseEntityProc(entityComm.entity, tmp.proc);
             }
           }
       }
       else if ( remove_recv ) {
-          entity_comm_map_erase(i->key, ghosting);
-          internal_change_entity_parts(i->entity, addParts, removeParts, scratchOrdinalVec, scratchSpace);
+          entity_comm_map_erase(entityComm.key, ghosting);
+          internal_change_entity_parts(entityComm.entity, addParts, removeParts, scratchOrdinalVec, scratchSpace);
       }
 
-      if ( internal_entity_comm_map(i->entity).empty() ) {
+      if ( internal_entity_comm_map(entityComm.entity).empty() ) {
         removed = true ;
-        i->key = EntityKey(); // No longer communicated
+        entityComm.key = EntityKey(); // No longer communicated
         if ( remove_recv ) {
-          ThrowRequireMsg( internal_destroy_entity_with_notification( i->entity, remove_recv ),
+          ThrowRequireMsg( internal_destroy_entity_with_notification( entityComm.entity, remove_recv ),
                            "P[" << this->parallel_rank() << "]: FAILED attempt to destroy entity: "
-                           << entity_key(i->entity) );
+                           << entity_key(entityComm.entity) );
         }
       }
     }
@@ -4130,7 +4118,7 @@ EntityVector BulkData::get_upward_send_ghost_relations(const Entity entity)
 }
 
 void BulkData::add_entity_to_same_ghosting(Entity entity, Entity connectedGhost) {
-  for(PairIterEntityComm ec(internal_entity_comm_map(entity_key(connectedGhost))); ! ec.empty(); ++ec) {
+  for(PairIterEntityComm ec(internal_entity_comm_map(connectedGhost)); ! ec.empty(); ++ec) {
     if (ec->ghost_id > BulkData::AURA) {
       entity_comm_map_insert(entity, EntityCommInfo(ec->ghost_id, ec->proc));
       entity_comm_list_insert(entity);
@@ -4208,7 +4196,7 @@ void BulkData::internal_resolve_ghosted_modify_delete(const stk::mesh::EntityVec
       const bool hasBeenPromotedToSharedOrOwned = this->owned_closure(entity);
       bool isAuraGhost = false;
       bool isCustomGhost = false;
-      PairIterEntityComm pairIterEntityComm = internal_entity_comm_map(key);
+      PairIterEntityComm pairIterEntityComm = internal_entity_comm_map(entity);
       if(pairIterEntityComm.empty()) {
         if(std::binary_search(entitiesNoLongerShared.begin(), entitiesNoLongerShared.end(), entity)) {
           EntityVector ghosts = get_upward_recv_ghost_relations(entity);
@@ -4345,7 +4333,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
             // Remove the locally owned, add the globally_shared
             internal_change_entity_parts(entity, shared_part /*add*/, owned_part /*remove*/, scratchOrdinalVec, scratchSpace);
         }
-        else if(!internal_entity_comm_map_shared(entity_key(entity)).empty())
+        else if(!internal_entity_comm_map_shared(entity).empty())
         {
             // Own it and has sharing information.
             // Add the globally_shared
@@ -4373,7 +4361,7 @@ void BulkData::move_entities_to_proper_part_ownership( const std::vector<Entity>
             }
             error_msg << "    " << impl::print_entity_key(m_mesh_meta_data, entity_key(entity));
             error_msg << " also declared on";
-            for(PairIterEntityComm ec = internal_entity_comm_map_shared(entity_key(entity)); !ec.empty(); ++ec)
+            for(PairIterEntityComm ec = internal_entity_comm_map_shared(entity); !ec.empty(); ++ec)
             {
                 error_msg << " P" << ec->proc;
             }
@@ -4706,7 +4694,7 @@ void BulkData::determineEntitiesThatNeedGhosting(stk::mesh::BulkData &stkMeshBul
         {
             if ( entitiesConnectedToNodes[j] != Entity() )
             {
-                PairIterEntityComm ghosted = stkMeshBulkData.internal_entity_comm_map( stkMeshBulkData.entity_key(entitiesConnectedToNodes[j]) , stkMeshBulkData.aura_ghosting());
+                PairIterEntityComm ghosted = stkMeshBulkData.internal_entity_comm_map( entitiesConnectedToNodes[j] , stkMeshBulkData.aura_ghosting());
                 for (PairIterEntityComm ec = ghosted; !ec.empty(); ++ec)
                 {
                     if ( ec->proc != stkMeshBulkData.parallel_rank() )
@@ -4939,7 +4927,6 @@ void BulkData::remove_unneeded_induced_parts(stk::mesh::Entity entity, const Ent
 {
     part_storage.induced_part_ordinals.clear();
     induced_part_membership(*this, entity, part_storage.induced_part_ordinals);
-
     impl::unpack_induced_parts_from_sharers(part_storage.induced_part_ordinals, entity_comm_info, comm, entity_key(entity));
     impl::filter_out_unneeded_induced_parts(*this, entity, part_storage.induced_part_ordinals, part_storage.removeParts);
 
@@ -4992,28 +4979,47 @@ void BulkData::internal_resolve_shared_membership(const stk::mesh::EntityVector 
     PartStorage part_storage;
 
 #ifndef NDEBUG
-    bool allOk = true;
+    bool localOk = true;
+#endif
+    std::string errorMsg;
     try
     {
-#endif
-        for(const EntityCommListInfo& info : m_entity_comm_list)
-        {
-            const int owner = parallel_owner_rank(info.entity);
-            bool i_own_this_entity = (owner == p_rank);
-            if(i_own_this_entity && state(info.entity) != Unchanged)
-            {
-                remove_unneeded_induced_parts(info.entity, info.entity_comm->comm_map, part_storage,  comm);
-            }
-        }
-#ifndef NDEBUG
-    }
-    catch(...) { allOk = false; }
+      std::vector<bool> shouldProcess(m_entity_comm_list.size(), false);
+      for(unsigned i=0; i<m_entity_comm_list.size(); ++i) {
+        const EntityCommListInfo& info = m_entity_comm_list[i];
+        const int owner = parallel_owner_rank(info.entity);
+        bool i_own_this_entity = (owner == p_rank);
 
-    int numericAllOk = allOk;
-    int minAllOk = 0;
-    stk::all_reduce_min(this->parallel(), &numericAllOk, &minAllOk, 1);
-    allOk = minAllOk == 1;
-    ThrowRequireWithSierraHelpMsg(allOk);
+        if (i_own_this_entity && state(info.entity) != Unchanged) {
+          shouldProcess[i] = true;
+        }
+      }
+      for (unsigned i=0; i<m_entity_comm_list.size(); ++i) {
+        if (shouldProcess[i]) {
+          const EntityCommListInfo& info = m_entity_comm_list[i];
+          remove_unneeded_induced_parts(info.entity, info.entity_comm->comm_map, part_storage,       comm);
+        }
+      }
+    }
+    catch(std::exception& e) {
+      errorMsg = "P"+std::to_string(parallel_rank())
+               + " stk::mesh::BulkData::internal_resolve_shared_membership exception: "
+               + e.what();
+#ifndef NDEBUG
+      localOk = false;
+#else
+      std::ostringstream os;
+      os<<errorMsg<<std::endl;
+      os<<"Run a debug build to get parallel-consistent catch and shutdown."<<std::endl;
+      std::cerr<<os.str();
+#endif
+    }
+
+#ifndef NDEBUG
+    if (!stk::is_true_on_all_procs(this->parallel(), localOk)) {
+      std::string msg = localOk ? "error on another proc" : errorMsg;
+      ThrowErrorMsg(msg);
+    }
 #endif
 
     OrdinalVector scratch, scratch2;

@@ -111,11 +111,11 @@ int main(int argc, char* argv[]) {
       solver2.solve(*outStream);
     }
     
-    ROL::Ptr<ROL::OptimizationProblem<double>> problem
-      = ROL::makePtr<ROL::OptimizationProblem<double>>(robj, z);
+    ROL::Ptr<ROL::Problem<double>> problem
+      = ROL::makePtr<ROL::Problem<double>>(robj, z);
     ROL::PrimalDualRisk<double> solver(problem, sampler, *parlist);
     if (parlist->sublist("Problem").get("Run Derivative Check",false)) {
-      problem->check(*outStream);
+      problem->check(true,*outStream);
       solver.check(*outStream);
     }
     solver.run(*outStream);

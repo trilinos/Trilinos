@@ -99,7 +99,8 @@ namespace FROSch {
 
         using LocalPartitionOfUnityBasisPtr     = typename SchwarzOperator<SC,LO,GO,NO>::LocalPartitionOfUnityBasisPtr;
 
-        using SubdomainSolverPtr                = typename SchwarzOperator<SC,LO,GO,NO>::SubdomainSolverPtr;
+        using SolverPtr                         = typename SchwarzOperator<SC,LO,GO,NO>::SolverPtr;
+        using SolverFactoryPtr                  = typename SchwarzOperator<SC,LO,GO,NO>::SolverFactoryPtr;
 
         using UN                                = typename SchwarzOperator<SC,LO,GO,NO>::UN;
         using UNVecPtr                          = typename SchwarzOperator<SC,LO,GO,NO>::UNVecPtr;

@@ -45,8 +45,8 @@
 #define ROL_AFFINE_TRANSFORM_CONSTRAINT_H
 
 #include "ROL_Constraint.hpp"
-#include "ROL_LinearOperator.hpp"
-#include "ROL_SimController.hpp"
+#include "ROL_LinearConstraint.hpp"
+#include "ROL_VectorController.hpp"
 
 /** @ingroup func_group
     \class ROL::AffineTransformConstraint
@@ -61,68 +61,40 @@ namespace ROL {
 template <class Real>
 class AffineTransformConstraint : public Constraint<Real> {
 private:
-  const Ptr<Constraint<Real>>     con_;
-  const Ptr<LinearOperator<Real>> A_;
-  const Ptr<Vector<Real>>         b_;
+  const Ptr<Constraint<Real>>  con_;
+  const Ptr<Constraint<Real>> acon_;
 
-  Ptr<SimController<Real>> storage_;
-
+  Ptr<VectorController<Real>> storage_;
   Ptr<Vector<Real>> primal_, dual_, Av_;
 
-  const Ptr<const Vector<Real>> transform(const Vector<Real> &x) {
-    bool isApplied = storage_->get(*primal_,Constraint<Real>::getParameter());
-    if (!isApplied) {
-      Real tol = std::sqrt(ROL_EPSILON<Real>());
-      A_->apply(*primal_,x,tol);
-      primal_->plus(*b_);
-      storage_->set(*primal_,Constraint<Real>::getParameter());
-    }
-    return primal_;
-  }
-
 public:
-  AffineTransformConstraint(const Ptr<Constraint<Real>>     &con,
-                            const Ptr<LinearOperator<Real>> &A,
-                            const Ptr<Vector<Real>>         &b,
-                            const Ptr<SimController<Real>>  &storage = nullPtr)
-    : con_(con), A_(A), b_(b), storage_(storage) {
-    primal_ = b->clone();
-    Av_     = b->clone();
-    dual_   = b->dual().clone();
-    if (storage == nullPtr) {
-      storage_ = makePtr<SimController<Real>>();
-    }
-  }
-
   virtual ~AffineTransformConstraint() {}
+  AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
+                            const Ptr<Constraint<Real>>       &acon,
+                            const Vector<Real>                &range,
+                            const Ptr<VectorController<Real>> &storage = nullPtr);
+  AffineTransformConstraint(const Ptr<Constraint<Real>>       &con,
+                            const Ptr<LinearConstraint<Real>> &acon,
+                            const Ptr<VectorController<Real>> &storage = nullPtr);
+  AffineTransformConstraint(const Ptr<Constraint<Real>>           &con,
+                            const Ptr<const LinearOperator<Real>> &A,
+                            const Ptr<const Vector<Real>>         &b,
+                            const Ptr<VectorController<Real>>     &storage = nullPtr);
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    storage_->equalityConstraintUpdate(true);
-    con_->update(*transform(x),flag,iter);
-  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) override;
+  void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
+  void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) override;
 
-  void value( Vector<Real> &c, const Vector<Real> &x, Real &tol ) {
-    con_->value(c,*transform(x),tol); 
-  }
-
-  void applyJacobian( Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    A_->apply(*Av_,v,tol);
-    con_->applyJacobian(jv,*Av_,*transform(x),tol);
-  }
-
-  void applyAdjointJacobian( Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    con_->applyAdjointJacobian(*dual_,v,*transform(x),tol);
-    A_->applyAdjoint(ajv,*dual_,tol);
-  }
-
-  void applyAdjointHessian( Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
-    A_->apply(*Av_,v,tol);
-    con_->applyAdjointHessian(*dual_,u,*Av_,*transform(x),tol);
-    A_->applyAdjoint(ahuv,*dual_,tol);
-  }
+private:
+  Ptr<const Vector<Real>> transform(const Vector<Real> &x);
 
 }; // class AffineTransformConstraint
 
 } // namespace ROL
+
+#include "ROL_AffineTransformConstraint_Def.hpp"
 
 #endif // ROL_AFFINE_TRANSFORM_OBJECTIVE_H

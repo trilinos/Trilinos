@@ -500,7 +500,8 @@ TimerImpl &
 TimerImpl::start()
 {
   if (shouldRecord()) {
-    if (m_lapStartCount++ == 0) {
+    if (m_lapStartCount == 0) {
+      ++m_lapStartCount;
       m_lapCount.m_lapStart = m_lapCount.m_lapStop;
 
       m_cpuTime.m_lapStop = m_cpuTime.m_lapStart = value_now<CPUTime>();
@@ -560,7 +561,7 @@ TimerImpl &
 TimerImpl::stop()
 {
   if (shouldRecord()) {
-    if (--m_lapStartCount <= 0) {
+    if (m_lapStartCount > 0) {
       m_lapStartCount = 0;
       m_lapCount.m_lapStop++;
       m_childCausedStart = false;

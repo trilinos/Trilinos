@@ -21,6 +21,7 @@ struct CommandLineOptions {
   int maxAllowedNumIters {30};
   int maxNumIters {100};
   int restartLength {30};
+  std::string orthoType {"ICGS"};
   int stepSize {1};
   bool useCholQR {false};
   bool useCholQR2 {false};
@@ -53,6 +54,8 @@ TEUCHOS_STATIC_SETUP()
                  "Maximum number of iterations per restart cycle.  "
                  "This corresponds to the standard Belos parameter "
                  "\"Num Blocks\".");
+  clp.setOption ("ortho", &commandLineOptions.orthoType,
+                 "Name of the orthogonalization procedure");
   clp.setOption ("stepSize", &commandLineOptions.stepSize,
                  "Step size; only applies to algorithms that take it.");
   clp.setOption ("useCholQR", "noCholQR", &commandLineOptions.useCholQR,
@@ -232,11 +235,14 @@ testSolver (Teuchos::FancyOStream& out,
   params->set ("Verbosity", verbose ? 1 : 0);
   params->set ("Maximum Iterations", commandLineOptions.maxNumIters);
   params->set ("Num Blocks", commandLineOptions.restartLength);
+  params->set ("Orthogonalization", commandLineOptions.orthoType);
   if (solverName == "TPETRA GMRES S-STEP") {
     params->set ("Step Size", commandLineOptions.stepSize);
-    params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);
     params->set ("CholeskyQR",  commandLineOptions.useCholQR);
     params->set ("CholeskyQR2", commandLineOptions.useCholQR2);
+  }
+  if (solverName == "TPETRA GMRES S-STEP" || solverName == "TPETRA GMRES SINGLE REDUCE") {
+    params->set ("Compute Ritz Values", commandLineOptions.computeRitzValues);
   }
   try {
     solver->setParameters (params);

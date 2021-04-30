@@ -138,6 +138,7 @@ lib stk_coupling
      /sierra/stk_util//stk_util_command_line
      /sierra/stk_util//stk_util_parallel
      /sierra/stk_util//stk_util_util
+     /tpl/trilinos//teuchoscore
    :
      [ ifuserbuild
          <file>$(stk_coupling-root)/lib/libstk_coupling.a

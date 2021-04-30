@@ -120,14 +120,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  withLocalAccess_generic
-  SOURCES
-    withLocalAccess_generic
-  COMM serial mpi
-  STANDARD_PASS_OUTPUT
-  )
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
   verbosePrintArray
   SOURCES
     verbosePrintArray
@@ -160,3 +152,14 @@ TRIBITS_ADD_TEST(
   COMM serial
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  insertCrsIndicesThreshold
+  SOURCES
+    insertCrsIndicesThreshold
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+

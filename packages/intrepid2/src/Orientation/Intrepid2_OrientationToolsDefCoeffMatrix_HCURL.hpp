@@ -167,14 +167,14 @@ check_getCoeffMatrix_HCURL(const subcellBasisType& subcellBasis,
 }
 
 template<typename OutputViewType,
-typename subcellBasisType,
-typename cellBasisType>
+typename subcellBasisHostType,
+typename cellBasisHostType>
 inline
 void
 OrientationTools::
 getCoeffMatrix_HCURL(OutputViewType &output,
-    const subcellBasisType& subcellBasis,
-    const cellBasisType& cellBasis,
+    const subcellBasisHostType& subcellBasis,
+    const cellBasisHostType& cellBasis,
     const ordinal_type subcellId,
     const ordinal_type subcellOrt) {
 
@@ -182,15 +182,8 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   Debug::check_getCoeffMatrix_HCURL(subcellBasis,cellBasis,subcellId,subcellOrt);
 #endif
 
-  using ScalarType = typename cellBasisType::scalarType;
-  using ExecutionSpace = typename cellBasisType::ExecutionSpace;
-  using HostExecutionSpace =
-      typename Kokkos::Impl::is_space<ExecutionSpace>::host_mirror_space::execution_space;
-  using OutputValueType = typename cellBasisType::OutputValueType;
-  using PointValueType = typename cellBasisType::PointValueType;
-  using BasisViewType = Kokkos::DynRankView<OutputValueType,ExecutionSpace>;
-  using PointViewType = Kokkos::DynRankView<PointValueType,ExecutionSpace>;
-  using ScalarViewType = Kokkos::DynRankView<ScalarType,ExecutionSpace>;
+  using value_type = typename OutputViewType::non_const_value_type;
+  using host_device_type = typename Kokkos::HostSpace::device_type;
 
   //
   // Topology
@@ -210,22 +203,22 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   // on the subcell spanning the same space as the bases \phi_j
 
   // Tangents t_j
-  ScalarViewType subcellTangents("subcellTangents", numSubcellBasis, subcellDim);
+  Kokkos::DynRankView<value_type,host_device_type> subcellTangents("subcellTangents", numSubcellBasis, subcellDim);
   auto degree = subcellBasis.getDegree();
-  BasisPtr<ExecutionSpace, ScalarType, ScalarType> basisPtr;
+  BasisPtr<host_device_type, value_type, value_type> basisPtr;
   if(subcellBaseKey == shards::Line<>::key) {
-    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HVOL_LINE_Cn_FEM<ExecutionSpace, ScalarType, ScalarType>(degree));
+    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HVOL_LINE_Cn_FEM<host_device_type, value_type, value_type>(degree));
     basisPtr->getDofCoeffs(Kokkos::subview(subcellTangents, Kokkos::ALL(),0));
   } else if (subcellBaseKey == shards::Triangle<>::key) {
-    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HCURL_TRI_In_FEM<ExecutionSpace, ScalarType, ScalarType>(degree));
+    basisPtr = Teuchos::rcp(new Intrepid2::Basis_HCURL_TRI_In_FEM<host_device_type, value_type, value_type>(degree));
     basisPtr->getDofCoeffs(subcellTangents);
   } else if (subcellBaseKey == shards::Quadrilateral<>::key) {
-    basisPtr =  Teuchos::rcp(new Intrepid2::Basis_HCURL_QUAD_In_FEM<ExecutionSpace, ScalarType, ScalarType>(degree));
+    basisPtr =  Teuchos::rcp(new Intrepid2::Basis_HCURL_QUAD_In_FEM<host_device_type, value_type, value_type>(degree));
     basisPtr->getDofCoeffs(subcellTangents);
   }
 
   // coordinates \xi_j
-  ScalarViewType subcellDofCoords("subcellDofCoords", basisPtr->getCardinality(), subcellDim);
+  Kokkos::DynRankView<value_type,host_device_type> subcellDofCoords("subcellDofCoords", basisPtr->getCardinality(), subcellDim);
   basisPtr->getDofCoords(subcellDofCoords);
   INTREPID2_TEST_FOR_EXCEPTION( basisPtr->getDofCount(subcellDim,0) != ndofSubcell,
       std::logic_error,
@@ -233,25 +226,24 @@ getCoeffMatrix_HCURL(OutputViewType &output,
       "the number of basisPtr internal DoFs should equate those of the subcell");
 
   // restrict \xi_j (and corresponding t_j) to points internal to the HCURL basis
-  PointViewType refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
-  ScalarViewType refSubcellTangents("subcellTangents", ndofSubcell, subcellDim);
-  auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename ExecutionSpace::memory_space(), basisPtr->getAllDofOrdinal());
-  Kokkos::parallel_for( Kokkos::RangePolicy<ExecutionSpace>(0, ndofSubcell),
-      KOKKOS_LAMBDA (const int i){
+  Kokkos::DynRankView<value_type,host_device_type> refPtsSubcell("refPtsSubcell", ndofSubcell, subcellDim);
+  Kokkos::DynRankView<value_type,host_device_type> refSubcellTangents("subcellTangents", ndofSubcell, subcellDim);
+  auto tagToOrdinal = basisPtr->getAllDofOrdinal();
+  for (ordinal_type i=0;i<ndofSubcell;++i) {
     ordinal_type isc = tagToOrdinal(subcellDim, 0, i);
     for(ordinal_type d=0; d <subcellDim; ++d){
       refPtsSubcell(i,d) = subcellDofCoords(isc,d);
       for(ordinal_type k=0; k <subcellDim; ++k)
         refSubcellTangents(i,d) = subcellTangents(isc,d);
     }
-  });
+  }
 
   //
   // Bases evaluation on the reference points
   //
 
   // subcellBasisValues = \phi_i (\xi_j)
-  BasisViewType subCellValues("subCellValues", numSubcellBasis, ndofSubcell, subcellDim);
+  Kokkos::DynRankView<value_type,host_device_type> subCellValues("subCellValues", numSubcellBasis, ndofSubcell, subcellDim);
   if(subcellDim==1) {
     auto lineValues = Kokkos::subview(subCellValues, Kokkos::ALL(), Kokkos::ALL(), 0);
     subcellBasis.getValues(lineValues, refPtsSubcell, OPERATOR_VALUE);
@@ -263,24 +255,22 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   // Basis evaluation on the reference points
   //
 
-  typename Intrepid2::CellTools<ExecutionSpace>::subcellParamViewType subcellParam;
-  Intrepid2::CellTools<ExecutionSpace>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
+  auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
 
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
-  PointViewType refPtsCell("refPtsCell", ndofSubcell, cellDim);
+  Kokkos::DynRankView<value_type,host_device_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);
   mapSubcellCoordsToRefCell(refPtsCell,refPtsSubcell, subcellParam, subcellBaseKey, subcellId, subcellOrt);
 
 
   //mapping tangents t_j into parent cell, i.e. computing J_F J_\eta t_j
-  ScalarViewType trJacobianF("trJacobianF", subcellDim, cellDim );
+  Kokkos::DynRankView<value_type,host_device_type> trJacobianF("trJacobianF", subcellDim, cellDim );
   OrientationTools::getRefSubcellTangents(trJacobianF, subcellParam, subcellBaseKey, subcellId, subcellOrt);
 
 
 
   // cellBasisValues = \psi_k(F_s (\eta_o (\xi_j)))
-  BasisViewType cellBasisValues("cellBasisValues", numCellBasis, ndofSubcell, cellDim);
+  Kokkos::DynRankView<value_type,host_device_type> cellBasisValues("cellBasisValues", numCellBasis, ndofSubcell, cellDim);
   cellBasis.getValues(cellBasisValues, refPtsCell, OPERATOR_VALUE);
-  ExecutionSpace().fence();
 
   //
   // Compute Psi_jk = \psi_k(F_s (\eta_o (\xi_j))) \cdot (J_F J_\eta t_j)
@@ -289,36 +279,31 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   //
 
   // construct Psi and Phi  matrices.  LAPACK wants left layout
-  Kokkos::View<ScalarType**,Kokkos::LayoutLeft,ExecutionSpace> // left layout for lapack
-  PsiMat("PsiMat", ndofSubcell, ndofSubcell),
-  PhiMat("PhiMat", ndofSubcell, ndofSubcell);
+  Kokkos::DynRankView<value_type,Kokkos::LayoutLeft,host_device_type> // left layout for lapack
+    PsiMat("PsiMat", ndofSubcell, ndofSubcell),
+    PhiMat("PhiMat", ndofSubcell, ndofSubcell);
+  
+  auto cellTagToOrdinal = cellBasis.getAllDofOrdinal();
+  auto subcellTagToOrdinal = subcellBasis.getAllDofOrdinal();
 
-  auto cellTagToOrdinal = Kokkos::create_mirror_view_and_copy(typename ExecutionSpace::memory_space(), cellBasis.getAllDofOrdinal());
-  auto subcellTagToOrdinal = Kokkos::create_mirror_view_and_copy(typename ExecutionSpace::memory_space(), subcellBasis.getAllDofOrdinal());
-
-  Kokkos::parallel_for( Kokkos::RangePolicy<ExecutionSpace>(0, ndofSubcell),
-      KOKKOS_LAMBDA (const int i){
+  for (ordinal_type i=0;i<ndofSubcell;++i) {
     const ordinal_type ic = cellTagToOrdinal(subcellDim, subcellId, i);
     for (ordinal_type j=0;j<ndofSubcell;++j) {
       const ordinal_type isc = subcellTagToOrdinal(subcellDim, 0, i);
-      ScalarType refEntry = 0, ortEntry =0;
+      value_type refEntry = 0, ortEntry =0;
       for (ordinal_type k=0;k<subcellDim;++k) {
-        ortEntry += get_scalar_value(subCellValues(isc,j,k))*refSubcellTangents(j,k);
+        ortEntry += subCellValues(isc,j,k)*refSubcellTangents(j,k);
         for (ordinal_type d=0; d<cellDim; ++d)
-          refEntry +=  get_scalar_value(cellBasisValues(ic,j,d))*trJacobianF(k,d)*refSubcellTangents(j,k);
+          refEntry +=  cellBasisValues(ic,j,d)*trJacobianF(k,d)*refSubcellTangents(j,k);
       }
       PsiMat(j,i) = refEntry;
       PhiMat(j,i) = ortEntry;
     }
-  });
-
-  auto hostRefMat = Kokkos::create_mirror_view_and_copy(typename ExecutionSpace::memory_space(), PsiMat);
-  auto hostOrtMat = Kokkos::create_mirror_view_and_copy(typename ExecutionSpace::memory_space(), PhiMat);
-
+  }
 
   // Solve the system using Lapack
   {
-    Teuchos::LAPACK<ordinal_type,ScalarType> lapack;
+    Teuchos::LAPACK<ordinal_type,value_type> lapack;
     ordinal_type info = 0;
 
 
@@ -333,10 +318,10 @@ getCoeffMatrix_HCURL(OutputViewType &output,
             &info);
 
         */
-    Kokkos::View<ordinal_type*,Kokkos::LayoutLeft,HostExecutionSpace> pivVec("pivVec", ndofSubcell);
+    Kokkos::DynRankView<ordinal_type,host_device_type> pivVec("pivVec", ndofSubcell);
     lapack.GESV(ndofSubcell, ndofSubcell,
-        hostRefMat.data(),
-        hostOrtMat.stride_1(),
+        PsiMat.data(),
+        PhiMat.stride_1(),
         pivVec.data(),
         PhiMat.data(),
         PhiMat.stride_1(),
@@ -355,16 +340,16 @@ getCoeffMatrix_HCURL(OutputViewType &output,
     // transpose and clean up numerical noise (for permutation matrices)
     const double eps = tolerence();
     for (ordinal_type i=0;i<ndofSubcell;++i) {
-      auto intmatii = std::round(hostOrtMat(i,i));
-      hostOrtMat(i,i) = (std::abs(hostOrtMat(i,i) - intmatii) < eps) ? intmatii : hostOrtMat(i,i);
+      auto intmatii = std::round(PhiMat(i,i));
+      PhiMat(i,i) = (std::abs(PhiMat(i,i) - intmatii) < eps) ? intmatii : PhiMat(i,i);
       for (ordinal_type j=i+1;j<ndofSubcell;++j) {
-        auto matij = hostOrtMat(i,j);
+        auto matij = PhiMat(i,j);
 
-        auto intmatji = std::round(hostOrtMat(j,i));
-        hostOrtMat(i,j) = (std::abs(hostOrtMat(j,i) - intmatji) < eps) ? intmatji : hostOrtMat(j,i);
+        auto intmatji = std::round(PhiMat(j,i));
+        PhiMat(i,j) = (std::abs(PhiMat(j,i) - intmatji) < eps) ? intmatji : PhiMat(j,i);
 
         auto intmatij = std::round(matij);
-        hostOrtMat(j,i) = (std::abs(matij - intmatij) < eps) ? intmatij : matij;
+        PhiMat(j,i) = (std::abs(matij - intmatij) < eps) ? intmatij : matij;
       }
     }
 
@@ -388,7 +373,9 @@ getCoeffMatrix_HCURL(OutputViewType &output,
   {
     // move the data to original device memory
     const Kokkos::pair<ordinal_type,ordinal_type> range(0, ndofSubcell);
-    Kokkos::deep_copy(Kokkos::subview(output, range, range), hostOrtMat);
+    auto suboutput = Kokkos::subview(output, range, range);
+    auto tmp = Kokkos::create_mirror_view_and_copy(typename OutputViewType::device_type::memory_space(), PhiMat);
+    Kokkos::deep_copy(suboutput, tmp);
   }
 }
 }

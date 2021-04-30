@@ -263,7 +263,9 @@ namespace MueLu {
     Array<SC>           vals;
 #endif
 
-    Array<char> filter( A.getColMap()->getNodeNumElements(), 0);
+    Array<char> filter( std::max(blkSize*G.GetImportMap()->getNodeNumElements(),
+                                 A.getColMap()->getNodeNumElements()),
+                        0);
 
     size_t numGRows = G.GetNodeNumVertices();
     for (size_t i = 0; i < numGRows; i++) {

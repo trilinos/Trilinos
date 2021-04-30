@@ -65,7 +65,7 @@
 
 namespace Intrepid2
 {
-  template<class Scalar, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename ExecSpaceType>
   class BasisValues
   {
     using TensorDataType = TensorData<Scalar,ExecSpaceType>;
@@ -99,6 +99,13 @@ namespace Intrepid2
     :
     vectorData_(vectorData)
     {}
+    
+    //! Default constructor.
+    BasisValues()
+    :
+    numTensorDataFamilies_(0)
+    {}
+    
     
     //! copy-like constructor for differing execution spaces.  This does a deep copy of underlying views.
     template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
@@ -285,9 +292,13 @@ namespace Intrepid2
         {
           return vectorData_.extent_int(i);
         }
-        else
+        else if (tensorDataFamilies_[0].isValid())
         {
           return tensorDataFamilies_[0].extent_int(i);
+        }
+        else
+        {
+          return 0;
         }
       }
     }
@@ -306,9 +317,13 @@ namespace Intrepid2
       {
         return vectorData_.rank();
       }
-      else
+      else if (tensorDataFamilies_[0].isValid())
       {
         return tensorDataFamilies_[0].rank();
+      }
+      else
+      {
+        return 0;
       }
     }
   };

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -24,7 +24,7 @@
 
 namespace {
   const unsigned int HASHSIZE       = 5939;
-  const char *       version_string = "5.20 (2020/11/05)";
+  const char *       version_string = "5.23 (2021/04/14)";
 
   void output_copyright();
 
@@ -66,13 +66,16 @@ namespace SEAMS {
       for (symrec *ptr = sym_table[hashval]; ptr != nullptr;) {
         symrec *save = ptr;
         ptr          = ptr->next;
-        if (save->type == Parser::token::AVAR) {
-          delete save->value.avar;
-        }
         delete save;
       }
     }
     aprepro = nullptr;
+
+    for (auto &arr_mem : array_allocations) {
+      delete arr_mem;
+    }
+    array_allocations.clear();
+
     cleanup_memory();
   }
 
@@ -513,7 +516,7 @@ namespace SEAMS {
           << "      --copyright or -C: Print copyright message                 \n"
           << "   --keep_history or -k: Keep a history of aprepro substitutions.\n"
           << "                         (not for general interactive use)       \n"
-          << "          --quiet or -q: (deprecated, option is ignored)         \n"
+          << "          --quiet or -q: Do not print the header output line     \n"
           << "                var=val: Assign value 'val' to variable 'var'    \n"
           << "                         Use var=\\\"sval\\\" for a string variable\n\n"
           << "\tUnits Systems: si, cgs, cgs-ev, shock, swap, ft-lbf-s, ft-lbm-s, in-lbf-s\n"
@@ -524,6 +527,20 @@ namespace SEAMS {
       exit(EXIT_SUCCESS);
     }
     return ret_value;
+  }
+
+  array *Aprepro::make_array(int r, int c)
+  {
+    auto ptr = new array(r, c);
+    array_allocations.push_back(ptr);
+    return ptr;
+  }
+
+  array *Aprepro::make_array(const array &from)
+  {
+    auto ptr = new array(from);
+    array_allocations.push_back(ptr);
+    return ptr;
   }
 
   void Aprepro::add_variable(const std::string &sym_name, const std::string &sym_value,

@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020
+// Copyright   : (c) Sandia National Labs 2020, 2021
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -12,22 +12,18 @@
 
 namespace NasModules {
 
-  N2ENasReader::N2ENasReader(string ifname)
+  N2ENasReader::N2ENasReader(std::string ifname) : inFileName(std::move(ifname))
   {
     // TODO Auto-generated constructor stub
-    this->inFileName = ifname;
-
     if (!doesFileExist(this->inFileName)) {
-
-      // Big ass Error
-      string msg = "This file does not exist: " + ifname;
+      std::string msg = "This file does not exist: " + ifname;
       throw std::invalid_argument(msg);
     }
 
     // C++ 14 version
-    // this->inStream = make_unique<ifstream>(this->inFileName);
+    // this->inStream = make_unique<std::ifstream>(this->inFileName);
     // C++ 11 version
-    this->inStream.reset(new ifstream(this->inFileName));
+    this->inStream.reset(new std::ifstream(this->inFileName));
 
     // Let's set the buffer
     this->inStream->rdbuf()->pubsetbuf(this->_readBuffer, sizeof(this->_readBuffer));
@@ -35,32 +31,24 @@ namespace NasModules {
     this->lineCount = this->lineCounter();
   }
 
-  N2ENasReader::~N2ENasReader()
+  bool N2ENasReader::doesFileExist(const std::string &fname)
   {
-
-    // TODO Auto-generated destructor stub
-  }
-
-  bool N2ENasReader::doesFileExist(string fname)
-  {
-
-    ifstream f(fname);
-
+    std::ifstream f(fname);
     return f.good();
   }
 
-  string N2ENasReader::getModelTitle() { return this->modelTitle; }
+  std::string N2ENasReader::getModelTitle() { return this->modelTitle; }
 
-  void N2ENasReader::setModelTitle(string title)
+  void N2ENasReader::setModelTitle(const std::string &title)
   {
 
-    string stmp = title;
+    std::string stmp = title;
 
     if (title.length() >= 72) {
       stmp = title.substr(0, 71);
     }
 
-    // This gymnastics with string is b/c
+    // This gymnastics with std::string is b/c
     // a Nastran title is limited to 72 chars.
     strncat(this->modelTitle, stmp.c_str(), 71);
   }
@@ -105,7 +93,7 @@ namespace NasModules {
 
     for (;;) {
 
-      vector<string> tokens;
+      std::vector<std::string> tokens;
 
       this->inStream->getline(buff, 511);
 
@@ -141,49 +129,49 @@ namespace NasModules {
       switch (card_id) {
       case 1:
         // Grid
-        istringstream(tokens[1]) >> utmp1;
-        istringstream(tokens[3]) >> pt.x[0];
-        istringstream(tokens[4]) >> pt.x[1];
-        istringstream(tokens[5]) >> pt.x[2];
-        gType = make_tuple(utmp1, pt);
+        std::istringstream(tokens[1]) >> utmp1;
+        std::istringstream(tokens[3]) >> pt.x[0];
+        std::istringstream(tokens[4]) >> pt.x[1];
+        std::istringstream(tokens[5]) >> pt.x[2];
+        gType = std::make_tuple(utmp1, pt);
         this->gridList.emplace_back(gType);
         break;
       case 2:
         // CTETRA
-        istringstream(tokens[1]) >> utmp1;
-        istringstream(tokens[2]) >> utmp2;
-        istringstream(tokens[3]) >> gLst.v[0];
-        istringstream(tokens[4]) >> gLst.v[1];
-        istringstream(tokens[5]) >> gLst.v[2];
-        istringstream(tokens[6]) >> gLst.v[3];
+        std::istringstream(tokens[1]) >> utmp1;
+        std::istringstream(tokens[2]) >> utmp2;
+        std::istringstream(tokens[3]) >> gLst.v[0];
+        std::istringstream(tokens[4]) >> gLst.v[1];
+        std::istringstream(tokens[5]) >> gLst.v[2];
+        std::istringstream(tokens[6]) >> gLst.v[3];
         gLst.v[7] = gLst.v[6] = gLst.v[5] = gLst.v[4] = 0;
-        eType                                         = make_tuple(utmp1, utmp2, 4, gLst);
+        eType                                         = std::make_tuple(utmp1, utmp2, 4, gLst);
         this->elementList.emplace_back(eType);
         break;
 
       case 3:
         // CHEXA 8 Node only!!!!!
-        istringstream(tokens[1]) >> utmp1;
-        istringstream(tokens[2]) >> utmp2;
-        istringstream(tokens[3]) >> gLst.v[0];
-        istringstream(tokens[4]) >> gLst.v[1];
-        istringstream(tokens[5]) >> gLst.v[2];
-        istringstream(tokens[6]) >> gLst.v[3];
-        istringstream(tokens[7]) >> gLst.v[4];
-        istringstream(tokens[8]) >> gLst.v[5];
+        std::istringstream(tokens[1]) >> utmp1;
+        std::istringstream(tokens[2]) >> utmp2;
+        std::istringstream(tokens[3]) >> gLst.v[0];
+        std::istringstream(tokens[4]) >> gLst.v[1];
+        std::istringstream(tokens[5]) >> gLst.v[2];
+        std::istringstream(tokens[6]) >> gLst.v[3];
+        std::istringstream(tokens[7]) >> gLst.v[4];
+        std::istringstream(tokens[8]) >> gLst.v[5];
         // Hexa 8 needs two more nodes from next line
         this->inStream->getline(buff, 511);
         tokens = csvLineToTokens(buff);
-        istringstream(tokens[0]) >> gLst.v[6];
-        istringstream(tokens[1]) >> gLst.v[7];
-        eType = make_tuple(utmp1, utmp2, 8, gLst);
+        std::istringstream(tokens[0]) >> gLst.v[6];
+        std::istringstream(tokens[1]) >> gLst.v[7];
+        eType = std::make_tuple(utmp1, utmp2, 8, gLst);
         this->elementList.emplace_back(eType);
         break;
       case 4:
         // Section
-        istringstream(tokens[1]) >> utmp1;
-        istringstream(tokens[2]) >> utmp2;
-        sType = make_tuple(utmp1, utmp2);
+        std::istringstream(tokens[1]) >> utmp1;
+        std::istringstream(tokens[2]) >> utmp2;
+        sType = std::make_tuple(utmp1, utmp2);
         this->sections.emplace_back(sType);
       }
     }
@@ -191,11 +179,11 @@ namespace NasModules {
     return result;
   }
 
-  vector<string> N2ENasReader::csvLineToTokens(char buff[])
+  std::vector<std::string> N2ENasReader::csvLineToTokens(char buff[])
   {
-    vector<string> toks;
-    stringstream   sStream(buff);
-    string         tmp;
+    std::vector<std::string> toks;
+    std::stringstream        sStream(buff);
+    std::string              tmp;
 
     while (getline(sStream, tmp, ',')) {
       toks.push_back(tmp);

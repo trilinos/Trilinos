@@ -9,23 +9,17 @@
 #ifndef Tempus_StepperTrapezoidal_impl_hpp
 #define Tempus_StepperTrapezoidal_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_StepperTrapezoidalModifierDefault.hpp"
 #include "Tempus_WrapperModelEvaluatorBasic.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "NOX_Thyra.H"
 
 
 namespace Tempus {
-
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
 
 
 template<class Scalar>
 StepperTrapezoidal<Scalar>::StepperTrapezoidal()
 {
+  this->setStepperName(        "Trapezoidal Method");
   this->setStepperType(        "Trapezoidal Method");
   this->setUseFSAL(            true);
   this->setICConsistency(      "Consistent");
@@ -47,7 +41,8 @@ StepperTrapezoidal<Scalar>::StepperTrapezoidal(
   bool zeroInitialGuess,
   const Teuchos::RCP<StepperTrapezoidalAppAction<Scalar> >& stepperTrapAppAction)
 {
-  this->setStepperType(        "Trapezoidal");
+  this->setStepperName(        "Trapezoidal Method");
+  this->setStepperType(        "Trapezoidal Method");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
   this->setICConsistencyCheck( ICConsistencyCheck);
@@ -220,21 +215,23 @@ bool StepperTrapezoidal<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 }
 
 
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
 template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperTrapezoidal<Scalar>::getValidParameters() const
+Teuchos::RCP<StepperTrapezoidal<Scalar> >
+createStepperTrapezoidal(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>       ("Use FSAL", true);
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  pl->set<bool>       ("Initial Condition Consistency Check", false);
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto stepper = Teuchos::rcp(new StepperTrapezoidal<Scalar>());
+  stepper->setStepperImplicitValues(pl);
 
-  return pl;
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

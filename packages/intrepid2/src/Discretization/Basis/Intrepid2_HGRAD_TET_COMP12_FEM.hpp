@@ -130,7 +130,7 @@ namespace Intrepid2 {
         
       };
       
-      template<typename ExecSpaceType, 
+      template<typename DeviceType, 
                typename outputValueValueType, class ...outputValueProperties,
                typename inputPointValueType,  class ...inputPointProperties>
       static void
@@ -181,24 +181,24 @@ namespace Intrepid2 {
     };
   }
 
-  template<typename ExecSpaceType = void,
+  template<typename DeviceType = void,
            typename outputValueType = double,
            typename pointValueType = double>
-  class Basis_HGRAD_TET_COMP12_FEM : public Basis<ExecSpaceType,outputValueType,pointValueType> {
+  class Basis_HGRAD_TET_COMP12_FEM : public Basis<DeviceType,outputValueType,pointValueType> {
   public:
-    using OrdinalTypeArray1DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
-    using OrdinalTypeArray2DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
-    using OrdinalTypeArray3DHost = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
+    using OrdinalTypeArray1DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray1DHost;
+    using OrdinalTypeArray2DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray2DHost;
+    using OrdinalTypeArray3DHost = typename Basis<DeviceType,outputValueType,pointValueType>::OrdinalTypeArray3DHost;
 
     /** \brief  Constructor.
      */
     Basis_HGRAD_TET_COMP12_FEM();
     
-    using OutputViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::OutputViewType;
-    using PointViewType  = typename Basis<ExecSpaceType,outputValueType,pointValueType>::PointViewType;
-    using ScalarViewType = typename Basis<ExecSpaceType,outputValueType,pointValueType>::ScalarViewType;
+    using OutputViewType = typename Basis<DeviceType,outputValueType,pointValueType>::OutputViewType;
+    using PointViewType  = typename Basis<DeviceType,outputValueType,pointValueType>::PointViewType;
+    using ScalarViewType = typename Basis<DeviceType,outputValueType,pointValueType>::ScalarViewType;
 
-    using Basis<ExecSpaceType,outputValueType,pointValueType>::getValues;
+    using Basis<DeviceType,outputValueType,pointValueType>::getValues;
 
     /** \brief  FEM basis evaluation on a <strong>reference Tetrahedron</strong> cell. 
     
@@ -225,7 +225,7 @@ namespace Intrepid2 {
                                       this->getCardinality() );
 #endif
       Impl::Basis_HGRAD_TET_COMP12_FEM::
-        getValues<ExecSpaceType>( outputValues,
+        getValues<DeviceType>( outputValues,
                                   inputPoints,
                                   operatorType );
     }

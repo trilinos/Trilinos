@@ -2,7 +2,7 @@
 // Name        : testnas2exo.cpp
 // Author      : Ramon J. Moral (STRA LLC), John Niederhaus (Coordinator, SNL)
 // Version     :
-// Copyright   : (c) Sandia National Labs 2020
+// Copyright   : (c) Sandia National Labs 2020, 2021
 // Description : Testing nas2exo Library, C++ 14
 //============================================================================
 
@@ -10,14 +10,11 @@
 #define INCLUDE_N2ENASREADER_H_
 
 #include "N2EDataTypes.h"
-#include <exception>
 #include <fstream>
-#include <iostream>
 #include <memory>
 #include <string>
-#include <tuple>
+#include <vector>
 
-using namespace std;
 using namespace N2EModules;
 
 namespace NasModules {
@@ -26,43 +23,43 @@ namespace NasModules {
   {
 
   public:
-    N2ENasReader(string ifname = "");
+    N2ENasReader(std::string ifname = "");
 
-    virtual ~N2ENasReader();
+    virtual ~N2ENasReader() = default;
 
-    inline unsigned getLineCount() { return this->lineCount; };
-    inline unsigned getNumberGridPts() { return this->gridList.size(); };
-    inline unsigned getNumberElems() { return this->elementList.size(); };
-    inline unsigned getNumberSects() { return this->sections.size(); };
-    inline string   getPath() { return this->inFileName; };
+    inline unsigned    getLineCount() { return this->lineCount; };
+    inline size_t      getNumberGridPts() { return this->gridList.size(); };
+    inline size_t      getNumberElems() { return this->elementList.size(); };
+    inline size_t      getNumberSects() { return this->sections.size(); };
+    inline std::string getPath() { return this->inFileName; };
 
     bool processFile();
 
-    vector<sectionType> getSections() { return this->sections; };
-    vector<gridType>    getGridPoints() { return this->gridList; };
-    vector<elementType> getElementList() { return this->elementList; };
+    std::vector<sectionType> getSections() { return this->sections; };
+    std::vector<gridType>    getGridPoints() { return this->gridList; };
+    std::vector<elementType> getElementList() { return this->elementList; };
 
-    string getModelTitle();
-    void   setModelTitle(string title = "");
+    std::string getModelTitle();
+    void        setModelTitle(const std::string &title = "");
 
   protected:
-    string               inFileName;
-    unique_ptr<ifstream> inStream;
-    unsigned             lineCount{0u};
+    std::string                    inFileName{};
+    std::unique_ptr<std::ifstream> inStream{};
+    unsigned                       lineCount{0u};
 
-    vector<sectionType> sections;
-    vector<gridType>    gridList;
-    vector<elementType> elementList;
+    std::vector<sectionType> sections;
+    std::vector<gridType>    gridList;
+    std::vector<elementType> elementList;
 
     char modelTitle[72]{'\0'};
 
-    bool doesFileExist(string fname);
+    bool doesFileExist(const std::string &fname);
     // Local buffer for reading faster
     char _readBuffer[4096]{'\0'};
 
   private:
-    unsigned       lineCounter();
-    vector<string> csvLineToTokens(char buff[]);
+    unsigned                 lineCounter();
+    std::vector<std::string> csvLineToTokens(char buff[]);
   };
 
 } // namespace NasModules

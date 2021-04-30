@@ -824,7 +824,7 @@ namespace Zoltan2 {
       Teuchos::ParameterList paramList;
       paramList.set("Polynomial Type", "Roots");
       paramList.set("Orthogonalization","ICGS");
-      paramList.set("Maximum Degree", 25);
+      paramList.set("Maximum Degree", laplacian_->getGlobalNumRows() > 100 ? 25 : 5);
       paramList.set("Polynomial Tolerance", 1.0e-6 );
       paramList.set("Verbosity", verbosity2 );
       paramList.set("Random RHS", false );

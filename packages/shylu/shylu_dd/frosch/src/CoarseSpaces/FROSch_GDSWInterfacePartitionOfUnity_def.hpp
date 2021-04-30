@@ -114,7 +114,7 @@ namespace FROSch {
             UseEdges_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
             UseFaces_ = this->ParameterList_->sublist("Custom").get("Vertices",false);
         } else {
-            FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity : ERROR: Specify a valid Type.");
+            FROSCH_ASSERT(false,"FROSch::GDSWInterfacePartitionOfUnity: Specify a valid Type.");
         }
         this->LocalPartitionOfUnity_ = ConstXMultiVectorPtrVecPtr(5);
         this->PartitionOfUnityMaps_ = ConstXMapPtrVecPtr(5);

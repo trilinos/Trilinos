@@ -256,6 +256,7 @@ namespace MueLu {
     if (verbosityLevel >= 10) eVerbLevel = High;
     if (verbosityLevel >= 11) eVerbLevel = Extreme;
     if (verbosityLevel >= 42) eVerbLevel = Test;
+    if (verbosityLevel >= 43) eVerbLevel = InterfaceTest;
     this->verbosity_ = eVerbLevel;
 
 

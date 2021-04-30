@@ -62,17 +62,25 @@
 #include "Adelus_mytime.hpp"
 #include "Kokkos_Core.hpp"
 
+#ifdef ADELUS_HAVE_TIME_MONITOR
+#include "Teuchos_TimeMonitor.hpp"
+#endif
+
 namespace Adelus {
 
 template<class ZDView>
 inline
 void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, double *secs)
 {
-  typedef typename ZDView::value_type value_type;
-#ifdef PRINT_STATUS
-  typedef typename ZDView::device_type::execution_space execution_space;
+#ifdef ADELUS_HAVE_TIME_MONITOR
+  using Teuchos::TimeMonitor;
 #endif
-  typedef typename ZDView::device_type::memory_space memory_space;
+
+  using value_type      = typename ZDView::value_type;
+#ifdef PRINT_STATUS
+  using execution_space = typename ZDView::device_type::execution_space;
+#endif
+  using memory_space    = typename ZDView::device_type::memory_space;
 
   double run_secs;              // time (in secs) during which the prog ran
   double tsecs;                 // intermediate storage of timing info
@@ -149,12 +157,19 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
 #ifdef PRINT_STATUS
   printf("OpenMP or Cuda: Rank %i -- factor() starts ...\n", me);
 #endif
-  factor(ZV,
-         col1_view,
-         row1_view,
-         row2_view, 
-         row3_view, 
-         pivot_vec_view);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: factor"));
+#endif
+    factor(ZV,
+           col1_view,
+           row1_view,
+           row2_view, 
+           row3_view, 
+           pivot_vec_view);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+  }
+#endif
 
   if (nrhs > 0) {
     // Perform the backsolve
@@ -162,15 +177,29 @@ void lusolve_(ZDView& ZV, int *matrix_size, int *num_procsr, int *num_rhs, doubl
 #ifdef PRINT_STATUS
     printf("OpenMP or Cuda: Rank %i -- back_solve6() starts ...\n", me);
 #endif
-    back_solve6(ZV);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: backsolve"));
+#endif
+      back_solve6(ZV);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    }
+#endif
 
     // Permute the results -- undo the torus map
 
 #ifdef PRINT_STATUS
     printf("OpenMP or Cuda: Rank %i -- perm1_()(permute the results -- undo the torus map) starts ...\n", me);
 #endif
-    auto sub_ZV = subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
-    perm1_(sub_ZV, &my_rhs);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    {
+      TimeMonitor t(*TimeMonitor::getNewTimer("Adelus: permutation"));
+#endif
+      auto sub_ZV = subview(ZV, Kokkos::ALL(), Kokkos::make_pair(my_cols, my_cols + my_rhs + 6));
+      perm1_(sub_ZV, &my_rhs);
+#ifdef ADELUS_HAVE_TIME_MONITOR
+    }
+#endif
   }
 
   tsecs = get_seconds(tsecs);

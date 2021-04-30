@@ -109,8 +109,8 @@ namespace mesh {
 
 using ModEndOptimizationFlag = impl::MeshModification::modification_optimization;
 
-void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
-void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted = false);
+void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted = false);
 void parallel_sum_including_ghosts(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
 void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
 void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
@@ -960,17 +960,7 @@ protected: //functions
   PairIterEntityComm internal_entity_comm_map(Entity entity, const Ghosting & sub ) const
   {
     if (m_entitycomm[entity.local_offset()] != nullptr) {
-      const EntityCommInfoVector& vec = m_entitycomm[entity.local_offset()]->comm_map;
-      const EntityCommInfo s_begin( sub.ordinal() ,     0 );
-      const EntityCommInfo s_end(   sub.ordinal() + 1 , 0 );
-    
-      EntityCommInfoVector::const_iterator i = vec.begin();
-      EntityCommInfoVector::const_iterator e = vec.end();
-    
-      i = std::lower_bound( i , e , s_begin );
-      e = std::lower_bound( i , e , s_end );
-    
-      return PairIterEntityComm( i , e );
+      return ghost_info_range(m_entitycomm[entity.local_offset()]->comm_map, sub);
     }
     return PairIterEntityComm();
   }
@@ -1503,8 +1493,8 @@ private:
   template <typename T, template <typename> class NgpDebugger> friend class stk::mesh::DeviceField;
 
   // friends until it is decided what we're doing with Fields and Parallel and BulkData
-  friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields);
-  friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
+  friend void communicate_field_data(const Ghosting & ghosts, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted);
+  friend void communicate_field_data(const BulkData & mesh, const std::vector<const FieldBase *> & fields, bool syncOnlySharedOrGhosted);
   template <Operation Op> friend void parallel_op_including_ghosts_impl(const BulkData & mesh, const std::vector<const FieldBase *> & fields);
   friend void skin_mesh( BulkData & mesh, Selector const& element_selector, PartVector const& skin_parts, const Selector * secondary_selector);
   friend void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges );
@@ -1629,7 +1619,6 @@ private: // data
   stk::mesh::impl::SideSetImpl<unsigned> m_sideSetData;
   mutable stk::mesh::NgpMeshBase* m_ngpMeshBase;
   mutable bool m_isDeviceMeshRegistered;
-  mutable Kokkos::View<uint8_t*, MemSpace> m_ngpFieldSyncBuffer;
   mutable size_t m_ngpFieldSyncBufferModCount;
   bool m_runConsistencyCheck;
 

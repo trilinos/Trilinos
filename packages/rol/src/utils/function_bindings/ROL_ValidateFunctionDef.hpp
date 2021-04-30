@@ -53,7 +53,8 @@ ValidateFunction<Real>::derivative_check( f_scalar_t<Real> f_value,
   
   // Compute the derivative in the given direction
   f_derivative( *r, x );
-  Real dr = r->dot(v.dual());
+  //Real dr = r->dot(v.dual());
+  Real dr = r->apply(v);
   
   for (int i=0; i<numSteps_; i++) {
 
@@ -178,8 +179,10 @@ ValidateFunction<Real>::symmetry_check( f_dderiv_t<Real> A,
   A( *Au, u, x );
   A( *Av, v, x );
 
-  Real vAu = v.dot(Au->dual());
-  Real uAv = u.dot(Av->dual());
+  //Real vAu = v.dot(Au->dual());
+  Real vAu = v.apply(*Au);
+  //Real uAv = u.dot(Av->dual());
+  Real uAv = u.apply(*Av);
 
   vector<Real> symCheck(3,0);
   symCheck[0] = vAu;
@@ -232,8 +235,10 @@ ValidateFunction<Real>::adjoint_consistency_check( f_dderiv_t<Real> A,
   A( *Au, u, x );
   A_adj( *Av, v, x );
 
-  Real vAu = v.dot(Au->dual());
-  Real uAv = u.dot(Av->dual());
+  //Real vAu = v.dot(Au->dual());
+  Real vAu = v.apply(*Au);
+  //Real uAv = u.dot(Av->dual());
+  Real uAv = u.apply(*Av);
  
   vector<Real> adjCheck(3,0);
   adjCheck[0] = vAu;

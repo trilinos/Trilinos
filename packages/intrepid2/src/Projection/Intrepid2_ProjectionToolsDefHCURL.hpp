@@ -122,7 +122,7 @@ struct ComputeBasisCoeffsOnEdges_HCurl {
 
 
 template<typename ViewType1, typename ViewType2, typename ViewType3, typename ViewType4,
-typename ViewType5, typename ViewType6, typename ViewType7, typename ViewType8, typename ViewType9>
+typename ViewType5, typename ViewType6, typename ViewType7, typename ViewType8>
 struct ComputeBasisCoeffsOnFaces_HCurl {
   const ViewType1 basisCoeffs_;
   const ViewType2 orts_;
@@ -149,9 +149,9 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
   const ViewType5 targetCurlEWeights_;
   const ViewType6 tagToOrdinal_;
   const ViewType6 hGradTagToOrdinal_;
-  const ViewType7 refTopologyKey_;
-  const ViewType8 faceParametrization_;
-  const ViewType9 computedDofs_;
+  const ViewType7 faceParametrization_;
+  const ViewType8 computedDofs_;
+  unsigned refTopologyKey_;
   ordinal_type offsetBasis_;
   ordinal_type offsetBasisCurl_;
   ordinal_type offsetTarget_;
@@ -180,9 +180,8 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
       const ViewType3 targetTanAtTargetEPoints, const ViewType4 targetCurlAtTargetCurlEPoints,
       const ViewType5 basisEWeights, const ViewType5 targetEWeights,
       const ViewType5 basisCurlEWeights, const ViewType5 targetCurlEWeights, const ViewType6 tagToOrdinal,
-      const ViewType6 hGradTagToOrdinal, const ViewType7 refTopologyKey,
-      const ViewType8 faceParametrization,
-      const ViewType9 computedDofs, ordinal_type offsetBasis,
+      const ViewType6 hGradTagToOrdinal, const ViewType7 faceParametrization,
+      const ViewType8 computedDofs, unsigned refTopologyKey, ordinal_type offsetBasis,
       ordinal_type offsetBasisCurl, ordinal_type offsetTarget,
       ordinal_type offsetTargetCurl, ordinal_type iface,
       ordinal_type hgradCardinality, ordinal_type numFaces,
@@ -200,9 +199,8 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
         targetTanAtTargetEPoints_(targetTanAtTargetEPoints),  targetCurlAtTargetCurlEPoints_(targetCurlAtTargetCurlEPoints),
         basisEWeights_(basisEWeights),  targetEWeights_(targetEWeights),
         basisCurlEWeights_(basisCurlEWeights), targetCurlEWeights_(targetCurlEWeights),  tagToOrdinal_(tagToOrdinal),
-        hGradTagToOrdinal_(hGradTagToOrdinal),  refTopologyKey_(refTopologyKey),
-        faceParametrization_(faceParametrization),
-        computedDofs_(computedDofs), offsetBasis_(offsetBasis),
+        hGradTagToOrdinal_(hGradTagToOrdinal), faceParametrization_(faceParametrization),
+        computedDofs_(computedDofs), refTopologyKey_(refTopologyKey), offsetBasis_(offsetBasis),
         offsetBasisCurl_(offsetBasisCurl), offsetTarget_(offsetTarget),
         offsetTargetCurl_(offsetTargetCurl), iface_(iface),
         hgradCardinality_(hgradCardinality), numFaces_(numFaces),
@@ -221,7 +219,7 @@ struct ComputeBasisCoeffsOnFaces_HCurl {
     typename ViewType3::value_type data[3*3];
     auto tangentsAndNormal = ViewType3(data, dim_, dim_);
 
-    Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, faceParametrization_,refTopologyKey_(faceDim_,iface_), iface_, ort);
+    Impl::OrientationTools::getRefSideTangentsAndNormal(tangentsAndNormal, faceParametrization_,refTopologyKey_, iface_, ort);
 
     ordinal_type numBasisEPoints = basisEWeights_.extent(0);
     ordinal_type numTargetEPoints = targetEWeights_.extent(0);
@@ -391,15 +389,15 @@ struct ComputeBasisCoeffsOnCell_HCurl {
 };
 
 
-template<typename SpT>
+template<typename DeviceType>
 template<typename BasisType,
 typename ortValueType,       class ...ortProperties>
 void
-ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewType targetEPoints,
+ProjectionTools<DeviceType>::getHCurlEvaluationPoints(typename BasisType::ScalarViewType targetEPoints,
     typename BasisType::ScalarViewType targetCurlEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
-    ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct,
+    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct,
     const EvalPointsType evalPointType) {
   const auto cellTopo = cellBasis->getBaseCellTopology();
   ordinal_type dim = cellTopo.getDimension();
@@ -410,26 +408,25 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
   ordinal_type numEdges = (cellBasis->getDofCount(1, 0) > 0) ? cellTopo.getEdgeCount() : 0;
   ordinal_type numFaces = (cellBasis->getDofCount(2, 0) > 0) ? cellTopo.getFaceCount() : 0;
 
-  CellTools<SpT>::setSubcellParametrization();
-  typename CellTools<SpT>::subcellParamViewType subcellParamEdge,  subcellParamFace;
+  typename RefSubcellParametrization<DeviceType>::ConstViewType subcellParamEdge,  subcellParamFace;
   if(numEdges>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamEdge,  edgeDim, cellTopo);
+    subcellParamEdge = RefSubcellParametrization<DeviceType>::get(edgeDim, cellTopo.getKey());
   if(numFaces>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellTopo);
+    subcellParamFace = RefSubcellParametrization<DeviceType>::get(faceDim, cellTopo.getKey());
 
-  auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
+  auto refTopologyKey = projStruct->getTopologyKey();
 
-  auto evalPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getPointsRange(evalPointType));
-  auto curlEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivPointsRange(evalPointType));
+  auto evalPointsRange = projStruct->getPointsRange(evalPointType);
+  auto curlEPointsRange = projStruct->getDerivPointsRange(evalPointType);
 
   for(ordinal_type ie=0; ie<numEdges; ++ie) {
 
     auto edgePointsRange = evalPointsRange(edgeDim, ie);
-    auto edgeEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(edgeDim,ie,evalPointType));
-
+    auto edgeEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(edgeDim,ie,evalPointType));
+    const auto topoKey = refTopologyKey(edgeDim, ie);
     Kokkos::parallel_for
     ("Evaluate Points Edges ",
-        Kokkos::RangePolicy<SpT, int> (0, numCells),
+        Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
         KOKKOS_LAMBDA (const size_t ic) {
 
       ordinal_type eOrt[12];
@@ -437,21 +434,22 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
       ordinal_type ort = eOrt[ie];
 
       Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetEPoints,ic,edgePointsRange,Kokkos::ALL()),
-          edgeEPoints, subcellParamEdge, refTopologyKey(edgeDim, ie), ie, ort);
+          edgeEPoints, subcellParamEdge, topoKey, ie, ort);
     });
   }
 
 
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
     auto faceCurlPointsRange = curlEPointsRange(faceDim, iface);
-    auto faceCurlEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivEvalPoints(faceDim,iface,evalPointType));
+    auto faceCurlEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getDerivEvalPoints(faceDim,iface,evalPointType));
 
     auto facePointsRange = evalPointsRange(faceDim, iface);
-    auto faceEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(faceDim,iface,evalPointType));
+    auto faceEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(faceDim,iface,evalPointType));
 
+    const auto topoKey = refTopologyKey(faceDim, iface);
     Kokkos::parallel_for
     ("Evaluate Points Faces ",
-        Kokkos::RangePolicy<SpT, int> (0, numCells),
+        Kokkos::RangePolicy<ExecSpaceType, int> (0, numCells),
         KOKKOS_LAMBDA (const size_t ic) {
 
       ordinal_type fOrt[6];
@@ -459,41 +457,41 @@ ProjectionTools<SpT>::getHCurlEvaluationPoints(typename BasisType::ScalarViewTyp
       ordinal_type ort = fOrt[iface];
 
       Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetEPoints, ic, facePointsRange, Kokkos::ALL()),
-          faceEPoints, subcellParamFace, refTopologyKey(faceDim, iface), iface, ort);
+          faceEPoints, subcellParamFace, topoKey, iface, ort);
 
       Impl::OrientationTools::mapSubcellCoordsToRefCell(Kokkos::subview(targetCurlEPoints,  ic, faceCurlPointsRange, Kokkos::ALL()),
-          faceCurlEPoints, subcellParamFace, refTopologyKey(faceDim, iface), iface, ort);
+          faceCurlEPoints, subcellParamFace, topoKey, iface, ort);
     });
   }
 
 
   if(cellBasis->getDofCount(dim,0)>0) {
-    auto cellEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getEvalPoints(dim,0,evalPointType));
-    RealSpaceTools<SpT>::clone(Kokkos::subview(targetEPoints, Kokkos::ALL(), evalPointsRange(dim, 0), Kokkos::ALL()), cellEPoints);
+    auto cellEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getEvalPoints(dim,0,evalPointType));
+    RealSpaceTools<DeviceType>::clone(Kokkos::subview(targetEPoints, Kokkos::ALL(), evalPointsRange(dim, 0), Kokkos::ALL()), cellEPoints);
 
-    auto cellCurlEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getDerivEvalPoints(dim,0,evalPointType));
-    RealSpaceTools<SpT>::clone(Kokkos::subview(targetCurlEPoints, Kokkos::ALL(), curlEPointsRange(dim, 0), Kokkos::ALL()), cellCurlEPoints);
+    auto cellCurlEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getDerivEvalPoints(dim,0,evalPointType));
+    RealSpaceTools<DeviceType>::clone(Kokkos::subview(targetCurlEPoints, Kokkos::ALL(), curlEPointsRange(dim, 0), Kokkos::ALL()), cellCurlEPoints);
   }
 }
 
 
-template<typename SpT>
+template<typename DeviceType>
 template<typename basisCoeffsValueType, class ...basisCoeffsProperties,
 typename funValsValueType, class ...funValsProperties,
 typename BasisType,
 typename ortValueType,class ...ortProperties>
 void
-ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
+ProjectionTools<DeviceType>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueType,basisCoeffsProperties...> basisCoeffs,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetAtTargetEPoints,
     const Kokkos::DynRankView<funValsValueType,funValsProperties...> targetCurlAtTargetCurlEPoints,
     const typename BasisType::ScalarViewType targetEPoints,
     const typename BasisType::ScalarViewType targetCurlEPoints,
     const Kokkos::DynRankView<ortValueType,   ortProperties...>  orts,
     const BasisType* cellBasis,
-    ProjectionStruct<SpT, typename BasisType::scalarType> * projStruct){
+    ProjectionStruct<DeviceType, typename BasisType::scalarType> * projStruct){
 
   typedef typename BasisType::scalarType scalarType;
-  typedef Kokkos::DynRankView<scalarType,SpT> ScalarViewType;
+  typedef Kokkos::DynRankView<scalarType,DeviceType> ScalarViewType;
   typedef Kokkos::pair<ordinal_type,ordinal_type> range_type;
   const auto cellTopo = cellBasis->getBaseCellTopology();
   ordinal_type dim = cellTopo.getDimension();
@@ -505,7 +503,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   const ordinal_type faceDim = 2;
   const ordinal_type derDim = dim == 3 ? dim : 1;
 
-  const Kokkos::RangePolicy<SpT> policy(0, numCells);
+  const Kokkos::RangePolicy<ExecSpaceType> policy(0, numCells);
 
   const std::string& name = cellBasis->getName();
 
@@ -524,17 +522,17 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   for(ordinal_type iface=0; iface<numFaces; ++iface)
     numFaceDofs += cellBasis->getDofCount(faceDim,iface);
 
-  auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(), cellBasis->getAllDofOrdinal());
+  auto tagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), cellBasis->getAllDofOrdinal());
 
-  Kokkos::View<ordinal_type*, SpT> computedDofs("computedDofs",numEdgeDofs+numFaceDofs);
+  Kokkos::View<ordinal_type*, DeviceType> computedDofs("computedDofs",numEdgeDofs+numFaceDofs);
 
-  auto targetEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetPointsRange());
-  auto targetCurlEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivPointsRange());
+  auto targetEPointsRange  = projStruct->getTargetPointsRange();
+  auto targetCurlEPointsRange  = projStruct->getTargetDerivPointsRange();
 
-  auto basisEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisPointsRange());
-  auto basisCurlEPointsRange  = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivPointsRange());
+  auto basisEPointsRange = projStruct->getBasisPointsRange();
+  auto basisCurlEPointsRange = projStruct->getBasisDerivPointsRange();
 
-  auto refTopologyKey =  Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTopologyKey());
+  auto refTopologyKey = projStruct->getTopologyKey();
 
   ordinal_type numTotalBasisEPoints = projStruct->getNumBasisEvalPoints(), numTotalBasisCurlEPoints = projStruct->getNumBasisDerivEvalPoints();
 
@@ -552,8 +550,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
       cellBasis->getValues(Kokkos::subview(nonOrientedBasisAtBasisEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisEPoints, ic, Kokkos::ALL(), Kokkos::ALL()));
     }
 
-    OrientationTools<SpT>::modifyBasisByOrientation(basisAtBasisEPoints, nonOrientedBasisAtBasisEPoints, orts, cellBasis);
-    OrientationTools<SpT>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtBasisEPoints, nonOrientedBasisAtBasisEPoints, orts, cellBasis);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(basisAtTargetEPoints, nonOrientedBasisAtTargetEPoints, orts, cellBasis);
   }
 
   ScalarViewType basisCurlAtBasisCurlEPoints;
@@ -575,8 +573,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
       cellBasis->getValues(Kokkos::subview(nonOrientedBasisCurlAtBasisCurlEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(basisCurlEPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_CURL);
       cellBasis->getValues(Kokkos::subview(nonOrientedBasisCurlAtTargetCurlEPoints,ic,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL()), Kokkos::subview(targetCurlEPoints, ic, Kokkos::ALL(), Kokkos::ALL()),OPERATOR_CURL);
     }
-    OrientationTools<SpT>::modifyBasisByOrientation(basisCurlAtBasisCurlEPoints, nonOrientedBasisCurlAtBasisCurlEPoints, orts, cellBasis);
-    OrientationTools<SpT>::modifyBasisByOrientation(basisCurlAtTargetCurlEPoints, nonOrientedBasisCurlAtTargetCurlEPoints, orts, cellBasis);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(basisCurlAtBasisCurlEPoints, nonOrientedBasisCurlAtBasisCurlEPoints, orts, cellBasis);
+    OrientationTools<DeviceType>::modifyBasisByOrientation(basisCurlAtTargetCurlEPoints, nonOrientedBasisCurlAtTargetCurlEPoints, orts, cellBasis);
   }
 
   ordinal_type computedDofsCount = 0;
@@ -588,9 +586,7 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
     {
       auto refEdgeTan = Kokkos::subview(refEdgesTangent, ie, Kokkos::ALL());
-      auto refEdgeTanHost = Kokkos::create_mirror_view(refEdgeTan);
-      CellTools<SpT>::getReferenceEdgeTangent(refEdgeTanHost, ie, cellTopo);
-      Kokkos::deep_copy(refEdgeTan,refEdgeTanHost);
+      CellTools<DeviceType>::getReferenceEdgeTangent(refEdgeTan, ie, cellTopo);
     }
 
     ScalarViewType basisTanAtBasisEPoints("basisTanAtBasisEPoints",numCells,edgeCardinality, numBasisEPoints);
@@ -599,8 +595,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     ScalarViewType weightedTanBasisAtTargetEPoints("weightedTanBasisAtTargetEPoints",numCells,edgeCardinality, numTargetEPoints);
     ScalarViewType targetTanAtTargetEPoints("normalTargetAtTargetEPoints",numCells, numTargetEPoints);
 
-    auto targetEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetEvalWeights(edgeDim,ie));
-    auto basisEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisEvalWeights(edgeDim,ie));
+    auto targetEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalWeights(edgeDim,ie));
+    auto basisEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalWeights(edgeDim,ie));
 
     //Note: we are not considering the jacobian of the orientation map since it is simply a scalar term for the integrals and it does not affect the projection
     ordinal_type offsetBasis = basisEPointsRange(edgeDim, ie).first;
@@ -619,41 +615,41 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         edgeRhsMat_("rhsMat_", numCells, edgeCardinality+1);
 
     ScalarViewType eWeights_("eWeights_", numCells, 1, basisEWeights.extent(0)), targetEWeights_("targetEWeights", numCells, 1, targetEWeights.extent(0));
-    RealSpaceTools<SpT>::clone(eWeights_, basisEWeights);
-    RealSpaceTools<SpT>::clone(targetEWeights_, targetEWeights);
+    RealSpaceTools<DeviceType>::clone(eWeights_, basisEWeights);
+    RealSpaceTools<DeviceType>::clone(targetEWeights_, targetEWeights);
 
     range_type range_H(0, edgeCardinality);
     range_type range_B(edgeCardinality, edgeCardinality+1);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(edgeMassMat_,Kokkos::ALL(),range_H,range_H), basisTanAtBasisEPoints, weightedTanBasisAtBasisEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(edgeMassMat_,Kokkos::ALL(),range_H,range_B), basisTanAtBasisEPoints, eWeights_);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(edgeRhsMat_,Kokkos::ALL(),range_H), targetTanAtTargetEPoints, weightedTanBasisAtTargetEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(edgeRhsMat_,Kokkos::ALL(),range_B), targetTanAtTargetEPoints, targetEWeights_);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(edgeMassMat_,Kokkos::ALL(),range_H,range_H), basisTanAtBasisEPoints, weightedTanBasisAtBasisEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(edgeMassMat_,Kokkos::ALL(),range_H,range_B), basisTanAtBasisEPoints, eWeights_);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(edgeRhsMat_,Kokkos::ALL(),range_H), targetTanAtTargetEPoints, weightedTanBasisAtTargetEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(edgeRhsMat_,Kokkos::ALL(),range_B), targetTanAtTargetEPoints, targetEWeights_);
 
-    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, DeviceType> WorkArrayViewType;
     ScalarViewType t_("t",numCells, edgeCardinality+1);
     WorkArrayViewType w_("w",numCells, edgeCardinality+1);
 
-    auto edgeDofs = Kokkos::subview(tagToOrdinal, edgeDim, ie, Kokkos::ALL());
+    auto edgeDofs = Kokkos::subview(tagToOrdinal, edgeDim, ie, range_type(0,edgeCardinality));
     ElemSystem edgeSystem("edgeSystem", false);
     edgeSystem.solve(basisCoeffs, edgeMassMat_, edgeRhsMat_, t_, w_, edgeDofs, edgeCardinality, 1);
 
-    for(ordinal_type i=0; i<edgeCardinality; ++i)
-      computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(edgeDim, ie, i);
+    auto computedEdgeDofs = Kokkos::subview(computedDofs, range_type(computedDofsCount,computedDofsCount+edgeCardinality));
+    deep_copy(computedEdgeDofs, edgeDofs);
+    computedDofsCount += edgeCardinality;
 
   }
 
-  CellTools<SpT>::setSubcellParametrization();
-  typename CellTools<SpT>::subcellParamViewType  subcellParamFace;
+  typename RefSubcellParametrization<DeviceType>::ConstViewType  subcellParamFace;
   if(numFaces>0)
-    CellTools<SpT>::getSubcellParametrization(subcellParamFace,  faceDim, cellBasis->getBaseCellTopology());
+    subcellParamFace = RefSubcellParametrization<DeviceType>::get(faceDim, cellBasis->getBaseCellTopology().getKey());
 
-  Basis<SpT,scalarType,scalarType> *hgradBasis = NULL;
+  Basis<DeviceType,scalarType,scalarType> *hgradBasis = NULL;
   for(ordinal_type iface=0; iface<numFaces; ++iface) {
 
     if(cellTopo.getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key)
-      hgradBasis = new Basis_HGRAD_QUAD_Cn_FEM<SpT,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+      hgradBasis = new Basis_HGRAD_QUAD_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
-      hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<SpT,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+      hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else  {
       std::stringstream ss;
       ss << ">>> ERROR (Intrepid2::ProjectionTools::getHCurlBasisCoeffs): "
@@ -673,8 +669,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
     ordinal_type hgradCardinality = hgradBasis->getDofCount(faceDim,0);
 
-    auto refBasisEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisEvalPoints(faceDim, iface));
-    auto refTargetEPoints = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetEvalPoints(faceDim, iface));
+    auto refBasisEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalPoints(faceDim, iface));
+    auto refTargetEPoints = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalPoints(faceDim, iface));
     hgradBasis->getValues(hgradBasisGradAtBasisEPoints, refBasisEPoints, OPERATOR_GRAD);
     hgradBasis->getValues(hgradBasisGradAtTargetEPoints, refTargetEPoints, OPERATOR_GRAD);
 
@@ -699,14 +695,15 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     ordinal_type offsetTarget = targetEPointsRange(faceDim, iface).first;
     ordinal_type offsetTargetCurl = targetCurlEPointsRange(faceDim, iface).first;
 
-    auto hGradTagToOrdinal = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(), hgradBasis->getAllDofOrdinal());
+    auto hGradTagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), hgradBasis->getAllDofOrdinal());
 
-    auto basisEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisEvalWeights(faceDim,iface));
-    auto targetEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetEvalWeights(faceDim,iface));
-    auto targetCurlEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivEvalWeights(faceDim,iface));
-    auto basisCurlEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivEvalWeights(faceDim,iface));
+    auto basisEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalWeights(faceDim,iface));
+    auto targetEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalWeights(faceDim,iface));
+    auto targetCurlEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetDerivEvalWeights(faceDim,iface));
+    auto basisCurlEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisDerivEvalWeights(faceDim,iface));
+    const auto topoKey = refTopologyKey(faceDim, iface);
     typedef ComputeBasisCoeffsOnFaces_HCurl<decltype(basisCoeffs), decltype(orts), ScalarViewType,  decltype(targetAtTargetEPoints), decltype(basisEWeights),
-        decltype(tagToOrdinal), decltype(refTopologyKey),  decltype(subcellParamFace), decltype(computedDofs)> functorTypeFaces;
+        decltype(tagToOrdinal), decltype(subcellParamFace), decltype(computedDofs)> functorTypeFaces;
     Kokkos::parallel_for(policy, functorTypeFaces(basisCoeffs,
         orts, negPartialProjTan, negPartialProjCurlNormal,
         hgradBasisGradAtBasisEPoints, wHgradBasisGradAtBasisEPoints,
@@ -719,9 +716,8 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         targetTanAtTargetEPoints, targetCurlAtTargetCurlEPoints,
         basisEWeights, targetEWeights,
         basisCurlEWeights, targetCurlEWeights, tagToOrdinal,
-        hGradTagToOrdinal, refTopologyKey,
-        subcellParamFace,
-        computedDofs, offsetBasis,
+        hGradTagToOrdinal, subcellParamFace,
+        computedDofs, topoKey, offsetBasis,
         offsetBasisCurl, offsetTarget,
         offsetTargetCurl, iface,
         hgradCardinality, numFaces,
@@ -733,26 +729,27 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
         faceRhsMat_("rhsMat_", numCells, numFaceDofs+hgradCardinality);
     range_type range_H(0, numFaceDofs);
     range_type range_B(numFaceDofs, numFaceDofs+hgradCardinality);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(faceMassMat_,Kokkos::ALL(),range_H,range_H), basisCurlNormalAtBasisCurlEPoints, wNormalBasisCurlAtBasisCurlEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(faceMassMat_,Kokkos::ALL(),range_H,range_B), basisTanAtBasisEPoints, wHgradBasisGradAtBasisEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(faceMassMat_,Kokkos::ALL(),range_H,range_H), basisCurlNormalAtBasisCurlEPoints, wNormalBasisCurlAtBasisCurlEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(faceMassMat_,Kokkos::ALL(),range_H,range_B), basisTanAtBasisEPoints, wHgradBasisGradAtBasisEPoints);
 
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_H), normalTargetCurlAtTargetEPoints, wNormalBasisCurlBasisAtTargetCurlEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_H), negPartialProjCurlNormal, wNormalBasisCurlAtBasisCurlEPoints,true);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_H), normalTargetCurlAtTargetEPoints, wNormalBasisCurlBasisAtTargetCurlEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_H), negPartialProjCurlNormal, wNormalBasisCurlAtBasisCurlEPoints,true);
 
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_B), targetTanAtTargetEPoints, wHgradBasisGradAtTargetEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_B), negPartialProjTan, wHgradBasisGradAtBasisEPoints,true);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_B), targetTanAtTargetEPoints, wHgradBasisGradAtTargetEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(faceRhsMat_,Kokkos::ALL(),range_B), negPartialProjTan, wHgradBasisGradAtBasisEPoints,true);
 
 
-    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, DeviceType> WorkArrayViewType;
     ScalarViewType t_("t",numCells, numFaceDofs+hgradCardinality);
     WorkArrayViewType w_("w",numCells, numFaceDofs+hgradCardinality);
 
-    auto faceDofs = Kokkos::subview(tagToOrdinal, faceDim, iface, Kokkos::ALL());
+    auto faceDofs = Kokkos::subview(tagToOrdinal, faceDim, iface, range_type(0,numFaceDofs));
     ElemSystem faceSystem( "faceSystem", false);
     faceSystem.solve(basisCoeffs, faceMassMat_, faceRhsMat_, t_, w_, faceDofs, numFaceDofs, hgradCardinality);
 
-    for(ordinal_type i=0; i<numFaceDofs; ++i)
-      computedDofs(computedDofsCount++) = cellBasis->getDofOrdinal(faceDim, iface, i);
+    auto computedFaceDofs = Kokkos::subview(computedDofs, range_type(computedDofsCount,computedDofsCount+numFaceDofs));
+    deep_copy(computedFaceDofs, faceDofs);
+    computedDofsCount += numFaceDofs;
 
     delete hgradBasis;
   }
@@ -760,13 +757,13 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
   ordinal_type numCellDofs = cellBasis->getDofCount(dim,0);
   if(numCellDofs>0) {
     if(cellTopo.getKey() == shards::getCellTopologyData<shards::Hexahedron<8> >()->key)
-      hgradBasis = new Basis_HGRAD_HEX_Cn_FEM<SpT,scalarType,scalarType>(cellBasis->getDegree());
+      hgradBasis = new Basis_HGRAD_HEX_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree());
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Tetrahedron<4> >()->key)
-      hgradBasis = new Basis_HGRAD_TET_Cn_FEM<SpT,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+      hgradBasis = new Basis_HGRAD_TET_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Triangle<3> >()->key)
-      hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<SpT,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+      hgradBasis = new Basis_HGRAD_TRI_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else if(cellTopo.getKey() == shards::getCellTopologyData<shards::Quadrilateral<4> >()->key)
-      hgradBasis = new Basis_HGRAD_QUAD_Cn_FEM<SpT,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
+      hgradBasis = new Basis_HGRAD_QUAD_Cn_FEM<DeviceType,scalarType,scalarType>(cellBasis->getDegree(),POINTTYPE_WARPBLEND);
     else  {
       std::stringstream ss;
       ss << ">>> ERROR (Intrepid2::ProjectionTools::getHCurlBasisCoeffs): "
@@ -799,16 +796,16 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
     ScalarViewType wBasisCurlAtCurlEPoints("weightedBasisCurlAtBasisEPoints",numCells,numCellDofs, numBasisCurlEPoints,derDim);
     ScalarViewType wBasisCurlBasisAtTargetCurlEPoints("weightedBasisCurlAtTargetCurlEPoints",numCells,numCellDofs, numTargetCurlEPoints,derDim);
 
-    auto targetEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetEvalWeights(dim,0));
-    auto basisEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisEvalWeights(dim,0));
-    auto targetCurlEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getTargetDerivEvalWeights(dim,0));
-    auto basisCurlEWeights = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(),projStruct->getBasisDerivEvalWeights(dim,0));
+    auto targetEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetEvalWeights(dim,0));
+    auto basisEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisEvalWeights(dim,0));
+    auto targetCurlEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getTargetDerivEvalWeights(dim,0));
+    auto basisCurlEWeights = Kokkos::create_mirror_view_and_copy(MemSpaceType(),projStruct->getBasisDerivEvalWeights(dim,0));
     ordinal_type offsetBasis = basisEPointsRange(dim, 0).first;
     ordinal_type offsetBasisCurl = basisCurlEPointsRange(dim, 0).first;
     ordinal_type offsetTargetCurl = targetCurlEPointsRange(dim, 0).first;
 
 
-    auto hGradTagToOrdinal = Kokkos::create_mirror_view_and_copy(typename SpT::memory_space(), hgradBasis->getAllDofOrdinal());
+    auto hGradTagToOrdinal = Kokkos::create_mirror_view_and_copy(MemSpaceType(), hgradBasis->getAllDofOrdinal());
 
     typedef ComputeBasisCoeffsOnCell_HCurl<decltype(basisCoeffs), ScalarViewType,  decltype(basisEWeights),
         decltype(computedDofs), decltype(tagToOrdinal)> functorTypeCell;
@@ -830,18 +827,18 @@ ProjectionTools<SpT>::getHCurlBasisCoeffs(Kokkos::DynRankView<basisCoeffsValueTy
 
     range_type range_H(0, numCellDofs);
     range_type range_B(numCellDofs, numCellDofs+hgradCardinality);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellMassMat_,Kokkos::ALL(),range_H,range_H), cellBasisCurlAtCurlEPoints, wBasisCurlAtCurlEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellMassMat_,Kokkos::ALL(),range_H,range_B), cellBasisAtBasisEPoints, wHgradBasisGradAtBasisEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellMassMat_,Kokkos::ALL(),range_H,range_H), cellBasisCurlAtCurlEPoints, wBasisCurlAtCurlEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellMassMat_,Kokkos::ALL(),range_H,range_B), cellBasisAtBasisEPoints, wHgradBasisGradAtBasisEPoints);
     if(dim==3)
-      FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_H), Kokkos::subview(targetCurlAtTargetCurlEPoints,Kokkos::ALL(),cellCurlPointsRange,Kokkos::ALL()), wBasisCurlBasisAtTargetCurlEPoints);
+      FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_H), Kokkos::subview(targetCurlAtTargetCurlEPoints,Kokkos::ALL(),cellCurlPointsRange,Kokkos::ALL()), wBasisCurlBasisAtTargetCurlEPoints);
     else
-      FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_H), Kokkos::subview(targetCurlAtTargetCurlEPoints,Kokkos::ALL(),cellCurlPointsRange), Kokkos::subview(wBasisCurlBasisAtTargetCurlEPoints,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),0));
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_H), negPartialProjCurl, wBasisCurlAtCurlEPoints, true);
+      FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_H), Kokkos::subview(targetCurlAtTargetCurlEPoints,Kokkos::ALL(),cellCurlPointsRange), Kokkos::subview(wBasisCurlBasisAtTargetCurlEPoints,Kokkos::ALL(),Kokkos::ALL(),Kokkos::ALL(),0));
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_H), negPartialProjCurl, wBasisCurlAtCurlEPoints, true);
 
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_B), Kokkos::subview(targetAtTargetEPoints,Kokkos::ALL(),cellPointsRange,Kokkos::ALL()), wHgradBasisGradAtTargetEPoints);
-    FunctionSpaceTools<SpT >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_B), negPartialProj, wHgradBasisGradAtBasisEPoints, true);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_B), Kokkos::subview(targetAtTargetEPoints,Kokkos::ALL(),cellPointsRange,Kokkos::ALL()), wHgradBasisGradAtTargetEPoints);
+    FunctionSpaceTools<DeviceType >::integrate(Kokkos::subview(cellRhsMat_,Kokkos::ALL(),range_B), negPartialProj, wHgradBasisGradAtBasisEPoints, true);
 
-    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, SpT> WorkArrayViewType;
+    typedef Kokkos::DynRankView<scalarType, Kokkos::LayoutRight, DeviceType> WorkArrayViewType;
     ScalarViewType t_("t",numCells, numCellDofs+hgradCardinality);
     WorkArrayViewType w_("w",numCells, numCellDofs+hgradCardinality);
 

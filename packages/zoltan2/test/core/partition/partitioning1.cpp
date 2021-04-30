@@ -161,6 +161,14 @@ int main(int narg, char** arg)
                 "mesh used to generate matrix.");
   cmdp.setOption("matrix", &matrixType,
                 "Matrix type: Laplace1D, Laplace2D, or Laplace3D");
+
+  //////////////////////////////////
+  // Quotient-specific parameters
+  int quotientThreshold = -1;
+  cmdp.setOption("qthreshold", &quotientThreshold,
+                "Threshold on the number of vertices for active MPI ranks to hold"
+		"after the migrating the communication graph to the active ranks.");  
+
   //////////////////////////////////
 
   cmdp.parse(narg, arg);
@@ -212,8 +220,11 @@ int main(int narg, char** arg)
   ////// Set number of parts if specified
   if(nParts > 0) {
     params.set("num_global_parts", nParts);
-    if(nParts != comm->getSize())
-      distributeInput= false;
+  }
+
+  ////// Set the threshold for the quotient algorithm if specified
+  if(method == "quotient" && quotientThreshold > 0) {
+    params.set("quotient_threshold", quotientThreshold);    
   }
 
   ////// Create an input adapter for the graph of the Tpetra matrix.
@@ -320,13 +331,9 @@ int main(int narg, char** arg)
   ///// Basic metric checking of the partitioning solution
   ///// Not ordinarily done in application code; just doing it for testing here.
   size_t checkNparts = comm->getSize();
+  if(nParts != -1) checkNparts = size_t(nParts);
   size_t checkLength = origMatrix->getNodeNumRows();
 
-  if(method == "quotient") {
-    checkNparts = nParts;
-    checkLength = 1;  //assuming one vertex per rank in the quotient model
-  }
-    
   const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartListView();
 
   // Check for load balance
@@ -349,11 +356,16 @@ int main(int narg, char** arg)
     }
   }
 
-  // The rest of the checks do not apply to the quotient algorithm
+  // Quotient algorithm should produce the same result for each local row
   if(method == "quotient") {
-    std::cout << "PASS" << std::endl;
-    return testReturn;
+    size_t result = size_t(checkParts[0]);    
+    for (size_t i = 1; i < checkLength; i++) {
+      if (size_t(checkParts[i]) != result)
+	std::cout << "Different parts in the quotient algorithm: " 
+		  << result << "!=" << checkParts[i] << ": FAIL" << std::endl;
+    }
   }
+
 
   Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,
                                   countPerPart, globalCountPerPart);

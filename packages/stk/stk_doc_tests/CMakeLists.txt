@@ -2,6 +2,7 @@ TRIBITS_SUBPACKAGE(Doc_tests)
 
 IF (Trilinos_ENABLE_STKIO AND Trilinos_ENABLE_STKMesh)
   TRIBITS_ADD_TEST_DIRECTORIES(stk_mesh)
+  TRIBITS_ADD_TEST_DIRECTORIES(stk_transfer)
 ENDIF()
 
 IF (Trilinos_ENABLE_STKTopology)

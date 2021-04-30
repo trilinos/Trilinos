@@ -55,10 +55,10 @@
 
 namespace Intrepid2 {
 
-  template<typename SpT>
-  template<typename BasisType>
-  typename OrientationTools<SpT>::CoeffMatrixDataViewType
-  OrientationTools<SpT>::createCoeffMatrixInternal(const BasisType* basis) {
+  template<typename DT>
+  template<typename BasisHostType>
+  typename OrientationTools<DT>::CoeffMatrixDataViewType
+  OrientationTools<DT>::createCoeffMatrixInternal(const BasisHostType* basis) {
     const std::string name(basis->getName());
     CoeffMatrixDataViewType matData;
 
@@ -100,17 +100,17 @@ namespace Intrepid2 {
   //
   // HGRAD elements
   //
-  template<typename SpT>
-  template<typename BasisType>
+  template<typename DT>
+  template<typename BasisHostType>
   void
-  OrientationTools<SpT>::
-  init_HGRAD(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-                                 BasisType const *cellBasis) {
+  OrientationTools<DT>::
+  init_HGRAD(typename OrientationTools<DT>::CoeffMatrixDataViewType matData,
+                                 BasisHostType const *cellBasis) {
 
     const auto cellTopo = cellBasis->getBaseCellTopology();
     const ordinal_type numEdges = cellTopo.getEdgeCount();
     const ordinal_type numFaces = cellTopo.getFaceCount();
-      
+    
     {
       const ordinal_type numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
@@ -119,7 +119,11 @@ namespace Intrepid2 {
           auto mat = Kokkos::subview(matData,
               edgeId, edgeOrt,
               Kokkos::ALL(), Kokkos::ALL());
-          Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
+          Impl::OrientationTools::getCoeffMatrix_HGRAD
+            (mat,
+             /// KK: mauro, this is an expensive construction for high order elements 
+             /// and we repeat this for all possible orientation combinations
+             /// we need to address this later
               *cellBasis->getSubCellRefBasis(1,edgeId), *cellBasis,
               edgeId, edgeOrt);
         }
@@ -135,9 +139,13 @@ namespace Intrepid2 {
           auto mat = Kokkos::subview(matData,
               numEdges+faceId, faceOrt,
               Kokkos::ALL(), Kokkos::ALL());
-          Impl::OrientationTools::getCoeffMatrix_HGRAD(mat,
-              *cellBasis->getSubCellRefBasis(2,faceId), *cellBasis,
-              faceId, faceOrt);
+          /// KK: mauro, this is an expensive construction for high order elements 
+          /// and we repeat this for all possible orientation combinations
+          /// we need to address this later
+          Impl::OrientationTools::getCoeffMatrix_HGRAD
+            (mat,
+             *cellBasis->getSubCellRefBasis(2,faceId), *cellBasis,
+             faceId, faceOrt);
         }
       }
     }
@@ -146,21 +154,22 @@ namespace Intrepid2 {
   //
   // HCURL elements
   //
-  template<typename SpT>
-  template<typename BasisType>
+  template<typename DT>
+  template<typename BasisHostType>
   void
-  OrientationTools<SpT>::
-  init_HCURL(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-      BasisType const *cellBasis) {
+  OrientationTools<DT>::
+  init_HCURL(typename OrientationTools<DT>::CoeffMatrixDataViewType matData,
+      BasisHostType const *cellBasis) {
     const auto cellTopo = cellBasis->getBaseCellTopology();
     const ordinal_type numEdges = cellTopo.getEdgeCount();
     const ordinal_type numFaces = cellTopo.getFaceCount();
+
     {
       const ordinal_type numOrt = 2;
       for (ordinal_type edgeId=0;edgeId<numEdges;++edgeId) {
         if(cellBasis->getDofCount(1, edgeId) < 1) continue;
         for (ordinal_type edgeOrt=0;edgeOrt<numOrt;++edgeOrt) {
-          auto mat = Kokkos::subview(matData, 
+          auto mat = Kokkos::subview(matData,
                                      edgeId, edgeOrt,
                                      Kokkos::ALL(), Kokkos::ALL());
           Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
@@ -169,17 +178,20 @@ namespace Intrepid2 {
         }
       }
     }
-    for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
-      // this works for triangles (numOrt=6) and quadratures (numOrt=8)
-      const ordinal_type numOrt = 2*cellTopo.getSideCount(2,faceId);
-      if(cellBasis->getDofCount(2, faceId) < 1) continue;
-      for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
-        auto mat = Kokkos::subview(matData,
-                                   numEdges+faceId, faceOrt,
-                                   Kokkos::ALL(), Kokkos::ALL());
-        Impl::OrientationTools::getCoeffMatrix_HCURL(mat,
-            *cellBasis->getSubCellRefBasis(2,faceId), *cellBasis,
-            faceId, faceOrt);
+    {
+      for (ordinal_type faceId=0;faceId<numFaces;++faceId) {
+        // this works for triangles (numOrt=6) and quadratures (numOrt=8)
+        const ordinal_type numOrt = 2*cellTopo.getSideCount(2,faceId);
+        if(cellBasis->getDofCount(2, faceId) < 1) continue;
+        for (ordinal_type faceOrt=0;faceOrt<numOrt;++faceOrt) {
+          auto mat = Kokkos::subview(matData,
+                                     numEdges+faceId, faceOrt,
+                                     Kokkos::ALL(), Kokkos::ALL());
+          Impl::OrientationTools::getCoeffMatrix_HCURL
+            (mat,
+             *cellBasis->getSubCellRefBasis(2,faceId), *cellBasis,
+             faceId, faceOrt);
+        }
       }
     }
   }
@@ -187,15 +199,16 @@ namespace Intrepid2 {
   //
   // HDIV elements
   //
-  template<typename SpT>
-  template<typename BasisType>
+  template<typename DT>
+  template<typename BasisHostType>
   void
-  OrientationTools<SpT>::
-  init_HDIV(typename OrientationTools<SpT>::CoeffMatrixDataViewType matData,
-      BasisType const *cellBasis) {
+  OrientationTools<DT>::
+  init_HDIV(typename OrientationTools<DT>::CoeffMatrixDataViewType matData,
+      BasisHostType const *cellBasis) {
     const auto cellTopo = cellBasis->getBaseCellTopology();
     const ordinal_type numSides = cellTopo.getSideCount();
     const ordinal_type sideDim = cellTopo.getDimension()-1;
+
     {
       for (ordinal_type sideId=0;sideId<numSides;++sideId) {
         if(cellBasis->getDofCount(sideDim, sideId) < 1) continue;
@@ -212,16 +225,16 @@ namespace Intrepid2 {
     }
   }
 
-  template<typename SpT>
+  template<typename DT>
   template<typename BasisType>
-  typename OrientationTools<SpT>::CoeffMatrixDataViewType
-  OrientationTools<SpT>::createCoeffMatrix(const BasisType* basis) {
+  typename OrientationTools<DT>::CoeffMatrixDataViewType
+  OrientationTools<DT>::createCoeffMatrix(const BasisType* basis) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( !basis->requireOrientation(), std::invalid_argument,
                                   ">>> ERROR (OrientationTools::createCoeffMatrix): basis does not require orientations." );
 #endif
     Kokkos::push_finalize_hook( [=] {
-      ortCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<SpT>::CoeffMatrixDataViewType>();
+      ortCoeffData=std::map<std::pair<std::string,ordinal_type>, typename OrientationTools<DT>::CoeffMatrixDataViewType>();
     });
 
     const std::pair<std::string,ordinal_type> key(basis->getName(), basis->getDegree());
@@ -229,8 +242,11 @@ namespace Intrepid2 {
     
     CoeffMatrixDataViewType matData;
     if (found == ortCoeffData.end()) {
-      matData = createCoeffMatrixInternal(basis);
-      ortCoeffData.insert(std::make_pair(key, matData));
+      {
+        auto basis_host = basis->getHostBasis();
+        matData = createCoeffMatrixInternal(basis_host.getRawPtr());
+        ortCoeffData.insert(std::make_pair(key, matData));
+      }
     } else {
       matData = found->second;
     }
@@ -238,8 +254,8 @@ namespace Intrepid2 {
     return matData;
   }
   
-  template<typename SpT>
-  void OrientationTools<SpT>::clearCoeffMatrix() {
+  template<typename DT>
+  void OrientationTools<DT>::clearCoeffMatrix() {
     ortCoeffData.clear();
   }
 }

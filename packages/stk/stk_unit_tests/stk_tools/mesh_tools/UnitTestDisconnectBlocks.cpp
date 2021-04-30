@@ -1652,7 +1652,6 @@ TEST_F(TestDisconnectBlocks2D, test_populate_blocks_to_reconnect_4block_4quad)
 
 void print_block_pair_list(const stk::tools::BlockPairVector& blockPairs)
 {
-  return;
   std::cout << "Block pairs to reconnect" << std::endl;
   for(const stk::tools::BlockPair& blockPair : blockPairs) {
     std::cout << "\t block pair: {" << blockPair.first->name() << "," << blockPair.second->name() <<"}" << std::endl;

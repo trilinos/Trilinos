@@ -115,8 +115,6 @@ namespace Test {
     
     Kokkos::deep_copy(C2,C);
 
-    Kokkos::fence();
- 
     struct VanillaGEMM<ViewTypeA,ViewTypeB,ViewTypeC,execution_space> vgemm;
     vgemm.A_t = A_t; vgemm.B_t = B_t;
     vgemm.A_c = A_c; vgemm.B_c = B_c;
@@ -129,8 +127,6 @@ namespace Test {
     Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
 
     KokkosBlas::gemm(TA,TB,alpha,A,B,beta,C);
-
-    Kokkos::fence();
 
     mag_type diff_C = 0;
     struct DiffGEMM<ViewTypeC,execution_space> diffgemm;

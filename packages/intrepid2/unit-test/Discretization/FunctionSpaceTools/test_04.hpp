@@ -77,8 +77,9 @@ namespace Intrepid2 {
     };
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
     
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int FunctionSpaceTools_Test04(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -92,9 +93,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
 
       *outStream                                                       
@@ -113,9 +114,9 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
 
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef FunctionSpaceTools<DeviceSpaceType> fst;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      typedef CellTools<DeviceType> ct;
+      typedef FunctionSpaceTools<DeviceType> fst;
+      typedef Kokkos::DynRankView<ValueType,DeviceType> DynRankView;
 
       const auto tol = tolerence();
 
@@ -135,7 +136,7 @@ namespace Intrepid2 {
         shards::CellTopology cell_topo = shards::getCellTopologyData< shards::Tetrahedron<4> >();
 
         const auto cub_degree = 0;
-        auto cub = cub_factory.create<DeviceSpaceType,ValueType,ValueType>(cell_topo, cub_degree);
+        auto cub = cub_factory.create<DeviceType,ValueType,ValueType>(cell_topo, cub_degree);
 
         const auto space_dim = cub->getDimension();
         const auto num_cub_points = cub->getNumPoints();
@@ -188,9 +189,15 @@ namespace Intrepid2 {
         // get cubature points and weights
         cub->getCubature(cub_points, cub_weights);
 
-        const Kokkos::DynRankView<const ValueType,Kokkos::LayoutRight,HostSpaceType> cell_nodes_host (&tetnodes[0],  num_cells, num_nodes, space_dim);
-        Kokkos::deep_copy( cell_nodes,  cell_nodes_host  );
-        
+        const Kokkos::DynRankView<ValueType,Kokkos::LayoutRight,Kokkos::HostSpace> cell_nodes_host (const_cast<ValueType*>(&tetnodes[0]),  num_cells, num_nodes, space_dim);
+
+        // 1. mirror allocation
+        // 2. deep copy preserving layout
+        // 3. remap to native layout of the device
+        auto cell_nodes_device  = create_mirror_view(typename DeviceType::memory_space(), cell_nodes_host);
+        Kokkos::deep_copy( cell_nodes_device, cell_nodes_host );
+        Kokkos::deep_copy( cell_nodes , cell_nodes_device );
+
         // compute geometric cell information
         ct::setJacobian(jacobian, cub_points, cell_nodes, cell_topo);
         ct::setJacobianDet(jacobian_det, jacobian);

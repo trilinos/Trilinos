@@ -97,7 +97,7 @@ template <typename INT> struct LB_Description
   std::vector<std::vector<INT>>              e_cmap_procs;
   std::vector<std::vector<INT>>              e_cmap_neigh;
 
-  LB_Description() {}
+  LB_Description() = default;
 };
 
 /* Structure for the problem description. */
@@ -126,7 +126,7 @@ struct Problem_Description
   int   int64db{0};  /* integer types for output mesh database */
   int   int64api{0}; /* integer types for exodus api calls */
 
-  Problem_Description() {}
+  Problem_Description() = default;
 };
 
 /* Structure for parameters needed for the Eigensolver in Chaco */
@@ -136,7 +136,7 @@ struct Solver_Description
   int    rqi_flag{-1};
   int    vmax{-1};
 
-  Solver_Description() {}
+  Solver_Description() = default;
 };
 
 /* Structure used to store information about the weighting scheme, if
@@ -165,7 +165,7 @@ template <typename INT> struct Weight_Description
   std::vector<int>   vertices{};
   std::vector<float> edges{};
 
-  Weight_Description<INT>() {}
+  Weight_Description<INT>() = default;
 };
 
 /* Structure used to store information about the FEM mesh */
@@ -199,7 +199,7 @@ struct Sphere_Info
   int *  begin{nullptr};
   int *  end{nullptr};
 
-  Sphere_Info() {}
+  Sphere_Info() = default;
 };
 
 /* Structure used to store various information about the graph */
@@ -210,7 +210,7 @@ template <typename INT> struct Graph_Description
   std::vector<INT>              adj{};
   std::vector<INT>              start{};
   std::vector<std::vector<INT>> sur_elem;
-  Graph_Description<INT>() {}
+  Graph_Description<INT>() = default;
 };
 
 /* Various constants */

@@ -323,6 +323,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   MESSAGE(STATUS "   <double,  int, long>      : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGINT}")
   MESSAGE(STATUS "   <double,  int, long long> : ${${PACKAGE_NAME}_INST_DOUBLE_INT_LONGLONGINT}")
   MESSAGE(STATUS "   <complex, int, int>       : ${${PACKAGE_NAME}_INST_COMPLEX_INT_INT}")
+  MESSAGE(STATUS "   <complex, int, long long> : ${${PACKAGE_NAME}_INST_COMPLEX_INT_LONG_LONG}")
 
   # GO preference: int > long long > long
   IF(NOT ${${PACKAGE_NAME}_INST_DOUBLE_INT_INT})

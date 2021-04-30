@@ -128,7 +128,8 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
                              RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap,
                              RCP<const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > colMap,
                              RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& rowImport,
-                             RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionMats) {
+                             RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& quasiRegionMats,
+                             const Teuchos::ArrayRCP<LocalOrdinal>& regionMatVecLIDs) {
 #include "Xpetra_UseShortNames.hpp"
   using Teuchos::RCP;
   using Teuchos::TimeMonitor;
@@ -166,31 +167,39 @@ void MakeQuasiregionMatrices(const RCP<Xpetra::CrsMatrixWrap<Scalar, LocalOrdina
 
   RCP<CrsMatrixWrap> quasiRegionCrsWrap = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(quasiRegionMats);
   RCP<CrsMatrix> quasiRegionCrs = quasiRegionCrsWrap->getCrsMatrix();
-  const LO numRows = Teuchos::as<LO>(quasiRegionCrs->getNodeNumRows());
 
-  for (LO row = 0; row < numRows; ++row) { // loop over local rows of composite matrix
-    GO rowGID = rowMap->getGlobalElement(row);
-    std::size_t numEntries = quasiRegionMats->getNumEntriesInLocalRow(row); // number of entries in this row
-    Teuchos::Array<SC> vals(numEntries); // non-zeros in this row
-    Teuchos::Array<LO> inds(numEntries); // local column indices
-    quasiRegionMats->getLocalRowCopy(row, inds, vals, numEntries);
+  // Grab first and last element of sorted interface LIDs
+  Array<LO> interfaceLIDs(regionMatVecLIDs());
+  std::sort(interfaceLIDs.begin(), interfaceLIDs.end());
+  auto vecEnd = std::unique(interfaceLIDs.begin(), interfaceLIDs.end());
+  auto vecStart = interfaceLIDs.begin();
 
-    for (std::size_t c = 0; c < Teuchos::as<std::size_t>(inds.size()); ++c) { // loop over all entries in this row
-      LocalOrdinal col = inds[c];
-      GlobalOrdinal colGID = colMap->getGlobalElement(col);
+  GO rowGID;
+  LocalOrdinal col;
+  GlobalOrdinal colGID;
+  std::size_t sizeOfCommonRegions;
+  std::size_t numEntries = 0;
+  for(auto row = vecStart; row < vecEnd; ++row) {
+    rowGID = rowMap->getGlobalElement(*row);
+    numEntries = quasiRegionMats->getNumEntriesInLocalRow(*row); // number of entries in this row
+    Array<SC> values(numEntries); // non-zeros in this row
+    Array<LO> colInds(numEntries); // local column indices
+    quasiRegionMats->getLocalRowCopy(*row, colInds, values, numEntries);
+
+    for (std::size_t entryIdx = 0; entryIdx < numEntries; ++entryIdx) { // loop over all entries in this row
+      col = colInds[entryIdx];
+      colGID = colMap->getGlobalElement(col);
       Array<int> commonRegions;
       if (rowGID != colGID) { // Skip the diagonal entry. It will be processed later.
-        // commonRegions = findCommonRegions(rowGID, colGID, *regionsPerGIDWithGhosts);
         commonRegions = findCommonRegions(rowGID, colGID, regionPerGIDWithGhostsData, regionsPerGIDWithGhosts->getMap());
       }
 
-      std::size_t sizeOfCommonRegions = commonRegions.size();
-      if (sizeOfCommonRegions > 1) {
-        vals[c] /= Teuchos::as<double>(sizeOfCommonRegions);
+      sizeOfCommonRegions = commonRegions.size();
+      if (1 < sizeOfCommonRegions) {
+        values[entryIdx] /= Teuchos::as<double>(sizeOfCommonRegions);
       }
     }
-
-    quasiRegionMats->replaceLocalValues(row, inds, vals);
+    quasiRegionMats->replaceLocalValues(*row, colInds, values);
   }
 
   tm = Teuchos::null;

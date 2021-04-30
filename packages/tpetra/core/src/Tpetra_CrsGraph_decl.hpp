@@ -42,11 +42,6 @@
 
 /// \file Tpetra_CrsGraph_decl.hpp
 /// \brief Declaration of the Tpetra::CrsGraph class
-///
-/// If you want to use Tpetra::CrsGraph, include "Tpetra_CrsGraph.hpp"
-/// (a file which CMake generates and installs for you).  If you only
-/// want the declaration of Tpetra::CrsGraph, include this file
-/// (Tpetra_CrsGraph_decl.hpp).
 
 #include "Tpetra_CrsGraph_fwd.hpp"
 #include "Tpetra_CrsMatrix_fwd.hpp"
@@ -1308,7 +1303,7 @@ namespace Tpetra {
     /// it only tells us whether boundForAllLocalRows has a meaningful
     /// value on output.  We don't necessarily check whether all
     /// entries of boundPerLocalRow are the same.
-    TPETRA_DEPRECATED
+    //TPETRA_DEPRECATED
     void
     getNumEntriesPerLocalRowUpperBound (Teuchos::ArrayRCP<const size_t>& boundPerLocalRow,
                                         size_t& boundForAllLocalRows,
@@ -1821,11 +1816,6 @@ namespace Tpetra {
     ///   indices[k] in the graphs indices.
     ///
     /// \return The number of indices found.
-    size_t
-    findLocalIndices(const RowInfo& rowInfo,
-                     const Teuchos::ArrayView<const local_ordinal_type>& indices,
-                     std::function<void(const size_t, const size_t, const size_t)> fun) const;
-
     size_t
     findGlobalIndices(const RowInfo& rowInfo,
                       const Teuchos::ArrayView<const global_ordinal_type>& indices,

@@ -155,6 +155,9 @@ typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ifpack2Sm
 #ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
 typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node> IndefBlockedDiagonalSmoother;
 #endif
+#ifdef MUELU_INITIALBLOCKNUMBERFACTORY_SHORT
+typedef MueLu::InitialBlockNumberFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> InitialBlockNumberFactory;
+#endif
 #ifdef MUELU_INTREPIDPCOARSENFACTORY_SHORT
 typedef MueLu::IntrepidPCoarsenFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node> IntrepidPCoarsenFactory;
 #endif

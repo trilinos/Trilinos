@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -79,3 +79,37 @@ Ioss::Property Ioss::EntityBlock::get_implicit_property(const std::string &my_na
 
   return Ioss::GroupingEntity::get_implicit_property(my_name);
 }
+
+bool Ioss::EntityBlock::equal_(const Ioss::EntityBlock &rhs, const bool quiet) const
+{
+  /* COMPARE element topologies */
+  if (*(this->topology_) != *(rhs.topology_)) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "EntityBlock: TOPOLOGY mismatch\n");
+    }
+    return false;
+  }
+
+  if (this->idOffset != rhs.idOffset) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "EntityBlock: idOffset mismatch ({} vs. {})\n", this->idOffset,
+                 rhs.idOffset);
+    }
+    return false;
+  }
+
+  if (!Ioss::GroupingEntity::equal_(rhs, quiet)) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "EntityBlock: GroupingEntity mismatch\n");
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool Ioss::EntityBlock::operator==(const Ioss::EntityBlock &rhs) const { return equal_(rhs, true); }
+
+bool Ioss::EntityBlock::operator!=(const Ioss::EntityBlock &rhs) const { return !(*this == rhs); }
+
+bool Ioss::EntityBlock::equal(const Ioss::EntityBlock &rhs) const { return equal_(rhs, false); }

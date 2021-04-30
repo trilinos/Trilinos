@@ -349,9 +349,9 @@ namespace {
         }
         if (find_string(names, name, interFace.nocase_var_names) < 0 &&
             find_string(x_list, name, interFace.nocase_var_names) < 0) {
-          int idx = names.size();
           names.push_back(name);
-          tols[idx] = default_tol;
+          tols.push_back(default_tol);
+          SMART_ASSERT(names.size() == tols.size())(names.size())(tols.size());
         }
       }
 
@@ -381,6 +381,7 @@ namespace {
     }
 
     std::vector<std::string> tmp_list;
+    std::vector<Tolerance>   tmp_tols;
     for (size_t n = 0; n < names.size(); ++n) {
       std::string name = names[n];
       chop_whitespace(name);
@@ -392,7 +393,7 @@ namespace {
       if (idx >= 0) {
         if (interFace.summary_flag ||
             find_string(var_names2, name, interFace.nocase_var_names) >= 0) {
-          tols[tmp_list.size()] = tols[n];
+          tmp_tols.push_back(tols[n]);
           tmp_list.push_back(var_names1[idx]);
         }
         else {
@@ -419,6 +420,8 @@ namespace {
       }
     }
     names = tmp_list;
+    tols  = tmp_tols;
+    SMART_ASSERT(names.size() == tols.size())(names.size())(tols.size());
   }
 
   template <typename INT>

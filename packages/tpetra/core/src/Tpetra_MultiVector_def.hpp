@@ -48,6 +48,7 @@
 /// installs for you).  If you only want the declaration of
 /// Tpetra::MultiVector, include "Tpetra_MultiVector_decl.hpp".
 
+#include "Tpetra_Core.hpp"
 #include "Tpetra_Util.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_Details_allReduceView.hpp"
@@ -239,13 +240,10 @@ namespace { // (anonymous)
     // Kokkos::DualView what _its_ space is.  That seems to work
     // around this default execution space issue.
     //
-    // NOTE (mfh 29 Jan 2016): See kokkos/kokkos#178 for why we use
-    // a memory space, rather than an execution space, as the first
-    // argument of VerifyExecutionCanAccessMemorySpace.
     typedef typename Kokkos::Impl::if_c<
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
+      Kokkos::Impl::SpaceAccessibility<
         typename ExecSpace::memory_space,
-        Kokkos::HostSpace>::value,
+        Kokkos::HostSpace>::accessible,
       typename ExecSpace::device_type,
       typename Kokkos::DualView<T*, ExecSpace>::host_mirror_space>::type host_exec_space;
     typedef Kokkos::LayoutLeft array_layout;
@@ -331,13 +329,16 @@ namespace { // (anonymous)
 
   template <class impl_scalar_type, class buffer_device_type>
   bool
-  runKernelOnHost ( Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports )
+  runKernelOnHost ( 
+    Kokkos::DualView<impl_scalar_type*, buffer_device_type> imports 
+  )
   {
     if (! imports.need_sync_device ()) {
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
+      size_t localLengthThreshold = 
+             Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return imports.extent(0) <= localLengthThreshold;
     }
   }
@@ -351,7 +352,8 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
-      size_t localLengthThreshold = Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
+      size_t localLengthThreshold = 
+             Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
     }
   }
@@ -362,6 +364,7 @@ namespace { // (anonymous)
                        ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
                        const ::Tpetra::Details::EWhichNorm whichNorm)
   {
+    using namespace Tpetra;
     using ::Tpetra::Details::normImpl;
     using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
     using val_type = typename MV::impl_scalar_type;
@@ -376,27 +379,21 @@ namespace { // (anonymous)
 
     const bool runOnHost = runKernelOnHost (X);
     if (runOnHost) {
-      using view_type = typename dual_view_type::t_host;
+      using view_type    = typename dual_view_type::t_host;
       using array_layout = typename view_type::array_layout;
-      using device_type = typename view_type::device_type;
+      using device_type  = typename view_type::device_type;
 
-      if (X.need_sync_host ()) {
-        X.sync_host ();
-      }
-      view_type X_lcl = X.getLocalViewHost ();
+      auto X_lcl = X.getLocalViewHost(Access::ReadOnly);
       normImpl<val_type, array_layout, device_type,
         mag_type> (norms, X_lcl, whichNorm, whichVecs,
                    isConstantStride, isDistributed, comm);
     }
     else {
-      using view_type = typename dual_view_type::t_dev;
+      using view_type    = typename dual_view_type::t_dev;
       using array_layout = typename view_type::array_layout;
       using device_type = typename view_type::device_type;
 
-      if (X.need_sync_device ()) {
-        X.sync_device ();
-      }
-      view_type X_lcl = X.getLocalViewDevice ();
+      auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
       normImpl<val_type, array_layout, device_type,
         mag_type> (norms, X_lcl, whichNorm, whichVecs,
                    isConstantStride, isDistributed, comm);
@@ -447,6 +444,7 @@ namespace Tpetra {
     const size_t lclNumRows = this->getLocalLength ();
     view_ = allocDualView<Scalar, LocalOrdinal, GlobalOrdinal, Node> (lclNumRows, numVecs, zeroOut);
     origView_ = view_;
+    owningView_ = view_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -456,6 +454,7 @@ namespace Tpetra {
     base_type (source),
     view_ (source.view_),
     origView_ (source.origView_),
+    owningView_ (source.owningView_),
     whichVectors_ (source.whichVectors_)
   {
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
@@ -470,6 +469,7 @@ namespace Tpetra {
       MV cpy = createCopy (source);
       this->view_ = cpy.view_;
       this->origView_ = cpy.origView_;
+      this->owningView_ = cpy.owningView_;
       this->whichVectors_ = cpy.whichVectors_;
     }
     else if (copyOrView == Teuchos::View) {
@@ -489,7 +489,8 @@ namespace Tpetra {
                const dual_view_type& view) :
     base_type (map),
     view_ (view),
-    origView_ (view)
+    origView_ (view),
+    owningView_ (view)
   {
     const char tfecfFuncName[] = "MultiVector(Map,DualView): ";
     const size_t lclNumRows_map = map.is_null () ? size_t (0) :
@@ -559,8 +560,9 @@ namespace Tpetra {
     // The user gave us a device view.  In order to respect its
     // initial contents, we mark the DualView as "modified on device."
     // That way, the next sync will synchronize it with the host view.
-    this->modify_device ();
+    view_.modify_device ();
     origView_ = view_;
+    owningView_ = view_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -570,7 +572,8 @@ namespace Tpetra {
                const dual_view_type& origView) :
     base_type (map),
     view_ (view),
-    origView_ (origView)
+    origView_ (origView),
+    owningView_ (origView)
   {
     const char tfecfFuncName[] = "MultiVector(map,view,origView): ";
 
@@ -611,6 +614,7 @@ namespace Tpetra {
     base_type (map),
     view_ (view),
     origView_ (view),
+    owningView_ (view),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -679,10 +683,12 @@ namespace Tpetra {
       // origView_ just to view that one column, not all of the
       // original columns.  This ensures that the use of origView_ in
       // offsetView works correctly.
+      //
+      // However, owningView_ is not a subview.
       const std::pair<size_t, size_t> colRng (whichVectors[0],
                                               whichVectors[0] + 1);
+      origView_ = view_;
       view_ = takeSubview (view_, ALL (), colRng);
-      origView_ = takeSubview (origView_, ALL (), colRng);
       // whichVectors_.size() == 0 means "constant stride."
       whichVectors_.clear ();
     }
@@ -697,6 +703,7 @@ namespace Tpetra {
     base_type (map),
     view_ (view),
     origView_ (origView),
+    owningView_ (origView),
     whichVectors_ (whichVectors.begin (), whichVectors.end ())
   {
     using Kokkos::ALL;
@@ -811,9 +818,10 @@ namespace Tpetra {
     }
 
     this->view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
-    this->modify_device ();
-    auto X_out = this->getLocalViewDevice ();
+    //Note: X_out will be completely overwritten
+    auto X_out = this->getLocalViewDevice(Access::OverwriteAll);
     origView_ = view_;
+    owningView_ = view_;
 
     // Make an unmanaged host Kokkos::View of the input data.  First
     // create a View (X_in_orig) with the original stride.  Then,
@@ -879,8 +887,7 @@ namespace Tpetra {
     }
 
     view_ = allocDualView<Scalar, LO, GO, Node> (lclNumRows, numVecs);
-    this->modify_device ();
-    auto X_out = this->getLocalViewDevice ();
+    auto X_out = this->getLocalViewDevice(Access::ReadWrite);
 
     // Make sure that the type of a single input column has the same
     // array layout as each output column does, so we can deep_copy.
@@ -899,6 +906,7 @@ namespace Tpetra {
       Kokkos::deep_copy (X_j_out, X_j_in);
     }
     origView_ = view_;
+    owningView_ = view_;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -937,6 +945,20 @@ namespace Tpetra {
   getStride () const
   {
     return isConstantStride () ? getDualViewStride (origView_) : size_t (0);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  aliases(const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& other) const
+  {
+    //Don't actually get a view, just get pointers.
+    auto thisData = view_.h_view.data();
+    auto otherData = other.view_.h_view.data();
+    size_t thisSpan = view_.h_view.span();
+    size_t otherSpan = other.view_.h_view.span();
+    return (otherData <= thisData && thisData < otherData + otherSpan)
+      || (thisData <= otherData && otherData < thisData + thisSpan);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1027,19 +1049,6 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
 
-    if (copyOnHost) {
-      sourceMV.sync_host();
-      this->sync_host ();
-      this->modify_host ();
-    }
-    else {
-      sourceMV.sync_device();
-      if (this->need_sync_device ()) {
-        this->sync_device ();
-      }
-      this->modify_device ();
-    }
-
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Copy" << endl;
@@ -1071,8 +1080,8 @@ namespace Tpetra {
     if (numSameIDs > 0) {
       const std::pair<size_t, size_t> rows (0, numSameIDs);
       if (copyOnHost) {
-        auto tgt_h = this->getLocalViewHost ();
-        auto src_h = create_const_view (sourceMV.getLocalViewHost ());
+        auto tgt_h = this->getLocalViewHost(Access::ReadWrite);
+        auto src_h = sourceMV.getLocalViewHost(Access::ReadOnly);
 
         for (size_t j = 0; j < numCols; ++j) {
           const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
@@ -1097,8 +1106,8 @@ namespace Tpetra {
         }
       }
       else { // copy on device
-        auto tgt_d = this->getLocalViewDevice ();
-        auto src_d = create_const_view (sourceMV.getLocalViewDevice ());
+        auto tgt_d = this->getLocalViewDevice(Access::ReadWrite);
+        auto src_d = sourceMV.getLocalViewDevice(Access::ReadOnly);
 
         for (size_t j = 0; j < numCols; ++j) {
           const size_t tgtCol = isConstantStride () ? j : whichVectors_[j];
@@ -1228,8 +1237,8 @@ namespace Tpetra {
         os << *prefix << "Get permute LIDs on host" << std::endl;
         std::cerr << os.str ();
       }
-      auto tgt_h = this->getLocalViewHost ();
-      auto src_h = create_const_view (sourceMV.getLocalViewHost ());
+      auto tgt_h = this->getLocalViewHost(Access::ReadWrite);
+      auto src_h = sourceMV.getLocalViewHost(Access::ReadOnly);
 
       TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_host () );
       auto permuteToLIDs_h = create_const_view (permuteToLIDs.view_host ());
@@ -1287,8 +1296,8 @@ namespace Tpetra {
         os << *prefix << "Get permute LIDs on device" << endl;
         std::cerr << os.str ();
       }
-      auto tgt_d = this->getLocalViewDevice ();
-      auto src_d = create_const_view (sourceMV.getLocalViewDevice ());
+      auto tgt_d = this->getLocalViewDevice(Access::ReadWrite);
+      auto src_d = sourceMV.getLocalViewDevice(Access::ReadOnly);
 
       TEUCHOS_ASSERT( ! permuteToLIDs.need_sync_device () );
       auto permuteToLIDs_d = create_const_view (permuteToLIDs.view_device ());
@@ -1447,8 +1456,6 @@ namespace Tpetra {
        std::logic_error, "Input MultiVector needs sync to both host "
        "and device.");
     const bool packOnHost = runKernelOnHost(sourceMV);
-    auto src_dev = sourceMV.getLocalViewHost ();
-    auto src_host = sourceMV.getLocalViewDevice ();
     if (printDebugOutput) {
       std::ostringstream os;
       os << *prefix << "packOnHost=" << (packOnHost ? "true" : "false") << endl;
@@ -1466,7 +1473,6 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_host ();
-      sourceMV.sync_host();
     }
     else {
       // nde 06 Feb 2020: If 'exports' does not require resize
@@ -1476,7 +1482,6 @@ namespace Tpetra {
       // Clearing the sync flags prevents this possible case.
       exports.clear_sync_state ();
       exports.modify_device ();
-      sourceMV.sync_device();
     }
 
     if (numCols == 1) { // special case for one column only
@@ -1500,15 +1505,17 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
+          auto src_host = sourceMV.getLocalViewHost(Access::ReadOnly);
           pack_array_single_column (exports.view_host (),
-                                    create_const_view (src_host),
+                                    src_host,
                                     exportLIDs.view_host (),
                                     0,
                                     debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = sourceMV.getLocalViewDevice(Access::ReadOnly);
           pack_array_single_column (exports.view_device (),
-                                    create_const_view (src_dev),
+                                    src_dev,
                                     exportLIDs.view_device (),
                                     0,
                                     debugCheckIndices);
@@ -1522,15 +1529,17 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
+          auto src_host = sourceMV.getLocalViewHost(Access::ReadOnly);
           pack_array_single_column (exports.view_host (),
-                                    create_const_view (src_host),
+                                    src_host,
                                     exportLIDs.view_host (),
                                     sourceMV.whichVectors_[0],
                                     debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = sourceMV.getLocalViewDevice(Access::ReadOnly);
           pack_array_single_column (exports.view_device (),
-                                    create_const_view (src_dev),
+                                    src_dev,
                                     exportLIDs.view_device (),
                                     sourceMV.whichVectors_[0],
                                     debugCheckIndices);
@@ -1546,15 +1555,17 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
         if (packOnHost) {
+          auto src_host = sourceMV.getLocalViewHost(Access::ReadOnly);
           pack_array_multi_column (exports.view_host (),
-                                   create_const_view (src_host),
+                                   src_host,
                                    exportLIDs.view_host (),
                                    numCols,
                                    debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = sourceMV.getLocalViewDevice(Access::ReadOnly);
           pack_array_multi_column (exports.view_device (),
-                                   create_const_view (src_dev),
+                                   src_dev,
                                    exportLIDs.view_device (),
                                    numCols,
                                    debugCheckIndices);
@@ -1577,18 +1588,20 @@ namespace Tpetra {
         using DES = typename DV::t_dev::execution_space;
         Teuchos::ArrayView<const size_t> whichVecs = sourceMV.whichVectors_ ();
         if (packOnHost) {
+          auto src_host = sourceMV.getLocalViewHost(Access::ReadOnly);
           pack_array_multi_column_variable_stride
             (exports.view_host (),
-             create_const_view (src_host),
+             src_host,
              exportLIDs.view_host (),
              getKokkosViewDeepCopy<HES> (whichVecs),
              numCols,
              debugCheckIndices);
         }
         else { // pack on device
+          auto src_dev = sourceMV.getLocalViewDevice(Access::ReadOnly);
           pack_array_multi_column_variable_stride
             (exports.view_device (),
-             create_const_view (src_dev),
+             src_dev,
              exportLIDs.view_device (),
              getKokkosViewDeepCopy<DES> (whichVecs),
              numCols,
@@ -1691,18 +1704,6 @@ namespace Tpetra {
 
     // We have to sync before modifying, because this method may read
     // as well as write (depending on the CombineMode).
-    if (unpackOnHost) {
-      imports.sync_host();
-      this->sync_host ();
-      this->modify_host ();
-    }
-    else {
-      imports.sync_device();
-      this->sync_device ();
-      this->modify_device ();
-    }
-    auto X_d = this->getLocalViewDevice ();
-    auto X_h = this->getLocalViewHost ();
     auto imports_d = imports.view_device ();
     auto imports_h = imports.view_host ();
     auto importLIDs_d = importLIDs.view_device ();
@@ -1756,6 +1757,7 @@ namespace Tpetra {
         using op_type = KokkosRefactor::Details::InsertOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHost(Access::ReadWrite);
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
                                        op_type (), numVecs,
@@ -1764,6 +1766,7 @@ namespace Tpetra {
 
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDevice(Access::ReadWrite);
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
@@ -1773,6 +1776,7 @@ namespace Tpetra {
         }
         else { // not constant stride
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHost(Access::ReadWrite);
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1783,6 +1787,7 @@ namespace Tpetra {
                                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDevice(Access::ReadWrite);
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
@@ -1798,6 +1803,7 @@ namespace Tpetra {
         using op_type = KokkosRefactor::Details::AddOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHost(Access::ReadWrite);
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
                                        op_type (), numVecs,
@@ -1805,6 +1811,7 @@ namespace Tpetra {
                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDevice(Access::ReadWrite);
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
@@ -1814,6 +1821,7 @@ namespace Tpetra {
         }
         else { // not constant stride
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHost(Access::ReadWrite);
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1824,6 +1832,7 @@ namespace Tpetra {
                                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDevice(Access::ReadWrite);
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
@@ -1839,6 +1848,7 @@ namespace Tpetra {
         using op_type = KokkosRefactor::Details::AbsMaxOp;
         if (isConstantStride ()) {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHost(Access::ReadWrite);
             unpack_array_multi_column (host_exec_space (),
                                        X_h, imports_h, importLIDs_h,
                                        op_type (), numVecs,
@@ -1846,6 +1856,7 @@ namespace Tpetra {
                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDevice(Access::ReadWrite);
             unpack_array_multi_column (dev_exec_space (),
                                        X_d, imports_d, importLIDs_d,
                                        op_type (), numVecs,
@@ -1855,6 +1866,7 @@ namespace Tpetra {
         }
         else {
           if (unpackOnHost) {
+            auto X_h = this->getLocalViewHost(Access::ReadWrite);
             unpack_array_multi_column_variable_stride (host_exec_space (),
                                                        X_h, imports_h,
                                                        importLIDs_h,
@@ -1865,6 +1877,7 @@ namespace Tpetra {
                                                        debugCheckIndices);
           }
           else { // unpack on device
+            auto X_d = this->getLocalViewDevice(Access::ReadWrite);
             unpack_array_multi_column_variable_stride (dev_exec_space (),
                                                        X_d, imports_d,
                                                        importLIDs_d,
@@ -1974,7 +1987,7 @@ namespace Tpetra {
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
     typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
-    typedef typename dual_view_type::t_dev XMV;
+    typedef typename dual_view_type::t_dev_const XMV;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::dot (Kokkos::View)");
@@ -2023,16 +2036,8 @@ namespace Tpetra {
     RCP<const Comm<int> > comm = this->getMap ().is_null () ? null :
       this->getMap ()->getComm ();
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) {
-      const_cast<MV&>(*this).sync_device ();
-    }
-    if (A.need_sync_device ()) {
-      const_cast<MV&>(A).sync_device ();
-    }
-
-    auto thisView = this->getLocalViewDevice ();
-    auto A_view = A.getLocalViewDevice ();
+    auto thisView = this->getLocalViewDevice(Access::ReadOnly);
+    auto A_view = A.getLocalViewDevice(Access::ReadOnly);
 
     ::Tpetra::Details::lclDot<RV, XMV> (dotsOut, thisView, A_view, lclNumRows, numVecs,
                      this->whichVectors_.getRawPtr (),
@@ -2070,12 +2075,12 @@ namespace Tpetra {
         dot_type gblDot = Kokkos::ArithTraits<dot_type>::zero ();
 
         // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-        const_cast<MV&>(x).sync_device ();
-        const_cast<MV&>(y).sync_device ();
+        //const_cast<MV&>(x).sync_device ();
+        //const_cast<MV&>(y).sync_device ();
 
-        auto x_2d = x.getLocalViewDevice ();
+        auto x_2d = x.getLocalViewDevice(Access::ReadOnly);
         auto x_1d = Kokkos::subview (x_2d, rowRng, 0);
-        auto y_2d = y.getLocalViewDevice ();
+        auto y_2d = y.getLocalViewDevice(Access::ReadOnly);
         auto y_1d = Kokkos::subview (y_2d, rowRng, 0);
         lclDot = KokkosBlas::dot (x_1d, y_1d);
 
@@ -2257,7 +2262,7 @@ namespace Tpetra {
     const bool useHostVersion = this->need_sync_device ();
     if (useHostVersion) {
       // DualView was last modified on host, so run the local kernel there.
-      auto X_lcl = subview (getLocalViewHost (),
+      auto X_lcl = subview (getLocalViewHost(Access::ReadOnly),
                             rowRng, Kokkos::ALL ());
       // Compute the local sum of each column.
       Kokkos::View<impl_scalar_type*, Kokkos::HostSpace> lclSums ("MV::meanValue tmp", numVecs);
@@ -2284,7 +2289,7 @@ namespace Tpetra {
     }
     else {
       // DualView was last modified on device, so run the local kernel there.
-      auto X_lcl = subview (this->getLocalViewDevice (),
+      auto X_lcl = subview (this->getLocalViewDevice(Access::ReadOnly),
                             rowRng, Kokkos::ALL ());
 
       // Compute the local sum of each column.
@@ -2366,13 +2371,7 @@ namespace Tpetra {
     const IST max = static_cast<IST> (maxVal);
     const IST min = static_cast<IST> (minVal);
 
-    // See #1510.  In case diag has already been marked modified on
-    // host or device, we need to clear those flags, since the code
-    // below works on device.
-    this->view_.clear_sync_state();
-
-    this->modify_device ();
-    auto thisView = this->getLocalViewDevice ();
+    auto thisView = this->getLocalViewDevice(Access::OverwriteAll);
 
     if (isConstantStride ()) {
       Kokkos::fill_random (thisView, rand_pool, min, max);
@@ -2410,11 +2409,8 @@ namespace Tpetra {
     //
     // If we need sync to device, then host has the most recent version.
     const bool runOnHost = runKernelOnHost(*this);
-
-    this->clear_sync_state();
     if (! runOnHost) {
-      this->modify_device ();
-      auto X = this->getLocalViewDevice ();
+      auto X = this->getLocalViewDevice(Access::OverwriteAll);
       if (this->isConstantStride ()) {
         fill (DES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2424,8 +2420,7 @@ namespace Tpetra {
       }
     }
     else { // last modified in host memory, so modify data there.
-      this->modify_host ();
-      auto X = this->getLocalViewHost ();
+      auto X = this->getLocalViewHost(Access::OverwriteAll);
       if (this->isConstantStride ()) {
         fill (HES (), X, theAlpha, lclNumRows, numVecs);
       }
@@ -2559,20 +2554,20 @@ namespace Tpetra {
     // If we need sync to device, then host has the most recent version.
     const bool useHostVersion = need_sync_device ();
     if (useHostVersion) {
-      auto Y_lcl = Kokkos::subview (getLocalViewHost (), rowRng, ALL ());
+      auto Y_lcl = Kokkos::subview (getLocalViewHost(Access::ReadWrite), rowRng, ALL ());
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
       }
       else {
         for (size_t k = 0; k < numVecs; ++k) {
-          const size_t Y_col = isConstantStride () ? k : whichVectors_[k];
+          const size_t Y_col = whichVectors_[k];
           auto Y_k = Kokkos::subview (Y_lcl, ALL (), Y_col);
           KokkosBlas::scal (Y_k, theAlpha, Y_k);
         }
       }
     }
     else { // work on device
-      auto Y_lcl = Kokkos::subview (getLocalViewDevice (), rowRng, ALL ());
+      auto Y_lcl = Kokkos::subview (getLocalViewDevice(Access::ReadWrite), rowRng, ALL ());
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, theAlpha, Y_lcl);
       }
@@ -2644,7 +2639,7 @@ namespace Tpetra {
       auto alphas_h = Kokkos::create_mirror_view (alphas);
       Kokkos::deep_copy (alphas_h, alphas);
 
-      auto Y_lcl = subview (this->getLocalViewHost (), rowRng, ALL ());
+      auto Y_lcl = subview (this->getLocalViewHost(Access::ReadWrite), rowRng, ALL ());
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, alphas_h, Y_lcl);
       }
@@ -2660,7 +2655,7 @@ namespace Tpetra {
       }
     }
     else { // Work in device memory, using the input View 'alphas' directly.
-      auto Y_lcl = subview (this->getLocalViewDevice (), rowRng, ALL ());
+      auto Y_lcl = subview (this->getLocalViewDevice(Access::ReadWrite), rowRng, ALL ());
       if (isConstantStride ()) {
         KokkosBlas::scal (Y_lcl, alphas, Y_lcl);
       }
@@ -2709,17 +2704,8 @@ namespace Tpetra {
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) {
-      this->sync_device ();
-    }
-    if (A.need_sync_device ()) {
-      const_cast<MV&>(A).sync_device ();
-    }
-
-    this->modify_device ();
-    auto Y_lcl_orig = this->getLocalViewDevice ();
-    auto X_lcl_orig = A.getLocalViewDevice ();
+    auto Y_lcl_orig = this->getLocalViewDevice(Access::ReadWrite);
+    auto X_lcl_orig = A.getLocalViewDevice(Access::ReadOnly);
     auto Y_lcl = subview (Y_lcl_orig, rowRng, ALL ());
     auto X_lcl = subview (X_lcl_orig, rowRng, ALL ());
 
@@ -2762,17 +2748,8 @@ namespace Tpetra {
 
     const size_t numVecs = getNumVectors ();
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) {
-      this->sync_device ();
-    }
-    if (A.need_sync_device ()) {
-      const_cast<MV&>(A).sync_device ();
-    }
-    this->modify_device ();
-
-    auto this_view_dev = this->getLocalViewDevice ();
-    auto A_view_dev = A.getLocalViewDevice ();
+    auto this_view_dev = this->getLocalViewDevice(Access::ReadWrite);
+    auto A_view_dev = A.getLocalViewDevice(Access::ReadOnly);
 
     if (isConstantStride () && A.isConstantStride ()) {
       KokkosBlas::reciprocal (this_view_dev, A_view_dev);
@@ -2810,17 +2787,8 @@ namespace Tpetra {
        << " != A.getNumVectors() = " << A.getNumVectors () << ".");
     const size_t numVecs = getNumVectors ();
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) {
-      this->sync_device ();
-    }
-    if (A.need_sync_device ()) {
-      const_cast<MV&>(A).sync_device ();
-    }
-    this->modify_device ();
-
-    auto this_view_dev = this->getLocalViewDevice ();
-    auto A_view_dev = A.getLocalViewDevice ();
+    auto this_view_dev = this->getLocalViewDevice(Access::ReadWrite);
+    auto A_view_dev = A.getLocalViewDevice(Access::ReadOnly);
 
     if (isConstantStride () && A.isConstantStride ()) {
       KokkosBlas::abs (this_view_dev, A_view_dev);
@@ -2865,26 +2833,17 @@ namespace Tpetra {
       "this->getNumVectors() = " << numVecs << " != A.getNumVectors() = "
       << A.getNumVectors () << ".");
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) {
-      this->sync_device ();
-    }
-    if (A.need_sync_device ()) {
-      const_cast<MV&>(A).sync_device ();
-    }
-
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
-    auto Y_lcl_orig = this->getLocalViewDevice ();
+    auto Y_lcl_orig = this->getLocalViewDevice(Access::ReadWrite);
     auto Y_lcl = subview (Y_lcl_orig, rowRng, Kokkos::ALL ());
-    auto X_lcl_orig = A.getLocalViewDevice ();
+    auto X_lcl_orig = A.getLocalViewDevice(Access::ReadOnly);
     auto X_lcl = subview (X_lcl_orig, rowRng, Kokkos::ALL ());
 
     // The device memory of *this is about to be modified
-    this->modify_device ();
     if (isConstantStride () && A.isConstantStride ()) {
       KokkosBlas::axpby (theAlpha, X_lcl, theBeta, Y_lcl);
     }
@@ -2943,23 +2902,15 @@ namespace Tpetra {
     const impl_scalar_type theBeta = static_cast<impl_scalar_type> (beta);
     const impl_scalar_type theGamma = static_cast<impl_scalar_type> (gamma);
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) this->sync_device ();
-    if (A.need_sync_device ())     const_cast<MV&>(A).sync_device ();
-    if (B.need_sync_device ())     const_cast<MV&>(B).sync_device ();
-
-    // This method modifies *this.
-    this->modify_device ();
-
     const std::pair<size_t, size_t> rowRng (0, lclNumRows);
     const std::pair<size_t, size_t> colRng (0, numVecs);
 
     // Prefer 'auto' over specifying the type explicitly.  This avoids
     // issues with a subview possibly having a different type than the
     // original view.
-    auto C_lcl = subview (this->getLocalViewDevice (), rowRng, ALL ());
-    auto A_lcl = subview (A.getLocalViewDevice (), rowRng, ALL ());
-    auto B_lcl = subview (B.getLocalViewDevice (), rowRng, ALL ());
+    auto C_lcl = subview (this->getLocalViewDevice(Access::ReadWrite), rowRng, ALL ());
+    auto A_lcl = subview (A.getLocalViewDevice(Access::ReadOnly), rowRng, ALL ());
+    auto B_lcl = subview (B.getLocalViewDevice(Access::ReadOnly), rowRng, ALL ());
 
     if (isConstantStride () && A.isConstantStride () && B.isConstantStride ()) {
       KokkosBlas::update (theAlpha, A_lcl, theBeta, B_lcl, theGamma, C_lcl);
@@ -2992,9 +2943,8 @@ namespace Tpetra {
     // viewBuffer or viewBufferNonConst methods always implied a
     // device->host synchronization.  Thus, we synchronize here as
     // well.
-    const_cast<MV&> (*this).sync_host ();
 
-    auto hostView = getLocalViewHost ();
+    auto hostView = getLocalViewHost(Access::ReadOnly);
     const size_t col = isConstantStride () ? j : whichVectors_[j];
     auto hostView_j = Kokkos::subview (hostView, ALL (), col);
     Teuchos::ArrayRCP<const IST> dataAsArcp =
@@ -3021,16 +2971,7 @@ namespace Tpetra {
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getDataNonConst: ";
 
-    // Any MultiVector method that called the (classic) Kokkos Node's
-    // viewBuffer or viewBufferNonConst methods always implied a
-    // device->host synchronization.  Thus, we synchronize here as
-    // well.
-    const_cast<MV*> (this)->sync_host ();
-    // Calling getDataNonConst() implies that the user plans to modify
-    // the values in the MultiVector, so we mark the host data as modified.
-    modify_host ();
-
-    auto hostView = getLocalViewHost ();
+    auto hostView = getLocalViewHost(Access::ReadWrite);
     const size_t col = isConstantStride () ? j : whichVectors_[j];
     auto hostView_j = subview (hostView, ALL (), col);
     Teuchos::ArrayRCP<IST> dataAsArcp =
@@ -3183,7 +3124,7 @@ namespace Tpetra {
 
     dual_view_type newOrigView = subview (X.origView_, origRowRng, ALL ());
     // FIXME (mfh 29 Sep 2016) If we just use X.view_ here, it breaks
-    // CrsMatrix's Gauss-Seidel implementation (which assumes the
+    // Ifpack2's Gauss-Seidel implementation (which assumes the
     // ability to create domain Map views of column Map MultiVectors,
     // and then get the original column Map MultiVector out again).
     // If we just use X.origView_ here, it breaks the fix for #46.
@@ -3214,6 +3155,8 @@ namespace Tpetra {
     MV subViewMV = X.isConstantStride () ?
       MV (subMap, newView, newOrigView) :
       MV (subMap, newView, newOrigView, X.whichVectors_ ());
+
+    subViewMV.owningView_ = X.owningView_;
 
     if (debug) {
       const LO lclNumRowsRet = static_cast<LO> (subViewMV.getLocalLength ());
@@ -3487,6 +3430,7 @@ namespace Tpetra {
       static_cast<size_t> (X.whichVectors_[j]);
     this->view_ = takeSubview (X.view_, Kokkos::ALL (), range_type (jj, jj+1));
     this->origView_ = X.origView_;
+    this->owningView_ = X.owningView_;
 
     // mfh 31 Jul 2017: It would be unwise to execute concurrent
     // Export or Import operations with different subviews of a
@@ -3549,8 +3493,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get1dCopy (const Teuchos::ArrayView<Scalar>& A, const size_t LDA) const
   {
-    using dev_view_type = typename dual_view_type::t_dev;
-    using host_view_type = typename dual_view_type::t_host;
     using IST = impl_scalar_type;
     using input_view_type = Kokkos::View<IST**, Kokkos::LayoutLeft,
                                          Kokkos::HostSpace,
@@ -3577,42 +3519,47 @@ namespace Tpetra {
                                  LDA, numCols);
     auto A_view = Kokkos::subview (A_view_orig, rowRange, colRange);
 
-    // Use the most recently updated version of this MultiVector's
-    // data.  This avoids sync'ing, which could violate users'
-    // expectations.
-    //
-    // If we need sync to device, then host has the most recent version.
-    const bool useHostVersion = this->need_sync_device ();
-
-    dev_view_type srcView_dev;
-    host_view_type srcView_host;
-    if (useHostVersion) {
-      srcView_host = this->getLocalViewHost ();
+    /// problematic example
+    ///   - a host view is checked out by users ; this increase ref count on host view
+    ///   - when the view is const view, it does not raise modify_host() flag
+    ///   - when we use useHostVersion logic (this->need_sync_device()) to figure out
+    ///     more recent version, the flag is false as the user checked out a const view
+    ///   - as a result, it attempts to use device view and it volate ref count rule
+    ///   - the other case of using device view is also problematic
+    /// solution
+    ///   - any non const view is alive outside, we cannot give a copy
+    ///   - if a user takes a const view, we use the same host/device view not to violate
+    ///     ref count rule.
+    if (this->need_sync_host() && this->need_sync_device()) {
+      /// there is non-const host or device view outside, we cannot give a copy as a user
+      /// can change the local data and we do not know which one the user want as a copy
+      throw std::runtime_error("Tpetra::MultiVector: A non-const view is alive outside and we cannot give a copy where host or device view can be modified outside");
     }
-    else {
-      srcView_dev = this->getLocalViewDevice ();
-    }
-
-    if (this->isConstantStride ()) {
-      if (useHostVersion) {
-        Kokkos::deep_copy (A_view, srcView_host);
+    else { 
+      const bool useHostView = owningView_.h_view.use_count() >= owningView_.d_view.use_count();
+      if (this->isConstantStride ()) {
+        if (useHostView) {
+          auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
+          Kokkos::deep_copy (A_view, srcView_host);
+        } else {
+          auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
+          Kokkos::deep_copy (A_view, srcView_device);
+        }
       }
       else {
-        Kokkos::deep_copy (A_view, srcView_dev);
-      }
-    }
-    else {
-      for (size_t j = 0; j < numCols; ++j) {
-        const size_t srcCol = this->whichVectors_[j];
-        auto dstColView = Kokkos::subview (A_view, rowRange, j);
-
-        if (useHostVersion) {
-          auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
-          Kokkos::deep_copy (dstColView, srcColView_host);
-        }
-        else {
-          auto srcColView_dev = Kokkos::subview (srcView_dev, rowRange, srcCol);
-          Kokkos::deep_copy (dstColView, srcColView_dev);
+        for (size_t j = 0; j < numCols; ++j) {
+          const size_t srcCol = this->whichVectors_[j];
+          auto dstColView = Kokkos::subview (A_view, rowRange, j);
+          
+          if (useHostView) {
+            auto srcView_host = this->getLocalViewHost(Access::ReadOnly);
+            auto srcColView_host = Kokkos::subview (srcView_host, rowRange, srcCol);
+            Kokkos::deep_copy (dstColView, srcColView_host);
+          } else {
+            auto srcView_device = this->getLocalViewDevice(Access::ReadOnly);
+            auto srcColView_device = Kokkos::subview (srcView_device, rowRange, srcCol);
+            Kokkos::deep_copy (dstColView, srcColView_device);
+          }
         }
       }
     }
@@ -3655,26 +3602,6 @@ namespace Tpetra {
     }
   }
 
-  namespace { // (anonymous)
-    template <class SC, class LO, class GO, class NT>
-    typename MultiVector<SC, LO, GO, NT>::dual_view_type::t_host
-    syncMVToHostIfNeededAndGetHostView (MultiVector<SC, LO, GO, NT>& X,
-                                        const bool markModified)
-    {
-      // NOTE (mfh 16 May 2016) get?dView() and get?dViewNonConst()
-      // (replace ? with 1 or 2) have always been device->host
-      // synchronization points, since <= 2012.  We retain this
-      // behavior for backwards compatibility.
-      if (X.need_sync_host ()) {
-        X.sync_host ();
-      }
-      if (markModified) {
-        X.modify_host ();
-      }
-      return X.getLocalViewHost ();
-    }
-  } // namespace (anonymous)
-
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<const Scalar>
@@ -3693,10 +3620,8 @@ namespace Tpetra {
       // Since get1dView() is and was always marked const, I have to
       // cast away const here in order not to break backwards
       // compatibility.
-      constexpr bool markModified = false;
       using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-      auto X_lcl = syncMVToHostIfNeededAndGetHostView (const_cast<MV&> (*this),
-                                                       markModified);
+      auto X_lcl = getLocalViewHost(Access::ReadOnly);
       Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
       return Teuchos::arcp_reinterpret_cast<const Scalar> (dataAsArcp);
@@ -3718,8 +3643,7 @@ namespace Tpetra {
          "so it is not possible to view its data as a single array.  You may "
          "check whether a MultiVector has constant stride by calling "
          "isConstantStride().");
-      constexpr bool markModified = true;
-      auto X_lcl = syncMVToHostIfNeededAndGetHostView (*this, markModified);
+      auto X_lcl = getLocalViewHost(Access::ReadWrite);
       Teuchos::ArrayRCP<impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
       return Teuchos::arcp_reinterpret_cast<Scalar> (dataAsArcp);
@@ -3731,8 +3655,7 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dViewNonConst ()
   {
-    constexpr bool markModified = true;
-    auto X_lcl = syncMVToHostIfNeededAndGetHostView (*this, markModified);
+    auto X_lcl = getLocalViewHost(Access::ReadWrite);
 
     // Don't use the row range here on the outside, in order to avoid
     // a strided return type (in case Kokkos::subview is conservative
@@ -3754,6 +3677,140 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host::const_type
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewHost(Access::ReadOnlyStruct) const
+  {
+    //returning dual_view_type::t_host::const_type
+    if (owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " host while a device view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
+    owningView_.sync_host();
+    return view_.view_host();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewHost(Access::ReadWriteStruct)
+  {
+    //returning dual_view_type::t_host::type
+    if (owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " host while a device view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
+    owningView_.sync_host();
+    owningView_.modify_host();
+    return view_.view_host();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_host
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewHost(Access::OverwriteAllStruct)
+  {
+    //returning dual_view_type::t_host::type
+    if (owningView_.h_view != view_.h_view) {
+      // view is a subview of owningView_; for safety, need to do ReadWrite
+      return getLocalViewHost(Access::ReadWrite);
+    }
+
+    if (owningView_.d_view.use_count() > owningView_.h_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " host while a device view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
+    owningView_.clear_sync_state();
+    owningView_.modify_host();
+    return view_.view_host();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev::const_type
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewDevice(Access::ReadOnlyStruct) const
+  {
+    //returning dual_view_type::t_dev::const_type
+    if (owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " device while a host view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
+    owningView_.sync_device();
+    return view_.view_device();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewDevice(Access::ReadWriteStruct)
+  {
+    //returning dual_view_type::t_dev::type
+    if(owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " device while a host view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
+    owningView_.sync_device();
+    owningView_.modify_device();
+    return view_.view_device();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
+  MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getLocalViewDevice(Access::OverwriteAllStruct)
+  {
+    //returning dual_view_type::t_dev::type
+    if (owningView_.h_view != view_.h_view) {
+      // view_ is a subview of owningView_; for safety, need to do ReadWrite
+      return getLocalViewDevice(Access::ReadWrite);
+    }
+
+    if (owningView_.h_view.use_count() > owningView_.d_view.use_count()) {
+      const bool debug = Details::Behavior::debug();
+      const char msg[] = "Tpetra::MultiVector: Cannot access data on "
+                         " device while a host view is alive";
+      if (debug) {
+        std::cout << "Rank " << this->getMap()->getComm()->getRank()
+                  << ":  " << msg << std::endl;
+      }
+      throw std::runtime_error(msg);
+    }
+    owningView_.clear_sync_state();
+    owningView_.modify_device();
+    return view_.view_device();
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   get2dView () const
@@ -3761,10 +3818,9 @@ namespace Tpetra {
     // Since get2dView() is and was always marked const, I have to
     // cast away const here in order not to break backwards
     // compatibility.
-    constexpr bool markModified = false;
     using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    auto X_lcl = syncMVToHostIfNeededAndGetHostView (const_cast<MV&> (*this),
-                                                     markModified);
+    auto X_lcl = getLocalViewHost(Access::ReadOnly);
+
     // Don't use the row range here on the outside, in order to avoid
     // a strided return type (in case Kokkos::subview is conservative
     // about that).  Instead, use the row range for the column views
@@ -3974,32 +4030,24 @@ namespace Tpetra {
        "Failed to make temporary constant-stride copies of MultiVectors.");
 
     {
-      if (A_tmp->need_sync_device ()) {
-        const_cast<MV&> (*A_tmp).sync_device (); // const is a lie
-      }
       const LO A_lclNumRows = A_tmp->getLocalLength ();
       const LO A_numVecs = A_tmp->getNumVectors ();
-      auto A_lcl = A_tmp->getLocalViewDevice ();
+      auto A_lcl = A_tmp->getLocalViewDevice(Access::ReadOnly);
       auto A_sub = Kokkos::subview (A_lcl,
                                     std::make_pair (LO (0), A_lclNumRows),
                                     std::make_pair (LO (0), A_numVecs));
 
-      if (B_tmp->need_sync_device ()) {
-        const_cast<MV&> (*B_tmp).sync_device (); // const is a lie
-      }
+
       const LO B_lclNumRows = B_tmp->getLocalLength ();
       const LO B_numVecs = B_tmp->getNumVectors ();
-      auto B_lcl = B_tmp->getLocalViewDevice ();
+      auto B_lcl = B_tmp->getLocalViewDevice(Access::ReadOnly);
       auto B_sub = Kokkos::subview (B_lcl,
                                     std::make_pair (LO (0), B_lclNumRows),
                                     std::make_pair (LO (0), B_numVecs));
 
-      if (C_tmp->need_sync_device ()) {
-        const_cast<MV&> (*C_tmp).sync_device (); // const is a lie
-      }
       const LO C_lclNumRows = C_tmp->getLocalLength ();
       const LO C_numVecs = C_tmp->getNumVectors ();
-      auto C_lcl = C_tmp->getLocalViewDevice ();
+      auto C_lcl = C_tmp->getLocalViewDevice(Access::ReadWrite);
       auto C_sub = Kokkos::subview (C_lcl,
                                     std::make_pair (LO (0), C_lclNumRows),
                                     std::make_pair (LO (0), C_numVecs));
@@ -4011,7 +4059,7 @@ namespace Tpetra {
 
       ProfilingRegion regionGemm ("Tpetra::MV::multiply-call-gemm");
 
-      this->modify_device ();
+      //this->modify_device ();
 
       KokkosBlas::gemm (&ctransA, &ctransB, alpha_IST, A_sub, B_sub,
                         beta_local, C_sub);
@@ -4056,21 +4104,9 @@ namespace Tpetra {
       "() = " << numVecs << " != B.getNumVectors() = " << B.getNumVectors ()
       << ".");
 
-    // All non-unary kernels are executed on the device as per Tpetra policy.  Sync to device if needed.
-    if (this->need_sync_device ()) {
-      this->sync_device ();
-    }
-    if (A.need_sync_device ()) {
-      const_cast<V&>(A).sync_device ();
-    }
-    if (B.need_sync_device ()) {
-      const_cast<MV&>(B).sync_device ();
-    }
-    this->modify_device ();
-
-    auto this_view = this->getLocalViewDevice ();
-    auto A_view = A.getLocalViewDevice ();
-    auto B_view = B.getLocalViewDevice ();
+    auto this_view = this->getLocalViewDevice(Access::ReadWrite);
+    auto A_view = A.getLocalViewDevice(Access::ReadOnly);
+    auto B_view = B.getLocalViewDevice(Access::ReadOnly);
 
     if (isConstantStride () && B.isConstantStride ()) {
       // A is just a Vector; it only has one column, so it always has
@@ -4123,13 +4159,11 @@ namespace Tpetra {
       // and host will be separate allocations.  In that case, it may
       // pay to do the all-reduce from device to host.
       Kokkos::fence(); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
-      this->modify_device ();
-      auto X_lcl = this->getLocalViewDevice ();
+      auto X_lcl = this->getLocalViewDevice(Access::ReadWrite);
       allReduceView (X_lcl, X_lcl, *comm);
     }
     else {
-      this->modify_host ();
-      auto X_lcl = this->getLocalViewHost ();
+      auto X_lcl = this->getLocalViewHost(Access::ReadWrite);
       allReduceView (X_lcl, X_lcl, *comm);
     }
   }
@@ -4158,11 +4192,9 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
-    this->sync_host();
-
+    auto view = this->getLocalViewHost(Access::ReadWrite);
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
-    view_.h_view (lclRow, colInd) = ScalarValue;
-    this->modify_host();
+    view (lclRow, colInd) = ScalarValue;
   }
 
 
@@ -4191,16 +4223,15 @@ namespace Tpetra {
         << " of the multivector is invalid.");
     }
 
-    this->sync_host();
-
     const size_t colInd = isConstantStride () ? col : whichVectors_[col];
+
+    auto view = this->getLocalViewHost(Access::ReadWrite);
     if (atomic) {
-      Kokkos::atomic_add (& (view_.h_view(lclRow, colInd)), value);
+      Kokkos::atomic_add (& (view(lclRow, colInd)), value);
     }
     else {
-      view_.h_view (lclRow, colInd) += value;
+      view(lclRow, colInd) += value;
     }
-    this->modify_host();
   }
 
 
@@ -4276,66 +4307,60 @@ namespace Tpetra {
   }
 
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   clear_sync_state () {
-    view_.clear_sync_state ();
+    owningView_.clear_sync_state ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_host () {
-    view_.sync_host ();
-
-    // This fence was motivated by the following specific situation:
-    // For transform Y to X:
-    //  Y.putScalar()    // acts on device
-    //  Y.sync_host()    // now need_sync_host() and need_sync_device() are false
-    //  transform (on device)
-    //  Y.sync_host()    // no modifications so no fence - this usually will be a fence
-    //  read Y           // crashes
-    // The expectation is that Tpetra developers would not normally be using sync_host
-    // so this fence should not be an issue for internal performance.
-    execution_space ().fence ();
+    owningView_.sync_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   sync_device () {
-    view_.sync_device ();
+    owningView_.sync_device ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   need_sync_host () const {
-    return view_.need_sync_host ();
+    return owningView_.need_sync_host ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   need_sync_device () const {
-    return view_.need_sync_device ();
+    return owningView_.need_sync_device ();
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   modify_device () {
-    view_.modify_device ();
+    owningView_.modify_device ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   modify_host () {
-    view_.modify_host ();
+    owningView_.modify_host ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type::t_dev
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
@@ -4349,6 +4374,7 @@ namespace Tpetra {
   getLocalViewHost () const {
     return view_.view_host ();
   }
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   std::string
@@ -4386,6 +4412,47 @@ namespace Tpetra {
   description () const
   {
     return this->descriptionImpl ("Tpetra::MultiVector");
+  }
+
+  namespace Details
+  {
+    template<typename ViewType>
+    void print_vector(Teuchos::FancyOStream & out, const char* prefix, const ViewType& v)
+    {
+      using std::endl;
+      static_assert(Kokkos::SpaceAccessibility<Kokkos::HostSpace, typename ViewType::memory_space>::accessible,
+          "Tpetra::MultiVector::localDescribeToString: Details::print_vector should be given a host-accessible view.");
+      static_assert(ViewType::rank == 2,
+          "Tpetra::MultiVector::localDescribeToString: Details::print_vector should be given a rank-2 view.");
+      // The square braces [] and their contents are in Matlab
+      // format, so users may copy and paste directly into Matlab.
+      out << "Values("<<prefix<<"): " << std::endl
+          << "[";
+      const size_t numRows = v.extent(0);
+      const size_t numCols = v.extent(1);
+      if (numCols == 1) {
+        for (size_t i = 0; i < numRows; ++i) {
+          out << v(i,0);
+          if (i + 1 < numRows) {
+            out << "; ";
+          }
+        }
+      }
+      else {
+        for (size_t i = 0; i < numRows; ++i) {
+          for (size_t j = 0; j < numCols; ++j) {
+            out << v(i,j);
+            if (j + 1 < numCols) {
+              out << ", ";
+            }
+          }
+          if (i + 1 < numRows) {
+            out << "; ";
+          }
+        }
+      }
+      out << "]" << endl;
+    }
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -4428,57 +4495,35 @@ namespace Tpetra {
       }
 
       if (vl > Teuchos::VERB_HIGH && lclNumRows > 0) {
-        // VERB_EXTREME prints values.  Get a host View of the
-        // Vector's local data, so we can print it.  (Don't assume
-        // that we can access device data directly in host code.)
-        typename dual_view_type::t_host X_host;
-        if (need_sync_host ()) {
-          // Device memory has the latest version.  Don't actually
-          // sync to host; that changes the Vector's state, and may
-          // change future computations (that use the data's current
-          // place to decide where to compute).  Instead, create a
-          // temporary host copy and print that.
-          auto X_dev = getLocalViewDevice ();
-          auto X_host_copy = Kokkos::create_mirror_view (X_dev);
-          Kokkos::deep_copy (X_host_copy, X_dev);
-          X_host = X_host_copy;
-        }
-        else {
-          // Either host and device are in sync, or host has the
-          // latest version of the Vector's data.  Thus, we can use
-          // the host version directly.
-          X_host = getLocalViewHost ();
-        }
-        // The square braces [] and their contents are in Matlab
-        // format, so users may copy and paste directly into Matlab.
-        out << "Values: " << endl
-            << "[";
-        const LO numCols = static_cast<LO> (this->getNumVectors ());
-        if (numCols == 1) {
-          for (LO i = 0; i < lclNumRows; ++i) {
-            out << X_host(i,0);
-            if (i + 1 < lclNumRows) {
-              out << "; ";
-            }
-          }
-        }
-        else {
-          for (LO i = 0; i < lclNumRows; ++i) {
-            for (LO j = 0; j < numCols; ++j) {
-              out << X_host(i,j);
-              if (j + 1 < numCols) {
-                out << ", ";
-              }
-            }
-            if (i + 1 < lclNumRows) {
-              out << "; ";
-            }
-          }
-        }
-        out << "]" << endl;
-      }
-    }
+        // VERB_EXTREME prints values.  If we're not doing univied memory, we'll
+        /// want to print both the host and device views, *without chaging state*,
+        // so we can't use our regular accessor functins
 
+        // NOTE: This is an occasion where we do *not* want the auto-sync stuff
+        // to trigger (since this function is conceptually const)                
+        auto X_dev  = view_.view_device();
+        auto X_host = view_.view_host();
+
+        if(X_dev.data() == X_host.data()) {
+          // One single allocation
+          Details::print_vector(out,"unified",X_host);
+        }
+        else {          
+          Details::print_vector(out,"host",X_host);
+          if(X_dev.span_is_contiguous())
+          {
+            auto X_dev_on_host = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), X_dev);
+            Details::print_vector(out,"dev",X_dev_on_host);
+          }
+          else
+          {
+            auto X_contig = Tpetra::Details::TempView::toLayout<decltype(X_dev), Kokkos::LayoutLeft>(X_dev);
+            auto X_dev_on_host = Kokkos::create_mirror_view_and_copy (Kokkos::HostSpace(), X_contig);
+            Details::print_vector(out,"dev",X_dev_on_host);
+          }
+        }
+      }
+    }    
     out.flush (); // make sure the ostringstream got everything
     return outStringP->str ();
   }
@@ -4595,27 +4640,30 @@ namespace Tpetra {
        "objects do not match.  src has " << src.getLocalLength () << " row(s) "
        << " and *this has " << this->getLocalLength () << " row(s).");
 
+
     // See #1510.  We're writing to *this, so we don't care about its
     // contents in either memory space, and we don't want
     // DualView::modify to complain about "concurrent modification" of
     // host and device Views.
-    this->clear_sync_state();
-    this->modify_device ();
+
+    /// KJ: this is problematic. assign funtion is used to construct a subvector
+    ///     if the sync flag is reset here, it lose all our control over getLocalView interface
+    ///this->clear_sync_state();
 
     // If need sync to device, then host has most recent version.
     const bool src_last_updated_on_host = src.need_sync_device ();
 
     if (src_last_updated_on_host) {
-      localDeepCopy (this->getLocalViewDevice (),
-                     src.getLocalViewHost (),
+      localDeepCopy (this->getLocalViewHost(Access::ReadWrite),
+                     src.getLocalViewHost(Access::ReadOnly),
                      this->isConstantStride (),
                      src.isConstantStride (),
                      this->whichVectors_ (),
                      src.whichVectors_ ());
     }
     else {
-      localDeepCopy (this->getLocalViewDevice (),
-                     src.getLocalViewDevice (),
+      localDeepCopy (this->getLocalViewDevice(Access::ReadWrite),
+                     src.getLocalViewDevice(Access::ReadOnly),
                      this->isConstantStride (),
                      src.isConstantStride (),
                      this->whichVectors_ (),
@@ -4640,8 +4688,8 @@ namespace Tpetra {
       return true;
     }
 
-    auto v1 = this->getLocalViewHost ();
-    auto v2 = vec.getLocalViewHost ();
+    auto v1 = this->getLocalViewHost(Access::ReadOnly);
+    auto v2 = vec.getLocalViewHost(Access::ReadOnly);
     if (PackTraits<ST>::packValueCount (v1(0,0)) !=
         PackTraits<ST>::packValueCount (v2(0,0))) {
       return false;
@@ -4656,6 +4704,7 @@ namespace Tpetra {
     std::swap(mv.map_, this->map_);
     std::swap(mv.view_, this->view_);
     std::swap(mv.origView_, this->origView_);
+    std::swap(mv.owningView_, this->owningView_);
     std::swap(mv.whichVectors_, this->whichVectors_);
   }
 
@@ -4689,11 +4738,12 @@ namespace Tpetra {
     input_view_type src_view =
       Kokkos::subview (src_orig, pair_type (0, numRows), Kokkos::ALL ());
 
-    dst.clear_sync_state ();
-    dst.modify_device ();
+    /// KJ : this does not sound correct
+    //dst.clear_sync_state ();
+    //dst.modify_device ();
     constexpr bool src_isConstantStride = true;
     Teuchos::ArrayView<const size_t> srcWhichVectors (nullptr, 0);
-    localDeepCopy (dst.getLocalViewDevice (),
+    localDeepCopy (dst.getLocalViewDevice(Access::ReadWrite),
                    src_view,
                    dst.isConstantStride (),
                    src_isConstantStride,
@@ -4736,7 +4786,7 @@ namespace Tpetra {
     // Prefer the host version of src's data.
     if (src.need_sync_host ()) { // last modified on device
       localDeepCopy (dst_view,
-                     src.getLocalViewDevice (),
+                     src.getLocalViewDevice(Access::ReadOnly),
                      dst_isConstantStride,
                      src.isConstantStride (),
                      dstWhichVectors,
@@ -4744,7 +4794,7 @@ namespace Tpetra {
     }
     else {
       localDeepCopy (dst_view,
-                     src.getLocalViewHost (),
+                     src.getLocalViewHost(Access::ReadOnly),
                      dst_isConstantStride,
                      src.isConstantStride (),
                      dstWhichVectors,

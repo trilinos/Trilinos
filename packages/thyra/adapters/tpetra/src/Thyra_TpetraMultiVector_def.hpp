@@ -657,6 +657,7 @@ void TpetraMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::euclideanApply(
 
     Y_tpetra->template modify<execution_space>();
     Y_tpetra->multiply(trans, Teuchos::NO_TRANS, alpha, *tpetraMultiVector_.getConstObj(), *X_tpetra, beta);
+    Kokkos::fence();
   } else {
     Teuchos::rcp_const_cast<TMV>(
       tpetraMultiVector_.getConstObj())->sync_host ();

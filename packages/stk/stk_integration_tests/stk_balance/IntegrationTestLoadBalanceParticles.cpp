@@ -213,7 +213,7 @@ protected:
 
     void do_stk_particle_rebalance()
     {
-        stk::mesh::Selector selector = (!(*m_particlePart)) & get_meta().locally_owned_part();
+        stk::mesh::Selector selector = !(*m_particlePart);
         const double defaultVertexWeight = 0.0;
         StkParticleRebalance graphSettings(m_particleManager, get_bulk(), *m_particleCountField, defaultVertexWeight);
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});
@@ -221,7 +221,7 @@ protected:
 
     void do_stk_rebalance()
     {
-        stk::mesh::Selector selector = get_meta().locally_owned_part();
+        stk::mesh::Selector selector = get_meta().universal_part();
         const double defaultVertexWeight = 0.0;
         StkRebalance graphSettings(get_bulk(), *m_particleCountField, defaultVertexWeight);
         stk::balance::balanceStkMesh(graphSettings, get_bulk(), {selector});

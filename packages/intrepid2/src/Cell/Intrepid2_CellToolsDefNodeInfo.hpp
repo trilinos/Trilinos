@@ -62,113 +62,11 @@ namespace Intrepid2 {
   //                                                                                            //          
   //============================================================================================//   
 
-  template<typename SpT>
+  template<typename DeviceType>
+  template<typename cellCenterValueType, class ...cellCenterProperties>
   void 
-  CellTools<SpT>::
-  setReferenceNodeData() {
-
-    {
-      // create memory on devices
-      refNodeData_.line            = referenceNodeDataViewType("CellTools::ReferenceNodeData::line",       2, 3);
-      refNodeData_.line_3          = referenceNodeDataViewType("CellTools::ReferenceNodeData::line_3",     3, 3);
-      
-      refNodeData_.triangle        = referenceNodeDataViewType("CellTools::ReferenceNodeData::triangle",   3, 3);
-      refNodeData_.triangle_4      = referenceNodeDataViewType("CellTools::ReferenceNodeData::triangle_4", 4, 3);    
-      refNodeData_.triangle_6      = referenceNodeDataViewType("CellTools::ReferenceNodeData::triangle_6", 6, 3);    
-      
-      refNodeData_.quadrilateral   = referenceNodeDataViewType("CellTools::ReferenceNodeData::quad",       4, 3);    
-      refNodeData_.quadrilateral_8 = referenceNodeDataViewType("CellTools::ReferenceNodeData::quad_8",     8, 3);    
-      refNodeData_.quadrilateral_9 = referenceNodeDataViewType("CellTools::ReferenceNodeData::quad_9",     9, 3);
-      
-      refNodeData_.tetrahedron     = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet",        4, 3);    
-      refNodeData_.tetrahedron_8   = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet_8",      8, 3);    
-      refNodeData_.tetrahedron_10  = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet_10",    10, 3);
-      refNodeData_.tetrahedron_11  = referenceNodeDataViewType("CellTools::ReferenceNodeData::tet_11",    11, 3);    
-      
-      refNodeData_.hexahedron      = referenceNodeDataViewType("CellTools::ReferenceNodeData::hex",        8, 3);    
-      refNodeData_.hexahedron_20   = referenceNodeDataViewType("CellTools::ReferenceNodeData::hex_20",    20, 3);
-      refNodeData_.hexahedron_27   = referenceNodeDataViewType("CellTools::ReferenceNodeData::hex_27",    27, 3);    
-      
-      refNodeData_.pyramid         = referenceNodeDataViewType("CellTools::ReferenceNodeData::pyr",        5, 3);    
-      refNodeData_.pyramid_13      = referenceNodeDataViewType("CellTools::ReferenceNodeData::pyr_13",    13, 3);
-      refNodeData_.pyramid_14      = referenceNodeDataViewType("CellTools::ReferenceNodeData::pyr_14",    14, 3);    
-      
-      refNodeData_.wedge           = referenceNodeDataViewType("CellTools::ReferenceNodeData::wedge",      6, 3);
-      refNodeData_.wedge_15        = referenceNodeDataViewType("CellTools::ReferenceNodeData::wedge_15",  15, 3);    
-      refNodeData_.wedge_18        = referenceNodeDataViewType("CellTools::ReferenceNodeData::wedge_18",  18, 3);    
-    }
-
-    {
-      // copy static data to devices
-      Kokkos::deep_copy(refNodeData_.line,            referenceNodeDataViewHostType(&refNodeDataStatic_.line[0][0],             2, 3));
-      Kokkos::deep_copy(refNodeData_.line_3,          referenceNodeDataViewHostType(&refNodeDataStatic_.line_3[0][0],           3, 3));
-      
-      Kokkos::deep_copy(refNodeData_.triangle,        referenceNodeDataViewHostType(&refNodeDataStatic_.triangle[0][0],         3, 3));
-      Kokkos::deep_copy(refNodeData_.triangle_4,      referenceNodeDataViewHostType(&refNodeDataStatic_.triangle_4[0][0],       4, 3));    
-      Kokkos::deep_copy(refNodeData_.triangle_6,      referenceNodeDataViewHostType(&refNodeDataStatic_.triangle_6[0][0],       6, 3));    
-      
-      Kokkos::deep_copy(refNodeData_.quadrilateral,   referenceNodeDataViewHostType(&refNodeDataStatic_.quadrilateral[0][0],    4, 3));    
-      Kokkos::deep_copy(refNodeData_.quadrilateral_8, referenceNodeDataViewHostType(&refNodeDataStatic_.quadrilateral_8[0][0],  8, 3));    
-      Kokkos::deep_copy(refNodeData_.quadrilateral_9, referenceNodeDataViewHostType(&refNodeDataStatic_.quadrilateral_9[0][0],  9, 3));
-      
-      Kokkos::deep_copy(refNodeData_.tetrahedron,     referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron[0][0],      4, 3));    
-      Kokkos::deep_copy(refNodeData_.tetrahedron_8,   referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron_8[0][0],    8, 3));    
-      Kokkos::deep_copy(refNodeData_.tetrahedron_10,  referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron_10[0][0],  10, 3));
-      Kokkos::deep_copy(refNodeData_.tetrahedron_11,  referenceNodeDataViewHostType(&refNodeDataStatic_.tetrahedron_11[0][0],  11, 3));    
-      
-      Kokkos::deep_copy(refNodeData_.hexahedron,      referenceNodeDataViewHostType(&refNodeDataStatic_.hexahedron[0][0],       8, 3));    
-      Kokkos::deep_copy(refNodeData_.hexahedron_20,   referenceNodeDataViewHostType(&refNodeDataStatic_.hexahedron_20[0][0],   20, 3));
-      Kokkos::deep_copy(refNodeData_.hexahedron_27,   referenceNodeDataViewHostType(&refNodeDataStatic_.hexahedron_27[0][0],   27, 3));    
-      
-      Kokkos::deep_copy(refNodeData_.pyramid,         referenceNodeDataViewHostType(&refNodeDataStatic_.pyramid[0][0],          5, 3));    
-      Kokkos::deep_copy(refNodeData_.pyramid_13,      referenceNodeDataViewHostType(&refNodeDataStatic_.pyramid_13[0][0],      13, 3));
-      Kokkos::deep_copy(refNodeData_.pyramid_14,      referenceNodeDataViewHostType(&refNodeDataStatic_.pyramid_14[0][0],      14, 3));    
-      
-      Kokkos::deep_copy(refNodeData_.wedge,           referenceNodeDataViewHostType(&refNodeDataStatic_.wedge[0][0],            6, 3));
-      Kokkos::deep_copy(refNodeData_.wedge_15,        referenceNodeDataViewHostType(&refNodeDataStatic_.wedge_15[0][0],        15, 3));    
-      Kokkos::deep_copy(refNodeData_.wedge_18,        referenceNodeDataViewHostType(&refNodeDataStatic_.wedge_18[0][0],        18, 3));    
-    }
-
-    Kokkos::push_finalize_hook( [=] {
-      refNodeData_.line            = referenceNodeDataViewType();
-      refNodeData_.line_3          = referenceNodeDataViewType();
-
-      refNodeData_.triangle        = referenceNodeDataViewType();
-      refNodeData_.triangle_4      = referenceNodeDataViewType();
-      refNodeData_.triangle_6      = referenceNodeDataViewType();
-
-      refNodeData_.quadrilateral   = referenceNodeDataViewType();
-      refNodeData_.quadrilateral_8 = referenceNodeDataViewType();
-      refNodeData_.quadrilateral_9 = referenceNodeDataViewType();
-
-      refNodeData_.tetrahedron     = referenceNodeDataViewType();
-      refNodeData_.tetrahedron_8   = referenceNodeDataViewType();
-      refNodeData_.tetrahedron_10  = referenceNodeDataViewType();
-      refNodeData_.tetrahedron_11  = referenceNodeDataViewType();
-
-      refNodeData_.hexahedron      = referenceNodeDataViewType();
-      refNodeData_.hexahedron_20   = referenceNodeDataViewType();
-      refNodeData_.hexahedron_27   = referenceNodeDataViewType();
-
-      refNodeData_.pyramid         = referenceNodeDataViewType();
-      refNodeData_.pyramid_13      = referenceNodeDataViewType();
-      refNodeData_.pyramid_14      = referenceNodeDataViewType();
-
-      refNodeData_.wedge           = referenceNodeDataViewType();
-      refNodeData_.wedge_15        = referenceNodeDataViewType();
-      refNodeData_.wedge_18        = referenceNodeDataViewType();
-    } );
-
-    isReferenceNodeDataSet_ = true;
-  }
-
-  template<typename SpT>
-  template<typename cellCenterValueType, class ...cellCenterProperties,
-           typename cellVertexValueType, class ...cellVertexProperties>
-  void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceCellCenter( Kokkos::DynRankView<cellCenterValueType,cellCenterProperties...> cellCenter,
-                          Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                           const shards::CellTopology cell ) {
 #ifdef HAVE_INTREPID2_DEBUG
     INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
@@ -179,31 +77,27 @@ namespace Intrepid2 {
 
     INTREPID2_TEST_FOR_EXCEPTION( cellCenter.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellCenter must have dimension at least as large as cell.getDimension()." );
-
-    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.rank() != 1, std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have rank 1." );
-
-    INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceCellCenter): cellVertex must have dimension at least as large as cell.getDimension()." );
 #endif
-    const ordinal_type vertexCount = cell.getVertexCount();
+
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellCenter)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceCellCenter(..): output view's memory space is not compatible with DeviceType");
+
     const ordinal_type dim = cell.getDimension();
 
-    for (ordinal_type i=0;i<dim;++i) {
-      cellCenter(i) = 0;
-      for (ordinal_type vertOrd=0;vertOrd<vertexCount;++vertOrd) {
-        getReferenceVertex(cellVertex, cell, vertOrd); 
-        cellCenter(i) += cellVertex(i);
-      }
-      cellCenter(i) /= vertexCount;
-    }
+    const auto refCellCenter = RefCellCenter<DeviceType>::get(cell.getKey());
+
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,dim),
+    KOKKOS_LAMBDA (const int &i) {cellCenter(i) = refCellCenter(i);}
+    );
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename cellVertexValueType, class ...cellVertexProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceVertex(       Kokkos::DynRankView<cellVertexValueType,cellVertexProperties...> cellVertex,
                       const shards::CellTopology cell,
                       const ordinal_type         vertexOrd ) {
@@ -220,16 +114,25 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( cellVertex.extent(0) < cell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNodes must have dimension at least as large as cell.getDimension()." );
 #endif
-    getReferenceNode(cellVertex, 
-                     cell, 
-                     vertexOrd);
+
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellVertex)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceVertex(..): output view's memory space is not compatible with DeviceType");
+
+    const auto refNodes = RefCellNodes<DeviceType>::get(cell.getKey());
+
+    ordinal_type dim = cell.getDimension();
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,dim),
+    KOKKOS_LAMBDA (const int &i) {cellVertex(i) = refNodes(vertexOrd,i);}
+    );
   }
     
   
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename subcellVertexValueType, class ...subcellVertexProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceSubcellVertices(       Kokkos::DynRankView<subcellVertexValueType,subcellVertexProperties...> subcellVertices,
                                const ordinal_type         subcellDim,
                                const ordinal_type         subcellOrd,
@@ -262,17 +165,14 @@ namespace Intrepid2 {
   }  
   
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename cellNodeValueType, class ...cellNodeProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceNode(       Kokkos::DynRankView<cellNodeValueType,cellNodeProperties...> cellNode,
                     const shards::CellTopology  cell,
                     const ordinal_type          nodeOrd ) {
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_EXCEPTION( !hasReferenceCell(cell), std::invalid_argument, 
-                                  ">>> ERROR (Intrepid2::CellTools::getReferenceNode): the specified cell topology does not have a reference cell." );
-    
     INTREPID2_TEST_FOR_EXCEPTION( nodeOrd >= static_cast<ordinal_type>(cell.getNodeCount()), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): invalid node ordinal for the specified cell topology." );
 
@@ -283,69 +183,22 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceNode): cellNode must have dimension at least as large as cell.getDimension()." );
 #endif
 
-    if (!isReferenceNodeDataSet_) 
-      setReferenceNodeData();
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(cellNode)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceNode(..): output view's memory space is not compatible with DeviceType");
 
-    referenceNodeDataViewType ref;
+    const auto refNodes = RefCellNodes<DeviceType>::get(cell.getKey());
 
-    switch (cell.getKey() ) {
-    case shards::Line<2>::key:     
-    case shards::ShellLine<2>::key:
-    case shards::Beam<2>::key:               ref = refNodeData_.line; break;
-    case shards::Line<3>::key:     
-    case shards::ShellLine<3>::key:
-    case shards::Beam<3>::key:               ref = refNodeData_.line_3; break;
-      
-    case shards::Triangle<3>::key: 
-    case shards::ShellTriangle<3>::key:      ref = refNodeData_.triangle; break;
-    case shards::Triangle<4>::key:           ref = refNodeData_.triangle_4; break;
-    case shards::Triangle<6>::key:
-    case shards::ShellTriangle<6>::key:      ref = refNodeData_.triangle_6; break;
-        
-    case shards::Quadrilateral<4>::key:
-    case shards::ShellQuadrilateral<4>::key: ref = refNodeData_.quadrilateral; break;
-    case shards::Quadrilateral<8>::key:
-    case shards::ShellQuadrilateral<8>::key: ref = refNodeData_.quadrilateral_8; break;
-    case shards::Quadrilateral<9>::key:
-    case shards::ShellQuadrilateral<9>::key: ref = refNodeData_.quadrilateral_9; break;
-
-    case shards::Tetrahedron<4>::key:        ref = refNodeData_.tetrahedron; break;
-    case shards::Tetrahedron<8>::key:        ref = refNodeData_.tetrahedron_8; break;
-    case shards::Tetrahedron<10>::key:       ref = refNodeData_.tetrahedron_10; break;
-    case shards::Tetrahedron<11>::key:       ref = refNodeData_.tetrahedron_11; break;
-
-    case shards::Hexahedron<8>::key:         ref = refNodeData_.hexahedron; break;
-    case shards::Hexahedron<20>::key:        ref = refNodeData_.hexahedron_20; break;
-    case shards::Hexahedron<27>::key:        ref = refNodeData_.hexahedron_27; break;
-
-    case shards::Pyramid<5>::key:            ref = refNodeData_.pyramid; break;
-    case shards::Pyramid<13>::key:           ref = refNodeData_.pyramid_13; break;
-    case shards::Pyramid<14>::key:           ref = refNodeData_.pyramid_14; break;
-
-    case shards::Wedge<6>::key:              ref = refNodeData_.wedge; break;
-    case shards::Wedge<15>::key:             ref = refNodeData_.wedge_15; break;
-    case shards::Wedge<18>::key:             ref = refNodeData_.wedge_18; break;
-
-    default: {
-      INTREPID2_TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-                                    ">>> ERROR (Intrepid2::CellTools::getReferenceNode): invalid cell topology.");
-    }
-    }
-    
-    // subview version; this is dangerous that users get control over the static data
-    // cellNode = Kokkos::subdynrankview( ref, nodeOrd, Kokkos::ALL() );
-
-    // let's copy;
-    const ordinal_type dim = cell.getDimension();
-
-    for (ordinal_type i=0;i<dim;++i) 
-      cellNode(i) = ref(nodeOrd, i);
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,cell.getDimension()),
+    KOKKOS_LAMBDA (const int &i) {cellNode(i) = refNodes(nodeOrd,i);}
+    );
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename subcellNodeValueType, class ...subcellNodeProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceSubcellNodes(       Kokkos::DynRankView<subcellNodeValueType,subcellNodeProperties...> subcellNodes,
                             const ordinal_type         subcellDim,
                             const ordinal_type         subcellOrd,
@@ -384,10 +237,10 @@ namespace Intrepid2 {
     }
   }  
 
-  template<typename SpT>  
+  template<typename DeviceType>
   template<typename refEdgeTangentValueType, class ...refEdgeTangentProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceEdgeTangent(       Kokkos::DynRankView<refEdgeTangentValueType,refEdgeTangentProperties...> refEdgeTangent,
                            const ordinal_type         edgeOrd,
                            const shards::CellTopology parentCell ) {
@@ -407,26 +260,27 @@ namespace Intrepid2 {
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceEdgeTangent): edge ordinal out of bounds");
 
 #endif
-    // Edge parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
-    // (subcOrd, coordinate, coefficient)
-    subcellParamViewType edgeMap;
-    getSubcellParametrization(edgeMap, 1, parentCell);
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refEdgeTangent)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceEdgeTangent(..): output view's memory space is not compatible with DeviceType");
+
+    const auto edgeMap = RefSubcellParametrization<DeviceType>::get(1, parentCell.getKey());
   
     // All ref. edge maps have affine coordinate functions: f_dim(u) = C_0(dim) + C_1(dim)*u, 
     //                                     => edge Tangent: -> C_1(*)
-    const ordinal_type dim = parentCell.getDimension();
-    for (ordinal_type i=0;i<dim;++i)
-      refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,parentCell.getDimension()),
+    KOKKOS_LAMBDA (const int &i) {refEdgeTangent(i) = edgeMap(edgeOrd, i, 1);}
+    );
   }
 
 
-  template<typename SpT>
-  template<typename refFaceTanUValueType, class ...refFaceTanUProperties,
-           typename refFaceTanVValueType, class ...refFaceTanVProperties>
+  template<typename DeviceType>
+  template<typename refFaceTanValueType, class ...refFaceTanProperties>
   void
-  CellTools<SpT>::
-  getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanUValueType,refFaceTanUProperties...> refFaceTanU,
-                                  Kokkos::DynRankView<refFaceTanVValueType,refFaceTanVProperties...> refFaceTanV,
+  CellTools<DeviceType>::
+  getReferenceFaceTangents(       Kokkos::DynRankView<refFaceTanValueType,refFaceTanProperties...> refFaceTanU,
+                                  Kokkos::DynRankView<refFaceTanValueType,refFaceTanProperties...> refFaceTanV,
                             const ordinal_type         faceOrd,
                             const shards::CellTopology parentCell ) {
 #ifdef HAVE_INTREPID2_DEBUG
@@ -445,11 +299,13 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceTanV.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceTangents): dim0 (spatial dim) must match that of parent cell");  
 #endif
-  
-    // Face parametrizations are computed in setSubcellParametrization and stored in rank-3 array 
-    // (subcOrd, coordinate, coefficient): retrieve this array
-    subcellParamViewType faceMap;
-    getSubcellParametrization(faceMap, 2, parentCell);
+    constexpr bool is_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(refFaceTanU)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceFaceTangents(..): output views' memory spaces are not compatible with DeviceType");
+
+
+    const auto faceMap = RefSubcellParametrization<DeviceType>::get(2, parentCell.getKey());
   
     /*  All ref. face maps have affine coordinate functions:  f_dim(u,v) = C_0(dim) + C_1(dim)*u + C_2(dim)*v
      *                           `   => Tangent vectors are:  refFaceTanU -> C_1(*);    refFaceTanV -> C_2(*)
@@ -457,17 +313,17 @@ namespace Intrepid2 {
 
     // set refFaceTanU -> C_1(*)
     // set refFaceTanV -> C_2(*)
-    const ordinal_type dim = parentCell.getDimension();
-    for (ordinal_type i=0;i<dim;++i) {
+    Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,parentCell.getDimension()),
+        KOKKOS_LAMBDA (const int &i) {
       refFaceTanU(i) = faceMap(faceOrd, i, 1);
       refFaceTanV(i) = faceMap(faceOrd, i, 2);
-    }
+      });
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename refSideNormalValueType, class ...refSideNormalProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceSideNormal(       Kokkos::DynRankView<refSideNormalValueType,refSideNormalProperties...> refSideNormal,
                           const ordinal_type         sideOrd,
                           const shards::CellTopology parentCell ) {
@@ -480,6 +336,10 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( sideOrd < 0 || sideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceSideNormal): side ordinal out of bounds");    
 #endif 
+    constexpr bool is_accessible = Kokkos::Impl::MemorySpaceAccess<
+        MemSpaceType,
+        typename decltype(refSideNormal)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceSideNormal(..): output view's memory space is not compatible with DeviceType");
 
     const auto dim = parentCell.getDimension();
     if (dim == 2) {
@@ -487,9 +347,12 @@ namespace Intrepid2 {
       getReferenceEdgeTangent(refSideNormal, sideOrd, parentCell);
     
       // rotate t(t1, t2) to get n(t2, -t1) so that (n,t) is positively oriented: det(n1,n2/t1,t2)>0
-      refSideNormalValueType tmp = refSideNormal(0);
-      refSideNormal(0) = refSideNormal(1);
-      refSideNormal(1) = -tmp;
+      Kokkos::parallel_for(Kokkos::RangePolicy<ExecSpaceType>(0,1),
+              KOKKOS_LAMBDA (const int &) {
+        refSideNormalValueType tmp = refSideNormal(0);
+        refSideNormal(0) = refSideNormal(1);
+        refSideNormal(1) = -tmp;
+      });
     } else {
       // 3D parent cell: side = 2D subcell (face), call the face normal method.
       getReferenceFaceNormal(refSideNormal, sideOrd, parentCell);
@@ -497,10 +360,10 @@ namespace Intrepid2 {
   }
 
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename refFaceNormalValueType, class ...refFaceNormalProperties>
   void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getReferenceFaceNormal(       Kokkos::DynRankView<refFaceNormalValueType,refFaceNormalProperties...> refFaceNormal,
                           const ordinal_type         faceOrd,
                           const shards::CellTopology parentCell ) {
@@ -517,23 +380,27 @@ namespace Intrepid2 {
     INTREPID2_TEST_FOR_EXCEPTION( refFaceNormal.extent(0) != parentCell.getDimension(), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getReferenceFaceNormal): dim0 (spatial dim) must match that of parent cell");  
 #endif
-    
+    constexpr bool is_accessible = Kokkos::Impl::MemorySpaceAccess<
+        MemSpaceType,
+        typename decltype(refFaceNormal)::memory_space>::accessible;
+    static_assert(is_accessible, "CellTools<DeviceType>::getReferenceFaceNormal(..): output view's memory space is not compatible with DeviceType");
+
     // Reference face normal = vector product of reference face tangents. Allocate temp FC storage:
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(refFaceNormal);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, SpT > refFaceTanU ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanU", vcprop), dim );
-    Kokkos::DynRankView< common_value_type, SpT > refFaceTanV ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanV", vcprop), dim );
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanU", vcprop), dim );
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getReferenceFaceNormal::refFaceTanV", vcprop), dim );
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, faceOrd, parentCell);
   
-    RealSpaceTools<SpT>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
+    RealSpaceTools<DeviceType>::vecprod(refFaceNormal, refFaceTanU, refFaceTanV);
   }
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename edgeTangentValueType,     class ...edgeTangentProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalEdgeTangents(       Kokkos::DynRankView<edgeTangentValueType,edgeTangentProperties...>         edgeTangents,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetEdgeOrd,
@@ -565,26 +432,32 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalEdgeTangents): edgeTangents dimension (i) does not match to worksetJacobians dimension(i)." );
     }
 #endif
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(edgeTangents)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalEdgeTangents(..): input/output views' memory spaces are not compatible with DeviceType");
+
   
     // Storage for constant reference edge tangent: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
     auto vcprop = Kokkos::common_view_alloc_prop(edgeTangents);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, SpT > refEdgeTan ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > refEdgeTan ( Kokkos::view_alloc("CellTools::getPhysicalEdgeTangents::refEdgeTan", vcprop), dim);
     getReferenceEdgeTangent(refEdgeTan, worksetEdgeOrd, parentCell);
     
-    RealSpaceTools<SpT>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
+    RealSpaceTools<DeviceType>::matvec(edgeTangents, worksetJacobians, refEdgeTan);
   }
 
 
-  template<typename SpT>
-  template<typename faceTanUValueType,        class ...faceTanUProperties,
-           typename faceTanVValueType,        class ...faceTanVProperties,
+  template<typename DeviceType>
+  template<typename faceTanValueType,        class ...faceTanProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
-  CellTools<SpT>::
-  getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanUValueType,faceTanUProperties...> faceTanU,
-                                 Kokkos::DynRankView<faceTanVValueType,faceTanVProperties...> faceTanV,
+  CellTools<DeviceType>::
+  getPhysicalFaceTangents(       Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanU,
+                                 Kokkos::DynRankView<faceTanValueType,faceTanProperties...> faceTanV,
                            const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                            const ordinal_type         worksetFaceOrd,
                            const shards::CellTopology parentCell ) {
@@ -622,30 +495,55 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceTangents): worksetJacobians dimension(i) and faceTan dimension (i) must match." );  
     }      
 #endif
-    
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(faceTanU)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceTangents(..): input/output views' memory spaces are not compatible with DeviceType");
+
     // Temp storage for the pair of constant ref. face tangents: rank-1 (D) arrays
     const auto dim = parentCell.getDimension();
 
-    auto vcpropU = Kokkos::common_view_alloc_prop(faceTanU);
-    using common_value_typeU = typename decltype(vcpropU)::value_type;
-    Kokkos::DynRankView< common_value_typeU, SpT > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcpropU), dim);
-
-    auto vcpropV = Kokkos::common_view_alloc_prop(faceTanV);
-    using common_value_typeV = typename decltype(vcpropV)::value_type;
-    Kokkos::DynRankView< common_value_typeV, SpT > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcpropV), dim);
+    auto vcprop = Kokkos::common_view_alloc_prop(faceTanU);
+    using common_value_type = typename decltype(vcprop)::value_type;
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanU", vcprop), dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > refFaceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceTangents::refFaceTanV", vcprop), dim);
 
     getReferenceFaceTangents(refFaceTanU, refFaceTanV, worksetFaceOrd, parentCell);
 
-    RealSpaceTools<SpT>::matvec(faceTanU, worksetJacobians, refFaceTanU);    
-    RealSpaceTools<SpT>::matvec(faceTanV, worksetJacobians, refFaceTanV);    
+    RealSpaceTools<DeviceType>::matvec(faceTanU, worksetJacobians, refFaceTanU);
+    RealSpaceTools<DeviceType>::matvec(faceTanV, worksetJacobians, refFaceTanV);
   }
 
+  namespace FunctorCellTools {
+  template<typename normalsViewType,
+           typename tangentsViewType>
+  struct F_edgeNormalsFromTangents {
+    normalsViewType edgeNormals_;
+    const tangentsViewType edgeTangents_;
 
-  template<typename SpT>
+    KOKKOS_INLINE_FUNCTION
+    F_edgeNormalsFromTangents( normalsViewType  edgeNormals,
+                           const tangentsViewType refEdgeTangents)
+      : edgeNormals_(edgeNormals), edgeTangents_(refEdgeTangents){};
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()(const size_type iter) const {
+      size_type cell, pt;
+      unrollIndex( cell, pt, edgeTangents_.extent(0),
+          edgeTangents_.extent(1), iter );
+      edgeNormals_(cell,pt,0) =  edgeTangents_(cell,pt,1);
+      edgeNormals_(cell,pt,1) = -edgeTangents_(cell,pt,0);
+    }
+  };
+}
+
+  template<typename DeviceType>
   template<typename sideNormalValueType,      class ...sideNormalProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void 
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalSideNormals(       Kokkos::DynRankView<sideNormalValueType,sideNormalProperties...> sideNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetSideOrd,
@@ -660,34 +558,42 @@ namespace Intrepid2 {
                                   worksetSideOrd >= static_cast<ordinal_type>(parentCell.getSubcellCount(parentCell.getDimension() - 1)), std::invalid_argument,
                                   ">>> ERROR (Intrepid2::CellTools::getPhysicalSideNormals): side ordinal out of bounds");  
 #endif  
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(sideNormals)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalSideNormals(..): input/output views' memory spaces are not compatible with DeviceType");
+
     const auto dim = parentCell.getDimension();
   
     if (dim == 2) {
       // compute edge tangents and rotate it
       auto vcprop = Kokkos::common_view_alloc_prop(sideNormals);
       using common_value_type = typename decltype(vcprop)::value_type;
-      Kokkos::DynRankView< common_value_type, SpT > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
+      Kokkos::DynRankView< common_value_type, DeviceType > edgeTangents ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::edgeTan", vcprop),
                                                               sideNormals.extent(0),
                                                               sideNormals.extent(1),
                                                               sideNormals.extent(2));
       getPhysicalEdgeTangents(edgeTangents, worksetJacobians, worksetSideOrd, parentCell);
 
-      Kokkos::DynRankView< common_value_type, SpT > rotation ( Kokkos::view_alloc("CellTools::getPhysicalSideNormals::rotation", vcprop), dim, dim);
-      rotation(0,0) =  0; rotation(0,1) =  1;
-      rotation(1,0) = -1; rotation(1,1) =  0;
+      //Note: this function has several template parameters and the compiler gets confused if using a lambda function
+      using FunctorType = FunctorCellTools::F_edgeNormalsFromTangents<decltype(sideNormals), decltype(edgeTangents)>;
+      const auto loopSize = edgeTangents.extent(0)*edgeTangents.extent(1);
+          Kokkos::RangePolicy<ExecSpaceType,Kokkos::Schedule<Kokkos::Static> > policy(0, loopSize);
+          Kokkos::parallel_for( policy, FunctorType(sideNormals, edgeTangents) );
 
-      RealSpaceTools<SpT>::matvec(sideNormals, rotation, edgeTangents);    
     } else {
       getPhysicalFaceNormals(sideNormals, worksetJacobians, worksetSideOrd, parentCell);
     }
   }
   
 
-  template<typename SpT>
+  template<typename DeviceType>
   template<typename faceNormalValueType,      class ...faceNormalProperties,
            typename worksetJacobianValueType, class ...worksetJacobianProperties>
   void
-  CellTools<SpT>::
+  CellTools<DeviceType>::
   getPhysicalFaceNormals(       Kokkos::DynRankView<faceNormalValueType,faceNormalProperties...> faceNormals,
                           const Kokkos::DynRankView<worksetJacobianValueType,worksetJacobianProperties...> worksetJacobians,
                           const ordinal_type         worksetFaceOrd,
@@ -716,6 +622,13 @@ namespace Intrepid2 {
                                     ">>> ERROR (Intrepid2::CellTools::getPhysicalFaceNormals): faceNormals dimension (i) must match to worksetJacobians dimension (i)." );
     }        
 #endif
+    constexpr bool are_accessible =
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(faceNormals)::memory_space>::accessible &&
+        Kokkos::Impl::MemorySpaceAccess<MemSpaceType,
+        typename decltype(worksetJacobians)::memory_space>::accessible;
+    static_assert(are_accessible, "CellTools<DeviceType>::getPhysicalFaceNormals(..): input/output views' memory spaces are not compatible with DeviceType");
+
   
     // this should be provided from users
     // Storage for physical face tangents: rank-3 (C,P,D) arrays
@@ -725,130 +638,16 @@ namespace Intrepid2 {
 
     auto vcprop = Kokkos::common_view_alloc_prop(faceNormals);
     using common_value_type = typename decltype(vcprop)::value_type;
-    Kokkos::DynRankView< common_value_type, SpT > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
-    Kokkos::DynRankView< common_value_type, SpT > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > faceTanU ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanU", vcprop), worksetSize, facePtCount, dim);
+    Kokkos::DynRankView< common_value_type, DeviceType > faceTanV ( Kokkos::view_alloc("CellTools::getPhysicalFaceNormals::faceTanV", vcprop), worksetSize, facePtCount, dim);
 
     getPhysicalFaceTangents(faceTanU, faceTanV, 
                             worksetJacobians, 
                             worksetFaceOrd, 
                             parentCell);
   
-    RealSpaceTools<SpT>::vecprod(faceNormals, faceTanU, faceTanV);
+    RealSpaceTools<DeviceType>::vecprod(faceNormals, faceTanU, faceTanV);
   }
-
-
-  template<typename SpT>
-  bool 
-  CellTools<SpT>::
-  isReferenceNodeDataSet_ = false;
-
-  template<typename SpT>
-  typename CellTools<SpT>::ReferenceNodeData
-  CellTools<SpT>::
-  refNodeData_ = typename CellTools<SpT>::ReferenceNodeData();
-
-  template<typename SpT>
-  const typename CellTools<SpT>::ReferenceNodeDataStatic
-  CellTools<SpT>::
-  refNodeDataStatic_ = {    
-    // line
-    { // 2
-      {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0} 
-    },
-    { // 3
-      {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 0.0, 0.0}
-    },
-    // triangle
-    { // 3
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0} 
-    },
-    { // 4
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 1/3, 1/3, 0.0}
-    },
-    { // 6
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
-      { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}
-    },
-    // quad
-    { // 4
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}
-    },
-    { // 8
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
-      { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0}
-    },
-    { // 9
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
-      { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0}, { 0.0, 0.0, 0.0}
-    },
-    // tet
-    { // 4
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0}
-    },
-    { // 8
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      { 1/3, 0.0, 1/3}, { 1/3, 1/3, 1/3}, { 1/3, 1/3, 0.0}, { 0.0, 1/3, 1/3} 
-    },
-    { // 10
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
-    },
-    { // 11
-      { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}, { 0.0, 0.0, 0.5}, { 0.5, 0.0, 0.5}, { 0.0, 0.5, 0.5}
-    },
-    // hex
-    { // 8
-      {-1.0,-1.0,-1.0}, { 1.0,-1.0,-1.0}, { 1.0, 1.0,-1.0}, {-1.0, 1.0,-1.0},
-      {-1.0,-1.0, 1.0}, { 1.0,-1.0, 1.0}, { 1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0}
-    },
-    { // 20
-      {-1.0,-1.0,-1.0}, { 1.0,-1.0,-1.0}, { 1.0, 1.0,-1.0}, {-1.0, 1.0,-1.0},
-      {-1.0,-1.0, 1.0}, { 1.0,-1.0, 1.0}, { 1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0},
-      { 0.0,-1.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, {-1.0, 0.0,-1.0}, 
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
-      { 0.0,-1.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0}, {-1.0, 0.0, 1.0}
-    },
-    { // 27
-      {-1.0,-1.0,-1.0}, { 1.0,-1.0,-1.0}, { 1.0, 1.0,-1.0}, {-1.0, 1.0,-1.0},
-      {-1.0,-1.0, 1.0}, { 1.0,-1.0, 1.0}, { 1.0, 1.0, 1.0}, {-1.0, 1.0, 1.0},
-      { 0.0,-1.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, {-1.0, 0.0,-1.0}, 
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0},
-      { 0.0,-1.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0}, {-1.0, 0.0, 1.0},
-      { 0.0, 0.0, 0.0},
-      { 0.0, 0.0,-1.0}, { 0.0, 0.0, 1.0}, {-1.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, {0.0,-1.0, 0.0}, {0.0, 1.0, 0.0} 
-    },
-    // pyramid
-    { // 5
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0}
-    },
-    { // 13
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0},
-      {-0.5,-0.5, 0.5}, { 0.5,-0.5, 0.5}, { 0.5, 0.5, 0.5}, {-0.5, 0.5, 0.5}   
-    },
-    { // 14 
-      {-1.0,-1.0, 0.0}, { 1.0,-1.0, 0.0}, { 1.0, 1.0, 0.0}, {-1.0, 1.0, 0.0}, { 0.0, 0.0, 1.0},
-      { 0.0,-1.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0}, {-1.0, 0.0, 0.0},
-      {-0.5,-0.5, 0.5}, { 0.5,-0.5, 0.5}, { 0.5, 0.5, 0.5}, {-0.5, 0.5, 0.5}, { 0.0, 0.0, 0.0}  
-    },
-    // wedge
-    { // 6
-      { 0.0, 0.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, { 0.0, 0.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0} 
-    },
-    { // 15
-      { 0.0, 0.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, { 0.0, 0.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0},
-      { 0.5, 0.0,-1.0}, { 0.5, 0.5,-1.0}, { 0.0, 0.5,-1.0}, { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
-      { 0.5, 0.0, 1.0}, { 0.5, 0.5, 1.0}, { 0.0, 0.5, 1.0}
-    },
-    { // 18
-      { 0.0, 0.0,-1.0}, { 1.0, 0.0,-1.0}, { 0.0, 1.0,-1.0}, { 0.0, 0.0, 1.0}, { 1.0, 0.0, 1.0}, { 0.0, 1.0, 1.0},
-      { 0.5, 0.0,-1.0}, { 0.5, 0.5,-1.0}, { 0.0, 0.5,-1.0}, { 0.0, 0.0, 0.0}, { 1.0, 0.0, 0.0}, { 0.0, 1.0, 0.0},
-      { 0.5, 0.0, 1.0}, { 0.5, 0.5, 1.0}, { 0.0, 0.5, 1.0},
-      { 0.5, 0.0, 0.0}, { 0.5, 0.5, 0.0}, { 0.0, 0.5, 0.0}
-    }
-  };
-    
 }
 
 #endif

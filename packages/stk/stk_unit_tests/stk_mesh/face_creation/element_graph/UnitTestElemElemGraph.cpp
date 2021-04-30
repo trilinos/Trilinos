@@ -1056,11 +1056,6 @@ TEST(ElementGraph, test_parallel_graph_info_with_parallel_element_graph)
         stk::mesh::count_entities(bulkData.mesh_meta_data().locally_owned_part(), bulkData, counts);
         size_t numLocallyOwnedElems = counts[stk::topology::ELEM_RANK];
 
-        stk::mesh::impl::ElementLocalIdMapper localIdMapper;
-        localIdMapper.initialize(bulkData);
-        std::vector<stk::topology> element_topologies(numLocallyOwnedElems);
-        impl::fill_topologies(bulkData, localIdMapper, element_topologies);
-
         ElemElemGraphTester elemElemGraph(bulkData);
 
         ASSERT_EQ(numLocallyOwnedElems, elemElemGraph.get_graph_size());

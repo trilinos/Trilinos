@@ -91,8 +91,10 @@ getWorksets(const panzer::WorksetDescriptor & worksetDesc,
   if(worksetDesc.requiresPartitioning()){
 
     // Generate the local mesh info if it doesn't already exist
-    if(mesh_info_ == Teuchos::null)
+    if(mesh_info_ == Teuchos::null){
+      TEUCHOS_ASSERT(mesh_ != Teuchos::null);
       mesh_info_ = panzer_stk::generateLocalMeshInfo(*mesh_);
+    }
 
     auto worksets = panzer::buildPartitionedWorksets(*mesh_info_, worksetDesc, this->getOrientationsInterface());
 

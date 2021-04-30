@@ -121,7 +121,6 @@ namespace Test {
       Kokkos::parallel_for("KokkosBlas::Test::NonUnitDiagTRMM", Kokkos::RangePolicy<execution_space>(0,K), nudtrmm);
     }
     Kokkos::fill_random(B, rand_pool, Kokkos::rand<Kokkos::Random_XorShift64<execution_space>, ScalarA>::max());
-    Kokkos::fence();
     
     Kokkos::deep_copy(host_A,  A);
     // Make host_A a lower triangle
@@ -162,11 +161,9 @@ namespace Test {
       vgemm.beta = beta;
       Kokkos::parallel_for("KokkosBlas::Test::VanillaGEMM", Kokkos::TeamPolicy<execution_space>(M,Kokkos::AUTO,16), vgemm);
     }
-    Kokkos::fence();
     Kokkos::deep_copy(host_B_expected, B_expected);
 
     KokkosBlas::trmm(side, uplo, trans, diag, alpha, A, B);
-    Kokkos::fence();
     Kokkos::deep_copy(host_B_actual, B);
 
     bool test_flag = true;

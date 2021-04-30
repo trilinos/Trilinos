@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -35,6 +35,7 @@ protected:
   {
     other.Dismiss();
   }
+
   template <typename J> static void SafeExecute(J &j)
   {
     if (!j.dismissed_) {
@@ -46,10 +47,10 @@ protected:
     }
   }
 
-  mutable bool dismissed_;
+  mutable bool dismissed_{false};
 
 public:
-  ScopeGuardImplBase() : dismissed_(false) {}
+  ScopeGuardImplBase() = default;
   void Dismiss() const { dismissed_ = true; }
 };
 

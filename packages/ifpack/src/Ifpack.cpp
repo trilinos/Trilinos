@@ -120,7 +120,7 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_HIPS
   ,HIPS
 #endif
-#ifdef HAVE_HYPRE
+#ifdef HAVE_IFPACK_HYPRE
   ,HYPRE
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
@@ -174,7 +174,7 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_HIPS
   ,"HIPS"
 #endif
-#ifdef HAVE_HYPRE
+#ifdef HAVE_IFPACK_HYPRE
   ,"Hypre"
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
@@ -228,7 +228,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #ifdef HAVE_IFPACK_HIPS
   ,true // HIPS
 #endif
-#ifdef HAVE_HYPRE
+#ifdef HAVE_IFPACK_HYPRE
   ,true
 #endif
 #ifdef HAVE_IFPACK_SUPERLU
@@ -333,7 +333,7 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
     case HIPS:
       return(new Ifpack_HIPS(Matrix));
 #endif
-#ifdef HAVE_HYPRE
+#ifdef HAVE_IFPACK_HYPRE
     case HYPRE:
       return(new Ifpack_Hypre(Matrix));
 #endif

@@ -15,7 +15,7 @@
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this AppAction <--> Stepper)
+// Forward Declaration
 template<class Scalar> class StepperNewmarkExplicitAForm;
 
 /** \brief Application Action for StepperNewmarkExplicitAForm.
@@ -23,25 +23,12 @@ template<class Scalar> class StepperNewmarkExplicitAForm;
  *  This class provides a means to apply various actions with the NewmarkExplicitAForm time step.
  *  The data available to this class is solution variables (through
  *  SolutionHistory), and stepper data (through the Stepper).  It allows
- *  the application to just observe this data (i.e., use but not change the
- *  data) to change any of it (USER BEWARE!).
+ *  the application to just observe this data, i.e., use but not change
+ *  any of it (USER BEWARE!).
  *
- *  Below is the NewmarkExplicitAForm algorithm and includes the locations where the
- *  application can take actions (in italicized).
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Newmark Explicit-A with application-action locations indicated.}
- *  \begin{algorithmic}[1]
- *    \State {\it appAction.execute(solutionHistory, stepper, BEGIN\_STEP)}
- *    \State Compute displacement and velocity predictors 
- *    \State {\it appAction.execute(solutionHistory, stepper, BEFORE\_EXPLICIT\_EVAL)}
- *    \State Form $\ddot{x}_n \leftarrow x_{n} + \Delta t_n f(x_{n},t_n)$
- *    \State {\it appAction.execute(solutionHistory, stepper, AFTER\_EXPLICIT\_EVAL)}
- *    \State Correct velocity 
- *    \State {\it appAction.execute(solutionHistory, stepper, END\_STEP)}
- *  \end{algorithmic}
- *  \f}
+ *  The locations for these AppAction calls
+ *  (StepperNewmarkExplicitAFormAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperNewmarkExplicitAForm.
  */
 template<class Scalar>
 class StepperNewmarkExplicitAFormAppAction

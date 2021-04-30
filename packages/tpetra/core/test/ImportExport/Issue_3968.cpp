@@ -116,8 +116,7 @@ namespace { // (anonymous)
   void
   fillSourceVector (vec_type& srcVector)
   {
-    srcVector.sync_host ();
-    auto X_lcl_2d_h = srcVector.getLocalViewHost ();
+    auto X_lcl_2d_h = srcVector.getLocalViewHost(Tpetra::Access::OverwriteAll);
     auto X_lcl_1d_h = Kokkos::subview (X_lcl_2d_h, Kokkos::ALL (), 0);
     const LO lclNumRows = static_cast<LO> (srcVector.getLocalLength ());
 
@@ -138,7 +137,6 @@ namespace { // (anonymous)
     for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) {
       X_lcl_1d_h(lclRow) = baseValue () + incrValue;
     }
-    srcVector.sync_device ();
   }
 
   void
@@ -160,8 +158,7 @@ namespace { // (anonymous)
     fillSourceVector (srcVector);
     tgtVector.doExport (srcVector, exporter, Tpetra::ABSMAX);
 
-    tgtVector.sync_host ();
-    auto X_lcl_2d_h = tgtVector.getLocalViewHost ();
+    auto X_lcl_2d_h = tgtVector.getLocalViewHost(Tpetra::Access::ReadOnly);
     auto X_lcl_1d_h = Kokkos::subview (X_lcl_2d_h, Kokkos::ALL (), 0);
 
     auto comm = tgtVector.getMap ()->getComm ();

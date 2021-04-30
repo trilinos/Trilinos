@@ -9,15 +9,14 @@
 #ifndef Tempus_StepperSubcycling_impl_hpp
 #define Tempus_StepperSubcycling_impl_hpp
 
-#include "Tempus_StepperFactory.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
+#include "Tempus_StepperForwardEuler.hpp"
 #include "Tempus_StepperSubcyclingModifierDefault.hpp"
 #include "Tempus_TimeStepControlStrategyConstant.hpp"
 #include "Tempus_TimeStepControlStrategyBasicVS.hpp"
 #include "Tempus_IntegratorObserverSubcycling.hpp"
 #include "Tempus_IntegratorObserverNoOp.hpp"
-
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
-#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Tempus {
@@ -29,6 +28,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   using Teuchos::RCP;
   using Teuchos::ParameterList;
 
+  this->setStepperName(        "Subcycling");
   this->setStepperType(        "Subcycling");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -40,7 +40,9 @@ StepperSubcycling<Scalar>::StepperSubcycling()
   scIntegrator_->setObserver(
     Teuchos::rcp(new IntegratorObserverNoOp<Scalar>()));
 
-  RCP<ParameterList> tempusPL = scIntegrator_->getTempusParameterList();
+  RCP<ParameterList> tempusPL =
+    Teuchos::rcp_const_cast<Teuchos::ParameterList> (
+      scIntegrator_->getValidParameters());
 
   { // Set default subcycling Stepper to Forward Euler.
     tempusPL->sublist("Default Integrator")
@@ -49,8 +51,7 @@ StepperSubcycling<Scalar>::StepperSubcycling()
     stepperPL->set("Stepper Type", "Forward Euler");
     tempusPL->set("Default Subcycling Stepper", *stepperPL);
 
-    auto sf = Teuchos::rcp(new Tempus::StepperFactory<Scalar>());
-    auto stepperFE = sf->createStepperForwardEuler(Teuchos::null,Teuchos::null);
+    auto stepperFE = Teuchos::rcp(new StepperForwardEuler<Scalar>());
     setSubcyclingStepper(stepperFE);
   }
 
@@ -87,6 +88,7 @@ StepperSubcycling<Scalar>::StepperSubcycling(
   bool ICConsistencyCheck,
   const Teuchos::RCP<StepperSubcyclingAppAction<Scalar> >& stepperSCAppAction)
 {
+  this->setStepperName(        "Subcycling");
   this->setStepperType(        "Subcycling");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -105,7 +107,7 @@ template<class Scalar>
 void StepperSubcycling<Scalar>::setSubcyclingStepper(
   Teuchos::RCP<Stepper<Scalar> > stepper)
 {
-  scIntegrator_->setStepperWStepper(stepper);
+  scIntegrator_->setStepper(stepper);
   this->isInitialized_ = false;
 }
 
@@ -240,7 +242,7 @@ int StepperSubcycling<Scalar>::getSubcyclingScreenOutputIndexInterval() const
 
 template<class Scalar>
 std::string StepperSubcycling<Scalar>::getSubcyclingScreenOutputIndexList() const
-{ return scIntegrator_->getScreenOutputIndexList(); }
+{ return scIntegrator_->getScreenOutputIndexListString(); }
 
 
 template<class Scalar>
@@ -262,7 +264,7 @@ template<class Scalar>
 void StepperSubcycling<Scalar>::setModel(
   const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel)
 {
-  scIntegrator_->setStepper(appModel);
+  scIntegrator_->setModel(appModel);
   this->isInitialized_ = false;
 }
 
@@ -382,7 +384,10 @@ void StepperSubcycling<Scalar>::setInitialGuess(
 template<class Scalar>
 void StepperSubcycling<Scalar>::setInitialConditions(
   const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory)
-{ scIntegrator_->getStepper()->setInitialConditions(solutionHistory); }
+{
+  scIntegrator_->getStepper()->setInitialConditions(solutionHistory);
+  scIntegrator_->setSolutionHistory(solutionHistory);
+}
 
 
 template<class Scalar>
@@ -522,11 +527,34 @@ StepperSubcycling<Scalar>::getValidParameters() const
     "Error - StepperSubcycling<Scalar>::getValidParameters()\n"
     "  is not implemented yet.\n");
 
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Use FSAL", false);
-  pl->set<std::string>("Initial Condition Consistency", "None");
-  return pl;
+  return this->getValidParametersBasic();
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperSubcycling<Scalar> >
+createStepperSubcycling(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  auto stepper = Teuchos::rcp(new StepperSubcycling<Scalar>());
+
+  TEUCHOS_TEST_FOR_EXCEPTION(pl != Teuchos::null, std::logic_error,
+    "Error - Construction of StepperSubcycling with a ParameterList\n"
+    "is not implemented yet!\n");
+
+  if (pl != Teuchos::null) {
+    stepper->setStepperValues(pl);
+  }
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

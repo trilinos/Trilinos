@@ -10,8 +10,9 @@
 
 #include "../TestModels/DahlquistTestModel.hpp"
 
-#include "Tempus_StepperFactory.hpp"
 #include "Tempus_SolutionHistory.hpp"
+#include "Tempus_StepperRKButcherTableau.hpp"
+#include "Tempus_StepperRKBase.hpp"
 #include "Tempus_StepperRKModifierBase.hpp"
 #include "Tempus_StepperRKModifierXBase.hpp"
 

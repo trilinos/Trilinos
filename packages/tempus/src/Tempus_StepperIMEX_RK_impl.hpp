@@ -9,24 +9,46 @@
 #ifndef Tempus_StepperIMEX_RK_impl_hpp
 #define Tempus_StepperIMEX_RK_impl_hpp
 
-#include "Tempus_config.hpp"
-#include "Tempus_StepperFactory.hpp"
-#include "Tempus_WrapperModelEvaluatorPairIMEX_Basic.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
-#include "NOX_Thyra.H"
+
+#include "Tempus_StepperFactory.hpp"
+#include "Tempus_StepperRKButcherTableau.hpp"
 
 
 namespace Tempus {
 
-// Forward Declaration for recursive includes (this Stepper <--> StepperFactory)
-template<class Scalar> class StepperFactory;
-
 
 template<class Scalar>
-StepperIMEX_RK<Scalar>::StepperIMEX_RK()
+StepperIMEX_RK<Scalar>::StepperIMEX_RK(std::string stepperType)
 {
-  this->setStepperType(        "IMEX RK SSP2");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stepperType != "IMEX RK 1st order" &&
+    stepperType != "SSP1_111"          &&
+    stepperType != "IMEX RK SSP2"      &&
+    stepperType != "IMEX RK SSP3"      &&
+    stepperType != "SSP3_332"          &&
+    stepperType != "SSP2_222"          &&
+    stepperType != "SSP2_222_L"        &&
+    stepperType != "SSP2_222_A"        &&
+    stepperType != "IMEX RK ARS 233"   &&
+    stepperType != "ARS 233"           &&
+    stepperType != "General IMEX RK",       std::logic_error,
+    "  'Stepper Type' (='" + stepperType +"')\n"
+    "  does not match one of the types for this Stepper:\n"
+    "    'IMEX RK 1st order'\n"
+    "    'SSP1_111'\n"
+    "    'IMEX RK SSP2'\n"
+    "    'IMEX RK SSP3'\n"
+    "    'SSP3_332'\n"
+    "    'SSP2_222'\n"
+    "    'SSP2_222_L'\n"
+    "    'SSP2_222_A'\n"
+    "    'IMEX RK ARS 233'\n"
+    "    'ARS 233'\n"
+    "    'General IMEX RK'\n");
+
+  this->setStepperName(        stepperType);
+  this->setStepperType(        stepperType);
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
   this->setICConsistencyCheck( false);
@@ -34,7 +56,7 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK()
 
   this->setStageNumber(-1);
 
-  this->setTableaus("IMEX RK SSP2");
+  this->setTableaus(stepperType);
   this->setAppAction(Teuchos::null);
   this->setDefaultSolver();
 }
@@ -54,6 +76,33 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
   Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau,
   Scalar order)
 {
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    stepperType != "IMEX RK 1st order" &&
+    stepperType != "SSP1_111"          &&
+    stepperType != "IMEX RK SSP2"      &&
+    stepperType != "IMEX RK SSP3"      &&
+    stepperType != "SSP3_332"          &&
+    stepperType != "SSP2_222"          &&
+    stepperType != "SSP2_222_L"        &&
+    stepperType != "SSP2_222_A"        &&
+    stepperType != "IMEX RK ARS 233"   &&
+    stepperType != "ARS 233"           &&
+    stepperType != "General IMEX RK",       std::logic_error,
+    "  'Stepper Type' (='" + stepperType +"')\n"
+    "  does not match one of the types for this Stepper:\n"
+    "    'IMEX RK 1st order'\n"
+    "    'SSP1_111'\n"
+    "    'IMEX RK SSP2'\n"
+    "    'IMEX RK SSP3'\n"
+    "    'SSP3_332'\n"
+    "    'SSP2_222'\n"
+    "    'SSP2_222_L'\n"
+    "    'SSP2_222_A'\n"
+    "    'IMEX RK ARS 233'\n"
+    "    'ARS 233'\n"
+    "    'General IMEX RK'\n");
+
+  this->setStepperName(        stepperType);
   this->setStepperType(        stepperType);
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -62,8 +111,12 @@ StepperIMEX_RK<Scalar>::StepperIMEX_RK(
 
   this->setStageNumber(-1);
 
-  this->setExplicitTableau(explicitTableau);
-  this->setImplicitTableau(implicitTableau);
+  if ( stepperType == "General IMEX RK" ) {
+    this->setExplicitTableau(explicitTableau);
+    this->setImplicitTableau(implicitTableau);
+  } else {
+    this->setTableaus(stepperType);
+  }
   this->setOrder(order);
   this->setAppAction(stepperRKAppAction);
   this->setSolver(solver);
@@ -144,6 +197,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       this->setImplicitTableau(impTableau);
     }
+    this->setStepperName("IMEX RK 1st order");
     this->setStepperType("IMEX RK 1st order");
     this->setOrder(1);
 
@@ -204,7 +258,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       this->setImplicitTableau(impTableau);
     }
-    this->setStepperType("IMEX RK 1st order (SSP1_111)");
+    this->setStepperName("SSP1_111");
+    this->setStepperType("SSP1_111");
     this->setOrder(1);
 
   } else if (stepperType == "IMEX RK SSP2" || stepperType == "SSP2_222_L" ) {
@@ -217,6 +272,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     stepperSDIRK->setGammaType("2nd Order L-stable");
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
+    this->setStepperName("IMEX RK SSP2");
     this->setStepperType("IMEX RK SSP2");
     this->setOrder(2);
   } else if (stepperType == "SSP2_222" || stepperType == "SSP2_222_A" ) {
@@ -230,7 +286,8 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     stepperSDIRK->setGamma( 0.5 );
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
-    this->setStepperType("IMEX RK SSP2( A-Stable, gamma = 0.5) ");
+    this->setStepperName("SSP2_222");
+    this->setStepperType("SSP2_222");
     this->setOrder(2);
   } else if (stepperType == "IMEX RK SSP3" || stepperType == "SSP3_332" ) {
     // Explicit Tableau
@@ -241,6 +298,7 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_3Stage2ndOrder<Scalar>());
     this->setImplicitTableau(stepperSDIRK->getTableau());
 
+    this->setStepperName("IMEX RK SSP3");
     this->setStepperType("IMEX RK SSP3");
     this->setOrder(2);
   } else if (stepperType == "IMEX RK ARS 233" || stepperType == "ARS 233" ) {
@@ -293,12 +351,30 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
 
       this->setImplicitTableau(impTableau);
     }
+    this->setStepperName("IMEX RK ARS 233");
     this->setStepperType("IMEX RK ARS 233");
     this->setOrder(3);
 
   } else if (stepperType == "General IMEX RK") {
-    this->setExplicitTableau(explicitTableau);
-    this->setImplicitTableau(implicitTableau);
+
+    if (explicitTableau == Teuchos::null) {
+      // Default Explicit Tableau (i.e., IMEX RK SSP2)
+      auto stepperERK = Teuchos::rcp(new StepperERK_Trapezoidal<Scalar>());
+      this->setExplicitTableau(stepperERK->getTableau());
+    } else {
+      this->setExplicitTableau(explicitTableau);
+    }
+
+    if (explicitTableau == Teuchos::null) {
+      // Default Implicit Tableau (i.e., IMEX RK SSP2)
+      auto stepperSDIRK = Teuchos::rcp(new StepperSDIRK_2Stage3rdOrder<Scalar>());
+      stepperSDIRK->setGammaType("2nd Order L-stable");
+      this->setImplicitTableau(stepperSDIRK->getTableau());
+    } else {
+      this->setImplicitTableau(implicitTableau);
+    }
+
+    this->setStepperName("General IMEX RK");
     this->setStepperType("General IMEX RK");
     this->setOrder(1);
 
@@ -332,6 +408,62 @@ void StepperIMEX_RK<Scalar>::setTableaus(std::string stepperType,
     << "    number of stages = " << implicitTableau_->numStages() << "\n");
 
   this->isInitialized_ = false;
+}
+
+
+template<class Scalar>
+void
+StepperIMEX_RK<Scalar>::
+setTableaus(Teuchos::RCP<Teuchos::ParameterList> pl,
+            std::string stepperType)
+{
+  using Teuchos::RCP;
+  if (stepperType == "") {
+    if (pl == Teuchos::null)
+      stepperType = "IMEX RK SSP2";
+    else
+      stepperType = pl->get<std::string>("Stepper Type", "IMEX RK SSP2");
+  }
+
+  if (stepperType != "General IMEX RK") {
+    this->setTableaus(stepperType);
+  } else {
+    if (pl != Teuchos::null) {
+      Teuchos::RCP<const RKButcherTableau<Scalar> > explicitTableau;
+      Teuchos::RCP<const RKButcherTableau<Scalar> > implicitTableau;
+      if (pl->isSublist("IMEX-RK Explicit Stepper")) {
+        RCP<Teuchos::ParameterList> explicitPL = Teuchos::rcp(
+            new Teuchos::ParameterList(pl->sublist("IMEX-RK Explicit Stepper")));
+        auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
+        auto stepperTemp = sf->createStepper(explicitPL, Teuchos::null);
+        auto stepperERK = Teuchos::rcp_dynamic_cast<StepperExplicitRK<Scalar> > (
+                        stepperTemp,true);
+        TEUCHOS_TEST_FOR_EXCEPTION(stepperERK == Teuchos::null, std::logic_error,
+            "Error - The explicit component of a general IMEX RK stepper was not specified as an ExplicitRK stepper");
+        explicitTableau = stepperERK->getTableau();
+      }
+
+      if (pl->isSublist("IMEX-RK Implicit Stepper")) {
+        RCP<Teuchos::ParameterList> implicitPL = Teuchos::rcp(
+            new Teuchos::ParameterList(pl->sublist("IMEX-RK Implicit Stepper")));
+        auto sf = Teuchos::rcp(new StepperFactory<Scalar>());
+        auto stepperTemp = sf->createStepper(implicitPL, Teuchos::null);
+        auto stepperDIRK = Teuchos::rcp_dynamic_cast<StepperDIRK<Scalar> > (
+            stepperTemp,true);
+        TEUCHOS_TEST_FOR_EXCEPTION(stepperDIRK == Teuchos::null, std::logic_error,
+            "Error - The implicit component of a general IMEX RK stepper was not specified as an DIRK stepper");
+        implicitTableau = stepperDIRK->getTableau();
+      }
+
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        !(explicitTableau!=Teuchos::null && implicitTableau!=Teuchos::null), std::logic_error,
+        "Error - A parameter list was used to setup a general IMEX RK stepper, but did not "
+        "specify both an explicit and an implicit tableau!\n");
+
+      this->setTableaus(stepperType, explicitTableau, implicitTableau);
+      this->setOrder(pl->get<int>("overall order", 1));
+    }
+  }
 }
 
 
@@ -801,15 +933,47 @@ template<class Scalar>
 Teuchos::RCP<const Teuchos::ParameterList>
 StepperIMEX_RK<Scalar>::getValidParameters() const
 {
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<bool>("Initial Condition Consistency Check", false);
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+  pl->template set<int>("overall order", this->getOrder());
+
+  auto explicitStepper = Teuchos::rcp(new StepperERK_General<Scalar>());
+  explicitStepper->setTableau(
+    explicitTableau_->A(), explicitTableau_->b(), explicitTableau_->c(),
+    explicitTableau_->order(), explicitTableau_->orderMin(),
+    explicitTableau_->orderMax(), explicitTableau_->bstar() );
+  pl->set("IMEX-RK Explicit Stepper", *explicitStepper->getValidParameters());
+
+  auto implicitStepper = Teuchos::rcp(new StepperERK_General<Scalar>());
+  implicitStepper->setTableau(
+    implicitTableau_->A(), implicitTableau_->b(), implicitTableau_->c(),
+    implicitTableau_->order(), implicitTableau_->orderMin(),
+    implicitTableau_->orderMax(), implicitTableau_->bstar() );
+  pl->set("IMEX-RK Implicit Stepper", *implicitStepper->getValidParameters());
 
   return pl;
+}
+
+
+// Nonmember constructor - ModelEvaluator and ParameterList
+// ------------------------------------------------------------------------
+template<class Scalar>
+Teuchos::RCP<StepperIMEX_RK<Scalar> >
+createStepperIMEX_RK(
+  const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& model,
+  std::string stepperType,
+  Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+
+  auto stepper = Teuchos::rcp(new StepperIMEX_RK<Scalar>(stepperType));
+  stepper->setStepperImplicitValues(pl);
+  stepper->setTableaus(pl, stepperType);
+
+  if (model != Teuchos::null) {
+    stepper->setModel(model);
+    stepper->initialize();
+  }
+
+  return stepper;
 }
 
 

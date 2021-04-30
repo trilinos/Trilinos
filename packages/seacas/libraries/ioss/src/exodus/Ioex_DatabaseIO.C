@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -157,9 +157,10 @@ namespace Ioex {
       : Ioex::BaseDatabaseIO(region, filename, db_usage, communicator, props)
   {
     if (!is_input()) {
-      // Check whether appending to existing file...
+      // Check whether appending to or modify existing file...
       if (open_create_behavior() == Ioss::DB_APPEND ||
-          open_create_behavior() == Ioss::DB_APPEND_GROUP) {
+          open_create_behavior() == Ioss::DB_APPEND_GROUP ||
+          open_create_behavior() == Ioss::DB_MODIFY) {
         // Append to file if it already exists -- See if the file exists.
         Ioss::FileInfo file = Ioss::FileInfo(decoded_filename());
         fileExists          = file.exists();
@@ -963,23 +964,27 @@ namespace Ioex {
             Ioex::exodus_error(get_file_pointer(), __LINE__, __func__, __FILE__);
           }
 
-          if (map_count == 1 && Ioss::Utils::str_equal(names[0], "original_global_id_map")) {
-            int error = 0;
-            if ((ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) != 0) {
-              Ioss::Int64Vector tmp_map(entity_map.size());
-              error = ex_get_num_map(get_file_pointer(), entity_type, 1, tmp_map.data());
-              if (error >= 0) {
-                entity_map.set_map(tmp_map.data(), tmp_map.size(), 0, true);
-                map_read = true;
+          for (int i = 0; i < map_count; i++) {
+            if (Ioss::Utils::str_equal(names[i], "original_global_id_map")) {
+              int error = 0;
+              if ((ex_int64_status(get_file_pointer()) & EX_BULK_INT64_API) != 0) {
+                Ioss::Int64Vector tmp_map(entity_map.size());
+                error = ex_get_num_map(get_file_pointer(), entity_type, i + 1, tmp_map.data());
+                if (error >= 0) {
+                  entity_map.set_map(tmp_map.data(), tmp_map.size(), 0, true);
+                  map_read = true;
+                  break;
+                }
               }
-            }
-            else {
-              // Ioss stores as 64-bit, read as 32-bit and copy over...
-              Ioss::IntVector tmp_map(entity_map.size());
-              error = ex_get_num_map(get_file_pointer(), entity_type, 1, tmp_map.data());
-              if (error >= 0) {
-                entity_map.set_map(tmp_map.data(), tmp_map.size(), 0, true);
-                map_read = true;
+              else {
+                // Ioss stores as 64-bit, read as 32-bit and copy over...
+                Ioss::IntVector tmp_map(entity_map.size());
+                error = ex_get_num_map(get_file_pointer(), entity_type, i + 1, tmp_map.data());
+                if (error >= 0) {
+                  entity_map.set_map(tmp_map.data(), tmp_map.size(), 0, true);
+                  map_read = true;
+                  break;
+                }
               }
             }
           }
@@ -2911,7 +2916,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
                 entity_proc[j++] = pros[i];
               }
             }
-            else {
+            else { // "entity_processor_raw"
               for (int64_t i = 0; i < entity_count; i++) {
                 entity_proc[j++] = ents[i];
                 entity_proc[j++] = pros[i];
@@ -2933,7 +2938,7 @@ int64_t DatabaseIO::get_field_internal(const Ioss::CommSet *cs, const Ioss::Fiel
                 entity_proc[j++] = pros[i];
               }
             }
-            else {
+            else { // "entity_processor_raw"
               for (int64_t i = 0; i < entity_count; i++) {
                 entity_proc[j++] = ents[i];
                 entity_proc[j++] = pros[i];
@@ -5326,10 +5331,10 @@ int64_t DatabaseIO::put_field_internal(const Ioss::SideBlock *fb, const Ioss::Fi
   return num_to_get;
 }
 
-void DatabaseIO::write_meta_data(bool appending)
+void DatabaseIO::write_meta_data(Ioss::IfDatabaseExistsBehavior behavior)
 {
   Ioss::Region *region = get_region();
-  common_write_meta_data();
+  common_write_meta_data(behavior);
 
   char the_title[max_line_length + 1];
 
@@ -5345,11 +5350,29 @@ void DatabaseIO::write_meta_data(bool appending)
   bool       file_per_processor = true;
   Ioex::Mesh mesh(spatialDimension, the_title, util(), file_per_processor);
   {
+    bool omit_maps = false;
+    Ioss::Utils::check_set_bool_property(properties, "OMIT_EXODUS_NUM_MAPS", omit_maps);
+    if (omit_maps) {
+      // Used for special cases only -- typically very large meshes with *known* 1..count maps
+      // and workarounds that avoid calling the "ids" put_field calls.
+      mesh.use_node_map = false;
+      mesh.use_elem_map = false;
+      mesh.use_face_map = false;
+      mesh.use_edge_map = false;
+    }
+
+    bool minimal_nemesis = false;
+    Ioss::Utils::check_set_bool_property(properties, "MINIMAL_NEMESIS_DATA", minimal_nemesis);
+    if (minimal_nemesis) {
+      // Only output the node communication map data... This is all that stk/sierra needs
+      mesh.full_nemesis_data = false;
+    }
+
     Ioss::SerializeIO serializeIO__(this);
     mesh.populate(region);
     gather_communication_metadata(&mesh.comm);
 
-    if (!appending) {
+    if (behavior != Ioss::DB_APPEND && behavior != Ioss::DB_MODIFY) {
       if (!properties.exists("OMIT_QA_RECORDS")) {
         put_qa();
       }

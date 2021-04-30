@@ -13,6 +13,7 @@
 #include <string>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Tempus_config.hpp"
 
 namespace Tempus {
 

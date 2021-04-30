@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -310,4 +310,40 @@ Ioss::ElementTopology *Ioss::ElementTopology::boundary_type(int bnd_number) cons
     }
   }
   return nullptr;
+}
+
+bool Ioss::ElementTopology::equal_(const Ioss::ElementTopology &rhs, bool quiet) const
+{
+  if (this->name_.compare(rhs.name_) != 0) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "Element Topology: NAME mismatch ({} vs. {})\n",
+                 this->name_.c_str(), rhs.name_.c_str());
+    }
+    return false;
+  }
+
+  if (this->masterElementName_.compare(rhs.masterElementName_) != 0) {
+    if (!quiet) {
+      fmt::print(Ioss::OUTPUT(), "Element Topology: MASTER ELEMENT NAME mismatch ({} vs. {})\n",
+                 this->masterElementName_.c_str(), rhs.masterElementName_.c_str());
+    }
+    return false;
+  }
+
+  return true;
+}
+
+bool Ioss::ElementTopology::operator==(const Ioss::ElementTopology &rhs) const
+{
+  return equal_(rhs, true);
+}
+
+bool Ioss::ElementTopology::operator!=(const Ioss::ElementTopology &rhs) const
+{
+  return !(*this == rhs);
+}
+
+bool Ioss::ElementTopology::equal(const Ioss::ElementTopology &rhs) const
+{
+  return equal_(rhs, false);
 }

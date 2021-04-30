@@ -9,6 +9,7 @@
 #ifndef Tempus_IntegratorObserverLogging_decl_hpp
 #define Tempus_IntegratorObserverLogging_decl_hpp
 
+#include "Tempus_config.hpp"
 #include "Tempus_IntegratorObserver.hpp"
 #include <list>
 

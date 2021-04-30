@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -496,6 +496,17 @@ void NemSpread<T, INT>::write_parExo_data(int mesh_exoid, int max_name_length, i
 
   PIO_Time_Array[8] = (second() - tt1);
   total_out_time += PIO_Time_Array[8];
+
+  /* Output the assembly information (if any). This puts the
+     file in/out of define mode, so should be early in the write stage
+  */
+  if (Debug_Flag >= 4) {
+    fmt::print("Number of Assemblies: {}\n", globals.Num_Assemblies);
+  }
+
+  if (globals.Num_Assemblies > 0) {
+    ex_put_assemblies(mesh_exoid, globals.Assemblies.size(), globals.Assemblies.data());
+  }
 
   /* Output the coordinate frame information (if any). This puts the
      file in/out of define mode, so should be early in the write stage

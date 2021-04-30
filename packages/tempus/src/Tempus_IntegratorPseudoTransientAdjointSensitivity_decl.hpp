@@ -9,9 +9,10 @@
 #ifndef Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 #define Tempus_IntegratorPseudoTransientAdjointSensitivity_decl_hpp
 
-// Tempus
-#include "Tempus_IntegratorBasic.hpp"
+#include "Tempus_config.hpp"
+#include "Tempus_IntegratorBasicOld.hpp"
 #include "Tempus_AdjointSensitivityModelEvaluator.hpp"
+
 
 namespace Tempus {
 
@@ -48,8 +49,9 @@ namespace Tempus {
  * (since the eigenvalues of df/dx^T are the same as df/dx).
  */
 template<class Scalar>
-class IntegratorPseudoTransientAdjointSensitivity :
-    virtual public Tempus::Integrator<Scalar>
+class IntegratorPseudoTransientAdjointSensitivity
+  : virtual public Tempus::Integrator<Scalar>,
+    virtual public Teuchos::ParameterListAcceptor
 {
 public:
 
@@ -169,8 +171,8 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<AdjointSensitivityModelEvaluator<Scalar> > sens_model_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasic<Scalar> > sens_integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasicOld<Scalar> > sens_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
   Teuchos::RCP<DMVPV> dgdp_;
 };

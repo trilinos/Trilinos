@@ -134,9 +134,13 @@
           
 \cbb{aggregate qualities: percentiles}{Array(double)}{{}}{Percentiles of aggregate qualities to report (in a [0,1] range).}
           
+\cbb{aggregate qualities: mode}{string}{eigenvalue}{Whether to compute eigenvalues (``eigenvalue''),
+      aggregates sizes (``size'') or
+      both (``both'').}
+          
 \cba{export data}{\parameterlist}{Exporting a subset of the hierarchy data in a
       file. Currently, the list can contain any of the following parameter
-      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'') of type \texttt{string}
+      names (``A'', ``P'', ``R'', ``Nullspace'', ``Coordinates'', ``Aggregates'') of type \texttt{string}
       and value ``\{levels separated by commas\}''. A
       matrix/multivector with a name ``X'' is saved in two or three
       three MatrixMarket files: a) data is saved in

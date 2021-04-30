@@ -1,4 +1,4 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -47,7 +47,7 @@ C      --A - the dynamic memory base array
       integer cpuws, iows
       LOGICAL MDEBUG
 
-      data (qainfo(i), i=1,3) / 'ex2ex1v2', '20201001', 'v 2.09  ' /
+      data (qainfo(i), i=1,3) / 'ex2ex1v2', '20210128', 'v 2.10  ' /
       data cpuws, iows /0,0/
 
       CALL STRTUP (QAINFO)
@@ -747,7 +747,7 @@ c       close all files
 
       CLOSE (NDB, IOSTAT=IDUM)
 
-      if (netid .ge. 0 ) call exclos (netid, ierr)
+      if (netid .gt. 0 ) call exclos (netid, ierr)
 
       call addlog (QAINFO(1)(:lenstr(QAINFO(1))))
       CALL WRAPUP (QAINFO(1))

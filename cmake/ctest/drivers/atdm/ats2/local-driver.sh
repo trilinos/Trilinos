@@ -23,7 +23,11 @@ if atdm_match_buildname_keyword xl ; then
   fi
   # Only enable the SPARC packages by default
   export ATDM_CONFIG_CONFIGURE_OPTIONS_FILES=cmake/std/atdm/ATDMDevEnv.cmake,cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake
-  export Trilinos_PACKAGE_ENABLES_FILE=$WORKSPACE/Trilinos/cmake/std/atdm/apps/sparc/SPARCTrilinosPackagesEnables.cmake
+
+  # Ensure that we don't set both Trilinos_PACKAGES and Trilinos_PACKAGE_ENABLES_FILE
+  if [ -z $Trilinos_PACKAGES ]; then
+      export Trilinos_PACKAGE_ENABLES_FILE=$WORKSPACE/Trilinos/cmake/std/atdm/apps/sparc/SPARCMiniTrilinosPackagesEnables.cmake
+  fi
 fi
 
 # Allow default setting for TPETRA_ASSUME_CUDA_AWARE_MPI=0 in trilinos_jsrun

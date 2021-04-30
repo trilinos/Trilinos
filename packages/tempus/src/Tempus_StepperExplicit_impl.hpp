@@ -9,6 +9,8 @@
 #ifndef Tempus_StepperExplicit_impl_hpp
 #define Tempus_StepperExplicit_impl_hpp
 
+#include "Thyra_VectorStdOps.hpp"
+
 
 namespace Tempus {
 
@@ -335,6 +337,17 @@ bool StepperExplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
   }
 
   return isValidSetup;
+}
+
+
+template<class Scalar>
+void StepperExplicit<Scalar>::
+setStepperExplicitValues(Teuchos::RCP<Teuchos::ParameterList> pl)
+{
+  if (pl != Teuchos::null) {
+    pl->validateParametersAndSetDefaults(*this->getValidParameters(), 0);
+    this->setStepperValues(pl);
+  }
 }
 
 

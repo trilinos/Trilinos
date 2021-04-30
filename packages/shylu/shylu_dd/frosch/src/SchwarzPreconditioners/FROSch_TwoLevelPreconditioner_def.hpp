@@ -192,9 +192,9 @@ namespace FROSch {
         if (!this->ParameterList_->get("CoarseOperator Type","IPOUHarmonicCoarseOperator").compare("IPOUHarmonicCoarseOperator")) {
             // Build Null Space
             if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Laplace")) {
-                nullSpaceBasis = BuildNullSpace<SC,LO,GO,NO>(dimension,LaplaceNullSpace,repeatedMap,dofsPerNode,dofsMaps);
+                nullSpaceBasis = BuildNullSpace<SC,LO,GO,NO>(dimension,NullSpaceType::Laplace,repeatedMap,dofsPerNode,dofsMaps);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Linear Elasticity")) {
-                nullSpaceBasis = BuildNullSpace(dimension,LinearElasticityNullSpace,repeatedMap,dofsPerNode,dofsMaps,nodeList);
+                nullSpaceBasis = BuildNullSpace(dimension,NullSpaceType::Elasticity,repeatedMap,dofsPerNode,dofsMaps,nodeList);
             } else if (!this->ParameterList_->get("Null Space Type","Laplace").compare("Input")) {
                 FROSCH_ASSERT(!nullSpaceBasis.is_null(),"Null Space Type is 'Input', but nullSpaceBasis.is_null().");
                 ConstXMapPtr nullSpaceBasisMap = nullSpaceBasis->getMap();

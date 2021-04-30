@@ -64,4 +64,7 @@
 /* Whether to enable status prints */
 #cmakedefine PRINT_STATUS
 
+/* Whether to have time monitor */
+#cmakedefine ADELUS_HAVE_TIME_MONITOR
+
 #endif // ADELUS_CONFIG_H

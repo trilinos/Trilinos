@@ -185,7 +185,8 @@ public:
     Real err1 = quad_->error(val_-(*xstat)[0],1);
     Real err2 = quad_->error(val_-(*xstat)[0],2);
     getGradient(*xvec,tol);
-    Real gv   = vvec->dot(g_->dual());
+    //Real gv   = vvec->dot(g_->dual());
+    Real gv   = vvec->apply(*g_);
     obj_->hessVec(*hvec,*vvec,*xvec,tol);
     hvec->scale(err1); hvec->axpy(err2*(gv-(*vstat)[0]),*g_);
     (*hstat)[0] = err2*((*vstat)[0]-gv);

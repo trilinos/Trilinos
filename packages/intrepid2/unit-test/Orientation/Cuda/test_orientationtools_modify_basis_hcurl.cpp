@@ -60,11 +60,12 @@ int main(int argc, char *argv[]) {
   Kokkos::initialize();
   
   int r_val = 0;
+  using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>;
 
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<Kokkos::Cuda>, Kokkos::Cuda>(verbose);
-  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HCURL<Kokkos::Cuda>(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_QUAD_HCURL<Intrepid2::Basis_HCURL_QUAD_In_FEM<device_type >, device_type>(verbose);
+  r_val += Intrepid2::Test::OrientationToolsModifyBasis_HEX_HCURL<device_type >(verbose);
 
-  //r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HCURL<Intrepid2::Basis_HCURL_TRI_In_FEM<Kokkos::Cuda>, Kokkos::Cuda>(verbose);  
+  //r_val += Intrepid2::Test::OrientationToolsModifyBasis_TRI_HCURL<Intrepid2::Basis_HCURL_TRI_In_FEM<device_type>, device_type>(verbose);  
 
   Kokkos::finalize();
   return r_val;

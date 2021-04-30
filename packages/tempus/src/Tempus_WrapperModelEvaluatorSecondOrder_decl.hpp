@@ -10,9 +10,10 @@
 #define Tempus_WrapperModelEvaluatorSecondOrder_decl_hpp
 
 #include <functional>
+#include "Tempus_config.hpp"
 #include "Tempus_WrapperModelEvaluator.hpp"
 #include "Thyra_VectorBase.hpp"
-#include "Thyra_VectorStdOps.hpp"
+
 
 //#define VERBOSE_DEBUG_OUTPUT
 

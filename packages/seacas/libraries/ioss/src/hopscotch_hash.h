@@ -177,8 +177,8 @@ class hopscotch_bucket_hash {
 template <>
 class hopscotch_bucket_hash<true> {
  public:
-  bool bucket_hash_equal(std::size_t hash) const noexcept {
-    return m_hash == truncated_hash_type(hash);
+  bool bucket_hash_equal(std::size_t my_hash) const noexcept {
+    return m_hash == truncated_hash_type(my_hash);
   }
 
   truncated_hash_type truncated_bucket_hash() const noexcept { return m_hash; }
@@ -188,7 +188,7 @@ class hopscotch_bucket_hash<true> {
     m_hash = bucket.m_hash;
   }
 
-  void set_hash(truncated_hash_type hash) noexcept { m_hash = hash; }
+  void set_hash(truncated_hash_type my_hash) noexcept { m_hash = my_hash; }
 
  private:
   truncated_hash_type m_hash;
@@ -318,14 +318,14 @@ class hopscotch_bucket : public hopscotch_bucket_hash<StoreHash> {
   }
 
   template <typename... Args>
-  void set_value_of_empty_bucket(truncated_hash_type hash,
+  void set_value_of_empty_bucket(truncated_hash_type my_hash,
                                  Args&&... value_type_args) {
     tsl_hh_assert(empty());
 
     ::new (static_cast<void*>(std::addressof(m_value)))
         value_type(std::forward<Args>(value_type_args)...);
     set_empty(false);
-    this->set_hash(hash);
+    this->set_hash(my_hash);
   }
 
   void swap_value_into_empty_bucket(hopscotch_bucket& empty_bucket) {
@@ -357,8 +357,8 @@ class hopscotch_bucket : public hopscotch_bucket_hash<StoreHash> {
     tsl_hh_assert(empty());
   }
 
-  static truncated_hash_type truncate_hash(std::size_t hash) noexcept {
-    return truncated_hash_type(hash);
+  static truncated_hash_type truncate_hash(std::size_t my_hash) noexcept {
+    return truncated_hash_type(my_hash);
   }
 
  private:
@@ -1734,7 +1734,7 @@ class hopscotch_hash : private Hash, private KeyEqual, private GrowthPolicy {
       if ((neighborhood_infos & 1) == 1) {
         // Check StoreHash before calling bucket_hash_equal. Functionally it
         // doesn't change anythin. If StoreHash is false, bucket_hash_equal is a
-        // no-op. Avoiding the call is there to help GCC optimizes `hash`
+        // no-op. Avoiding the call is there to help GCC optimizes `my_hash`
         // parameter away, it seems to not be able to do without this hint.
         if ((!StoreHash || bucket_for_hash->bucket_hash_equal(my_hash)) &&
             compare_keys(KeySelect()(bucket_for_hash->value()), key)) {

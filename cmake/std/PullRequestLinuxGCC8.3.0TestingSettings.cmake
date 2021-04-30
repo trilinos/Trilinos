@@ -6,6 +6,8 @@
 
 # Usage: cmake -C PullRequestLinuxGCC8.3.0TestingSettings.cmake
 
+set (CMAKE_CXX_STANDARD "17" CACHE STRING "Set C++ standard to C++17")
+
 # Misc options typically added by CI testing mode in TriBITS
 
 # Use the below option only when submitting to the dashboard

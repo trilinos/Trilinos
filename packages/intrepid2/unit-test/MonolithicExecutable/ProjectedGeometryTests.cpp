@@ -64,12 +64,12 @@ namespace
 {
   using namespace Intrepid2;
 
-  template<typename PointScalar, typename ExecutionSpace>
+  template<typename PointScalar, typename DeviceType>
   void testCircularGeometryProjectionConvergesInP(int meshWidth, Teuchos::FancyOStream &out, bool &success)
   {
     constexpr int spaceDim = 2;
-    using BasisFamily = DerivedNodalBasisFamily<ExecutionSpace,PointScalar,PointScalar>;
-    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,ExecutionSpace>;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
+    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     
     constexpr PointScalar R = 1.0; // unit circle centered at origin
     constexpr PointScalar exactArea = M_PI * R * R;
@@ -89,12 +89,12 @@ namespace
       numCells *= meshWidth;
     }
     
-    CellGeometry<PointScalar, spaceDim> flatCellGeometry(origin,extent,cellCount);
+    CellGeometry<PointScalar, spaceDim, DeviceType> flatCellGeometry(origin,extent,cellCount);
     shards::CellTopology cellTopo = flatCellGeometry.cellTopology();
     
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<ExecutionSpace>(cellTopo,Intrepid2::Parameters::MaxOrder);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,Intrepid2::Parameters::MaxOrder);
     auto cubatureWeights = cubature->allocateCubatureWeights();
-    TensorPoints<PointScalar,ExecutionSpace> cubaturePoints  = cubature->allocateCubaturePoints();
+    TensorPoints<PointScalar,DeviceType> cubaturePoints  = cubature->allocateCubaturePoints();
     cubature->getCubature(cubaturePoints, cubatureWeights);
     
     const int numPoints = cubaturePoints.extent_int(0);
@@ -106,14 +106,14 @@ namespace
       
       const int nodesPerCell = basisForNodes->getCardinality();
       
-      ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
+      ViewType<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
       
       ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, basisForNodes, flatCellGeometry, circularGeometry, circularGeometry);
 
-      CellGeometry<PointScalar, spaceDim> projectedGeometry(basisForNodes,projectedNodes);
+      CellGeometry<PointScalar, spaceDim, DeviceType> projectedGeometry(basisForNodes,projectedNodes);
 
       auto jacobian = projectedGeometry.allocateJacobianData(cubaturePoints);
-      auto jacobianDet = CellTools<ExecutionSpace>::allocateJacobianDet(jacobian);
+      auto jacobianDet = CellTools<DeviceType>::allocateJacobianDet(jacobian);
       
       // sanity checks on the allocations:
       TEST_EQUALITY(numCells,  jacobian.extent_int(0));
@@ -123,13 +123,15 @@ namespace
       TEST_EQUALITY(numCells,  jacobianDet.extent_int(0));
       TEST_EQUALITY(numPoints, jacobianDet.extent_int(1));
       
-      projectedGeometry.setJacobian(jacobian, cubaturePoints);
-      CellTools<ExecutionSpace>::setJacobianDet(jacobianDet, jacobian);
+      auto refData = projectedGeometry.getJacobianRefData(cubaturePoints);
+      projectedGeometry.setJacobian(jacobian, cubaturePoints, refData);
+      CellTools<DeviceType>::setJacobianDet(jacobianDet, jacobian);
       
       auto cellMeasure = projectedGeometry.allocateCellMeasure(jacobianDet, cubatureWeights);
       projectedGeometry.computeCellMeasure(cellMeasure, jacobianDet, cubatureWeights);
           
       PointScalar actualArea = 0;
+      using ExecutionSpace = typename DeviceType::execution_space;
       Kokkos::RangePolicy<ExecutionSpace > reducePolicy(0, numCells);
       Kokkos::parallel_reduce( reducePolicy,
       KOKKOS_LAMBDA( const int &cellOrdinal, PointScalar &reducedValue )
@@ -149,7 +151,7 @@ namespace
     }
   }
 
-  template<typename PointScalar, int spaceDim, typename ExecutionSpace>
+  template<typename PointScalar, int spaceDim, typename DeviceType>
   void testLinearGeometryIsExact(int meshWidth, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
@@ -164,7 +166,7 @@ namespace
       cellCount[d] = meshWidth;
     }
     
-    CellGeometry<PointScalar, spaceDim> flatCellGeometry(origin,extent,cellCount);
+    CellGeometry<PointScalar, spaceDim, DeviceType> flatCellGeometry(origin,extent,cellCount);
     auto linearBasis = flatCellGeometry.basisForNodes();
     
     ProjectedGeometryIdentityMap<PointScalar, spaceDim> exactGeometry;
@@ -176,16 +178,16 @@ namespace
     }
     const int nodesPerCell = linearBasis->getCardinality();
     
-    ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
+    ViewType<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
     
-    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,ExecutionSpace>;
+    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, linearBasis, flatCellGeometry, exactGeometry, exactGeometry);
     
     printFunctor3(projectedNodes, out, "projectedNodes");
     testFloatingEquality3(projectedNodes, flatCellGeometry, relTol, absTol, out, success, "projected geometry", "original CellGeometry");
   }
 
-  template<typename PointScalar, int spaceDim, typename ExecutionSpace>
+  template<typename PointScalar, int spaceDim, typename DeviceType>
   void testLinearGeometryIsExact(int meshWidth, int polyOrderForBasis, const double &relTol, const double &absTol,
                                  Teuchos::FancyOStream &out, bool &success)
   {
@@ -200,11 +202,11 @@ namespace
       cellCount[d] = meshWidth;
     }
     
-    CellGeometry<PointScalar, spaceDim> flatCellGeometry(origin,extent,cellCount);
+    CellGeometry<PointScalar, spaceDim,DeviceType> flatCellGeometry(origin,extent,cellCount);
     
-    using BasisPtr = Teuchos::RCP< Basis<ExecutionSpace,PointScalar,PointScalar> >;
+    using BasisPtr = Teuchos::RCP< Basis<DeviceType,PointScalar,PointScalar> >;
     
-    using BasisFamily = DerivedNodalBasisFamily<ExecutionSpace,PointScalar,PointScalar>;
+    using BasisFamily = DerivedNodalBasisFamily<DeviceType,PointScalar,PointScalar>;
     BasisPtr hgradBasisForProjection = getBasis<BasisFamily>(flatCellGeometry.cellTopology(), FUNCTION_SPACE_HGRAD, polyOrderForBasis);
     
     ProjectedGeometryIdentityMap<PointScalar, spaceDim> exactGeometry;
@@ -215,28 +217,29 @@ namespace
       numCells *= meshWidth;
     }
     const int nodesPerCell = hgradBasisForProjection->getCardinality();
-    ViewType<PointScalar> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
+    ViewType<PointScalar,DeviceType> projectedNodes("projected nodes", numCells, nodesPerCell, spaceDim);
     
-    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,ExecutionSpace>;
+    using ProjectedGeometry = ProjectedGeometry<spaceDim,PointScalar,DeviceType>;
     ProjectedGeometry::projectOntoHGRADBasis(projectedNodes, hgradBasisForProjection, flatCellGeometry, exactGeometry, exactGeometry);
     
     auto cellTopo = flatCellGeometry.cellTopology();
     
     // get reference-element points at which we can evaluate the projected basis
     const int numNodesPerFlatCell = flatCellGeometry.numNodesPerCell();
-    ScalarView<PointScalar,ExecutionSpace> refCellNodes("ref cell nodes", numNodesPerFlatCell, spaceDim);
+    ScalarView<PointScalar,DeviceType> refCellNodes("ref cell nodes", numNodesPerFlatCell, spaceDim);
     
     for (int node=0; node<numNodesPerFlatCell; node++)
     {
       auto nodeSubview = Kokkos::subdynrankview(refCellNodes, node, Kokkos::ALL());
-      CellTools<ExecutionSpace>::getReferenceNode(nodeSubview, cellTopo, node);
+      CellTools<DeviceType>::getReferenceNode(nodeSubview, cellTopo, node);
     }
     
     auto hgradValuesAtNodes = hgradBasisForProjection->allocateOutputView(numNodesPerFlatCell);
     hgradBasisForProjection->getValues(hgradValuesAtNodes, refCellNodes, OPERATOR_VALUE);
 
-    ViewType<PointScalar> evaluatedNodes("projected nodes evaluated on flat cell", numCells, numNodesPerFlatCell, spaceDim);
+    ViewType<PointScalar,DeviceType> evaluatedNodes("projected nodes evaluated on flat cell", numCells, numNodesPerFlatCell, spaceDim);
     
+    using ExecutionSpace = typename DeviceType::execution_space;
     auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numCells,numNodesPerFlatCell});
     Kokkos::parallel_for("evaluate projected nodes", policy,
     KOKKOS_LAMBDA (const int &cellOrdinal, const int &nodeOrdinalInFlatCell) {
@@ -258,10 +261,10 @@ namespace
     printFunctor3(evaluatedNodes, out, "evaluatedNodes");
     
     // need to use "classic" node ordering for the comparison below because the refCellNodes above use the classic node ordering
-    auto subdivisionStrategy = CellGeometry<PointScalar, spaceDim>::NO_SUBDIVISION;
-    auto nodeOrdering = CellGeometry<PointScalar, spaceDim>::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
+    auto subdivisionStrategy = CellGeometry<PointScalar, spaceDim, DeviceType>::NO_SUBDIVISION;
+    auto nodeOrdering = CellGeometry<PointScalar, spaceDim, DeviceType>::HYPERCUBE_NODE_ORDER_CLASSIC_SHARDS;
     
-    CellGeometry<PointScalar, spaceDim> flatCellGeometryClassic(origin,extent,cellCount, subdivisionStrategy, nodeOrdering);
+    CellGeometry<PointScalar, spaceDim, DeviceType> flatCellGeometryClassic(origin,extent,cellCount, subdivisionStrategy, nodeOrdering);
     
     testFloatingEquality3(evaluatedNodes, flatCellGeometryClassic, relTol, absTol, out, success, "projected geometry", "original CellGeometry");
   }
@@ -269,9 +272,9 @@ namespace
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_SingleCell )
   {
     using Scalar = double;
-    using ExecSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     const int meshWidth = 1;
-    testCircularGeometryProjectionConvergesInP<Scalar, ExecSpace>(meshWidth, out, success);
+    testCircularGeometryProjectionConvergesInP<Scalar, DeviceType>(meshWidth, out, success);
   }
 
   TEUCHOS_UNIT_TEST( ProjectedGeometry, CircularGeometryConvergesInP_MultiCell )

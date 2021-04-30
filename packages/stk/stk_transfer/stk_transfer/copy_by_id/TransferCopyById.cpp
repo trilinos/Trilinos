@@ -118,47 +118,54 @@ void TransferCopyById::pack_fields(const int target_proc, const Mesh_ID key, Com
   }
 }
 
-void TransferCopyById::send_fields(CommSparse& commSparse)
+void TransferCopyById::initialize_commsparse_buffers()
 {
-  const ParallelMachine comm = m_mesha.comm();
-  const int my_proc = parallel_machine_rank(comm);
+  pack_commsparse();
+  m_commSparse.allocate_buffers();
+}
 
-  for (int phase=0;phase<2;++phase) {
-    KeyToTargetProcessor::const_iterator map_it = m_key_to_target_processor.begin();
+void TransferCopyById::pack_commsparse()
+{
+  const int myProc = m_commSparse.parallel_rank();
 
-    for ( ; map_it!=m_key_to_target_processor.end() ;  ++map_it) {
-      const Mesh_ID key = map_it->first;
-      const int target_proc = map_it->second;
-
-      if (target_proc == my_proc) {
-        if (0 == phase) {
-          local_copy(key);
-        }
-        continue;
-      }
-      pack_fields(target_proc, key, commSparse);
-    }
-
-    if (phase == 0) {
-      commSparse.allocate_buffers();
-    } else {
-      commSparse.communicate();
+  for (const auto & k2tEntry : m_key_to_target_processor) {
+    const int targetProc = k2tEntry.second;
+    if (targetProc != myProc) {
+      const Mesh_ID key = k2tEntry.first;
+      pack_fields(targetProc, key, m_commSparse);
     }
   }
 }
 
-void TransferCopyById::unpack_and_copy_fields(const int recv_proc, CommSparse& commSparse, CopyTransferUnpackInfo& unpackInfo)
+void TransferCopyById::pack_send_fields(CommSparse& commSparse)
+{
+  const ParallelMachine comm = m_mesha.comm();
+  const int my_proc = parallel_machine_rank(comm);
+
+  for (const auto & k2tEntry : m_key_to_target_processor) {
+    const Mesh_ID key = k2tEntry.first;
+    const int target_proc = k2tEntry.second;
+
+    if (target_proc == my_proc) {
+      local_copy(key);
+      continue;
+    }
+    pack_fields(target_proc, key, commSparse);
+  }
+}
+
+void TransferCopyById::unpack_and_copy_fields(CommBuffer& recvBuffer, CopyTransferUnpackInfo& unpackInfo)
 {
   unsigned fsize = std::min(unpackInfo.fieldSize, unpackInfo.sentDataTypeKey);
   unpackInfo.buffer.resize(unpackInfo.sentDataTypeKey);
 
   for (unsigned index = 0 ; index < unpackInfo.sentDataTypeKey; ++index) {
-    commSparse.recv_buffer(recv_proc).unpack<uint8_t>(unpackInfo.buffer[index]);
+    recvBuffer.unpack<uint8_t>(unpackInfo.buffer[index]);
   }
   std::memcpy(unpackInfo.fieldData, unpackInfo.buffer.data(), fsize);
 }
 
-void TransferCopyById::unpack_and_copy_fields_with_compatibility(const int recv_proc, CommSparse& commSparse, CopyTransferUnpackInfo& unpackInfo)
+void TransferCopyById::unpack_and_copy_fields_with_compatibility(CommBuffer& recvBuffer, CopyTransferUnpackInfo& unpackInfo)
 {
   DataTypeKey unpackedData(unpackInfo.sentDataTypeKey);
   DataTypeKey::data_t sentDataType = unpackedData.get_data_type();
@@ -167,59 +174,59 @@ void TransferCopyById::unpack_and_copy_fields_with_compatibility(const int recv_
   unpackInfo.buffer.resize(remoteFieldSize);
 
   for(unsigned index = 0 ; index < remoteFieldSize; ++index) {
-    commSparse.recv_buffer(recv_proc).unpack<uint8_t>(unpackInfo.buffer[index]);
+    recvBuffer.unpack<uint8_t>(unpackInfo.buffer[index]);
   }
   m_dataTranslators[sentDataType]->translate(unpackInfo.buffer.data(), remoteFieldSize, m_recvFieldDataTypes[unpackInfo.fieldIndex], 
                                              unpackInfo.fieldData, unpackInfo.fieldSize);
 }
 
-void TransferCopyById::unpack_fields(MeshIDSet& remote_keys, const int recv_proc, CommSparse& commSparse)
+void TransferCopyById::unpack_fields(MeshIDSet & remoteKeys, const int recv_proc, CommBuffer& recvBuffer)
 {
   Mesh_ID key;
   std::vector<uint8_t> tmpBuffer;
-  const int my_proc = parallel_machine_rank(m_mesha.comm());
-  commSparse.recv_buffer(recv_proc).unpack<Mesh_ID>(key);
+  recvBuffer.unpack<Mesh_ID>(key);
 
-  if(remote_keys.find(key) == remote_keys.end()) {
+  if(remoteKeys.find(key) == remoteKeys.end()) {
     ++m_errorCount;
+    const int my_proc = parallel_machine_rank(m_mesha.comm());
     m_errorMsg << "P" << my_proc << " Error, proc = " << recv_proc << " sent unrequested data for key = " << key << std::endl;
   } else {
-    remote_keys.erase(key);
+    remoteKeys.erase(key);
   }
   for(unsigned f=0 ; f<m_numFields ; ++f) {
     uint8_t * f_data = reinterpret_cast<uint8_t*>(m_meshb.field_data(key,f));
     unsigned sentDataTypeKey = 0;
 
-    commSparse.recv_buffer(recv_proc).unpack<unsigned>(sentDataTypeKey);
+    recvBuffer.unpack<unsigned>(sentDataTypeKey);
 
     CopyTransferUnpackInfo unpackInfo(tmpBuffer, f_data, sentDataTypeKey, m_meshb.field_data_size(key,f), f);
 
     if(m_fieldCompatibility[f]) {
-      unpack_and_copy_fields(recv_proc, commSparse, unpackInfo);
+      unpack_and_copy_fields(recvBuffer, unpackInfo);
     } else {
-      unpack_and_copy_fields_with_compatibility(recv_proc, commSparse, unpackInfo); 
+      unpack_and_copy_fields_with_compatibility(recvBuffer, unpackInfo); 
     }
   }
 }
 
-void TransferCopyById::receive_fields(CommSparse& commSparse)
+void TransferCopyById::receive_fields(MeshIDSet & remoteKeys)
+{
+  for(int fromProc=0; fromProc<m_commSparse.parallel_size(); ++fromProc) {
+    stk::CommBuffer& recvBuffer = m_commSparse.recv_buffer(fromProc);
+    while(recvBuffer.remaining()) {
+      unpack_fields(remoteKeys, fromProc, recvBuffer);
+    }
+  }
+}
+
+void TransferCopyById::check_received_keys(MeshIDSet & remoteKeys)
 {
   const ParallelMachine comm = m_mesha.comm();
   const int my_proc = parallel_machine_rank(comm);
-  const int num_proc = parallel_machine_size(comm);
 
-  MeshIDSet remote_keys = m_search.get_remote_keys();
-
-  for(int recv_proc=0;recv_proc<num_proc;++recv_proc) {
-    if( my_proc != recv_proc ) {
-      while(commSparse.recv_buffer(recv_proc).remaining()) {
-        unpack_fields(remote_keys, recv_proc, commSparse);
-      }
-    }
-  }
-  if(!remote_keys.empty()) {
+  if(!remoteKeys.empty()) {
     m_errorMsg << "P" << my_proc << " Error, Did not receive all the requested keys from other processors, unfulfilled keys = [";
-    for(MeshIDSet::const_iterator set_it=remote_keys.begin() ; set_it != remote_keys.end() ; ++set_it) {
+    for(MeshIDSet::const_iterator set_it=remoteKeys.begin() ; set_it != remoteKeys.end() ; ++set_it) {
       m_errorMsg << m_meshb.print_mesh_id(*set_it) << " ";
     }
     m_errorMsg << "]" << std::endl;
@@ -234,13 +241,25 @@ void TransferCopyById::receive_fields(CommSparse& commSparse)
 
 void TransferCopyById::do_transfer()
 {
-  stk::CommSparse commSparse(m_mesha.comm());
   m_errorCount = 0;
   m_errorMsg.str("");
   m_errorMsg.clear();
 
-  send_fields(commSparse);
-  receive_fields(commSparse); 
+  m_mesha.begin_transfer();
+  m_meshb.begin_transfer();
+
+  pack_send_fields(m_commSparse);
+  m_commSparse.communicate();
+
+  MeshIDSet remoteKeys = m_search.get_remote_keys();
+
+  receive_fields(remoteKeys);
+  check_received_keys(remoteKeys); 
+
+  m_mesha.end_transfer();
+  m_meshb.end_transfer();
+
+  m_commSparse.reset_buffers();
 }
 
 }  } // namespace transfer stk

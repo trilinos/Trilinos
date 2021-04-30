@@ -1,0 +1,45 @@
+module load cuda/10.1.243
+module load gcc/7.4.0 
+module load netlib-lapack/3.8.0
+module load cmake/3.13.4 
+module load spectrum-mpi/10.3.1.2-20200121
+
+export OMPI_CXX=$TRILINOS_SOURCE/packages/kokkos/bin/nvcc_wrapper
+export NVCC_WRAPPER_DEFAULT_COMPILER=`which g++`
+export CUDA_LAUNCH_BLOCKING=1
+
+export TRILINOS_SOURCE=path_to_your_trilinos_source_dir
+
+cmake \
+-D  CMAKE_BUILD_TYPE:STRING=RELEASE \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_TESTS:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+\
+-D Trilinos_ENABLE_Zoltan2:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan2Sphynx:BOOL=ON \
+-D Trilinos_ENABLE_MueLu:BOOL=ON \
+-D Trilinos_ENABLE_Amesos2:BOOL=ON \
+\
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D TPL_ENABLE_CUDA:BOOL=ON \
+\
+-D Kokkos_ENABLE_CUDA:BOOL=ON \
+-D Kokkos_ENABLE_CUDA_LAMBDA:BOOL=ON \
+-D Kokkos_ENABLE_CUDA_UVM:BOOL=ON \
+-D Kokkos_ARCH_POWER9:BOOL=ON \
+-D Kokkos_ARCH_VOLTA70:BOOL=ON \
+\
+-D Zoltan2_ENABLE_TESTS:BOOL=ON \
+-D Zoltan2_ENABLE_EXAMPLES:BOOL=ON \
+-D MPI_EXEC:FILEPATH="/opt/ibm/spectrum_mpi/jsm_pmix/bin/jsrun" \
+-D MPI_EXEC_NUMPROCS_FLAG:STRING="-n" \
+-D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="-g1;-a1;" \
+\
+-D Tpetra_ASSUME_CUDA_AWARE_MPI:BOOL=OFF \
+-D MueLu_ENABLE_Kokkos_Refactor:BOOL=ON \
+-D TPL_ENABLE_CUSPARSE:BOOL=OFF \
+\
+$TRILINOS_SOURCE / 2>&1 | tee configure.log

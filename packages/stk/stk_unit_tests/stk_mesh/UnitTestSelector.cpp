@@ -430,6 +430,23 @@ TEST(Verify, usingPartVectorToSelectIntersection)
   EXPECT_EQ("(PartA & PartB)", msg.str());
 }
 
+TEST(Verify, selectUnionIgnoresNullParts)
+{
+  SelectorFixture fix ;
+  initialize(fix);
+
+  stk::mesh::PartVector parts ;
+  parts.push_back( & fix.m_partA );
+  parts.push_back( & fix.m_partB );
+  parts.push_back( & fix.m_partC );
+  stk::mesh::Selector selector = selectUnion(parts);
+
+  parts.insert(parts.begin(), nullptr);
+  parts.push_back(nullptr);
+  stk::mesh::Selector selector2 = selectUnion(parts);
+  EXPECT_TRUE(selector == selector2);
+}
+
 TEST(Verify, usingPartVectorToSelectUnion)
 {
   SelectorFixture fix ;

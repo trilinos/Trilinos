@@ -9,7 +9,7 @@
 #ifndef Tempus_TimeStepControlStrategy_Constant_hpp
 #define Tempus_TimeStepControlStrategy_Constant_hpp
 
-#include "Tempus_TimeStepControl.hpp"
+#include "Tempus_config.hpp"
 #include "Tempus_TimeStepControlStrategy.hpp"
 #include "Tempus_SolutionState.hpp"
 #include "Tempus_SolutionHistory.hpp"

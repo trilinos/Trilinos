@@ -36,35 +36,11 @@
 
 #include <vector>
 #include <string>
-#include <sstream>
-#include <iostream>
+#include "stk_util/util/string_utils.hpp"
 #include "stk_util/util/ReportHandler.hpp"
 
 namespace stk {
 namespace tools {
-
-std::string strip_string(const std::string &token)
-{
-  std::string tmp(token);
-  tmp.erase(0, tmp.find_first_not_of(" "));
-  tmp.erase(tmp.find_last_not_of(" ")+1);
-  return tmp;
-}
-
-std::vector<std::string> split_string(const std::string &input, const char separator)
-{
-  std::vector<std::string> separated;
-  std::istringstream iss(input);
-  std::string token;
-  while(std::getline(iss, token, separator))
-    separated.push_back(strip_string(token));
-  return separated;
-}
-
-std::vector<std::string> get_csv(const std::string &input)
-{
-  return split_string(input, ',');
-}
 
 int string_to_integer(const std::string &input)
 {
@@ -81,21 +57,21 @@ int string_to_integer(const std::string &input)
 }
 
 
-std::vector<int> get_ids_from_strings(const std::vector<std::string> & input)
+std::vector<int> get_ids_from_strings(const std::vector<std::string> & inputSegments)
 {
   std::vector<int> ids;
-  for (const std::string & inputString : input)
+  for (const std::string & inputSegment : inputSegments)
   {
-    const std::vector<std::string> splitInput = split_string(inputString, ':');
+    const std::vector<std::string> splitInput = stk::split_string(stk::trim_string(inputSegment), ':');
     ThrowRequireMsg((splitInput.size() > 0) && (splitInput.size() <= 3),
-                    "Incorrect number of fields for range (" << inputString << ").  Syntax is first:last:stride");
+                    "Incorrect number of fields for range (" << inputSegment << ").  Syntax is first:last:stride");
 
-    const int first = string_to_integer(splitInput[0]);
-    const int last = (splitInput.size() > 1) ? string_to_integer(splitInput[1]) : first;
-    const int stride = (splitInput.size() > 2) ? string_to_integer(splitInput[2]) : 1;
+    const int first = string_to_integer(stk::trim_string(splitInput[0]));
+    const int last = (splitInput.size() > 1) ? string_to_integer(stk::trim_string(splitInput[1])) : first;
+    const int stride = (splitInput.size() > 2) ? string_to_integer(stk::trim_string(splitInput[2])) : 1;
 
     ThrowRequireMsg((first > 0) && (last > 0) && (stride > 0) && (last >= first),
-                    "Invalid integers provided for range (" << inputString << ").  Syntax is first:last:stride");
+                    "Invalid integers provided for range (" << inputSegment << ").  Syntax is first:last:stride");
 
     for (int i = first; i <= last; i += stride) {
       ids.push_back(i);

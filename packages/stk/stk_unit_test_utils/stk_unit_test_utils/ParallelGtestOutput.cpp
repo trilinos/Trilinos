@@ -5,7 +5,7 @@
 #include <gtest/gtest-message.h>
 #include <stdarg.h>                 // for va_end, va_list, va_start
 #include <stdio.h>                  // for printf, vprintf, fflush, NULL, etc
-#include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelVectorConcat.hpp>
 #include <stk_util/util/SortAndUnique.hpp>
 #include <string>                   // for string
@@ -108,26 +108,51 @@ private:
         }
     }
 
+    std::string test_result_string(const ::testing::TestPartResult & test_part_result) const
+    {
+        if (test_part_result.skipped())
+        {
+            return "*** Skipped";
+        }
+        else if(test_part_result.failed())
+        {
+          return  "*** Failure";
+        }
+        else return "*** Success";
+    }
+
     // Called after a failed assertion or a SUCCEED() invocation.
     virtual void OnTestPartResult(
             const ::testing::TestPartResult& test_part_result)
     {
-//        if(mProcId == 0)
+        printf("%s on proc %d in %s:%d\n%s\n",
+                test_result_string(test_part_result).c_str(),
+                mProcId,
+                test_part_result.file_name(),
+                test_part_result.line_number(),
+                test_part_result.summary());
+    }
+
+    bool test_has_failed(const ::testing::TestInfo & test_info)
+    {
+        if (test_info.result() == nullptr) 
         {
-            printf("%s on proc %d in %s:%d\n%s\n",
-                    test_part_result.failed() ? "*** Failure" : "*** Success",
-                    mProcId,
-                    test_part_result.file_name(),
-                    test_part_result.line_number(),
-                    test_part_result.summary());
+            return true;
         }
+
+        if (test_info.result()->Skipped() || test_info.result()->Passed())
+        {
+            return false;
+        }
+
+        return true;
     }
 
     // Called after a test ends.
     virtual void OnTestEnd(const ::testing::TestInfo& test_info)
     {
         int numFailuresThisProc = 0;
-        if(!test_info.result()->Passed())
+        if(test_has_failed(test_info))
         {
             numFailuresThisProc = 1;
         }
@@ -149,8 +174,12 @@ private:
             printf("%s.%s", test_info.test_case_name(), test_info.name());
             if ( should_print_time() )
             {
-                printf(" (%s ms)\n", ::testing::internal::StreamableToString(
-                     test_info.result()->elapsed_time()).c_str());
+#ifdef STK_BUILT_IN_SIERRA
+                size_t millis = test_info.result() != nullptr ? test_info.result()->elapsed_time() : 0;
+#else
+                size_t millis = 0;
+#endif
+                printf(" (%s ms)\n", ::testing::internal::StreamableToString(millis).c_str());
             }
             else
             {

@@ -99,7 +99,7 @@ fi
 
 if [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.1.163" ]] ; then
   module load devpack/20171203/openmpi/2.1.2/intel/18.1.163
-  module swap cmake/3.9.0 cmake/3.12.3
+  module swap cmake/3.9.0 cmake/3.19.3
   module load ninja/1.7.2
   module load python/2.7.13
 
@@ -120,7 +120,7 @@ if [[ "$ATDM_CONFIG_COMPILER" == "INTEL-18.1.163" ]] ; then
   export ATDM_CONFIG_MPI_POST_FLAGS="-bind-to;socket;-map-by;socket"
 elif [[ "$ATDM_CONFIG_COMPILER" == "GNU-7.2.0" ]] ; then
   module load devpack/20171203/openmpi/2.1.2/gcc/7.2.0
-  module swap cmake/3.9.0 cmake/3.12.3
+  module swap cmake/3.9.0 cmake/3.19.3
   module load ninja/1.7.2
   module load python/2.7.13
 

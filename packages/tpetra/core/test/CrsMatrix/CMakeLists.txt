@@ -88,14 +88,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_2DRandomDist
-  SOURCES
-    CrsMatrix_2DRandomDist.cpp
-  COMM serial mpi
-  PASS_REGULAR_EXPRESSION "PASS"
-  FAIL_REGULAR_EXPRESSION "FAIL"
-  )
+IF(NOT Tpetra_INST_HIP)
+  # This test causes AMD MI25 to permanently crash (until reboot)
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    CrsMatrix_2DRandomDist
+    SOURCES
+      CrsMatrix_2DRandomDist.cpp
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+    )
+ENDIF()
 
 # We split the CrsMatrix_WithGraph test by execution space.
 # This speeds up the build.
@@ -198,17 +201,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_gaussSeidel
-  SOURCES
-    CrsMatrix_gaussSeidel
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  ARGS
-  COMM serial mpi
-  NUM_MPI_PROCS 1-4
-  STANDARD_PASS_OUTPUT
-  )
-
 # This test only makes sense for exactly 2 MPI processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_Bug5978
@@ -259,6 +251,17 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug8794
+  SOURCES
+  Bug8794
+  ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   CrsMatrix_ReplaceLocalValues

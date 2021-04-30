@@ -13,7 +13,15 @@
 #include "Tempus_StepperSubcycling_impl.hpp"
 
 namespace Tempus {
+
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(StepperSubcycling)
+
+  // Nonmember constructor
+  template Teuchos::RCP<StepperSubcycling<double> >
+  createStepperSubcycling(
+    const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
+    Teuchos::RCP<Teuchos::ParameterList> pl);
+
 }
 
 #endif
