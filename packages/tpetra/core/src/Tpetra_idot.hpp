@@ -58,8 +58,7 @@
 /// If you want to find the only functions in this file that you are
 /// supposed to use, search for "SKIP DOWN TO HERE" (omit the quotes).
 
-#include "Tpetra_Details_iallreduce.hpp"
-#include "Tpetra_Details_isInterComm.hpp"
+#include "Tpetra_iallreduce.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_CommHelpers.hpp"
@@ -70,24 +69,44 @@
 namespace Tpetra {
 namespace Details {
 
-/// \brief Compute dot product locally, with the kernel operating on Views in memory_space.
-///   Preconditions:
-///    - localResult lives in Device::memory_space.
-///    - X's underlying view is up-to-date in Device::memory_space.
-template<class SC, class LO, class GO, class NT, class ResultView, class memory_space>
-void idotLocal(const ResultView& localResult,
-               const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
-               const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
+// Temporary helper to get read-only view from multivector in requested space.
+// TODO: when https://github.com/kokkos/kokkos/issues/3850 is resolved,
+// remove this and just use templated getLocalView<Device>(ReadOnly).
+template<typename MV>
+struct GetReadOnly
 {
-  using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
-  using dot_type = typename MV::dot_type;
-  using dual_view_type = typename MV::dual_view_type;
-  using dev_mem_space = typename dual_view_type::t_dev::memory_space;
-  using host_mem_space = typename dual_view_type::t_host::memory_space;
-  //Get the other memory space for MV's DualView, whatever that is (it may be the same in case of UVM)
-  using other_memory_space = typename std::conditional<std::is_same<memory_space, dev_mem_space>::value,
-        host_mem_space, dev_mem_space>::type;
+  using DevView = typename MV::dual_view_type::t_dev::const_type;
+  using HostView = typename MV::dual_view_type::t_host::const_type;
+
+  template<typename exec_space>
+  static DevView get(const MV& x, typename std::enable_if<std::is_same<exec_space, typename MV::execution_space>::value>::type* = nullptr)
+  {
+    return x.getLocalViewDevice(Tpetra::Access::ReadOnly);
+  }
+
+  template<typename exec_space>
+  static HostView get(const MV& x, typename std::enable_if<!std::is_same<exec_space, typename MV::execution_space>::value>::type* = nullptr)
+  {
+    return x.getLocalViewHost(Tpetra::Access::ReadOnly);
+  }
+};
+
+/// \brief Compute dot product locally. Where the kernel runs controlled by runOnDevice.
+
+template<class MV, class ResultView, bool runOnDevice>
+void idotLocal(const ResultView& localResult,
+               const MV& X,
+               const MV& Y)
+{
   using pair_type = Kokkos::pair<size_t, size_t>;
+  using exec_space = typename std::conditional<runOnDevice, typename MV::execution_space, Kokkos::DefaultHostExecutionSpace>::type;
+  //if the execution space can access localResult, use it directly. Otherwise need to make a copy.
+  static_assert(Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible,
+      "idotLocal: Execution space must be able to access localResult");
+  //If Dot executes on Serial, it requires the result to be HostSpace. If localResult is CudaUVMSpace,
+  //we can just treat it like HostSpace.
+  Kokkos::View<typename ResultView::data_type, typename exec_space::memory_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+    localResultUnmanaged(localResult.data(), localResult.extent(0));
   const size_t numRows = X.getLocalLength ();
   const pair_type rowRange (0, numRows);
   const size_t X_numVecs = X.getNumVectors ();
@@ -104,222 +123,103 @@ void idotLocal(const ResultView& localResult,
        << ", but neither is 1.";
     throw std::invalid_argument (os.str ());
   }
+  auto X_lcl = GetReadOnly<MV>::template get<exec_space>(X);
+  auto Y_lcl = GetReadOnly<MV>::template get<exec_space>(Y);
   //Can the multivector dot kernel be used?
   bool useMVDot = X.isConstantStride() && Y.isConstantStride() && X_numVecs == Y_numVecs;
-  //Does Y need to be copied to the same memory_space as X and localResult?
-  bool copyY = Y.template need_sync<memory_space>();
   if(useMVDot)
   {
-    //Get local X (we know it doesn't need a sync to memory_space)
-    auto X_lcl = X.template getLocalView<memory_space>();
-    //Get local Y, and make a copy if it needs sync. Y is const so we can't just sync to memory_space.
-    decltype (X_lcl) Y_lcl;
-    if (copyY) {
-      auto Y_lcl_other = Y.template getLocalView<other_memory_space>();
-      typename decltype (Y_lcl)::non_const_type
-        Y_lcl_nc (Kokkos::ViewAllocateWithoutInitializing("Y_lcl"), Y_lcl_other.extent(0), Y_numVecs);
-      Kokkos::deep_copy (Y_lcl_nc, Y_lcl_other);
-      Y_lcl = Y_lcl_nc;
-    }
-    else { // Y already sync'd to dev; just use its dev view
-      Y_lcl = Y.template getLocalView<memory_space>();
-    }
     if (numVecs == size_t (1)) {
       auto X_lcl_1d = Kokkos::subview (X_lcl, rowRange, 0);
       auto Y_lcl_1d = Kokkos::subview (Y_lcl, rowRange, 0);
-      auto result_0d = Kokkos::subview (localResult, 0);
+      auto result_0d = Kokkos::subview (localResultUnmanaged, 0);
       KokkosBlas::dot (result_0d, X_lcl_1d, Y_lcl_1d);
     }
     else {
       auto X_lcl_2d = Kokkos::subview (X_lcl, rowRange, pair_type (0, X_numVecs));
       auto Y_lcl_2d = Kokkos::subview (Y_lcl, rowRange, pair_type (0, Y_numVecs));
-      KokkosBlas::dot (localResult, X_lcl_2d, Y_lcl_2d);
+      KokkosBlas::dot (localResultUnmanaged, X_lcl_2d, Y_lcl_2d);
     }
   }
   else
   {
+    auto XWhichVectors = Tpetra::getMultiVectorWhichVectors(X);
+    auto YWhichVectors = Tpetra::getMultiVectorWhichVectors(Y);
     //Need to compute each dot individually, using 1D subviews of X_lcl and Y_lcl
-    Kokkos::View<dot_type*, memory_space> YLocalCol_nc;
-    if(copyY) {
-      //Need to allocate Ycol, as a place to store each column of Y temporarily
-      YLocalCol_nc = Kokkos::View<dot_type*, memory_space>(
-          Kokkos::ViewAllocateWithoutInitializing("YLocalCol_nc"), numRows);
-    }
     for(size_t vec = 0; vec < numVecs; vec++) {
       //Get the Vectors for each column of X and Y that will be dotted together.
-      size_t Xvec = (numVecs == X_numVecs) ? vec : size_t(0);
-      size_t Yvec = (numVecs == Y_numVecs) ? vec : size_t(0);
-      auto Xcol = X.getVector(Xvec);
-      auto Ycol = Y.getVector(Yvec);
-      auto XLocalCol = Kokkos::subview(Xcol->template getLocalView<memory_space>(), rowRange, 0);
-      decltype(XLocalCol) YLocalCol;
-      if(copyY) {
-        //Get a copy of Y's column if needed. If X has k columns but Y has 1, only copy to YLocalCol_nc once.
-        if(vec == 0 || Y_numVecs > 1) {
-          auto YLocalCol_other_space = Kokkos::subview(Ycol->template getLocalView<other_memory_space>(), rowRange, 0);
-          Kokkos::deep_copy(YLocalCol_nc, YLocalCol_other_space);
-        }
-        YLocalCol = YLocalCol_nc;
-      }
-      else {
-        YLocalCol = Kokkos::subview(Ycol->template getLocalView<memory_space>(), rowRange, 0);
-      }
+      //Note: "which vectors" is not populated for constant stride MVs (but it's the identity mapping)
+      size_t Xj = (numVecs == X_numVecs) ? vec : 0;
+      Xj = X.isConstantStride() ? Xj : XWhichVectors[Xj];
+      size_t Yj = (numVecs == Y_numVecs) ? vec : 0;
+      Yj = Y.isConstantStride() ? Yj : YWhichVectors[Yj];
+      auto Xcol = Kokkos::subview(X_lcl, rowRange, Xj);
+      auto Ycol = Kokkos::subview(Y_lcl, rowRange, Yj);
       //Compute the rank-1 dot product, and place the result in an element of localResult
-      KokkosBlas::dot(Kokkos::subview(localResult, vec), XLocalCol, YLocalCol);
+      KokkosBlas::dot(Kokkos::subview(localResultUnmanaged, vec), Xcol, Ycol);
     }
   }
 }
 
-//Fallback version: produces same result, but is synchronous.
-//Used only when MPI is not CUDA-aware, and the global result lives on device.
-//It's not allowed to use a CudaSpace or CudaUVMSpace view as a target buffer for MPI
-//unless CUDA-aware.
-template<class SC, class LO, class GO, class NT, class ResultView>
-void blockingDotImpl(
-    const ResultView& globalResult,
-    const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
-    const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y,
-    bool mpiReduceInPlace)
+//Helper to avoid extra instantiations of KokkosBlas::dot and iallreduce.
+template<typename MV, typename ResultView>
+struct IdotHelper
 {
-  using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
   using dot_type = typename MV::dot_type;
-  using result_dev_view_type = Kokkos::View<dot_type*, typename NT::device_type>;
-  using result_mirror_view_type = typename result_dev_view_type::HostMirror;
-  using result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace>;
-  using dev_mem_space = typename result_dev_view_type::memory_space;
-  using mirror_mem_space = typename result_mirror_view_type::memory_space;
-  using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  const size_t numVecs = globalResult.extent(0);
-  //Logic to compute the local dot is no different than when CUDA-aware MPI.
-  result_host_view_type localHostResult(Kokkos::ViewAllocateWithoutInitializing("HostLocalDotResult"), numVecs);
-  if(X.template need_sync<dev_mem_space>())
+
+  //First version: use result directly
+  template<typename exec_space>
+  static std::shared_ptr< ::Tpetra::Details::CommRequest> run(
+      const ResultView& globalResult, const MV& X, const MV& Y,
+      typename std::enable_if<Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible>::type* = nullptr)
   {
-    //compute local result on host.
-    //NOTE: UVM never takes this branch because then dev_mem_space == mirror_mem_space.
-    //This means that the dot is actually computed on host.
-    idotLocal<SC, LO, GO, NT, result_host_view_type, mirror_mem_space>(localHostResult, X, Y);
+    constexpr bool runOnDevice = std::is_same<exec_space, typename MV::execution_space>::value;
+    idotLocal<MV, ResultView, runOnDevice>(globalResult, X, Y);
+    //Fence because we're giving result of device kernel to MPI
+    if(runOnDevice)
+      exec_space().fence();
+    auto comm = X.getMap()->getComm();
+    return iallreduce(globalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
   }
-  else
+
+  //Second version: use a temporary local result, because exec_space can't write to globalResult
+  template<typename exec_space>
+  static std::shared_ptr< ::Tpetra::Details::CommRequest> run(
+      const ResultView& globalResult, const MV& X, const MV& Y,
+      typename std::enable_if<!Kokkos::SpaceAccessibility<exec_space, typename ResultView::memory_space>::accessible>::type* = nullptr)
   {
-    //compute local result on temporary device view, then copy that to host.
-    result_dev_view_type localDeviceResult(Kokkos::ViewAllocateWithoutInitializing("DeviceLocalDotResult"), numVecs);
-    idotLocal<SC, LO, GO, NT, result_dev_view_type, dev_mem_space>(localDeviceResult, X, Y);
-    //NOTE: no fence is required: deep_copy will fence.
-    Kokkos::deep_copy(localHostResult, localDeviceResult);
+    constexpr bool runOnDevice = std::is_same<exec_space, typename MV::execution_space>::value;
+    Kokkos::View<dot_type*, typename exec_space::memory_space> localResult(Kokkos::ViewAllocateWithoutInitializing("idot:localResult"), X.getNumVectors());
+    idotLocal<MV, decltype(localResult), runOnDevice>(localResult, X, Y);
+    //Fence because we're giving result of device kernel to MPI
+    if(runOnDevice)
+      exec_space().fence();
+    auto comm = X.getMap()->getComm();
+    return iallreduce(localResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
   }
-  result_host_view_type globalHostResultOwning;
-  unmanaged_result_host_view_type globalHostResultNonowning;
-  if(mpiReduceInPlace)
-  {
-    globalHostResultNonowning = unmanaged_result_host_view_type(localHostResult.data(), numVecs);
-  }
-  else
-  {
-    globalHostResultOwning = result_host_view_type(Kokkos::ViewAllocateWithoutInitializing("HostGlobalDotResult"), numVecs);
-    globalHostResultNonowning = unmanaged_result_host_view_type(globalHostResultOwning.data(), numVecs);
-  }
-  Teuchos::reduceAll<int, dot_type> (*X.getMap()->getComm(), Teuchos::REDUCE_SUM, numVecs, localHostResult.data(), globalHostResultNonowning.data());
-  Kokkos::deep_copy(globalResult, globalHostResultNonowning);
-}
+};
 
 /// \brief Internal (common) version of idot, a global dot product
 /// that uses a non-blocking MPI reduction.
-///
-/// Will always try to minimize the amount of host-device copies.
-/// However, if the globalResult is in a CUDA device space (CudaSpace
-/// or CudaUVMSpace) and MPI is not CUDA-aware, a synchronous reduction
-/// will be used instead to ensure correct execution.
-template<class SC, class LO, class GO, class NT, class ResultView>
+template<class MV, class ResultView>
 std::shared_ptr< ::Tpetra::Details::CommRequest>
 idotImpl(const ResultView& globalResult,
-         const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
-         const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
+         const MV& X,
+         const MV& Y)
 {
-  using MV = ::Tpetra::MultiVector<SC, LO, GO, NT>;
-  using dot_type = typename MV::dot_type;
-  using global_result_memspace = typename ResultView::memory_space;
-  using result_dev_view_type = Kokkos::View<dot_type*, typename NT::device_type>;
-  using result_mirror_view_type = typename result_dev_view_type::HostMirror;
-  using result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace>;
-  using dev_mem_space = typename result_dev_view_type::memory_space;
-  using mirror_mem_space = typename result_mirror_view_type::memory_space;
-  using unmanaged_result_dev_view_type = Kokkos::View<dot_type*, dev_mem_space, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  using unmanaged_result_host_view_type = Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>;
-  auto comm = X.getMap()->getComm();
-  bool mpiReduceInPlace = !Details::isInterComm(*comm);
-  //note: numVecs is verified in idotLocal
-  const size_t numVecs = globalResult.extent(0);
-  //BMK: If either local or global results live in a CUDA device space but
-  //MPI is not CUDA-aware, we are forced to perform (synchronous) communication
-  //using temporary HostSpace view(s).
-#ifdef KOKKOS_ENABLE_CUDA
-  //If globalResult's memory space is a Cuda space, then the user's global result lives on device.
-  //For this case, there is currently no way to do the asynchronous MPI reduction to a temporary HostSpace
-  //view, and then deep copy to the original globalResult. 
-  //However, this could also be solved
-  //(and still be globally asynchronous) by adding a
-  //deep_copy callback to CommRequest.
-  if(!Tpetra::Details::Behavior::assumeMpiIsCudaAware() &&
-     (std::is_same<global_result_memspace, Kokkos::CudaSpace>::value || 
-     std::is_same<global_result_memspace, Kokkos::CudaUVMSpace>::value))
+  static_assert(std::is_same<typename ResultView::non_const_value_type, typename MV::dot_type>::value,
+      "Tpetra::idot: result view's element type must match MV::dot_type");
+
+  // Execution space to use for dot kernel(s) is whichever has access to up-to-date X.
+  if(X.need_sync_device())
   {
-    blockingDotImpl<SC, LO, GO, NT, ResultView>(globalResult, X, Y, mpiReduceInPlace);
-    return Tpetra::Details::Impl::emptyCommRequest();
+    //run on host.
+    return IdotHelper<MV, ResultView>::template run<Kokkos::DefaultHostExecutionSpace>(globalResult, X, Y);
   }
-#endif
-  bool X_latestOnHost = X.template need_sync<dev_mem_space>();
-  bool runOnHost = !std::is_same<dev_mem_space, mirror_mem_space>::value && X_latestOnHost;
-  //Wherever the kernel runs, allocate a separate local result if either:
-  //  * comm is an "InterComm" (can't do in-place collectives)
-  //  * globalResult is not accessible from the space of X's latest data
-  const bool allocateLocalResult = !mpiReduceInPlace ||
-    (X_latestOnHost ?
-      !Kokkos::Impl::MemorySpaceAccess<mirror_mem_space, global_result_memspace>::accessible :
-      !Kokkos::Impl::MemorySpaceAccess<dev_mem_space, global_result_memspace>::accessible);
-  if(runOnHost) {
-    //Note BMK: cannot get here if the device memory space is CudaUVMSpace,
-    //because in that case the mirror space of MV's DualView is also CudaUVMSpace. Verified this by printing typeid.
-    unmanaged_result_host_view_type nonowningLocalResult;
-    result_host_view_type localResult;
-    if(allocateLocalResult) {
-      localResult = result_host_view_type(Kokkos::ViewAllocateWithoutInitializing("localResult"), numVecs);
-      nonowningLocalResult = unmanaged_result_host_view_type(localResult.data(), numVecs);
-    }
-    else
-      nonowningLocalResult = unmanaged_result_host_view_type(globalResult.data(), numVecs);
-    idotLocal<SC, LO, GO, NT, unmanaged_result_host_view_type, mirror_mem_space>(nonowningLocalResult, X, Y);
-    return iallreduce(nonowningLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
-  }
-  else {
-    //running on device
-    unmanaged_result_dev_view_type nonowningLocalResult;
-    result_dev_view_type localResult;
-    if(allocateLocalResult) {
-      localResult = result_dev_view_type(Kokkos::ViewAllocateWithoutInitializing("localResult"), numVecs);
-      nonowningLocalResult = unmanaged_result_dev_view_type(localResult.data(), numVecs);
-    }
-    else
-      nonowningLocalResult = unmanaged_result_dev_view_type(globalResult.data(), numVecs);
-    idotLocal<SC, LO, GO, NT, unmanaged_result_dev_view_type, dev_mem_space>(nonowningLocalResult, X, Y);
-    //If MPI not CUDA-aware, must copy local result to HostSpace before iallreduce.
-    //That view will persistent in the CommRequest, and localResult won't.
-    bool communicateFromHost = false;
-#ifdef KOKKOS_ENABLE_CUDA
-    communicateFromHost = !Tpetra::Details::Behavior::assumeMpiIsCudaAware();
-#endif
-    if(communicateFromHost)
-    {
-      result_host_view_type hostLocalResult(Kokkos::ViewAllocateWithoutInitializing("hostLocalResult"), numVecs);
-      //The deep copy fences.
-      Kokkos::deep_copy(hostLocalResult, nonowningLocalResult);
-      return iallreduce(hostLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
-    }
-    else
-    {
-      //(Only fence in idot) required because the device-space result of idotLocal will be accessed directly by MPI.
-      typename dev_mem_space::execution_space().fence();
-      return iallreduce(nonowningLocalResult, globalResult, ::Teuchos::REDUCE_SUM, *comm);
-    }
+  else
+  {
+    //run on device.
+    return IdotHelper<MV, ResultView>::template run<typename MV::execution_space>(globalResult, X, Y);
   }
 }
 } // namespace Details
@@ -390,8 +290,9 @@ idot (typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_type* resultRaw,
   const size_t X_numVecs = X.getNumVectors ();
   const size_t Y_numVecs = Y.getNumVectors ();
   const size_t numVecs = (X_numVecs > Y_numVecs) ? X_numVecs : Y_numVecs;
-  Kokkos::View<dot_type*, Kokkos::HostSpace> resultView(resultRaw, numVecs);
-  return Details::idotImpl<SC,LO,GO,NT>(resultView, X, Y);
+  Kokkos::View<dot_type*, Kokkos::HostSpace, Kokkos::MemoryTraits<Kokkos::Unmanaged>>
+    resultView(resultRaw, numVecs);
+  return Details::idotImpl(resultView, X, Y);
 }
 
 /// \brief Nonblocking dot product, with Tpetra::MultiVector inputs,
@@ -463,7 +364,7 @@ idot (const Kokkos::View<typename ::Tpetra::MultiVector<SC, LO, GO, NT>::dot_typ
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& X,
       const ::Tpetra::MultiVector<SC, LO, GO, NT>& Y)
 {
-  return Details::idotImpl<SC,LO,GO,NT>(result, X, Y);
+  return Details::idotImpl(result, X, Y);
 }
 
 /// \brief Nonblocking dot product, with Tpetra::Vector inputs, and
@@ -517,7 +418,7 @@ idot (const Kokkos::View<typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type,
   using dot_type = typename ::Tpetra::Vector<SC, LO, GO, NT>::dot_type;
   using result_device_t = typename ::Tpetra::Vector<SC, LO, GO, NT>::device_type;
   Kokkos::View<dot_type*, result_device_t, Kokkos::MemoryTraits<Kokkos::Unmanaged>> result1D(result.data(), 1);
-  return Details::idotImpl<SC,LO,GO,NT>(result1D, X, Y);
+  return Details::idotImpl(result1D, X, Y);
 }
 
 } // namespace Tpetra

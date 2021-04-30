@@ -80,14 +80,9 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   typedef typename block_crs_matrix_type::impl_scalar_type IST;
   typedef Kokkos::Details::ArithTraits<IST> KAT;
   typedef typename block_crs_matrix_type::device_type::memory_space device_memory_space;
-  typedef Kokkos::View<IST*,
-    Kokkos::LayoutRight,
-    Kokkos::HostSpace,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_vec_type;
-  typedef Kokkos::View<IST**,
-    Kokkos::LayoutRight,
-    Kokkos::HostSpace,
-    Kokkos::MemoryTraits<Kokkos::Unmanaged> > little_blk_type;
+  typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
+  typedef typename block_crs_matrix_type::little_block_type little_blk_type;
+
   const auto G = A.getCrsGraph ();
 
   const IST zero = KAT::zero ();
@@ -100,10 +95,10 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   // NOTE (mfh 01 Jun 2016) This is a host code, so we have to sync
   // all the objects to host.  We sync them back to device after we're
   // done.  That's why all objects come in by nonconst reference.
-  A.sync_host ();
-  X.sync_host ();
-  Y.sync_host ();
-  Y.modify_host (); // only Y gets modified here
+  // A.sync_host ();
+  // X.sync_host ();
+  // Y.sync_host ();
+  // Y.modify_host (); // only Y gets modified here
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
@@ -120,7 +115,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-      auto Y_cur = Y.getLocalBlock (lclRow, j);
+      auto Y_cur = Y.getLocalBlock (lclRow, j, Tpetra::Access::ReadWrite);
       if (beta == zero) {
         FILL (Y_lcl, zero);
       } else if (beta == one) {
@@ -137,7 +132,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
         auto A_cur_1d = Kokkos::subview (val, absBlkOff * blockSize * blockSize);
         little_blk_type A_cur (A_cur_1d.data (), blockSize, blockSize);
-        auto X_cur = X.getLocalBlock (meshCol, j);
+        auto X_cur = X.getLocalBlock (meshCol, j, Tpetra::Access::ReadOnly);
 
         GEMV (alpha, A_cur, X_cur, Y_lcl); // Y_lcl += alpha*A_cur*X_cur
       } // for each entry in the current local row of the matrix
@@ -149,9 +144,9 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
   // Sync everything back to device when we're done.  This only
   // actually copies Y back to device, but it ensures that all the
   // modified flags are right.
-  A.template sync<device_memory_space> ();
-  X.template sync<device_memory_space> ();
-  Y.template sync<device_memory_space> ();
+  // A.template sync<device_memory_space> ();
+  // X.template sync<device_memory_space> ();
+  // Y.template sync<device_memory_space> ();
 }
 
 
@@ -538,8 +533,8 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   RCP<matrix_type> A = rcp (new matrix_type (*graph, blkSize));
 
   // We're filling on the host.
-  A->sync_host ();
-  A->modify_host ();
+  // A->sync_host ();
+  // A->modify_host ();
 
   // This only matters if filling with random values.  We only do that
   // if opts.runTest is true (that is, if we're testing correctness of
@@ -588,7 +583,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   }
 
   // We're done filling on the host, so sync to device.
-  A->sync<device_type::memory_space> ();
+  //A->sync<device_type::memory_space> ();
   return A;
 }
 

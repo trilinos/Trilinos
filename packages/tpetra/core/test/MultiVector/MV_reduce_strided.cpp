@@ -87,14 +87,12 @@ bool multiVectorsLocallyEqual (Teuchos::FancyOStream& out,
   MV Y_copy;
   if (X.need_sync_host ()) {
     X_copy = MV (X, Teuchos::Copy);
-    X_copy.sync_host ();
   }
   else {
     X_copy = X; // harmless shallow copy
   }
   if (Y.need_sync_host ()) {
     Y_copy = MV (Y, Teuchos::Copy);
-    Y_copy.sync_host ();
   }
   else {
     Y_copy = Y; // harmless shallow copy
@@ -104,8 +102,8 @@ bool multiVectorsLocallyEqual (Teuchos::FancyOStream& out,
   for (size_t j = 0; j < numCols; ++j) {
     auto X_j = X_copy.getVector (j);
     auto Y_j = Y_copy.getVector (j);
-    auto X_j_lcl_2d = X_j->getLocalViewHost ();
-    auto Y_j_lcl_2d = Y_j->getLocalViewHost ();
+    auto X_j_lcl_2d = X_j->getLocalViewHost(Tpetra::Access::ReadOnly);
+    auto Y_j_lcl_2d = Y_j->getLocalViewHost(Tpetra::Access::ReadOnly);
     auto X_j_lcl = Kokkos::subview (X_j_lcl_2d, Kokkos::ALL (), 0);
     auto Y_j_lcl = Kokkos::subview (Y_j_lcl_2d, Kokkos::ALL (), 0);
 
@@ -176,32 +174,24 @@ void reduceMultiVector2 (MV& Z)
   using Teuchos::reduceAll;
   using Teuchos::REDUCE_SUM;
 
-  if (Z.need_sync_host ()) {
-    Z.sync_host ();
-  }
-  Z.modify_host ();
-
   const size_t numRows = Z.getLocalLength ();
   const size_t numCols = Z.getNumVectors ();
   MV Z2 (Z.getMap (), Z.getNumVectors ());
-  Z2.sync_host ();
-  Z2.modify_host ();
   const auto& comm = * (Z.getMap ()->getComm ());
 
   for (size_t j = 0; j < numCols; ++j) {
     auto Z_j = Z.getVectorNonConst (j);
-    auto Z_j_lcl_2d = Z_j->getLocalViewHost ();
+    auto Z_j_lcl_2d = Z_j->getLocalViewHost(Tpetra::Access::OverwriteAll);
     auto Z_j_lcl = Kokkos::subview (Z_j_lcl_2d, Kokkos::ALL (), 0);
 
     auto Z2_j = Z2.getVectorNonConst (j);
-    auto Z2_j_lcl_2d = Z2_j->getLocalViewHost ();
+    auto Z2_j_lcl_2d = Z2_j->getLocalViewHost(Tpetra::Access::ReadWrite);
     auto Z2_j_lcl = Kokkos::subview (Z2_j_lcl_2d, Kokkos::ALL (), 0);
 
     reduceAll (comm, REDUCE_SUM, static_cast<int> (numRows),
                Z_j_lcl.data (), Z2_j_lcl.data ());
     Kokkos::deep_copy (Z_j_lcl, Z2_j_lcl);
   }
-  Z.sync_device ();
 }
 
 //
@@ -218,6 +208,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
   using GO = GlobalOrdinal;
   using NT = Node;
   using MV = Tpetra::MultiVector<SC, LO, GO, NT>;
+  using impl_scalar_type = typename MV::impl_scalar_type;
   using map_type = typename MV::map_type;
   using STS = Teuchos::ScalarTraits<SC>;
   using mag_type = typename MV::mag_type;
@@ -244,20 +235,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
   // instead of 0, because 0 is the default fill value.
   {
     SC curVal = STS::one ();
-    Z0.sync_host ();
-    Z0.modify_host ();
     for (size_t j = 0; j < numCols; ++j) {
       Z0.getVectorNonConst (j)->putScalar (curVal);
       curVal += STS::one ();
     }
-    Z0.sync_device ();
   }
 
   MV Z1 (Z0, Teuchos::Copy);
   Z1.reduce ();
   {
-    Z1.sync_host ();
-    auto Z1_lcl = Z1.getLocalViewHost ();
+
+    auto Z1_lcl = Z1.getLocalViewHost(Tpetra::Access::ReadOnly);
     bool reduce_expected_result = true;
     for (size_t j = 0; j < numCols; ++j) {
       SC expectedVal = SC (mag_type (j+1)) *
@@ -269,7 +257,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
       }
     }
     TEST_ASSERT( reduce_expected_result );
-    Z1.sync_device ();
+
   }
   Z1.describe (out, Teuchos::VERB_EXTREME);
 
@@ -302,9 +290,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     TEST_ASSERT( size_t (Z4_dv.d_view.stride (1)) >= Z4_stride );
     TEST_ASSERT( size_t (Z4_dv.h_view.stride (1)) >= Z4_stride );
 
-    MV Z4 (lclMap, Z4_dv);
-    TEST_ASSERT( Z4_dv.d_view.data () == Z4.getLocalViewDevice ().data () );
-    TEST_ASSERT( Z4_dv.h_view.data () == Z4.getLocalViewHost ().data () );
+    MV Z4 (lclMap, Z4_dv, Z4_dv_extra);
+    TEST_ASSERT( Z4_dv.d_view.data () == Z4.getLocalViewDevice(Tpetra::Access::ReadOnly).data () );
+    TEST_ASSERT( Z4_dv.h_view.data () == Z4.getLocalViewHost(Tpetra::Access::ReadOnly).data () );
     TEST_ASSERT( Z4.isConstantStride () );
     if (Z4.isConstantStride ()) {
       TEST_ASSERT( size_t (Z4_dv.d_view.stride (1)) == Z4.getStride () );
@@ -317,34 +305,41 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
       Teuchos::OSTab colTab (out);
 
       auto Z4_dv_j = Kokkos::subview (Z4_dv, Kokkos::ALL (), j);
+      const impl_scalar_type* Z4_h_raw = nullptr;
+      const impl_scalar_type* Z4_d_raw = nullptr;
+      {
+        auto Z4_j_h = Z4.getVectorNonConst (j);
+        auto Z4_j_h_lcl_2d = Z4_j_h->getLocalViewHost(Tpetra::Access::OverwriteAll);
+        auto Z4_j_h_lcl = Kokkos::subview (Z4_j_h_lcl_2d, Kokkos::ALL (), 0);
+        Z4_h_raw = Z4_j_h_lcl.data();
 
-      auto Z4_j_h = Z4.getVectorNonConst (j);
-      auto Z4_j_h_lcl_2d = Z4_j_h->getLocalViewHost ();
-      auto Z4_j_h_lcl = Kokkos::subview (Z4_j_h_lcl_2d, Kokkos::ALL (), 0);
-
-      TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv_j.h_view.data () );
-      if (Z4_j_h_lcl.data () != Z4_dv_j.h_view.data ()) {
-        out << "Z4_j_h_lcl.data() = " << Z4_j_h_lcl.data ()
-            << ", Z4_dv_j.h_view.data() = " << Z4_dv_j.h_view.data ()
-            << endl;
+        TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv_j.h_view.data () );
+        if (Z4_j_h_lcl.data () != Z4_dv_j.h_view.data ()) {
+          out << "Z4_j_h_lcl.data() = " << Z4_j_h_lcl.data ()
+              << ", Z4_dv_j.h_view.data() = " << Z4_dv_j.h_view.data ()
+              << endl;
+        }
+        TEST_ASSERT( Z4_j_h_lcl.extent (0) == Z4_dv_j.h_view.extent (0) );
       }
-      TEST_ASSERT( Z4_j_h_lcl.extent (0) == Z4_dv_j.h_view.extent (0) );
 
-      auto Z4_j_d = Z4.getVectorNonConst (j);
-      auto Z4_j_d_lcl_2d = Z4_j_d->getLocalViewDevice ();
-      auto Z4_j_d_lcl = Kokkos::subview (Z4_j_d_lcl_2d, Kokkos::ALL (), 0);
+      {
+        auto Z4_j_d = Z4.getVectorNonConst (j);
+        auto Z4_j_d_lcl_2d = Z4_j_d->getLocalViewDevice(Tpetra::Access::ReadWrite);
+        auto Z4_j_d_lcl = Kokkos::subview (Z4_j_d_lcl_2d, Kokkos::ALL (), 0);
+        Z4_d_raw = Z4_j_d_lcl.data();
 
-      TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv_j.d_view.data () );
-      if (Z4_j_d_lcl.data () != Z4_dv_j.d_view.data ()) {
-        out << "Z4_j_d_lcl.data() = " << Z4_j_d_lcl.data ()
-            << ", Z4_dv_j.d_view.data() = " << Z4_dv_j.d_view.data ()
-            << endl;
+        TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv_j.d_view.data () );
+        if (Z4_j_d_lcl.data () != Z4_dv_j.d_view.data ()) {
+          out << "Z4_j_d_lcl.data() = " << Z4_j_d_lcl.data ()
+              << ", Z4_dv_j.d_view.data() = " << Z4_dv_j.d_view.data ()
+              << endl;
+        }
+        TEST_ASSERT( Z4_j_d_lcl.extent (0) == Z4_dv_j.d_view.extent (0) );
       }
-      TEST_ASSERT( Z4_j_d_lcl.extent (0) == Z4_dv_j.d_view.extent (0) );
 
       if (j == 0) {
-        TEST_ASSERT( Z4_j_h_lcl.data () == Z4_dv.h_view.data () );
-        TEST_ASSERT( Z4_j_d_lcl.data () == Z4_dv.d_view.data () );
+        TEST_ASSERT( Z4_h_raw == Z4_dv.h_view.data () );
+        TEST_ASSERT( Z4_d_raw == Z4_dv.d_view.data () );
       }
     }
 
@@ -395,7 +390,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, reduce_strided, Scalar, LocalOrd
     TEST_ASSERT( size_t (Z6_dv.d_view.stride (1)) >= Z6_stride );
     TEST_ASSERT( size_t (Z6_dv.h_view.stride (1)) >= Z6_stride );
 
-    MV Z6 (lclMap, Z6_dv);
+    MV Z6 (lclMap, Z6_dv, Z6_dv_extra);
     Tpetra::deep_copy (Z6, Z0);
 
     const bool Z0_Z6_equal_before = multiVectorsEqual (out, Z0, Z6);

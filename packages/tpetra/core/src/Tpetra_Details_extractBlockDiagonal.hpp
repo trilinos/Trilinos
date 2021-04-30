@@ -84,7 +84,7 @@ void extractBlockDiagonal(const SparseMatrixType& A, MultiVectorType & diagonal)
   // Get Kokkos versions of objects
   local_map_type rowmap  = A.getRowMap()->getLocalMap();
   local_map_type colmap  = A.getRowMap()->getLocalMap();
-  local_mv_type diag     = diagonal.getLocalViewDevice();
+  local_mv_type diag     = diagonal.getLocalViewDevice(Access::OverwriteAll);
   const KCRS   Amat      = A.getLocalMatrix();
   lno_view_t Arowptr     = Amat.graph.row_map;
   lno_nnz_view_t Acolind = Amat.graph.entries;

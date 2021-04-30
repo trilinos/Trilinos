@@ -44,6 +44,7 @@
 #include "Tpetra_BlockView.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 namespace { // anonymous
 
   /// \brief Get a raw pointer to the (host) data in a
@@ -62,14 +63,10 @@ namespace { // anonymous
     typedef typename MultiVectorType::impl_scalar_type impl_scalar_type;
 
     static impl_scalar_type* getRawPtr (MultiVectorType& X) {
-      // NOTE (mfh 09 Jun 2016) This does NOT sync to host, or mark
-      // host as modified.  This is on purpose, because we don't want
-      // the BlockMultiVector sync'd to host unnecessarily.
-      // Otherwise, all the MultiVector and BlockMultiVector kernels
-      // would run on host instead of device.  See Github Issue #428.
-      auto X_view_host = X.template getLocalView<typename MultiVectorType::dual_view_type::t_host::device_type> ();
-      impl_scalar_type* X_raw = X_view_host.data ();
-      return X_raw;
+      return nullptr;
+      //auto X_view_host = X.getLocalViewHost ();
+      //impl_scalar_type* X_raw = X_view_host.data ();
+      //return X_raw;
     }
   };
 
@@ -93,6 +90,7 @@ namespace { // anonymous
   }
 
 } // namespace (anonymous)
+#endif
 
 namespace Tpetra {
 
@@ -126,7 +124,9 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& in,
   meshMap_ (in.meshMap_),
   pointMap_ (in.pointMap_),
   mv_ (in.mv_, copyOrView),
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (in.blockSize_)
 {}
 
@@ -139,7 +139,9 @@ BlockMultiVector (const map_type& meshMap,
   meshMap_ (meshMap),
   pointMap_ (makePointMap (meshMap, blockSize)),
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (blockSize)
 {}
 
@@ -153,7 +155,9 @@ BlockMultiVector (const map_type& meshMap,
   meshMap_ (meshMap),
   pointMap_ (pointMap),
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (blockSize)
 {}
 
@@ -164,7 +168,9 @@ BlockMultiVector (const mv_type& X_mv,
                   const LO blockSize) :
   dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
   meshMap_ (meshMap),
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (nullptr), // just for now
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (blockSize)
 {
   using Teuchos::RCP;
@@ -212,7 +218,9 @@ BlockMultiVector (const mv_type& X_mv,
   if (! pointMap.is_null ()) {
     pointMap_ = *pointMap; // Map::operator= also does a shallow copy
   }
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ = getRawHostPtrFromMultiVector (mv_);
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 }
 
 template<class Scalar, class LO, class GO, class Node>
@@ -225,7 +233,9 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
   meshMap_ (newMeshMap),
   pointMap_ (newPointMap),
   mv_ (X.mv_, newPointMap, offset * X.getBlockSize ()), // MV "offset view" constructor
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (X.getBlockSize ())
 {}
 
@@ -238,7 +248,9 @@ BlockMultiVector (const BlockMultiVector<Scalar, LO, GO, Node>& X,
   meshMap_ (newMeshMap),
   pointMap_ (makePointMap (newMeshMap, X.getBlockSize ())),
   mv_ (X.mv_, pointMap_, offset * X.getBlockSize ()), // MV "offset view" constructor
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (getRawHostPtrFromMultiVector (mv_)),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (X.getBlockSize ())
 {}
 
@@ -246,7 +258,9 @@ template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
 BlockMultiVector () :
   dist_object_type (Teuchos::null),
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   mvData_ (nullptr),
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
   blockSize_ (0)
 {}
 
@@ -300,9 +314,9 @@ void
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
-                        const Scalar vals[]) const
+                        const Scalar vals[]) 
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex);
+  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   Kokkos::deep_copy (X_dst, X_src);
@@ -314,7 +328,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceLocalValues (const LO localRowIndex,
                     const LO colIndex,
-                    const Scalar vals[]) const
+                    const Scalar vals[])
 {
   if (! meshMap_.isNodeLocalElement (localRowIndex)) {
     return false;
@@ -329,7 +343,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 replaceGlobalValues (const GO globalRowIndex,
                      const LO colIndex,
-                     const Scalar vals[]) const
+                     const Scalar vals[])
 {
   const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
@@ -345,9 +359,9 @@ void
 BlockMultiVector<Scalar, LO, GO, Node>::
 sumIntoLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
-                        const Scalar vals[]) const
+                        const Scalar vals[])
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex);
+  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
@@ -358,7 +372,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 sumIntoLocalValues (const LO localRowIndex,
                     const LO colIndex,
-                    const Scalar vals[]) const
+                    const Scalar vals[])
 {
   if (! meshMap_.isNodeLocalElement (localRowIndex)) {
     return false;
@@ -373,7 +387,7 @@ bool
 BlockMultiVector<Scalar, LO, GO, Node>::
 sumIntoGlobalValues (const GO globalRowIndex,
                      const LO colIndex,
-                     const Scalar vals[]) const
+                     const Scalar vals[])
 {
   const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
   if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
@@ -384,53 +398,15 @@ sumIntoGlobalValues (const GO globalRowIndex,
   }
 }
 
-template<class Scalar, class LO, class GO, class Node>
-bool
-BlockMultiVector<Scalar, LO, GO, Node>::
-getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals) const
-{
-  if (! meshMap_.isNodeLocalElement (localRowIndex)) {
-    return false;
-  } else {
-    auto X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.data ());
-    return true;
-  }
-}
-
-template<class Scalar, class LO, class GO, class Node>
-bool
-BlockMultiVector<Scalar, LO, GO, Node>::
-getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals) const
-{
-  const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
-  if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
-    return false;
-  } else {
-    auto X_ij = getLocalBlock (localRowIndex, colIndex);
-    vals = reinterpret_cast<Scalar*> (X_ij.data ());
-    return true;
-  }
-}
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
+TPETRA_DEPRECATED
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                const LO colIndex) const
 {
-  // NOTE (mfh 07 Jul 2016) It should be correct to add the
-  // commented-out test below.  However, I've conservatively commented
-  // it out, since users might not realize that they need to have
-  // things sync'd correctly.
-
-// #ifdef HAVE_TPETRA_DEBUG
-//   TEUCHOS_TEST_FOR_EXCEPTION
-//     (mv_.need_sync_host (), std::runtime_error,
-//      "Tpetra::BlockMultiVector::getLocalBlock: This method "
-//      "accesses host data, but the object is not in sync on host." );
-// #endif // HAVE_TPETRA_DEBUG
-
   if (! isValidLocalMeshIndex (localRowIndex)) {
     return little_host_vec_type ();
   } else {
@@ -439,6 +415,64 @@ getLocalBlock (const LO localRowIndex,
       localRowIndex * blockSize;
     impl_scalar_type* blockRaw = this->getRawPtr () + offset;
     return little_host_vec_type (blockRaw, blockSize);
+  }
+}
+#endif
+
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::const_little_host_vec_type
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalBlock (const LO localRowIndex,
+               const LO colIndex,
+               Access::ReadOnlyStruct) const
+{
+  if (!isValidLocalMeshIndex(localRowIndex)) {
+    return const_little_host_vec_type();
+  } else {
+    const size_t blockSize = getBlockSize();
+    auto hostView = mv_.getLocalViewHost(Access::ReadOnly);
+    LO startRow = localRowIndex*blockSize;
+    LO endRow = startRow + blockSize;
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow),
+                           colIndex);
+  }
+}
+
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalBlock (const LO localRowIndex,
+               const LO colIndex,
+               Access::OverwriteAllStruct)
+{
+  if (!isValidLocalMeshIndex(localRowIndex)) {
+    return little_host_vec_type();
+  } else {
+    const size_t blockSize = getBlockSize();
+    auto hostView = mv_.getLocalViewHost(Access::OverwriteAll);
+    LO startRow = localRowIndex*blockSize;
+    LO endRow = startRow + blockSize;
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow),
+                           colIndex);
+  }
+}
+
+template<class Scalar, class LO, class GO, class Node>
+typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalBlock (const LO localRowIndex,
+               const LO colIndex,
+               Access::ReadWriteStruct)
+{
+  if (!isValidLocalMeshIndex(localRowIndex)) {
+    return little_host_vec_type();
+  } else {
+    const size_t blockSize = getBlockSize();
+    auto hostView = mv_.getLocalViewHost(Access::ReadWrite);
+    LO startRow = localRowIndex*blockSize;
+    LO endRow = startRow + blockSize;
+    return Kokkos::subview(hostView, Kokkos::make_pair(startRow, endRow), 
+                           colIndex);
   }
 }
 
@@ -766,8 +800,8 @@ blockWiseMultiply (const Scalar& alpha,
   else { // alpha != 0
     const LO blockSize = this->getBlockSize ();
     const impl_scalar_type alphaImpl = static_cast<impl_scalar_type> (alpha);
-    auto X_lcl = X.mv_.template getLocalView<memory_space> ();
-    auto Y_lcl = this->mv_.template getLocalView<memory_space> ();
+    auto X_lcl = X.mv_.getLocalViewDevice (Access::ReadOnly);
+    auto Y_lcl = this->mv_.getLocalViewDevice (Access::ReadWrite);
     auto bwm = Impl::createBlockWiseMultiply (blockSize, alphaImpl, Y_lcl, D, X_lcl);
 
     // Use an explicit RangePolicy with the desired execution space.
@@ -798,17 +832,14 @@ blockJacobiUpdate (const Scalar& alpha,
   const IST betaImpl = static_cast<IST> (beta);
   const LO numVecs = mv_.getNumVectors ();
 
-  auto X_lcl = X.mv_.template getLocalView<memory_space> ();
-  auto Y_lcl = this->mv_.template getLocalView<memory_space> ();
-  auto Z_lcl = Z.mv_.template getLocalView<memory_space> ();
-
   if (alpha == STS::zero ()) { // Y := beta * Y
     this->scale (beta);
   }
   else { // alpha != 0
     Z.update (STS::one (), X, -STS::one ());
     for (LO j = 0; j < numVecs; ++j) {
-      auto X_lcl_j = subview (X_lcl, ALL (), j);
+      auto Y_lcl = this->mv_.getLocalViewDevice (Access::ReadWrite);
+      auto Z_lcl = Z.mv_.getLocalViewDevice (Access::ReadWrite);
       auto Y_lcl_j = subview (Y_lcl, ALL (), j);
       auto Z_lcl_j = subview (Z_lcl, ALL (), j);
       Impl::blockJacobiUpdate (Y_lcl_j, alphaImpl, D, Z_lcl_j, betaImpl);

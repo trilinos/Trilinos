@@ -386,8 +386,6 @@ spmv_beta_no_transpose (const KokkosKernels::Experimental::Controls& controls,
 	  }
           if (dobeta == 0) {
             y_ptr[i] = alpha*(tmp1 + tmp2 + tmp3 + tmp4);
-          } else if (dobeta == -1) {
-            y_ptr[i] -= alpha*(tmp1 + tmp2 + tmp3 + tmp4);
           } else if (dobeta == 1) {
             y_ptr[i] += alpha*(tmp1 + tmp2 + tmp3 + tmp4);
           } else {

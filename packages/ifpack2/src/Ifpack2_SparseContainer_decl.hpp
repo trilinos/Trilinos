@@ -172,6 +172,7 @@ private:
   using InverseMap = typename Tpetra::Map<InverseLocalOrdinal, InverseGlobalOrdinal, InverseNode>;
 
   using typename Container<MatrixType>::HostView;
+  using typename Container<MatrixType>::ConstHostView;
   using HostViewInverse = typename inverse_mv_type::dual_view_type::t_host;
 
   static_assert(std::is_same<MatrixType,
@@ -234,7 +235,7 @@ public:
 
   //! Compute <tt>Y := alpha * M^{-1} X + beta*Y</tt>.
   virtual void
-  apply (HostView X,
+  apply (ConstHostView X,
          HostView Y,
          int blockIndex,
          Teuchos::ETransp mode = Teuchos::NO_TRANS,
@@ -243,9 +244,9 @@ public:
 
   //! Compute <tt>Y := alpha * diag(D) * M^{-1} (diag(D) * X) + beta*Y</tt>.
   virtual void
-  weightedApply (HostView X,
+  weightedApply (ConstHostView X,
                  HostView Y,
-                 HostView W,
+                 ConstHostView W,
                  int blockIndex,
                  Teuchos::ETransp mode = Teuchos::NO_TRANS,
                  SC alpha = Teuchos::ScalarTraits<SC>::one(),
@@ -297,7 +298,7 @@ private:
   /// \param Y [in] Subset permutation of the input/output Y of apply(),
   ///   suitable for the second argument of Inverse_->apply().
   void
-  solveBlockMV(inverse_mv_type& X,
+  solveBlockMV(const inverse_mv_type& X,
                inverse_mv_type& Y,
                int blockIndex,
                Teuchos::ETransp mode,

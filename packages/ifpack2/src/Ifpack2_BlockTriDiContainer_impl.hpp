@@ -2184,6 +2184,7 @@ namespace Ifpack2 {
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using vector_type_3d_view = typename impl_type::vector_type_3d_view;
       using impl_scalar_type_2d_view_tpetra = typename impl_type::impl_scalar_type_2d_view_tpetra;
+      using const_impl_scalar_type_2d_view_tpetra = typename impl_scalar_type_2d_view_tpetra::const_type;
       static constexpr int vector_length = impl_type::vector_length;
 
       using member_type = typename Kokkos::TeamPolicy<execution_space>::member_type;
@@ -2200,7 +2201,7 @@ namespace Ifpack2 {
 
       // packed multivector output (or input)
       vector_type_3d_view packed_multivector;
-      impl_scalar_type_2d_view_tpetra scalar_multivector;
+      const_impl_scalar_type_2d_view_tpetra scalar_multivector;
 
       template<typename TagType>
       KOKKOS_INLINE_FUNCTION
@@ -2282,7 +2283,7 @@ namespace Ifpack2 {
           });
       }
 
-      void run(const impl_scalar_type_2d_view_tpetra &scalar_multivector_) {
+      void run(const const_impl_scalar_type_2d_view_tpetra &scalar_multivector_) {
         IFPACK2_BLOCKTRIDICONTAINER_PROFILER_REGION_BEGIN;
         IFPACK2_BLOCKTRIDICONTAINER_TIMER("BlockTriDi::MultiVectorConverter");
 
@@ -3810,9 +3811,9 @@ namespace Ifpack2 {
 
       // wrap the workspace with 3d view
       vector_type_3d_view pmv(work.data(), num_blockrows, blocksize, num_vectors);
-      const auto XX = X.template getLocalView<node_memory_space>();
-      const auto YY = Y.template getLocalView<node_memory_space>();
-      const auto ZZ = Z.template getLocalView<node_memory_space>();
+      const auto XX = X.getLocalViewDevice(Tpetra::Access::ReadOnly);
+      const auto YY = Y.getLocalViewDevice(Tpetra::Access::ReadWrite);
+      const auto ZZ = Z.getLocalViewDevice(Tpetra::Access::ReadWrite);
       if (is_y_zero) Kokkos::deep_copy(YY, zero);
 
       MultiVectorConverter<MatrixType> multivector_converter(interf, pmv);
