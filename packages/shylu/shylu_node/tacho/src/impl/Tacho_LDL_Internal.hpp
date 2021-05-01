@@ -41,7 +41,7 @@ namespace Tacho {
                                       Uplo::Lower::param,
                                       m,
                                       A.data(), A.stride_1(),
-                                      P.data()+m, /// fpiv is input
+                                      P.data(),
                                       W.data(),
                                       &r_val);
       }
@@ -74,21 +74,111 @@ namespace Tacho {
       int r_val = 0;      
       const ordinal_type m = A.extent(0);
       if (m > 0) {
+        value_type 
+          *__restrict__ Aptr = A.data();
         ordinal_type 
           *__restrict__ ipiv = P.data(),
           *__restrict__ fpiv = ipiv + m, 
           *__restrict__ perm = fpiv + m, 
           *__restrict__ peri = perm + m;
         const value_type one(1);
-        Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
-            D(i,0) = A(i,i);
-            A(i,i) = one;
-            ipiv[i] = i+1;
-            fpiv[i] = 0;
+        Kokkos::parallel_for
+          (Kokkos::TeamVectorRange(member, m),
+           [&](const int &i) {
             perm[i] = i;
-            peri[i] = i;
           });
+        member.team_barrier();
+        Kokkos::parallel_for
+          (Kokkos::TeamVectorRange(member,m),
+           [&](const int &j) {
+            const bool single = (j == 0);
+            for (ordinal_type i=0/*,cnt=0*/;i<m;++i) {
+              // if (ipiv[i] <= 0) {
+              //   if (++cnt%2) {
+              //     if (single) {
+              //       ipiv[i] = 0; /// invalidate this pivot
+              //       fpiv[i] = 0;
+                  
+              //       D(i,0) = A(i,  i);     
+              //       D(i,1) = A(i+1,i); /// symmetric
+              //       A(i,i) = one;
+              //     }
+              //   } else {
+              //     const ordinal_type fla_pivot = -ipiv[i]-i-1;
+              //     if (single) {
+              //       fpiv[i] = fla_pivot;
+              //     }
+              //     if (fla_pivot) {
+              //       value_type *__restrict__ src = Aptr + i;
+              //       value_type *__restrict__ tgt = src + fla_pivot;
+              //       if (j<(i-1)) {
+              //         const ordinal_type idx = j*m;
+              //         swap(src[idx], tgt[idx]);
+              //       }
+              //     }             
+                  
+              //     if (single) {
+              //       D(i,0) = A(i,i-1); 
+              //       D(i,1) = A(i,i  );
+              //       A(i,i-1) = zero; A(i,i) = one;
+              //     }
+              //   }
+              // } else 
+              {
+                const ordinal_type fla_pivot = ipiv[i]-i-1;
+                if (single) {
+                  fpiv[i] = fla_pivot;
+                }
+                if (fla_pivot) {
+                  value_type * src = Aptr + i;
+                  value_type * tgt = src + fla_pivot;
+                  if (j<i) {
+                    const ordinal_type idx = j*m;
+                    swap(src[idx],tgt[idx]);
+                  }
+                }
+
+                if (single) {
+                  D(i,0) = A(i,i); 
+                  A(i,i) = one;
+                }
+              }
+              
+              /// apply pivots to perm vector
+              if (single) {
+                if (fpiv[i]) {
+                  const ordinal_type pidx = i+fpiv[i];
+                  swap(perm[i], perm[pidx]);
+                }
+              }
+            }
+          });
+        member.team_barrier();
+        Kokkos::parallel_for
+          (Kokkos::TeamVectorRange(member, m),
+           [&](const int &i) {
+            peri[perm[i]] = i;
+          });
+
       }
+
+      /// no piv version
+      // if (m > 0) {
+      //   ordinal_type 
+      //     *__restrict__ ipiv = P.data(),
+      //     *__restrict__ fpiv = ipiv + m, 
+      //     *__restrict__ perm = fpiv + m, 
+      //     *__restrict__ peri = perm + m;
+      //   const value_type one(1);
+      //   Kokkos::parallel_for(Kokkos::TeamVectorRange(member,m),[&](const int &i) {
+      //       D(i,0) = A(i,i);
+      //       A(i,i) = one;
+      //       ipiv[i] = i+1;
+      //       fpiv[i] = 0;
+      //       perm[i] = i;
+      //       peri[i] = i;
+      //     });
+      // }
       return r_val;
     }
     

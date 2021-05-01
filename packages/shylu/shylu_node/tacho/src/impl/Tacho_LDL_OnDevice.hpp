@@ -166,6 +166,7 @@ namespace Tacho {
            KOKKOS_LAMBDA(const ordinal_type i) {
             perm[i] = i; 
           });
+        exec_instance.fence();
         Kokkos::parallel_for
           ("ExtractDiagonalsAndPostProcessing",
            range_policy,
@@ -231,6 +232,7 @@ namespace Tacho {
               }
             }
           });
+        exec_instance.fence();
         Kokkos::parallel_for
           ("PermutationInverse", range_policy,
            KOKKOS_LAMBDA(const ordinal_type i) {

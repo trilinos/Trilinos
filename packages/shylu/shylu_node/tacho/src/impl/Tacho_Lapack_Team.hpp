@@ -56,9 +56,109 @@ namespace Tacho {
         void sytrf_lower(MemberType &member, 
                          const int m, 
                          T *__restrict__ A, const int as0, const int as1,
-                         int *__restrict__ fpiv, 
-                         T *__restrict__ W,
+                         int *__restrict__ ipiv, 
                          int *info) {
+          if (m <= 0) return;
+          
+          using arith_traits = ArithTraits<T>;
+          using mag_type = typename arith_traits::mag_type;
+          
+          Kokkos::parallel_for
+            (Kokkos::TeamVectorRange(member, m),
+             [&](const int &i) {
+              ipiv[i] = i+1;
+            });
+
+          const int as = as0+as1;
+          const mag_type mu = 0.6404;
+          for (int p=0;p<m;++p) {
+            const int iend = m-p-1;
+            
+            T
+              *__restrict__ alpha11 = A+(p  )*as0+(p  )*as1,
+              *__restrict__ a21     = A+(p+1)*as0+(p  )*as1,
+              *__restrict__ A22     = A+(p+1)*as0+(p+1)*as1;
+
+            mag_type lambda1(0);
+            int idx(0);
+            {
+              using reducer_value_type = typename Kokkos::MaxLoc<mag_type, int>::value_type;
+              reducer_value_type value;
+              Kokkos::MaxLoc<mag_type, int> reducer_value(value);
+              Kokkos::parallel_reduce
+                (Kokkos::TeamVectorRange(member, iend), 
+                 [&](const int &i, reducer_value_type &update) {
+                  const mag_type val = arith_traits::abs(a21[i*as0]);
+                  if (val > update.val) {
+                    update.val = val;
+                    update.loc = i;
+                  }
+                }, reducer_value);
+              member.team_barrier();
+              
+              lambda1 = value.val;
+              idx = value.loc;
+            }
+
+            const mag_type abs_alpha = arith_traits::abs(*alpha11);
+            if (abs_alpha < mu*lambda1) {
+              mag_type lambda2(0);
+              {
+                using reducer_value_type = typename Kokkos::Max<mag_type>::value_type;
+                reducer_value_type value;
+                Kokkos::Max<mag_type> reducer_value(value);
+                Kokkos::parallel_reduce
+                  (Kokkos::TeamVectorRange(member, iend), 
+                   [&](const int &i, reducer_value_type &update) {
+                    mag_type val(0);
+                    if (i < idx) val = arith_traits::abs(a21[idx*as0+i*as1]);
+                    if (i > idx) val = arith_traits::abs(A22[idx*as+(i-idx)*as1]);
+                    if (val > update) {
+                      update = val;
+                    }
+                  }, reducer_value);
+                member.team_barrier();
+                lambda2 = value;
+              }
+              const mag_type abs_alpha_idx = arith_traits::abs(A22[idx*as]);
+              if (abs_alpha_idx*lambda2 < mu*lambda1*lambda1) {
+                /// pivot
+                Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
+                    if (i < idx)  {
+                      swap(a21[i*as0], A22[idx*as-i*as1]);
+                    } else if (i > idx) {
+                      swap(a21[i*as0], A22[idx*as+i*as0]);
+                    } else {
+                      swap(alpha11[0], A22[idx*as]);
+                      swap(ipiv[p], ipiv[p+idx]);
+                    } 
+                  });
+              }
+            }
+            member.team_barrier();
+            const T alpha = *alpha11;            
+            Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
+                a21[i*as0] /= alpha;
+              });
+            member.team_barrier();
+            Kokkos::parallel_for(Kokkos::TeamThreadRange(member,iend),[&](const int &i) {
+                const T aa = a21[i*as0];
+                Kokkos::parallel_for(Kokkos::ThreadVectorRange(member,i+1),[&](const int &j) {
+                    const T bb = a21[j*as0];
+                    A22[i*as0+j*as1] -= alpha*aa*bb;
+                  });
+              });
+            member.team_barrier();
+          }
+        }
+
+        template<typename MemberType>
+        static 
+        KOKKOS_INLINE_FUNCTION
+        void sytrf_lower_nopiv(MemberType &member, 
+                               const int m, 
+                               T *__restrict__ A, const int as0, const int as1,
+                               int *info) {
           if (m <= 0) return;
           
           //typedef ArithTraits<T> arith_traits;
@@ -137,7 +237,6 @@ namespace Tacho {
                             m,
                             A, 1, lda,
                             P,
-                            W,
                             info); 
           break;
         }
