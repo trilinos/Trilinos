@@ -95,7 +95,7 @@ namespace Tacho {
                   /// no pivot
                 } else {
                   /// 1x1 pivot
-                  const ordinal_type p = piv - 1;
+                  const ordinal_type p = i + piv;
                   const value_type tmp = A(i,j);
                   A(i,j) = A(p,j);
                   A(p,j) = tmp;

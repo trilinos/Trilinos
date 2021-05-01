@@ -100,7 +100,6 @@ namespace Tacho {
         member.team_barrier();
 
         if (n_m > 0) {
-          member.team_barrier();
           const value_type one(1), minus_one(-1), zero(0);
           UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m);
           UnmanagedViewType<value_type_matrix> STR(W.data(), m, n_m);
@@ -246,7 +245,7 @@ namespace Tacho {
         const int bufbeg = _buf_ptr(lid), bufend = _buf_ptr(lid+1);
         value_type * bufptr = _buf.data()+bufbeg;
         UnmanagedViewType<value_type_matrix> ABR(bufptr, n_m, n_m); bufptr += ABR.span();
-        UnmanagedViewType<value_type_array> W(bufptr, int(bufend-bufbeg)); 
+        UnmanagedViewType<value_type_array> W(bufptr, int(bufend-bufbeg-ABR.span())); 
         
         /// check the span does not go more than buf_ptr(lid+1)
         factorize(member, s, P, D, W, ABR);

@@ -404,7 +404,7 @@ namespace Tacho {
                                                    _stree_level, _stree_roots); \
               numeric_tools_levelset_name * N = dynamic_cast<numeric_tools_levelset_name*>(_N); \
               N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose); \
-              N->createStream(_nstreams);                               \
+              N->createStream(_nstreams, _verbose);                     \
             } while (false)
             
             switch (_variant) {
@@ -437,7 +437,7 @@ namespace Tacho {
                                                  _stree_level, _stree_roots); \
             numeric_tools_levelset_name * N = dynamic_cast<numeric_tools_levelset_name*>(_N); \
             N->initialize(_device_level_cut, _device_factor_thres, _device_solve_thres, _verbose); \
-            N->createStream(_nstreams);                                 \
+            N->createStream(_nstreams, _verbose);                       \
           } while (false)
           
           switch (_variant) {

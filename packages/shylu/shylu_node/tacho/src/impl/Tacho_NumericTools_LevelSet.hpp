@@ -595,7 +595,7 @@ namespace Tacho {
 
     inline
     void
-    createStream(const ordinal_type nstreams) {
+    createStream(const ordinal_type nstreams, const ordinal_type verbose = 0) {
 #if defined(KOKKOS_ENABLE_CUDA)
       // destroy previously created streams
       for (ordinal_type i=0;i<_nstreams;++i) {
@@ -614,7 +614,11 @@ namespace Tacho {
       _exec_instances.resize(_nstreams);
       for (ordinal_type i=0;i<_nstreams;++i) {
         ExecSpaceFactory<exec_space>::createInstance(_cuda_streams[i], _exec_instances[i]);
-      }      
+      }
+      if (verbose || true) {
+        printf("Summary: CreateStream : %3d\n", _nstreams);
+        printf("===========================\n");          
+      }
 #endif
     }
 
@@ -883,9 +887,9 @@ namespace Tacho {
               value_type * dptr = _diag.data() + 2*offs;
               UnmanagedViewType<value_type_matrix> D(dptr, m, 2);              
               _status = LDL<Uplo::Lower,Algo::OnDevice>::modify(exec_instance, ATL, P, D); checkDeviceLapackStatus("ldl::modify");
+              exec_instance.fence();
 
               if (n_m > 0) {
-                exec_instance.fence();
                 UnmanagedViewType<value_type_matrix> ATR(aptr, m, n_m); // aptr += m*n_m;
                 UnmanagedViewType<value_type_matrix> ABR(_buf.data()+h_buf_factor_ptr(p-pbeg), n_m, n_m); 
                 UnmanagedViewType<value_type_matrix> STR(ABR.data()+ABR.span(), m, n_m); 
@@ -1698,7 +1702,7 @@ namespace Tacho {
         ordinal_type_array P(NULL, _info.max_supernode_size);
         const size_type worksize = LDL<Uplo::Lower,Algo::OnDevice>
           ::invoke(_handle_lapack, T, P, work); 
-        work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams+1));
+        work = value_type_array(do_not_initialize_tag("work"), worksize*(_nstreams+1)*max(8, _nstreams));
 #else
         const size_type worksize = 32*_info.max_supernode_size;
         work = value_type_array(do_not_initialize_tag("work"), worksize);

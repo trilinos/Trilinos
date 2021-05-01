@@ -97,7 +97,7 @@ namespace Tacho {
       }
       const double kilo(1024);
       printf("  FLOPs\n");
-      printf("             gflop   for numeric factorization wrt. Chol:     %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop   for numeric factorization:               %10.3f GFLOP\n", flop/kilo/kilo/kilo);
       printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
       printf("\n");
     }
@@ -355,8 +355,8 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: NumericTools, Cholesky (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
-        printf("==================================================\n");
+        printf("Summary: NumericTools, LDL (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
+        printf("=============================================\n");
 
         print_stat_solve();
       }

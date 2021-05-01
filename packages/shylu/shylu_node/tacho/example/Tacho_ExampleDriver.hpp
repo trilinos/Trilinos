@@ -19,6 +19,10 @@ int driver (int argc, char *argv[]) {
   int sym = 2;
   int posdef = 1;
   int small_problem_thres = 1024;
+  int device_factor_thres = 64;
+  int device_solve_thres = 128;
+  int variant = 0;
+  int nstreams = 8;
 
   Tacho::CommandLineParser opts("This example program measure the Tacho on Kokkos::OpenMP");
 
@@ -32,6 +36,10 @@ int driver (int argc, char *argv[]) {
   opts.set_option<int>("symmetric", "Symmetric type: 0 - unsym, 1 - structure sym, 2 - symmetric", &sym);
   opts.set_option<int>("posdef", "Positive definite: 0 - indef, 1 - positive definite", &posdef);
   opts.set_option<int>("small-problem-thres", "LAPACK is used smaller than this thres", &small_problem_thres);
+  opts.set_option<int>("device-factor-thres", "Device function is used above this subproblem size", &device_factor_thres);
+  opts.set_option<int>("device-solve-thres", "Device function is used above this subproblem size", &device_solve_thres);
+  opts.set_option<int>("variant", "algorithm variant in levelset scheduling; 0, 1 and 2", &variant);
+  opts.set_option<int>("nstreams", "# of streams used in CUDA; on host, it is ignored", &nstreams);
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -122,6 +130,11 @@ int driver (int argc, char *argv[]) {
 
     /// graph options
     solver.setOrderConnectedGraphSeparately();
+
+    /// levelset options
+    solver.setLevelSetOptionDeviceFunctionThreshold(device_factor_thres, device_solve_thres);
+    solver.setLevelSetOptionAlgorithmVariant(variant);
+    solver.setLevelSetOptionNumStreams(nstreams);
 
     auto values_on_device = Kokkos::create_mirror_view(typename device_type::memory_space(), A.Values());
     Kokkos::deep_copy(values_on_device, A.Values());
