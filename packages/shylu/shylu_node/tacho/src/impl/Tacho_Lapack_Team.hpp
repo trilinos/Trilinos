@@ -61,7 +61,7 @@ namespace Tacho {
                          int *info) {
           if (m <= 0) return;
           
-          typedef ArithTraits<T> arith_traits;
+          //typedef ArithTraits<T> arith_traits;
           for (int p=0;p<m;++p) {
             const int iend = m-p-1;
             
@@ -70,7 +70,7 @@ namespace Tacho {
               *__restrict__ a21     = A+(p+1)*as0+(p  )*as1,
               *__restrict__ A22     = A+(p+1)*as0+(p+1)*as1;
             
-            const auto alpha = arith_traits::real(*alpha11);
+            const auto alpha = *alpha11; //arith_traits::real(*alpha11);
             Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
                 a21[i*as0] /= alpha;
               });
