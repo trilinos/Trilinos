@@ -510,7 +510,8 @@ namespace MueLu {
       for(int i = 0; i < 5; i++) {
         for(int j = i + 1; j < 6; j++) {
           double thisDist = distance(extremeVectors[i], extremeVectors[j]);
-          if(thisDist > maxDist) {
+          // Want to make sure thisDist is significantly larger than maxDist to prevent roundoff errors from impacting node choice.
+          if(thisDist > maxDist && thisDist - maxDist > 1e-12) {
             maxDist = thisDist;
             base1 = i;
             base2 = j;
@@ -534,7 +535,8 @@ namespace MueLu {
       for(Iter node = aggNodes.begin(); node != aggNodes.end(); node++) {
         myVec3 nodePos(xCoords[*node], yCoords[*node], zCoords[*node]);
         double dist = mymagnitude(crossProduct(vecSubtract(nodePos, b1), vecSubtract(nodePos, b2))) / mymagnitude(vecSubtract(b2, b1));
-        if(dist > maxDist) {
+        // Want to make sure dist is significantly larger than maxDist to prevent roundoff errors from impacting node choice.
+        if(dist > maxDist && dist - maxDist > 1e-12) {
           maxDist = dist;
           thirdNode = node;
         }
@@ -550,7 +552,8 @@ namespace MueLu {
       for(Iter node = aggNodes.begin(); node != aggNodes.end(); node++) {
         myVec3 thisNode(xCoords[*node], yCoords[*node], zCoords[*node]);
         double nodeDist = pointDistFromTri(thisNode, b1, b2, b3);
-        if(nodeDist > maxDist) {
+        // Want to make sure nodeDist is significantly larger than maxDist to prevent roundoff errors from impacting node choice.
+        if(nodeDist > maxDist && nodeDist - maxDist > 1e-12) {
           maxDist = nodeDist;
           fourthVertex = *node;
         }
@@ -951,7 +954,8 @@ namespace MueLu {
     {
       myVec3 pointVec(xCoords[*point], yCoords[*point], zCoords[*point]);
       double dist = pointDistFromTri(pointVec, v1, v2, v3);
-      if(dist > maxDist)
+      // Want to make sure nodeDist is significantly larger than maxDist to prevent roundoff errors from impacting node choice.
+      if(dist > maxDist && dist - maxDist > 1e-12)
       {
         dist = maxDist;
         farPointVec = pointVec;
