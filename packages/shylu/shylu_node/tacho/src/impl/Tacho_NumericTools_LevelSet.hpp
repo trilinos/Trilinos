@@ -279,7 +279,7 @@ namespace Tacho {
       }
       const double kilo(1024);
       printf("  FLOPs\n");
-      printf("             gflop   for numeric factorization wrt. Chol:     %10.3f GFLOP\n", flop/kilo/kilo/kilo);
+      printf("             gflop   for numeric factorization:               %10.3f GFLOP\n", flop/kilo/kilo/kilo);
       printf("             gflop/s for numeric factorization:               %10.3f GFLOP/s\n", flop/stat.t_factor/kilo/kilo/kilo);
       printf("\n");
       printf("  Kernels\n");
