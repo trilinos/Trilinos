@@ -314,10 +314,9 @@ namespace FROSch {
           horz.reserve((M+1)*Dim);
           int numSubPerRow  = std::pow(size,1/3.)+0.7;
           //int numSubPerRow = numSubPerRow1;
-        //  numSubPerRow = numSubPerRow+1;
+          //  numSubPerRow = numSubPerRow+1;
           if(Comm->getRank() == 0) std::cout<<"Size "<<size<<"\n";
-
-        //  if(Comm->getRank() == 0) std::cout<<"numSubPerRow1 "<<numSubPerRow1<<"  numSubPerRow "<<numSubPerRow<<"\n";
+          //if(Comm->getRank() == 0) std::cout<<"numSubPerRow1 "<<numSubPerRow1<<"  numSubPerRow "<<numSubPerRow<<"\n";
           int subInLev = numSubPerRow*numSubPerRow;
           if(Comm->getRank() == 0) std::cout<<"subInLev "<<subInLev<<"\n";
           GO nodesInRow = M*numSubPerRow;
