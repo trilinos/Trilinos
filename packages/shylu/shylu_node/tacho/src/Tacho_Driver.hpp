@@ -138,10 +138,10 @@ namespace Tacho {
     ordinal_type _small_problem_thres;  // smaller than this, use lapack
     
     // // ** tasking options
-    // ordinal_type _serial_thres_size;    // serialization threshold size    
-    // ordinal_type _mb;                   // block size for byblocks algorithms
-    // ordinal_type _nb;                   // panel size for panel algorithms
-    // ordinal_type _front_update_mode;    // front update mode 0 - lock, 1 - atomic
+    ordinal_type _serial_thres_size;    // serialization threshold size    
+    ordinal_type _mb;                   // block size for byblocks algorithms
+    ordinal_type _nb;                   // panel size for panel algorithms
+    ordinal_type _front_update_mode;    // front update mode 0 - lock, 1 - atomic
 
     // ** levelset options
     bool         _levelset;             // use level set code instead of tasking
@@ -151,8 +151,8 @@ namespace Tacho {
     ordinal_type _variant;              // algorithmic variant in levelset 0: naive, 1: invert diagonals
     ordinal_type _nstreams;             // on cuda, multi streams are used
 
-    // // parallelism and memory constraint is made via this parameter
-    // ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
+    // parallelism and memory constraint is made via this parameter
+    ordinal_type _max_num_superblocks;  // # of superblocks in the memoyrpool
 
   public:
     Driver();
@@ -177,11 +177,11 @@ namespace Tacho {
     ///
     /// tasking options
     ///
-    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1) {}
-    void setBlocksize(const ordinal_type mb = -1) {}
-    void setPanelsize(const ordinal_type nb = -1) {}
-    void setFrontUpdateMode(const ordinal_type front_update_mode = 1) {}
-    void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1) {}
+    void setSerialThresholdsize(const ordinal_type serial_thres_size = -1);
+    void setBlocksize(const ordinal_type mb = -1);
+    void setPanelsize(const ordinal_type nb = -1);
+    void setFrontUpdateMode(const ordinal_type front_update_mode = 1);
+    void setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks = -1);
 
     ///
     /// Level set tools options
@@ -328,6 +328,6 @@ namespace Tacho {
 
 }
 
-#include "Tacho_Driver_Impl.hpp"
+//#include "Tacho_Driver_Impl.hpp"
 
 #endif

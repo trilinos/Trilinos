@@ -23,18 +23,18 @@ namespace Tacho {
       _N(nullptr),
       _verbose(0),
       _small_problem_thres(1024),
-      // _serial_thres_size(-1),
-      // _mb(-1),
-      // _nb(-1),
-      // _front_update_mode(-1),
+      _serial_thres_size(-1),
+      _mb(-1),
+      _nb(-1),
+      _front_update_mode(-1),
       _levelset(0),
       _device_level_cut(0),
-      _device_factor_thres(64),
+      _device_factor_thres(128),
       _device_solve_thres(128),
       _variant(2),
-    _nstreams(16) {}
-      // _max_num_superblocks(-1) 
-
+    _nstreams(16),
+    _max_num_superblocks(-1) {}
+  
   ///
   /// common options
   ///
@@ -90,40 +90,40 @@ namespace Tacho {
   ///
   /// tasking options
   ///
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setSerialThresholdsize(const ordinal_type serial_thres_size) {
-  //   _serial_thres_size = serial_thres_size;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setSerialThresholdsize(const ordinal_type serial_thres_size) {
+    _serial_thres_size = serial_thres_size;
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setBlocksize(const ordinal_type mb) {
-  //   _mb = mb;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setBlocksize(const ordinal_type mb) {
+    _mb = mb;
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setPanelsize(const ordinal_type nb) {
-  //   _nb = nb;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setPanelsize(const ordinal_type nb) {
+    _nb = nb;
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setFrontUpdateMode(const ordinal_type front_update_mode) {
-  //   _front_update_mode = front_update_mode;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setFrontUpdateMode(const ordinal_type front_update_mode) {
+    _front_update_mode = front_update_mode;
+  }
 
-  // template<typename VT, typename DT>  
-  // void 
-  // Driver<VT,DT>
-  // ::setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks) {
-  //   _max_num_superblocks = max_num_superblocks;
-  // }
+  template<typename VT, typename DT>  
+  void 
+  Driver<VT,DT>
+  ::setMaxNumberOfSuperblocks(const ordinal_type max_num_superblocks) {
+    _max_num_superblocks = max_num_superblocks;
+  }
 
   ///
   /// Level set tools options
@@ -372,7 +372,7 @@ namespace Tacho {
 #if !defined(__CUDA_ARCH__)
       if (std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
         const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
-        if (nthreads == 1 && false) {
+        if (nthreads == 1 || true) {
           /// single threaded case
           if (_N == nullptr) 
             _N = (numeric_tools_base_type*) ::operator new (sizeof(numeric_tools_serial_type));
@@ -385,7 +385,10 @@ namespace Tacho {
                                              _sid_super_panel_ptr, _sid_super_panel_colidx, _blk_super_panel_colidx,
                                              _stree_parent, _stree_ptr, _stree_children, 
                                              _stree_level, _stree_roots);
-        } else {
+        } 
+        //// levelset is not going to be supported on CPUs
+#if 0
+        else {
           /// multi threaded case for test only
           if (_levelset || true) {
             /// level schedule
@@ -417,6 +420,7 @@ namespace Tacho {
             /// tasking 
           }
         }
+#endif
       }
 #endif 
 #if defined(KOKKOS_ENABLE_CUDA)

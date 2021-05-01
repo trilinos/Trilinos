@@ -111,8 +111,8 @@ namespace Tacho {
                   (Kokkos::TeamVectorRange(member, iend), 
                    [&](const int &i, reducer_value_type &update) {
                     mag_type val(0);
-                    if (i < idx) val = arith_traits::abs(a21[idx*as0+i*as1]);
-                    if (i > idx) val = arith_traits::abs(A22[idx*as+(i-idx)*as1]);
+                    if      (i < idx) val = arith_traits::abs(a21[idx*as0+i*as1]);
+                    else if (i > idx) val = arith_traits::abs(A22[idx*as+(i-idx)*as0]);
                     if (val > update) {
                       update = val;
                     }
@@ -124,13 +124,11 @@ namespace Tacho {
               if (abs_alpha_idx*lambda2 < mu*lambda1*lambda1) {
                 /// pivot
                 Kokkos::parallel_for(Kokkos::TeamVectorRange(member,iend),[&](const int &i) {
-                    if (i < idx)  {
-                      swap(a21[i*as0], A22[idx*as-i*as1]);
-                    } else if (i > idx) {
-                      swap(a21[i*as0], A22[idx*as+i*as0]);
-                    } else {
+                    if      (i < idx) swap(a21[i*as0], A22[idx*as0+i*as1]);
+                    else if (i > idx) swap(a21[i*as0], A22[i*as0+idx*as1]);
+                    else {
                       swap(alpha11[0], A22[idx*as]);
-                      swap(ipiv[p], ipiv[p+idx]);
+                      ipiv[p] = ipiv[p+idx+1];
                     } 
                   });
               }

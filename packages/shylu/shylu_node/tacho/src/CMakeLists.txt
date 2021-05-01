@@ -81,6 +81,19 @@ APPEND_SET(SOURCES
   eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_Cuda.cpp
   eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_OpenMP.cpp
   eti/Tacho_Solver_ETI_TaskSchedulerMultiple_float_Serial.cpp
+  eti/Tacho_Driver_ETI_complex_double_Cuda.cpp
+  eti/Tacho_Driver_ETI_complex_double_OpenMP.cpp
+  eti/Tacho_Driver_ETI_complex_double_Serial.cpp
+  eti/Tacho_Driver_ETI_complex_float_Cuda.cpp
+  eti/Tacho_Driver_ETI_complex_float_OpenMP.cpp
+  eti/Tacho_Driver_ETI_complex_float_Serial.cpp
+  eti/Tacho_Driver_ETI_double_Cuda.cpp
+  eti/Tacho_Driver_ETI_double_OpenMP.cpp
+  eti/Tacho_Driver_ETI_double_Serial.cpp
+  eti/Tacho_Driver_ETI_float_Cuda.cpp
+  eti/Tacho_Driver_ETI_float_OpenMP.cpp
+  eti/Tacho_Driver_ETI_float_Serial.cpp
+
 )
 
 #-----------------------------------------------------------------------------

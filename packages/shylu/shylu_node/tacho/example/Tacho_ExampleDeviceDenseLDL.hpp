@@ -9,6 +9,7 @@
 
 #include "Tacho_LDL.hpp"
 #include "Tacho_LDL_External.hpp"
+#include "Tacho_LDL_Internal.hpp"
 #include "Tacho_LDL_OnDevice.hpp"
 
 #include "Tacho_Scale2x2_BlockInverseDiagonals.hpp"
@@ -135,6 +136,14 @@ int driver_ldl (const int m, const bool verbose) {
       printf("LDLt lwork %d\n", lwork);
       Tacho::LDL<Tacho::Uplo::Lower,Tacho::Algo::OnDevice>
         ::invoke(handle_lapack, A, p, W);
+      // {
+      //   using policy_type = Kokkos::TeamPolicy<Kokkos::DefaultExecutionSpace>;
+      //   policy_type policy(1, 1, 1);
+      //   Kokkos::parallel_for(policy, KOKKOS_LAMBDA(const typename policy_type::member_type &member) {
+      //       Tacho::LDL<Tacho::Uplo::Lower,Tacho::Algo::Internal>
+      //         ::invoke(member, A, p, W);
+      //     });
+      // }
       Kokkos::fence();
       
       Tacho::LDL<Tacho::Uplo::Lower,Tacho::Algo::OnDevice>
