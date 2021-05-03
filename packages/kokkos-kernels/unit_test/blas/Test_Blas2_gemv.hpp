@@ -26,7 +26,7 @@ namespace Test {
 
     ScalarA alpha = 3;
     ScalarX beta = 5;
-    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarY>::mag_type, float>::value ? 1e-3 : 1e-10);
+    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarY>::mag_type, float>::value ? 1e-3 : 5e-10);
 
     int ldx;
     int ldy;
@@ -115,26 +115,35 @@ namespace Test {
 
     KokkosBlas::gemv(mode, alpha, A, x, beta, y);
     Kokkos::deep_copy(h_b_y, b_y);
+    int numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
-      EXPECT_NEAR_KK(expected(i), h_y(i), eps * expected(i));
+      if(KAT::abs(expected(i) - h_y(i)) > KAT::abs(eps * expected(i)))
+        numErrors++;
     }
+    EXPECT_EQ(numErrors, 0) << "Nonconst input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
  
     Kokkos::deep_copy(b_y, b_org_y);
     KokkosBlas::gemv(mode, alpha,A ,c_x, beta, y);
     Kokkos::deep_copy(h_b_y, b_y);
+    numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
-      EXPECT_NEAR_KK(expected(i), h_y(i), eps);
+      if(KAT::abs(expected(i) - h_y(i)) > KAT::abs(eps * expected(i)))
+        numErrors++;
     }
+    EXPECT_EQ(numErrors, 0) << "Const vector input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
 
     Kokkos::deep_copy(b_y, b_org_y);
     KokkosBlas::gemv(mode, alpha, c_A, c_x, beta, y);
     Kokkos::deep_copy(h_b_y, b_y);
+    numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
-      EXPECT_NEAR_KK(expected(i), h_y(i), eps);
+      if(KAT::abs(expected(i) - h_y(i)) > KAT::abs(eps * expected(i)))
+        numErrors++;
     }
+    EXPECT_EQ(numErrors, 0) << "Const matrix/vector input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
   }
 }
 
@@ -156,8 +165,12 @@ int test_gemv(const char* mode) {
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,200,10);
   #endif
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,0,1024);
+  Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,1024,0);
+  Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,13,13);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,13,1024);
+  Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,50,40);
   Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,1024,1024);
+  Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,4321,4321);
   //Test::impl_test_gemv<view_type_a_ll, view_type_b_ll, view_type_c_ll, Device>(mode,132231,1024);
 #endif
 
@@ -166,8 +179,12 @@ int test_gemv(const char* mode) {
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutRight, Device> view_type_b_lr;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutRight, Device> view_type_c_lr;
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,0,1024);
+  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,1024,0);
+  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,13,13);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,13,1024);
+  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,50,40);
   Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,1024,1024);
+  Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,4321,4321);
   //Test::impl_test_gemv<view_type_a_lr, view_type_b_lr, view_type_c_lr, Device>(mode,132231,1024);
 #endif
 
@@ -176,8 +193,12 @@ int test_gemv(const char* mode) {
   typedef Kokkos::View<ScalarX*, Kokkos::LayoutStride, Device> view_type_b_ls;
   typedef Kokkos::View<ScalarY*, Kokkos::LayoutStride, Device> view_type_c_ls;
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,0,1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,1024,0);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,13,13);
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,13,1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,50,40);
   Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,1024,1024);
+  Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,4321,4321);
   //Test::impl_test_gemv<view_type_a_ls, view_type_b_ls, view_type_c_ls, Device>(mode,132231,1024);
 #endif
 
