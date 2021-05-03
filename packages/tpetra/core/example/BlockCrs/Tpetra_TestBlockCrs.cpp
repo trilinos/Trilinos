@@ -238,7 +238,7 @@ int main (int argc, char *argv[])
     // uses a different device. An easy check is device configuration for
     // 4 mpi nodes as the typical number of GPUs per node is 4.
     if (commTest->getRank () < 4) {
-      exec_space::print_configuration (std::cout, false);
+      exec_space{}.print_configuration (std::cout, false);
     }
 
     if (debug) {
@@ -477,7 +477,8 @@ int main (int argc, char *argv[])
       {
         TimeMonitor timerMultiVectorFill(*TimeMonitor::getNewTimer("4) MultiVectorFill"));
 
-        auto value = X->getLocalView<typename exec_space::memory_space>(Tpetra::Access::OverwriteAll);
+        using device_type = typename tpetra_multivector_type::node_type::device_type;
+        auto value = X->getLocalView<device_type>(Tpetra::Access::OverwriteAll);
         auto map = X->getMap()->getLocalMap();
         Kokkos::parallel_for
           (value.extent(0), KOKKOS_LAMBDA(const LO i) {
