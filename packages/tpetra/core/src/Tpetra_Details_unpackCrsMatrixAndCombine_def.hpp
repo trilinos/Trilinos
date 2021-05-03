@@ -284,7 +284,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
     if (expected_num_bytes > num_bytes)
     {
-      printf(
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the expected number of bytes (%d) != number of unpacked bytes (%d)\n",
         (int) lid_no, (int) expected_num_bytes, (int) num_bytes
@@ -295,7 +295,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
 
     if (offset > buf_size || offset + num_bytes > buf_size)
     {
-      printf(
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, the offset (%d) > buffer size (%d)\n",
         (int) lid_no, (int) offset, (int) buf_size
@@ -332,7 +332,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
     (void)PackTraits<LO>::unpackValue(num_ent_out, num_ent_in);
     if (static_cast<size_t>(num_ent_out) != num_entries_in_row)
     {
-      printf(
+      KOKKOS_IMPL_DO_NOT_USE_PRINTF(
         "*** Error: UnpackCrsMatrixAndCombineFunctor: "
         "At row %d, number of entries (%d) != number of entries unpacked (%d)\n",
         (int) lid_no, (int) num_entries_in_row, (int) num_ent_out
@@ -389,7 +389,7 @@ struct UnpackCrsMatrixAndCombineFunctor {
           );
         } else {
           // should never get here
-          printf(
+          KOKKOS_IMPL_DO_NOT_USE_PRINTF(
             "*** Error: UnpackCrsMatrixAndCombineFunctor: "
             "At row %d, an unknown error occurred during unpack\n", (int) lid_no
           );
