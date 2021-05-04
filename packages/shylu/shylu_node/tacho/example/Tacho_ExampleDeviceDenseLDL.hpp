@@ -123,9 +123,9 @@ int driver_ldl (const int m, const bool verbose) {
       Kokkos::View<value_type**,Kokkos::LayoutRight,device_type> D("D", m, 2);
       Kokkos::View<int*,Kokkos::LayoutLeft,device_type> p("pivots", 4*m);
 
-      value_type * A_ptr = A.data();
-      value_type * x_ptr = x.data();
-      int * p_ptr = p.data();
+      //value_type * A_ptr = A.data();
+      //value_type * x_ptr = x.data();
+      //int * p_ptr = p.data();
         
       timer.reset();
       Kokkos::View<value_type*,Kokkos::LayoutLeft,device_type> W;
