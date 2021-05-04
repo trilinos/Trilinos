@@ -47,7 +47,7 @@
 // The level of detail of the timers used in FROSch is determined by FROSCH_TIMER_DETAILS
 // Currently, we support no timers (0), selected timers (1), and all timers (2)
 #ifndef FROSCH_TIMER_DETAILS
-    #define FROSCH_TIMER_DETAILS 2
+    #define FROSCH_TIMER_DETAILS 1
 #endif
 
 #if FROSCH_TIMER_DETAILS > 1
