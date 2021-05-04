@@ -22,7 +22,7 @@ module load sems-hdf5/1.10.6/parallel
 module load sems-netcdf/4.7.3/parallel
 module load sems-parmetis/4.0.3/parallel
 module load sems-scotch/6.0.3/nopthread_64bit_parallel
-module load sems-superlu/4.3/base
+module load sems-superlu_dist/5.2.2/32bit_parallel
 
 module load sems-cmake/3.17.1
 module load sems-ninja_fortran/1.8.2
