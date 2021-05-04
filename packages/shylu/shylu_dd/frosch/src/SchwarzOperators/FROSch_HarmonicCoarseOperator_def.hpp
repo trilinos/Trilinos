@@ -580,7 +580,7 @@ namespace FROSch {
                 //     linearDependentVectors[tmp] = i;
                 //     tmp++;
                 // }
-                if ((*r)(i,i)<tresholdOrthogonalization) {
+                if (fabs((*r)(i,i))<tresholdOrthogonalization) {
                     //cout << this->MpiComm_->getRank() << " " << i << " " << AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(i) << " " << sqrt(normRow) << std::endl;
                     linearDependentVectors[tmp] = i;
                     tmp++;
