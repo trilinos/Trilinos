@@ -108,7 +108,7 @@ namespace FROSch {
         int buildGlobalBasisMatrix(ConstXMapPtr rowMap,
                                    ConstXMapPtr rangeMap,
                                    ConstXMapPtr repeatedMap,
-                                   SC treshold);
+                                   SC tresholdDropping);
 
         int clearCoarseSpace();
 
