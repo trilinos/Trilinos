@@ -738,6 +738,12 @@ namespace Tpetra {
                    const bool commOnHost,
                    const bool restrictedMode);
 
+    void doPostsAndWaits(Distributor& distor,
+                         size_t constantNumPackets,
+                         bool commOnHost,
+                         ReverseOption revOp,
+                         std::shared_ptr<std::string> prefix);
+
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
                           size_t& constantNumPackets,
