@@ -13,7 +13,7 @@ namespace Tacho {
   template<typename VT, typename DT>
   Driver<VT,DT>
   ::Driver()
-    : _mode(0), _order_connected_graph_separately(0),
+    : _mode(1), _order_connected_graph_separately(0),
       _m(0), _nnz(0),
       _ap(), _h_ap(), _aj(), _h_aj(),
       _perm(), _h_perm(), _peri(), _h_peri(),
