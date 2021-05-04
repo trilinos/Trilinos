@@ -790,6 +790,12 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   solveStatus.extraParameters->set ("Belos/Achieved Tolerance",
                                     solveStatus.achievedTol);
 
+  if(solverType_ == SOLVER_TYPE_PSEUDO_BLOCK_CG){
+    RCP<Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> > blockcg = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> >(iterativeSolver_);
+    Scalar cond = blockcg->getConditionEstimate();
+    *out<<"\n Estimated condition number: "<<cond<<" \n \n";
+  }
+
 //  This information is in the previous line, which is printed anytime the verbosity
 //  is not set to Teuchos::VERB_NONE, so I'm commenting this out for now.
 //  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
