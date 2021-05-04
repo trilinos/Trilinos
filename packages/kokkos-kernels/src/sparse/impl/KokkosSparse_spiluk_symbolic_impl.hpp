@@ -343,12 +343,12 @@ void iluk_symbolic ( IlukHandle& thandle,
   thandle.set_nnzU(cntU);
 
   // Sort
-  for (size_type row_id = 0; row_id < L_row_map.extent(0)-1; row_id++) {
+  for (size_type row_id = 0; row_id < static_cast<size_type>(L_row_map.extent(0))-1; row_id++) {
     size_type row_start = L_row_map(row_id);
     size_type row_end   = L_row_map(row_id + 1);
     Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
   }
-  for (size_type row_id = 0; row_id < U_row_map.extent(0)-1; row_id++) {
+  for (size_type row_id = 0; row_id < static_cast<size_type>(U_row_map.extent(0))-1; row_id++) {
     size_type row_start = U_row_map(row_id);
     size_type row_end   = U_row_map(row_id + 1);
     Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
