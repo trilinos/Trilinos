@@ -29,7 +29,48 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../unit_tests)
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
 
-  IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_AztecOO)
+  TRIBITS_ADD_EXECUTABLE(
+    AggExport
+    SOURCES AggExport.cpp
+    COMM serial mpi
+    )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    AggExport
+    NAME "VizElasticity3DPointCloudTpetra"
+    ARGS "--matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizElasticity3DPointCloud.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    AggExport
+    NAME "VizLaplace3DPointCloudTpetra"
+    ARGS "--matrixType=Laplace3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizLaplace3DPointCloud.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    AggExport
+    NAME "VizElasticity3DConvexHullsTpetra"
+    ARGS "--matrixType=Elasticity3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizElasticity3DConvexHulls.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+  MUELU_ADD_SERIAL_AND_MPI_TEST(
+    AggExport
+    NAME "VizLaplace3DConvexHullsTpetra"
+    ARGS "--matrixType=Laplace3D --nx=10 --ny=10 --nz=10 --linAlgebra=Tpetra --xml=vizLaplace3DConvexHulls.xml"
+    NUM_MPI_PROCS 4
+    COMM serial mpi
+    )
+
+
+  IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_AztecOO AND NOT ${PACKAGE_NAME}_ENABLE_Kokkos_Refactor)
+  # AggregationExportFactory can't work with
+  # Aggregates_kokkos (yet)
     TRIBITS_ADD_EXECUTABLE(
       Viz
       SOURCES Viz.cpp
@@ -80,5 +121,25 @@ ENDIF()
 
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Viz_cp
-    SOURCE_FILES viztest.xml
+    SOURCE_FILES viztest.xml vizElasticity3DPointCloud.xml vizLaplace3DPointCloud.xml vizElasticity3DConvexHulls.xml vizLaplace3DConvexHulls.xml
+    MPI-Viz-Output-Laplace3D-PointCloud-Level0.gold
+    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc0.gold
+    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc1.gold
+    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc2.gold
+    MPI-Viz-Output-Laplace3D-PointCloud-Level0-Proc3.gold
+    MPI-Viz-Output-Elasticity3D-PointCloud-Level0.gold
+    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc0.gold
+    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc1.gold
+    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc2.gold
+    MPI-Viz-Output-Elasticity3D-PointCloud-Level0-Proc3.gold
+    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0.gold
+    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc0.gold
+    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc1.gold
+    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc2.gold
+    MPI-Viz-Output-Laplace3D-ConvexHulls-Level0-Proc3.gold
+    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0.gold
+    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc0.gold
+    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc1.gold
+    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc2.gold
+    MPI-Viz-Output-Elasticity3D-ConvexHulls-Level0-Proc3.gold
     )
