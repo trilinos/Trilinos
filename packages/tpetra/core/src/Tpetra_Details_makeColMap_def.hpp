@@ -587,6 +587,11 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   using device_t = typename NT::device_type;
   using exec_space = typename device_t::execution_space;
   using memory_space = typename device_t::memory_space;
+  // Note BMK 5-2021: this is deliberately exec_space, not device_t
+  // The reason is that Bitset cannot use HIPHostPinnedSpace currently -
+  // using the default memory space for HIP (HIPSpace) instead works fine.
+  // This won't cause any type mismatches in Tpetra because this Bitset is
+  // just used locally in makeColMap().
   using bitset_t = Kokkos::Bitset<exec_space>;
   using const_bitset_t = Kokkos::ConstBitset<exec_space>;
   using GOView = Kokkos::View<GO*, memory_space>;
