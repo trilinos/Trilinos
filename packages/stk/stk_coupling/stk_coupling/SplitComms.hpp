@@ -46,6 +46,8 @@ public:
 
   bool is_coupling_version_deprecated() const;
 
+  bool is_initialized() const;
+
 private:
   void setup_pairwise_comms();
   void fill_other_colors();

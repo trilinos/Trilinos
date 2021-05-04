@@ -530,12 +530,12 @@ namespace Galeri {
 	  GetNeighboursCartesian3d(center, nx, ny, nz,
 				   left, right, front, back, bottom, top);
 
-	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
-                             (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-	                     (front == -1 && (DirichletBC & DIR_BOTTOM)) ||
-	                     (back  == -1 && (DirichletBC & DIR_TOP))    ||
-                             (front == -1 && (DirichletBC & DIR_FRONT))  ||
-                             (back  == -1 && (DirichletBC & DIR_BACK));
+	  bool isDirichlet = (left   == -1 && (DirichletBC & DIR_LEFT))   ||
+                             (right  == -1 && (DirichletBC & DIR_RIGHT))  ||
+                             (bottom == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                             (top    == -1 && (DirichletBC & DIR_TOP))    ||
+                             (front  == -1 && (DirichletBC & DIR_FRONT))  ||
+                             (back   == -1 && (DirichletBC & DIR_BACK));
 
 	  if (isDirichlet && keepBCs) {
 	    // Dirichlet unknown we want to keep
@@ -635,8 +635,8 @@ namespace Galeri {
 
 	  bool isDirichlet = (left  == -1 && (DirichletBC & DIR_LEFT))   ||
                              (right == -1 && (DirichletBC & DIR_RIGHT))  ||
-                             (front == -1 && (DirichletBC & DIR_BOTTOM)) ||
-                             (back  == -1 && (DirichletBC & DIR_TOP))    ||
+                             (below == -1 && (DirichletBC & DIR_BOTTOM)) ||
+                             (above == -1 && (DirichletBC & DIR_TOP))    ||
                              (front == -1 && (DirichletBC & DIR_FRONT))  ||
                              (back  == -1 && (DirichletBC & DIR_BACK));
 

@@ -69,14 +69,18 @@ protected:
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
         stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-        EXPECT_TRUE(stk::balance::internal::rebalanceMtoN(get_bulk(), *targetDecompField, parsedOptions));
+        stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, parsedOptions);
     }
 
-    // FIXME
     void setup_initial_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
     {
-        create_target_decomp_field_on_entire_mesh();
-        setup_mesh(get_input_mesh_file_name(), auraOption);
+      const std::string tempInputFilename = "TemporaryInputFile.g";
+      stk::unit_test_util::generated_mesh_to_file_in_serial(get_generated_mesh_spec(), tempInputFilename);
+
+      allocate_bulk(auraOption);
+      create_target_decomp_field_on_entire_mesh();
+      m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
+      stk::io::fill_mesh_preexisting(m_ioBroker, tempInputFilename, get_bulk());
     }
 
     void create_field_on_entire_mesh(const std::string& fieldName)
@@ -185,10 +189,10 @@ protected:
 
     void test_num_elements_this_subdomain(const std::string& subdomain_filename)
     {
-        stk::mesh::MetaData feta;
-        stk::mesh::BulkData bulkData(feta, MPI_COMM_SELF);
+        stk::mesh::MetaData meta;
+        stk::mesh::BulkData bulkData(meta, MPI_COMM_SELF);
         stk::io::fill_mesh(subdomain_filename, bulkData);
-        EXPECT_EQ(get_num_elements_per_proc_for_target_decomp(), stk::mesh::count_selected_entities(feta.universal_part(), bulkData.buckets(stk::topology::ELEM_RANK)));
+        EXPECT_EQ(get_num_elements_per_proc_for_target_decomp(), stk::mesh::count_selected_entities(meta.universal_part(), bulkData.buckets(stk::topology::ELEM_RANK)));
     }
 
     size_t get_num_elements_per_proc_for_target_decomp() const
@@ -196,10 +200,10 @@ protected:
         return get_x()*get_y()*get_z()/get_num_procs_target_decomp();
     }
 
-    virtual std::string get_input_mesh_file_name() const
+    virtual std::string get_generated_mesh_spec() const
     {
         std::ostringstream os;
-        os << "generated:" << get_x() << "x" << get_y() << "x" << get_z() << std::endl;
+        os << get_x() << "x" << get_y() << "x" << get_z() << std::endl;
         return os.str();
     }
 
@@ -210,6 +214,7 @@ protected:
     virtual unsigned get_num_procs_target_decomp() const = 0;
 
     stk::mesh::Field<double> *targetDecompField;
+    stk::io::StkMeshIoBroker m_ioBroker;
 };
 
 #endif

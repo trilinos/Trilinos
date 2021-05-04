@@ -419,7 +419,12 @@ public:
       vectorDoubleTargetField = static_cast<VectorDoubleField*>(metaB->get_field(field_rank, prefix + " Vector Double Field"));
 
       std::vector<stk::mesh::Entity> targetNodes;
-      stk::mesh::get_entities(*meshB, field_rank, metaB->locally_owned_part(), targetNodes);
+      stk::mesh::Selector receiverSelector = metaB->locally_owned_part();
+      if (receiverIncludesSharedNodes) {
+        receiverSelector |= metaB->globally_shared_part();
+      }
+      stk::mesh::get_entities(*meshB, field_rank, receiverSelector, targetNodes);
+
       std::vector<stk::mesh::FieldBase*> targetFields;
       targetFields.push_back(scalarIntTargetField);
       targetFields.push_back(scalarDoubleTargetField);
@@ -437,6 +442,7 @@ public:
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(*transferSourcePtr, *transferTargetPtr,key_to_target_processor);
 
+      stk::util::sort_and_unique(key_to_target_processor);
       keyToTargetCheck(key_to_target_processor);
 
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
@@ -480,13 +486,18 @@ public:
       EXPECT_TRUE (meshA); //if mehsB didn't exist on processor, mehsA should exist
     }
   }
+
+  void add_shared_nodes_to_receiver() { receiverIncludesSharedNodes = true; }
+
   virtual ~CopyTransferFixture() = default;
+
 protected:
   stk::ParallelMachine pm;
   stk::ParallelMachine pmSub;
 //  Does this communicator own the mesh
   std::vector<bool> commOwnsMesh;
   SearchById copySearch;
+  bool receiverIncludesSharedNodes = false;
   const size_t spatial_dimension = 3;
   std::unique_ptr<stk::mesh::MetaData> metaA;
   std::unique_ptr<stk::mesh::BulkData> meshA;
@@ -703,23 +714,24 @@ namespace {
 stk::transfer::SearchById::KeyToTargetProcessor get_01T10_key_to_target_processor_gold(stk::ParallelMachine pm)
 {
   const int p_rank = stk::parallel_machine_rank( pm );
-  stk::transfer::SearchById::KeyToTargetProcessor gold_map;
+  stk::transfer::SearchById::KeyToTargetProcessor gold;
   if (0 == p_rank) {
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 1;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 1;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 1;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 1;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 0;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 0;
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 1);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,4), 1);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 1);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 1);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 0);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,5), 0);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,8), 0);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 0);
   } else {
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 0;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 0;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
-    gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 0;
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 0);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 0);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,9), 0);
+    gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,12), 0);
   }
-  return gold_map;
+  stk::util::sort_and_unique(gold);
+  return gold;
 }
 
 
@@ -772,12 +784,12 @@ TYPED_TEST(CopyTransferFixture, copy01T10)
   this->build_fixture(element_ownerA, element_ownerB, FourElemMeshInfo());
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
-    auto gold_map = get_01T10_key_to_target_processor_gold(this->pm);
-    EXPECT_TRUE( gold_map == key_to_target_processor );
+    auto gold = get_01T10_key_to_target_processor_gold(this->pm);
+    EXPECT_EQ(gold, key_to_target_processor);
       },
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
         auto gold_remote_keys = get_01T10_remote_key_gold(this->pm);
-        EXPECT_TRUE( remote_keys == gold_remote_keys);
+        EXPECT_EQ(remote_keys, gold_remote_keys);
       });
 
   this->check_target_fields();
@@ -821,14 +833,14 @@ TYPED_TEST(CopyTransferFixture, copy01T32_MPMD)
         if (color == 1) return;
 
         //Map wrt subcommunicators is same as non mpmd 01T10 case above
-        auto gold_map = get_01T10_key_to_target_processor_gold(this->pmSub);
+        auto gold = get_01T10_key_to_target_processor_gold(this->pmSub);
 
         //adjust from subcommunicator to global
-        for (auto && elem : gold_map)
+        for (auto && elem : gold)
         {
           elem.second+=2;
         }
-        EXPECT_TRUE( gold_map == key_to_target_processor );
+        EXPECT_EQ(gold, key_to_target_processor);
       },
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
         if (color == 0) return;
@@ -842,7 +854,7 @@ TYPED_TEST(CopyTransferFixture, copy01T32_MPMD)
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
         }
 
-        EXPECT_TRUE( remote_keys == gold_remote_keys);
+        EXPECT_EQ(remote_keys, gold_remote_keys);
       });
 
   this->check_target_fields();
@@ -878,27 +890,28 @@ TYPED_TEST(CopyTransferFixture, copy001T011)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
-      stk::transfer::SearchById::KeyToTargetProcessor gold_map;
+      stk::transfer::SearchById::KeyToTargetProcessor gold;
       if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,13)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,14)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,15)] = 1;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,5), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,9), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,13), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 1);
       } else {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 1;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,4), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,8), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,12), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,16), 1);
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
       },
 
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
@@ -911,7 +924,7 @@ TYPED_TEST(CopyTransferFixture, copy001T011)
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,15).m_value);
         }
-        EXPECT_TRUE( remote_keys == gold_remote_keys );
+        EXPECT_EQ(remote_keys, gold_remote_keys);
       });
 
   this->check_target_fields();
@@ -946,14 +959,15 @@ TYPED_TEST(CopyTransferFixture, copy001T011Element)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
-        stk::transfer::SearchById::KeyToTargetProcessor gold_map;
+        stk::transfer::SearchById::KeyToTargetProcessor gold;
         if (0 == p_rank) {
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,1)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,2)] = 1;
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,1), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,2), 1);
         } else {
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,3)] = 1;
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,3), 1);
         }
-        EXPECT_TRUE( gold_map == key_to_target_processor );
+        stk::util::sort_and_unique(gold);
+        EXPECT_EQ(gold, key_to_target_processor);
       },
 
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
@@ -962,7 +976,7 @@ TYPED_TEST(CopyTransferFixture, copy001T011Element)
         if (1 == p_rank) {
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::ELEM_RANK,2).m_value);
         }
-        EXPECT_TRUE( remote_keys == gold_remote_keys );
+        EXPECT_EQ(remote_keys, gold_remote_keys);
       }, stk::topology::ELEM_RANK);
 
   this->check_target_fields(stk::topology::ELEMENT_RANK);
@@ -1017,33 +1031,34 @@ TYPED_TEST(CopyTransferFixture, copy001T011Face)
   this->run_test([&, p_rank](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
       {
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor gold_map;
+      KeyToTargetProcessor gold;
       if (0 == p_rank) {
         stk::mesh::Entity elem1 = mesh_a.get_entity(stk::topology::ELEM_RANK, 1);
         stk::mesh::Entity elem2 = mesh_a.get_entity(stk::topology::ELEM_RANK, 2);
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 0))] = 0;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 1))] = 0;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 2))] = 0;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 3))] = 0;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 4))] = 0;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 5))] = 0;
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 0)), 0);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 1)), 0);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 2)), 0);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 3)), 0);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 4)), 0);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem1, 5)), 0);
 
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 0))] = 1;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 1))] = 1;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 2))] = 1;
-        //gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 3))] = 0;  // Already in map from elem1
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 4))] = 1;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 5))] = 1;
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 0)), 1);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 1)), 1);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 2)), 1);
+        //gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem2, 3)), 0);  // Already in map from elem1
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 4)), 1);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem2, 5)), 1);
       } else {
         stk::mesh::Entity elem3 = mesh_a.get_entity(stk::topology::ELEM_RANK, 3);
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 0))] = 1;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 1))] = 1;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 2))] = 1;
-        //gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 3))] = 0;  // Not owned by this proc
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 4))] = 1;
-        gold_map[mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 5))] = 1;
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 0)), 1);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 1)), 1);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 2)), 1);
+        //gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(meshA, elem3, 3)), 0);  // Not owned by this proc
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 4)), 1);
+        gold.emplace_back(mesh_a.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_a, elem3, 5)), 1);
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
       },
 
       [&, p_rank](const stk::transfer::SearchById::MeshIDSet & remote_keys){
@@ -1058,7 +1073,7 @@ TYPED_TEST(CopyTransferFixture, copy001T011Face)
         gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 4)).m_value);
         gold_remote_keys.insert(mesh_b.entity_key(stk::mesh::get_side_entity_for_elem_side_pair(mesh_b, elem2, 5)).m_value);
       }
-      EXPECT_TRUE( remote_keys == gold_remote_keys );
+      EXPECT_EQ(remote_keys, gold_remote_keys);
       }, stk::topology::FACE_RANK);
 
   this->check_target_fields(stk::topology::FACE_RANK);
@@ -1094,7 +1109,7 @@ TEST(Transfer, copy001T011Shell)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
+      EXPECT_EQ(copySearchPtr, &geometricSearch);
     }
     stk::transfer::SearchById & copySearch = *copySearchPtr;
 
@@ -1109,13 +1124,13 @@ TEST(Transfer, copy001T011Shell)
         {10,11,3,2,14,15,7,6},
         {11,12,4,3,15,16,8,7} };
     std::vector<int> node_sharingA = { -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1,
-                            -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
+                                       -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1 };
     std::vector<int> node_sharingB = { -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1, -1,  1, -1, -1,
-                            -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1 };
+                                       -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1, -1,  0, -1, -1 };
     std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
-                                {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
-                                {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
-                                {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
+                                                     {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
+                                                     {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
+                                                     {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
 
 
     // Set up the "source" mesh for the transfer
@@ -1222,30 +1237,32 @@ TEST(Transfer, copy001T011Shell)
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
+      stk::util::sort_and_unique(key_to_target_processor);
 
-      KeyToTargetProcessor gold_map;
+      KeyToTargetProcessor gold;
       for (int shell_index=0; shell_index<num_shells; ++shell_index) {
         if (0 == p_rank) {
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,10+100*shell_index)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,11+100*shell_index)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,12+100*shell_index)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,13+100*shell_index)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,14+100*shell_index)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,15+100*shell_index)] = 0;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,16+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,17+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,18+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,19+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,20+100*shell_index)] = 1;
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,10+100*shell_index), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,11+100*shell_index), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,12+100*shell_index), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,13+100*shell_index), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,14+100*shell_index), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,15+100*shell_index), 0);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,16+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,17+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,18+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,19+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,20+100*shell_index), 1);
         } else {
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,21+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,22+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,23+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,24+100*shell_index)] = 1;
-          gold_map[stk::mesh::EntityKey(stk::topology::ELEM_RANK,25+100*shell_index)] = 1;
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,21+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,22+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,23+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,24+100*shell_index), 1);
+          gold.emplace_back(stk::mesh::EntityKey(stk::topology::ELEM_RANK,25+100*shell_index), 1);
         }
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
 
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
@@ -1258,7 +1275,7 @@ TEST(Transfer, copy001T011Shell)
           gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::ELEM_RANK,20+100*shell_index).m_value);
         }
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
+      EXPECT_EQ(copySearch.get_remote_keys(), gold_remote_keys);
     }
     stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
@@ -1356,28 +1373,29 @@ TYPED_TEST(CopyTransferFixture, copy012T000)
   const int p_rank = stk::parallel_machine_rank( this->pm );
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
-      stk::transfer::SearchById::KeyToTargetProcessor gold_map;
+      stk::transfer::SearchById::KeyToTargetProcessor gold;
       if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,13)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,14)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,5), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,9), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,13), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 0);
       } else if (1 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,15)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 0);
       } else {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,4), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,8), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,12), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,16), 0);
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
       },
 
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
@@ -1393,7 +1411,7 @@ TYPED_TEST(CopyTransferFixture, copy012T000)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( remote_keys == gold_remote_keys );
+      EXPECT_EQ(remote_keys, gold_remote_keys);
     });
 
   this->check_target_fields();
@@ -1433,29 +1451,30 @@ TYPED_TEST(CopyTransferFixture, copy000T012)
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor gold_map;
+      KeyToTargetProcessor gold;
       if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,13)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,5), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,9), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,13), 0);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,14)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 0);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,15)] = 1;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 1);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 2;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 2;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 2;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 2;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,4), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,8), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,12), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,16), 2);
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
       },
 
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
@@ -1472,7 +1491,109 @@ TYPED_TEST(CopyTransferFixture, copy000T012)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( remote_keys == gold_remote_keys );
+      EXPECT_EQ(remote_keys, gold_remote_keys);
+    });
+
+  this->check_target_fields();
+}
+
+TYPED_TEST(CopyTransferFixture, copy000T012_multipleTargets)
+{
+//    ^ Y       ID.owning_proc
+//    |
+//    |    X                   meshA                                         meshB
+//    .---->    5.0--------6.0--------7.0--------8.0         5.0--------6.0--------7.1--------8.2
+//   /          /|         /|         /|         /|          /|         /|         /|         /|
+//  /          / |        / |        / |        / |         / |        / |        / |        / |
+// v Z      13.0-------14.0-------15.0-------16.0 |      13.0-------14.0-------15.1-------16.2 |
+//            |  |  1.0  |  |  2.0  |  |  3.0  |  |  -->   |  |  1.0  |  |  2.1  |  |  3.2  |  |
+//            | 1.0------|-2.0------|-3.0------|-4.0       | 1.0------|-2.0------|-3.1------|-4.2
+//            | /        | /        | /        | /         | /        | /        | /        | /
+//            |/         |/         |/         |/          |/         |/         |/         |/
+//           9.0-------10.0-------11.0-------12.0         9.0-------10.0-------11.1-------12.2
+//
+//  This is the same as the previous test, but with the destination receiving values
+//  on both locally-owned and shared instead of just locally-owned.  So, every node
+//  that isn't ghosted will receive some data.
+
+  const int color = 0; //all ranks same communicator
+  this->init(MPI_COMM_WORLD, color);
+
+  const int p_size = stk::parallel_machine_size( this->pm );
+  if (p_size != 3) {
+    return;
+  }
+
+
+  auto meshInfo = create_SixElemMeshInfo_000T012();
+  std::vector<int> element_ownerA = {0, 0, 0};
+  std::vector<int> element_ownerB = {0, 1, 2};
+  this->build_fixture(element_ownerA, element_ownerB, meshInfo);
+  const int p_rank = stk::parallel_machine_rank( this->pm );
+  this->add_shared_nodes_to_receiver();
+
+  this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
+    {
+      typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
+      KeyToTargetProcessor gold;
+      if (0 == p_rank) {
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,5), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,9), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,13), 0);
+
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 1);
+
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 2);
+
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,4), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,8), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,12), 2);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,16), 2);
+      }
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
+      },
+
+      [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
+      typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
+      MeshIDSet gold_remote_keys;
+      if (1 == p_rank) {
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,2).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,6).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,10).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,14).m_value);
+
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,7).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,15).m_value);
+      } else if (2 == p_rank) {
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,3).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,7).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,15).m_value);
+
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,4).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,8).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
+        gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
+      }
+      EXPECT_EQ(remote_keys, gold_remote_keys);
     });
 
   this->check_target_fields();
@@ -1529,34 +1650,35 @@ TYPED_TEST(CopyTransferFixture, copy0011T1010)
   this->run_test([=](const stk::transfer::SearchById::KeyToTargetProcessor & key_to_target_processor)
     {
       typedef stk::transfer::SearchById::KeyToTargetProcessor KeyToTargetProcessor;
-      KeyToTargetProcessor gold_map;
+      KeyToTargetProcessor gold;
       if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,1)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,16)] = 1;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,1), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,16), 1);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,12)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,17)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,12), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,17), 0);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,8)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,13)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,18)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,8), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,13), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,18), 0);
       } else if (1 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,4)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,9)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,14)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,19)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,4), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,9), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,19), 0);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,5)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,15)] = 0;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,20)] = 0;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,5), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 0);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,20), 0);
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
       },
 
       [=](const stk::transfer::SearchById::MeshIDSet & remote_keys){
@@ -1578,7 +1700,7 @@ TYPED_TEST(CopyTransferFixture, copy0011T1010)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,11).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( remote_keys == gold_remote_keys );
+      EXPECT_EQ(remote_keys, gold_remote_keys);
     });
 
   this->check_target_fields();
@@ -1614,7 +1736,7 @@ TEST(Transfer, copy0T_)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
+      EXPECT_EQ(copySearchPtr, &geometricSearch);
     }
     stk::transfer::SearchById & copySearch = *copySearchPtr;
 
@@ -1695,12 +1817,12 @@ TEST(Transfer, copy0T_)
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
-      KeyToTargetProcessor gold_map;
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      KeyToTargetProcessor gold;
+      EXPECT_EQ(gold, key_to_target_processor);
 
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
+      EXPECT_EQ(copySearch.get_remote_keys(), gold_remote_keys);
     }
     stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
@@ -1741,7 +1863,7 @@ TEST(Transfer, copy_T0)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
+      EXPECT_EQ(copySearchPtr, &geometricSearch);
     }
     stk::transfer::SearchById & copySearch = *copySearchPtr;
 
@@ -1810,8 +1932,8 @@ TEST(Transfer, copy_T0)
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
-      KeyToTargetProcessor gold_map;
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      KeyToTargetProcessor gold;
+      EXPECT_EQ(gold, key_to_target_processor);
 
       EXPECT_EQ( 8u, copySearch.get_remote_keys().size() );
     }
@@ -1856,7 +1978,7 @@ TEST(Transfer, copy00_T_11)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
+      EXPECT_EQ(copySearchPtr, &geometricSearch);
     }
     stk::transfer::SearchById & copySearch = *copySearchPtr;
 
@@ -1871,13 +1993,13 @@ TEST(Transfer, copy00_T_11)
         {2, 3, 7, 6, 10, 11, 15, 14},
         {3, 4, 8, 7, 11, 12, 16, 15} };
     std::vector<int> node_sharingA = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+                                       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     std::vector<int> node_sharingB = { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-      -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
+                                       -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 };
     std::vector<std::vector<double>> coordinates = { {0.0, 0.0, 0.0}, {1.0, 0.0, 0.0}, {2.0, 0.0, 0.0}, {3.0, 0.0, 0.0},
-      {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
-      {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
-      {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
+                                                     {0.0, 1.0, 0.0}, {1.0, 1.0, 0.0}, {2.0, 1.0, 0.0}, {3.0, 1.0, 0.0},
+                                                     {0.0, 0.0, 1.0}, {1.0, 0.0, 1.0}, {2.0, 0.0, 1.0}, {3.0, 0.0, 1.0},
+                                                     {0.0, 1.0, 1.0}, {1.0, 1.0, 1.0}, {2.0, 1.0, 1.0}, {3.0, 1.0, 1.0} };
 
     // Set up the "source" mesh for the transfer
     //
@@ -1936,19 +2058,20 @@ TEST(Transfer, copy00_T_11)
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
-      KeyToTargetProcessor gold_map;
+      KeyToTargetProcessor gold;
       if (0 == p_rank) {
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,2)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,6)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,10)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,14)] = 1;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,2), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,6), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,10), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,14), 1);
 
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,3)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,7)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,11)] = 1;
-        gold_map[stk::mesh::EntityKey(stk::topology::NODE_RANK,15)] = 1;
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,3), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,7), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,11), 1);
+        gold.emplace_back(stk::mesh::EntityKey(stk::topology::NODE_RANK,15), 1);
       }
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      stk::util::sort_and_unique(gold);
+      EXPECT_EQ(gold, key_to_target_processor);
 
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
@@ -1968,7 +2091,7 @@ TEST(Transfer, copy00_T_11)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,12).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,16).m_value);
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
+      EXPECT_EQ(copySearch.get_remote_keys(), gold_remote_keys);
     }
     stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 
@@ -2011,7 +2134,7 @@ TEST(Transfer, copy00___T___11)
   {
     if (1 == search_index) {
       copySearchPtr = &geometricSearch;
-      EXPECT_TRUE( copySearchPtr == &geometricSearch );
+      EXPECT_EQ(copySearchPtr, &geometricSearch);
     }
     stk::transfer::SearchById & copySearch = *copySearchPtr;
 
@@ -2093,8 +2216,8 @@ TEST(Transfer, copy00___T___11)
       KeyToTargetProcessor key_to_target_processor;
       copySearch.do_search(transferSource,transferTarget,key_to_target_processor);
 
-      KeyToTargetProcessor gold_map;
-      EXPECT_TRUE( gold_map == key_to_target_processor );
+      KeyToTargetProcessor gold;
+      EXPECT_EQ(gold, key_to_target_processor);
 
       typedef stk::transfer::SearchById::MeshIDSet MeshIDSet;
       MeshIDSet gold_remote_keys;
@@ -2115,7 +2238,7 @@ TEST(Transfer, copy00___T___11)
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,18).m_value);
         gold_remote_keys.insert(stk::mesh::EntityKey(stk::topology::NODE_RANK,24).m_value);
       }
-      EXPECT_TRUE( copySearch.get_remote_keys() == gold_remote_keys );
+      EXPECT_EQ(copySearch.get_remote_keys(), gold_remote_keys);
     }
     stk::transfer::TransferCopyById transfer(copySearch, transferSource, transferTarget);
 

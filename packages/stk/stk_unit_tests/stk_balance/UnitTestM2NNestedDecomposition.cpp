@@ -203,7 +203,7 @@ public:
     const bool useNestedDecomp = false;
     stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
     testing::internal::CaptureStdout();
-    stk::balance::internal::rebalanceMtoN(get_bulk(), *m_targetDecompField, parsedOptions);
+    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, parsedOptions);
     testing::internal::GetCapturedStdout();
   }
 };
@@ -212,7 +212,7 @@ TEST_F(M2NDefaultRebalance, Bar)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
-  setup_initial_mesh("generated:1x1x8");
+  setup_initial_mesh("1x1x8");
   rebalance_mesh_m2n(4);
   test_decomposed_mesh_element_distribution({2, 2, 2, 2});
 }
@@ -221,7 +221,7 @@ TEST_F(M2NDefaultRebalance, Plate)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
-  setup_initial_mesh("generated:1x4x4");
+  setup_initial_mesh("1x4x4");
   rebalance_mesh_m2n(4);
   test_decomposed_mesh_element_distribution({4, 4, 4, 4});
 }
@@ -230,7 +230,7 @@ TEST_F(M2NDefaultRebalance, Cube)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
-  setup_initial_mesh("generated:4x4x4");
+  setup_initial_mesh("4x4x4");
   rebalance_mesh_m2n(8);
   test_decomposed_mesh_element_distribution({8, 8, 8, 8, 8, 8, 8, 8});
 }
@@ -245,7 +245,7 @@ public:
     const bool useNestedDecomp = true;
     stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
     testing::internal::CaptureStdout();
-    stk::balance::internal::rebalanceMtoN(get_bulk(), *m_targetDecompField, parsedOptions);
+    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, parsedOptions);
     testing::internal::GetCapturedStdout();
   }
 };
@@ -254,7 +254,7 @@ TEST_F(M2NNestedRebalance, Bar)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
-  setup_initial_mesh("generated:1x1x8");
+  setup_initial_mesh("1x1x8");
   rebalance_mesh_m2n(4);
   test_decomposed_mesh_element_distribution({2, 2, 2, 2});
 }
@@ -263,7 +263,7 @@ TEST_F(M2NNestedRebalance, Plate)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
-  setup_initial_mesh("generated:1x4x4");
+  setup_initial_mesh("1x4x4");
   rebalance_mesh_m2n(4);
   test_decomposed_mesh_element_distribution({4, 4, 4, 4});
 }
@@ -272,7 +272,7 @@ TEST_F(M2NNestedRebalance, Cube)
 {
   if (stk::parallel_machine_size(get_comm()) != 2) return;
 
-  setup_initial_mesh("generated:4x4x4");
+  setup_initial_mesh("4x4x4");
   rebalance_mesh_m2n(8);
   test_decomposed_mesh_element_distribution({8, 8, 8, 8, 8, 8, 8, 8});
 }

@@ -21,14 +21,14 @@ namespace Test {
                 std::is_same<typename ViewTypeB::array_layout,Kokkos::LayoutStride>::value,
                 Kokkos::LayoutRight, Kokkos::LayoutLeft>::type,Device> BaseTypeB;
 
+    using MagnitudeA = typename Kokkos::ArithTraits<ScalarA>::mag_type;
 
     ScalarA a = 3;
-    double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
+    double eps = std::is_same<MagnitudeA,float>::value?2e-5:1e-7;
 
     BaseTypeA b_x("X",N);
     BaseTypeB b_y("Y",N);
     BaseTypeB b_org_y("Org_Y",N);
-    
 
     ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
     ViewTypeB y = Kokkos::subview(b_y,Kokkos::ALL(),0);
@@ -43,26 +43,40 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    {
+      ScalarA randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(x,rand_pool,randStart,randEnd);
+    }
+    {
+      ScalarB randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(y,rand_pool,randStart,randEnd);
+    }
 
     Kokkos::deep_copy(b_org_y,b_y);
+    auto h_b_org_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
 
     Kokkos::deep_copy(h_b_x,b_x);
-    Kokkos::deep_copy(h_b_y,b_y);
-
-    ScalarA expected_result = 0;
-    for(int i=0;i<N;i++)
-      expected_result += ScalarB(a*h_x(i) + h_y(i)) * ScalarB(a*h_x(i) + h_y(i));
 
     KokkosBlas::axpy(a,x,y);
-    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
- 
+    Kokkos::deep_copy(h_b_y, b_y);
+
+    for(int i=0;i<N;i++)
+    {
+      ScalarB expected = a * h_x(i) + h_b_org_y(i, 0);
+      EXPECT_NEAR_KK(expected, h_y(i), eps);
+    }
+
+    //reset y to orig, and run again with const-valued x
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::axpy(a,c_x,y);
-    ScalarB const_nonconst_result = KokkosBlas::dot(c_y,c_y);
-    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i=0;i<N;i++)
+    {
+      ScalarB expected = a * h_x(i) + h_b_org_y(i, 0);
+      EXPECT_NEAR_KK(expected, h_y(i), eps);
+    }
   }
 
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -92,10 +106,19 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    {
+      ScalarA randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
+    }
+    {
+      ScalarB randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
+    }
 
     Kokkos::deep_copy(b_org_y,b_y);
+    auto h_b_org_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
 
     Kokkos::deep_copy(h_b_x,b_x);
     Kokkos::deep_copy(h_b_y,b_y);
@@ -103,33 +126,28 @@ namespace Test {
     ScalarA a = 3;
     typename ViewTypeA::const_type c_x = x;
 
-    ScalarA* expected_result = new ScalarA[K];
-    for(int j=0;j<K;j++) {
-      expected_result[j] = ScalarA();
-      for(int i=0;i<N;i++)
-        expected_result[j] += ScalarB(a*h_x(i,j) + h_y(i,j)) * ScalarB(a*h_x(i,j) + h_y(i,j));
-    }
-
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
-    Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
-
     KokkosBlas::axpy(a,x,y);
-    KokkosBlas::dot(r,y,y);
-    for(int k=0;k<K;k++) {
-      ScalarA nonconst_nonconst_result = r(k);
-      EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result[k], eps*expected_result[k]);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < N; i++)
+    {
+      for(int j = 0; j < K; j++)
+      {
+        EXPECT_NEAR_KK(a * h_x(i, j) + h_b_org_y(i, j), h_y(i, j), eps);
+      }
     }
 
     Kokkos::deep_copy(b_y,b_org_y);
     KokkosBlas::axpy(a,c_x,y);
-    KokkosBlas::dot(r,y,y);
-    for(int k=0;k<K;k++) {
-      ScalarA const_non_const_result = r(k);
-      EXPECT_NEAR_KK( const_non_const_result, expected_result[k], eps*expected_result[k]);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < N; i++)
+    {
+      for(int j = 0; j < K; j++)
+      {
+        EXPECT_NEAR_KK(a * h_x(i, j) + h_b_org_y(i, j), h_y(i, j), eps);
+      }
     }
-
-    delete [] expected_result;
   }
 }
 

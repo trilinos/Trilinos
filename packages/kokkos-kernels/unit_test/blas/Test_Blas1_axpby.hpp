@@ -31,6 +31,7 @@ namespace Test {
     BaseTypeB b_org_y("Org_Y",N);
     
 
+    auto h_b_org_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
     ViewTypeA x = Kokkos::subview(b_x,Kokkos::ALL(),0);
     ViewTypeB y = Kokkos::subview(b_y,Kokkos::ALL(),0);
     typename ViewTypeA::const_type c_x = x;
@@ -44,26 +45,38 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    {
+      ScalarA randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
+    }
+    {
+      ScalarB randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
+    }
 
     Kokkos::deep_copy(b_org_y,b_y);
+    Kokkos::deep_copy(h_b_org_y, b_org_y);
 
     Kokkos::deep_copy(h_b_x,b_x);
-    Kokkos::deep_copy(h_b_y,b_y);
 
-    ScalarA expected_result = 0;
-    for(int i=0;i<N;i++)
-      expected_result += ScalarB(a*h_x(i) + b*h_y(i)) * ScalarB(a*h_x(i) + b*h_y(i));
-
+    //Run with non-const input (x) and verify 
     KokkosBlas::axpby(a,x,b,y);
-    ScalarB nonconst_nonconst_result = KokkosBlas::dot(y,y);
-    EXPECT_NEAR_KK( nonconst_nonconst_result, expected_result, eps*expected_result);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < N; i++)
+    {
+      EXPECT_NEAR_KK(a * h_x(i) + b * h_b_org_y(i, 0), h_y(i), eps);
+    }
  
     Kokkos::deep_copy(b_y,b_org_y);
+    //Run again with const input (c_x)
     KokkosBlas::axpby(a,c_x,b,y);
-    ScalarB const_nonconst_result = KokkosBlas::dot(c_y,c_y);
-    EXPECT_NEAR_KK( const_nonconst_result, expected_result, eps*expected_result);
+    Kokkos::deep_copy(h_b_y, b_y);
+    for(int i = 0; i < N; i++)
+    {
+      EXPECT_NEAR_KK(a * h_x(i) + b * h_b_org_y(i, 0), h_y(i), eps);
+    }
   }
 
   template<class ViewTypeA, class ViewTypeB, class Device>
@@ -93,10 +106,19 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_x,rand_pool,ScalarA(10));
-    Kokkos::fill_random(b_y,rand_pool,ScalarB(10));
+    {
+      ScalarA randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_x,rand_pool,randStart,randEnd);
+    }
+    {
+      ScalarB randStart, randEnd;
+      Test::getRandomBounds(10.0, randStart, randEnd);
+      Kokkos::fill_random(b_y,rand_pool,randStart,randEnd);
+    }
 
     Kokkos::deep_copy(b_org_y,b_y);
+    auto h_b_org_y = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), b_org_y);
 
     Kokkos::deep_copy(h_b_x,b_x);
     Kokkos::deep_copy(h_b_y,b_y);
@@ -105,36 +127,32 @@ namespace Test {
     ScalarB b = 5;
     typename ViewTypeA::const_type c_x = x;
 
-    ScalarA* expected_result = new ScalarA[K];
-    for(int j=0;j<K;j++) {
-      expected_result[j] = ScalarA();
-      for(int i=0;i<N;i++)
-        expected_result[j] += ScalarB(a*h_x(i,j) + b*h_y(i,j)) * ScalarB(a*h_x(i,j) + b*h_y(i,j));
-    }
-
-
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;
 
     Kokkos::View<ScalarB*,Kokkos::HostSpace> r("Dot::Result",K);
 
-    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
-
     KokkosBlas::axpby(a,x,b,y);
-    KokkosBlas::dot(r,y,y);
-    for(int k=0;k<K;k++) {
-      ScalarA nonconst_nonconst_result = r(k);
-      EXPECT_NEAR_KK( AT::abs(nonconst_nonconst_result), AT::abs(expected_result[k]), AT::abs(expected_result[k]*eps));
+    Kokkos::deep_copy(h_b_y, b_y);
+
+    for(int i = 0; i < N; i++)
+    {
+      for(int j = 0; j < K; j++)
+      {
+        EXPECT_NEAR_KK(a * h_x(i, j) + b * h_b_org_y(i, j), h_y(i, j), eps);
+      }
     }
 
-    Kokkos::deep_copy(b_y,b_org_y);
+    Kokkos::deep_copy(b_y, b_org_y);
     KokkosBlas::axpby(a,c_x,b,y);
-    KokkosBlas::dot(r,y,y);
-    for(int k=0;k<K;k++) {
-      ScalarA const_non_const_result = r(k);
-      EXPECT_NEAR_KK( AT::abs(const_non_const_result), AT::abs(expected_result[k]), AT::abs(eps*expected_result[k]));
-    }
+    Kokkos::deep_copy(h_b_y, b_y);
 
-    delete [] expected_result;
+    for(int i = 0; i < N; i++)
+    {
+      for(int j = 0; j < K; j++)
+      {
+        EXPECT_NEAR_KK(a * h_x(i, j) + b * h_b_org_y(i, j), h_y(i, j), eps);
+      }
+    }
   }
 }
 

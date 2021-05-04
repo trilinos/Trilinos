@@ -55,6 +55,14 @@ testAll() {
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_} ARM-20.1_OPENMPI-4.0.3 ${ATDM_CONFIG_COMPILER}
 
+  ATDM_CONFIG_BUILD_NAME=before-arm-20.1-openmpi-4.0.5_after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ARM-20.1_OPENMPI-4.0.5 ${ATDM_CONFIG_COMPILER}
+
+  ATDM_CONFIG_BUILD_NAME=before-arm-20.1_openmpi-4.0.5-after
+  . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
+  ${_ASSERT_EQUALS_} ARM-20.1_OPENMPI-4.0.5 ${ATDM_CONFIG_COMPILER}
+
   ATDM_CONFIG_BUILD_NAME=before_arm-20.1-after
   . ${ATDM_CONFIG_SCRIPT_DIR}/utils/set_build_options.sh
   ${_ASSERT_EQUALS_}  ARM-20.1_OPENMPI-4.0.3 ${ATDM_CONFIG_COMPILER}

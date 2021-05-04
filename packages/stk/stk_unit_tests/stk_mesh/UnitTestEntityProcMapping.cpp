@@ -44,6 +44,29 @@
 #include <vector>
 #include <set>
 
+TEST(EntityAndProcs, find_proc)
+{
+  stk::mesh::Entity entity(1);
+  int proc = 0;
+  stk::mesh::EntityAndProcs entityAndProcs(entity, proc);
+  EXPECT_TRUE(entityAndProcs.find_proc(proc));
+  EXPECT_FALSE(entityAndProcs.find_proc(proc+1));
+}
+
+TEST(EntityAndProcs, find_proc_multiple)
+{
+  stk::mesh::Entity entity(1);
+  int proc = 0;
+  stk::mesh::EntityAndProcs entityAndProcs(entity, proc);
+  entityAndProcs.proc = -1;
+  entityAndProcs.procs.push_back(0);
+  entityAndProcs.procs.push_back(1);
+
+  EXPECT_TRUE(entityAndProcs.find_proc(proc));
+  EXPECT_TRUE(entityAndProcs.find_proc(proc+1));
+  EXPECT_FALSE(entityAndProcs.find_proc(proc+2));
+}
+
 TEST(EntityProcMapping, basic)
 {
   if (stk::parallel_machine_size(MPI_COMM_WORLD) > 4) {

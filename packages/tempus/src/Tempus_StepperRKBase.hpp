@@ -150,7 +150,7 @@ public:
         c(i) = values[i];
     }
 
-    if (tableauPL->isParameter("bstar") and
+    if (tableauPL->isParameter("bstar") &&
         tableauPL->get<std::string>("bstar") != "") {
       bstar.size(Teuchos::as<int>(numStages));
       // read in the bstar vector

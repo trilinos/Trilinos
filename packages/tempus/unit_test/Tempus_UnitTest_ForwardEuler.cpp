@@ -102,7 +102,7 @@ public:
   StepperForwardEulerModifierTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testEND_STEP(false), testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -127,8 +127,8 @@ public:
         testBEFORE_EXPLICIT_EVAL = true;
         testDt = sh->getWorkingState()->getTimeStep()/10.0;
         sh->getWorkingState()->setTimeStep(testDt);
-        testType = "Forward Euler - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Forward Euler - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperForwardEulerAppAction<double>::END_STEP:
@@ -149,7 +149,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
@@ -164,8 +164,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
   stepper->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -200,7 +199,7 @@ TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
-  TEST_COMPARE(modifier->testType, ==, "Forward Euler - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Forward Euler - Modifier");
 }
 
 
@@ -215,7 +214,7 @@ public:
   StepperForwardEulerObserverTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testEND_STEP(false), testCurrentValue(-0.99),
-      testWorkingValue(-0.99),testDt(-1.5), testType("")
+      testWorkingValue(-0.99),testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -239,7 +238,7 @@ public:
       {
         testBEFORE_EXPLICIT_EVAL = true;
         testDt = sh->getWorkingState()->getTimeStep();
-        testType = stepper->getStepperType();
+        testName = stepper->getStepperName();
         break;
       }
     case StepperForwardEulerAppAction<double>::END_STEP:
@@ -261,23 +260,22 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
-  TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_Observer)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
-    stepper->setModel(model);
-    auto observer = rcp(new StepperForwardEulerObserverTest());
-    stepper->setAppAction(observer);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  auto observer = rcp(new StepperForwardEulerObserverTest());
+  stepper->setAppAction(observer);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);
@@ -311,7 +309,7 @@ public:
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "Forward Euler");
+  TEST_COMPARE(observer->testName, ==, "Forward Euler");
 }
 
 
@@ -372,20 +370,19 @@ public:
   double testTime;
 };
 
-  TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
-  {
-    auto model = rcp(new Tempus_Test::SinCosModel<double>());
+TEUCHOS_UNIT_TEST(ForwardEuler, AppAction_ModifierX)
+{
+  auto model = rcp(new Tempus_Test::SinCosModel<double>());
 
-    // Setup Stepper for field solve ----------------------------
-    auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
-    stepper->setModel(model);
-    auto modifierX = rcp(new StepperForwardEulerModifierXTest());
-    stepper->setAppAction(modifierX);
-    stepper->initialize();
+  // Setup Stepper for field solve ----------------------------
+  auto stepper = rcp(new Tempus::StepperForwardEuler<double>());
+  stepper->setModel(model);
+  auto modifierX = rcp(new StepperForwardEulerModifierXTest());
+  stepper->setAppAction(modifierX);
+  stepper->initialize();
 
-    // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+  // Setup initial condition SolutionState --------------------
+  auto inArgsIC = model->getNominalValues();
   auto icSolution =
     rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icState = Tempus::createSolutionStateX(icSolution);

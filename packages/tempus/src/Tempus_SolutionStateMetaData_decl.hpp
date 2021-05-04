@@ -142,12 +142,12 @@ protected:
   bool   computeNorms_;      ///< flag to compute norms of solution
 
   /** \brief The solutionStatus is used to indicate
-      - if the solution is still being worked on; WORKING
-      - if the solution is accepted and completed (e.g., past solutions
-        in SolutionHistory); PASSED.
-      - if the time step has FAILED.  This may be caused by the Stepper
-        failing, or Integrator not accepting the time step.
-  */
+   *  - if the solution is still being worked on; WORKING
+   *  - if the solution is accepted and completed (e.g., past solutions
+   *    in SolutionHistory); PASSED.
+   *  - if the time step has FAILED.  This may be caused by the Stepper
+   *    failing, or Integrator not accepting the time step.
+   */
   Status solutionStatus_;
   bool   output_;         ///< SolutionState should be or has been outputted
   bool   outputScreen_;   ///< Output screen dump
@@ -160,6 +160,8 @@ protected:
   Scalar accuracy_;       ///< Interpolation accuracy of solution
 
 };
+
+
 } // namespace Tempus
 
 #endif // Tempus_SolutionStateMetaData_decl_hpp

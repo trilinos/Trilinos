@@ -167,7 +167,11 @@ public:
     /// Promote the working state to current state
     void promoteWorkingState();
 
+    /// Clear the history.
     void clear() {history_->clear(); isInitialized_ = false;}
+
+    /// Make a shallow copy of SolutionHistory (i.e., only RCPs to states and interpolator).
+    void copy(Teuchos::RCP<const SolutionHistory<Scalar> > sh);
   //@}
 
   /// \name Accessor methods
@@ -190,7 +194,7 @@ public:
     /// Subscript operator
     Teuchos::RCP<SolutionState<Scalar> > operator[](const int i) {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        !((0 <= i) and (i < (int)history_->size())), std::out_of_range,
+        !((0 <= i) && (i < (int)history_->size())), std::out_of_range,
         "Error - SolutionHistory index is out of range.\n"
         << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
         << "    index = " << i << "\n");
@@ -200,7 +204,7 @@ public:
     /// Subscript operator (const version)
     Teuchos::RCP<const SolutionState<Scalar> > operator[](const int i) const {
       TEUCHOS_TEST_FOR_EXCEPTION(
-        !((0 <= i) and (i < (int)history_->size())), std::out_of_range,
+        !((0 <= i) && (i < (int)history_->size())), std::out_of_range,
         "Error - SolutionHistory index is out of range.\n"
         << "    [Min, Max] = [ 0, " << history_->size()<< "]\n"
         << "    index = " << i << "\n");
@@ -213,7 +217,7 @@ public:
       const int m = history_->size();
       Teuchos::RCP<SolutionState<Scalar> > state;
       if (m == 0)                                        state=Teuchos::null;
-      else if (m == 1 or workingState_ == Teuchos::null) state=(*history_)[m-1];
+      else if (m == 1 || workingState_ == Teuchos::null) state=(*history_)[m-1];
       else if (m > 1)                                    state=(*history_)[m-2];
       return state;
     }
@@ -305,7 +309,8 @@ public:
   /// \name Interpolation Methods
   //@{
     /// Set the interpolator for this history
-    void setInterpolator(const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
+    void setInterpolator(
+      const Teuchos::RCP<Interpolator<Scalar> >& interpolator);
     Teuchos::RCP<Interpolator<Scalar> > getNonconstInterpolator();
     Teuchos::RCP<const Interpolator<Scalar> > getInterpolator() const;
     /// Unset the interpolator for this history

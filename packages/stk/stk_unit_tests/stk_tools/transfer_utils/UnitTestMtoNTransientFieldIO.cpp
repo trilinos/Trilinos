@@ -54,7 +54,7 @@
 #include "stk_mesh/base/FEMHelpers.hpp"
 #include "stk_mesh/base/EntityLess.hpp"
 #include "stk_mesh/base/Comm.hpp"
-#include "stk_tools/transfer_utils/TransientFieldTransferById.hpp"
+#include "stk_tools/transfer_utils/MtoNTransientFieldTransferById.hpp"
 #include "Ioss_Field.h"
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 
@@ -205,7 +205,7 @@ TEST(TransientFieldTransfer, writeStaticMesh)
 
   stk::transfer_utils::MtoNTransientFieldTransferById m2nIo(ioBroker, targetNumDomains);
   m2nIo.setup_subdomain(bulk, fileName, subdomain, nodeSharingInfo, globalNumNodes, globalNumElems);
-  m2nIo.write_mesh_data(subdomain);
+  m2nIo.get_subdomain_writer(subdomain).write_mesh();
 
   test_static_mesh_output(bulk, fileName);
   clean_up(targetNumDomains, fileName);
@@ -345,11 +345,11 @@ TEST(TransientFieldTransfer, writeTransientMesh)
 
   stk::transfer_utils::MtoNTransientFieldTransferById m2nIo(ioBroker, targetNumDomains);
   m2nIo.setup_subdomain(inputBulk, outputFileName, subdomain, nodeSharingInfo, globalNumNodes, globalNumElems);
-  m2nIo.write_mesh_data(subdomain);
+  m2nIo.get_subdomain_writer(subdomain).write_mesh();
 
   for(unsigned i = 0; i <= numSteps; i++) {
     double outputTime = (double)i;
-    m2nIo.write_transient_data(subdomain, outputTime);
+    m2nIo.get_subdomain_writer(subdomain).write_transient_data(outputTime);
   }
 
   test_transient_mesh_output(ioBroker, outputFileName, fieldName);
@@ -365,7 +365,7 @@ TEST(TransientFieldTransfer, invalidSubdomainIndex)
   ioBroker.set_bulk_data(bulk);
 
   stk::transfer_utils::MtoNTransientFieldTransferById m2nIo(ioBroker, 2);
-  EXPECT_THROW(m2nIo.write_mesh_data(0), std::logic_error);
+  EXPECT_THROW(m2nIo.get_subdomain_writer(0).write_mesh(), std::logic_error);
 }
 
 TEST(TransientFieldTransfer, setupSubdomainError)
@@ -383,7 +383,7 @@ TEST(TransientFieldTransfer, setupSubdomainError)
   std::string fileName = "test_m2n_output.g";
 
   stk::transfer_utils::MtoNTransientFieldTransferById m2nIo(ioBroker, 1);
-  EXPECT_THROW(m2nIo.write_mesh_data(bulk.parallel_rank()), std::logic_error) << " setup_subdomain() was not called";
+  EXPECT_THROW(m2nIo.get_subdomain_writer(bulk.parallel_rank()).write_mesh(), std::logic_error) << " setup_subdomain() was not called";
 }
 
 void load_time_step(stk::io::StkMeshIoBroker& ioBroker, double time)
@@ -460,7 +460,7 @@ TEST(TransientFieldTransfer, transferTransientData)
   stk::io::EntitySharingInfo nodeSharingInfo = get_two_hex_mesh_node_sharing_info(inputBulk);
   stk::transfer_utils::MtoNTransientFieldTransferById m2nIo(ioBroker, inputBulk.parallel_size());
   m2nIo.setup_subdomain(outputBulk, outputFileName, subdomain, nodeSharingInfo, globalNumNodes, globalNumElems);
-  m2nIo.write_mesh_data(subdomain);
+  m2nIo.get_subdomain_writer(subdomain).write_mesh();
 
   std::vector<double> inputTimeSteps = ioBroker.get_time_steps();
   stk::mesh::FieldBase* outputField = outputMeta.get_field(fieldRank, fieldName);

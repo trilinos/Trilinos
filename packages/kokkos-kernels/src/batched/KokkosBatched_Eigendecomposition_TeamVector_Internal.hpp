@@ -76,6 +76,8 @@ namespace KokkosBatched {
            RealType * UL, const int uls0, const int uls1,
            RealType * UR, const int urs0, const int urs1,
            RealType * w,  const int wlen) {
+      static_assert(false, "TeamVector eigendecomposition is not implemented yet.");
+      /*
 #if defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HOST)
       if (as0 == 1 || as1 == 1) {
 	/// column major or row major and it runs on host
@@ -100,6 +102,7 @@ namespace KokkosBatched {
 		      UL, uls0, uls1,
 		      UR, urs0, urs1,
 		      w, wlen);
+        throw std::runtime_error("TeamVector eigendecomposition is not implemented yet.");
       }
 #else
       /// device code runs 
@@ -111,6 +114,7 @@ namespace KokkosBatched {
 		    UR, urs0, urs1,
 		    w, wlen);
 #endif
+*/
       return 0;
     }
   };

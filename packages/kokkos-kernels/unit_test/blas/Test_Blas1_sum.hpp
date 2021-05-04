@@ -26,9 +26,9 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
@@ -51,7 +51,6 @@ namespace Test {
   void impl_test_sum_mv(int N, int K) {
 
     typedef typename ViewTypeA::value_type ScalarA;
-    typedef Kokkos::Details::ArithTraits<ScalarA> AT;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
 
@@ -67,9 +66,9 @@ namespace Test {
 
     Kokkos::Random_XorShift64_Pool<typename Device::execution_space> rand_pool(13718);
 
-    Kokkos::fill_random(b_a,rand_pool,ScalarA(10));
-
-    Kokkos::fence();
+    ScalarA randStart, randEnd;
+    Test::getRandomBounds(10.0, randStart, randEnd);
+    Kokkos::fill_random(b_a,rand_pool,randStart,randEnd);
 
     Kokkos::deep_copy(h_b_a,b_a);
 
@@ -79,7 +78,7 @@ namespace Test {
     for(int j=0;j<K;j++) {
       expected_result[j] = ScalarA();
       for(int i=0;i<N;i++)
-        expected_result[j] += AT::abs(h_a(i,j));
+        expected_result[j] += h_a(i,j);
     }
 
     double eps = std::is_same<ScalarA,float>::value?2*1e-5:1e-7;

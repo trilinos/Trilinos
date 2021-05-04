@@ -117,7 +117,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -147,8 +147,8 @@ public:
       case StepperBackwardEulerAppAction<double>::AFTER_SOLVE:
       {
         testAFTER_SOLVE = true;
-        testType = "Backward Euler - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Backward Euler - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
       case StepperBackwardEulerAppAction<double>::END_STEP:
@@ -171,7 +171,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Modifier)
@@ -210,7 +210,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
 
-  TEST_COMPARE(modifier->testType, ==, "Backward Euler - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Backward Euler - Modifier");
 
 }
 
@@ -227,7 +227,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -256,7 +256,7 @@ public:
       case StepperBackwardEulerAppAction<double>::AFTER_SOLVE:
       {
         testAFTER_SOLVE = true;
-        testType = stepper->getStepperType();
+        testName = stepper->getStepperType();
         break;
       }
       case StepperBackwardEulerAppAction<double>::END_STEP:
@@ -279,7 +279,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Observer)
@@ -317,7 +317,7 @@ TEUCHOS_UNIT_TEST(BackwardEuler, AppAction_Observer)
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
 
-  TEST_COMPARE(observer->testType, ==, "Backward Euler");
+  TEST_COMPARE(observer->testName, ==, "Backward Euler");
 }
 
 

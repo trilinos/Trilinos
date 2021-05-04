@@ -2,7 +2,7 @@
 
 // Skeleton implementation for Bison LALR(1) parsers in C++
 
-// Copyright (C) 2002-2015, 2018-2019 Free Software Foundation, Inc.
+// Copyright (C) 2002-2015, 2018-2019, 2021 Free Software Foundation, Inc.
 
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -456,7 +456,8 @@ namespace SEAMS {
           yyla.type = yytranslate_(yylex(&yyla.value));
         }
 #if YY_EXCEPTIONS
-        catch (const syntax_error &yyexc) {
+        catch (const syntax_error &yyexc)
+        {
           YYCDEBUG << "Caught exception: " << yyexc.what() << '\n';
           error(yyexc);
           goto yyerrlab1;
@@ -731,7 +732,7 @@ namespace SEAMS {
           case 28:
 #line 187 "aprepro.yy"
           {
-            (yylhs.value.arrval) = new array(*((yystack_[0].value.tptr)->value.avar));
+            (yylhs.value.arrval) = aprepro.make_array(*((yystack_[0].value.tptr)->value.avar));
           }
 #line 791 "apr_parser.cc"
           break;
@@ -1930,7 +1931,8 @@ namespace SEAMS {
           }
         }
 #if YY_EXCEPTIONS
-        catch (const syntax_error &yyexc) {
+        catch (const syntax_error &yyexc)
+        {
           YYCDEBUG << "Caught exception: " << yyexc.what() << '\n';
           error(yyexc);
           YYERROR;
@@ -2052,7 +2054,8 @@ namespace SEAMS {
       return yyresult;
     }
 #if YY_EXCEPTIONS
-    catch (...) {
+    catch (...)
+    {
       YYCDEBUG << "Exception caught: cleaning lookahead and stack\n";
       // Do not try to display the values of the reclaimed symbols,
       // as their printers might throw an exception.

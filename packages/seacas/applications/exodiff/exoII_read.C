@@ -52,6 +52,9 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
     delete[] ssets;
     delete[] nodes;
     delete[] times;
+    delete[] edge_blocks;
+    delete[] face_blocks;
+
     if (results) {
       for (unsigned i = 0; i < nodal_vars.size(); ++i) {
         delete[] results[i];

@@ -63,17 +63,19 @@ static struct option long_options[] = {
     {"trmm_options", required_argument, 0, 'o'},
     {"trmm_alpha", required_argument, 0, 'a'},
     {"gemm_options", required_argument, 0, 'g'},
-    {"gemm_alpha", required_argument, 0, 'p'},
+    {"gemm_scalars", required_argument, 0, 'p'},
     {"team_size", required_argument, 0, 'z'},
     {"vector_len", required_argument, 0, 'n'},
     {"batch_size", required_argument, 0, 'k'},
+    {"batch_size_last_dim", required_argument, 0, 'd'},
+    {"verify", required_argument, 0, 'v'},
     {0, 0, 0, 0}};
 
 static void __print_help_blas3_perf_test() {
   printf("Options:\n");
 
   printf("\t-h, --help\n");
-  printf("\t\tPrint this help menu.\n\n");
+  printf("\t\tPrint this help menu.\n");
 
   printf("\t-t, --test=OPTION\n");
   printf("\t\tAlgorithm selection.\n");
@@ -104,10 +106,12 @@ static void __print_help_blas3_perf_test() {
       "%s)\n",
       DEFAULT_GEMM_ARGS);
 
-  printf("\t-p, --gemm_alpha=SCALAR_VALUE\n");
-  printf("\t\tGEMM alpha value.\n");
-  printf("\t\t\tThe value of alpha in floating point. (default: %lf)\n",
-         DEFAULT_GEMM_ALPHA);
+  printf("\t-p, --gemm_scalars=ALPHA_SCALAR_VALUE,BETA_SCALAR_VALUE\n");
+  printf("\t\tGEMM alpha and beta values.\n");
+  printf(
+      "\t\t\tThe value of alpha and beta in floating point. (default: "
+      "%lf,%lf)\n",
+      DEFAULT_GEMM_ALPHA, DEFAULT_GEMM_BETA);
 
   printf("\t-z, --team_size=SIZE\n");
   printf("\t\tKokkos team size.\n");
@@ -119,10 +123,27 @@ static void __print_help_blas3_perf_test() {
   printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
          DEFAULT_VECTOR_LEN);
 
+  printf("\t-u, --use_auto=AUTO\n");
+  printf(
+      "\t\tWhether to use Kokkos::AUTO for vector_len and team_size "
+      "(Heirarchical parallelism).\n");
+  printf(
+      "\t\t\tValid values for AUTO are 1 to use Kokkos::AUTO and 0 to use "
+      "--vector_len and --team_size "
+      "instead. (default: %d)\n",
+      DEFAULT_USE_AUTO);
+
   printf("\t-k, --batch_size=LEN\n");
   printf("\t\tBatch size. Adds third dimension to matrices A, B, and C.\n");
-  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
-         DEFAULT_VECTOR_LEN);
+  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n", DEFAULT_K);
+
+  printf("\t-d, --batch_size_last_dim=LAST_DIM\n");
+  printf("\t\tHow to allocate the batch_size in the matrices.\n");
+  printf(
+      "\t\t\tValid values for LAST_DIM are 1 make the batch_size the last "
+      "dimension and 0 to make the batch_size "
+      "the first dimension (default: %d)\n",
+      DEFAULT_BATCH_SIZE_LAST_DIM);
 
   printf("\t-l, --loop_type=OPTION\n");
   printf("\t\tLoop selection.\n");
@@ -134,7 +155,7 @@ static void __print_help_blas3_perf_test() {
   printf("%c[1m", 27);
   printf("\t\t\t\tparallel:");
   printf("%c[0m", 27);
-  printf(" invoke blas routine in a Kokkos::parallel_for-loop.\n\n");
+  printf(" invoke blas routine in a Kokkos::parallel_for-loop.\n");
 
   printf("\t-b, --matrix_size_start=MxN,IxJ,PxQ\n");
   printf(
@@ -142,7 +163,7 @@ static void __print_help_blas3_perf_test() {
       "(start)\n");
   printf(
       "\t\t\tValid values for M and N are any non-negative 32-bit integers. "
-      "(default: %dx%d,%dx%d,%dx%d)\n\n",
+      "(default: %dx%d,%dx%d,%dx%d)\n",
       DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START,
       DEFAULT_MATRIX_START, DEFAULT_MATRIX_START, DEFAULT_MATRIX_START);
 
@@ -152,7 +173,7 @@ static void __print_help_blas3_perf_test() {
       "(stop)\n");
   printf(
       "\t\t\tValid dimension values are any non-negative 32-bit integers. "
-      "(default: %dx%d,%dx%d,%dx%d)\n\n",
+      "(default: %dx%d,%dx%d,%dx%d)\n",
       DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP,
       DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP, DEFAULT_MATRIX_STOP);
 
@@ -160,35 +181,43 @@ static void __print_help_blas3_perf_test() {
   printf("\t\tMatrix step selection.\n");
   printf(
       "\t\t\tValid value for K is any non-negative 32-bit integer. (default: "
-      "%d)\n\n",
+      "%d)\n",
       DEFAULT_STEP);
 
   printf("\t-w, --warm_up_loop=LOOP\n");
   printf("\t\tWarm up loop selection. (untimed)\n");
   printf(
       "\t\t\tValid value for LOOP is any non-negative 32-bit integer that's <= "
-      "ITER. (default: %d)\n\n",
+      "ITER. (default: %d)\n",
       DEFAULT_WARM_UP_N);
 
   printf("\t-i, --iter=ITER\n");
   printf("\t\tIteration selection. (timed)\n");
   printf(
       "\t\t\tValid value for ITER is any non-negative 32-bit integer. "
-      "(default: %d)\n\n",
+      "(default: %d)\n",
       DEFAULT_N);
 
   printf("\t-c, --csv=/path/to/file.csv\n");
   printf("\t\tCsv output file selection.\n");
   printf(
       "\t\t\tValid value for /path/to/file.csv is any valid file name. "
-      "(default: stdout)\n\n");
+      "(default: stdout)\n");
 
   printf("\t-r, --routines=ROUTINES\n");
   printf("\t\tRoutine selection.\n");
   printf(
       "\t\t\tValid value for ROUTINES is one of more valid blas3 routines "
-      "delimited by a comma. (default: %s)\n\n",
+      "delimited by a comma. (default: %s)\n",
       DEFAULT_BLAS_ROUTINES);
+
+  printf("\t-v, --verify=VERIFY\n");
+  printf("\t\tVerification selection. (untimed)\n");
+  printf(
+      "\t\t\tValid values for VERIFY are either 0 to skip verification or 1 to "
+      "verify before timing. "
+      "(default: %d)\n",
+      DEFAULT_VERIFY);
 }
 
 static void __blas3_perf_test_input_error(char **argv, char short_opt,
@@ -211,42 +240,47 @@ int main(int argc, char **argv) {
   };
 
   /* set default options */
-  options.test                 = DEFAULT_TEST;
-  options.loop                 = DEFAULT_LOOP;
-  options.start.a.k            = DEFAULT_K;
-  options.start.a.m            = DEFAULT_MATRIX_START;
-  options.start.a.n            = DEFAULT_MATRIX_START;
-  options.stop.a.k             = DEFAULT_K;
-  options.stop.a.m             = DEFAULT_MATRIX_STOP;
-  options.stop.a.n             = DEFAULT_MATRIX_STOP;
-  options.start.b.k            = DEFAULT_K;
-  options.start.b.m            = DEFAULT_MATRIX_START;
-  options.start.b.n            = DEFAULT_MATRIX_START;
-  options.stop.b.k             = DEFAULT_K;
-  options.stop.b.m             = DEFAULT_MATRIX_STOP;
-  options.stop.b.n             = DEFAULT_MATRIX_STOP;
-  options.start.c.k            = DEFAULT_K;
-  options.start.c.m            = DEFAULT_MATRIX_START;
-  options.start.c.n            = DEFAULT_MATRIX_START;
-  options.stop.c.k             = DEFAULT_K;
-  options.stop.c.m             = DEFAULT_MATRIX_STOP;
-  options.stop.c.n             = DEFAULT_MATRIX_STOP;
-  options.step                 = DEFAULT_STEP;
-  options.warm_up_n            = DEFAULT_WARM_UP_N;
-  options.n                    = DEFAULT_N;
-  options.out                  = DEFAULT_OUT;
-  options.blas_routines        = std::string(DEFAULT_BLAS_ROUTINES);
-  options.blas_args.team_size  = DEFAULT_TEAM_SIZE;
-  options.blas_args.vector_len = DEFAULT_VECTOR_LEN;
+  options.test                          = DEFAULT_TEST;
+  options.loop                          = DEFAULT_LOOP;
+  options.start.a.k                     = DEFAULT_K;
+  options.start.a.m                     = DEFAULT_MATRIX_START;
+  options.start.a.n                     = DEFAULT_MATRIX_START;
+  options.stop.a.k                      = DEFAULT_K;
+  options.stop.a.m                      = DEFAULT_MATRIX_STOP;
+  options.stop.a.n                      = DEFAULT_MATRIX_STOP;
+  options.start.b.k                     = DEFAULT_K;
+  options.start.b.m                     = DEFAULT_MATRIX_START;
+  options.start.b.n                     = DEFAULT_MATRIX_START;
+  options.stop.b.k                      = DEFAULT_K;
+  options.stop.b.m                      = DEFAULT_MATRIX_STOP;
+  options.stop.b.n                      = DEFAULT_MATRIX_STOP;
+  options.start.c.k                     = DEFAULT_K;
+  options.start.c.m                     = DEFAULT_MATRIX_START;
+  options.start.c.n                     = DEFAULT_MATRIX_START;
+  options.stop.c.k                      = DEFAULT_K;
+  options.stop.c.m                      = DEFAULT_MATRIX_STOP;
+  options.stop.c.n                      = DEFAULT_MATRIX_STOP;
+  options.step                          = DEFAULT_STEP;
+  options.warm_up_n                     = DEFAULT_WARM_UP_N;
+  options.n                             = DEFAULT_N;
+  options.out                           = DEFAULT_OUT;
+  options.blas_routines                 = std::string(DEFAULT_BLAS_ROUTINES);
+  options.blas_args.team_size           = DEFAULT_TEAM_SIZE;
+  options.blas_args.vector_len          = DEFAULT_VECTOR_LEN;
+  options.blas_args.use_auto            = DEFAULT_USE_AUTO;
+  options.blas_args.batch_size_last_dim = DEFAULT_BATCH_SIZE_LAST_DIM;
+  options.verify                        = DEFAULT_VERIFY;
 
   options.blas_args.trmm.trmm_args = DEFAULT_TRMM_ARGS;
   options.blas_args.trmm.alpha     = DEFAULT_TRMM_ALPHA;
 
   options.blas_args.gemm.gemm_args = DEFAULT_GEMM_ARGS;
   options.blas_args.gemm.alpha     = DEFAULT_GEMM_ALPHA;
+  options.blas_args.gemm.beta      = DEFAULT_GEMM_BETA;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:",
-                            long_options, &option_idx)) != -1) {
+  while (
+      (ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:a:c:r:g:z:n:k:u:p:d:v:",
+                         long_options, &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas3_perf_test(); return 0;
       case 't':
@@ -269,14 +303,19 @@ int main(int argc, char **argv) {
         break;
       case 'g':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        if (strlen(optarg) != 3) {
+        if (strlen(optarg) != 2) {
           __blas3_perf_test_input_error(argv, ret, optarg);
         }
         options.blas_args.gemm.gemm_args = optarg;
         break;
       case 'p':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
-        options.blas_args.gemm.alpha = (default_scalar)atof(optarg);
+        double alpha, beta;
+        if (sscanf(optarg, "%lf,%lf", &alpha, &beta) != 2)
+          __blas3_perf_test_input_error(argv, ret, optarg);
+
+        options.blas_args.gemm.alpha = static_cast<default_scalar>(alpha);
+        options.blas_args.gemm.beta  = static_cast<default_scalar>(beta);
         break;
       case 'a':
         // printf("optarg=%s. %d\n", optarg, strncasecmp(optarg, "blas", 4));
@@ -361,8 +400,11 @@ int main(int argc, char **argv) {
             options.stop.a.k = options.stop.b.k = options.stop.c.k =
                 atoi(optarg);
         break;
+      case 'd': options.blas_args.batch_size_last_dim = atoi(optarg); break;
+      case 'v': options.verify = atoi(optarg); break;
       case 'z': options.blas_args.team_size = atoi(optarg); break;
       case 'n': options.blas_args.vector_len = atoi(optarg); break;
+      case 'u': options.blas_args.use_auto = atoi(optarg); break;
       case 'c':
         out_file         = optarg;
         options.out_file = std::string(out_file);

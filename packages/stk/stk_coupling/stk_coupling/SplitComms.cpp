@@ -136,6 +136,11 @@ bool SplitComms::is_coupling_version_deprecated() const
   return (impl::Deprecated == m_compatibilityMode);
 }
 
+bool SplitComms::is_initialized() const
+{
+  return m_isInitialized;
+}
+
 void SplitComms::initialize()
 {
   setup_pairwise_comms();

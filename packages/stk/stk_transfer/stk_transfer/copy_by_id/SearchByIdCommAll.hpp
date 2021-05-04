@@ -47,7 +47,8 @@ public:
   SearchByIdCommAll() {}
   virtual ~SearchByIdCommAll() {}
   virtual void intialize(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb) {}
-  virtual void do_search(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb, KeyToTargetProcessor & key_to_target_processor);
+  virtual void do_search(const TransferCopyByIdMeshAdapter & mesha, const TransferCopyByIdMeshAdapter & meshb,
+                         KeyToTargetProcessor & key_to_target_processor);
   virtual const MeshIDSet & get_remote_keys() const { return m_remote_keys; }
 
 private:

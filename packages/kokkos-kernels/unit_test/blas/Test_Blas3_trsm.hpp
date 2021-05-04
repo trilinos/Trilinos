@@ -127,8 +127,6 @@ namespace Test {
     ScalarA alpha_trmm = ScalarA(1)/alpha;
     ScalarA beta       = ScalarA(0);
 
-    Kokkos::fence();
- 
     if ((uplo[0]=='L')||(uplo[0]=='l')) {
       for (int i = 0; i < K-1; i++)
         for (int j = i+1; j < K; j++)
