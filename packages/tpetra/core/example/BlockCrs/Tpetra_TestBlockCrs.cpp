@@ -477,8 +477,7 @@ int main (int argc, char *argv[])
       {
         TimeMonitor timerMultiVectorFill(*TimeMonitor::getNewTimer("4) MultiVectorFill"));
 
-        using device_type = typename tpetra_multivector_type::node_type::device_type;
-        auto value = X->getLocalView<device_type>(Tpetra::Access::OverwriteAll);
+        auto value = X->getLocalViewDevice(Tpetra::Access::OverwriteAll);
         auto map = X->getMap()->getLocalMap();
         Kokkos::parallel_for
           (value.extent(0), KOKKOS_LAMBDA(const LO i) {
