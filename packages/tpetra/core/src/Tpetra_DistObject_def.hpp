@@ -696,7 +696,6 @@ namespace Tpetra {
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-    const bool debug = Behavior::debug("DistObject");
     const bool verbose = Behavior::verbose("DistObject");
     // Prefix for verbose output.  Use a pointer, so we don't pay for
     // string construction unless needed.  We set this below.
@@ -822,72 +821,15 @@ namespace Tpetra {
            << endl;
         std::cerr << os.str ();
       }
-      {
-        ProfilingRegion region_pp
-          ("Tpetra::DistObject::doTransferNew::packAndPrepare");
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
-        // favor of Kokkos profiling.
-        Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
 
-        // Ask the source to pack data.  Also ask it whether there are
-        // a constant number of packets per element
-        // (constantNumPackets is an output argument).  If there are,
-        // constantNumPackets will come back nonzero.  Otherwise, the
-        // source will fill the numExportPacketsPerLID_ array.
-
-        // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
-        // Alternately, make packAndPrepare take a "commOnHost"
-        // argument to tell it where to leave the data?
-        //
-        // NOTE (mfh 04 Feb 2019) Subclasses of DistObject should have
-        // the freedom to pack and unpack either on host or device.
-        // We should prefer sync'ing only on demand.  Thus, we can
-        // answer the above question: packAndPrepare should not
-        // take a commOnHost argument, and doTransferNew should sync
-        // where needed, if needed.
-        if (debug) {
-          std::ostringstream lclErrStrm;
-          bool lclSuccess = false;
-          try {
-            this->packAndPrepare (src, exportLIDs, this->exports_,
-                                  this->numExportPacketsPerLID_,
-                                  constantNumPackets, distor);
-            lclSuccess = true;
-          }
-          catch (std::exception& e) {
-            lclErrStrm << "packAndPrepare threw an exception: "
-                       << endl << e.what();
-          }
-          catch (...) {
-            lclErrStrm << "packAndPrepare threw an exception "
-              "not a subclass of std::exception.";
-          }
-          const char gblErrMsgHeader[] = "Tpetra::DistObject::"
-            "doTransferNew threw an exception in packAndPrepare on "
-            "one or more processes in the DistObject's communicator.";
-          auto comm = getMap()->getComm();
-          Details::checkGlobalError(std::cerr, lclSuccess,
-                                    lclErrStrm.str().c_str(),
-                                    gblErrMsgHeader, *comm);
-        }
-        else {
-          this->packAndPrepare (src, exportLIDs, this->exports_,
-                                this->numExportPacketsPerLID_,
-                                constantNumPackets, distor);
-        }
-        if (commOnHost) {
-          if (this->exports_.need_sync_host ()) {
-            this->exports_.sync_host ();
-          }
-        }
-        else { // ! commOnHost
-          if (this->exports_.need_sync_device ()) {
-            this->exports_.sync_device ();
-          }
-        }
+      doPackAndPrepare(src, exportLIDs, constantNumPackets, distor);
+      if (commOnHost) {
+        this->exports_.sync_host();
       }
+      else {
+        this->exports_.sync_device();
+      }
+
       if (verbose) {
         std::ostringstream os;
         os << *prefix << "5.1. After packAndPrepare, "
@@ -1185,44 +1127,7 @@ namespace Tpetra {
           os << *prefix << "8. unpackAndCombine" << endl;
           std::cerr << os.str ();
         }
-        ProfilingRegion region_uc
-          ("Tpetra::DistObject::doTransferNew::unpackAndCombine");
-#ifdef HAVE_TPETRA_TRANSFER_TIMERS
-        // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
-        // favor of Kokkos profiling.
-        Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
-#endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-        if (debug) {
-          std::ostringstream lclErrStrm;
-          bool lclSuccess = false;
-          try {
-            this->unpackAndCombine (remoteLIDs, this->imports_,
-                                    this->numImportPacketsPerLID_,
-                                    constantNumPackets, distor, CM);
-            lclSuccess = true;
-          }
-          catch (std::exception& e) {
-            lclErrStrm << "unpackAndCombine threw an exception: "
-                       << endl << e.what();
-          }
-          catch (...) {
-            lclErrStrm << "unpackAndCombine threw an exception "
-              "not a subclass of std::exception.";
-          }
-          const char gblErrMsgHeader[] = "Tpetra::DistObject::"
-            "doTransferNew threw an exception in unpackAndCombine on "
-            "one or more processes in the DistObject's communicator.";
-          auto comm = getMap()->getComm();
-          Details::checkGlobalError(std::cerr, lclSuccess,
-                                    lclErrStrm.str().c_str(),
-                                    gblErrMsgHeader, *comm);
-        }
-        else {
-          this->unpackAndCombine (remoteLIDs, this->imports_,
-                                  this->numImportPacketsPerLID_,
-                                  constantNumPackets, distor, CM);
-        }
+        doUnpackAndCombine(remoteLIDs, constantNumPackets, distor, CM);
       } // if (needCommunication)
     } // if (CM != ZERO)
 
@@ -1233,6 +1138,125 @@ namespace Tpetra {
     }
   }
 
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doPackAndPrepare(const SrcDistObject& src,
+                   const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+                   size_t& constantNumPackets,
+                   Distributor& distor)
+  {
+    using Details::ProfilingRegion;
+    using std::endl;
+    const bool debug = Details::Behavior::debug("DistObject");
+
+    ProfilingRegion region_pp
+      ("Tpetra::DistObject::doTransferNew::packAndPrepare");
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
+    // favor of Kokkos profiling.
+    Teuchos::TimeMonitor packAndPrepareMon (*packAndPrepareTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+    // Ask the source to pack data.  Also ask it whether there are
+    // a constant number of packets per element
+    // (constantNumPackets is an output argument).  If there are,
+    // constantNumPackets will come back nonzero.  Otherwise, the
+    // source will fill the numExportPacketsPerLID_ array.
+
+    // FIXME (mfh 18 Oct 2017) if (! commOnHost), sync to device?
+    // Alternately, make packAndPrepare take a "commOnHost"
+    // argument to tell it where to leave the data?
+    //
+    // NOTE (mfh 04 Feb 2019) Subclasses of DistObject should have
+    // the freedom to pack and unpack either on host or device.
+    // We should prefer sync'ing only on demand.  Thus, we can
+    // answer the above question: packAndPrepare should not
+    // take a commOnHost argument, and doTransferNew should sync
+    // where needed, if needed.
+    if (debug) {
+      std::ostringstream lclErrStrm;
+      bool lclSuccess = false;
+      try {
+        this->packAndPrepare (src, exportLIDs, this->exports_,
+            this->numExportPacketsPerLID_,
+            constantNumPackets, distor);
+        lclSuccess = true;
+      }
+      catch (std::exception& e) {
+        lclErrStrm << "packAndPrepare threw an exception: "
+          << endl << e.what();
+      }
+      catch (...) {
+        lclErrStrm << "packAndPrepare threw an exception "
+          "not a subclass of std::exception.";
+      }
+      const char gblErrMsgHeader[] = "Tpetra::DistObject "
+        "threw an exception in packAndPrepare on "
+        "one or more processes in the DistObject's communicator.";
+      auto comm = getMap()->getComm();
+      Details::checkGlobalError(std::cerr, lclSuccess,
+          lclErrStrm.str().c_str(),
+          gblErrMsgHeader, *comm);
+    }
+    else {
+      this->packAndPrepare (src, exportLIDs, this->exports_,
+          this->numExportPacketsPerLID_,
+          constantNumPackets, distor);
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
+                     size_t constantNumPackets,
+                     Distributor& distor,
+                     CombineMode CM)
+  {
+    using Details::ProfilingRegion;
+    using std::endl;
+    const bool debug = Details::Behavior::debug("DistObject");
+
+    ProfilingRegion region_uc
+      ("Tpetra::DistObject::doTransferNew::unpackAndCombine");
+#ifdef HAVE_TPETRA_TRANSFER_TIMERS
+    // FIXME (mfh 04 Feb 2019) Deprecate Teuchos::TimeMonitor in
+    // favor of Kokkos profiling.
+    Teuchos::TimeMonitor unpackAndCombineMon (*unpackAndCombineTimer_);
+#endif // HAVE_TPETRA_TRANSFER_TIMERS
+
+    if (debug) {
+      std::ostringstream lclErrStrm;
+      bool lclSuccess = false;
+      try {
+        this->unpackAndCombine (remoteLIDs, this->imports_,
+            this->numImportPacketsPerLID_,
+            constantNumPackets, distor, CM);
+        lclSuccess = true;
+      }
+      catch (std::exception& e) {
+        lclErrStrm << "unpackAndCombine threw an exception: "
+          << endl << e.what();
+      }
+      catch (...) {
+        lclErrStrm << "unpackAndCombine threw an exception "
+          "not a subclass of std::exception.";
+      }
+      const char gblErrMsgHeader[] = "Tpetra::DistObject "
+        "threw an exception in unpackAndCombine on "
+        "one or more processes in the DistObject's communicator.";
+      auto comm = getMap()->getComm();
+      Details::checkGlobalError(std::cerr, lclSuccess,
+          lclErrStrm.str().c_str(),
+          gblErrMsgHeader, *comm);
+    }
+    else {
+      this->unpackAndCombine (remoteLIDs, this->imports_,
+          this->numImportPacketsPerLID_,
+          constantNumPackets, distor, CM);
+    }
+  }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void

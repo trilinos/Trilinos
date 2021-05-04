@@ -738,6 +738,16 @@ namespace Tpetra {
                    const bool commOnHost,
                    const bool restrictedMode);
 
+    void doPackAndPrepare(const SrcDistObject& src,
+                          const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
+                          size_t& constantNumPackets,
+                          Distributor& distor);
+
+    void doUnpackAndCombine(const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& remoteLIDs,
+                            size_t constantNumPackets,
+                            Distributor& distor,
+                            CombineMode CM);
+
     /// \name Methods implemented by subclasses and used by doTransfer().
     ///
     /// The doTransfer() method uses the subclass' implementations of
