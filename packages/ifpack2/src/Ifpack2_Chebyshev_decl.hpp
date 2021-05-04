@@ -425,6 +425,10 @@ public:
   /// always provide a row Map or range Map vector for this parameter.
   void setParameters (const Teuchos::ParameterList& params);
 
+  bool supportsZeroStartingSolution() { return true; }
+
+  void setZeroStartingSolution (bool zeroStartingSolution);
+
   /// \brief Initialize the preconditioner.
   ///
   /// The compute() method will call initialize() automatically if it

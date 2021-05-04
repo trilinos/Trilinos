@@ -134,6 +134,10 @@ namespace Ifpack2 {
     ///   - "hiptmair: zero starting solution" (\c bool)
     void setParameters (const Teuchos::ParameterList& params);
 
+    bool supportsZeroStartingSolution() { return true; }
+
+    void setZeroStartingSolution (bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
+
     //! Do any initialization that depends on the input matrix's structure.
     void initialize ();
 

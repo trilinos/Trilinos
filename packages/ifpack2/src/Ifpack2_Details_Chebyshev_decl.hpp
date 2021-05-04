@@ -262,6 +262,8 @@ public:
   /// from Ifpack.
   void setParameters (Teuchos::ParameterList& plist);
 
+  void setZeroStartingSolution (bool zeroStartingSolution) { zeroStartingSolution_ = zeroStartingSolution; }
+
   /// \brief (Re)compute the left scaling D_inv, and estimate min and
   ///   max eigenvalues of D_inv * A.
   ///
