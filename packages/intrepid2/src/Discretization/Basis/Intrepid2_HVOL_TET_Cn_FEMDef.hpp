@@ -232,6 +232,7 @@ namespace Intrepid2 {
                           const EPointType   pointType ) {
     constexpr ordinal_type spaceDim = 3;
 
+    this->pointType_         = pointType;
     this->basisCardinality_  = Intrepid2::getPnCardinality<spaceDim>(order); // bigN
     this->basisDegree_       = order; // small n
     this->basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4> >() );

@@ -768,71 +768,6 @@ namespace MueLuTests {
         return Teuchos::rcp( new TrilinosSmoother(ifpackType, ifpackList) );
       }
 
-    }; // class TestFactory
-
-
-    // Helper class which has some Tpetra specific code inside
-    // We put this into an extra helper class as we need partial specializations and
-    // do not want to introduce partial specializations for the full TestFactory class
-    //
-    // The BuildBlockMatrix is only available with Tpetra. However, if both Epetra
-    // and Tpetra are enabled it may be that Tpetra is not instantiated on either
-    // GO=int/long long and/or Node=Serial/OpenMP. We need partial specializations
-    // with an empty BuildBlockMatrix routine for all instantiations Teptra is not
-    // enabled for, but are existing in Xpetra due to Epetra enabled.
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-    class TpetraTestFactory {
-#include "MueLu_UseShortNames.hpp"
-    public:
-
-      // Create a matrix as specified by parameter list options
-      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
-        RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
-        RCP<Matrix> Op;
-
-         if (lib == Xpetra::NotSpecified)
-           lib = TestHelpers::Parameters::getLib();
-
-         // This only works for Tpetra
-         if (lib!=Xpetra::UseTpetra) return Op;
-
-#if defined(HAVE_MUELU_TPETRA)
-         // Thanks for the code, Travis!
-
-         // Make the graph
-         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList,lib);
-         RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > Graph = FirstMatrix->getCrsGraph();
-
-         int blocksize = 3;
-         RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(Graph);
-         RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > TTGraph = TGraph->getTpetra_CrsGraph();
-
-         RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (*TTGraph, blocksize));
-
-         const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
-         const Scalar zero   = Teuchos::ScalarTraits<Scalar>::zero();
-         const Scalar one   = Teuchos::ScalarTraits<Scalar>::one();
-         const Scalar two   = one+one;
-         const Scalar three = two+one;
-
-         Teuchos::Array<Scalar> basematrix(blocksize*blocksize, zero);
-         basematrix[0] = two;
-         basematrix[2] = three;
-         basematrix[3] = three;
-         basematrix[4] = two;
-         basematrix[7] = three;
-         basematrix[8] = two;
-         Teuchos::Array<LocalOrdinal> lclColInds(1);
-         for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
-           lclColInds[0] = lclRowInd;
-           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
-         }
-
-         RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
-         Op = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
-#endif
-         return Op;
-      } // BuildBlockMatrix()
 
       // Create a matrix as specified by parameter list options
       static RCP<Matrix> BuildBlockMatrixAsPoint(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
@@ -843,10 +778,7 @@ namespace MueLuTests {
          if (lib == Xpetra::NotSpecified)
            lib = TestHelpers::Parameters::getLib();
 
-         // This only works for Tpetra
-         if (lib!=Xpetra::UseTpetra) return Op;
 
-#if defined(HAVE_MUELU_TPETRA)
          // Make the base graph
          RCP<Matrix> old_matrix    = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList,lib);
          RCP<const CrsGraph> old_graph   = old_matrix->getCrsGraph();
@@ -891,9 +823,77 @@ namespace MueLuTests {
          Op = rcp(new CrsMatrixWrap(new_matrix));
          if(new_map.is_null()) throw std::runtime_error("BuildBlockMatrixAsPoint: CrsMatrixWrap constructor failed");         
          Op->SetFixedBlockSize(blocksize);
-#endif
+
          return Op;
       } // BuildBlockMatrixAsPoint()
+
+    }; // class TestFactory
+
+
+    // Helper class which has some Tpetra specific code inside
+    // We put this into an extra helper class as we need partial specializations and
+    // do not want to introduce partial specializations for the full TestFactory class
+    //
+    // The BuildBlockMatrix is only available with Tpetra. However, if both Epetra
+    // and Tpetra are enabled it may be that Tpetra is not instantiated on either
+    // GO=int/long long and/or Node=Serial/OpenMP. We need partial specializations
+    // with an empty BuildBlockMatrix routine for all instantiations Teptra is not
+    // enabled for, but are existing in Xpetra due to Epetra enabled.
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    class TpetraTestFactory {
+#include "MueLu_UseShortNames.hpp"
+    public:
+
+      // Create a matrix as specified by parameter list options
+      static RCP<Matrix> BuildBlockMatrix(Teuchos::ParameterList &matrixList, Xpetra::UnderlyingLib lib) {
+        RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+        RCP<Matrix> Op;
+
+         if (lib == Xpetra::NotSpecified)
+           lib = TestHelpers::Parameters::getLib();
+
+         // This only works for Tpetra
+         if (lib!=Xpetra::UseTpetra) return Op;
+
+#if defined(HAVE_MUELU_TPETRA)
+         // Thanks for the code, Travis!
+
+         // Make the graph
+         RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > FirstMatrix = TestHelpers::TestFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::BuildMatrix(matrixList,lib);
+         RCP<const Xpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > FGraph = FirstMatrix->getCrsGraph();
+
+         int blocksize = 3;
+         RCP<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TGraph = rcp_dynamic_cast<const Xpetra::TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node> >(FGraph);
+         RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > TTGraph = TGraph->getTpetra_CrsGraph();
+
+         RCP<Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > bcrsmatrix = rcp(new Tpetra::BlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> (*TTGraph, blocksize));
+
+         const Tpetra::Map<LocalOrdinal, GlobalOrdinal, Node>& meshRowMap = *bcrsmatrix->getRowMap();
+         const Scalar zero   = Teuchos::ScalarTraits<Scalar>::zero();
+         const Scalar one   = Teuchos::ScalarTraits<Scalar>::one();
+         const Scalar two   = one+one;
+         const Scalar three = two+one;
+
+         Teuchos::Array<Scalar> basematrix(blocksize*blocksize, zero);
+         basematrix[0] = two;
+         basematrix[2] = three;
+         basematrix[3] = three;
+         basematrix[4] = two;
+         basematrix[7] = three;
+         basematrix[8] = two;
+         Teuchos::Array<LocalOrdinal> lclColInds(1);
+         for (LocalOrdinal lclRowInd = meshRowMap.getMinLocalIndex (); lclRowInd <= meshRowMap.getMaxLocalIndex(); ++lclRowInd) {
+           lclColInds[0] = lclRowInd;
+           bcrsmatrix->replaceLocalValues(lclRowInd, lclColInds.getRawPtr(), &basematrix[0], 1);
+         }
+
+         RCP<Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > temp = rcp(new Xpetra::TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(bcrsmatrix));
+         Op = rcp(new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(temp));
+#endif
+         return Op;
+      } // BuildBlockMatrix()
+
+
 
 
     private:

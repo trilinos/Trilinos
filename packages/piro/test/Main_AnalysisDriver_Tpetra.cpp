@@ -138,7 +138,6 @@ int main(int argc, char *argv[]) {
         Teuchos::updateParametersFromXmlFile(inputFile, Teuchos::ptr(appParams.get()));
 
         const RCP<Teuchos::ParameterList>  piroParams = Teuchos::sublist(appParams,"Piro");
-        Teuchos::ParameterList& analysisParams = piroParams->sublist("Analysis");
 
 
         Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
@@ -170,7 +169,7 @@ int main(int argc, char *argv[]) {
 
         // Call the analysis routine
         RCP<Thyra::VectorBase<double>> p;
-        status = Piro::PerformAnalysis(*piro, analysisParams, p);
+        status = Piro::PerformAnalysis(*piro, *piroParams, p);
 
         if (Teuchos::nonnull(p)) { //p might be null if the package ROL is not enabled
           Thyra::DetachedVectorView<double> p_view(p);

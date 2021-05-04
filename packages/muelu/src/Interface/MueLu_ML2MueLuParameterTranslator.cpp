@@ -269,6 +269,22 @@ namespace MueLu {
       std::string valueInterpreterStr = "\"" + valuestr + "\"";
       std::string ret = MasterList::interpretParameterName(MasterList::ML2MueLu(pname),valueInterpreterStr);
 
+      // special handling for verbosity level
+      if (pname == "ML output") {
+        // Translate verbosity parameter
+        int verbosityLevel = std::stoi(valuestr);
+        std::string eVerbLevel = "none";
+        if (verbosityLevel ==  0) eVerbLevel = "none";
+        if (verbosityLevel >=  1) eVerbLevel = "low";
+        if (verbosityLevel >=  5) eVerbLevel = "medium";
+        if (verbosityLevel >= 10) eVerbLevel = "high";
+        if (verbosityLevel >= 11) eVerbLevel = "extreme";
+        if (verbosityLevel >= 42) eVerbLevel = "test";
+        if (verbosityLevel >= 666) eVerbLevel = "interfacetest";
+        mueluss << "<Parameter name=\"verbosity\" type=\"string\"     value=\"" << eVerbLevel << "\"/>" << std::endl;
+        continue;
+      }
+
       // add XML string
       if (ret != "") {
         mueluss << ret << std::endl;

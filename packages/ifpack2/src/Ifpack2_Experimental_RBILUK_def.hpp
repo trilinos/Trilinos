@@ -341,6 +341,8 @@ initAllValues (const block_crs_matrix_type& A)
   // This is ok, as the *order* of the GIDs in the rowmap is a better
   // expression of the user's intent than the GIDs themselves.
 
+  //TODO BMK: Revisit this fence when BlockCrsMatrix is refactored.
+  Kokkos::fence();
   for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
     local_ordinal_type local_row = myRow;
 
@@ -839,14 +841,13 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         const local_ordinal_type numVectors = xBlock.getNumVectors();
         BMV cBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
         BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
-        cBlock.sync_host();
         for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
         {
           for (size_t i = 0; i < D_block_->getNodeNumRows(); ++i)
           {
             local_ordinal_type local_row = i;
-            little_host_vec_type xval = xBlock.getLocalBlock(local_row,imv);
-            little_host_vec_type cval = cBlock.getLocalBlock(local_row,imv);
+            const_host_little_vec_type xval = xBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
+            little_host_vec_type cval = cBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
             //cval.assign(xval);
             Tpetra::COPY (xval, cval);
 
@@ -859,7 +860,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             for (local_ordinal_type j = 0; j < NumL; ++j)
             {
               local_ordinal_type col = colValsL[j];
-              little_host_vec_type prevVal = cBlock.getLocalBlock(col, imv);
+              const_host_little_vec_type prevVal = cBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
 
               const local_ordinal_type matOffset = blockMatSize*j;
               little_block_type lij((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
@@ -874,15 +875,14 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         D_block_->applyBlock(cBlock, rBlock);
 
         // Solve U Y = R.
-        rBlock.sync_host();
         for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
         {
           const local_ordinal_type numRows = D_block_->getNodeNumRows();
           for (local_ordinal_type i = 0; i < numRows; ++i)
           {
             local_ordinal_type local_row = (numRows-1)-i;
-            little_host_vec_type rval = rBlock.getLocalBlock(local_row,imv);
-            little_host_vec_type yval = yBlock.getLocalBlock(local_row,imv);
+            const_host_little_vec_type rval = rBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
+            little_host_vec_type yval = yBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
             //yval.assign(rval);
             Tpetra::COPY (rval, yval);
 
@@ -895,7 +895,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             for (local_ordinal_type j = 0; j < NumU; ++j)
             {
               local_ordinal_type col = colValsU[NumU-1-j];
-              little_host_vec_type prevVal = yBlock.getLocalBlock(col, imv);
+              const_host_little_vec_type prevVal = yBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
 
               const local_ordinal_type matOffset = blockMatSize*(NumU-1-j);
               little_block_type uij((typename little_block_type::value_type*) &valsU[matOffset], blockSize_, rowStride);

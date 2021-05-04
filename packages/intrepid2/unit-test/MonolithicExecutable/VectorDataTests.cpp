@@ -70,8 +70,13 @@ namespace
   template<int spaceDim>
   void testRefSpaceVectorValues(Teuchos::FancyOStream &out, bool &success)
   {
+    using DeviceType = DefaultTestDeviceType;
     using Scalar = double;
     using PointScalar = double;
+    using WeightScalar = double;
+    using CubatureType   = Cubature<DeviceType,PointScalar,WeightScalar>;
+    using PointViewType  = typename CubatureType::PointViewTypeAllocatable;
+    using WeightViewType = typename CubatureType::WeightViewTypeAllocatable;
     
     const double relTol = 1e-12;
     const double absTol = 1e-12;
@@ -81,7 +86,7 @@ namespace
     
     auto fs = Intrepid2::FUNCTION_SPACE_HGRAD;
     
-    auto lineBasis = Intrepid2::getLineBasis< Intrepid2::NodalBasisFamily<> >(fs, polyOrder);
+    auto lineBasis = Intrepid2::getLineBasis< Intrepid2::NodalBasisFamily<DeviceType> >(fs, polyOrder);
     
     int numFields_1D = lineBasis->getCardinality();
     
@@ -99,17 +104,16 @@ namespace
     else if (spaceDim == 2) cellTopo = shards::getCellTopologyData< shards::Quadrilateral<> >();
     else if (spaceDim == 3) cellTopo = shards::getCellTopologyData< shards::Hexahedron<>    >();
     
-    using ExecSpaceType = Kokkos::DefaultExecutionSpace;
-    auto lineCubature = Intrepid2::DefaultCubatureFactory::create<ExecSpaceType>(lineTopo,polyOrder*2);
+    auto lineCubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(lineTopo,polyOrder*2);
     int numPoints_1D = lineCubature->getNumPoints();
-    ScalarView<PointScalar,ExecSpaceType> lineCubaturePoints("line cubature points",numPoints_1D,1);
-    ScalarView<double,ExecSpaceType> lineCubatureWeights("line cubature weights", numPoints_1D);
+    PointViewType lineCubaturePoints("line cubature points",numPoints_1D,1);
+    WeightViewType lineCubatureWeights("line cubature weights", numPoints_1D);
     
     lineCubature->getCubature(lineCubaturePoints, lineCubatureWeights);
     
     // Allocate some intermediate containers
-    ScalarView<Scalar,ExecSpaceType> lineBasisValues    ("line basis values",      numFields_1D, numPoints_1D   );
-    ScalarView<Scalar,ExecSpaceType> lineBasisGradValues("line basis grad values", numFields_1D, numPoints_1D, 1);
+    ScalarView<Scalar,DeviceType> lineBasisValues    ("line basis values",      numFields_1D, numPoints_1D   );
+    ScalarView<Scalar,DeviceType> lineBasisGradValues("line basis grad values", numFields_1D, numPoints_1D, 1);
     
     // for now, we use 1D values to build up the 2D or 3D gradients
     // eventually, TensorBasis should offer a getValues() variant that returns tensor basis data
@@ -119,23 +123,23 @@ namespace
     // drop the trivial space dimension in line gradient values:
     Kokkos::resize(lineBasisGradValues, numFields_1D, numPoints_1D);
       
-    Kokkos::Array<TensorData<Scalar,ExecSpaceType>, spaceDim> vectorComponents;
+    Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim> vectorComponents;
     
     for (int d=0; d<spaceDim; d++)
     {
-      Kokkos::Array<Data<Scalar,ExecSpaceType>, spaceDim> gradComponent_d;
+      Kokkos::Array<Data<Scalar,DeviceType>, spaceDim> gradComponent_d;
       // gradComponent_d stores vector component d of the gradient, expressed as the product of values corresponding to each coordinate dimension
       // The gradient operator is (dx,dy,dz) in 3D; that is, the derivative taken is in the coordinate dimension that matches d.
       // Therefore, the operator leaves the tensorial components in dimension d2≠d unaffected, and results in a 1D "gradient" being taken in the dimension for which d2=d.
       // Hence, the assignment below.
       for (int d2=0; d2<spaceDim; d2++)
       {
-        if (d2 == d) gradComponent_d[d2] = Data<Scalar,ExecSpaceType>(lineBasisGradValues);
-        else         gradComponent_d[d2] = Data<Scalar,ExecSpaceType>(lineBasisValues);
+        if (d2 == d) gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisGradValues);
+        else         gradComponent_d[d2] = Data<Scalar,DeviceType>(lineBasisValues);
       }
-      vectorComponents[d] = TensorData<Scalar,ExecSpaceType>(gradComponent_d);
+      vectorComponents[d] = TensorData<Scalar,DeviceType>(gradComponent_d);
     }
-    VectorData<Scalar,ExecSpaceType> gradientValues(vectorComponents, false); // false: not axis-aligned
+    VectorData<Scalar,DeviceType> gradientValues(vectorComponents, false); // false: not axis-aligned
     
     int numPoints = 1;
     for (int d=0; d<spaceDim; d++)
@@ -143,17 +147,16 @@ namespace
       numPoints *= numPoints_1D;
     }
     
-    auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<> >(cellTopo, fs, polyOrder);
+    auto basis = Intrepid2::getBasis< Intrepid2::NodalBasisFamily<DeviceType> >(cellTopo, fs, polyOrder);
     
     // Allocate some intermediate containers
-    ScalarView<Scalar,ExecSpaceType> basisValues    ("basis values", numFields, numPoints );
-    ScalarView<Scalar,ExecSpaceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
+    ScalarView<Scalar,DeviceType> basisValues    ("basis values", numFields, numPoints );
+    ScalarView<Scalar,DeviceType> basisGradValues("basis grad values", numFields, numPoints, spaceDim);
 
-    using Kokkos::DefaultExecutionSpace;
-    auto cubature = Intrepid2::DefaultCubatureFactory::create<DefaultExecutionSpace>(cellTopo,polyOrder*2);
+    auto cubature = Intrepid2::DefaultCubatureFactory::create<DeviceType>(cellTopo,polyOrder*2);
     TEST_EQUALITY( numPoints, cubature->getNumPoints());
-    ScalarView<PointScalar,ExecSpaceType> cubaturePoints("cubature points",numPoints,spaceDim);
-    ScalarView<double,ExecSpaceType> cubatureWeights("cubature weights", numPoints);
+    PointViewType cubaturePoints("cubature points",numPoints,spaceDim);
+    WeightViewType cubatureWeights("cubature weights", numPoints);
     
     cubature->getCubature(cubaturePoints, cubatureWeights);
     
@@ -184,7 +187,7 @@ namespace
   TEUCHOS_UNIT_TEST( VectorData, ZeroFirstComponent )
   {
     using Scalar  = double;
-    using ExecSpaceType = Kokkos::DefaultExecutionSpace;
+    using DeviceType = Kokkos::DefaultExecutionSpace;
     
     const int spaceDim = 2;
     
@@ -193,7 +196,7 @@ namespace
     const int numFields          = numComponentFields * numComponentFields;
     const int numPoints          = numComponentPoints * numComponentPoints;
     
-    ScalarView<Scalar,ExecSpaceType> fieldComponentDataView = getView<Scalar>("field component data", numComponentFields);
+    ScalarView<Scalar,DeviceType> fieldComponentDataView = getView<Scalar,DeviceType>("field component data", numComponentFields);
     auto fieldComponentDataViewHost = Kokkos::create_mirror_view(fieldComponentDataView);
     fieldComponentDataViewHost(0) = 1.0;
     
@@ -202,27 +205,39 @@ namespace
     const int fieldComponentDataRank = 2;
     Kokkos::Array<int,fieldComponentDataRank> fieldComponentExtents {numComponentFields,numComponentPoints};
     Kokkos::Array<DataVariationType,fieldComponentDataRank> fieldComponentVariationTypes {GENERAL,CONSTANT};
-    Data<Scalar,ExecSpaceType> fieldComponentData(fieldComponentDataView,fieldComponentExtents,fieldComponentVariationTypes);
+    Data<Scalar,DeviceType> fieldComponentData(fieldComponentDataView,fieldComponentExtents,fieldComponentVariationTypes);
     
-    TensorData<Scalar,ExecSpaceType> nonzeroTensorData(std::vector< Data<Scalar,ExecSpaceType> >{fieldComponentData,fieldComponentData});
+    TensorData<Scalar,DeviceType> nonzeroTensorData(std::vector< Data<Scalar,DeviceType> >{fieldComponentData,fieldComponentData});
     
     const int numFamilies = 1;
-    Kokkos::Array<TensorData<Scalar,ExecSpaceType>, spaceDim > family {TensorData<Scalar,ExecSpaceType>(), nonzeroTensorData}; // empty first component
-    Kokkos::Array< Kokkos::Array<TensorData<Scalar,ExecSpaceType>, spaceDim>, numFamilies> vectorComponents {family};
+    Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim > family {TensorData<Scalar,DeviceType>(), nonzeroTensorData}; // empty first component
+    Kokkos::Array< Kokkos::Array<TensorData<Scalar,DeviceType>, spaceDim>, numFamilies> vectorComponents {family};
     
-    VectorData<Scalar,ExecSpaceType> vectorData(vectorComponents);
+    VectorData<Scalar,DeviceType> vectorData(vectorComponents);
     
     TEST_EQUALITY(numFields, vectorData.extent_int(0)); // (F,P,D)
     TEST_EQUALITY(numPoints, vectorData.extent_int(1)); // (F,P,D)
     TEST_EQUALITY( spaceDim, vectorData.extent_int(2)); // (F,P,D)
     
+    Kokkos::View<bool*,DeviceType> vectorDataBools("vectorDataBools", 2);
+    Kokkos::View<double*,DeviceType> vectorDataValues("vectorDataValues", 2);
+
+    using HostSpaceType = typename Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space;
+    Kokkos::parallel_for(Kokkos::RangePolicy<typename DeviceType::execution_space>(0,2),
+    KOKKOS_LAMBDA (const int &i) {
+      vectorDataBools(i) = vectorData.getComponent(0,i).isValid();
+      vectorDataValues(i) = vectorData(0,0,i);
+    });
+    auto vectorDataBoolsHost = Kokkos::create_mirror_view_and_copy(HostSpaceType(), vectorDataBools);
+    auto vectorDataValuesHost = Kokkos::create_mirror_view_and_copy(HostSpaceType(), vectorDataValues);
+
     // check that the first component is identically zero (indicated by invalidity)
-    TEST_EQUALITY( false, vectorData.getComponent(0,0).isValid() ); // getComponent(familyOrdinal, componentOrdinal)
-    TEST_EQUALITY(  true, vectorData.getComponent(0,1).isValid() ); // getComponent(familyOrdinal, componentOrdinal)
-    
+    TEST_EQUALITY( false, vectorDataBoolsHost(0) ); // getComponent(familyOrdinal, componentOrdinal)
+    TEST_EQUALITY( true,  vectorDataBoolsHost(1) ); // getComponent(familyOrdinal, componentOrdinal)
+
     // test values
-    TEST_EQUALITY(                          0.0, vectorData(0,0,0)); // (F,P,D)
-    TEST_EQUALITY(fieldComponentDataViewHost(0), vectorData(0,0,1)); // (F,P,D)
+    TEST_EQUALITY(                          0.0, vectorDataValuesHost(0)); // (F,P,D)
+    TEST_EQUALITY(fieldComponentDataViewHost(0), vectorDataValuesHost(1)); // (F,P,D)
   }
 
 } // anonymous namespace

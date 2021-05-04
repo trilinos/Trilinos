@@ -95,9 +95,11 @@ public:
 
   /// Constructor
   StepperLeapfrogModifierTest()
-    : testBEGIN_STEP(false), testBEFORE_X_UPDATE(false),testBEFORE_EXPLICIT_EVAL(false),
-      testBEFORE_XDOT_UPDATE(false), testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+    : testBEGIN_STEP(false), testBEFORE_X_UPDATE(false),
+      testBEFORE_EXPLICIT_EVAL(false), testBEFORE_XDOT_UPDATE(false),
+      testEND_STEP(false),
+      testCurrentValue(-0.99), testWorkingValue(-0.99),
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -127,8 +129,8 @@ public:
     case StepperLeapfrogAppAction<double>::BEFORE_X_UPDATE:
       {
         testBEFORE_X_UPDATE = true;
-        testType = "Leapfrog - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Leapfrog - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperLeapfrogAppAction<double>::BEFORE_XDOT_UPDATE:
@@ -136,6 +138,11 @@ public:
         testBEFORE_XDOT_UPDATE = true;
         auto x = sh->getWorkingState()->getX();
         testWorkingValue = get_ele(*(x), 0);
+        break;
+      }
+    case StepperLeapfrogAppAction<double>::END_STEP:
+      {
+        testEND_STEP = true;
         break;
       }
     default:
@@ -147,10 +154,11 @@ public:
   bool testBEFORE_X_UPDATE;
   bool testBEFORE_EXPLICIT_EVAL;
   bool testBEFORE_XDOT_UPDATE;
+  bool testEND_STEP;
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Modifier)
@@ -170,8 +178,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Modifier)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
@@ -199,6 +206,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Modifier)
   TEST_COMPARE(modifier->testBEFORE_EXPLICIT_EVAL, ==, true);
   TEST_COMPARE(modifier->testBEFORE_X_UPDATE, ==, true);
   TEST_COMPARE(modifier->testBEFORE_XDOT_UPDATE, ==, true);
+  TEST_COMPARE(modifier->testEND_STEP, ==, true);
 
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifier->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
@@ -207,7 +215,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Modifier)
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-15);
 
-  TEST_COMPARE(modifier->testType, ==, "Leapfrog - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Leapfrog - Modifier");
 }
 // ************************************************************
 // ************************************************************
@@ -220,7 +228,8 @@ public:
   StepperLeapfrogModifierXTest()
     : testX_BEGIN_STEP(false), testX_BEFORE_EXPLICIT_EVAL(false),
       testX_BEFORE_X_UPDATE(false), testX_BEFORE_XDOT_UPDATE(false),
-      testX(0.0), testDt(-1.25), testTime(-1.25),testType("")
+      testX_END_STEP(false),
+      testX(0.0), testDt(-1.25), testTime(-1.25),testName("")
   {}
 
   /// Destructor
@@ -254,7 +263,12 @@ public:
     case StepperLeapfrogModifierXBase<double>::X_BEFORE_XDOT_UPDATE:
       {
         testX_BEFORE_XDOT_UPDATE = true;
-	testType = "Leapfrog - ModifierX";
+        testName = "Leapfrog - ModifierX";
+        break;
+      }
+    case StepperLeapfrogModifierXBase<double>::X_END_STEP:
+      {
+        testX_END_STEP = true;
         break;
       }
     default:
@@ -266,10 +280,11 @@ public:
   bool testX_BEFORE_EXPLICIT_EVAL;
   bool testX_BEFORE_X_UPDATE;
   bool testX_BEFORE_XDOT_UPDATE;
+  bool testX_END_STEP;
   double testX;
   double testDt;
   double testTime;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(LeapFrog, AppAction_ModifierX)
@@ -289,8 +304,7 @@ TEUCHOS_UNIT_TEST(LeapFrog, AppAction_ModifierX)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
@@ -318,6 +332,7 @@ TEUCHOS_UNIT_TEST(LeapFrog, AppAction_ModifierX)
   TEST_COMPARE(modifierX->testX_BEFORE_EXPLICIT_EVAL, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_XDOT_UPDATE, ==, true);
   TEST_COMPARE(modifierX->testX_BEFORE_X_UPDATE, ==, true);
+  TEST_COMPARE(modifierX->testX_END_STEP, ==, true);
 
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(modifierX->testX, get_ele(*(x), 0), 1.0e-15);
@@ -325,7 +340,7 @@ TEUCHOS_UNIT_TEST(LeapFrog, AppAction_ModifierX)
   TEST_FLOATING_EQUALITY(modifierX->testDt, Dt, 1.0e-15);
   auto time = solutionHistory->getWorkingState()->getTime();
   TEST_FLOATING_EQUALITY(modifierX->testTime, time, 1.0e-15);
-  TEST_COMPARE(modifierX->testType, ==, "Leapfrog - ModifierX");
+  TEST_COMPARE(modifierX->testName, ==, "Leapfrog - ModifierX");
 
 }
 
@@ -339,17 +354,18 @@ public:
   StepperLeapfrogObserverTest()
     : testBEGIN_STEP(false), testBEFORE_EXPLICIT_EVAL(false),
       testBEFORE_X_UPDATE(false), testBEFORE_XDOT_UPDATE(false),
+      testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
   /// Destructor
   virtual ~StepperLeapfrogObserverTest(){}
 
   /// Observe Leapfrog Stepper at action location.
   virtual void observe(
-		       Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
-		       Teuchos::RCP<const Tempus::StepperLeapfrog<double> > stepper,
-		       const typename Tempus::StepperLeapfrogAppAction<double>::ACTION_LOCATION actLoc)
+    Teuchos::RCP<const Tempus::SolutionHistory<double> > sh,
+    Teuchos::RCP<const Tempus::StepperLeapfrog<double> > stepper,
+    const typename Tempus::StepperLeapfrogAppAction<double>::ACTION_LOCATION actLoc)
   {
     switch(actLoc) {
     case StepperLeapfrogAppAction<double>::BEGIN_STEP:
@@ -368,7 +384,7 @@ public:
     case StepperLeapfrogAppAction<double>::BEFORE_X_UPDATE:
       {
         testBEFORE_X_UPDATE = true;
-        testType = stepper->getStepperType();
+        testName = stepper->getStepperType();
         break;
       }
     case StepperLeapfrogAppAction<double>::BEFORE_XDOT_UPDATE:
@@ -378,19 +394,25 @@ public:
         testWorkingValue = get_ele(*(x), 0);
         break;
       }
+    case StepperLeapfrogAppAction<double>::END_STEP:
+      {
+        testEND_STEP = true;
+        break;
+      }
     default:
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-				 "Error - unknown action location.\n");
+        "Error - unknown action location.\n");
     }
   }
   bool testBEGIN_STEP;
   bool testBEFORE_EXPLICIT_EVAL;
   bool testBEFORE_X_UPDATE;
   bool testBEFORE_XDOT_UPDATE;
+  bool testEND_STEP;
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Observer)
@@ -411,8 +433,7 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Observer)
   timeStepControl->initialize();
 
   // Setup initial condition SolutionState --------------------
-  Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-    stepper->getModel()->getNominalValues();
+  auto inArgsIC = model->getNominalValues();
   auto icX = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
   auto icXDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot());
   auto icXDotDot = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x_dot_dot());
@@ -437,13 +458,19 @@ TEUCHOS_UNIT_TEST(Leapfrog, AppAction_Observer)
   stepper->takeStep(solutionHistory);
 
   // Testing that values can be observed through the observer.
+  TEST_COMPARE(observer->testBEGIN_STEP, ==, true);
+  TEST_COMPARE(observer->testBEFORE_EXPLICIT_EVAL, ==, true);
+  TEST_COMPARE(observer->testBEFORE_X_UPDATE, ==, true);
+  TEST_COMPARE(observer->testBEFORE_XDOT_UPDATE, ==, true);
+  TEST_COMPARE(observer->testEND_STEP, ==, true);
+
   auto x = solutionHistory->getCurrentState()->getX();
   TEST_FLOATING_EQUALITY(observer->testCurrentValue, get_ele(*(x), 0), 1.0e-15);
   x = solutionHistory->getWorkingState()->getX();
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-15);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-15);
 
-  TEST_COMPARE(observer->testType, ==, "Leapfrog");
+  TEST_COMPARE(observer->testName, ==, "Leapfrog");
 }
 
 

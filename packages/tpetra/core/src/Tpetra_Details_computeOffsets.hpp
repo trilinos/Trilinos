@@ -292,8 +292,8 @@ computeOffsetsFromCounts (const ExecutionSpace& execSpace,
       typename offsets_device_type::memory_space;
     using counts_memory_space = typename CountsViewType::memory_space;
     constexpr bool countsAccessibleFromOffsetsExecSpace =
-      Kokkos::Impl::VerifyExecutionCanAccessMemorySpace<
-        offsets_memory_space, counts_memory_space>::value;
+      Kokkos::Impl::SpaceAccessibility<
+        offsets_memory_space, counts_memory_space>::accessible;
     if (countsAccessibleFromOffsetsExecSpace) {
       // NOTE (mfh 21 Aug 2019) Some compilers have trouble deducing
       // that operator= works if more than one template argument

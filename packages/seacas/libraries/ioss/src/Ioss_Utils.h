@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -10,6 +10,7 @@
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Field.h>
 #include <Ioss_Property.h>
+#include <Ioss_Sort.h>
 #include <algorithm> // for sort, lower_bound, copy, etc
 #include <cassert>
 #include <cmath>
@@ -26,7 +27,6 @@ namespace Ioss {
   class Region;
   class SideBlock;
   class PropertyManager;
-  struct MeshCopyOptions;
 } // namespace Ioss
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error((errmsg).str())
@@ -122,7 +122,7 @@ namespace Ioss {
       if (skip_first) {
         it++;
       }
-      std::sort(it, vec.end());
+      Ioss::sort(it, vec.end());
       vec.resize(unique(vec, skip_first));
       vec.shrink_to_fit();
     }
@@ -488,11 +488,6 @@ namespace Ioss {
      *  \param[in,out] region The region on which the nominal mesh is to be defined.
      */
     static void generate_history_mesh(Ioss::Region *region);
-
-    //! Copy the mesh in `region` to `output_region`.  Behavior can be controlled
-    //! via options in `options`
-    static void copy_database(Ioss::Region &region, Ioss::Region &output_region,
-                              Ioss::MeshCopyOptions &options);
 
     static void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
                             const std::string &header, const std::string &suffix = "\n\t");

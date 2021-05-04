@@ -2235,9 +2235,26 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
         }
       }
 
+      bool assembly_has_valid_io_leaf_part(stk::io::OutputParams &params,
+                                           const stk::mesh::Part& assemblyPart)
+      {
+        const stk::mesh::MetaData & meta = mesh::MetaData::get(assemblyPart);
+        stk::mesh::PartVector leafParts = get_unique_leaf_parts(meta, assemblyPart.name());
+        for (stk::mesh::Part* leafPart : leafParts) {
+          if (is_in_subsets_of_parts(*leafPart, leafParts)) {continue;}
+          if (is_valid_for_output(*leafPart, params.get_output_selector(leafPart->primary_entity_rank()))) {
+            return true;
+          }
+        }
+        return false;
+      }
+
       void define_assembly(stk::io::OutputParams &params,
                            const stk::mesh::Part &part)
       {
+        if (!assembly_has_valid_io_leaf_part(params, part)) {
+          return;
+        }
         Ioss::Region &io_region = params.io_region();
 
         std::string name = getPartName(part);
@@ -2252,6 +2269,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       void define_assembly_hierarchy(stk::io::OutputParams &params,
                                      const stk::mesh::Part &part)
       {
+        if (!assembly_has_valid_io_leaf_part(params, part)) {
+          return;
+        }
         const stk::mesh::MetaData & meta = mesh::MetaData::get(part);
         Ioss::Region &io_region = params.io_region();
 

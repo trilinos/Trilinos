@@ -64,22 +64,28 @@ namespace
   void testTensorPointCubature(const shards::CellTopology &cellTopo, const int &quadratureDegree,
                                const double &relTol, const double &absTol, Teuchos::FancyOStream &out, bool &success)
   {
-    using ExecutionSpace = Kokkos::DefaultExecutionSpace;
+    using DeviceType = DefaultTestDeviceType;
     using PointScalar = double;
     using WeightScalar = double;
+    using CubatureType   = Cubature<DeviceType,PointScalar,WeightScalar>;
+    using PointViewType  = typename CubatureType::PointViewTypeAllocatable;
+    using WeightViewType = typename CubatureType::WeightViewTypeAllocatable;
+    
     DefaultCubatureFactory cub_factory;
     auto cellTopoKey = cellTopo.getKey();
-    auto quadrature = cub_factory.create<ExecutionSpace, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
+    auto quadrature = cub_factory.create<DeviceType, PointScalar, WeightScalar>(cellTopoKey, quadratureDegree);
     ordinal_type numRefPoints = quadrature->getNumPoints();
     const int spaceDim = cellTopo.getDimension();
-    ViewType<PointScalar> points = ViewType<PointScalar>("quadrature points ref cell", numRefPoints, spaceDim);
-    ViewType<WeightScalar> weights = ViewType<WeightScalar>("quadrature weights ref cell", numRefPoints);
+    
+    PointViewType points("quadrature points ref cell", numRefPoints, spaceDim);
+    WeightViewType weights("quadrature weights ref cell", numRefPoints);
+    
     quadrature->getCubature(points, weights);
     
-    TensorPoints<PointScalar> tensorPoints;
-    TensorData<WeightScalar>  tensorWeights;
+    TensorPoints<PointScalar,DeviceType> tensorPoints;
+    TensorData<WeightScalar,DeviceType>  tensorWeights;
     
-    using CubatureTensorType = CubatureTensor<ExecutionSpace,PointScalar,WeightScalar>;
+    using CubatureTensorType = CubatureTensor<DeviceType,PointScalar,WeightScalar>;
     CubatureTensorType* tensorQuadrature = dynamic_cast<CubatureTensorType*>(quadrature.get());
 
     if (tensorQuadrature)
@@ -90,11 +96,11 @@ namespace
     }
     else
     {
-      std::vector<ViewType<PointScalar>> pointComponents {points};
-      tensorPoints = TensorPoints<PointScalar>(pointComponents);
-      Data<WeightScalar> weightData(weights);
-      std::vector<Data<WeightScalar>> weightComponents {weightData};
-      tensorWeights = TensorData<WeightScalar>(weightComponents);
+      std::vector<ViewType<PointScalar,DeviceType>> pointComponents {points};
+      tensorPoints = TensorPoints<PointScalar,DeviceType>(pointComponents);
+      Data<WeightScalar,DeviceType> weightData(weights);
+      std::vector<Data<WeightScalar,DeviceType>> weightComponents {weightData};
+      tensorWeights = TensorData<WeightScalar,DeviceType>(weightComponents);
     }
     
     printView(points, out, "Points being tested");

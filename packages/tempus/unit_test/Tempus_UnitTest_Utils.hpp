@@ -317,7 +317,7 @@ public:
       testCurrentValue(-0.99),
       testWorkingValue(-0.99),
       testDt(-1.5),
-      testType("")
+      testName("")
   {}
 
   /// Destructor
@@ -335,8 +335,8 @@ public:
         testBEGIN_STEP = true;
         auto x = sh->getCurrentState()->getX();
         testCurrentValue = get_ele(*(x), 0);
-        testType = stepper->getStepperType() + " - Modifier";
-        stepper->setStepperType(testType);
+        testName = stepper->getStepperType() + " - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
       case StepperRKAppAction<double>::BEGIN_STAGE:
@@ -388,7 +388,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 
@@ -411,7 +411,7 @@ public:
       testCurrentValue(-0.99),
       testWorkingValue(-0.99),
       testDt(-1.5),
-      testType("")
+      testName("")
   {}
 
   /// Destructor
@@ -445,7 +445,7 @@ public:
       case StepperRKAppAction<double>::AFTER_SOLVE:
       {
         testAFTER_SOLVE = true;
-        testType = stepper->getStepperType() + " - Observer";
+        testName = stepper->getStepperType() + " - Observer";
         break;
       }
       case StepperRKAppAction<double>::BEFORE_EXPLICIT_EVAL:
@@ -481,7 +481,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 
@@ -588,7 +588,7 @@ void testRKAppAction(
   const Teuchos::RCP<const Thyra::ModelEvaluator<double> >& model,
   Teuchos::FancyOStream &out, bool &success)
 {
-  auto testTypeOrig = stepper->getStepperType();
+  auto testNameOrig = stepper->getStepperType();
 
   // Test Modifier.
   {
@@ -597,7 +597,7 @@ void testRKAppAction(
     stepper->setAppAction(modifier);
     stepper->initialize();
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
-    auto testType = testTypeOrig + " - Modifier";
+    auto testName = testNameOrig + " - Modifier";
 
     // Create a SolutionHistory.
     auto solutionHistory = Tempus::createSolutionHistoryME(model);
@@ -626,7 +626,7 @@ void testRKAppAction(
     auto Dt = solutionHistory->getWorkingState()->getTimeStep();
     TEST_FLOATING_EQUALITY(modifier->testDt, Dt/10.0, 1.0e-14);
 
-    TEST_COMPARE(modifier->testType, ==, testType);
+    TEST_COMPARE(modifier->testName, ==, testName);
   }
 
   // Test Observer.
@@ -634,7 +634,7 @@ void testRKAppAction(
     stepper->setModel(model);
     auto observer = rcp(new StepperRKObserverTest());
     stepper->setAppAction(observer);
-    stepper->setStepperType(testTypeOrig);
+    stepper->setStepperName(testNameOrig);
     stepper->initialize();
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
@@ -665,8 +665,8 @@ void testRKAppAction(
     auto Dt = solutionHistory->getWorkingState()->getTimeStep();
     TEST_FLOATING_EQUALITY(observer->testDt, Dt/10.0, 1.0e-14);
 
-    auto testType = testTypeOrig + " - Observer";
-    TEST_COMPARE(observer->testType, ==, testType);
+    auto testName = testNameOrig + " - Observer";
+    TEST_COMPARE(observer->testName, ==, testName);
   }
 
   // Test ModifierX.
@@ -674,7 +674,7 @@ void testRKAppAction(
     stepper->setModel(model);
     auto modifierX = rcp(new StepperRKModifierXTest());
     stepper->setAppAction(modifierX);
-    stepper->setStepperType(testTypeOrig);
+    stepper->setStepperName(testNameOrig);
     stepper->initialize();
     TEUCHOS_TEST_FOR_EXCEPT(!stepper->isInitialized());
 
@@ -881,8 +881,8 @@ void testRKAppAction(
     TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(xWS), 0),relTol);
     TEST_FLOATING_EQUALITY(modifier->testDt, Dt/10.0, relTol);
 
-    auto testType = testTypeOrig + " - Modifier";
-    TEST_COMPARE(modifier->testType, ==, testType);
+    auto testName = testNameOrig + " - Modifier";
+    TEST_COMPARE(modifier->testName, ==, testName);
 
 
     // Test Observer.
@@ -900,8 +900,8 @@ void testRKAppAction(
     TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(xWS), 0),relTol);
     TEST_FLOATING_EQUALITY(observer->testDt, Dt/10.0, relTol);
 
-    testType = testType + " - Observer";
-    TEST_COMPARE(observer->testType, ==, testType);
+    testName = testNameOrig + " - Observer";
+    TEST_COMPARE(observer->testName, ==, testName);
 
 
     // Test ModifierX.

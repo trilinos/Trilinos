@@ -81,6 +81,8 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> solverPL = parameterList();
       *solverPL  = *(sublist(stepperPL, "Default Solver", true));
+      if (RKMethods[m] == "EDIRK 2 Stage Theta Method")
+        tempusPL->sublist("Default Stepper").set<bool>("Use FSAL", 1);
       tempusPL->sublist("Default Stepper").remove("Zero Initial Guess");
       tempusPL->sublist("Default Stepper").remove("Default Solver");
       tempusPL->sublist("Default Stepper").set<bool>("Zero Initial Guess", 0);
@@ -116,16 +118,19 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
            .set<std::string>("Gamma Type", "3rd Order A-stable");
       tempusPL->sublist("Default Stepper")
            .set<double>("gamma", 0.7886751345948128);
+    } else if (RKMethods[m] == "RK Trapezoidal Rule") {
+      tempusPL->sublist("Default Stepper").set<bool>("Use FSAL", 1);
     } else if (RKMethods[m] == "RK Crank-Nicolson") {
+      tempusPL->sublist("Default Stepper").set<bool>("Use FSAL", 1);
       // Match default Stepper Type
       tempusPL->sublist("Default Stepper")
                    .set("Stepper Type", "RK Trapezoidal Rule");
     } else if (RKMethods[m] == "General DIRK") {
       // Add the default tableau.
       Teuchos::RCP<Teuchos::ParameterList> tableauPL = Teuchos::parameterList();
-      tableauPL->set<std::string>("A", "0.2928932188134524 0.0; 0.7071067811865476 0.2928932188134524");
-      tableauPL->set<std::string>("b", "0.7071067811865476 0.2928932188134524");
-      tableauPL->set<std::string>("c", "0.2928932188134524 1.0");
+      tableauPL->set<std::string>("A", "0.292893218813452 0; 0.707106781186548 0.292893218813452");
+      tableauPL->set<std::string>("b", "0.707106781186548 0.292893218813452");
+      tableauPL->set<std::string>("c", "0.292893218813452 1");
       tableauPL->set<int>("order", 2);
       tableauPL->set<std::string>("bstar", "");
       tempusPL->sublist("Default Stepper").set("Tableau", *tableauPL);
@@ -135,15 +140,14 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
     // Test constructor IntegratorBasic(tempusPL, model)
     {
       RCP<Tempus::IntegratorBasic<double> > integrator =
-        Tempus::integratorBasic<double>(tempusPL, model);
+        Tempus::createIntegratorBasic<double>(tempusPL, model);
 
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> defaultPL =
         Teuchos::rcp_const_cast<Teuchos::ParameterList>(
           integrator->getStepper()->getValidParameters());
-      defaultPL->remove("Description");
 
-      bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+      bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
       if (!pass) {
         std::cout << std::endl;
         std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
@@ -155,15 +159,26 @@ TEUCHOS_UNIT_TEST(DIRK, ParameterList)
     // Test constructor IntegratorBasic(model, stepperType)
     {
       RCP<Tempus::IntegratorBasic<double> > integrator =
-        Tempus::integratorBasic<double>(model, RKMethods[m]);
+        Tempus::createIntegratorBasic<double>(model, RKMethods[m]);
 
       RCP<ParameterList> stepperPL = sublist(tempusPL, "Default Stepper", true);
       RCP<ParameterList> defaultPL =
         Teuchos::rcp_const_cast<Teuchos::ParameterList>(
           integrator->getStepper()->getValidParameters());
-      defaultPL->remove("Description");
 
-      bool pass = haveSameValues(*stepperPL, *defaultPL, true);
+      // These Steppers have 'Initial Condition Consistency = Consistent'
+      // set as the default, so the ParameterList has been modified by
+      // NOX (filled in default parameters).  Thus solver comparison
+      // will be removed.
+      if (RKMethods[m] == "EDIRK 2 Stage Theta Method" ||
+          RKMethods[m] == "RK Trapezoidal Rule" ||
+          RKMethods[m] == "RK Crank-Nicolson") {
+        stepperPL->set<std::string>("Initial Condition Consistency", "Consistent");
+        stepperPL->remove("Default Solver");
+        defaultPL->remove("Default Solver");
+      }
+
+      bool pass = haveSameValuesSorted(*stepperPL, *defaultPL, true);
       if (!pass) {
         std::cout << std::endl;
         std::cout << "stepperPL -------------- \n" << *stepperPL << std::endl;
@@ -219,8 +234,7 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
     timeStepControl->initialize();
 
     // Setup initial condition SolutionState --------------------
-    Thyra::ModelEvaluatorBase::InArgs<double> inArgsIC =
-      stepper->getModel()->getNominalValues();
+    auto inArgsIC = model->getNominalValues();
     auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icState = Tempus::createSolutionStateX(icSolution);
     icState->setTime    (timeStepControl->getInitTime());
@@ -238,8 +252,8 @@ TEUCHOS_UNIT_TEST(DIRK, ConstructingFromDefaults)
 
     // Setup Integrator -----------------------------------------
     RCP<Tempus::IntegratorBasic<double> > integrator =
-      Tempus::integratorBasic<double>();
-    integrator->setStepperWStepper(stepper);
+      Tempus::createIntegratorBasic<double>();
+    integrator->setStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
     //integrator->setObserver(...);
@@ -312,7 +326,7 @@ TEUCHOS_UNIT_TEST(DIRK, useFSAL_false)
     timeStepControl->initialize();
 
     // Setup initial condition SolutionState --------------------
-    auto inArgsIC = stepper->getModel()->getNominalValues();
+    auto inArgsIC = model->getNominalValues();
     auto icSolution = rcp_const_cast<Thyra::VectorBase<double> > (inArgsIC.get_x());
     auto icState = Tempus::createSolutionStateX(icSolution);
     icState->setTime    (timeStepControl->getInitTime());
@@ -329,8 +343,8 @@ TEUCHOS_UNIT_TEST(DIRK, useFSAL_false)
     solutionHistory->addState(icState);
 
     // Setup Integrator -----------------------------------------
-    auto integrator = Tempus::integratorBasic<double>();
-    integrator->setStepperWStepper(stepper);
+    auto integrator = Tempus::createIntegratorBasic<double>();
+    integrator->setStepper(stepper);
     integrator->setTimeStepControl(timeStepControl);
     integrator->setSolutionHistory(solutionHistory);
     integrator->initialize();
@@ -471,7 +485,7 @@ TEUCHOS_UNIT_TEST(DIRK, SinCos)
       // Setup the Integrator and reset initial time step
       pl->sublist("Default Integrator")
          .sublist("Time Step Control").set("Initial Time Step", dt);
-      integrator = Tempus::integratorBasic<double>(pl, model);
+      integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
       // Initial Conditions
       // During the Integrator construction, the initial SolutionState
@@ -595,7 +609,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
     // Setup the Integrator and reset initial time step
     pl->sublist("Default Integrator")
        .sublist("Time Step Control").set("Initial Time Step", dt);
-    integrator = Tempus::integratorBasic<double>(pl, model);
+    integrator = Tempus::createIntegratorBasic<double>(pl, model);
 
     // Integrate to timeMax
     bool integratorStatus = integrator->advanceTime();
@@ -619,7 +633,7 @@ TEUCHOS_UNIT_TEST(DIRK, VanDerPol)
 
     // Output finest temporal solution for plotting
     // This only works for ONE MPI process
-    if ((n == 0) or (n == nTimeStepSizes-1)) {
+    if ((n == 0) || (n == nTimeStepSizes-1)) {
       std::string fname = "Tempus_"+RKMethod+"_VanDerPol-Ref.dat";
       if (n == 0) fname = "Tempus_"+RKMethod+"_VanDerPol.dat";
       RCP<const SolutionHistory<double> > solutionHistory =
@@ -679,7 +693,7 @@ TEUCHOS_UNIT_TEST(DIRK, EmbeddedVanDerPol)
 
       // Setup the Integrator
       RCP<Tempus::IntegratorBasic<double> > integrator =
-         Tempus::integratorBasic<double>(pl, model);
+         Tempus::createIntegratorBasic<double>(pl, model);
 
      const std::string RKMethod_ =
         pl->sublist(integratorChoice).get<std::string>("Stepper Name");

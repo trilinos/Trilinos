@@ -95,6 +95,9 @@ using Teuchos::TimeMonitor;
 // Stratimikos includes
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include <Stratimikos_MueLuHelpers.hpp>
+#ifdef HAVE_MUELU_IFPACK2
+#include <Thyra_Ifpack2PreconditionerFactory.hpp>
+#endif
 #endif
 
 // Support for ML interface
@@ -421,6 +424,7 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
 
   Teuchos::ParameterList params          = *static_cast<Teuchos::ParameterList*>(inputs["params"]);
   Teuchos::ParameterList belosParams     = *static_cast<Teuchos::ParameterList*>(inputs["belosParams"]);
+  Teuchos::ParameterList stratimikosParams = *static_cast<Teuchos::ParameterList*>(inputs["stratimikosParams"]);
   std::string            solverName      = *static_cast<std::string*>(inputs["solverName"]);
   std::string            belosSolverType = *static_cast<std::string*>(inputs["belosSolverType"]);
   std::string            precType        = *static_cast<std::string*>(inputs["precType"]);
@@ -526,21 +530,59 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
 #endif // HAVE_MUELU_BELOS
 #if defined(HAVE_MUELU_STRATIMIKOS) && defined(HAVE_MUELU_THYRA)
   if (solverName == "Stratimikos") {
-    // Build the rest of the Stratimikos list
-    Teuchos::ParameterList stratimikosParams;
-    stratimikosParams.set("Linear Solver Type","Belos");
-    stratimikosParams.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", belosSolverType);
-    stratimikosParams.sublist("Linear Solver Types").sublist("Belos").set("Solver Types", belosParams);
-    stratimikosParams.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
-    stratimikosParams.set("Preconditioner Type","MueLuRefMaxwell");
-    params.set("parameterlist: syntax","muelu");
-    stratimikosParams.sublist("Preconditioner Types").set("MueLuRefMaxwell",params);
+
+    using Teuchos::ParameterList;
+    using Teuchos::rcp_dynamic_cast;
+
     // Add matrices to parameterlist
-    stratimikosParams.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0",         D0_Matrix);
-    stratimikosParams.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv",      M0inv_Matrix);
-    stratimikosParams.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M1",         M1_Matrix);
-    stratimikosParams.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Ms",         Ms_Matrix);
-    stratimikosParams.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Coordinates",coords);
+    Teuchos::ParameterList& precTypesPL = stratimikosParams.sublist("Preconditioner Types");
+    std::list<Teuchos::ParameterList*> sublists;
+    sublists.push_back(&precTypesPL);
+    while (sublists.size() > 0) {
+      Teuchos::ParameterList* sublist = sublists.front();
+      sublists.pop_front();
+      std::list<std::string> keys;
+      for (Teuchos::ParameterList::ConstIterator it = sublist->begin(); it != sublist->end(); ++it) {
+        const std::string &entryName = sublist->name(it);
+        const Teuchos::ParameterEntry &theEntry = sublist->entry(it);
+        if (theEntry.isList()) {
+          Teuchos::ParameterList& sl = sublist->sublist(entryName);
+          sublists.push_back(&sl);
+        } else if (theEntry.isType<std::string>() && Teuchos::getValue<std::string>(theEntry).find("substitute ") != std::string::npos) {
+          keys.push_back(entryName);
+        }
+      }
+      for (auto key_it = keys.begin(); key_it != keys.end(); ++key_it) {
+        std::string value = sublist->get<std::string>(*key_it).substr(11, std::string::npos);
+        if (value == "D0")
+          sublist->set(*key_it, D0_Matrix);
+        else if (value == "M0inv")
+          sublist->set(*key_it, M0inv_Matrix);
+        else if (value == "M1")
+          sublist->set(*key_it, M1_Matrix);
+        else if (value == "Ms")
+          sublist->set(*key_it, Ms_Matrix);
+        else if (value == "Coordinates")
+          sublist->set(*key_it, coords);
+        // else if (*key_it == "Nullspace")
+        //     sublist->set(*key_it, Nullspace);
+#ifdef HAVE_MUELU_EPETRA
+        else if (value == "eD0") {
+          auto eD0 = Teuchos::rcp_dynamic_cast<EpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getEpetra_CrsMatrix();
+          sublist->set(*key_it, eD0);
+        } else if (value == "eCoordinates")
+          sublist->set(*key_it, Teuchos::rcp_dynamic_cast<Xpetra::EpetraMultiVectorT<GlobalOrdinal, Node> >(coords, true)->getEpetra_MultiVector());
+#endif
+#ifdef HAVE_MUELU_TPETRA
+        else if (value == "tD0") {
+          auto tD0 = Teuchos::rcp_dynamic_cast<TpetraCrsMatrix>(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(D0_Matrix, true)->getCrsMatrix(), true)->getTpetra_CrsMatrix();
+          sublist->set(*key_it, tD0);
+        } else if (value == "tCoordinates") {
+          sublist->set(*key_it, Teuchos::rcp_dynamic_cast<TpetraMultiVector>(coords, true)->getTpetra_MultiVector());
+        }
+#endif
+      }
+    }
 
     // Build Thyra linear algebra objects
     RCP<const Thyra::LinearOpBase<Scalar> > thyraA = Xpetra::ThyraUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node>::toThyra(Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(SM_Matrix)->getCrsMatrix());
@@ -551,6 +593,11 @@ bool SetupSolveWrappers<double,LocalOrdinal,GlobalOrdinal,Node>::SetupSolve(std:
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;  // This is the Stratimikos main class (= factory of solver factory).
     Stratimikos::enableMueLuRefMaxwell<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+#ifdef HAVE_MUELU_IFPACK2
+    typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
+    typedef Thyra::Ifpack2PreconditionerFactory<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Impl;
+    linearSolverBuilder.setPreconditioningStrategyFactory(Teuchos::abstractFactoryStd<Base, Impl>(), "Ifpack2");
+#endif
     linearSolverBuilder.setParameterList(rcp(&stratimikosParams,false));              // Setup solver parameters using a Stratimikos parameter list.
 
     // Build a new "solver factory" according to the previously specified parameter list.
@@ -747,9 +794,10 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   }
 
   // set parameters
-  Teuchos::ParameterList params, belosParams;
-  Teuchos::updateParametersFromXmlFileAndBroadcast(xml,      Teuchos::Ptr<Teuchos::ParameterList>(&params),     *comm);
-  Teuchos::updateParametersFromXmlFileAndBroadcast(belos_xml,Teuchos::Ptr<Teuchos::ParameterList>(&belosParams),*comm);
+  Teuchos::ParameterList params, belosParams, stratimikosParams;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xml,            Teuchos::Ptr<Teuchos::ParameterList>(&params),           *comm);
+  Teuchos::updateParametersFromXmlFileAndBroadcast(belos_xml,      Teuchos::Ptr<Teuchos::ParameterList>(&belosParams),      *comm);
+  Teuchos::updateParametersFromXmlFileAndBroadcast(stratimikos_xml,Teuchos::Ptr<Teuchos::ParameterList>(&stratimikosParams),*comm);
   belosParams.sublist(belosSolverType).set("Maximum Iterations", maxIts);
   belosParams.sublist(belosSolverType).set("Convergence Tolerance",tol);
 
@@ -792,6 +840,7 @@ int main_(Teuchos::CommandLineProcessor &clp, Xpetra::UnderlyingLib lib, int arg
   inputs["belosSolverType"] = &belosSolverType;
   inputs["precType"]        = &precType;
   inputs["belosParams"]     = &belosParams;
+  inputs["stratimikosParams"] = &stratimikosParams;
   inputs["numResolves"]     = &numResolves;
   inputs["reuse"]           = &reuse;
 

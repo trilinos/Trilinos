@@ -62,6 +62,7 @@ local installed-end-user-files =
 # be installed for end-users. (This is only intended to be used for testing.)
 local installed-developer-files = 
   stk_transfer_integration_tests
+  stk_transfer_doc_tests
   stk_transfer_utest
   ;
 
@@ -170,6 +171,17 @@ exe stk_transfer_integration_tests
      ]
     /sierra/stk_unit_test_utils//stk_unit_main
     /sierra/stk_mesh//stk_mesh_base
+    stk_transfer_impl
+  : <tag>@sierra-exec-tag
+    <include>$(stk_transfer-root-inc)
+  ;
+
+exe stk_transfer_doc_tests
+  :
+    [ glob 
+      $(stk_transfer-root)/../stk_doc_tests/stk_transfer/*.cpp 
+     ]
+    /sierra/stk_unit_test_utils//stk_unit_main
     stk_transfer_impl
   : <tag>@sierra-exec-tag
     <include>$(stk_transfer-root-inc)

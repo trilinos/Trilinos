@@ -71,7 +71,6 @@ namespace Details
     {
       numRows = A.getNodeNumRows();
       inverseDiagVec = inverseDiagVec_;
-      inverseDiagVec->sync_host();
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
@@ -88,7 +87,6 @@ namespace Details
     {
       numRows = A.getNodeNumRows();
       inverseDiagVec = inverseDiagVec_;
-      inverseDiagVec->sync_host();
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
@@ -141,7 +139,7 @@ namespace Details
       //note: direction is either Forward or Backward (Symmetric is handled in apply())
       LO numApplyRows = useApplyRows ? (LO) applyRows.size() : numRows;
       //note: inverseDiagMV always has only one column
-      auto inverseDiag = inverseDiagVec->get1dView();
+      auto inverseDiag = Kokkos::subview(inverseDiagVec->getLocalViewHost(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
       bool forward = direction == Tpetra::Forward;
       if(multipleRHS)
       {
@@ -158,7 +156,7 @@ namespace Details
             row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
           for(LO k = 0; k < numVecs; k++)
           {
-            accum[k] = blcl[k][row];
+            accum[k] = KAT::zero();
           }
           Offset rowBegin = Arowmap(row);
           Offset rowEnd = Arowmap(row + 1);
@@ -168,25 +166,25 @@ namespace Details
             IST val = Avalues(j);
             for(LO k = 0; k < numVecs; k++)
             {
-              accum[k] -= val * IST(xlcl[k][col]);
+              accum[k] += val * IST(xlcl[k][col]);
             }
           }
           //Update x
-          IST dinv = inverseDiag[row];
+          IST dinv = inverseDiag(row);
           for(LO k = 0; k < numVecs; k++)
           {
             if(omegaNotOne)
-              xlcl[k][row] += Scalar(omega * dinv * accum[k]);
+              xlcl[k][row] += Scalar(omega * dinv * (IST(blcl[k][row]) - accum[k]));
             else
-              xlcl[k][row] += Scalar(dinv * accum[k]);
+              xlcl[k][row] += Scalar(dinv * (IST(blcl[k][row]) - accum[k]));
           }
         }
       }
       else
       {
-        auto xlcl = Kokkos::subview(x.getLocalViewHost(), Kokkos::ALL(), 0);
-        auto blcl = Kokkos::subview(b.getLocalViewHost(), Kokkos::ALL(), 0);
-        auto dlcl = Kokkos::subview(inverseDiagVec->getLocalViewHost(), Kokkos::ALL(), 0);
+        auto xlcl = Kokkos::subview(x.getLocalViewHost(Tpetra::Access::ReadWrite), Kokkos::ALL(), 0);
+        auto blcl = Kokkos::subview(b.getLocalViewHost(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
+        auto dlcl = Kokkos::subview(inverseDiagVec->getLocalViewHost(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
         for(LO i = 0; i < numApplyRows; i++)
         {
           LO row;
@@ -194,19 +192,19 @@ namespace Details
             row = useApplyRows ? applyRows[i] : i;
           else
             row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
-          IST sum = blcl(row);
+          IST accum = KAT::zero();
           Offset rowBegin = Arowmap(row);
           Offset rowEnd = Arowmap(row + 1);
           for(Offset j = rowBegin; j < rowEnd; j++)
           {
-            sum -= Avalues(j) * xlcl(Aentries(j));
+            accum += Avalues(j) * xlcl(Aentries(j));
           }
           //Update x
           IST dinv = dlcl(row);
           if(omegaNotOne)
-            xlcl(row) += omega * dinv * sum;
+            xlcl(row) += omega * dinv * (blcl(row) - accum);
           else
-            xlcl(row) += dinv * sum;
+            xlcl(row) += dinv * (blcl(row) - accum);
         }
       }
     }
@@ -238,10 +236,10 @@ namespace Details
           row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v);
+          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
           for(LO k = 0; k < blockSize; k++)
           {
-            accum(k, v) = bRow(k);
+            accum(k, v) = KAT::zero();
           }
         }
         Offset rowBegin = Arowmap(row);
@@ -252,13 +250,13 @@ namespace Details
           IST* blk = &Avalues(j * bs2);
           for(LO v = 0; v < numVecs; v++)
           {
-            auto xCol = x.getLocalBlock (col, v);
+            auto xCol = x.getLocalBlock (col, v, Tpetra::Access::ReadOnly);
             for(LO br = 0; br < blockSize; br++)
             {
               for(LO bc = 0; bc < blockSize; bc++)
               {
                 IST Aval = blk[br * blockSize + bc];
-                accum(br, v) -= Aval * xCol(bc);
+                accum(br, v) += Aval * xCol(bc);
               }
             }
           }
@@ -266,6 +264,14 @@ namespace Details
         //Update x: term is omega * Aii^-1 * accum, where omega is scalar, Aii^-1 is bs*bs, and accum is bs*nv
         auto invBlock = Kokkos::subview(inverseBlockDiag, row, Kokkos::ALL(), Kokkos::ALL());
         Kokkos::deep_copy(dinv_accum, KAT::zero());
+        for(LO v = 0; v < numVecs; v++)
+        {
+          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
+          for(LO br = 0; br < blockSize; br++)
+          {
+            accum(br, v) = bRow(br) - accum(br, v);
+          }
+        }
         for(LO v = 0; v < numVecs; v++)
         {
           for(LO br = 0; br < blockSize; br++)
@@ -279,7 +285,7 @@ namespace Details
         //Update x
         for(LO v = 0; v < numVecs; v++)
         {
-          auto xRow = x.getLocalBlock (row, v);
+          auto xRow = x.getLocalBlock (row, v, Tpetra::Access::ReadWrite);
           for(LO k = 0; k < blockSize; k++)
           {
             xRow(k) += omega * dinv_accum(k, v);

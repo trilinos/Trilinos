@@ -26,6 +26,7 @@ template<class Scalar>
 StepperStaggeredForwardSensitivity<Scalar>::
 StepperStaggeredForwardSensitivity()
 {
+  this->setStepperName(        "StaggeredForwardSensitivity");
   this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(Teuchos::null, Teuchos::null);
 }
@@ -39,6 +40,7 @@ StepperStaggeredForwardSensitivity(
   const Teuchos::RCP<Teuchos::ParameterList>& sens_pList)
 {
   // Set all the input parameters and call initialize
+  this->setStepperName(        "StaggeredForwardSensitivity");
   this->setStepperType(        "StaggeredForwardSensitivity");
   this->setParams(pList, sens_pList);
   this->setModel(appModel);
@@ -153,7 +155,7 @@ takeStep(
     state_state->setX(x);
     state_state->setXDot(xdot);
     state_state->setXDotDot(xdotdot);
-    stateSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+    stateSolutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
     stateSolutionHistory_->addState(state_state);
 
     const int num_param = X->getMultiVector()->domain()->dim()-1;
@@ -181,7 +183,7 @@ takeStep(
     sens_state->setX(dxdp_vec);
     sens_state->setXDot(dxdotdp_vec);
     sens_state->setXDotDot(dxdotdotdp_vec);
-    sensSolutionHistory_ = rcp(new SolutionHistory<Scalar>(shPL));
+    sensSolutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
     sensSolutionHistory_->addState(sens_state);
   }
 

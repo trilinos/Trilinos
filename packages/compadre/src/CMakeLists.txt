@@ -55,15 +55,6 @@ elseif (KOKKOSKERNELS_BUILT_FOR_USER) # Kokkos-Kernels built for user by this pr
   target_link_libraries(compadre PUBLIC Kokkos::kokkoskernels)
 endif()
 
-# link to CUDA
-if (Compadre_USE_CUDA AND NOT(KOKKOS_IN_TRILINOS))
-  if (TARGET Kokkos::CUDA)
-    target_link_libraries(compadre PUBLIC "cusolver") # comes from Kokkos::CUBLAS
-  else()
-    MESSAGE(FATAL_ERROR "Compadre_USE_CUDA is ON, but CUBLAS not found by KokkosKernels.")
-  endif()
-endif()
-
 # link to MPI
 if (Compadre_USE_MPI)
   if (MPI_CXX_INCLUDE_PATH)
@@ -78,6 +69,9 @@ bob_export_target(compadre)
 
 set(COMPADRE_TPL
     tpl/nanoflann.hpp
+    tpl/KokkosBatched_SolveUTV_Decl_Compadre.hpp
+    tpl/KokkosBatched_SolveUTV_TeamVector_Impl_Compadre.hpp
+    tpl/KokkosBatched_SolveUTV_TeamVector_Internal_Compadre.hpp
 )
 
 install(FILES ${COMPADRE_TPL} DESTINATION include/tpl)

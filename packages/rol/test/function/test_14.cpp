@@ -41,29 +41,16 @@
 // ************************************************************************
 // @HEADER
 
-/*! \file  test_14.cpp
-    \brief Validate ExplicitLinearConstraint infrastructure.
+/*! \file  test_15.cpp
+    \brief Validate polyhedral projection infrastructure.
 
 */
 
-#include "ROL_OptimizationSolver.hpp"
-#include "ROL_ExplicitLinearConstraint.hpp"
-#include "ROL_HS9.hpp"
-#include "ROL_HS14.hpp"
-#include "ROL_HS28.hpp"
-#include "ROL_HS42.hpp"
-#include "ROL_HS48.hpp"
-#include "ROL_HS49.hpp"
-#include "ROL_HS50.hpp"
-#include "ROL_HS51.hpp"
-#include "ROL_HS52.hpp"
-
-#include "ROL_BinaryConstraint.hpp"
-#include "ROL_DiagonalOperator.hpp"
-#include "ROL_QuadraticObjective.hpp"
-#include "ROL_RandomVector.hpp"
-#include "ROL_StdVector.hpp"
+#include "ROL_HS41.hpp"
+#include "ROL_HS53.hpp"
+#include "ROL_HS55.hpp"
 #include "ROL_Bounds.hpp"
+#include "ROL_PolyhedralProjectionFactory.hpp"
 
 #include "ROL_Stream.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -87,375 +74,178 @@ int main(int argc, char *argv[]) {
   int errorFlag = 0;
 
   try {
-    RealT tol = 1e4*std::sqrt(ROL::ROL_EPSILON<RealT>());
+    RealT tol = std::sqrt(ROL::ROL_EPSILON<RealT>());
+    RealT cnorm(0);
+    ROL::Ptr<ROL::Vector<RealT>>     sol, mul, x, lam, l, u, c;
+    ROL::Ptr<ROL::Objective<RealT>>  obj;
+    ROL::Ptr<ROL::Constraint<RealT>> con;
+    ROL::Ptr<ROL::BoundConstraint<RealT>> bnd;
+    ROL::Ptr<ROL::PolyhedralProjection<RealT>> proj;
     ROL::ParameterList list;
-    list.sublist("Status Test").set("Gradient Tolerance",1e-12);
-    list.sublist("Status Test").set("Constraint Tolerance",1e-12);
-    list.sublist("Status Test").set("Step Tolerance",1e-14);
-    list.sublist("Step").set("Type","Trust Region");
-    list.sublist("Step").sublist("Trust Region").set("Subproblem Solver","Truncated CG");
-    list.sublist("Step").sublist("Augmented Lagrangian").set("Print Intermediate Optimization History",true);
-    ROL::Ptr<ROL::Vector<RealT>>     sol, mul, s, ds, Ps, imul, c;
-    ROL::Ptr<ROL::Objective<RealT>>  obj, tobj;
-    ROL::Ptr<ROL::Constraint<RealT>> con, icon, tcon;
-    ROL::Ptr<ROL::BoundConstraint<RealT>> ibnd;
-    ROL::Ptr<ROL::ExplicitLinearConstraint<RealT>> elc;
-    ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
-    ROL::Ptr<ROL::OptimizationSolver<RealT>>  solver;
+    list.sublist("General").set("Output Level",2);
     std::vector<RealT> data;
-    RealT e1(0), e2(0), e3(0), e4(0), e5(0), err(0);
 
-    *outStream << "Hock and Schittkowski Problem #9" << std::endl << std::endl;
-    ROL::ZOO::getHS9<RealT> HS9;
-    obj = HS9.getObjective();
-    sol = HS9.getInitialGuess();
-    con = HS9.getEqualityConstraint(); 
-    mul = HS9.getEqualityMultiplier();
+    *outStream << std::endl << "Hock and Schittkowski Problem #41" << std::endl << std::endl;
+    ROL::ZOO::getHS41<RealT> HS41;
+    obj = HS41.getObjective();
+    sol = HS41.getInitialGuess();
+    con = HS41.getEqualityConstraint();
+    mul = HS41.getEqualityMultiplier();
+    bnd = HS41.getBoundConstraint();
 
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
+    lam = mul->clone(); lam->set(*mul);
+    x   = sol->clone(); x->set(*sol);
+    l   = sol->clone(); l->zero();
+    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
+    c   = mul->dual().clone();
 
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dai-Fletcher");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
 
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
+    con->value(*c,*x,tol);
+    cnorm = c->norm();
 
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
+    *outStream << "  Multiplier: l1 = " << data[0] << std::endl;
 
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]+static_cast<RealT>(3))/static_cast<RealT>(12);
-    e2 = (data[1]+static_cast<RealT>(4))/static_cast<RealT>(16);
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1] << std::endl;
-    err = std::max(std::abs(e1-std::round(e1)),std::abs(e2-std::round(e2)));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag = (err > tol ? 1 : 0);
+    *outStream << std::endl;
+    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
+               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #28" << std::endl << std::endl;
-    ROL::ZOO::getHS28<RealT> HS28;
-    obj = HS28.getObjective();
-    sol = HS28.getInitialGuess();
-    con = HS28.getEqualityConstraint(); 
-    mul = HS28.getEqualityMultiplier();
+    errorFlag += !bnd->isFeasible(*x);
+    errorFlag += (cnorm > tol);
 
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
+    *outStream << std::endl << "Hock and Schittkowski Problem #41" << std::endl << std::endl;
+    ROL::ZOO::getHS41<RealT> HS41a;
+    obj = HS41a.getObjective();
+    sol = HS41a.getInitialGuess();
+    con = HS41a.getEqualityConstraint();
+    mul = HS41a.getEqualityMultiplier();
+    bnd = HS41a.getBoundConstraint();
 
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
+    lam = mul->clone(); lam->set(*mul);
+    x   = sol->clone(); x->set(*sol);
+    l   = sol->clone(); l->zero();
+    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
+    c   = mul->dual().clone();
 
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Ridders");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
 
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
+    con->value(*c,*x,tol);
+    cnorm = c->norm();
 
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(0.5));
-    e2 = (data[1]+static_cast<RealT>(0.5));
-    e3 = (data[2]-static_cast<RealT>(0.5));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1] << "  x3 = " << data[2] << std::endl;
-    err = std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x3 = " << data[2] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
+    *outStream << "  Multiplier: l1 = " << data[0] << std::endl;
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #48" << std::endl << std::endl;
-    ROL::ZOO::getHS48<RealT> HS48;
-    obj = HS48.getObjective();
-    sol = HS48.getInitialGuess();
-    con = HS48.getEqualityConstraint(); 
-    mul = HS48.getEqualityMultiplier();
+    *outStream << std::endl;
+    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
+               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
 
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
+    errorFlag += !bnd->isFeasible(*x);
+    errorFlag += (cnorm > tol);
 
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
+    *outStream << std::endl << "Hock and Schittkowski Problem #53" << std::endl << std::endl;
+    ROL::ZOO::getHS53<RealT> HS53;
+    obj = HS53.getObjective();
+    sol = HS53.getInitialGuess();
+    con = HS53.getEqualityConstraint();
+    mul = HS53.getEqualityMultiplier();
+    bnd = HS53.getBoundConstraint();
 
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
+    lam = mul->clone(); lam->set(*mul);
+    x   = sol->clone(); x->set(*sol);
+    l   = sol->clone(); l->zero();
+    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
+    c   = mul->dual().clone();
 
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Dykstra");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
 
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(1));
-    e2 = (data[1]-static_cast<RealT>(1));
-    e3 = (data[2]-static_cast<RealT>(1));
-    e4 = (data[3]-static_cast<RealT>(1));
-    e5 = (data[4]-static_cast<RealT>(1));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1]
+    con->value(*c,*x,tol);
+    cnorm = c->norm();
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
                << "  x3 = " << data[2] << "  x4 = " << data[3]
                << "  x5 = " << data[4] << std::endl;
-    err = std::max(std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4)),std::abs(e5));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
-
-    *outStream << std::endl << "Hock and Schittkowski Problem #49" << std::endl << std::endl;
-    ROL::ZOO::getHS49<RealT> HS49;
-    obj = HS49.getObjective();
-    sol = HS49.getInitialGuess();
-    con = HS49.getEqualityConstraint(); 
-    mul = HS49.getEqualityMultiplier();
-
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
-
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
-
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
-
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
-
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(1));
-    e2 = (data[1]-static_cast<RealT>(1));
-    e3 = (data[2]-static_cast<RealT>(1));
-    e4 = (data[3]-static_cast<RealT>(1));
-    e5 = (data[4]-static_cast<RealT>(1));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1]
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
                << "  x3 = " << data[2] << "  x4 = " << data[3]
                << "  x5 = " << data[4] << std::endl;
-    err = std::max(std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4)),std::abs(e5));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
+    *outStream << "  Multiplier: l1 = " << data[0] << "  l2 = " << data[1]
+               << "  l3 = " << data[2] << std::endl;
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #50" << std::endl << std::endl;
-    ROL::ZOO::getHS50<RealT> HS50;
-    obj = HS50.getObjective();
-    sol = HS50.getInitialGuess();
-    con = HS50.getEqualityConstraint(); 
-    mul = HS50.getEqualityMultiplier();
+    *outStream << std::endl;
+    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
+               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
 
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
+    errorFlag += !bnd->isFeasible(*x);
+    errorFlag += (cnorm > tol);
 
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
+    *outStream << std::endl << "Hock and Schittkowski Problem #55" << std::endl << std::endl;
+    ROL::ZOO::getHS55<RealT> HS55;
+    obj = HS55.getObjective();
+    sol = HS55.getInitialGuess();
+    con = HS55.getEqualityConstraint();
+    mul = HS55.getEqualityMultiplier();
+    bnd = HS55.getBoundConstraint();
 
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
+    //ROL::Ptr<ROL::OptimizationProblem<RealT>> problem;
+    //ROL::Ptr<ROL::Vector<RealT>> xt;
+    //std::vector<ROL::Ptr<ROL::Vector<RealT>>> xv;
+    //HS55.get(problem,xt,xv);
+    //problem->check(*outStream);
 
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
+    lam = mul->clone(); lam->set(*mul);
+    x   = sol->clone(); x->set(*sol);
+    l   = sol->clone(); l->zero();
+    u   = sol->clone(); u->setScalar(static_cast<RealT>(1));
+    c   = mul->dual().clone();
 
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(1));
-    e2 = (data[1]-static_cast<RealT>(1));
-    e3 = (data[2]-static_cast<RealT>(1));
-    e4 = (data[3]-static_cast<RealT>(1));
-    e5 = (data[4]-static_cast<RealT>(1));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1]
+    list.sublist("General").sublist("Polyhedral Projection").set("Type","Semismooth Newton");
+    proj = ROL::PolyhedralProjectionFactory<RealT>(*sol,sol->dual(),bnd,con,*lam,*c,list);
+    proj->project(*x,*outStream);
+
+    con->value(*c,*x,tol);
+    cnorm = c->norm();
+
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(sol)->getVector();
+    *outStream << "  Initial:    x1 = " << data[0] << "  x2 = " << data[1]
                << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << std::endl;
-    err = std::max(std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4)),std::abs(e5));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
-
-    *outStream << std::endl << "Hock and Schittkowski Problem #51" << std::endl << std::endl;
-    ROL::ZOO::getHS51<RealT> HS51;
-    obj = HS51.getObjective();
-    sol = HS51.getInitialGuess();
-    con = HS51.getEqualityConstraint(); 
-    mul = HS51.getEqualityMultiplier();
-
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
-
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
-
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
-
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
-
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(1));
-    e2 = (data[1]-static_cast<RealT>(1));
-    e3 = (data[2]-static_cast<RealT>(1));
-    e4 = (data[3]-static_cast<RealT>(1));
-    e5 = (data[4]-static_cast<RealT>(1));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1]
+               << "  x5 = " << data[4] << "  x6 = " << data[5] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(x)->getVector();
+    *outStream << "  Result:     x1 = " << data[0] << "  x2 = " << data[1]
                << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << std::endl;
-    err = std::max(std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4)),std::abs(e5));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+               << "  x5 = " << data[4] << "  x6 = " << data[5] << std::endl;
+    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(lam)->getVector();
+    *outStream << "  Multiplier: l1 = " << data[0] << "  l2 = " << data[1]
+               << "  l3 = " << data[2] << "  l4 = " << data[3]
+               << "  l5 = " << data[4] << "  l6 = " << data[5] << std::endl;
 
-    *outStream << std::endl << "Hock and Schittkowski Problem #52" << std::endl << std::endl;
-    ROL::ZOO::getHS52<RealT> HS52;
-    obj = HS52.getObjective();
-    sol = HS52.getInitialGuess();
-    con = HS52.getEqualityConstraint(); 
-    mul = HS52.getEqualityMultiplier();
+    *outStream << std::endl;
+    *outStream << "  is equality feasible = " << (cnorm<=tol)        << std::endl
+               << "  are bounds feasible  = " << bnd->isFeasible(*x) << std::endl;
+    *outStream << std::endl;
 
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,sol,mul);
-    tobj = elc->getTransformedObjective();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
-
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
-
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
-
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
-
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(-33.0/349.0));
-    e2 = (data[1]-static_cast<RealT>(11.0/349.0));
-    e3 = (data[2]-static_cast<RealT>(180.0/349.0));
-    e4 = (data[3]-static_cast<RealT>(-158.0/349.0));
-    e5 = (data[4]-static_cast<RealT>(11.0/349.0));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << "  x4 = " << data[3]
-               << "  x5 = " << data[4] << std::endl;
-    err = std::max(std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4)),std::abs(e5));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
-
-    *outStream << std::endl << "Hock and Schittkowski Problem #14" << std::endl << std::endl;
-    list.sublist("Step").set("Type","Moreau-Yosida Penalty");
-    ROL::ZOO::getHS14<RealT> HS14;
-    obj  = HS14.getObjective();
-    sol  = HS14.getInitialGuess();
-    con  = HS14.getEqualityConstraint(); 
-    mul  = HS14.getEqualityMultiplier();
-    icon = HS14.getInequalityConstraint();
-    imul = HS14.getInequalityMultiplier();
-    ibnd = HS14.getSlackBoundConstraint();
-
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,icon,sol,mul);
-    tobj = elc->getTransformedObjective();
-    tcon = elc->getTransformedConstraint();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
-    c    = imul->clone(); c->randomize();
-
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
-    tcon->checkApplyJacobian(*s,*ds,*c,true,*outStream);
-    tcon->checkApplyAdjointJacobian(*s,*c,*c,*ds,true,*outStream);
-    tcon->checkApplyAdjointHessian(*s,*c,*ds,*s,true,*outStream);
-
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s,tcon,imul,ibnd);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
-
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
-
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(0.5 *(std::sqrt(7)-1.0)));
-    e2 = (data[1]-static_cast<RealT>(0.25*(std::sqrt(7)+1.0)));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1] << std::endl;
-    err = std::max(std::abs(e1),std::abs(e2));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
-
-    *outStream << std::endl << "Hock and Schittkowski Problem #42" << std::endl << std::endl;
-    list.sublist("Step").set("Type","Composite Step");
-    ROL::ZOO::getHS42<RealT> HS42;
-    obj  = HS42.getObjective();
-    sol  = HS42.getInitialGuess();
-    con  = ROL::staticPtrCast<ROL::Constraint_Partitioned<RealT>>(HS42.getEqualityConstraint())->get(0);
-    mul  = ROL::staticPtrCast<ROL::PartitionedVector<RealT>>(HS42.getEqualityMultiplier())->get(0);
-    icon = ROL::staticPtrCast<ROL::Constraint_Partitioned<RealT>>(HS42.getEqualityConstraint())->get(1);
-    imul = ROL::staticPtrCast<ROL::PartitionedVector<RealT>>(HS42.getEqualityMultiplier())->get(1);
-
-    elc  = ROL::makePtr<ROL::ExplicitLinearConstraint<RealT>>(con,obj,icon,sol,mul);
-    tobj = elc->getTransformedObjective();
-    tcon = elc->getTransformedConstraint();
-    s    = sol->clone();  s->randomize();
-    ds   = sol->clone(); ds->randomize();
-    c    = imul->clone(); c->randomize();
-
-    obj->checkGradient(*s,*ds,true,*outStream);
-    obj->checkHessVec(*s,*ds,true,*outStream);
-    tobj->checkGradient(*s,*ds,true,*outStream);
-    tobj->checkHessVec(*s,*ds,true,*outStream);
-    tcon->checkApplyJacobian(*s,*ds,*c,true,*outStream);
-    tcon->checkApplyAdjointJacobian(*s,*c,*c,*ds,true,*outStream);
-    tcon->checkApplyAdjointHessian(*s,*c,*ds,*s,true,*outStream);
-
-    s->zero();
-    problem = ROL::makePtr<ROL::OptimizationProblem<RealT>>(tobj,s,tcon,imul);
-    solver  = ROL::makePtr<ROL::OptimizationSolver<RealT>>(*problem,list);
-    solver->solve(*outStream);
-
-    Ps = s->clone();
-    elc->project(Ps,s);
-    Ps->plus(*elc->getFeasibleVector());
-
-    data = *ROL::staticPtrCast<ROL::StdVector<RealT>>(Ps)->getVector();
-    e1 = (data[0]-static_cast<RealT>(2.0));
-    e2 = (data[1]-static_cast<RealT>(2.0));
-    e3 = (data[2]-static_cast<RealT>(0.6*std::sqrt(2.0)));
-    e4 = (data[3]-static_cast<RealT>(0.8*std::sqrt(2.0)));
-    *outStream << "  x1 = " << data[0] << "  x2 = " << data[1]
-               << "  x3 = " << data[2] << "  x4 = " << data[3] << std::endl;
-    err = std::max(std::max(std::max(std::abs(e1),std::abs(e2)),std::abs(e3)),std::abs(e4));
-    *outStream << "  Max-Error = " << err << std::endl;
-    errorFlag += (err > tol ? 1 : 0);
+    errorFlag += !bnd->isFeasible(*x);
+    errorFlag += (cnorm > tol);
   }
   
   catch (std::logic_error& err) {

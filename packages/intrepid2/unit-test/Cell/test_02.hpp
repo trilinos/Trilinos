@@ -77,8 +77,9 @@ namespace Intrepid2 {
     };                                                                  
 #define ConstructWithLabel(obj, ...) obj(#obj, __VA_ARGS__)
         
-    template<typename ValueType, typename DeviceSpaceType>
+    template<typename ValueType, typename DeviceType>
     int CellTools_Test02(const bool verbose) {
+      using ExecSpaceType = typename DeviceType::execution_space;
 
       Teuchos::RCP<std::ostream> outStream;
       Teuchos::oblackholestream bhs; // outputs nothing
@@ -92,9 +93,9 @@ namespace Intrepid2 {
       oldFormatState.copyfmt(std::cout);
 
       typedef typename
-        Kokkos::Impl::is_space<DeviceSpaceType>::host_mirror_space::execution_space HostSpaceType ;
+        Kokkos::Impl::is_space<DeviceType>::host_mirror_space::execution_space HostSpaceType ;
 
-      *outStream << "DeviceSpace::  "; DeviceSpaceType::print_configuration(*outStream, false);
+      *outStream << "DeviceSpace::  ";   ExecSpaceType::print_configuration(*outStream, false);
       *outStream << "HostSpace::    ";   HostSpaceType::print_configuration(*outStream, false);
       
       *outStream
@@ -117,8 +118,8 @@ namespace Intrepid2 {
         << "|                                                                             |\n"
         << "===============================================================================\n";
   
-      typedef CellTools<DeviceSpaceType> ct;
-      typedef Kokkos::DynRankView<ValueType,DeviceSpaceType> DynRankView;
+      using ct = CellTools<DeviceType>;
+      using DynRankView = Kokkos::DynRankView<ValueType,DeviceType>;
 
       const ValueType tol = tolerence()*100.0;
 
@@ -151,7 +152,7 @@ namespace Intrepid2 {
         {
           // Define cubature on the edge parametrization domain:
           const auto testAccuracy = 6;
-          CubatureDirectLineGauss<DeviceSpaceType> edgeCubature(testAccuracy); 
+          CubatureDirectLineGauss<DeviceType> edgeCubature(testAccuracy);
 
           const auto cubDim       = edgeCubature.getDimension();
           const auto numCubPoints = edgeCubature.getNumPoints();
@@ -185,13 +186,22 @@ namespace Intrepid2 {
               // Array for physical cell vertices ( must have rank 3 for setJacobians)
               DynRankView ConstructWithLabel(physCellVertices, 1, vCount, cellDim);
               
+              // create mirror host views
+              auto hRefCellVertices = Kokkos::create_mirror_view_and_copy(
+                  typename HostSpaceType:: memory_space(), refCellVertices);
+
+              auto hPhysCellVertices = Kokkos::create_mirror_view(physCellVertices);
+
               // Randomize reference cell vertices by moving them up to +/- (1/8) units along their
               // coordinate axis. Guaranteed to be non-degenerate for standard cells with base topology 
               for (size_type v=0;v<vCount;++v) 
                 for (size_type d=0;d<cellDim;++d) {
                   const auto delta = Teuchos::ScalarTraits<ValueType>::random()/8.0;
-                  physCellVertices(0, v, d) = refCellVertices(v, d) + delta;
+                  hPhysCellVertices(0, v, d) = hRefCellVertices(v, d) + delta;
                 }
+
+              Kokkos::deep_copy(physCellVertices,hPhysCellVertices);
+
         
               // Allocate storage for cub. points on a ref. edge; Jacobians, phys. edge tangents/normals
               DynRankView ConstructWithLabel(refEdgePoints,          numCubPoints, cellDim);        
@@ -199,7 +209,11 @@ namespace Intrepid2 {
               // here, 1 means that the container includes a single cell
               DynRankView ConstructWithLabel(edgePointsJacobians, 1, numCubPoints, cellDim, cellDim);
               DynRankView ConstructWithLabel(edgePointTangents,   1, numCubPoints, cellDim);
-              DynRankView ConstructWithLabel(edgePointNormals,    1, numCubPoints, cellDim);        
+              DynRankView ConstructWithLabel(edgePointNormals,    1, numCubPoints, cellDim);
+
+              // create mirror host views
+              auto hEdgePointTangents = Kokkos::create_mirror_view(edgePointTangents);
+              auto hEdgePointNormals = Kokkos::create_mirror_view(edgePointNormals);
               
               // Loop over edges:
               for (size_type edgeOrd=0;edgeOrd<cell.getEdgeCount();++edgeOrd) {
@@ -212,6 +226,13 @@ namespace Intrepid2 {
                 ct::mapToReferenceSubcell(refEdgePoints, paramEdgePoints, 1, edgeOrd, cell);
                 ct::setJacobian(edgePointsJacobians, refEdgePoints, physCellVertices, cell);
                 ct::getPhysicalEdgeTangents(edgePointTangents, edgePointsJacobians, edgeOrd, cell); 
+                Kokkos::deep_copy( hEdgePointTangents, edgePointTangents);
+
+                // Compute side normals (here only for sides of dim 2):
+                if(cellDim == 2) {
+                  ct::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, cell);
+                  Kokkos::deep_copy( hEdgePointNormals, edgePointNormals);
+                }
 
                 /*
                  * Compute tangents directly using parametrization of phys. edge and compare with CellTools tangents.
@@ -226,13 +247,13 @@ namespace Intrepid2 {
                 for (auto pt=0;pt<numCubPoints;++pt) {
                   
                   // Temp storage for directly computed edge tangents
-                  DynRankView ConstructWithLabel(edgeBenchmarkTangents, 3);
+                  Kokkos::DynRankView<ValueType,HostSpaceType> ConstructWithLabel(hEdgeBenchmarkTangents, 3);
                   
                   for (size_type d=0;d<cellDim;++d) {
-                    edgeBenchmarkTangents(d) = (physCellVertices(0, v1ord, d) - physCellVertices(0, v0ord, d))/2.0;
+                    hEdgeBenchmarkTangents(d) = (hPhysCellVertices(0, v1ord, d) - hPhysCellVertices(0, v0ord, d))/2.0;
                     
                     // Compare with d-component of edge tangent by CellTools
-                    if ( std::abs(edgeBenchmarkTangents(d) - edgePointTangents(0, pt, d)) > tol ) {
+                    if ( std::abs(hEdgeBenchmarkTangents(d) - hEdgePointTangents(0, pt, d)) > tol ) {
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -241,15 +262,14 @@ namespace Intrepid2 {
                         << "        Edge ordinal = " << edgeOrd << "\n"
                         << "   Edge point number = " << pt << "\n"
                         << "  Tangent coordinate = " << d << "\n"
-                        << "     CellTools value = " <<  edgePointTangents(0, pt, d) << "\n"
-                        << "     Benchmark value = " <<  edgeBenchmarkTangents(d) << "\n\n";
+                        << "     CellTools value = " <<  hEdgePointTangents(0, pt, d) << "\n"
+                        << "     Benchmark value = " <<  hEdgeBenchmarkTangents(d) << "\n\n";
                     }
                   } // for d
                   
                   // Test side normals for 2D cells only: edge normal has coordinates (t1, -t0)
                   if (cellDim == 2) {
-                    ct::getPhysicalSideNormals(edgePointNormals, edgePointsJacobians, edgeOrd, cell);
-                    if ( std::abs(edgeBenchmarkTangents(1) - edgePointNormals(0, pt, 0)) > tol ) {
+                    if ( std::abs(hEdgeBenchmarkTangents(1) - hEdgePointNormals(0, pt, 0)) > tol ) {
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -258,10 +278,10 @@ namespace Intrepid2 {
                         << "        Edge ordinal = " << edgeOrd << "\n"
                         << "   Edge point number = " << pt << "\n"
                         << "   Normal coordinate = " << 0 << "\n"
-                        << "     CellTools value = " <<  edgePointNormals(0, pt, 0) << "\n"
-                        << "     Benchmark value = " <<  edgeBenchmarkTangents(1) << "\n\n";
+                        << "     CellTools value = " <<  hEdgePointNormals(0, pt, 0) << "\n"
+                        << "     Benchmark value = " <<  hEdgeBenchmarkTangents(1) << "\n\n";
                     }
-                    if ( std::abs(edgeBenchmarkTangents(0) + edgePointNormals(0, pt, 1)) > tol ) {
+                    if ( std::abs(hEdgeBenchmarkTangents(0) + hEdgePointNormals(0, pt, 1)) > tol ) {
                       errorFlag++;
                       *outStream
                         << std::setw(70) << "^^^^----FAILURE!" << "\n"
@@ -270,8 +290,8 @@ namespace Intrepid2 {
                         << "        Edge ordinal = " << edgeOrd << "\n"
                         << "   Edge point number = " << pt << "\n"
                         << "   Normal coordinate = " << 1  << "\n"
-                        << "     CellTools value = " <<  edgePointNormals(0, pt, 1) << "\n"
-                        << "     Benchmark value = " << -edgeBenchmarkTangents(0) << "\n\n";
+                        << "     CellTools value = " <<  hEdgePointNormals(0, pt, 1) << "\n"
+                        << "     Benchmark value = " << -hEdgeBenchmarkTangents(0) << "\n\n";
                     }
                   } // edge normals            
                 } // for pt

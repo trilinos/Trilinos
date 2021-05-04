@@ -90,7 +90,7 @@ namespace FROSch {
         } else if (!coarseSpaceList->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
             communicationStrategy = CreateOneToOneMap;
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWCoarseOperator : ERROR: Specify a valid communication strategy for the identification of the interface components.");
+            FROSCH_ASSERT(false,"FROSch::RGDSWCoarseOperator: Specify a valid communication strategy for the identification of the interface components.");
         }
 
         Verbosity verbosity = All;
@@ -99,7 +99,7 @@ namespace FROSch {
         } else if (!coarseSpaceList->get("Verbosity","All").compare("All")) {
             verbosity = All;
         } else {
-            FROSCH_ASSERT(false,"FROSch::RGDSWCoarseOperator : ERROR: Specify a valid verbosity level.");
+            FROSCH_ASSERT(false,"FROSch::RGDSWCoarseOperator: Specify a valid verbosity level.");
         }
 
         bool useForCoarseSpace = coarseSpaceList->get("Use For Coarse Space",false);

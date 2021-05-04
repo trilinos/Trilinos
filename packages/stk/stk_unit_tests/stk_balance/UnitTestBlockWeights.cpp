@@ -61,12 +61,14 @@ protected:
       balanceSettings.setVertexWeightBlockMultiplier(weights.first, weights.second);
     }
 
-    std::vector<stk::mesh::Selector> selectors = {get_bulk().mesh_meta_data().locally_owned_part()};
+    std::vector<stk::mesh::Selector> selectors = {get_bulk().mesh_meta_data().universal_part()};
     const int numProcs = 2;
 
     stk::mesh::EntityProcVec decomp;
     testing::internal::CaptureStdout();
-    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(balanceSettings, numProcs, decomp, get_bulk(), selectors);
+    stk::balance::internal::calculateGeometricOrGraphBasedDecomp(get_bulk(), selectors,
+                                                                 get_bulk().parallel(), numProcs,
+                                                                 balanceSettings, decomp);
     testing::internal::GetCapturedStdout();
 
     check_decomposition(decomp, expectedElemsOnEachProc);

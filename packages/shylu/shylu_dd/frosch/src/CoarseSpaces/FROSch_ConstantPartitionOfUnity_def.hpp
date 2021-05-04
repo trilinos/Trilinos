@@ -74,7 +74,7 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Type","Full").compare("Custom")) {
             UseVolumes_ = this->ParameterList_->sublist("Custom").get("Volumes",false);
         } else {
-            FROSCH_ASSERT(false,"FROSch::ConstantPartitionOfUnity : ERROR: Specify a valid Type.");
+            FROSCH_ASSERT(false,"FROSch::ConstantPartitionOfUnity: Specify a valid Type.");
         }
 
         CommunicationStrategy communicationStrategy = CreateOneToOneMap;
@@ -85,11 +85,11 @@ namespace FROSch {
         } else if (!this->ParameterList_->get("Interface Communication Strategy","CreateOneToOneMap").compare("CreateOneToOneMap")) {
             communicationStrategy = CreateOneToOneMap;
         } else {
-            FROSCH_ASSERT(false,"FROSch::InterfacePartitionOfUnity : ERROR: Specify a valid communication strategy for the identification of the interface components.");
+            FROSCH_ASSERT(false,"FROSch::InterfacePartitionOfUnity: Specify a valid communication strategy for the identification of the interface components.");
         }
 
         if (DDInterface_.is_null()) DDInterface_.reset(new DDInterface<SC,LO,GO,NO>(dimension,dofsPerNode,nodesMap.getConst(),this->Verbosity_,this->LevelID_,communicationStrategy));
-        FROSCH_ASSERT(DDInterface_->getInterface()->getEntity(0)->getNumNodes()==0,"FROSch::ConstantPartitionOfUnity : ERROR: Is only reasonable if there is no interface.");
+        FROSCH_ASSERT(DDInterface_->getInterface()->getEntity(0)->getNumNodes()==0,"FROSch::ConstantPartitionOfUnity: Is only reasonable if there is no interface.");
         DDInterface_->resetGlobalDofs(dofsMaps);
         Volumes_ = DDInterface_->getInterior()->deepCopy();
 

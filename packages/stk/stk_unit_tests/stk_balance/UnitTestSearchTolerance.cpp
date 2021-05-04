@@ -104,7 +104,7 @@ protected:
     unsigned get_num_search_results_with_app_settings(const stk::balance::GraphCreationSettings &balanceSettings)
     {
         make_two_separated_hex_mesh();
-        stk::mesh::Selector thingsToSearch = get_meta().locally_owned_part();
+        stk::mesh::Selector thingsToSearch = get_meta().universal_part();
         stk::balance::internal::SearchElemPairs searchResults = stk::balance::internal::getBBIntersectionsForFacesParticles(get_bulk(), balanceSettings, thingsToSearch);
         return searchResults.size();
     }

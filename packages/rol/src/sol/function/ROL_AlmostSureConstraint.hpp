@@ -54,21 +54,26 @@ namespace ROL {
 template <class Real>
 class AlmostSureConstraint : public Constraint<Real> {
 private:
-  const ROL::Ptr<SampleGenerator<Real> > sampler_;
-  const ROL::Ptr<Constraint<Real> >      con_;
+  const Ptr<SampleGenerator<Real>> sampler_;
+  const Ptr<Constraint<Real>>      con_;
 
-  ROL::Ptr<Vector<Real> >                scratch1_;
-  ROL::Ptr<Vector<Real> >                scratch2_;
-  bool                                       isInitialized_;
+  Ptr<Vector<Real>>                scratch1_;
+  Ptr<Vector<Real>>                scratch2_;
+  bool                             isInitialized_;
 
 public:
   virtual ~AlmostSureConstraint() {}
 
-  AlmostSureConstraint(const ROL::Ptr<SampleGenerator<Real> > &sampler,
-                       const ROL::Ptr<Constraint<Real> > &con)
+  AlmostSureConstraint(const Ptr<SampleGenerator<Real>> &sampler,
+                       const Ptr<Constraint<Real>> &con)
     : sampler_(sampler), con_(con), isInitialized_(false) {}
 
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    con_->update(x,flag,iter);
+  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) {
+    con_->update(x,type,iter);
+  }
 
   void value(Vector<Real> &c,
              const Vector<Real> &x,

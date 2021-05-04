@@ -265,7 +265,8 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
       modelInArgs.set_p(l, p_inargs);
     }
 
-    this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs);
+    Teuchos::ParameterList analysisParams;
+    this->evalConvergedModelResponsesAndSensitivities(modelInArgs, outArgs, analysisParams);
 
     // Save the final solution TODO: this needs to be redone
 

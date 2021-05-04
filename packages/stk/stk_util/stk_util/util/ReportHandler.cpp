@@ -37,6 +37,29 @@
 #include <sstream>    // for ostringstream, operator<<, basic_ostream, basic_ostream::operator<<
 #include <stdexcept>  // for runtime_error, logic_error, invalid_argument
 
+#include "stk_util/stk_config.h"
+
+#ifdef STK_HAVE_BOOST
+#include "boost/version.hpp"
+#if BOOST_VERSION >= 106500
+#ifndef STK_NO_BOOST_STACKTRACE
+#define STK_HAVE_BOOST_STACKTRACE
+#endif
+#endif
+#endif
+
+#ifdef STK_HAVE_BOOST_STACKTRACE
+#ifdef __INTEL_COMPILER
+#include "boost/stacktrace.hpp"
+#else
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wattributes"
+#include "boost/stacktrace.hpp"
+#pragma GCC diagnostic pop
+#endif
+#endif
+
 namespace stk {
 namespace {
 
@@ -59,8 +82,7 @@ void default_handler_req(const char* expr,
 
   throw EXCEPTION(
     std::string("Requirement( ") + expr + " ) FAILED\n" +
-    "Error occured at: " + source_relative_path(location) + "\n" +
-    error_msg);
+    "Error occurred at: " + location + "\n" + error_msg);
 }
 
 
@@ -80,9 +102,7 @@ void default_handler_exc(const char* expr,
   }
 
   throw EXCEPTION(
-    expr_msg +
-    "Error occured at: " + source_relative_path(location) + "\n" +
-    error_msg);
+    expr_msg + "Error occurred at: " + location + "\n" + error_msg);
 }
 
 
@@ -227,5 +247,21 @@ void handle_invalid_arg(const char* expr,
 {
   (*s_invalid_arg_handler)(expr, location, message);
 }
+
+#ifdef STK_HAVE_BOOST_STACKTRACE
+std::ostream & output_stacktrace(std::ostream & os)
+{
+#ifdef __INTEL_COMPILER
+#pragma warning( disable: 2196 )
+#endif
+  os << boost::stacktrace::stacktrace();
+  return os;
+}
+#else
+std::ostream & output_stacktrace(std::ostream & os)
+{
+  return os;
+}
+#endif
 
 } // namespace stk

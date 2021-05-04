@@ -17,34 +17,22 @@
 namespace Tempus {
 
 /** \brief Base ModifierX for StepperTrapezoidal.
-*
-*  This class provides a means to modify just the solution values
-*  (i.e., \f$x\f$ and \f$dot{x}\f$), and nothing else, but time and
-*  timestep are also provided.
-*
-*  Users deriving from this class can access and change the solution
-*  during the timestep (e.g., limiting the solution for monoticity).
-*  It is expected that the user knows what changes are allowable without
-*  affecting the Stepper correctness, performance, accuracy and stability
-*  (i.e., USER BEWARE!!).
-*
-*  Below is the Trapezoidal algorithm with the locations of the ModifierX calls
-*  italicized.
-*
-*  \f{algorithm}{                                                                                           
-*  \renewcommand{\thealgorithm}{}                                                                              
-*  \caption{Trapezoidal stepper with modfiyX call locations indicated.}                                        
-*  \begin{algorithmic}[1]                                                                                      
-*    \State {\it modifierX.modify(x, time, dt, X\_BEGIN\_STEP)}                                       
-*    \State Compute $y \leftarrow x_{n-1} + \frac{\Delta t_{n-1}}{2}f(x_{n-1},t_{n-1})$                        
-*    \State {\it modifierX.modify(x, time, dt, X\_BEFORE\_SOLVE)}                                     
-*    \State Solve $x - y - \frac{\Delta t_{n-1}}{2}f(x,t_{n}) = 0$ for $x$                    
-*    \State {\it modifierX.modify(x, time, dt,X\_AFTER\_SOLVE)}                                      
-*    \State $x_n \leftarrow x$ and $\dot x_n \leftarrow f(x,t_n)$                                              
-*    \State {\it modifierX.modify(x, time, dt, XDOT\_END\_STEP)}                                        
-*  \end{algorithmic}                                                                                           
-*  \f}  
-*/
+ *
+ *  This class provides a means to modify just the solution values
+ *  (i.e., \f$x\f$ and \f$dot{x}\f$), and nothing else, but time and
+ *  timestep are also provided.
+ *
+ *  Users deriving from this class can access and change the solution
+ *  during the timestep (e.g., limiting the solution for monoticity).
+ *  It is expected that the user knows what changes are allowable without
+ *  affecting the Stepper correctness, performance, accuracy and stability
+ *  (i.e., USER BEWARE!!).
+ *
+ *  The locations of the StepperTrapezoidalModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperTrapezoidalAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperTrapezoidal.
+ */
 template<class Scalar>
 class StepperTrapezoidalModifierXBase
   : virtual public Tempus::StepperTrapezoidalAppAction<Scalar>

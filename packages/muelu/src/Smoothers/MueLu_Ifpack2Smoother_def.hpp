@@ -87,7 +87,6 @@
 #include "Kokkos_DynRankView.hpp"
 #endif
 
-// #define IFPACK2_HAS_PROPER_REUSE
 
 namespace MueLu {
 
@@ -296,13 +295,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null() && isTRowMatrix) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupSchwarz(): reuse of this type is not available "
             "(either failed cast to CanChangeMatrix, or to Tpetra Row Matrix), reverting to full construction" << std::endl;
@@ -573,13 +567,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null()) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupBlockRelaxation(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;
@@ -610,9 +599,27 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
   void Ifpack2Smoother<Scalar, LocalOrdinal, GlobalOrdinal, Node>::SetupChebyshev(Level& currentLevel) {
+    typedef Tpetra::RowMatrix<SC,LO,GO,NO> tRowMatrix;
+    RCP<BlockedCrsMatrix> bA = rcp_dynamic_cast<BlockedCrsMatrix>(A_);
+    if (!bA.is_null())
+      A_ = bA->Merge();
+
+    RCP<const tRowMatrix> tA = Utilities::Op2NonConstTpetraRow(A_);
+
+    bool reusePreconditioner = false;
+
     if (this->IsSetup() == true) {
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupChebyshev(): SetupChebyshev() has already been called" << std::endl;
-      this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupChebyshev(): reuse of this type is not available, reverting to full construction" << std::endl;
+      // Reuse the constructed preconditioner
+      this->GetOStream(Runtime1) << "MueLu::Ifpack2Smoother::SetupChebyshev(): Setup() has already been called, assuming reuse" << std::endl;
+
+      RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
+      if (!prec.is_null()) {
+        prec->setMatrix(tA);
+        reusePreconditioner = true;
+      } else {
+        this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupChebyshev(): reuse of this type is not available (failed cast to CanChangeMatrix), "
+            "reverting to full construction" << std::endl;
+      }
     }
 
     typedef Teuchos::ScalarTraits<SC> STS;
@@ -691,14 +698,16 @@ namespace MueLu {
       }
     }
 
-    RCP<const Tpetra::RowMatrix<SC, LO, GO, NO> > tA = Utilities::Op2NonConstTpetraRow(A_);
+    if (!reusePreconditioner) {
+      prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
+      SetPrecParameters();
+      {
+        SubFactoryMonitor(*this, "Preconditioner init", currentLevel);
+        prec_->initialize();
+      }
+    } else
+      SetPrecParameters();
 
-    prec_ = Ifpack2::Factory::create(type_, tA, overlap_);
-    SetPrecParameters();
-    {
-      SubFactoryMonitor(*this, "Preconditioner init", currentLevel);
-      prec_->initialize();
-    }
     {
       SubFactoryMonitor(*this, "Preconditioner compute", currentLevel);
       prec_->compute();
@@ -733,13 +742,8 @@ namespace MueLu {
 
       RCP<Ifpack2::Details::CanChangeMatrix<tRowMatrix> > prec = rcp_dynamic_cast<Ifpack2::Details::CanChangeMatrix<tRowMatrix> >(prec_);
       if (!prec.is_null()) {
-#ifdef IFPACK2_HAS_PROPER_REUSE
-        prec->resetMatrix(tA);
+        prec->setMatrix(tA);
         reusePreconditioner = true;
-#else
-        this->GetOStream(Errors) << "Ifpack2 does not have proper reuse yet." << std::endl;
-#endif
-
       } else {
         this->GetOStream(Warnings0) << "MueLu::Ifpack2Smoother::SetupGeneric(): reuse of this type is not available (failed cast to CanChangeMatrix), "
             "reverting to full construction" << std::endl;

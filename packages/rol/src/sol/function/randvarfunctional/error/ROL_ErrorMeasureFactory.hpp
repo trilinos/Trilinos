@@ -142,9 +142,9 @@ namespace ROL {
   }
 
   template<class Real>
-  inline Ptr<RandVarFunctional<Real> > ErrorMeasureFactory(ROL::ParameterList &parlist) {
-    std::string risk = parlist.sublist("SOL").sublist("Error Measure").get("Name","Least Squares");
-    EErrorMeasure ed = StringToEErrorMeasure(risk);
+  inline Ptr<RandVarFunctional<Real>> ErrorMeasureFactory(ParameterList &parlist) {
+    std::string error = parlist.sublist("SOL").sublist("Error Measure").get("Name","Least Squares");
+    EErrorMeasure ed = StringToEErrorMeasure(error);
     switch(ed) {
       case ERRORMEASURE_MEANVARIANCEQUADRANGLE:
              return makePtr<ExpectationQuadError<Real>>(makePtr<MeanVarianceQuadrangle<Real>>(parlist));
@@ -164,7 +164,7 @@ namespace ROL {
              return makePtr<ExpectationQuadError<Real>>(makePtr<SmoothedWorstCaseQuadrangle<Real>>(parlist));
       default:
         ROL_TEST_FOR_EXCEPTION(true,std::invalid_argument,
-                                   "Invalid error measure type " << risk << "!");
+                                   "Invalid error measure type " << error << "!");
     }
   }
 }

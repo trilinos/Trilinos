@@ -67,6 +67,28 @@ void move_killed_elements_out_of_parts(stk::mesh::BulkData& bulkData,
     bulkData.batch_change_entity_parts(killedElements, add_parts, rm_parts);
 }
 
+void put_elements_into_part(stk::mesh::BulkData& bulk, const std::vector<ElementAndPart> & entries)
+{
+  stk::mesh::MetaData & meta = bulk.mesh_meta_data();
+
+  for (const ElementAndPart & entry : entries) {
+    const stk::mesh::Part * part = meta.get_part(entry.partName);
+    if (part == nullptr) {
+      meta.declare_part(entry.partName, stk::topology::ELEM_RANK);
+    }
+  }
+
+  bulk.modification_begin();
+  for (const ElementAndPart & entry : entries) {
+    const stk::mesh::Entity elem = bulk.get_entity(stk::topology::ELEM_RANK, entry.id);
+    if (bulk.is_valid(elem) && bulk.bucket(elem).owned()) {
+      const stk::mesh::Part * part = meta.get_part(entry.partName);
+      bulk.change_entity_parts(elem, stk::mesh::ConstPartVector{part});
+    }
+  }
+  bulk.modification_end();
+}
+
 } // namespace unit_test_util
 } // namespace stk
 

@@ -471,7 +471,7 @@ int main (int argc, char *argv[])
       {
         TimeMonitor timerMultiVectorFill(*TimeMonitor::getNewTimer("4) MultiVectorFill"));
 
-        auto value = X->getLocalView<typename exec_space::memory_space>();
+        auto value = X->getLocalView<typename exec_space::memory_space>(Tpetra::Access::OverwriteAll);
         auto map = X->getMap()->getLocalMap();
         Kokkos::parallel_for
           (value.extent(0), KOKKOS_LAMBDA(const LO i) {

@@ -182,7 +182,7 @@ void test_vdp_fsa(const bool use_combined_method,
       StepSize.push_back(dt);
 
       // Output finest temporal solution for plotting
-      if (comm->getRank() == 0 and ((n == 0) or (n == nTimeStepSizes-1))) {
+      if (comm->getRank() == 0 && ((n == 0) || (n == nTimeStepSizes-1))) {
         typedef Thyra::DefaultMultiVectorProductVector<double> DMVPV;
 
         std::string fname = "Tempus_"+stepperName+"_VanDerPol_Sens-Ref.dat";

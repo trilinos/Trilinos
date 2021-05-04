@@ -69,7 +69,7 @@ namespace Intrepid2 {
 
 // the following defines a family of hierarchical basis functions that matches the unpermuted ESEAS basis functions
 // each basis member is associated with appropriate subcell topologies, making this suitable for continuous Galerkin finite elements.
-  template<typename DeviceType=typename Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>
@@ -83,7 +83,7 @@ namespace Intrepid2 {
     using HVOL  = dummyBasis<DeviceType,OutputScalar,PointScalar>;
   };
   
-  template<typename DeviceType=typename Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double,
            bool defineVertexFunctions = true>
@@ -117,7 +117,7 @@ namespace Intrepid2 {
    We have offline tests that verify agreement between our implementation and ESEAS.  We hope to add these to the
    Trilinos continuous integration tests in the future.
   */
-  template<typename DeviceType=typename Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
   using HierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar,true>,
@@ -134,7 +134,7 @@ namespace Intrepid2 {
    The suitability of this family for DG contexts is primarily due to the fact that the H(grad) basis has a constant member.  Note also that in this family,
    all members are associated with the cell interior; there are no basis functions associated with subcell topologies.
   */
-  template<typename DeviceType=typename Kokkos::DefaultExecutionSpace,
+  template<typename DeviceType,
            typename OutputScalar = double,
            typename PointScalar  = double>
   using DGHierarchicalBasisFamily = DerivedBasisFamily< IntegratedLegendreBasis_HGRAD_LINE<DeviceType,OutputScalar,PointScalar,false>,

@@ -319,6 +319,29 @@ template <typename T, typename INT> void NemSpread<T, INT>::load_mesh()
     }
   }
 
+  /* Read in the assembly information */
+  {
+    ex_init_params ex_info;
+    ex_get_init_ext(mesh_exoid, &ex_info);
+    globals.Num_Assemblies = ex_info.num_assembly;
+  }
+
+  if (globals.Num_Assemblies > 0) {
+    globals.Assemblies.resize(globals.Num_Assemblies);
+    for (int i = 0; i < globals.Num_Assemblies; i++) {
+      globals.Assemblies[i].name        = nullptr;
+      globals.Assemblies[i].entity_list = nullptr;
+    }
+    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
+
+    for (auto &assembly : globals.Assemblies) {
+      assembly.entity_list = new int64_t[assembly.entity_count];
+    }
+
+    // Now get the assembly entity lists...
+    ex_get_assemblies(mesh_exoid, globals.Assemblies.data());
+  }
+
   /* Read in the coordinate frame information */
   globals.Num_Coordinate_Frames = ex_inquire_int(mesh_exoid, EX_INQ_COORD_FRAMES);
 
@@ -863,8 +886,8 @@ template <typename T, typename INT>
 void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
 {
 
-  /* Function which reads the nodal coordinates information from an * EXODUS
-   * database for a given processor.
+  /* Function which reads the nodal coordinates information from an
+   * EXODUS database for a given processor.
    */
 
   /*

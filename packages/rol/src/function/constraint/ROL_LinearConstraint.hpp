@@ -41,79 +41,45 @@
 // ************************************************************************
 // @HEADER
 
+#ifndef ROL_LINEARCONSTRAINT_H
+#define ROL_LINEARCONSTRAINT_H
+
 #include "ROL_Constraint.hpp"
 #include "ROL_LinearOperator.hpp"
 
-
-#ifndef ROL_LINEAR_CONSTRAINT_H
-#define ROL_LINEAR_CONSTRAINT_H
-
-
 /** @ingroup func_group
     \class ROL::LinearConstraint
-    \brief Provides the interface to evaluate linear constraints.
-
-    This class implements the linear constraint
-    \f[
-       c(x) = Ax-b
-    \f]
-
-    Where A is a linear operator
+    \brief Defines the general affine constraint with the form \f$c(x)=Ax+b\f$.
 
     ---
 */
 
 namespace ROL {
 
-template <class Real>
+template<typename Real>
 class LinearConstraint : public Constraint<Real> {
 private:
-  const ROL::Ptr<const LinearOperator<Real>> A_;
-  const ROL::Ptr<const LinearOperator<Real>> Atrans_;
-  const ROL::Ptr<const Vector<Real>> b_;
-  bool  isSymmetric_;
+  const Ptr<const LinearOperator<Real>> A_;
+  const Ptr<const Vector<Real>> b_;
+
 public:
-  // Nonsymmetric case
-  LinearConstraint( const ROL::Ptr<const LinearOperator<Real>> &A,
-                            const ROL::Ptr<const LinearOperator<Real>> &Atrans,
-                            const ROL::Ptr<const Vector<Real> &b ) :
-      A_(A), Atrans_(Atrans), b_(b), isSymmetric_(false) {
-  }
-  // Symmetric case
-  LinearConstraint( const ROL::Ptr<const LinearOperator<Real>> &A,
-                            const ROL::Ptr<const Vector<Real> &b ) : 
-      A_(A), Atrans_(A), b_(b), isSymmetric_(true) {
-  }
+  LinearConstraint(const Ptr<const LinearOperator<Real>> &A,
+                   const Ptr<const Vector<Real>> &b);
 
-  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) {
-    A_->apply(c,x,tol);
-    c_->axpy(-1.0,*b_);
-  }
+  void update( const Vector<Real> &x, UpdateType type, int iter = -1 ) override;
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) override;
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, const Vector<Real> &dualv, Real &tol) override;
+  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
 
-  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, 
-                     const Vector<Real> &x, Real &tol) {
-    A_->apply(jv,v,tol);
-  }
- 
-  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v,
-                            const Vector<Real> &x, Real &tol) {
-    Atrans_->apply(ajv,v,tol);
-  }
+  Ptr<Vector<Real>> createRangeSpaceVector(void) const;
 
-  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v,
-                           const Vector<Real> &x, Real &tol) {
-    ahuv.zero();
-  }
-
-  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
-    A_->update(x,flag,iter);
-    if( !isSymmetric_ ) {
-      A_->update(x,flag,iter);
-    }
-  }
 }; // class LinearConstraint
-
 
 } // namespace ROL
 
-#endif //ROL_LINEAR_EQUALITY_CONSTRAINT_H
+#include "ROL_LinearConstraint_Def.hpp"
+
+#endif

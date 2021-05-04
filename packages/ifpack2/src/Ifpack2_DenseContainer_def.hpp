@@ -271,7 +271,7 @@ factor ()
 template<class MatrixType, class LocalScalarType>
 void
 DenseContainer<MatrixType, LocalScalarType>::
-solveBlock(HostSubviewLocal X,
+solveBlock(ConstHostSubviewLocal X,
            HostSubviewLocal Y,
            int blockIndex,
            Teuchos::ETransp mode,

@@ -246,7 +246,7 @@ namespace FROSch {
         // this is offspring of each ancestor
         for (UN i=0; i<Ancestors_->getNumEntities(); i++) {
             InterfaceEntityPtr thisEntity = rcpFromRef(*this);
-            FROSCH_ASSERT(!thisEntity.is_null(),"FROSch::InterfaceEntity : ERROR: thisEntity.is_null()");
+            FROSCH_ASSERT(!thisEntity.is_null(),"FROSch::InterfaceEntity: thisEntity.is_null()");
             Ancestors_->getEntity(i)->addOffspring(thisEntity);
         }
         return 0;
@@ -328,8 +328,8 @@ namespace FROSch {
                     }
                     break;
                 case InverseEuclideanDistanceFunction:
-                    FROSCH_ASSERT(!nodeList.is_null(),"FROSch::InterfaceEntity : ERROR: The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
-                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::InterfaceEntity : ERROR: Inconsistent Dimension.");
+                    FROSCH_ASSERT(!nodeList.is_null(),"FROSch::InterfaceEntity: The inverse euclidean distance cannot be calculated without coordinates of the nodes!");
+                    FROSCH_ASSERT(dimension==nodeList->getNumVectors(),"FROSch::InterfaceEntity: Inconsistent Dimension.");
                     for (UN i=0; i<Roots_->getNumEntities(); i++) {
                         for (UN j=0; j<Roots_->getEntity(i)->getNumNodes(); j++) {
                             // Coordinates of the nodes of the coarse node
@@ -358,7 +358,7 @@ namespace FROSch {
                     }
                     break;
                 default:
-                    FROSCH_ASSERT(false,"FROSch::InterfaceEntity : ERROR: Specify a valid Distance Function.");
+                    FROSCH_ASSERT(false,"FROSch::InterfaceEntity: Specify a valid Distance Function.");
                     break;
             }
 

@@ -25,7 +25,12 @@ namespace Ioss {
     const double *axis_3_point() const;
     const double *plane_1_3_point() const;
 
+    bool operator!=(const Ioss::CoordinateFrame &rhs) const;
+    bool operator==(const Ioss::CoordinateFrame &rhs) const;
+    bool equal(const Ioss::CoordinateFrame &rhs) const;
+
   private:
+    bool                equal_(const Ioss::CoordinateFrame &rhs, bool quiet) const;
     std::vector<double> pointList_{};
     int64_t             id_{};
     char                tag_;

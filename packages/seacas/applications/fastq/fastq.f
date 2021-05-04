@@ -75,8 +75,8 @@ C         BE INCREASED ACCORDINGLY.
 C         ALSO, THE VARIABLE A SHOULD BE DIMENSIONED AS:
 C            DIMENSION A(MP*17 + ML*31 + MS*10 + MR*15)
 
-      CHARACTER  DEV1*8, DEV2*8, VERSN*10, NUMBER*80, DATATYPE*8
-      CHARACTER*8  HARD, SOFT, DATE, TIME
+      CHARACTER  DEV1*32, DEV2*32, VERSN*10, NUMBER*80, DATATYPE*8
+      CHARACTER*9  HARD, SOFT, DATE, TIME
       CHARACTER*72 SCHEME, DEFSCH, TITLE, CIN(MCOM)
       CHARACTER*8  MEMDBG
       CHARACTER*2048 FNAME
@@ -107,7 +107,7 @@ C     is set to 'GENESIS', write exodusI format
       CALL EXCPUS (TIME1)
       TITLE = ' '
       DEFSCH = 'M'
-      VERSN = 'FASTQ 3.22'
+      VERSN = 'FASTQ 3.23'
       DEFSIZ = 0.
       SNAP = .TRUE.
       TBZOOM = .FALSE.
@@ -221,7 +221,7 @@ C  PRINT GREETING AND TRACE
 
       CALL MESAGE (' ')
       WRITE (*, *)
-     *  '+++                Copyright 2014 NTESS                   +++'
+     *  '+++            Copyright(C) 1999-2021 NTESS               +++'
       WRITE (*, *)
      *  '+++ The U.S. Government retains a limited license in this +++'
       WRITE (*, *)

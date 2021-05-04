@@ -443,21 +443,23 @@ namespace MueLu {
     Teuchos::RCP<MultiVector> Nullspace_;
     //! Coordinates
     Teuchos::RCP<RealValuedMultiVector> Coords_, CoordsH_;
+    //! Nullspace for (1,1) problem
+    Teuchos::RCP<MultiVector> NullspaceH_;
     //! Importer to coarse (1,1) hierarchy
     Teuchos::RCP<const Import> ImporterH_, Importer22_;
     bool D0_T_R11_colMapsMatch_;
-    bool allBoundary_;
+    bool allEdgesBoundary_, allNodesBoundary_;
     //! Parameter lists
     Teuchos::ParameterList parameterList_, precList11_, precList22_, smootherList_;
     Teuchos::RCP<Teuchos::ParameterList> AH_AP_reuse_data_, AH_RAP_reuse_data_;
     Teuchos::RCP<Teuchos::ParameterList> A22_AP_reuse_data_, A22_RAP_reuse_data_;
     //! Some options
     bool disable_addon_, dump_matrices_, useKokkos_, use_as_preconditioner_, implicitTranspose_, fuseProlongationAndUpdate_, syncTimers_, enable_reuse_, skipFirstLevel_;
-    bool applyBCsToH_, applyBCsTo22_;
+    bool applyBCsToAnodal_, applyBCsToH_, applyBCsTo22_;
     int numItersH_, numIters22_;
     std::string mode_;
     //! Temporary memory
-    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, D0res_, D0x_, residual_, P11resTmp_, P11xTmp_, D0resTmp_, D0xTmp_, D0TR11Tmp_;
+    mutable Teuchos::RCP<MultiVector> P11res_, P11x_, P11resSubComm_, P11xSubComm_, D0res_, D0x_, D0resSubComm_, D0xSubComm_, residual_, P11resTmp_, D0resTmp_, D0TR11Tmp_;
   };
 
 

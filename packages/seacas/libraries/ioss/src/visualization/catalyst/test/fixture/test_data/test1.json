@@ -1,0 +1,22 @@
+{
+"camera blocks":{
+  "camxyz1":{"camera type":"camera","look direction":[-1,-1,-1]}
+},
+"representation blocks":{
+},
+"imageset blocks":{
+  "is_test1":{
+    "camera":"camxyz1",
+    "image basedirectory":"CatalystOutput",
+    "image basename":"test1."
+  }
+},
+"operation blocks":{},
+"text annotation blocks":{},
+"scatter plot blocks":{},
+"plot over time blocks":{},
+"experimental blocks":{},
+"onoff criteria blocks":{},
+"visual marker blocks":{}
+}
+

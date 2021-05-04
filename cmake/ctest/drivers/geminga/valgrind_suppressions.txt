@@ -633,3 +633,31 @@
    fun:orterun
    fun:(below main)
 }
+
+{
+
+   Memcheck:Leak
+   match-leak-kinds: definite
+   ...
+   fun:orterun
+   ...
+}
+
+{
+
+   Memcheck:Leak
+   match-leak-kinds: possible
+   ...
+   fun:orterun
+   ...
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Param
+   write(buf)
+   ...
+   fun:orte_finalize
+   fun:orterun
+   ...
+}

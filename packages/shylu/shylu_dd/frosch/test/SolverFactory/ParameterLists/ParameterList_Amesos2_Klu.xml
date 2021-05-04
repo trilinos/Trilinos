@@ -1,0 +1,4 @@
+<ParameterList name="Solver Factory Example">
+    <Parameter name="SolverType"    type="string"   value="Amesos2"/>
+    <Parameter name="Solver"        type="string"   value="Klu"/>
+</ParameterList>

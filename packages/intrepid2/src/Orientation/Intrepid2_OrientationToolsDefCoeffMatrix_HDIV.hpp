@@ -214,8 +214,7 @@ getCoeffMatrix_HDIV(OutputViewType &output,
   PointTools::getLattice(refPtsSubcell, subcellTopo, latticeDegree, 1);//, POINTTYPE_WARPBLEND);
 
   // evaluate values on the modified cell
-  typename Intrepid2::CellTools<host_device_type>::subcellParamViewType subcellParam;
-  Intrepid2::CellTools<host_device_type>::getSubcellParametrization(subcellParam, subcellDim, cellTopo);
+  auto subcellParam = Intrepid2::RefSubcellParametrization<host_device_type>::get(subcellDim, cellTopo.getKey());
 
   // refPtsCell = F_s (\eta_o (refPtsSubcell))
   Kokkos::DynRankView<value_type,host_device_type> refPtsCell("refPtsCell", ndofSubcell, cellDim);

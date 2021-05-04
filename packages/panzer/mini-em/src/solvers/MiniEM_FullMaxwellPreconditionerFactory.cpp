@@ -266,16 +266,22 @@ Teko::LinearOp FullMaxwellPreconditionerFactory::buildPreconditionerOperator(Tek
          if (useAsPreconditioner)
            invS_E = Teko::buildInverse(*S_E_prec_factory,S_E);
          else {
-           Teko::LinearOp S_E_prec = Teko::buildInverse(*S_E_prec_factory,S_E);
-           invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+           if (S_E_prec_.is_null())
+             S_E_prec_ = Teko::buildInverse(*S_E_prec_factory,S_E);
+           else
+             Teko::rebuildInverse(*S_E_prec_factory,S_E, S_E_prec_);
+           invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
          }
        } 
      } else {
        if (useAsPreconditioner)
          invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
        else {
-         Teko::LinearOp S_E_prec = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
-         invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec);
+         if (S_E_prec_.is_null())
+           S_E_prec_ = Teko::buildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E);
+         else
+           Teko::rebuildInverse(*invLib.getInverseFactory("S_E Preconditioner"),S_E, S_E_prec_);
+         invS_E = Teko::buildInverse(*invLib.getInverseFactory("S_E Solve"),S_E,S_E_prec_);
        }
      }
    }

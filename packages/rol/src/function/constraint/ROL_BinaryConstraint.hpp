@@ -57,52 +57,38 @@
 
 namespace ROL {
 
-template<class Real>
+template<typename Real>
 class BinaryConstraint : public Constraint<Real> {
-
-  using V = Vector<Real>;
-
-
 private:
-
-  const ROL::Ptr<const V> lo_;    // Lower Bound Vector
-  const ROL::Ptr<const V> up_;    // Upper Bound Vector
-
-  ROL::Ptr<V> d_;     // Scratch Vector
-
-//  ROL::Ptr<V> dl_;    // Scratch Vectors
-//  ROL::Ptr<V> du_;    // Scratch Vectors
-
-  Real   gamma_; // Penality parameter 
-
+  const Ptr<const Vector<Real>> lo_; // Lower Bound Vector
+  const Ptr<const Vector<Real>> up_; // Upper Bound Vector
+  Ptr<Vector<Real>> d_;              // Scratch Vector
+  Real gamma_;                       // Penality parameter 
 
   class BoundsCheck : public Elementwise::BinaryFunction<Real> {
-
   private:
-
-    int opt_;
+    const int opt_;
 
   public:
-
     BoundsCheck( int option ) : opt_(option) {}
 
     Real apply( const Real &dl, const Real &du ) const {
-
+      const Real zero(0), one(1), two(2);
       if( dl < ROL_INF<Real>() ) {
         if( du < ROL_INF<Real>() ) {
           switch(opt_) {
             case 0:  return  dl*du; break;
             case 1:  return  du-dl; break;
-            case 2:  return -2.0;   break;
-            default: return  0.0;   break; // Should never be called
+            case 2:  return -two;   break;
+            default: return  zero;  break; // Should never be called
           }
         }
         else { //  dl finite, du infinite
           switch(opt_) {
             case 0:  return  dl;   break;
-            case 1:  return  1.0;  break;
-            case 2:  return  0.0;  break; 
-            default: return  0.0;  break; // Should never be called
+            case 1:  return  one;  break;
+            case 2:  return  zero; break; 
+            default: return  zero; break; // Should never be called
           }
         }
       }
@@ -110,118 +96,35 @@ private:
         if( du <ROL_INF<Real>() ) { // dl and du infinite
           switch(opt_) {
             case 0:  return  du;   break;
-            case 1:  return -1.0;  break;
-            case 2:  return  0.0;  break;
-            default: return  0.0;  break; // Should never be called
+            case 1:  return -one;  break;
+            case 2:  return  zero; break;
+            default: return  zero; break; // Should never be called
           }
         }
         else {
-            return 0.0;
+            return zero;
           }
         }
       } // apply
     }; // class BoundsCheck
-    
 
 public:
 
-  BinaryConstraint( const ROL::Ptr<const V> &lo, const ROL::Ptr<const V> &up, Real gamma ) :
-      lo_( lo ), up_( up ), d_( lo_->clone() ), gamma_( gamma ) {} 
+  BinaryConstraint( const ROL::Ptr<const Vector<Real>> &lo,
+                    const ROL::Ptr<const Vector<Real>> &up, Real gamma );
+  BinaryConstraint( const BoundConstraint<Real> &bnd, Real gamma );
+  BinaryConstraint( const ROL::Ptr<const BoundConstraint<Real>> &bnd, Real gamma );
 
-  BinaryConstraint( const BoundConstraint<Real> &bnd, Real gamma ) :
-      BinaryConstraint( bnd.getLowerBound(), bnd.getUpperBound(), gamma ) {}
-   
+  void value(Vector<Real> &c, const Vector<Real> &x, Real &tol) override;
+  void applyJacobian(Vector<Real> &jv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointJacobian(Vector<Real> &ajv, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
+  void applyAdjointHessian(Vector<Real> &ahuv, const Vector<Real> &u, const Vector<Real> &v, const Vector<Real> &x, Real &tol) override;
 
-  BinaryConstraint( const ROL::Ptr<const BoundConstraint<Real>> &bnd, Real gamma ) :
-      BinaryConstraint( bnd->getLowerBound(), bnd->getUpperBound(), gamma ) {}
-     
-
-  /** \brief Evaluate constraint
-    \f[ c_i(x) = \begin{cases}
-          \gamma(u_i-x_i)(x_i-l_i)  & -\infty<l_i,u_i<\infty \\
-          \gamma(x_i-l_i)           & -\infty<l_i,u_i=\infty \\
-          \gamma(u_i-x_i)           & l_i=-\infty,u_i<\infty \\
-                0                   & l_i=-\infty,u_i=\infty
-        \end{cases}
-    \f] 
-  */
-  void value(V &c, const V &x, Real &tol) {
-
-    c.set( x );
-    c.axpy( -1.0, *lo_ );  // c = x-l
-
-    d_->set( *up_ );      // d = u-x
-    d_->axpy( -1.0, x );
-    
-    BoundsCheck bc(0);
-    c.applyBinary( bc, *d_ );
-
-    c.scale( gamma_ );
-            
-  }
-
-
-  /** Evaluate constraint Jacobian at x in the direction v
-    \f[ c_i'(x)v = \begin{cases}
-          \gamma(u_i+l_i-2x_i)v_i    & -\infty<l_i,u_i<\infty \\
-          \gamma v_i                 & -\infty<l_i,u_i=\infty \\
-         -\gamma v_i                 & l_i=-\infty,u_i<\infty \\
-                0                    & l_i=-\infty,u_i=\infty
-       \end{cases} 
-    \f]
-  */
-  void applyJacobian(V &jv, const V &v, const V &x, Real &tol) {
-
-    Elementwise::Multiply<Real> mult;
-
-    jv.set( x );
-    jv.axpy( -1.0, *lo_ );
-    d_->set( *up_ );
-    d_->axpy( -1.0, x );
-
-    BoundsCheck bc(1);
-    jv.applyBinary( bc, *d_ );
-    jv.applyBinary( mult, v );
-    jv.scale( gamma_ );
-  }
-
-
-  void applyAdjointJacobian(V &ajv, const V &v, const V &x, Real &tol) {
-    applyJacobian(ajv,v,x,tol); 
-  }
-
-
-  /** c_i''(x)(w,v) = \begin{cases} 
-       -2 \gamma v_i w_i & -\infty<l_i,u_i<\infty \\
-             0           & \text{otherwise}
-    \end{cases}
-  */
-
-  void applyAdjointHessian(V &ahuv, const V &u, const V &v, const V &x, Real &tol) {
-
-    Elementwise::Multiply<Real> mult;
-    
-    ahuv.set( x );
-    ahuv.axpy( -1.0, *lo_ );
-    d_->set( *up_ );
-    d_->axpy( -1.0, x );
-
-    BoundsCheck bc(2);
-    ahuv.applyBinary( bc, *d_ );
-    ahuv.applyBinary( mult, v );
-    ahuv.applyBinary( mult, u );
-
-    ahuv.scale( gamma_ ); 
-
-  }
-
-  void setPenalty( Real gamma ) {
-    gamma_ = gamma;
-  }
+  void setPenalty( Real gamma );
 };
-
 
 } // namespace ROL
 
+#include "ROL_BinaryConstraint_Def.hpp"
 
 #endif // ROL_BINARY_CONSTRAINT_H

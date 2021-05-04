@@ -450,6 +450,10 @@ void check_supernode_sizes(const char *title, int n, int nsuper, input_size_type
 template <typename host_graph_t, typename graph_t, typename input_size_type>
 host_graph_t
 generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const input_size_type *nb) {
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  double time_seconds = 0.0;
+  Kokkos::Timer timer;
+  #endif
 
   using size_type = typename graph_t::size_type;
   using cols_view_host_t    = typename host_graph_t::entries_type::non_const_type;
@@ -476,13 +480,19 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const inpu
   // count non-empty supernodal blocks
   row_map_view_host_t hr ("rowmap_view", nsuper+1);
   integer_view_host_t check ("check", nsuper);
+  integer_view_host_t  idxs ("idxs",  nsuper);
   Kokkos::deep_copy (hr, 0);
   Kokkos::deep_copy (check, 0);
 
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  timer.reset ();
+  #endif
   int nblocks = 0;
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     int j2 = j1+1;  // based on the first row
+
+    size_type nidxs = 0;
     for (size_type i = row_map_host (j1); i < row_map_host (j2); i++) {
       int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
@@ -493,10 +503,16 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const inpu
         nblocks ++;
         // count blocks per row for col_major
         hr (s2+1) ++;
+        // keep track of non-zero block ids
+        idxs (nidxs) = s2;
+        nidxs ++;
       }
     }
     // reset check
-    Kokkos::deep_copy (check, 0);
+    //Kokkos::deep_copy (check, 0);
+    for (size_type i = 0; i < nidxs; i++) {
+      check (idxs(i)) = 0;
+    }
   }
 
   cols_view_host_t hc ("colmap_view", nblocks);
@@ -506,11 +522,18 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const inpu
       hr (s+1) += hr (s);
     }
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = timer.seconds ();
+  std::cout << "   > Generate Supernodal Graph: count blocks   : " << time_seconds << std::endl;
+  timer.reset ();
+  #endif
 
   nblocks = 0;
   for (int s = 0; s < nsuper; s++) {
     int j1 = nb[s];
     int j2 = j1+1;  // based on the first row
+
+    size_type nidxs = 0;
     for (size_type i = row_map_host (j1); i < row_map_host (j2); i++) {
       int s2 = map (entries_host (i));
       // supernodal blocks may not be filled with zeros
@@ -525,19 +548,25 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const inpu
           hc (nblocks) = s2;
         }
         nblocks ++;
+        // keep track of non-zero block ids
+        idxs (nidxs) = s2;
+        nidxs ++;
       }
     }
     if (!col_major) {
       hr (s+1) = nblocks;
     }
     // reset check
-    if (!col_major) {
+    /*if (!col_major) {
       for (size_type s2 = hr(s); s2 < hr(s+1); s2++) {
         check (hc(s2)) = 0;
       }
     } else {
       // NOTE: nonzero supernodes in s-th col are not stored
       Kokkos::deep_copy (check, 0);
+    }*/
+    for (size_type i = 0; i < nidxs; i++) {
+      check (idxs(i)) = 0;
     }
   }
   // fix hr
@@ -547,10 +576,21 @@ generate_supernodal_graph(bool col_major, graph_t &graph, int nsuper, const inpu
     }
     hr (0) = 0;
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = timer.seconds ();
+  std::cout << "   > Generate Supernodal Graph: compress graph : " << time_seconds
+            << " (col_major = " << col_major << ")" << std::endl;
+  timer.reset ();
+  #endif
+
   // sort column ids per row
   for (int s = 0; s < nsuper; s++) {
     std::sort(&(hc (hr (s))), &(hc (hr (s+1))));
   }
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = timer.seconds ();
+  std::cout << "   > Generate Supernodal Graph: sort graph     : " << time_seconds << std::endl << std::endl;
+  #endif
 
   host_graph_t static_graph (hc, hr);
   return static_graph;
@@ -1018,17 +1058,32 @@ void sptrsv_supernodal_symbolic(
   // save the supernodal info in the handles for L/U solves
   handleL->set_supernodes (nsuper, supercols_view, etree);
   handleU->set_supernodes (nsuper, supercols_view, etree);
+  #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+  time_seconds = tic.seconds ();
+  std::cout << "   Deep-copy graph Time: " << time_seconds << std::endl;
+  tic.reset ();
+  #endif
 
   if (handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_DAG ||
       handleL->get_algorithm () == SPTRSVAlgorithm::SUPERNODAL_SPMV_DAG) {
     // generate supernodal graphs for DAG scheduling
     auto supL = generate_supernodal_graph<host_graph_t> (!col_majorL, graphL_host, nsuper, supercols);
     auto supU = generate_supernodal_graph<host_graph_t> ( col_majorU, graphU_host, nsuper, supercols);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
+    std::cout << "   Compute Supernodal Graph Time: " << time_seconds << std::endl;
+    tic.reset ();
+    #endif
 
     auto dagL = generate_supernodal_dag<host_graph_t> (nsuper, supL, supU);
     auto dagU = generate_supernodal_dag<host_graph_t> (nsuper, supU, supL);
     handleL->set_supernodal_dag (dagL);
     handleU->set_supernodal_dag (dagU);
+    #ifdef KOKKOS_SPTRSV_SUPERNODE_PROFILE
+    time_seconds = tic.seconds ();
+    std::cout << "   Compute DAG Time: " << time_seconds << std::endl;
+    tic.reset ();
+    #endif
   }
 
   // ===================================================================

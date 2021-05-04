@@ -64,7 +64,6 @@ namespace Intrepid2 {
     // This code provides an example to use serial interface of high order elements
     template<typename OutValueType, typename PointValueType, typename DeviceType>
     int HGRAD_QUAD_Cn_FEM_Test02(const bool verbose) {
-      using DeviceSpaceType = typename DeviceType::execution_space;
       Kokkos::print_configuration(std::cout, false);
 
       int errorFlag = 0;

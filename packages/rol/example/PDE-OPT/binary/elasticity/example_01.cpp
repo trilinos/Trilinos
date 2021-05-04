@@ -59,10 +59,12 @@
 
 #include "ROL_Stream.hpp"
 #include "ROL_ParameterList.hpp"
-#include "ROL_PEBBL_Driver.hpp"
-#include "ROL_StdBranchHelper_PEBBL.hpp"
+#include "ROL_PEBBL_BranchAndBound.hpp"
 
 #include "opfactory.hpp"
+#include "transform.hpp"
+#include "branching.hpp"
+#include "branchHelper.hpp"
 
 typedef double RealT;
 
@@ -87,7 +89,6 @@ int main(int argc, char *argv[]) {
 
   // *** Example body.
   try {
-    RealT tol(1e-8);
 
     /*** Read in XML input ***/
     std::string filename = "input_ex01.xml";
@@ -96,7 +97,6 @@ int main(int argc, char *argv[]) {
 
     // Retrieve parameters.
     const std::string example = parlist->sublist("Problem").get("Example", "Default");
-    RealT cmpScaling          = parlist->sublist("Problem").get("Compliance Scaling", 1e0);
     int probDim               = parlist->sublist("Problem").get("Problem Dimension", 2);
     RealT maxWeight           = parlist->sublist("Problem").get("Maximum Weight Fraction", 1.0);
     if (example == "2D Wheel"                   ||
@@ -120,31 +120,48 @@ int main(int argc, char *argv[]) {
     // Set up and solve.
     ROL::Ptr<ElasticityFactory<RealT>> factory
       = ROL::makePtr<ElasticityFactory<RealT>>(*parlist,comm,outStream);
+    bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
+    if (derivCheck) {
+      factory->check();
+      ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> prob = factory->build();
+      ROL::Ptr<TpetraMultiMatIntegerTransformation<RealT>> trans
+        = ROL::makePtr<TpetraMultiMatIntegerTransformation<RealT>>();
+      trans->add({  1, RealT(1)});
+      trans->add({ 17, RealT(0)});
+      trans->add({107, RealT(1)});
+      prob->setTransformation(trans);
+      prob->finalize(false,true,*outStream);
+      prob->check(true,*outStream);
+    }
     Teuchos::Time algoTimer("Algorithm Time", true);
     bool binary = parlist->sublist("Problem").get("Binary",true);
+    ROL::Ptr<ROL::Vector<RealT>> z;
     if (!binary) {
-      ROL::Ptr<ROL::OptimizationProblem<RealT>> problem = factory->build();
-      bool derivCheck = parlist->sublist("Problem").get("Check derivatives",false);
-      if (derivCheck) {
-        factory->check();
-        problem->check(*outStream);
-      }
-      ROL::OptimizationSolver<RealT> solver(*problem,*parlist);
+      ROL::Ptr<ROL::PEBBL::IntegerProblem<RealT>> problem = factory->build();
+      problem->finalize(false,true,*outStream);
+      ROL::Solver<RealT> solver(problem,*parlist);
       solver.solve(*outStream);
+      z = problem->getPrimalOptimizationVector();
     }
     else {
-      ROL::Ptr<ROL::StdBranchHelper_PEBBL<RealT>> bHelper
-        = ROL::makePtr<ROL::StdBranchHelper_PEBBL<RealT>>();
-      ROL::ROL_PEBBL_Driver<RealT> pebbl(factory,parlist,bHelper,3,outStream);
+      RealT intTol  = parlist->sublist("Problem").get("Integrality Tolerance",1e-6);
+      int method    = parlist->sublist("Problem").get("Branching Method",0);
+      int verbosity = parlist->sublist("Problem").get("BB Output Level",0);
+      ROL::Ptr<TpetraMultiMatBranchHelper<RealT>> bHelper
+        = ROL::makePtr<TpetraMultiMatBranchHelper<RealT>>(intTol,method);
+      ROL::Ptr<MultiMatBranching<RealT>> branching
+        = ROL::makePtr<MultiMatBranching<RealT>>(factory,parlist,bHelper,verbosity,outStream);
+      ROL::PEBBL::BranchAndBound<RealT> pebbl(branching);
       pebbl.solve(argc,argv,*outStream);
+      z = pebbl.getSolution()->clone();
+      z->set(*pebbl.getSolution());
     }
     algoTimer.stop();
     *outStream << "Total optimization time = " << algoTimer.totalElapsedTime() << " seconds.\n";
 
     // Output.
-    factory->print();
+    factory->print(*z);
     
-
     // Get a summary from the time monitor.
     Teuchos::TimeMonitor::summarize();
   }

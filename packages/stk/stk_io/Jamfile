@@ -71,7 +71,7 @@ local installed-developer-files =
   stk_io_doc_test
   stk_io_lowlevel_example
   stk_io_topology
-  stk_io_mesh_read_write_example
+  stk_io_mesh
   ;
 
 #
@@ -200,9 +200,9 @@ lib stk_io_util
     ]
   ;
 
-exe stk_io_mesh_read_write_example
+exe stk_io_mesh
   :
-    $(stk_io-root)/example/io_mesh_read_write_example.cpp
+    $(stk_io-root)/example/io_mesh.cpp
     stk_io
     /sierra/stk_util//stk_util_command_line
   : <tag>@sierra-exec-tag

@@ -563,19 +563,12 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
      "Ifpack2::OverlappingRowMatrix::apply: X.getNumVectors() = "
      << X.getNumVectors() << " != Y.getNumVectors() = " << Y.getNumVectors()
      << ".");
-  // Check whether X aliases Y.  In that case, we'll need to copy X.
-  auto X_d = X.getLocalViewDevice ();
-  auto Y_d = Y.getLocalViewDevice ();
-  bool aliases = true;
-  if (X_d.data () >= Y_d.data () + Y_d.span ()) {
-    aliases = false; // X starts after Y ends; no overlap
-  }
-  else if (Y_d.data () >= X_d.data () + X_d.span ()) {
-    aliases = false; // Y starts after X ends; no overlap
-  }
+  // If X aliases Y, we'll need to copy X.
+  bool aliases = X.aliases(Y);
   if (aliases) {
     MV X_copy (X, Teuchos::Copy);
     this->apply (X_copy, Y, mode, alpha, beta);
+    return;
   }
 
   const auto& rowMap0 = * (A_->getRowMap ());

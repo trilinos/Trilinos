@@ -175,6 +175,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
 
+  this->setStepperName(        "Newmark Implicit d-Form");
   this->setStepperType(        "Newmark Implicit d-Form");
   this->setUseFSAL(            false);
   this->setICConsistency(      "None");
@@ -188,8 +189,8 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm()
 
 template<class Scalar>
 StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
-    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar>>& appModel,
-    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >& solver,
+    const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > & appModel,
+    const Teuchos::RCP<Thyra::NonlinearSolverBase<Scalar> >  & solver,
     bool useFSAL,
     std::string ICConsistency,
     bool ICConsistencyCheck,
@@ -200,6 +201,7 @@ StepperNewmarkImplicitDForm<Scalar>::StepperNewmarkImplicitDForm(
     const Teuchos::RCP<StepperNewmarkImplicitDFormAppAction<Scalar> >& stepperAppAction)
   : out_(Teuchos::VerboseObjectBase::getDefaultOStream())
 {
+  this->setStepperName(        "Newmark Implicit d-Form");
   this->setStepperType(        "Newmark Implicit d-Form");
   this->setUseFSAL(            useFSAL);
   this->setICConsistency(      ICConsistency);
@@ -278,7 +280,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
 
     auto thisStepper = Teuchos::rcpFromRef(*this);
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
 
     RCP<SolutionState<Scalar>> workingState =solutionHistory->getWorkingState();
     RCP<SolutionState<Scalar>> currentState =solutionHistory->getCurrentState();
@@ -375,7 +377,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     }
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::BEFORE_SOLVE);
 
 
     //Set d_pred as initial guess for NOX solver, and solve nonlinear system.
@@ -385,7 +387,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     workingState->setSolutionStatus(sStatus);  // Converged --> pass.
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::AFTER_SOLVE);
 
     //solveImplicitODE will return converged solution in initial_guess
     //vector.  Copy it here to d_new, to define the new displacement.
@@ -422,7 +424,7 @@ StepperNewmarkImplicitDForm<Scalar>::takeStep(
     workingState->computeNorms(currentState);
 
     stepperNewmarkImpAppAction_->execute(solutionHistory, thisStepper,
-        StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
+      StepperNewmarkImplicitDFormAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
@@ -498,15 +500,13 @@ StepperNewmarkImplicitDForm<Scalar>::getValidParameters() const {
 #ifdef VERBOSE_DEBUG_OUTPUT
   *out_ << "DEBUG: " << __PRETTY_FUNCTION__ << "\n";
 #endif
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Scheme Name", "Average Acceleration");
-  pl->set<double>     ("Beta" , 0.25);
-  pl->set<double>     ("Gamma", 0.5 );
-  pl->set<std::string>("Solver Name", "Default Solver");
-  pl->set<bool>       ("Zero Initial Guess", false);
-  Teuchos::RCP<Teuchos::ParameterList> solverPL = defaultSolverParameters();
-  pl->set("Default Solver", *solverPL);
+  auto pl = this->getValidParametersBasicImplicit();
+
+  auto newmarkPL = Teuchos::parameterList("Newmark Parameters");
+  newmarkPL->set<std::string>("Scheme Name", schemeName_);
+  newmarkPL->set<double>     ("Beta",    beta_);
+  newmarkPL->set<double>     ("Gamma",   gamma_ );
+  pl->set("Newmark Parameters", *newmarkPL);
 
   return pl;
 }

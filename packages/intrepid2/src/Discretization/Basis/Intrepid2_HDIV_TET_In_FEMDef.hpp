@@ -303,11 +303,11 @@ Basis_HDIV_TET_In_FEM( const ordinal_type order,
   for (ordinal_type face=0;face<numFaces;face++) {  // loop over faces
 
     // these are normal scaled by the appropriate face areas.
-    CellTools<Kokkos::HostSpace::execution_space>::getReferenceSideNormal( faceNormal ,
+    CellTools<Kokkos::HostSpace>::getReferenceSideNormal( faceNormal ,
         face ,
         this->basisCellTopology_ );
 
-    CellTools<Kokkos::HostSpace::execution_space>::mapToReferenceSubcell( facePts ,
+    CellTools<Kokkos::HostSpace>::mapToReferenceSubcell( facePts ,
         triPts ,
         2 ,
         face ,

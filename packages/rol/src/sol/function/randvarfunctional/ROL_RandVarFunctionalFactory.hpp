@@ -54,7 +54,7 @@ namespace ROL {
 
   template<class Real>
   inline Ptr<RandVarFunctional<Real> > RandVarFunctionalFactory(ROL::ParameterList &parlist) {
-    std::string type = parlist.sublist("SOL").get("Stochastic Component Type","Risk Averse");
+    std::string type = parlist.sublist("SOL").get("Type","Risk Averse");
     if (type == "Risk Averse") {
       return RiskMeasureFactory<Real>(parlist);
     }

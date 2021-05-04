@@ -57,6 +57,7 @@
 #include "MueLu_ConfigDefs.hpp"
 
 #include "MueLu_Exceptions.hpp"
+#include "MueLu_Aggregates.hpp"
 #include "MueLu_Hierarchy.hpp"
 #include "MueLu_HierarchyFactory.hpp"
 #include "MueLu_Level.hpp"
@@ -230,6 +231,8 @@ namespace MueLu {
       ExportDataSetKeepFlags(H, restrictorsToPrint_,  "R");
       ExportDataSetKeepFlags(H, nullspaceToPrint_,  "Nullspace");
       ExportDataSetKeepFlags(H, coordinatesToPrint_,  "Coordinates");
+      // NOTE: Aggregates use the next level's Factory
+      ExportDataSetKeepFlagsNextLevel(H, aggregatesToPrint_,  "Aggregates");
 #ifdef HAVE_MUELU_INTREPID2
       ExportDataSetKeepFlags(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map");
 #endif
@@ -272,6 +275,7 @@ namespace MueLu {
       WriteData<Matrix>(H, restrictorsToPrint_,  "R");
       WriteData<MultiVector>(H, nullspaceToPrint_,  "Nullspace");
       WriteData<MultiVector>(H, coordinatesToPrint_,  "Coordinates");
+      WriteDataAggregates(H, aggregatesToPrint_,  "Aggregates");
 #ifdef HAVE_MUELU_INTREPID2
       typedef Kokkos::DynRankView<LocalOrdinal,typename Node::device_type> FCi;
       WriteDataFC<FCi>(H,elementToNodeMapsToPrint_, "pcoarsen: element to node map","el2node");
@@ -327,6 +331,7 @@ namespace MueLu {
     Teuchos::Array<int>   restrictorsToPrint_;
     Teuchos::Array<int>   nullspaceToPrint_;
     Teuchos::Array<int>   coordinatesToPrint_;
+    Teuchos::Array<int>   aggregatesToPrint_;
     Teuchos::Array<int>   elementToNodeMapsToPrint_;
     Teuchos::RCP<Teuchos::ParameterList> matvecParams_;
 
@@ -340,6 +345,16 @@ namespace MueLu {
           RCP<Level> L = H.GetLevel(data[i]);
 	  if(!L.is_null()  && data[i] < levelManagers_.size())
 	    L->AddKeepFlag(name, &*levelManagers_[data[i]]->GetFactory(name));
+        }
+      }
+    }
+
+    void ExportDataSetKeepFlagsNextLevel(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
+      for (int i = 0; i < data.size(); ++i) {
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+	  if(!L.is_null()  && data[i]+1 < levelManagers_.size())
+	    L->AddKeepFlag(name, &*levelManagers_[data[i]+1]->GetFactory(name));
         }
       }
     }
@@ -375,6 +390,31 @@ namespace MueLu {
       }
     }
 
+
+    void WriteDataAggregates(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name) const {
+      for (int i = 0; i < data.size(); ++i) {
+        const std::string fileName = name + "_" + Teuchos::toString(data[i]) + ".m";
+        
+        if (data[i] < H.GetNumLevels()) {
+          RCP<Level> L = H.GetLevel(data[i]);
+
+          // NOTE: Aggregates use the next level's factory
+          RCP<Aggregates> agg;
+          if(data[i]+1 < H.GetNumLevels() && L->IsAvailable(name,&*levelManagers_[data[i]+1]->GetFactory(name))) {
+            // Try generating factory
+            agg = L->template Get< RCP<Aggregates> >(name,&*levelManagers_[data[i]+1]->GetFactory(name));  
+          }
+          else if (L->IsAvailable(name)) {
+            agg = L->template Get<RCP<Aggregates> >("Aggregates");
+          }
+          if(!agg.is_null()) {
+            std::ofstream ofs(fileName);
+            Teuchos::FancyOStream fofs(rcp(&ofs,false));
+            agg->print(fofs,Teuchos::VERB_EXTREME);
+          }
+        }
+      }
+    }
 
     template<class T>
     void WriteDataFC(Hierarchy& H, const Teuchos::Array<int>& data, const std::string& name, const std::string & ofname) const {

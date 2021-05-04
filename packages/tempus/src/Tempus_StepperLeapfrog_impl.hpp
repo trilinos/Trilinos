@@ -20,6 +20,7 @@ namespace Tempus {
 template<class Scalar>
 StepperLeapfrog<Scalar>::StepperLeapfrog()
 {
+  this->setStepperName(        "Leapfrog");
   this->setStepperType(        "Leapfrog");
   this->setUseFSAL(            false);
   this->setICConsistency(      "Consistent");
@@ -36,6 +37,7 @@ StepperLeapfrog<Scalar>::StepperLeapfrog(
   bool ICConsistencyCheck,
   const Teuchos::RCP<StepperLeapfrogAppAction<Scalar> >& stepperLFAppAction)
   {
+    this->setStepperName(        "Leapfrog");
     this->setStepperType(        "Leapfrog");
     this->setUseFSAL(            useFSAL);
     this->setICConsistency(      ICConsistency);
@@ -117,11 +119,12 @@ void StepperLeapfrog<Scalar>::takeStep(
 
     RCP<StepperLeapfrog<Scalar> > thisStepper = Teuchos::rcpFromRef(*this);
 
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
+
     // Perform half-step startup if working state is synced
     // (i.e., xDot and x are at the same time level).
     if (workingState->getIsSynced() == true) {
-      stepperLFAppAction_->execute(solutionHistory, thisStepper,
-        StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::BEGIN_STEP);
       // Half-step startup: xDot_{n+1/2} = xDot_n + 0.5*dt*xDotDot_n
       Thyra::V_VpStV(Teuchos::outArg(*(workingState->getXDot())),
         *(currentState->getXDot()),0.5*dt,*(currentState->getXDotDot()));
@@ -157,6 +160,9 @@ void StepperLeapfrog<Scalar>::takeStep(
     workingState->setSolutionStatus(Status::PASSED);
     workingState->setOrder(this->getOrder());
     workingState->computeNorms(currentState);
+
+    stepperLFAppAction_->execute(solutionHistory, thisStepper,
+      StepperLeapfrogAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
   return;
 }
@@ -208,17 +214,6 @@ bool StepperLeapfrog<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 
 
   return isValidSetup;
-}
-
-
-template<class Scalar>
-Teuchos::RCP<const Teuchos::ParameterList>
-StepperLeapfrog<Scalar>::getValidParameters() const
-{
-  Teuchos::RCP<Teuchos::ParameterList> pl = Teuchos::parameterList();
-  getValidParametersBasic(pl, this->getStepperType());
-  pl->set<std::string>("Initial Condition Consistency", "Consistent");
-  return pl;
 }
 
 

@@ -20,7 +20,7 @@ jobs:
   stale:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/stale@v3.0.17
+    - uses: actions/stale@v3.0.18
       with:
         debug-only: false
         ascending: true
@@ -35,16 +35,21 @@ jobs:
         # We specifically DO NOT exempt PR's from autoclosing.
         #exempt-pr-labels: ''
         remove-stale-when-updated: true
-        operations-per-run: 52
+        operations-per-run: 70
         stale-issue-message: >
           This issue has had no activity for **365** days and is marked for
           closure. It will be closed after an additional **30** days of inactivity.
 
-          If you would like to keep this issue open please add a comment and remove
+          If you would like to keep this issue open please add a comment and/or remove
           the `MARKED_FOR_CLOSURE` label.
 
           If this issue should be kept open even with no activity beyond the time
           limits you can add the label `DO_NOT_AUTOCLOSE`.
+
+          If it is ok for this issue to be closed, feel free to go ahead and close it.
+          Please **do not** add any comments or change any labels or otherwise touch
+          this issue unless your intention is to reset the inactivity counter for an
+          additional year.
 
         close-issue-message: >
           This issue was closed due to inactivity for **395** days.
@@ -57,15 +62,18 @@ jobs:
           considered to be abandoned and will be automatically closed after **30**
           additional days of inactivity from when it was marked inactive.
 
-          If this should be kept open, please post a comment and remove the
+          If this should be kept open, please post a comment and/or remove the
           label `MARKED_FOR_CLOSURE` to reset the inactivity timer.
+
+          If it is ok for this pull request to be closed, feel free to go ahead and close it.
+          Please **do not** add any comments or change any labels or otherwise touch
+          this issue unless your intention is to reset the inactivity counter for an
+          additional year.
 
         close-pr-message: >
           This Pull Request has been automatically closed due to **395** days of inactivity.
 
         # start-date : only consider issues/PR's created after this date.
         start-date: '2001-01-01T00:00:00Z'
-
-
 
 

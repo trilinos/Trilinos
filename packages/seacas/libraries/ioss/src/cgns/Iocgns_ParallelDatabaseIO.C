@@ -12,6 +12,7 @@
 #include <cgns/Iocgns_Defines.h>
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_Sort.h>
 #include <Ioss_Utils.h>
 #include <cassert>
 #include <cgns/Iocgns_ParallelDatabaseIO.h>
@@ -101,7 +102,7 @@ namespace {
                 recv_count.data(), recv_off.data(), MPI_INT, 0, util.communicator());
 
     if (processor == 0) {
-      std::sort(I_nodes_recv.begin(), I_nodes_recv.end());
+      Ioss::sort(I_nodes_recv.begin(), I_nodes_recv.end());
     }
     return I_nodes_recv;
   }
@@ -202,7 +203,8 @@ namespace Iocgns {
         }
         else {
           // Check whether appending to existing file...
-          if (open_create_behavior() == Ioss::DB_APPEND) {
+          if (open_create_behavior() == Ioss::DB_APPEND ||
+              open_create_behavior() == Ioss::DB_MODIFY) {
             // Append to file if it already exists -- See if the file exists.
             Ioss::FileInfo file = Ioss::FileInfo(decoded_filename());
             if (file.exists()) {
@@ -382,6 +384,7 @@ namespace Iocgns {
     }
 
     get_step_times__();
+
     if (open_create_behavior() == Ioss::DB_APPEND) {
       return;
     }
@@ -979,17 +982,23 @@ namespace Iocgns {
     // Transitioning out of state 'state'
     switch (state) {
     case Ioss::STATE_DEFINE_MODEL:
-      if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
+      if (!is_input() && open_create_behavior() != Ioss::DB_APPEND &&
+          open_create_behavior() != Ioss::DB_MODIFY) {
         write_meta_data();
+      }
+      if (!is_input() && open_create_behavior() == Ioss::DB_APPEND) {
+        Utils::update_db_zone_property(m_cgnsFilePtr, get_region(), myProcessor, isParallel, true);
       }
       break;
     case Ioss::STATE_MODEL:
-      if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
+      if (!is_input() && open_create_behavior() != Ioss::DB_APPEND &&
+          open_create_behavior() != Ioss::DB_MODIFY) {
         write_adjacency_data();
       }
       break;
     case Ioss::STATE_DEFINE_TRANSIENT:
-      if (!is_input() && open_create_behavior() != Ioss::DB_APPEND) {
+      if (!is_input() && open_create_behavior() != Ioss::DB_APPEND &&
+          open_create_behavior() != Ioss::DB_MODIFY) {
         write_results_meta_data();
       }
       break;

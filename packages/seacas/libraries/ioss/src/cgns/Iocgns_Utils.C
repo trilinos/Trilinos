@@ -20,6 +20,7 @@
 #include <Ioss_Quad4.h>
 #include <Ioss_Quad8.h>
 #include <Ioss_Quad9.h>
+#include <Ioss_Sort.h>
 #include <Ioss_Spring2.h>
 #include <Ioss_Spring3.h>
 #include <Ioss_StructuredBlock.h>
@@ -863,8 +864,8 @@ void Iocgns::Utils::output_assembly(int file_ptr, const Ioss::Assembly *assembly
   // Now, iterate the members of the assembly and add the reference to the structured block
   if (assembly->get_member_type() == Ioss::STRUCTUREDBLOCK) {
     for (const auto &mem : members) {
-      base = mem->get_property("base").get_int();
-      const auto *sb   = dynamic_cast<const Ioss::StructuredBlock *>(mem);
+      base           = mem->get_property("base").get_int();
+      const auto *sb = dynamic_cast<const Ioss::StructuredBlock *>(mem);
       Ioss::Utils::check_dynamic_cast(sb);
       if (is_parallel_io || sb->is_active()) {
         int db_zone = get_db_zone(sb);
@@ -2376,11 +2377,11 @@ void Iocgns::Utils::set_line_decomposition(int cgns_file_ptr, const std::string 
           else if (k) {
             ordinal = Ordinal::K;
           }
-	  zone->m_lineOrdinal |= ordinal;
-	  if (verbose && rank == 0) {
-	    fmt::print(Ioss::DEBUG(), "Setting line ordinal to {} on {} for surface: {}\n",
-		       zone->m_lineOrdinal, zone->m_name, boconame);
-	  }
+          zone->m_lineOrdinal |= ordinal;
+          if (verbose && rank == 0) {
+            fmt::print(Ioss::DEBUG(), "Setting line ordinal to {} on {} for surface: {}\n",
+                       zone->m_lineOrdinal, zone->m_name, boconame);
+          }
         }
       }
     }
@@ -2527,10 +2528,10 @@ void Iocgns::Utils::assign_zones_to_procs(std::vector<Iocgns::StructuredZoneData
   std::copy_if(all_zones.begin(), all_zones.end(), std::back_inserter(zones),
                [](Iocgns::StructuredZoneData *z) { return z->is_active(); });
 
-  std::sort(zones.begin(), zones.end(),
-            [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
-              return a->work() > b->work();
-            });
+  Ioss::sort(zones.begin(), zones.end(),
+             [](Iocgns::StructuredZoneData *a, Iocgns::StructuredZoneData *b) {
+               return a->work() > b->work();
+             });
 
   std::set<std::pair<int, int>> proc_adam_map;
 

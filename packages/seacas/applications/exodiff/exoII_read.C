@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -52,6 +52,9 @@ template <typename INT> ExoII_Read<INT>::~ExoII_Read()
     delete[] ssets;
     delete[] nodes;
     delete[] times;
+    delete[] edge_blocks;
+    delete[] face_blocks;
+
     if (results) {
       for (unsigned i = 0; i < nodal_vars.size(); ++i) {
         delete[] results[i];
@@ -1061,6 +1064,7 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
       }
 
       eblocks[b].initialize(file_id, ids[b]);
+      eblocks[b].offset(e_count);
       e_count += eblocks[b].Size();
     }
 

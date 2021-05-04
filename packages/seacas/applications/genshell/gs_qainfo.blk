@@ -1,31 +1,11 @@
-C Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C NTESS, the U.S. Government retains certain rights in this software.
 C
 C See packages/seacas/LICENSE for details
 
-      CHARACTER*32 CVSREV, CVSDAT
-
-C     The CVS* variables are updated by the CVS/RCS program every time
-C     this routine is committed to the repository.  Therefore, whenever
-C     there are any changes to any routines, this routine should also
-C     be committed.  The assignment to QAINFO(I) strips off the 'Revision'
-C     and 'Date' strings from the CVS variables.  Kludgey but it might work.
-
-      CVSREV = '$Revision: 1.15 $'
-      CVSDAT = '$Date: 2007/08/06 21:03:15 $'
-
       QAINFO(1) = 'GenShell                        '
+      QAINFO(2) = '                                '
       QAINFO(3) = '                                '
-
-      if (cvsrev(1:1) .eq. '$') then
-         LREV = LENSTR(CVSREV) - 12
-         QAINFO(2) = CVSDAT(10:17)
-         QAINFO(3)(MAX(1,8-LREV):8) = CVSREV(12:11+LREV)
-      else
-         lrev = lenstr(cvsrev)
-         QAINFO(2) = CVSDAT(3:10)
-         QAINFO(3)(MAX(1,9-LREV):8) = CVSREV(1:LREV)
-      end if
-
-C--------
+      QAINFO(2)(:8) = '20210331'
+      QAINFO(3)(:8) = ' 1.16   '

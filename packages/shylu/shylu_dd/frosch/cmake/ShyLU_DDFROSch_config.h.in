@@ -20,5 +20,4 @@
 
 #cmakedefine HAVE_SHYLU_DDFROSCH_ZOLTAN2
 
-
 #cmakedefine HAVE_SHYLU_DDFROSCH_HDF5

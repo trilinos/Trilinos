@@ -40,7 +40,6 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/util/ReportHandler.hpp>  // for ThrowRequire
-#include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <vector>                       // for allocator, vector
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket

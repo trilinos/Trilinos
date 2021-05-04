@@ -28,24 +28,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the Leapfrog algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Leapfrog with the locations of the application actions indicated}
- *  \begin{algorithmic}[1]
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, X\_BEGIN\_STEP)}                            
- *    \State Compute $\dot{x}_{n+1/2} = \dot{x}_n + 0.5\Delta t \ddot{x}_n$                                      
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, X\_BEFORE\_X\_UPDATE)}                      
- *    \State Compute $x_{n+1} = x_n + \Delta t \dot{x}_{n+1/2}$                                                  
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, X\_BEFORE\_EXPLICIT\_EVAL)}                
- *    \State Evaluate $\ddot{x}_{n+1} = f(x_{n+1},t_{n+1})$                                                      
- *    \State \quad {\it appAction.execute(solutionHistory, stepper, X\_BEFORE\_XDOT\_UPDATE)}          
- *    \State Compute half-step sync $\dot{x}_{n+1} = \dot{x}_{n+1/2} + 0.5 \Delta t \ddot{x}_{n+1}$ or full step 
-$\dot{x}_{n+3/2} = \dot{x}_{n+1/2} + \Delta t \ddot{x}_{n+1}$     
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperLeapfrogModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperLeapfrogAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperLeapfrog.
  */
 
 template<class Scalar>
@@ -87,12 +73,6 @@ private:
         x = workingState->getX();
         break;
       }
-      case StepperLeapfrogAppAction<Scalar>::BEFORE_XDOT_UPDATE_INITIALIZE:
-      {
-        modType = X_BEFORE_XDOT_UPDATE_INITIALIZE;
-        x = workingState->getX();
-        break;
-      }
       case StepperLeapfrogAppAction<Scalar>::BEFORE_X_UPDATE:
       {
         modType = X_BEFORE_X_UPDATE;
@@ -114,7 +94,7 @@ private:
       case StepperLeapfrogAppAction<Scalar>::END_STEP:
       {
         modType = X_END_STEP;
-        x = stepper->getStepperX();
+        x = workingState->getX();
         break;
       }
       default:
@@ -129,12 +109,11 @@ public:
 
   /// Indicates the location of application action (see algorithm).
   enum MODIFIER_TYPE {
-    X_BEGIN_STEP,     ///< Modify \f$x\f$ at the beginning of the step.
-    X_BEFORE_XDOT_UPDATE_INITIALIZE,     ///< Modify \f$x\f$ before updating xDot while initializing xDotDot
-    X_BEFORE_X_UPDATE,     ///< Modify \f$x\f$ before updating x   
-    X_BEFORE_EXPLICIT_EVAL,   ///< Modify \f$x\f$ before the explicit ME evaluation
-    X_BEFORE_XDOT_UPDATE, //Modify \f$x\f$ Before updating xDot 
-    X_END_STEP     ///< Modify \f$\dot{x}\f$ at the end of the step.
+    X_BEGIN_STEP,           ///< Modify \f$x\f$ at the beginning of the step.
+    X_BEFORE_X_UPDATE,      ///< Modify \f$x\f$ before updating x
+    X_BEFORE_EXPLICIT_EVAL, ///< Modify \f$x\f$ before the explicit ME evaluation
+    X_BEFORE_XDOT_UPDATE,   ///< Modify \f$x\f$ Before updating xDot
+    X_END_STEP              ///< Modify \f$\dot{x}\f$ at the end of the step.
   };
 
   /// Modify solution based on the MODIFIER_TYPE.

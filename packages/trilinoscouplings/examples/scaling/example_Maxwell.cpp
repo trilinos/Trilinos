@@ -317,18 +317,21 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
     \param  TotalErrorExactSol [out]   error in xh
 
 */
-void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
-                                                   Teuchos::ParameterList   & MLList,
-                                                   Epetra_CrsMatrix   & CurlCurl,
-                                                   Epetra_CrsMatrix   & D0clean,
-                                                   Epetra_CrsMatrix   & M0inv,
-                                                   Epetra_CrsMatrix   & Ms,
-                                                   Epetra_CrsMatrix   & M1,
-                                                   Epetra_MultiVector & coords,
-                                                   Epetra_MultiVector & xh,
-                                                   Epetra_MultiVector & b,
-                                                   double & TotalErrorResidual,
-                                                   double & TotalErrorExactSol);
+void TestPreconditioner_Stratimikos(char ProblemType[],
+                                    Teuchos::ParameterList & SList,
+                                    Epetra_CrsMatrix   & CurlCurl,
+                                    Epetra_CrsMatrix   & D0clean,
+                                    Epetra_CrsMatrix   & M0inv,
+                                    Epetra_CrsMatrix   & Ms,
+                                    Epetra_CrsMatrix   & M1,
+                                    Epetra_MultiVector & coords,
+                                    Epetra_Vector      & Nx,
+                                    Epetra_Vector      & Ny,
+                                    Epetra_Vector      & Nz,
+                                    Epetra_MultiVector & xh,
+                                    Epetra_MultiVector & b,
+                                    double & TotalErrorResidual,
+                                    double & TotalErrorExactSol);
   #endif
 #endif
 
@@ -426,7 +429,7 @@ int main(int argc, char *argv[]) {
   bool printedHelp = false;
   // Values of command-line arguments.
   int nx, ny, nz;
-  std::string xmlInFileName;
+  std::string xmlInFileName, xmlStratimikos;
   bool verbose, debug, jiggle, dump;
   std::string solverName;
   double scaling = 1.0;
@@ -436,6 +439,7 @@ int main(int argc, char *argv[]) {
   ny = 10;
   nz = 10;
   xmlInFileName = "Maxwell.xml";
+  xmlStratimikos = "stratimikos.xml";
   solverName = "default";
   verbose = false;
   debug = false;
@@ -452,9 +456,10 @@ int main(int argc, char *argv[]) {
                   "std::string value as the Pamgen mesh specification.  "
                   "Otherwise, we tell Pamgen to make a cube, using "
                   "nx, ny, and nz.");
+  cmdp.setOption ("stratimikosParams", &xmlStratimikos, "XML file with Stratimikos inputs");
   cmdp.setOption ("solverName", &solverName, "Name of iterative linear solver "
                   "to use for solving the linear system.  Examples include "
-                  "\"ML\", \"MueLu\", \"ML-Stratimikos\" and \"MueLu-Stratimikos\".");
+                  "\"ML\", \"MueLu\", \"ML-Stratimikos\" and \"Stratimikos\".");
   cmdp.setOption ("verbose", "quiet", &verbose,
                   "Whether to print verbose status output.");
   cmdp.setOption ("debug", "release", &debug,
@@ -1708,7 +1713,7 @@ int main(int argc, char *argv[]) {
 
     // multiply by weighted measure
     IntrepidFSTools::multiplyMeasure<double>(HCurlsTransformedWeighted,
-                                             weightedMeasure, HCurlsTransformed);
+                                             weightedMeasureMuInv, HCurlsTransformed);
 
     // integrate to compute element stiffness matrix
     IntrepidFSTools::integrate<double>(stiffMatrixHCurl,
@@ -2174,7 +2179,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   Epetra_MultiVector coords(MassMatrixGinv.RowMap(),3);
-  if (solverName == "MueLu" || solverName == "MueLu-Stratimikos") {
+  if (solverName == "MueLu" || solverName == "Stratimikos") {
     // build coordinates multivector
 
     double* xx = coords[0];
@@ -2200,13 +2205,15 @@ int main(int argc, char *argv[]) {
   }
 
   #ifdef HAVE_TRILINOSCOUPLINGS_STRATIMIKOS
-  if (solverName == "MueLu-Stratimikos") {
-    if(MyPID==0) {std::cout << "\n\nMueLu Stratimikos solve \n";}
-    TestMueLuMultiLevelPreconditioner_Stratimikos(probType,MueLuList,StiffMatrixC,
-                                                  DGrad,MassMatrixGinv,MassMatrixC,MassMatrixC1,
-                                                  coords,
-                                                  xh,rhsVector,
-                                                  TotalErrorResidual, TotalErrorExactSol);
+  if (solverName == "Stratimikos") {
+    if(MyPID==0) {std::cout << "\n\nStratimikos solve \n";}
+    Teuchos::ParameterList SList;
+    Teuchos::updateParametersFromXmlFile(xmlStratimikos,Teuchos::ptr (&SList));
+    TestPreconditioner_Stratimikos(probType,SList,StiffMatrixC,
+                                   DGrad,MassMatrixGinv,MassMatrixC,MassMatrixC1,
+                                   coords,Nx,Ny,Nz,
+                                   xh,rhsVector,
+                                   TotalErrorResidual, TotalErrorExactSol);
   }
   #endif
 #endif
@@ -2760,53 +2767,94 @@ void TestMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 /*************************************************************************************/
 /*************************** MueLu PRECONDITIONER ************************************/
 /*************************************************************************************/
-void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
-                                                   Teuchos::ParameterList   & MLList,
-                                                   Epetra_CrsMatrix   & CurlCurl,
-                                                   Epetra_CrsMatrix   & D0clean,
-                                                   Epetra_CrsMatrix   & M0inv,
-                                                   Epetra_CrsMatrix   & Ms,
-                                                   Epetra_CrsMatrix   & M1,
-                                                   Epetra_MultiVector & coords,
-                                                   Epetra_MultiVector & xh,
-                                                   Epetra_MultiVector & b,
-                                                   double & TotalErrorResidual,
-                                                   double & TotalErrorExactSol){
-#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
-  // typedef double Scalar;
-  typedef int LocalOrdinal;
-  typedef int GlobalOrdinal;
-  typedef LocalOrdinal LO;
-  typedef GlobalOrdinal GO;
-  typedef Xpetra::EpetraNode Node;
-
+void TestPreconditioner_Stratimikos(char ProblemType[],
+                                    Teuchos::ParameterList & SList,
+                                    Epetra_CrsMatrix   & CurlCurl,
+                                    Epetra_CrsMatrix   & D0clean,
+                                    Epetra_CrsMatrix   & M0inv,
+                                    Epetra_CrsMatrix   & Ms,
+                                    Epetra_CrsMatrix   & M1,
+                                    Epetra_MultiVector & coords,
+                                    Epetra_Vector      & Nx,
+                                    Epetra_Vector      & Ny,
+                                    Epetra_Vector      & Nz,
+                                    Epetra_MultiVector & xh,
+                                    Epetra_MultiVector & b,
+                                    double & TotalErrorResidual,
+                                    double & TotalErrorExactSol){
   using Teuchos::rcp;
   using Teuchos::RCP;
 
   Epetra_Time SetupTime(CurlCurl.Comm());
 
   /* Build the rest of the Stratimikos list */
-  Teuchos::ParameterList SList;
-  SList.set("Linear Solver Type","Belos");
-  SList.sublist("Linear Solver Types").sublist("Belos").set("Solver Type", "Pseudo Block CG");
-  SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Frequency",10);
-  SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Maximum Iterations",500);
-  SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Convergence Tolerance",1e-10);
-  SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Output Style",1);
-  SList.sublist("Linear Solver Types").sublist("Belos").sublist("Solver Types").sublist("Pseudo Block CG").set("Verbosity",33);
-  SList.sublist("Linear Solver Types").sublist("Belos").sublist("VerboseObject").set("Verbosity Level", "medium");
+  SList.sublist("Preconditioner Types").sublist("ML").set("Base Method Defaults","refmaxwell");
 
-  SList.set("Preconditioner Type","MueLuRefMaxwell");
-  MLList.set("parameterlist: syntax","muelu");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("D0","substitute const D0");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("M0inv","substitute const M0inv");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("M1","substitute const M1");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").set("Ms","substitute const Ms");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 11list").set("x-coordinates","substitute x-coordinates");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 11list").set("y-coordinates","substitute y-coordinates");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 11list").set("z-coordinates","substitute z-coordinates");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 22list").set("x-coordinates","substitute x-coordinates");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 22list").set("y-coordinates","substitute y-coordinates");
+  SList.sublist("Preconditioner Types").sublist("ML").sublist("ML Settings").sublist("refmaxwell: 22list").set("z-coordinates","substitute z-coordinates");
 
-  SList.sublist("Preconditioner Types").set("MueLuRefMaxwell",MLList);
+  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0","substitute D0");
+  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv","substitute M0inv");
+  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M1","substitute M1");
+  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Ms","substitute Ms");
+  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Coordinates","substitute Coordinates");
+
   /* Add matrices to parameterlist */
-  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("D0",rcp((Epetra_CrsMatrix*) &D0clean,false));
-  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M0inv",rcp((Epetra_CrsMatrix*) &M0inv,false));
-  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("M1",rcp((Epetra_CrsMatrix*) &M1,false));
-  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Ms",rcp((Epetra_CrsMatrix*) &Ms,false));
-  SList.sublist("Preconditioner Types").sublist("MueLuRefMaxwell").set("Coordinates",rcp((Epetra_MultiVector*) &coords,false));
-
+  Teuchos::ParameterList& precTypesPL = SList.sublist("Preconditioner Types");
+  std::list<Teuchos::ParameterList*> sublists;
+  sublists.push_back(&precTypesPL);
+  while (sublists.size() > 0) {
+    Teuchos::ParameterList* sublist = sublists.front();
+    sublists.pop_front();
+    std::list<std::string> keys;
+    for (Teuchos::ParameterList::ConstIterator it = sublist->begin(); it != sublist->end(); ++it) {
+      const std::string &entryName = sublist->name(it);
+      const Teuchos::ParameterEntry &theEntry = sublist->entry(it);
+      if (theEntry.isList()) {
+        Teuchos::ParameterList& sl = sublist->sublist(entryName);
+        sublists.push_back(&sl);
+      } else if (theEntry.isType<std::string>() && Teuchos::getValue<std::string>(theEntry).find("substitute ") != std::string::npos) {
+        keys.push_back(entryName);
+      }
+    }
+    for (auto key_it = keys.begin(); key_it != keys.end(); ++key_it) {
+      std::string value = sublist->get<std::string>(*key_it).substr(11, std::string::npos);
+      if (value == "D0")
+        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &D0clean,false));
+      else if (value == "M0inv")
+        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &M0inv,false));
+      else if (value == "M1")
+        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &M1,false));
+      else if (value == "Ms")
+        sublist->set(*key_it, rcp((Epetra_CrsMatrix*) &Ms,false));
+      else if (value == "Coordinates")
+        sublist->set(*key_it, rcp((Epetra_MultiVector*) &coords,false));
+      else if (value == "const D0")
+        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &D0clean,false));
+      else if (value == "const M0inv")
+        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &M0inv,false));
+      else if (value == "const M1")
+        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &M1,false));
+      else if (value == "const Ms")
+        sublist->set(*key_it, rcp((const Epetra_CrsMatrix*) &Ms,false));
+      else if (value == "const Coordinates")
+        sublist->set(*key_it, rcp((const Epetra_MultiVector*) &coords,false));
+      else if (value == "x-coordinates")
+        sublist->set(*key_it, &Nx[0]);
+      else if (value == "y-coordinates")
+        sublist->set(*key_it, &Ny[0]);
+      else if (value == "z-coordinates")
+        sublist->set(*key_it, &Nz[0]);
+    }
+  }
 
   Epetra_Time Time(CurlCurl.Comm());
 
@@ -2820,7 +2868,15 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
 
   /* Stratimikos setup */
   Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
+#if defined(HAVE_MUELU_EPETRA) and defined(HAVE_TRILINOSCOUPLINGS_MUELU)
+  // typedef double Scalar;
+  typedef int LocalOrdinal;
+  typedef int GlobalOrdinal;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Xpetra::EpetraNode Node;
   Stratimikos::enableMueLuRefMaxwell<LO,GO,Node>(linearSolverBuilder);                // Register MueLu as a Stratimikos preconditioner strategy.
+#endif
   linearSolverBuilder.setParameterList(rcp(&SList,false));
   RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory = createLinearSolveStrategy(linearSolverBuilder);
   RCP<Thyra::LinearOpWithSolveBase<double> > lows = Thyra::linearOpWithSolve<double>(*lowsFactory,At);
@@ -2835,7 +2891,6 @@ void TestMueLuMultiLevelPreconditioner_Stratimikos(char ProblemType[],
   solution_test(msg,CurlCurl,x,b,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
 
   xh = x;
-#endif
 }
 
 #endif  // HAVE_TRILINOSCOUPLINGS_STRATIMIKOS

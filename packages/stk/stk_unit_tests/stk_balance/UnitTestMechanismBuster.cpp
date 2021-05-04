@@ -98,7 +98,7 @@ TEST_F(MechanismMesh2x2, move_components)
         stk::tools::create_custom_aura(get_bulk(), get_bulk().mesh_meta_data().globally_shared_part(), "customAura");
 
         Zoltan2ParallelGraph zoltan2Graph;
-        stk::balance::internal::fill_zoltan2_parallel_graph(get_bulk(), graphSettings, localIds, zoltan2Graph);
+        stk::balance::internal::fill_zoltan2_parallel_graph(get_bulk(), graphSettings, zoltan2Graph);
 
         std::vector<int> componentsToMove = {0};
         stk::balance::internal::move_components(zoltan2Graph, localIds, get_bulk(), elementsToMove, componentsToMove);

@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -31,6 +31,7 @@ namespace Ioss {
     DB_OVERWRITE,
     DB_APPEND,
     DB_APPEND_GROUP,
+    DB_MODIFY,
     DB_ABORT,
     DB_ADD_SUFFIX,
     DB_ADD_SUFFIX_OVERWRITE

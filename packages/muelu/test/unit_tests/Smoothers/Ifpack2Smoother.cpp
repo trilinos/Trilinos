@@ -76,6 +76,59 @@ namespace MueLuTests {
     }
   }
 
+  // Tests interface to Ifpack2's Jacobi preconditioner.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, HardCodedResult_Jacobi, Scalar, LocalOrdinal, GlobalOrdinal, Node)
+  {
+#   include <MueLu_UseShortNames.hpp>
+    MUELU_TESTING_SET_OSTREAM;
+    MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
+    MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
+      if (Teuchos::ScalarTraits<Scalar>::isComplex) {
+        out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
+        return;
+      }
+      Teuchos::ParameterList paramList;
+      paramList.set("relaxation: type", "Jacobi");
+      paramList.set("relaxation: sweeps", (int) 1);
+      paramList.set("relaxation: damping factor", (double) 0.8);
+      paramList.set("relaxation: zero starting solution", false);
+
+      Ifpack2Smoother smoother("RELAXATION", paramList);
+
+      typename Teuchos::ScalarTraits<SC>::magnitudeType residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+
+      RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+      const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 6.3245553203367577133e-01;
+      switch (comm->getSize()) {
+        case 1:
+        case 4:
+          TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
+      } // switch
+
+      auto ifpack2prec = smoother.getPreconditioner();
+
+      // reuse setup & solve
+      residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      switch (comm->getSize()) {
+        case 1:
+        case 4:
+          TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
+      } // switch
+
+      // make sure the Ifpack2 preconditioner did not get replaced
+      TEUCHOS_ASSERT_EQUALITY(ifpack2prec.ptr(), smoother.getPreconditioner().ptr());
+
+    }
+  } // Jacobi
+
   // Tests interface to Ifpack2's Gauss-Seidel preconditioner.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Ifpack2Smoother, HardCodedResult_GaussSeidel, Scalar, LocalOrdinal, GlobalOrdinal, Node)
   {
@@ -83,7 +136,7 @@ namespace MueLuTests {
     MUELU_TESTING_SET_OSTREAM;
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
-      if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
+      if (Teuchos::ScalarTraits<Scalar>::isComplex) {
         out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
         return;
       }
@@ -109,6 +162,23 @@ namespace MueLuTests {
           break;
       } // switch
 
+      auto ifpack2prec = smoother.getPreconditioner();
+
+      // reuse setup & solve
+      residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      switch (comm->getSize()) {
+        case 1:
+        case 4:
+          TEST_FLOATING_EQUALITY(residualNorms,expectedNorm,1e-12);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
+      } // switch
+
+      // make sure the Ifpack2 preconditioner did not get replaced
+      TEUCHOS_ASSERT_EQUALITY(ifpack2prec.ptr(), smoother.getPreconditioner().ptr());
+
     }
   } // GaussSeidel
 
@@ -120,7 +190,7 @@ namespace MueLuTests {
     MUELU_TESTING_LIMIT_SCOPE(Scalar,GlobalOrdinal,Node);
     MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra) {
 
-      if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
+      if (Teuchos::ScalarTraits<Scalar>::isComplex) {
         out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
         return;
       }
@@ -149,6 +219,25 @@ namespace MueLuTests {
           break;
       } // switch
 
+      auto ifpack2prec = smoother.getPreconditioner();
+
+      // reuse setup & solve
+      residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      switch (comm->getSize()) {
+        case 1:
+          TEST_FLOATING_EQUALITY(residualNorms, expectedNorm1, 1e-12);
+          break;
+        case 4:
+          TEST_FLOATING_EQUALITY(residualNorms, expectedNorm4, 1e-12);
+          break;
+        default:
+          out << "Pass/Fail is checked only for 1 and 4 processes." << std::endl;
+          break;
+      } // switch
+
+      // make sure the Ifpack2 preconditioner did not get replaced
+      TEUCHOS_ASSERT_EQUALITY(ifpack2prec.ptr(), smoother.getPreconditioner().ptr());
+
     }
   } // GaussSeidel
 
@@ -163,7 +252,7 @@ namespace MueLuTests {
       using magnitude_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
       using TMT            = Teuchos::ScalarTraits<magnitude_type>;
 
-      if (Teuchos::ScalarTraits<Scalar>::name().find("complex") != std::string::npos) {
+      if (Teuchos::ScalarTraits<Scalar>::isComplex) {
         out << "Skipping Tpetra for SC type \"complex\"" << std::endl;
         return;
       }
@@ -180,6 +269,14 @@ namespace MueLuTests {
       const typename Teuchos::ScalarTraits<SC>::magnitudeType expectedNorm = 5.269156e-01;
       TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, (1e-7 < TMT::eps() ? 10*TMT::eps() : 1e-7));  // Compare to residual reported by ML
 
+      auto ifpack2prec = smoother.getPreconditioner();
+
+      // reuse setup & solve
+      residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      TEST_FLOATING_EQUALITY(residualNorms, expectedNorm, (1e-7 < TMT::eps() ? 10*TMT::eps() : 1e-7));  // Compare to residual reported by ML
+
+      // make sure the Ifpack2 preconditioner did not get replaced
+      TEUCHOS_ASSERT_EQUALITY(ifpack2prec.ptr(), smoother.getPreconditioner().ptr());
     }
   } // Chebyshev
 
@@ -205,6 +302,19 @@ namespace MueLuTests {
       } else {
         out << "Pass/Fail is only checked in serial." << std::endl;
       }
+
+      auto ifpack2prec = smoother.getPreconditioner();
+
+      // reuse setup & solve
+      residualNorms = testApply_A125_X1_RHS0(smoother, out, success);
+      if (comm->getSize() == 1) {
+        TEST_EQUALITY(residualNorms < 100*Teuchos::ScalarTraits<magnitude_type>::eps(), true);
+      } else {
+        out << "Pass/Fail is only checked in serial." << std::endl;
+      }
+
+      // make sure the Ifpack2 preconditioner did not get replaced
+      TEUCHOS_ASSERT_EQUALITY(ifpack2prec.ptr(), smoother.getPreconditioner().ptr());
 
     }
   } // ILU
@@ -469,7 +579,7 @@ namespace MueLuTests {
       matrixParams.set("matrixType","Laplace1D");
       matrixParams.set("nx",(GlobalOrdinal)20);// needs to be even
 
-      RCP<Matrix> A = TestHelpers::TpetraTestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
+      RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO>::BuildBlockMatrixAsPoint(matrixParams,Xpetra::UseTpetra);     
       ifpack2Params.set("smoother: use blockcrsmatrix storage",true);
       
       Ifpack2Smoother smoother("RELAXATION",ifpack2Params);
@@ -486,6 +596,7 @@ namespace MueLuTests {
 
 #define MUELU_ETI_GROUP(SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,NotSetup,SC,LO,GO,NO) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_Jacobi,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_GaussSeidel2,SC,LO,GO,NO) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(Ifpack2Smoother,HardCodedResult_Chebyshev,SC,LO,GO,NO) \

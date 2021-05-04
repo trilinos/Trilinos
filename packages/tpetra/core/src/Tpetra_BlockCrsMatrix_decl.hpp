@@ -196,19 +196,13 @@ public:
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           const_little_block_type;
   //! The type used to access nonconst vector blocks.
-  typedef Kokkos::View<impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-          little_vec_type;
-  typedef typename little_vec_type::HostMirror
-          little_host_vec_type;
+  typedef typename BMV::little_vec_type little_vec_type;
+  typedef typename BMV::little_host_vec_type little_host_vec_type;
+
   //! The type used to access const vector blocks.
-  typedef Kokkos::View<const impl_scalar_type*,
-                       Kokkos::LayoutRight,
-                       device_type,
-                       Kokkos::MemoryTraits<Kokkos::Unmanaged> >
-          const_little_vec_type;
+  typedef typename BMV::const_little_vec_type const_little_vec_type;
+  typedef typename BMV::const_little_host_vec_type const_host_little_vec_type;
+
 
   //@}
   //! \name Constructors and destructor
@@ -840,7 +834,13 @@ private:
     static constexpr bool value =
       std::is_same<typename Device::execution_space, Kokkos::Cuda>::value;
 #else
+    // Gonna badly fake this here for other execspaces
+    #if defined(KOKKOS_ENABLE_HIP)
+    static constexpr bool value =
+      std::is_same<typename Device::execution_space, Kokkos::Experimental::HIP>::value;
+    #else
     static constexpr bool value = false;
+    #endif
 #endif // defined(KOKKOS_ENABLE_CUDA)
   };
 

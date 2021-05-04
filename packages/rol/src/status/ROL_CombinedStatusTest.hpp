@@ -53,11 +53,10 @@
 
 namespace ROL {
 
-
-template <class Real>
+template<typename Real>
 class CombinedStatusTest : public StatusTest<Real> {
 private:
-  std::vector<ROL::Ptr<StatusTest<Real> > > status_;
+  std::vector<Ptr<StatusTest<Real>>> status_;
 
 public:
   CombinedStatusTest(void) {
@@ -68,26 +67,22 @@ public:
     status_.clear();
   }
 
-  void add(const ROL::Ptr<StatusTest<Real> > &status) {
+  void add(const Ptr<StatusTest<Real>> &status) {
     status_.push_back(status);
   }
 
   bool check( AlgorithmState<Real> &state ) {
-    int size = static_cast<int>(status_.size());
-    if (size==0) {
-      throw Exception::NotImplemented(">>> ROL::CombinedStatusTest::check: No status test has been added!");
-    }
+    ROL_TEST_FOR_EXCEPTION(status_.empty(),std::logic_error,
+      ">>> ROL::CombinedStatusTest::check : No status test has been added!");
 
     bool flag = true;
-    for (int i = 0; i < size; ++i) {
-      if (!(status_[i]->check(state))) {
-        flag = false;
-        break;
-      }
+    for (const auto & status : status_) {
+      flag = status->check(state);
+      if (!flag) break;
     }
 
-    // true  = "not converged"
-    // false = "converged"
+    // true  = "continue iteration"
+    // false = "stop iteration"
     return flag;
   }
 

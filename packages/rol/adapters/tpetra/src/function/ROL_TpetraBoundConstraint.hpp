@@ -171,10 +171,11 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
+                const Real zero(0);
                 const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)<=L_(i,j)+eps_) {
-                        Y_(i,j) = 0.0;
+                        Y_(i,j) = zero;
                     }
                 }
             }
@@ -196,10 +197,11 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
+                const Real zero(0);
                 const int M = U_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)>=U_(i,j)-eps_) {
-                        Y_(i,j) = 0.0;
+                        Y_(i,j) = zero;
                     }
                 }
             }
@@ -222,13 +224,14 @@ namespace ROL {
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
+                const Real zero(0);
                 const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
                     if(X_(i,j)<=L_(i,j)+eps_) {
-                        Y_(i,j) = 0.0;
+                        Y_(i,j) = zero;
                     }
                     else if(X_(i,j)>=U_(i,j)-eps_) {
-                        Y_(i,j) = 0.0;
+                        Y_(i,j) = zero;
                     }
                 }
             }
@@ -245,17 +248,18 @@ namespace ROL {
             V X_; // Optimization variable
             V L_; // Lower bounds
 
-            Real eps_;
+            Real xeps_, geps_;
 
-            GradPruneLowerActive(V &Y, const V &G, const V &X, const V &L,Real eps) :
-                Y_(Y), G_(G), X_(X), L_(L), eps_(eps) {}
+            GradPruneLowerActive(V &Y, const V &G, const V &X, const V &L,Real xeps, Real geps) :
+                Y_(Y), G_(G), X_(X), L_(L), xeps_(xeps), geps_(geps) {}
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
+                const Real zero(0);
                 const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
-                    if( (X_(i,j)<=L_(i,j)+eps_) && G_(i,j) > 0.0 ) {
-                        Y_(i,j) = 0.0;
+                    if( (X_(i,j)<=L_(i,j)+xeps_) && (G_(i,j)>geps_) ) {
+                        Y_(i,j) = zero;
                     }
                 }
             }
@@ -272,17 +276,18 @@ namespace ROL {
             V X_; // Optimization variable
             V U_; // Upper bounds
 
-            Real eps_;
+            Real xeps_, geps_;
 
-            GradPruneUpperActive(V &Y, const V &G, const V &X, const V &U, Real eps) :
-                Y_(Y), G_(G), X_(X), U_(U), eps_(eps) {}
+            GradPruneUpperActive(V &Y, const V &G, const V &X, const V &U, Real xeps, Real geps) :
+                Y_(Y), G_(G), X_(X), U_(U), xeps_(xeps), geps_(geps) {}
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
+                const Real zero(0);
                 const int M = U_.extent(1);
                 for(int j=0;j<M;++j) {
-                    if( (X_(i,j)>=U_(i,j)-eps_) && G_(i,j) < 0.0 ) {
-                        Y_(i,j) = 0.0;
+                    if( (X_(i,j)>=U_(i,j)-xeps_) && (G_(i,j)<-geps_) ) {
+                        Y_(i,j) = zero;
                     }
                 }
             }
@@ -299,20 +304,21 @@ namespace ROL {
             V X_; // Optimization variable
             V L_; // Lower bounds
             V U_; // Upper bounds
-            Real eps_;
+            Real xeps_, geps_;
 
-            GradPruneActive(V &Y, const V &G, const V &X, const V &L, const V &U, Real eps) :
-                Y_(Y), G_(G), X_(X), L_(L), U_(U), eps_(eps) {}
+            GradPruneActive(V &Y, const V &G, const V &X, const V &L, const V &U, Real xeps, Real geps) :
+                Y_(Y), G_(G), X_(X), L_(L), U_(U), xeps_(xeps), geps_(geps) {}
 
             KOKKOS_INLINE_FUNCTION
             void operator() (const int i) const {
+                const Real zero(0);
                 const int M = L_.extent(1);
                 for(int j=0;j<M;++j) {
-                    if(( X_(i,j)<=L_(i,j)+eps_) && (G_(i,j)>0.0))  {
-                        Y_(i,j) = 0.0;
+                    if(( X_(i,j)<=L_(i,j)+xeps_) && (G_(i,j)>geps_))  {
+                        Y_(i,j) = zero;
                     }
-                    else if(( X_(i,j)>=U_(i,j)-eps_) && (G_(i,j)<0.0) ) {
-                        Y_(i,j) = 0.0;
+                    else if(( X_(i,j)>=U_(i,j)-xeps_) && (G_(i,j)<-geps_) ) {
+                        Y_(i,j) = zero;
                     }
                 }
             }
@@ -412,7 +418,7 @@ namespace ROL {
             }
 
 
-            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
+            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) {
                 auto xp = getVector(x);
                 auto vp = getVector(v);
 
@@ -426,7 +432,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
+            void pruneUpperActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) {
                 auto xp = getVector(x);
                 auto vp = getVector(v);
 
@@ -440,7 +446,7 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps) {
+            void pruneActive(Vector<Real> &v, const Vector<Real> &x, Real eps = Real(0)) {
                 auto xp = getVector(x);
                 auto vp = getVector(v);
 
@@ -454,47 +460,47 @@ namespace ROL {
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
+            void pruneLowerActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
                 auto xp = getVector(x);
                 auto gp = getVector(g);
                 auto vp = getVector(v);
-               Real epsn = std::min(scale_*eps,this->min_diff_);
+               Real epsn = std::min(scale_*xeps,this->min_diff_);
 
                 ViewType x_lcl = xp->getLocalViewDevice();
                 ViewType g_lcl = gp->getLocalViewDevice();
                 ViewType v_lcl = vp->getLocalViewDevice();
 
-                KokkosStructs::GradPruneLowerActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,epsn);
+                KokkosStructs::GradPruneLowerActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
+             void pruneUpperActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
                 auto xp = getVector(x);
                 auto gp = getVector(g);
                 auto vp = getVector(v);
-                Real epsn = std::min(scale_*eps,this->min_diff_);
+                Real epsn = std::min(scale_*xeps,this->min_diff_);
 
                 ViewType x_lcl = xp->getLocalViewDevice();
                 ViewType g_lcl = gp->getLocalViewDevice();
                 ViewType v_lcl = vp->getLocalViewDevice();
 
-                KokkosStructs::GradPruneUpperActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,u_,epsn);
+                KokkosStructs::GradPruneUpperActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,u_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }
 
-            void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps) {
+            void pruneActive(Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real xeps = Real(0), Real geps = Real(0)) {
                 auto xp = getVector(x);
                 auto gp = getVector(g);
                 auto vp = getVector(v);
-                Real epsn = std::min(scale_*eps,this->min_diff_);
+                Real epsn = std::min(scale_*xeps,this->min_diff_);
 
                 ViewType x_lcl = xp->getLocalViewDevice();
                 ViewType g_lcl = gp->getLocalViewDevice();
                 ViewType v_lcl = vp->getLocalViewDevice();
 
-                KokkosStructs::GradPruneActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn);
+                KokkosStructs::GradPruneActive<Real,ViewType> prune(v_lcl,g_lcl,x_lcl,l_,u_,epsn,geps);
 
                 Kokkos::parallel_for(lclDim_,prune);
             }

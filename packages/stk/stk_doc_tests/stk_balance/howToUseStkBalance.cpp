@@ -226,7 +226,6 @@ public:
 
     virtual double getGraphEdgeWeight(stk::topology element1Topology, stk::topology element2Topology) const { return 1.0; }
 
-    virtual bool areVertexWeightsProvidedInAVector() const { return !areVertexWeightsProvidedViaFields(); }
     virtual bool areVertexWeightsProvidedViaFields() const { return true; }
 
     virtual int getGraphVertexWeight(stk::topology type) const { return 1; }

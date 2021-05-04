@@ -44,11 +44,8 @@
 #ifndef ROL_NULL_SPACE_OPERATOR_H
 #define ROL_NULL_SPACE_OPERATOR_H
 
+#include "ROL_LinearOperator.hpp"
 #include "ROL_Constraint.hpp"
-#include "ROL_PartitionedVector.hpp"
-#include "ROL_Krylov.hpp"
-#include "ROL_AugmentedSystemOperator.hpp"
-#include "ROL_AugmentedSystemPrecOperator.hpp"
 
 /** @ingroup func_group
     \class ROL::NullSpaceOperator
@@ -63,111 +60,66 @@ template <class Real>
 class NullSpaceOperator : public LinearOperator<Real> {
 private:
   const Ptr<Constraint<Real>> con_;
-  const bool useInexact_;
+  const Ptr<Vector<Real>> x_;
+  const bool useAugSys_;
 
-  Ptr<LinearOperator<Real>> augsys_, augsysprec_;
-  Ptr<Krylov<Real>> krylov_;
-  mutable int iterKrylov_;
-  mutable int flagKrylov_;
-
-  mutable Ptr<Vector<Real>> v1_;
-  mutable Ptr<Vector<Real>> v2_;
-  mutable Ptr<PartitionedVector<Real>> vv_;
   mutable Ptr<Vector<Real>> b1_;
+  mutable Ptr<Vector<Real>> b1dual_;
   mutable Ptr<Vector<Real>> b2_;
-  mutable Ptr<PartitionedVector<Real>> bb_;
-  mutable Ptr<Vector<Real>> w1_;
-  mutable Ptr<Vector<Real>> w2_;
-  mutable Ptr<PartitionedVector<Real>> ww_;
   mutable Ptr<Vector<Real>> mul_;
 
   int dim_;
   Real b1sqr_;
 
-  void solveAugmentedSystem(Vector<Real> &v,
-                            Vector<Real> &b,
-                            Real &tol,
-                            bool refine = false) const {
-    if( refine ) {
-      // TODO: Make sure this tol is actually ok...
-      Real origTol = tol;
-      ww_->set(v);
-      augsys_->apply(*vv_, *ww_, tol);
-      tol = origTol;
-      b.axpy( static_cast<Real>(-1), *vv_ );
-    }
-    vv_->zero();
-    // If inexact, change tolerance
-    if( useInexact_ ) {
-      krylov_->resetAbsoluteTolerance(tol);
-    }
-
-    flagKrylov_ = 0;
-    tol = krylov_->run(*vv_,*augsys_,b,*augsysprec_,iterKrylov_,flagKrylov_);
-
-    if( refine ) {
-      v.plus(*vv_);
-    }
-    else {
-      v.set(*vv_);
-    }
-  }
-
 public:
   virtual ~NullSpaceOperator() {}
   NullSpaceOperator(const Ptr<Constraint<Real>> &con,
-                    const Ptr<Vector<Real>>     &dom,
-                    const Ptr<Vector<Real>>     &ran)
-    : con_(con), useInexact_(false) {
-    iterKrylov_ = 0;
-    flagKrylov_ = 0;
-    dim_        = ran->dimension();
-    if (dim_==1) {
+                    const Vector<Real> &dom,
+                    const Vector<Real> &ran,
+                    const bool useAugSys = false)
+    : con_(con), x_(dom.clone()), useAugSys_(useAugSys) {
+    x_->set(dom);
+    dim_ = ran.dimension();
+    if (dim_==1 && !useAugSys_) {
       Real tol = std::sqrt(ROL_EPSILON<Real>());
-      b1_ = dom->dual().clone();
-      b2_ = ran->clone(); b2_->setScalar(1.0);
-      con_->applyAdjointJacobian(*b1_,*b2_,*dom,tol);
+      b1_     = dom.dual().clone();
+      b1dual_ = dom.clone();
+      b2_     = ran.dual().clone(); b2_->setScalar(1.0);
+      con_->applyAdjointJacobian(*b1_,*b2_,dom,tol);
+      b1dual_->set(b1_->dual());
       b1sqr_ = b1_->dot(*b1_);
     }
     else {
-      ParameterList list;
-      Real atol = static_cast<Real>(1e-12);
-      Real rtol = static_cast<Real>(1e-2);
-      list.sublist("General").sublist("Krylov").set("Type", "GMRES");
-      list.sublist("General").sublist("Krylov").set("Absolute Tolerance", atol);
-      list.sublist("General").sublist("Krylov").set("Relative Tolerance", rtol);
-      list.sublist("General").sublist("Krylov").set("Iteration Limit", 200);
-      krylov_ = KrylovFactory<Real>(list);
+      b1_  = dom.dual().clone();
+      b2_  = ran.clone();
+      mul_ = ran.dual().clone();
+    }
+  }
 
-      augsys_ = makePtr<AugmentedSystemOperator<Real>>(con,dom);
-      augsysprec_ = makePtr<AugmentedSystemPrecOperator<Real>>(con,dom);
+  NullSpaceOperator(const Ptr<Constraint<Real>>   &con,
+                    const Ptr<const Vector<Real>> &dom,
+                    const Ptr<const Vector<Real>> &ran)
+    : NullSpaceOperator(con,*dom,*ran) {}
 
-      v1_ = dom->dual().clone();
-      v2_ = ran->dual().clone();
-      vv_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({v1_, v2_}));
-
-      w1_ = dom->dual().clone();
-      w2_ = ran->dual().clone();
-      ww_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({w1_, w2_}));
-
-      b1_ = dom->dual().clone();
-      b2_ = ran->clone();
-      bb_ = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({b1_, b2_}));
-
-      mul_ = ran->dual().clone();
+  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    x_->set(x);
+    if (dim_==1 && !useAugSys_) {
+      Real tol = std::sqrt(ROL_EPSILON<Real>());
+      con_->applyAdjointJacobian(*b1_,*b2_,x,tol);
+      b1dual_->set(b1_->dual());
+      b1sqr_ = b1_->dot(*b1_);
     }
   }
 
   virtual void apply( Vector<Real> &Hv, const Vector<Real> &v, Real &tol ) const {
-    if (dim_==1) {
-      Real dot = v.dot(*b1_);
+    if (dim_==1 && !useAugSys_) {
+      Real dot = v.dot(*b1dual_);
       Hv.set(v);
-      Hv.axpy(-dot/b1sqr_,*b1_);
+      Hv.axpy(-dot/b1sqr_,*b1dual_);
     }
     else {
-      b1_->set(v); b2_->zero();
-      Ptr<PartitionedVector<Real>> sol = makePtr<PartitionedVector<Real>>(std::vector<Ptr<Vector<Real>>>({makePtrFromRef(Hv),mul_}));
-      solveAugmentedSystem(*sol,*bb_,tol);
+      b1_->set(v.dual()); b2_->zero();
+      con_->solveAugmentedSystem(Hv,*mul_,*b1_,*b2_,*x_,tol);
     }
   }
 

@@ -334,7 +334,8 @@ private:
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
   typedef typename block_crs_matrix_type::little_block_type little_block_type;
   typedef typename block_crs_matrix_type::little_vec_type little_vec_type;
-  typedef typename little_vec_type::HostMirror little_host_vec_type;
+  typedef typename block_crs_matrix_type::little_host_vec_type little_host_vec_type;
+  typedef typename block_crs_matrix_type::const_host_little_vec_type const_host_little_vec_type;
 
   void allocate_L_and_U_blocks();
   void initAllValues (const block_crs_matrix_type& A);

@@ -37,6 +37,7 @@
 #define  STK_COPYTRANSFER_HPP
 
 #include <stk_transfer/TransferBase.hpp>
+#include <stk_util/parallel/CommSparse.hpp>
 #include "SearchById.hpp"
 #include "TransferCopyByIdMeshAdapter.hpp"
 
@@ -67,17 +68,19 @@ public :
     :m_search(search_in)
     ,m_mesha(mesha_in)
     ,m_meshb(meshb_in)
+    ,m_commSparse(mesha_in.comm())
   {
     setup_translators();
   }
 
-  virtual ~TransferCopyById() {};
+  virtual ~TransferCopyById() {}
   virtual void coarse_search()
   {
     m_search.do_search(m_mesha,m_meshb,m_key_to_target_processor);
+    initialize_commsparse_buffers();
   }
-  virtual void communication() {};
-  virtual void local_search() {};
+  virtual void communication() {}
+  virtual void local_search() {}
   virtual void apply()
   {
     do_transfer();
@@ -93,18 +96,22 @@ public :
   static const stk::transfer::DataTypeTranslator<double> translateDouble;
 
 private:
+  void initialize_commsparse_buffers();
+  void pack_commsparse();
   void do_transfer();
-  void send_fields(CommSparse& commSparse);
-  void receive_fields(CommSparse& commSparse);
+  void pack_send_fields(CommSparse& commSparse);
+  void receive_fields(MeshIDSet & remoteKeys);
+  void check_received_keys(MeshIDSet & remoteKeys);
   void local_copy(const Mesh_ID key);
   void pack_fields(const int target_proc, const Mesh_ID key, CommSparse& commSparse);
-  void unpack_fields(MeshIDSet& remote_keys, const int recv_proc, CommSparse& commSparse);
-  void unpack_and_copy_fields(const int recv_proc, CommSparse& commSparse, CopyTransferUnpackInfo& unpackInfo);
-  void unpack_and_copy_fields_with_compatibility(const int recv_proc, CommSparse& commSparse, CopyTransferUnpackInfo& unpackInfo);
+  void unpack_fields(MeshIDSet & remoteKeys, const int recv_proc, CommBuffer& recvBuffer);
+  void unpack_and_copy_fields(CommBuffer& recvBuffer, CopyTransferUnpackInfo& unpackInfo);
+  void unpack_and_copy_fields_with_compatibility(CommBuffer& recvBuffer, CopyTransferUnpackInfo& unpackInfo);
 
   SearchById & m_search;
   TransferCopyByIdMeshAdapter & m_mesha;
   TransferCopyByIdMeshAdapter & m_meshb;
+  CommSparse m_commSparse;
   KeyToTargetProcessor m_key_to_target_processor;
   unsigned m_numFields;
   unsigned m_errorCount;

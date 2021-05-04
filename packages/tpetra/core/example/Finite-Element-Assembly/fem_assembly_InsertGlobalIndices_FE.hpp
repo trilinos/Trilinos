@@ -472,7 +472,7 @@ int executeInsertGlobalIndicesFESPKokkos_(const Teuchos::RCP<const Teuchos::Comm
     rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
   auto localMatrix  = fe_matrix->getLocalMatrix();
-  auto localRHS     = rhs->getLocalViewDevice();
+  auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto localMap     = owned_plus_shared_map->getLocalMap();
   auto localColMap  = fe_matrix->getColMap()->getLocalMap();
 

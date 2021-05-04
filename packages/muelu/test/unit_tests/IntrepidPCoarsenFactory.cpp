@@ -1835,6 +1835,8 @@ bool test_representative_basis(Teuchos::FancyOStream &out, const std::string & n
     for (int vertexOrdinal=0; vertexOrdinal<vertexCount; vertexOrdinal++)
     {
       CellTools::getReferenceVertex(refCellVertex, cellTopo, vertexOrdinal);
+      //UVM used here, accessing vertex coordinates on host that were populated on device.
+      Kokkos::fence();
       for (int d=0; d<spaceDim; d++)
       {
         refCellVertices(vertexOrdinal,d) = refCellVertex(d);

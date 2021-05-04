@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -6,6 +6,7 @@
 
 #include <Ioss_Field.h>
 #include <Ioss_FieldManager.h>
+#include <Ioss_Sort.h>
 #include <cassert>
 #include <cstddef>
 #include <map>
@@ -103,7 +104,7 @@ int Ioss::FieldManager::describe(NameList *names) const
     the_count++;
   }
   if (the_count > 0) {
-    std::sort(names->begin(), names->end());
+    Ioss::sort(names->begin(), names->end());
   }
   return the_count;
 }
@@ -126,7 +127,7 @@ int Ioss::FieldManager::describe(Ioss::Field::RoleType role, NameList *names) co
     }
   }
   if (the_count > 0) {
-    std::sort(names->begin(), names->end());
+    Ioss::sort(names->begin(), names->end());
   }
   return the_count;
 }

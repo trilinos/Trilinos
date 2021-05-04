@@ -46,8 +46,8 @@
     <Parameter name="Height"            type="double"  value="10.0"  />
     <Parameter name="X0"                type="double"  value="-5.0"  />
     <Parameter name="Y0"                type="double"  value="-5.0"  />
-    <Parameter name="NX"                type="int"     value="64"    />
-    <Parameter name="NY"                type="int"     value="64"    />
+    <Parameter name="NX"                type="int"     value="20"    />
+    <Parameter name="NY"                type="int"     value="20"    />
     <Parameter name="Partition type"    type="int"     value="1"     />
   </ParameterList>
 
@@ -67,11 +67,11 @@
 
   <!-- ===========  SOL PARAMETER SUBLIST  =========== -->
   <ParameterList name="SOL">
-    <Parameter name="Stochastic Component Type" type="string" value="Mean Value"   />
+    <Parameter name="Type" type="string" value="Mean Value"   />
     <!--
-    <Parameter name="Stochastic Component Type" type="string" value="Risk Averse"  />
-    <Parameter name="Stochastic Component Type" type="string" value="Risk Neutral" />
-    <Parameter name="Stochastic Component Type" type="string" value="Probability"  />
+    <Parameter name="Type" type="string" value="Risk Averse"  />
+    <Parameter name="Type" type="string" value="Risk Neutral" />
+    <Parameter name="Type" type="string" value="Probability"  />
     -->
     <ParameterList name="Risk Measure">
       <Parameter name="Name" type="string" value="Entropic Risk" />
@@ -129,6 +129,7 @@
   <!-- ===========  BEGIN GENERAL INPUT PARAMETER SUBLIST  =========== -->
   <ParameterList name="General">
     <Parameter name="Scale for Epsilon Active Sets"          type="double" value="1.0"   />
+    <Parameter name="Output Level"                           type="int"    value="1"     />
     <!-- ===========  USE INEXACT OBJECTIVE OR DERIVATIVES  =========== -->
     <Parameter name="Inexact Objective Function"             type="bool" value="false" />
     <Parameter name="Inexact Gradient"                       type="bool" value="false" />

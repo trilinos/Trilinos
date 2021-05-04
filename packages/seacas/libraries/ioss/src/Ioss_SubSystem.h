@@ -10,6 +10,7 @@
 #include <Ioss_Assembly.h>
 #include <Ioss_Blob.h>
 #include <Ioss_CommSet.h>
+#include <Ioss_Compare.h>
 #include <Ioss_CoordinateFrame.h>
 #include <Ioss_DBUsage.h>
 #include <Ioss_DatabaseIO.h>
@@ -36,4 +37,5 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Utils.h>
 #include <Ioss_VariableType.h>
+
 #endif

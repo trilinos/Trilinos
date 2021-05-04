@@ -124,8 +124,7 @@ namespace Intrepid2 {
     */
     virtual TensorWeightDataType allocateCubatureWeights() const override
     {
-      /// KK: this needs to be updated with nate tensor work      
-      using WeightDataType = Data<weightValueType,typename DeviceType::execution_space>;
+      using WeightDataType = Data<weightValueType,DeviceType>;
       
       std::vector< WeightDataType > cubatureWeightComponents(numCubatures_);
       for (ordinal_type i=0;i<numCubatures_;++i)

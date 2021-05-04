@@ -28,16 +28,10 @@ namespace Tempus {
  *  affecting the Stepper correctness, performance, accuracy and stability
  *  (i.e., USER BEWARE!!).
  *
- *  Below is the Subcycling algorithm with the locations of the ModifierX calls
- *  italicized.
- *
- *  \f{algorithm}{
- *  \renewcommand{\thealgorithm}{}
- *  \caption{Subcycling with the locations of the application actions indicated}
- *  \begin{algorithmic}[1]
- *    \State ToDO
- *  \end{algorithmic}
- *  \f}
+ *  The locations of the StepperSubcyclingModifierXBase::MODIFIER_TYPE
+ *  which correspond to the AppAction calls
+ *  (StepperSubcyclingAppAction::ACTION_LOCATION) are shown in the
+ *  algorithm documentation of the StepperSubcycling.
  */
 
 template<class Scalar>

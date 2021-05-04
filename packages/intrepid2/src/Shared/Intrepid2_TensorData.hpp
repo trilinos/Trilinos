@@ -60,10 +60,10 @@ namespace Intrepid2
   /** \class Intrepid2::TensorData
       \brief View-like interface to tensor data; tensor components are stored separately and multiplied together at access time.
   */
-  template<class Scalar, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class Scalar, typename DeviceType>
   class TensorData {
   protected:
-    Kokkos::Array< Data<Scalar,ExecSpaceType>, Parameters::MaxTensorComponents> tensorComponents_;
+    Kokkos::Array< Data<Scalar,DeviceType>, Parameters::MaxTensorComponents> tensorComponents_;
     Kokkos::Array<ordinal_type, 7> extents_;
     Kokkos::Array<Kokkos::Array<ordinal_type, Parameters::MaxTensorComponents>, 7> entryModulus_;
     ordinal_type rank_;
@@ -122,7 +122,7 @@ namespace Intrepid2
     When <var>separateFirstComponent</var> is true, all components are required to have rank 1, and TensorData has rank 2, with the first argument reserved for the first component.  The second argument is indexed precisely as described above, omitting the first component.
     */
     template<size_t numTensorComponents>
-    TensorData(Kokkos::Array< Data<Scalar,ExecSpaceType>, numTensorComponents> tensorComponents, bool separateFirstComponent = false)
+    TensorData(Kokkos::Array< Data<Scalar,DeviceType>, numTensorComponents> tensorComponents, bool separateFirstComponent = false)
     :
     separateFirstComponent_(separateFirstComponent),
     numTensorComponents_(numTensorComponents)
@@ -144,7 +144,7 @@ namespace Intrepid2
      
     When <var>separateFirstComponent</var> is true, all components are required to have rank 1, and TensorData has rank 2, with the first argument reserved for the first component.  The second argument is indexed precisely as described above, omitting the first component.
     */
-    TensorData(std::vector< Data<Scalar,ExecSpaceType> > tensorComponents, bool separateFirstComponent = false)
+    TensorData(std::vector< Data<Scalar,DeviceType> > tensorComponents, bool separateFirstComponent = false)
     :
     separateFirstComponent_(separateFirstComponent),
     numTensorComponents_(tensorComponents.size())
@@ -163,9 +163,9 @@ namespace Intrepid2
      
       Simple constructor for trivial tensor-product structure.  The TensorData object will have precisely the same nominal data layout as the provided <var>tensorComponent</var>.
     */
-    TensorData(Data<Scalar,ExecSpaceType> tensorComponent)
+    TensorData(Data<Scalar,DeviceType> tensorComponent)
     :
-    TensorData(Kokkos::Array< Data<Scalar,ExecSpaceType>, 1>({tensorComponent}), false)
+    TensorData(Kokkos::Array< Data<Scalar,DeviceType>, 1>({tensorComponent}), false)
     {}
     
     /**
@@ -179,19 +179,41 @@ namespace Intrepid2
     rank_(0)
     {}
     
-    /**
-     \brief Copy-like constructor for differing execution spaces.  This performs a deep copy of the underlying data.
-    */
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    TensorData(const TensorData<Scalar,OtherExecSpaceType> &tensorData)
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    TensorData(const TensorData<Scalar,OtherDeviceType> &tensorData)
     {
       if (tensorData.isValid())
       {
         numTensorComponents_ = tensorData.numTensorComponents();
         for (ordinal_type r=0; r<numTensorComponents_; r++)
         {
-          Data<Scalar,OtherExecSpaceType> otherTensorComponent = tensorData.getTensorComponent(r);
-          tensorComponents_[r] = Data<Scalar,ExecSpaceType>(otherTensorComponent);
+          Data<Scalar,OtherDeviceType> otherTensorComponent = tensorData.getTensorComponent(r);
+          tensorComponents_[r] = Data<Scalar,DeviceType>(otherTensorComponent);
+        }
+        initialize();
+      }
+      else
+      {
+        extents_ = Kokkos::Array<ordinal_type,7>{0,0,0,0,0,0,0};
+        rank_    = 0;
+      }
+    }
+    
+    /**
+     \brief Copy-like constructor for differing execution spaces.  This performs a deep copy of the underlying data.
+    */
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
+    TensorData(const TensorData<Scalar,OtherDeviceType> &tensorData)
+    {
+      if (tensorData.isValid())
+      {
+        numTensorComponents_ = tensorData.numTensorComponents();
+        for (ordinal_type r=0; r<numTensorComponents_; r++)
+        {
+          Data<Scalar,OtherDeviceType> otherTensorComponent = tensorData.getTensorComponent(r);
+          tensorComponents_[r] = Data<Scalar,DeviceType>(otherTensorComponent);
         }
         initialize();
       }
@@ -208,7 +230,7 @@ namespace Intrepid2
      \return the requested tensor component.
     */
     KOKKOS_INLINE_FUNCTION
-    const Data<Scalar,ExecSpaceType> & getTensorComponent(const ordinal_type &r) const
+    const Data<Scalar,DeviceType> & getTensorComponent(const ordinal_type &r) const
     {
       return tensorComponents_[r];
     }

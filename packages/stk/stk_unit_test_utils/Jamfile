@@ -147,6 +147,7 @@ lib stk_unit_test_utils
       /sierra/stk_util//stk_util_parallel
       /sierra/stk_util//stk_util_util
       /tpl/gtest//gtest
+      /tpl/gtest//gmock
     ]
   : 
     [ ifuserbuild

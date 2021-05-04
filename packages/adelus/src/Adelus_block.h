@@ -50,8 +50,8 @@
 #ifndef __ADELUS_BLOCK_H__
 #define __ADELUS_BLOCK_H__
 
-#define DEFBLKSZ 64
+//#define DEFBLKSZ 64
 //#define DEFBLKSZ 96   //TODO: allow users to input block size
-//#define DEFBLKSZ 128
+#define DEFBLKSZ 128
 
 #endif

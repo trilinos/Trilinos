@@ -50,15 +50,33 @@
 #endif
 
 #ifndef FROSCH_ASSERT
-    #define FROSCH_ASSERT(A,S) TEUCHOS_TEST_FOR_EXCEPTION(!(A),std::logic_error,S);
+    #define FROSCH_ASSERT(COND,MSG) \
+    { \
+      const bool throw_exception = !(COND); \
+      if(throw_exception) { \
+        Teuchos::TestForException_incrThrowNumber(); \
+        std::ostringstream omsg; \
+        omsg \
+          << std::setw(FROSCH_OUTPUT_INDENT) << " " << __FILE__ << ":" << __LINE__ << ":\n\n" \
+          << "Throw number = " << Teuchos::TestForException_getThrowNumber() \
+          << "\n\n" \
+          << std::setw(FROSCH_OUTPUT_INDENT) << " " << "Throw test that evaluated to true: "#COND \
+          << "\n\n" \
+          << std::setw(FROSCH_OUTPUT_INDENT) << " " << "[ERROR] " << MSG; \
+        const std::string &omsgstr = omsg.str(); \
+        TEUCHOS_STORE_STACKTRACE(); \
+        Teuchos::TestForException_break(omsgstr); \
+        throw std::logic_error(omsgstr); \
+      } \
+    }
 #endif
 
 #ifndef FROSCH_WARNING
-    #define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << std::setw(FROSCH_OUTPUT_INDENT) << " " << CLASS << " : WARNING: " << OUTPUT << std::endl;
+    #define FROSCH_WARNING(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cerr << std::setw(FROSCH_OUTPUT_INDENT) << " " << "[WARNING] " << CLASS << ": " << OUTPUT << std::endl;
 #endif
 
 #ifndef FROSCH_NOTIFICATION
-    #define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_OUTPUT_INDENT) << " " << CLASS << " : NOTIFICATION: " << OUTPUT << std::endl;
+    #define FROSCH_NOTIFICATION(CLASS,VERBOSE,OUTPUT) if (VERBOSE) std::cout << std::setw(FROSCH_OUTPUT_INDENT) << " " << "[NOTIFICATION] " << CLASS << ": " << OUTPUT << std::endl;
 #endif
 
 #ifndef FROSCH_TEST_OUTPUT

@@ -59,13 +59,13 @@ Ifpack2_UnitTestTemplate.cpp
 Ifpack2_UnitTestTriDiSolver.cpp
 )
 
-IF(${PACKAGE_NAME}_ENABLE_HYPRE) 
+IF(${PACKAGE_NAME}_ENABLE_HYPRE AND ${PACKAGE_NAME}_ENABLE_MPI)
   APPEND_SET(SOURCES Ifpack2_UnitTestHypre.cpp)
 ENDIF()
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
   SOURCE_DIR ${Ifpack2_SOURCE_DIR}/test/data
-  SOURCE_FILES Dfactor_bw2.mm Dfactor_bw3.mm Dfactor_bw4.mm Dfactor_bw5.mm Dfactor_bw6.mm Dfactor_bw7.mm Dfactor_bw8.mm Lfactor_bw2.mm Lfactor_bw3.mm Lfactor_bw4.mm Lfactor_bw5.mm Lfactor_bw6.mm Lfactor_bw7.mm Lfactor_bw8.mm Ufactor_bw2.mm Ufactor_bw3.mm Ufactor_bw4.mm Ufactor_bw5.mm Ufactor_bw6.mm Ufactor_bw7.mm Ufactor_bw8.mm AdditiveSchwarzMatlab_A.mm AdditiveSchwarzMatlab_rhs.mm AdditiveSchwarzMatlab_rowmap.mm AdditiveSchwarzILU_NO_sol.mm AdditiveSchwarzILU_O_sol.mm AdditiveSchwarzSGS_NO_sol.mm AdditiveSchwarzSGS_O_sol.mm 
+  SOURCE_FILES Dfactor_bw2.mm Dfactor_bw3.mm Dfactor_bw4.mm Dfactor_bw5.mm Dfactor_bw6.mm Dfactor_bw7.mm Dfactor_bw8.mm Lfactor_bw2.mm Lfactor_bw3.mm Lfactor_bw4.mm Lfactor_bw5.mm Lfactor_bw6.mm Lfactor_bw7.mm Lfactor_bw8.mm Ufactor_bw2.mm Ufactor_bw3.mm Ufactor_bw4.mm Ufactor_bw5.mm Ufactor_bw6.mm Ufactor_bw7.mm Ufactor_bw8.mm AdditiveSchwarzMatlab_A.mm AdditiveSchwarzMatlab_rhs.mm AdditiveSchwarzMatlab_rowmap.mm AdditiveSchwarzILU_NO_sol.mm AdditiveSchwarzILU_O_sol.mm AdditiveSchwarzSGS_NO_sol.mm AdditiveSchwarzSGS_O_sol.mm
   )
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -84,7 +84,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
 		RBILUK
-		SOURCES 
+		SOURCES
 		Ifpack2_UnitTestRBILUK.cpp
 		${TEUCHOS_STD_UNIT_TEST_MAIN}
 		ARGS ""
@@ -94,13 +94,13 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 #TRIBITS_ADD_EXECUTABLE(
 #    Distributed_SGS
-#    SOURCES Ifpack2_DistributedRelaxationTest.cpp 
+#    SOURCES Ifpack2_DistributedRelaxationTest.cpp
 #  )
 
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ChebyshevConvergence
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTestChebyshev2.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -113,7 +113,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 # processes.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   AdditiveSchwarzBug5963
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTestAdditiveSchwarzBug5963.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -124,7 +124,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   RILUKSingleProcessUnitTests
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTestSingleProcessRILUK.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -136,7 +136,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     BlockTriDiContainerUnitAndPerfTests
-    SOURCES 
+    SOURCES
     Ifpack2_UnitTestBlockTriDiContainer.cpp
     ARGS ""
     COMM serial mpi
@@ -146,13 +146,13 @@ IF(${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
 ENDIF()
 
 ASSERT_DEFINED (${PACKAGE_NAME}_ENABLE_ML)
-# mfh 01 Jan 2017: 
+# mfh 01 Jan 2017:
 # Fix for https://github.com/trilinos/Trilinos/issues/935
 ASSERT_DEFINED (${PROJECT_NAME}_ENABLE_Epetra)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SolverFactory
-  SOURCES 
+  SOURCES
   Ifpack2_SolverFactory.cpp
   ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -163,7 +163,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LocalSparseTriangularSolver
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTestLocalSparseTriangularSolver.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -174,7 +174,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   LocalSparseTriangularSolver2
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTestLocalSparseTriangularSolver2.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -189,7 +189,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ContainerFactory
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTestContainerFactory.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -203,7 +203,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Issue234
-  SOURCES 
+  SOURCES
     Ifpack2_UnitTest234.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -214,7 +214,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Issue762
-  SOURCES 
+  SOURCES
     762.cpp
     ${TEUCHOS_STD_UNIT_TEST_MAIN}
   ARGS ""
@@ -229,7 +229,7 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental_KokkosKernels_Features)
 
   TRIBITS_ADD_EXECUTABLE(
     SGSMT
-    SOURCES 
+    SOURCES
       Ifpack2_UnitTestSGSMT.cpp
       ${TEUCHOS_STD_UNIT_TEST_MAIN}
     COMM serial mpi

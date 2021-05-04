@@ -1,4 +1,4 @@
-C    Copyright(C) 1999-2020 National Technology & Engineering Solutions
+C    Copyright(C) 1999-2021 National Technology & Engineering Solutions
 C    of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 C    NTESS, the U.S. Government retains certain rights in this software.
 C
@@ -84,9 +84,10 @@ C------------------------------------------------------------------------
       do while(root*2 + 1 .lt. bottom)
         child = root * 2 + 1
 
-        if ((child + 1 .lt. bottom) .and.
-     *    (a(indx(child)) .lt. a(indx(child+1)))) then
-          child = child + 1
+        if ((child + 1 .lt. bottom)) then
+           if ((a(indx(child)) .lt. a(indx(child+1)))) then
+              child = child + 1
+           end if
         end if
 
         if (a(indx(root)) .lt. a(indx(child))) then

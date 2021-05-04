@@ -293,7 +293,7 @@ inline ROL::Ptr<const ROL::ParameterList> getValidSOLParameters() {
 
   ROL::Ptr<PL> sol = ROL::makePtr<PL>("SOL");
 
-  sol->set("Stochastic Component Type",  "Risk Neutral");
+  sol->set("Type",  "Risk Neutral");
   sol->set("Store Sampled Value and Gradient", true);
     
   /* ===== RISK MEASURE ============== */

@@ -175,10 +175,7 @@ std::string construct_coloring_part_name(const int color, const stk::mesh::Part&
 
 bool colorMesh(const BalanceSettings& balanceSettings, stk::mesh::BulkData& bulk, const stk::mesh::PartVector& parts)
 {
-    ThrowRequireMsg(balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH ||
-                    balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_BY_TOPOLOGY ||
-                    balanceSettings.getGraphOption() == BalanceSettings::COLOR_MESH_AND_OUTPUT_COLOR_FIELDS,
-                    "colorMesh must be called with COLOR_MESH or COLOR_MESH_BY_TOPOLOGY Setting");
+    ThrowRequireMsg(balanceSettings.usingColoring(), "colorMesh must be called with COLOR_MESH or COLOR_MESH_BY_TOPOLOGY Setting");
 
     internal::logMessage(bulk.parallel(), "Start Coloring Mesh");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright(C) 1999-2020 National Technology & Engineering Solutions
+ * Copyright(C) 1999-2021 National Technology & Engineering Solutions
  * of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
  * NTESS, the U.S. Government retains certain rights in this software.
  *
@@ -87,10 +87,6 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
     snprintf(errmsg, MAX_ERR_LENGTH, "ERROR: failed to find dimension ID for \"%s\" in file ID %d",
              DIM_NUM_PROCS_F, exoid);
     ex_err_fn(exoid, __func__, errmsg, status);
-
-    /* Leave define mode before returning */
-    ex__leavedef(exoid, __func__);
-
     EX_FUNC_LEAVE(EX_FATAL);
   }
 
@@ -103,6 +99,7 @@ int ex_put_loadbal_param(int exoid, int64_t num_int_nodes, int64_t num_bor_nodes
 
   /* Output the file version */
   if ((status = ex__put_nemesis_version(exoid)) < 0) {
+    ex__leavedef(exoid, __func__);
     EX_FUNC_LEAVE(status);
   }
 

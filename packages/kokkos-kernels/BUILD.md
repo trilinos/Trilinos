@@ -125,6 +125,12 @@ endif()
 * CUSPARSE_LIBRARY_DIRS: STRING
   * Optional override for the library directories that comprise TPL CUSPARSE.
   * Default: None. Default common library locations will be searched
+* ARMPL_LIBRARIES: STRING
+  * Optional override for the libraries that comprise TPL ARMPL.
+  * Default: None. Default common library names will be searched
+* ARMPL_LIBRARY_DIRS: STRING
+  * Optional override for the library directories that comprise TPL ARMPL.
+  * Default: None. Default common library locations will be searched
 * KokkosKernels_BLAS_ROOT: PATH
   * Location of BLAS install root.
   * Default: None or the value of the environment variable BLAS_ROOT if set
@@ -160,6 +166,9 @@ endif()
   * Default: OFF
 * KokkosKernels_ENABLE_TPL_MKL: BOOL
   * Whether to enable MKL
+  * Default: OFF
+* KokkosKernels_ENABLE_TPL_ARMPL: BOOL
+  * Whether to enable ARMPL
   * Default: OFF
 * KokkosKernels_ETI_ONLY: BOOL
   * Whether to restrict availability of kernels to ETI types only. Turning this on guarantees that kernels are never built inside of object files which simply call KokkosKernels functions.

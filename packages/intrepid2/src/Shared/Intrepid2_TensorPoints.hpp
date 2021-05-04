@@ -56,20 +56,20 @@ namespace Intrepid2 {
 /** \class Intrepid2::TensorPoints
     \brief View-like interface to tensor points; point components are stored separately; the appropriate coordinate is determined from the composite point index and requested dimension at access time.
 */
-  template<class PointScalar, typename ExecSpaceType = Kokkos::DefaultExecutionSpace>
+  template<class PointScalar, typename DeviceType>
   class TensorPoints {
   protected:
-    Kokkos::Array< ScalarView<PointScalar,ExecSpaceType>, Parameters::MaxTensorComponents> pointTensorComponents_; // each component has dimensions (P,D)
+    Kokkos::Array< ScalarView<PointScalar,DeviceType>, Parameters::MaxTensorComponents> pointTensorComponents_; // each component has dimensions (P,D)
     ordinal_type numTensorComponents_;
     ordinal_type totalPointCount_;
     ordinal_type totalDimension_;
-    Kokkos::vector<ordinal_type> dimToComponent_;
-    Kokkos::vector<ordinal_type> dimToComponentDim_;
+    Kokkos::View<ordinal_type*, DeviceType> dimToComponent_;
+    Kokkos::View<ordinal_type*, DeviceType> dimToComponentDim_;
     Kokkos::Array<ordinal_type, Parameters::MaxTensorComponents> pointModulus_;
     Kokkos::Array<ordinal_type, Parameters::MaxTensorComponents> pointDivisor_;
     
     bool isValid_;
-    using reference_type = typename ScalarView<PointScalar,ExecSpaceType>::reference_type;
+    using reference_type = typename ScalarView<PointScalar,DeviceType>::reference_type;
     
     /**
      \brief Initialize members based on constructor parameters.
@@ -90,21 +90,26 @@ namespace Intrepid2 {
         pointDivisor_[r] = pointDivisor;
         pointDivisor *= pointTensorComponents_[r].extent_int(0);
       }
-      dimToComponent_    = Kokkos::vector<ordinal_type>(totalDimension_);
-      dimToComponentDim_ = Kokkos::vector<ordinal_type>(totalDimension_);
+      dimToComponent_    = Kokkos::View<ordinal_type*, DeviceType>("dimToComponent_",totalDimension_);
+      dimToComponentDim_ = Kokkos::View<ordinal_type*, DeviceType>("dimToComponentDim_",totalDimension_);
       ordinal_type d=0;
       ordinal_type dimsSoFar = 0;
+
+      auto dimToComponentHost = Kokkos::create_mirror_view(dimToComponent_);
+      auto dimToComponentDimHost = Kokkos::create_mirror_view(dimToComponentDim_);
       for (ordinal_type r=0; r<numTensorComponents_; r++)
       {
         const int componentDim = pointTensorComponents_[r].extent_int(1);
         for (int i=0; i<componentDim; i++)
         {
-          dimToComponent_[d]    = r;
-          dimToComponentDim_[d] = d - dimsSoFar;
+          dimToComponentHost[d]    = r;
+          dimToComponentDimHost[d] = d - dimsSoFar;
           d++;
         }
         dimsSoFar += componentDim;
       }
+      Kokkos::deep_copy(dimToComponent_,dimToComponentHost);
+      Kokkos::deep_copy(dimToComponentDim_,dimToComponentDimHost);
     }
   public:
     /**
@@ -114,7 +119,7 @@ namespace Intrepid2 {
      TensorPoints has shape (P,D), where P is the product of the first dimensions of the component points, and D is the sum of the second dimensions.
     */
     template<size_t numTensorComponents>
-    TensorPoints(Kokkos::Array< ScalarView<PointScalar,ExecSpaceType>, numTensorComponents> pointTensorComponents)
+    TensorPoints(Kokkos::Array< ScalarView<PointScalar,DeviceType>, numTensorComponents> pointTensorComponents)
     :
     numTensorComponents_(numTensorComponents),
     isValid_(true)
@@ -133,7 +138,7 @@ namespace Intrepid2 {
      
      TensorPoints has shape (P,D), where P is the product of the first dimensions of the component points, and D is the sum of the second dimensions.
     */
-    TensorPoints(std::vector< ScalarView<PointScalar,ExecSpaceType>> pointTensorComponents)
+    TensorPoints(std::vector< ScalarView<PointScalar,DeviceType>> pointTensorComponents)
     :
     numTensorComponents_(pointTensorComponents.size()),
     isValid_(true)
@@ -152,7 +157,7 @@ namespace Intrepid2 {
      
      TensorPoints has the same shape (P,D) as the input points.
     */
-    TensorPoints(ScalarView<PointScalar,ExecSpaceType> points)
+    TensorPoints(ScalarView<PointScalar,DeviceType> points)
     :
     numTensorComponents_(1),
     isValid_(true)
@@ -167,20 +172,22 @@ namespace Intrepid2 {
      \param [in] fromPoints - the container to copy from.
     */
     template<class OtherPointsContainer>
-    void copyPointsContainer(ScalarView<PointScalar,ExecSpaceType> toPoints, OtherPointsContainer fromPoints)
+    void copyPointsContainer(ScalarView<PointScalar,DeviceType> toPoints, OtherPointsContainer fromPoints)
     {
       const int numPoints = fromPoints.extent_int(0);
       const int numDims   = fromPoints.extent_int(1);
-      auto policy = Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{numPoints,numDims});
+      using ExecutionSpace = typename DeviceType::execution_space;
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numPoints,numDims});
       Kokkos::parallel_for("copy points", policy,
       KOKKOS_LAMBDA (const int &i0, const int &i1) {
         toPoints(i0,i1) = fromPoints(i0,i1);
       });
     }
     
-    //! copy-like constructor for differing execution spaces.  This does a deep_copy of the underlying view.
-    template<typename OtherExecSpaceType, class = typename std::enable_if<!std::is_same<ExecSpaceType, OtherExecSpaceType>::value>::type>
-    TensorPoints(const TensorPoints<PointScalar,OtherExecSpaceType> &tensorPoints)
+    //! copy-like constructor for differing device type, but same memory space.  This does a shallow copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if< std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type,
+                                       class = typename std::enable_if<!std::is_same<DeviceType,OtherDeviceType>::value>::type>
+    TensorPoints(const TensorPoints<PointScalar,OtherDeviceType> &tensorPoints)
     :
     numTensorComponents_(tensorPoints.numTensorComponents()),
     isValid_(tensorPoints.isValid())
@@ -189,12 +196,29 @@ namespace Intrepid2 {
       {
         for (ordinal_type r=0; r<numTensorComponents_; r++)
         {
-          ScalarView<PointScalar,OtherExecSpaceType> otherPointComponent = tensorPoints.getTensorComponent(r);
+          pointTensorComponents_[r] = tensorPoints.getTensorComponent(r);
+        }
+        initialize();
+      }
+    }
+    
+    //! copy-like constructor for differing memory spaces.  This does a deep_copy of the underlying view.
+    template<typename OtherDeviceType, class = typename std::enable_if<!std::is_same<typename DeviceType::memory_space, typename OtherDeviceType::memory_space>::value>::type>
+    TensorPoints(const TensorPoints<PointScalar,OtherDeviceType> &tensorPoints)
+    :
+    numTensorComponents_(tensorPoints.numTensorComponents()),
+    isValid_(tensorPoints.isValid())
+    {
+      if (isValid_)
+      {
+        for (ordinal_type r=0; r<numTensorComponents_; r++)
+        {
+          ScalarView<PointScalar,OtherDeviceType> otherPointComponent = tensorPoints.getTensorComponent(r);
           const int numPoints = otherPointComponent.extent_int(0);
           const int numDims   = otherPointComponent.extent_int(1);
-          pointTensorComponents_[r] = ScalarView<PointScalar,ExecSpaceType>("Intrepid2 point component", numPoints, numDims);
+          pointTensorComponents_[r] = ScalarView<PointScalar,DeviceType>("Intrepid2 point component", numPoints, numDims);
           
-          using MemorySpace = typename ExecSpaceType::memory_space;
+          using MemorySpace = typename DeviceType::memory_space;
           auto pointComponentMirror = Kokkos::create_mirror_view_and_copy(MemorySpace(), otherPointComponent);
           
           copyPointsContainer(pointTensorComponents_[r], pointComponentMirror);
@@ -294,14 +318,15 @@ namespace Intrepid2 {
     }
     
     //! This method is for compatibility with existing methods that take raw point views.  Note that in general it is probably better for performance to make the existing methods accept a TensorPoints object, since that can dramatically reduce memory footprint, and avoids an allocation here.
-    ScalarView<PointScalar,ExecSpaceType> allocateAndFillExpandedRawPointView() const
+    ScalarView<PointScalar,DeviceType> allocateAndFillExpandedRawPointView() const
     {
       const int numPoints = this->extent_int(0);
       const int spaceDim  = this->extent_int(1);
-      ScalarView<PointScalar,ExecSpaceType> expandedRawPoints("expanded raw points from TensorPoints", numPoints, spaceDim);
-      TensorPoints<PointScalar,ExecSpaceType> tensorPoints(*this); // (shallow) copy for lambda capture
+      ScalarView<PointScalar,DeviceType> expandedRawPoints("expanded raw points from TensorPoints", numPoints, spaceDim);
+      TensorPoints<PointScalar,DeviceType> tensorPoints(*this); // (shallow) copy for lambda capture
+      using ExecutionSpace = typename DeviceType::execution_space;
       Kokkos::parallel_for(
-        Kokkos::MDRangePolicy<ExecSpaceType,Kokkos::Rank<2>>({0,0},{numPoints,spaceDim}),
+        Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{numPoints,spaceDim}),
         KOKKOS_LAMBDA (const int &pointOrdinal, const int &d) {
           expandedRawPoints(pointOrdinal,d) = tensorPoints(pointOrdinal,d);
       });
@@ -314,7 +339,7 @@ namespace Intrepid2 {
      \return the requested tensor component.
     */
     KOKKOS_INLINE_FUNCTION
-    ScalarView<PointScalar,ExecSpaceType> getTensorComponent(const ordinal_type &r) const
+    ScalarView<PointScalar,DeviceType> getTensorComponent(const ordinal_type &r) const
     {
       return pointTensorComponents_[r];
     }
@@ -343,7 +368,7 @@ namespace Intrepid2 {
     // NOTE: the extractTensorPoints() code commented out below appears not to work.  We don't have tests against it, though.
     // TODO: either delete this, or re-enable, add tests, and fix.
 //    template<class ViewType>
-//    static TensorPoints<PointScalar,ExecSpaceType> extractTensorPoints( ViewType expandedPoints, const std::vector<ordinal_type> &dimensionExtents )
+//    static TensorPoints<PointScalar,DeviceType> extractTensorPoints( ViewType expandedPoints, const std::vector<ordinal_type> &dimensionExtents )
 //    {
 //      const ordinal_type numComponents = dimensionExtents.size();
 //      const ordinal_type numPoints     = expandedPoints.extent_int(0);
@@ -357,7 +382,7 @@ namespace Intrepid2 {
 //      ordinal_type dimOffset = 0;
 //      ordinal_type tensorPointStride = 1; // increases with componentOrdinal
 //
-//      TensorPoints<PointScalar,ExecSpaceType> invalidTensorData; // will be returned if extraction does not succeed.
+//      TensorPoints<PointScalar,DeviceType> invalidTensorData; // will be returned if extraction does not succeed.
 //
 //      for (ordinal_type componentOrdinal=0; componentOrdinal<numComponents; componentOrdinal++)
 //      {
@@ -419,13 +444,13 @@ namespace Intrepid2 {
 //        tensorPointStride *= componentPointCounts[componentOrdinal];
 //      }
 //
-//      std::vector< ScalarView<PointScalar,ExecSpaceType> > componentPoints(numComponents);
+//      std::vector< ScalarView<PointScalar,DeviceType> > componentPoints(numComponents);
 //      std::vector< ScalarView<PointScalar,Kokkos::HostSpace> > componentPointsHost(numComponents);
 //      for (ordinal_type componentOrdinal=0; componentOrdinal<numComponents; componentOrdinal++)
 //      {
 //        const ordinal_type numPointsForComponent = componentPointCounts[componentOrdinal];
 //        const ordinal_type dimForComponent       = dimensionExtents[componentOrdinal];
-//        componentPoints[componentOrdinal] = ScalarView<PointScalar,ExecSpaceType>("extracted tensor components", numPointsForComponent, dimForComponent);
+//        componentPoints[componentOrdinal] = ScalarView<PointScalar,DeviceType>("extracted tensor components", numPointsForComponent, dimForComponent);
 //        componentPointsHost[componentOrdinal] = Kokkos::create_mirror(componentPoints[componentOrdinal]);
 //      }
 //
@@ -471,7 +496,7 @@ namespace Intrepid2 {
 //        return invalidTensorData;
 //      }
 //
-//      return TensorPoints<PointScalar,ExecSpaceType>(componentPoints);
+//      return TensorPoints<PointScalar,DeviceType>(componentPoints);
 //    }
   };
 

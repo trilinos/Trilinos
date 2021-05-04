@@ -161,7 +161,6 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
-    typedef typename BV::little_host_vec_type little_host_vec_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
@@ -262,9 +261,12 @@ namespace {
     blockMat.modify_host ();
     {
       if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
+        // This is messed up with HIP using HIPHostPinnedSpace as its memory space
+        #ifndef KOKKOS_ENABLE_HIP
         TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
-        TEST_ASSERT( blockMat.need_sync_device () );
         TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
+        #endif
+        TEST_ASSERT( blockMat.need_sync_device () );
         TEST_ASSERT( ! blockMat.need_sync_host () );
       }
       auto val = blockMat.template getValues<Kokkos::HostSpace> ();
@@ -429,12 +431,12 @@ namespace {
       BV Y (* (graph.getRangeMap ()), blockSize);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
-        little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
+        auto X_lcl = X.getLocalBlock (lclDomIdx, Tpetra::Access::OverwriteAll);
         TEST_ASSERT( X_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
@@ -448,7 +450,7 @@ namespace {
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        auto Y_lcl = Y.getLocalBlock (lclRanIdx, Tpetra::Access::ReadOnly);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -480,7 +482,7 @@ namespace {
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        auto Y_lcl = Y.getLocalBlock (lclRanIdx, Tpetra::Access::ReadOnly);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -539,13 +541,13 @@ namespace {
       BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
-          little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
+          auto X_lcl = X.getLocalBlock(lclDomIdx, j, Tpetra::Access::OverwriteAll);
           TEST_ASSERT( X_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
@@ -561,7 +563,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          auto Y_lcl = Y.getLocalBlock (lclRanIdx, col, Tpetra::Access::ReadOnly);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -596,7 +598,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          auto Y_lcl = Y.getLocalBlock (lclRanIdx, col, Tpetra::Access::ReadOnly);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -652,12 +654,12 @@ namespace {
       BV Y (* (graph.getRangeMap ()), blockSize);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
-        little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
+        auto X_lcl = X.getLocalBlock (lclDomIdx, Tpetra::Access::OverwriteAll);
         TEST_ASSERT( X_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
         for (LO i = 0; i < blockSize; ++i) {
@@ -678,7 +680,7 @@ namespace {
       const map_type& meshRangeMap = * (graph.getRangeMap ());
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        auto Y_lcl = Y.getLocalBlock (lclRanIdx, Tpetra::Access::ReadOnly);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -710,7 +712,7 @@ namespace {
 
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
-        little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        auto Y_lcl = Y.getLocalBlock (lclRanIdx, Tpetra::Access::ReadOnly);
         TEST_ASSERT( Y_lcl.data () != NULL );
         TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -769,13 +771,13 @@ namespace {
       BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
       Y.putScalar (STS::zero ());
 
-      Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
+      //Y.sync_host(); // X and Y are same map and write to X_lcl(i) needs fence
 
       const map_type& meshDomainMap = * (graph.getDomainMap ());
       for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
            lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
         for (LO j = 0; j < numVecs; ++j) {
-          little_host_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
+          auto X_lcl = X.getLocalBlock(lclDomIdx, j, Tpetra::Access::OverwriteAll);
           TEST_ASSERT( X_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (X_lcl.extent (0)) == static_cast<size_t> (blockSize) );
           for (LO i = 0; i < blockSize; ++i) {
@@ -798,7 +800,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          auto Y_lcl = Y.getLocalBlock (lclRanIdx, col, Tpetra::Access::ReadOnly);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -833,7 +835,7 @@ namespace {
       for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
            lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
         for (LO col = 0; col < numVecs; ++col) {
-          little_host_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          auto Y_lcl = Y.getLocalBlock (lclRanIdx, col, Tpetra::Access::ReadOnly);
           TEST_ASSERT( Y_lcl.data () != NULL );
           TEST_ASSERT( static_cast<size_t> (Y_lcl.extent (0)) == static_cast<size_t> (blockSize) );
 
@@ -1341,7 +1343,7 @@ namespace {
     const LO myMinLclMeshRow = Y.getMap ()->getMinLocalIndex ();
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::little_host_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      auto Y_lcl = Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
       for (LO i = 0; i < blockSize; ++i) {
         TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), requiredValue );
       }
@@ -1352,7 +1354,7 @@ namespace {
     Kokkos::fence ();
 
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::little_host_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      auto Y_lcl = Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
       for (LO i = 0; i < blockSize; ++i) {
         TEST_EQUALITY( static_cast<Scalar> (Y_lcl(i)), STS::zero () );
       }
@@ -1504,7 +1506,7 @@ namespace {
     const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
     bool valsMatch = true;
     for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      typename BMV::little_host_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      auto Y_lcl = Y.getLocalBlock (lclMeshRow, 0, Tpetra::Access::ReadOnly);
       for (LO i = 0; i < blockSize; ++i) {
         if (static_cast<Scalar> (Y_lcl(i)) != requiredValue) {
           valsMatch = false;
@@ -1751,7 +1753,7 @@ namespace {
       // const LO myMaxLclMeshRow = Y.getMap ()->getMaxLocalIndex ();
       // bool valsMatch = true;
       // for (LO lclMeshRow = myMinLclMeshRow; lclMeshRow <= myMaxLclMeshRow; ++lclMeshRow) {
-      //   typename BMV::little_vec_type Y_lcl = Y.getLocalBlock (lclMeshRow, 0);
+      //   auto Y_lcl = Y.getLocalBlock(lclMeshRow, 0,Tpetra::Access::ReadOnly);
       //   for (LO i = 0; i < blockSize; ++i) {
       //     if (Y_lcl(i) != requiredValue) {
       //       valsMatch = false;
