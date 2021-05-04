@@ -476,6 +476,16 @@ private:
   //! Number of power method iterations for estimating the max eigenvalue.
   int eigMaxIters_;
 
+  //! Relative tolerance for power method iterations for estimating the max eigenvalue.
+  MT eigRelTolerance_;
+
+  //! Whether the iteration vectors of the power method should be saved.
+  bool eigKeepVectors_;
+
+  //! Iteration vectors of the power method. Can be saved for the purpose of multiple setups.
+  Teuchos::RCP<V> eigVector_;
+  Teuchos::RCP<V> eigVector2_;
+
   //! Frequency of normalization in the power method.
   int eigNormalizationFreq_;
 
