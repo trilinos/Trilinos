@@ -210,6 +210,7 @@ public:
   void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) { };
 
   void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const { }
+  void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const { }
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
   const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { return Teuchos::null; }
 
@@ -925,6 +926,11 @@ public:
 
     // calculate alpha * A * x + beta * y
     XPETRA_ERR_CHECK(eY.getEpetra_MultiVector()->Update(alpha,*tmp,beta));
+  }
+
+  //!
+  void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.apply() is not implemented for region matricies.");
   }
 
   //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
@@ -1937,6 +1943,10 @@ public:
 
     // calculate alpha * A * x + beta * y
     XPETRA_ERR_CHECK(eY.getEpetra_MultiVector()->Update(alpha,*tmp,beta));
+  }
+
+  void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrixT.apply() is not implemented for region matricies.");
   }
 
   //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
