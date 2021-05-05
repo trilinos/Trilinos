@@ -139,7 +139,7 @@ namespace DefaultTypes {
   template<>
   struct CommBufferMemorySpace<Kokkos::Experimental::SYCL>
   {
-    using type = Kokkos::Experimental::SYCLDeviceUSMSpace;
+    using type = Kokkos::Experimental::SYCLSharedUSMSpace;
   };
 #endif
 
