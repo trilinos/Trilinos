@@ -548,14 +548,15 @@ ENDIF()
 
 # GBH Oct6 2020: No need to check  Xpetra_ENABLE_Experimental
 # since it is a required flag for MueLu_ENABLE_Experimental
-IF(${PACKAGE_NAME}_ENABLE_Belos AND 
-   ${PACKAGE_NAME}_ENABLE_Intrepid AND 
-   ${PACKAGE_NAME}_ENABLE_MueLu AND 
-   MueLu_ENABLE_Experimental AND 
-   MueLu_ENABLE_Kokkos_Refactor AND 
-   ${PACKAGE_NAME}_ENABLE_Pamgen AND 
-   ${PACKAGE_NAME}_ENABLE_STKIO AND 
-   ${PACKAGE_NAME}_ENABLE_STKMesh AND 
+IF(${PACKAGE_NAME}_ENABLE_Belos AND
+   ${PACKAGE_NAME}_ENABLE_Intrepid AND
+   ${PACKAGE_NAME}_ENABLE_MueLu AND
+   MueLu_ENABLE_Experimental AND
+   MueLu_ENABLE_Kokkos_Refactor AND
+   ${PACKAGE_NAME}_ENABLE_Pamgen AND
+   ${PACKAGE_NAME}_ENABLE_Percept AND
+   ${PACKAGE_NAME}_ENABLE_STKIO AND
+   ${PACKAGE_NAME}_ENABLE_STKMesh AND
    ${PACKAGE_NAME}_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     MueLu_Region_Poisson
