@@ -301,6 +301,9 @@ namespace FROSch {
         template <class SC,class LO,class GO,class NO>
         RCP<Map<LO,GO,NO> > BuildRepeatedMapGaleriStruct3D(RCP<const Map<LO,GO,NO> > matrix,int M,int Dim)
         {
+	 
+          FROSCH_DETAILTIMER_START(Galeri3DMap,"BuildGeometricMap3D");
+
           Teuchos::ArrayView< const GO> eleList;
           eleList = matrix->getNodeElementList();
           Teuchos::RCP< const Teuchos::Comm< int > > Comm = matrix->getComm();
@@ -315,14 +318,14 @@ namespace FROSch {
           int numSubPerRow  = std::pow(size,1/3.)+0.7;
           //int numSubPerRow = numSubPerRow1;
           //  numSubPerRow = numSubPerRow+1;
-          if(Comm->getRank() == 0) std::cout<<"Size "<<size<<"\n";
+          //if(Comm->getRank() == 0) std::cout<<"Size "<<size<<"\n";
           //if(Comm->getRank() == 0) std::cout<<"numSubPerRow1 "<<numSubPerRow1<<"  numSubPerRow "<<numSubPerRow<<"\n";
           int subInLev = numSubPerRow*numSubPerRow;
-          if(Comm->getRank() == 0) std::cout<<"subInLev "<<subInLev<<"\n";
+          //if(Comm->getRank() == 0) std::cout<<"subInLev "<<subInLev<<"\n";
           GO nodesInRow = M*numSubPerRow;
-            if(Comm->getRank() == 0) std::cout<<"nodesInRow "<<nodesInRow<<"\n";
+          //if(Comm->getRank() == 0) std::cout<<"nodesInRow "<<nodesInRow<<"\n";
           GO nodesInLev = nodesInRow*nodesInRow;
-          if(Comm->getRank() == 0) std::cout<<"nodesInLev "<<nodesInLev<<"\n";
+          //if(Comm->getRank() == 0) std::cout<<"nodesInLev "<<nodesInLev<<"\n";
           int subLevel = rank/(numSubPerRow*numSubPerRow);
 
 

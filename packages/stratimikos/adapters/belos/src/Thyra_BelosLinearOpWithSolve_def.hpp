@@ -58,6 +58,7 @@
 #  include <MatrixMarket_Tpetra.hpp>
 #  include <TpetraExt_MatrixMatrix.hpp>
 #endif
+#include "BelosPseudoBlockCGSolMgr.hpp"
 
 namespace {
   // Set the Belos solver's parameter list to scale its residual norms
@@ -789,11 +790,11 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
   // just be the convergence tolerance (a correct upper bound).
   solveStatus.extraParameters->set ("Belos/Achieved Tolerance",
                                     solveStatus.achievedTol);
-
-  if(solverType_ == SOLVER_TYPE_PSEUDO_BLOCK_CG){
-    RCP<Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> > blockcg = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> >(iterativeSolver_);
-    Scalar cond = blockcg->getConditionEstimate();
-    *out<<"\n Estimated condition number: "<<cond<<" \n \n";
+//Bad if Solver is GMRES!
+  RCP<Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> > blockcg = Teuchos::rcp_dynamic_cast<Belos::PseudoBlockCGSolMgr<Scalar,MV_t,LO_t> >(iterativeSolver_);
+  if (!blockcg.is_null()) {
+      Scalar cond = blockcg->getConditionEstimate();
+      *out<<"\n Estimated condition number: "<<cond<<" \n \n";
   }
 
 //  This information is in the previous line, which is printed anytime the verbosity
