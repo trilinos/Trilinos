@@ -32,6 +32,9 @@ void testTachoSolver(int numRows,
                      int* rowBegin,
                      int* columns,
                      double* values,
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+                     const int posDef = 1,
+#endif
                      const int numRuns = 1)
 {
   Kokkos::Impl::Timer timer;
@@ -44,7 +47,12 @@ void testTachoSolver(int numRows,
   tachoParams[tacho::USEDEFAULTSOLVERPARAMETERS] = 0;
   tachoParams[tacho::VERBOSITY] = 0;
   tachoParams[tacho::SMALLPROBLEMTHRESHOLDSIZE] = 1024;
-  
+
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+  tachoParams[tacho::MATRIX_SYMMETRIC] = 2;
+  tachoParams[tacho::MATRIX_POSITIVE_DEFINITE] = posDef;
+#endif
+
 #if defined (KOKKOS_ENABLE_CUDA)
   tachoParams[tacho::TASKING_OPTION_MAXNUMSUPERBLOCKS] = 32;
   tachoParams[tacho::TASKING_OPTION_BLOCKSIZE] = 64;
@@ -157,11 +165,16 @@ int main(int argc, char *argv[]) {
   int niter = 1;
   bool verbose = true;
   bool sanitize = false;
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+  bool posdef = true;
+#endif
 
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<int>("niter", "# of solver iterations", &niter);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
-  opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+  opts.set_option<bool>("posdef", "Flag to indicate that the matrix positive definite", &posdef);
+#endif
 
   const bool r_parse = opts.parse(argc, argv);
   if (r_parse) return 0; // print help return
@@ -186,8 +199,12 @@ int main(int argc, char *argv[]) {
 
     int numRows = A.NumRows(), *rowBegin = A.RowPtr().data(), *columns = A.Cols().data();
     double *values = A.Values().data();
-
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+    testTachoSolver(numRows, rowBegin, columns, values, posdef, niter);
+#else
     testTachoSolver(numRows, rowBegin, columns, values, niter);
+#endif
+
   }
   Kokkos::finalize();
 }

@@ -17,7 +17,7 @@ namespace Tacho {
     typedef value_type non_const_value_type;
 
     typedef SchedulerType scheduler_type;
-    typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+    typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
 
     typedef Kokkos::BasicFuture<int,scheduler_type> future_type;
 
