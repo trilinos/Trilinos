@@ -261,6 +261,32 @@ tol = 0.;
       return diag;
     }
 
+    /*! @brief Return vector containing: max_{i\not=k}(-a_ik), for each for i in the matrix
+     *
+     * @param[in] A: input matrix
+     * @ret: vector containing max_{i\not=k}(-a_ik)
+    */
+
+    static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { 
+      size_t numRows = A.getRowMap()->getNodeNumElements();
+      Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
+      Teuchos::ArrayRCP<Scalar> maxvec(numRows);
+      Teuchos::ArrayView<const LocalOrdinal> cols;
+      Teuchos::ArrayView<const Scalar> vals;
+      for (size_t i = 0; i < numRows; ++i) {
+        A.getLocalRowView(i, cols, vals);
+        Magnitude mymax = ZERO;
+        for (LocalOrdinal j=0; j < cols.size(); ++j) {
+          if (Teuchos::as<size_t>(cols[j]) != i) {
+            mymax = std::max(mymax,-Teuchos::ScalarTraits<Scalar>::real(vals[j]));
+          }
+        }          
+        maxvec[i] = mymax;
+      }
+      return maxvec;
+    }
+
+
     /*! @brief Return vector containing inverse of input vector
      *
      * @param[in] v: input vector

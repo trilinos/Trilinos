@@ -124,7 +124,7 @@ namespace MueLu {
 
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
-      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","block diagonal","block diagonal classical","block diagonal distance laplacian"), "aggregation: drop scheme")));
+      validParamList->getEntry("aggregation: drop scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("classical", "distance laplacian","signed classical","block diagonal","block diagonal classical","block diagonal distance laplacian","block diagonal signed classical"), "aggregation: drop scheme")));
                                                                         
     }
     SET_VALID_ENTRY("aggregation: distance laplacian algo");
@@ -154,7 +154,8 @@ namespace MueLu {
       if (algo == "distance laplacian" || algo == "block diagonal distance laplacian") {
         Input(currentLevel, "Coordinates");    
       }
-      if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" || algo == "block diagonal")  {
+      if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" 
+          || algo == "block diagonal" || algo == "block diagonal signed classical")  {
         Input(currentLevel, "BlockNumber");
       }
     }     
@@ -188,9 +189,16 @@ namespace MueLu {
 
     bool use_block_algorithm=false;
     LO interleaved_blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
+    bool useSignedClassical = false;
+
     if(algo == "distance laplacian" ) { 
       // Grab the coordinates for distance laplacian
       Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
+      A = realA;
+    }
+    else if(algo == "signed classical") {
+      useSignedClassical = true;
+      algo = "classical";
       A = realA;
     }
     else if(algo == "block diagonal") {
@@ -198,12 +206,11 @@ namespace MueLu {
       BlockDiagonalize(currentLevel,realA,false);
       return;
     }
-    else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian")  {
+    else if (algo == "block diagonal classical" || algo == "block diagonal distance laplacian" || algo == "block diagonal signed classical")  {
       // Handle the "block diagonal" filtering, and then continue onward
       use_block_algorithm = true;
       RCP<Matrix> filteredMatrix = BlockDiagonalize(currentLevel,realA,true);
-      if(algo == "block diagonal") return;
-      else if(algo == "block diagonal distance laplacian") {  
+      if(algo == "block diagonal distance laplacian") {  
         // We now need to expand the coordinates by the interleaved blocksize
         RCP<RealValuedMultiVector> OldCoords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
         if (OldCoords->getLocalLength() != realA->getNodeNumRows()) {
@@ -227,7 +234,11 @@ namespace MueLu {
       else if(algo == "block diagonal classical") {
         algo = "classical";
       }
-      // Both cases
+      else if(algo == "block diagonal signed classical") {
+        algo = "classical";
+        useSignedClassical = true;
+      }
+      // All cases
       A = filteredMatrix;
     }
     else {
@@ -275,12 +286,13 @@ namespace MueLu {
 
     if (doExperimentalWrap) {
       TEUCHOS_TEST_FOR_EXCEPTION(predrop_ != null   && algo != "classical", Exceptions::RuntimeError, "Dropping function must not be provided for \"" << algo << "\" algorithm");
-      TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian)");
+      TEUCHOS_TEST_FOR_EXCEPTION(algo != "classical" && algo != "distance laplacian" && algo != "signed classical", Exceptions::RuntimeError, "\"algorithm\" must be one of (classical|distance laplacian|signed classical)");
 
       SC threshold = as<SC>(pL.get<double>("aggregation: drop tol"));
       std::string distanceLaplacianAlgoStr = pL.get<std::string>("aggregation: distance laplacian algo");
       std::string classicalAlgoStr = pL.get<std::string>("aggregation: classical algo");
       real_type realThreshold = STS::magnitude(threshold);// CMS: Rename this to "magnitude threshold" sometime
+
       ////////////////////////////////////////////////////
       // Remove this bit once we are confident that cut-based dropping works.
 #ifdef HAVE_MUELU_DEBUG
@@ -337,6 +349,10 @@ namespace MueLu {
 
       const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
+      // NOTE: We don't support signed classical with cut drop at present
+      TEUCHOS_TEST_FOR_EXCEPTION(useSignedClassical && classicalAlgo != defaultAlgo, Exceptions::RuntimeError, "\"aggregation: classical algo\" != default is not supported for scalled classical aggregation");
+
+
       GO numDropped = 0, numTotal = 0;
       std::string graphType = "unamalgamated"; //for description purposes only
       if (algo == "classical") {
@@ -359,7 +375,7 @@ namespace MueLu {
         // At this points we either have
         //     (predrop_ != null)
         // Therefore, it is sufficient to check only threshold
-        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && A->hasCrsGraph()) {
+        if (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !useSignedClassical && A->hasCrsGraph()) {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           // Detect and record rows that correspond to Dirichlet boundary conditions
@@ -383,7 +399,8 @@ namespace MueLu {
           Set(currentLevel, "Graph", graph);
 
         } else if ( (A->GetFixedBlockSize() == 1 && threshold != STS::zero()) ||
-                    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph())) {
+                    (A->GetFixedBlockSize() == 1 && threshold == STS::zero() && !A->hasCrsGraph()) ||
+                    (A->GetFixedBlockSize() == 1 && useSignedClassical) ) {
           // Case 2:  scalar problem with dropping => record the column indices of undropped entries, but still use original
           //                                          graph's map information, e.g., whether index is local
           // OR a matrix without a CrsGraph
@@ -392,10 +409,19 @@ namespace MueLu {
           ArrayRCP<LO> rows   (A->getNodeNumRows()+1);
           ArrayRCP<LO> columns(A->getNodeNumEntries());
 
-          RCP<Vector> ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
-          const ArrayRCP<const SC> ghostedDiagVals = ghostedDiag->getData(0);
+          using MT = typename STS::magnitudeType;
+          RCP<Vector> ghostedDiag;
+          ArrayRCP<const SC> ghostedDiagVals;
+          ArrayRCP<const MT> negMaxOffDiagonal;
+          if(useSignedClassical) {
+            negMaxOffDiagonal = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixMaxMinusOffDiagonal(*A);
+          }
+          else {
+            ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
+            ghostedDiagVals = ghostedDiag->getData(0);
+          }
           ArrayRCP<const bool> boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
-
+          
           LO realnnz = 0;
           rows[0] = 0;
           for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
@@ -411,20 +437,36 @@ namespace MueLu {
               //FIXME For now, hardwiring the dropping in here
               
               LO rownnz = 0;
-              for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
-                LO col = indices[colID];
-                
-                // we avoid a square root by using squared values
-                typename STS::magnitudeType aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
-                typename STS::magnitudeType aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
-                
-                if (aij > aiiajj || row == col) {
+              if(useSignedClassical) {
+                // Signed classical
+                for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+                  LO col = indices[colID];               
+                  MT max_neg_aik = threshold * negMaxOffDiagonal[row];
+                  MT neg_aij    = - STS::real(vals[colID]);
+                  //printf(" - a_ij = %6.4e >? %6.4e * %6.4e = alpha max(-aik)\n",neg_aij,threshold, negMaxOffDiagonal[row]);
+                  if (neg_aij > max_neg_aik || row == col) {
+                    columns[realnnz++] = col;
+                    rownnz++;
+                  } else
+                    numDropped++;
+                }
+                rows[row+1] = realnnz;
+              }
+              else {
+                // Standard abs classical
+                for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
+                  LO col = indices[colID];               
+                  MT  aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
+                  MT aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
+                  
+                  if (aij > aiiajj || row == col) {
                   columns[realnnz++] = col;
                   rownnz++;
-                } else
-                  numDropped++;
+                  } else
+                    numDropped++;
+                }
+                rows[row+1] = realnnz;
               }
-              rows[row+1] = realnnz;
             }
             else {
               /* Cut Algorithm */
@@ -676,7 +718,6 @@ namespace MueLu {
           // Case 4:  Multiple DOF/node problem with dropping
           const RCP<const Map> rowMap = A->getRowMap();
           const RCP<const Map> colMap = A->getColMap();
-
           graphType = "amalgamated";
 
           // build node row map (uniqueMap) and node column map (nonUniqueMap)
@@ -800,7 +841,6 @@ namespace MueLu {
       } else if (algo == "distance laplacian") {
         LO blkSize   = A->GetFixedBlockSize();
         GO indexBase = A->getRowMap()->getIndexBase();
-
         // [*0*] : FIXME
         // ap: somehow, if I move this line to [*1*], Belos throws an error
         // I'm not sure what's going on. Do we always have to Get data, if we did

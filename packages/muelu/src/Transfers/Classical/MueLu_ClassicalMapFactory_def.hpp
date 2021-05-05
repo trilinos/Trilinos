@@ -147,19 +147,20 @@ namespace MueLu {
         fc_data[i] = (LO) mv_data[i];
 
     }
-#ifdef HAVE_MUELU_KOKKOSCORE  
-    else if(coloringAlgo != "MIS" && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
-      SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
-      DoGraphColoring(*graph,myColors,numColors);
-    }
-#endif
-    else if(coloringAlgo == "MIS") { 
+    else if(coloringAlgo == "MIS" || graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
       SubFactoryMonitor sfm(*this,"MIS",currentLevel);
       DoMISNaive(*graph,myColors,numColors);
     }
+#ifdef HAVE_MUELU_KOKKOSCORE  
+    else {
+      SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
+      DoGraphColoring(*graph,myColors,numColors);
+    }
+#else
     else {
       TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unrecognized distance 1 coloring algorithm");
     }
+#endif
 
     // FIXME: This coloring will either need to be done MPI parallel, or
     // there needs to be a cleanup phase to fix mistakes

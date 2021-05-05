@@ -63,7 +63,8 @@
 #include "MueLu_GraphBase.hpp"
 
 
-#define CMS_DEBUG
+//#define CMS_DEBUG
+//#define CMS_DUMP
 
 namespace { 
 
@@ -150,11 +151,30 @@ namespace MueLu {
     const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
     const ParameterList& pL = GetParameterList();
 
-#ifdef CMS_DEBUG
+    
+
+#if defined(CMS_DEBUG) || defined(CMS_DUMP)
     {
       std::ofstream ofs(std::string("dropped_graph_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat"),std::ofstream::out);
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
       graph->print(*fancy,Debug);
+      std::string out_fc = std::string("fc_splitting_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat");
+
+
+      // We don't support writing LO vectors in Xpetra (boo!) so....
+      using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
+      using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
+      typedef Xpetra::MultiVectorFactory<real_type,LO,GO,NO> RealValuedMultiVectorFactory;
+ 
+      RCP<RealValuedMultiVector> mv = RealValuedMultiVectorFactory::Build(fc_splitting->getMap(),1);
+      ArrayRCP<real_type> mv_data= mv->getDataNonConst(0);
+      ArrayRCP<const LO> fc_data= fc_splitting->getData(0);
+      
+      for(LO i=0; i<(LO)fc_data.size(); i++)
+        mv_data[i] = Teuchos::as<real_type>(fc_data[i]);
+      Xpetra::IO<real_type,LO,GO,NO>::Write(out_fc,*mv);
+
+
     }
 #endif
 
@@ -467,7 +487,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           if(k==i) continue; // No self-sums
 
           // FIXME: Ghosting
-          size_t k_row_start = eis_rowptr[k];
+          //          size_t k_row_start = eis_rowptr[k];
           // FIXME: Ghosting
           if(myPointType[k] == F_PT && !in_fis_star[j])  {
             // Strong F-point neighbor and not in F_i^s\star
@@ -490,11 +510,11 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
               LO m    = A_indices_k[l];
               SC a_km = A_vals_k[l];
 
-#ifdef CMS_DEBUG
-              char mylabel[5]="FUCD";
-              char sw[3]="ws";
-              printf(" - - A(%d,%d)%c%c = %6.4e (a_kk = %6.4e)\n",k,m,mylabel[1+myPointType[m]],sw[(int)edgeIsStrong[k_row_start+k]],a_km,a_kk);
-#endif
+              //#ifdef CMS_DEBUG
+              //              char mylabel[5]="FUCD";
+              //              char sw[3]="ws";
+              //              printf(" - - A(%d,%d)%c%c = %6.4e (a_kk = %6.4e)\n",k,m,mylabel[1+myPointType[m]],sw[(int)edgeIsStrong[k_row_start+k]],a_km,a_kk);
+              //#endif
 
               // Is a_im \in C_i^s? If so, we can add the a_km term to the denominator
               /*
