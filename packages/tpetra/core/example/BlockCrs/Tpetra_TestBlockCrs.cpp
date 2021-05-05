@@ -418,7 +418,7 @@ int main (int argc, char *argv[])
             const auto end = rowptr_host(row+1);
             typedef typename std::remove_const<decltype (beg) >::type offset_type;
             for (offset_type loc = beg; loc < end; ++loc) {
-              blocks_host(loc) = A_bcrs->getLocalBlock(row, colidx(loc));
+              blocks_host(loc) = A_bcrs->getLocalBlockDeviceNonConst(row, colidx(loc));
             }
           });
         Kokkos::deep_copy(blocks, blocks_host);

@@ -189,6 +189,8 @@ public:
                        device_type,
                        Kokkos::MemoryTraits<Kokkos::Unmanaged> >
           little_block_type;
+  typedef typename little_block_type::HostMirror little_block_host_type;
+
   //! The type used to access const matrix blocks.
   typedef Kokkos::View<const impl_scalar_type**,
                        Kokkos::LayoutRight,
@@ -430,6 +432,7 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Get a view of the (mesh, i.e., block) row, using local
   ///   (mesh, i.e., block) indices.
   ///
@@ -459,11 +462,14 @@ public:
   ///
   /// \return 0 if \c localRowInd is valid, else
   ///   <tt>Teuchos::OrdinalTraits<LO>::invalid()</tt>.
+  /// KK: we remove this interface 
+  ///     we cannot give a pointer
   LO
   getLocalRowView (const LO localRowInd,
                    const LO*& colInds,
                    Scalar*& vals,
                    LO& numInds) const;
+#endif
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Not implemented.
@@ -492,8 +498,13 @@ public:
                    size_t &NumEntries) const;
 #endif
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   little_block_type
   getLocalBlock (const LO localRowInd, const LO localColInd) const;
+#endif
+
+  little_block_type
+  getLocalBlockDeviceNonConst (const LO localRowInd, const LO localColInd) const;
 
   /// \brief Get relative offsets corresponding to the given rows,
   ///   given by local row index.
@@ -534,6 +545,12 @@ public:
                                const ptrdiff_t offsets[],
                                const Scalar vals[],
                                const LO numOffsets) const;
+
+  LO
+  absMaxLocalValuesByOffsets (const LO localRowInd,
+                              const ptrdiff_t offsets[],
+                              const Scalar vals[],
+                              const LO numOffsets) const;
 
   /// \brief Like sumIntoLocalValues, but avoids computing row offsets.
   ///
@@ -660,11 +677,12 @@ public:
   /// This method uses the offsets of the diagonal entries, as
   /// precomputed by getLocalDiagOffsets(), to speed up copying the
   /// diagonal of the matrix.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   void
   getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
                                        Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const;
-
+#endif
 
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
@@ -673,13 +691,6 @@ protected:
                      const LO colInds[],
                      const Scalar vals[],
                      const LO numColInds) const;
-
-  //! Like sumIntoLocalValuesByOffsets, but for the ABSMAX combine mode.
-  LO
-  absMaxLocalValuesByOffsets (const LO localRowInd,
-                              const ptrdiff_t offsets[],
-                              const Scalar vals[],
-                              const LO numOffsets) const;
 
   /// \brief \name Implementation of Tpetra::DistObject.
   ///
@@ -775,25 +786,25 @@ private:
   /// Kokkos::DualView has extra Views in it for the "modified" flags,
   /// and we don't want the (modest) overhead of creating and storing
   /// those.
-     // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
-     // KDDUVM This will be bad news for our reference counting
-  typename crs_graph_type::local_graph_device_type::row_map_type::HostMirror ptrHost_;
+  using graph_row_offset_host_type = typename crs_graph_type::local_graph_device_type::row_map_type::HostMirror;
+  graph_row_offset_host_type ptrHost_;
 
   /// \brief Host version of the graph's array of column indices.
   ///
   /// The device version of this is already stored in the graph.  We
   /// need the host version here, because this class' interface needs
   /// to access it on host.  See notes on ptrHost_ above.
-      // KDDUVM Why does BlockCrsMatrix need to hold on to non-const host view?
-      // KDDUVM This will be bad news for our reference counting
-  typename crs_graph_type::local_graph_device_type::entries_type::HostMirror indHost_;
+  using graph_column_indices_host_type =   typename crs_graph_type::local_graph_device_type::entries_type::HostMirror;
+  graph_column_indices_host_type indHost_;
 
   /// \brief The array of values in the matrix.
   ///
   /// Each blockSize_ x blockSize_ block of values is stored
   /// contiguously, in row major format, with no padding either inside
   /// a block or between blocks.
-  typename Kokkos::DualView<impl_scalar_type*, device_type> val_;
+  using impl_scalar_type_dualview = Kokkos::DualView<impl_scalar_type*, device_type>;
+  using impl_scalar_type_wrapped_dualview = Details::WrappedDualView<impl_scalar_type_dualview>;
+  mutable impl_scalar_type_wrapped_dualview val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
@@ -884,89 +895,82 @@ private:
   };
 
 public:
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    // KK: sync modify syntax will not work
+    //     the interface is deprecated bu the functionalities are removed
   //! \name Implementation of "dual view semantics"
   //@{
 
   //! Mark the matrix's valueas as modified in host space
   inline void modify_host()
   {
-    val_.modify_host();
+    throw std::logic_error("do not use");
   }
 
   //! Mark the matrix's valueas as modified in device space
   inline void modify_device()
   {
-    val_.modify_device();
+    throw std::logic_error("do not use");
   }
 
   //! Mark the matrix's values as modified in the given memory space.
   template<class MemorySpace>
   void modify ()
   {
-    if (is_cuda<MemorySpace>::value) {
-      this->modify_device ();
-    }
-    else {
-      this->modify_host ();
-    }
+    throw std::logic_error("do not use");
   }
 
   //! Whether the matrix's values need sync'ing to host space
   inline bool need_sync_host() const
   {
-    return val_.need_sync_host();
+    throw std::logic_error("do not use");
+    return false; 
   }
 
   //! Whether the matrix's values need sync'ing to device space
   inline bool need_sync_device() const
   {
-    return val_.need_sync_device();
+    throw std::logic_error("do not use");
+    return false; 
   }
 
   //! Whether the matrix's values need sync'ing to the given memory space.
   template<class MemorySpace>
   bool need_sync () const
   {
-    if (is_cuda<MemorySpace>::value) {
-      return this->need_sync_device ();
-    }
-    else {
-      return this->need_sync_host ();
-    }
+    throw std::logic_error("do not use");
+    return false;
   }
 
   //! Sync the matrix's values to host space
   inline void sync_host()
   {
-    val_.sync_host();
+    throw std::logic_error("do not use");
   }
 
   //! Sync the matrix's values to device space
   inline void sync_device()
   {
-    val_.sync_device();
+    throw std::logic_error("do not use");
   }
 
   //! Sync the matrix's values <i>to</i> the given memory space.
   template<class MemorySpace>
   void sync ()
   {
-    if (is_cuda<MemorySpace>::value) {
-      this->sync_device ();
-    }
-    else {
-      this->sync_host ();
-    }
+    throw std::logic_error("do not use");
   }
 
   // \brief Get the host view of the matrix's values
-  typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host getValuesHost () const {
-    return val_.view_host();
+  typename impl_scalar_type_dualview::t_host
+  getValuesHost () {
+    return val_.getHostView(Access::ReadWrite);
   }
 
   // \brief Get the device view of the matrix's values
-  typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev getValuesDevice () const {
-    return val_.view_device();
+  typename impl_scalar_type_dualview::t_dev
+  getValuesDevice () {
+    return val_.getDeviceView(Access::ReadWrite);
   }
 
   /// \brief Get the host or device View of the matrix's values (\c val_).
@@ -1000,6 +1004,35 @@ public:
       >::select (this->getValuesDevice (), this->getValuesHost ());
   }
 
+#endif
+    /// later we change getValues to getValues
+    typename impl_scalar_type_dualview::t_host::const_type
+    getValuesViewHost() const;
+
+    typename impl_scalar_type_dualview::t_dev::const_type
+    getValuesViewDevice() const;
+
+    typename impl_scalar_type_dualview::t_host
+    getValuesViewHostNonConst() const;
+
+    typename impl_scalar_type_dualview::t_dev
+    getValuesViewDeviceNonConst() const;
+
+    /// \brief Get a const Host view of the locally owned values
+    typename impl_scalar_type_dualview::t_host::const_type
+    getValuesViewHost (const LO& lclRow) const;
+
+    /// \brief Get a const Device view of the locally owned values
+    typename impl_scalar_type_dualview::t_dev::const_type
+    getValuesViewDevice (const LO& lclRow) const;
+
+    /// \brief Get a non-const Host view of the locally owned values
+    typename impl_scalar_type_dualview::t_host
+    getValuesViewHostNonConst (const LO& lclRow);
+
+    /// \brief Get a non-const Device view of the locally owned values
+    typename impl_scalar_type_dualview::t_dev
+    getValuesViewDeviceNonConst (const LO& lclRow);
   //@}
 
 private:
@@ -1099,19 +1132,6 @@ private:
 
   little_block_type
   getNonConstLocalBlockFromInput (impl_scalar_type* val, const size_t pointOffset) const;
-
-  const_little_block_type
-  getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
-
-  little_block_type
-  getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
-
-  /// \c Block at the given local mesh row and relative (mesh) offset.
-  ///
-  /// Use this for 2-argument getLocalDiagCopy that writes to Kokkos::View.
-  const_little_block_type
-  getConstLocalBlockFromRelOffset (const LO lclMeshRow,
-                                   const size_t relMeshOffset) const;
 
 public:
   //! The communicator over which this matrix is distributed.

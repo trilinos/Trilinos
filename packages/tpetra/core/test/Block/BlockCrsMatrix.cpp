@@ -264,27 +264,15 @@ namespace {
 
     out << "Test getLocalRowView, getLocalRowCopy, and replaceLocalValues" << endl;
 
-    blockMat.sync_host ();
-    blockMat.modify_host ();
     {
-      if (! std::is_same<typename Node::device_type::memory_space, Kokkos::HostSpace>::value) {
-        // This is messed up with HIP using HIPHostPinnedSpace as its memory space
-        #ifndef KOKKOS_ENABLE_HIP
-        TEST_ASSERT( blockMat.template need_sync<typename Node::device_type::memory_space> () );
-        TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
-        #endif
-        TEST_ASSERT( blockMat.need_sync_device () );
-        TEST_ASSERT( ! blockMat.need_sync_host () );
-      }
-      auto val = blockMat.template getValues<Kokkos::HostSpace> ();
-      // "Host" View may live in CudaUVMSpace, but its execution space
-      // had better be host.  We can tell that by getting the
-      // execution space's default memory space.
+      auto val = blockMat.getValuesViewHost(); 
       static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
                      Kokkos::HostSpace>::value,
                      "Host View is not actually a host View.");
-      auto val2 = blockMat.getValuesHost ();
-      static_assert (std::is_same<typename decltype (val2)::execution_space::memory_space,
+    }
+    {
+      auto val = blockMat.getValuesViewHostNonConst ();
+      static_assert (std::is_same<typename decltype (val)::execution_space::memory_space,
                      Kokkos::HostSpace>::value,
                      "Host View is not actually a host View.");
     }
@@ -379,7 +367,6 @@ namespace {
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
       TEST_ASSERT( myLclColInds != NULL );
       TEST_ASSERT( myVals != NULL );
-
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* curBlkPtr = myVals + k * blockSize * blockSize;
         little_block_type curBlk ((typename little_block_type::value_type*) curBlkPtr, blockSize, blockSize);
@@ -393,11 +380,7 @@ namespace {
       } // for each entry in the row
     } // for each local row
 
-    // We're done modifying data on host.
-    blockMat.template sync<typename Node::device_type::memory_space> ();
     {
-      TEST_ASSERT( ! blockMat.template need_sync<typename Node::device_type::memory_space> () );
-      TEST_ASSERT( ! blockMat.template need_sync<Kokkos::HostSpace> () );
       auto val = blockMat.template getValues<typename Node::device_type::memory_space> ();
       // "Device" View may live in CudaUVMSpace.
 #if defined(KOKKOS_ENABLE_CUDA)
