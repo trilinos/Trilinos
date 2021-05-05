@@ -9,8 +9,9 @@ TRIBITS_PACKAGE(Amesos)
 #
 # B) Set up package-specific options
 #
-# One can now configure SuperLUDist without ParMETIS
-if (NOT TPL_ENABLE_SuperLUDist_Without_ParMETIS)
+ADVANCED_SET(Amesos_Allow_SuperLUDist_Without_ParMETIS OFF
+  CACHE BOOL "Allow Amesos to use the SuperLUDist TPL without the enable of the ParMETIS TPL")
+if (NOT Amesos_Allow_SuperLUDist_Without_ParMETIS)
   IF(${PACKAGE_NAME}_ENABLE_SuperLUDist AND NOT ${PACKAGE_NAME}_ENABLE_ParMETIS)
     MESSAGE(FATAL_ERROR "The Amesos support for the SuperLUDist TPL requires the ParMETIS TPL.  Either disable Amesos SuperLUDist support or enable the ParMETIS TPL.")
   ENDIF()
