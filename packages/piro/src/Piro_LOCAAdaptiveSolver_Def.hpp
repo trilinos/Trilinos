@@ -297,4 +297,11 @@ Piro::observedLocaSolver(
   return Teuchos::rcp(new Piro::LOCAAdaptiveSolver<Scalar>(appParams, model, solMgr, saveDataStrategy));
 }
 
+template <typename Scalar>
+Teuchos::RCP<LOCA::AdaptiveStepper>
+Piro::LOCAAdaptiveSolver<Scalar>::getStepper()
+{
+  return stepper_;
+}
+
 #endif /* PIRO_LOCAADAPTIVESOLVER_DEF_HPP */
