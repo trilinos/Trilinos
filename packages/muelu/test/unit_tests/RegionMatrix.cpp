@@ -755,9 +755,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec, Scalar, LocalOrdinal
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
-              regionInterfaceImporter, regionMatVecLIDs,
-              regC, Teuchos::NO_TRANS, true);
+  regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
   for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
@@ -855,9 +853,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D, Scalar, LocalOrdin
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
-              regionInterfaceImporter, regionMatVecLIDs,
-              regC, Teuchos::NO_TRANS, true);
+  regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
   for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
@@ -950,9 +946,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec2D_Elasticity, Scalar,
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
-              regionInterfaceImporter, regionMatVecLIDs,
-              regC, Teuchos::NO_TRANS, true);
+  regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
   for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
@@ -1045,9 +1039,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(RegionMatrix, FastMatVec3D_Elasticity, Scalar,
 
   RCP<Vector> regC = Teuchos::null;
   regC = VectorFactory::Build(revisedRowMap, true);
-  ApplyMatVec(TST::one(), regionMats, regX, TST::zero(),
-              regionInterfaceImporter, regionMatVecLIDs,
-              regC, Teuchos::NO_TRANS, true);
+  regionMats->apply(*regX, *regC, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionMatVecLIDs);
 
   ArrayRCP<const SC> dataRegC = regC->getData(0);
   for(size_t idx = 0; idx < refRegB->getLocalLength(); ++idx) {
