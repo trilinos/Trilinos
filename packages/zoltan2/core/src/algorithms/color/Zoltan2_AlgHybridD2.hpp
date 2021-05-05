@@ -67,14 +67,10 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
 	  <offset_t, lno_t, lno_t, ExecutionSpace, MemorySpace, MemorySpace>;
       KernelHandle kh;
 
-      //pick which KokkosKernels algorithm to use.
-      //This boolean's value is set by the base class,
-      //based on the max degree of the graph.
-      if(use_vertex_based_coloring){
-        kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_VB_BIT);
-      } else {
-        kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_NB_BIT);
-      }
+      //Instead of switching between vertex-based and net-based algorithms,
+      //we only use the net-based algorithm, as it is faster than its
+      //vertex-based counterpart.
+      kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_NB_BIT);
 
       //vertex_list_size indicates whether we have provided a list of vertices to recolor
       //only currently makes a difference if the algorithm to be used is VBBIT
