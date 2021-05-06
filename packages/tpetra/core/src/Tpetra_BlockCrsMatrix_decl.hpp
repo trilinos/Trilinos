@@ -432,7 +432,7 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
   /// \brief Get a view of the (mesh, i.e., block) row, using local
   ///   (mesh, i.e., block) indices.
   ///
@@ -470,18 +470,28 @@ public:
                    Scalar*& vals,
                    LO& numInds) const;
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Not implemented.
   void
   getLocalRowView (LO LocalRow,
                    Teuchos::ArrayView<const LO> &indices,
                    Teuchos::ArrayView<const Scalar> &values) const;
 #endif // TPETRA_ENABLE_DEPRECATED_CODE
-  /// \brief Not yet implemented.
+  /// KK: this is inherited from row matrix interface and it returns const
+  ///      this cannot replace the deprecated pointer interface
+  ///      we need nonconst version of this code
   void
   getLocalRowView (LO LocalRow,
                    local_inds_host_view_type &indices,
                    values_host_view_type &values) const override;
 
+  /// KK: this is new addition to replace getLocalRowVie with pointers and arrayviews
+  ///     we can change name if it is not prefrred
+  void
+  getLocalRowViewNonConst (LO LocalRow,
+                           local_inds_host_view_type &indices,
+                           nonconst_values_host_view_type &values) const;
+  
   /// \brief Not implemented.
   virtual void
   getLocalRowCopy (LO LocalRow,

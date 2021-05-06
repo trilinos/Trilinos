@@ -1005,6 +1005,20 @@ public:
                                 graph_.getLocalGraphDevice ().row_map, blockSize_));
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  template <class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar,LO,GO,Node>::
+  getLocalDiagCopy (const Kokkos::View<impl_scalar_type***, device_type,
+                    Kokkos::MemoryUnmanaged>& diag,
+                    const Teuchos::ArrayView<const size_t>& offsets) const
+  {
+    auto offsets_view_host = Kokkos::View<const size_t*,Kokkos::HostSpace>(offsets.getRawPtr(), offsets.size());
+    auto offsets_view_device = Kokkos::create_mirror_view_and_copy(typename device_type::memory_space(), offsets_view_host);
+    getLocalDiagCopy(diag, offsets_view_device);
+    Kokkos::deep_copy(offsets_view_host, offsets_view_device);
+  }
+#endif
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -1038,7 +1052,6 @@ public:
     const LO validCount = this->sumIntoLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
     return validCount;
   }
-
 
   template<class Scalar, class LO, class GO, class Node>
   LO
@@ -1599,6 +1612,7 @@ public:
     return little_block_type (val + pointOffset, blockSize_, rowStride);
   }
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -1618,6 +1632,7 @@ public:
       return little_block_type ();
     }
   }
+#endif
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
@@ -3409,6 +3424,32 @@ public:
       colInds = local_inds_host_view_type(indHost_.data()+absBlockOffsetStart, numInds);
 
       vals = getValuesHost (localRowInd);
+    }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalRowViewNonConst (LO localRowInd,
+                           local_inds_host_view_type &colInds,
+                           nonconst_values_host_view_type &vals) const
+  {
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::BlockCrsMatrix::getLocalRowView: ";
+#endif // HAVE_TPETRA_DEBUG
+    
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      colInds = nonconst_local_inds_host_view_type();
+      vals = nonconst_values_host_view_type();
+    }
+    else {
+      const size_t absBlockOffsetStart = ptrHost_[localRowInd];
+      const size_t numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
+      colInds = local_inds_host_view_type(indHost_.data()+absBlockOffsetStart, numInds);
+
+      using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+      vals = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
     }
   }
 
