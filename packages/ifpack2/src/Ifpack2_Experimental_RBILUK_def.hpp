@@ -277,22 +277,22 @@ RBILUK<MatrixType>::
 initAllValues (const block_crs_matrix_type& A)
 {
   using Teuchos::RCP;
-  typedef Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> map_type;
+  typedef Tpetra::Map<LO,GO,node_type> map_type;
 
-  local_ordinal_type NumIn = 0, NumL = 0, NumU = 0;
+  LO NumIn = 0, NumL = 0, NumU = 0;
   bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
   size_t MaxNumEntries = A.getNodeMaxNumRowEntries();
-  local_ordinal_type blockMatSize = blockSize_*blockSize_;
+  LO blockMatSize = blockSize_*blockSize_;
 
   // First check that the local row map ordering is the same as the local portion of the column map.
   // The extraction of the strictly lower/upper parts of A, as well as the factorization,
   // implicitly assume that this is the case.
-  Teuchos::ArrayView<const global_ordinal_type> rowGIDs = A.getRowMap()->getNodeElementList();
-  Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getNodeElementList();
+  Teuchos::ArrayView<const GO> rowGIDs = A.getRowMap()->getNodeElementList();
+  Teuchos::ArrayView<const GO> colGIDs = A.getColMap()->getNodeElementList();
   bool gidsAreConsistentlyOrdered=true;
-  global_ordinal_type indexOfInconsistentGID=0;
-  for (global_ordinal_type i=0; i<rowGIDs.size(); ++i) {
+  GO indexOfInconsistentGID=0;
+  for (GO i=0; i<rowGIDs.size(); ++i) {
     if (rowGIDs[i] != colGIDs[i]) {
       gidsAreConsistentlyOrdered=false;
       indexOfInconsistentGID=i;
@@ -307,8 +307,8 @@ initAllValues (const block_crs_matrix_type& A)
 
   // Allocate temporary space for extracting the strictly
   // lower and upper parts of the matrix A.
-  Teuchos::Array<local_ordinal_type> LI(MaxNumEntries);
-  Teuchos::Array<local_ordinal_type> UI(MaxNumEntries);
+  Teuchos::Array<LO> LI(MaxNumEntries);
+  Teuchos::Array<LO> UI(MaxNumEntries);
   Teuchos::Array<scalar_type> LV(MaxNumEntries*blockMatSize);
   Teuchos::Array<scalar_type> UV(MaxNumEntries*blockMatSize);
 
@@ -346,11 +346,11 @@ initAllValues (const block_crs_matrix_type& A)
   //TODO BMK: Revisit this fence when BlockCrsMatrix is refactored.
   Kokkos::fence();
   for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
-    local_ordinal_type local_row = myRow;
+    LO local_row = myRow;
 
     //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
     //                    we'd need to check via the Tpetra::RowMatrix method supportsRowViews().
-    const local_ordinal_type * InI = 0;
+    const LO * InI = 0;
     scalar_type * InV = 0;
     A.getLocalRowView(local_row, InI, InV, NumIn);
 
@@ -360,14 +360,14 @@ initAllValues (const block_crs_matrix_type& A)
     NumU = 0;
     DiagFound = false;
 
-    for (local_ordinal_type j = 0; j < NumIn; ++j) {
-      const local_ordinal_type k = InI[j];
-      const local_ordinal_type blockOffset = blockMatSize*j;
+    for (LO j = 0; j < NumIn; ++j) {
+      const LO k = InI[j];
+      const LO blockOffset = blockMatSize*j;
 
       if (k == local_row) {
         DiagFound = true;
         // Store perturbed diagonal in Tpetra::Vector D_
-        for (local_ordinal_type jj = 0; jj < blockMatSize; ++jj)
+        for (LO jj = 0; jj < blockMatSize; ++jj)
           diagValues[jj] = this->Rthresh_ * InV[blockOffset+jj] + IFPACK2_SGN(InV[blockOffset+jj]) * this->Athresh_;
         D_block_->replaceLocalValues(local_row, &InI[j], diagValues.getRawPtr(), 1);
       }
@@ -382,15 +382,15 @@ initAllValues (const block_crs_matrix_type& A)
       }
       else if (k < local_row) {
         LI[NumL] = k;
-        const local_ordinal_type LBlockOffset = NumL*blockMatSize;
-        for (local_ordinal_type jj = 0; jj < blockMatSize; ++jj)
+        const LO LBlockOffset = NumL*blockMatSize;
+        for (LO jj = 0; jj < blockMatSize; ++jj)
           LV[LBlockOffset+jj] = InV[blockOffset+jj];
         NumL++;
       }
       else if (Teuchos::as<size_t>(k) <= rowMap->getNodeNumElements()) {
         UI[NumU] = k;
-        const local_ordinal_type UBlockOffset = NumU*blockMatSize;
-        for (local_ordinal_type jj = 0; jj < blockMatSize; ++jj)
+        const LO UBlockOffset = NumU*blockMatSize;
+        for (LO jj = 0; jj < blockMatSize; ++jj)
           UV[UBlockOffset+jj] = InV[blockOffset+jj];
         NumU++;
       }
@@ -402,7 +402,7 @@ initAllValues (const block_crs_matrix_type& A)
       ++NumNonzeroDiags;
     } else
     {
-      for (local_ordinal_type jj = 0; jj < blockSize_; ++jj)
+      for (LO jj = 0; jj < blockSize_; ++jj)
         diagValues[jj*(blockSize_+1)] = this->Athresh_;
       D_block_->replaceLocalValues(local_row, &local_row, diagValues.getRawPtr(), 1);
     }
@@ -418,6 +418,7 @@ initAllValues (const block_crs_matrix_type& A)
 
   // NOTE (mfh 27 May 2016) Sync back to device, in case compute()
   // ever gets a device implementation.
+  /*
   {
     typedef typename block_crs_matrix_type::device_type device_type;
     const_cast<block_crs_matrix_type&> (A).template sync<device_type> ();
@@ -425,6 +426,7 @@ initAllValues (const block_crs_matrix_type& A)
     U_block_->template sync<device_type> ();
     D_block_->template sync<device_type> ();
   }
+  */
   this->isInitialized_ = true;
 }
 
@@ -505,18 +507,18 @@ void RBILUK<MatrixType>::compute ()
     initAllValues (*A_block_);
 
     size_t NumIn;
-    local_ordinal_type NumL, NumU, NumURead;
+    LO NumL, NumU, NumURead;
 
     // Get Maximum Row length
     const size_t MaxNumEntries =
       L_block_->getNodeMaxNumRowEntries () + U_block_->getNodeMaxNumRowEntries () + 1;
 
-    const local_ordinal_type blockMatSize = blockSize_*blockSize_;
+    const LO blockMatSize = blockSize_*blockSize_;
 
     // FIXME (mfh 08 Nov 2015, 24 May 2016) We need to move away from
     // expressing these strides explicitly, in order to finish #177
     // (complete Kokkos-ization of BlockCrsMatrix) thoroughly.
-    const local_ordinal_type rowStride = blockSize_;
+    const LO rowStride = blockSize_;
 
     Teuchos::Array<int> ipiv_teuchos(blockSize_);
     Kokkos::View<int*, Kokkos::HostSpace,
@@ -537,50 +539,52 @@ void RBILUK<MatrixType>::compute ()
     // Now start the factorization.
 
     // Need some integer workspace and pointers
-    local_ordinal_type NumUU;
+    LO NumUU;
     for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
     }
-    Teuchos::Array<local_ordinal_type> InI(MaxNumEntries, 0);
+    Teuchos::Array<LO> InI(MaxNumEntries, 0);
     Teuchos::Array<scalar_type> InV(MaxNumEntries*blockMatSize,STM::zero());
 
-    const local_ordinal_type numLocalRows = L_block_->getNodeNumRows ();
-    for (local_ordinal_type local_row = 0; local_row < numLocalRows; ++local_row) {
+    const LO numLocalRows = L_block_->getNodeNumRows ();
+    for (LO local_row = 0; local_row < numLocalRows; ++local_row) {
 
       // Fill InV, InI with current row of L, D and U combined
 
       NumIn = MaxNumEntries;
-      const local_ordinal_type * colValsL;
-      scalar_type * valsL;
+      local_inds_host_view_type colValsL;
+      values_host_view_type valsL;
 
-      L_block_->getLocalRowView(local_row, colValsL, valsL, NumL);
-      for (local_ordinal_type j = 0; j < NumL; ++j)
+      L_block_->getLocalRowView(local_row, colValsL, valsL);
+      NumL = (LO) colValsL.size();
+      for (LO j = 0; j < NumL; ++j)
       {
-        const local_ordinal_type matOffset = blockMatSize*j;
-        little_block_type lmat((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
-        little_block_type lmatV((typename little_block_type::value_type*) &InV[matOffset],blockSize_,rowStride);
+        const LO matOffset = blockMatSize*j;
+        little_block_host_type lmat((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+        little_block_host_type lmatV((typename little_block_host_type::value_type*) &InV[matOffset],blockSize_,rowStride);
         //lmatV.assign(lmat);
         Tpetra::COPY (lmat, lmatV);
         InI[j] = colValsL[j];
       }
 
-      little_block_type dmat = D_block_->getLocalBlock(local_row, local_row);
-      little_block_type dmatV((typename little_block_type::value_type*) &InV[NumL*blockMatSize], blockSize_, rowStride);
+      little_block_host_type dmat = D_block_->getLocalBlockHostNonConst(local_row, local_row);
+      little_block_host_type dmatV((typename little_block_host_type::value_type*) &InV[NumL*blockMatSize], blockSize_, rowStride);
       //dmatV.assign(dmat);
       Tpetra::COPY (dmat, dmatV);
       InI[NumL] = local_row;
 
-      const local_ordinal_type * colValsU;
-      scalar_type * valsU;
-      U_block_->getLocalRowView(local_row, colValsU, valsU, NumURead);
+      local_inds_host_view_type colValsU;
+      values_host_view_type valsU;
+      U_block_->getLocalRowView(local_row, colValsU, valsU);
+      NumURead = (LO) colValsU.size();
       NumU = 0;
-      for (local_ordinal_type j = 0; j < NumURead; ++j)
+      for (LO j = 0; j < NumURead; ++j)
       {
         if (!(colValsU[j] < numLocalRows)) continue;
         InI[NumL+1+j] = colValsU[j];
-        const local_ordinal_type matOffset = blockMatSize*(NumL+1+j);
-        little_block_type umat((typename little_block_type::value_type*) &valsU[blockMatSize*j], blockSize_, rowStride);
-        little_block_type umatV((typename little_block_type::value_type*) &InV[matOffset], blockSize_, rowStride);
+        const LO matOffset = blockMatSize*(NumL+1+j);
+        little_block_host_type umat((typename little_block_host_type::value_type*) &valsU[blockMatSize*j], blockSize_, rowStride);
+        little_block_host_type umatV((typename little_block_host_type::value_type*) &InV[matOffset], blockSize_, rowStride);
         //umatV.assign(umat);
         Tpetra::COPY (umat, umatV);
         NumU += 1;
@@ -593,8 +597,8 @@ void RBILUK<MatrixType>::compute ()
       }
 
 #ifndef IFPACK2_RBILUK_INITIAL
-      for (local_ordinal_type i = 0; i < blockSize_; ++i)
-        for (local_ordinal_type j = 0; j < blockSize_; ++j){
+      for (LO i = 0; i < blockSize_; ++i)
+        for (LO j = 0; j < blockSize_; ++j){
           {
             diagModBlock(i,j) = 0;
           }
@@ -604,13 +608,13 @@ void RBILUK<MatrixType>::compute ()
       Kokkos::deep_copy (diagModBlock, diagmod);
 #endif
 
-      for (local_ordinal_type jj = 0; jj < NumL; ++jj) {
-        local_ordinal_type j = InI[jj];
-        little_block_type currentVal((typename little_block_type::value_type*) &InV[jj*blockMatSize], blockSize_, rowStride); // current_mults++;
+      for (LO jj = 0; jj < NumL; ++jj) {
+        LO j = InI[jj];
+        little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[jj*blockMatSize], blockSize_, rowStride); // current_mults++;
         //multiplier.assign(currentVal);
         Tpetra::COPY (currentVal, multiplier);
 
-        const little_block_type dmatInverse = D_block_->getLocalBlock(j,j);
+        const little_block_host_type dmatInverse = D_block_->getLocalBlockHostNonConst(j,j);
         // alpha = 1, beta = 0
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
@@ -625,18 +629,19 @@ void RBILUK<MatrixType>::compute ()
         //blockMatOpts.square_matrix_matrix_multiply(reinterpret_cast<impl_scalar_type*> (currentVal.data ()), reinterpret_cast<impl_scalar_type*> (dmatInverse.data ()), reinterpret_cast<impl_scalar_type*> (matTmp.data ()), blockSize_);
         //currentVal.assign(matTmp);
         Tpetra::COPY (matTmp, currentVal);
+        local_inds_host_view_type UUI;
+        values_host_view_type UUV;
 
-        const local_ordinal_type * UUI;
-        scalar_type * UUV;
-        U_block_->getLocalRowView(j, UUI, UUV, NumUU);
+        U_block_->getLocalRowView(j, UUI, UUV);
+        NumUU = (LO) UUI.size();
 
         if (this->RelaxValue_ == STM::zero ()) {
-          for (local_ordinal_type k = 0; k < NumUU; ++k) {
+          for (LO k = 0; k < NumUU; ++k) {
             if (!(UUI[k] < numLocalRows)) continue;
             const int kk = colflag[UUI[k]];
             if (kk > -1) {
-              little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
-              little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
+              little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
+              little_block_host_type uumat((typename little_block_host_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
@@ -652,12 +657,12 @@ void RBILUK<MatrixType>::compute ()
           }
         }
         else {
-          for (local_ordinal_type k = 0; k < NumUU; ++k) {
+          for (LO k = 0; k < NumUU; ++k) {
             if (!(UUI[k] < numLocalRows)) continue;
             const int kk = colflag[UUI[k]];
-            little_block_type uumat((typename little_block_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
+            little_block_host_type uumat((typename little_block_host_type::value_type*) &UUV[k*blockMatSize], blockSize_, rowStride);
             if (kk > -1) {
-              little_block_type kkval((typename little_block_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
+              little_block_host_type kkval((typename little_block_host_type::value_type*) &InV[kk*blockMatSize], blockSize_, rowStride);
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
           <KokkosBatched::Experimental::Trans::NoTranspose,
@@ -727,7 +732,7 @@ void RBILUK<MatrixType>::compute ()
           "lapackInfo = " << lapackInfo << " which indicates an error in the matrix inverse GETRI.");
       }
 
-      for (local_ordinal_type j = 0; j < NumU; ++j) {
+      for (LO j = 0; j < NumU; ++j) {
         little_block_type currentVal((typename little_block_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
         // scale U by the diagonal inverse
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
@@ -820,9 +825,9 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     "complex Scalar type.  Please talk to the Ifpack2 developers to get this "
     "fixed.  There is a FIXME in this file about this very issue.");
 
-  const local_ordinal_type blockMatSize = blockSize_*blockSize_;
+  const LO blockMatSize = blockSize_*blockSize_;
 
-  const local_ordinal_type rowStride = blockSize_;
+  const LO rowStride = blockSize_;
 
   BMV yBlock (Y, * (A_block_->getGraph ()->getDomainMap ()), blockSize_);
   const BMV xBlock (X, * (A_block_->getColMap ()), blockSize_);
@@ -844,31 +849,31 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         // input and output to alias one another.
         //
         // FIXME (mfh 24 Jan 2014) Cache this temp multivector.
-        const local_ordinal_type numVectors = xBlock.getNumVectors();
+        const LO numVectors = xBlock.getNumVectors();
         BMV cBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
         BMV rBlock (* (A_block_->getGraph ()->getDomainMap ()), blockSize_, numVectors);
-        for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
+        for (LO imv = 0; imv < numVectors; ++imv)
         {
           for (size_t i = 0; i < D_block_->getNodeNumRows(); ++i)
           {
-            local_ordinal_type local_row = i;
+            LO local_row = i;
             const_host_little_vec_type xval = xBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
             little_host_vec_type cval = cBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
             //cval.assign(xval);
             Tpetra::COPY (xval, cval);
 
-            local_ordinal_type NumL;
-            const local_ordinal_type * colValsL;
+            LO NumL;
+            const LO * colValsL;
             scalar_type * valsL;
 
             L_block_->getLocalRowView(local_row, colValsL, valsL, NumL);
 
-            for (local_ordinal_type j = 0; j < NumL; ++j)
+            for (LO j = 0; j < NumL; ++j)
             {
-              local_ordinal_type col = colValsL[j];
+              LO col = colValsL[j];
               const_host_little_vec_type prevVal = cBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
 
-              const local_ordinal_type matOffset = blockMatSize*j;
+              const LO matOffset = blockMatSize*j;
               little_block_type lij((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
 
               //cval.matvecUpdate(-one, lij, prevVal);
@@ -881,29 +886,29 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         D_block_->applyBlock(cBlock, rBlock);
 
         // Solve U Y = R.
-        for (local_ordinal_type imv = 0; imv < numVectors; ++imv)
+        for (LO imv = 0; imv < numVectors; ++imv)
         {
-          const local_ordinal_type numRows = D_block_->getNodeNumRows();
-          for (local_ordinal_type i = 0; i < numRows; ++i)
+          const LO numRows = D_block_->getNodeNumRows();
+          for (LO i = 0; i < numRows; ++i)
           {
-            local_ordinal_type local_row = (numRows-1)-i;
+            LO local_row = (numRows-1)-i;
             const_host_little_vec_type rval = rBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
             little_host_vec_type yval = yBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
             //yval.assign(rval);
             Tpetra::COPY (rval, yval);
 
-            local_ordinal_type NumU;
-            const local_ordinal_type * colValsU;
+            LO NumU;
+            const LO * colValsU;
             scalar_type * valsU;
 
             U_block_->getLocalRowView(local_row, colValsU, valsU, NumU);
 
-            for (local_ordinal_type j = 0; j < NumU; ++j)
+            for (LO j = 0; j < NumU; ++j)
             {
-              local_ordinal_type col = colValsU[NumU-1-j];
+              LO col = colValsU[NumU-1-j];
               const_host_little_vec_type prevVal = yBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
 
-              const local_ordinal_type matOffset = blockMatSize*(NumU-1-j);
+              const LO matOffset = blockMatSize*(NumU-1-j);
               little_block_type uij((typename little_block_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
 
               //yval.matvecUpdate(-one, uij, prevVal);

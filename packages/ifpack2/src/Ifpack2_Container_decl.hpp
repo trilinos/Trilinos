@@ -540,8 +540,8 @@ namespace Details {
 
     using block_crs_matrix_type = Tpetra::BlockCrsMatrix<SC, LO, GlobalOrdinal, Node>;
 
-    using h_vals_type = typename block_crs_matrix_type::local_inds_host_view_type;
-    using h_inds_type = typename block_crs_matrix_type::values_host_view_type;
+    using h_inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using h_vals_type = typename block_crs_matrix_type::values_host_view_type;
     //! Constructor for row views (preferred)
     StridedRowView(h_vals_type vals_, h_inds_type inds_, int blockSize_, size_t nnz_);
 
