@@ -168,6 +168,7 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
+    typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
@@ -336,7 +337,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
+        little_block_host_type tempBlock ((typename little_block_host_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             TEST_ASSERT( static_cast<Scalar> (tempBlock(i,j)) == STS::zero () );
@@ -349,7 +350,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
+        little_block_host_type tempBlock ((typename little_block_host_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize));
@@ -363,14 +364,26 @@ namespace {
       // Get a view of the current row again, and test that the
       // entries were modified as expected.  This tests that the
       // method assumes that the input blocks are row major.
-      err = blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
-      TEST_ASSERT( err == 0 );
+      // KK: this is going to be deprecated
+      //err = blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
+      {
+        using impl_scalar_type = typename BCM::impl_scalar_type;
+        using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+        using values_host_view_type = typename BCM::values_host_view_type;
+        local_inds_host_view_type myLclColIndsView;
+        values_host_view_type myValsView;
+        blockMat.getLocalRowView (lclRowInd, myLclColIndsView, myValsView);      
+        myLclColInds = myLclColIndsView.data();
+        myVals = const_cast<impl_scalar_type*>(myValsView.data());
+        numEnt = static_cast<LO>(myLclColIndsView.extent(0));
+      }
+
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
       TEST_ASSERT( myLclColInds != NULL );
       TEST_ASSERT( myVals != NULL );
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* curBlkPtr = myVals + k * blockSize * blockSize;
-        little_block_type curBlk ((typename little_block_type::value_type*) curBlkPtr, blockSize, blockSize);
+        little_block_host_type curBlk ((typename little_block_host_type::value_type*) curBlkPtr, blockSize, blockSize);
 
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
@@ -877,6 +890,7 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
+    typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
@@ -973,7 +987,7 @@ namespace {
       for (LO k = 0; k < numEnt; ++k) {
         Scalar* const tempBlockPtr = tempBlockSpace.getRawPtr () +
           k * blockSize * blockSize;
-        little_block_type tempBlock ((typename little_block_type::value_type*) tempBlockPtr, blockSize, blockSize);
+        little_block_host_type tempBlock ((typename little_block_host_type::value_type*) tempBlockPtr, blockSize, blockSize);
         for (LO j = 0; j < blockSize; ++j) {
           for (LO i = 0; i < blockSize; ++i) {
             tempBlock(i,j) = static_cast<Scalar> (static_cast<MT> (j + i * blockSize) + 0.0123);
@@ -1008,6 +1022,7 @@ namespace {
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
     typedef typename BCM::little_block_type little_block_type;
+    typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
 
     int lclSuccess = 1;
@@ -1085,6 +1100,7 @@ namespace {
       std::cerr << os.str ();
     }
     Kokkos::fence ();
+    auto diagMeshOffsetsHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), diagMeshOffsets);
 
     lclSuccess = success ? 1 : 0;
     reduceAll<int, int> (*comm, REDUCE_MIN, lclSuccess, outArg (gblSuccess));
@@ -1129,7 +1145,7 @@ namespace {
           LO err = blockMat.getLocalRowView (lclRowInd, lclColInds, lclVals, numEnt);
           TEST_ASSERT( err == 0 );
           if (err == 0) {
-            const size_t offset = diagMeshOffsets[lclRowInd];
+            const size_t offset = diagMeshOffsetsHost[lclRowInd];
             if (offset >= static_cast<size_t> (numEnt)) {
               diagOffsetCorrect = false;
             }
@@ -1180,8 +1196,8 @@ namespace {
       // that we copied them in the correct order.
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
-        little_block_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
-                                    blockSize, blockSize); // row major
+        little_block_host_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
+                                         blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
           IST curVal = STS::one ();
@@ -1206,6 +1222,7 @@ namespace {
     Kokkos::fence ();
     blockMat.getLocalDiagCopy (diagBlocks, diagMeshOffsets);
     Kokkos::fence ();
+    auto diagBlocksHost = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), diagBlocks);
 
     bool allBlocksGood = true;
     for (LO lclRowInd = 0; lclRowInd < static_cast<LO> (numLclMeshPoints); ++lclRowInd) {
@@ -1219,11 +1236,11 @@ namespace {
       // match those in the matrix.
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
-        little_block_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
+        little_block_host_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
                                     blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
-          auto diagBlock = subview (diagBlocks, lclRowInd, ALL (), ALL ());
+          auto diagBlock = subview (diagBlocksHost, lclRowInd, ALL (), ALL ());
           for (LO j = 0; j < blockSize; ++j) {
             for (LO i = 0; i < blockSize; ++i) {
               if (curBlock(i,j) != diagBlock(i,j)) {

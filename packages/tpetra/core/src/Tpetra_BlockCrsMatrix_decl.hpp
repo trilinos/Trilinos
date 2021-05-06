@@ -469,9 +469,7 @@ public:
                    const LO*& colInds,
                    Scalar*& vals,
                    LO& numInds) const;
-#endif
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   /// \brief Not implemented.
   void
   getLocalRowView (LO LocalRow,

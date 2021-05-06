@@ -1628,11 +1628,11 @@ public:
 
     const size_t absRowBlockOffset = ptrHost_[localRowInd];
     const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
-
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
       auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
-      return getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);
+      auto r_val = getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);      
+      return r_val; 
     }
     else {
       return little_block_type ();
@@ -3390,13 +3390,26 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowView (LO /* LocalRow */,
-                   local_inds_host_view_type & /* indices */,
-                   values_host_view_type & /* values */) const
+  getLocalRowView (LO localRowInd,
+                   local_inds_host_view_type &colInds,
+                   values_host_view_type &vals) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::BlockCrsMatrix::getLocalRowView: "
-      "Kokkos view interface is not yet implemented");
+#ifdef HAVE_TPETRA_DEBUG
+    const char prefix[] =
+      "Tpetra::BlockCrsMatrix::getLocalRowView: ";
+#endif // HAVE_TPETRA_DEBUG
+    
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      colInds = local_inds_host_view_type();
+      vals = values_host_view_type();
+    }
+    else {
+      const size_t absBlockOffsetStart = ptrHost_[localRowInd];
+      const size_t numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
+      colInds = local_inds_host_view_type(indHost_.data()+absBlockOffsetStart, numInds);
+
+      vals = getValuesHost (localRowInd);
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
