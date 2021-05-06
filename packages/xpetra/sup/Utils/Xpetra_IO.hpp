@@ -456,12 +456,12 @@ namespace Xpetra {
           Teuchos::Array<GlobalOrdinal> inds;
           Teuchos::Array<Scalar> vals;
           // Scan matrix to determine the exact nnz per row.
-          Teuchos::ArrayRCP<size_t> numEntriesPerRow(m);
+          Teuchos::ArrayRCP<size_t> numEntriesPerRow(m,(size_t)(0));
           for (int i = 0; i < m; i++) {
             int row, rownnz;
             ifs.read(reinterpret_cast<char*>(&row),    sizeof(row));
             ifs.read(reinterpret_cast<char*>(&rownnz), sizeof(rownnz));
-            numEntriesPerRow[i] = rownnz;
+            numEntriesPerRow[row] = rownnz;
             for (int j = 0; j < rownnz; j++) {
               int index;
               ifs.read(reinterpret_cast<char*>(&index), sizeof(index));
