@@ -868,6 +868,88 @@ namespace FROSch {
             FROSCH_ASSERT(false,"FROSch::CoarseOperator: Distribution type unknown.");
         }
 
+        // Output information about the Gatherin Steps
+        GO global,sum,numRanks;
+        LO local,minVal,maxVal;
+        SC avg;
+
+        global = coarseMapUnique->getMaxAllGlobalIndex();
+        if (coarseMapUnique->lib()==UseEpetra || coarseMapUnique->getGlobalNumElements()>0) {
+            global += 1;
+        }
+
+        local = (LO) max((LO) coarseMapUnique->getNodeNumElements(),(LO) 0);
+        reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
+        avg = max(sum/SC(this->MpiComm_->getSize()),0.0);
+        reduceAll(*this->MpiComm_,REDUCE_MIN,local,ptr(&minVal));
+        reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| "
+            << left << setw(74) << "> Gathering Steps Statistics " << right << setw(8) << "(Level " << setw(2) << this->LevelID_ << ")"
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "========================================================================================="
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(7) << " " << right
+            << " | " << setw(10) << "ranks"
+            << " | " << setw(10) << "total"
+            << " | " << setw(10) << "avg"
+            << " | " << setw(10) << "min"
+            << " | " << setw(10) << "max"
+            << " | " << setw(10) << "global sum"
+            << " |"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << "| " << left << setw(4) << "Map " << setw(3) << "0" << right
+            << " | " << setw(10) << this->MpiComm_->getSize()
+            << " | " << setw(10) << global
+            << " | " << setw(10) << setprecision(5) << avg
+            << " | " << setw(10) << minVal
+            << " | " << setw(10) << maxVal
+            << " | " << setw(10) << sum
+            << " |";
+        }
+
+        for (int i=0; i<GatheringMaps_.size(); i++) {
+            global = GatheringMaps_[i]->getMaxAllGlobalIndex();
+            if (GatheringMaps_[i]->lib()==UseEpetra || GatheringMaps_[i]->getGlobalNumElements()>0) {
+                global += 1;
+            }
+
+            local = (LO) max((LO) GatheringMaps_[i]->getNodeNumElements(),(LO) 0);
+            reduceAll(*this->MpiComm_,REDUCE_SUM,GO(local),ptr(&sum));
+            reduceAll(*this->MpiComm_,REDUCE_SUM,GO(GatheringMaps_[i]->getNodeNumElements()>0),ptr(&numRanks));
+            avg = max(sum/SC(numRanks),0.0);
+            reduceAll(*this->MpiComm_,REDUCE_MIN,(GatheringMaps_[i]->getNodeNumElements()>0 ? local : numeric_limits<LO>::max()),ptr(&minVal));
+            reduceAll(*this->MpiComm_,REDUCE_MAX,local,ptr(&maxVal));
+
+            if (this->Verbose_) {
+                cout
+                << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+                << "| " << setw(4) << left << "Map " << setw(3) << i+1 << right
+                << " | " << setw(10) << numRanks
+                << " | " << setw(10) << global
+                << " | " << setw(10) << setprecision(3) << avg
+                << " | " << setw(10) << minVal
+                << " | " << setw(10) << maxVal
+                << " | " << setw(10) << sum
+                << " |";
+            }
+        }
+
+        if (this->Verbose_) {
+            cout
+            << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
+            << setw(89) << "-----------------------------------------------------------------------------------------"
+            << endl;
+        }
+
         return 0;
     }
 
