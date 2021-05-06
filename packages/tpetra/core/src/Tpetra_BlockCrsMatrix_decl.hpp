@@ -960,18 +960,14 @@ public:
   {
     throw std::logic_error("do not use");
   }
+#endif
 
-  // \brief Get the host view of the matrix's values
-  typename impl_scalar_type_dualview::t_host
-  getValuesHost () {
-    return val_.getHostView(Access::ReadWrite);
-  }
 
-  // \brief Get the device view of the matrix's values
-  typename impl_scalar_type_dualview::t_dev
-  getValuesDevice () {
-    return val_.getDeviceView(Access::ReadWrite);
-  }
+    typename impl_scalar_type_dualview::t_host::const_type
+    getValuesHost() const;
+
+    typename impl_scalar_type_dualview::t_dev::const_type
+    getValuesDevice() const;
 
   /// \brief Get the host or device View of the matrix's values (\c val_).
   ///
@@ -990,49 +986,44 @@ public:
   ///
   /// CT: While we reserved the "right" we ignored this and explicitly did const cast away
   /// Hence I made the non-templated functions [getValuesHost and getValuesDevice; see above] const.
+  /// KK: This should be deprecated.
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class MemorySpace>
   typename std::conditional<is_cuda<MemorySpace>::value,
-                            typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev,
-                            typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host>::type
-  getValues ()
+                            typename impl_scalar_type_dualview::t_dev,
+                            typename impl_scalar_type_dualview::t_host>::type
+  getValues () const
   {
     // Unlike std::conditional, if_c has a select method.
     return Kokkos::Impl::if_c<
-        is_cuda<MemorySpace>::value,
-        typename Kokkos::DualView<impl_scalar_type*, device_type>::t_dev,
-        typename Kokkos::DualView<impl_scalar_type*, device_type>::t_host
-      >::select (this->getValuesDevice (), this->getValuesHost ());
+      is_cuda<MemorySpace>::value,
+      typename impl_scalar_type_dualview::t_dev,
+      typename impl_scalar_type_dualview::t_host
+      >::select (this->getValuesDeviceNonConst (), this->getValuesHostNonConst ());
   }
-
 #endif
-    /// later we change getValues to getValues
-    typename impl_scalar_type_dualview::t_host::const_type
-    getValuesViewHost() const;
-
-    typename impl_scalar_type_dualview::t_dev::const_type
-    getValuesViewDevice() const;
 
     typename impl_scalar_type_dualview::t_host
-    getValuesViewHostNonConst() const;
+    getValuesHostNonConst() const;
 
     typename impl_scalar_type_dualview::t_dev
-    getValuesViewDeviceNonConst() const;
+    getValuesDeviceNonConst() const;
 
     /// \brief Get a const Host view of the locally owned values
     typename impl_scalar_type_dualview::t_host::const_type
-    getValuesViewHost (const LO& lclRow) const;
+    getValuesHost (const LO& lclRow) const;
 
     /// \brief Get a const Device view of the locally owned values
     typename impl_scalar_type_dualview::t_dev::const_type
-    getValuesViewDevice (const LO& lclRow) const;
+    getValuesDevice (const LO& lclRow) const;
 
     /// \brief Get a non-const Host view of the locally owned values
     typename impl_scalar_type_dualview::t_host
-    getValuesViewHostNonConst (const LO& lclRow);
+    getValuesHostNonConst (const LO& lclRow);
 
     /// \brief Get a non-const Device view of the locally owned values
     typename impl_scalar_type_dualview::t_dev
-    getValuesViewDeviceNonConst (const LO& lclRow);
+    getValuesDeviceNonConst (const LO& lclRow);
   //@}
 
 private:

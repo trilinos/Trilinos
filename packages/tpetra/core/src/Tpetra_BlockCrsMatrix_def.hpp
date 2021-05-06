@@ -1063,7 +1063,7 @@ public:
       const size_t absBlockOffsetStart = ptrHost_[localRowInd];
       colInds = indHost_.data () + absBlockOffsetStart;
 
-      auto vals_host_out = getValuesViewHost (localRowInd);
+      auto vals_host_out = getValuesHost (localRowInd);
       impl_scalar_type* vals_host_out_raw = const_cast<impl_scalar_type*>(vals_host_out.data ());
       vals = reinterpret_cast<Scalar*> (vals_host_out_raw);
       numInds = ptrHost_[localRowInd + 1] - absBlockOffsetStart;
@@ -1079,7 +1079,7 @@ public:
                    nonconst_values_host_view_type &Values,
                    size_t& NumEntries) const 
   {
-    auto vals = getValuesViewHost(LocalRow);
+    auto vals = getValuesHost(LocalRow);
     const LO numInds = ptrHost_(LocalRow+1) - ptrHost_(LocalRow);
     if (numInds > (LO)Indices.extent(0) || numInds*blockSize_*blockSize_ > (LO)Values.extent(0)) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -1105,7 +1105,7 @@ public:
                    const Teuchos::ArrayView<Scalar>& Values,
                    size_t &NumEntries) const
   {
-    auto vals = getValuesViewHost(LocalRow);
+    auto vals = getValuesHost(LocalRow);
     const LO numInds = ptrHost_(LocalRow+1) - ptrHost_(LocalRow);
     if (numInds > (LO)Indices.size() || numInds*blockSize_*blockSize_ > (LO)Values.size()) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -1173,7 +1173,7 @@ public:
     }
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
     using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
-    auto val_out = const_cast<this_type&>(*this).getValuesViewHostNonConst(localRowInd);
+    auto val_out = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1210,7 +1210,7 @@ public:
       return static_cast<LO> (0);
     }
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
-    auto val_out = getValuesViewHost(localRowInd);
+    auto val_out = getValuesHost(localRowInd);
     impl_scalar_type* vOut = const_cast<impl_scalar_type*>(val_out.data());
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1249,7 +1249,7 @@ public:
     const impl_scalar_type ONE = static_cast<impl_scalar_type> (1.0);
     const impl_scalar_type* const vIn = reinterpret_cast<const impl_scalar_type*> (vals);
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
-    auto val_out = const_cast<this_type&>(*this).getValuesViewHostNonConst(localRowInd);
+    auto val_out = const_cast<this_type&>(*this).getValuesHostNonConst(localRowInd);
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
@@ -1273,7 +1273,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_host::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewHost () const 
+  getValuesHost () const 
   {
     return val_.getHostView(Access::ReadOnly);
   }
@@ -1282,7 +1282,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_dev::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewDevice () const 
+  getValuesDevice () const 
   {
     return val_.getDeviceView(Access::ReadOnly);
   }
@@ -1291,7 +1291,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_host
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewHostNonConst () const 
+  getValuesHostNonConst () const 
   {
     return val_.getHostView(Access::ReadWrite);
   }
@@ -1300,7 +1300,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_dev
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewDeviceNonConst () const 
+  getValuesDeviceNonConst () const 
   {
     return val_.getDeviceView(Access::ReadWrite);
   }
@@ -1309,7 +1309,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_host::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewHost (const LO& lclRow) const 
+  getValuesHost (const LO& lclRow) const 
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getHostView(Access::ReadOnly);
@@ -1321,7 +1321,7 @@ public:
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::
   impl_scalar_type_dualview::t_dev::const_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewDevice (const LO& lclRow) const 
+  getValuesDevice (const LO& lclRow) const 
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getDeviceView(Access::ReadOnly);
@@ -1332,7 +1332,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::impl_scalar_type_dualview::t_host
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewHostNonConst (const LO& lclRow) 
+  getValuesHostNonConst (const LO& lclRow) 
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getHostView(Access::ReadWrite);
@@ -1343,7 +1343,7 @@ public:
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::impl_scalar_type_dualview::t_dev
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getValuesViewDeviceNonConst (const LO& lclRow) 
+  getValuesDeviceNonConst (const LO& lclRow) 
   {
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     auto val = val_.getDeviceView(Access::ReadWrite);
@@ -1611,7 +1611,7 @@ public:
 
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesViewDeviceNonConst();
+      auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
       return getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);
     }
     else {
@@ -1631,7 +1631,7 @@ public:
 
     if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
       const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
-      auto vals = const_cast<this_type&>(*this).getValuesViewDeviceNonConst();
+      auto vals = const_cast<this_type&>(*this).getValuesDeviceNonConst();
       return getNonConstLocalBlockFromInput (vals.data(), absBlockOffset);
     }
     else {
