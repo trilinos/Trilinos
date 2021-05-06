@@ -481,7 +481,7 @@ namespace Tpetra {
            "target Map must be locally fitted (in the sense of "
            "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
       }
-      else { // if (restrictedMode && revOp == DoReverse) {
+      else { // if (restrictedMode && revOp == DoReverse) 
         const bool myMapLocallyFittedTransferSrcMap =
           this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
         TEUCHOS_TEST_FOR_EXCEPTION
@@ -847,9 +847,36 @@ namespace Tpetra {
         // answer the above question: packAndPrepare should not
         // take a commOnHost argument, and doTransferNew should sync
         // where needed, if needed.
-        this->packAndPrepare (src, exportLIDs, this->exports_,
-                              this->numExportPacketsPerLID_,
-                              constantNumPackets, distor);
+        if (debug) {
+          std::ostringstream lclErrStrm;
+          bool lclSuccess = false;
+          try {
+            this->packAndPrepare (src, exportLIDs, this->exports_,
+                                  this->numExportPacketsPerLID_,
+                                  constantNumPackets, distor);
+            lclSuccess = true;
+          }
+          catch (std::exception& e) {
+            lclErrStrm << "packAndPrepare threw an exception: "
+                       << endl << e.what();
+          }
+          catch (...) {
+            lclErrStrm << "packAndPrepare threw an exception "
+              "not a subclass of std::exception.";
+          }
+          const char gblErrMsgHeader[] = "Tpetra::DistObject::"
+            "doTransferNew threw an exception in packAndPrepare on "
+            "one or more processes in the DistObject's communicator.";
+          auto comm = getMap()->getComm();
+          Details::checkGlobalError(std::cerr, lclSuccess,
+                                    lclErrStrm.str().c_str(),
+                                    gblErrMsgHeader, *comm);
+        }
+        else {
+          this->packAndPrepare (src, exportLIDs, this->exports_,
+                                this->numExportPacketsPerLID_,
+                                constantNumPackets, distor);
+        }
         if (commOnHost) {
           if (this->exports_.need_sync_host ()) {
             this->exports_.sync_host ();

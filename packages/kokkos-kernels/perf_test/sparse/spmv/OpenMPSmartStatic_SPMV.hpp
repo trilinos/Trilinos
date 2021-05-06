@@ -138,7 +138,7 @@ void openmp_smart_static_matvec(AType A, XType x, YType y) {
 
   #pragma omp parallel
   {
-#ifdef KOKKOS_COMPILER_INTEL
+#if defined(KOKKOS_COMPILER_INTEL) && !defined(__clang__)
     __assume_aligned(x_ptr, 64);
     __assume_aligned(y_ptr, 64);
 #endif

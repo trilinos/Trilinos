@@ -702,6 +702,9 @@ namespace KokkosBatched {
     enum : int { vector_length = 8 };
     typedef __m512d data_type __attribute__ ((aligned(64)));
 
+    inline
+    static const char* label() { return "AVX512"; }
+
     template<typename,int>
     friend class Vector;
 

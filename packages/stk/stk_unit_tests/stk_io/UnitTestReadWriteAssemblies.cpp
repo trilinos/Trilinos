@@ -87,7 +87,27 @@ TEST_F(Assembly, readWriteAssembly_simple_excludeBlock2)
   stk::io::fill_mesh("generated:2x2x2", get_bulk());
   move_element(1, block1Part, block2Part);
 
-  test_write_then_read_assemblies(1, &block2Part);
+  test_write_then_read_assemblies(1, {&block2Part});
+}
+
+TEST_F(Assembly, readWriteAssembly_simple_excludeBothAssemblyBlocks)
+{
+  if(stk::parallel_machine_size(get_comm()) != 1) { return; }
+
+  setup_empty_mesh(stk::mesh::BulkData::AUTO_AURA);
+  const std::string assemblyName("simpleAssembly");
+  const std::vector<std::string> partNames {"block_1", "block_2", "block_3"};
+
+  stk::mesh::Part& assemblyPart = create_assembly(assemblyName, 10);
+  stk::mesh::Part& block1Part = create_io_part(partNames[0], 1);
+  stk::mesh::Part& block2Part = create_io_part(partNames[1], 2);
+  stk::mesh::Part& block3Part = create_io_part(partNames[2], 3);
+  declare_subsets(assemblyPart, {&block2Part, &block3Part});
+  stk::io::fill_mesh("generated:2x2x2", get_bulk());
+  move_element(1, block1Part, block2Part);
+  move_element(2, block1Part, block3Part);
+
+  test_write_then_read_assemblies(0, {&block2Part, &block3Part});
 }
 
 TEST_F(Assembly, readWriteAssembly_multiple)

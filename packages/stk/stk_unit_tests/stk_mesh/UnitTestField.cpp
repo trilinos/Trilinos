@@ -734,30 +734,6 @@ TEST_F(FieldFixture, totalNgpFieldDataBytes)
   EXPECT_EQ(stk::mesh::get_total_ngp_field_allocation_bytes(field), expectedTotalFieldDataBytes);
 }
 
-TEST_F(FieldFixture, maxNgpFieldDataBytes)
-{
-  stk::mesh::Field<double> &fieldA = get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::NODE_RANK, "doubleFieldA");
-  stk::mesh::Field<int> &fieldB    = get_meta().declare_field<stk::mesh::Field<int>>(stk::topology::NODE_RANK, "intFieldB");
-  const size_t numPerEntityA = 1;
-  const size_t numPerEntityB = 10;
-  const double scalarInitValue = 3.14;
-  const int vectorInitValue[numPerEntityB] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-  stk::mesh::put_field_on_mesh(fieldA, get_meta().universal_part(), &scalarInitValue);
-  stk::mesh::put_field_on_mesh(fieldB, get_meta().universal_part(), numPerEntityB, vectorInitValue);
-
-  const int numElemsPerDim = 10;
-  setup_mesh(stk::unit_test_util::get_mesh_spec(numElemsPerDim), stk::mesh::BulkData::NO_AUTO_AURA);
-
-  const size_t numBuckets = get_bulk().buckets(stk::topology::NODE_RANK).size();
-  const size_t bucketCapacity = stk::mesh::impl::BucketRepository::default_bucket_capacity;
-  const size_t bytesPerScalarA = sizeof(double);
-  const size_t bytesPerScalarB = sizeof(int);
-  const size_t expectedTotalFieldDataBytesA = (numBuckets * bucketCapacity * numPerEntityA * bytesPerScalarA);
-  const size_t expectedTotalFieldDataBytesB = (numBuckets * bucketCapacity * numPerEntityB * bytesPerScalarB);
-  EXPECT_EQ(stk::mesh::get_max_ngp_field_allocation_bytes(get_meta()),
-            std::max(expectedTotalFieldDataBytesA, expectedTotalFieldDataBytesB));
-}
-
 TEST_F(FieldFixture, writingDifferentNodalFieldsPerSolutionCase)
 {
     if(stk::parallel_machine_size(MPI_COMM_WORLD)<3)

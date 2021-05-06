@@ -54,7 +54,7 @@ template<class ViewType>
 struct GetUnifiedLayout {
   typedef typename std::conditional<
         ( (ViewType::rank == 1) &&
-          (std::is_same<typename ViewType::array_layout,Kokkos::LayoutRight>::value) ) ||
+          (!std::is_same<typename ViewType::array_layout,Kokkos::LayoutStride>::value) ) ||
         ( (ViewType::rank == 0) )
        ,Kokkos::LayoutLeft,typename ViewType::array_layout>::type array_layout;
 };

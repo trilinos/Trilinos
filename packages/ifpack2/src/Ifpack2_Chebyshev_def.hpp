@@ -98,6 +98,13 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
 
 
 template<class MatrixType>
+void
+Chebyshev<MatrixType>::setZeroStartingSolution (bool zeroStartingSolution)
+{
+  impl_.setZeroStartingSolution(zeroStartingSolution);
+}
+
+template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 Chebyshev<MatrixType>::getComm () const
 {
@@ -460,15 +467,11 @@ applyImpl (const MV& X,
   // optimize for it by caching X_copy.
   RCP<const MV> X_copy;
   bool copiedInput = false;
-  {
-    auto X_lcl_host = X.getLocalViewHost ();
-    auto Y_lcl_host = Y.getLocalViewHost ();
-    if (X_lcl_host.data () == Y_lcl_host.data ()) {
-      X_copy = rcp (new MV (X, Teuchos::Copy));
-      copiedInput = true;
-    } else {
-      X_copy = rcpFromRef (X);
-    }
+  if (X.aliases(Y)) {
+    X_copy = rcp (new MV (X, Teuchos::Copy));
+    copiedInput = true;
+  } else {
+    X_copy = rcpFromRef (X);
   }
 
   // If alpha != 1, fold alpha into (a deep copy of) X.

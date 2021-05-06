@@ -91,7 +91,7 @@ namespace Amesos2 {
     typedef typename multivec_t::dual_view_type dual_view_type;
     typedef typename dual_view_type::host_mirror_space host_execution_space;
     mv_->template sync<host_execution_space> ();
-    auto contig_local_view_2d = mv_->template getLocalView<host_execution_space>();
+    auto contig_local_view_2d = mv_->getLocalViewHost();
     auto contig_local_view_1d = Kokkos::subview (contig_local_view_2d, Kokkos::ALL (), 0);
     return contig_local_view_1d.data();
   }
@@ -191,7 +191,7 @@ namespace Amesos2 {
         typedef typename dual_view_type::host_mirror_space host_execution_space;
         redist_mv.template sync < host_execution_space > ();
 
-        auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+        auto contig_local_view_2d = redist_mv.getLocalViewHost();
         if ( redist_mv.isConstantStride() ) {
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = av(lda*j, lda);
@@ -208,7 +208,7 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = av(lda*j, lclNumRows);
-            auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
+            auto X_lcl_j_2d = redist_mv.getLocalViewHost();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
 
             using val_type = typename decltype( X_lcl_j_1d )::value_type;
@@ -425,7 +425,7 @@ namespace Amesos2 {
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
       typedef typename multivec_t::dual_view_type::host_mirror_space host_execution_space;
       // num_vecs = 1; stride does not matter
-      auto mv_view_to_modify_2d = mv_->template getLocalView<host_execution_space>();
+      auto mv_view_to_modify_2d = mv_->getLocalViewHost();
       for ( size_t i = 0; i < lda; ++i ) {
         mv_view_to_modify_2d(i,0) = new_data[i]; // Only one vector
       }
@@ -464,7 +464,7 @@ namespace Amesos2 {
         redist_mv.template modify< host_execution_space > ();
 
         if ( redist_mv.isConstantStride() ) {
-          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+          auto contig_local_view_2d = redist_mv.getLocalViewHost();
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = new_data(lda*j, lda);
             for ( size_t i = 0; i < lda; ++i ) {
@@ -480,7 +480,7 @@ namespace Amesos2 {
           const size_t lclNumRows = redist_mv.getLocalLength();
           for (size_t j = 0; j < redist_mv.getNumVectors(); ++j) {
             auto av_j = new_data(lda*j, lclNumRows);
-            auto X_lcl_j_2d = redist_mv.template getLocalView<host_execution_space> ();
+            auto X_lcl_j_2d = redist_mv.getLocalViewHost();
             auto X_lcl_j_1d = Kokkos::subview (X_lcl_j_2d, Kokkos::ALL (), j);
 
             using val_type = typename decltype( X_lcl_j_1d )::value_type;
@@ -535,7 +535,7 @@ namespace Amesos2 {
       // num_vecs = 1; stride does not matter
 
       // If this is the optimized path then kokkos_new_data will be the dst
-      auto mv_view_to_modify_2d = mv_->getLocalViewDevice();
+      auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
       deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
@@ -592,7 +592,7 @@ namespace Amesos2 {
         auto host_kokkos_new_data = Kokkos::create_mirror_view(kokkos_new_data);
         Kokkos::deep_copy(host_kokkos_new_data, kokkos_new_data);
         if ( redist_mv.isConstantStride() ) {
-          auto contig_local_view_2d = redist_mv.template getLocalView<host_execution_space>();
+          auto contig_local_view_2d = redist_mv.getLocalViewHost();
           for ( size_t j = 0; j < num_vecs; ++j) {
             auto av_j = Kokkos::subview(host_kokkos_new_data, Kokkos::ALL, j);
             for ( size_t i = 0; i < lda; ++i ) {

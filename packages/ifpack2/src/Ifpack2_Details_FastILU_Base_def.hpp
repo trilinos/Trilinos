@@ -119,8 +119,8 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
   int nvecs = X.getNumVectors();
   if(nvecs == 1)
   {
-    auto x2d = X.template getLocalView<execution_space>();
-    auto y2d = Y.template getLocalView<execution_space>();
+    auto x2d = X.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
+    auto y2d = Y.template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
     auto x1d = Kokkos::subview(x2d, Kokkos::ALL(), 0);
     auto y1d = Kokkos::subview(y2d, Kokkos::ALL(), 0);
     applyLocalPrec(x1d, y1d);
@@ -132,8 +132,8 @@ apply (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
     {
       auto Xcol = X.getVector(i);
       auto Ycol = Y.getVector(i);
-      auto xColView2d = Xcol->template getLocalView<execution_space>();
-      auto yColView2d = Ycol->template getLocalView<execution_space>();
+      auto xColView2d = Xcol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
+      auto yColView2d = Ycol->template getLocalView<execution_space>(Tpetra::Access::ReadWrite);
       ScalarArray xColView1d = Kokkos::subview(xColView2d, Kokkos::ALL(), 0);
       ScalarArray yColView1d = Kokkos::subview(yColView2d, Kokkos::ALL(), 0);
       applyLocalPrec(xColView1d, yColView1d);

@@ -53,11 +53,6 @@
 #include "Tpetra_Details_PackTraits.hpp" // unused here, could delete
 #include "KokkosSparse_CrsMatrix.hpp"
 
-// localGaussSeidel and reorderedLocalGaussSeidel are templated on
-// DomainScalar and RangeScalar, so we have to include this header
-// file here, rather than in the _def header file, so that we can get
-// the interfaces to the corresponding local computational kernels.
-
 #include <memory> // std::shared_ptr
 
 namespace Tpetra {
@@ -2707,7 +2702,7 @@ namespace Tpetra {
     rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x) override;
 
     //@}
-    //! @name Local apply and Gauss-Seidel
+    //! @name Local apply
     //@{
 
     /// \brief Compute the local part of a sparse matrix-(Multi)Vector
@@ -2777,58 +2772,6 @@ namespace Tpetra {
                 const Teuchos::ETransp mode = Teuchos::NO_TRANS,
                 const Scalar& alpha = Teuchos::ScalarTraits<Scalar>::one (),
                 const Scalar& beta = Teuchos::ScalarTraits<Scalar>::zero ()) const;
-
-    /// \brief Gauss-Seidel or SOR on \f$B = A X\f$.
-    ///
-    /// Apply a forward or backward sweep of Gauss-Seidel or
-    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
-    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
-    /// to 1.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in B.
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector B.  This may differ from the type of entries in
-    ///   A or in X.
-    ///
-    /// \param B [in] Right-hand side(s).
-    /// \param X [in/out] On input: initial guess(es).  On output:
-    ///   result multivector(s).
-    /// \param D [in] Inverse of diagonal entries of the matrix A.
-    /// \param omega [in] SOR damping factor.  omega = 1 results in
-    ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: Tpetra::Forward or
-    ///   Tpetra::Backward.  ("Symmetric" requires interprocess
-    ///   communication (before each sweep), which is not part of the
-    ///   local kernel.)
-
-    /// \brief Reordered Gauss-Seidel or SOR on \f$B = A X\f$.
-    ///
-    /// Apply a forward or backward sweep of reordered Gauss-Seidel or
-    /// Successive Over-Relaxation (SOR) to the linear system(s) \f$B
-    /// = A X\f$.  For Gauss-Seidel, set the damping factor \c omega
-    /// to 1.  The ordering can be a partial one, in which case the Gauss-Seidel is only
-    /// executed on a local subset of unknowns.
-    ///
-    /// \tparam DomainScalar The type of entries in the input
-    ///   multivector X.  This may differ from the type of entries in
-    ///   A or in B.
-    /// \tparam RangeScalar The type of entries in the output
-    ///   multivector B.  This may differ from the type of entries in
-    ///   A or in X.
-    ///
-    /// \param B [in] Right-hand side(s).
-    /// \param X [in/out] On input: initial guess(es).  On output:
-    ///   result multivector(s).
-    /// \param D [in] Inverse of diagonal entries of the matrix A.
-    /// \param rowIndices [in] Ordered list of indices on which to execute GS.
-    /// \param omega [in] SOR damping factor.  omega = 1 results in
-    ///   Gauss-Seidel.
-    /// \param direction [in] Sweep direction: Tpetra::Forward or
-    ///   Tpetra::Backward.  ("Symmetric" requires interprocess
-    ///   communication (before each sweep), which is not part of the
-    ///   local kernel.)
 
     /// \brief Return another CrsMatrix with the same entries, but
     ///   converted to a different Scalar type \c T.
@@ -3745,11 +3688,11 @@ namespace Tpetra {
     //! Returns true if globalConstants have been computed; false otherwise
     bool haveGlobalConstants() const;
   protected:
-    /// \brief Column Map MultiVector used in apply() and gaussSeidel().
+    /// \brief Column Map MultiVector used in apply().
     ///
     /// This is a column Map MultiVector.  It is used as the target of
-    /// the forward mode Import operation (if necessary) in apply()
-    /// and gaussSeidel(), and the source of the reverse mode Export
+    /// the forward mode Import operation (if necessary) in apply(),
+    /// and the source of the reverse mode Export
     /// operation (if necessary) in these methods.  Both of these
     /// methods create this MultiVector on demand if needed, and reuse
     /// it (if possible) for subsequent calls.
@@ -3762,8 +3705,8 @@ namespace Tpetra {
     /// \brief Row Map MultiVector used in apply().
     ///
     /// This is a row Map MultiVector.  It is uses as the source of
-    /// the forward mode Export operation (if necessary) in apply()
-    /// and gaussSeidel(), and the target of the reverse mode Import
+    /// the forward mode Export operation (if necessary) in apply(),
+    /// and the target of the reverse mode Import
     /// operation (if necessary) in these methods.  Both of these
     /// methods create this MultiVector on demand if needed, and reuse
     /// it (if possible) for subsequent calls.

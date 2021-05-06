@@ -645,8 +645,9 @@ private:
    * \param achieved balance we achieved.
    * \param expected balance expected.
    */
+  static
   KOKKOS_INLINE_FUNCTION
-  double calculate_imbalance(mj_scalar_t achieved, mj_scalar_t expected) const {
+  double calculate_imbalance(mj_scalar_t achieved, mj_scalar_t expected) {
     return static_cast<double>(achieved) / static_cast<double>(expected) - 1.0;
   }
 
@@ -715,6 +716,7 @@ private:
    * the left of the cut line.
    * \param new_cut_position DOCWORK: Documentation
    */
+  static
   KOKKOS_INLINE_FUNCTION
   void mj_calculate_new_cut_position (
     mj_scalar_t cut_upper_bound,
@@ -722,7 +724,8 @@ private:
     mj_scalar_t cut_upper_weight,
     mj_scalar_t cut_lower_weight,
     mj_scalar_t expected_weight,
-    mj_scalar_t &new_cut_position);
+    mj_scalar_t &new_cut_position,
+    mj_scalar_t sEpsilon);
 
   /*! \brief Function checks if should do migration or not.
    * It returns true to point that migration should be done when
@@ -4386,19 +4389,21 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t, mj_node_t>::
  */
 template <typename mj_scalar_t, typename mj_lno_t, typename mj_gno_t,
   typename mj_part_t, typename mj_node_t>
+KOKKOS_INLINE_FUNCTION
 void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   mj_node_t>::mj_calculate_new_cut_position(mj_scalar_t cut_upper_bound,
   mj_scalar_t cut_lower_bound,
   mj_scalar_t cut_upper_weight,
   mj_scalar_t cut_lower_weight,
   mj_scalar_t expected_weight,
-  mj_scalar_t &new_cut_position) {
+  mj_scalar_t &new_cut_position,
+  mj_scalar_t sEpsilon) {
 
-  if(std::abs(cut_upper_bound - cut_lower_bound) < this->sEpsilon) {
+  if(std::abs(cut_upper_bound - cut_lower_bound) < sEpsilon) {
     new_cut_position = cut_upper_bound; //or lower bound does not matter.
   }
 
-  if(std::abs(cut_upper_weight - cut_lower_weight) < this->sEpsilon) {
+  if(std::abs(cut_upper_weight - cut_lower_weight) < sEpsilon) {
     new_cut_position = cut_lower_bound;
   }
 
@@ -5113,6 +5118,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
   auto local_global_min_max_coord_total_weight =
     global_min_max_coord_total_weight;
 
+  const auto _sEpsilon = this->sEpsilon;
   // Note for a 22 part system I tried removing the outer loop
   // and doing each sub loop as a simple parallel_for over num_cuts.
   // But that was about twice as slow (10ms) as the current form (5ms)
@@ -5154,6 +5160,8 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
 
     Kokkos::parallel_for(Kokkos::TeamThreadRange (team_member, num_cuts),
       [=] (mj_part_t i) {
+      using algMJ_t = AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
+                            mj_node_t>;
       // seen weight in the part
       mj_scalar_t seen_weight_in_part = 0;
       // expected weight for part.
@@ -5180,12 +5188,12 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
         //expected ratio
         expected_weight_in_part = current_part_target_weights(i);
 
-       //leftImbalance = imbalanceOf(seenW, globalTotalWeight, expected);
-        imbalance_on_left = calculate_imbalance(seen_weight_in_part,
+        //leftImbalance = imbalanceOf(seenW, globalTotalWeight, expected);
+        imbalance_on_left = algMJ_t::calculate_imbalance(seen_weight_in_part,
           expected_weight_in_part);
         // rightImbalance = imbalanceOf(globalTotalWeight - seenW,
         // globalTotalWeight, 1 - expected);
-        imbalance_on_right = calculate_imbalance(global_total_weight -
+        imbalance_on_right = algMJ_t::calculate_imbalance(global_total_weight -
           seen_weight_in_part, global_total_weight - expected_weight_in_part);
         bool is_left_imbalance_valid = std::abs(imbalance_on_left) -
           used_imbalance_tolerance < local_sEpsilon ;
@@ -5301,12 +5309,13 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
             }
 
             mj_scalar_t new_cut_position = 0;
-            this->mj_calculate_new_cut_position(
+            algMJ_t::mj_calculate_new_cut_position(
               current_cut_upper_bounds(i),
               current_cut_lower_bounds(i),
               current_cut_upper_weights(i),
               current_cut_lower_bound_weights(i),
-              expected_weight_in_part, new_cut_position);
+              expected_weight_in_part, new_cut_position,
+              _sEpsilon);
 
             // if cut line does not move significantly.
             // then finalize the search.
@@ -5382,13 +5391,14 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t,
             }
           }
           mj_scalar_t new_cut_position = 0;
-          this->mj_calculate_new_cut_position(
+          algMJ_t::mj_calculate_new_cut_position(
             current_cut_upper_bounds(i),
             current_cut_lower_bounds(i),
             current_cut_upper_weights(i),
             current_cut_lower_bound_weights(i),
             expected_weight_in_part,
-            new_cut_position);
+            new_cut_position,
+            _sEpsilon);
 
             // if cut line does not move significantly.
             if(std::abs(current_cut_coordinates(i) -

@@ -113,9 +113,7 @@ namespace Tpetra {
       // corresponding matrix dimension is zero.
       ordinal_type X_stride = 1;
       if(tsqr_->wants_device_memory()) {
-        X.sync_device();
-        X.modify_device();
-        auto X_view = X.getLocalViewDevice();
+        auto X_view = X.getLocalViewDevice(Access::ReadWrite);
         X_ptr = reinterpret_cast<scalar_type*>(X_view.data());
         X_stride = static_cast<ordinal_type>(X_view.stride(1));
         if(X_stride == 0) {
@@ -123,9 +121,7 @@ namespace Tpetra {
         }
       }
       else {
-        X.sync_host();
-        X.modify_host();
-        auto X_view = X.getLocalViewHost();
+        auto X_view = X.getLocalViewHost(Access::ReadWrite);
         X_ptr = reinterpret_cast<scalar_type*>(X_view.data());
         X_stride = static_cast<ordinal_type>(X_view.stride(1));
         if(X_stride == 0) {

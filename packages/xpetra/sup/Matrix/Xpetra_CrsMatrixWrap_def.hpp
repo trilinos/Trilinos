@@ -346,6 +346,19 @@ namespace Xpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
+                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
+                  Teuchos::ETransp mode,
+                  Scalar alpha,
+                  Scalar beta,
+                  bool sumInterfaceValues,
+                  const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                  const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs
+  ) const{
+      matrixData_->apply(X,Y,mode,alpha,beta,sumInterfaceValues,regionInterfaceImporter,regionInterfaceLIDs);
+  }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > CrsMatrixWrap<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const {
     return matrixData_->getDomainMap();
   }

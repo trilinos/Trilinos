@@ -496,10 +496,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
     // we need to create an auxiliary vector, Xcopy
     Teuchos::RCP<const MV> X_copy;
     {
-      auto X_lcl_host = X.getLocalViewHost ();
-      auto Y_lcl_host = Y.getLocalViewHost ();
-
-      if (X_lcl_host.data () == Y_lcl_host.data ()) {
+      if (X.aliases(Y)) {
         X_copy = rcp (new MV (X, Teuchos::Copy));
       } else {
         X_copy = rcpFromRef (X);
@@ -804,20 +801,18 @@ BlockRelaxation<MatrixType,ContainerType>::
 ApplyInverseJacobi (const MV& X, MV& Y) const
 {
   const size_t NumVectors = X.getNumVectors ();
-  auto XView = X.getLocalViewHost ();
-  auto YView = Y.getLocalViewHost ();
 
   MV AY (Y.getMap (), NumVectors);
-
-  auto AYView = AY.getLocalViewHost ();
 
   // Initial matvec not needed
   int starting_iteration = 0;
   if (OverlapLevel_ > 0)
   {
     //Overlapping jacobi, with view of W_
-    auto WView = W_->getLocalViewHost ();
+    auto WView = W_->getLocalViewHost (Tpetra::Access::ReadOnly);
     if(ZeroStartingSolution_) {
+      auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+      auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
       Container_->DoOverlappingJacobi(XView, YView, WView, DampingFactor_);
       starting_iteration = 1;
     }
@@ -826,7 +821,11 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     {
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
-      Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
+      {
+        auto AYView = AY.getLocalViewHost (Tpetra::Access::ReadOnly);
+        auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
+        Container_->DoOverlappingJacobi (AYView, YView, WView, DampingFactor_);
+      }
     }
   }
   else
@@ -834,6 +833,8 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     //Non-overlapping
     if(ZeroStartingSolution_)
     {
+      auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+      auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
       Container_->DoJacobi (XView, YView, DampingFactor_);
       starting_iteration = 1;
     }
@@ -842,7 +843,11 @@ ApplyInverseJacobi (const MV& X, MV& Y) const
     {
       applyMat (Y, AY);
       AY.update (ONE, X, -ONE);
-      Container_->DoJacobi (AYView, YView, DampingFactor_);
+      {
+        auto AYView = AY.getLocalViewHost (Tpetra::Access::ReadOnly);
+        auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
+        Container_->DoJacobi (AYView, YView, DampingFactor_);
+      }
     }
   }
 }
@@ -856,8 +861,8 @@ ApplyInverseGS (const MV& X, MV& Y) const
   using Teuchos::ptr;
   size_t numVecs = X.getNumVectors();
   //Get view of X (is never modified in this function)
-  auto XView = X.getLocalViewHost ();
-  auto YView = Y.getLocalViewHost ();
+  auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+  auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
   //Pre-import Y, if parallel
   Ptr<MV> Y2;
   bool deleteY2 = false;
@@ -874,13 +879,13 @@ ApplyInverseGS (const MV& X, MV& Y) const
     {
       //do import once per sweep
       Y2->doImport(Y, *Importer_, Tpetra::INSERT);
-      auto Y2View = Y2->getLocalViewHost ();
+      auto Y2View = Y2->getLocalViewHost (Tpetra::Access::ReadWrite);
       Container_->DoGaussSeidel(XView, YView, Y2View, DampingFactor_);
     }
   }
   else
   {
-    auto Y2View = Y2->getLocalViewHost ();
+    auto Y2View = Y2->getLocalViewHost (Tpetra::Access::ReadWrite);
     for(int j = 0; j < NumSweeps_; ++j)
     {
       Container_->DoGaussSeidel(XView, YView, Y2View, DampingFactor_);
@@ -898,8 +903,8 @@ ApplyInverseSGS (const MV& X, MV& Y) const
   using Teuchos::Ptr;
   using Teuchos::ptr;
   //Get view of X (is never modified in this function)
-  auto XView = X.getLocalViewHost ();
-  auto YView = Y.getLocalViewHost ();
+  auto XView = X.getLocalViewHost (Tpetra::Access::ReadOnly);
+  auto YView = Y.getLocalViewHost (Tpetra::Access::ReadWrite);
   //Pre-import Y, if parallel
   Ptr<MV> Y2;
   bool deleteY2 = false;
@@ -916,13 +921,13 @@ ApplyInverseSGS (const MV& X, MV& Y) const
     {
       //do import once per sweep
       Y2->doImport(Y, *Importer_, Tpetra::INSERT);
-      auto Y2View = Y2->getLocalViewHost ();
+      auto Y2View = Y2->getLocalViewHost (Tpetra::Access::ReadWrite);
       Container_->DoSGS(XView, YView, Y2View, DampingFactor_);
     }
   }
   else
   {
-    auto Y2View = Y2->getLocalViewHost ();
+    auto Y2View = Y2->getLocalViewHost (Tpetra::Access::ReadWrite);
     for(int j = 0; j < NumSweeps_; ++j)
     {
       Container_->DoSGS(XView, YView, Y2View, DampingFactor_);

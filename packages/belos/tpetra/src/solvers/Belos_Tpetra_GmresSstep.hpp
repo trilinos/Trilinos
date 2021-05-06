@@ -76,13 +76,8 @@ public:
     // A^T * A = R^T * R, where R is ncols by ncols upper
     // triangular.
     int info = 0;
-    if (R_mv.need_sync_host()) {
-      // sync R to host before modifying it in place on host
-      R_mv.sync_host();
-    }
-    R_mv.modify_host ();
     {
-      auto R_h = R_mv.getLocalViewHost ();
+      auto R_h = R_mv.getLocalViewHost (Tpetra::Access::ReadWrite);
       int ldr = int (R_h.extent (0));
       SC *Rdata = reinterpret_cast<SC*> (R_h.data ());
       lapack.POTRF ('U', ncols, Rdata, ldr, &info);
@@ -114,11 +109,9 @@ public:
     // triangle of R.
 
     // Compute A_cur / R (Matlab notation for A_cur * R^{-1}) in place.
-    A.sync_device ();
-    A.modify_device ();
     {
-      auto A_d = A.getLocalViewDevice ();
-      auto R_d = R_mv.getLocalViewDevice ();
+      auto A_d = A.getLocalViewDevice (Tpetra::Access::ReadWrite);
+      auto R_d = R_mv.getLocalViewDevice (Tpetra::Access::ReadOnly);
       KokkosBlas::trsm ("R", "U", "N", "N",
                         one, R_d, A_d);
     }

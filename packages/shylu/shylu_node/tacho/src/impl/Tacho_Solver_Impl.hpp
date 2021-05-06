@@ -60,17 +60,17 @@ namespace Tacho {
     _small_problem_thres = small_problem_thres;
   }
   
-  template<typename VT, typename ST>  
-  void 
-  Solver<VT,ST>
-  ::setTransposeSolve(const bool transpose) {
-    _transpose = transpose; // this option is not used yet
-  }
+  // template<typename VT, typename ST>  
+  // void 
+  // Solver<VT,ST>
+  // ::setTransposeSolve(const bool transpose) {
+  //   _transpose = transpose; // this option is not used yet
+  // }
   
   template<typename VT, typename ST>  
   void 
   Solver<VT,ST>
-  ::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric, 3 - hermitian
+  ::setMatrixType(const int symmetric, // 0 - unsymmetric, 1 - structure sym, 2 - symmetric
                   const bool is_positive_definite) { 
     switch (symmetric) {
     case 0: { _mode = LU; break; }
@@ -78,27 +78,14 @@ namespace Tacho {
     case 2: {
       if (is_positive_definite) {
         if (std::is_same<value_type,double>::value ||
-            std::is_same<value_type,float>::value) { // real symmetric posdef
+            std::is_same<value_type,float>::value || 
+            std::is_same<value_type,Kokkos::complex<float> >::value || 
+            std::is_same<value_type,Kokkos::complex<double> >::value) {
+          // real symmetric posdef
           _mode = Cholesky;
-        } else { // complex symmetric posdef - does not exist; should be hermitian if the matrix is posdef
-          TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, 
-                                   "symmetric positive definite with complex values are not right combination: try hermitian positive definite");
-        }
+        } 
       } else { // real or complex symmetric indef
-        _mode = UtDU;
-      }
-      break;
-    }
-    case 3: {
-      if (is_positive_definite) { // real or complex hermitian posdef
-        _mode = Cholesky;
-      } else {
-        if (std::is_same<value_type,double>::value ||
-            std::is_same<value_type,float>::value) { // real symmetric indef 
-          _mode = UtDU;
-        } else { // complex hermitian indef
-          _mode = SymLU; 
-        }
+        _mode = LDL;
       }
       break;
     }
@@ -106,7 +93,6 @@ namespace Tacho {
       TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "symmetric argument is wrong");
     }
     }
-    TACHO_TEST_FOR_EXCEPTION(_mode != Cholesky, std::logic_error, "Cholesky is only supported now");
   }
 
   template<typename VT, typename ST>
@@ -394,7 +380,7 @@ namespace Tacho {
     /// initialize numeric tools
     ///
     if (_m < _small_problem_thres) {
-      //_U = value_type_matrix_host("U", _m, _m);
+      //_A = value_type_matrix_host("A", _m, _m);
     } else {
       if (_N == nullptr) 
         _N = (numeric_tools_type*) ::operator new (sizeof(numeric_tools_type));
@@ -455,6 +441,19 @@ namespace Tacho {
   int
   Solver<VT,ST>      
   ::factorize(const value_type_array &ax) {
+    switch (_mode) {
+    case Cholesky: factorize_chol(ax); break;
+    case LDL:      factorize_ldl(ax); break;
+    default:
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
+  ::factorize_chol(const value_type_array &ax) {
     if (_verbose) {
       printf("TachoSolver: Factorize\n");
       printf("======================\n");
@@ -463,20 +462,20 @@ namespace Tacho {
       Kokkos::Impl::Timer timer;
 
       timer.reset();
-      _U = value_type_matrix_host("U", _m, _m);
+      _A = value_type_matrix_host("A", _m, _m);
       auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
       for (ordinal_type i=0;i<_m;++i) {
         const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
         for (size_type j=jbeg;j<jend;++j) {
           const ordinal_type col = _h_aj(j);
           if (i <= col) 
-            _U(i, col) = h_ax(j);
+            _A(i, col) = h_ax(j);
         }
       }
       const double t_copy = timer.seconds();
         
       timer.reset();
-      Chol<Uplo::Upper,Algo::External>::invoke(_U);
+      Tacho::Chol<Uplo::Upper,Algo::External>::invoke(_A);
       const double t_factor = timer.seconds();
 
       if (_verbose) {
@@ -491,11 +490,7 @@ namespace Tacho {
     } else {
 
 #if !defined (KOKKOS_ENABLE_CUDA)
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const ordinal_type nthreads = host_space::thread_pool_size(0);
-#else
       const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
-#endif
 #endif
       if (_levelset) {
         if      (_variant == 0) _L0->factorizeCholesky(ax, _verbose);
@@ -564,9 +559,91 @@ namespace Tacho {
   template<typename VT, typename ST>  
   int
   Solver<VT,ST>      
+  ::factorize_ldl(const value_type_array &ax) {
+    if (_verbose) {
+      printf("TachoSolver: Factorize\n");
+      printf("======================\n");
+    }
+    if (_m < _small_problem_thres) {
+      Kokkos::Impl::Timer timer;
+
+      timer.reset();
+      _A = value_type_matrix_host("A", _m, _m);
+      auto h_ax = Kokkos::create_mirror_view(host_memory_space(), ax); Kokkos::deep_copy(h_ax, ax);
+      for (ordinal_type i=0;i<_m;++i) {
+        const size_type jbeg = _h_ap(i), jend = _h_ap(i+1);
+        for (size_type j=jbeg;j<jend;++j) {
+          const ordinal_type col = _h_aj(j);
+          if (i >= col) 
+            _A(i, col) = h_ax(j);
+        }
+      }
+      const double t_copy = timer.seconds();
+        
+      timer.reset();
+      _P = ordinal_type_array_host("P", 4*_m);
+      _D = value_type_matrix_host("D", _m, 2);
+      auto W = value_type_array_host("W", 32*_m);
+      Tacho::LDL<Uplo::Lower,Algo::External>::invoke(_A, _P, W);
+      Tacho::LDL<Uplo::Lower,Algo::External>::modify(_A, _P, _D);
+      const double t_factor = timer.seconds();
+      
+      if (_verbose) {
+        printf("Summary: NumericTools (SmallDenseFactorization)\n");
+        printf("===============================================\n");
+        printf("  Time\n");
+        printf("             time for copying A into L:                       %10.6f s\n", t_copy);
+        printf("             time for numeric factorization:                  %10.6f s\n", t_factor);
+        printf("             total time spent:                                %10.6f s\n", (t_copy+t_factor));
+        printf("\n");
+      }
+    } else {
+#if !defined (KOKKOS_ENABLE_CUDA)
+      const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+#endif
+      if (_levelset) {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");
+        // if      (_variant == 0) _L0->factorizeLDL(ax, _verbose);
+        // else if (_variant == 1) _L1->factorizeLDL(ax, _verbose);
+        // else if (_variant == 2) _L2->factorizeLDL(ax, _verbose);
+      } 
+#if !defined (KOKKOS_ENABLE_CUDA)
+      else if (nthreads == 1) {
+        _N->factorizeLDL_Serial(ax, _verbose);
+        // if (_nb < 0) 
+        //   _N->factorizeLDL_Serial(ax, _verbose);
+        // else 
+        //   _N->factorizeLDL_SerialPanel(ax, _nb, _verbose);
+      }
+#endif
+      else {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+      }
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
   ::solve(const value_type_matrix &x,
           const value_type_matrix &b,
           const value_type_matrix &t) {
+    switch (_mode) {
+    case Cholesky: solve_chol(x, b, t); break;
+    case LDL:      solve_ldl(x, b, t); break;
+    default:
+      TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+    }      
+    return 0;
+  }    
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
+  ::solve_chol(const value_type_matrix &x,
+               const value_type_matrix &b,
+               const value_type_matrix &t) {
     if (_verbose) {
       printf("TachoSolver: Solve\n");
       printf("==================\n");
@@ -583,9 +660,9 @@ namespace Tacho {
       auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
       Kokkos::deep_copy(h_x, x);
       Trsm<Side::Left,Uplo::Upper,Trans::ConjTranspose,Algo::External>
-        ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
+        ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
       Trsm<Side::Left,Uplo::Upper,Trans::NoTranspose,Algo::External>
-        ::invoke(Diag::NonUnit(), 1.0, _U, h_x);
+        ::invoke(Diag::NonUnit(), 1.0, _A, h_x);
       Kokkos::deep_copy(x, h_x);         
       const double t_solve = timer.seconds();
 
@@ -600,11 +677,7 @@ namespace Tacho {
       }
     } else {
 #if !defined (KOKKOS_ENABLE_CUDA)
-#ifdef KOKKOS_ENABLE_DEPRECATED_CODE
-      const ordinal_type nthreads = host_space::thread_pool_size(0);
-#else
       const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
-#endif
 #endif
       TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
                                t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
@@ -623,6 +696,79 @@ namespace Tacho {
 #endif
       else {
         _N->solveCholesky_Parallel(x, b, tt, _verbose);
+      }
+    }
+    return 0;
+  }
+
+  template<typename VT, typename ST>  
+  int
+  Solver<VT,ST>      
+  ::solve_ldl(const value_type_matrix &x,
+              const value_type_matrix &b,
+              const value_type_matrix &t) {
+    if (_verbose) {
+      printf("TachoSolver: Solve\n");
+      printf("==================\n");
+    }
+
+    if (_m < _small_problem_thres) {
+      Kokkos::Impl::Timer timer;
+
+      timer.reset();
+      Kokkos::deep_copy(x, b);
+      const double t_copy = timer.seconds();
+
+      timer.reset();
+      auto perm = ordinal_type_array_host(_P.data()+2*_m, _m);
+      auto peri = ordinal_type_array_host(_P.data()+3*_m, _m);
+      auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); 
+      auto h_t = Kokkos::create_mirror_view(host_memory_space(), t); 
+
+      ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+        ::invoke(h_x, perm, h_t);              
+      Trsm<Side::Left,Uplo::Lower,Trans::NoTranspose,Algo::External>
+        ::invoke(Diag::Unit(), 1.0, _A, h_t);
+      Scale2x2_BlockInverseDiagonals<Side::Left,Algo::Internal>
+        ::invoke(_P, _D, h_t);
+      Trsm<Side::Left,Uplo::Lower,Trans::Transpose,Algo::External>
+        ::invoke(Diag::Unit(), 1.0, _A, h_t);
+      ApplyPermutation<Side::Left,Trans::NoTranspose,Algo::Internal>
+        ::invoke(h_t, peri, h_x);        
+      Kokkos::deep_copy(x, h_x);         
+      const double t_solve = timer.seconds();
+
+      if (_verbose) {
+        printf("Summary: NumericTools (SmallDenseSolve)\n");
+        printf("=======================================\n");
+        printf("  Time\n");
+        printf("             time for extra work e.g.,copy rhs:               %10.6f s\n", t_copy);
+        printf("             time for numeric solve:                          %10.6f s\n", t_solve);
+        printf("             total time spent:                                %10.6f s\n", (t_solve+t_copy));
+        printf("\n");
+      }
+    } else {
+#if !defined (KOKKOS_ENABLE_CUDA)
+      const ordinal_type nthreads = host_space::impl_thread_pool_size(0);
+#endif
+      TACHO_TEST_FOR_EXCEPTION(t.extent(0) < x.extent(0) ||
+                               t.extent(1) < x.extent(1), std::logic_error, "Temporary rhs vector t is smaller than x");
+      auto tt = Kokkos::subview(t, 
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(0)),
+                                Kokkos::pair<ordinal_type,ordinal_type>(0, x.extent(1)));
+      if (_levelset) {
+        TACHO_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented yet");        
+        // if      (_variant == 0) _L0->solveCholesky(x, b, tt, _verbose);
+        // else if (_variant == 1) _L1->solveCholesky(x, b, tt, _verbose);
+        // else if (_variant == 2) _L2->solveCholesky(x, b, tt, _verbose);
+      } 
+#if !defined (KOKKOS_ENABLE_CUDA)
+      else if (nthreads == 1) {
+        _N->solveLDL_Serial(x, b, tt, _verbose);
+      }
+#endif
+      else {
+        //_N->solveCholesky_Parallel(x, b, tt, _verbose);
       }
     }
     return 0;
@@ -653,7 +799,7 @@ namespace Tacho {
       size_type_array_host h_ap("h_ap", m+1);
       for (ordinal_type i=0;i<m;++i) 
         for (ordinal_type j=0;j<m;++j) 
-          h_ap(i+1) += (ats::abs(_U(i,j)) > zero);
+          h_ap(i+1) += (ats::abs(_A(i,j)) > zero);
         
       /// serial scan; this is a small problem
       h_ap(0) = 0;
@@ -667,9 +813,9 @@ namespace Tacho {
 
       for (ordinal_type i=0,k=0;i<m;++i) 
         for (ordinal_type j=i;j<m;++j)
-          if (ats::abs(_U(i,j)) > zero) {
+          if (ats::abs(_A(i,j)) > zero) {
             h_aj(k) = j;
-            h_ax(k) = _U(i,j);
+            h_ax(k) = _A(i,j);
             ++k;
           }
 
@@ -754,7 +900,7 @@ namespace Tacho {
       _stree_parent = ordinal_type_array();
       _stree_roots = ordinal_type_array_host();
       
-      _U = value_type_matrix_host();
+      _A = value_type_matrix_host();
         
       _verbose = 0;
       _small_problem_thres = 1024;

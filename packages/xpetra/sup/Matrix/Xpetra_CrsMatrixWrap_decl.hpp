@@ -389,6 +389,16 @@ public:
                    Scalar alpha = ScalarTraits<Scalar>::one(),
                    Scalar beta = ScalarTraits<Scalar>::zero()) const;
 
+  //! Computes the matrix-multivector multiplication for region layout matrices
+  virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X,
+                    MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y,
+                    Teuchos::ETransp mode,
+                    Scalar alpha,
+                    Scalar beta,
+                    bool sumInterfaceValues,
+                    const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
+                    const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const;
+
   //! \brief Returns the Map associated with the domain of this operator.
   //! This will be <tt>null</tt> until fillComplete() is called.
   RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
