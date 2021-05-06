@@ -898,37 +898,36 @@ public:
     //     the interface is deprecated bu the functionalities are removed
   //! \name Implementation of "dual view semantics"
   //@{
-
   //! Mark the matrix's valueas as modified in host space
   inline void modify_host()
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
   }
 
   //! Mark the matrix's valueas as modified in device space
   inline void modify_device()
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
   }
 
   //! Mark the matrix's values as modified in the given memory space.
   template<class MemorySpace>
   void modify ()
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
   }
 
   //! Whether the matrix's values need sync'ing to host space
   inline bool need_sync_host() const
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
     return false; 
   }
 
   //! Whether the matrix's values need sync'ing to device space
   inline bool need_sync_device() const
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
     return false; 
   }
 
@@ -936,27 +935,27 @@ public:
   template<class MemorySpace>
   bool need_sync () const
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
     return false;
   }
 
   //! Sync the matrix's values to host space
   inline void sync_host()
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
   }
 
   //! Sync the matrix's values to device space
   inline void sync_device()
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
   }
 
   //! Sync the matrix's values <i>to</i> the given memory space.
   template<class MemorySpace>
   void sync ()
   {
-    throw std::logic_error("do not use");
+    //throw std::logic_error("do not use");
   }
 #endif
 
