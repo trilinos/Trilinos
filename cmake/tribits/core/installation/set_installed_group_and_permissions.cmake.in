@@ -15,7 +15,9 @@ SET(PROJECT_MAKE_INSTALL_PERMS_CHANGE "@PROJECT_MAKE_INSTALL_PERMS_CHANGE@")
 # Helper functions
 #
 
+
 SET(CHMOD_CHGRP_IDX 0)
+
 
 FUNCTION(ECHO_AND_RUN_CMND)
   STRING(REPLACE ";" " " CMND_STR "${ARGN}")
@@ -26,9 +28,21 @@ FUNCTION(ECHO_AND_RUN_CMND)
   ENDIF()
 ENDFUNCTION()
 
+
 FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
-  EXECUTE_PROCESS(COMMAND stat -c %U "${dirPath}"
+  IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Darwin")
+    SET(STAT_ARGS "-f%Su")  # MacOSX stat
+  ELSE()
+    SET(STAT_ARGS "-c%U")  # BinUtils stat
+  ENDIF()
+  # NOTE: Above, we can't have a space between the '-f' and '%Su' strings or
+  # the '-c' and '%U' strings.  If you do, then you get a single space at the
+  # beginning of the returned owner name as ' <dirOwner>' instead of
+  # '<dirOwner>'.  The automated tests on Linux and MacOSX don't pass if you
+  # don't have it this way.
+
+  EXECUTE_PROCESS(COMMAND stat ${STAT_ARGS} "${dirPath}"
     OUTPUT_STRIP_TRAILING_WHITESPACE
     OUTPUT_VARIABLE  dirOwner)
 
@@ -40,12 +54,12 @@ FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
     IF (NOT "${PROJECT_MAKE_INSTALL_GROUP}" STREQUAL "")
       ECHO_AND_RUN_CMND(
-        chgrp ${PROJECT_MAKE_INSTALL_GROUP} ${recurseFlag} "${dirPath}")
+        chgrp ${recurseFlag} ${PROJECT_MAKE_INSTALL_GROUP} "${dirPath}")
     ENDIF()
 
     IF (NOT "${PROJECT_MAKE_INSTALL_PERMS_CHANGE}" STREQUAL "")
       ECHO_AND_RUN_CMND(
-        chmod ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} ${recurseFlag} "${dirPath}")
+        chmod ${recurseFlag} ${PROJECT_MAKE_INSTALL_PERMS_CHANGE} "${dirPath}")
     ENDIF()
 
   ENDIF()
@@ -55,9 +69,11 @@ FUNCTION(SET_DIR_OWNER_AND_PERMS  dirPath  recurseFlag)
 
 ENDFUNCTION()
 
+
 #
 # Executable script
 #
+
 
 IF (EXISTS "${projectInstallBaseDir}")
 
@@ -67,17 +83,17 @@ IF (EXISTS "${projectInstallBaseDir}")
 
   LIST(LENGTH projectSubdirPathsArray numSubDirs)
 
-  # Get projectSubdirPathsArrayLessOne and CMAKE_INSTALL_PREFIX
+  # Get projectSubdirPathsArrayLessOne and cmakeInstallPrefix
   SET(projectSubdirPathsArrayLessOne "${projectSubdirPathsArray}")
   IF (numSubDirs GREATER 0)
     LIST(REMOVE_AT projectSubdirPathsArrayLessOne -1)
   ENDIF()
 
-  # Loop over base dirs and set group and permissions and set CMAKE_INSTALL_PREFIX
+  # Loop over base dirs and set group and permissions and set cmakeInstallPrefix
   SET(dirPath "${projectInstallBaseDir}")
   IF (numSubDirs EQUAL 0)
-    # The base dir is CMAKE_INSTALL_PREFIX
-    SET(CMAKE_INSTALL_PREFIX "${dirPath}")
+    # The base dir is cmakeInstallPrefix
+    SET(cmakeInstallPrefix "${dirPath}")
   ELSE()
     # Non-recursive set of the group and permissions
     SET_DIR_OWNER_AND_PERMS("${dirPath}" "")
@@ -85,13 +101,13 @@ IF (EXISTS "${projectInstallBaseDir}")
       SET(dirPath "${dirPath}/${subDirEle}")
       SET_DIR_OWNER_AND_PERMS("${dirPath}" "")
     ENDFOREACH()
-    # Append last subdir which gives CMAKE_INSTALL_PREFIX
+    # Append last subdir which gives cmakeInstallPrefix
     LIST(GET projectSubdirPathsArray -1 lastSubdir)
-    SET(CMAKE_INSTALL_PREFIX "${dirPath}/${lastSubdir}")
+    SET(cmakeInstallPrefix "${dirPath}/${lastSubdir}")
  ENDIF()
 
-  # Recursive set of group and permsisions on CMAKE_INSTALL_PREFIX
-  SET_DIR_OWNER_AND_PERMS("${CMAKE_INSTALL_PREFIX}" "-R")
+  # Recursive set of group and permsisions on cmakeInstallPrefix
+  SET_DIR_OWNER_AND_PERMS("${cmakeInstallPrefix}" "-R")
 
 ELSE()
 
@@ -107,3 +123,10 @@ ELSE()
     )
 
 ENDIF()
+
+# NOTE: Above, we had to change from using the var name 'CMAKE_INSTALL_PREFIX'
+# as the local variable name to 'cmakeinstallPrefix' because it turns out that
+# the 'cmake_install.cmake' script that CMake generates also uses and sets the
+# variable 'CMAKE_INSTALL_PREFIX'!  Or, we could have created a function and
+# run this code in a function and that would avoid the global namespace as
+# well.
