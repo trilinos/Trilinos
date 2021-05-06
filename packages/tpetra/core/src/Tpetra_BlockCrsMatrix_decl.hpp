@@ -464,13 +464,14 @@ public:
   ///   <tt>Teuchos::OrdinalTraits<LO>::invalid()</tt>.
   /// KK: we remove this interface 
   ///     we cannot give a pointer
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   LO
   getLocalRowView (const LO localRowInd,
                    const LO*& colInds,
                    Scalar*& vals,
                    LO& numInds) const;
 
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+
   /// \brief Not implemented.
   void
   getLocalRowView (LO LocalRow,

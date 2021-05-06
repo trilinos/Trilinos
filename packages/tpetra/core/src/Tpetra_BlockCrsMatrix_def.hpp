@@ -1052,7 +1052,7 @@ public:
     const LO validCount = this->sumIntoLocalValuesByOffsets(localRowInd, offsets, vals, numOffsets);
     return validCount;
   }
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
   LO
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -1083,6 +1083,7 @@ public:
       return 0; // indicates no error
     }
   }
+#endif
 
   template<class Scalar, class LO, class GO, class Node>
   void
@@ -1838,20 +1839,14 @@ public:
         }
 #endif // HAVE_TPETRA_DEBUG
 
-        const LO* lclSrcCols;
-        Scalar* vals;
+        local_inds_host_view_type lclSrcCols;
+        values_host_view_type vals;
         LO numEntries;
         // If this call fails, that means the mesh row local index is
         // invalid.  That means the Import or Export is invalid somehow.
-        LO err = src->getLocalRowView (localRow, lclSrcCols, vals, numEntries);
-        if (err != 0) {
-          lclErr = true;
-#ifdef HAVE_TPETRA_DEBUG
-          (void) invalidSrcCopyRows.insert (localRow);
-#endif // HAVE_TPETRA_DEBUG
-        }
-        else {
-          err = this->replaceLocalValues (localRow, lclSrcCols, vals, numEntries);
+        src->getLocalRowView (localRow, lclSrcCols, vals); numEntries = lclSrcCols.extent(0);
+        if (numEntries > 0) {
+          LO err = this->replaceLocalValues (localRow, lclSrcCols.data(), vals.data(), numEntries);
           if (err != numEntries) {
             lclErr = true;
             if (! dstRowMap.isNodeLocalElement (localRow)) {
@@ -1883,18 +1878,12 @@ public:
         const LO srcLclRow = static_cast<LO> (permuteFromLIDsHost(k));
         const LO dstLclRow = static_cast<LO> (permuteToLIDsHost(k));
 
-        const LO* lclSrcCols;
-        Scalar* vals;
+        local_inds_host_view_type lclSrcCols;
+        values_host_view_type vals;
         LO numEntries;
-        LO err = src->getLocalRowView (srcLclRow, lclSrcCols, vals, numEntries);
-        if (err != 0) {
-          lclErr = true;
-#ifdef HAVE_TPETRA_DEBUG
-          invalidPermuteFromRows.insert (srcLclRow);
-#endif // HAVE_TPETRA_DEBUG
-        }
-        else {
-          err = this->replaceLocalValues (dstLclRow, lclSrcCols, vals, numEntries);
+        src->getLocalRowView (srcLclRow, lclSrcCols, vals); numEntries = lclSrcCols.extent(0);
+        if (numEntries > 0) {
+          LO err = this->replaceLocalValues (dstLclRow, lclSrcCols.data(), vals.data(), numEntries);
           if (err != numEntries) {
             lclErr = true;
 #ifdef HAVE_TPETRA_DEBUG
@@ -1915,14 +1904,14 @@ public:
 
       // Copy local rows that are the "same" in both source and target.
       for (LO localRow = 0; localRow < static_cast<LO> (numSameIDs); ++localRow) {
-        const LO* lclSrcCols;
-        Scalar* vals;
+        local_inds_host_view_type lclSrcCols;
+        values_host_view_type vals;
         LO numEntries;
+
         // If this call fails, that means the mesh row local index is
         // invalid.  That means the Import or Export is invalid somehow.
-        LO err = 0;
         try {
-          err = src->getLocalRowView (localRow, lclSrcCols, vals, numEntries);
+          src->getLocalRowView (localRow, lclSrcCols, vals); numEntries = lclSrcCols.extent(0);
         } catch (std::exception& e) {
           if (debug) {
             std::ostringstream os;
@@ -1935,13 +1924,7 @@ public:
           throw e;
         }
 
-        if (err != 0) {
-          lclErr = true;
-#ifdef HAVE_TPETRA_DEBUG
-          invalidSrcCopyRows.insert (localRow);
-#endif // HAVE_TPETRA_DEBUG
-        }
-        else {
+        if (numEntries > 0) {
           if (static_cast<size_t> (numEntries) > static_cast<size_t> (lclDstCols.size ())) {
             lclErr = true;
             if (debug) {
@@ -1966,8 +1949,9 @@ public:
 #endif // HAVE_TPETRA_DEBUG
               }
             }
+            LO err(0);
             try {
-              err = this->replaceLocalValues (localRow, lclDstColsView.getRawPtr (), vals, numEntries);
+              err = this->replaceLocalValues (localRow, lclDstColsView.getRawPtr (), vals.data(), numEntries);
             } catch (std::exception& e) {
               if (debug) {
                 std::ostringstream os;
@@ -2000,12 +1984,12 @@ public:
         const LO srcLclRow = static_cast<LO> (permuteFromLIDsHost(k));
         const LO dstLclRow = static_cast<LO> (permuteToLIDsHost(k));
 
-        const LO* lclSrcCols;
-        Scalar* vals;
+        local_inds_host_view_type lclSrcCols;
+        values_host_view_type vals;
         LO numEntries;
-        LO err = 0;
+
         try {
-          err = src->getLocalRowView (srcLclRow, lclSrcCols, vals, numEntries);
+          src->getLocalRowView (srcLclRow, lclSrcCols, vals); numEntries = lclSrcCols.extent(0);
         } catch (std::exception& e) {
           if (debug) {
             std::ostringstream os;
@@ -2018,13 +2002,7 @@ public:
           throw e;
         }
 
-        if (err != 0) {
-          lclErr = true;
-#ifdef HAVE_TPETRA_DEBUG
-          invalidPermuteFromRows.insert (srcLclRow);
-#endif // HAVE_TPETRA_DEBUG
-        }
-        else {
+        if (numEntries > 0) {
           if (static_cast<size_t> (numEntries) > static_cast<size_t> (lclDstCols.size ())) {
             lclErr = true;
           }
@@ -2041,7 +2019,7 @@ public:
 #endif // HAVE_TPETRA_DEBUG
               }
             }
-            err = this->replaceLocalValues (dstLclRow, lclDstColsView.getRawPtr (), vals, numEntries);
+            LO err = this->replaceLocalValues (dstLclRow, lclDstColsView.getRawPtr (), vals.data(), numEntries);
             if (err != numEntries) {
               lclErr = true;
             }
@@ -2564,16 +2542,14 @@ public:
               gblColInds(member.team_scratch(0), maxRowLength);
 
             const LO  lclRowInd = exportLIDsHost(i);
-            const LO* lclColIndsRaw;
-            Scalar* valsRaw;
-            LO numEntLO;
+            local_inds_host_view_type lclColInds;
+            values_host_view_type vals;
+
             // It's OK to ignore the return value, since if the calling
             // process doesn't own that local row, then the number of
             // entries in that row on the calling process is zero.
-            (void) src->getLocalRowView (lclRowInd, lclColIndsRaw, valsRaw, numEntLO);
-
-            const size_t numEnt = static_cast<size_t> (numEntLO);
-            Kokkos::View<const LO*,host_exec> lclColInds (lclColIndsRaw, numEnt);
+            src->getLocalRowView (lclRowInd, lclColInds, vals); 
+            const size_t numEnt = lclColInds.extent(0);
 
             // Convert column indices from local to global.
             for (size_t j = 0; j < numEnt; ++j)
@@ -2589,7 +2565,7 @@ public:
                offset(i),
                numEnt,
                Kokkos::View<const GO*, host_exec>(gblColInds.data(), maxRowLength),
-               Kokkos::View<const impl_scalar_type*, host_exec>(reinterpret_cast<const impl_scalar_type*>(valsRaw), numEnt*blockSize*blockSize),
+               vals,
                numBytesPerValue,
                blockSize);
 
@@ -3123,10 +3099,10 @@ public:
         const GO meshGblRow = meshRowMap.getGlobalElement (meshLclRow);
         os << "Row " << meshGblRow << ": {";
 
-        const LO* lclColInds = NULL;
-        Scalar* vals = NULL;
+        local_inds_host_view_type lclColInds;
+        values_host_view_type vals;
         LO numInds = 0;
-        this->getLocalRowView (meshLclRow, lclColInds, vals, numInds);
+        this->getLocalRowView (meshLclRow, lclColInds, vals); numInds = lclColInds.extent(0);
 
         for (LO k = 0; k < numInds; ++k) {
           const GO gblCol = meshColMap.getGlobalElement (lclColInds[k]);

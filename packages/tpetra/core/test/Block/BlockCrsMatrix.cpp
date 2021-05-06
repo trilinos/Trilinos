@@ -164,6 +164,9 @@ namespace {
     using lids_type = typename graph_type::nonconst_local_inds_host_view_type;
     using gids_type = typename graph_type::nonconst_global_inds_host_view_type;
     using vals_type = typename BCM::nonconst_values_host_view_type;
+    using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+    using values_host_view_type = typename BCM::values_host_view_type;
+    using impl_scalar_type = typename BCM::impl_scalar_type;
 
     // The typedef below is also a test.  BlockCrsMatrix must have
     // this typedef, or this test won't compile.
@@ -289,14 +292,14 @@ namespace {
     lids_type myLclColIndsSorted ("myLclColIndsSorted",maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      const LO* myLclColInds = NULL;
-      Scalar* myVals = NULL;
+      local_inds_host_view_type myLclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      LO err = blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
-      TEST_ASSERT( err == 0 );
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals); numEnt = myLclColInds.extent(0);
+
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
-      TEST_ASSERT( myLclColInds != NULL );
-      TEST_ASSERT( myVals != NULL );
+      TEST_ASSERT( myLclColInds.data() != NULL );
+      TEST_ASSERT( myVals.data() != NULL );
 
       // Compute what the local column indices in this row _should_ be.
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
@@ -309,7 +312,7 @@ namespace {
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
       Tpetra::sort (lclColInds, lclColInds.extent(0));
-      std::copy (myLclColInds, myLclColInds + 2, arcp_from_view(myLclColIndsSorted).begin());
+      std::copy (myLclColInds.data(), myLclColInds.data() + 2, arcp_from_view(myLclColIndsSorted).begin());
       Tpetra::sort (myLclColIndsSorted, myLclColIndsSorted.extent(0));
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsSorted );
 
@@ -317,7 +320,6 @@ namespace {
       size_t numEntries;
       blockMat.getLocalRowCopy (lclRowInd, myLclColIndsCopy, myValsCopy, numEntries);
       numEnt = static_cast<LO>(numEntries);
-      TEST_ASSERT( err == 0 );
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
 
       // CrsGraph doesn't technically need to promise to sort by local
@@ -329,7 +331,7 @@ namespace {
 
       // Fill the entries in the row with zeros.
       std::fill (tempBlockSpace.begin (), tempBlockSpace.end (), STS::zero ());
-      err = blockMat.replaceLocalValues (lclRowInd, lclColInds.data(),
+      int err = blockMat.replaceLocalValues (lclRowInd, lclColInds.data(),
                                          tempBlockSpace.getRawPtr (), numEnt);
       TEST_ASSERT( err == numEnt );
       // Make sure that the input Scalar values didn't change (are
@@ -364,25 +366,14 @@ namespace {
       // Get a view of the current row again, and test that the
       // entries were modified as expected.  This tests that the
       // method assumes that the input blocks are row major.
-      // KK: this is going to be deprecated
-      //err = blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
-      {
-        using impl_scalar_type = typename BCM::impl_scalar_type;
-        using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
-        using values_host_view_type = typename BCM::values_host_view_type;
-        local_inds_host_view_type myLclColIndsView;
-        values_host_view_type myValsView;
-        blockMat.getLocalRowView (lclRowInd, myLclColIndsView, myValsView);      
-        myLclColInds = myLclColIndsView.data();
-        myVals = const_cast<impl_scalar_type*>(myValsView.data());
-        numEnt = static_cast<LO>(myLclColIndsView.extent(0));
-      }
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals); numEnt = static_cast<LO>(myLclColInds.extent(0));
+
 
       TEST_ASSERT( numEnt == static_cast<LO> (maxNumEntPerRow) );
-      TEST_ASSERT( myLclColInds != NULL );
-      TEST_ASSERT( myVals != NULL );
+      TEST_ASSERT( myLclColInds.data() != NULL );
+      TEST_ASSERT( myVals.data() != NULL );
       for (LO k = 0; k < numEnt; ++k) {
-        Scalar* curBlkPtr = myVals + k * blockSize * blockSize;
+        Scalar* curBlkPtr = const_cast<Scalar*>(myVals.data()) + k * blockSize * blockSize;
         little_block_host_type curBlk ((typename little_block_host_type::value_type*) curBlkPtr, blockSize, blockSize);
 
         for (LO j = 0; j < blockSize; ++j) {
@@ -894,6 +885,9 @@ namespace {
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType MT;
 
+    using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+    using values_host_view_type = typename BCM::values_host_view_type;
+
     out << "Testing output of a Tpetra::BlockCrsMatrix" << endl;
     Teuchos::OSTab tab0 (out);
 
@@ -957,10 +951,11 @@ namespace {
     Array<LO> myLclColIndsCopy (maxNumEntPerRow);
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
-      const LO* myLclColInds = NULL;
-      Scalar* myVals = NULL;
+
+      local_inds_host_view_type myLclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals, numEnt);
+      blockMat.getLocalRowView (lclRowInd, myLclColInds, myVals); numEnt = myLclColInds.extent(0);
 
       // Compute what the local column indices in this row _should_ be.
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
@@ -973,7 +968,7 @@ namespace {
       // CrsGraph doesn't technically need to promise to sort by local
       // column indices, so we sort both arrays before comparing.
       std::sort (lclColInds.begin (), lclColInds.end ());
-      std::copy (myLclColInds, myLclColInds + 2, myLclColIndsCopy.begin ());
+      std::copy (myLclColInds.data(), myLclColInds.data() + 2, myLclColIndsCopy.begin ());
       std::sort (myLclColIndsCopy.begin (), myLclColIndsCopy.end ());
       TEST_COMPARE_ARRAYS( lclColInds, myLclColIndsCopy );
 
@@ -1024,6 +1019,9 @@ namespace {
     typedef typename BCM::little_block_type little_block_type;
     typedef typename BCM::little_block_host_type little_block_host_type;
     typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
+    using values_host_view_type = typename BCM::values_host_view_type;
 
     int lclSuccess = 1;
     int gblSuccess = 1;
@@ -1139,12 +1137,11 @@ namespace {
           const GO gblColInd = gblRowInd;
           bool diagOffsetCorrect = false;
 
-          const LO* lclColInds = NULL;
-          Scalar* lclVals = NULL;
+          local_inds_host_view_type lclColInds;
+          values_host_view_type lclVals;
           LO numEnt = 0;
-          LO err = blockMat.getLocalRowView (lclRowInd, lclColInds, lclVals, numEnt);
-          TEST_ASSERT( err == 0 );
-          if (err == 0) {
+          blockMat.getLocalRowView (lclRowInd, lclColInds, lclVals); numEnt = lclColInds.extent(0);
+          {
             const size_t offset = diagMeshOffsetsHost[lclRowInd];
             if (offset >= static_cast<size_t> (numEnt)) {
               diagOffsetCorrect = false;
@@ -1185,10 +1182,10 @@ namespace {
     for (LO lclRowInd = meshRowMap.getMinLocalIndex ();
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-      const LO* lclColInds = NULL;
-      Scalar* myVals = NULL;
+      local_inds_host_view_type lclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals, numEnt);
+      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals); numEnt = lclColInds.extent(0);
 
       // Fill the diagonal block D such that D(i,j) = (lclRowInd+1) *
       // (1 + i + j*blockSize).  Fill the off-diagonal block with -1.
@@ -1196,7 +1193,7 @@ namespace {
       // that we copied them in the correct order.
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
-        little_block_host_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
+        little_block_host_type curBlock (const_cast<IST*> (myVals.data()) + offset,
                                          blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block
@@ -1227,16 +1224,16 @@ namespace {
     bool allBlocksGood = true;
     for (LO lclRowInd = 0; lclRowInd < static_cast<LO> (numLclMeshPoints); ++lclRowInd) {
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
-      const LO* lclColInds = NULL;
-      Scalar* myVals = NULL;
+      local_inds_host_view_type lclColInds;
+      values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals, numEnt);
+      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals); numEnt = lclColInds.extent(0);
 
       // Make sure that the diagonal blocks from getLocalDiagCopy
       // match those in the matrix.
       for (LO k = 0; k < numEnt; ++k) {
         const LO offset = blockSize * blockSize * k;
-        little_block_host_type curBlock (reinterpret_cast<IST*> (myVals) + offset,
+        little_block_host_type curBlock (const_cast<IST*> (myVals.data()) + offset,
                                     blockSize, blockSize); // row major
         const GO gblColInd = meshColMap.getGlobalElement (lclColInds[k]);
         if (gblColInd == gblRowInd) { // the diagonal block

@@ -198,6 +198,9 @@ namespace Tpetra {
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
     using Teuchos::RCP;
     using map_type = Tpetra::Map<LO, GO, Node>;
+    using bcrs_type = BlockCrsMatrix<Scalar,LO,GO,Node>;
+    using bcrs_local_inds_host_view_type = typename bcrs_type::local_inds_host_view_type;
+    using bcrs_values_host_view_type = typename bcrs_type::values_host_view_type;
 
     size_t numRows = A.getGlobalNumRows();
     RCP<const map_type> rowMap = A.getRowMap();
@@ -246,17 +249,15 @@ namespace Tpetra {
       for (localRowInd = 0; localRowInd < numLocalRows; ++localRowInd) {
 
         // Get a view of the current row.
-        const LO*     localColInds;
-        Scalar* vals;
+        bcrs_local_inds_host_view_type localColInds;
+        bcrs_values_host_view_type vals;
         LO numEntries;
-        err = A.getLocalRowView (localRowInd, localColInds, vals, numEntries);
-        if (err != 0)
-          break;
+        A.getLocalRowView (localRowInd, localColInds, vals); numEntries = localColInds.extent(0);
         GO globalMeshRowID = rowMap->getGlobalElement(localRowInd) - meshRowOffset;
 
         for (LO k = 0; k < numEntries; ++k) {
           GO globalMeshColID = colMap->getGlobalElement(localColInds[k]) - meshColOffset;
-          Scalar* const curBlock = vals + blockSize * blockSize * k;
+          const Scalar* curBlock = vals.data() + blockSize * blockSize * k;
           // Blocks are stored in row-major format.
           for (LO j = 0; j < blockSize; ++j) {
             GO globalPointRowID = globalMeshRowID * blockSize + j + pointOffset;
