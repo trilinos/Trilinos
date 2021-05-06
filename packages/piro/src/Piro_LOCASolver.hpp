@@ -84,6 +84,10 @@ public:
   Teuchos::ParameterList &
   getStepSizeParams();
 
+  //! Return the underlying LOCA stepper
+  Teuchos::RCP<LOCA::Stepper>
+  getStepper();
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{

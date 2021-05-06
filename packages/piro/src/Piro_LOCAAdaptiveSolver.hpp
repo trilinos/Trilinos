@@ -80,6 +80,9 @@ public:
   void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool /* wasSolved */)
        { finalPoint_ = Teuchos::rcpFromRef(finalPoint); }
 
+  //! Returns the underlying stepper
+  Teuchos::RCP<LOCA::AdaptiveStepper>
+  getStepper();
 
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */

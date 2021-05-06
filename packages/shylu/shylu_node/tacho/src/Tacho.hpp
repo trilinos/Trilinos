@@ -42,23 +42,39 @@ namespace Tacho {
   ///
   template<typename ExecSpace>
   struct UseThisDevice {
-    using default_exec_space = Kokkos::DefaultExecutionSpace;
-    using default_memory_space = typename default_exec_space::memory_space;
-    using device_type = Kokkos::Device<default_exec_space,default_memory_space>;
+    using exec_space = ExecSpace;
+    using memory_space = typename exec_space::memory_space;
+    using type = Kokkos::Device<exec_space,memory_space>;
+    using device_type = type;
+  };
+
+  template<typename ExecSpace>
+  struct UseThisScheduler {
+    using type = Kokkos::TaskSchedulerMultiple<ExecSpace>;
+    using scheduler_type = type;
   };
 
   /// until kokkos dual view issue is resolved, we follow the default space in Trilinos (uvm)
 #if defined(KOKKOS_ENABLE_CUDA)
   template<>
-  struct UseThisDevice<Kokkos::Cuda> { using device_type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; };
+  struct UseThisDevice<Kokkos::Cuda> { 
+    using type = Kokkos::Device<Kokkos::Cuda,Kokkos::CudaSpace>; 
+    using device_type = type;
+  };
 #endif
 #if defined(KOKKOS_ENABLE_OPENMP)
   template<>
-  struct UseThisDevice<Kokkos::OpenMP> { using device_type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; };
+  struct UseThisDevice<Kokkos::OpenMP> { 
+    using type = Kokkos::Device<Kokkos::OpenMP,Kokkos::HostSpace>; 
+    using device_type = type; 
+  };
 #endif
 #if defined(KOKKOS_ENABLE_SERIAL)
   template<>
-  struct UseThisDevice<Kokkos::Serial> { using device_type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>; };
+  struct UseThisDevice<Kokkos::Serial> { 
+    using type = Kokkos::Device<Kokkos::Serial,Kokkos::HostSpace>;
+    using device_type = type;
+  };
 #endif
 
   ///
@@ -75,6 +91,81 @@ namespace Tacho {
     std::cout << std::setw(16) << name << "::  ";
     SpT::print_configuration(std::cout, detail);
   }
+
+  template<typename T>
+  struct ArithTraits;
+
+  template<>
+  struct ArithTraits<float> {
+    typedef float val_type;
+    typedef float mag_type;
+
+    enum : bool { is_complex = false };
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
+    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
+  };
+
+  template<>
+  struct ArithTraits<double> {
+    typedef double val_type;
+    typedef double mag_type;
+
+    enum : bool { is_complex = false };
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
+    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
+  };
+
+  template<>
+  struct ArithTraits<std::complex<float> > {
+    typedef std::complex<float> val_type;
+    typedef float mag_type;
+
+    enum : bool { is_complex = true };
+    static inline mag_type abs (const val_type& x) { return std::abs(x); }
+    static inline mag_type real(const val_type& x) { return x.real(); }
+    static inline mag_type imag(const val_type& x) { return x.imag(); }
+    static inline val_type conj(const val_type& x) { return std::conj(x); }
+  };
+
+  template<>
+  struct ArithTraits<std::complex<double> > {
+    typedef std::complex<double> val_type;
+    typedef double mag_type;
+
+    enum : bool { is_complex = true };
+    static inline mag_type abs (const val_type& x) { return std::abs(x); }
+    static inline mag_type real(const val_type& x) { return x.real(); }
+    static inline mag_type imag(const val_type& x) { return x.imag(); }
+    static inline val_type conj(const val_type& x) { return std::conj(x); }
+  };
+    
+  template<>
+  struct ArithTraits<Kokkos::complex<float> > {
+    typedef Kokkos::complex<float> val_type;
+    typedef float mag_type;
+
+    enum : bool { is_complex = true };
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
+    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
+  };
+
+  template<>
+  struct ArithTraits<Kokkos::complex<double> > {
+    typedef Kokkos::complex<double> val_type;
+    typedef double mag_type;
+
+    enum : bool { is_complex = true };
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
+    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
+    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
+  };
 
 }
 
