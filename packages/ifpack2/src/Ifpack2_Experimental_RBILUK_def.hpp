@@ -322,6 +322,7 @@ initAllValues (const block_crs_matrix_type& A)
   // host, so sync to host first.  The const_cast is unfortunate but
   // is our only option to make this correct.
 
+  /*
   const_cast<block_crs_matrix_type&> (A).sync_host ();
   L_block_->sync_host ();
   U_block_->sync_host ();
@@ -330,6 +331,7 @@ initAllValues (const block_crs_matrix_type& A)
   L_block_->modify_host ();
   U_block_->modify_host ();
   D_block_->modify_host ();
+  */
 
   RCP<const map_type> rowMap = L_block_->getRowMap ();
 
@@ -477,8 +479,9 @@ void RBILUK<MatrixType>::compute ()
   if (! A_block_.is_null ()) {
     Teuchos::RCP<block_crs_matrix_type> A_nc =
       Teuchos::rcp_const_cast<block_crs_matrix_type> (A_block_);
-    A_nc->sync_host ();
+    //    A_nc->sync_host ();
   }
+  /*
   L_block_->sync_host ();
   U_block_->sync_host ();
   D_block_->sync_host ();
@@ -486,6 +489,7 @@ void RBILUK<MatrixType>::compute ()
   L_block_->modify_host ();
   U_block_->modify_host ();
   D_block_->modify_host ();
+  */
 
   Teuchos::Time timer ("RBILUK::compute");
   double startTime = timer.wallTime();
@@ -762,6 +766,7 @@ void RBILUK<MatrixType>::compute ()
   } // Stop timing
 
   // Sync everything back to device, for efficient solves.
+  /*
   {
     typedef typename block_crs_matrix_type::device_type device_type;
     if (! A_block_.is_null ()) {
@@ -773,6 +778,7 @@ void RBILUK<MatrixType>::compute ()
     U_block_->template sync<device_type> ();
     D_block_->template sync<device_type> ();
   }
+  */
 
   this->isComputed_ = true;
   this->numCompute_ += 1;
