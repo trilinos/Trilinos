@@ -49,6 +49,9 @@
 
 #include "Panzer_ConnManager.hpp"
 
+#include "Shards_CellTopology.hpp"
+#include "Shards_BasicTopologies.hpp"
+
 
 namespace panzer {
 namespace unit_test {
@@ -71,6 +74,11 @@ namespace unit_test {
   *
   * You can also construct multiple element blocks. In 3D they will be named "eblock-i_j_k"
   * and in 2D "eblock-i_j".
+  *
+  * In 3D, the mesh can either have Hexahedral (brick) elements, or tetrahedral elements,
+  * where each brick element is split into 6 tetrahedra
+  * In 2D, the mesh can either have Quadrilateral (brick) elements, or triangular elements,
+  * where each brick element is split into 2 triangles
   */
 class CartesianConnManager : public virtual panzer::ConnManager {
 public:
@@ -96,10 +104,12 @@ public:
      * \param[in] py Number of processors in the y direction
      * \param[in] bx Number of blocks in the x direction
      * \param[in] by Number of blocks in the y direction
+     * \param[in] elemTopo Topology of the mesh element (either Quadrilateral<4> or Triangular<3>)
      */
    void initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny,
                    int px, int py,
-                   int bx, int by);
+                   int bx, int by,
+                   const shards::CellTopology elemTopo=shards::getCellTopologyData<shards::Quadrilateral<4>>());
 
    /** Initialize a 3D topology.
      *
@@ -113,50 +123,62 @@ public:
      * \param[in] bx Number of blocks in the x direction
      * \param[in] by Number of blocks in the y direction
      * \param[in] bz Number of blocks in the z direction
+     * \param[in] elemTopo Topology of the mesh element (either Hexahedron<8> or Tetrahedron<4>)
      */
    void initialize(const Teuchos::MpiComm<int> & comm,GlobalOrdinal nx, GlobalOrdinal ny, GlobalOrdinal nz,
                    int px, int py, int pz,
-                   int bx, int by, int bz);
+                   int bx, int by, int bz,
+                   const shards::CellTopology elemTopo=shards::getCellTopologyData<shards::Hexahedron<8>>());
 
-   /** Get the triplet corresponding to the number of elements this processor owns.
+   /** Get the triplet corresponding to the number of brick elements (Hexahedra or Quadrilaterals) this processor owns.
      * Publically exposed for testing.
      */
-   Triplet<GlobalOrdinal> getMyElementsTriplet() const { return myElements_; }
+   Triplet<GlobalOrdinal> getMyBrickElementsTriplet() const { return myBrickElements_; }
 
-   /** Get the triplet corresponding to the offset beginning with what this processor owns.
+   /** Get the triplet corresponding to the offset of brick elements beginning with what this processor owns.
      * Publically exposed for testing.
      */
-   Triplet<GlobalOrdinal> getMyOffsetTriplet() const { return myOffset_; }
+   Triplet<GlobalOrdinal> getMyBrickOffsetTriplet() const { return myBrickOffset_; }
 
-   /** This computes the local element index, from the global triplet. If the index isn't
+   /** This computes the local index of a brick element, from the global triplet. If the index isn't
      * on this processor a -1 is returned.
      */
-   LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element) const;
+   LocalOrdinal computeLocalBrickElementIndex(const Triplet<GlobalOrdinal> & brickElement) const;
 
-   /** Compute the global index from a global triplet.
+   /** Compute the global index of a brick element from a global triplet.
      */
-   GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element) const;
+   GlobalOrdinal computeGlobalBrickElementIndex(const Triplet<GlobalOrdinal> & brickElement) const;
 
    /** Utility function for computing the processor i,j,k ranking. Publically exposed for testing.
      */
    static Triplet<int> computeMyRankTriplet(int myRank,int dim,const Triplet<int> & procs);
 
-   /** Utility function for computing a global element triplet from a local element index
+   /** Utility function for computing a global triplet of a brick from a local brick element index
      * Publically exposed for testing.
      */
-   static Triplet<GlobalOrdinal> computeLocalElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myElements,
-                                                                       const Triplet<GlobalOrdinal> & myOffset);
+   static Triplet<GlobalOrdinal> computeLocalBrickElementGlobalTriplet(int index,const Triplet<GlobalOrdinal> & myBrickElements,
+                                                                       const Triplet<GlobalOrdinal> & myBrickOffset);
 
-   /** Compute the global index from a global triplet.
+   /** Compute the global brick index from a global brick triplet.
      */
-   static GlobalOrdinal computeGlobalElementIndex(const Triplet<GlobalOrdinal> & element,
-                                                  const Triplet<GlobalOrdinal> & shape);
+   static GlobalOrdinal computeGlobalBrickElementIndex(const Triplet<GlobalOrdinal> & brickElement,
+                                                  const Triplet<GlobalOrdinal> & brickShape);
 
-   /** Compute the global index for a triplet.
+   /** Compute the global brick index for a triplet.
      */
-   static LocalOrdinal computeLocalElementIndex(const Triplet<GlobalOrdinal> & element,
-                                                const Triplet<GlobalOrdinal> & myElements,
-                                                const Triplet<GlobalOrdinal> & myOffset);
+   static LocalOrdinal computeLocalBrickElementIndex(const Triplet<GlobalOrdinal> & brickElement,
+                                                const Triplet<GlobalOrdinal> & myBrickElements,
+                                                const Triplet<GlobalOrdinal> & myBrickOffset);
+
+   /** Number of sub elements per brick (e.g. 6 tets per Hex, 2 triangles per quad)
+     */
+   int numSubElemsPerBrickElement(){return numSubElemsPerBrickElement_;}
+
+   /** Local node Ids of a brick from the local Id of the sub element
+     */
+   int getLocalBrickNodeFromSubElemNode(int subElement, int node) {
+     return subElemToBrickElementNodesMap_[subElement][node];
+   }
 
    // The next functions are all pure virtual from ConnManager
    ////////////////////////////////////////////////////////////////////////////////
@@ -254,13 +276,13 @@ private:
    Triplet<int> myRankIndex_;
 
    int dim_;
-   Triplet<GlobalOrdinal> totalElements_; // over all blocks and processors how many elements
-   Triplet<GlobalOrdinal> elements_; // per block element counts
+   Triplet<GlobalOrdinal> totalBrickElements_; // over all blocks and processors how many elements
+   Triplet<GlobalOrdinal> brickElements_; // per block element counts
    Triplet<int> processors_;         // full mesh
    Triplet<int> blocks_;             // number of element blocks
 
-   Triplet<GlobalOrdinal> myElements_;
-   Triplet<GlobalOrdinal> myOffset_;
+   Triplet<GlobalOrdinal> myBrickElements_;
+   Triplet<GlobalOrdinal> myBrickOffset_;
 
    std::map<std::string,std::vector<int> > localElements_;
 
@@ -270,7 +292,25 @@ private:
    GlobalOrdinal totalNodes_;
    GlobalOrdinal totalEdges_;
    GlobalOrdinal totalFaces_;
-   GlobalOrdinal totalCells_;
+   GlobalOrdinal totalElements_;
+   int numSubElemsPerBrickElement_;
+
+   // element to brick map
+
+   //note: nodes of a sub element are a subset of nodes of a brick element
+   std::vector<std::vector<int> > subElemToBrickElementNodesMap_;
+
+   //note: the edges of a sub elements can include edges of the brick element,
+   //      diagonal edges of brick faces, and in 3D, diagonal edges of the brick element
+   std::vector<std::vector<int> > subElemToBrickElementEdgesMap_;
+
+   //note: the faces of a sub elements can include faces of the brick element,
+   //      and in 3D, faces internal to the brick element
+   std::vector<std::vector<int> > subElemToBrickElementFacesMap_;
+
+   shards::CellTopology elemTopology_;
+
+
 };
 
 } // end unit test
