@@ -1014,8 +1014,7 @@ void vCycle(const int l, ///< ID of current level
         coarseRegX = VectorFactory::Build(regRowMapCoarse, true);
         coarseRegB = VectorFactory::Build(regRowMapCoarse, true);
 
-        ApplyMatVec(SC_ONE, regProlongCoarse, regRes, SC_ZERO, regionInterfaceImporter,
-            regionInterfaceLIDs, coarseRegB, Teuchos::TRANS, true);
+        regProlongCoarse->apply(*regRes, *coarseRegB, Teuchos::TRANS, SC_ONE, SC_ZERO, true, regionInterfaceImporter, regionInterfaceLIDs);
           // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regRes[j]->getMap()));
           // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegB[j]->getMap()));
       }
@@ -1040,8 +1039,7 @@ void vCycle(const int l, ///< ID of current level
         const RCP<Import>        regionInterfaceImporter = smootherParams[l]->get<RCP<Import>>("Fast MatVec: interface importer");
 
         regCorrection = VectorFactory::Build(regRowMap, true);
-        ApplyMatVec(SC_ONE, regProlongCoarse, coarseRegX, SC_ZERO, regionInterfaceImporter,
-            regionInterfaceLIDs, regCorrection, Teuchos::NO_TRANS, false);
+        regProlongCoarse->apply(*coarseRegX, *regCorrection, Teuchos::NO_TRANS, SC_ONE, SC_ZERO, false, regionInterfaceImporter, regionInterfaceLIDs);
           // TEUCHOS_ASSERT(regProlong[l+1][j]->getDomainMap()->isSameAs(*coarseRegX[j]->getMap()));
           // TEUCHOS_ASSERT(regProlong[l+1][j]->getRangeMap()->isSameAs(*regCorrection[j]->getMap()));
       }

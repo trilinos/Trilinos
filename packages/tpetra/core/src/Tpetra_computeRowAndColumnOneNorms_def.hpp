@@ -707,48 +707,63 @@ computeLocalRowAndColumnOneNorms (const Tpetra::RowMatrix<SC, LO, GO, NT>& A,
 }
 
 template<class SC, class LO, class GO, class NT>
-typename Tpetra::MultiVector<SC, LO, GO, NT>::dual_view_type::t_dev
-getLocalView_2d (const Tpetra::MultiVector<SC, LO, GO, NT>& X)
-{
-  return X.template getLocalView<typename NT::device_type::memory_space> ();
-}
-
-template<class SC, class LO, class GO, class NT>
-auto getLocalView_1d (const Tpetra::MultiVector<SC, LO, GO, NT>& X,
-                      const LO whichColumn)
-  -> decltype (Kokkos::subview (getLocalView_2d (X), Kokkos::ALL (), whichColumn))
+auto getLocalView_1d_readOnly (
+  const Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  const LO whichColumn)
+-> decltype (Kokkos::subview (X.getLocalViewDevice(Access::ReadOnly),
+                              Kokkos::ALL (), whichColumn))
 {
   if (X.isConstantStride ()) {
-    return Kokkos::subview (getLocalView_2d (X), Kokkos::ALL (), whichColumn);
+    return Kokkos::subview (X.getLocalViewDevice(Access::ReadOnly),
+                            Kokkos::ALL (), whichColumn);
   }
   else {
     auto X_whichColumn = X.getVector (whichColumn);
-    return Kokkos::subview (getLocalView_2d (*X_whichColumn), Kokkos::ALL (), 0);
+    return Kokkos::subview (X_whichColumn->getLocalViewDevice(Access::ReadOnly),
+                            Kokkos::ALL (), 0);
   }
 }
-
+ 
+template<class SC, class LO, class GO, class NT>
+auto getLocalView_1d_writeOnly (
+  Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  const LO whichColumn)
+-> decltype (Kokkos::subview (X.getLocalViewDevice(Access::ReadWrite),
+                              Kokkos::ALL (), whichColumn))
+{
+  if (X.isConstantStride ()) {
+    return Kokkos::subview (X.getLocalViewDevice(Access::ReadWrite),
+                            Kokkos::ALL (), whichColumn);
+  }
+  else {
+    using vector_t = Tpetra::Vector<SC, LO, GO, NT>;
+    auto X_whichColumn = X.getVectorNonConst (whichColumn);
+    return Kokkos::subview(X_whichColumn->getLocalViewDevice(Access::ReadWrite),
+                           Kokkos::ALL (), 0);
+  }
+}
+ 
 template<class SC, class LO, class GO, class NT, class ViewValueType>
 void
-copy1DViewIntoMultiVectorColumn (Tpetra::MultiVector<SC, LO, GO, NT>& X,
-                                 const LO whichColumn,
-                                 const Kokkos::View<ViewValueType*, typename NT::device_type>& view)
+copy1DViewIntoMultiVectorColumn (
+  Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  const LO whichColumn,
+  const Kokkos::View<ViewValueType*, typename NT::device_type>& view)
 {
   using dev_memory_space = typename NT::device_type::memory_space;
-  // MultiVector always starts sync'd to device.
-  X.template modify<dev_memory_space> ();
-  auto X_lcl = getLocalView_1d (X, whichColumn);
+  auto X_lcl = getLocalView_1d_writeOnly (X, whichColumn);
   Tpetra::Details::copyConvert (X_lcl, view);
 }
 
 template<class SC, class LO, class GO, class NT, class ViewValueType>
 void
-copyMultiVectorColumnInto1DView (const Kokkos::View<ViewValueType*, typename NT::device_type>& view,
-                                 Tpetra::MultiVector<SC, LO, GO, NT>& X,
-                                 const LO whichColumn)
+copyMultiVectorColumnInto1DView (
+  const Kokkos::View<ViewValueType*, typename NT::device_type>& view,
+  Tpetra::MultiVector<SC, LO, GO, NT>& X,
+  const LO whichColumn)
 {
   using dev_memory_space = typename NT::device_type::memory_space;
-  X.template sync<dev_memory_space> ();
-  auto X_lcl = getLocalView_1d (X, whichColumn);
+  auto X_lcl = getLocalView_1d_readOnly (X, whichColumn);
   Tpetra::Details::copyConvert (view, X_lcl);
 }
 

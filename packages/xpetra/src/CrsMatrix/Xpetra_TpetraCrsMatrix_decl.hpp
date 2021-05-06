@@ -73,10 +73,11 @@ namespace Xpetra {
   class TpetraCrsMatrix
     : public CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> //, public TpetraRowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   {
+#include "Xpetra_UseShortNamesScalar.hpp"
 
     // The following typedef are used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraCrsMatrixClass;
-    typedef TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraVectorClass;
+    typedef TpetraVector TpetraVectorClass;
     typedef TpetraImport<LocalOrdinal,GlobalOrdinal,Node> TpetraImportClass;
     typedef TpetraExport<LocalOrdinal,GlobalOrdinal,Node> TpetraExportClass;
 
@@ -108,21 +109,21 @@ namespace Xpetra {
     TpetraCrsMatrix(const Teuchos::RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > > &graph, const Teuchos::RCP< Teuchos::ParameterList > &params=Teuchos::null);
 
     //! Constructor for a fused import
-    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Constructor for a fused export
-    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
                     const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null);
 
     //! Constructor for a fused import
-    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix >& sourceMatrix,
                     const Import<LocalOrdinal,GlobalOrdinal,Node> & RowImporter,
                     const Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > DomainImporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -130,7 +131,7 @@ namespace Xpetra {
                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
     //! Constructor for a fused export
-    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& sourceMatrix,
+    TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix >& sourceMatrix,
                     const Export<LocalOrdinal,GlobalOrdinal,Node> & RowExporter,
                     const Teuchos::RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > DomainExporter,
                     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap,
@@ -325,7 +326,10 @@ namespace Xpetra {
     //@{
 
     //! Computes the sparse matrix-multivector multiplication.
-    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const;
+    void apply(const MultiVector &X, MultiVector &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const;
+
+    //! Computes the matrix-multivector multiplication for region layout matrices
+    void apply(const MultiVector &X, MultiVector &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const;
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const;
@@ -357,22 +361,22 @@ namespace Xpetra {
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix);
       
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const;
+    void getLocalDiagCopy(Vector &diag) const;
 
     //! Get offsets of the diagonal entries in the matrix.
     void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const;
 
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
-    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
+    void getLocalDiagCopy(Vector &diag, const Teuchos::ArrayView<const size_t> &offsets) const;
 
     //! Replace the diagonal entries of the matrix
-    void replaceDiag(const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> &diag);
+    void replaceDiag(const Vector &diag);
 
     //! Left scale operator with given vector values
-    void leftScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+    void leftScale (const Vector& x);
 
     //! Right scale operator with given vector values
-    void rightScale (const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& x);
+    void rightScale (const Vector& x);
 
     //! Implements DistObject interface
     //{@
@@ -430,9 +434,9 @@ namespace Xpetra {
 #endif
 
     //! Compute a residual R = B - (*this) * X
-    void residual(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & X,
-                  const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & B,
-                  MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > & R) const;
+    void residual(const MultiVector & X,
+                  const MultiVector & B,
+                  MultiVector & R) const;
     
    //@}
 
@@ -728,6 +732,9 @@ namespace Xpetra {
 
     //! Computes the sparse matrix-multivector multiplication.
     void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const {  }
+
+    //! Computes the matrix-multivector multiplication for region layout matrices
+    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const {  }
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }
@@ -1125,6 +1132,9 @@ namespace Xpetra {
 
     //! Computes the sparse matrix-multivector multiplication.
     void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const {  }
+
+    //! Computes the matrix-multivector multiplication for region layout matrices
+    void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const {  }
 
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { return Teuchos::null; }

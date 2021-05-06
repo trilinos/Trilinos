@@ -51,6 +51,7 @@
 #include <type_traits>
 #include <KokkosKernels_Handle.hpp>
 #include "Ifpack2_Details_GaussSeidel.hpp"
+#include "Ifpack2_Details_InverseDiagonalKernel.hpp"
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Ifpack2 {
@@ -271,6 +272,12 @@ public:
   typedef Tpetra::RowMatrix<scalar_type, local_ordinal_type,
                             global_ordinal_type, node_type> row_matrix_type;
 
+  //! Tpetra::Operator specialization used by this class.
+  typedef Tpetra::Operator<scalar_type,
+                           local_ordinal_type,
+                           global_ordinal_type,
+                           node_type> op_type;
+
   static_assert(std::is_same<MatrixType, row_matrix_type>::value, "Ifpack2::Relaxation: Please use MatrixType = Tpetra::RowMatrix.  This saves build times, library sizes, and executable sizes.  Don't worry, this class still works with CrsMatrix and BlockCrsMatrix; those are both subclasses of RowMatrix.");
 
   //@}
@@ -395,6 +402,10 @@ public:
   /// If scalar_type is <tt>std::complex<T></tt> for some type \c T,
   /// then magnitude_type is \c T.
   void setParameters (const Teuchos::ParameterList& params);
+
+  bool supportsZeroStartingSolution() { return true; }
+
+  void setZeroStartingSolution (bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
 
   //! Return a list of all the parameters that this class accepts.
   Teuchos::RCP<const Teuchos::ParameterList>
@@ -605,6 +616,8 @@ private:
 
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Tpetra::Import<local_ordinal_type, global_ordinal_type, node_type> import_type;
+
+  Teuchos::RCP<Ifpack2::Details::InverseDiagonalKernel<op_type> > invDiagKernel_;
 
 
   //@}

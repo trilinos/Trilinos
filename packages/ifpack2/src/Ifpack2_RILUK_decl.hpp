@@ -289,6 +289,9 @@ class RILUK:
                             global_ordinal_type,
                             node_type> crs_matrix_type;
 
+  //! Scalar type stored in Kokkos::Views (CrsMatrix and MultiVector)
+  typedef typename crs_matrix_type::impl_scalar_type impl_scalar_type;
+
   template <class NewMatrixType> friend class RILUK;
 
   //@}

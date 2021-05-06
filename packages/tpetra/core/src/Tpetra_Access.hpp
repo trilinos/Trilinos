@@ -46,12 +46,18 @@ namespace Tpetra
 {
 namespace Access
 {
+  // Structs for Access tags, these should not be used by user code
+  struct ReadOnlyStruct {};
+  struct OverwriteAllStruct {};
+  struct ReadWriteStruct {};
+
+
   //Tag indicating intent to read up-to-date data, but not modify.
-  struct ReadOnly {};
+  constexpr struct ReadOnlyStruct  ReadOnly  = ReadOnlyStruct();
   //Tag indicating intent to completely overwrite existing data.
-  struct WriteOnly {};
+  constexpr struct OverwriteAllStruct OverwriteAll = OverwriteAllStruct();
   //Tag indicating intent to both read up-to-date data and modify it.
-  struct ReadWrite {};
+  constexpr struct ReadWriteStruct ReadWrite = ReadWriteStruct();
 }
 }
 
