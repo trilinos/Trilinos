@@ -2,6 +2,13 @@
 
 cmake_minimum_required(VERSION 3.17.1)
 
+# Declare project but don't process compilers yet
+#
+# You must do this before calling find_package(Trilinos) when
+# BUILD_SHARED_LIBS=ON or you get a lot of nasty warnings.
+#
+project(MyApp NONE)
+
 # Disable Kokkos warning about not supporting C++ extensions
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -33,11 +40,11 @@ set(CMAKE_C_FLAGS  "${Trilinos_C_COMPILER_FLAGS} ${CMAKE_C_FLAGS}")
 set(CMAKE_Fortran_FLAGS  "${Trilinos_Fortran_COMPILER_FLAGS} ${CMAKE_Fortran_FLAGS}")
 
 # End of setup and error checking.
-#
-# NOTE: PROJECT command checks for compilers, so this statement
-# is moved AFTER setting compilers.
 
-project(MyApp)
+# Now enable the compilers now that we have gotten them from Trilinos
+enable_language(C)
+enable_language(CXX)
+enable_language(Fortran)
 
 # Build the APP and link to Trilinos
 add_executable(MyApp ${CMAKE_CURRENT_SOURCE_DIR}/app.cpp)
