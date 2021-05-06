@@ -11,7 +11,7 @@ namespace Tacho {
 
   class GraphTools {
   public:
-    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
     typedef Kokkos::View<ordinal_type*,host_device_type> ordinal_type_array;
 
   private:

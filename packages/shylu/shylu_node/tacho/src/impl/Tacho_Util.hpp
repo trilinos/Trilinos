@@ -93,85 +93,6 @@ namespace Tacho {
   };
 
   ///
-  /// later, this would be replaced with Kokkos::ArithTraits
-  ///
-  template<typename T>
-  struct ArithTraits;
-
-  template<>
-  struct ArithTraits<float> {
-    typedef float val_type;
-    typedef float mag_type;
-
-    enum : bool { is_complex = false };
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
-    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
-  };
-
-  template<>
-  struct ArithTraits<double> {
-    typedef double val_type;
-    typedef double mag_type;
-
-    enum : bool { is_complex = false };
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return x > 0 ? x : -x; }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x; }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x; }
-    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return x; }
-  };
-
-  template<>
-  struct ArithTraits<std::complex<float> > {
-    typedef std::complex<float> val_type;
-    typedef float mag_type;
-
-    enum : bool { is_complex = true };
-    static inline mag_type abs (const val_type& x) { return std::abs(x); }
-    static inline mag_type real(const val_type& x) { return x.real(); }
-    static inline mag_type imag(const val_type& x) { return x.imag(); }
-    static inline val_type conj(const val_type& x) { return std::conj(x); }
-  };
-
-  template<>
-  struct ArithTraits<std::complex<double> > {
-    typedef std::complex<double> val_type;
-    typedef double mag_type;
-
-    enum : bool { is_complex = true };
-    static inline mag_type abs (const val_type& x) { return std::abs(x); }
-    static inline mag_type real(const val_type& x) { return x.real(); }
-    static inline mag_type imag(const val_type& x) { return x.imag(); }
-    static inline val_type conj(const val_type& x) { return std::conj(x); }
-  };
-    
-  template<>
-  struct ArithTraits<Kokkos::complex<float> > {
-    typedef Kokkos::complex<float> val_type;
-    typedef float mag_type;
-
-    enum : bool { is_complex = true };
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
-    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
-  };
-
-  template<>
-  struct ArithTraits<Kokkos::complex<double> > {
-    typedef Kokkos::complex<double> val_type;
-    typedef double mag_type;
-
-    enum : bool { is_complex = true };
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type abs (const val_type& x) { return Kokkos::abs(x); }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type real(const val_type& x) { return x.real(); }
-    static KOKKOS_FORCEINLINE_FUNCTION mag_type imag(const val_type& x) { return x.imag(); }
-    static KOKKOS_FORCEINLINE_FUNCTION val_type conj(const val_type& x) { return Kokkos::conj(x); }
-  };
-
-
-  ///
   /// util
   ///
   template<typename Ta, typename Tb>
@@ -307,6 +228,11 @@ namespace Tacho {
   /// Tag struct
   ///
   struct NullTag { enum : int { tag = 0 }; };
+  struct PivotMode {
+    struct Flame {};  /// 0 base relative pivot index
+    struct Lapack {}; /// 1 base index
+  };
+
   struct Partition {
     enum : int { Top = 101,
                  Bottom,
@@ -465,6 +391,16 @@ namespace Tacho {
   template<>           struct conj_transpose_trans_tag<Trans::Transpose>      { typedef Trans::NoTranspose type; };
   template<>           struct conj_transpose_trans_tag<Trans::ConjTranspose>  { typedef Trans::NoTranspose type; };
   template<>           struct conj_transpose_trans_tag<Trans::NoTranspose>    { typedef Trans::ConjTranspose type; };
+
+  struct Direct {
+    enum : int { tag = 800 };
+    struct Forward {
+      enum : int { tag = 801 };
+    };
+    struct Backward {
+      enum : int { tag = 802 };
+    };
+  };
 
   ///
   /// helper functions

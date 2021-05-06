@@ -260,6 +260,26 @@ namespace Xpetra {
      */
     virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode=Teuchos::NO_TRANS, Scalar alpha=ScalarTraits< Scalar >::one(), Scalar beta=ScalarTraits< Scalar >::zero()) const = 0;
 
+    /*! \brief Computes the sparse matrix-multivector multiplication for region layout matrices.
+     *
+     * This method is for use with matrices that are in a region layout
+     * with duplicated degrees of freedom on rejgion interfaces.
+     * This method computes <tt>Y := beta*Y + alpha*Op(A)*X</tt>,
+     * where <tt>Op(A)</tt> is either \f$A\f$, \f$A^T\f$ (the transpose),
+     * or \f$A^H\f$ (the conjugate transpose).
+     *
+     * @param[in] X Input vector
+     * @param[in,out] Y Result vector
+     * @param[in] mode Transpose mode
+     * @param[in] alpha Scaling factor
+     * @param[in] beta Scaling factor
+     * @param[in] sumInterfaceValues Whether or not to sum interface values between regions after the matvec
+     * @param[in] regionInterfaceImporter Importer with region interface information
+     * @param[in] regionInterfaceLIDs Array of LIDs on region interfaces in local region format
+     */
+    virtual void apply(const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &X, MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &Y, Teuchos::ETransp mode, Scalar alpha, Scalar beta, bool sumInterfaceValues, const RCP<Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter, const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs) const = 0;
+
+
     //! Returns the Map associated with the domain of this operator. This will be null until fillComplete() is called.
     virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const = 0;
 

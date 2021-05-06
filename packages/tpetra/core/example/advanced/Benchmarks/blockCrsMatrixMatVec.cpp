@@ -115,7 +115,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-      auto Y_cur = Y.getLocalBlock (lclRow, j, Tpetra::Access::ReadWrite);
+      auto Y_cur = Y.getLocalBlockHost (lclRow, j, Tpetra::Access::ReadWrite);
       if (beta == zero) {
         FILL (Y_lcl, zero);
       } else if (beta == one) {
@@ -132,7 +132,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
         auto A_cur_1d = Kokkos::subview (val, absBlkOff * blockSize * blockSize);
         little_blk_type A_cur (A_cur_1d.data (), blockSize, blockSize);
-        auto X_cur = X.getLocalBlock (meshCol, j, Tpetra::Access::ReadOnly);
+        auto X_cur = X.getLocalBlockHost (meshCol, j, Tpetra::Access::ReadOnly);
 
         GEMV (alpha, A_cur, X_cur, Y_lcl); // Y_lcl += alpha*A_cur*X_cur
       } // for each entry in the current local row of the matrix

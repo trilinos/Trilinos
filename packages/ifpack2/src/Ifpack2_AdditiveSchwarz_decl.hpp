@@ -645,6 +645,10 @@ public:
   void
   setParameterList (const Teuchos::RCP<Teuchos::ParameterList>& plist);
 
+  bool supportsZeroStartingSolution() { return true; }
+
+  void setZeroStartingSolution (bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
+
   /// \brief Get a list of the preconditioner's default parameters.
   ///
   /// See the documentation of setParameters() for a list of the
