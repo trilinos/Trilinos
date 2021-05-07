@@ -1013,7 +1013,7 @@ public:
                     Kokkos::MemoryUnmanaged>& diag,
                     const Teuchos::ArrayView<const size_t>& offsets) const
   {
-    auto offsets_view_host = Kokkos::View<const size_t*,Kokkos::HostSpace>(offsets.getRawPtr(), offsets.size());
+    auto offsets_view_host = Kokkos::View<size_t*,Kokkos::HostSpace>(const_cast<size_t*>(offsets.getRawPtr()), offsets.size());
     auto offsets_view_device = Kokkos::create_mirror_view_and_copy(typename device_type::memory_space(), offsets_view_host);
     getLocalDiagCopy(diag, offsets_view_device);
     Kokkos::deep_copy(offsets_view_host, offsets_view_device);
