@@ -437,7 +437,7 @@ namespace { // (anonymous)
 
 // For a given Kokkos::View type, possibly unmanaged, get the
 // corresponding managed Kokkos::View type.  This is handy for
-// translating from little_block_type or little_vec_type (both
+// translating from little_block_type or little_host_vec_type (both
 // possibly unmanaged) to their managed versions.
 template<class LittleBlockType>
 struct GetManagedView {
@@ -533,9 +533,9 @@ void RBILUK<MatrixType>::compute ()
     size_t num_cols = U_block_->getColMap()->getNodeNumElements();
     Teuchos::Array<int> colflag(num_cols);
 
-    typename GetManagedView<little_block_type>::managed_non_const_type diagModBlock ("diagModBlock", blockSize_, blockSize_);
-    typename GetManagedView<little_block_type>::managed_non_const_type matTmp ("matTmp", blockSize_, blockSize_);
-    typename GetManagedView<little_block_type>::managed_non_const_type multiplier ("multiplier", blockSize_, blockSize_);
+    typename GetManagedView<little_block_host_type>::managed_non_const_type diagModBlock ("diagModBlock", blockSize_, blockSize_);
+    typename GetManagedView<little_block_host_type>::managed_non_const_type matTmp ("matTmp", blockSize_, blockSize_);
+    typename GetManagedView<little_block_host_type>::managed_non_const_type multiplier ("multiplier", blockSize_, blockSize_);
 
 //    Teuchos::ArrayRCP<scalar_type> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
@@ -736,7 +736,7 @@ void RBILUK<MatrixType>::compute ()
       }
 
       for (LO j = 0; j < NumU; ++j) {
-        little_block_type currentVal((typename little_block_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
+        little_block_host_type currentVal((typename little_block_host_type::value_type*) &InV[(NumL+1+j)*blockMatSize], blockSize_, rowStride); // current_mults++;
         // scale U by the diagonal inverse
 #ifndef IFPACK2_RBILUK_INITIAL_NOKK
         KokkosBatched::Experimental::SerialGemm
@@ -836,7 +836,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   const BMV xBlock (X, * (A_block_->getColMap ()), blockSize_);
 
   Teuchos::Array<scalar_type> lclarray(blockSize_);
-  little_vec_type lclvec((typename little_vec_type::value_type*)&lclarray[0], blockSize_);
+  little_host_vec_type lclvec((typename little_host_vec_type::value_type*)&lclarray[0], blockSize_);
   const scalar_type one = STM::one ();
   const scalar_type zero = STM::zero ();
 
@@ -876,7 +876,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               const_host_little_vec_type prevVal = cBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
 
               const LO matOffset = blockMatSize*j;
-              little_block_type lij((typename little_block_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
+              little_block_host_type lij((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
 
               //cval.matvecUpdate(-one, lij, prevVal);
               Tpetra::GEMV (-one, lij, prevVal, cval);

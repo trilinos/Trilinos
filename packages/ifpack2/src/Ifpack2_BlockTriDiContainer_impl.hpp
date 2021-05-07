@@ -1563,10 +1563,10 @@ namespace Ifpack2 {
 
       // construct the D and R graphs in A = D + R.
       {
-        const auto& local_graph = g.getLocalGraphDevice();
-        const auto& local_graph_rowptr = local_graph.row_map;
+        const auto local_graph = g.getLocalGraphHost();
+        const auto local_graph_rowptr = local_graph.row_map;
         TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
-        const auto& local_graph_colidx = local_graph.entries;
+        const auto local_graph_colidx = local_graph.entries;
 
         //assume no overlap.
 
