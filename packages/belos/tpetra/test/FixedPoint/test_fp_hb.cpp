@@ -157,25 +157,28 @@ int main(int argc, char *argv[]) {
     MVT::MvScale(*B,norm);
 
     // Drastically bump the diagonal and then rescale so FP can converge
-    VV diag(A->getRowMap());
-    A->getLocalDiagCopy(diag);
-    Teuchos::ArrayRCP<ST> dd=diag.getDataNonConst();
+    {
+      VV diag(A->getRowMap());
+      A->getLocalDiagCopy(diag);
+      {
+        Teuchos::ArrayRCP<ST> dd=diag.getDataNonConst();
 
-    auto GlobalElements = A->getRowMap()->getNodeElementList();
-    A->resumeFill();
-    for(int i=0; i<(int)dd.size(); i++) {
-      dd[i]=dd[i]*1e4;
-      A->replaceGlobalValues(GlobalElements[i],
-                            Teuchos::tuple<GO>(GlobalElements[i]),
-                            Teuchos::tuple<ST>(dd[i]) );
+        auto GlobalElements = A->getRowMap()->getNodeElementList();
+        A->resumeFill();
+        for(int i=0; i<(int)dd.size(); i++) {
+          dd[i]=dd[i]*1e4;
+          A->replaceGlobalValues(GlobalElements[i],
+                                 Teuchos::tuple<GO>(GlobalElements[i]),
+                                 Teuchos::tuple<ST>(dd[i]) );
+        }
+        A->fillComplete();
+
+        for(int i=0; i<(int)dd.size(); i++)
+          dd[i] = 1.0/sqrt(dd[i]);
+      }
+      A->leftScale(diag);
+      A->rightScale(diag);
     }
-    A->fillComplete();
-
-    for(int i=0; i<(int)dd.size(); i++)
-      dd[i] = 1.0/sqrt(dd[i]);
-    A->leftScale(diag);
-    A->rightScale(diag);
-
 
     //
     // ********Other information used by block solver***********
