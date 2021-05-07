@@ -999,7 +999,7 @@ public:
     // we reserve the right to do lazy allocation of device data.  (We
     // don't plan to do lazy allocation for host data; the host
     // version of the data always exists.)
-    auto val_d = val_.getDeviceView(Access::OverwriteAll);
+    auto val_d = val_.getDeviceView(Access::ReadOnly);
     parallel_for (policy_type (0, lclNumMeshRows),
                   functor_type (diag, val_d, offsets,
                                 graph_.getLocalGraphDevice ().row_map, blockSize_));
