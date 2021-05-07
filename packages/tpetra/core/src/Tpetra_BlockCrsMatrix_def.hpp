@@ -1613,6 +1613,17 @@ public:
     return little_block_type (val + pointOffset, blockSize_, rowStride);
   }
 
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_host_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getNonConstLocalBlockFromInputHost (impl_scalar_type* val,
+                                  const size_t pointOffset) const
+  {
+    // Row major blocks
+    const LO rowStride = blockSize_;
+    return little_block_host_type (val + pointOffset, blockSize_, rowStride);
+  }
+
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
@@ -1654,6 +1665,27 @@ public:
       return little_block_type ();
     }
   }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_host_type
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  getLocalBlockHostNonConst (const LO localRowInd, const LO localColInd) const
+  {
+    using this_type = BlockCrsMatrix<Scalar, LO, GO, Node>;
+
+    const size_t absRowBlockOffset = ptrHost_[localRowInd];
+    const LO relBlockOffset = this->findRelOffsetOfColumnIndex (localRowInd, localColInd);
+    if (relBlockOffset != Teuchos::OrdinalTraits<LO>::invalid ()) {
+      const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+      auto vals = const_cast<this_type&>(*this).getValuesHostNonConst();
+      auto r_val = getNonConstLocalBlockFromInputHost (vals.data(), absBlockOffset);      
+      return r_val; 
+    }
+    else {
+      return little_block_host_type ();
+    }
+  }
+
 
   template<class Scalar, class LO, class GO, class Node>
   bool

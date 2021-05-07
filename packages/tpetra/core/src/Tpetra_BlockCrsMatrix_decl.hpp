@@ -515,6 +515,10 @@ public:
   little_block_type
   getLocalBlockDeviceNonConst (const LO localRowInd, const LO localColInd) const;
 
+  little_block_host_type
+  getLocalBlockHostNonConst (const LO localRowInd, const LO localColInd) const;
+
+
   /// \brief Get relative offsets corresponding to the given rows,
   ///   given by local row index.
   ///
@@ -1131,6 +1135,11 @@ private:
 
   little_block_type
   getNonConstLocalBlockFromInput (impl_scalar_type* val, const size_t pointOffset) const;
+
+  little_block_host_type
+  getNonConstLocalBlockFromInputHost (impl_scalar_type* val, const size_t pointOffset) const;
+
+
 
 public:
   //! The communicator over which this matrix is distributed.
