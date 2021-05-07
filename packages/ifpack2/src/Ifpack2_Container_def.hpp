@@ -913,7 +913,7 @@ StridedRowView(h_vals_type vals_, h_inds_type inds_, int blockSize_, size_t nnz_
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StridedRowView<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 StridedRowView(Teuchos::Array<SC>& vals_, Teuchos::Array<LO>& inds_)
-  : vals(nullptr), inds(nullptr), blockSize(1), nnz(vals_.size())
+  : vals(), inds(), blockSize(1), nnz(vals_.size())
 {
   valsCopy.swap(vals_);
   indsCopy.swap(inds_);
