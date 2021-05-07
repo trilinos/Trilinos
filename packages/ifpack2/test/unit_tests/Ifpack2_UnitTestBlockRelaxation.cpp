@@ -750,16 +750,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainers, S
   //the (block) graph should be diagonal
   auto crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, 2);
 
-  auto bcrsmatrix = Teuchos::rcp(new
-      Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>(*crsgraph, blockSize));
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>;
+  using h_inds = typename block_crs_matrix_type::local_inds_host_view_type;
+  using h_vals = typename block_crs_matrix_type::nonconst_values_host_view_type;
+
+  auto bcrsmatrix = Teuchos::rcp(new block_crs_matrix_type(*crsgraph, blockSize));
+                                
   
   //Fill in values of the the matrix
   for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getNodeNumRows(); ++l_row)
   {
-    const LO * inds;
-    Scalar * vals;
-    LO numInd;
-    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    h_inds inds;
+    h_vals vals;
+    bcrsmatrix->getLocalRowViewNonConst(l_row, inds, vals);
+    LO numInd = (LO) inds.size();
     for(int k = 0; k < blockSize * blockSize * numInd; k++)
       vals[k] = 0;
     for (LO j = 0; j < numInd; ++j)
@@ -901,16 +905,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestBlockContainersDec
   //the (block) graph should be diagonal
   auto crsgraph = tif_utest::create_banded_graph<LO,GO,Node>(num_rows_per_proc, 1);
 
-  auto bcrsmatrix = Teuchos::rcp(new
-      Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>(*crsgraph, blockSize));
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar,LO,GO,Node>;
+  using h_inds = typename block_crs_matrix_type::local_inds_host_view_type;
+  using h_vals = typename block_crs_matrix_type::nonconst_values_host_view_type;
+  auto bcrsmatrix = Teuchos::rcp(new block_crs_matrix_type(*crsgraph, blockSize));
   
   //Fill in values of the the matrix
   for(LO l_row = 0; (size_t) l_row < bcrsmatrix->getNodeNumRows(); ++l_row)
   {
-    const LO * inds;
-    Scalar * vals;
-    LO numInd;
-    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    h_inds inds;
+    h_vals vals;
+    bcrsmatrix->getLocalRowViewNonConst(l_row, inds, vals);
+    LO numInd = (LO)inds.size();
     for (LO j = 0; j < numInd; ++j)
     {
       const LO lcl_col = inds[j];

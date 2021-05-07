@@ -129,7 +129,7 @@ namespace Details
       omega = omega_;
       auto AlocalGraph = A.getCrsGraph().getLocalGraphDevice();
       //A.sync_host();  //note: this only syncs values, not graph
-      Avalues = A.getValuesHost();
+      Avalues = A.getValuesHostNonConst();
       Arowmap = Kokkos::create_mirror_view(AlocalGraph.row_map);
       Aentries = Kokkos::create_mirror_view(AlocalGraph.entries);
       Kokkos::deep_copy(Arowmap, AlocalGraph.row_map);

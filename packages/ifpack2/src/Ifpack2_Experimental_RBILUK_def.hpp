@@ -345,14 +345,17 @@ initAllValues (const block_crs_matrix_type& A)
 
   //TODO BMK: Revisit this fence when BlockCrsMatrix is refactored.
   Kokkos::fence();
+  using inds_type = typename row_matrix_type::local_inds_host_view_type;
+  using vals_type = typename row_matrix_type::values_host_view_type;
   for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
     LO local_row = myRow;
 
     //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
     //                    we'd need to check via the Tpetra::RowMatrix method supportsRowViews().
-    const LO * InI = 0;
-    scalar_type * InV = 0;
-    A.getLocalRowView(local_row, InI, InV, NumIn);
+    inds_type InI;
+    vals_type InV;
+    A.getLocalRowView(local_row, InI, InV);
+    NumIn = (LO)InI.size();
 
     // Split into L and U (we don't assume that indices are ordered).
 
@@ -862,11 +865,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             //cval.assign(xval);
             Tpetra::COPY (xval, cval);
 
-            LO NumL;
-            const LO * colValsL;
-            scalar_type * valsL;
-
-            L_block_->getLocalRowView(local_row, colValsL, valsL, NumL);
+            local_inds_host_view_type colValsL;
+            values_host_view_type valsL;
+            L_block_->getLocalRowView(local_row, colValsL, valsL);
+            LO NumL = (LO) colValsL.size();
 
             for (LO j = 0; j < NumL; ++j)
             {
@@ -897,11 +899,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             //yval.assign(rval);
             Tpetra::COPY (rval, yval);
 
-            LO NumU;
-            const LO * colValsU;
-            scalar_type * valsU;
-
-            U_block_->getLocalRowView(local_row, colValsU, valsU, NumU);
+            local_inds_host_view_type colValsU;
+            values_host_view_type valsU;      
+            U_block_->getLocalRowView(local_row, colValsU, valsU);
+            LO NumU = (LO) colValsU.size();
 
             for (LO j = 0; j < NumU; ++j)
             {
@@ -909,7 +910,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
               const_host_little_vec_type prevVal = yBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
 
               const LO matOffset = blockMatSize*(NumU-1-j);
-              little_block_type uij((typename little_block_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
+              little_block_host_type uij((typename little_block_host_type::value_type*) &valsU[matOffset], blockSize_, rowStride);
 
               //yval.matvecUpdate(-one, uij, prevVal);
               Tpetra::GEMV (-one, uij, prevVal, yval);

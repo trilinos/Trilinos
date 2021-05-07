@@ -1783,8 +1783,8 @@ namespace Ifpack2 {
           }
 
           // Allocate or view values.
-          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->
-                               template getValues<node_memory_space>());
+          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->getValuesDeviceNonConst());
+                               
         }
       }
     }
@@ -1915,7 +1915,7 @@ namespace Ifpack2 {
         max_partsz(interf_.max_partsz),
         // block crs matrix
         A_rowptr(A_->getCrsGraph().getLocalGraphDevice().row_map),
-        A_values(const_cast<block_crs_matrix_type*>(A_.get())->template getValues<memory_space>()),
+        A_values(const_cast<block_crs_matrix_type*>(A_.get())->getValuesDeviceNonConst()),
         // block tridiags
         pack_td_ptr(btdm_.pack_td_ptr),
         flat_td_ptr(btdm_.flat_td_ptr),
