@@ -44,7 +44,13 @@ set(CMAKE_Fortran_FLAGS  "${Trilinos_Fortran_COMPILER_FLAGS} ${CMAKE_Fortran_FLA
 # Now enable the compilers now that we have gotten them from Trilinos
 enable_language(C)
 enable_language(CXX)
-enable_language(Fortran)
+if (CMAKE_Fortran_COMPILER)
+  enable_language(Fortran)
+endif()
+# NOTE: Technically this project only has C++ code so we could only call
+# enable_language(CXX) here.  But we leave the enable of C and Fortran here to
+# demonstrate how to do this.  Also, note that Fortran is optional in Trilinos
+# so we make the enable of Fortran optional based on it's enable in Trilinos.
 
 # Build the APP and link to Trilinos
 add_executable(MyApp ${CMAKE_CURRENT_SOURCE_DIR}/app.cpp)
