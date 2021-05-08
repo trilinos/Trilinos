@@ -53,32 +53,32 @@ namespace ROL {
 template <class Real>
 class Reduced_Constraint_SimOpt : public Constraint<Real> {
 private:
-  const ROL::Ptr<Constraint_SimOpt<Real> > conVal_;          
-  const ROL::Ptr<Constraint_SimOpt<Real> > conRed_; 
-  const ROL::Ptr<VectorController<Real> > stateStore_;
-  ROL::Ptr<VectorController<Real> > adjointStore_;
+  const ROL::Ptr<Constraint_SimOpt<Real>> conVal_;
+  const ROL::Ptr<Constraint_SimOpt<Real>> conRed_;
+  const ROL::Ptr<VectorController<Real>>  stateStore_;
+  ROL::Ptr<VectorController<Real>>        adjointStore_;
 
   // Primal vectors
-  ROL::Ptr<Vector<Real> > state_;                              
-  ROL::Ptr<Vector<Real> > adjoint_;                            
-  ROL::Ptr<Vector<Real> > residual_;                            
-  ROL::Ptr<Vector<Real> > state_sens_;                              
-  ROL::Ptr<Vector<Real> > adjoint_sens_;                            
+  ROL::Ptr<Vector<Real>> state_;
+  ROL::Ptr<Vector<Real>> adjoint_;
+  ROL::Ptr<Vector<Real>> residual_;
+  ROL::Ptr<Vector<Real>> state_sens_;
+  ROL::Ptr<Vector<Real>> adjoint_sens_;
 
   // Dual vectors
-  ROL::Ptr<Vector<Real> > dualstate_;
-  ROL::Ptr<Vector<Real> > dualstate1_;
-  ROL::Ptr<Vector<Real> > dualadjoint_;
-  ROL::Ptr<Vector<Real> > dualcontrol_;
-  ROL::Ptr<Vector<Real> > dualresidual_;                            
+  ROL::Ptr<Vector<Real>> dualstate_;
+  ROL::Ptr<Vector<Real>> dualstate1_;
+  ROL::Ptr<Vector<Real>> dualadjoint_;
+  ROL::Ptr<Vector<Real>> dualcontrol_;
+  ROL::Ptr<Vector<Real>> dualresidual_;
 
-  const bool storage_;             
+  const bool storage_;
   const bool useFDhessVec_;
 
   bool updateFlag_;
   int  updateIter_;
 
-  void solve_state_equation(const Vector<Real> &z, Real &tol) { 
+  void solve_state_equation(const Vector<Real> &z, Real &tol) {
     // Check if state has been computed.
     bool isComputed = false;
     if (storage_) {

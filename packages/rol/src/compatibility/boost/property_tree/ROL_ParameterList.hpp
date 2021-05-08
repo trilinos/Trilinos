@@ -130,7 +130,7 @@ public:
     // Copy name from "Name" Parameter in p
     std::string name = "Unknown";
     for (auto &q : p.root_->second)
-      if (q.first == "Parameter" and
+      if (q.first == "Parameter" &&
           q.second.get<std::string>("<xmlattr>.name") == "Name")
       {
         name = q.second.get<std::string>("<xmlattr>.value");
@@ -160,8 +160,8 @@ public:
     const std::string my_type = get_type(obj);
     for (auto q : root_->second)
     {
-      if (q.first == "Parameter" and
-          q.second.get<std::string>("<xmlattr>.name") == name and
+      if (q.first == "Parameter" &&
+          q.second.get<std::string>("<xmlattr>.name") == name &&
           q.second.get<std::string>("<xmlattr>.type") == my_type)
         return true;
     }
@@ -175,7 +175,7 @@ public:
 
     for (auto &q : root_->second)
     {
-      if (q.first == "Parameter" and
+      if (q.first == "Parameter" &&
           q.second.get<string>("<xmlattr>.name") == name)
       {
         q.second.put("<xmlattr>.value", value);
@@ -198,7 +198,7 @@ public:
   T get( const string& name ) const {
     for (auto &r : root_->second)
     {
-      if (r.first == "Parameter" and
+      if (r.first == "Parameter" &&
           r.second.get<std::string>("<xmlattr>.name") == name)
       {
         return r.second.get<T>("<xmlattr>.value");
@@ -216,7 +216,7 @@ public:
   T get( const string& name, const T& default_value ) {
     for (auto r : root_->second)
     {
-      if (r.first == "Parameter" and
+      if (r.first == "Parameter" &&
           r.second.get<std::string>("<xmlattr>.name") == name)
       {
         return r.second.get<T>("<xmlattr>.value");
@@ -276,7 +276,7 @@ public:
   {
     for (auto q : root_->second)
     {
-      if (q.first == "ParameterList" and
+      if (q.first == "ParameterList" &&
           q.second.get<string>("<xmlattr>.name") == name)
         return true;
     }
@@ -287,7 +287,7 @@ public:
   {
     for (auto q : root_->second)
     {
-      if (q.first == "Parameter" and
+      if (q.first == "Parameter" &&
           q.second.get<string>("<xmlattr>.name") == name)
         return true;
     }
