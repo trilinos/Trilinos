@@ -53,16 +53,16 @@ namespace ROL {
 template<typename Real>
 class Reduced_Objective_SimOpt : public Objective<Real> {
 private:
-  const Ptr<Objective_SimOpt<Real>> obj_;          
-  const Ptr<Constraint_SimOpt<Real>> con_; 
+  const Ptr<Objective_SimOpt<Real>> obj_;
+  const Ptr<Constraint_SimOpt<Real>> con_;
   Ptr<VectorController<Real>> stateStore_;
   Ptr<VectorController<Real>> adjointStore_;
 
   // Primal vectors
-  Ptr<Vector<Real>> state_;                              
-  Ptr<Vector<Real>> adjoint_;                            
-  Ptr<Vector<Real>> state_sens_;                              
-  Ptr<Vector<Real>> adjoint_sens_;                            
+  Ptr<Vector<Real>> state_;
+  Ptr<Vector<Real>> adjoint_;
+  Ptr<Vector<Real>> state_sens_;
+  Ptr<Vector<Real>> adjoint_sens_;
 
   // Dual vectors
   Ptr<Vector<Real>> dualstate_;
@@ -70,8 +70,11 @@ private:
   Ptr<Vector<Real>> dualadjoint_;
   Ptr<Vector<Real>> dualcontrol_;
 
-  const bool storage_;             
+  const bool storage_;
   const bool useFDhessVec_;
+
+  unsigned nupda_, nvalu_, ngrad_, nhess_, nprec_;
+  unsigned nstat_, nadjo_, nssen_, nasen_;
   
   bool updateFlag_;
   int  updateIter_;
@@ -197,6 +200,14 @@ public:
   /** \brief Apply a reduced Hessian preconditioner.
   */
   virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) override;
+
+  /** Write summary to stream.
+  */
+  void summarize(std::ostream &stream) const;
+
+  /** Reset summary data.
+  */
+  void reset();
 
 // For parametrized (stochastic) objective functions and constraints
 public:

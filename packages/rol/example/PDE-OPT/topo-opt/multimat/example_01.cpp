@@ -59,12 +59,12 @@
 
 #include "ROL_Solver.hpp"
 #include "opfactory.hpp"
-#include <fenv.h>
+//#include <fenv.h>
 
 typedef double RealT;
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_OVERFLOW | FE_DIVBYZERO | FE_INVALID);
+  //feenableexcept(FE_OVERFLOW | FE_DIVBYZERO | FE_INVALID);
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint     = argc - 1;
   ROL::Ptr<std::ostream> outStream;

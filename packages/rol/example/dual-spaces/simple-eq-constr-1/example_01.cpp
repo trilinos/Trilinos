@@ -52,7 +52,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include <iostream>
-#include <fenv.h>
+//#include <fenv.h>
 
 typedef double RealT;
 
@@ -443,12 +443,10 @@ Real apply( const ROL::Vector<Real> &x ) const {
 
 
 int main(int argc, char *argv[]) {
-  feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
+  //feenableexcept(FE_DIVBYZERO | FE_INVALID | FE_OVERFLOW);
 
   typedef std::vector<RealT> vector;
   typedef vector::size_type  uint;
-
-    
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
 
