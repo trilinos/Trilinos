@@ -6,12 +6,52 @@
 #include<KokkosKernels_TestUtils.hpp>
 
 namespace Test {
+  template<class ViewTypeA, class ViewTypeX, class ViewTypeY>
+  void vanilla_gemv(char mode,
+      typename ViewTypeA::non_const_value_type alpha, const ViewTypeA& A, const ViewTypeX& x, 
+      typename ViewTypeY::non_const_value_type beta, const ViewTypeY& y)
+  {
+    using ScalarY = typename ViewTypeY::non_const_value_type;
+    using KAT_A = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
+    using KAT_Y = Kokkos::ArithTraits<ScalarY>;
+    int M = A.extent(0);
+    int N = A.extent(1);
+    if(beta == KAT_Y::zero())
+      Kokkos::deep_copy(y, KAT_Y::zero());
+    if(mode == 'N') {
+      for(int i = 0; i < M; i++) {
+        ScalarY y_i = beta * y(i);
+        for(int j = 0; j < N; j++) {
+           y_i += alpha * A(i,j) * x(j);
+        }
+        y(i) = y_i;
+      }
+    } else if(mode == 'T') {
+      for(int j = 0; j < N; j++) {
+        ScalarY y_j = beta * y(j);
+        for(int i = 0; i < M; i++) {
+           y_j += alpha * A(i,j) * x(i);
+        }
+        y(j) = y_j;
+      }
+    } else if(mode == 'C') {
+      for(int j = 0; j < N; j++) {
+        ScalarY y_j = beta * y(j);
+        for(int i = 0; i < M; i++) {
+           y_j += alpha * KAT_A::conj (A(i,j)) * x(i);
+        }
+        y(j) = y_j;
+      }
+    }
+  }
+
   template<class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>
   void impl_test_gemv(const char* mode, int M, int N) {
 
     typedef typename ViewTypeA::value_type ScalarA;
     typedef typename ViewTypeX::value_type ScalarX;
     typedef typename ViewTypeY::value_type ScalarY;
+    typedef Kokkos::ArithTraits<ScalarY> KAT_Y;
 
     typedef multivector_layout_adapter<ViewTypeA> vfA_type;
     typedef Kokkos::View<ScalarX*[2],
@@ -25,8 +65,8 @@ namespace Test {
 
 
     ScalarA alpha = 3;
-    ScalarX beta = 5;
-    double eps = (std::is_same<typename Kokkos::ArithTraits<ScalarY>::mag_type, float>::value ? 1e-3 : 5e-10);
+    ScalarY beta = 5;
+    double eps = (std::is_same<typename KAT_Y::mag_type, float>::value ? 1e-3 : 5e-10);
 
     int ldx;
     int ldy;
@@ -42,7 +82,6 @@ namespace Test {
     BaseTypeY b_y("Y", ldy);
     BaseTypeY b_org_y("Org_Y", ldy);
     
-
     ViewTypeA A = vfA_type::view(b_A);
     ViewTypeX x = Kokkos::subview(b_x,Kokkos::ALL(),0);
     ViewTypeY y = Kokkos::subview(b_y,Kokkos::ALL(),0);
@@ -85,40 +124,16 @@ namespace Test {
     Kokkos::deep_copy(h_b_y,b_y);
     Kokkos::deep_copy(h_b_A,b_A);
 
-    typedef Kokkos::Details::ArithTraits<typename ViewTypeA::non_const_value_type> KAT;
     Kokkos::View<ScalarY*, Kokkos::HostSpace> expected("expected aAx+by", ldy);
-    if(mode[0] == 'N') {
-      for(int i = 0; i < M; i++) {
-        ScalarY y_i = beta * h_org_y(i);
-        for(int j = 0; j < N; j++) {
-           y_i += alpha * h_A(i,j) * h_x(j);
-        }
-        expected(i) = y_i;
-      }
-    } else if(mode[0] == 'T') {
-      for(int j = 0; j < N; j++) {
-        ScalarY y_j = beta * h_org_y(j);
-        for(int i = 0; i < M; i++) {
-           y_j += alpha * h_A(i,j) * h_x(i);
-        }
-        expected(j) = y_j;
-      }
-    } else if(mode[0] == 'C') {
-      for(int j = 0; j < N; j++) {
-        ScalarY y_j = beta * h_org_y(j);
-        for(int i = 0; i < M; i++) {
-           y_j += alpha * KAT::conj (h_A(i,j)) * h_x(i);
-        }
-        expected(j) = y_j;
-      }
-    }
+    Kokkos::deep_copy(expected, h_org_y);
+    vanilla_gemv(mode[0], alpha, h_A, h_x, beta, expected);
 
     KokkosBlas::gemv(mode, alpha, A, x, beta, y);
     Kokkos::deep_copy(h_b_y, b_y);
     int numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
-      if(KAT::abs(expected(i) - h_y(i)) > KAT::abs(eps * expected(i)))
+      if(KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
         numErrors++;
     }
     EXPECT_EQ(numErrors, 0) << "Nonconst input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
@@ -129,7 +144,7 @@ namespace Test {
     numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
-      if(KAT::abs(expected(i) - h_y(i)) > KAT::abs(eps * expected(i)))
+      if(KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
         numErrors++;
     }
     EXPECT_EQ(numErrors, 0) << "Const vector input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
@@ -140,10 +155,25 @@ namespace Test {
     numErrors = 0;
     for(int i = 0; i < ldy; i++)
     {
-      if(KAT::abs(expected(i) - h_y(i)) > KAT::abs(eps * expected(i)))
+      if(KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
         numErrors++;
     }
     EXPECT_EQ(numErrors, 0) << "Const matrix/vector input, " << M << 'x' << N << ", alpha = " << alpha << ", beta = " << beta << ", mode " << mode << ": gemv incorrect";
+    //Test once with beta = 0, but with y initially filled with NaN.
+    //This should overwrite the NaNs with the correct result.
+    beta = KAT_Y::zero();
+    //beta changed, so update the correct answer
+    vanilla_gemv(mode[0], alpha, h_A, h_x, beta, expected);
+    Kokkos::deep_copy(b_y, KAT_Y::nan());
+    KokkosBlas::gemv(mode, alpha, A, x, beta, y);
+    Kokkos::deep_copy(h_b_y, b_y);
+    numErrors = 0;
+    for(int i = 0; i < ldy; i++)
+    {
+      if(KAT_Y::isNan(h_y(i)) || KAT_Y::abs(expected(i) - h_y(i)) > KAT_Y::abs(eps * expected(i)))
+        numErrors++;
+    }
+    EXPECT_EQ(numErrors, 0) << "beta = 0, input contains NaN, A is " << M << 'x' << N << ", mode " << mode << ": gemv incorrect";
   }
 }
 
