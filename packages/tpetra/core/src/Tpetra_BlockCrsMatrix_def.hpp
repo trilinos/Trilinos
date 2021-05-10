@@ -1878,7 +1878,7 @@ public:
         // invalid.  That means the Import or Export is invalid somehow.
         src->getLocalRowView (localRow, lclSrcCols, vals); numEntries = lclSrcCols.extent(0);
         if (numEntries > 0) {
-          LO err = this->replaceLocalValues (localRow, lclSrcCols.data(), vals.data(), numEntries);
+          LO err = this->replaceLocalValues (localRow, lclSrcCols.data(), reinterpret_cast<const scalar_type*>(vals.data()), numEntries);
           if (err != numEntries) {
             lclErr = true;
             if (! dstRowMap.isNodeLocalElement (localRow)) {
@@ -1915,7 +1915,7 @@ public:
         LO numEntries;
         src->getLocalRowView (srcLclRow, lclSrcCols, vals); numEntries = lclSrcCols.extent(0);
         if (numEntries > 0) {
-          LO err = this->replaceLocalValues (dstLclRow, lclSrcCols.data(), vals.data(), numEntries);
+          LO err = this->replaceLocalValues (dstLclRow, lclSrcCols.data(), reinterpret_cast<const scalar_type*>(vals.data()), numEntries);
           if (err != numEntries) {
             lclErr = true;
 #ifdef HAVE_TPETRA_DEBUG
@@ -1983,7 +1983,7 @@ public:
             }
             LO err(0);
             try {
-              err = this->replaceLocalValues (localRow, lclDstColsView.getRawPtr (), vals.data(), numEntries);
+              err = this->replaceLocalValues (localRow, lclDstColsView.getRawPtr (), reinterpret_cast<const scalar_type*>(vals.data()), numEntries);
             } catch (std::exception& e) {
               if (debug) {
                 std::ostringstream os;
@@ -2051,7 +2051,7 @@ public:
 #endif // HAVE_TPETRA_DEBUG
               }
             }
-            LO err = this->replaceLocalValues (dstLclRow, lclDstColsView.getRawPtr (), vals.data(), numEntries);
+            LO err = this->replaceLocalValues (dstLclRow, lclDstColsView.getRawPtr (), reinterpret_cast<const scalar_type*>(vals.data()), numEntries);
             if (err != numEntries) {
               lclErr = true;
             }
@@ -3481,7 +3481,7 @@ public:
     Kokkos::deep_copy (diagOffsetsHost, diagOffsets);
 
     auto vals_host_out = val_.getHostView(Access::ReadOnly);
-    const Scalar* vals_host_out_raw = vals_host_out.data();
+    const impl_scalar_type* vals_host_out_raw = vals_host_out.data();
 
     // TODO amk: This is a temporary measure to make the code run with Ifpack2
     size_t rowOffset = 0;
