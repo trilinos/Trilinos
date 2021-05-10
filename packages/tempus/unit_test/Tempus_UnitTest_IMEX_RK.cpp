@@ -288,13 +288,6 @@ class StepperRKModifierIMEX_TrapezoidaTest
             TEST_FLOATING_EQUALITY(dt,       1.0, relTol);
             TEST_COMPARE(stageNumber, ==, -1);
 
-            if (stepper->getUseEmbedded() == true) {
-              TEST_FLOATING_EQUALITY(workingState->getTolRel(), 1.0, relTol);
-              TEST_ASSERT(std::abs(workingState->getTolAbs()) < relTol);
-              // e = 0 from doxygen above.
-              TEST_ASSERT(std::abs(workingState->getErrorRel()) < relTol);
-            }
-
           }
 
       }
