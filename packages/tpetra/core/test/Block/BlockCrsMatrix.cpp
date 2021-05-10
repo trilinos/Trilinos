@@ -373,7 +373,7 @@ namespace {
       TEST_ASSERT( myLclColInds.data() != NULL );
       TEST_ASSERT( myVals.data() != NULL );
       for (LO k = 0; k < numEnt; ++k) {
-        Scalar* curBlkPtr = const_cast<Scalar*>(myVals.data()) + k * blockSize * blockSize;
+        impl_scalar_type* curBlkPtr = const_cast<impl_scalar_type*>(reinterpret_cast<const impl_scalar_type*>(myVals.data())) + k * blockSize * blockSize;
         little_block_host_type curBlk ((typename little_block_host_type::value_type*) curBlkPtr, blockSize, blockSize);
 
         for (LO j = 0; j < blockSize; ++j) {
