@@ -279,7 +279,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 			 typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send,
 			 typename Kokkos::View<size_t*, device_type>::HostMirror& verts_to_send_size,
                          Teuchos::RCP<femv_t> femv,
-			 std::unordered_map<lno_t, std::vector<int>> procs_to_send,
+			 const std::unordered_map<lno_t, std::vector<int>>& procs_to_send,
                          gno_t& recv, gno_t& send){ 
       auto femvColors = femv->getLocalViewHost();
       auto colors = subview(femvColors, Kokkos::ALL, 0);
@@ -531,7 +531,7 @@ class AlgDistance1 : public Algorithm<Adapter>
                    std::vector<int> rand,
                    ArrayView<int> owners,
                    RCP<const map_t> mapOwnedPlusGhosts,
-		   std::unordered_map<lno_t, std::vector<int>> procs_to_send){
+		   const std::unordered_map<lno_t, std::vector<int>>& procs_to_send){
       if(verbose) std::cout<<comm->getRank()<<": inside coloring algorithm\n";
       
       //initialize timers

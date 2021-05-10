@@ -523,7 +523,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 			   typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send,
 			   typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size,
                            Teuchos::RCP<femv_t> femv,
-			   std::unordered_map<lno_t, std::vector<int>> procs_to_send,
+			   const std::unordered_map<lno_t, std::vector<int>>& procs_to_send,
                            gno_t& total_sent, gno_t& total_recvd){
       
       auto femvColors = femv->getLocalViewHost();
@@ -906,7 +906,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                        const std::vector<int>& rand,
                        ArrayView<int> owners,
                        RCP<const map_t> mapOwnedPlusGhosts,
-		       std::unordered_map<lno_t, std::vector<int>> procs_to_send){
+		       const std::unordered_map<lno_t, std::vector<int>>& procs_to_send){
       //initialize timing variables
       double total_time = 0.0;
       double interior_time = 0.0;
