@@ -44,7 +44,7 @@ namespace Intrepid2 {
     DataVariationType variationType;
     int dataExtent;
     int variationModulus; // should be equal to dataExtent variationType other than MODULAR and CONSTANT
-    int blockPlusDiagonalFirstNonDiagonal = -1; // only relevant for variationType == BLOCK_PLUS_DIAGONAL
+    int blockPlusDiagonalLastNonDiagonal = -1; // only relevant for variationType == BLOCK_PLUS_DIAGONAL
   };
 
   //! Returns DimensionInfo for a Data container that combines (through multiplication, say, or addition) the two specified DimensionInfo specifications in one of its dimensions.
@@ -134,8 +134,8 @@ namespace Intrepid2 {
             combinedDimensionInfo.variationType    = GENERAL;
             combinedDimensionInfo.dataExtent       = max(myDataExtent,otherDataExtent);
             combinedDimensionInfo.variationModulus = combinedDimensionInfo.dataExtent;
-            // for this case, we want to take the minimum of the two Data objects' blockPlusDiagonalFirstNonDiagonal as the combined object's blockPlusDiagonalFirstNonDiagonal
-            combinedDimensionInfo.blockPlusDiagonalFirstNonDiagonal = min(myData.blockPlusDiagonalFirstNonDiagonal, otherData.blockPlusDiagonalFirstNonDiagonal);
+            // for this case, we want to take the minimum of the two Data objects' blockPlusDiagonalLastNonDiagonal as the combined object's blockPlusDiagonalLastNonDiagonal
+            combinedDimensionInfo.blockPlusDiagonalLastNonDiagonal = min(myData.blockPlusDiagonalLastNonDiagonal, otherData.blockPlusDiagonalLastNonDiagonal);
         }
         break;
       case GENERAL:
@@ -352,13 +352,13 @@ namespace Intrepid2 {
       {
         switch (dataRank_)
         {
-          case 1: return data1_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 2: return data2_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 3: return data3_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 4: return data4_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 5: return data5_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 6: return data6_.access(i0,i1,i2,i3,i4,i5,i6);;
-          case 7: return data7_.access(i0,i1,i2,i3,i4,i5,i6);;
+          case 1: return data1_.access(i0,i1,i2,i3,i4,i5,i6);
+          case 2: return data2_.access(i0,i1,i2,i3,i4,i5,i6);
+          case 3: return data3_.access(i0,i1,i2,i3,i4,i5,i6);
+          case 4: return data4_.access(i0,i1,i2,i3,i4,i5,i6);
+          case 5: return data5_.access(i0,i1,i2,i3,i4,i5,i6);
+          case 6: return data6_.access(i0,i1,i2,i3,i4,i5,i6);
+          case 7: return data7_.access(i0,i1,i2,i3,i4,i5,i6);
           default:
             INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "invalid dataRank_");
         }
@@ -487,6 +487,53 @@ namespace Intrepid2 {
         case 7: copyContainer(data7_,data); break;
         default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
       }
+    }
+    
+    //! Constructor in terms of DimensionInfo for each nominal dimension; does not require a View to be specified.  Will allocate a View of appropriate rank, zero-filled.
+    Data(std::vector<DimensionInfo> dimInfoVector)
+    :
+    // initialize member variables as if default constructor; if dimInfoVector is empty, we want default constructor behavior.
+    dataRank_(0), extents_({0,0,0,0,0,0,0}), variationType_({CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT,CONSTANT}), blockPlusDiagonalLastNonDiagonal_(-1), rank_(dimInfoVector.size())
+    {
+      // If dimInfoVector is empty, the member initialization above is correct; otherwise, we set as below.
+      // Either way, once members are initialized, we must call setActiveDims().
+      if (dimInfoVector.size() != 0)
+      {
+        std::vector<int> dataExtents;
+
+        bool blockPlusDiagonalEncountered = true;
+        for (int d=0; d<rank_; d++)
+        {
+          const DimensionInfo & dimInfo = dimInfoVector[d];
+          extents_[d] = dimInfo.nominalExtent;
+          variationType_[d] = dimInfo.variationType;
+          const bool isConstant = (variationType_[d] == CONSTANT);
+          const bool isBlockPlusDiagonal = (variationType_[d] == BLOCK_PLUS_DIAGONAL);
+          const bool isSecondBlockPlusDiagonal = isBlockPlusDiagonal && blockPlusDiagonalEncountered;
+          if (isBlockPlusDiagonal)
+          {
+            blockPlusDiagonalEncountered = true;
+            blockPlusDiagonalLastNonDiagonal_ = dimInfo.blockPlusDiagonalLastNonDiagonal;
+          }
+          if ((variationType_[d] != CONSTANT) && (!isSecondBlockPlusDiagonal))
+          {
+            dataExtents.push_back(dimInfo.dataExtent);
+          }
+        }
+        dataRank_ = dataExtents.size();
+        switch (dataRank_)
+        {
+          case 1: data1_ = Kokkos::View<DataScalar*,       DeviceType>("Intrepid2 Data", dataExtents[0]); break;
+          case 2: data2_ = Kokkos::View<DataScalar**,      DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1]); break;
+          case 3: data3_ = Kokkos::View<DataScalar***,     DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2]); break;
+          case 4: data4_ = Kokkos::View<DataScalar****,    DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3]); break;
+          case 5: data5_ = Kokkos::View<DataScalar*****,   DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3], dataExtents[4]); break;
+          case 6: data6_ = Kokkos::View<DataScalar******,  DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3], dataExtents[4], dataExtents[5]); break;
+          case 7: data7_ = Kokkos::View<DataScalar*******, DeviceType>("Intrepid2 Data", dataExtents[0], dataExtents[1], dataExtents[2], dataExtents[3], dataExtents[4], dataExtents[5], dataExtents[6]); break;
+          default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid data rank");
+        }
+      }
+      setActiveDims();
     }
     
     //! DynRankView constructor.  Will copy to a View of appropriate rank.
@@ -779,14 +826,14 @@ namespace Intrepid2 {
       
       if (dimInfo.variationType == BLOCK_PLUS_DIAGONAL)
       {
-        dimInfo.blockPlusDiagonalFirstNonDiagonal = blockPlusDiagonalLastNonDiagonal_;
+        dimInfo.blockPlusDiagonalLastNonDiagonal = blockPlusDiagonalLastNonDiagonal_;
       }
       return dimInfo;
     }
     
     //! Returns (DataVariationType, data extent) in the specified dimension for a Data container that combines (through multiplication, say, or addition) this container with otherData.
     KOKKOS_INLINE_FUNCTION
-    DimensionInfo combinedDimensionInfo(const Data &otherData, const int &dim) const
+    DimensionInfo combinedDataDimensionInfo(const Data &otherData, const int &dim) const
     {
       const DimensionInfo myDimInfo    = getDimensionInfo(dim);
       const DimensionInfo otherDimInfo = otherData.getDimensionInfo(dim);
@@ -1352,6 +1399,25 @@ namespace Intrepid2 {
       return false; // statement should be unreachable; included because compilers don't necessarily recognize that fact...
     }
     
+    //! Constructs a container suitable for storing the result of an in-place combination of the two provided data containers.  The two containers must have the same nominal shape.
+    //! \see storeInPlaceCombination()
+    //! \param A  [in] - the first data container.
+    //! \param B  [in] - the second data container.  Must have the same nominal shape as A.
+    //! \return A container with the same nominal shape as A and B, with underlying View storage sufficient to store the result of A + B (or any other in-place combination).
+    static Data<DataScalar,DeviceType> allocateInPlaceCombinationResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B )
+    {
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.rank() != B.rank(), std::invalid_argument, "A and B must have the same nominal shape");
+      const int rank = A.rank();
+      std::vector<DimensionInfo> dimInfo(rank);
+      for (int d=0; d<rank; d++)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(d) != B.extent_int(d), std::invalid_argument, "A and B must have the same nominal shape");
+        dimInfo[d] = A.combinedDataDimensionInfo(B, d);
+      }
+      Data<DataScalar,DeviceType> result(dimInfo);
+      return result;
+    }
+    
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatMat()
     //! \param A_MatData                                            [in] - nominally (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
@@ -1662,6 +1728,166 @@ namespace Intrepid2 {
       }
       
       return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes);
+    }
+    
+    //! returns an MDRangePolicy over the underlying data extents (but with the nominal shape).
+    template<int rank>
+    Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<rank>> dataExtentRangePolicy()
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::Array<int,rank> startingOrdinals;
+      Kokkos::Array<int,rank> extents;
+      
+      for (int d=0; d<rank; d++)
+      {
+        startingOrdinals[d] = 0;
+        extents[d] = getDataExtent(d);
+      }
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<rank>>(startingOrdinals,extents);
+      return policy;
+    }
+    
+    //! Places the result of an in-place combination (e.g., entrywise sum) into this data container.
+    template<class BinaryOperator>
+    void storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      // check nominal extents
+      for (int d=0; d<rank_; d++)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(A.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all nominal extents");
+        INTREPID2_TEST_FOR_EXCEPTION(B.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all nominal extents");
+      }
+      // TODO: add some checks that data extent of this suffices to accept combined A + B data.
+      
+      // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      using ExecutionSpace = typename DeviceType::execution_space;
+      if (rank_ == 1)
+      {
+        int dataExtent = this->getDataExtent(0);
+        Kokkos::parallel_for("compute in-place", dataExtent,
+        KOKKOS_LAMBDA (const int &i0) {
+          auto & result = thisData.getWritableEntry(i0, 0, 0, 0, 0, 0, 0);
+          const auto & A_val = A(i0);
+          const auto & B_val = B(i0);
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      if (rank_ == 2)
+      {
+        auto policy = dataExtentRangePolicy<2>();
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0, const int &i1) {
+          auto & result = thisData.getWritableEntry(i0, i1, 0, 0, 0, 0, 0);
+          const auto & A_val = A(i0,i1);
+          const auto & B_val = B(i0,i1);
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      else if (rank_ == 3)
+      {
+        auto policy = dataExtentRangePolicy<3>();
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2) {
+          auto & result = thisData.getWritableEntry(i0, i1, i2, 0, 0, 0, 0);
+          const auto & A_val = A(i0,i1,i2);
+          const auto & B_val = B(i0,i1,i2);
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      else if (rank_ == 4)
+      {
+        auto policy = dataExtentRangePolicy<4>();
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3) {
+          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, 0, 0, 0);
+          const auto & A_val = A(i0,i1,i2,i3);
+          const auto & B_val = B(i0,i1,i2,i3);
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      else if (rank_ == 5)
+      {
+        auto policy = dataExtentRangePolicy<5>();
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4) {
+          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, 0, 0);
+          const auto & A_val = A(i0,i1,i2,i3,i4);
+          const auto & B_val = B(i0,i1,i2,i3,i4);
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      else if (rank_ == 6)
+      {
+        auto policy = dataExtentRangePolicy<6>();
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
+          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, i5, 0);
+          const auto & A_val = A(i0,i1,i2,i3,i4,i5);
+          const auto & B_val = B(i0,i1,i2,i3,i4,i5);
+          result = binaryOperator(A_val,B_val);
+        });
+      }
+      else if (rank_ == 7)
+      {
+        auto policy = dataExtentRangePolicy<6>(); // MDRangePolicy only goes up to 6
+        const int dataExtent6 = getDataExtent(6);
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
+          for (int i6=0; i6<dataExtent6; i6++)
+          {
+            auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, i5, i6);
+            const auto & A_val = A(i0,i1,i2,i3,i4,i5,i6);
+            const auto & B_val = B(i0,i1,i2,i3,i4,i5,i6);
+            result = binaryOperator(A_val,B_val);
+          }
+        });
+      }
+      else
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported rank");
+      }
+    }
+    
+    //! stores the in-place (entrywise) sum, A .+ B, into this container.
+    void storeInPlaceSum(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto sum = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a + b;
+      };
+      storeInPlaceCombination(A, B, sum);
+    }
+    
+    //! stores the in-place (entrywise) product, A .* B, into this container.
+    void storeInPlaceProduct(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto product = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a * b;
+      };
+      storeInPlaceCombination(A, B, product);
+    }
+    
+    //! stores the in-place (entrywise) difference, A .- B, into this container.
+    void storeInPlaceDifference(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto difference = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a - b;
+      };
+      storeInPlaceCombination(A, B, difference);
+    }
+    
+    //! stores the in-place (entrywise) quotient, A ./ B, into this container.
+    void storeInPlaceQuotient(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B)
+    {
+      auto quotient = KOKKOS_LAMBDA(const DataScalar &a, const DataScalar &b) -> DataScalar
+      {
+        return a / b;
+      };
+      storeInPlaceCombination(A, B, quotient);
     }
     
     //! Places the result of a matrix-vector multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatVecResult(), or should match such a container in underlying data extent and variation types.

@@ -57,6 +57,111 @@ namespace
 {
   using namespace Intrepid2;
 
+/** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of nominal shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
+*/
+  TEUCHOS_UNIT_TEST( Data, AllocateInPlaceCombinationResult )
+  {
+    // test allocateInPlaceCombinationResult()
+    // Use two Data objects A and B, each with nominal shape (5,9,15) -- (C,F,P), say.
+    // with A having variation types of GENERAL, MODULAR, and CONSTANT,
+    // and B having variation types of CONSTANT, CONSTANT, and GENERAL.
+    // Result should have variation types of GENERAL, MODULAR, GENERAL.
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    
+    const int rank        = 3;
+    const int cellCount   = 5;
+    const int fieldCount  = 9;
+    const int pointCount  = 15;
+    
+    const int fieldCountA = 3; // A is modular in field dimension, with variation mod 3.
+    auto AView = getView<Scalar,DeviceType>("A", cellCount, fieldCountA);
+    auto BView = getView<Scalar,DeviceType>("B", pointCount);
+    
+    auto ABView = getView<Scalar,DeviceType>("A+B", cellCount, fieldCountA, pointCount);
+    
+    Kokkos::Array<int,rank> extents {cellCount, fieldCount, pointCount};
+    Kokkos::Array<DataVariationType,rank> A_variation {GENERAL, MODULAR, CONSTANT};
+    Kokkos::Array<DataVariationType,rank> B_variation {CONSTANT, CONSTANT, GENERAL};
+    
+    Data<Scalar,DeviceType> A(AView,extents,A_variation);
+    Data<Scalar,DeviceType> B(BView,extents,B_variation);
+    
+    // expected variation for A+B:
+    Kokkos::Array<DataVariationType,3> AB_variation {GENERAL, MODULAR, GENERAL};
+    // expected Data object for A+B:
+    Data<Scalar,DeviceType> AB_expected(ABView,extents,AB_variation);
+    
+    auto AB_actual = Data<Scalar,DeviceType>::allocateInPlaceCombinationResult(A, B);
+    
+    TEST_EQUALITY(AB_actual.rank(), AB_expected.rank());
+    for (int d=0; d<rank; d++)
+    {
+      const auto actualVariationType   = AB_actual.getVariationTypes()[d];
+      const auto expectedVariationType = AB_expected.getVariationTypes()[d];
+      TEST_EQUALITY(actualVariationType, expectedVariationType);
+      
+      const auto actualVariationModulus   = AB_actual.getVariationModulus(d);
+      const auto expectedVariationModulus = AB_expected.getVariationModulus(d);
+      TEST_EQUALITY(actualVariationModulus, expectedVariationModulus);
+      
+      const auto actualExtent   = AB_actual.extent_int(d);
+      const auto expectedExtent = AB_expected.extent_int(d);
+      TEST_EQUALITY(actualExtent, expectedExtent);
+    }
+    
+    TEST_EQUALITY(AB_actual.getUnderlyingViewRank(), AB_expected.getUnderlyingViewRank());
+    const int dataRank = AB_expected.getUnderlyingViewRank();
+    if (AB_actual.getUnderlyingViewRank() == dataRank)
+    {
+      for (int d=0; d<dataRank; d++)
+      {
+        const auto actualDataExtent   = AB_actual.getDataExtent(d);
+        const auto expectedDataExtent = AB_expected.getDataExtent(d);
+        TEST_EQUALITY(actualDataExtent, expectedDataExtent);
+      }
+    }
+  }
+
+  TEUCHOS_UNIT_TEST( Data, CombinedDimensionInfo )
+  {
+    // test free function, combinedDimensionInfo()
+    
+    DimensionInfo A_dimInfo;
+    DimensionInfo B_dimInfo;
+    DimensionInfo AB_dimInfo;
+    
+    A_dimInfo.nominalExtent = 15;
+    B_dimInfo.nominalExtent = 15;
+    AB_dimInfo.nominalExtent = 15;
+    
+    A_dimInfo.blockPlusDiagonalLastNonDiagonal = -1;
+    B_dimInfo.blockPlusDiagonalLastNonDiagonal = -1;
+    AB_dimInfo.blockPlusDiagonalLastNonDiagonal = -1;
+    
+    A_dimInfo.variationModulus = 15;
+    B_dimInfo.variationModulus = 1;
+    AB_dimInfo.variationModulus = 15;
+    
+    A_dimInfo.variationType = GENERAL;
+    B_dimInfo.variationType = CONSTANT;
+    AB_dimInfo.variationType = GENERAL;
+    
+    // combinedDimensionInfo should commute, so let's test both directions:
+    DimensionInfo AB_dimInfoActual_LR = combinedDimensionInfo(A_dimInfo, B_dimInfo);
+    DimensionInfo AB_dimInfoActual_RL = combinedDimensionInfo(B_dimInfo, A_dimInfo);
+    
+    std::vector<DimensionInfo> actualCombinations {AB_dimInfoActual_LR, AB_dimInfoActual_RL};
+    
+    for (const auto & dimInfoActual : actualCombinations)
+    {
+      TEST_EQUALITY(dimInfoActual.nominalExtent, AB_dimInfo.nominalExtent);
+      TEST_EQUALITY(dimInfoActual.dataExtent, AB_dimInfo.dataExtent);
+      TEST_EQUALITY(dimInfoActual.variationType, AB_dimInfo.variationType);
+      TEST_EQUALITY(dimInfoActual.variationModulus, AB_dimInfo.variationModulus);
+    }
+  }
+
 // #pragma mark Data: EmptyDataMarkedAsInvalid
 /** \brief When Data containers are constructed without arguments, the isValid() method should return false.  This test confirms that that is the case.
  */
@@ -102,6 +207,90 @@ namespace
     
     Kokkos::deep_copy(expectedView, expectedViewHost);
     testFloatingEquality2(expectedView, data, relTol, absTol, out, success);
+  }
+
+/** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of nominal shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
+*/
+
+  TEUCHOS_UNIT_TEST( Data, InPlaceSum )
+  {
+    double relTol = 1e-13;
+    double absTol = 1e-13;
+    
+    // Use two Data objects A and B, each with nominal shape (5,9,15) -- (C,F,P), say.
+    // with A having variation types of GENERAL, MODULAR, and CONSTANT,
+    // and B having variation types of CONSTANT, CONSTANT, and GENERAL.
+    // Result should have variation types of GENERAL, MODULAR, GENERAL.
+    using DeviceType = DefaultTestDeviceType;
+    using Scalar = double;
+    
+    const int rank        = 3;
+    const int cellCount   = 5;
+    const int fieldCount  = 9;
+    const int pointCount  = 15;
+    
+    auto formula_A = [] (int cellOrdinal, int fieldOrdinal, int pointOrdinal) -> double
+    {
+      // varies modulus 3 in fieldOrdinal; constant pointwise
+      return double(cellOrdinal) + double(fieldOrdinal % 3);
+    };
+    
+    auto formula_B = [] (int cellOrdinal, int fieldOrdinal, int pointOrdinal) -> double
+    {
+      // constant in cell, field; varies pointwise
+      return double(pointOrdinal);
+    };
+    
+    auto sum = [] (const Scalar &a, const Scalar &b) -> Scalar
+    {
+      return a + b;
+    };
+    
+    const int fieldCountA = 3; // A is modular in field dimension, with variation mod 3.
+    auto AView = getView<Scalar,DeviceType>("A", cellCount, fieldCountA);
+    auto BView = getView<Scalar,DeviceType>("B", pointCount);
+    
+    auto ABView = getView<Scalar,DeviceType>("A+B", cellCount, fieldCountA, pointCount);
+    
+    auto AViewHost  = Kokkos::create_mirror(AView);
+    auto BViewHost  = Kokkos::create_mirror(BView);
+    auto ABViewHost = Kokkos::create_mirror(ABView);
+    for (int cellOrdinal=0; cellOrdinal<cellCount; cellOrdinal++)
+    {
+      for (int fieldOrdinal=0; fieldOrdinal<fieldCountA; fieldOrdinal++)
+      {
+        for (int pointOrdinal=0; pointOrdinal<pointCount; pointOrdinal++)
+        {
+          auto a = formula_A(cellOrdinal,fieldOrdinal,pointOrdinal);
+          auto b = formula_B(cellOrdinal,fieldOrdinal,pointOrdinal);
+          AViewHost (cellOrdinal,fieldOrdinal) = a;
+          BViewHost (pointOrdinal) = b;
+          ABViewHost(cellOrdinal,fieldOrdinal,pointOrdinal) = sum(a,b);
+        }
+      }
+    }
+    Kokkos::deep_copy( AView,  AViewHost);
+    Kokkos::deep_copy( BView,  BViewHost);
+    Kokkos::deep_copy(ABView, ABViewHost);
+    
+    Kokkos::Array<int,rank> extents {cellCount, fieldCount, pointCount};
+    Kokkos::Array<DataVariationType,rank> A_variation {GENERAL, MODULAR, CONSTANT};
+    Kokkos::Array<DataVariationType,rank> B_variation {CONSTANT, CONSTANT, GENERAL};
+    
+    Data<Scalar,DeviceType> A(AView,extents,A_variation);
+    Data<Scalar,DeviceType> B(BView,extents,B_variation);
+    
+    // expected variation for A+B:
+    Kokkos::Array<DataVariationType,3> AB_variation {GENERAL, MODULAR, GENERAL};
+    // expected Data object for A+B:
+    Data<Scalar,DeviceType> AB_expected(ABView,extents,AB_variation);
+    
+    auto AB_actual = Data<Scalar,DeviceType>::allocateInPlaceCombinationResult(A, B);
+    
+    AB_actual.storeInPlaceSum(A, B);
+    
+    // test AB_actual equals AB_expected.  (This will iterate over the nominal extents.)
+    testFloatingEquality3(AB_actual, AB_expected, relTol, absTol, out, success);
   }
 
 // #pragma mark Data: MatVec
