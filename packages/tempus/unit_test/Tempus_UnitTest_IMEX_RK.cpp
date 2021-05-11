@@ -204,8 +204,10 @@ class StepperRKModifierIMEX_TrapezoidaTest
       const double dt     = workingState->getTimeStep();
       double time = currentState->getTime();
       double imp_time = time;
-      imp_time += chat(stageNumber)*dt;
-      if (stageNumber >= 0) time += c(stageNumber)*dt;
+      if (stageNumber >= 0) {
+        time     += c(stageNumber)*dt;   
+        imp_time += chat(stageNumber)*dt;
+      }
 
       auto x    = workingState->getX();
       auto xDot = workingState->getXDot();
