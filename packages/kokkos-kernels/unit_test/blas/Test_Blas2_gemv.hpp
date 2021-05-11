@@ -6,45 +6,6 @@
 #include<KokkosKernels_TestUtils.hpp>
 
 namespace Test {
-  template<class ViewTypeA, class ViewTypeX, class ViewTypeY>
-  void vanilla_gemv(char mode,
-      typename ViewTypeA::non_const_value_type alpha, const ViewTypeA& A, const ViewTypeX& x, 
-      typename ViewTypeY::non_const_value_type beta, const ViewTypeY& y)
-  {
-    using ScalarY = typename ViewTypeY::non_const_value_type;
-    using KAT_A = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
-    using KAT_Y = Kokkos::ArithTraits<ScalarY>;
-    int M = A.extent(0);
-    int N = A.extent(1);
-    if(beta == KAT_Y::zero())
-      Kokkos::deep_copy(y, KAT_Y::zero());
-    if(mode == 'N') {
-      for(int i = 0; i < M; i++) {
-        ScalarY y_i = beta * y(i);
-        for(int j = 0; j < N; j++) {
-           y_i += alpha * A(i,j) * x(j);
-        }
-        y(i) = y_i;
-      }
-    } else if(mode == 'T') {
-      for(int j = 0; j < N; j++) {
-        ScalarY y_j = beta * y(j);
-        for(int i = 0; i < M; i++) {
-           y_j += alpha * A(i,j) * x(i);
-        }
-        y(j) = y_j;
-      }
-    } else if(mode == 'C') {
-      for(int j = 0; j < N; j++) {
-        ScalarY y_j = beta * y(j);
-        for(int i = 0; i < M; i++) {
-           y_j += alpha * KAT_A::conj (A(i,j)) * x(i);
-        }
-        y(j) = y_j;
-      }
-    }
-  }
-
   template<class ViewTypeA, class ViewTypeX, class ViewTypeY, class Device>
   void impl_test_gemv(const char* mode, int M, int N) {
 
@@ -126,7 +87,7 @@ namespace Test {
 
     Kokkos::View<ScalarY*, Kokkos::HostSpace> expected("expected aAx+by", ldy);
     Kokkos::deep_copy(expected, h_org_y);
-    vanilla_gemv(mode[0], alpha, h_A, h_x, beta, expected);
+    vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
 
     KokkosBlas::gemv(mode, alpha, A, x, beta, y);
     Kokkos::deep_copy(h_b_y, b_y);
@@ -163,7 +124,7 @@ namespace Test {
     //This should overwrite the NaNs with the correct result.
     beta = KAT_Y::zero();
     //beta changed, so update the correct answer
-    vanilla_gemv(mode[0], alpha, h_A, h_x, beta, expected);
+    vanillaGEMV(mode[0], alpha, h_A, h_x, beta, expected);
     Kokkos::deep_copy(b_y, KAT_Y::nan());
     KokkosBlas::gemv(mode, alpha, A, x, beta, y);
     Kokkos::deep_copy(h_b_y, b_y);

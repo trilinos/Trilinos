@@ -214,6 +214,46 @@ namespace Test {
     }
   };
 
+  template<class ViewTypeA, class ViewTypeX, class ViewTypeY>
+  void vanillaGEMV(char mode,
+      typename ViewTypeA::non_const_value_type alpha, const ViewTypeA& A, const ViewTypeX& x, 
+      typename ViewTypeY::non_const_value_type beta, const ViewTypeY& y)
+  {
+    using ScalarY = typename ViewTypeY::non_const_value_type;
+    using KAT_A = Kokkos::ArithTraits<typename ViewTypeA::non_const_value_type>;
+    using KAT_Y = Kokkos::ArithTraits<ScalarY>;
+    int M = A.extent(0);
+    int N = A.extent(1);
+    if(beta == KAT_Y::zero())
+      Kokkos::deep_copy(y, KAT_Y::zero());
+    if(mode == 'N') {
+      for(int i = 0; i < M; i++) {
+        ScalarY y_i = beta * y(i);
+        for(int j = 0; j < N; j++) {
+           y_i += alpha * A(i,j) * x(j);
+        }
+        y(i) = y_i;
+      }
+    } else if(mode == 'T') {
+      for(int j = 0; j < N; j++) {
+        ScalarY y_j = beta * y(j);
+        for(int i = 0; i < M; i++) {
+           y_j += alpha * A(i,j) * x(i);
+        }
+        y(j) = y_j;
+      }
+    } else if(mode == 'C') {
+      for(int j = 0; j < N; j++) {
+        ScalarY y_j = beta * y(j);
+        for(int i = 0; i < M; i++) {
+           y_j += alpha * KAT_A::conj (A(i,j)) * x(i);
+        }
+        y(j) = y_j;
+      }
+    }
+  }
+
+
   template<class T>
   class epsilon {
     public:

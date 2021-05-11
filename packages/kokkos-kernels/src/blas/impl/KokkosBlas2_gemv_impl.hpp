@@ -566,12 +566,10 @@ public:
       IndexType yrow = team.league_rank() * 32 + i;
       if(yrow < (IndexType) A_.extent(0))
       {
-        Scalar betaTerm;
         if(beta_ == KAT::zero())
-          betaTerm = KAT::zero();
+          y_(yrow) = alpha_ * blockResult[i];
         else
-          betaTerm = beta_ * y_(yrow);
-        y_(yrow) = betaTerm + alpha_ * blockResult[i];
+          y_(yrow) = beta_ * y_(yrow) + alpha_ * blockResult[i];
       }
     });
   }
