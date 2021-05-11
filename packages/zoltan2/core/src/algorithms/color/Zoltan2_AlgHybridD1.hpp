@@ -155,9 +155,7 @@ class AlgDistance1 : public Algorithm<Adapter>
     //
     //  dist_adjs: CSR adjacencies of the local graph
     //
-    //  verts_to_send_atomic: atomic version of the verts_to_send view.
-    //                        Used to construct a list on device,
-    //                        the atomic is necessary for correctness.
+    //  verts_to_send_view: Used to construct a list of verts to send on device.
     //
     //  verts_to_send_size_atomic: atomic version of the verts_to_send_size view
     //                             Used to construct a list on device,
@@ -183,8 +181,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 			 Kokkos::View<lno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> dist_adjs,
 			 Kokkos::View<int*, Kokkos::Device<ExecutionSpace, MemorySpace>> femv_colors,
 			 Kokkos::View<lno_t*,
-			              Kokkos::Device<ExecutionSpace, MemorySpace>,
-				      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic,
+			              Kokkos::Device<ExecutionSpace, MemorySpace>> verts_to_send_view,
 		         Kokkos::View<size_t*,
 			              Kokkos::Device<ExecutionSpace, MemorySpace>,
 				      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
@@ -237,7 +234,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       },recoloringSize(0));
       Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
         if(femv_colors(i) == 0){
-          verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+          verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
         }
       });
     }
@@ -288,8 +285,8 @@ class AlgDistance1 : public Algorithm<Adapter>
       std::vector<int> sendcnts(comm->getSize(), 0);
       std::vector<gno_t> sdispls(comm->getSize()+1, 0);
       for(size_t i = 0; i < verts_to_send_size(0); i++){
-	for(size_t j = 0; j < procs_to_send[verts_to_send(i)].size(); j++){
-	  sendcnts[procs_to_send[verts_to_send(i)][j]] += 2;
+	for(size_t j = 0; j < procs_to_send.at(verts_to_send(i)).size(); j++){
+	  sendcnts[procs_to_send.at(verts_to_send(i))[j]] += 2;
 	}
       }
       
@@ -305,7 +302,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       std::vector<gno_t> sendbuf(sendsize,0);
       
       for(size_t i = 0; i < verts_to_send_size(0); i++){
-	std::vector<int> procs = procs_to_send[verts_to_send(i)];
+	std::vector<int> procs = procs_to_send.at(verts_to_send(i));
         for(size_t j = 0; j < procs.size(); j++){
 	  size_t idx = sdispls[procs[j]] + sentcount[procs[j]];
 	  sentcount[procs[j]] += 2;
@@ -710,7 +707,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       Kokkos::parallel_for("Initialize verts_to_send",nVtx, KOKKOS_LAMBDA(const int&i){
         for(offset_t j = dist_offsets(i); j < dist_offsets(i+1); j++){
 	  if((size_t)dist_adjs(j) >= nVtx){
-	    verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+	    verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
 	    break;
 	  }
 	} 
@@ -778,7 +775,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 						       dist_offsets,
 						       dist_adjs,
 						       femv_colors,
-						       verts_to_send_atomic,
+						       verts_to_send_view,
 						       verts_to_send_size_atomic,
 						       recoloringSize,
 						       rand_dev,
@@ -900,7 +897,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 						       dist_offsets,
 						       dist_adjs,
 						       femv_colors,
-						       verts_to_send_atomic,
+						       verts_to_send_view,
 						       verts_to_send_size_atomic,
 						       recoloringSize,
 						       rand_dev,

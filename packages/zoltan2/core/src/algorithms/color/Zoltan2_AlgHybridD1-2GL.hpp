@@ -150,19 +150,16 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
                            Kokkos::View<lno_t*,
 			                Kokkos::Device<ExecutionSpace, MemorySpace>> dist_adjs,
 			   Kokkos::View<int*,
-			                Kokkos::Device<ExecutionSpace, MemorySpace>> femv_colors, //this may need to change...
+			                Kokkos::Device<ExecutionSpace, MemorySpace>> femv_colors, 
 			   Kokkos::View<lno_t*,
 			                Kokkos::Device<ExecutionSpace, MemorySpace>> boundary_verts_view,
-			   gno_t boundary_size,
 			   Kokkos::View<lno_t*,
-			                Kokkos::Device<ExecutionSpace, MemorySpace>,
-					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
+			                Kokkos::Device<ExecutionSpace, MemorySpace> > verts_to_recolor_view,
 			   Kokkos::View<int*,
 			                Kokkos::Device<ExecutionSpace, MemorySpace>,
 					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_size_atomic,
 			   Kokkos::View<lno_t*,
-			                Kokkos::Device<ExecutionSpace, MemorySpace>,
-					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
+			                Kokkos::Device<ExecutionSpace, MemorySpace> > verts_to_send_view,
 			   Kokkos::View<size_t*,
 			                Kokkos::Device<ExecutionSpace, MemorySpace>,
 					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic,
@@ -216,9 +213,9 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
       Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA (const size_t& i){
         if(femv_colors(i) == 0){
           if(i < n_local){
-            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+            verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
           }
-          verts_to_recolor_atomic(verts_to_recolor_size_atomic(0)++) = i;
+          verts_to_recolor_view(verts_to_recolor_size_atomic(0)++) = i;
         }
       });
       Kokkos::fence();
@@ -228,18 +225,15 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
     virtual void detectConflicts(const size_t n_local,
                                  Kokkos::View<offset_t*, device_type > dist_offsets_dev,
                                  Kokkos::View<lno_t*, device_type > dist_adjs_dev,
-                                 Kokkos::View<int*,device_type > femv_colors,  //might need to change
+                                 Kokkos::View<int*,device_type > femv_colors, 
                                  Kokkos::View<lno_t*, device_type > boundary_verts_view,
-                                 gno_t boundary_size,
                                  Kokkos::View<lno_t*,
-                                              device_type,
-                                              Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
+                                              device_type > verts_to_recolor_view,
                                  Kokkos::View<int*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic,
                                  Kokkos::View<lno_t*,
-                                              device_type,
-                                              Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
+                                              device_type > verts_to_send_view,
                                  Kokkos::View<size_t*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
@@ -256,10 +250,9 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 							     dist_adjs_dev,
 							     femv_colors,
 							     boundary_verts_view,
-							     boundary_size,
-							     verts_to_recolor_atomic,
+							     verts_to_recolor_view,
 							     verts_to_recolor_size_atomic,
-							     verts_to_send_atomic,
+							     verts_to_send_view,
 							     verts_to_send_size_atomic,
 							     recoloringSize,
 							     rand,
@@ -271,9 +264,8 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
     virtual void detectConflicts_serial(const size_t n_local,
                                  typename Kokkos::View<offset_t*, device_type >::HostMirror dist_offsets_host,
                                  typename Kokkos::View<lno_t*, device_type >::HostMirror dist_adjs_host,
-                                 typename Kokkos::View<int*,device_type >::HostMirror femv_colors, //might need to change
+                                 typename Kokkos::View<int*,device_type >::HostMirror femv_colors,
                                  typename Kokkos::View<lno_t*, device_type >::HostMirror boundary_verts_view,
-                                 gno_t boundary_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_recolor,
                                  typename Kokkos::View<int*,device_type>::HostMirror verts_to_recolor_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send,
@@ -288,7 +280,6 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 						    dist_adjs_host,
 						    femv_colors,
 						    boundary_verts_view,
-						    boundary_size,
 						    verts_to_recolor,
 						    verts_to_recolor_size,
 						    verts_to_send,
@@ -307,10 +298,8 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
 				   typename Kokkos::View<offset_t*, device_type>::HostMirror dist_offsets_host,
 				   typename Kokkos::View<lno_t*, device_type>::HostMirror dist_adjs_host,
                                    Kokkos::View<lno_t*, device_type>& boundary_verts,
-                                   gno_t& boundary_size,
                                    Kokkos::View<lno_t*,
-                                                device_type,
-                                                Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
+                                                device_type > verts_to_send_view,
                                    Kokkos::View<size_t*,
                                                 device_type,
                                                 Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic){
@@ -318,13 +307,13 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
       Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
         for(offset_t j = dist_offsets_dev(i); j < dist_offsets_dev(i+1); j++){
           if((size_t)dist_adjs_dev(j) >= n_local){
-            verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+            verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
             break;
           }
           bool found = false;
           for(offset_t k = dist_offsets_dev(dist_adjs_dev(j)); k < dist_offsets_dev(dist_adjs_dev(j)+1); k++){
             if((size_t)dist_adjs_dev(k) >= n_local){
-              verts_to_send_atomic(verts_to_send_size_atomic(0)++) = i;
+              verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
               found = true;
               break;
             }
@@ -333,7 +322,6 @@ class AlgDistance1TwoGhostLayer : public AlgTwoGhostLayer<Adapter> {
         }
       });
       Kokkos::fence();
-      boundary_size = verts_to_send_size_atomic(0);
     }
 
 

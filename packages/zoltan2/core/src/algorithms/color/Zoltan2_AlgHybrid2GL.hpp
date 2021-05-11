@@ -104,19 +104,20 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //
     //  boundary_verts_view holds the local IDs of vertices in the boundary
     //
-    //  boundary_size is the number of entries in boundary_verts_view
-    //
-    //  verts_to_recolor_atomic is an atomic device view that holds the list
+    //  verts_to_recolor_view is a device view that holds the list
     //                          of vertices to recolor
     //
     //  verts_to_recolor_size_atomic is an atomic device view that holds the
-    //                               size of verts_to_recolor_atomic
+    //                               size of verts_to_recolor_view.
+    //                               It differs in size from the allocated size of
+    //                               verts_to_recolor_view.
     //
-    //  verts_to_send_atomic is an atomic device view that holds the list of vertices
+    //  verts_to_send_view is a device view that holds the list of vertices
     //                       that will need to be sent to remotes after recoloring
     //
     //  verts_to_send_size_atomic is an atomic device view that holds the size of
-    //                            verts_to_send_atomic
+    //                            verts_to_send_view. It differs in size from the
+    //                            allocated size of verts_to_send_view.
     //
     //  recoloringSize is a device view that holds the total amount of work left
     //                 to do
@@ -137,16 +138,13 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 		                 Kokkos::View<lno_t*, device_type > dist_adjs_dev,
 				 Kokkos::View<int*,device_type > femv_colors,
 				 Kokkos::View<lno_t*, device_type > boundary_verts_view,
-				 gno_t boundary_size,
                                  Kokkos::View<lno_t*,
-				              device_type, 
-					      Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_recolor_atomic,
+				              device_type > verts_to_recolor_view,
 				 Kokkos::View<int*, 
 				              device_type, 
 					      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_size_atomic,
 				 Kokkos::View<lno_t*,
-				              device_type,
-					      Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
+				              device_type > verts_to_send_view,
 				 Kokkos::View<size_t*, 
 				              device_type, 
 					      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
@@ -165,10 +163,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 		                 typename Kokkos::View<lno_t*, device_type >::HostMirror dist_adjs_host,
 				 typename Kokkos::View<int*,device_type >::HostMirror femv_colors,
 				 typename Kokkos::View<lno_t*, device_type >::HostMirror boundary_verts_view,
-				 gno_t boundary_size,
-                                 typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_recolor_atomic,
+                                 typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_recolor_view,
 				 typename Kokkos::View<int*,device_type>::HostMirror verts_to_recolor_size_atomic,
-				 typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send_atomic,
+				 typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send_view,
 				 typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size_atomic,
 				 typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize,
 			         typename Kokkos::View<int*,  device_type>::HostMirror rand,
@@ -191,9 +188,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //  boundary_verts is an unallocated device view that will hold the
     //                 list of boundary vertices.
     //
-    //  boundary_size will hold the size of the list of boundary vertices
-    //
-    //  verts_to_send_atomic will hold the list of vertices to send
+    //  verts_to_send_view will hold the list of vertices to send
     //
     //  verts_to_send_size_atomic will hold the size of the list of
     //                            vertices to send.
@@ -204,10 +199,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 				   typename Kokkos::View<offset_t*, device_type>::HostMirror dist_offsets_host,
 				   typename Kokkos::View<lno_t*, device_type>::HostMirror dist_adjs_host,
                                    Kokkos::View<lno_t*, device_type>& boundary_verts,
-				   gno_t& boundary_size,
 				   Kokkos::View<lno_t*, 
-				                device_type, 
-						Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_atomic,
+				                device_type > verts_to_send_view,
 				   Kokkos::View<size_t*, 
 				                device_type, 
 						Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic) = 0;
@@ -535,8 +528,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       
       //calculate how much data we're sending to each process
       for(size_t i = 0; i < verts_to_send_size(0); i++){
-        for(size_t j = 0; j < procs_to_send[verts_to_send(i)].size(); j++){
-	  sendcnts[procs_to_send[verts_to_send(i)][j]] += 2;
+        for(size_t j = 0; j < procs_to_send.at(verts_to_send(i)).size(); j++){
+	  sendcnts[procs_to_send.at(verts_to_send(i))[j]] += 2;
 	}
       }
       //calculate sendsize and sdispls
@@ -555,7 +548,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //ghost copy of that vertex. If a vertex is not ghosted,
       //it does not get sent anywhere.
       for(size_t i = 0; i < verts_to_send_size(0); i++){
-        std::vector<int> procs = procs_to_send[verts_to_send(i)];
+        std::vector<int> procs = procs_to_send.at(verts_to_send(i));
 	for(size_t j = 0; j < procs.size(); j++){
 	  size_t idx = sdispls[procs[j]] + sentcount[procs[j]];
 	  sentcount[procs[j]] += 2;
@@ -1109,7 +1102,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //with a remote vertex. Stores LIDs.
       Kokkos::View<lno_t*, device_type> boundary_verts_dev; 
       //this is the number of vertices in the boundary.
-      gno_t boundary_size = 0;
       if(verbose) std::cout<<comm->getRank()<<": constructing communication and recoloring lists\n";
       
       //We keep track of the vertices that need to get recolored
@@ -1153,7 +1145,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //sets the boundary_size accordingly, and adds vertices to the
       //verts_to_send_atomic view, updating the size view as well.
       constructBoundary(n_local, dist_offsets_dev, dist_adjs_dev, dist_offsets_host, dist_adjs_host, boundary_verts_dev, 
-	                boundary_size, verts_to_send_atomic, verts_to_send_size_atomic);
+	                verts_to_send_view, verts_to_send_size_atomic);
       
       //this boolean chooses which KokkosKernels algorithm to use.
       //It was experimentally chosen for distance-1 coloring.
@@ -1209,8 +1201,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::deep_copy(verts_to_recolor_size, verts_to_recolor_size_host);
       Kokkos::deep_copy(recoloringSize, recoloringSize_host);
       
-      detectConflicts(n_local, dist_offsets_dev, dist_adjs_dev, femv_colors, boundary_verts_dev, boundary_size,
-	       verts_to_recolor_atomic, verts_to_recolor_size_atomic, verts_to_send_atomic, verts_to_send_size_atomic,
+      detectConflicts(n_local, dist_offsets_dev, dist_adjs_dev, femv_colors, boundary_verts_dev,
+	       verts_to_recolor_view, verts_to_recolor_size_atomic, verts_to_send_view, verts_to_send_size_atomic,
 	       recoloringSize, rand_dev, gid_dev, ghost_degrees_dev, recolor_degrees);
       
       //these sizes were updated by detectConflicts,
@@ -1316,8 +1308,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         //check for further conflicts
         double detection_temp = timer();
 
-        detectConflicts(n_local, dist_offsets_dev, dist_adjs_dev,femv_colors, boundary_verts_dev, boundary_size,
-	         verts_to_recolor_atomic, verts_to_recolor_size_atomic, verts_to_send_atomic, verts_to_send_size_atomic, 
+        detectConflicts(n_local, dist_offsets_dev, dist_adjs_dev,femv_colors, boundary_verts_dev,
+	         verts_to_recolor_view, verts_to_recolor_size_atomic, verts_to_send_view, verts_to_send_size_atomic, 
 		 recoloringSize, rand_dev, gid_dev, ghost_degrees_dev, recolor_degrees);
 
         //copy the updated device views back into host memory where necessary
@@ -1402,7 +1394,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	verts_to_send_size_host(0) = 0;
 	recoloringSize_host(0) = 0;
 
-        detectConflicts_serial(n_local,dist_offsets_host, dist_adjs_host, colors_host, boundary_verts_host, boundary_size,
+        detectConflicts_serial(n_local,dist_offsets_host, dist_adjs_host, colors_host, boundary_verts_host, 
 	                       verts_to_recolor_host, verts_to_recolor_size_host, verts_to_send_host, verts_to_send_size_host,
 		               recoloringSize_host, rand_host, gid_host, ghost_degrees_host, recolor_degrees);
 	
