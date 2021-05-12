@@ -941,17 +941,6 @@ void RILUK<MatrixType>::compute ()
     auto U_entries = U_->getLocalMatrix().graph.entries;
     auto U_values  = U_->getLocalValuesView();
     
-    for (unsigned int row_id = 0; row_id < L_rowmap.extent(0)-1; row_id++) {
-      int row_start = L_rowmap(row_id);
-      int row_end   = L_rowmap(row_id + 1);
-      Kokkos::sort(subview(L_entries, Kokkos::make_pair(row_start, row_end)));
-    }
-    for (unsigned int row_id = 0; row_id < U_rowmap.extent(0)-1; row_id++) {
-      int row_start = U_rowmap(row_id);
-      int row_end   = U_rowmap(row_id + 1);
-      Kokkos::sort(subview(U_entries, Kokkos::make_pair(row_start, row_end)));
-    }
-    
     KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
                                                 A_local_rowmap_, A_local_entries_, A_local_values_, 
                                                 L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
