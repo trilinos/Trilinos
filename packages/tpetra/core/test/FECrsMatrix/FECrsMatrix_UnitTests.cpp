@@ -267,7 +267,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
   // not being handled correctly.
   RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,4));
 
-  graph->beginFill();
+  graph->beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -278,7 +278,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D, LO, GO, Scalar, Node
       }
     }
   }
-  graph->endFill();
+  graph->endAssembly();
 
 
   // Generate the "local stiffness matrix"
@@ -324,7 +324,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_2, LO, GO, Scalar, No
   // not being handled correctly.
   RCP<FEG> graph = rcp(new FEG(pack.uniqueMap, pack.overlapMap, 4));
 
-  graph->beginFill();
+  graph->beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -335,7 +335,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_2, LO, GO, Scalar, No
       }
     }
   }
-  graph->endFill();
+  graph->endAssembly();
 
 
   // Generate the "local stiffness matrix"
@@ -403,7 +403,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
   // not being handled correctly.
   RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,4));
 
-  graph->beginFill();
+  graph->beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -414,7 +414,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_Kokkos, LO, GO, Scala
       }
     }
   }
-  graph->endFill();
+  graph->endAssembly();
 
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, S
   // Make the graph
   RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,3));
 
-  graph->beginFill();
+  graph->beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -491,7 +491,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex, LO, GO, S
       }
     }
   }
-  graph->endFill();
+  graph->endAssembly();
 
 
   // Generate the "local stiffness matrix"
@@ -541,7 +541,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
   // Make the graph
   RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,3));
 
-  graph->beginFill();
+  graph->beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -554,7 +554,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos, LO
       }
     }
   }
-  graph->endFill();
+  graph->endAssembly();
 
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
@@ -621,7 +621,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos_Mul
   // Make the graph
   RCP<FEG> graph = rcp(new FEG(pack.uniqueMap,pack.overlapMap,pack.overlapMap,3));
 
-  graph->beginFill();
+  graph->beginAssembly();
   for(size_t i=0; i<(size_t)pack.element2node.size(); i++) {
     for(size_t j=0; j<pack.element2node[i].size(); j++) {
       GO gid_j = pack.element2node[i][j];
@@ -634,7 +634,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( FECrsMatrix, Assemble1D_LocalIndex_Kokkos_Mul
       }
     }
   }
-  graph->endFill();
+  graph->endAssembly();
 
   // Generate the "local stiffness matrix"
   std::vector<std::vector<Scalar> > localValues = generate_fem1d_element_values<Scalar>();
