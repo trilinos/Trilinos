@@ -4694,16 +4694,6 @@ namespace Tpetra {
     if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors())) {
       return false;
     }
-    if (l1==0) {
-      return true;
-    }
-
-    auto v1 = this->getLocalViewHost(Access::ReadOnly);
-    auto v2 = vec.getLocalViewHost(Access::ReadOnly);
-    if (PackTraits<ST>::packValueCount (v1(0,0)) !=
-        PackTraits<ST>::packValueCount (v2(0,0))) {
-      return false;
-    }
 
     return true;
   }
