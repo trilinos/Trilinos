@@ -24,6 +24,17 @@ for i=1:m
   F(i) = func(T(i),x,x0,l,u,A,b,H)-del;
 end
 
+figure,
+plot((1-T(2:end))./T(2:end),F(2:end),'b','linewidth',3), hold on
+plot((1-T(2:end))./T(2:end),0*T(2:end),'r--','linewidth',3)
+
+funcTrans = @(mu)func(1./(1+mu),x,x0,l,u,A,b,H)-del;
+[mu,fmu,cnt] = bracket(funcTrans);
+fprintf('Bracketing: mu = % 6.5e  f(mu) = % 6.5e  cnt = %d\n',mu,fmu,cnt);
+[T0,T1] = brents(@(mu)funcTrans(mu),0,mu);
+fprintf('Brents:     cnt = %d\n',length(T0));
+cnt = cnt + length(T0);
+
 [T0,T1] = regula_falsi(@(t)(func(t,x,x0,l,u,A,b,H)-del),0,1);
 [S0,S1] = ridders(@(t)(func(t,x,x0,l,u,A,b,H)-del),0,1);
 [U0,U1] = brents(@(t)(func(t,x,x0,l,u,A,b,H)-del),0,1);
@@ -59,6 +70,7 @@ print('-depsc2','brents.eps');
 fprintf('Regula Falsi Iters: %d\n',length(T0))
 fprintf('Ridders Iters:      %d\n',length(S0))
 fprintf('Brents Iters:       %d\n',length(U0))
+fprintf('Trans Brent Iters:  %d\n',cnt)
 
 end
 
@@ -219,5 +231,17 @@ while(true)
   T0 = [T0;t0];
   T1 = [T1;t1];
 end
+end
+
+function [u,fu,cnt] = bracket(f)
+  t   = 1e-3;
+  fu  = 1;
+  cnt = 0;
+  while (fu >= 0)
+    u   = (1-t)/t;
+    fu  = f(u);
+    cnt = cnt+1;
+    t   = 1e-1*t;
+  end
 end
 
