@@ -342,6 +342,109 @@ namespace Intrepid2 {
     }
     
   public:
+    //! applies the specified unary operator to each entry
+    template<class UnaryOperator>
+    void applyOperator(UnaryOperator unaryOperator)
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      
+      switch (dataRank_)
+      {
+        case 1:
+        {
+          const int dataRank = 1;
+          auto view = getUnderlyingView<dataRank>();
+          
+          const int dataExtent = this->getDataExtent(0);
+          Kokkos::parallel_for("apply operator in-place", dataExtent,
+          KOKKOS_LAMBDA (const int &i0) {
+            view(i0) = unaryOperator(view(i0));
+          });
+          
+        }
+        break;
+        case 2:
+        {
+          const int dataRank = 2;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1) {
+            view(i0,i1) = unaryOperator(view(i0,i1));
+          });
+        }
+        break;
+        case 3:
+        {
+          const int dataRank = 3;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2) {
+            view(i0,i1,i2) = unaryOperator(view(i0,i1,i2));
+          });
+        }
+        break;
+        case 4:
+        {
+          const int dataRank = 4;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3) {
+            view(i0,i1,i2,i3) = unaryOperator(view(i0,i1,i2,i3));
+          });
+        }
+        break;
+        case 5:
+        {
+          const int dataRank = 5;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4) {
+            view(i0,i1,i2,i3,i4) = unaryOperator(view(i0,i1,i2,i3,i4));
+          });
+        }
+        break;
+        case 6:
+        {
+          const int dataRank = 6;
+          auto policy = dataExtentRangePolicy<dataRank>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          Kokkos::parallel_for("apply operator in-place", policy,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
+            view(i0,i1,i2,i3,i4,i5) = unaryOperator(view(i0,i1,i2,i3,i4,i5));
+          });
+        }
+        break;
+        case 7:
+        {
+          const int dataRank = 7;
+          auto policy6 = dataExtentRangePolicy<6>();
+          auto view = getUnderlyingView<dataRank>();
+          
+          const int dim_i6 = view.extent_int(6);
+          
+          Kokkos::parallel_for("apply operator in-place", policy6,
+          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
+            for (int i6=0; i6<dim_i6; i6++)
+            {
+              view(i0,i1,i2,i3,i4,i5,i6) = unaryOperator(view(i0,i1,i2,i3,i4,i5,i6));
+            }
+          });
+        }
+        break;
+        default:
+          INTREPID2_TEST_FOR_EXCEPTION(true,std::invalid_argument,"Unsupported data rank");
+      }
+    }
+    
     //! Returns an l-value reference to the specified nominal entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
     KOKKOS_INLINE_FUNCTION
     reference_type getWritableEntry(const int & i0, const int & i1, const int & i2,
@@ -1774,7 +1877,7 @@ namespace Intrepid2 {
           result = binaryOperator(A_val,B_val);
         });
       }
-      if (rank_ == 2)
+      else if (rank_ == 2)
       {
         auto policy = dataExtentRangePolicy<2>();
         Kokkos::parallel_for("compute in-place", policy,
