@@ -151,13 +151,13 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
 			   Kokkos::View<size_t*,
 			                Kokkos::Device<ExecutionSpace, MemorySpace>,
 					Kokkos::MemoryTraits<Kokkos::Atomic> > verts_to_send_size_atomic,
-                           Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
+                           Kokkos::View<size_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> recoloringSize,
 			   Kokkos::View<int*, Kokkos::Device<ExecutionSpace, MemorySpace>> rand,
 			   Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> gid,
 			   Kokkos::View<gno_t*, Kokkos::Device<ExecutionSpace, MemorySpace>> ghost_degrees,
 			   bool recolor_degrees){
       Kokkos::RangePolicy<ExecutionSpace> policy(0, boundary_verts_view.extent(0));
-      Kokkos::parallel_reduce("D2 conflict detection",policy, KOKKOS_LAMBDA(const uint64_t& i,gno_t& recoloring_size){
+      Kokkos::parallel_reduce("D2 conflict detection",policy, KOKKOS_LAMBDA(const uint64_t& i,size_t& recoloring_size){
 	//we only detect conflicts for vertices in the boundary
         const size_t curr_lid = boundary_verts_view(i);
         const int curr_color = femv_colors(curr_lid);
@@ -285,7 +285,7 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
                                  Kokkos::View<size_t*,
                                               device_type,
                                               Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
-                                 Kokkos::View<gno_t*, device_type> recoloringSize,
+                                 Kokkos::View<size_t*, device_type> recoloringSize,
                                  Kokkos::View<int*,
                                               device_type> rand,
                                  Kokkos::View<gno_t*,
@@ -319,7 +319,7 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
                                  typename Kokkos::View<int*,device_type>::HostMirror verts_to_recolor_size,
                                  typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send,
                                  typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size,
-                                 typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize,
+                                 typename Kokkos::View<size_t*, device_type>::HostMirror recoloringSize,
                                  typename Kokkos::View<int*,  device_type>::HostMirror rand,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,

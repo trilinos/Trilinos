@@ -93,46 +93,95 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                        bool recolor=false) = 0;
   public:
     //Entry point for parallel conflict detection
+    //INPUT ARGS
     //  n_local is the number of vertices owned by the current process
     //
     //  dist_offsets_dev is the device view that holds the CSR offsets
+    //                   It holds offsets for all vertices, owned and ghosts.
+    //                   It is organized with owned first, and then ghost layers:
+    //                   -----------------------------------------------
+    //                   | owned     | first       | second            |
+    //                   |  vtx      | ghost       | ghost             |
+    //                   | offsets   | layer       | layer             |
+    //                   -----------------------------------------------
+    //                   The allocated length is equal to the sum of owned 
+    //                   and ghost vertices + 1. Any vertex with LID >= n_local
+    //                   is a ghost.
     //
     //  dist_adjs_dev is the device view that holds CSR adjacencies
     //
-    //  femv_colors is the device color view.
-    //              colors are modified in this function.
-    //
-    //  boundary_verts_view holds the local IDs of vertices in the boundary
-    //
-    //  verts_to_recolor_view is a device view that holds the list
-    //                          of vertices to recolor
-    //
-    //  verts_to_recolor_size_atomic is an atomic device view that holds the
-    //                               size of verts_to_recolor_view.
-    //                               It differs in size from the allocated size of
-    //                               verts_to_recolor_view.
-    //
-    //  verts_to_send_view is a device view that holds the list of vertices
-    //                       that will need to be sent to remotes after recoloring
-    //
-    //  verts_to_send_size_atomic is an atomic device view that holds the size of
-    //                            verts_to_send_view. It differs in size from the
-    //                            allocated size of verts_to_send_view.
-    //
-    //  recoloringSize is a device view that holds the total amount of work left
-    //                 to do
+    //  boundary_verts_view holds the local IDs of vertices in the boundary.
+    //                      By definition, boundary vertices are owned vertices
+    //                      that have a ghost in their neighborhood.
+    //                      (distance-1 coloring = 1-hop neighborhood)
+    //                      (distance-2 coloring = 2-hop neighborhood)
+    //                      Note: for D1-2GL we do not use this argument.
+    //                      It is possible to detect all D1 conflicts by only 
+    //                      checking the ghost vertices, without constructing
+    //                      the boundary.
     //
     //  rand is a device view that holds random numbers generated from GIDs,
     //       they are consistently generated across processes
     //
     //  gid is a device view that holds the GIDs of each vertex on this process.
-    //      It is indexable by local ID
+    //      It is indexable by local ID. It stores both owned and ghost
+    //      vertices, and LIDs are ordered so that the structure looks like:
+    //      -----------------------------------------
+    //      |          |  first    | second         | owned LIDs are smallest
+    //      |  owned   |  ghost    | ghost          | ghost LIDs increase based
+    //      |   vtx    |  layer    | layer          | on layer (1 < 2)
+    //      -----------------------------------------
+    //      The allocated size is dist_offsets_dev.extent(0)-1.
+    //
     //
     //  ghost_degrees is a device view that holds the degrees of ghost vertices only.
     //                A ghost with local ID n_local will be the first entry in this view.
+    //                So, ghost_degrees[i] is the degree of the vtx with 
+    //                GID = gid[n_local+i].
     //
     //  recolor_degrees is a boolean that determines whether or not we factor in vertex
     //                  degrees on recoloring
+    //
+    //OUTPUT ARGS
+    //  femv_colors is the device color view.
+    //              After this function call, conflicts between vertices will
+    //              be resolved via setting a vertex's color to 0. The vertex
+    //              to be uncolored is determined by rules that are consistent
+    //              across multiple processes.
+    //
+    //  verts_to_recolor_view is a device view that holds the list
+    //                          of vertices to recolor. Any vertex
+    //                          uncolored by this function will appear in this
+    //                          view after the function returns.
+    //
+    //  verts_to_recolor_size_atomic is an atomic device view that holds the
+    //                               size of verts_to_recolor_view.
+    //                               Effectively it represents how many 
+    //                               vertices need to be recolored after 
+    //                               conflict detection.
+    //                               It differs in size from the allocated size of
+    //                               verts_to_recolor_view.
+    //                               Atomicity is required for building
+    //                               verts_to_recolor_view in parallel, which
+    //                               is the reason this is a view instead of
+    //                               just an integer type.
+    //
+    //  verts_to_send_view is a device view that holds the list of vertices
+    //                       that will need to be sent to remotes after recoloring
+    //                       Note: Only locally owned vertices should ever be in
+    //                       this view. A process cannot color ghosts correctly.
+    //
+    //  verts_to_send_size_atomic is an atomic device view that holds the size of
+    //                            verts_to_send_view. It differs in size from the
+    //                            allocated size of verts_to_send_view.
+    //                            Atomicity is required for building
+    //                            verts_to_send_view in parallel,
+    //                            which is the reason this is a view instead of
+    //                            just an integer type.
+    //
+    //  recoloringSize is a device view that stores the total number of
+    //                 vertices that were uncolored by the conflict detection.
+    //
     virtual void detectConflicts(const size_t n_local,
 		                 Kokkos::View<offset_t*, device_type > dist_offsets_dev,
 		                 Kokkos::View<lno_t*, device_type > dist_adjs_dev,
@@ -148,7 +197,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 				 Kokkos::View<size_t*, 
 				              device_type, 
 					      Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_size_atomic,
-			         Kokkos::View<gno_t*, device_type> recoloringSize,
+			         Kokkos::View<size_t*, device_type> recoloringSize,
 				 Kokkos::View<int*,
 				              device_type> rand,
 			         Kokkos::View<gno_t*,
@@ -167,7 +216,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 				 typename Kokkos::View<int*,device_type>::HostMirror verts_to_recolor_size_atomic,
 				 typename Kokkos::View<lno_t*,device_type>::HostMirror verts_to_send_view,
 				 typename Kokkos::View<size_t*,device_type>::HostMirror verts_to_send_size_atomic,
-				 typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize,
+				 typename Kokkos::View<size_t*, device_type>::HostMirror recoloringSize,
 			         typename Kokkos::View<int*,  device_type>::HostMirror rand,
 			         typename Kokkos::View<gno_t*,device_type>::HostMirror gid,
                                  typename Kokkos::View<gno_t*,device_type>::HostMirror ghost_degrees,
@@ -190,8 +239,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //
     //  verts_to_send_view will hold the list of vertices to send
     //
-    //  verts_to_send_size_atomic will hold the size of the list of
-    //                            vertices to send.
+    //  verts_to_send_size_atomic will hold the number of vertices to
+    //                            send currently held in verts_to_send_view.
+    //                            verts_to_send_size_atomic differs
+    //                            from the allocated size of verts_to_send_view
+    //                            Atomicity is required for building
+    //                            verts_to_send_view in parallel, which is
+    //                            the reason this is a view instead of an
+    //                            integer type.
     //
     virtual void constructBoundary(const size_t n_local,
 		    		   Kokkos::View<offset_t*, device_type> dist_offsets_dev,
@@ -215,18 +270,61 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 
     
   private:
-    //This function constructs the second ghost layer.
-    //It proceeds in rounds in order to keep messages
-    //under MPI's maximum send size.
+    //This function constructs a CSR with complete adjacency information for
+    //first-layer ghost vertices. This CSR can contain edges from:
+    //      first-layer ghosts to owned; 
+    //      first-layer ghosts to first-layer ghosts;
+    //      first-layer ghosts to second-layer ghosts;
+    //1) Each process sends a list of ghost GIDs back to their owning process
+    //   to request full adjacency information for that vertex. 
+    //
+    //2) Initially each process sends back degree information to the requesting
+    //   process.
+    //
+    //3) Then, each process can construct send buffers and receive schedules for
+    //   the adjacency information for each requested GID it received, 
+    //   in addition to building the 2GL offsets and relabeling ghost LIDs 
+    //   to make the final CSR construction easier. 
+    //   
+    //   3a)  We can construct the 2GL offsets here because each process has
+    //        already received the degree information for each first-layer 
+    //        ghost vertex.
+    //   
+    //   3b)  The original ghost LIDs may not correspond to the order in which
+    //        we will receive the adjacency information. Instead of reordering
+    //        the received adjacencies, we relabel the GIDs of first-layer 
+    //        ghosts with new LIDs that correspond to the order in which we 
+    //        receive the adjacency information. Only first-layer ghost LIDs
+    //        are changed.
+    //
+    //4) Due to limitations on the size of an MPI message, we split sending and
+    //   receiving into rounds to accommodate arbitrarily large graphs.
+    //
+    //5) As send rounds progress, we construct the 2GL adjacency structure.
+    //   Because we relabel ghost LIDs, we do not need to reorder the 
+    //   data after we receive it.
+    //
+    //
     //
     //OUTPUT ARGS
-    //  ownedPlusGhosts holds the initial list of GIDs for all owned vertices.
-    //                  This function changes the order of the ghost GIDs in
-    //                  order to more easily construct the second ghost layer.
+    //  ownedPlusGhosts Initially holds the list of GIDs for owned and ghost
+    //                  vertices. The only hard constraint on the ordering is
+    //                  that owned vertices come before ghost vertices.
+    //                  This function can re-assign the LIDs of ghost vertices
+    //                  in order to make the final construction of the 2GL
+    //                  CSR easier. After this function call, some ghost
+    //                  LIDs may be changed, but they will still be greater
+    //                  than owned LIDs. No owned LIDs will be changed.
     //
-    //  adjs_2GL holds the second ghost layer CSR adjacencies
+    //  adjs_2GL holds the second ghost layer CSR adjacencies. The 2GL CSR
+    //           contains complete adjacency information for the first-layer
+    //           ghosts. These adjacencies can hold both owned vertices and
+    //           second-layer ghosts, as well as first-layer ghosts.
     //
-    //  offsets_2GL holds CSR offsets into the second ghost layer adjacencies.
+    //  offsets_2GL holds CSR offsets for vertices in the first ghost layer only.
+    //              That is, a vertex with GID = gid[n_local] will be the first
+    //              vertex with information in this offset structure.
+    //   
     //
     //INPUT ARGS
     //  owners holds the owning proc for a given vertex, indexed by local ID.
@@ -238,6 +336,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //  mapOwned translates from Owned GID to LID. We only need this translation
     //           for owned vertices.
     //
+    //TODO: This function uses many vectors of size comm->getSize();
+    //      consider changes to increase memory scalability.
     void constructSecondGhostLayer(std::vector<gno_t>& ownedPlusGhosts,
                                    const std::vector<int>& owners,
                                    ArrayView<const gno_t> adjs,
@@ -245,16 +345,20 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                                    RCP<const map_t> mapOwned,
                                    std::vector< gno_t>& adjs_2GL,
                                    std::vector< offset_t>& offsets_2GL) {
+
+      //first, we send ghost GIDs back to owners to receive the
+      //degrees of each first-layer ghost.
       std::vector<int> sendcounts(comm->getSize(),0);
-      std::vector<gno_t> sdispls(comm->getSize()+1,0);
+      std::vector<size_t> sdispls(comm->getSize()+1,0);
       //loop through owners, count how many vertices we'll send to each processor
+      //We send each ghost GID back to its owning process.
       if(verbose) std::cout<<comm->getRank()<<": building sendcounts\n";
       for(size_t i = 0; i < owners.size(); i++){
         if(owners[i] != comm->getRank()&& owners[i] !=-1) sendcounts[owners[i]]++;
       }
       //construct sdispls (for building sendbuf), and sum the total sendcount
       if(verbose) std::cout<<comm->getRank()<<": building sdispls\n";
-      gno_t sendcount = 0;
+      size_t sendcount = 0;
       for(int i = 1; i < comm->getSize()+1; i++){
         sdispls[i] = sdispls[i-1] + sendcounts[i-1];
         sendcount += sendcounts[i-1];
@@ -273,11 +377,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         if(owners[i] != comm->getRank() && owners[i] != -1){
           sendbuf[idx[owners[i]]++] = ownedPlusGhosts[i];
         }
-      }
-      //remap the GIDs so we receive the adjacencies in the same order as the current processes LIDs
-      if(verbose) std::cout<<comm->getRank()<<": updating ownedPlusGhosts\n";
-      for(gno_t i = 0; i < sendcount; i++){
-        ownedPlusGhosts[i+offsets.size()-1] = sendbuf[i];
       }
       
       //communicate GIDs to owners
@@ -346,7 +445,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //fill out the send schedules
       for(int proc_to_send = 0; proc_to_send < comm->getSize(); proc_to_send++){
         int curr_round = 0;
-        for(int j = sdispls[proc_to_send]; j < sdispls[proc_to_send+1]; j++){
+        for(size_t j = sdispls[proc_to_send]; j < sdispls[proc_to_send+1]; j++){
           if((per_proc_round_adj_sums[curr_round][proc_to_send] + recvDegrees[j])*sizeof(gno_t) > INT_MAX){
             curr_round++;
           }
@@ -374,7 +473,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       for(int i = 0; i < comm->getSize(); i++){
         int curr_round = 0;
         size_t curr_idx = 0;
-        for(int j = sdispls[i]; j < sdispls[i+1]; j++){
+        for(size_t j = sdispls[i]; j < sdispls[i+1]; j++){
           if(curr_idx > per_proc_round_vtx_sums[curr_round][i]){
             curr_round++;
             curr_idx = 0;
@@ -384,8 +483,20 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       }
       
       if(verbose) std::cout<<comm->getRank()<<": reordering gids and degrees in the order they'll be received\n";
-      //reorder the GIDs and degrees locally so that the data received on this process
-      //just happens to be the correct CSR.
+      //reorder the GIDs and degrees locally:
+      //  - The way we previously stored GIDs and degrees had no relation
+      //    to the order that we'll be receiving the adjacency data.
+      //    For the CSR to be complete (and usable), we reorder the LIDs of
+      //    ghosts so that they are in the order we will receive the adjacency
+      //    data.
+      //  
+      //  - For graphs that are not large enough to trigger sending in multiple
+      //    rounds of communication, the LIDs of the ghosts will be ordered
+      //    by owning process. If multiple rounds are used, the LIDs of
+      //    ghosts will be ordered by rounds in addition to owning process.
+      //
+      //  - final_gid_vec and final_degree_vec hold the reorganized gids and
+      //    degrees, the final re-mapping happens further down
       std::vector<gno_t> final_gid_vec(sendcount, 0);
       std::vector<offset_t> final_degree_vec(sendcount,0);
       gno_t reorder_idx = 0;
@@ -397,21 +508,32 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
           }
         }
       }
-      //do a quick check to see if we ended up reorganizing anything
-      bool reorganized = false;
-      for(int i = 0; i < sendcount; i++){
-        if(final_gid_vec[i] != sendbuf[i]) reorganized = true;
-      }
-
-      //if we have more than a single round of communication, we need to reorganize.
-      //this alerts of unnecessary reorganization, and a failure to perform necessary
-      //reorganization.
+      
+      //check to see if the reorganization has happened correctly
       if(verbose){
+        //do a quick check to see if we ended up reorganizing anything
+        bool reorganized = false;
+        for(size_t i = 0; i < sendcount; i++){
+          if(final_gid_vec[i] != sendbuf[i]) reorganized = true;
+        }
+
+        //if we have more than a single round of communication, we need to reorganize.
+        //this alerts of unnecessary reorganization, and a failure to perform necessary
+        //reorganization.
         if(!reorganized && (max_rounds > 1)) std::cout<<comm->getRank()<<": did not reorgainze GIDs, but probably should have\n";
         if(reorganized && (max_rounds == 1)) std::cout<<comm->getRank()<<": reorganized GIDs, but probably should not have\n";
       }
       //remap the GIDs so we receive the adjacencies in the same order as the current processes LIDs
-      for (gno_t i = 0; i < sendcount; i++){
+      //  originally, the GID->LID mapping has no relevance to how we'll be receiving adj data from
+      //  remote processes. Here we make it so that the GID->LID mapping does correspond to the
+      //  order we have received degree info and will receive adjacencies. ( LID n_local 
+      //  corresponds to the first GID whose adjacency info we will receive, LID n_local+1 the
+      //  second, etc.)
+      //  That way, we don't need to reorder the adjacencies after we receive them. 
+      //
+      //  This next loop is the final mapping step.
+
+      for (size_t i = 0; i < sendcount; i++){
         ownedPlusGhosts[i+offsets.size()-1] = final_gid_vec[i];
       }
 
@@ -422,7 +544,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       }
       //start building the second ghost layer's offsets
       std::vector<offset_t> ghost_offsets(sendcount+1,0);
-      for(int i = 1; i < sendcount+1; i++){
+      for(size_t i = 1; i < sendcount+1; i++){
         ghost_offsets[i] = ghost_offsets[i-1] + final_degree_vec[i-1];
       }
 
@@ -478,7 +600,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       }
       if(verbose) std::cout<<comm->getRank()<<": constructing offsets\n";
       //put the offsets we computed into the output argument.
-      for(int i = 0; i < sendcount+1; i++){
+      for(size_t i = 0; i < sendcount+1; i++){
         offsets_2GL.push_back(ghost_offsets[i]);
       }
       if(verbose) std::cout<<comm->getRank()<<": done building 2nd ghost layer\n";
@@ -580,8 +702,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //update the local ghost copies with the color we just received.
       for(int i = 0; i < recvsize; i+=2){
         size_t lid = mapOwnedPlusGhosts->getLocalElement(recvbuf[i]);
-	//this message should never print, if it does, something has gone wrong.
-	if(lid < nVtx && verbose) std::cout<<comm->getRank()<<": received a locally owned vertex, somehow\n";
 	colors(lid) = recvbuf[i+1];
       }
 
@@ -619,8 +739,24 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //This map is used to map GID to LID initially
       std::unordered_map<gno_t,lno_t> globalToLocal;
       //this vector holds GIDs for owned and ghost vertices
+      //The final order of the gids is:
+      // -----------------------------------
+      // |           | first    | second   |
+      // | owned     | layer    | layer    |
+      // |           | ghosts   | ghosts   |
+      // -----------------------------------
+      //
+      // constructSecondGhostLayer reorders the first layer ghost
+      // GIDs in the particular order that the communication requires.
+
       std::vector<gno_t> ownedPlusGhosts;
-      //this vector holds the owning process for a vertex
+
+      //this vector holds the owning process for 
+      //owned vertices and the first ghost layer.
+      //owners[i] gives the processor owning ownedPlusGhosts[i],
+      //for owned vertices and first layer ghosts.
+      //
+      //This should only be used BEFORE the call to constructSecondGhostLayer
       std::vector<int> owners;
       
       //fill these structures using owned vertices
@@ -672,7 +808,20 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //NOTE: this may reorder the LIDs of the ghosts.
       //
       //these vectors hold the CSR representation of the 
-      //first layer ghost adjacencies, using GIDs.
+      // first ghost layer. This CSR contains:
+      //   - edges from first layer ghosts to:
+      //       - owned vertices
+      //       - first layer ghosts
+      //       - second layer ghosts
+      //
+      //   - first_layer_ghost_adjs uses GIDs that need
+      //     translated to LIDs.
+      //
+      //   - first_layer_ghost_offsets are indexed by LID,
+      //     first_layer_ghost_offsets[i] corresponds to
+      //     the vertex with GID = ownedPlusGhosts[i+nVtx].
+      //     first_layer_ghost_offsets.size() = #first layer ghosts + 1
+      //
       std::vector< gno_t> first_layer_ghost_adjs;
       std::vector< offset_t> first_layer_ghost_offsets;
       constructSecondGhostLayer(ownedPlusGhosts,owners, adjs, offsets, mapOwned,
@@ -696,7 +845,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //and add them to the map, as well as translating 2layer ghost
       //adjacencies to use those new LIDs.
       size_t n2Ghosts = 0;
-      //this holds the CSR adjacencies translated to LIDs.
+      
+      //local_ghost_adjs is the LID translation of first_layer_ghost_adjs.
       std::vector<lno_t> local_ghost_adjs;
       for(size_t i = 0; i< first_layer_ghost_adjs.size(); i++ ){
         if(globalToLocal.count(first_layer_ghost_adjs[i]) == 0){
@@ -723,16 +873,15 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                                                     importer, 1, true));
       if(verbose) std::cout<<comm->getRank()<<": done constructing femv\n";
 
-      //Create random numbers seeded on global IDs, as in AlgHybridGMB.
-      //This may or may not have an effect on this algorithm, but we
-      //might as well see.
+      //Create random numbers seeded on global IDs to resolve conflicts
+      //consistently between processes.
       std::vector<int> rand(ownedPlusGhosts.size());
       for(size_t i = 0; i < rand.size(); i++){
         std::srand(ownedPlusGhosts[i]);
         rand[i] = std::rand();
       }
 
-      // get the owners for the second ghost layer as well.
+      // get up-to-date owners for all ghosts.
       std::vector<int> ghostOwners2(ownedPlusGhosts.size() -nVtx);
       std::vector<gno_t> ghosts2(ownedPlusGhosts.size() - nVtx);
       for(size_t i = nVtx; i < ownedPlusGhosts.size(); i++) ghosts2[i-nVtx] = ownedPlusGhosts[i];
@@ -809,8 +958,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         std::cout<<comm->getRank()<<": "<<boundaryverts<<" boundary verts out of "<<n2Ghosts<<" verts in 2GL\n";
       }
 
-      //create ArrayViews from the local vectors, to prevent changes happening in the coloring
-      //
+      
       //local CSR representation for the owned vertices: 
       Teuchos::ArrayView<const lno_t> local_adjs_view = Teuchos::arrayViewFromVector(local_adjs);
       //NOTE: the offset ArrayView was constructed earlier, and is up-to-date.
@@ -818,7 +966,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //first ghost layer CSR representation:
       Teuchos::ArrayView<const offset_t> ghost_offsets = Teuchos::arrayViewFromVector(first_layer_ghost_offsets);
       Teuchos::ArrayView<const lno_t> ghost_adjacencies = Teuchos::arrayViewFromVector(local_ghost_adjs);
-
+      Teuchos::ArrayView<const int> rand_view = Teuchos::arrayViewFromVector(rand);
+      Teuchos::ArrayView<const gno_t> gid_view = Teuchos::arrayViewFromVector(ownedPlusGhosts);
       //these ArrayViews contain LIDs that are ghosted remotely,
       //and the Process IDs that have those ghost copies.
       //An LID may appear in the exportLIDs more than once.
@@ -834,7 +983,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 
       //call the coloring algorithm
       twoGhostLayer(nVtx, nVtx+nGhosts, local_adjs_view, offsets, ghost_adjacencies, ghost_offsets,
-                    femv, ownedPlusGhosts, rand, owners2, mapWithCopies, procs_to_send);
+                    femv, gid_view, rand_view, owners2, mapWithCopies, procs_to_send);
       
       //copy colors to the output array
       ArrayRCP<int> colors = solution->getColorsRCP();
@@ -854,13 +1003,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //
     //  n_total: the number of local owned vertices plus first layer ghosts
     //
-    //  adjs: the CSR adjacencies for the graph, includes first and second
-    //        layer ghosts
+    //  adjs: the CSR adjacencies for the graph, only including owned vertices
+    //        and first layer ghosts
     //
     //  offsets: the CSR offsets for the graph, has owned offsets into adjacencies
     //
-    //  ghost_adjs: the adjacency information for only the second ghost layer
-    //              indexed by ghost_offsets.
+    //  ghost_adjs: the adjacency information for first-layer ghost vertices.
+    //              Includes all neighbors (owned, first-layer ghost,
+    //              second-layer ghost) for each first-layer ghost.
     //              
     //
     //  ghost_offsets: the offsets into ghost_adjs, first layer ghost LIDs 
@@ -870,6 +1020,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //
     //  gids: a vector that holds GIDs for all vertices on this process
     //        (includes owned, and all ghosts, indexable by LID)
+    //        The GIDs are ordered like this:
+    //        ----------------------------------
+    //        |         | first     | second   |
+    //        | owned   | layer     | layer    |
+    //        |         | ghosts    | ghosts   |
+    //        ----------------------------------
+    //                  ^           ^
+    //                  n_local     n_total
     //
     //  rand: a vector that holds random numbers generated on GID for tie
     //        breaking. Indexed by LID.
@@ -895,9 +1053,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                        const Teuchos::ArrayView<const lno_t>& ghost_adjs,
                        const Teuchos::ArrayView<const offset_t>& ghost_offsets,
                        const Teuchos::RCP<femv_t>& femv,
-                       const std::vector<gno_t>& gids, 
-                       const std::vector<int>& rand,
-                       ArrayView<int> owners,
+                       const Teuchos::ArrayView<const gno_t>& gids, 
+                       const Teuchos::ArrayView<const int>& rand,
+                       const Teuchos::ArrayView<const int>& owners,
                        RCP<const map_t> mapOwnedPlusGhosts,
 		       const std::unordered_map<lno_t, std::vector<int>>& procs_to_send){
       //initialize timing variables
@@ -1041,7 +1199,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //we can construct the entire offsets using the degrees we computed above
       dist_offsets_host(0) = 0;
       offset_t total_adjs = 0;
-      for(size_t i = 1; i < rand.size()+1; i++){
+      for(Teuchos_Ordinal i = 1; i < rand.size()+1; i++){
         dist_offsets_host(i) = dist_degrees_host(i-1) + dist_offsets_host(i-1);
         total_adjs += dist_degrees_host(i-1);
       }
@@ -1051,7 +1209,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //zero out the degrees to use it as a counter.
       //The offsets now allow us to compute degrees, 
       //so we aren't losing anything.
-      for(size_t i = 0; i < rand.size(); i++){
+      for(Teuchos_Ordinal i = 0; i < rand.size(); i++){
         dist_degrees_host(i) = 0;
       }
       //We can just copy the adjacencies for the owned verts and first layer ghosts
@@ -1078,8 +1236,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::deep_copy(dist_adjs_dev, dist_adjs_host);
       
       //this view represents how many conflicts were found
-      Kokkos::View<gno_t*, device_type> recoloringSize("Recoloring Queue Size",1);
-      typename Kokkos::View<gno_t*, device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
+      Kokkos::View<size_t*, device_type> recoloringSize("Recoloring Queue Size",1);
+      typename Kokkos::View<size_t*, device_type>::HostMirror recoloringSize_host = Kokkos::create_mirror(recoloringSize);
       recoloringSize_host(0) = 0;
       Kokkos::deep_copy(recoloringSize, recoloringSize_host);
 
@@ -1087,13 +1245,13 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       if(verbose) std::cout<<comm->getRank()<<": constructing rand and GIDs views\n";
       Kokkos::View<int*, device_type> rand_dev("Random View", rand.size());
       typename Kokkos::View<int*, device_type>::HostMirror rand_host = Kokkos::create_mirror(rand_dev);
-      for(size_t i = 0; i < rand.size(); i ++) rand_host(i) = rand[i];
+      for(Teuchos_Ordinal i = 0; i < rand.size(); i ++) rand_host(i) = rand[i];
       Kokkos::deep_copy(rand_dev,rand_host);
       
       //create a view for the global IDs of each vertex.
       Kokkos::View<gno_t*, device_type> gid_dev("GIDs", gids.size());
       typename Kokkos::View<gno_t*, device_type>::HostMirror gid_host = Kokkos::create_mirror(gid_dev);
-      for(size_t i = 0; i < gids.size(); i++) gid_host(i) = gids[i];
+      for(Teuchos_Ordinal i = 0; i < gids.size(); i++) gid_host(i) = gids[i];
       Kokkos::deep_copy(gid_dev,gid_host);
        
       //These variables will be initialized by constructBoundary()
@@ -1237,11 +1395,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       incorrectGhostsPerRound[0]=0;
       typename Kokkos::View<int*, device_type>::HostMirror ghost_colors_host;
       typename Kokkos::View<lno_t*, device_type>::HostMirror boundary_verts_host;
-      int serial_threshold = this->pl->template get<int>("serial_threshold",0);
+      size_t serial_threshold = this->pl->template get<int>("serial_threshold",0);
       //see if recoloring is necessary.
-      gno_t totalConflicts = 0;
-      gno_t localConflicts = recoloringSize_host(0);
-      Teuchos::reduceAll<int,gno_t>(*comm, Teuchos::REDUCE_SUM, 1, &localConflicts, &totalConflicts);
+      size_t totalConflicts = 0;
+      size_t localConflicts = recoloringSize_host(0);
+      Teuchos::reduceAll<int,size_t>(*comm, Teuchos::REDUCE_SUM, 1, &localConflicts, &totalConflicts);
       bool done = !totalConflicts;
       if(comm->getSize()==1) done = true;
       
@@ -1328,9 +1486,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         }
 
         distributedRounds++;
-        int localDone = recoloringSize_host(0);
-        int globalDone = 0;
-        Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
+        size_t localDone = recoloringSize_host(0);
+        size_t globalDone = 0;
+        Teuchos::reduceAll<int,size_t>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
         done = !globalDone;
         
       }//end device coloring
@@ -1407,9 +1565,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	  totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
 	  comp_time += conflictDetectionPerRound[distributedRounds];
         }
-	int globalDone = 0;
-	int localDone = recoloringSize_host(0);
-	Teuchos::reduceAll<int,int>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
+	size_t globalDone = 0;
+	size_t localDone = recoloringSize_host(0);
+	Teuchos::reduceAll<int,size_t>(*comm, Teuchos::REDUCE_SUM, 1, &localDone, &globalDone);
 	distributedRounds++;
 	done = !globalDone;
       }
