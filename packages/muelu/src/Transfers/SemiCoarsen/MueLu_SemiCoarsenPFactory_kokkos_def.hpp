@@ -274,43 +274,46 @@ namespace MueLu {
                     const RCP<Matrix>& Amat, const RCP<MultiVector> fineNullspace,
                     RCP<Matrix>& P, RCP<MultiVector>& coarseNullspace) const {
     SubFactoryMonitor m2(*this, "BuildSemiCoarsenP", coarseLevel);
-    using memory_space = typename DeviceType::memory_space;
+    using LOView1D = Kokkos::View<LO*, DeviceType>;
+    using LOView2D = Kokkos::View<LO**, DeviceType>;
 
-    // Allocate memory for fine level column connectivity
+    // Construct a map from fine level column to layer ids (including ghost nodes)
     // Note: this is needed to sum all couplings within a layer
-    int NGhost = Amat->getColMap()->getNodeNumElements() - Amat->getDomainMap()->getNodeNumElements();
-    if (NGhost < 0) NGhost = 0;
-    const int NFCols = NFRows + NGhost;
-    Kokkos::View<LO*, memory_space> FCol2Layer("FCol2Layer", NFCols);
-    Kokkos::View<LO*, memory_space> FCol2Dof("FCol2Dof", NFCols);
-
-    // Allocate temporary vectors to fill ghost nodes
-    RCP<Xpetra::Vector<LO,LO,GO,NO> > localdtemp = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(Amat->getDomainMap());
-    RCP<Xpetra::Vector<LO,LO,GO,NO> > dtemp      = Xpetra::VectorFactory<LO,LO,GO,NO>::Build(Amat->getColMap());
-
-    // Load local temp with layer ids
-    ArrayRCP<LO> valptr = localdtemp->getDataNonConst(0);
-    for (int row = 0; row < NFRows; row++)
-      valptr[row] = LayerId[row / DofsPerNode];
-
-    // Fill ghost nodes and copy data
-    RCP< const Import> importer;
-    importer = Amat->getCrsGraph()->getImporter();
+    const auto FCol2LayerVector = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Amat->getColMap());
+    const auto localTemp  = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Amat->getDomainMap());
+    RCP<const Import> importer = Amat->getCrsGraph()->getImporter();
     if (importer == Teuchos::null)
       importer = ImportFactory::Build(Amat->getDomainMap(), Amat->getColMap());
-    dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
-    valptr = dtemp->getDataNonConst(0);
-    for (int col = 0; col < NFCols; col++)
-      FCol2Layer(col) = valptr[col];
+    {
+      // Fill local temp with layer ids and fill ghost nodes
+      const auto localTempHost = localTemp->getHostLocalView();
+      for (int row = 0; row < NFRows; row++)
+        localTempHost(row, 0) = LayerId[row / DofsPerNode];
+      // const auto localTempView = localTemp->getDeviceLocalView();
+      const auto localTempView = localTemp->template getLocalView<DeviceType>();
+      Kokkos::deep_copy(localTempView, localTempHost);
+      FCol2LayerVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
+    }
+    // const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView();
+    const auto FCol2LayerView = FCol2LayerVector->template getLocalView<DeviceType>();
+    const auto FCol2Layer = Kokkos::subview(FCol2LayerView, Kokkos::ALL(), 0);
 
-    // Load local temp with local dofs per node, fill ghost nodes and copy data
-    valptr = localdtemp->getDataNonConst(0);
-    for (int row = 0; row < NFRows; row++)
-      valptr[row] = row % DofsPerNode;
-    dtemp->doImport(*localdtemp, *(importer), Xpetra::INSERT);
-    valptr = dtemp->getDataNonConst(0);
-    for (int col = 0; col < NFCols; col++)
-      FCol2Dof(col)= valptr[col];
+    // Construct a map from fine level column to local dof per node id (including ghost nodes)
+    // Note: this is needed to sum all couplings within a layer
+    const auto FCol2DofVector = Xpetra::VectorFactory<LO, LO, GO, NO>::Build(Amat->getColMap());
+    {
+      // Fill local temp with local dof per node ids and fill ghost nodes
+      const auto localTempHost = localTemp->getHostLocalView();
+      for (int row = 0; row < NFRows; row++)
+        localTempHost(row, 0) = row % DofsPerNode;
+      // const auto localTempView = localTemp->getDeviceLocalView();
+      const auto localTempView = localTemp->template getLocalView<DeviceType>();
+      Kokkos::deep_copy(localTempView, localTempHost);
+      FCol2DofVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
+    }
+    // const auto FCol2DofView = FCol2DofVector->getDeviceLocalView();
+    const auto FCol2DofView = FCol2DofVector->template getLocalView<DeviceType>();
+    const auto FCol2Dof = Kokkos::subview(FCol2DofView, Kokkos::ALL(), 0);
 
     // Compute NVertLines
     // TODO: Read this from line detection factory
@@ -321,12 +324,15 @@ namespace MueLu {
     NVertLines++;
 
     // Construct a map from Line, Layer ids to fine level node
-    Kokkos::View<LO**, memory_space> LineLayer2Node("LineLayer2Node", NVertLines, NFLayers);
+    LOView2D LineLayer2Node("LineLayer2Node", NVertLines, NFLayers);
+    typename LOView2D::HostMirror LineLayer2NodeHost = Kokkos::create_mirror_view(LineLayer2Node);
     for (int node = 0; node < NFNodes; ++node)
-      LineLayer2Node(VertLineId[node], LayerId[node]) = node;
+      LineLayer2NodeHost(VertLineId[node], LayerId[node]) = node;
+    Kokkos::deep_copy(LineLayer2Node, LineLayer2NodeHost);
 
     // Construct a map from coarse layer id to fine layer id
-    Kokkos::View<LO*, memory_space> CLayer2FLayer("CLayer2FLayer", NCLayers);
+    LOView1D CLayer2FLayer("CLayer2FLayer", NCLayers);
+    typename LOView1D::HostMirror CLayer2FLayerHost = Kokkos::create_mirror_view(CLayer2FLayer);
     using coordT = typename Teuchos::ScalarTraits<Scalar>::coordinateType;
     const LO FirstStride = (LO) ceil( ((coordT) (NFLayers+1)) / ((coordT) (NCLayers+1)) );
     const coordT RestStride = ((coordT) (NFLayers-FirstStride+1)) / ((coordT) NCLayers);
@@ -334,85 +340,94 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(NCLayers != NCpts, Exceptions::RuntimeError, "sizes do not match.");
     coordT stride = (coordT) FirstStride;
     for (int clayer = 0; clayer < NCLayers; ++clayer) {
-      CLayer2FLayer(clayer) = (LO) floor(stride) - 1;
+      CLayer2FLayerHost(clayer) = (LO) floor(stride) - 1;
       stride += RestStride;
     }
+    Kokkos::deep_copy(CLayer2FLayer, CLayer2FLayerHost);
 
     // Compute start layer and stencil sizes for layer interpolation at each coarse layer
     int MaxStencilSize = 1;
-    Kokkos::View<LO*, memory_space> CLayer2StartLayer("CLayer2StartLayer", NCLayers);
-    Kokkos::View<LO*, memory_space> CLayer2StencilSize("CLayer2StencilSize", NCLayers);
+    LOView1D CLayer2StartLayer("CLayer2StartLayer", NCLayers);
+    LOView1D CLayer2StencilSize("CLayer2StencilSize", NCLayers);
+    typename LOView1D::HostMirror CLayer2StartLayerHost = Kokkos::create_mirror_view(CLayer2StartLayer);
+    typename LOView1D::HostMirror CLayer2StencilSizeHost = Kokkos::create_mirror_view(CLayer2StencilSize);
     for (int clayer = 0; clayer < NCLayers; ++clayer) {
-      const int startLayer = (clayer > 0) ? CLayer2FLayer(clayer-1)+1 : 0;
-      const int stencilSize = (clayer < NCLayers-1) ? CLayer2FLayer(clayer+1) - startLayer :
+      const int startLayer = (clayer > 0) ? CLayer2FLayerHost(clayer-1)+1 : 0;
+      const int stencilSize = (clayer < NCLayers-1) ? CLayer2FLayerHost(clayer+1) - startLayer :
           NFLayers - startLayer;
       
       if (MaxStencilSize < stencilSize) MaxStencilSize = stencilSize;
-      CLayer2StartLayer(clayer) = startLayer;
-      CLayer2StencilSize(clayer) = stencilSize;
+      CLayer2StartLayerHost(clayer) = startLayer;
+      CLayer2StencilSizeHost(clayer) = stencilSize;
     }
+    Kokkos::deep_copy(CLayer2StartLayer, CLayer2StartLayerHost);
+    Kokkos::deep_copy(CLayer2StencilSize, CLayer2StencilSizeHost);
 
     // Allocate storage for the coarse layer interpolation matrices on all vertical lines
     // Note: Contributions to each matrix are collapsed to vertical lines. Thus, each vertical line gives rise
     // to a block tridiagonal matrix. Here we store the full matrix to be compatible with kokkos kernels batch
     // LU and tringular solve.
     int Nmax = MaxStencilSize*DofsPerNode;
-    Kokkos::View<SC***, memory_space> BandMat("BandMat", NVertLines, Nmax, Nmax);
-    Kokkos::View<SC***, memory_space> BandSol("BandSol", NVertLines, Nmax, DofsPerNode);
+    Kokkos::View<SC***, DeviceType> BandMat("BandMat", NVertLines, Nmax, Nmax);
+    Kokkos::View<SC***, DeviceType> BandSol("BandSol", NVertLines, Nmax, DofsPerNode);
 
     // Precompute number of nonzeros in prolongation matrix and allocate P views
     // Note: Each coarse dof (NVertLines*NCLayers*DofsPerNode) contributes an interpolation stencil (StencilSize*DofsPerNode)
     int NnzP = 0;
     for (int clayer = 0; clayer < NCLayers; ++clayer)
-      NnzP += CLayer2StencilSize(clayer);
+      NnzP += CLayer2StencilSizeHost(clayer);
     NnzP *= NVertLines * DofsPerNode * DofsPerNode;
-    Kokkos::View<SC*, memory_space> Pvals("Pvals", NnzP);
-    Kokkos::View<LO*, memory_space> Pcols("Pcols", NnzP);
+    Kokkos::View<SC*, DeviceType> Pvals("Pvals", NnzP);
+    Kokkos::View<LO*, DeviceType> Pcols("Pcols", NnzP);
 
     // Precompute Pptr
     // Note: Each coarse layer stencil dof contributes DofsPerNode to the corresponding row in P
-    Kokkos::View<size_t*, memory_space> Pptr("Pptr", NFRows+1);
-    Kokkos::deep_copy(Pptr, 0);
+    Kokkos::View<size_t*, DeviceType> Pptr("Pptr", NFRows+1);
+    typename Kokkos::View<size_t*, DeviceType>::HostMirror PptrHost = Kokkos::create_mirror_view(Pptr);
+    Kokkos::deep_copy(PptrHost, 0);
     for (int line = 0; line < NVertLines; ++line) {
       for (int clayer = 0; clayer < NCLayers; ++clayer) {
-        const int stencilSize = CLayer2StencilSize(clayer);
-        const int startLayer = CLayer2StartLayer(clayer);
+        const int stencilSize = CLayer2StencilSizeHost(clayer);
+        const int startLayer = CLayer2StartLayerHost(clayer);
         for (int snode = 0; snode < stencilSize; ++snode) {
           for (int dofi = 0; dofi < DofsPerNode; ++dofi) {
             const int layer = startLayer + snode;
-            const int AmatBlkRow = LineLayer2Node(line, layer);
+            const int AmatBlkRow = LineLayer2NodeHost(line, layer);
             const int AmatRow = AmatBlkRow * DofsPerNode + dofi;
-            Pptr(AmatRow+1) += DofsPerNode;
+            PptrHost(AmatRow+1) += DofsPerNode;
           }
         }
       }
     }
     for (int i = 2; i < NFRows+1; ++i)
-      Pptr(i) += Pptr(i-1);
-    TEUCHOS_TEST_FOR_EXCEPTION(NnzP != (int)Pptr(NFRows), Exceptions::RuntimeError, "Number of nonzeros in P does not match");
+      PptrHost(i) += PptrHost(i-1);
+    TEUCHOS_TEST_FOR_EXCEPTION(NnzP != (int)PptrHost(NFRows), Exceptions::RuntimeError, "Number of nonzeros in P does not match");
+    Kokkos::deep_copy(Pptr, PptrHost);
 
     // Precompute Pptr offsets
     // Note: These are used to determine the nonzero index in Pvals and Pcols
-    Kokkos::View<LO*, memory_space> layerBuckets("layerBuckets", NFLayers);
+    Kokkos::View<LO*, Kokkos::DefaultHostExecutionSpace> layerBuckets("layerBuckets", NFLayers);
     Kokkos::deep_copy(layerBuckets, 0);
-    Kokkos::View<LO**, memory_space> CLayerSNode2PptrOffset("CLayerSNode2PptrOffset", NCLayers, MaxStencilSize);
+    LOView2D CLayerSNode2PptrOffset("CLayerSNode2PptrOffset", NCLayers, MaxStencilSize);
+    typename LOView2D::HostMirror CLayerSNode2PptrOffsetHost = Kokkos::create_mirror_view(CLayerSNode2PptrOffset);
     for (int clayer = 0; clayer < NCLayers; ++clayer) {
-      const int stencilSize = CLayer2StencilSize(clayer);
-      const int startLayer = CLayer2StartLayer(clayer);
+      const int stencilSize = CLayer2StencilSizeHost(clayer);
+      const int startLayer = CLayer2StartLayerHost(clayer);
       for (int snode = 0; snode < stencilSize; ++snode) {
         const int layer = startLayer + snode;
-        CLayerSNode2PptrOffset(clayer, snode) = layerBuckets(layer);
+        CLayerSNode2PptrOffsetHost(clayer, snode) = layerBuckets(layer);
         layerBuckets(layer)++;
       }
     }
+    Kokkos::deep_copy(CLayerSNode2PptrOffset, CLayerSNode2PptrOffsetHost);
 
     { // Fill P - fill and solve each block tridiagonal system and fill P views
       SubFactoryMonitor m3(*this, "Fill P", coarseLevel);
 
       const auto localAmat = Amat->getLocalMatrix();
 
-      using range_policy = Kokkos::RangePolicy<typename DeviceType::execution_space>;
-      Kokkos::parallel_for("MueLu::SemiCoarsenPFactory::BuildSemiCoarsenP Fill P",range_policy(0, NVertLines),
+      using range_policy = Kokkos::RangePolicy<execution_space>;
+      Kokkos::parallel_for("MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Fill P",range_policy(0, NVertLines),
         KOKKOS_LAMBDA (const int line) {
           for (int clayer = 0; clayer < NCLayers; ++clayer) {
 
@@ -551,10 +566,12 @@ namespace MueLu {
     // Construct coarse nullspace and inject fine nullspace
     coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
     const int numVectors = fineNullspace->getNumVectors();
-    const auto fineNullspaceView = fineNullspace->template getLocalView<memory_space>();
-    const auto coarseNullspaceView = coarseNullspace->template getLocalView<memory_space>();
-    using range_policy = Kokkos::RangePolicy<typename DeviceType::execution_space>;
-    Kokkos::parallel_for("MueLu::SemiCoarsenPFactory::BuildSemiCoarsenP Inject Nullspace",range_policy(0,NVertLines),
+    // const auto fineNullspaceView = fineNullspace->getDeviceLocalView();
+    // const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView();
+    const auto fineNullspaceView = fineNullspace->template getLocalView<DeviceType>();
+    const auto coarseNullspaceView = coarseNullspace->template getLocalView<DeviceType>();
+    using range_policy = Kokkos::RangePolicy<execution_space>;
+    Kokkos::parallel_for("MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Inject Nullspace",range_policy(0,NVertLines),
       KOKKOS_LAMBDA (const int line) {
         for (int clayer = 0; clayer < NCLayers; ++clayer) {
           const int layer = CLayer2FLayer(clayer);
