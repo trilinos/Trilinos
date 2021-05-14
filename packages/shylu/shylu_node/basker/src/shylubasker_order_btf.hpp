@@ -212,7 +212,10 @@ namespace BaskerNS
     #ifdef BASKER_TIMER
     timer_order.reset();
     #endif
-    btf_blk_mwm_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    int blk_mwm_info = btf_blk_mwm_amd(M, order_blk_mwm_array, order_blk_amd_array, btf_blk_nnz, btf_blk_work);
+    if (blk_mwm_info != BASKER_SUCCESS) {
+      return blk_mwm_info;
+    }
     #if 0 //debug
     printf( " >> debug: set order_blk_mwm/amd on global matrix to identity <<\n" );
     for (Int i = 0; i < (Int)M.nrow; i++) {
@@ -378,7 +381,7 @@ namespace BaskerNS
     printf("------------BTF CUT: %d --------------\n",  btf_tabs(btf_tabs_offset));
 #endif
 
-    return 0;
+    return BASKER_SUCCESS;
   }//end find_btf2
 
 

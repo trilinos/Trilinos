@@ -316,7 +316,7 @@ namespace BaskerNS
       
 
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::btf_blk_mwm_amd
+  int Basker<Int,Entry,Exe_Space>::btf_blk_mwm_amd
   (
    Int b_start,
    Int b_num,
@@ -347,7 +347,7 @@ namespace BaskerNS
         btf_work(b) = 1;
       }
 
-      return;
+      return BASKER_SUCCESS;
     }
 
     #ifdef BASKER_TIMER
@@ -499,10 +499,21 @@ namespace BaskerNS
                     << ", nnz = " << nnz << ") ** " << std::endl;
           //flag = false;
         }
-        Int num = 0;
+        Int num_match = 0;
         mwm_order::mwm(blk_size, nnz,
                        &(temp_col(0)), &(temp_row(0)), &(temp_val(0)),
-                       &(tempp(0)), num);
+                       &(tempp(0)), num_match);
+        if(num_match < blk_size) {
+          if(Options.verbose == BASKER_TRUE) {
+            std::cout << " ++ Num of matches returned " << num_match
+                      << " is less than blk_size(" << b << ") = " << blk_size 
+                      << std::endl;
+          }
+          FREE_INT_1DARRAY(temp_col);
+          FREE_INT_1DARRAY(temp_row);
+          FREE_ENTRY_1DARRAY(temp_val);
+          return BASKER_ERROR;
+        }
         for(Int ii = 0; ii < blk_size; ii++) {
           scale_row_array(btf_tabs(b)+ii) = one;
           scale_col_array(btf_tabs(b)+ii) = one;
@@ -683,8 +694,19 @@ namespace BaskerNS
           if (flag) {
             std::cout << " >> + Basker::AMD_ORDER" << std::endl;
           }
+          int amd_info =
           BaskerSSWrapper<Int>::amd_order(blk_size, &(temp_col(0)), &(temp_row(0)), 
                                           &(tempp(0)), l_nnz, lu_work, Options.verbose);
+          if (amd_info == TRILINOS_AMD_OUT_OF_MEMORY || amd_info == TRILINOS_AMD_INVALID) {
+            if(Options.verbose == BASKER_TRUE) {
+              std::cout << " ++ amd_order returned " << amd_info
+                        << " for blk(" << b << ")" << std::endl;
+            }
+            FREE_INT_1DARRAY(temp_col);
+            FREE_INT_1DARRAY(temp_row);
+            FREE_ENTRY_1DARRAY(temp_val);
+            return BASKER_ERROR;
+          }
         }
       }
       #ifdef BASKER_TIMER
@@ -752,11 +774,13 @@ namespace BaskerNS
     FREE_INT_1DARRAY(temp_col);
     FREE_INT_1DARRAY(temp_row);
     FREE_ENTRY_1DARRAY(temp_val);
+
+    return BASKER_SUCCESS;
   }//end blk_amd()
 
   // default: compute blk_mwm & blk_amd of all the blocks
   template <class Int, class Entry, class Exe_Space>
-  void Basker<Int,Entry,Exe_Space>::btf_blk_mwm_amd
+  int Basker<Int,Entry,Exe_Space>::btf_blk_mwm_amd
   (
    BASKER_MATRIX &M, 
    INT_1DARRAY p_mwm, 
@@ -769,7 +793,7 @@ namespace BaskerNS
     // the diagonal blocks are split into A & C later
     Int b_start = 0; 
     Int b_num = btf_nblks;
-    btf_blk_mwm_amd(b_start, b_num, M, p_mwm, p_amd, btf_nnz, btf_work);
+    return btf_blk_mwm_amd(b_start, b_num, M, p_mwm, p_amd, btf_nnz, btf_work);
   }
 
 }//end namespace BaskerNS

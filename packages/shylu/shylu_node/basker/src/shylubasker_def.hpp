@@ -365,7 +365,7 @@ namespace BaskerNS
 
     if(Options.verbose == BASKER_TRUE)
     {
-      std::cout << " == Basker Symbolic ==" << std::endl;
+      std::cout << "\n == Basker Symbolic ==" << std::endl;
       std::cout << "Matrix dims: " << nrow << " x " << ncol << ", nnz = " << nnz << std::endl;
     }
 
@@ -657,7 +657,7 @@ namespace BaskerNS
     #endif
     if(Options.verbose == BASKER_TRUE)
     {
-      printf(" == Basker Factor ==\n\n");
+      printf("\n == Basker Factor ==\n\n");
     }
 
     if(symb_flag != BASKER_TRUE)

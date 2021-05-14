@@ -306,8 +306,12 @@ static int basker_sort_matrix_col(const void *arg1, const void *arg2)
     // where A is one "large" diagonal block for threaded factorization, and
     //       B contains "small" diagonabl blocks for sequential factorization
     //printf("outer num_threads:%d \n", num_threads);
-    find_btf2(A);
-
+    if (find_btf2(A) != BASKER_SUCCESS) {
+        if(Options.verbose == BASKER_TRUE) {
+            std::cout << " ++ find_btf2 failed ++ " << std::endl;
+        }
+        return BASKER_ERROR;
+    }
     /*printf( " btfP=[\n" );
     for (int i = 0; i < A.ncol; i++) printf( "%d\n", order_btf_array(i));
     printf( "];\n" );*/

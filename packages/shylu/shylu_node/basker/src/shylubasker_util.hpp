@@ -757,7 +757,7 @@ namespace BaskerNS
             //printf("Using BTF AU\n");
             //printf("2nd convert AVM: %d %d size:%d kid: %d\n",
             //	   U_col, U_row, AVM(U_col)(U_row).nnz, 
-            //	   kid);
+            //     kid);
             AVM(U_col)(U_row).convert2D(BTF_A, alloc, kid);
           }
 
@@ -1290,8 +1290,7 @@ namespace BaskerNS
     {
       for(Int j=M.col_ptr[k-bcol]; j<M.col_ptr[k-bcol+1]; j++)
       {
-        fprintf(fp, "%ld %ld %e \n", 
-            (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]); 
+        fprintf(fp, "%ld %ld %e \n", (long)M.row_idx[j]+1, (long)k-bcol+1, M.val[j]); 
       }//over nnz in each column
     }//over each column
 

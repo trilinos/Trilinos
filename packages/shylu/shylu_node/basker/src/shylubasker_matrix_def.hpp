@@ -558,6 +558,7 @@ namespace BaskerNS
     {
       val(i) = 0;
     }*/
+    //if (kid == 3)
     //printf( " kid=%d: convert2D(%dx%d, nnz = %d, alloc = %d, scol = %d, ncol = %d)\n",kid,M.nrow,M.ncol,M.nnz,alloc, scol,ncol );
 
     const Entry zero(0.0);
@@ -585,14 +586,14 @@ namespace BaskerNS
       for(Int i = col_ptr(k-scol); i < M.col_ptr(k+1); i++)
       {
         Int j = M.row_idx(i);
-        /*if (kid == 1)
+        /*if (kid == 3)
         {
           printf( " > row_idx[%d] = %d, val[%d] = %e (%d + %d) with k = %d+%d\n",i,j, i,M.val(i), srow,nrow, scol,k );
         }*/
         if(j >= srow+nrow)
         {
           // skip lower-off diagonal blocks for U
-          /*if (kid == 1)
+          /*if (kid == 3)
           {
             printf("break called, k: %d  \n", k);
           }*/
@@ -605,16 +606,19 @@ namespace BaskerNS
 
         if(j < srow)
         {
-          std::cout << "kid: " << kid 
-                    << " j: " << j 
+          std::cout << std::endl 
+                    << "BaskerMatrix::convert2D(kid = " << kid 
+                    << "): j " << j 
                     << " srow: " << srow 
                     << " scol: " << scol 
                     << " nrow: " << nrow 
                     << " ncol: " << ncol 
                     << " with k: " << k
                     << " idx: " << i
-                    << std::endl;
-          BASKER_ASSERT(0==1, " ERROR: j is less than srow");
+                    << std::endl << std::endl;
+          char error_msg[100];
+          sprintf(error_msg, " ERROR: j is less than srow (j=%d, srow=%d, kid=%d)",j,srow,kid);
+          BASKER_ASSERT(0 == 1, error_msg);
         }
         /*if (kid == 1) 
         {
