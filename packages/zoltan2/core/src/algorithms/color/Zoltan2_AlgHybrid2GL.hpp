@@ -49,6 +49,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     using device_type = Tpetra::Map<>::device_type;
     using execution_space = Tpetra::Map<>::execution_space;
     using memory_space = Tpetra::Map<>::memory_space;
+    using host_exec = typename Kokkos::View<device_type>::HostMirror::execution_space;
+    using host_mem = typename Kokkos::View<device_type>::HostMirror::memory_space;
+
     double timer(){
       struct timeval tp;
       gettimeofday(&tp, NULL);
@@ -1032,8 +1035,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
     //  rand: a vector that holds random numbers generated on GID for tie
     //        breaking. Indexed by LID.
     //
-    //  owners: contains the process ID for the owner of each vertex.
-    //          Indexable by LID.
+    //  ghost_owners: contains the process ID for the owner of each remote vertex.
+    //          Indexable by LID. owners[i] = the owning process for vertex
+    //          with GID = gids[i+n_local]
     //
     //  mapOwnedPlusGhosts: map that can translate between GID and LID
     //
@@ -1055,7 +1059,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
                        const Teuchos::RCP<femv_t>& femv,
                        const Teuchos::ArrayView<const gno_t>& gids, 
                        const Teuchos::ArrayView<const int>& rand,
-                       const Teuchos::ArrayView<const int>& owners,
+                       const Teuchos::ArrayView<const int>& ghost_owners,
                        RCP<const map_t> mapOwnedPlusGhosts,
 		       const std::unordered_map<lno_t, std::vector<int>>& procs_to_send){
       //initialize timing variables
@@ -1079,8 +1083,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //we need ghost vertex degrees for consistency.
       std::vector<int> deg_send_cnts(comm->getSize(),0);
       std::vector<gno_t> deg_sdispls(comm->getSize()+1,0);
-      for(int i = 0; i < owners.size(); i++){
-        deg_send_cnts[owners[i]]++;
+      for(int i = 0; i < ghost_owners.size(); i++){
+        deg_send_cnts[ghost_owners[i]]++;
       }
       deg_sdispls[0] = 0;
       gno_t deg_sendsize = 0;
@@ -1090,9 +1094,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	deg_sendsize += deg_send_cnts[i-1];
       }
       std::vector<gno_t> deg_sendbuf(deg_sendsize,0);
-      for(int i = 0; i < owners.size(); i++){
-        size_t idx = deg_sdispls[owners[i]] + deg_sentcount[owners[i]];
-	deg_sentcount[owners[i]]++;
+      for(int i = 0; i < ghost_owners.size(); i++){
+        size_t idx = deg_sdispls[ghost_owners[i]] + deg_sentcount[ghost_owners[i]];
+	deg_sentcount[ghost_owners[i]]++;
 	deg_sendbuf[idx] = mapOwnedPlusGhosts->getGlobalElement(i+n_local);
       }
       Teuchos::ArrayView<int> deg_send_cnts_view = Teuchos::arrayViewFromVector(deg_send_cnts);
@@ -1100,9 +1104,10 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       Teuchos::ArrayRCP<gno_t> deg_recvbuf;
       std::vector<int> deg_recvcnts(comm->getSize(),0);
       Teuchos::ArrayView<int> deg_recvcnts_view = Teuchos::arrayViewFromVector(deg_recvcnts);
-      AlltoAllv<gno_t>(*comm, *env, deg_sendbuf_view, deg_send_cnts_view, deg_recvbuf, deg_recvcnts_view);
+      Zoltan2::AlltoAllv<gno_t>(*comm, *env, deg_sendbuf_view, deg_send_cnts_view, deg_recvbuf, deg_recvcnts_view);
 
-      //replace GID with local degree.
+      //replace GID with the degree the owning process has for this vertex.
+      //(this will include all edges present for this vertex globally)
       //This is safe to do, since we sent ghosts to their owners.
       for(int i = 0; i < deg_recvbuf.size(); i++){
         lno_t lid = mapOwnedPlusGhosts->getLocalElement(deg_recvbuf[i]);
@@ -1110,7 +1115,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       }
       //send modified buffer back
       ArrayRCP<gno_t> ghost_degrees;
-      AlltoAllv<gno_t>(*comm, *env, deg_recvbuf(), deg_recvcnts_view, ghost_degrees, deg_send_cnts_view);
+      Zoltan2::AlltoAllv<gno_t>(*comm, *env, deg_recvbuf(), deg_recvcnts_view, ghost_degrees, deg_send_cnts_view);
 
       //create the ghost degree views, for use on host and device.
       Kokkos::View<gno_t*, device_type> ghost_degrees_dev("ghost degree view",ghost_degrees.size());
@@ -1161,7 +1166,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       Kokkos::View<offset_t*, device_type> dist_degrees_dev("Owned+Ghost degree view",rand.size());
       typename Kokkos::View<offset_t*, device_type>::HostMirror dist_degrees_host = Kokkos::create_mirror(dist_degrees_dev);
       
-      //calculate the degrees for the owned, first layer ghosts, and second layer ghosts
+      //calculate the local degrees for the owned, first layer ghosts, and second layer ghosts
+      //to be used to construct the CSR representation of the local graph.
       //owned
       for(Teuchos_Ordinal i = 0; i < offsets.size()-1; i++) dist_degrees_host(i) = offsets[i+1] - offsets[i];
       //first layer ghosts
@@ -1193,6 +1199,11 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       // We end up with a CSR that has adjacency information for all the vertices on
       // this process. We include only edges on the process, so ghosts have only partial
       // adjacency information.
+      //
+      // We symmetrize the local graph representation as well, for 
+      // KokkosKernels to behave as we need it to. This means that edges to 
+      // second layer ghosts must be symmetrized, so we end up with offsets
+      // that correspond to second layer ghosts.
       Kokkos::View<offset_t*, device_type> dist_offsets_dev("Owned+Ghost Offset view", rand.size()+1);
       typename Kokkos::View<offset_t*, device_type>::HostMirror dist_offsets_host = Kokkos::create_mirror(dist_offsets_dev);
 
@@ -1216,7 +1227,8 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       for(Teuchos_Ordinal i = 0; i < adjs.size(); i++) dist_adjs_host(i) = adjs[i];
       for(Teuchos_Ordinal i = adjs.size(); i < adjs.size() + ghost_adjs.size(); i++) dist_adjs_host(i) = ghost_adjs[i-adjs.size()];
 
-      //We have to symmetrize edges that involve a second layer ghost in ghost offsets.
+      //We have to symmetrize edges that involve a second layer ghost.
+      //Add edges from the second layer ghosts to their neighbors.
       for(Teuchos_Ordinal i = 0; i < ghost_offsets.size()-1; i++){
 	//loop through each first layer ghost
         for(offset_t j = ghost_offsets[i]; j < ghost_offsets[i+1]; j++){
@@ -1268,7 +1280,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //rand has an entry for each vertex, so its size corresponds to what is needed.
       Kokkos::View<lno_t*, device_type> verts_to_recolor_view("verts to recolor", rand.size());
       typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_recolor_host = create_mirror(verts_to_recolor_view);
-      Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_recolor_atomic = verts_to_recolor_view;
       
       //This view keeps track of the size of the list of vertices to recolor.
       Kokkos::View<int*, device_type> verts_to_recolor_size("verts to recolor size",1);
@@ -1286,7 +1297,6 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //This view is a list of local vertices that are going to be
       //recolored, and need to be sent to their remote copies.
       Kokkos::View<lno_t*, device_type> verts_to_send_view("verts to send", n_local);
-      Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
       typename Kokkos::View<lno_t*, device_type>::HostMirror verts_to_send_host = create_mirror(verts_to_send_view);
       
       //this view keeps track of the size of verts_to_send.
@@ -1310,7 +1320,9 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       //Should be disregarded for distance-2 colorings.
       bool use_vbbit = (global_max_degree < 6000);
       //Done initializing, start coloring!
-      comm->barrier();
+
+      //use a barrier if we are reporting timing info
+      if(verbose) comm->barrier();
       interior_time = timer();
       total_time = timer();
       //give the entire local graph to KokkosKernels to color
@@ -1318,15 +1330,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       interior_time = timer() - interior_time;
       comp_time = interior_time;
       //get the color view from the FEMultiVector
-      Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
-      Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
+      auto femvColors = femv->template getLocalViewDevice();
+      auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
 
       //ghost_colors holds the colors of only ghost vertices.
       //ghost_colors(0) holds the color of a vertex with LID n_local.
       //To index this with LIDs, subtract n_local. If an LID is < n_local,
       //it will not have a color stored in this view.
       Kokkos::View<int*,device_type> ghost_colors("ghost color backups", n_ghosts);
-      comm->barrier();
 
       //communicate the initial coloring.
       if(verbose) std::cout<<comm->getRank()<<": communicating\n";
@@ -1340,7 +1351,10 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_host,verts_to_send_size_host,femv,procs_to_send,sent,recv);
       sentPerRound[0] = sent;
       recvPerRound[0] = recv; 
-
+      
+      //store ghost colors so we can restore them after recoloring.
+      //the local process can't color ghosts correctly, so we
+      //reset the colors to avoid consistency issues.
       Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
         ghost_colors(i) = femv_colors(i+n_local);
       });
@@ -1405,12 +1419,15 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       
       //recolor until no conflicts are left
       while(!done){
+	//if the number of vertices left to recolor is less than
+	//the serial threshold set by the user, finish the coloring
+	//only using host views in a serial execution space.
 	if(recoloringSize_host(0) < serial_threshold) break;
         if(distributedRounds < numStatisticRecordingRounds) {
           vertsPerRound[distributedRounds] = verts_to_recolor_size_host(0);
         }
         
-        comm->barrier();
+        if(verbose) comm->barrier();
         double recolor_temp = timer();
         //recolor using KokkosKernels' coloring function 
         if(verts_to_recolor_size_host(0) > 0){
@@ -1425,13 +1442,16 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
           compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
           totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
 	}
-
+        
+	//reset the ghost colors to what they were before recoloring
+	//the recoloring does not have enough information to color
+	//ghosts correctly, so we set the colors to what they were before
+	//to avoid consistency issues.
 	Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
           femv_colors(i+n_local) = ghost_colors(i);
         });
         Kokkos::fence();
         
-	comm->barrier();
 	//send views are up-to-date, they were copied after conflict detection.
         //communicate the new colors
         double curr_comm_time = doOwnedToGhosts(mapOwnedPlusGhosts,n_local,verts_to_send_host,verts_to_send_size_host,femv,procs_to_send,sent,recv);
@@ -1447,12 +1467,16 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	  }
           totalPerRound[distributedRounds] += commPerRound[distributedRounds];
 	}
-
+        
+	//store ghost colors before we uncolor and recolor them.
+	//this process doesn't have enough info to correctly color
+	//ghosts, so we set them back to what they were before to
+	//remove consistency issues.
         Kokkos::parallel_for(n_ghosts, KOKKOS_LAMBDA(const int& i){
           ghost_colors(i) = femv_colors(i+n_local);
         });
         Kokkos::fence();
-        comm->barrier();
+        
 
         //these views will change in detectConflicts, they need
 	//to be zeroed out beforehand
@@ -1492,24 +1516,29 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
         done = !globalDone;
         
       }//end device coloring
-      
+     
+
+      //If we reach this point and still have vertices to color,
+      //the rest of the coloring is happening in serial on the host.
+      //
+      //First, we need to copy device-only views to host mirrors 
       if(recoloringSize_host(0) > 0 || !done){
-
-	ghost_colors_host = Kokkos::create_mirror_view(ghost_colors);
-	deep_copy(ghost_colors_host, ghost_colors);
-
-	boundary_verts_host = Kokkos::create_mirror_view(boundary_verts_dev);
-	deep_copy(boundary_verts_host, boundary_verts_dev);
+	ghost_colors_host = Kokkos::create_mirror_view_and_copy(host_mem(),ghost_colors,"ghost_colors host mirror");
+	boundary_verts_host = Kokkos::create_mirror_view_and_copy(host_mem(),boundary_verts_dev,"boundary_verts host mirror");
       }
-
+       
+      //Now we do a similar coloring loop to before, 
+      //but using only host views in a serial execution space.
       while(recoloringSize_host(0) > 0 || !done){
 	auto femvColors_host = femv->getLocalViewHost();
 	auto colors_host = subview(femvColors_host, Kokkos::ALL, 0);
 	if(distributedRounds < numStatisticRecordingRounds){
 	  vertsPerRound[distributedRounds] = recoloringSize_host(0);
 	}
-	if(verbose) std::cout<<comm->getRank()<<": starting to recolor, serial\n";
-        comm->barrier();
+	if(verbose){
+            std::cout<<comm->getRank()<<": starting to recolor, serial\n";
+            comm->barrier();
+	}
 	double recolor_temp = timer();
 	if(verts_to_recolor_size_host(0) > 0){
 	  this->colorInterior_serial(femv_colors.size(), dist_adjs_host, dist_offsets_host, femv, 
@@ -1523,10 +1552,13 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	  compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
 	  totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
 	}
+
+	//reset the ghost colors to their previous values to avoid
+	//consistency issues.
 	for(size_t i = 0; i < n_ghosts; i++){
 	  colors_host(i+n_local) = ghost_colors_host(i);
 	}
-        comm->barrier();
+	
 	double curr_comm_time = doOwnedToGhosts(mapOwnedPlusGhosts, n_local,verts_to_send_host, verts_to_send_size_host, femv, procs_to_send, sent,recv);
 	comm_time += curr_comm_time;
 	
@@ -1540,11 +1572,14 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
 	  }
 	  totalPerRound[distributedRounds] += commPerRound[distributedRounds];
 	}
-
+        
+	//store updated ghost colors we received from their owners
+	//before conflict detection and recoloring changes them locally.
 	for(size_t i = 0; i < n_ghosts; i++){
 	  ghost_colors_host(i) = colors_host(i+n_local);
 	}
-	comm->barrier();
+
+	if(verbose) comm->barrier();
 	double detection_temp = timer();
         
 	//zero these out, they'll be updated by detectConflicts_serial

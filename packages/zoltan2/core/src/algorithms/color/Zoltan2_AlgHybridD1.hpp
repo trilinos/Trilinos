@@ -467,6 +467,8 @@ class AlgDistance1 : public Algorithm<Adapter>
      //create const views of the CSR representation of the local graph 
       ArrayView<const offset_t> finalOffsets = Teuchos::arrayViewFromVector(finalOffset_vec);
       ArrayView<const lno_t> finalAdjs = Teuchos::arrayViewFromVector(finalAdjs_vec);
+      ArrayView<const int> rand_view = Teuchos::arrayViewFromVector(rand);
+      ArrayView<const gno_t> gid_view = Teuchos::arrayViewFromVector(finalGIDs);
       
       //find out which remote processes have a ghost copy of a local owned vertex.
       Teuchos::ArrayView<const lno_t> exportLIDs = importer->getExportLIDs();
@@ -479,7 +481,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       }
 
       // call coloring function
-      hybridGMB(nVtx, finalAdjs, finalOffsets,femv,finalGIDs,rand,owners,mapWithCopies, procs_to_send);
+      hybridGMB(nVtx, finalAdjs, finalOffsets,femv,gid_view,rand_view,owners,mapWithCopies, procs_to_send);
       
       //copy colors to the output array.
       auto femvdata = femv->getData(0);
@@ -511,8 +513,8 @@ class AlgDistance1 : public Algorithm<Adapter>
     //  rand: random number generated for every vertex on 
     //        this process. Indexed by local ID
     //
-    //  owners: owners of each ghost vertex,
-    //          indexed by localID - nVtx
+    //  owners: owners of each ghost vertex.
+    //          owners[i] = the owning process for vertex with GID gids[i+nVtx]
     //
     //  mapOwnedPlusGhosts: Tpetra map that translates between LIDs and GIDs
     //
@@ -521,12 +523,12 @@ class AlgDistance1 : public Algorithm<Adapter>
     //                 a ghost copy of LID. 
     //
     void hybridGMB(const size_t nVtx,
-		   Teuchos::ArrayView<const lno_t> adjs, 
-                   Teuchos::ArrayView<const offset_t> offsets, 
-                   Teuchos::RCP<femv_t> femv,
-                   std::vector<gno_t> gids,
-                   std::vector<int> rand,
-                   ArrayView<int> owners,
+		   const Teuchos::ArrayView<const lno_t>& adjs, 
+                   const Teuchos::ArrayView<const offset_t>& offsets, 
+                   const Teuchos::RCP<femv_t>& femv,
+                   const Teuchos::ArrayView<const gno_t>& gids,
+                   const Teuchos::ArrayView<const int>& rand,
+                   const Teuchos::ArrayView<const int>& owners,
                    RCP<const map_t> mapOwnedPlusGhosts,
 		   const std::unordered_map<lno_t, std::vector<int>>& procs_to_send){
       if(verbose) std::cout<<comm->getRank()<<": inside coloring algorithm\n";
@@ -615,7 +617,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       //set offsets and total # of adjacencies
       dist_offsets_host(0) = 0;
       uint64_t total_adjs = 0;
-      for(size_t i = 1; i < rand.size()+1; i++){
+      for(Teuchos_Ordinal i = 1; i < rand.size()+1; i++){
         dist_offsets_host(i) = dist_degrees_host(i-1) + dist_offsets_host(i-1);
         total_adjs+= dist_degrees_host(i-1);
       }
@@ -623,7 +625,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       Kokkos::View<lno_t*, device_type> dist_adjs("Owned+Ghost adjacency view", total_adjs);
       typename Kokkos::View<lno_t*, device_type>::HostMirror dist_adjs_host = Kokkos::create_mirror(dist_adjs);
       //now, use the degree view as a counter
-      for(size_t i = 0; i < rand.size(); i++){
+      for(Teuchos_Ordinal i = 0; i < rand.size(); i++){
         dist_degrees_host(i) = 0;
       }
       for(int i = 0; i < adjs.size(); i++) dist_adjs_host(i) = adjs[i];
@@ -656,14 +658,14 @@ class AlgDistance1 : public Algorithm<Adapter>
       //device copy of the random tie-breakers
       Kokkos::View<int*,device_type> rand_dev("randVec",rand.size());
       typename Kokkos::View<int*, device_type>::HostMirror rand_host = Kokkos::create_mirror(rand_dev);
-      for(size_t i = 0; i < rand.size(); i++){
+      for(Teuchos_Ordinal i = 0; i < rand.size(); i++){
         rand_host(i) = rand[i];
       }
 
       //device copy of global IDs
       Kokkos::View<gno_t*, device_type> gid_dev("GIDs",gids.size());
       typename Kokkos::View<gno_t*,device_type>::HostMirror gid_host = Kokkos::create_mirror(gid_dev);
-      for(size_t i = 0; i < gids.size(); i++){
+      for(Teuchos_Ordinal i = 0; i < gids.size(); i++){
         gid_host(i) = gids[i];
       }
 
@@ -689,8 +691,6 @@ class AlgDistance1 : public Algorithm<Adapter>
       Kokkos::parallel_for(boundary_size, KOKKOS_LAMBDA(const int& i){
         verts_to_send_view(i) = -1;
       });
-      //atomic copy
-      Kokkos::View<lno_t*, device_type, Kokkos::MemoryTraits<Kokkos::Atomic>> verts_to_send_atomic = verts_to_send_view;
       
       //size information for the list of vertices to send. Also includes an atomic copy
       Kokkos::View<size_t*, device_type> verts_to_send_size("verts to send size",1);

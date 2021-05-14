@@ -72,7 +72,7 @@ class AlgPartialDistance2 : public AlgTwoGhostLayer<Adapter> {
       kh.create_distance2_graph_coloring_handle(KokkosGraph::COLORING_D2_NB_BIT);
 
       //vertex_list_size indicates whether we have provided a list of vertices to recolor
-      //only currently makes a difference if the algorithm to be used is VBBIT
+      //NB_BIT does not currently make use of this.
       if(vertex_list_size != 0){
         kh.get_distance2_graph_coloring_handle()->set_vertex_list(vertex_list, vertex_list_size);
       }
