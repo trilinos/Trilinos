@@ -1330,7 +1330,7 @@ class AlgTwoGhostLayer : public Algorithm<Adapter> {
       interior_time = timer() - interior_time;
       comp_time = interior_time;
       //get the color view from the FEMultiVector
-      auto femvColors = femv->template getLocalViewDevice();
+      auto femvColors = femv->getLocalViewDevice();
       auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
 
       //ghost_colors holds the colors of only ghost vertices.
