@@ -67,6 +67,9 @@ LinMoreAlgorithm<Real>::LinMoreAlgorithm(ParameterList &list,
   TRsafe_    = trlist.get("Safeguard Size",                       100.0);
   eps_       = TRsafe_*ROL_EPSILON<Real>();
   interpRad_ = trlist.get("Use Radius Interpolation",             false);
+  // Nonmonotone Parameters
+  storageNM_ = trlist.get("Nonmonotone Storage Size",             0);
+  useNM_     = (storageNM_ <= 0 ? false : true);
   // Krylov Parameters
   maxit_ = list.sublist("General").sublist("Krylov").get("Iteration Limit",    20);
   tol1_  = list.sublist("General").sublist("Krylov").get("Absolute Tolerance", 1e-4);
@@ -167,6 +170,11 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
   Ptr<Vector<Real>> gmod = g.clone(), gfree = g.clone();
   Ptr<Vector<Real>> pwa1 = x.clone(), pwa2 = x.clone(), pwa3 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone(), dwa3 = g.clone();
+  // Initialize nonmonotone data
+  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real fr(state_->value), fc(state_->value), fmin(state_->value);
+  TRUtils::ETRFlag TRflagNM;
+  int L(0);
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
@@ -284,6 +292,11 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
     // Compute ratio of acutal and predicted reduction
     TRflag_ = TRUtils::SUCCESS;
     TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    if (useNM_) {
+      TRUtils::analyzeRatio<Real>(rhoNM,TRflagNM,fr,ftrial,pRed+sigmar,eps_,outStream,verbosity_>1);
+      TRflag_ = (rho < rhoNM ? TRflagNM : TRflag_);
+      rho     = (rho < rhoNM ?    rhoNM :    rho );
+    }
 
     // Update algorithm state
     state_->iter++;
@@ -305,6 +318,15 @@ void LinMoreAlgorithm<Real>::run(Vector<Real>          &x,
              || (TRflag_ == TRUtils::POSPREDNEG)) { // Step Accepted
       state_->value = ftrial;
       obj.update(x,UpdateType::Accept,state_->iter);
+      if (useNM_) {
+        sigmac += pRed; sigmar += pRed;
+        if (ftrial < fmin) { fmin = ftrial; fc = fmin; sigmac = zero; L = 0; }
+        else {
+          L++;
+          if (ftrial > fc)     { fc = ftrial; sigmac = zero;   }
+          if (L == storageNM_) { fr = fc;     sigmar = sigmac; }
+        }
+      }
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate

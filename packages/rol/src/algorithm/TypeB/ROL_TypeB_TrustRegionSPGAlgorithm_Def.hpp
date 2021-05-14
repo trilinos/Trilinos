@@ -69,11 +69,12 @@ TrustRegionSPGAlgorithm<Real>::TrustRegionSPGAlgorithm(ParameterList &list,
   TRsafe_    = trlist.get("Safeguard Size",                       100.0);
   eps_       = TRsafe_*ROL_EPSILON<Real>();
   interpRad_ = trlist.get("Use Radius Interpolation",             false);
-  verbosity_    = trlist.sublist("General").get("Output Level",                     0);
+  verbosity_    = trlist.sublist("General").get("Output Level",   0);
+  // Nonmonotone Parameters
+  storageNM_ = trlist.get("Nonmonotone Storage Size",             0);
+  useNM_     = (storageNM_ <= 0 ? false : true);
   // Algorithm-Specific Parameters
   ROL::ParameterList &lmlist = trlist.sublist("SPG");
-  useNM_     = lmlist.get("Use Nonmonotone Trust Region",                              false);
-  maxNM_     = lmlist.get("Maximum Storage Size",                                      10);
   mu0_       = lmlist.get("Sufficient Decrease Parameter",                             1e-2);
   spexp_     = lmlist.get("Relative Tolerance Exponent",                               1.0);
   spexp_     = std::max(static_cast<Real>(1),std::min(spexp_,static_cast<Real>(2)));
@@ -221,7 +222,7 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
   const Real zero(0), one(1);
   //Real tol0 = std::sqrt(ROL_EPSILON<Real>());
   Real inTol = static_cast<Real>(0.1)*ROL_OVERFLOW<Real>(), outTol(inTol);
-  Real ftrial(0), fcheck(0), pRed(0), rho(1), q(0);
+  Real ftrial(0), pRed(0), rho(1), q(0);
   // Initialize trust-region data
   std::vector<std::string> output;
   initialize(x,g,inTol,obj,bnd,outStream);
@@ -231,12 +232,15 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
   Ptr<Vector<Real>> pwa5 = x.clone(), pwa6 = x.clone();
   Ptr<Vector<Real>> pwa7 = x.clone();
   Ptr<Vector<Real>> dwa1 = g.clone(), dwa2 = g.clone();
+  // Initialize nonmonotone data
+  Real rhoNM(0), sigmac(0), sigmar(0);
+  Real fr(state_->value), fc(state_->value), fmin(state_->value);
+  TRUtils::ETRFlag TRflagNM;
+  int L(0);
 
   // Output
   if (verbosity_ > 0) writeOutput(outStream,true);
 
-  std::deque<Real> fqueue;
-  if (useNM_) fqueue.push_back(state_->value);
   while (status_->check(*state_)) {
     // Build trust-region model
     model_->setData(obj,*state_->iterateVec,*state_->gradientVec);
@@ -266,10 +270,13 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
     state_->nfval++;
 
     // Compute ratio of acutal and predicted reduction
-    fcheck = useNM_ ? *std::max_element(fqueue.begin(),fqueue.end()) : state_->value;
     TRflag_ = TRUtils::SUCCESS;
-    TRUtils::analyzeRatio<Real>(rho,TRflag_,fcheck,ftrial,pRed,eps_,outStream,verbosity_>1);
-    //TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    TRUtils::analyzeRatio<Real>(rho,TRflag_,state_->value,ftrial,pRed,eps_,outStream,verbosity_>1);
+    if (useNM_) {
+      TRUtils::analyzeRatio<Real>(rhoNM,TRflagNM,fr,ftrial,pRed+sigmar,eps_,outStream,verbosity_>1);
+      TRflag_ = (rho < rhoNM ? TRflagNM : TRflag_);
+      rho     = (rho < rhoNM ?    rhoNM :    rho );
+    }
 
     // Update algorithm state
     state_->iter++;
@@ -292,6 +299,15 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
       state_->value = ftrial;
       obj.update(x,UpdateType::Accept,state_->iter);
       inTol = outTol;
+      if (useNM_) {
+        sigmac += pRed; sigmar += pRed;
+        if (ftrial < fmin) { fmin = ftrial; fc = fmin; sigmac = zero; L = 0; }
+        else {
+          L++;
+          if (ftrial > fc)     { fc = ftrial; sigmac = zero;   }
+          if (L == storageNM_) { fr = fc;     sigmar = sigmac; }
+        }
+      }
       // Increase trust-region radius
       if (rho >= eta2_) state_->searchSize = std::min(gamma2_*state_->searchSize, delMax_);
       // Compute gradient at new iterate
@@ -304,10 +320,6 @@ void TrustRegionSPGAlgorithm<Real>::run(Vector<Real>          &x,
       // Update secant information in trust-region model
       model_->update(x,*state_->stepVec,*dwa1,*state_->gradientVec,
                      state_->snorm,state_->iter);
-      if (useNM_) {
-        if (static_cast<int>(fqueue.size())==maxNM_) fqueue.pop_front();
-        fqueue.push_back(state_->value);
-      }
     }
 
     // Update Output
