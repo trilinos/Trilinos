@@ -274,6 +274,7 @@ namespace MueLu {
                     const RCP<Matrix>& Amat, const RCP<MultiVector> fineNullspace,
                     RCP<Matrix>& P, RCP<MultiVector>& coarseNullspace) const {
     SubFactoryMonitor m2(*this, "BuildSemiCoarsenP", coarseLevel);
+    using ATS = Kokkos::ArithTraits<SC>;
     using LOView1D = Kokkos::View<LO*, DeviceType>;
     using LOView2D = Kokkos::View<LO**, DeviceType>;
 
@@ -368,8 +369,8 @@ namespace MueLu {
     // to a block tridiagonal matrix. Here we store the full matrix to be compatible with kokkos kernels batch
     // LU and tringular solve.
     int Nmax = MaxStencilSize*DofsPerNode;
-    Kokkos::View<SC***, DeviceType> BandMat("BandMat", NVertLines, Nmax, Nmax);
-    Kokkos::View<SC***, DeviceType> BandSol("BandSol", NVertLines, Nmax, DofsPerNode);
+    Kokkos::View<typename ATS::val_type***, DeviceType> BandMat("BandMat", NVertLines, Nmax, Nmax);
+    Kokkos::View<typename ATS::val_type***, DeviceType> BandSol("BandSol", NVertLines, Nmax, DofsPerNode);
 
     // Precompute number of nonzeros in prolongation matrix and allocate P views
     // Note: Each coarse dof (NVertLines*NCLayers*DofsPerNode) contributes an interpolation stencil (StencilSize*DofsPerNode)
@@ -377,7 +378,7 @@ namespace MueLu {
     for (int clayer = 0; clayer < NCLayers; ++clayer)
       NnzP += CLayer2StencilSizeHost(clayer);
     NnzP *= NVertLines * DofsPerNode * DofsPerNode;
-    Kokkos::View<SC*, DeviceType> Pvals("Pvals", NnzP);
+    Kokkos::View<typename ATS::val_type*, DeviceType> Pvals("Pvals", NnzP);
     Kokkos::View<LO*, DeviceType> Pcols("Pcols", NnzP);
 
     // Precompute Pptr
@@ -435,7 +436,7 @@ namespace MueLu {
             auto bandSol = Kokkos::subview(BandSol, line, Kokkos::ALL(), Kokkos::ALL());
             for (int row = 0; row < Nmax; ++row)
               for (int dof = 0; dof < DofsPerNode; ++dof)
-                bandSol(row, dof) = 0.0;
+                bandSol(row, dof) = ATS::zero();
 
             // Initialize BandMat (set unused row diagonal to 1.0)
             const int stencilSize = CLayer2StencilSize(clayer);
@@ -443,7 +444,7 @@ namespace MueLu {
             auto bandMat = Kokkos::subview(BandMat, line, Kokkos::ALL(), Kokkos::ALL());
             for (int row = 0; row < Nmax; ++row) 
               for (int col = 0; col < Nmax; ++col)
-                bandMat(row, col) = (row == col && row >= N) ? 1.0 : 0.0;
+                bandMat(row, col) = (row == col && row >= N) ? ATS::one() : ATS::zero();
 
             // Loop over layers in stencil and fill banded matrix and rhs
             const int flayer = CLayer2FLayer(clayer);
@@ -454,8 +455,8 @@ namespace MueLu {
               if (layer == flayer) { // If layer in stencil is a coarse layer
                 for (int dof = 0; dof < DofsPerNode; ++dof) {
                   const int row = snode * DofsPerNode + dof;
-                  bandMat(row, row) = 1.0;
-                  bandSol(row, dof) = 1.0;
+                  bandMat(row, row) = ATS::one();
+                  bandSol(row, dof) = ATS::one();
                 }
               }
               else { // Not a coarse layer
@@ -472,7 +473,7 @@ namespace MueLu {
                     const int col = snode * DofsPerNode + dofj;
 
                     // Sum values along row which correspond to stencil layer/dof and fill bandMat
-                    SC val = 0.0;
+                    typename ATS::val_type val = 0.0;
                     for (int i = 0; i < AmatRowLeng; ++i) {
                       const int colidx = localAmatRow.colidx(i);
                       if (FCol2Layer(colidx) == layer && FCol2Dof(colidx) == dofj)
@@ -512,10 +513,10 @@ namespace MueLu {
             lu_type::invoke(bandMat);
             using trsv_l_type = typename KB::SerialTrsm<KB::Side::Left, KB::Uplo::Lower, KB::Trans::NoTranspose,
                 KB::Diag::Unit, KB::Algo::Trsm::Unblocked>;
-            trsv_l_type::invoke(1.0, bandMat, bandSol);
+            trsv_l_type::invoke(ATS::one(), bandMat, bandSol);
             using trsv_u_type = typename KB::SerialTrsm<KB::Side::Left, KB::Uplo::Upper, KB::Trans::NoTranspose,
                 KB::Diag::NonUnit, KB::Algo::Trsm::Unblocked>;
-            trsv_u_type::invoke(1.0, bandMat, bandSol);
+            trsv_u_type::invoke(ATS::one(), bandMat, bandSol);
 
             // Fill prolongation views with solution
             for (int snode = 0; snode < stencilSize; ++snode) {
