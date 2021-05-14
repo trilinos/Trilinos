@@ -112,19 +112,6 @@ public:
         m_graphEdges.erase(m_graphEdges.begin()+id);
     }
 
-    size_t heap_memory_in_bytes() const
-    {
-        int allocOverhead = 16;//may not always be 16, but this seems to be common...
-        size_t bytes = 0;
-        for(const GraphEdgesForElement& graphEdgesForElement : m_graphEdges) {
-            bytes += sizeof(GraphEdgesForElement)
-                     + sizeof(GraphEdge)*graphEdgesForElement.capacity()
-                     + allocOverhead;
-        }
-        bytes += (m_graphEdges.capacity()-m_graphEdges.size())*sizeof(GraphEdgesForElement);
-        return bytes;
-    }
-
 private:
     std::vector<GraphEdgesForElement> m_graphEdges;
     size_t m_numEdges = 0;

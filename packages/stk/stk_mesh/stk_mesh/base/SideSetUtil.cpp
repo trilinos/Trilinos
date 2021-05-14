@@ -52,7 +52,7 @@ std::pair<bool,bool> old_is_positive_sideset_polarity(const stk::mesh::BulkData 
     try {
         ssetPtr = &bulk.get_sideset(parentPart);
     }
-    catch(std::exception& excpt) {
+    catch(std::exception&) {
         return returnValue;
     }
 
