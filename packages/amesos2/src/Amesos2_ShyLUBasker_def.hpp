@@ -99,6 +99,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbasker->Options.amd_dom       = BASKER_TRUE;  // use block-wise AMD
   ShyLUbasker->Options.use_metis     = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
   ShyLUbasker->Options.transpose     = BASKER_FALSE;
+  ShyLUbasker->Options.replace_tiny_pivot = BASKER_TRUE;
   ShyLUbasker->Options.verbose_matrix_out = BASKER_FALSE;
 
   ShyLUbasker->Options.user_fill     = (double)BASKER_FILL_USER;
@@ -121,6 +122,7 @@ ShyLUBasker<Matrix,Vector>::ShyLUBasker(
   ShyLUbaskerTr->Options.amd_dom       = BASKER_TRUE;  // use block-wise AMD
   ShyLUbaskerTr->Options.use_metis     = BASKER_TRUE;  // use scotch/metis for ND (TODO: should METIS optional?)
   ShyLUbaskerTr->Options.transpose     = BASKER_TRUE;
+  ShyLUbaskerTr->Options.replace_tiny_pivot = BASKER_TRUE;
   ShyLUbaskerTr->Options.verbose_matrix_out = BASKER_FALSE;
 
   ShyLUbaskerTr->Options.user_fill     = (double)BASKER_FILL_USER;
@@ -631,6 +633,11 @@ ShyLUBasker<Matrix,Vector>::setParameters_impl(const Teuchos::RCP<Teuchos::Param
       ShyLUbasker->Options.prune = parameterList->get<bool>("prune");
       ShyLUbaskerTr->Options.prune = parameterList->get<bool>("prune");
     }
+  if(parameterList->isParameter("replace_tiny_pivot"))
+    {
+      ShyLUbasker->Options.prune = parameterList->get<bool>("replace_tiny_pivot");
+      ShyLUbaskerTr->Options.prune = parameterList->get<bool>("replace_tiny_pivot");
+    }
   if(parameterList->isParameter("btf_matching"))
     {
       ShyLUbasker->Options.btf_matching = parameterList->get<int>("btf_matching");
@@ -687,6 +694,8 @@ ShyLUBasker<Matrix,Vector>::getValidParameters_impl() const
              "Matching option for BTF: 0 = none, 1 = Basker, 2 = Trilinos (default), (3 = MC64 if enabled)");
       pl->set("blk_matching", 0, 
              "Matching optioon for block: 0 = none (default), 1 or anything else = Basker (2 = MC64 if enabled)");
+      pl->set("replace_tiny_pivot",  true, 
+             "Replace tiny pivots during the numerical factorization");
       pl->set("use_metis", true,  // TODO: should METIS optional?
 	      "Use METIS for ND");
       pl->set("transpose", false,
