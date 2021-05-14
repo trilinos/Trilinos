@@ -73,6 +73,8 @@ void getValidParameters(Teuchos::ParameterList& params)
   params.set("chebyshev: min eigenvalue", 30.0);
   params.set("chebyshev: degree", 1);
   params.set("chebyshev: eigenvalue max iterations", 10);
+  params.set("chebyshev: eigenvalue relative tolerance", 0.0);
+  params.set("chebyshev: eigenvalue keep vector", false);
   params.set("chebyshev: assume matrix does not change", false);
   // params.set("chebyshev: operator inv diagonal",Teuchos::null);
   params.set("chebyshev: min diagonal value", STS::eps());

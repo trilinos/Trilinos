@@ -75,7 +75,7 @@
 #include "volume_constraint.hpp"
 #include "build_sampler.hpp"
 
-#include <fenv.h>
+//#include <fenv.h>
 
 typedef double RealT;
 
@@ -84,7 +84,7 @@ ROL::Ptr<Tpetra::MultiVector<> > createTpetraVector(const ROL::Ptr<const Tpetra:
 }
 
 int main(int argc, char *argv[]) {
-//  feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
+  //feenableexcept(FE_ALL_EXCEPT & ~FE_INEXACT);
 
   // This little trick lets us print to std::cout only if a (dummy) command-line argument is provided.
   int iprint = argc - 1;

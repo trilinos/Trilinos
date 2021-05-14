@@ -48,15 +48,17 @@ namespace ROL {
 
 template<typename Real>
 Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
-    const Ptr<Objective_SimOpt<Real>> &obj, 
-    const Ptr<Constraint_SimOpt<Real>> &con, 
-    const Ptr<Vector<Real>> &state, 
-    const Ptr<Vector<Real>> &control, 
+    const Ptr<Objective_SimOpt<Real>> &obj,
+    const Ptr<Constraint_SimOpt<Real>> &con,
+    const Ptr<Vector<Real>> &state,
+    const Ptr<Vector<Real>> &control,
     const Ptr<Vector<Real>> &adjoint,
     const bool storage,
-    const bool useFDhessVec) 
+    const bool useFDhessVec)
   : obj_(obj), con_(con),
     storage_(storage), useFDhessVec_(useFDhessVec),
+    nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
+    nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   stateStore_   = makePtr<VectorController<Real>>();
@@ -76,15 +78,17 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const Ptr<Objective_SimOpt<Real>> &obj,
     const Ptr<Constraint_SimOpt<Real>> &con,
     const Ptr<Vector<Real>> &state,
-    const Ptr<Vector<Real>> &control, 
+    const Ptr<Vector<Real>> &control,
     const Ptr<Vector<Real>> &adjoint,
     const Ptr<Vector<Real>> &dualstate,
-    const Ptr<Vector<Real>> &dualcontrol, 
+    const Ptr<Vector<Real>> &dualcontrol,
     const Ptr<Vector<Real>> &dualadjoint,
     const bool storage,
     const bool useFDhessVec)
   : obj_(obj), con_(con),
     storage_(storage), useFDhessVec_(useFDhessVec),
+    nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
+    nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   stateStore_   = makePtr<VectorController<Real>>();
@@ -101,16 +105,18 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
 
 template<typename Real>
 Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
-    const Ptr<Objective_SimOpt<Real>> &obj, 
-    const Ptr<Constraint_SimOpt<Real>> &con, 
-    const Ptr<VectorController<Real>> &stateStore, 
-    const Ptr<Vector<Real>> &state, 
-    const Ptr<Vector<Real>> &control, 
+    const Ptr<Objective_SimOpt<Real>> &obj,
+    const Ptr<Constraint_SimOpt<Real>> &con,
+    const Ptr<VectorController<Real>> &stateStore,
+    const Ptr<Vector<Real>> &state,
+    const Ptr<Vector<Real>> &control,
     const Ptr<Vector<Real>> &adjoint,
     const bool storage,
-    const bool useFDhessVec) 
+    const bool useFDhessVec)
   : obj_(obj), con_(con), stateStore_(stateStore),
     storage_(storage), useFDhessVec_(useFDhessVec),
+    nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
+    nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   adjointStore_ = makePtr<VectorController<Real>>();
@@ -128,17 +134,19 @@ template<typename Real>
 Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
     const Ptr<Objective_SimOpt<Real>> &obj,
     const Ptr<Constraint_SimOpt<Real>> &con,
-    const Ptr<VectorController<Real>> &stateStore, 
+    const Ptr<VectorController<Real>> &stateStore,
     const Ptr<Vector<Real>> &state,
-    const Ptr<Vector<Real>> &control, 
+    const Ptr<Vector<Real>> &control,
     const Ptr<Vector<Real>> &adjoint,
     const Ptr<Vector<Real>> &dualstate,
-    const Ptr<Vector<Real>> &dualcontrol, 
+    const Ptr<Vector<Real>> &dualcontrol,
     const Ptr<Vector<Real>> &dualadjoint,
     const bool storage,
     const bool useFDhessVec)
   : obj_(obj), con_(con), stateStore_(stateStore),
     storage_(storage), useFDhessVec_(useFDhessVec),
+    nupda_(0), nvalu_(0), ngrad_(0), nhess_(0), nprec_(0),
+    nstat_(0), nadjo_(0), nssen_(0), nasen_(0),
     updateFlag_(true), updateIter_(0), updateType_(UpdateType::Initial),
     newUpdate_(false) {
   adjointStore_ = makePtr<VectorController<Real>>();
@@ -154,6 +162,7 @@ Reduced_Objective_SimOpt<Real>::Reduced_Objective_SimOpt(
 
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, bool flag, int iter ) {
+  nupda_++;
   newUpdate_  = false;
   updateFlag_ = flag;
   updateIter_ = iter;
@@ -163,6 +172,7 @@ void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, bool flag, i
 
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, UpdateType type, int iter ) {
+  nupda_++;
   newUpdate_  = true;
   updateType_ = type;
   updateIter_ = iter;
@@ -172,6 +182,7 @@ void Reduced_Objective_SimOpt<Real>::update( const Vector<Real> &z, UpdateType t
 
 template<typename Real>
 Real Reduced_Objective_SimOpt<Real>::value( const Vector<Real> &z, Real &tol ) {
+  nvalu_++;
   // Solve state equation
   solve_state_equation(z,tol);
   // Get objective function value
@@ -180,6 +191,7 @@ Real Reduced_Objective_SimOpt<Real>::value( const Vector<Real> &z, Real &tol ) {
 
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::gradient( Vector<Real> &g, const Vector<Real> &z, Real &tol ) {
+  ngrad_++;
   // Solve state equation
   solve_state_equation(z,tol);
   // Solve adjoint equation
@@ -193,6 +205,7 @@ void Reduced_Objective_SimOpt<Real>::gradient( Vector<Real> &g, const Vector<Rea
 
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::hessVec( Vector<Real> &hv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) {
+  nhess_++;
   if ( useFDhessVec_ ) {
     Objective<Real>::hessVec(hv,v,z,tol);
   }
@@ -220,6 +233,7 @@ void Reduced_Objective_SimOpt<Real>::hessVec( Vector<Real> &hv, const Vector<Rea
 
 template<typename Real>
 void Reduced_Objective_SimOpt<Real>::precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &z, Real &tol ) {
+  nprec_++;
   Pv.set(v.dual());
 }
 
@@ -231,12 +245,33 @@ void Reduced_Objective_SimOpt<Real>::setParameter(const std::vector<Real> &param
 }
 
 template<typename Real>
-void Reduced_Objective_SimOpt<Real>::solve_state_equation(const Vector<Real> &z, Real &tol) { 
+void Reduced_Objective_SimOpt<Real>::summarize(std::ostream &stream) const {
+  stream << std::endl;
+  stream << std::string(80,'=') << std::endl;
+  stream << "  ROL::Reduced_Objective_SimOpt::summarize" << std::endl;
+  stream << "    Number of calls to update:            " << nupda_ << std::endl;
+  stream << "    Number of calls to value:             " << nvalu_ << std::endl;
+  stream << "    Number of calls to gradient:          " << ngrad_ << std::endl;
+  stream << "    Number of calls to hessvec:           " << nhess_ << std::endl;
+  stream << "    Number of calls to precond:           " << nprec_ << std::endl;
+  stream << "    Number of state solves:               " << nstat_ << std::endl;
+  stream << "    Number of adjoint solves:             " << nadjo_ << std::endl;
+  stream << "    Number of state sensitivity solves:   " << nssen_ << std::endl;
+  stream << "    Number of adjoint sensitivity solves: " << nssen_ << std::endl;
+  stream << std::string(80,'=') << std::endl;
+  stream << std::endl;
+}
+
+template<typename Real>
+void Reduced_Objective_SimOpt<Real>::reset() {
+  nupda_ = 0; nvalu_ = 0; ngrad_ = 0; nhess_ = 0; nprec_ = 0;
+  nstat_ = 0; nadjo_ = 0; nssen_ = 0; nasen_ = 0;
+}
+
+template<typename Real>
+void Reduced_Objective_SimOpt<Real>::solve_state_equation(const Vector<Real> &z, Real &tol) {
   // Check if state has been computed.
-  bool isComputed = false;
-  if (storage_) {
-    isComputed = stateStore_->get(*state_,Objective<Real>::getParameter());
-  }
+  bool isComputed = storage_ ? stateStore_->get(*state_,Objective<Real>::getParameter()) : false;
   // Solve state equation if not done already.
   if (!isComputed || !storage_) {
     // Update equality constraint with new Opt variable.
@@ -244,6 +279,7 @@ void Reduced_Objective_SimOpt<Real>::solve_state_equation(const Vector<Real> &z,
     else            con_->update_2(z,updateFlag_,updateIter_);
     // Solve state equation.
     con_->solve(*dualadjoint_,*state_,z,tol);
+    nstat_++;
     // Update equality constraint with new Sim variable.
     if (newUpdate_) con_->update_1(*state_,updateType_,updateIter_);
     else            con_->update_1(*state_,updateFlag_,updateIter_);
@@ -251,19 +287,14 @@ void Reduced_Objective_SimOpt<Real>::solve_state_equation(const Vector<Real> &z,
     if (newUpdate_) obj_->update(*state_,z,updateType_,updateIter_);
     else            obj_->update(*state_,z,updateFlag_,updateIter_);
     // Store state.
-    if (storage_) {
-      stateStore_->set(*state_,Objective<Real>::getParameter());
-    }
+    if (storage_)   stateStore_->set(*state_,Objective<Real>::getParameter());
   }
 }
 
 template<typename Real>
-void Reduced_Objective_SimOpt<Real>::solve_adjoint_equation(const Vector<Real> &z, Real &tol) { 
+void Reduced_Objective_SimOpt<Real>::solve_adjoint_equation(const Vector<Real> &z, Real &tol) {
   // Check if adjoint has been computed.
-  bool isComputed = false;
-  if (storage_) {
-    isComputed = adjointStore_->get(*adjoint_,Objective<Real>::getParameter());
-  }
+  bool isComputed = storage_ ? adjointStore_->get(*adjoint_,Objective<Real>::getParameter()) : false;
   // Solve adjoint equation if not done already.
   if (!isComputed || !storage_) {
     // Evaluate the full gradient wrt u
@@ -271,10 +302,9 @@ void Reduced_Objective_SimOpt<Real>::solve_adjoint_equation(const Vector<Real> &
     // Solve adjoint equation
     con_->applyInverseAdjointJacobian_1(*adjoint_,*dualstate_,*state_,z,tol);
     adjoint_->scale(static_cast<Real>(-1));
+    nadjo_++;
     // Store adjoint
-    if (storage_) {
-      adjointStore_->set(*adjoint_,Objective<Real>::getParameter());
-    }
+    if (storage_) adjointStore_->set(*adjoint_,Objective<Real>::getParameter());
   }
 }
 
@@ -284,6 +314,7 @@ void Reduced_Objective_SimOpt<Real>::solve_state_sensitivity(const Vector<Real> 
   con_->applyJacobian_2(*dualadjoint_,v,*state_,z,tol);
   dualadjoint_->scale(static_cast<Real>(-1));
   con_->applyInverseJacobian_1(*state_sens_,*dualadjoint_,*state_,z,tol);
+  nssen_++;
 }
 
 template<typename Real>
@@ -300,6 +331,7 @@ void Reduced_Objective_SimOpt<Real>::solve_adjoint_sensitivity(const Vector<Real
   // Solve adjoint sensitivity equation
   dualstate_->scale(static_cast<Real>(-1));
   con_->applyInverseAdjointJacobian_1(*adjoint_sens_,*dualstate_,*state_,z,tol);
+  nasen_++;
 }
 
 } // namespace ROL

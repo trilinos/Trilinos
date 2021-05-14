@@ -403,6 +403,10 @@ public:
   /// then magnitude_type is \c T.
   void setParameters (const Teuchos::ParameterList& params);
 
+  bool supportsZeroStartingSolution() { return true; }
+
+  void setZeroStartingSolution (bool zeroStartingSolution) { ZeroStartingSolution_ = zeroStartingSolution; };
+
   //! Return a list of all the parameters that this class accepts.
   Teuchos::RCP<const Teuchos::ParameterList>
   getValidParameters () const;

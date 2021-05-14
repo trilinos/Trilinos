@@ -48,6 +48,7 @@
 #include <array>
 #include <utility>
 #include <random>
+#include <numeric>
 #include "ROL_Vector.hpp"
 
 /** \class ROL::StdArray

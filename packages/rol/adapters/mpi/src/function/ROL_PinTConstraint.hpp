@@ -190,7 +190,7 @@ private:
     // one for the "primary" variable (first, even index), and the "virtual" variable (second, odd index)
 
     std::vector<Ptr<Vector<Real>>> vecs;
-    if(oldTimeIndex==-1 and timeRank==0) {
+    if(oldTimeIndex==-1 && timeRank==0) {
       auto val = initialCond_->clone();
       if(useInitialCond) 
         val->set(*initialCond_); 
@@ -609,7 +609,7 @@ public:
       // build in the time continuity constraint, note that this is just using the identity matrix
       //    v_s = u_s
       pint_jv.getVectorPtr(2*s+1)->set(*pint_v.getVectorPtr(2*s+1));       // this is the virtual value
-      if(s+1<numSteps or lastRank)
+      if(s+1<numSteps || lastRank)
         pint_jv.getVectorPtr(2*s+1)->axpy(-1.0,*pint_v.getVectorPtr(2*s)); // this is the u value
       pint_jv.getVectorPtr(2*s+1)->scale(globalScale_);
     }
@@ -842,7 +842,7 @@ public:
        constraint->applyAdjointJacobian_1(*part_ajv,*part_v,*part_u,*part_z,*part_v,tol);
 
        // this is the remainder of the constraint application
-       if(s+1<numSteps or lastRank) 
+       if(s+1<numSteps || lastRank) 
          pint_ajv.getVectorPtr(2*s)->axpy(-globalScale_,*pint_v.getVectorPtr(2*s+1));
 
        sendBuffer[0] = part_ajv->get(0);
@@ -1052,7 +1052,7 @@ public:
        constraint->applyInverseJacobian_1(*part_ijv,*part_v,*part_u,*part_z,tol);
 
        // satisfy the time continuity constraint, note that this just using the identity matrix
-       if(s+1<numSteps or lastRank) {
+       if(s+1<numSteps || lastRank) {
          pint_ijv.getVectorPtr(2*s+1)->set(*pint_ijv.getVectorPtr(2*s));    
          pint_ijv.getVectorPtr(2*s+1)->axpy(1.0/globalScale_,*pint_v.getVectorPtr(2*s+1));        
        }
@@ -1694,7 +1694,7 @@ public:
        // compute the residual
        applyAugmentedKKT(*residual,x,u,z,tol,level);
  
-       if(i<numSweeps-1 or computeFinalResidual or recordResidualReductions_) {
+       if(i<numSweeps-1 || computeFinalResidual || recordResidualReductions_) {
          residual->scale(-1.0);
          residual->axpy(1.0,b);
        }

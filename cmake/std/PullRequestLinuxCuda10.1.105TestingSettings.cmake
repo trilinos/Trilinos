@@ -132,5 +132,8 @@ set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR 
 set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Intrepid2_unit-test_Discretization_Basis_HierarchicalBases_Hierarchical_Basis_Tests_MPI_1_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
+set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
+set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
+set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
 
 include("${CMAKE_CURRENT_LIST_DIR}/PullRequestLinuxCommonTestingSettings.cmake")

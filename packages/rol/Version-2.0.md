@@ -141,7 +141,7 @@ In this example the optimization problem types (TypeU, TypeB, TypeE and TypeG) a
     // Instantiate Problem.
     ROL::Ptr<ROL::Objective<double>> obj = ROL::makePtr<MyObjective<double>>();
     ROL::Ptr<ROL::Vector<double>>      x = ROL::makePtr<MyOptimizationVector<double>>();
-    ROL::Problem<double> problem(obj,x);
+    ROL::OptimizationProblem<double> problem(obj,x);
     ... // add constraints if needed
     
     // Instantiate Solver.
@@ -259,3 +259,74 @@ For computationally expensive objective function and constraint evaluations,
 including derivatives, ROL's performance can be enhanced significantly by
 taking advantage of `update()` functions.
 
+**Key change**: The second input argument to `update()` has changed.
+In ___Version 1.0___, the second argument was a boolean.  In ___Version 2.0___,
+the second argument is an enumeration type, which enables finer-grained
+control of computations.  The enumeration values and their descriptions are
+listed below.
+
+```cpp
+enum class UpdateType : std::uint8_t {
+  Initial = 0, // Update has not been called before
+  Accept,      // This is the new iterate, trial must be called before
+  Revert,      // Revert to the previous iterate, trial must be called before
+  Trial,       // This is a candidate for the next iterate
+  Temp         // For temporary uses including finite difference computations
+};
+```
+
+Here is a simple example demonstrating the use of the new `update()` function.
+
+```cpp
+
+// Evaluate f(S(x),x) where S(x)=u solves c(u,x) = 0
+
+template<typename Real>
+class MyObjective : public ROL::Objective<Real> {
+private:
+  ... // Member variables
+  ROL::Ptr<Objective_SimOpt<Real>> obj_; // Full-space objective
+  ROL::Ptr<Constraint_SimOpt<Real>> con_; // Eliminated constraint
+  ROL::Ptr<Vector<Real>> u_, ucache_, utemp_; // Storage for state u
+  ROL::Ptr<Vector<Real>> r_; // Storage for residual r = c(u,x);
+
+public:
+  void update(const ROL::Vector<Real> &x, ROL::UpdateType type, int iter) {
+    Real tol(std::sqrt(ROL::ROL_EPSILON<Real>()));
+    if (type == ROL::UpdateType::Initial)  {
+      // This is the first call to update
+      ucache_ = ROL::makePtr<MyStateVector<Real>>();
+      utemp_  = ROL::makePtr<MyStateVector<Real>>();
+      u_      = ucache_;
+      con_->solve(*r_,*u_,x,tol);
+    }
+    else if (type == ROL::UpdateType::Accept) {
+      // u_ was set to u=S(x) during a trial update
+      // and has been accepted as the new iterate
+      utemp_  = ucache_;
+      ucache_ = u_;      // Cache the accepted value
+    }
+    else if (type == ROL::UpdateType::Revert) {
+      // u_ was set to u=S(x) during a trial update
+      // and has been rejected as the new iterate
+      u_ = ucache_;      // Revert to cached value
+    }
+    else if (type == ROL::UpdateType::Trial) {
+      // This is a new value of x
+      u_ = utemp_;
+      con_->solve(*r_,*u_,x,tol);
+    }
+    else { // ROL::UpdateType::Temp
+      // This is a new value of x used for,
+      // e.g., finite-difference checks
+      u_ = utemp_;
+      con_->solve(*r_,*u_,x,tol);
+    }
+  }
+  
+  Real value(const ROL::Vector<Real> &x, Real &tol) {
+    return obj_->value(*u_,x,tol);
+  }
+  ... // Define remaining functions
+};
+```

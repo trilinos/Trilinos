@@ -1,4 +1,4 @@
-#include < time.h >
+#include <time.h>
 #include <Winsock2.h> /* to get timeval struct */
 
 struct timezone 

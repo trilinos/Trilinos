@@ -98,6 +98,13 @@ Chebyshev<MatrixType>::setParameters (const Teuchos::ParameterList& List)
 
 
 template<class MatrixType>
+void
+Chebyshev<MatrixType>::setZeroStartingSolution (bool zeroStartingSolution)
+{
+  impl_.setZeroStartingSolution(zeroStartingSolution);
+}
+
+template<class MatrixType>
 Teuchos::RCP<const Teuchos::Comm<int> >
 Chebyshev<MatrixType>::getComm () const
 {

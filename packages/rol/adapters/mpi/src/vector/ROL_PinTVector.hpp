@@ -112,7 +112,7 @@ protected:
 
     bool stepOff = false;
 
-    if(localSteps_<0 and globalSteps_>=0) {
+    if(localSteps_<0 && globalSteps_>=0) {
 
       // determine which steps are owned by this processor
       int stepsPerRank = globalSteps_ / numRanks;
@@ -340,7 +340,7 @@ public:
    */
   bool isValidIndex(int i) const
   {
-    if(i<0 or i>=numOwnedVectors()) 
+    if(i<0 || i>=numOwnedVectors()) 
       return false;
 
     return true;
@@ -360,7 +360,7 @@ public:
    */
   Ptr<Vector<Real>> getRemoteBufferPtr(int i) const
   {
-    assert( 0<=i or i < static_cast<int>(bufferVectors_.size()) );
+    assert( 0<=i || i < static_cast<int>(bufferVectors_.size()) );
 
     return bufferVectors_[i];
   }

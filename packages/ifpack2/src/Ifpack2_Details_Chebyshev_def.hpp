@@ -286,6 +286,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A) :
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
+  eigRelTolerance_(Teuchos::ScalarTraits<MT>::zero ()),
+  eigKeepVectors_(false),
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
@@ -314,6 +316,8 @@ Chebyshev (Teuchos::RCP<const row_matrix_type> A,
   minDiagVal_ (STS::eps ()),
   numIters_ (1),
   eigMaxIters_ (10),
+  eigRelTolerance_(Teuchos::ScalarTraits<MT>::zero ()),
+  eigKeepVectors_(false),
   eigNormalizationFreq_(1),
   zeroStartingSolution_ (true),
   assumeMatrixUnchanged_ (false),
@@ -357,6 +361,8 @@ setParameters (Teuchos::ParameterList& plist)
   const ST defaultMinDiagVal = STS::eps ();
   const int defaultNumIters = 1;
   const int defaultEigMaxIters = 10;
+  const MT defaultEigRelTolerance = Teuchos::ScalarTraits<MT>::zero ();
+  const bool defaultEigKeepVectors = false;
   const int defaultEigNormalizationFreq = 1;
   const bool defaultZeroStartingSolution = true; // Ifpack::Chebyshev default
   const bool defaultAssumeMatrixUnchanged = false;
@@ -376,6 +382,8 @@ setParameters (Teuchos::ParameterList& plist)
   ST minDiagVal = defaultMinDiagVal;
   int numIters = defaultNumIters;
   int eigMaxIters = defaultEigMaxIters;
+  MT eigRelTolerance = defaultEigRelTolerance;
+  bool eigKeepVectors = defaultEigKeepVectors;
   int eigNormalizationFreq = defaultEigNormalizationFreq;
   bool zeroStartingSolution = defaultZeroStartingSolution;
   bool assumeMatrixUnchanged = defaultAssumeMatrixUnchanged;
@@ -581,6 +589,15 @@ setParameters (Teuchos::ParameterList& plist)
     "\" parameter (also called \"eigen-analysis: iterations\") must be a "
     "nonnegative integer.  You gave a value of " << eigMaxIters << ".");
 
+  if (plist.isType<double>("chebyshev: eigenvalue relative tolerance"))
+    eigRelTolerance = Teuchos::as<MT>(plist.get<double> ("chebyshev: eigenvalue relative tolerance"));
+  else if (plist.isType<MT>("chebyshev: eigenvalue relative tolerance"))
+    eigRelTolerance = plist.get<MT> ("chebyshev: eigenvalue relative tolerance");
+  else if (plist.isType<ST>("chebyshev: eigenvalue relative tolerance"))
+    eigRelTolerance = Teuchos::ScalarTraits<ST>::magnitude(plist.get<ST> ("chebyshev: eigenvalue relative tolerance"));
+
+  eigKeepVectors = plist.get ("chebyshev: eigenvalue keep vectors", eigKeepVectors);
+
   eigNormalizationFreq = plist.get ("chebyshev: eigenvalue normalization frequency", eigNormalizationFreq);
   TEUCHOS_TEST_FOR_EXCEPTION(
     eigNormalizationFreq < 0, std::invalid_argument,
@@ -650,6 +667,8 @@ setParameters (Teuchos::ParameterList& plist)
   minDiagVal_ = minDiagVal;
   numIters_ = numIters;
   eigMaxIters_ = eigMaxIters;
+  eigRelTolerance_ = eigRelTolerance;
+  eigKeepVectors_ = eigKeepVectors;
   eigNormalizationFreq_ = eigNormalizationFreq;
   zeroStartingSolution_ = zeroStartingSolution;
   assumeMatrixUnchanged_ = assumeMatrixUnchanged;
@@ -696,6 +715,8 @@ Chebyshev<ScalarType, MV>::reset ()
   W_ = Teuchos::null;
   computedLambdaMax_ = STS::nan ();
   computedLambdaMin_ = STS::nan ();
+  eigVector_ = Teuchos::null;
+  eigVector2_ = Teuchos::null;
 }
 
 
@@ -1359,9 +1380,16 @@ powerMethodWithInitGuess (const op_type& A,
   const ST zero = static_cast<ST> (0.0);
   const ST one = static_cast<ST> (1.0);
   ST lambdaMax = zero;
-  ST RQ_top, RQ_bottom = one, norm;
+  ST lambdaMaxOld = one;
+  ST norm;
 
-  V y (A.getRangeMap ());
+  Teuchos::RCP<V> y;
+  if (eigVector2_.is_null()) {
+    y = rcp(new V(A.getRangeMap ()));
+    if (eigKeepVectors_)
+      eigVector2_ = y;
+  } else
+    y = eigVector2_;
   norm = x.norm2 ();
   TEUCHOS_TEST_FOR_EXCEPTION
     (norm == zero, std::runtime_error,
@@ -1386,16 +1414,31 @@ powerMethodWithInitGuess (const op_type& A,
     if (debug_) {
       *out_ << "  Iteration " << iter << endl;
     }
-    A.apply (x, y);
-    solve (x, D_inv, y);
+    A.apply (x, *y);
+    solve (x, D_inv, *y);
 
     if (((iter+1) % eigNormalizationFreq_ == 0) && (iter < numIters-2)) {
       norm = x.norm2 ();
       if (norm == zero) { // Return something reasonable.
         if (debug_) {
           *out_ << "   norm is zero; returning zero" << endl;
+          *out_ << "   Power method terminated after "<< iter << " iterations." << endl;
         }
         return zero;
+      } else {
+        lambdaMaxOld = lambdaMax;
+        lambdaMax = pow(norm, Teuchos::ScalarTraits<MT>::one() / eigNormalizationFreq_);
+        if (Teuchos::ScalarTraits<ST>::magnitude(lambdaMax-lambdaMaxOld) < eigRelTolerance_ * Teuchos::ScalarTraits<ST>::magnitude(lambdaMax)) {
+          if (debug_) {
+            *out_ << "  lambdaMax: " << lambdaMax << endl;
+            *out_ << "  Power method terminated after "<< iter << " iterations." << endl;
+          }
+          return lambdaMax;
+        } else if (debug_) {
+          *out_ << "  lambdaMaxOld: " << lambdaMaxOld << endl;
+          *out_ << "  lambdaMax: " << lambdaMax << endl;
+          *out_ << "  |lambdaMax-lambdaMaxOld|/|lambdaMax|: " << Teuchos::ScalarTraits<ST>::magnitude(lambdaMax-lambdaMaxOld)/Teuchos::ScalarTraits<ST>::magnitude(lambdaMax) << endl;
+        }
       }
       x.scale (one / norm);
     }
@@ -1408,19 +1451,19 @@ powerMethodWithInitGuess (const op_type& A,
   if (norm == zero) { // Return something reasonable.
     if (debug_) {
       *out_ << "   norm is zero; returning zero" << endl;
+      *out_ << "   Power method terminated after "<< numIters << " iterations." << endl;
     }
     return zero;
   }
   x.scale (one / norm);
-  A.apply (x, y);
-  solve (y, D_inv, y);
-  RQ_top = y.dot (x);
-  RQ_bottom = one;
+  A.apply (x, *y);
+  solve (*y, D_inv, *y);
+  lambdaMax = y->dot (x);
   if (debug_) {
-    *out_ << "   RQ_top: " << RQ_top
-          << ", RQ_bottom: " << RQ_bottom << endl;
+    *out_ << "  lambdaMax: " << lambdaMax << endl;
+    *out_ << "  Power method terminated after "<< numIters << " iterations." << endl;
   }
-  lambdaMax = RQ_top / RQ_bottom;
+
   return lambdaMax;
 }
 
@@ -1456,13 +1499,19 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
   }
 
   const ST zero = static_cast<ST> (0.0);
-  V x (A.getDomainMap ());
-  // For the first pass, just let the pseudorandom number generator
-  // fill x with whatever values it wants; don't try to make its
-  // entries nonnegative.
-  computeInitialGuessForPowerMethod (x, false);
+  Teuchos::RCP<V> x;
+  if (eigVector_.is_null()) {
+    x = rcp(new V(A.getDomainMap ()));
+    if (eigKeepVectors_)
+      eigVector_ = x;
+    // For the first pass, just let the pseudorandom number generator
+    // fill x with whatever values it wants; don't try to make its
+    // entries nonnegative.
+    computeInitialGuessForPowerMethod (*x, false);
+  } else
+    x = eigVector_;
 
-  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+  ST lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, *x);
 
   // mfh 07 Jan 2015: Taking the real part here is only a concession
   // to the compiler, so that this class can build with ScalarType =
@@ -1483,8 +1532,8 @@ powerMethod (const op_type& A, const V& D_inv, const int numIters)
 
     // For the second pass, make all the entries of the initial guess
     // vector have nonnegative real parts.
-    computeInitialGuessForPowerMethod (x, true);
-    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, x);
+    computeInitialGuessForPowerMethod (*x, true);
+    lambdaMax = powerMethodWithInitGuess (A, D_inv, numIters, *x);
   }
   return lambdaMax;
 }
@@ -1672,6 +1721,7 @@ describe (Teuchos::FancyOStream& out,
           << "userEigRatio_: " << userEigRatio_ << endl
           << "numIters_: " << numIters_ << endl
           << "eigMaxIters_: " << eigMaxIters_ << endl
+          << "eigRelTolerance_: " << eigRelTolerance_ << endl
           << "eigNormalizationFreq_: " << eigNormalizationFreq_ << endl
           << "zeroStartingSolution_: " << zeroStartingSolution_ << endl
           << "assumeMatrixUnchanged_: " << assumeMatrixUnchanged_ << endl

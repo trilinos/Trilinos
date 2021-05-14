@@ -95,7 +95,7 @@ int main( int argc, char* argv[] )
 //  int numProcs = Teuchos::GlobalMPISession::getNProc();
 
 //  int iprint     = argc - 1;
-  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 and myRank==0 );
+  auto outStream = ROL::makeStreamPtr( std::cout, argc > 1 && myRank==0 );
 
   int errorFlag  = 0;
 

@@ -100,6 +100,8 @@ env
 
 export CUDA_LAUNCH_BLOCKING=1
 export CUDA_MANAGED_FORCE_DEVICE_ALLOC=1
+# Only run on the Tesla K40, not the Quadro
+export CUDA_VISIBLE_DEVICES=0
 # Machine independent cron_driver:
 SCRIPT_DIR=`cd "\`dirname \"$0\"\`";pwd`
 $SCRIPT_DIR/../cron_driver.py

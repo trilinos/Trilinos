@@ -46,6 +46,7 @@
 
 #include "KokkosKernels_config.h"
 #include "Kokkos_Core.hpp"
+#include "KokkosKernels_ExecSpaceUtils.hpp"
 #include "Kokkos_ArithTraits.hpp"
 
 namespace KokkosBlas {
@@ -95,17 +96,17 @@ struct SingleLevelNontransposeGEMV {
   KOKKOS_INLINE_FUNCTION void
   operator () (const IndexType& i) const
   {
-    using y_value_type = typename std::decay<decltype (y_[i]) >::type;
+    using y_value_type = typename YViewType::non_const_value_type;
 
     y_value_type y_i;
     if (betaPreset == 0) {
-      y_i = Kokkos::Details::ArithTraits<y_value_type>::zero ();
+      y_i = Kokkos::ArithTraits<y_value_type>::zero ();
     }
     else if (betaPreset == 1) {
-      y_i = y_[i];
+      y_i = y_(i);
     }
     else { // beta_ != 0 and beta != 1
-      y_i = beta_ * y_[i];
+      y_i = beta_ * y_(i);
     }
 
     const IndexType numCols = A_.extent(1);
@@ -123,7 +124,7 @@ struct SingleLevelNontransposeGEMV {
       }
     }
 
-    y_[i] = y_i;
+    y_(i) = y_i;
   }
 
 private:
@@ -211,11 +212,10 @@ public:
 
     for (IndexType j = 0; j < value_count; ++j) {
       // Sum into initial y_ values; use beta as a pre-multiplier if nonzero.
-      const y_value_type y_j =
-        beta_ == ArithTraits<BetaCoeffType>::zero () ?
-        ArithTraits<y_value_type>::zero () :
-        beta_ * y_[j];
-      y_[j] = y_j + y_result[j];
+      if(betaPreset == 0)
+        y_(j) = y_result[j];
+      else
+        y_(j) = beta_ * y_(j) + y_result[j];
     }
   }
 
@@ -480,6 +480,136 @@ singleLevelGemv (const char trans[],
   }
 }
 
+struct TwoLevelGEMV_LayoutLeftTag {};
+struct TwoLevelGEMV_LayoutRightTag {};
+
+// ---------------------------------------------------------------------------------------------
+// Functor for a two-level parallel_reduce version of GEMV (non-transpose),
+// designed for performance on GPU. Kernel depends on the layout of A.
+template<class AViewType,
+         class XViewType,
+         class YViewType,
+         class IndexType = typename AViewType::size_type>
+struct TwoLevelGEMV {
+  using y_value_type   = typename YViewType::non_const_value_type;
+  using AlphaCoeffType = typename AViewType::non_const_value_type;
+  using BetaCoeffType  = typename YViewType::non_const_value_type;
+
+
+  using execution_space = typename AViewType::execution_space;
+  using policy_type = Kokkos::TeamPolicy<execution_space>;
+  using member_type = typename policy_type::member_type;
+
+  TwoLevelGEMV (const AlphaCoeffType& alpha,
+                         const AViewType& A,
+                         const XViewType& x,
+                         const BetaCoeffType& beta,
+                         const YViewType& y) :
+    alpha_ (alpha), A_ (A), x_ (x), beta_ (beta), y_ (y)
+  {
+    static_assert (Kokkos::Impl::is_view<AViewType>::value,
+                   "AViewType must be a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<XViewType>::value,
+                   "XViewType must be a Kokkos::View.");
+    static_assert (Kokkos::Impl::is_view<YViewType>::value,
+                   "YViewType must be a Kokkos::View.");
+    static_assert (static_cast<int> (AViewType::rank) == 2,
+                   "AViewType must have rank 2.");
+    static_assert (static_cast<int> (XViewType::rank) == 1,
+                   "XViewType must have rank 1.");
+    static_assert (static_cast<int> (YViewType::rank) == 1,
+                   "YViewType must have rank 1.");
+    static_assert (std::is_integral<IndexType>::value,
+                   "IndexType must be an integer.");
+  }
+
+public:
+  //LayoutLeft version: 32xK blocks.
+  //  -Each team handles block rows. 
+  //  -Groups of 32 threads handle N/teamsize columns sequentially, placing results into shared.
+  //  -Then individual thread results are combined with parallel_reduce.
+  KOKKOS_INLINE_FUNCTION void
+  operator () (TwoLevelGEMV_LayoutLeftTag, const member_type& team) const
+  {
+    using Kokkos::Details::ArithTraits;
+    using Scalar = typename YViewType::non_const_value_type;
+    using KAT = ArithTraits<Scalar>;
+    //Allocate a Scalar in shared for each thread
+    Scalar* blockResult = (Scalar*) team.team_shmem().get_shmem(32 * sizeof(Scalar));
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 32),
+    [&](int i)
+    {
+      blockResult[i] = KAT::zero();
+    });
+    team.team_barrier();
+    //Which block this thread will work on
+    int block = team.team_rank() / 32;
+    //Which row in the block this thread will work on
+    IndexType row = team.league_rank() * 32 + team.team_rank() % 32;
+    IndexType blockColStart = columnsPerThread * block;
+    Scalar localSum = KAT::zero();
+    //compute local sum
+    if(row < (IndexType) A_.extent(0))
+    {
+      for(IndexType col = blockColStart; col < blockColStart + columnsPerThread && col < A_.extent(1); col++)
+      {
+        //A access is coalesced, x access is a broadcast
+        localSum += A_(row, col) * x_(col);
+      }
+    }
+    //atomically combine local result into shared
+    Kokkos::atomic_add(&blockResult[team.team_rank() % 32], localSum);
+    team.team_barrier();
+    Kokkos::parallel_for(Kokkos::TeamThreadRange(team, 32),
+    [&](int i)
+    {
+      IndexType yrow = team.league_rank() * 32 + i;
+      if(yrow < (IndexType) A_.extent(0))
+      {
+        if(beta_ == KAT::zero())
+          y_(yrow) = alpha_ * blockResult[i];
+        else
+          y_(yrow) = beta_ * y_(yrow) + alpha_ * blockResult[i];
+      }
+    });
+  }
+
+  //LayoutRight version: one team per row
+  KOKKOS_INLINE_FUNCTION void
+  operator () (TwoLevelGEMV_LayoutRightTag, const member_type& team) const
+  {
+    using Kokkos::Details::ArithTraits;
+    using KAT = ArithTraits<typename YViewType::non_const_value_type>;
+
+    const IndexType N = A_.extent(1);
+    const int i = team.league_rank(); // batch id
+
+    // parallel-reduce to compute val += A(:,j)' * x
+    y_value_type val = KAT::zero();
+    Kokkos::parallel_reduce( Kokkos::TeamThreadRange( team, N ), [&] ( const int j, y_value_type &update ) {
+      update += A_(i, j) * x_(j);
+    }, val);
+
+    // compute yj = beta*yj + alpha*val
+    Kokkos::single(Kokkos::PerTeam(team),
+    [=]()
+    {
+      if(beta_ == KAT::zero())
+        y_(i) = alpha_ * val;
+      else
+        y_(i) = beta_ * y_(i) + alpha_ * val;
+    });
+  }
+
+  IndexType columnsPerThread;
+private:
+  AlphaCoeffType alpha_;
+  typename AViewType::const_type A_;
+  typename XViewType::const_type x_;
+  BetaCoeffType beta_;
+  YViewType y_;
+};
+
 
 // ---------------------------------------------------------------------------------------------
 // Functor for a two-level parallel_reduce version of (conjugate)
@@ -529,23 +659,29 @@ public:
   operator () (const member_type & team) const
   {
     using Kokkos::Details::ArithTraits;
-    using KAT = ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT_A = ArithTraits<typename AViewType::non_const_value_type>;
+    using KAT_Y = ArithTraits<typename YViewType::non_const_value_type>;
 
     const IndexType M = A_.extent(0);
     const int j = team.league_rank(); // batch id
 
     // parallel-reduce to compute val += A(:,j)' * x
-    y_value_type val = KAT:: zero();
+    y_value_type val = KAT_Y::zero();
     Kokkos::parallel_reduce( Kokkos::TeamThreadRange( team, M ), [&] ( const int i, y_value_type &update ) {
       const auto x_i = x_(i);
-      const auto A_ij = conj ? KAT::conj (A_(i,j)) : A_(i,j);
+      const auto A_ij = conj ? KAT_A::conj (A_(i,j)) : A_(i,j);
       update += A_ij * x_i;
     }, val);
 
     // compute yj = beta*yj + alpha*val
-    if (team.team_rank() == 0) {
-      y_[j] = beta_*y_[j] + alpha_ * val;
-    }
+    Kokkos::single(Kokkos::PerTeam(team),
+    [&]()
+    {
+      if(beta_ == KAT_Y::zero())
+        y_(j) = alpha_ * val;
+      else
+        y_(j) = beta_ * y_(j) + alpha_ * val;
+    });
   }
 
 private:
@@ -589,38 +725,68 @@ twoLevelGemv (const char trans[],
   using team_policy_type  = Kokkos::TeamPolicy<execution_space>;
   using range_policy_type = Kokkos::RangePolicy<execution_space, IndexType>;
 
-  using BetaCoeffType = typename YViewType::non_const_value_type;
-
   using Kokkos::Details::ArithTraits;
   using KAT = ArithTraits<typename AViewType::non_const_value_type>;
+  using YKAT = ArithTraits<typename YViewType::non_const_value_type>;
 
-  const char tr = trans[0];
+  const char tr = toupper(trans[0]);
 
   // The transpose and conjugate transpose cases where A has zero rows
   // need special handling.  These are equivalent to y := beta*y.  We
   // could implement this using KokkosBlas::scal, but we don't want to
   // depend on that or its implementation details.  Instead, we reuse
   // an instantiation of the non-transpose case for alpha=0.
-  if (A.extent(0) == 0 && (tr != 'N' && tr != 'n')) {
-    if (beta == KAT::zero ()) {
+  if (y.extent(0) == 0)
+  {
+    //no entries to update
+    return;
+  }
+  else if (x.extent(0) == 0)
+  {
+    if (beta == YKAT::zero ()) {
       Kokkos::deep_copy (y, KAT::zero ());
     }
-    else if (beta != Kokkos::Details::ArithTraits<BetaCoeffType>::one ()) {
+    else if (beta != YKAT::one ()) {
       // "Fake out" a scal() by using the non-transpose alpha=0,
       // general beta case.  This assumes that the functor doesn't
       // check dimensions.
       using functor_type = SingleLevelNontransposeGEMV<AViewType, XViewType, YViewType,
                                                        0, -1, IndexType>;
       functor_type functor (alpha, A, x, beta, y);
-      Kokkos::parallel_for ("KokkosBlas::gemv[SingleLevel]",range_policy_type (0, A.extent(1)), functor);
+      Kokkos::parallel_for ("KokkosBlas::gemv[SingleLevel]",range_policy_type (0, y.extent(0)), functor);
     }
     return;
   }
 
-  if (tr == 'N' || tr == 'n') {
-    // NOTE: not implemented, so just call single-level version
-    singleLevelGemv<AViewType, XViewType, YViewType, IndexType>
-         (trans, alpha, A, x, beta, y);
+  if (tr == 'N') {
+    constexpr bool isLayoutLeft = std::is_same<typename AViewType::array_layout, Kokkos::LayoutLeft>::value;
+    using layout_tag = typename std::conditional<isLayoutLeft,
+      TwoLevelGEMV_LayoutLeftTag, TwoLevelGEMV_LayoutRightTag>::type;
+    using tagged_policy = Kokkos::TeamPolicy<execution_space, layout_tag>;
+    using functor_type = TwoLevelGEMV<AViewType, XViewType, YViewType, IndexType>;
+    functor_type functor (alpha, A, x, beta, y);
+    tagged_policy team;
+    if(isLayoutLeft)
+    {
+      size_t sharedPerTeam = 32 * sizeof(y_value_type);
+      IndexType numTeams = (A.extent(0) + 31) / 32;
+      tagged_policy temp(1, 1);
+      int teamSize = temp.team_size_max(functor, Kokkos::ParallelForTag());
+      //make sure teamSize is a multiple of 32
+      teamSize -= teamSize % 32;
+      //don't make teamSize larger than what's useful
+      if((size_t) teamSize > 32 * A.extent(1))
+        teamSize = 32 * A.extent(1);
+      int numBlocks = teamSize / 32;
+      functor.columnsPerThread = (A.extent(1) + numBlocks - 1) / numBlocks;
+      team = tagged_policy(numTeams, teamSize).set_scratch_size(0, Kokkos::PerTeam(sharedPerTeam));
+    }
+    else
+    {
+      //LayoutRight: one team per row
+      team = tagged_policy(A.extent(0), Kokkos::AUTO);
+    }
+    Kokkos::parallel_for ("KokkosBlas::gemv[twoLevel]", team, functor);
   }
   else {
     if (alpha == KAT::zero () && beta == KAT::zero ()) {
@@ -630,7 +796,7 @@ twoLevelGemv (const char trans[],
     else if (alpha == KAT::zero () && beta == KAT::one ()) {
       // Do nothing (y := 1 * y)
     }
-    else if (tr == 'T' || tr == 't') {
+    else if (tr == 'T') {
       // transpose, and not conj transpose
       team_policy_type  team (A.extent(1), Kokkos::AUTO);
       using functor_type = TwoLevelTransposeGEMV<AViewType, XViewType, YViewType,
@@ -638,7 +804,7 @@ twoLevelGemv (const char trans[],
       functor_type functor (alpha, A, x, beta, y);
       Kokkos::parallel_for ("KokkosBlas::gemv[twoLevelTranspose]", team, functor);
     }
-    else if (tr == 'C' || tr == 'c' || tr == 'H' || tr == 'h') {
+    else if (tr == 'C' || tr == 'H') {
       // conjugate transpose
       team_policy_type  team (A.extent(1), Kokkos::AUTO);
       using functor_type = TwoLevelTransposeGEMV<AViewType, XViewType, YViewType,
@@ -647,6 +813,43 @@ twoLevelGemv (const char trans[],
       Kokkos::parallel_for ("KokkosBlas::gemv[twoLevelTranspose]", team, functor);
     }
   }
+}
+
+//generalGemv: use 1 level (Range) or 2 level (Team) implementation,
+//depending on whether execution space is CPU or GPU. enable_if makes sure
+//unused kernels are not instantiated.
+template<class AViewType,
+         class XViewType,
+         class YViewType,
+         class IndexType,
+         typename std::enable_if<!KokkosKernels::Impl::kk_is_gpu_exec_space
+           <typename AViewType::execution_space>()>::type* = nullptr>
+void
+generalGemvImpl (const char trans[],
+                 typename AViewType::const_value_type& alpha,
+                 const AViewType& A,
+                 const XViewType& x,
+                 typename YViewType::const_value_type& beta,
+                 const YViewType& y)
+{
+  singleLevelGemv (trans, alpha, A, x, beta, y);
+}
+
+template<class AViewType,
+         class XViewType,
+         class YViewType,
+         class IndexType,
+         typename std::enable_if<KokkosKernels::Impl::kk_is_gpu_exec_space
+           <typename AViewType::execution_space>()>::type* = nullptr>
+void
+generalGemvImpl (const char trans[],
+                 typename AViewType::const_value_type& alpha,
+                 const AViewType& A,
+                 const XViewType& x,
+                 typename YViewType::const_value_type& beta,
+                 const YViewType& y)
+{
+  twoLevelGemv (trans, alpha, A, x, beta, y);
 }
 
 } // namespace Impl
