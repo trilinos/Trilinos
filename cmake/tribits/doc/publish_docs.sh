@@ -29,6 +29,9 @@ function copy_over_readonly {
     chmod u+w $to_dir/$file
   fi
   cp -u -v $from_dir/$file $to_dir/$file
+  file_lc=$(echo $file | tr '[:upper:]' '[:lower:]')
+  cp -u -v $from_dir/$file $to_dir/$file_lc
+
 }
 
 _DEST_BASE_DIR=$1
