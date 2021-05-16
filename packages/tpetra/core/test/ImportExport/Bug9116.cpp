@@ -67,7 +67,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9116, LargeImport,
   using import_t = Tpetra::Import<lno_t, gno_t>;
 
   auto comm = Tpetra::getDefaultComm();
-  int me = comm->getRank();
   int np = comm->getSize();
 
   if (np == 1) {
@@ -115,7 +114,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug9116, LargeImport,
     auto x_h = x_olap.getLocalViewHost(Tpetra::Access::ReadOnly);
     for (size_t i = 0; i < map_olap->getNodeNumElements(); i++) {
       if (x_h(i,0) != map_olap->getGlobalElement(i)) {
-//      std::cout << me << " of " << np << ": x_olap[ " << i 
+//      std::cout << comm->getRank() << " of " << np << ": x_olap[ " << i 
 //                << "] " << x_h(i, 0) << " != "
 //                << map_olap->getGlobalElement(i) << " expected" << std::endl;
         ierr++;
