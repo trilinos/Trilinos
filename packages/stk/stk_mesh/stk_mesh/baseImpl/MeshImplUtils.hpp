@@ -132,14 +132,15 @@ private:
 stk::parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
 
 void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData& mesh,
-                             const Entity entity_from ,
+                             const Bucket& bucket_from ,
                              const OrdinalVector       & omit ,
                              EntityRank            entity_rank_to ,
                              OrdinalVector       & induced_parts);
+
 void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
-                             const Entity entity_from ,
-                             EntityRank            entity_rank_to ,
-                             OrdinalVector       & induced_parts);
+                                                const Bucket& bucket_from ,
+                                                EntityRank entity_rank_to ,
+                                                OrdinalVector& induced_parts);
 
 stk::mesh::Entity get_or_create_face_at_element_side(stk::mesh::BulkData & bulk,
                                                      stk::mesh::Entity elem,

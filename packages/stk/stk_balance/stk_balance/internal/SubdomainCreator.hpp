@@ -48,6 +48,27 @@ namespace stk {
 namespace balance {
 namespace internal {
 
+class OutputMesh
+{
+public:
+  OutputMesh(const ParallelMachine & comm)
+    : m_meta(new stk::mesh::MetaData()),
+      m_bulk(new stk::transfer_utils::M2NOutputSerializerBulkData(*m_meta, comm))
+  {}
+
+  ~OutputMesh() {
+    delete m_bulk;
+    delete m_meta;
+  }
+
+  stk::transfer_utils::M2NOutputSerializerBulkData & bulk() { return *m_bulk; }
+  stk::mesh::MetaData & meta() { return *m_meta; }
+
+private:
+  stk::mesh::MetaData * m_meta;
+  stk::transfer_utils::M2NOutputSerializerBulkData * m_bulk;
+};
+
 class SubdomainCreator
 {
 public:
@@ -55,19 +76,30 @@ public:
     SubdomainCreator(stk::io::StkMeshIoBroker& ioBroker, int numTarget);
     ~SubdomainCreator();
 
-    int get_num_final_subdomains() const { return mNumFinalSubdomains; }
-    stk::mesh::PartVector declare_all_final_subdomain_parts();
+    int get_num_final_subdomains() const { return m_numFinalSubdomains; }
+    const stk::mesh::PartVector & declare_all_final_subdomain_parts();
     void move_entities_into_final_subdomain_part(size_t i, const stk::mesh::EntityVector &entities);
 
     stk::io::EntitySharingInfo get_node_sharing_info(unsigned subdomain);
+
+    stk::io::EntitySharingInfo get_node_sharing_info(unsigned mySubdomain,
+                                                     const std::vector<unsigned> & targetSubdomains,
+                                                     const std::vector<unsigned> & ownerForEachFinalSubdomain);
+
     void create_subdomain_and_write(const std::string &filename, unsigned subdomain,
                                     int global_num_nodes, int global_num_elems,
                                     int numSteps = -1, double timeStep = 0.0);
 
+    void create_subdomain_and_write(const std::string &filename, const std::vector<unsigned> & targetSubdomains,
+                                    const std::vector<unsigned> & ownerForEachFinalSubdomain,
+                                    OutputMesh & outputMesh, unsigned globalNumNodes, unsigned globalNumElems,
+                                    int numSteps = -1, double timeStep = 0.0);
+
+    std::string get_subdomain_part_name(int subdomainId);
+
     static constexpr unsigned INVALID_SUBDOMAIN = stk::transfer_utils::INVALID_SUBDOMAIN;
 
 private:
-    std::string getSubdomainPartName(int subdomainId);
     stk::mesh::Part* get_subdomain_part(size_t subdomain_num);
     stk::mesh::PartVector get_parts_to_add_for_subdomain(size_t subdomain_num);
     stk::mesh::EntityVector get_nodes_shared_between_subdomains(int this_subdomain_index, int other_subdomain_index);
@@ -76,10 +108,11 @@ private:
     void fill_shared_node_info_for_this_subdomain(const unsigned this_subdomain_num, stk::mesh::EntityVector& shared_nodes,
                                                   std::vector<int>& procs_for_shared_nodes);
 
-    stk::mesh::MetaData &mMeta;
-    stk::mesh::BulkData &mBulk;
-    int mNumFinalSubdomains;
-    stk::transfer_utils::MtoNTransientFieldTransferById* mTransientIo;
+    stk::mesh::MetaData &m_inputMeta;
+    stk::mesh::BulkData &m_inputBulk;
+    unsigned m_numFinalSubdomains;
+    stk::mesh::PartVector m_subdomainParts;
+    stk::transfer_utils::MtoNTransientFieldTransferById* m_transientIo;
 };
 
 }}}

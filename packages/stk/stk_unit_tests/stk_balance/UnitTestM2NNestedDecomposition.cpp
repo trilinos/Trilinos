@@ -201,9 +201,10 @@ public:
   {
     m_numFinalProcs = numFinalProcs;
     const bool useNestedDecomp = false;
+    stk::balance::BasicGeometricSettings balanceSettings;
     stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
     testing::internal::CaptureStdout();
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, parsedOptions);
+    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, balanceSettings, parsedOptions);
     testing::internal::GetCapturedStdout();
   }
 };
@@ -243,9 +244,10 @@ public:
   {
     m_numFinalProcs = numFinalProcs;
     const bool useNestedDecomp = true;
+    stk::balance::BasicGeometricSettings balanceSettings;
     stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
     testing::internal::CaptureStdout();
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, parsedOptions);
+    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, balanceSettings, parsedOptions);
     testing::internal::GetCapturedStdout();
   }
 };

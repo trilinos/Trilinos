@@ -68,8 +68,9 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
+        stk::balance::GraphCreationSettings balanceSettings;
         stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-        stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, parsedOptions);
+        stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, balanceSettings, parsedOptions);
     }
 
     void setup_initial_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -85,8 +86,8 @@ protected:
 
     void create_field_on_entire_mesh(const std::string& fieldName)
     {
-        targetDecompField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field_on_mesh(*targetDecompField, get_meta().universal_part(), static_cast<double*>(nullptr));
+        targetDecompField = &get_meta().declare_field<stk::mesh::Field<unsigned> >(stk::topology::ELEMENT_RANK, fieldName, 1);
+        stk::mesh::put_field_on_mesh(*targetDecompField, get_meta().universal_part(), static_cast<unsigned*>(nullptr));
     }
 
     void create_target_decomp_field_on_entire_mesh()
@@ -213,7 +214,7 @@ protected:
     virtual unsigned get_num_procs_initial_decomp() const = 0;
     virtual unsigned get_num_procs_target_decomp() const = 0;
 
-    stk::mesh::Field<double> *targetDecompField;
+    stk::mesh::Field<unsigned> *targetDecompField;
     stk::io::StkMeshIoBroker m_ioBroker;
 };
 
