@@ -798,7 +798,11 @@ namespace FROSch {
             if (OnCoarseSolveComm_) {
                 //Coarse DofsMaps so far only one Block will work
                 ConstXMapPtrVecPtr2D CoarseDofsMaps(1);
-                FROSch::BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,MLCoarseMap_->getComm(),CoarseSolveRepeatedMap_);
+#ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
+                BuildRepMapZoltan(SubdomainConnectGraph_,ElementNodeList_, DistributionList_,MLCoarseMap_->getComm(),CoarseSolveRepeatedMap_);
+#else
+                ThrowErrorMissingPackage("FROSch::CoarseOperator","Zoltan2");
+#endif
                 ConstRepMap = CoarseSolveRepeatedMap_;
                 ConstXMapPtrVecPtr NodesMapVector(1);
                 //MapVector for next Level
