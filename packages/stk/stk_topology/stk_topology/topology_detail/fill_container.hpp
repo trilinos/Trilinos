@@ -85,22 +85,6 @@ struct fill_ordinal_container< std::vector<T,A> >
 };
 
 template <typename NodeArray, typename NodeOutputIterator>
-struct host_fill_node_container {
-
-  template <typename Ordinal>
-  void operator()(Ordinal i)
-  { *m_itr = m_nodes[i]; ++m_itr; }
-
-  host_fill_node_container( const NodeArray & nodes, NodeOutputIterator itr)
-    : m_nodes(nodes)
-    , m_itr(itr)
-  {}
-
-  const NodeArray    & m_nodes;
-  NodeOutputIterator   m_itr;
-};
-
-template <typename NodeArray, typename NodeOutputIterator>
 struct fill_node_container {
 
   template <typename Ordinal>

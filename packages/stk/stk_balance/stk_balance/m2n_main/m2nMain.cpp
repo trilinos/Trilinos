@@ -43,13 +43,14 @@ void rebalance_m_to_n(stk::balance::M2NParsedOptions &parsedOptions, MPI_Comm co
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
 
-    stk::mesh::Field<double> &field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
-    stk::mesh::put_field_on_mesh(field, meta.universal_part(), (double*)nullptr);
+    stk::mesh::Field<unsigned> &field = meta.declare_field<stk::mesh::Field<unsigned> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), static_cast<unsigned*>(nullptr));
 
     stk::io::StkMeshIoBroker ioBroker;
     stk::io::fill_mesh_preexisting(ioBroker, parsedOptions.inFile, bulk);
 
-    stk::balance::internal::rebalanceMtoN(ioBroker, field, parsedOptions);
+    stk::balance::GraphCreationSettings balanceSettings;
+    stk::balance::internal::rebalanceMtoN(ioBroker, field, balanceSettings, parsedOptions);
 }
 
 }

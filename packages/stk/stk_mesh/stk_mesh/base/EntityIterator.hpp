@@ -6,15 +6,15 @@
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
-//
+// 
 //     * Redistributions of source code must retain the above copyright
 //       notice, this list of conditions and the following disclaimer.
-//
+// 
 //     * Redistributions in binary form must reproduce the above
 //       copyright notice, this list of conditions and the following
 //       disclaimer in the documentation and/or other materials provided
 //       with the distribution.
-//
+// 
 //     * Neither the name of NTESS nor the names of its contributors
 //       may be used to endorse or promote products derived from this
 //       software without specific prior written permission.
@@ -30,29 +30,22 @@
 // THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// 
 
-#ifndef STK_ENTITY_DATA_TO_FIELD_H
-#define STK_ENTITY_DATA_TO_FIELD_H
+#ifndef STK_MESH_ENTITYITERATOR_HPP
+#define STK_MESH_ENTITYITERATOR_HPP
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-//#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/EntityKey.hpp>
+#include <stk_mesh/base/Entity.hpp>
+#include <vector>
+#include <utility>
 
 namespace stk {
-namespace balance {
-namespace internal {
+namespace mesh {
 
-inline void put_entity_data_to_field(const stk::mesh::EntityProcVec& entityDataToBePutIntoField, stk::mesh::FieldBase *field)
-{
-    for(const stk::mesh::EntityProc& entityProc : entityDataToBePutIntoField)
-    {
-        unsigned *fieldData = static_cast<unsigned*>(stk::mesh::field_data(*field, entityProc.first));
-        *fieldData = static_cast<unsigned>(entityProc.second);
-    }
-}
+using const_entity_iterator = std::vector<std::pair<EntityKey,Entity>>::const_iterator;
+using entity_iterator = std::vector<std::pair<EntityKey,Entity>>::iterator;
 
-}
-}
-}
+}} // namespace stk::mesh
 
-#endif
+#endif /* STK_MESH_ENTITYITERATOR_HPP */
