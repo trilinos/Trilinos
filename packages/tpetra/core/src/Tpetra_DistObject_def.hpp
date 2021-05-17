@@ -422,15 +422,132 @@ namespace Tpetra {
               const CombineMode CM,
               bool restrictedMode)
   {
+    doTransferPost(src, transfer, modeString, revOp, CM, restrictedMode);
+    doTransferWait(src, transfer, modeString, revOp, CM, restrictedMode);
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  reallocImportsIfNeeded (const size_t newSize,
+                          const bool verbose,
+                          const std::string* prefix)
+  {
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Realloc (if needed) imports_ from "
+         << imports_.extent (0) << " to " << newSize << std::endl;
+      std::cerr << os.str ();
+    }
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
+    const bool reallocated =
+      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Finished realloc'ing imports_" << std::endl;
+      std::cerr << os.str ();
+    }
+    return reallocated;
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
+                                    const size_t numImportLIDs)
+  {
     using Details::Behavior;
+    using ::Tpetra::Details::dualViewStatusToString;
+    using ::Tpetra::Details::reallocDualViewIfNeeded;
+    using std::endl;
+    // If an array is already allocated, and if is at least
+    // tooBigFactor times bigger than it needs to be, free it and
+    // reallocate to the size we need, in order to save space.
+    // Otherwise, take subviews to reduce allocation size.
+    constexpr size_t tooBigFactor = 10;
+
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject",
+        "reallocArraysForNumPacketsPerLid");
+      std::ostringstream os;
+      os << *prefix
+         << "numExportLIDs: " << numExportLIDs
+         << ", numImportLIDs: " << numImportLIDs
+         << endl;
+      os << *prefix << "DualView status before:" << endl
+         << *prefix
+         << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                    "numExportPacketsPerLID_")
+         << endl
+         << *prefix
+         << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                    "numImportPacketsPerLID_")
+         << endl;
+      std::cerr << os.str ();
+    }
+
+    // Reallocate numExportPacketsPerLID_ if needed.
+    const bool firstReallocated =
+      reallocDualViewIfNeeded (this->numExportPacketsPerLID_,
+                               numExportLIDs,
+                               "numExportPacketsPerLID",
+                               tooBigFactor,
+                               true); // need fence before, if realloc'ing
+
+    // If we reallocated above, then we fenced after that
+    // reallocation.  This means that we don't need to fence again,
+    // before the next reallocation.
+    const bool needFenceBeforeNextAlloc = ! firstReallocated;
+    const bool secondReallocated =
+      reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
+                               numImportLIDs,
+                               "numImportPacketsPerLID",
+                               tooBigFactor,
+                               needFenceBeforeNextAlloc);
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "DualView status after:" << endl
+         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
+                                               "numExportPacketsPerLID_")
+         << endl
+         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
+                                               "numImportPacketsPerLID_")
+         << endl;
+      std::cerr << os.str ();
+    }
+
+    return firstReallocated || secondReallocated;
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doTransferPost(const SrcDistObject& src,
+                 const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                 const char modeString[],
+                 const ReverseOption revOp,
+                 const CombineMode CM,
+                 bool restrictedMode)
+  {
+    using Details::Behavior;
+    using ::Tpetra::Details::dualViewStatusToString;
+    using ::Tpetra::Details::getArrayViewFromDualView;
+    using Details::ProfilingRegion;
+    using Kokkos::Compat::getArrayView;
+    using Kokkos::Compat::getConstArrayView;
+    using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Kokkos::Compat::create_const_view;
+    using std::endl;
     using Details::getDualViewCopyFromArrayView;
     using Details::ProfilingRegion;
-    using std::endl;
     const char funcName[] = "Tpetra::DistObject::doTransfer";
 
     ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
-    std::unique_ptr<std::string> prefix;
+    std::shared_ptr<std::string> prefix;
     if (verbose) {
       std::ostringstream os;
       prefix = this->createPrefix("DistObject", "doTransfer");
@@ -540,10 +657,10 @@ namespace Tpetra {
 
     using const_lo_dv_type =
       Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
-    const_lo_dv_type permToLIDs = (revOp == DoForward) ?
+    const_lo_dv_type permuteToLIDs = (revOp == DoForward) ?
       transfer.getPermuteToLIDs_dv () :
       transfer.getPermuteFromLIDs_dv ();
-    const_lo_dv_type permFromLIDs = (revOp == DoForward) ?
+    const_lo_dv_type permuteFromLIDs = (revOp == DoForward) ?
       transfer.getPermuteFromLIDs_dv () :
       transfer.getPermuteToLIDs_dv ();
     const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
@@ -552,145 +669,6 @@ namespace Tpetra {
     const_lo_dv_type exportLIDs = (revOp == DoForward) ?
       transfer.getExportLIDs_dv () :
       transfer.getRemoteLIDs_dv ();
-    doTransferPost(src, CM, numSameIDs, permToLIDs, permFromLIDs,
-                   remoteLIDs, exportLIDs, distor, revOp, commOnHost,
-                   restrictedMode);
-    doTransferWait(src, CM, numSameIDs, permToLIDs, permFromLIDs,
-                   remoteLIDs, exportLIDs, distor, revOp, commOnHost,
-                   restrictedMode);
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Tpetra::DistObject::doTransfer: Done!" << endl;
-      std::cerr << os.str ();
-    }
-  }
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  reallocImportsIfNeeded (const size_t newSize,
-                          const bool verbose,
-                          const std::string* prefix)
-  {
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Realloc (if needed) imports_ from "
-         << imports_.extent (0) << " to " << newSize << std::endl;
-      std::cerr << os.str ();
-    }
-    using ::Tpetra::Details::reallocDualViewIfNeeded;
-    const bool reallocated =
-      reallocDualViewIfNeeded (this->imports_, newSize, "imports");
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "Finished realloc'ing imports_" << std::endl;
-      std::cerr << os.str ();
-    }
-    return reallocated;
-  }
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  reallocArraysForNumPacketsPerLid (const size_t numExportLIDs,
-                                    const size_t numImportLIDs)
-  {
-    using Details::Behavior;
-    using ::Tpetra::Details::dualViewStatusToString;
-    using ::Tpetra::Details::reallocDualViewIfNeeded;
-    using std::endl;
-    // If an array is already allocated, and if is at least
-    // tooBigFactor times bigger than it needs to be, free it and
-    // reallocate to the size we need, in order to save space.
-    // Otherwise, take subviews to reduce allocation size.
-    constexpr size_t tooBigFactor = 10;
-
-    const bool verbose = Behavior::verbose("DistObject");
-    std::unique_ptr<std::string> prefix;
-    if (verbose) {
-      prefix = this->createPrefix("DistObject",
-        "reallocArraysForNumPacketsPerLid");
-      std::ostringstream os;
-      os << *prefix
-         << "numExportLIDs: " << numExportLIDs
-         << ", numImportLIDs: " << numImportLIDs
-         << endl;
-      os << *prefix << "DualView status before:" << endl
-         << *prefix
-         << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                    "numExportPacketsPerLID_")
-         << endl
-         << *prefix
-         << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                    "numImportPacketsPerLID_")
-         << endl;
-      std::cerr << os.str ();
-    }
-
-    // Reallocate numExportPacketsPerLID_ if needed.
-    const bool firstReallocated =
-      reallocDualViewIfNeeded (this->numExportPacketsPerLID_,
-                               numExportLIDs,
-                               "numExportPacketsPerLID",
-                               tooBigFactor,
-                               true); // need fence before, if realloc'ing
-
-    // If we reallocated above, then we fenced after that
-    // reallocation.  This means that we don't need to fence again,
-    // before the next reallocation.
-    const bool needFenceBeforeNextAlloc = ! firstReallocated;
-    const bool secondReallocated =
-      reallocDualViewIfNeeded (this->numImportPacketsPerLID_,
-                               numImportLIDs,
-                               "numImportPacketsPerLID",
-                               tooBigFactor,
-                               needFenceBeforeNextAlloc);
-
-    if (verbose) {
-      std::ostringstream os;
-      os << *prefix << "DualView status after:" << endl
-         << *prefix << dualViewStatusToString (this->numExportPacketsPerLID_,
-                                               "numExportPacketsPerLID_")
-         << endl
-         << *prefix << dualViewStatusToString (this->numImportPacketsPerLID_,
-                                               "numImportPacketsPerLID_")
-         << endl;
-      std::cerr << os.str ();
-    }
-
-    return firstReallocated || secondReallocated;
-  }
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void
-  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doTransferPost(const SrcDistObject& src,
-                 const CombineMode CM,
-                 const size_t numSameIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& permuteToLIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& permuteFromLIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& remoteLIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& exportLIDs,
-                 Distributor& distor,
-                 const ReverseOption revOp,
-                 const bool commOnHost,
-                 const bool restrictedMode)
-  {
-    using Details::Behavior;
-    using ::Tpetra::Details::dualViewStatusToString;
-    using ::Tpetra::Details::getArrayViewFromDualView;
-    using Details::ProfilingRegion;
-    using Kokkos::Compat::getArrayView;
-    using Kokkos::Compat::getConstArrayView;
-    using Kokkos::Compat::getKokkosViewDeepCopy;
-    using Kokkos::Compat::create_const_view;
-    using std::endl;
-    const char funcName[] = "Tpetra::DistObject::doTransferNew";
 
     ProfilingRegion region_dTN(funcName);
 #ifdef HAVE_TPETRA_TRANSFER_TIMERS
@@ -698,14 +676,6 @@ namespace Tpetra {
     // of Kokkos profiling.
     Teuchos::TimeMonitor doXferMon (*doXferTimer_);
 #endif // HAVE_TPETRA_TRANSFER_TIMERS
-
-    const bool verbose = Behavior::verbose("DistObject");
-    // Prefix for verbose output.  Use a pointer, so we don't pay for
-    // string construction unless needed.  We set this below.
-    std::shared_ptr<std::string> prefix;
-    if (verbose) {
-      prefix = this->createPrefix("DistObject", "doTransferNew");
-    }
 
     if (verbose) {
       std::ostringstream os;
@@ -907,20 +877,11 @@ namespace Tpetra {
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
   doTransferWait(const SrcDistObject& src,
-                 const CombineMode CM,
-                 const size_t numSameIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& permuteToLIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& permuteFromLIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& remoteLIDs,
-                 const Kokkos::DualView<const local_ordinal_type*,
-                   buffer_device_type>& exportLIDs,
-                 Distributor& distor,
+                 const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                 const char modeString[],
                  const ReverseOption revOp,
-                 const bool commOnHost,
-                 const bool restrictedMode)
+                 const CombineMode CM,
+                 bool restrictedMode)
   {
     using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -931,15 +892,134 @@ namespace Tpetra {
     using Kokkos::Compat::getKokkosViewDeepCopy;
     using Kokkos::Compat::create_const_view;
     using std::endl;
-    const char funcName[] = "Tpetra::DistObject::doTransferNew";
+    using Details::getDualViewCopyFromArrayView;
+    using Details::ProfilingRegion;
+    const char funcName[] = "Tpetra::DistObject::doTransfer";
 
+    ProfilingRegion region_doTransfer(funcName);
     const bool verbose = Behavior::verbose("DistObject");
-    // Prefix for verbose output.  Use a pointer, so we don't pay for
-    // string construction unless needed.  We set this below.
     std::shared_ptr<std::string> prefix;
     if (verbose) {
-      prefix = this->createPrefix("DistObject", "doTransferNew");
+      std::ostringstream os;
+      prefix = this->createPrefix("DistObject", "doTransfer");
+      os << *prefix << "Source type: " << Teuchos::typeName(src)
+         << ", Target type: " << Teuchos::typeName(*this) << endl;
+      std::cerr << os.str();
     }
+
+    // "Restricted Mode" does two things:
+    // 1) Skips copyAndPermute
+    // 2) Allows the "target" Map of the transfer to be a subset of
+    //    the Map of *this, in a "locallyFitted" sense.
+    //
+    // This cannot be used if #2 is not true, OR there are permutes.
+    // Source Maps still need to match
+
+    // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
+    // checks.  These may communicate more.
+    const bool debug = Behavior::debug("DistObject");
+    if (debug) {
+      if (! restrictedMode && revOp == DoForward) {
+        const bool myMapSameAsTransferTgtMap =
+          this->getMap ()->isSameAs (* (transfer.getTargetMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapSameAsTransferTgtMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For forward-mode "
+           "communication, the target DistObject's Map must be the same "
+           "(in the sense of Tpetra::Map::isSameAs) as the input "
+           "Export/Import object's target Map.");
+      }
+      else if (! restrictedMode && revOp == DoReverse) {
+        const bool myMapSameAsTransferSrcMap =
+          this->getMap ()->isSameAs (* (transfer.getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapSameAsTransferSrcMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+           "communication, the target DistObject's Map must be the same "
+         "(in the sense of Tpetra::Map::isSameAs) as the input "
+           "Export/Import object's source Map.");
+      }
+      else if (restrictedMode && revOp == DoForward) {
+        const bool myMapLocallyFittedTransferTgtMap =
+          this->getMap ()->isLocallyFitted (* (transfer.getTargetMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapLocallyFittedTransferTgtMap , std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For forward-mode "
+           "communication using restricted mode, Export/Import object's "
+           "target Map must be locally fitted (in the sense of "
+           "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
+      }
+      else { // if (restrictedMode && revOp == DoReverse) 
+        const bool myMapLocallyFittedTransferSrcMap =
+          this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapLocallyFittedTransferSrcMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+           "communication using restricted mode, Export/Import object's "
+           "source Map must be locally fitted (in the sense of "
+           "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
+      }
+
+      // SrcDistObject need not even _have_ Maps.  However, if the
+      // source object is a DistObject, it has a Map, and we may
+      // compare that Map with the Transfer's Maps.
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+      if (srcDistObj != nullptr) {
+        if (revOp == DoForward) {
+          const bool srcMapSameAsImportSrcMap =
+            srcDistObj->getMap ()->isSameAs (* (transfer.getSourceMap ()));
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! srcMapSameAsImportSrcMap, std::invalid_argument,
+             "Tpetra::DistObject::" << modeString << ": For forward-mode "
+             "communication, the source DistObject's Map must be the same "
+             "as the input Export/Import object's source Map.");
+        }
+        else { // revOp == DoReverse
+          const bool srcMapSameAsImportTgtMap =
+            srcDistObj->getMap ()->isSameAs (* (transfer.getTargetMap ()));
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! srcMapSameAsImportTgtMap, std::invalid_argument,
+             "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+             "communication, the source DistObject's Map must be the same "
+             "as the input Export/Import object's target Map.");
+        }
+      }
+    }
+
+    const size_t numSameIDs = transfer.getNumSameIDs ();
+    Distributor& distor = transfer.getDistributor ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (debug && restrictedMode &&
+       (transfer.getPermuteToLIDs_dv().extent(0) != 0 ||
+        transfer.getPermuteFromLIDs_dv().extent(0) != 0),
+       std::invalid_argument,
+       "Tpetra::DistObject::" << modeString << ": Transfer object "
+       "cannot have permutes in restricted mode.");
+
+    // Do we need all communication buffers to live on host?
+    const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "doTransfer: Use new interface; "
+        "commOnHost=" << (commOnHost ? "true" : "false") << endl;
+      std::cerr << os.str ();
+    }
+
+    using const_lo_dv_type =
+      Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
+    const_lo_dv_type permuteToLIDs = (revOp == DoForward) ?
+      transfer.getPermuteToLIDs_dv () :
+      transfer.getPermuteFromLIDs_dv ();
+    const_lo_dv_type permuteFromLIDs = (revOp == DoForward) ?
+      transfer.getPermuteFromLIDs_dv () :
+      transfer.getPermuteToLIDs_dv ();
+    const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
+      transfer.getRemoteLIDs_dv () :
+      transfer.getExportLIDs_dv ();
+    const_lo_dv_type exportLIDs = (revOp == DoForward) ?
+      transfer.getExportLIDs_dv () :
+      transfer.getRemoteLIDs_dv ();
 
     size_t constantNumPackets = this->constantNumberOfPackets ();
 
@@ -997,6 +1077,12 @@ namespace Tpetra {
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "9. Done!" << endl;
+      std::cerr << os.str ();
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::doTransfer: Done!" << endl;
       std::cerr << os.str ();
     }
   }
