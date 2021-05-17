@@ -294,6 +294,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
     this->doImportPost(source, importer, CM, restrictedMode);
+    while (!this->isImportReady(source, importer, CM, restrictedMode)) continue;
     this->doImportWait(source, importer, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
@@ -326,6 +327,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
     this->doExportPost(source, exporter, CM, restrictedMode);
+    while (!this->isExportReady(source, exporter, CM, restrictedMode)) continue;
     this->doExportWait(source, exporter, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
@@ -358,6 +360,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
     this->doImportPost(source, exporter, CM, restrictedMode);
+    while (!this->isImportReady(source, exporter, CM, restrictedMode)) continue;
     this->doImportWait(source, exporter, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
@@ -390,6 +393,7 @@ namespace Tpetra {
       std::cerr << os.str ();
     }
     this->doExportPost(source, importer, CM, restrictedMode);
+    while (!this->isExportReady(source, importer, CM, restrictedMode)) continue;
     this->doExportWait(source, importer, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
@@ -644,6 +648,134 @@ namespace Tpetra {
       os << *prefix << "Done" << endl;
       std::cerr << os.str ();
     }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  isImportReady(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doImport (forward mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    bool result = this->isTransferReady(source, importer, modeString, DoForward, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+    return result;
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  isExportReady(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doExport (forward mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    bool result = this->isTransferReady(source, exporter, modeString, DoForward, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+    return result;
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  isImportReady(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doImport (reverse mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    bool result = this->isTransferReady(source, exporter, modeString, DoReverse, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+    return result;
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  isExportReady(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
+                const CombineMode CM,
+                const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doExport (reverse mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    bool result = this->isTransferReady(source, importer, modeString, DoReverse, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+    return result;
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -1333,6 +1465,218 @@ namespace Tpetra {
       os << *prefix << "Tpetra::DistObject::doTransfer: Done!" << endl;
       std::cerr << os.str ();
     }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  isTransferReady(const SrcDistObject& src,
+                  const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                  const char modeString[],
+                  const ReverseOption revOp,
+                  const CombineMode CM,
+                  bool restrictedMode)
+  {
+    using Details::Behavior;
+    using ::Tpetra::Details::dualViewStatusToString;
+    using ::Tpetra::Details::getArrayViewFromDualView;
+    using Details::ProfilingRegion;
+    using Kokkos::Compat::getArrayView;
+    using Kokkos::Compat::getConstArrayView;
+    using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Kokkos::Compat::create_const_view;
+    using std::endl;
+    using Details::getDualViewCopyFromArrayView;
+    using Details::ProfilingRegion;
+    const char funcName[] = "Tpetra::DistObject::doTransfer";
+
+    ProfilingRegion region_doTransfer(funcName);
+    const bool verbose = Behavior::verbose("DistObject");
+    std::shared_ptr<std::string> prefix;
+    if (verbose) {
+      std::ostringstream os;
+      prefix = this->createPrefix("DistObject", "doTransfer");
+      os << *prefix << "Source type: " << Teuchos::typeName(src)
+         << ", Target type: " << Teuchos::typeName(*this) << endl;
+      std::cerr << os.str();
+    }
+
+    bool result = true;
+
+    // "Restricted Mode" does two things:
+    // 1) Skips copyAndPermute
+    // 2) Allows the "target" Map of the transfer to be a subset of
+    //    the Map of *this, in a "locallyFitted" sense.
+    //
+    // This cannot be used if #2 is not true, OR there are permutes.
+    // Source Maps still need to match
+
+    // mfh 18 Oct 2017: Set TPETRA_DEBUG to true to enable extra debug
+    // checks.  These may communicate more.
+    const bool debug = Behavior::debug("DistObject");
+    if (debug) {
+      if (! restrictedMode && revOp == DoForward) {
+        const bool myMapSameAsTransferTgtMap =
+          this->getMap ()->isSameAs (* (transfer.getTargetMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapSameAsTransferTgtMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For forward-mode "
+           "communication, the target DistObject's Map must be the same "
+           "(in the sense of Tpetra::Map::isSameAs) as the input "
+           "Export/Import object's target Map.");
+      }
+      else if (! restrictedMode && revOp == DoReverse) {
+        const bool myMapSameAsTransferSrcMap =
+          this->getMap ()->isSameAs (* (transfer.getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapSameAsTransferSrcMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+           "communication, the target DistObject's Map must be the same "
+         "(in the sense of Tpetra::Map::isSameAs) as the input "
+           "Export/Import object's source Map.");
+      }
+      else if (restrictedMode && revOp == DoForward) {
+        const bool myMapLocallyFittedTransferTgtMap =
+          this->getMap ()->isLocallyFitted (* (transfer.getTargetMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapLocallyFittedTransferTgtMap , std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For forward-mode "
+           "communication using restricted mode, Export/Import object's "
+           "target Map must be locally fitted (in the sense of "
+           "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
+      }
+      else { // if (restrictedMode && revOp == DoReverse) 
+        const bool myMapLocallyFittedTransferSrcMap =
+          this->getMap ()->isLocallyFitted (* (transfer.getSourceMap ()));
+        TEUCHOS_TEST_FOR_EXCEPTION
+          (! myMapLocallyFittedTransferSrcMap, std::invalid_argument,
+           "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+           "communication using restricted mode, Export/Import object's "
+           "source Map must be locally fitted (in the sense of "
+           "Tpetra::Map::isLocallyFitted) to target DistObject's Map.");
+      }
+
+      // SrcDistObject need not even _have_ Maps.  However, if the
+      // source object is a DistObject, it has a Map, and we may
+      // compare that Map with the Transfer's Maps.
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+      if (srcDistObj != nullptr) {
+        if (revOp == DoForward) {
+          const bool srcMapSameAsImportSrcMap =
+            srcDistObj->getMap ()->isSameAs (* (transfer.getSourceMap ()));
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! srcMapSameAsImportSrcMap, std::invalid_argument,
+             "Tpetra::DistObject::" << modeString << ": For forward-mode "
+             "communication, the source DistObject's Map must be the same "
+             "as the input Export/Import object's source Map.");
+        }
+        else { // revOp == DoReverse
+          const bool srcMapSameAsImportTgtMap =
+            srcDistObj->getMap ()->isSameAs (* (transfer.getTargetMap ()));
+          TEUCHOS_TEST_FOR_EXCEPTION
+            (! srcMapSameAsImportTgtMap, std::invalid_argument,
+             "Tpetra::DistObject::" << modeString << ": For reverse-mode "
+             "communication, the source DistObject's Map must be the same "
+             "as the input Export/Import object's target Map.");
+        }
+      }
+    }
+
+    const size_t numSameIDs = transfer.getNumSameIDs ();
+    Distributor& distor = transfer.getDistributor ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION
+      (debug && restrictedMode &&
+       (transfer.getPermuteToLIDs_dv().extent(0) != 0 ||
+        transfer.getPermuteFromLIDs_dv().extent(0) != 0),
+       std::invalid_argument,
+       "Tpetra::DistObject::" << modeString << ": Transfer object "
+       "cannot have permutes in restricted mode.");
+
+    // Do we need all communication buffers to live on host?
+    const bool commOnHost = ! Behavior::assumeMpiIsCudaAware ();
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "doTransfer: Use new interface; "
+        "commOnHost=" << (commOnHost ? "true" : "false") << endl;
+      std::cerr << os.str ();
+    }
+
+    using const_lo_dv_type =
+      Kokkos::DualView<const local_ordinal_type*, buffer_device_type>;
+    const_lo_dv_type permuteToLIDs = (revOp == DoForward) ?
+      transfer.getPermuteToLIDs_dv () :
+      transfer.getPermuteFromLIDs_dv ();
+    const_lo_dv_type permuteFromLIDs = (revOp == DoForward) ?
+      transfer.getPermuteFromLIDs_dv () :
+      transfer.getPermuteToLIDs_dv ();
+    const_lo_dv_type remoteLIDs = (revOp == DoForward) ?
+      transfer.getRemoteLIDs_dv () :
+      transfer.getExportLIDs_dv ();
+    const_lo_dv_type exportLIDs = (revOp == DoForward) ?
+      transfer.getExportLIDs_dv () :
+      transfer.getRemoteLIDs_dv ();
+
+    size_t constantNumPackets = this->constantNumberOfPackets ();
+
+    // We only need to send data if the combine mode is not ZERO.
+    if (CM != ZERO) {
+      if (constantNumPackets != 0) {
+        // There are a constant number of packets per element.  We
+        // already know (from the number of "remote" (incoming)
+        // elements) how many incoming elements we expect, so we can
+        // resize the buffer accordingly.
+        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
+        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
+      }
+
+      // Do we need to do communication (via doPostsAndWaits)?
+      bool needCommunication = true;
+
+      // This may be NULL.  It will be used below.
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+
+      if (revOp == DoReverse && ! this->isDistributed ()) {
+        needCommunication = false;
+      }
+      // FIXME (mfh 30 Jun 2013): Checking whether the source object
+      // is distributed requires a cast to DistObject.  If it's not a
+      // DistObject, then I'm not quite sure what to do.  Perhaps it
+      // would be more appropriate for SrcDistObject to have an
+      // isDistributed() method.  For now, I'll just assume that we
+      // need to do communication unless the cast succeeds and the
+      // source is not distributed.
+      else if (revOp == DoForward && srcDistObj != NULL &&
+               ! srcDistObj->isDistributed ()) {
+        needCommunication = false;
+      }
+
+      if (! needCommunication) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Comm not needed; skipping" << endl;
+          std::cerr << os.str ();
+        }
+      }
+      else {
+        //doWaits(distor, revOp);
+        //call "isReady" or similar
+      } // if (needCommunication)
+    } // if (CM != ZERO)
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "9. Done!" << endl;
+      std::cerr << os.str ();
+    }
+
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Tpetra::DistObject::doTransfer: Done!" << endl;
+      std::cerr << os.str ();
+    }
+
+    return result;
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

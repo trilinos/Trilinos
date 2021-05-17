@@ -563,6 +563,30 @@ namespace Tpetra {
                  const CombineMode CM,
                  const bool restrictedMode = false);
 
+    bool
+    isImportReady(const SrcDistObject& source,
+                  const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                  const CombineMode CM,
+                  const bool restrictedMode = false);
+
+    bool
+    isExportReady(const SrcDistObject& source,
+                  const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                  const CombineMode CM,
+                  const bool restrictedMode = false);
+
+    bool
+    isImportReady(const SrcDistObject& source,
+                  const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                  const CombineMode CM,
+                  const bool restrictedMode = false);
+
+    bool
+    isExportReady(const SrcDistObject& source,
+                  const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                  const CombineMode CM,
+                  const bool restrictedMode = false);
+
     //@}
     //! @name Attribute accessor methods
     //@{
@@ -782,6 +806,13 @@ namespace Tpetra {
                         const ReverseOption revOp,
                         const CombineMode CM,
                         const bool restrictedMode);
+
+    bool isTransferReady(const SrcDistObject& src,
+                         const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                         const char modeString[],
+                         const ReverseOption revOp,
+                         const CombineMode CM,
+                         const bool restrictedMode);
 
     void doPosts(Distributor& distor,
                  size_t constantNumPackets,
