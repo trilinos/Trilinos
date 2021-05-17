@@ -293,8 +293,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoForward, CM,
-                      restrictedMode);
+    this->doImportPost(source, importer, CM, restrictedMode);
+    this->doImportWait(source, importer, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -325,8 +325,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoForward, CM,
-                      restrictedMode);
+    this->doExportPost(source, exporter, CM, restrictedMode);
+    this->doExportWait(source, exporter, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -357,8 +357,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, exporter, modeString, DoReverse, CM,
-                      restrictedMode);
+    this->doImportPost(source, exporter, CM, restrictedMode);
+    this->doImportWait(source, exporter, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -389,8 +389,256 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransfer (source, importer, modeString, DoReverse, CM,
-                      restrictedMode);
+    this->doExportPost(source, importer, CM, restrictedMode);
+    this->doExportWait(source, importer, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doImportPost(const SrcDistObject& source,
+               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doImport (forward mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferPost(source, importer, modeString, DoForward, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doExportPost(const SrcDistObject& source,
+               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doExport (forward mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferPost(source, exporter, modeString, DoForward, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doImportPost(const SrcDistObject& source,
+               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doImport (reverse mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferPost(source, exporter, modeString, DoReverse, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doExportPost(const SrcDistObject& source,
+               const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doExport (reverse mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferPost(source, importer, modeString, DoReverse, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doImportWait(const SrcDistObject& source,
+               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doImport (forward mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferWait(source, importer, modeString, DoForward, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doExportWait(const SrcDistObject& source,
+               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doExport (forward mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferWait(source, exporter, modeString, DoForward, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doImportWait(const SrcDistObject& source,
+               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doImport (reverse mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferWait(source, exporter, modeString, DoReverse, CM, restrictedMode);
+    if (verbose) {
+      std::ostringstream os;
+      os << *prefix << "Done" << endl;
+      std::cerr << os.str ();
+    }
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doExportWait(const SrcDistObject& source,
+               const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
+               const CombineMode CM,
+               const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using std::endl;
+    const char modeString[] = "doExport (reverse mode)";
+
+    // mfh 18 Oct 2017: Set TPETRA_VERBOSE to true for copious debug
+    // output to std::cerr on every MPI process.  This is unwise for
+    // runs with large numbers of MPI processes.
+    const bool verbose = Behavior::verbose("DistObject");
+    std::unique_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", modeString);
+      std::ostringstream os;
+      os << *prefix << "Start" << endl;
+      std::cerr << os.str ();
+    }
+    this->doTransferWait(source, importer, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;

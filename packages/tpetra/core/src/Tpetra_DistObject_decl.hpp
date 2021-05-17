@@ -515,6 +515,54 @@ namespace Tpetra {
               const CombineMode CM,
               const bool restrictedMode = false);
 
+    void
+    doImportPost(const SrcDistObject& source,
+                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doExportPost(const SrcDistObject& source,
+                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doImportPost(const SrcDistObject& source,
+                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doExportPost(const SrcDistObject& source,
+                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doImportWait(const SrcDistObject& source,
+                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doExportWait(const SrcDistObject& source,
+                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doImportWait(const SrcDistObject& source,
+                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
+    void
+    doExportWait(const SrcDistObject& source,
+                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                 const CombineMode CM,
+                 const bool restrictedMode = false);
+
     //@}
     //! @name Attribute accessor methods
     //@{
