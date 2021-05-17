@@ -552,7 +552,10 @@ namespace Tpetra {
     const_lo_dv_type exportLIDs = (revOp == DoForward) ?
       transfer.getExportLIDs_dv () :
       transfer.getRemoteLIDs_dv ();
-    doTransferNew (src, CM, numSameIDs, permToLIDs, permFromLIDs,
+    doTransferPost(src, CM, numSameIDs, permToLIDs, permFromLIDs,
+                   remoteLIDs, exportLIDs, distor, revOp, commOnHost,
+                   restrictedMode);
+    doTransferWait(src, CM, numSameIDs, permToLIDs, permFromLIDs,
                    remoteLIDs, exportLIDs, distor, revOp, commOnHost,
                    restrictedMode);
 
@@ -662,7 +665,7 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doTransferNew (const SrcDistObject& src,
+  doTransferPost(const SrcDistObject& src,
                  const CombineMode CM,
                  const size_t numSameIDs,
                  const Kokkos::DualView<const local_ordinal_type*,
@@ -895,7 +898,92 @@ namespace Tpetra {
           std::cerr << os.str ();
         }
 
-        doPostsAndWaits(distor, constantNumPackets, commOnHost, revOp, prefix);
+        doPosts(distor, constantNumPackets, commOnHost, revOp, prefix);
+      } // if (needCommunication)
+    } // if (CM != ZERO)
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doTransferWait(const SrcDistObject& src,
+                 const CombineMode CM,
+                 const size_t numSameIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   buffer_device_type>& permuteToLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   buffer_device_type>& permuteFromLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   buffer_device_type>& remoteLIDs,
+                 const Kokkos::DualView<const local_ordinal_type*,
+                   buffer_device_type>& exportLIDs,
+                 Distributor& distor,
+                 const ReverseOption revOp,
+                 const bool commOnHost,
+                 const bool restrictedMode)
+  {
+    using Details::Behavior;
+    using ::Tpetra::Details::dualViewStatusToString;
+    using ::Tpetra::Details::getArrayViewFromDualView;
+    using Details::ProfilingRegion;
+    using Kokkos::Compat::getArrayView;
+    using Kokkos::Compat::getConstArrayView;
+    using Kokkos::Compat::getKokkosViewDeepCopy;
+    using Kokkos::Compat::create_const_view;
+    using std::endl;
+    const char funcName[] = "Tpetra::DistObject::doTransferNew";
+
+    const bool verbose = Behavior::verbose("DistObject");
+    // Prefix for verbose output.  Use a pointer, so we don't pay for
+    // string construction unless needed.  We set this below.
+    std::shared_ptr<std::string> prefix;
+    if (verbose) {
+      prefix = this->createPrefix("DistObject", "doTransferNew");
+    }
+
+    size_t constantNumPackets = this->constantNumberOfPackets ();
+
+    // We only need to send data if the combine mode is not ZERO.
+    if (CM != ZERO) {
+      if (constantNumPackets != 0) {
+        // There are a constant number of packets per element.  We
+        // already know (from the number of "remote" (incoming)
+        // elements) how many incoming elements we expect, so we can
+        // resize the buffer accordingly.
+        const size_t rbufLen = remoteLIDs.extent (0) * constantNumPackets;
+        reallocImportsIfNeeded (rbufLen, verbose, prefix.get ());
+      }
+
+      // Do we need to do communication (via doPostsAndWaits)?
+      bool needCommunication = true;
+
+      // This may be NULL.  It will be used below.
+      const this_type* srcDistObj = dynamic_cast<const this_type*> (&src);
+
+      if (revOp == DoReverse && ! this->isDistributed ()) {
+        needCommunication = false;
+      }
+      // FIXME (mfh 30 Jun 2013): Checking whether the source object
+      // is distributed requires a cast to DistObject.  If it's not a
+      // DistObject, then I'm not quite sure what to do.  Perhaps it
+      // would be more appropriate for SrcDistObject to have an
+      // isDistributed() method.  For now, I'll just assume that we
+      // need to do communication unless the cast succeeds and the
+      // source is not distributed.
+      else if (revOp == DoForward && srcDistObj != NULL &&
+               ! srcDistObj->isDistributed ()) {
+        needCommunication = false;
+      }
+
+      if (! needCommunication) {
+        if (verbose) {
+          std::ostringstream os;
+          os << *prefix << "Comm not needed; skipping" << endl;
+          std::cerr << os.str ();
+        }
+      }
+      else {
+        doWaits(distor, revOp);
 
         if (verbose) {
           std::ostringstream os;
@@ -916,11 +1004,11 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doPostsAndWaits(Distributor& distor,
-                  size_t constantNumPackets,
-                  bool commOnHost,
-                  ReverseOption revOp,
-                  std::shared_ptr<std::string> prefix)
+  doPosts(Distributor& distor,
+          size_t constantNumPackets,
+          bool commOnHost,
+          ReverseOption revOp,
+          std::shared_ptr<std::string> prefix)
   {
     using ::Tpetra::Details::dualViewStatusToString;
     using ::Tpetra::Details::getArrayViewFromDualView;
@@ -974,12 +1062,8 @@ namespace Tpetra {
         totalImportPackets = countTotalImportPackets<the_dev_type> (numImp_h);
       }
       else { // ! commOnHost
-        if (this->numExportPacketsPerLID_.need_sync_device ()) {
-          this->numExportPacketsPerLID_.sync_device ();
-        }
-        if (this->numImportPacketsPerLID_.need_sync_device ()) {
-          this->numImportPacketsPerLID_.sync_device ();
-        }
+        this->numExportPacketsPerLID_.sync_device ();
+        this->numImportPacketsPerLID_.sync_device ();
         this->numImportPacketsPerLID_.modify_device (); // out arg
         auto numExp_d = create_const_view
           (this->numExportPacketsPerLID_.view_device ());
@@ -1025,12 +1109,8 @@ namespace Tpetra {
       // mfh 04 Feb 2019: Distributor expects the "num packets per
       // LID" arrays on host, so that it can issue MPI sends and
       // receives correctly.
-      if (this->numExportPacketsPerLID_.need_sync_host ()) {
-        this->numExportPacketsPerLID_.sync_host ();
-      }
-      if (this->numImportPacketsPerLID_.need_sync_host ()) {
-        this->numImportPacketsPerLID_.sync_host ();
-      }
+      this->numExportPacketsPerLID_.sync_host ();
+      this->numImportPacketsPerLID_.sync_host ();
 
       // NOTE (mfh 25 Apr 2016, 01 Aug 2017) doPostsAndWaits and
       // doReversePostsAndWaits currently want
@@ -1063,14 +1143,14 @@ namespace Tpetra {
       if (commOnHost) {
         this->imports_.modify_host ();
         if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits
+          distor.doReversePosts
             (create_const_view (this->exports_.view_host ()),
              numExportPacketsPerLID_av,
              this->imports_.view_host (),
              numImportPacketsPerLID_av);
         }
         else {
-          distor.doPostsAndWaits
+          distor.doPosts
             (create_const_view (this->exports_.view_host ()),
              numExportPacketsPerLID_av,
              this->imports_.view_host (),
@@ -1081,14 +1161,14 @@ namespace Tpetra {
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
         if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits
+          distor.doReversePosts
             (create_const_view (this->exports_.view_device ()),
              numExportPacketsPerLID_av,
              this->imports_.view_device (),
              numImportPacketsPerLID_av);
         }
         else {
-          distor.doPostsAndWaits
+          distor.doPosts
             (create_const_view (this->exports_.view_device ()),
              numExportPacketsPerLID_av,
              this->imports_.view_device (),
@@ -1126,13 +1206,13 @@ namespace Tpetra {
       if (commOnHost) {
         this->imports_.modify_host ();
         if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits
+          distor.doReversePosts
             (create_const_view (this->exports_.view_host ()),
              constantNumPackets,
              this->imports_.view_host ());
         }
         else {
-          distor.doPostsAndWaits
+          distor.doPosts
             (create_const_view (this->exports_.view_host ()),
              constantNumPackets,
              this->imports_.view_host ());
@@ -1142,19 +1222,33 @@ namespace Tpetra {
         Kokkos::fence(); // for UVM
         this->imports_.modify_device ();
         if (revOp == DoReverse) {
-          distor.doReversePostsAndWaits
+          distor.doReversePosts
             (create_const_view (this->exports_.view_device ()),
              constantNumPackets,
              this->imports_.view_device ());
         }
         else {
-          distor.doPostsAndWaits
+          distor.doPosts
             (create_const_view (this->exports_.view_device ()),
              constantNumPackets,
              this->imports_.view_device ());
         }
       } // commOnHost
     } // constant or variable num packets per LID
+  }
+
+  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
+  doWaits(Distributor& distor,
+          ReverseOption revOp)
+  {
+    if (revOp == DoReverse) {
+      distor.doReverseWaits();
+    }
+    else {
+      distor.doWaits();
+    }
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

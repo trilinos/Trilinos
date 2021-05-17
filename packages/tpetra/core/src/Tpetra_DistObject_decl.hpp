@@ -721,28 +721,46 @@ namespace Tpetra {
     /// LID DualViews come from the Transfer object given to
     /// doTransfer.  They are <i>always</i> sync'd on both host and
     /// device.  Users must never attempt to modify or sync them.
-    virtual void
-    doTransferNew (const SrcDistObject& src,
-                   const CombineMode CM,
-                   const size_t numSameIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteToLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& permuteFromLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& remoteLIDs,
-                   const Kokkos::DualView<const local_ordinal_type*,
-                     buffer_device_type>& exportLIDs,
-                   Distributor& distor,
-                   const ReverseOption revOp,
-                   const bool commOnHost,
-                   const bool restrictedMode);
+    void doTransferPost(const SrcDistObject& src,
+                        const CombineMode CM,
+                        const size_t numSameIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& permuteToLIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& permuteFromLIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& remoteLIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& exportLIDs,
+                        Distributor& distor,
+                        const ReverseOption revOp,
+                        const bool commOnHost,
+                        const bool restrictedMode);
 
-    void doPostsAndWaits(Distributor& distor,
-                         size_t constantNumPackets,
-                         bool commOnHost,
-                         ReverseOption revOp,
-                         std::shared_ptr<std::string> prefix);
+    void doTransferWait(const SrcDistObject& src,
+                        const CombineMode CM,
+                        const size_t numSameIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& permuteToLIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& permuteFromLIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& remoteLIDs,
+                        const Kokkos::DualView<const local_ordinal_type*,
+                          buffer_device_type>& exportLIDs,
+                        Distributor& distor,
+                        const ReverseOption revOp,
+                        const bool commOnHost,
+                        const bool restrictedMode);
+
+    void doPosts(Distributor& distor,
+                 size_t constantNumPackets,
+                 bool commOnHost,
+                 ReverseOption revOp,
+                 std::shared_ptr<std::string> prefix);
+
+    void doWaits(Distributor& distor,
+                 ReverseOption revOp);
 
     void doPackAndPrepare(const SrcDistObject& src,
                           const Kokkos::DualView<const local_ordinal_type*, buffer_device_type>& exportLIDs,
