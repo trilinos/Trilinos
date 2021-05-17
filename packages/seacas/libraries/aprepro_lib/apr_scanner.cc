@@ -2109,7 +2109,7 @@ YY_DECL
       {
         // Check if we need to save the substitution history first.
         if (aprepro.ap_options.keep_history && (aprepro.ap_file_list.top().name != "_string_")) {
-          if (curr_index > (size_t)yyleng)
+          if (curr_index > (ssize_t)yyleng)
             hist_start = curr_index - yyleng;
           else
             hist_start = 0;
