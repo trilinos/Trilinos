@@ -45,6 +45,7 @@
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
 #include <set>
+#include <stk_mesh/base/EntityIterator.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
