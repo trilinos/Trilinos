@@ -32,6 +32,7 @@ void excpus_(FTNREAL *cpusec)
 #include <sys/time.h>
 
 #if defined(__NO_CYGWIN_OPTION__)
+#define NOMINMAX
 #include <windows.h>
 #else
 #include <sys/resource.h>

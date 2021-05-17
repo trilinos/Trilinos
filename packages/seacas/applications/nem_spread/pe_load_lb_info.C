@@ -608,9 +608,9 @@ void NemSpread<T, INT>::read_lb_init(int lb_exoid, INT *Int_Space, INT *Int_Node
     fmt::print("---------------------------------------------------------\n"
                "\t\tLoad balance file global information\n"
                "---------------------------------------------------------\n"
-               "\tNumber of nodes:          {:n}\n"
-               "\tNumber of elements:       {:n}\n"
-               "\tNumber of element blocks: {:n}\n"
+               "\tNumber of nodes:          {:L}\n"
+               "\tNumber of elements:       {:L}\n"
+               "\tNumber of element blocks: {:L}\n"
                "---------------------------------------------------------\n",
                num_nodes, num_elem, num_elem_blk);
   }
@@ -670,14 +670,14 @@ in mesh file",
                    "\t\tLoad balance parameters as read by Processor 0\n"
                    "--------------------------------------------------------\n");
       }
-      fmt::print("Read on processor 0 for processor  {:n}\n"
-                 "\tNumber internal nodes:         {:n}\n"
-                 "\tNumber border nodes:           {:n}\n"
-                 "\tNumber external nodes:         {:n}\n"
-                 "\tNumber internal elements:      {:n}\n"
-                 "\tNumber border elements:       {:n}\n"
-                 "\tNumber of nodal comm maps:     {:n}\n"
-                 "\tNumber of elemental comm maps: {:n}\n"
+      fmt::print("Read on processor 0 for processor  {:L}\n"
+                 "\tNumber internal nodes:         {:L}\n"
+                 "\tNumber border nodes:           {:L}\n"
+                 "\tNumber external nodes:         {:L}\n"
+                 "\tNumber internal elements:      {:L}\n"
+                 "\tNumber border elements:       {:L}\n"
+                 "\tNumber of nodal comm maps:     {:L}\n"
+                 "\tNumber of elemental comm maps: {:L}\n"
                  "--------------------------------------------------------\n",
                  i, Int_Node_Num[i], Bor_Node_Num[i], Ext_Node_Num[i], Int_Elem_Num[i],
                  Bor_Elem_Num[i], Node_Comm_Num[i], Elem_Comm_Num[i]);

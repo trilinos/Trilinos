@@ -271,7 +271,7 @@ int read_mesh_params(const std::string &exo_file, Problem_Description *problem,
     fmt::print("\ttitle: {}\n", mesh->title);
   }
   fmt::print("\tgeometry dimension: {}\n", mesh->num_dims);
-  fmt::print("\tnumber of nodes: {:n}\tnumber of elements: {:n}\n", mesh->num_nodes,
+  fmt::print("\tnumber of nodes: {:L}\tnumber of elements: {:L}\n", mesh->num_nodes,
              mesh->num_elems);
   fmt::print("\tnumber of element blocks: {}\n", mesh->num_el_blks);
   fmt::print("\tnumber of node sets: {}\tnumber of side sets: {}\n", mesh->num_node_sets,

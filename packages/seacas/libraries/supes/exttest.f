@@ -59,6 +59,10 @@ C      CALL EXREAD( 'TST: ',LINE,IOSTAT )
       CALL EXMEMY( -10,LOCBLK,MEMRTN )
       PRINT *,'Memory block location and length: ',LOCBLK,MEMRTN
 
+      MEMRTN = -999
+      CALL EXMEMY( -10,LOCBLK,MEMRTN )
+      PRINT *,'Freeing Memory block location and length: ',LOCBLK,MEMRTN
+
       NN = IXLNUM( A(5) ) - IXLNUM( A )
       PRINT *,'Numeric difference = ',NN
 

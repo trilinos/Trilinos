@@ -855,7 +855,7 @@ std::string ExoII_Read<INT>::Global_to_Block_Local(size_t global_elmt_num, int &
     return "exodiff: ERROR:  File not open!";
   }
   if (global_elmt_num < 1 || global_elmt_num > num_elmts) {
-    return fmt::format("exodiff: ERROR:  global_elmt_num = {:n} is out of bounds [1, {:n}]!",
+    return fmt::format("exodiff: ERROR:  global_elmt_num = {:L} is out of bounds [1, {:L}]!",
                        global_elmt_num, num_elmts);
   }
 
@@ -995,8 +995,8 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
   if (dimension < 1 || dimension > 3) {
     Error(fmt::format("Init data appears corrupt:\n"
                       "         dimension = {}\n"
-                      "         num_nodes = {:n}\n"
-                      "         num_elmts = {:n}\n"
+                      "         num_nodes = {:L}\n"
+                      "         num_elmts = {:L}\n"
                       "         num_elmt_blocks = {}\n"
                       "         num_node_sets = {}\n"
                       "         num_side_sets = {}\n"
@@ -1070,9 +1070,9 @@ template <typename INT> void ExoII_Read<INT>::Get_Init_Data()
 
     if (e_count != num_elmts && !interFace.quiet_flag) {
       fmt::print(stderr,
-                 "exodiff: WARNING: Total number of elements {:n}"
+                 "exodiff: WARNING: Total number of elements {:L}"
                  " does not equal the sum of the number of elements "
-                 "in each block {:n}\n",
+                 "in each block {:L}\n",
                  num_elmts, e_count);
     }
 
