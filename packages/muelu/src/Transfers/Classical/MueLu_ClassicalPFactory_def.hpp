@@ -49,6 +49,7 @@
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Map.hpp>
+#include <Xpetra_Vector.hpp>
 #include <Xpetra_IO.hpp>
 
 #include <Teuchos_OrdinalTraits.hpp>
@@ -64,7 +65,7 @@
 
 
 //#define CMS_DEBUG
-//#define CMS_DUMP
+#define CMS_DUMP
 
 namespace { 
 
@@ -91,6 +92,9 @@ namespace MueLu {
     SET_VALID_ENTRY("aggregation: deterministic");
     SET_VALID_ENTRY("aggregation: coloring algorithm");
     SET_VALID_ENTRY("aggregation: classical scheme");
+
+    // To know if we need BlockNumber
+    SET_VALID_ENTRY("aggregation: drop scheme");
     {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validatorType;
       validParamList->getEntry("aggregation: classical scheme").setValidator(rcp(new validatorType(Teuchos::tuple<std::string>("direct","ext+i","classical modified"), "aggregation: classical scheme")));
@@ -104,7 +108,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("DofsPerNode", null, "Generating factory for variable \'DofsPerNode\', usually the same as for \'Graph\'");
     validParamList->set< RCP<const FactoryBase> >("CoarseMap",         Teuchos::null, "Generating factory of the CoarseMap");
     validParamList->set< RCP<const FactoryBase> >("FC Splitting",         Teuchos::null, "Generating factory of the FC Splitting");
-
+    validParamList->set< RCP<const FactoryBase> >("BlockNumber",        Teuchos::null, "Generating factory for Block Number");
     //    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Generating factory of the nullspace");
 
     return validParamList;
@@ -119,8 +123,13 @@ namespace MueLu {
     Input(fineLevel, "DofsPerNode");
     Input(fineLevel, "CoarseMap");
     Input(fineLevel, "FC Splitting");
+    
+    const ParameterList& pL = GetParameterList();
+    std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
+    if (drop_algo.find("block diagonal") != std::string::npos) {
+      Input(fineLevel, "BlockNumber");
+    }
 
-    //    Input(fineLevel, "Nullspace");
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -151,7 +160,12 @@ namespace MueLu {
     const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
     const ParameterList& pL = GetParameterList();
 
-    
+    // Get the block number, if we need it
+    RCP<LocalOrdinalVector> BlockNumber;
+    std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
+    if (drop_algo.find("block diagonal") != std::string::npos) 
+      BlockNumber = Get<RCP<LocalOrdinalVector> >(fineLevel, "BlockNumber");
+    // FIXME:  This needs to be ghosted
 
 #if defined(CMS_DEBUG) || defined(CMS_DUMP)
     {
@@ -224,15 +238,15 @@ namespace MueLu {
     std::string scheme = pL.get<std::string>("aggregation: classical scheme");
     if(scheme == "ext+i") {
       SubFactoryMonitor sfm(*this,"Ext+i Interpolation",coarseLevel);
-      Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+      Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     else if(scheme == "direct") {
       SubFactoryMonitor sfm(*this,"Direct Interpolation",coarseLevel);
-      Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+      Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     else if(scheme == "classical modified") {
       SubFactoryMonitor sfm(*this,"Classical Modified Interpolation",coarseLevel);
-      Coarsen_ClassicalModified(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,P);
+      Coarsen_ClassicalModified(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
@@ -258,7 +272,7 @@ namespace MueLu {
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_ClassicalModified(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+Coarsen_ClassicalModified(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Classical Modified Interpolation                    */
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -302,6 +316,11 @@ Coarsen_ClassicalModified(const Matrix & A,const GraphBase & graph,  RCP<const M
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     //    size_t ST_INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
     SC SC_ZERO = STS::zero();
+
+    // Get the block number if we have it.
+    ArrayRCP<const LO> block_id; 
+    if(!BlockNumber.is_null()) 
+      block_id = BlockNumber->getData(0);
 
     // Initial (estimated) allocation
     // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
@@ -428,7 +447,8 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           else if (!edgeIsStrong[row_start + j]) {
             // Weak neighbors
             // FIXME: Ghosting
-            diagonal_sum += a_ik;
+            if(block_id.size() && block_id[i] == block_id[k])
+              diagonal_sum += a_ik;
           }
           else if(myPointType[k] == F_PT && edgeIsStrong[row_start+j]) {
             // Strong F-neighbors
@@ -457,7 +477,8 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
             
             if(in_fis_star[j]) {
               // Point is in F_i^s\star
-              diagonal_sum +=a_ik;
+              if(block_id.size() && block_id[i] == block_id[k])
+                diagonal_sum +=a_ik;
             }
             
           }//end else F_PT                 
@@ -631,7 +652,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Direct Interpolation                                */
     /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
@@ -893,7 +914,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<Matrix> & P) const {
+Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
 
     /* ============================================================= */
     /* Phase 3 : Extended+i Interpolation                            */

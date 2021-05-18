@@ -1009,6 +1009,7 @@ namespace MueLu {
        ParameterList dropParams;
        dropParams.set("lightweight wrap", true);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme",             std::string, dropParams);
+       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: row sum drop tol",        double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: block diagonal: interleaved blocksize", int, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop tol",                     double, dropParams);
        MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: Dirichlet threshold",          double, dropParams);
@@ -1097,12 +1098,16 @@ namespace MueLu {
       aggFactory = rcp(new ClassicalPFactory());      
       ParameterList aggParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: classical scheme", std::string, aggParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "aggregation: drop scheme", std::string, aggParams);
       aggFactory->SetParameterList(aggParams);
       aggFactory->SetFactory("FC Splitting",manager.GetFactory("FC Splitting"));
       aggFactory->SetFactory("CoarseMap",manager.GetFactory("CoarseMap"));
       aggFactory->SetFactory("DofsPerNode", manager.GetFactory("Graph"));
       aggFactory->SetFactory("Graph", manager.GetFactory("Graph"));
-
+      std::string drop_algo = aggParams.get<std::string>("aggregation: drop scheme");
+      if (drop_algo.find("block diagonal") != std::string::npos) 
+        aggFactory->SetFactory("BlockNumber", manager.GetFactory("BlockNumber"));
+      
       // Now we short-circuit, because we neither need nor want TentativePFactory here      
       manager.SetFactory("Ptent",     aggFactory);
       manager.SetFactory("P Graph",     aggFactory);

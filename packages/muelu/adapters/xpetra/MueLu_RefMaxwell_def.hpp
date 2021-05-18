@@ -171,34 +171,6 @@ namespace MueLu {
     FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getData(0),dirichletCols);
   }
 
-
-  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  void ApplyRowSumCriterion(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-                            const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
-                            Teuchos::ArrayRCP<bool>& dirichletRows)
-  {
-    typedef Teuchos::ScalarTraits<Scalar> STS;
-    RCP<const Xpetra::Map<LocalOrdinal,GlobalOrdinal,Node>> rowmap = A.getRowMap();
-    for (LocalOrdinal row = 0; row < Teuchos::as<LocalOrdinal>(rowmap->getNodeNumElements()); ++row) {
-      size_t nnz = A.getNumEntriesInLocalRow(row);
-      ArrayView<const LocalOrdinal> indices;
-      ArrayView<const Scalar> vals;
-      A.getLocalRowView(row, indices, vals);
-
-      Scalar rowsum = STS::zero();
-      Scalar diagval = STS::zero();
-      for (LocalOrdinal colID = 0; colID < Teuchos::as<LocalOrdinal>(nnz); colID++) {
-        LocalOrdinal col = indices[colID];
-        if (row == col)
-          diagval = vals[colID];
-        rowsum += vals[colID];
-      }
-      if (STS::real(rowsum) > STS::magnitude(diagval) * rowSumTol)
-        dirichletRows[row] = true;
-    }
-  }
-
-
 #ifdef HAVE_MUELU_KOKKOS_REFACTOR
 
   template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -438,7 +410,7 @@ namespace MueLu {
       BCrows_ = Teuchos::arcp_const_cast<bool>(Utilities::DetectDirichletRows(*SM_Matrix_,Teuchos::ScalarTraits<magnitudeType>::eps(),/*count_twos_as_dirichlet=*/true));
 
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
+        Utilities::ApplyRowSumCriterion(*SM_Matrix_, rowSumTol, BCrows_);
 
       BCcols_.resize(D0_Matrix_->getColMap()->getNodeNumElements());
       BCdomain_.resize(D0_Matrix_->getDomainMap()->getNodeNumElements());
@@ -2408,7 +2380,7 @@ namespace MueLu {
             AHBCrows[i*dim+k] = BCdomain_[i];
       magnitudeType rowSumTol = parameterList_.get("refmaxwell: row sum drop tol (1,1)",-1.0);
       if (rowSumTol > 0.)
-        ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
+        Utilities::ApplyRowSumCriterion(*AH_, rowSumTol, AHBCrows);
       if (applyBCsToH_)
         Utilities::ApplyOAZToMatrixRows(AH_, AHBCrows);
     }

@@ -140,12 +140,17 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(mv.is_null(),std::invalid_argument,"Coloring on disk cannot be read");      
       fc_splitting = LocalOrdinalVectorFactory::Build(A->getRowMap());
       TEUCHOS_TEST_FOR_EXCEPTION(mv->getLocalLength() != fc_splitting->getLocalLength(),std::invalid_argument,"Coloring map mismatch");
-      ArrayRCP<const real_type> mv_data= mv->getData(0);
-      ArrayRCP<LO> fc_data= fc_splitting->getDataNonConst(0);
-      
-      for(LO i=0; i<(LO)fc_data.size(); i++)
-        fc_data[i] = (LO) mv_data[i];
 
+      // Overlay the Dirichlet Points (and copy out the rest)
+      auto boundaryNodes = graph->GetBoundaryNodeMap();
+      ArrayRCP<const real_type> mv_data= mv->getData(0);
+      ArrayRCP<LO> fc_data= fc_splitting->getDataNonConst(0);     
+      for(LO i=0; i<(LO)fc_data.size(); i++) {
+        if(boundaryNodes[i]) 
+          fc_data[i] = DIRICHLET_PT;
+        else
+          fc_data[i] = (LO) mv_data[i];
+      }
     }
     else if(coloringAlgo == "MIS" || graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
       SubFactoryMonitor sfm(*this,"MIS",currentLevel);
@@ -180,8 +185,8 @@ namespace MueLu {
           num_d_points++;
         }
         else if ((LO)myColors[i] == 1) {
-        myPointType[i] = C_PT;
-        num_c_points++;
+          myPointType[i] = C_PT;
+          num_c_points++;
         }
         else
           myPointType[i] = F_PT;
@@ -379,7 +384,7 @@ DoMISNaive(const GraphBase & graph, ArrayRCP<LO> & myColors, LO & numColors) con
 
   
   for(LO row=0; row < Nrows; row++) {
-    if(boundaryNodes[row]) 
+    if(boundaryNodes[row])
       continue;
     ArrayView<const LO> indices = graph.getNeighborVertices(row);
     bool has_colored_neighbor=false;

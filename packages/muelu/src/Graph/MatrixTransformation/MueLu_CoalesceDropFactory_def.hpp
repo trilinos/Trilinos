@@ -118,6 +118,7 @@ namespace MueLu {
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("aggregation: drop tol");
     SET_VALID_ENTRY("aggregation: Dirichlet threshold");
+    SET_VALID_ENTRY("aggregation: row sum drop tol");
     SET_VALID_ENTRY("aggregation: drop scheme");
     SET_VALID_ENTRY("aggregation: block diagonal: interleaved blocksize");
     SET_VALID_ENTRY("aggregation: distance laplacian directional weights");
@@ -135,7 +136,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                  Teuchos::null, "Generating factory of the matrix A");
     validParamList->set< RCP<const FactoryBase> >("UnAmalgamationInfo", Teuchos::null, "Generating factory for UnAmalgamationInfo");
     validParamList->set< RCP<const FactoryBase> >("Coordinates",        Teuchos::null, "Generating factory for Coordinates");
-    validParamList->set< RCP<const FactoryBase> >("BlockNumber",        Teuchos::null, "Generating factory for Coordinates");
+    validParamList->set< RCP<const FactoryBase> >("BlockNumber",        Teuchos::null, "Generating factory for BlockNUmber");
 
     return validParamList;
   }
@@ -191,6 +192,10 @@ namespace MueLu {
     LO interleaved_blocksize = as<LO>(pL.get<int>("aggregation: block diagonal: interleaved blocksize"));
     bool useSignedClassical = false;
 
+    // NOTE:  If we're doing blockDiagonal, we'll not want to do rowSum twice (we'll do it
+    // in the block diagonalizaiton). So we'll clobber the rowSumTol with -1.0 in this case
+    typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
+
     if(algo == "distance laplacian" ) { 
       // Grab the coordinates for distance laplacian
       Coords = Get< RCP<RealValuedMultiVector > >(currentLevel, "Coordinates");
@@ -240,6 +245,7 @@ namespace MueLu {
       }
       // All cases
       A = filteredMatrix;
+      rowSumTol = -1.0;
     }
     else {
       A = realA;
@@ -349,6 +355,7 @@ namespace MueLu {
 
       const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
 
+
       // NOTE: We don't support signed classical with cut drop at present
       TEUCHOS_TEST_FOR_EXCEPTION(useSignedClassical && classicalAlgo != defaultAlgo, Exceptions::RuntimeError, "\"aggregation: classical algo\" != default is not supported for scalled classical aggregation");
 
@@ -379,8 +386,10 @@ namespace MueLu {
           // Case 1:  scalar problem, no dropping => just use matrix graph
           RCP<GraphBase> graph = rcp(new Graph(A->getCrsGraph(), "graph of A"));
           // Detect and record rows that correspond to Dirichlet boundary conditions
-          ArrayRCP<const bool > boundaryNodes;
-          boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          ArrayRCP<bool > boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+          if (rowSumTol > 0.) 
+            Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);
+
           graph->SetBoundaryNodeMap(boundaryNodes);
           numTotal = A->getNodeNumEntries();
 
@@ -420,8 +429,10 @@ namespace MueLu {
             ghostedDiag = MueLu::Utilities<SC,LO,GO,NO>::GetMatrixOverlappedDiagonal(*A);
             ghostedDiagVals = ghostedDiag->getData(0);
           }
-          ArrayRCP<const bool> boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
-          
+          ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+          if (rowSumTol > 0.)
+            Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);          
+
           LO realnnz = 0;
           rows[0] = 0;
           for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
@@ -623,8 +634,11 @@ namespace MueLu {
           // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
           // TODO the array one bigger than the number of local rows, and the last entry can
           // TODO hold the actual number of boundary nodes.  Clever, huh?
-          ArrayRCP<const bool > pointBoundaryNodes;
-          pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          ArrayRCP<bool > pointBoundaryNodes;
+          pointBoundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+          if (rowSumTol > 0.)
+            Utilities::ApplyRowSumCriterion(*A, rowSumTol, pointBoundaryNodes);
+
 
           // extract striding information
           LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
@@ -742,8 +756,11 @@ namespace MueLu {
           // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
           // TODO the array one bigger than the number of local rows, and the last entry can
           // TODO hold the actual number of boundary nodes.  Clever, huh?
-          ArrayRCP<const bool > pointBoundaryNodes;
-          pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+          ArrayRCP<bool > pointBoundaryNodes;
+          pointBoundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+          if (rowSumTol > 0.)
+            Utilities::ApplyRowSumCriterion(*A, rowSumTol, pointBoundaryNodes);
+
 
           // extract striding information
           LO blkSize = A->GetFixedBlockSize();     //< the full block size (number of dofs per node in strided map)
@@ -851,8 +868,10 @@ namespace MueLu {
         // TODO If we use ArrayRCP<LO>, then we can record boundary nodes as usual.  Size
         // TODO the array one bigger than the number of local rows, and the last entry can
         // TODO hold the actual number of boundary nodes.  Clever, huh?
-        ArrayRCP<const bool > pointBoundaryNodes;
-        pointBoundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+        ArrayRCP<bool > pointBoundaryNodes;
+        pointBoundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+        if (rowSumTol > 0.)
+          Utilities::ApplyRowSumCriterion(*A, rowSumTol, pointBoundaryNodes);
 
         if ( (blkSize == 1) && (threshold == STS::zero()) ) {
           // Trivial case: scalar problem, no dropping. Can return original graph
@@ -1598,6 +1617,7 @@ namespace MueLu {
  
     const ParameterList  & pL = GetParameterList();
     const typename STS::magnitudeType dirichletThreshold = STS::magnitude(as<SC>(pL.get<double>("aggregation: Dirichlet threshold")));
+    const typename STS::magnitudeType rowSumTol = as<typename STS::magnitudeType>(pL.get<double>("aggregation: row sum drop tol"));
 
     RCP<LocalOrdinalVector> BlockNumber = Get<RCP<LocalOrdinalVector> >(currentLevel, "BlockNumber");
     RCP<LocalOrdinalVector> ghostedBlockNumber;
@@ -1659,7 +1679,10 @@ namespace MueLu {
       else rows_graph[row+1] = realnnz;
     }
     
-    ArrayRCP<const bool> boundaryNodes = MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold);
+    ArrayRCP<bool> boundaryNodes = Teuchos::arcp_const_cast<bool>(MueLu::Utilities<SC,LO,GO,NO>::DetectDirichletRows(*A, dirichletThreshold));
+    if (rowSumTol > 0.)
+      Utilities::ApplyRowSumCriterion(*A, rowSumTol, boundaryNodes);
+
         
     if(!generate_matrix) {
       // We can't resize an Arrayrcp and pass the checks for setAllValues
