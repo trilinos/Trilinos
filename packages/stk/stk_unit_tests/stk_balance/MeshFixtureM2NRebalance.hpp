@@ -37,7 +37,6 @@
 #include <stk_unit_test_utils/MeshFixture.hpp>
 #include <stk_balance/internal/balanceMtoN.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <Ioss_IOFactory.h>

@@ -7,7 +7,6 @@
 #include <stk_balance/internal/entityDataToField.hpp>
 #include <stk_balance/internal/MxNutils.hpp>
 #include <stk_balance/internal/M2NDecomposer.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -18,14 +17,14 @@ namespace balance {
 namespace internal {
 
 MtoNRebalancer::MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker,
-                               stk::mesh::Field<unsigned> &targetField,
-                               M2NDecomposer &decomposer,
-                               const stk::balance::M2NParsedOptions &parsedOptions)
+                               stk::mesh::Field<unsigned>& targetField,
+                               M2NDecomposer& decomposer,
+                               const M2NBalanceSettings& balanceSettings)
   : m_bulkData(ioBroker.bulk_data()),
-    m_subdomainCreator(ioBroker, parsedOptions.targetNumProcs),
+    m_subdomainCreator(ioBroker, balanceSettings.get_num_output_processors()),
     m_decomposer(decomposer),
     m_inputMeshTargetDecompField(targetField),
-    m_parsedOptions(parsedOptions)
+    m_balanceSettings(balanceSettings)
 {
   std::vector<size_t> counts;
   stk::mesh::comm_mesh_counts(m_bulkData, counts);
@@ -45,7 +44,7 @@ MtoNRebalancer::rebalance(int numSteps, double timeStep)
   for (const std::vector<unsigned> & targetSubdomains : targetSubdomainsForEachBatch) {
     OutputMesh outputMesh = clone_target_subdomains(targetSubdomains);
     move_subdomain_to_owning_processor(outputMesh);
-    create_subdomain_and_write(m_parsedOptions.inFile, targetSubdomains, outputMesh, numSteps, timeStep);
+    create_subdomain_and_write(m_balanceSettings.get_input_filename(), targetSubdomains, outputMesh, numSteps, timeStep);
   }
 }
 

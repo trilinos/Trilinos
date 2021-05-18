@@ -793,14 +793,14 @@ void fill_decomp_using_geometric_method(stk::mesh::BulkData& stkMeshBulkData, co
 }
 
 
-void get_multicriteria_parmetis_decomp(const stk::mesh::BulkData &mesh,
-                                       stk::mesh::Selector selector,
-                                       const stk::ParallelMachine & decompCommunicator,
-                                       const BalanceSettings& balanceSettings,
-                                       const stk::mesh::impl::LocalIdMapper& domainLocalIds,
-                                       Zoltan2ParallelGraph &zoltan2Graph,
-                                       Teuchos::ParameterList &params,
-                                       stk::mesh::EntityProcVec &decomp)
+void get_multicriteria_graph_based_decomp(const stk::mesh::BulkData &mesh,
+                                          stk::mesh::Selector selector,
+                                          const stk::ParallelMachine & decompCommunicator,
+                                          const BalanceSettings& balanceSettings,
+                                          const stk::mesh::impl::LocalIdMapper& domainLocalIds,
+                                          Zoltan2ParallelGraph &zoltan2Graph,
+                                          Teuchos::ParameterList &params,
+                                          stk::mesh::EntityProcVec &decomp)
 
 {
   StkMeshZoltanAdapter stkMeshAdapter(zoltan2Graph);
@@ -1157,12 +1157,12 @@ void createZoltanParallelGraph(stk::mesh::BulkData & stkMeshBulkData,
   }
 }
 
-void fill_decomp_using_parmetis(stk::mesh::BulkData & stkMeshBulkData,
-                                const std::vector<stk::mesh::Selector> & selectors,
-                                const stk::ParallelMachine & decompCommunicator,
-                                const int numSubdomainsToCreate,
-                                const BalanceSettings & balanceSettings,
-                                stk::mesh::EntityProcVec & decomp)
+void fill_decomp_using_graph_based_method(stk::mesh::BulkData & stkMeshBulkData,
+                                          const std::vector<stk::mesh::Selector> & selectors,
+                                          const stk::ParallelMachine & decompCommunicator,
+                                          const int numSubdomainsToCreate,
+                                          const BalanceSettings & balanceSettings,
+                                          stk::mesh::EntityProcVec & decomp)
 {
 #if defined(WRITE_OUT_DEBUGGING_INFO) || defined(WRITE_OUT_DECOMP_METRICS)
   static int step = 0;
@@ -1182,15 +1182,15 @@ void fill_decomp_using_parmetis(stk::mesh::BulkData & stkMeshBulkData,
     stk::mesh::Selector selectUnion = stk::mesh::selectUnion(selectors);
     Zoltan2ParallelGraph zoltan2Graph;
     createZoltanParallelGraph(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings, zoltan2Graph);
-    get_multicriteria_parmetis_decomp(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings,
-                                      localIds, zoltan2Graph, params, decomp);
+    get_multicriteria_graph_based_decomp(stkMeshBulkData, selectUnion, decompCommunicator, balanceSettings,
+                                         localIds, zoltan2Graph, params, decomp);
   }
   else {
     for (const stk::mesh::Selector & selector : selectors) {
       Zoltan2ParallelGraph zoltan2Graph;
       createZoltanParallelGraph(stkMeshBulkData, selector, decompCommunicator, balanceSettings, zoltan2Graph);
-      get_multicriteria_parmetis_decomp(stkMeshBulkData, selector, decompCommunicator, balanceSettings,
-                                        localIds, zoltan2Graph, params, decomp);
+      get_multicriteria_graph_based_decomp(stkMeshBulkData, selector, decompCommunicator, balanceSettings,
+                                           localIds, zoltan2Graph, params, decomp);
     }
   }
 
@@ -1269,7 +1269,8 @@ bool is_geometric_method(const std::string& method)
 
 bool is_graph_based_method(const std::string& method)
 {
-  return (method == "parmetis");
+  return (method == "parmetis" ||
+          method == "scotch");
 }
 
 void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
@@ -1294,7 +1295,7 @@ void calculateGeometricOrGraphBasedDecomp(stk::mesh::BulkData & stkMeshBulkData,
                                                                         stkMeshBulkData.mesh_meta_data().globally_shared_part(),
                                                                         "customAura");
       internal::fill_spider_connectivity_count_fields(stkMeshBulkData, balanceSettings);
-      fill_decomp_using_parmetis(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings, decomp);
+      fill_decomp_using_graph_based_method(stkMeshBulkData, selectors, decompCommunicator, numSubdomainsToCreate, balanceSettings, decomp);
       stk::tools::destroy_custom_aura(stkMeshBulkData, customAura);
     }
   }
