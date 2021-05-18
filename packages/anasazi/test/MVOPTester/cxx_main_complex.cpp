@@ -99,27 +99,8 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ST;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<double> ST;
-#else
-  typedef double ST;
-  // no complex. quit with failure.
-  if (verbose && MyPID==0) {
-    cout << "Not compiled with complex support." << endl;
-    if (verbose && MyPID==0) {
-      cout << "End Result: TEST FAILED" << endl;
-    }
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
-
   // Issue several useful typedefs;
-  //typedef Anasazi::MultiVec<ST> MV;
+  typedef std::complex<double> ST;
   typedef Anasazi::MultiVec<ST> MV;
   typedef Anasazi::Operator<ST> OP;
   typedef Anasazi::MultiVecTraits<ST,MV> MVT;
