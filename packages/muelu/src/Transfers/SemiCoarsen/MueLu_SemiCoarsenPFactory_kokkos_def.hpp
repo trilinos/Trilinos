@@ -290,13 +290,13 @@ namespace MueLu {
       const auto localTempHost = localTemp->getHostLocalView();
       for (int row = 0; row < NFRows; row++)
         localTempHost(row, 0) = LayerId[row / DofsPerNode];
-      // const auto localTempView = localTemp->getDeviceLocalView();
-      const auto localTempView = localTemp->template getLocalView<DeviceType>();
+      const auto localTempView = localTemp->getDeviceLocalView();
+      // const auto localTempView = localTemp->template getLocalView<DeviceType>();
       Kokkos::deep_copy(localTempView, localTempHost);
       FCol2LayerVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
     }
-    // const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView();
-    const auto FCol2LayerView = FCol2LayerVector->template getLocalView<DeviceType>();
+    const auto FCol2LayerView = FCol2LayerVector->getDeviceLocalView();
+    // const auto FCol2LayerView = FCol2LayerVector->template getLocalView<DeviceType>();
     const auto FCol2Layer = Kokkos::subview(FCol2LayerView, Kokkos::ALL(), 0);
 
     // Construct a map from fine level column to local dof per node id (including ghost nodes)
@@ -307,13 +307,13 @@ namespace MueLu {
       const auto localTempHost = localTemp->getHostLocalView();
       for (int row = 0; row < NFRows; row++)
         localTempHost(row, 0) = row % DofsPerNode;
-      // const auto localTempView = localTemp->getDeviceLocalView();
-      const auto localTempView = localTemp->template getLocalView<DeviceType>();
+      const auto localTempView = localTemp->getDeviceLocalView();
+      // const auto localTempView = localTemp->template getLocalView<DeviceType>();
       Kokkos::deep_copy(localTempView, localTempHost);
       FCol2DofVector->doImport(*localTemp, *(importer), Xpetra::INSERT);
     }
-    // const auto FCol2DofView = FCol2DofVector->getDeviceLocalView();
-    const auto FCol2DofView = FCol2DofVector->template getLocalView<DeviceType>();
+    const auto FCol2DofView = FCol2DofVector->getDeviceLocalView();
+    // const auto FCol2DofView = FCol2DofVector->template getLocalView<DeviceType>();
     const auto FCol2Dof = Kokkos::subview(FCol2DofView, Kokkos::ALL(), 0);
 
     // Compute NVertLines
@@ -567,10 +567,10 @@ namespace MueLu {
     // Construct coarse nullspace and inject fine nullspace
     coarseNullspace = MultiVectorFactory::Build(coarseMap, fineNullspace->getNumVectors());
     const int numVectors = fineNullspace->getNumVectors();
-    // const auto fineNullspaceView = fineNullspace->getDeviceLocalView();
-    // const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView();
-    const auto fineNullspaceView = fineNullspace->template getLocalView<DeviceType>();
-    const auto coarseNullspaceView = coarseNullspace->template getLocalView<DeviceType>();
+    const auto fineNullspaceView = fineNullspace->getDeviceLocalView();
+    const auto coarseNullspaceView = coarseNullspace->getDeviceLocalView();
+    // const auto fineNullspaceView = fineNullspace->template getLocalView<DeviceType>();
+    // const auto coarseNullspaceView = coarseNullspace->template getLocalView<DeviceType>();
     using range_policy = Kokkos::RangePolicy<execution_space>;
     Kokkos::parallel_for("MueLu::SemiCoarsenPFactory_kokkos::BuildSemiCoarsenP Inject Nullspace",range_policy(0,NVertLines),
       KOKKOS_LAMBDA (const int line) {
