@@ -48,7 +48,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
-#include "BelosBlockCGSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
 #include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -56,9 +56,6 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-
-// I/O for Harwell-Boeing files
-#include <Trilinos_Util_iohb.h>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -71,7 +68,7 @@ using Teuchos::tuple;
 
 int main(int argc, char *argv[]) {
 
-  typedef std::complex<double>             ST;
+  typedef double                           ST;
   typedef ScalarTraits<ST>                SCT;
   typedef SCT::magnitudeType               MT;
   typedef Tpetra::Operator<ST>             OP;
@@ -89,32 +86,37 @@ int main(int argc, char *argv[]) {
   //
   // Get test parameters from command-line processor
   //
-  bool verbose = false, proc_verbose = false, debug = false;
-  int frequency = -1;  // how often residuals are printed by solver
-  int numrhs = 1;      // total number of right-hand sides to solve for
-  int blocksize = 1;   // blocksize used by solver
-  int maxiters = -1;   // maximum number of iterations for solver to use
-  std::string filename("mhd1280b.cua");
-  MT tol = 1.0e-5;     // relative residual tolerance
+  bool verbose = false, debug = false, proc_verbose = false;
+  int frequency = -1;        // frequency of status test output.
+  int numrhs = 1;            // number of right-hand sides to solve for
+  int maxiters = -1;         // maximum number of iterations allowed per linear system
+  int maxsubspace = 250;      // maximum number of blocks the solver can use for the subspace
+  int recycle = 50;      // maximum number of blocks the solver can use for the subspace
+  int maxrestarts = 15;      // number of restarts allowed
+  std::string filename("orsirr1.hb");
+  std::string ortho("IMGS");
+  MT tol = 1.0e-10;           // relative residual tolerance
 
-  CommandLineProcessor cmdp(false,true);
+  Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-  cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
+  cmdp.setOption("debug","nodebug",&debug,"Print debugging information from the solver.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
-  cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
+  cmdp.setOption("filename",&filename,"Filename for test matrix.  Acceptable file extensions: *.hb,*.mtx,*.triU,*.triS");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GMRES solver.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
-  cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 = adapted to problem/block size).");
+  cmdp.setOption("max-subspace",&maxsubspace,"Maximum number of vectors in search space (including recycle space).");
+  cmdp.setOption("recycle",&recycle,"Number of vectors in recycle space.");
+  cmdp.setOption("max-cycles",&maxrestarts,"Maximum number of cycles allowed for GCRO-DR solver.");
+  cmdp.setOption("ortho-type",&ortho,"Orthogonalization type. Must be one of DGKS, ICGS, IMGS.");
+  if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
   if (debug) {
     verbose = true;
   }
-  if (!verbose) {
+  if (!verbose)
     frequency = -1;  // reset frequency if test is not verbose
-  }
 
   proc_verbose = ( verbose && (MyPID==0) );
 
@@ -124,7 +126,7 @@ int main(int argc, char *argv[]) {
 
   Belos::Tpetra::HarwellBoeingReader<Tpetra::CrsMatrix<ST> > reader( comm );
   RCP<Tpetra::CrsMatrix<ST> > A = reader.readFromFile( filename );
-  RCP<const Tpetra::Map<> > map = A->getMap();
+  RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
   // Create initial vectors
   RCP<MV> B, X;
@@ -139,27 +141,27 @@ int main(int argc, char *argv[]) {
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->getGlobalLength();
-  if (maxiters == -1) {
-    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  }
+  if (maxiters == -1)
+    maxiters = NumGlobalElements - 1; // maximum number of iterations to run
   //
   ParameterList belosList;
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
+  belosList.set( "Num Blocks", maxsubspace);             // Maximum number of blocks in Krylov factorization
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
-  int verbLevel = Belos::Errors + Belos::Warnings;
-  if (debug) {
-    verbLevel += Belos::Debug;
-  }
+  belosList.set( "Num Recycled Blocks", recycle );       // Number of vectors in recycle space
+  belosList.set( "Orthogonalization", ortho );           // Orthogonalization type
+
+  int verbosity = Belos::Errors + Belos::Warnings;
   if (verbose) {
-    verbLevel += Belos::TimingDetails + Belos::FinalSummary + Belos::StatusTestDetails;
-  }
-  belosList.set( "Verbosity", verbLevel );
-  if (verbose) {
-    if (frequency > 0) {
+    verbosity += Belos::TimingDetails + Belos::StatusTestDetails;
+    if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
-    }
   }
+  if (debug) {
+    verbosity += Belos::Debug;
+  }
+  belosList.set( "Verbosity", verbosity );
   //
   // Construct an unpreconditioned linear problem instance.
   //
@@ -172,10 +174,10 @@ int main(int argc, char *argv[]) {
   }
   //
   // *******************************************************************
-  // *************Start the block CG iteration***********************
+  // ******************Start the GCRODR iteration***********************
   // *******************************************************************
   //
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+  Belos::GCRODRSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
   //
   // **********Print out information about problem*******************
@@ -184,8 +186,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of CG iterations: " << maxiters << std::endl;
+    std::cout << "Max number of GCRODR iterations: " << maxiters << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -215,7 +216,7 @@ int main(int argc, char *argv[]) {
     if (actRes > tol) badRes = true;
   }
 
-  if (ret!=Belos::Converged || badRes) {
+  if ( ret!=Belos::Converged || badRes) {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }
@@ -229,4 +230,4 @@ int main(int argc, char *argv[]) {
   }
   return 0;
   //
-} // end test_bl_cg_complex_hb.cpp
+} // end test_gcrodr_hb.cpp
