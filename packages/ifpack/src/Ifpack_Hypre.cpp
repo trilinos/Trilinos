@@ -816,6 +816,8 @@ int Ifpack_Hypre::Compute(){
         HYPRE_Int local_size = hypre_CSRMatrixNumRows(hypre_ParCSRMatrixDiag(A_array[k]));
         sprintf(ofs,"cf_marker.bmg.%d.dat.%d",k,Comm().MyPID());
         FILE * f = fopen(ofs,"w");
+        fprintf(f,"%%%%MatrixMarket matrix array real general\n");
+        fprintf(f,"%d 1\n",local_size);
         for(int i=0; i<local_size; i++)
           fprintf(f,"%d\n",(int)CF_marker_array[k][i]);
         fclose(f);
