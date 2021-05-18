@@ -53,9 +53,8 @@ TEST_F(TestBalanceMtoM, MxM_decompositionWithoutAura)
 {
     if(stk::parallel_machine_size(get_comm()) == static_cast<int>(get_num_procs_initial_decomp())) {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::balance::GraphCreationSettings balanceSettings;
-        stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-        EXPECT_NO_THROW(stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, balanceSettings, parsedOptions));
+        stk::balance::M2NBalanceSettings balanceSettings(get_output_filename(), get_num_procs_target_decomp());
+        EXPECT_NO_THROW(stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, balanceSettings));
     }
 }
 
@@ -85,10 +84,11 @@ TEST_F(Mesh1x1x4, read2procsWrite4procsFilesUsingGeneratedMesh)
 
     setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
 
-    stk::balance::BasicZoltan2Settings graphSettings;
-    stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-    stk::balance::internal::M2NDecomposer decomposer(get_bulk(), graphSettings, parsedOptions);
-    stk::balance::internal::MtoNRebalancer rebalancer(m_ioBroker, *targetDecompField, decomposer, parsedOptions);
+    stk::balance::M2NBalanceSettings balanceSettings(get_output_filename(), get_num_procs_target_decomp());
+    balanceSettings.setDecompMethod("rcb");
+
+    stk::balance::internal::M2NDecomposer decomposer(get_bulk(), balanceSettings);
+    stk::balance::internal::MtoNRebalancer rebalancer(m_ioBroker, *targetDecompField, decomposer, balanceSettings);
 
     rebalancer.decompose_mesh();
     rebalancer.map_new_subdomains_to_original_processors();

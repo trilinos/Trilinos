@@ -43,12 +43,11 @@ public:
   virtual void rebalance_mesh_m2n(int numFinalProcs) override
   {
     m_numFinalProcs = numFinalProcs;
-    const bool useNestedDecomp = false;
-    stk::balance::BasicGeometricSettings balanceSettings;
-    stk::balance::M2NParsedOptions parsedOptions{get_output_file_name(), numFinalProcs, useNestedDecomp};
+    stk::balance::M2NBalanceSettings balanceSettings(get_output_file_name(), numFinalProcs);
+    balanceSettings.setDecompMethod("rcb");
 
     stk::EnvData::instance().m_outputP0 = &stk::EnvData::instance().m_outputNull;
-    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, balanceSettings, parsedOptions);
+    stk::balance::internal::rebalanceMtoN(m_ioBroker, *m_targetDecompField, balanceSettings);
     stk::EnvData::instance().m_outputP0 = &std::cout;
   }
 };
