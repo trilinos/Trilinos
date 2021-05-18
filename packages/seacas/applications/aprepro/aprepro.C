@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
     if (!infile.good()) {
       std::cerr << "APREPRO: ERROR: Could not open file: " << input_files[0] << '\n'
                 << "                Error Code: " << strerror(errno) << '\n';
-      return 0;
+      return EXIT_FAILURE;
     }
 
     // Read and parse a file.  The entire file will be parsed and
