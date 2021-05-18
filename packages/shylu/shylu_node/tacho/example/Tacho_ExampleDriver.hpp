@@ -12,6 +12,7 @@ int driver (int argc, char *argv[]) {
   int nthreads = 1;
   bool verbose = true;
   bool sanitize = false;
+  bool duplicate = false;
   std::string file = "test.mtx";
   std::string graph_file = "";
   std::string weight_file = "";
@@ -29,6 +30,7 @@ int driver (int argc, char *argv[]) {
   opts.set_option<int>("kokkos-threads", "Number of threads", &nthreads);
   opts.set_option<bool>("verbose", "Flag for verbose printing", &verbose);
   opts.set_option<bool>("sanitize", "Flag to sanitize input matrix (remove zeros)", &sanitize);
+  opts.set_option<bool>("duplicate", "Flag to duplicate input graph in the solver", &duplicate);
   opts.set_option<std::string>("file", "Input file (MatrixMarket SPD matrix)", &file);
   opts.set_option<std::string>("graph", "Input condensed graph", &graph_file);
   opts.set_option<std::string>("weight", "Input condensed graph weight", &weight_file);
@@ -157,7 +159,8 @@ int driver (int argc, char *argv[]) {
     solver.initialize();
 
     /// symbolic structure can be reused
-    solver.factorize(values_on_device);
+    for (int i=0;i<2;++i)
+      solver.factorize(values_on_device);
     
     DenseMultiVectorType 
       b("b", A.NumRows(), nrhs), // rhs multivector
