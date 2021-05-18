@@ -1661,7 +1661,7 @@ void BulkData::comm_procs( EntityKey key, std::vector<int> & procs ) const
 void BulkData::comm_procs(Entity entity, std::vector<int> & procs ) const
 {
   ThrowAssertMsg(is_valid(entity),
-                  "BulkData::comm_procs ERROR, input key "<<entity_key(entity)<<" not a valid entity. Contact sierra-help@sandia.gov");
+                  "BulkData::comm_procs ERROR, input entity "<<entity_key(entity)<<" not a valid entity. Contact sierra-help@sandia.gov");
 
   impl::fill_sorted_procs(internal_entity_comm_map(entity), procs);
 }
@@ -1717,26 +1717,25 @@ void BulkData::shared_procs_intersection(const EntityVector& entities,
 {
   procs.clear();
   int num = entities.size();
-  std::vector<int> procs_tmp;
-  std::vector<int> result;
-  for (int i = 0; i < num; ++i)
-  {
-    comm_shared_procs(entities[i], procs_tmp);
+  for (int i = 0; i < num; ++i) {
 
-    if (i == 0)
-      procs.swap(procs_tmp);
-    else
-    {
-      // subsequent loops keep the intersection
-      result.clear();
-      std::back_insert_iterator<std::vector<int> > result_itr(result);
-      std::set_intersection(procs.begin(),
-                            procs.end(),
-                            procs_tmp.begin(),
-                            procs_tmp.end(),
-                            result_itr,
-                            std::less<int>());
-      procs.swap(result);
+    if (i == 0) {
+      comm_shared_procs(entities[i], procs);
+    }
+    else {
+      PairIterEntityComm sharing = internal_entity_comm_map_shared(entities[i]);
+
+      auto notFoundInSharing = [&sharing](const int& proc) {
+        auto compare = [&proc](const EntityCommInfo& info){ return info.proc == proc; };
+        return std::find_if(sharing.begin(), sharing.end(), compare) == sharing.end();
+      };
+
+      procs.erase(std::remove_if(procs.begin(), procs.end(), notFoundInSharing),
+                  procs.end());
+    }
+
+    if (procs.empty()) {
+      return;
     }
   }
 }
@@ -1978,10 +1977,6 @@ void BulkData::update_field_data_states(FieldBase* field)
 {
   const int numStates = field->number_of_states();
   if (numStates > 1) {
-#ifdef STK_DEBUG_FIELD_SYNC
-    ThrowRequireMsg(!field->has_ngp_field(), "Field state rotation currently unsupported for Field sync debugging");
-#endif
-
     field->rotate_multistate_data();
 
     unsigned fieldOrdinal = field->mesh_meta_data_ordinal();
@@ -2324,7 +2319,8 @@ void BulkData::internal_declare_relation( Entity e_from ,
     // Deduce and set new part memberships:
     scratch1.clear();
 
-    impl::get_part_ordinals_to_induce_on_lower_ranks(*this, e_from, entity_rank(e_to), scratch1);
+    const Bucket& bucketFrom = bucket(e_from);
+    impl::get_part_ordinals_to_induce_on_lower_ranks(*this, bucketFrom, entity_rank(e_to), scratch1);
 
     OrdinalVector emptyParts;
     internal_change_entity_parts(e_to, scratch1, emptyParts, scratch2, scratch3);
@@ -2404,20 +2400,24 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
     // For all relations that are *not* being deleted, add induced parts for
     // these relations to the 'keep' vector
     {
-      Entity const* rel_entities = nullptr;
-      ConnectivityOrdinal const* rel_ordinals = nullptr;
-      int num_rels = 0;
       for (EntityRank irank = static_cast<EntityRank>(e_to_entity_rank + 1); irank < end_rank; ++irank) {
-        num_rels     = num_connectivity(e_to, irank);
-        rel_entities = begin(e_to, irank);
-        rel_ordinals = begin_ordinals(e_to, irank);
+        int num_rels = num_connectivity(e_to, irank);
+        if (num_rels > 0) {
+          const Entity* rel_entities = begin(e_to, irank);
+          const ConnectivityOrdinal* rel_ordinals = begin_ordinals(e_to, irank);
 
-        for (int j = 0; j < num_rels; ++j) {
-          ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " with key " << entity_key(e_to) << " has invalid back-relation for ordinal: "
-                         << (uint32_t)rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
-          if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
-          {
-            impl::get_part_ordinals_to_induce_on_lower_ranks(*this, rel_entities[j], e_to_entity_rank, keep);
+          const Bucket* prevBucketPtr = nullptr;
+          for (int j = 0; j < num_rels; ++j) {
+            ThrowAssertMsg(is_valid(rel_entities[j]), "Error, entity " << e_to.local_offset() << " with key " << entity_key(e_to) << " has invalid back-relation for ordinal: "
+                           << (uint32_t)rel_ordinals[j] << " to rank: " << irank << ", target entity is: " << rel_entities[j].local_offset());
+            if ( !(rel_entities[j] == e_from && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) ) )
+            {
+              const Bucket* curBucketPtr = bucket_ptr(rel_entities[j]);
+              if (prevBucketPtr != curBucketPtr) {
+                prevBucketPtr = curBucketPtr;
+                impl::get_part_ordinals_to_induce_on_lower_ranks(*this, *curBucketPtr, e_to_entity_rank, keep);
+              }
+            }
           }
         }
       }
@@ -2433,7 +2433,7 @@ bool BulkData::internal_destroy_relation( Entity e_from ,
       {
         if ( rel_entities[j] == e_to && rel_ordinals[j] == static_cast<ConnectivityOrdinal>(local_id) )
         {
-          impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, e_from, keep, e_to_entity_rank, del);
+          impl::get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(*this, bucket(e_from), keep, e_to_entity_rank, del);
           break; // at most 1 relation can match our specification
         }
       }
@@ -3715,29 +3715,27 @@ void BulkData::fill_list_of_entities_to_send_for_aura_ghosting(EntityProcMapping
   Selector shared = mesh_meta_data().globally_shared_part();
 
   std::vector<int> sharingProcs;
-  for(const EntityRank entityRank : ranks) {
-    impl::for_each_selected_entity_run_no_threads(*this, entityRank, shared,
-      [&sendAuraEntityProcs, &entitySharing, &sharingProcs, &entityRank, &end_rank]
-      (const BulkData& bulk, const MeshIndex& meshIndex) {
-        const Bucket& bucket = *meshIndex.bucket;
-        const unsigned bucketOrd = meshIndex.bucket_ordinal;
-        const EntityRank nextHigherRank = static_cast<EntityRank>(entityRank+1);
+  impl::for_each_selected_entity_run_no_threads(*this, stk::topology::NODE_RANK, shared,
+    [&sendAuraEntityProcs, &entitySharing, &sharingProcs, &end_rank]
+    (const BulkData& bulk, const MeshIndex& meshIndex) {
+      const Bucket& bucket = *meshIndex.bucket;
+      const unsigned bucketOrd = meshIndex.bucket_ordinal;
+      const EntityRank nextHigherRank = stk::topology::EDGE_RANK;
 
-        bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
-        for (const int sharingProc : sharingProcs) {
+      bulk.comm_shared_procs(bucket[bucketOrd], sharingProcs);
+      for (const int sharingProc : sharingProcs) {
 
-          for (EntityRank higherRank = nextHigherRank; higherRank < end_rank; ++higherRank) {
-            const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
-            const Entity* rels     = bucket.begin(bucketOrd, higherRank);
+        for (EntityRank higherRank = nextHigherRank; higherRank < end_rank; ++higherRank) {
+          const unsigned num_rels = bucket.num_connectivity(bucketOrd, higherRank);
+          const Entity* rels     = bucket.begin(bucketOrd, higherRank);
 
-            for (unsigned r = 0; r < num_rels; ++r) {
-              stk::mesh::impl::insert_upward_relations(bulk, entitySharing, rels[r], entityRank, sharingProc, sendAuraEntityProcs);
-            }
+          for (unsigned r = 0; r < num_rels; ++r) {
+            stk::mesh::impl::insert_upward_relations(bulk, entitySharing, rels[r], stk::topology::NODE_RANK, sharingProc, sendAuraEntityProcs);
           }
         }
       }
-    ); // for_each_entity_run
-  }
+    }
+  ); // for_each_entity_run
 }
 
 void BulkData::internal_regenerate_aura()
@@ -4037,6 +4035,7 @@ void BulkData::fill_shared_entities_of_rank_while_updating_sharing_info(stk::mes
 void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_entities(
         std::vector<Entity> & shared_new )
 {
+  if (parallel_size() > 1) {
     std::vector<Entity> shared_nodes;
     this->gather_shared_nodes(shared_nodes);
 
@@ -4047,7 +4046,8 @@ void BulkData::internal_update_sharing_comm_map_and_fill_list_modified_shared_en
     this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::EDGE_RANK, shared_new);
     this->fill_shared_entities_of_rank_while_updating_sharing_info(stk::topology::FACE_RANK, shared_new);
 
-    std::fill(m_mark_entity.begin(), m_mark_entity.end(), BulkData::NOT_MARKED);
+  }
+  std::fill(m_mark_entity.begin(), m_mark_entity.end(), BulkData::NOT_MARKED);
 }
 
 
@@ -5800,10 +5800,14 @@ void BulkData::internal_insert_all_parts_induced_from_higher_rank_entities_to_ve
 
         for (int k = 0; k < num_upward_rels; ++k)
         {
+            const Bucket* prevBucketPtr = nullptr;
             if (entity != upward_rel_entities[k])  // Already did this entity
             {
-                // Relation from to_rel->entity() to e_to
-                impl::get_part_ordinals_to_induce_on_lower_ranks(*this, upward_rel_entities[k], e_to_rank, to_add );
+              const Bucket* curBucketPtr = bucket_ptr(upward_rel_entities[k]);
+              if (prevBucketPtr != curBucketPtr) {
+                prevBucketPtr = curBucketPtr;
+                impl::get_part_ordinals_to_induce_on_lower_ranks(*this, *curBucketPtr, e_to_rank, to_add );
+              }
             }
         }
     }

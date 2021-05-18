@@ -336,7 +336,8 @@ namespace { // (anonymous)
     if (! imports.need_sync_device ()) {
       return false; // most up-to-date on device
     }
-    else { // most up-to-date on host
+    else { // most up-to-date on host, 
+           // but if large enough, worth running on device anyway
       size_t localLengthThreshold = 
              Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return imports.extent(0) <= localLengthThreshold;
@@ -352,6 +353,7 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
+           // but if large enough, worth running on device anyway
       size_t localLengthThreshold = 
              Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
@@ -1691,9 +1693,17 @@ namespace Tpetra {
     }
 
     // mfh 12 Apr 2016, 04 Feb 2019: Decide where to unpack based on
-    // the memory space in which the imports buffer was last modified.
-    // DistObject::doTransferNew gets to decide this.
+    // the memory space in which the imports buffer was last modified and
+    // the size of the imports buffer.
+    // DistObject::doTransferNew decides where it was last modified (based on
+    // whether communication buffers used were on host or device).
     const bool unpackOnHost = runKernelOnHost(imports);
+    if (unpackOnHost) {
+      if (this->imports_.need_sync_host()) this->imports_.sync_host();
+    }
+    else {
+      if (this->imports_.need_sync_device()) this->imports_.sync_device();
+    }
 
     if (printDebugOutput) {
       std::ostringstream os;
@@ -4682,16 +4692,6 @@ namespace Tpetra {
     const size_t l1 = this->getLocalLength();
     const size_t l2 = vec.getLocalLength();
     if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors())) {
-      return false;
-    }
-    if (l1==0) {
-      return true;
-    }
-
-    auto v1 = this->getLocalViewHost(Access::ReadOnly);
-    auto v2 = vec.getLocalViewHost(Access::ReadOnly);
-    if (PackTraits<ST>::packValueCount (v1(0,0)) !=
-        PackTraits<ST>::packValueCount (v2(0,0))) {
       return false;
     }
 

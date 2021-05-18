@@ -146,10 +146,26 @@ namespace Tpetra {
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   template<class Scalar, class LO, class GO, class Node>
-  typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
-  TPETRA_DEPRECATED
+  bool
+  // TPETRA_DEPRECATED
   BlockVector<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowIndex) const
+  getLocalRowView (const LO localRowIndex, Scalar*& vals) {
+    return ((base_type*) this)->getLocalRowView (localRowIndex, 0, vals);
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  // TPETRA_DEPRECATED
+  BlockVector<Scalar, LO, GO, Node>::
+  getGlobalRowView (const GO globalRowIndex, Scalar*& vals) {
+    return ((base_type*) this)->getGlobalRowView (globalRowIndex, 0, vals);
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
+  // TPETRA_DEPRECATED
+  BlockVector<Scalar, LO, GO, Node>::
+  getLocalBlock (const LO localRowIndex)
   {
     if (! this->isValidLocalMeshIndex (localRowIndex)) {
       return little_host_vec_type ();
@@ -165,30 +181,29 @@ namespace Tpetra {
   template<class Scalar, class LO, class GO, class Node>
   typename BlockVector<Scalar, LO, GO, Node>::const_little_host_vec_type
   BlockVector<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowIndex, Access::ReadOnlyStruct) const
+  getLocalBlockHost (const LO localRowIndex, Access::ReadOnlyStruct) const
   {
-    return ((const base_type*) this)->getLocalBlock(localRowIndex, 0, 
-                                                    Access::ReadOnly);
+    return ((const base_type*) this)->getLocalBlockHost(localRowIndex, 0, 
+                                                        Access::ReadOnly);
   }
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
   BlockVector<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowIndex, Access::ReadWriteStruct)
+  getLocalBlockHost (const LO localRowIndex, Access::ReadWriteStruct)
   {
-    return ((base_type*) this)->getLocalBlock(localRowIndex, 0, 
-                                              Access::ReadWrite);
+    return ((base_type*) this)->getLocalBlockHost(localRowIndex, 0, 
+                                                  Access::ReadWrite);
   }
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockVector<Scalar, LO, GO, Node>::little_host_vec_type
   BlockVector<Scalar, LO, GO, Node>::
-  getLocalBlock (const LO localRowIndex, Access::OverwriteAllStruct)
+  getLocalBlockHost (const LO localRowIndex, Access::OverwriteAllStruct)
   {
-    return ((base_type*) this)->getLocalBlock(localRowIndex, 0, 
-                                              Access::OverwriteAll);
+    return ((base_type*) this)->getLocalBlockHost(localRowIndex, 0, 
+                                                  Access::OverwriteAll);
   }
-
 
 } // namespace Tpetra
 

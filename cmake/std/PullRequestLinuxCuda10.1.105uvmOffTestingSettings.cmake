@@ -128,6 +128,9 @@ set (EpetraExt_inout_test_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUD
 set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
+set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
+set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
+set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
 
 # UVM = OFF
 set (Kokkos_ENABLE_CUDA_UVM OFF CACHE BOOL "Set by default for CUDA PR testing")

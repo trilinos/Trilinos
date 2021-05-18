@@ -708,7 +708,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestDiagonalBlockCrsMa
   const Scalar exactSol = 0.2;
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
+    auto ylcl = yBlock.getLocalBlockHost(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(ylcl(j), exactSol, 1e-14);
     }
@@ -1269,7 +1269,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestLowerTriangularBlo
 
   for (size_t k = 0; k < num_rows_per_proc; ++k) {
     LO lcl_row = k;
-    auto ylcl = yBlock.getLocalBlock(lcl_row, 0, Tpetra::Access::ReadOnly);
+    auto ylcl = yBlock.getLocalBlockHost(lcl_row, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }
@@ -1329,7 +1329,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2BlockRelaxation, TestUpperTriangularBlo
   exactSol[2] = 0.5;
 
   for (int k = 0; k < num_rows_per_proc; ++k) {
-    auto ylcl = yBlock.getLocalBlock(k, 0, Tpetra::Access::ReadOnly);
+    auto ylcl = yBlock.getLocalBlockHost(k, 0, Tpetra::Access::ReadOnly);
     for (int j = 0; j < blockSize; ++j) {
       TEST_FLOATING_EQUALITY(ylcl(j), exactSol[k], 1e-14);
     }

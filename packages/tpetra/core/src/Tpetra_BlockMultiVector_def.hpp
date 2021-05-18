@@ -316,7 +316,7 @@ replaceLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
                         const Scalar vals[]) 
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
+  auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   Kokkos::deep_copy (X_dst, X_src);
@@ -361,7 +361,7 @@ sumIntoLocalValuesImpl (const LO localRowIndex,
                         const LO colIndex,
                         const Scalar vals[])
 {
-  auto X_dst = getLocalBlock (localRowIndex, colIndex, Access::ReadWrite);
+  auto X_dst = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
   typename const_little_vec_type::HostMirror::const_type X_src (reinterpret_cast<const impl_scalar_type*> (vals),
                                                                 getBlockSize ());
   AXPY (static_cast<impl_scalar_type> (STS::one ()), X_src, X_dst);
@@ -401,11 +401,42 @@ sumIntoGlobalValues (const GO globalRowIndex,
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class Scalar, class LO, class GO, class Node>
+bool
+// TPETRA_DEPRECATED
+BlockMultiVector<Scalar, LO, GO, Node>::
+getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals)
+{
+  if (! meshMap_.isNodeLocalElement (localRowIndex)) {
+    return false;
+  } else {
+    auto X_ij = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
+    vals = reinterpret_cast<Scalar*> (X_ij.data ());
+    return true;
+  }
+}
+
+template<class Scalar, class LO, class GO, class Node>
+bool
+// TPETRA_DEPRECATED
+BlockMultiVector<Scalar, LO, GO, Node>::
+getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals)
+{
+  const LO localRowIndex = meshMap_.getLocalElement (globalRowIndex);
+  if (localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
+    return false;
+  } else {
+    auto X_ij = getLocalBlockHost (localRowIndex, colIndex, Access::ReadWrite);
+    vals = reinterpret_cast<Scalar*> (X_ij.data ());
+    return true;
+  }
+}
+
+template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
-TPETRA_DEPRECATED
+// TPETRA_DEPRECATED
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
-               const LO colIndex) const
+               const LO colIndex)
 {
   if (! isValidLocalMeshIndex (localRowIndex)) {
     return little_host_vec_type ();
@@ -417,14 +448,15 @@ getLocalBlock (const LO localRowIndex,
     return little_host_vec_type (blockRaw, blockSize);
   }
 }
-#endif
+
+#endif  // TPETRA_ENABLE_DEPRECATED_CODE
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::const_little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
-getLocalBlock (const LO localRowIndex,
-               const LO colIndex,
-               Access::ReadOnlyStruct) const
+getLocalBlockHost (const LO localRowIndex,
+                   const LO colIndex,
+                   const Access::ReadOnlyStruct) const
 {
   if (!isValidLocalMeshIndex(localRowIndex)) {
     return const_little_host_vec_type();
@@ -441,9 +473,9 @@ getLocalBlock (const LO localRowIndex,
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
-getLocalBlock (const LO localRowIndex,
-               const LO colIndex,
-               Access::OverwriteAllStruct)
+getLocalBlockHost (const LO localRowIndex,
+                   const LO colIndex,
+                   const Access::OverwriteAllStruct)
 {
   if (!isValidLocalMeshIndex(localRowIndex)) {
     return little_host_vec_type();
@@ -460,9 +492,9 @@ getLocalBlock (const LO localRowIndex,
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_host_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
-getLocalBlock (const LO localRowIndex,
-               const LO colIndex,
-               Access::ReadWriteStruct)
+getLocalBlockHost (const LO localRowIndex,
+                   const LO colIndex,
+                   const Access::ReadWriteStruct)
 {
   if (!isValidLocalMeshIndex(localRowIndex)) {
     return little_host_vec_type();

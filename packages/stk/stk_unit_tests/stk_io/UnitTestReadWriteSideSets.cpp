@@ -131,7 +131,7 @@ protected:
     }
   }
 
-  void create_parts_and_fields()
+  void create_parts_and_fields(bool createQuadBlockFirst = true)
   {
     const std::vector<std::string> partNames {"block_1", "block_2"};
     block1 = &create_io_part(partNames[0], 1, stk::topology::HEX_8);
@@ -139,10 +139,20 @@ protected:
     surface1 = &get_meta().declare_part("surface_1", stk::topology::FACE_RANK);
     stk::io::put_io_part_attribute(*surface1);
     get_meta().set_part_id(*surface1, 1);
-    sideBlock1 = &create_io_part("surface_hex8_quad4_1", 1, stk::topology::QUAD_4);
-    get_meta().declare_part_subset(*surface1, *sideBlock1);
-    sideBlock2 = &create_io_part("surface_tet4_tri3_1", 1, stk::topology::TRI_3);
-    get_meta().declare_part_subset(*surface1, *sideBlock2);
+
+    if (createQuadBlockFirst) {
+      sideBlock1 = &create_io_part("surface_hex8_quad4_1", 1, stk::topology::QUAD_4);
+      get_meta().declare_part_subset(*surface1, *sideBlock1);
+      sideBlock2 = &create_io_part("surface_tet4_tri3_1", 1, stk::topology::TRI_3);
+      get_meta().declare_part_subset(*surface1, *sideBlock2);
+    }
+    else {
+      sideBlock2 = &create_io_part("surface_tet4_tri3_1", 1, stk::topology::TRI_3);
+      get_meta().declare_part_subset(*surface1, *sideBlock2);
+      sideBlock1 = &create_io_part("surface_hex8_quad4_1", 1, stk::topology::QUAD_4);
+      get_meta().declare_part_subset(*surface1, *sideBlock1);
+    }
+
     coordField = &get_meta().declare_field<VecField>(stk::topology::NODE_RANK, "coordinates");
     get_meta().set_coordinate_field(coordField);
     ssField = &get_meta().declare_field<VecField>(stk::topology::FACE_RANK, "ssfield");
@@ -211,7 +221,21 @@ TEST_F(StkIoSideset, field_QuadAndTriSides)
   unsigned bucketCapacity = 1;
   setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
 
-  create_parts_and_fields();
+  bool createQuadBlockFirst = true;
+  create_parts_and_fields(createQuadBlockFirst);
+  setup_mesh_hex_tet_quad_tri();
+
+  test_write_then_read();
+}
+
+TEST_F(StkIoSideset, field_TriAndQuadSides)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) { return; }
+  unsigned bucketCapacity = 1;
+  setup_empty_mesh(stk::mesh::BulkData::NO_AUTO_AURA, bucketCapacity);
+
+  bool createQuadBlockFirst = false;
+  create_parts_and_fields(createQuadBlockFirst);
   setup_mesh_hex_tet_quad_tri();
 
   test_write_then_read();
