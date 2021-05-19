@@ -9,6 +9,67 @@ set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 set(BUILD_STATS_CSV_FILE "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
 
 
+# Generate the build stats compiler wrappers if asked to do so.
+#
+function(generate_build_stats_wrappers)
+
+  set_project_enable_build_stats_var()
+
+  if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
+    build_stats_find_and_check_time()  # Sets cache var BUILD_STATS_TIME_CMD
+    if(NOT BUILD_STATS_TIME_CMD)
+      message("-- ${PROJECT_NAME}_ENABLE_BUILD_STATS=ON, but valid GNU Time was not found")
+      message("-- NOTE: Force setting ${PROJECT_NAME}_ENABLE_BUILD_STATS=OFF!")
+      set(${PROJECT_NAME}_ENABLE_BUILD_STATS OFF CACHE BOOL
+        "Forced to 'OFF' since valid 'time' command not found" FORCE)
+      return()
+    endif()
+
+    get_base_build_dir_for_python()
+
+    generate_build_stats_wrapper_for_op(C   WRAP CMAKE_C_COMPILER)
+    generate_build_stats_wrapper_for_op(CXX WRAP CMAKE_CXX_COMPILER)
+    if (${PROJECT_NAME}_ENABLE_Fortran)
+      generate_build_stats_wrapper_for_op(Fortran WRAP CMAKE_Fortran_COMPILER)
+    endif()
+
+    generate_build_stats_wrapper_for_op(LD WRAP CMAKE_LD ALLOW_FIND)
+    generate_build_stats_wrapper_for_op(AR WRAP CMAKE_AR ALLOW_FIND)
+    generate_build_stats_wrapper_for_op(RANLIB WRAP CMAKE_RANLIB ALLOW_FIND)
+    # NOTE: LD, AR, and RANDLIB can be used even in builds where
+    # BUILD_SHARED_LIBS=ON because individual add_librariy() commands can
+    # request static libraries be built.
+
+    set(BUILD_STATS_COMPLETED_FIRST_CONFIG TRUE CACHE INTERNAL "")
+  endif()
+
+endfunction()
+
+
+# Macro that sets the cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
+#
+macro(set_project_enable_build_stats_var)
+
+  if (NOT "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}" STREQUAL "")
+    # Use the default set in the env (overrides any local default set)
+    set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT
+      "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}")
+  elseif(NOT "${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT}" STREQUAL "")
+    # ${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT was already set, so use it as
+    # the default.
+  else()
+    # No default was set, so make it OFF by default
+    set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT OFF)
+  endif()
+
+  advanced_set(${PROJECT_NAME}_ENABLE_BUILD_STATS
+    ${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT} CACHE BOOL
+    "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
+    )
+
+endmacro()
+
+
 # Find the GNU 'time' command that is used by magic_wrapper.py to extract the
 # info out of the command that it runs.
 #
@@ -95,65 +156,26 @@ endfunction()
 # 'time', we expect it to work and we could `find_program()` it as well.
 
 
-# Generate the build stats compiler wrappers if asked to do so.
+# Get the non-cache var BASE_BUILD_DIR_FOR_PYTHON
 #
-function(generate_build_stats_wrappers)
-
-  set_project_enable_build_stats_var()
-
-  if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
-    build_stats_find_and_check_time()  # Sets cache var BUILD_STATS_TIME_CMD
-    if(NOT BUILD_STATS_TIME_CMD)
-      message("-- ${PROJECT_NAME}_ENABLE_BUILD_STATS=ON, but valid GNU Time was not found")
-      message("-- NOTE: Force setting ${PROJECT_NAME}_ENABLE_BUILD_STATS=OFF!")
-      set(${PROJECT_NAME}_ENABLE_BUILD_STATS OFF CACHE BOOL
-        "Forced to 'OFF' since valid 'time' command not found" FORCE)
-      return()
-    endif()
-
-    get_base_build_dir_for_python()
-
-    generate_build_stats_wrapper_for_op(C   WRAP CMAKE_C_COMPILER)
-    generate_build_stats_wrapper_for_op(CXX WRAP CMAKE_CXX_COMPILER)
-    if (${PROJECT_NAME}_ENABLE_Fortran)
-      generate_build_stats_wrapper_for_op(Fortran WRAP CMAKE_Fortran_COMPILER)
-    endif()
-
-    generate_build_stats_wrapper_for_op(LD WRAP CMAKE_LD ALLOW_FIND)
-    generate_build_stats_wrapper_for_op(AR WRAP CMAKE_AR ALLOW_FIND)
-    generate_build_stats_wrapper_for_op(RANLIB WRAP CMAKE_RANLIB ALLOW_FIND)
-    # NOTE: LD, AR, and RANDLIB can be used even in builds where
-    # BUILD_SHARED_LIBS=ON because individual add_librariy() commands can
-    # request static libraries be built.
-
-    set(BUILD_STATS_COMPLETED_FIRST_CONFIG TRUE CACHE INTERNAL "")
-  endif()
-
-endfunction()
-
-
-# Macro that sets the cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
+# This var gets picked up in the configure of build_stat_wrapper.sh.in.
 #
-macro(set_project_enable_build_stats_var)
-
-  if (NOT "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}" STREQUAL "")
-    # Use the default set in the env (overrides any local default set)
-    set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT
-      "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}")
-  elseif(NOT "${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT}" STREQUAL "")
-    # ${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT was already set, so use it as
-    # the default.
-  else()
-    # No default was set, so make it OFF by default
-    set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT OFF)
-  endif()
-
-  advanced_set(${PROJECT_NAME}_ENABLE_BUILD_STATS
-    ${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT} CACHE BOOL
-    "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
-    )
-
+macro(get_base_build_dir_for_python)
+  set(get_cwd_for_python ${BUILD_STATS_SRC_DIR}/get_cwd_for_python.py)
+  execute_process(
+    COMMAND ${PYTHON_EXECUTABLE} ${get_cwd_for_python}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
 endmacro()
+#
+# NOTE: We need this function to get the value of os.getcwd() from Python so
+# that it matches the value returned inside of magic_wapper.py.  The issue is
+# that some platforms, CMake determines a different absolute base build dir
+# for systems with mounted filesystems.  The only systems I know this happens
+# on are some systems at SNL with the mounted home directories.  By using the
+# same Python code, we ensure that we get the same base directory, which is
+# needed when computing relative paths.
 
 
 # Generate the build stats compiler wrapper for a given CMake variable.
@@ -241,36 +263,13 @@ macro(generate_build_stats_wrapper_for_op_find_op_lc)
 endmacro()
 
 
-# Get the non-cache var BASE_BUILD_DIR_FOR_PYTHON
-#
-# This var gets picked up in the configure of build_stat_wrapper.sh.in.
-#
-macro(get_base_build_dir_for_python)
-  set(get_cwd_for_python ${BUILD_STATS_SRC_DIR}/get_cwd_for_python.py)
-  execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} ${get_cwd_for_python}
-    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-    OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-endmacro()
-#
-# NOTE: We need this function to get the value of os.getcwd() from Python so
-# that it matches the value returned inside of magic_wapper.py.  The issue is
-# that some platforms, CMake determines a different absolute base build dir
-# for systems with mounted filesystems.  The only systems I know this happens
-# on are some systems at SNL with the mounted home directories.  By using the
-# same Python code, we ensure that we get the same base directory, which is
-# needed when computing relative paths.
-
-
-# Remove the build stats file on configure if asked to do so.
+# Remove the build stats file on each configure if asked to do so.
 #
 function(remove_build_stats_file_on_configure)
 
   advanced_set(${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE OFF
     ${${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE_DEFAULT} CACHE BOOL
-    "If set to 'ON', then the build_stats.csv file will be removed on each configure."
-    )
+    "If set to 'ON', then the build_stats.csv file will be removed on each configure." )
 
   if (
       (${PROJECT_NAME}_REMOVE_BUILD_STATS_ON_CONFIGURE)
@@ -380,7 +379,7 @@ endfunction()
 # Get a list all of the lib and exec build targets starting in a subdir and in
 # below subdirs.
 #
-function(get_all_build_targets_including_in_subdirs srcdir  targetsListVarOut)
+function(get_all_build_targets_including_in_subdirs  srcdir  targetsListVarOut)
 
   set(targetsList "")
 
