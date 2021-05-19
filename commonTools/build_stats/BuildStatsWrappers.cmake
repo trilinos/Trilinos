@@ -8,7 +8,16 @@ set(BUILD_STATS_SRC_DIR "${CMAKE_CURRENT_LIST_DIR}")
 
 set(BUILD_STATS_CSV_FILE "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv")
 
-function(build_stats_find_time)
+
+# Find the GNU 'time' command that is used by magic_wrapper.py to extract the
+# info out of the command that it runs.
+#
+# If this finds the GNU 'time' command and it behaves correctly, then it sets
+# the cache var BUILD_STATS_TIME_CMD on output.  If BUILD_STATS_TIME_CMD is
+# already set by the user in the cache and it is found to not behave
+# correctly, then BUILD_STATS_TIME_CMD will be removed from the cache.
+# 
+function(build_stats_find_and_check_time)
 
   # let the user provide BUILD_STATS_TIME_CMD
   if (BUILD_STATS_TIME_CMD)
@@ -25,18 +34,16 @@ function(build_stats_find_time)
     endif()
   endif()
 
-  # this should ideally call the python script and request the fields
-  # to test, add 'badflag' or some other nonsense
+  # This should ideally call the python script and request the fields to test,
+  # add 'badflag' or some other nonsense.
   SET(GNU_TIME_POSSIBLE_FIELDS "e;M;K;D;X;F;R;W;w;c;S;U;P;I;O;r;s;k;x")
   SET(GNU_TIME_SUPPORTED_FIELDS "")
   
-  #  should ideally ask for the dtypes or suitable regexes to vet them
+  #  Should ideally ask for the dtypes or suitable regexes to vet them
   foreach(flag ${GNU_TIME_POSSIBLE_FIELDS})
     message(DEBUG "----------------------")
     message(DEBUG "Time: Testing field ${flag}")
-    # the output from time goes to stderr, the programs output to stdout
-    set(GNU_TIME_RC "-1")
-    set(GNU_TIME_OUTPUT "")
+    # The output from time goes to stderr, the programs output to stdout
     execute_process(COMMAND "${GNU_TIME_EXE}"
                               "--format=%${flag}" "true"
                     # this is useless - we run a noop command
@@ -44,61 +51,91 @@ function(build_stats_find_time)
                     # capture stderr
                     ERROR_VARIABLE GNU_TIME_OUTPUT
                     )
-    # if this fails, then something is broken on the system.
-    # the checks after will likely fail, because they expect a predefined
-    # format for stderr text
-    if(GNU_TIME_RC MATCHES "0")
-      #message("Time invocation error returned `${GNU_TIME_RC}` but expected `0`")
-    else()
+    # If this fails, then something is broken on the system.  The checks after
+    # will likely fail, because they expect a predefined format for stderr
+    # text.
+    if(NOT GNU_TIME_RC EQUAL 0)
       message(DEBUG "Time invocation error returned `${GNU_TIME_RC}` but expected `0`")
       message("-- GNU_TIME_EXE=${GNU_TIME_EXE} does not work")
-      message("-- Set BUILD_STATS_TIME_CMD if /usr/bin/time is invalid")
+      message("-- Unset BUILD_STATS_TIME_CMD since '${GNU_TIME_EXE}' is invalid!")
       unset(BUILD_STATS_TIME_CMD CACHE)
       return()
     endif()
 
-    # this isn't ideal, we match the failure mode, but we should match valid output
-    # That is harder to do, as we would need to determine expected format for each
-    # command (e.g., dtype or a suitable regex from the python script)
-    # A good todo would be to have the pythong script report headeres it will
-    # try and a valid expected format regex, then we test against that here.
+    # For now, just assert that all expected fields are supported (see
+    # discussion after function of other possible options).
     if("${GNU_TIME_OUTPUT}" MATCHES "^?${flag}.*")
-      message(DEBUG "Time does not support Field: ${flag}")
-      # not ideal, but let's quit if we don't find the fields...
-      # a better solution would be to disable the field, and only
-      # error out if we can't find some required set of fields.
+      message("-- Time does not support Field: ${flag}")
       message("-- GNU_TIME_EXE=${GNU_TIME_EXE} does not work")
-      message("-- Set BUILD_STATS_TIME_CMD if /usr/bin/time is invalid")
+      message("-- Unset BUILD_STATS_TIME_CMD since '${GNU_TIME_EXE}' is invalid!")
       unset(BUILD_STATS_TIME_CMD CACHE)
       return()
     else()
-      message(DEBUG "Time supports Field: ${flag}")
+      message(DEBUG "-- Time supports Field: ${flag}")
       list(APPEND GNU_TIME_SUPPORTED_FIELDS "${flag}")
     endif()
   endforeach()
 
-  # if we get here, we should have a list of supported fields from TIME
-  # We could reconcile the supported fields against anything the user specified
-  # in the TRILINOS_BUILD_STATS_OUTPUT_FIELDS, which will override the default
-  # fields the parser will output
-  # `time` will actually silently accept bad fields, and give `?field` back
-  # if we use TRILINOS_BUILD_STATS_OUTPUT_FIELDS then bad fields will simply not
-  # be written to a file
-  #
-  # an unimplemented feature in the wrapper is `TRILINOS_BUILD_STATS_PARSE_NM`
-  # which could control if NM is used. (like time, we expect it to work)
-  # we could `find_program` it as well
-
+  # If we get here, we should have a list of supported fields from TIME.  
   set(BUILD_STATS_TIME_CMD ${GNU_TIME_EXE}
       CACHE FILEPATH "The GNU time binary required by build_stats" FORCE )
 endfunction()
+#
+# NOTE: Above, the GNU_TIME_SUPPORTED_FIELDS list var is currently not being
+# used for anything but in the future, it could be exported to the env as
+# TRILINOS_BUILD_STATS_OUTPUT_FIELDS for the magic_wapper.py to use to pass in
+# to the 'time' command for fields that are known to be supported.  This would
+# override the default fields specified there.  Note that `time` will actually
+# silently accept bad fields, and give `?field` back.  If we were to set
+# TRILINOS_BUILD_STATS_OUTPUT_FIELDS the GNU_TIME_SUPPORTED_FIELDS then bad
+# fields will simply not be written to a file.
+#
+# One unimplemented feature in the wrapper is
+# `TRILINOS_BUILD_STATS_PARSE_NM` which we could control if NM is used. Like
+# 'time', we expect it to work and we could `find_program()` it as well.
 
 
 # Generate the build stats compiler wrappers if asked to do so.
 #
 function(generate_build_stats_wrappers)
 
-  # Set default for cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
+  set_project_enable_build_stats_var()
+
+  if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
+    build_stats_find_and_check_time()  # Sets cache var BUILD_STATS_TIME_CMD
+    if(NOT BUILD_STATS_TIME_CMD)
+      message("-- ${PROJECT_NAME}_ENABLE_BUILD_STATS=ON, but valid GNU Time was not found")
+      message("-- NOTE: Force setting ${PROJECT_NAME}_ENABLE_BUILD_STATS=OFF!")
+      set(${PROJECT_NAME}_ENABLE_BUILD_STATS OFF CACHE BOOL
+        "Forced to 'OFF' since valid 'time' command not found" FORCE)
+      return()
+    endif()
+
+    get_base_build_dir_for_python()
+
+    generate_build_stats_wrapper_for_op(C   WRAP CMAKE_C_COMPILER)
+    generate_build_stats_wrapper_for_op(CXX WRAP CMAKE_CXX_COMPILER)
+    if (${PROJECT_NAME}_ENABLE_Fortran)
+      generate_build_stats_wrapper_for_op(Fortran WRAP CMAKE_Fortran_COMPILER)
+    endif()
+
+    generate_build_stats_wrapper_for_op(LD WRAP CMAKE_LD ALLOW_FIND)
+    generate_build_stats_wrapper_for_op(AR WRAP CMAKE_AR ALLOW_FIND)
+    generate_build_stats_wrapper_for_op(RANLIB WRAP CMAKE_RANLIB ALLOW_FIND)
+    # NOTE: LD, AR, and RANDLIB can be used even in builds where
+    # BUILD_SHARED_LIBS=ON because individual add_librariy() commands can
+    # request static libraries be built.
+
+    set(BUILD_STATS_COMPLETED_FIRST_CONFIG TRUE CACHE INTERNAL "")
+  endif()
+
+endfunction()
+
+
+# Macro that sets the cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
+#
+macro(set_project_enable_build_stats_var)
+
   if (NOT "$ENV{${PROJECT_NAME}_ENABLE_BUILD_STATS}" STREQUAL "")
     # Use the default set in the env (overrides any local default set)
     set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT
@@ -111,119 +148,102 @@ function(generate_build_stats_wrappers)
     set(${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT OFF)
   endif()
 
-  # Set cache var ${PROJECT_NAME}_ENABLE_BUILD_STATS
   advanced_set(${PROJECT_NAME}_ENABLE_BUILD_STATS
     ${${PROJECT_NAME}_ENABLE_BUILD_STATS_DEFAULT} CACHE BOOL
     "If set to 'ON', then compiler wrappers will be created and used to gather build stats."
     )
 
-  # Generate the build-stats compiler wrappers
-  get_base_build_dir_for_python()
-  if (${PROJECT_NAME}_ENABLE_BUILD_STATS)
-    # sets BUILD_STATS_TIME_CMD
-    build_stats_find_time()
-
-    # give up if this didn't work
-    if(NOT BUILD_STATS_TIME_CMD)
-      message("-- ${PROJECT_NAME}_ENABLE_BUILD_STATS=ON, but valid GNU Time was not found")
-      message("-- Disabling BUILD_STATS")
-      unset(${PROJECT_NAME}_ENABLE_BUILD_STATS CACHE)
-      return()
-    endif()
-
-    generate_build_stats_wrapper_for_op(C   WRAP CMAKE_C_COMPILER)
-    generate_build_stats_wrapper_for_op(CXX WRAP CMAKE_CXX_COMPILER)
-    if (${PROJECT_NAME}_ENABLE_Fortran)
-      generate_build_stats_wrapper_for_op(Fortran WRAP CMAKE_Fortran_COMPILER)
-    endif()
-
-    generate_build_stats_wrapper_for_op(LD WRAP CMAKE_LD ALLOW_FIND)
-    generate_build_stats_wrapper_for_op(AR WRAP CMAKE_AR ALLOW_FIND)
-    generate_build_stats_wrapper_for_op(RANLIB WRAP CMAKE_RANLIB ALLOW_FIND)
-
-  endif()
-
-endfunction()
+endmacro()
 
 
 # Generate the build stats compiler wrapper for a given CMake variable.
 #
-# The intent of this function is pass in arbitrary cmake variables that
-# map to commands and generate suitable wrappers.
+# Usage:
 #
-# Supported functions are C, CXX, Fortran, AR, LD, and RANLIB
+#   generate_build_stats_wrapper_for_op(<op_name> WRAP <cmake_var> [ALLOW_FIND])
 #
-#  TODO: wrap MPIEXEC!
-function(generate_build_stats_wrapper_for_op op_name)
+# The intent of this function is pass in arbitrary cmake variables <cmake_var>
+# that map to commands and generate suitable wrappers.
+#
+# <op_name> is the short name, like C, CXX, Fortran, LD, AR, RANLIB.
+#
+function(generate_build_stats_wrapper_for_op  op_name)
   cmake_parse_arguments(
-        PARSE_ARGV 1
-        BUILD_STATS
-        "ALLOW_FIND"
-        "WRAP"
-        ""
-  )
-  if (NOT BUILD_STATS_TIME_CMD)
-    message(DEBUG "generate_build_stats_wrapper_for_op: BUILD_STATS_TIME_CMD is required but it is not set")
-    return()
-  endif()
+    PARSE_ARGV 1
+    BUILD_STATS    # prefix
+    "ALLOW_FIND"   # options
+    "WRAP"         # one_value_keywords
+    ""             # multi_value_keywords
+    )
+  set(variable_to_set "${BUILD_STATS_WRAP}")
 
-  set(variable_to_set ${BUILD_STATS_WRAP})
-  set(ALLOW_FIND ${BUILD_STATS_ALLOW_FIND})
-
-  # 'op_name' is the short name, like C, CXX, Fortran, LD, AR, RANLIB
-  # this is will give us a lowercase 
   string(TOLOWER "${op_name}" op_lc)
-  set(op_wrapper
-    "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${op_lc}_wrapper.sh")
+  set(op_wrapper "${${PROJECT_NAME}_BINARY_DIR}/build_stat_${op_lc}_wrapper.sh")
 
+  generate_build_stats_wrapper_for_op_find_op_lc() # Sets ${variable_to_set}
+
+  # Override the op with the wrapper but remember the original command
+  if (NOT BUILD_STATS_COMPLETED_FIRST_CONFIG)
+    if (${variable_to_set}) # True if was set on input or was found above
+      set(${variable_to_set}_ORIG ${${variable_to_set}}
+        CACHE FILEPATH "Original non-wrapped ${op_name}" FORCE )
+      set(${variable_to_set} "${op_wrapper}"
+        CACHE FILEPATH "Overwritten build stats ${op_name} wrapper" FORCE )
+
+      message("-- " "Generating build stats wrapper for ${op_name}")
+      set(BUILD_STATS_WRAPPER_INNER_OP "${${variable_to_set}_ORIG}")
+      configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
+        "${op_wrapper}" @ONLY)
+
+      set(${variable_to_set}_OP_FOR_CONFIG_FILE_INSTALL_DIR
+        "${${variable_to_set}_ORIG}" CACHE INTERNAL "")
+    else()
+      message("-- Not wrapping ${op_name} because "
+        "${variable_to_set}=`${variable_to_set}` is not set."
+        " To enable statistics set ${variable_to_set}.")
+    endif()
+  endif()
+endfunction()
+#
+# NOTE: Above, if this is not the first configure (and
+# BUILD_STATS_COMPLETED_FIRST_CONFIG is unset) then we don't want to do
+# anything different with the build stats wrappers.  For example, we don't
+# want CMAKE_CXX_FLAGS to be empty on the first configure when this function
+# is called and have CMake to find the C++ compiler later in the first
+# configure and then on the reconfigure have a build stats wrapper generated
+# for the C++ compiler.  If this happened, then the C++ code would build with
+# the raw C++ compiler after the first configure but after the second and
+# subsequent (re)configures would (re)build the code with the build-stats
+# wrapped compiler.  It seems like a bad idea to have the code build
+# differently on a reconfigure even if the user does not do anything other
+# than trigger a reconfigure (e.g. by touching a CMakeLists.txt file or adding
+# a new source file).
+
+
+# Helper macro to shorten above function some
+#
+# Sets ${variable_to_set} if ${op_lc} is found.
+#
+macro(generate_build_stats_wrapper_for_op_find_op_lc)
   # there's an issue here - if CMAKE_FOO is unset (whatever `variable_to_set` is)
   # we need a to know the command - but CMake hasn't chosen one yet...
-  if( (ALLOW_FIND) AND ( ("${${variable_to_set}}" STREQUAL "")
-                         OR
-                         (NOT ${variable_to_set}) ))
+  if( BUILD_STATS_ALLOW_FIND
+    AND (
+      ("${${variable_to_set}}" STREQUAL "")
+      OR
+      (NOT ${variable_to_set})
+      )
+    )
     message("-- " "${variable_to_set} is not set, but a wrapper has been requested. Asking CMake to find ${op_lc}")
     find_program(${variable_to_set} "${op_lc}")
     print_var(${variable_to_set})
   endif()
-
-  # Override the op with the wrapper but remember the original command
-  # we take as a parameter a CMake `variable_to_set`, e.g., CMAKE_CXX_COMPILER
-  # we only wrap if `variable_to_set` is defined.
-  if( ("${${variable_to_set}_ORIG}" STREQUAL "") AND (${variable_to_set}) )
-    # we want to set CMAKE_FOO_ORIG to CMAKE_FOO (e.g., FOO=C_COMPILER or AR)
-    # `variable_to_set` is a string, so we need the value of the string evaluated
-    set(${variable_to_set}_ORIG ${${variable_to_set}}
-      CACHE FILEPATH "Original non-wrappeed ${op_name}" FORCE )
-    set(${variable_to_set} "${op_wrapper}"
-      CACHE FILEPATH "Overwritten build stats ${op_name} wrapper" FORCE )
-
-    message("-- " "Generating build stats wrapper for ${op_name}")
-    # this variable is only used to write the subsequent configure file
-    # so the variable name is generic.
-    set(BUILD_STATS_WRAPPER_INNER_OP "${${variable_to_set}_ORIG}")
-    configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
-                   "${op_wrapper}" @ONLY)
-
-    # Use the orginal compiler for the installed <XXX>Config.cmake files
-    # doubt this works w/AR/LD/RANLIB
-    set(${variable_to_set}_OP_FOR_CONFIG_FILE_INSTALL_DIR
-        "${${variable_to_set}_ORIG}" CACHE INTERNAL "")
-
-  # conditional expanded so we only wrap what is defined
-  else()
-     # allow some verbosity when we don't set something
-     message("-- " "Not wrapping ${op_name} because "
-                     "${variable_to_set}=`${variable_to_set}` is not set."
-                     " To enable statistics set ${variable_to_set}.")
-  endif()
-endfunction()
-# NOTE: The above implementation will make sure the compiler wrapper will get
-# updated if the *.sh.in template file changes and just reconfiguring.
-# Actaully, you should be able to fix the wrapper and just type 'make' and it
-# should reconfigure and update automatically.
+endmacro()
 
 
-# Get the var BASE_BUILD_DIR_FOR_PYTHON
+# Get the non-cache var BASE_BUILD_DIR_FOR_PYTHON
+#
+# This var gets picked up in the configure of build_stat_lang_wrapper.sh.in.
 #
 macro(get_base_build_dir_for_python)
   set(get_cwd_for_python ${BUILD_STATS_SRC_DIR}/get_cwd_for_python.py)
@@ -233,6 +253,7 @@ macro(get_base_build_dir_for_python)
     OUTPUT_VARIABLE BASE_BUILD_DIR_FOR_PYTHON
     OUTPUT_STRIP_TRAILING_WHITESPACE)
 endmacro()
+#
 # NOTE: We need this function to get the value of os.getcwd() from Python so
 # that it matches the value returned inside of magic_wapper.py.  The issue is
 # that some platforms, CMake determines a different absolute base build dir
@@ -356,8 +377,8 @@ function(add_target_gather_build_stats)
 endfunction()
 
 
-# Get a list all of the lib and exec build targets starting in a a subdir and
-# in below subdirs.
+# Get a list all of the lib and exec build targets starting in a subdir and in
+# below subdirs.
 #
 function(get_all_build_targets_including_in_subdirs srcdir  targetsListVarOut)
 

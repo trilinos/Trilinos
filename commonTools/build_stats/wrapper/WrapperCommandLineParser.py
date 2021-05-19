@@ -27,7 +27,7 @@ class WrapperCommandLineParser:
     self.parse_nm = True
     self.output_fields = None
 
-    self.time_cmd = '/usr/bin/time'
+    self.time_cmd = 'not_set'
     # we must parse envs first, because they contain required parameters
     self.parse_env_controls()
     # finally parse the args
@@ -81,7 +81,7 @@ class WrapperCommandLineParser:
     if 'TRILINOS_BUILD_STATS_BASE_DIR' not in os.environ:
       err_msg+=os.linesep
       err_msg+=('TRILINOS_BUILD_STATS_BASE_DIR (ENV) is required. CMake should '
-                'set this to the build directory (top level). If using the '
+                'set this to the build directory (top level). If using this script '
                 'manually, set this to your build directory (full path). E.g., '
                 'export TRILINOS_BUILD_STATS_BASE_DIR=/path/to/build')
 
