@@ -57,7 +57,7 @@ template <typename INT> void Edge_Block<INT>::entity_load_params()
   if (num_edges_per_elmt < 0 || num_attr < 0) {
     Error(fmt::format(
         "Edge_Block<INT>::entity_load_params(): Data appears corrupt for edge block {}!\n"
-        "\tnum elmts          = {:n}\n"
+        "\tnum elmts          = {:L}\n"
         "\tnum edges per elmt = {}\n"
         "\tnum attributes     = {}\n"
         " ... Aborting...\n",

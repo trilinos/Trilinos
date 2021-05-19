@@ -31,6 +31,7 @@
 // if you are not using precompiled headers then include these lines:
 #include <stdio.h>
 #include <tchar.h>
+#define NOMINMAX
 #include <windows.h>
 ///////////////////////////////////////////////////////////////////////////////
 

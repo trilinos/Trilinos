@@ -68,9 +68,8 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::balance::GraphCreationSettings balanceSettings;
-        stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-        stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, balanceSettings, parsedOptions);
+        stk::balance::M2NBalanceSettings balanceSettings(get_output_filename(), get_num_procs_target_decomp());
+        stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, balanceSettings);
     }
 
     void setup_initial_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)

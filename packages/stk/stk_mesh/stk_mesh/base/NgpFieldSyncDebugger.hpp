@@ -429,9 +429,13 @@ private:
       const stk::mesh::BucketVector & buckets = bulk.get_buckets(stkField.entity_rank(), *ngpField->syncSelector);
 
       for (auto bucket : buckets) {
+        unsigned offsetBucketId = debugHostSelectedBucketOffset(bucket->bucket_id());
+        if (offsetBucketId == INVALID_BUCKET_ID) {
+          print_outside_selector_warning(*ngpField->syncSelector);
+          continue;
+        }
         for (size_t j = 0; j < lastFieldModLocation.extent(1); ++j) {
           for (size_t k = 0; k < lastFieldModLocation.extent(2); ++k) {
-            unsigned offsetBucketId = debugHostSelectedBucketOffset(bucket->bucket_id());
             lastFieldModLocation(offsetBucketId, j, k) = value;
           }
         }
@@ -471,6 +475,12 @@ private:
   bool data_is_stale_on_device(int bucketId, int bucketOrdinal, int component) const {
     return !(lastFieldModLocation(debugDeviceSelectedBucketOffset(bucketId),
                                   ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
+  }
+
+  void print_outside_selector_warning(const Selector& badSelector) const
+  {
+    std::cout << "*** WARNING: Marked field " << fieldName.data() << " modified with selector " << badSelector
+      << " that includes buckets outside the subset of the mesh that the field is defined on." << std::endl;
   }
 
   STK_INLINE_FUNCTION

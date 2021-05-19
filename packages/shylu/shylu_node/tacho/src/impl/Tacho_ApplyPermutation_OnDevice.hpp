@@ -20,7 +20,7 @@ namespace Tacho {
            const ViewTypeA &A,
            const ViewTypeP &P,
            const ViewTypeB &B) {
-      typedef typename ViewTypeA::non_const_value_type value_type;
+      //typedef typename ViewTypeA::non_const_value_type value_type;
 
       const ordinal_type
         m = A.extent(0),
