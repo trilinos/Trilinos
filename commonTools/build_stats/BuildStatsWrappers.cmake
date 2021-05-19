@@ -192,7 +192,7 @@ function(generate_build_stats_wrapper_for_op  op_name)
 
       message("-- " "Generating build stats wrapper for ${op_name}")
       set(BUILD_STATS_WRAPPER_INNER_OP "${${variable_to_set}_ORIG}")
-      configure_file("${BUILD_STATS_SRC_DIR}/build_stat_lang_wrapper.sh.in"
+      configure_file("${BUILD_STATS_SRC_DIR}/build_stat_wrapper.sh.in"
         "${op_wrapper}" @ONLY)
 
       set(${variable_to_set}_OP_FOR_CONFIG_FILE_INSTALL_DIR
@@ -243,7 +243,7 @@ endmacro()
 
 # Get the non-cache var BASE_BUILD_DIR_FOR_PYTHON
 #
-# This var gets picked up in the configure of build_stat_lang_wrapper.sh.in.
+# This var gets picked up in the configure of build_stat_wrapper.sh.in.
 #
 macro(get_base_build_dir_for_python)
   set(get_cwd_for_python ${BUILD_STATS_SRC_DIR}/get_cwd_for_python.py)
