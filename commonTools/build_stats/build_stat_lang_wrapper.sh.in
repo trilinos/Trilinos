@@ -1,7 +1,6 @@
 #!/bin/bash
 # Consumed by the magic_wrapper
 
-export TRILINOS_BUILD_STATS_PARSE_NM="false"
 # BUILD_STATS_INNER_OP is the command we are wrapping
 export TRILINOS_BUILD_STATS_INNER_OP="@BUILD_STATS_WRAPPER_INNER_OP@"
 # BUILD_STATS_TIME_CMD points to a valid GNU Time executable
