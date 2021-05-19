@@ -57,15 +57,16 @@ def main(cmdline_args):
     return returncode
 
   if returncode == 0:
-    # test nm
-    # we probably need some to handle the case the .o isn't created
-    # as-us, the following will return empty dicts (we parse/validate) the output
-    # from NM, so we won't return garbage
-    nmp = NMParser.parse_object(wcp.op_output_file)
-    # NMParser.print_counts(nmp)
-    # add NM's output to our csv data
-    # we could move this into the NM parser
-    csv_map.update(NMParser.get_csv_map(nmp))
+    if wcp.parse_nm:
+      # test nm
+      # we probably need some to handle the case the .o isn't created
+      # as-us, the following will return empty dicts (we parse/validate) the output
+      # from NM, so we won't return garbage
+      nmp = NMParser.parse_object(wcp.op_output_file)
+      # NMParser.print_counts(nmp)
+      # add NM's output to our csv data
+      # we could move this into the NM parser
+      csv_map.update(NMParser.get_csv_map(nmp))
 
     # ultimately, print the csv data to a file
     # make sure to quote csv columns
