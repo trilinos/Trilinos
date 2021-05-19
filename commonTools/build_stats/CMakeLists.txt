@@ -1,5 +1,6 @@
 tribits_package(TrilinosBuildStats)
 
+include("${CMAKE_CURRENT_LIST_DIR}/BuildStatsGatherTarget.cmake")
 add_target_gather_build_stats()
 # NOTE: We define this build target here after all of the other packages are
 # done getting defined so that it will have a dependency on all defined
