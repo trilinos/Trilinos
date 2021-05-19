@@ -91,7 +91,6 @@ namespace MueLu {
                                                  "Coarsening rate per spatial dimensions");
     validParamList->set<int>                    ("aggregation: coarsening order", 0,
                                                   "The interpolation order used to construct grid transfer operators based off these aggregates.");
-
     validParamList->set<RCP<const FactoryBase> >("Graph",                   Teuchos::null,
                                                  "Graph of the matrix after amalgamation but without dropping.");
     validParamList->set<RCP<const FactoryBase> >("DofsPerNode",             Teuchos::null,
@@ -248,10 +247,10 @@ namespace MueLu {
       Set(currentLevel, "prolongatorGraph", myGraph);
     }
 
-    Set(currentLevel, "lCoarseNodesPerDim",       geoData->getCoarseNodesPerDirArray());
-    Set(currentLevel, "indexManager",             geoData);
-    Set(currentLevel, "interpolationOrder",       interpolationOrder);
-    Set(currentLevel, "numDimensions",            numDimensions);
+    Set(currentLevel, "lCoarseNodesPerDim",           geoData->getCoarseNodesPerDirArray());
+    Set(currentLevel, "indexManager",                 geoData);
+    Set(currentLevel, "structuredInterpolationOrder", interpolationOrder);
+    Set(currentLevel, "numDimensions",                numDimensions);
 
   } // Build()
 

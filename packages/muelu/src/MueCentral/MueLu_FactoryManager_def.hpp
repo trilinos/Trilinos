@@ -72,6 +72,7 @@
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_TrilinosSmoother.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
+#include "MueLu_StructuredAggregationFactory.hpp"
 #include "MueLu_HybridAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_InterfaceMappingTransferFactory.hpp"
@@ -194,7 +195,7 @@ namespace MueLu {
       if (varName == "Graph")                           return MUELU_KOKKOS_FACTORY(varName, CoalesceDropFactory, CoalesceDropFactory_kokkos);
       if (varName == "UnAmalgamationInfo")              return MUELU_KOKKOS_FACTORY(varName, AmalgamationFactory, AmalgamationFactory_kokkos);
       if (varName == "Aggregates")                      return MUELU_KOKKOS_FACTORY(varName, UncoupledAggregationFactory, UncoupledAggregationFactory_kokkos);
-      if (varName == "AggregateQualities")       return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
+      if (varName == "AggregateQualities")              return SetAndReturnDefaultFactory(varName, rcp(new AggregateQualityEstimateFactory()));
       if (varName == "CoarseMap")                       return MUELU_KOKKOS_FACTORY(varName, CoarseMapFactory, CoarseMapFactory_kokkos);
       if (varName == "DofsPerNode")                     return GetFactory("Graph");
       if (varName == "Filtering")                       return GetFactory("Graph");
@@ -202,6 +203,9 @@ namespace MueLu {
       if (varName == "LineDetection_VertLineIds")       return SetAndReturnDefaultFactory(varName, rcp(new LineDetectionFactory()));
       if (varName == "LineDetection_Layers")            return GetFactory("LineDetection_VertLineIds");
       if (varName == "CoarseNumZLayers")                return GetFactory("LineDetection_VertLineIds");
+      
+      // Structured
+      if (varName == "structuredInterpolationOrder")    return SetAndReturnDefaultFactory(varName, rcp(new StructuredAggregationFactory()));
 
       // Non-Galerkin
       if (varName == "K")                               return GetFactory("A");
@@ -233,7 +237,7 @@ namespace MueLu {
       if (varName == "CoarseDualNodeID2PrimalNodeID")   return SetAndReturnDefaultFactory(varName, rcp(new InterfaceAggregationFactory()));
 #ifdef HAVE_MUELU_INTREPID2
       // If we're asking for it, find who made P
-      if (varName == "pcoarsen: element to node map")                      return GetFactory("P");
+      if (varName == "pcoarsen: element to node map")   return GetFactory("P");
 #endif
 
       TEUCHOS_TEST_FOR_EXCEPTION(true, MueLu::Exceptions::RuntimeError, "MueLu::FactoryManager::GetDefaultFactory(): No default factory available for building '" + varName + "'.");
