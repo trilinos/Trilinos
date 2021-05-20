@@ -48,7 +48,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosTpetraAdapter.hpp"
-#include "BelosBlockCGSolMgr.hpp"
+#include "BelosGCRODRSolMgr.hpp"
 #include "BelosTpetraTestFramework.hpp"
 
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -56,9 +56,6 @@
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_Core.hpp>
 #include <Tpetra_CrsMatrix.hpp>
-
-// I/O for Harwell-Boeing files
-#include <Trilinos_Util_iohb.h>
 
 using namespace Teuchos;
 using Tpetra::Operator;
@@ -92,8 +89,6 @@ int main(int argc, char *argv[]) {
   bool verbose = false, proc_verbose = false, debug = false;
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;      // total number of right-hand sides to solve for
-  int blocksize = 1;   // blocksize used by solver
-  int maxiters = -1;   // maximum number of iterations for solver to use
   std::string filename("mhd1280b.cua");
   MT tol = 1.0e-5;     // relative residual tolerance
 
@@ -101,11 +96,9 @@ int main(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("debug","nodebug",&debug,"Run debugging checks.");
   cmdp.setOption("frequency",&frequency,"Solvers frequency for printing residuals (#iters).");
-  cmdp.setOption("tol",&tol,"Relative residual tolerance used by CG solver.");
+  cmdp.setOption("tol",&tol,"Relative residual tolerance used by GCRODR solver.");
   cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("num-rhs",&numrhs,"Number of right-hand sides to be solved for.");
-  cmdp.setOption("max-iters",&maxiters,"Maximum number of iterations per linear system (-1 := adapted to problem/block size).");
-  cmdp.setOption("block-size",&blocksize,"Block size to be used by the CG solver.");
   if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
     return -1;
   }
@@ -124,7 +117,7 @@ int main(int argc, char *argv[]) {
 
   Belos::Tpetra::HarwellBoeingReader<Tpetra::CrsMatrix<ST> > reader( comm );
   RCP<Tpetra::CrsMatrix<ST> > A = reader.readFromFile( filename );
-  RCP<const Tpetra::Map<> > map = A->getMap();
+  RCP<const Tpetra::Map<> > map = A->getDomainMap();
 
   // Create initial vectors
   RCP<MV> B, X;
@@ -139,14 +132,16 @@ int main(int argc, char *argv[]) {
   // *****************(can be user specified)******************
   //
   const int NumGlobalElements = B->getGlobalLength();
-  if (maxiters == -1) {
-    maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
-  }
-  //
+  int numIters1, numIters2, numIters3;
+  int maxits = NumGlobalElements; // maximum number of iterations to run
+  int numBlocks = 100;
+  int numRecycledBlocks = 20;
   ParameterList belosList;
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-  belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
+  belosList.set( "Maximum Iterations", maxits );         // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Num Blocks", numBlocks );
+  belosList.set( "Num Recycled Blocks", numRecycledBlocks );
+
   int verbLevel = Belos::Errors + Belos::Warnings;
   if (debug) {
     verbLevel += Belos::Debug;
@@ -172,10 +167,10 @@ int main(int argc, char *argv[]) {
   }
   //
   // *******************************************************************
-  // *************Start the block CG iteration***********************
+  // ******************Start the GCRODR iteration***********************
   // *******************************************************************
   //
-  Belos::BlockCGSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
+  Belos::GCRODRSolMgr<ST,MV,OP> solver( rcpFromRef(problem), rcpFromRef(belosList) );
 
   //
   // **********Print out information about problem*******************
@@ -184,8 +179,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Block size used by solver: " << blocksize << std::endl;
-    std::cout << "Max number of CG iterations: " << maxiters << std::endl;
+    std::cout << "Max number of GCRODR iterations: " << maxits << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -193,6 +187,7 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   Belos::ReturnType ret = solver.solve();
+  numIters1=solver.getNumIters();
   //
   // Compute actual residuals.
   //
@@ -215,7 +210,25 @@ int main(int argc, char *argv[]) {
     if (actRes > tol) badRes = true;
   }
 
-  if (ret!=Belos::Converged || badRes) {
+  if (proc_verbose) { std::cout << "First solve took " << numIters1 << " iterations." << std::endl; }
+
+  // Resolve linear system with same rhs and recycled space
+  MVT::MvInit( *X, SCT::zero() );
+  solver.reset(Belos::Problem);
+  ret = solver.solve();
+  numIters2=solver.getNumIters();
+
+  if (proc_verbose) { std::cout << "Second solve took " << numIters2 << " iterations." << std::endl; }
+
+  // Resolve linear system (again) with same rhs and recycled space
+  MVT::MvInit( *X, SCT::zero() );
+  solver.reset(Belos::Problem);
+  ret = solver.solve();
+  numIters3=solver.getNumIters();
+
+  if (proc_verbose) { std::cout << "Third solve took " << numIters3 << " iterations." << std::endl; }
+
+  if ( ret!=Belos::Converged || badRes || numIters1 < numIters2 || numIters2 < numIters3 ) {
     if (proc_verbose) {
       std::cout << "\nEnd Result: TEST FAILED" << std::endl;
     }
@@ -229,4 +242,4 @@ int main(int argc, char *argv[]) {
   }
   return 0;
   //
-} // end test_bl_cg_complex_hb.cpp
+} // end test_gcrodr_complex_hb.cpp
