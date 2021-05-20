@@ -111,8 +111,11 @@ namespace MueLu {
     /* ============================================================= */
     ArrayRCP<LO> myColors;
     LO numColors=0;
+
     // FIXME:  This is not going to respect coloring at or near processor
     // boundaries, so that'll need to get cleaned up later
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument,"Coloring on more than 1 MPI rank currently not supported");
+
     RCP<LocalOrdinalVector> fc_splitting;
     std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
     if(coloringAlgo == "file") {
@@ -152,6 +155,12 @@ namespace MueLu {
           fc_data[i] = (LO) mv_data[i];
       }
     }
+#ifdef HAVE_MUELU_ZOLTAN2
+    else if(coloringAlgo.find("Zoltan2")!=std::string::npos && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
+      SubFactoryMonitor sfm(*this,"DistributedGraphColoring",currentLevel);
+      DoDistributedGraphColoring(*graph,myColors,numColors);
+    }
+#endif
     else if(coloringAlgo == "MIS" || graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
       SubFactoryMonitor sfm(*this,"MIS",currentLevel);
       DoMISNaive(*graph,myColors,numColors);
@@ -167,8 +176,6 @@ namespace MueLu {
     }
 #endif
 
-    // FIXME: This coloring will either need to be done MPI parallel, or
-    // there needs to be a cleanup phase to fix mistakes
 
     /* ============================================================= */
     /* Phase 2 : Mark the C-Points                                   */
@@ -206,11 +213,17 @@ namespace MueLu {
       num_f_points = (LO)myPointType.size() - num_d_points - num_c_points;
     }
 
-    // FIXME: This array will need to be ghosted so we can get the point_types
-    // of the neighbors
+    /* Output statistics on c/f/d points */
+    if (GetVerbLevel() & Statistics1) {
+      // NOTE: We batch the communication here
+      GO l_counts[] = {(GO)num_c_points, (GO) num_f_points, (GO) num_d_points};
+      GO g_counts[3];
 
-    // FIXME:  These stats will need to be reduced
-    GetOStream(Statistics1) << "ClassicalMapFactory: C/F/D = "<<num_c_points<<"/"<<num_f_points<<"/"<<num_d_points<<std::endl;
+      RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
+      Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 3, l_counts, g_counts);
+      GetOStream(Statistics1) << "ClassicalMapFactory: C/F/D = "<<g_counts[0]<<"/"<<g_counts[1]<<"/"<<g_counts[2]<<std::endl;
+    }
+
 
     /* Generate the Coarse map */
     RCP<const Map> coarseMap;
@@ -248,8 +261,8 @@ GenerateCoarseMap(const Map & fineMap, LO num_c_points, RCP<const Map> & coarseM
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 DoGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numColors) const {
-  const ParameterList& pL = GetParameterList();
 #ifdef HAVE_MUELU_KOKKOSCORE  
+  const ParameterList& pL = GetParameterList();
   using graph_t = typename LWGraph_kokkos::local_graph_type;
   using KernelHandle = KokkosKernels::Experimental::
     KokkosKernelsHandle<typename graph_t::row_map_type::value_type,
@@ -398,6 +411,22 @@ DoMISNaive(const GraphBase & graph, ArrayRCP<LO> & myColors, LO & numColors) con
   } 
   numColors=1;
 }
+
+
+/* ************************************************************************* */
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+DoDistributedGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numColors) const {
+#ifdef HAVE_MUELU_ZOLTAN2
+  //const ParameterList& pL = GetParameterList();
+  // TODO: We'll need specialty versions of the Zoltan2 adapters that take 
+  // LWGraph and LWGraph_kokkos.  They already have adapters for XpetraCrsGraph
+
+  TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument,"Zoltan2 distributed coloring not currently supported.");
+
+#endif
+}
+
 
 
 } //namespace MueLu
