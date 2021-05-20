@@ -229,12 +229,6 @@ public:
     void globalAssemble () {endFill();}
 
     //! Migrates data to the owned mode
-    void endFill();
-
-    //! Activates the owned+shared mode for assembly
-    void beginFill();
-
-    //! Migrates data to the owned mode
     void endAssembly();
 
     //! Activates the owned+shared mode for assembly
@@ -247,6 +241,10 @@ public:
     void beginModify();
 
   private:
+
+    //! Called by beginAssembly, endAssembly.
+    void endFill();
+    void beginFill();
 
     /// \brief Whether sumIntoLocalValues and sumIntoGlobalValues
     ///   should use atomic updates by default.

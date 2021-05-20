@@ -465,12 +465,6 @@ namespace Tpetra {
     //@{
 
     //! Migrates data to the owned mode
-    void endFill();
-
-    //! Activates the owned+shared mode for assembly.  This can only be called once.
-    void beginFill();
-
-    //! Migrates data to the owned mode
     void endAssembly();
 
     //! Activates the owned+shared mode for assembly
@@ -554,6 +548,13 @@ namespace Tpetra {
 
 
   private:
+
+    //! Migrates data to the owned mode
+    void endFill();
+
+    //! Activates the owned+shared mode for assembly.  This can only be called once.
+    void beginFill();
+
     /// \brief Migrate data from the owned+shared to the owned graph
     /// Since this is non-unique -> unique, we need a combine mode.
     /// Precondition: Must be FE_ACTIVE_OWNED_PLUS_SHARED mode

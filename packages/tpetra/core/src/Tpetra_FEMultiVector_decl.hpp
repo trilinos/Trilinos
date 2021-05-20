@@ -61,6 +61,12 @@ namespace Tpetra {
     using base_type = ::Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     friend base_type;
 
+    //! Declare the beginning of a phase of owned+shared modifications.
+    void beginFill ();
+
+    //! Declare the end of a phase of owned+shared modifications.
+    void endFill ();
+
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
@@ -158,12 +164,6 @@ namespace Tpetra {
     //@}
     //! @name Post-construction modification routines
     //@{
-
-    //! Declare the beginning of a phase of owned+shared modifications.
-    void beginFill ();
-
-    //! Declare the end of a phase of owned+shared modifications.
-    void endFill ();
 
     //! Declare the beginning of a phase of owned+shared modifications.
     void beginAssembly ();
