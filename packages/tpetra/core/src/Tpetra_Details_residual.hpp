@@ -49,6 +49,7 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_Profiling.hpp"
+#include "KokkosSparse_spmv_impl.hpp"
 
 /// \file Tpetra_Details_residual.hpp
 /// \brief Functions that allow for fused residual calculation.
@@ -58,78 +59,6 @@
 
 namespace Tpetra {
   namespace Details {
-
-
-template<class ExecutionSpace>
-int64_t
-residual_launch_parameters (int64_t numRows,
-                            int64_t nnz,
-                            int64_t rows_per_thread,
-                            int& team_size,
-                            int& vector_length)
-{
-  using execution_space = typename ExecutionSpace::execution_space;
-
-  int64_t rows_per_team;
-  int64_t nnz_per_row = nnz/numRows;
-
-  if (nnz_per_row < 1) {
-    nnz_per_row = 1;
-  }
-
-  if (vector_length < 1) {
-    vector_length = 1;
-    while (vector_length<32 && vector_length*6 < nnz_per_row) {
-      vector_length *= 2;
-    }
-  }
-
-  // Determine rows per thread
-  if (rows_per_thread < 1) {
-#ifdef KOKKOS_ENABLE_CUDA
-    if (std::is_same<Kokkos::Cuda, execution_space>::value) {
-      rows_per_thread = 1;
-    }
-    else
-#endif
-    {
-      if (nnz_per_row < 20 && nnz > 5000000) {
-        rows_per_thread = 256;
-      }
-      else {
-        rows_per_thread = 64;
-      }
-    }
-  }
-
-#ifdef KOKKOS_ENABLE_CUDA
-  if (team_size < 1) {
-    if (std::is_same<Kokkos::Cuda,execution_space>::value) {
-      team_size = 256/vector_length;
-    }
-    else {
-      team_size = 1;
-    }
-  }
-#endif
-
-  rows_per_team = rows_per_thread * team_size;
-
-  if (rows_per_team < 0) {
-    int64_t nnz_per_team = 4096;
-    int64_t conc = execution_space::concurrency ();
-    while ((conc * nnz_per_team * 4 > nnz) &&
-           (nnz_per_team > 256)) {
-      nnz_per_team /= 2;
-    }
-    rows_per_team = (nnz_per_team + nnz_per_row - 1) / nnz_per_row;
-  }
-
-  return rows_per_team;
-}
-
-
-
 
 
 template<class SC, class LO, class GO, class NO>
@@ -231,8 +160,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
   int vector_length = -1;
   int64_t rows_per_thread = -1;
   
-  int64_t rows_per_team = 
-    residual_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
+  int64_t rows_per_team = KokkosSparse::Impl::spmv_launch_parameters<execution_space>(numLocalRows, myNnz, rows_per_thread, team_size, vector_length);
   int64_t worksets = (B_lcl.extent (0) + rows_per_team - 1) / rows_per_team;
 
   using policy_type = typename Kokkos::TeamPolicy<execution_space>;
