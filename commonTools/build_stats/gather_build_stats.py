@@ -275,6 +275,10 @@ def injectCmndLineOptionsInParser(clp):
     help="Base directory for project build dir containing the *.timing files."+\
       " [default is current working directory]" )
 
+  clp.add_argument(
+    "--verbose", "-v", dest="verbose", action="store_true", default=False,
+    help="Provide verbose output." )
+
   clp.add_argument("buildStatsCsvFile", nargs='?', default="build_stats.csv",
     help="The build status CSV file to created on output."+\
       "  [default is 'build_stats.csv' in current working directory]" )
@@ -299,11 +303,14 @@ def getCmndLineOptions():
 
 if __name__ == '__main__':
   inOptions = getCmndLineOptions()
-  print("Reading all *.timing files from under '"+inOptions.baseDir+"' ...")
+  if inOptions.verbose:
+    print("Reading all *.timing files from under '"+inOptions.baseDir+"' ...")
   allValidTimingFilesListOfDicts = readAllValidTimingFiles(inOptions.baseDir,
-    printStats=True)
+    printStats=inOptions.verbose)
   allValidTimingFilesDictOfLists = \
-    getDictOfListsFromListOfDicts(allValidTimingFilesListOfDicts, printStats=True)
+    getDictOfListsFromListOfDicts(allValidTimingFilesListOfDicts,
+      printStats=inOptions.verbose)
   writeDictOfListsToCsvFile(allValidTimingFilesDictOfLists,
     inOptions.buildStatsCsvFile)
-  print("Wrote file '"+inOptions.buildStatsCsvFile+"'")
+  if inOptions.verbose:
+    print("Wrote file '"+inOptions.buildStatsCsvFile+"'")

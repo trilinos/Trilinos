@@ -19,6 +19,7 @@ tribits_add_advanced_test( Results
   TEST_0
     MESSAGE "Gather up the build stats in case the build failed"
     CMND "${CMAKE_CURRENT_LIST_DIR}/gather_build_stats.py"
+    ARGS -v
     WORKING_DIRECTORY "${${PROJECT_NAME}_BINARY_DIR}"
     SKIP_CLEAN_WORKING_DIRECTORY  # Critical or you delete the entire working dir!
     ALWAYS_FAIL_ON_NONZERO_RETURN

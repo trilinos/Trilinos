@@ -308,7 +308,7 @@ def sortCsvFileTextList(csvFileText):
   return csvFileTextList
 
 
-def test_gather_build_stats_py_body(testObj, csvFile, cmnd):
+def test_gather_build_stats_py_body(testObj, csvFile, cmnd, silentStdout=False):
   output = GSS.getCmndOutput(cmnd)
   #print("output:\n"+output)
   with open(csvFile, 'r') as csvFileHandle:
@@ -316,9 +316,10 @@ def test_gather_build_stats_py_body(testObj, csvFile, cmnd):
   testObj.assertEqual(
     sortCsvFileTextList(csvFileText),
     sortCsvFileTextList(csvFileText_expected))
-  testObj.assertEqual(
-    output.split('\n'),
-    gather_build_stats_py_expected_output(csvFile).split('\n'))
+  if not silentStdout:
+    testObj.assertEqual(
+      output.split('\n'),
+      gather_build_stats_py_expected_output(csvFile).split('\n'))
 
 
 class test_gather_build_stats_py(unittest.TestCase):
@@ -336,11 +337,17 @@ class test_gather_build_stats_py(unittest.TestCase):
     csvFile = "build_stats.csv"
     cmnd = thisScriptsDir+"/../gather_build_stats.py"+\
       " -d "+g_testBaseDir+"/dummy_build_dir"
+    test_gather_build_stats_py_body(self, csvFile, cmnd, silentStdout=True)
+
+  def test_default_out_file_verbose(self):
+    csvFile = "build_stats.csv"
+    cmnd = thisScriptsDir+"/../gather_build_stats.py -v"+\
+      " -d "+g_testBaseDir+"/dummy_build_dir"
     test_gather_build_stats_py_body(self, csvFile, cmnd)
 
-  def test_explicit_out_file(self):
+  def test_explicit_out_file_verbose(self):
     csvFile = "test_gather_build_stats_py_build_stats.csv"
-    cmnd = thisScriptsDir+"/../gather_build_stats.py"+\
+    cmnd = thisScriptsDir+"/../gather_build_stats.py -v"+\
       " -d "+g_testBaseDir+"/dummy_build_dir "+csvFile
     test_gather_build_stats_py_body(self, csvFile, cmnd)
 
