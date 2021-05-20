@@ -134,34 +134,35 @@ residual_launch_parameters (int64_t numRows,
 
 template<class SC, class LO, class GO, class NO>
 void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
-                   const MultiVector<SC,LO,GO,NO> & X,
+                   const MultiVector<SC,LO,GO,NO> & X_colmap,
                    const MultiVector<SC,LO,GO,NO> & B,
-                   MultiVector<SC,LO,GO,NO> & R) {
+                   MultiVector<SC,LO,GO,NO> & R,
+                   const MultiVector<SC,LO,GO,NO> * X_domainmap=nullptr) {
   using Tpetra::Details::ProfilingRegion;
   using Teuchos::NO_TRANS;
   ProfilingRegion regionLocalApply ("Tpetra::CrsMatrix::localResidual");
 
-  auto A_lcl = A.getLocalMatrixDevice (); 
-  auto X_lcl = X.getLocalViewDevice(Access::ReadOnly);
+  auto A_lcl = A.getLocalMatrixDevice ();
+  auto X_colmap_lcl = X_colmap.getLocalViewDevice(Access::ReadOnly);
   auto B_lcl = B.getLocalViewDevice(Access::ReadOnly);
   auto R_lcl = R.getLocalViewDevice(Access::OverwriteAll);
 
   const bool debug = ::Tpetra::Details::Behavior::debug ();
   if (debug) {
     TEUCHOS_TEST_FOR_EXCEPTION
-      (X.getNumVectors () != R.getNumVectors (), std::runtime_error,
-       "X.getNumVectors() = " << X.getNumVectors () << " != "
+      (X_colmap.getNumVectors () != R.getNumVectors (), std::runtime_error,
+       "X.getNumVectors() = " << X_colmap.getNumVectors () << " != "
        "R.getNumVectors() = " << R.getNumVectors () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (X.getNumVectors () != R.getNumVectors (), std::runtime_error,
-       "X.getNumVectors() = " << X.getNumVectors () << " != "
+      (X_colmap.getNumVectors () != R.getNumVectors (), std::runtime_error,
+       "X.getNumVectors() = " << X_colmap.getNumVectors () << " != "
        "R.getNumVectors() = " << R.getNumVectors () << ".");
 
     TEUCHOS_TEST_FOR_EXCEPTION
-      (X.getLocalLength () !=
+      (X_colmap.getLocalLength () !=
        A.getColMap ()->getNodeNumElements (), std::runtime_error,
        "X has the wrong number of local rows.  "
-       "X.getLocalLength() = " << X.getLocalLength () << " != "
+       "X.getLocalLength() = " << X_colmap.getLocalLength () << " != "
        "A.getColMap()->getNodeNumElements() = " <<
        A.getColMap ()->getNodeNumElements () << ".");
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -185,13 +186,13 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
        "domain and range Map arguments) without an intervening "
        "resumeFill() call before you may call this method.");
     TEUCHOS_TEST_FOR_EXCEPTION
-      (! X.isConstantStride () || ! R.isConstantStride () || ! B.isConstantStride (),
+      (! X_colmap.isConstantStride () || ! R.isConstantStride () || ! B.isConstantStride (),
        std::runtime_error, "X, Y and B must be constant stride.");
     // If the two pointers are NULL, then they don't alias one
     // another, even though they are equal.
     TEUCHOS_TEST_FOR_EXCEPTION
-      ((X_lcl.data () == R_lcl.data () && X_lcl.data () != nullptr) ||
-       (X_lcl.data () == B_lcl.data () && X_lcl.data () != nullptr),
+      ((X_colmap_lcl.data () == R_lcl.data () && X_colmap_lcl.data () != nullptr) ||
+       (X_colmap_lcl.data () == B_lcl.data () && X_colmap_lcl.data () != nullptr),
        std::runtime_error, "X, Y and R may not alias one another.");
   }
       
@@ -199,7 +200,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
 #ifdef TPETRA_DETAILS_USE_REFERENCE_RESIDUAL
   // This is currently a "reference implementation" waiting until Kokkos Kernels provides
   // a residual kernel.
-  A.localApply(X,R,Teuchos::NO_TRANS, one, zero);
+  A.localApply(X_colmap,R,Teuchos::NO_TRANS, one, zero);
   R.update(one,B,negone);
 #else
   using execution_space = typename CrsMatrix<SC,LO,GO,NO>::execution_space;
@@ -221,7 +222,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
     //note: lclOp will be wrapped in shared_ptr
     auto lclOp = A.getLocalMultiplyOperator();
     //Call local SPMV, requesting merge path, through A's LocalCrsMatrixOperator
-    lclOp->applyImbalancedRows (X_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
+    lclOp->applyImbalancedRows (X_colmap_lcl, R_lcl, Teuchos::NO_TRANS, one, zero);
     R.update(one,B,negone);
     return;
   }
@@ -248,63 +249,135 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
     policy = policy_type (worksets, team_size, vector_length);
   }
 
-  bool is_vector = (X_lcl.extent(1) == 1);
+  bool is_vector = (X_colmap_lcl.extent(1) == 1);
 
   if(is_vector) {
-    // Vector case
-    // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
-    Kokkos::parallel_for("residual-vector",policy,KOKKOS_LAMBDA(const team_member& dev) {
-        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
-            const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
-            
-            if (lclRow >= A_lcl.numRows ()) {
-              return;
-            }
 
-            const auto A_row = A_lcl.rowConst(lclRow);
-            const LO row_length = static_cast<LO> (A_row.length);
-            residual_value_type A_x = KAT::zero ();          
+    if (X_domainmap == nullptr) {
+    
+      // Vector case
+      // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
+      Kokkos::parallel_for("residual-vector",policy,KOKKOS_LAMBDA(const team_member& dev) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+              const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
             
-            Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
-                const auto A_val = A_row.value(iEntry);
-                lsum += A_val * X_lcl(A_row.colidx(iEntry),0);
-              }, A_x);
-            
-            Kokkos::single(Kokkos::PerThread(dev),[&] () {            
-                R_lcl(lclRow,0) = B_lcl(lclRow,0) - A_x;
-              });           
-          });//end parallel_for TeamThreadRange
-      });//end parallel_for "residual-vector"
-  } else {
-    // MultiVector case
-    // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
-    Kokkos::parallel_for("residual-multivector",policy,KOKKOS_LAMBDA(const team_member& dev) {
-        // NOTE: It looks like I should be able to get this data up above, but if I try to
-        // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
-        const LO numVectors = static_cast<LO>(X_lcl.extent(1));
-        Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
-            const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
-            
-            if (lclRow >= A_lcl.numRows ()) {
-              return;
-            }
-            const auto A_row = A_lcl.rowConst(lclRow);
-            const LO row_length = static_cast<LO> (A_row.length);
-            for(LO v=0; v<numVectors; v++) {
+              if (lclRow >= A_lcl.numRows ()) {
+                return;
+              }
+
+              const auto A_row = A_lcl.rowConst(lclRow);
+              const LO row_length = static_cast<LO> (A_row.length);
               residual_value_type A_x = KAT::zero ();          
-              
+            
               Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
                   const auto A_val = A_row.value(iEntry);
-                  lsum += A_val * X_lcl(A_row.colidx(iEntry),v);
+                  lsum += A_val * X_colmap_lcl(A_row.colidx(iEntry),0);
                 }, A_x);
-              
+            
               Kokkos::single(Kokkos::PerThread(dev),[&] () {            
-                  R_lcl(lclRow,v) = B_lcl(lclRow,v) - A_x;
-                });
+                  R_lcl(lclRow,0) = B_lcl(lclRow,0) - A_x;
+                });           
+            });//end parallel_for TeamThreadRange
+        });//end parallel_for "residual-vector"
+    } else {
+      auto X_domainmap_lcl = X_domainmap->getLocalViewDevice(Access::ReadOnly);
+      
+      Kokkos::parallel_for("residual-vector",policy,KOKKOS_LAMBDA(const team_member& dev) {
+          Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+              const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
+              const LO numRows = A_lcl.numRows ();
+            
+              if (lclRow >= numRows) {
+                return;
+              }
+
+              const auto A_row = A_lcl.rowConst(lclRow);
+              const LO row_length = static_cast<LO> (A_row.length);
+              residual_value_type A_x = KAT::zero ();          
+            
+              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
+                  const auto A_val = A_row.value(iEntry);
+                  const auto lclCol = A_row.colidx(iEntry);
+                  if (lclCol < numRows)
+                    lsum += A_val * X_domainmap_lcl(lclCol,0);
+                  else
+                    lsum += A_val * X_colmap_lcl(lclCol,0);
+                }, A_x);
+            
+              Kokkos::single(Kokkos::PerThread(dev),[&] () {            
+                  R_lcl(lclRow,0) = B_lcl(lclRow,0) - A_x;
+                });           
+            });//end parallel_for TeamThreadRange
+        });//end parallel_for "residual-vector"
+      
+    }
+  } else {
+    // MultiVector case
+    if (X_domainmap == nullptr) {
+      // Kernel interior shamelessly horked from Ifpack2_Details_ScaledDampedResidual_def.hpp
+      Kokkos::parallel_for("residual-multivector",policy,KOKKOS_LAMBDA(const team_member& dev) {
+          // NOTE: It looks like I should be able to get this data up above, but if I try to
+          // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
+          const LO numVectors = static_cast<LO>(X_colmap_lcl.extent(1));
+          Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+              const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
+            
+              if (lclRow >= A_lcl.numRows ()) {
+                return;
+              }
+              const auto A_row = A_lcl.rowConst(lclRow);
+              const LO row_length = static_cast<LO> (A_row.length);
+              for(LO v=0; v<numVectors; v++) {
+                residual_value_type A_x = KAT::zero ();          
               
-            }//end for numVectors
-          });//end parallel_for TeamThreadRange
-      });//end parallel_for "residual-multivector"
+                Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
+                    const auto A_val = A_row.value(iEntry);
+                    lsum += A_val * X_colmap_lcl(A_row.colidx(iEntry),v);
+                  }, A_x);
+              
+                Kokkos::single(Kokkos::PerThread(dev),[&] () {            
+                    R_lcl(lclRow,v) = B_lcl(lclRow,v) - A_x;
+                  });
+              
+              }//end for numVectors
+            });//end parallel_for TeamThreadRange
+        });//end parallel_for "residual-multivector"
+    } else {
+      auto X_domainmap_lcl = X_domainmap->getLocalViewDevice(Access::ReadOnly);
+      
+      Kokkos::parallel_for("residual-multivector",policy,KOKKOS_LAMBDA(const team_member& dev) {
+          // NOTE: It looks like I should be able to get this data up above, but if I try to
+          // we get internal compiler errors.  Who knew that gcc tried to "gimplify"?
+          const LO numVectors = static_cast<LO>(X_colmap_lcl.extent(1));
+          Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
+              const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
+              const LO numRows = A_lcl.numRows ();
+              
+              if (lclRow >= numRows) {
+                return;
+              }
+              const auto A_row = A_lcl.rowConst(lclRow);
+              const LO row_length = static_cast<LO> (A_row.length);
+              for(LO v=0; v<numVectors; v++) {
+                residual_value_type A_x = KAT::zero ();          
+              
+                Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
+                    const auto A_val = A_row.value(iEntry);
+                    const auto lclCol = A_row.colidx(iEntry);
+                    if (lclCol < numRows)
+                      lsum += A_val * X_domainmap_lcl(lclCol,v);
+                    else
+                      lsum += A_val * X_colmap_lcl(lclCol,v);
+                  }, A_x);
+              
+                Kokkos::single(Kokkos::PerThread(dev),[&] () {            
+                    R_lcl(lclRow,v) = B_lcl(lclRow,v) - A_x;
+                  });
+              
+              }//end for numVectors
+            });//end parallel_for TeamThreadRange
+        });//end parallel_for "residual-multivector"
+    }
   }// end else
 #endif
 }
@@ -321,6 +394,15 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcpFromRef;
+
+  const bool debug = ::Tpetra::Details::Behavior::debug ();
+
+  // Whether we are using restrictedMode in the import from domain to
+  // column map. Restricted mode skips the copy and permutation of the
+  // local part of X. We are using restrictedMode only when domain and
+  // column map are locally fitted, i.e. when the local indices of
+  // domain and column map match.
+  bool restrictedMode = false;
   
   const CrsMatrix<SC,LO,GO,NO> * Apt  = dynamic_cast<const CrsMatrix<SC,LO,GO,NO>*>(&Aop);
   if(!Apt) {
@@ -379,8 +461,17 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
     // stride.
     RCP<MV> X_colMapNonConst = A.getColumnMapMultiVector (X_in);
     
+    // Do we want to use restrictedMode?
+    restrictedMode = importer->isLocallyFitted();
+
+    if (debug && restrictedMode) {
+      TEUCHOS_TEST_FOR_EXCEPTION
+        (!importer->getTargetMap()->isLocallyFitted(*importer->getSourceMap()), std::runtime_error,
+         "Source map and target map are not locally fitted, but Tpetra::residual thinks they are.");
+    }
+
     // Import from the domain Map MV to the column Map MV.
-    X_colMapNonConst->doImport (X_in, *importer, INSERT);
+    X_colMapNonConst->doImport (X_in, *importer, INSERT, restrictedMode);
     X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
   }
 
@@ -431,7 +522,10 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   // make a constant stride R_rowMap MV and do an Export anyway.
   if (! exporter.is_null ()) {
 
-    localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
+    if (restrictedMode && !importer.is_null ())
+      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, &X_in);
+    else
+      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
     
     {
       ProfilingRegion regionExport ("Tpetra::CrsMatrix::residual: R Export");
@@ -453,7 +547,10 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
       Tpetra::deep_copy (R_in, *R_rowMap);
     }
     else {
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
+      if (restrictedMode && !importer.is_null ())
+        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, &X_in);
+      else
+        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
     }
   }
 
