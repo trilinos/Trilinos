@@ -189,7 +189,7 @@ void hex_volume_internal(Ioss::ElementBlock *block, const std::vector<double> &c
 
   if (nelem > 0) {
     fmt::print(Ioss::OUTPUT(),
-               "\n{:12}\tMin volume = {:12}  Max volume = {:12}  Elements = {:12n}  Time/Elem = "
+               "\n{:12}\tMin volume = {:12}  Max volume = {:12}  Elements = {:12L}  Time/Elem = "
                "{:5.3f} micro-sec.\n",
                block->name(), *std::min_element(volume.begin(), volume.end()),
                *std::max_element(volume.begin(), volume.end()), nelem,

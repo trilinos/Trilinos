@@ -99,6 +99,7 @@ namespace Tacho {
     using base_type::_perm;
     using base_type::_peri;
     using base_type::_stree_roots;
+    using base_type::_superpanel_buf;
     using base_type::_piv;
     using base_type::_diag; 
     using base_type::_info;
@@ -2015,6 +2016,7 @@ namespace Tacho {
     void
     factorize(const value_type_array &ax,
               const ordinal_type verbose = 0) override {
+      Kokkos::deep_copy(_superpanel_buf, value_type(0));
       switch (this->getSolutionMethod()) {
       case 1: { /// Cholesky
         factorizeCholesky(ax, verbose);

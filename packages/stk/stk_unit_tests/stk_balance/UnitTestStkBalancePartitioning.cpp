@@ -65,6 +65,15 @@ protected:
     balance_mesh(decompCommunicator, numFinalSubdomains, selectors, balanceSettings);
   }
 
+  void balance_mesh_scotch(const stk::ParallelMachine & decompCommunicator,
+                           int numFinalSubdomains,
+                           const std::vector<stk::mesh::Selector> & selectors)
+  {
+    stk::balance::GraphCreationSettings balanceSettings;
+    balanceSettings.setDecompMethod("scotch");
+    balance_mesh(decompCommunicator, numFinalSubdomains, selectors, balanceSettings);
+  }
+
   void test_partition_element_distribution(const std::vector<int> & expectedElemsPerProc)
   {
     ASSERT_EQ(static_cast<unsigned>(m_numFinalSubdomains), expectedElemsPerProc.size());
@@ -292,3 +301,25 @@ TEST_F(StkBalancePartitioning, 4Elem2ProcMesh_Geometric_SeparateCommunicator_Emp
 
   test_partition_element_distribution({1, 1});
 }
+
+TEST_F(StkBalancePartitioning, 6Elem1ProcMesh_EntireDomain_Scotch)
+{
+  if (stk::parallel_machine_size(get_comm()) != 1) GTEST_SKIP();
+
+  setup_initial_mesh("generated:1x1x6");
+  balance_mesh_scotch(get_bulk().parallel(), 2, {get_meta().universal_part()});
+
+  test_partition_element_distribution({3, 3});
+}
+
+
+TEST_F(StkBalancePartitioning, 6Elem2ProcMesh_EntireDomain_Scotch)
+{
+  if (stk::parallel_machine_size(get_comm()) != 2) GTEST_SKIP();
+
+  setup_initial_mesh("generated:1x1x6");
+  balance_mesh_scotch(get_bulk().parallel(), 2, {get_meta().universal_part()});
+
+  test_partition_element_distribution({3, 3});
+}
+

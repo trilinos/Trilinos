@@ -1,4 +1,4 @@
-
+ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   Tpetra_BlockCG_hb_test
@@ -21,24 +21,24 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   )
 
-# Tpetra matrix file reader does not read complex-valued matrices 6/28/2018
-#ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
-#IF(Tpetra_INST_COMPLEX_DOUBLE)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Triutils)
+ASSERT_DEFINED(Tpetra_INST_COMPLEX_DOUBLE)
+IF (${PACKAGE_NAME}_ENABLE_Triutils AND Tpetra_INST_COMPLEX_DOUBLE)
 
-#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-#    Tpetra_BlockCG_complex_hb_test
-#    SOURCES test_bl_cg_complex_hb.cpp
-#    ARGS
-#    COMM serial mpi
-#    )
+  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+    Tpetra_BlockCG_complex_hb_test
+    SOURCES test_bl_cg_complex_hb.cpp
+    ARGS "--verbose"
+    COMM serial mpi
+    )
 
-#  TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_complex_hb_CopyFiles
-#    SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
-#    SOURCE_FILES mhd1280b.cua
-#    EXEDEPS Tpetra_BlockCG_complex_hb_test
-#    )
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_complex_hb_CopyFiles
+    SOURCE_DIR ${Anasazi_SOURCE_DIR}/testmatrices
+    SOURCE_FILES mhd1280b.cua
+    EXEDEPS Tpetra_BlockCG_complex_hb_test
+    )
 
-#ENDIF()
+ENDIF()
 
 ASSERT_DEFINED(Anasazi_SOURCE_DIR)
 TRIBITS_COPY_FILES_TO_BINARY_DIR(Tpetra_BlockCG_hb_CopyFiles2

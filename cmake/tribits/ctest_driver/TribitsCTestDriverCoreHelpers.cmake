@@ -1670,6 +1670,6 @@ MACRO(TRIBITS_CTEST_ALL_AT_ONCE)
   ENDIF()
   # ToDo: Optionally determine pass/fail based 
 
-  MESSAGE("\nDone with the all-at-once configure, build, test, ans submit of ${PROJECT_NAME} packages!\n")
+  MESSAGE("\nDone with the all-at-once configure, build, test, and submit of ${PROJECT_NAME} packages!\n")
 
 ENDMACRO()

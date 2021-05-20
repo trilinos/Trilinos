@@ -35,7 +35,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 
 namespace stk {
@@ -43,11 +42,9 @@ namespace balance {
 namespace internal {
 
 M2NDecomposer::M2NDecomposer(stk::mesh::BulkData & bulkData,
-                             const stk::balance::BalanceSettings & balanceSettings,
-                             const stk::balance::M2NParsedOptions & parsedOptions)
+                             const stk::balance::M2NBalanceSettings & balanceSettings)
   : m_bulkData(bulkData),
-    m_balanceSettings(balanceSettings),
-    m_parsedOptions(parsedOptions)
+    m_balanceSettings(balanceSettings)
 {
 }
 
@@ -55,7 +52,7 @@ unsigned
 M2NDecomposer::num_required_subdomains_for_each_proc()
 {
   const unsigned numInitialSubdomains = m_bulkData.parallel_size();
-  const unsigned numFinalSubdomains = m_parsedOptions.targetNumProcs;
+  const unsigned numFinalSubdomains = m_balanceSettings.get_num_output_processors();
   return (numFinalSubdomains / numInitialSubdomains) + (numFinalSubdomains % numInitialSubdomains > 0);
 }
 
@@ -65,7 +62,7 @@ M2NDecomposer::get_partition()
   stk::mesh::EntityProcVec decomp;
   std::vector<stk::mesh::Selector> selectors = { m_bulkData.mesh_meta_data().universal_part() };
   stk::balance::internal::calculateGeometricOrGraphBasedDecomp(m_bulkData, selectors,
-                                                               m_bulkData.parallel(), m_parsedOptions.targetNumProcs,
+                                                               m_bulkData.parallel(), m_balanceSettings.get_num_output_processors(),
                                                                m_balanceSettings, decomp);
   return decomp;
 }
@@ -74,7 +71,7 @@ std::vector<unsigned>
 M2NDecomposer::map_new_subdomains_to_original_processors()
 {
   const unsigned numInitialSubdomains = m_bulkData.parallel_size();
-  const unsigned numFinalSubdomains = m_parsedOptions.targetNumProcs;
+  const unsigned numFinalSubdomains = m_balanceSettings.get_num_output_processors();
 
   std::vector<unsigned> targetSubdomainsToProc(numFinalSubdomains, std::numeric_limits<unsigned>::max());
   for (unsigned i = 0; i < numFinalSubdomains; ++i) {
@@ -83,13 +80,12 @@ M2NDecomposer::map_new_subdomains_to_original_processors()
   return targetSubdomainsToProc;
 }
 
-M2NDecomposerNested::M2NDecomposerNested(stk::mesh::BulkData & bulkData,
-                                         const stk::balance::BalanceSettings & balanceSettings,
-                                         const stk::balance::M2NParsedOptions & parsedOptions)
-  : M2NDecomposer(bulkData, balanceSettings, parsedOptions)
+M2NDecomposerNested::M2NDecomposerNested(stk::mesh::BulkData& bulkData,
+                                         const M2NBalanceSettings& balanceSettings)
+  : M2NDecomposer(bulkData, balanceSettings)
 {
   const int numInitialSubdomains = m_bulkData.parallel_size();
-  const int numFinalSubdomains = m_parsedOptions.targetNumProcs;
+  const int numFinalSubdomains = m_balanceSettings.get_num_output_processors();
   ThrowRequireMsg((numFinalSubdomains % numInitialSubdomains) == 0,
                   "Final subdomains (" << numFinalSubdomains << ") must be an integer multiple of initial subdomains ("
                   << numInitialSubdomains << ")");
@@ -135,7 +131,7 @@ M2NDecomposerNested::get_partition_for_subdomain(int subdomainId)
 std::vector<unsigned>
 M2NDecomposerNested::map_new_subdomains_to_original_processors()
 {
-  const unsigned numFinalSubdomains = m_parsedOptions.targetNumProcs;
+  const unsigned numFinalSubdomains = m_balanceSettings.get_num_output_processors();
 
   std::vector<unsigned> targetSubdomainsToProc(numFinalSubdomains, std::numeric_limits<unsigned>::max());
   for (unsigned i = 0; i < numFinalSubdomains; ++i) {

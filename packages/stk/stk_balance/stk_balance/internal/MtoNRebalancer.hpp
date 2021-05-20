@@ -58,7 +58,7 @@ public:
     MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker,
                    stk::mesh::Field<unsigned> &targetField,
                    M2NDecomposer &decomposer,
-                   const stk::balance::M2NParsedOptions &num_target_procs);
+                   const M2NBalanceSettings &balanceSettings);
 
     ~MtoNRebalancer() = default;
 
@@ -96,7 +96,7 @@ private:
     SubdomainCreator m_subdomainCreator;
     M2NDecomposer &m_decomposer;
     stk::mesh::Field<unsigned> &m_inputMeshTargetDecompField;
-    const stk::balance::M2NParsedOptions &m_parsedOptions;
+    const M2NBalanceSettings &m_balanceSettings;
     stk::mesh::EntityProcVec m_decomp;
     std::vector<unsigned> m_ownerForEachFinalSubdomain;
     int m_globalNumNodes;

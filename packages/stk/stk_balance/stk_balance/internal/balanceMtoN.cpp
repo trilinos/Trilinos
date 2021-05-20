@@ -39,7 +39,6 @@
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/entityDataToField.hpp>
 #include <stk_balance/internal/M2NDecomposer.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
 
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_io/IossBridge.hpp>
@@ -54,28 +53,26 @@ namespace internal {
 using DecomposerPtr = std::shared_ptr<stk::balance::internal::M2NDecomposer>;
 
 DecomposerPtr make_decomposer(stk::mesh::BulkData& bulkData,
-                              const stk::balance::BalanceSettings& balanceSettings,
-                              const stk::balance::M2NParsedOptions& parsedOptions)
+                              const stk::balance::M2NBalanceSettings& balanceSettings)
 {
   DecomposerPtr decomposer;
-  if (parsedOptions.useNestedDecomp) {
-    decomposer = std::make_shared<stk::balance::internal::M2NDecomposerNested>(bulkData, balanceSettings, parsedOptions);
+  if (balanceSettings.get_use_nested_decomp()) {
+    decomposer = std::make_shared<stk::balance::internal::M2NDecomposerNested>(bulkData, balanceSettings);
   }
   else {
-    decomposer = std::make_shared<stk::balance::internal::M2NDecomposer>(bulkData, balanceSettings, parsedOptions);
+    decomposer = std::make_shared<stk::balance::internal::M2NDecomposer>(bulkData, balanceSettings);
   }
   return decomposer;
 }
 
 bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker,
                    stk::mesh::Field<unsigned> &targetDecompField,
-                   const stk::balance::BalanceSettings & balanceSettings,
-                   const stk::balance::M2NParsedOptions & parsedOptions,
+                   const stk::balance::M2NBalanceSettings & balanceSettings,
                    int numSteps,
                    double timeStep)
 {
-    DecomposerPtr decomposer = make_decomposer(ioBroker.bulk_data(), balanceSettings, parsedOptions);
-    MtoNRebalancer m2nRebalancer(ioBroker, targetDecompField, *decomposer, parsedOptions);
+    DecomposerPtr decomposer = make_decomposer(ioBroker.bulk_data(), balanceSettings);
+    MtoNRebalancer m2nRebalancer(ioBroker, targetDecompField, *decomposer, balanceSettings);
     m2nRebalancer.rebalance(numSteps, timeStep);
 
     return true;

@@ -945,7 +945,7 @@ INCLUDE(${CMAKE_CURRENT_LIST_DIR}/TribitsCTestDriverCoreHelpers.cmake)
 #     ``-D${PROJECT_NAME}_ENABLE_COVERAGE_TESTING=ON`` getting passed down to
 #     the inner CMake configure of the project (i.e. so that the executables
 #     are instrumented to generate coverage data when run by the tests in the
-#     ``CTEST_TEST()`` command).
+#     ``CTEST_TEST()`` command).  (Default is ``OFF``)
 #
 #   .. _CTEST_COVERAGE_COMMAND:
 #
@@ -1620,7 +1620,7 @@ FUNCTION(TRIBITS_CTEST_DRIVER)
   SET_DEFAULT_AND_FROM_ENV( ${PROJECT_NAME}_WARNINGS_AS_ERRORS_FLAGS "" )
 
   # Do coverage testing or not
-  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING OFF )
 
   # Command to run to get coverage results
   SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
