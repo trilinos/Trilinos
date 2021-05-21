@@ -85,6 +85,10 @@ namespace Xpetra {
     //! Destructor.
     ~TpetraImport();
 
+    //! Special "constructor"
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const;
+
     //@}
 
     //! @name Import Attribute Methods
