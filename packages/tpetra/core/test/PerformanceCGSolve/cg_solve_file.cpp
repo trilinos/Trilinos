@@ -69,6 +69,7 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   std::string addTimerName = "CG: axpby";
   std::string matvecTimerName = "CG: spmv";
   std::string dotTimerName = "CG: dot";
+  std::string replaceValsName = "CG: replaceLocalValues";
   static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
                  "The CrsMatrix and Vector template parameters must have the same scalar_type.");
 
@@ -82,11 +83,14 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   p = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
 
-  int length = r->getLocalLength();
-  for(int i = 0;i<length;i++) {
-    x->replaceLocalValue(i,0);
-    r->replaceLocalValue(i,1);
-    Ap->replaceLocalValue(i,1);
+  {
+    TimeMonitor t(*TimeMonitor::getNewTimer(replaceValsName));
+    int length = r->getLocalLength();
+    for(int i = 0;i<length;i++) {
+      x->replaceLocalValue(i,0);
+      r->replaceLocalValue(i,1);
+      Ap->replaceLocalValue(i,1);
+    }
   }
 
   magnitude_type normr = 0;
