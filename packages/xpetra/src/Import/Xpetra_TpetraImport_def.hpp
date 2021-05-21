@@ -187,6 +187,13 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
     //! Destructor.
     ~TpetraImport() {  }
 
+
+    //! Special "constructor"
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const {
+      return Teuchos::null;
+    }
+
     //@}
 
     //! @name Import Attribute Methods
@@ -289,6 +296,12 @@ RCP< const Tpetra::Import< LocalOrdinal, GlobalOrdinal, Node > > TpetraImport<Lo
 
     //! Destructor.
     ~TpetraImport() {  }
+    
+    //! Special "constructor"
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const {
+      return Teuchos::null;
+    }
 
     //@}
 
