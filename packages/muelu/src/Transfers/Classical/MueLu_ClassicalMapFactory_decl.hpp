@@ -48,6 +48,7 @@
 #define MUELU_CLASSICALMAPFACTORY_DECL_HPP_
 
 #include "Xpetra_StridedMapFactory_fwd.hpp"
+#include "Xpetra_Import_fwd.hpp"
 #include "Xpetra_Vector_fwd.hpp"
 #include "Xpetra_VectorFactory_fwd.hpp"
 

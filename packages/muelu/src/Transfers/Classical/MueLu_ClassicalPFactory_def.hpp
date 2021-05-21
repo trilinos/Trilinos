@@ -47,10 +47,16 @@
 #define MUELU_CLASSICALPFACTORY_DEF_HPP
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_VectorFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Map.hpp>
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
 #include <Xpetra_Vector.hpp>
+#include <Xpetra_Import.hpp>
+#include <Xpetra_ImportUtils.hpp>
 #include <Xpetra_IO.hpp>
+#include <Xpetra_StridedMapFactory.hpp>
 
 #include <Teuchos_OrdinalTraits.hpp>
 
@@ -147,25 +153,96 @@ namespace MueLu {
 
     // We begin by getting a MIS (from a graph coloring) and then at that point we need
     // to start generating entries for the prolongator.   
-    RCP<const Matrix>      A        = Get< RCP<Matrix> >      (fineLevel, "A");
-    RCP<const Map> coarseMap        = Get<RCP<const Map> >(fineLevel,"CoarseMap");
-    RCP<const LocalOrdinalVector> fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
+    RCP<const Matrix>      A        = Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<const Map> ownedCoarseMap   = Get<RCP<const Map> >(fineLevel,"CoarseMap");
+    RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
     RCP<const GraphBase> graph      = Get< RCP<GraphBase> >(fineLevel, "Graph");
     LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
     RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
+    RCP<const Import>    Importer   = A->getCrsGraph()->getImporter();
+    Xpetra::UnderlyingLib lib = ownedCoarseMap->lib();
+
     //    RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
     RCP<Matrix> P;
     SC SC_ZERO = STS::zero();
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
-    const ArrayRCP<const LO> myPointType = fc_splitting->getData(0);
+    const point_type C_PT = ClassicalMapFactory::C_PT;
+    const point_type F_PT = ClassicalMapFactory::F_PT;
     const ParameterList& pL = GetParameterList();
+  
+    // FIXME: This guy doesn't work right now for NumPDEs != 1
+    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
 
-    // Get the block number, if we need it
-    RCP<LocalOrdinalVector> BlockNumber;
+    // FIXME: This does not work in parallel yet
+    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
+ 
+    // NOTE: Let's hope we never need to deal with this case
+    TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*A->getDomainMap()),Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
+
+
+    // Ghost the FC splitting and grab the data (if needed)
+    RCP<LocalOrdinalVector> fc_splitting;
+    ArrayRCP<const LO> myPointType;
+    if(Importer.is_null()) {
+      myPointType = owned_fc_splitting->getData(0);      
+    }
+    else {
+      fc_splitting = LocalOrdinalVectorFactory::Build(A->getCrsGraph()->getColMap());
+      fc_splitting->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
+      myPointType = fc_splitting->getData(0);      
+    }
+
+    /* Ghost A (if needed) */
+    RCP<const Matrix> Aghost;
+    if(!Importer.is_null()){      
+      ArrayView<const LO> remoteLIDs = Importer->getRemoteLIDs();
+      size_t numRemote = Importer->getNumRemoteIDs();
+      Array<GO> remoteRows(numRemote);
+      for (size_t i = 0; i < numRemote; i++)
+        remoteRows[i] = Importer->getTargetMap()->getGlobalElement(remoteLIDs[i]);
+
+      RCP<const Map> remoteRowMap = MapFactory::Build(lib,Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), remoteRows(),
+                                                      A->getDomainMap()->getIndexBase(), A->getDomainMap()->getComm());
+
+      RCP<const Import> remoteOnlyImporter = Importer->createRemoteOnlyImport(remoteRowMap);
+      RCP<const CrsMatrix> Acrs = rcp_dynamic_cast<const CrsMatrixWrap>(A)->getCrsMatrix();
+      if(lib == Xpetra::UseEpetra) {
+#ifdef HAVE_MUELU_EPETRA
+        RCP<CrsMatrix> Ecrs = rcp(new EpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
+        Aghost = rcp(new CrsMatrixWrap(Ecrs));
+#endif
+      }
+      else {
+#ifdef HAVE_MUELU_TPETRA
+        RCP<CrsMatrix> Tcrs = rcp(new TpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
+        Aghost = rcp(new CrsMatrixWrap(Tcrs));
+#endif
+      }
+    }
+
+    /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/   
+    RCP<const Map> coarseMap;
+    if(Importer.is_null())  
+      coarseMap = ownedCoarseMap;
+    else {
+      // Generate a domain vector with the coarse ID's as entries for C points
+      GhostCoarseMap(*A,*Importer,myPointType,ownedCoarseMap,coarseMap);
+    }
+  
+
+    // Get the block number, if we need it (and ghost it)
+    RCP<LocalOrdinalVector>  BlockNumber;
     std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
-    if (drop_algo.find("block diagonal") != std::string::npos) 
-      BlockNumber = Get<RCP<LocalOrdinalVector> >(fineLevel, "BlockNumber");
-    // FIXME:  This needs to be ghosted
+    if (drop_algo.find("block diagonal") != std::string::npos) {
+      RCP<LocalOrdinalVector> OwnedBlockNumber;
+      OwnedBlockNumber = Get<RCP<LocalOrdinalVector> >(fineLevel, "BlockNumber");
+      if(Importer.is_null()) 
+        BlockNumber = OwnedBlockNumber;
+      else{
+        BlockNumber = LocalOrdinalVectorFactory::Build(A->getRowMap());
+        BlockNumber->doImport(*OwnedBlockNumber,*Importer,Xpetra::INSERT);
+      }
+    }
 
 #if defined(CMS_DEBUG) || defined(CMS_DUMP)
     {
@@ -173,7 +250,6 @@ namespace MueLu {
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
       graph->print(*fancy,Debug);
       std::string out_fc = std::string("fc_splitting_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat");
-
 
       // We don't support writing LO vectors in Xpetra (boo!) so....
       using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
@@ -192,19 +268,12 @@ namespace MueLu {
     }
 #endif
 
-    // FIXME: This guy doesn't work right now for NumPDEs != 1
-    TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
-
-    // FIXME: This does not work in parallel yet
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
-    
-
+  
     /* Generate reindexing arrays */
-    // FIXME: cpoint2ccol needs to get ghosted... athough if myPointType is ghosted, then this
-    // guy will be too.
-    const point_type C_PT = ClassicalMapFactory::C_PT;
-    const point_type F_PT = ClassicalMapFactory::F_PT;
-
+    // Note: cpoint2pcol is ghosted if myPointType is
+    // NOTE: Since the ghosted coarse column map follows the ordering of
+    // the fine column map, this *should* work, because it is in local indices.
+    // FIXME:  Add a check for this in debug mode.
     Array<LO> cpoint2pcol(myPointType.size(),LO_INVALID);
     Array<LO> pcol2cpoint(coarseMap->getNodeNumElements(),LO_INVALID);   
     LO num_c_points = 0;
@@ -223,6 +292,7 @@ namespace MueLu {
     }
 
     // Generate edge strength flags (this will make everything easier later)
+    // These do *not* need to be ghosted (unlike A)
     Teuchos::Array<size_t> eis_rowptr;
     Teuchos::Array<bool> edgeIsStrong;
     {
@@ -231,22 +301,21 @@ namespace MueLu {
     }
 
     // Phase 3: Generate the P matrix
-    // FIXME: coarseColMap needs to ghosted
     RCP<const Map> coarseColMap = coarseMap;
-    RCP<const Map> coarseDomainMap = coarseMap;
+    RCP<const Map> coarseDomainMap = ownedCoarseMap;
 
     std::string scheme = pL.get<std::string>("aggregation: classical scheme");
     if(scheme == "ext+i") {
       SubFactoryMonitor sfm(*this,"Ext+i Interpolation",coarseLevel);
-      Coarsen_Ext_Plus_I(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_Ext_Plus_I(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     else if(scheme == "direct") {
       SubFactoryMonitor sfm(*this,"Direct Interpolation",coarseLevel);
-      Coarsen_Direct(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_Direct(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     else if(scheme == "classical modified") {
       SubFactoryMonitor sfm(*this,"Classical Modified Interpolation",coarseLevel);
-      Coarsen_ClassicalModified(*A,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_ClassicalModified(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
@@ -272,7 +341,7 @@ namespace MueLu {
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_ClassicalModified(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Classical Modified Interpolation                    */
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -446,16 +515,11 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           }
           else if (!edgeIsStrong[row_start + j]) {
             // Weak neighbors
-            // FIXME: Ghosting
             if(block_id.size() && block_id[i] == block_id[k])
               diagonal_sum += a_ik;
           }
           else if(myPointType[k] == F_PT && edgeIsStrong[row_start+j]) {
-            // Strong F-neighbors
-            // FIXME: Ghosting
-
-            // We want strong F-neighbors with no common strong C-Points with i.  P has the strong C-points
-            // FIXME: Ghosting
+            // We want strong F-neighbors with no common strong C-Points with i.  
             ArrayView<LO> P_indices_k = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
             
             // std::sets are sorted, so...
@@ -507,9 +571,6 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           LO k = A_indices_i[j];
           if(k==i) continue; // No self-sums
 
-          // FIXME: Ghosting
-          //          size_t k_row_start = eis_rowptr[k];
-          // FIXME: Ghosting
           if(myPointType[k] == F_PT && !in_fis_star[j])  {
             // Strong F-point neighbor and not in F_i^s\star
             A.getLocalRowView(k, A_indices_k, A_vals_k);
@@ -652,12 +713,13 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Direct(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Direct Interpolation                                */
     /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
     /* here.  Instead we follow:                                     */
     /* Trottenberg, Oosterlee and Schueller, Multigrid, 2001.        */
+    /* with some modifications inspirted by PyAMG                    */
     /* ============================================================= */    
     /* Definitions:                                                        */
     /* F = F-points                                                        */
@@ -767,10 +829,6 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     for(LO i=0; i<(LO)tmp_rowptr[Nrows]; i++)
       P_colind[i] = tmp_colind[i];
 
-    
-    //    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
-    //    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
-
 
     // Algorithm (numeric)
     for(LO i=0; i < (LO)Nrows; i++) {
@@ -829,7 +887,6 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
             a_ii = a_ik;
           }          
           // Only strong C-neighbors are in the denomintor
-          // FIXME: myPointType needs to be ghosted
           if(myPointType[k] == C_PT && edgeIsStrong[row_start + j]) {
             if(STS::real(a_ik) > SC_ZERO) pos_denominator += a_ik;
             else neg_denominator += a_ik;
@@ -872,10 +929,6 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 
     // Finish up
     PCrs->setAllValues(P_rowptr, P_colind, P_values);
-    //    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
-    //    RCP<const Export> dummy_e;
-    //    RCP<const Import> dummy_i;
-    //    RCP<Teuchos::ParameterList> FCparams;
     PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
 
 
@@ -914,7 +967,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
 
     /* ============================================================= */
     /* Phase 3 : Extended+i Interpolation                            */
@@ -998,8 +1051,11 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
         for(LO j=0; j<(LO)strong_neighbors.size(); j++) {
           if(myPointType[strong_neighbors[j]] == F_PT) {
             LO row2 = strong_neighbors[j];
-            A.getLocalRowView(row2, indices, vals);
+            if(row2 < Nrows) A.getLocalRowView(row2, indices, vals);
+            else Aghost->getLocalRowView(row2-Nrows,indices,vals);
+              
             // C-neighbors of strong F-neighbors
+            // FIXME:  This needs double ghosting doesn't it.  Ugh.
             for(LO k=0; k<indices.size(); k++) {
               if(myPointType[indices[k]] == C_PT)
                 C_hat.insert(cpoint2pcol[indices[k]]);
@@ -1187,9 +1243,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const GraphBase & graph,  RCP<const Map> & c
             if(edgeIsStrong[row_start +j] && (myPointType[A_indices_i[j]] == F_PT) && (A_vals_i[j] != SC_ZERO)) {          
               // CMS Mod: Not counting self-connections here.
               if(i==A_indices_i[j]) continue;
-   
-
-              // FIXME: This is the off-rank deal again
+              
               LO k    = A_indices_i[j];
               SC a_ik = A_vals_i[j];
               SC a_kj_bar = SC_ZERO;
@@ -1288,6 +1342,59 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
 }
    
 
+/* ************************************************************************* */
+template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
+void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+GhostCoarseMap(const Matrix &A, const Import & Importer, const ArrayRCP<const LO> myPointType, const RCP<const Map> & coarseMap, RCP<const Map> & coarseColMap) const {  
+  const point_type C_PT = ClassicalMapFactory::C_PT;
+  const GO GO_INVALID = Teuchos::OrdinalTraits<GO>::invalid();
+  RCP<GlobalOrdinalVector> d_coarseIds = GlobalOrdinalVectorFactory::Build(A.getRowMap());
+  ArrayRCP<GO> d_data = d_coarseIds->getDataNonConst(0);
+  LO ct=0;
+      
+  for(LO i=0; i<(LO)d_data.size(); i++) {
+    if(myPointType[i] == C_PT) {
+      d_data[i] = ct;
+      ct++;
+    }
+    else
+      d_data[i] = GO_INVALID;
+  }
+  
+  // Ghost this guy
+  RCP<GlobalOrdinalVector> c_coarseIds = GlobalOrdinalVectorFactory::Build(A.getColMap());
+  c_coarseIds->doImport(*d_coarseIds,Importer,Xpetra::INSERT);
+  
+  // If we assume that A is in Aztec ordering, then any subset of A's unknowns will
+  // be in Aztec ordering as well, which means we can just condense these guys down        
+  // Overallocate, count and view
+  ArrayRCP<GO> c_data = c_coarseIds->getDataNonConst(0);
+  
+  Array<GO> c_gids(c_data.size());
+  LO count=0;
+  
+  for(LO i=0; i<(LO)c_data.size(); i++) {
+    if(c_data[i] != GO_INVALID) {
+      c_gids[count] = c_data[i];
+      count++;
+    }
+  }
+  // FIXME: Assumes scalar PDE
+  std::vector<size_t> stridingInfo_(1);
+  stridingInfo_[0]=1;
+  GO domainGIDOffset = 0;
+  
+  coarseColMap = StridedMapFactory::Build(coarseMap->lib(),
+                                          Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                          c_gids.view(0,count),
+                                          coarseMap->getIndexBase(),
+                                          stridingInfo_,
+                                          coarseMap->getComm(),
+                                          domainGIDOffset);        
+  
+}
+
+
 } //namespace MueLu
 
 
@@ -1295,4 +1402,4 @@ GenerateStrengthFlags(const Matrix & A,const GraphBase & graph, Teuchos::Array<s
 #define MUELU_CLASSICALPFACTORY_SHORT
 #endif // MUELU_CLASSICALPFACTORY_DEF_HPP
 
-
+ 

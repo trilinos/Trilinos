@@ -53,6 +53,7 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_Import.hpp>
 #include <Xpetra_IO.hpp>
 
 #include "MueLu_ClassicalMapFactory_decl.hpp"
@@ -231,9 +232,13 @@ namespace MueLu {
       SubFactoryMonitor sfm(*this,"Coarse Map",currentLevel);
       GenerateCoarseMap(*A->getRowMap(),num_c_points,coarseMap);
     }
-   
+    
+ 
+    
     Set(currentLevel, "FC Splitting",fc_splitting);
-    Set(currentLevel, "CoarseMap", coarseMap);
+    Set(currentLevel, "CoarseMap", coarseMap);    
+
+    
    
   }
 
@@ -253,8 +258,9 @@ GenerateCoarseMap(const Map & fineMap, LO num_c_points, RCP<const Map> & coarseM
                                        fineMap.getIndexBase(),
                                        stridingInfo_,
                                        fineMap.getComm(),
-                                       domainGIDOffset); 
+                                       domainGIDOffset);  
 }
+
 
 
 /* ************************************************************************* */
