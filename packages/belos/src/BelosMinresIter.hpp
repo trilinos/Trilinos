@@ -403,12 +403,13 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     // Create convenience variables for zero, one.
     const ScalarType one = SCT::one();
     const MagnitudeType zero = SMT::zero();
+    const MagnitudeType m_zero = SMT::zero();
 
     // Set up y and v for the first Lanczos vector v_1.
     // y  =  beta1_ P' v1,  where  P = C**(-1).
     // v is really P' v1.
-    MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *R2_ );
-    MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *R1_ );
+    MVT::Assign( *newstate.Y, *R2_ );
+    MVT::Assign( *newstate.Y, *R1_ );
 
     // Initialize the W's to 0.
     MVT::MvInit ( *W_ );
@@ -420,7 +421,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     else {
       if (newstate.Y != Y_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *Y_ );
+        MVT::Assign( *newstate.Y, *Y_ );
       }
     }
 
@@ -428,7 +429,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     beta1_ = Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 );
     MVT::MvTransMv( one, *newstate.Y, *Y_, beta1_ );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < zero,
+    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < m_zero,
                         std::invalid_argument,
                         "The preconditioner is not positive definite." );
 
@@ -462,7 +463,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero and one.
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = SMT::zero();
+    const ScalarType zero = SCT::zero();
+    const MagnitudeType m_zero = SMT::zero();
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
@@ -553,10 +555,10 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // algebra library to compute a posteriori rounding error bounds
       // for the inner product, and then changing
       // Belos::MultiVecTraits to make this information available).
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) <= zero,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) < m_zero,
                           MinresIterateFailure,
-                          "Belos::MinresIter::iterate(): Encountered nonpositi"
-			  "ve value " << beta(0,0) << " for r2^H*M*r2 at itera"
+                          "Belos::MinresIter::iterate(): Encountered negative "
+			  "value " << beta(0,0) << " for r2^H*M*r2 at itera"
 			  "tion " << iter_ << ": MINRES cannot continue." );
       beta(0,0) = SCT::squareroot( beta(0,0) );
 
@@ -579,7 +581,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       //  w1 = w2;
       //  w2 = w;
-      MVT::MvAddMv( one, *W_, zero, *W_, *W1_ );
+      MVT::Assign( *W_, *W1_ );
       tmpW = W1_;
       W1_ = W2_;
       W2_ = W_;
@@ -592,8 +594,8 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       // Update x:
       // x = x + phi*w;
-      MVT::MvAddMv( one, *cur_soln_vec, phi, *W_, *cur_soln_vec );
-      lp_->updateSolution();
+      //MVT::MvAddMv( one, *cur_soln_vec, phi, *W_, *cur_soln_vec );
+      lp_->updateSolution( W_, true, phi );
     } // end while (sTest_->checkStatus(this) != Passed)
   }
 
