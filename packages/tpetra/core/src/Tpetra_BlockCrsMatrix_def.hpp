@@ -1197,7 +1197,7 @@ public:
 
     for (LO k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
       const size_t blockOffset = offsets[k]*perBlockSize;
-      if (blockOffset != STINV) { 
+      if (offsets[k] != STINV) {
         little_block_type A_old = getNonConstLocalBlockFromInput (vOut, blockOffset);
         const_little_block_type A_new = getConstLocalBlockFromInput (vIn, pointOffset);
         COPY (A_new, A_old);
@@ -1621,7 +1621,8 @@ public:
   {
     // Row major blocks
     const LO rowStride = blockSize_;
-    return little_block_host_type (val + pointOffset, blockSize_, rowStride);
+    const size_t bs2 = blockSize_ * blockSize_;
+    return little_block_host_type (val + bs2 * pointOffset, blockSize_, rowStride);
   }
 
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
