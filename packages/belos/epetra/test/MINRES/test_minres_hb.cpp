@@ -119,16 +119,29 @@ main (int argc, char *argv[])
     RCP<Epetra_CrsMatrix> A;
     RCP<Epetra_MultiVector> B, X;
     RCP<Epetra_Map> rowMap;
+    int tmp_numRHS = numRHS;
     try {
       // This might change the number of right-hand sides, if we read in
       // a right-hand side from the Harwell-Boeing file.
-      Belos::Util::createEpetraProblem (filename, &rowMap, &A, &B, &X, &MyPID, numRHS);
+      Belos::Util::createEpetraProblem (filename, &rowMap, &A, &B, &X, &MyPID, tmp_numRHS);
     } catch (std::exception& e) {
       TEUCHOS_TEST_FOR_EXCEPTION (true, std::runtime_error,
           "Failed to create Epetra problem for matrix "
           "filename \"" << filename << "\".  "
           "createEpetraProblem() reports the following "
           "error: " << e.what());
+    }
+
+    //
+    // *****Construct initial guess and random right-hand-sides *****
+    //
+    if (tmp_numRHS != numRHS)
+    {
+      X = rcp( new Epetra_MultiVector( A->Map(), numRHS ) );
+      MVT::MvRandom( *X );
+      B = rcp( new Epetra_MultiVector( A->Map(), numRHS ) );
+      OPT::Apply( *A, *X, *B );
+      MVT::MvInit( *X, 0.0 );
     }
     //
     // Compute the initial residual norm of the problem, so we can see
@@ -310,11 +323,6 @@ main (int argc, char *argv[])
         }
       }
     }
-
-#   ifdef BELOS_TEUCHOS_TIME_MONITOR
-    Teuchos::TimeMonitor::summarize (verbOut);
-#   endif // BELOS_TEUCHOS_TIME_MONITOR
-
     success = (ret == Belos::Converged && !badRes);
 
     if (success) {
