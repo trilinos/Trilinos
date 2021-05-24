@@ -265,6 +265,13 @@ def injectCmndLineOptionsInParser(clp, gitoliteRootDefault=""):
     "--send-email-to=", dest="sendEmailTo", type="string", default="",
     help="Send email to 'address1, address2, ...'.  [default '']" )
 
+  addOptionParserChoiceOption(
+    "--email-without-soft-hyphens",
+    "emailWithoutSoftHyphensStr",
+    ("on", "off"), 1,
+    "Remove soft hyphens from emails.",
+    clp )
+
 
 def validateAndConvertCmndLineOptions(inOptions):
 
@@ -301,6 +308,9 @@ def setExtraCmndLineOptionsAfterParse(inOptions_inout):
   if inOptions_inout.cdashBaseCacheFilesPrefix == "":
     inOptions_inout.cdashBaseCacheFilesPrefix = \
      CDQAR.getFileNameStrFromText(inOptions_inout.buildSetName)+"_"
+
+  setattr(inOptions_inout, 'emailWithoutSoftHyphens',
+    inOptions_inout.emailWithoutSoftHyphensStr == "on")
 
 
 def getCmndLineOptions():
@@ -340,7 +350,8 @@ def fwdCmndLineOptions(inOptions, lt=""):
     "  --write-test-data-to-file='"+io.writeTestDataToFile+"'"+lt+\
     "  --write-email-to-file='"+io.writeEmailToFile+"'"+lt+\
     "  --email-from-address='"+io.emailFromAddress+"'"+lt+\
-    "  --send-email-to='"+io.sendEmailTo+"'"+lt
+    "  --send-email-to='"+io.sendEmailTo+"'"+lt+\
+    "  --email-without-soft-hyphens='"+io.emailWithoutSoftHyphensStr+"'"+lt
   return cmndLineOpts
 
 
@@ -969,7 +980,8 @@ if __name__ == '__main__':
       emailAddress = emailAddress.strip()
       print("\nSending email to '"+emailAddress+"' ...")
       msg=CDQAR.createHtmlMimeEmail(
-        inOptions.emailFromAddress, emailAddress, summaryLine, "", htmlEmailBodyStr)
+        inOptions.emailFromAddress, emailAddress, summaryLine, "",
+        htmlEmailBodyStr, inOptions.emailWithoutSoftHyphens)
       CDQAR.sendMineEmail(msg)
 
   #

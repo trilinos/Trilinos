@@ -93,7 +93,7 @@ enum : bool {BothStride = std::is_same<L1, Kokkos::LayoutStride>::value && std::
 
 /// Get a deep copy of SrcView with the requested contiguous layout and default memory traits. If SrcView already has that layout, just return it.
 template<typename SrcView, typename Layout, typename std::enable_if<!std::is_same<typename SrcView::array_layout, Layout>::value>::type* = nullptr>
-Kokkos::View<typename SrcView::non_const_data_type, Layout, typename SrcView::device_type>
+Kokkos::View<typename SrcView::data_type, Layout, typename SrcView::device_type>
 toLayout(const SrcView& src)
 {
   static_assert(!std::is_same<Kokkos::LayoutStride, Layout>::value,
@@ -105,7 +105,7 @@ toLayout(const SrcView& src)
 }
 
 template<typename SrcView, typename Layout, typename std::enable_if<std::is_same<typename SrcView::array_layout, Layout>::value>::type* = nullptr>
-Kokkos::View<typename SrcView::non_const_data_type, Layout, typename SrcView::device_type>
+Kokkos::View<typename SrcView::data_type, Layout, typename SrcView::device_type>
 toLayout(const SrcView& src)
 {
   if(src.span_is_contiguous())
@@ -130,32 +130,19 @@ template<typename SrcView, bool AssumeGPUAware, typename = typename std::enable_
 SrcView
 toMPISafe(const SrcView& src)
 {
-  static_assert(!std::is_same<typename SrcView::array_layout, Kokkos::LayoutStride>::value,
-      "toMPISafe requires that SrcView has a contiguous layout (not Stride)");
-  return src;
+  using SrcLayout = typename SrcView::array_layout;
+  static_assert(!std::is_same<SrcLayout, Kokkos::LayoutStride>::value, "toMPISafe requires that SrcView is contiguous");
+  return toLayout<SrcView, SrcLayout>(src);
 }
 
 template<typename SrcView, bool AssumeGPUAware, typename = typename std::enable_if<!(AssumeGPUAware || AlwaysMPISafe<typename SrcView::memory_space>::value)>::type>
 decltype(Kokkos::create_mirror_view_and_copy(std::declval<Kokkos::HostSpace>(), std::declval<SrcView>()))
 toMPISafe(const SrcView& src)
 {
-  static_assert(!std::is_same<typename SrcView::array_layout, Kokkos::LayoutStride>::value,
-      "toMPISafe requires that SrcView has a contiguous layout (not Stride)");
-  Kokkos::LayoutLeft layout(src.extent(0), src.extent(1), src.extent(2), src.extent(3), src.extent(4), src.extent(5), src.extent(6), src.extent(7)); 
-  Kokkos::View<typename SrcView::non_const_data_type, Kokkos::LayoutLeft, Kokkos::HostSpace> dst(Kokkos::ViewAllocateWithoutInitializing(src.label()), layout);
-  return Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), src);
-}
-
-template<typename SrcView>
-Kokkos::View<typename SrcView::non_const_value_type*, Kokkos::HostSpace>
-make1DHostCopy(const SrcView& src)
-{
-  static_assert(!std::is_same<typename SrcView::array_layout, Kokkos::LayoutStride>::value, "TempView::make1DHostCopy: src must be contiguous.");
-  size_t n = src.span();
-  Kokkos::View<typename SrcView::const_value_type*, typename SrcView::device_type, Kokkos::MemoryTraits<Kokkos::Unmanaged>> srcFlat(src.data(), n);
-  Kokkos::View<typename SrcView::non_const_value_type*, Kokkos::HostSpace> dst(Kokkos::ViewAllocateWithoutInitializing("Temp1DHost"), n);
-  Kokkos::deep_copy(dst, srcFlat);
-  return dst;
+  using SrcLayout = typename SrcView::array_layout;
+  static_assert(!std::is_same<SrcLayout, Kokkos::LayoutStride>::value, "toMPISafe requires that SrcView is contiguous");
+  auto srcContig = toLayout<SrcView, SrcLayout>(src);
+  return Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), srcContig);
 }
 
 }}} //namespace Tpetra::Details::TempView

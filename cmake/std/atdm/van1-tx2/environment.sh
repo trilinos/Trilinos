@@ -100,7 +100,27 @@ elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.3" ]]; then
   export PARMETIS_ROOT=${PARMETIS_DIR}
   export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
   export BINUTILS_ROOT=${BINUTILS_DIR}
+elif [[ "$ATDM_CONFIG_COMPILER" == "ARM-20.1_OPENMPI-4.0.5" ]]; then
+  module load sparc-dev/arm-20.1_openmpi-4.0.5
+  module unload yaml-cpp
 
+  if [ "$ATDM_CONFIG_NODE_TYPE" == "OPENMP" ] ; then
+    unset OMP_PLACES
+    unset OMP_PROC_BIND
+  fi
+
+  # We'll use TPL_ROOT for consistency across ATDM environments
+  export MPI_ROOT=${MPI_DIR}
+  export BLAS_ROOT=${ARMPL_DIR}
+  export HDF5_ROOT=${HDF5_DIR}
+  export NETCDF_ROOT=${NETCDF_DIR}
+  export PNETCDF_ROOT=${PNETCDF_DIR}
+  export ZLIB_ROOT=${ZLIB_DIR}
+  export CGNS_ROOT=${CGNS_DIR}
+  export METIS_ROOT=${METIS_DIR}
+  export PARMETIS_ROOT=${PARMETIS_DIR}
+  export SUPERLUDIST_ROOT=${SUPERLU_DIST_DIR}
+  export BINUTILS_ROOT=${BINUTILS_DIR}
 else
   echo
   echo "***"

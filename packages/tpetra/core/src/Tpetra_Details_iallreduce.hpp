@@ -189,7 +189,7 @@ allreduceRaw  (const void* sendbuf,
                const Teuchos::EReductionType op,
                MPI_Comm comm);
 
-template<class InputViewType, class OutputViewType, bool assumeGPUAwareMPI>
+template<class InputViewType, class OutputViewType>
 std::shared_ptr<CommRequest>
 iallreduceImpl (const InputViewType& sendbuf,
             const OutputViewType& recvbuf,
@@ -208,10 +208,10 @@ iallreduceImpl (const InputViewType& sendbuf,
     MPI_BYTE;
   bool datatypeNeedsFree = MpiTypeTraits<Packet>::needsFree;
   MPI_Comm rawComm = ::Tpetra::Details::extractMpiCommFromTeuchos (comm);
-  //TODO BMK: update this if the Behavior option is renamed to
-  //something generic for all GPUs: CUDA/HIP/OpenMPTarget/etc.
-  auto sendMPI = Tpetra::Details::TempView::toMPISafe<InputViewType, assumeGPUAwareMPI>(sendbuf);
-  auto recvMPI = Tpetra::Details::TempView::toMPISafe<OutputViewType, assumeGPUAwareMPI>(recvbuf);
+  //Note BMK: Nonblocking collectives like iallreduce cannot use GPU buffers.
+  //See https://www.open-mpi.org/faq/?category=runcuda#mpi-cuda-support
+  auto sendMPI = Tpetra::Details::TempView::toMPISafe<InputViewType, false>(sendbuf);
+  auto recvMPI = Tpetra::Details::TempView::toMPISafe<OutputViewType, false>(recvbuf);
   std::shared_ptr<CommRequest> req;
   //Next, if input/output alias and comm is an intercomm, make a deep copy of input.
   //Not possible to do in-place allreduce for intercomm.
@@ -219,7 +219,9 @@ iallreduceImpl (const InputViewType& sendbuf,
   {
     //Can't do in-place collective on an intercomm,
     //so use a separate 1D copy as the input.
-    auto tempInput = TempView::make1DHostCopy(sendMPI);
+    Kokkos::View<Packet*, Kokkos::HostSpace> tempInput(Kokkos::ViewAllocateWithoutInitializing("tempInput"), sendMPI.extent(0));
+    for(size_t i = 0; i < sendMPI.extent(0); i++)
+      tempInput(i) = sendMPI.data()[i];
 #if MPI_VERSION >= 3
     //MPI 3+: use async allreduce
     MPI_Request mpiReq = iallreduceRaw((const void*) tempInput.data(), (void*) recvMPI.data(), tempInput.extent(0), mpiDatatype, op, rawComm);
@@ -252,7 +254,7 @@ iallreduceImpl (const InputViewType& sendbuf,
 #else
 
 //No MPI: reduction is always the same as input.
-template<class InputViewType, class OutputViewType, bool assumeGPUAwareMPI>
+template<class InputViewType, class OutputViewType>
 std::shared_ptr<CommRequest>
 iallreduceImpl (const InputViewType& sendbuf,
             const OutputViewType& recvbuf,
@@ -327,12 +329,7 @@ iallreduce (const InputViewType& sendbuf,
   static_assert (!std::is_same<typename OutputViewType::array_layout, Kokkos::LayoutStride>::value,
       "Input/Output views must be contiguous (not LayoutStride)");
 
-  //TODO BMK: keep this updated/generalized for other GPU backends (HIP, OpenMPTarget, ...)
-#ifdef HAVE_TPETRA_INST_CUDA
-  if(Tpetra::Details::Behavior::assumeMpiIsCudaAware())
-    return Impl::iallreduceImpl<InputViewType, OutputViewType, true> (sendbuf, recvbuf, op, comm);
-#endif
-  return Impl::iallreduceImpl<InputViewType, OutputViewType, false> (sendbuf, recvbuf, op, comm);
+  return Impl::iallreduceImpl<InputViewType, OutputViewType> (sendbuf, recvbuf, op, comm);
 }
 
 std::shared_ptr<CommRequest>

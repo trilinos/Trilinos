@@ -123,11 +123,13 @@
 
         <ParameterList name="Bogacki Shampine Stepper Embedded">
             <Parameter name="Stepper Type" type="string" value="Bogacki-Shampine 3(2) Pair"/>
+            <Parameter name="Use FSAL"       type="bool" value="false"/>
             <Parameter name="Use Embedded" type="bool" value="true"/>
         </ParameterList>
 
         <ParameterList name="General ERK Bogacki Shampine Stepper Embedded">
             <Parameter name="Use Embedded" type="bool" value="true"/>
+            <Parameter name="Use FSAL"       type="bool" value="false"/>
             <Parameter name="Stepper Type" type="string" value="General ERK"/>
             <ParameterList name="Tableau">
                 <Parameter name="A" type="string"

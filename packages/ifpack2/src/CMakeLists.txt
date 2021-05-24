@@ -245,6 +245,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     Details::ChebyshevKernel
     Details::DenseSolver
     Details::Factory
+    Details::InverseDiagonalKernel
     Details::LinearSolver
     Details::OneLevelFactory
     Details::ScaledDampedResidual

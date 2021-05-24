@@ -1713,7 +1713,7 @@ int main(int argc, char *argv[]) {
 
     // multiply by weighted measure
     IntrepidFSTools::multiplyMeasure<double>(HCurlsTransformedWeighted,
-                                             weightedMeasure, HCurlsTransformed);
+                                             weightedMeasureMuInv, HCurlsTransformed);
 
     // integrate to compute element stiffness matrix
     IntrepidFSTools::integrate<double>(stiffMatrixHCurl,

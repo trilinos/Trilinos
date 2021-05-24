@@ -103,7 +103,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -133,8 +133,8 @@ public:
     case StepperTrapezoidalAppAction<double>::AFTER_SOLVE:
       {
         testAFTER_SOLVE = true;
-        testType = "Trapezoidal - Modifier";
-        stepper->setStepperType(testType);
+        testName = "Trapezoidal - Modifier";
+        stepper->setStepperName(testName);
         break;
       }
     case StepperTrapezoidalAppAction<double>::END_STEP:
@@ -157,7 +157,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
@@ -195,7 +195,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Modifier)
   TEST_FLOATING_EQUALITY(modifier->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   auto Dt = solutionHistory->getWorkingState()->getTimeStep();
   TEST_FLOATING_EQUALITY(modifier->testDt, Dt, 1.0e-14);
-  TEST_COMPARE(modifier->testType, ==, "Trapezoidal - Modifier");
+  TEST_COMPARE(modifier->testName, ==, "Trapezoidal - Modifier");
 }
 
 // ************************************************************
@@ -210,7 +210,7 @@ public:
     : testBEGIN_STEP(false), testBEFORE_SOLVE(false),
       testAFTER_SOLVE(false), testEND_STEP(false),
       testCurrentValue(-0.99), testWorkingValue(-0.99),
-      testDt(-1.5), testType("")
+      testDt(-1.5), testName("")
   {}
 
   /// Destructor
@@ -239,7 +239,7 @@ public:
     case StepperTrapezoidalAppAction<double>::AFTER_SOLVE:
     {
       testAFTER_SOLVE = true;
-      testType = stepper->getStepperType();
+      testName = stepper->getStepperType();
       break;
     }
     case StepperTrapezoidalAppAction<double>::END_STEP:
@@ -261,7 +261,7 @@ public:
   double testCurrentValue;
   double testWorkingValue;
   double testDt;
-  std::string testType;
+  std::string testName;
 };
 
 TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Observer)
@@ -298,7 +298,7 @@ TEUCHOS_UNIT_TEST(Trapezoidal, AppAction_Observer)
   x = solutionHistory->getWorkingState()->getX();
   TEST_FLOATING_EQUALITY(observer->testWorkingValue, get_ele(*(x), 0), 1.0e-14);
   TEST_FLOATING_EQUALITY(observer->testDt, dt, 1.0e-14);
-  TEST_COMPARE(observer->testType, ==, "Trapezoidal Method");
+  TEST_COMPARE(observer->testName, ==, "Trapezoidal Method");
 }
 
 // ************************************************************

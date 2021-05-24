@@ -57,6 +57,7 @@ static struct option long_options[] = {
     {"matrix_size_step", required_argument, 0, 's'},
     {"warm_up_loop", required_argument, 0, 'w'},
     {"iter", required_argument, 0, 'i'},
+    {"batch_size", required_argument, 0, 'k'},
     {"csv", required_argument, 0, 'c'},
     {"routines", required_argument, 0, 'r'},
     {"trtri_options", required_argument, 0, 'o'},
@@ -135,6 +136,11 @@ static void __print_help_blas_perf_test() {
       "(default: %d)\n\n",
       DEFAULT_N);
 
+  printf("\t-k, --batch_size=LEN\n");
+  printf("\t\tBatch size. Adds third dimension to matrices A and B.\n");
+  printf("\t\t\tThe value of LEN as an integer. (default: %d)\n",
+         DEFAULT_K);
+
   printf("\t-c, --csv=/path/to/file.csv\n");
   printf("\t\tCsv output file selection.\n");
   printf(
@@ -166,12 +172,16 @@ int main(int argc, char **argv) {
   /* set default options */
   options.test          = DEFAULT_TEST;
   options.loop          = DEFAULT_LOOP;
+  options.start.a.k     = DEFAULT_K;
   options.start.a.m     = DEFAULT_MATRIX_START;
   options.start.a.n     = DEFAULT_MATRIX_START;
+  options.stop.a.k      = DEFAULT_K;
   options.stop.a.m      = DEFAULT_MATRIX_STOP;
   options.stop.a.n      = DEFAULT_MATRIX_STOP;
+  options.start.b.k     = DEFAULT_K;
   options.start.b.m     = DEFAULT_MATRIX_START;
   options.start.b.n     = DEFAULT_MATRIX_START;
+  options.stop.b.k      = DEFAULT_K;
   options.stop.b.m      = DEFAULT_MATRIX_STOP;
   options.stop.b.n      = DEFAULT_MATRIX_STOP;
   options.step          = DEFAULT_STEP;
@@ -182,7 +192,7 @@ int main(int argc, char **argv) {
 
   options.blas_args.trtri.trtri_args = DEFAULT_TRTRI_ARGS;
 
-  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:c:r:", long_options,
+  while ((ret = getopt_long(argc, argv, "ht:l:b:e:s:w:i:o:c:r:k:", long_options,
                             &option_idx)) != -1) {
     switch (ret) {
       case 'h': __print_help_blas_perf_test(); return 0;
@@ -255,6 +265,11 @@ int main(int argc, char **argv) {
       case 's': options.step = atoi(optarg); break;
       case 'w': options.warm_up_n = atoi(optarg); break;
       case 'i': options.n = atoi(optarg); break;
+      case 'k':
+        options.start.a.k = options.stop.a.k = 
+        options.start.b.k = options.stop.b.k =
+          atoi(optarg);
+        break;
       case 'c':
         out_file         = optarg;
         options.out_file = std::string(out_file);

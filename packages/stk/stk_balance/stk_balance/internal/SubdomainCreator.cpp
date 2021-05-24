@@ -35,11 +35,12 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
-#include <stk_tools/transfer_utils/TransientFieldTransferById.hpp>
 
 namespace stk {
 namespace balance {
 namespace internal {
+
+constexpr unsigned SubdomainCreator::INVALID_SUBDOMAIN;
 
 SubdomainCreator::SubdomainCreator(stk::mesh::BulkData &bulk, int numTarget)
   : mMeta(bulk.mesh_meta_data()),
@@ -69,13 +70,14 @@ std::string SubdomainCreator::getSubdomainPartName(int subdomainId)
     return out.str();
 }
 
-void SubdomainCreator::declare_all_final_subdomain_parts()
+stk::mesh::PartVector SubdomainCreator::declare_all_final_subdomain_parts()
 {
-    for(int i=0;i<mNumFinalSubdomains;++i)
-    {
-        std::string partNameForSubdomain = getSubdomainPartName(i);
-        mMeta.declare_part(partNameForSubdomain, stk::topology::ELEMENT_RANK);
-    }
+  stk::mesh::PartVector subdomainParts;
+  for (int i = 0; i < mNumFinalSubdomains; ++i) {
+    std::string partNameForSubdomain = getSubdomainPartName(i);
+    subdomainParts.push_back(&mMeta.declare_part(partNameForSubdomain, stk::topology::ELEMENT_RANK));
+  }
+  return subdomainParts;
 }
 
 stk::mesh::Part* SubdomainCreator::get_subdomain_part(size_t subdomain_num)
@@ -99,17 +101,19 @@ stk::mesh::PartVector SubdomainCreator::get_parts_to_add_for_subdomain(size_t su
 
 stk::io::EntitySharingInfo SubdomainCreator::get_node_sharing_info(unsigned subdomain)
 {
+  stk::io::EntitySharingInfo nodeSharingInfo;
+  if (stk::transfer_utils::is_valid_subdomain(subdomain)) {
     stk::mesh::EntityVector sharedNodes;
     std::vector<int> procsForSharedNodes;
     fill_shared_node_info_for_this_subdomain(subdomain, sharedNodes, procsForSharedNodes);
 
-    stk::io::EntitySharingInfo nodeSharingInfo;
     for(size_t nodeIndex = 0; nodeIndex < sharedNodes.size(); nodeIndex++)
     {
-        stk::mesh::EntityId nodeId = mBulk.identifier(sharedNodes[nodeIndex]);
-        nodeSharingInfo.push_back({nodeId, procsForSharedNodes[nodeIndex]});
+      stk::mesh::EntityId nodeId = mBulk.identifier(sharedNodes[nodeIndex]);
+      nodeSharingInfo.push_back({nodeId, procsForSharedNodes[nodeIndex]});
     }
-    return nodeSharingInfo;
+  }
+  return nodeSharingInfo;
 }
 
 stk::mesh::EntityVector SubdomainCreator::get_nodes_shared_between_subdomains(int this_subdomain_index, int other_subdomain_index)
@@ -138,23 +142,29 @@ void SubdomainCreator::fill_shared_node_info_for_this_subdomain(const unsigned t
     }
 }
 
-void SubdomainCreator::create_subdomain_and_write(const std::string &filename,
-                                                unsigned subdomain,
-                                                int global_num_nodes,
-                                                int global_num_elems,
-                                                const stk::io::EntitySharingInfo &nodeSharingInfo,
-                                                int numSteps, double timeStep)
+void SubdomainCreator::create_subdomain_and_write(const std::string &filename, unsigned subdomain,
+                                                  int global_num_nodes, int global_num_elems,
+                                                  int numSteps, double timeStep)
 {
-    stk::mesh::MetaData newMeta;
-    stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
-    stk::tools::copy_mesh(mBulk, *mMeta.get_part(getSubdomainPartName(subdomain)), newBulkData);
+  stk::mesh::MetaData newMeta;
+  stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
 
-    if(mTransientIo == nullptr) {
-        stk::io::write_file_for_subdomain(filename, subdomain, mNumFinalSubdomains, global_num_nodes, global_num_elems, newBulkData, nodeSharingInfo, numSteps, timeStep);
-    } else {
-        mTransientIo->setup_subdomain(newBulkData, filename, subdomain, nodeSharingInfo, global_num_nodes, global_num_elems);
-        mTransientIo->transfer_and_write_transient_data(subdomain);
+  const stk::mesh::Selector subdomainSelector = stk::transfer_utils::is_valid_subdomain(subdomain) ? *mMeta.get_part(getSubdomainPartName(subdomain))
+                                                                                                   : stk::mesh::Selector();
+  stk::tools::copy_mesh(mBulk, subdomainSelector, newBulkData);
+
+  stk::io::EntitySharingInfo nodeSharingInfo = get_node_sharing_info(subdomain);
+
+  if (mTransientIo == nullptr) {
+    if (stk::transfer_utils::is_valid_subdomain(subdomain)) {
+      stk::io::write_file_for_subdomain(filename, subdomain, mNumFinalSubdomains, global_num_nodes, global_num_elems,
+                                        newBulkData, nodeSharingInfo, numSteps, timeStep);
     }
+  }
+  else {
+    mTransientIo->setup_subdomain(newBulkData, filename, subdomain, nodeSharingInfo, global_num_nodes, global_num_elems);
+    mTransientIo->transfer_and_write_transient_data(subdomain);
+  }
 }     
 
 }}}

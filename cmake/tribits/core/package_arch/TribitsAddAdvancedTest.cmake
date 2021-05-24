@@ -318,6 +318,7 @@ INCLUDE(PrintVar)
 #
 # .. _TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
+#
 # **TEST_<idx> EXEC/CMND Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())**
 #
 # Each test general command block ``TEST_<idx>`` runs either a package-built
@@ -524,11 +525,16 @@ INCLUDE(PrintVar)
 # below their ``TEST_<idx>`` argument and before the next test block (see
 # `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
 #
-# **WARNING:** The current implementation limits the number of ``TEST_<idx>``
-# cases to just 20 (i.e. ``<idx>=0...19``).  And if more test cases are added
-# (e.g. ``TEST_20``), the current implementation can't detect that case and
-# the resulting behavior is undefined.  This restriction will be removed in a
-# future version of TriBITS.
+# **NOTE:** The current implementation limits the number of ``TEST_<idx>``
+# blocks to just 20 (i.e. for ``<idx>=0...19``).  If more test blocks are
+# added (e.g. ``TEST_20``), then an fatal error message will be printed and
+# processing will end.  To increase this max in a local scope, call::
+#
+#   set(TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_BLOCKS <larger-num>)
+#
+# where ``<larger-num> > 20``.  This can be set in any scope in any
+# ``CMakeLists.txt`` file or inside of a function and it will impact all of
+# the future calls to ``TRIBITS_ADD_ADVANCED_TEST()`` in that scope.
 #
 # .. _TEST_<idx> COPY_FILES_TO_TEST_DIR Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 #
@@ -838,7 +844,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
   # commands we will have
   #
 
-  # Allow for a maximum of 20 (0 through 19) test commands
+  # Set maximum number of TEST_<idx> blocks
+  TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX_COMPUTE()
   SET(MAX_NUM_TEST_CMND_IDX ${TRIBITS_ADD_ADVANCED_TEST_MAX_NUM_TEST_CMND_IDX})
 
   SET(TEST_IDX_LIST "")
@@ -858,6 +865,8 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
      "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;OVERALL_NUM_TOTAL_CORES_USED;FINAL_PASS_REGULAR_EXPRESSION;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;EXCLUDE_IF_NOT_TRUE;FINAL_FAIL_REGULAR_EXPRESSION;TIMEOUT;ENVIRONMENT;ADDED_TEST_NAME_OUT"
      ${ARGN}
      )
+
+  TRIBITS_ADD_ADVANCED_TEST_CHECK_EXCEED_MAX_NUM_TEST_BLOCKS()
 
   IF(PARSE_ADDED_TEST_NAME_OUT)
     SET(${PARSE_ADDED_TEST_NAME_OUT} "" PARENT_SCOPE )
@@ -1132,7 +1141,7 @@ FUNCTION(TRIBITS_ADD_ADVANCED_TEST TEST_NAME_IN)
 
       LIST( LENGTH PARSE_CMND PARSE_CMND_LEN )
       IF (NOT PARSE_CMND_LEN EQUAL 1)
-        MESSAGE(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} CMND = '${PARSE_CMND}'"
+        MESSAGE_WRAPPER(SEND_ERROR "Error, TEST_${TEST_CMND_IDX} CMND = '${PARSE_CMND}'"
           " must be a single command.  To add arguments use ARGS <arg1> <arg2> ...." )
       ENDIF()
 

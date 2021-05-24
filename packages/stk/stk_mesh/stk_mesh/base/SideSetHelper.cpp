@@ -241,7 +241,7 @@ bool SideSetHelper::graph_edge_can_be_distinguished(const ElemElemGraph& eeGraph
 
   if(!isParallelEdge) {
     // Local connectivity
-    Entity otherElement = eeGraph.get_entity_from_local_id(graphEdge.elem2());
+    Entity otherElement = eeGraph.get_entity(graphEdge.elem2());
     bool elemSelectorValue = selector(mesh.bucket(otherElement)) && activeSelector(mesh.bucket(otherElement));
     if(selectorValue != elemSelectorValue) {
       return true;
@@ -374,7 +374,7 @@ bool SideSetHelper::element_side_has_remote_coincidence_using_elem_elem_graph(En
 
       if (isParallelEdge) {
         const impl::ParallelInfo &parallelInfo = eeGraph.get_parallel_info_for_graph_edge(graphEdge);
-        bool remotePolarity = parallelInfo.m_remote_element_toplogy.sub_topology(sideRank, graphEdge.side2()).is_positive_polarity(parallelInfo.m_permutation);
+        bool remotePolarity = parallelInfo.m_remote_element_topology.sub_topology(sideRank, graphEdge.side2()).is_positive_polarity(parallelInfo.m_permutation);
 
         hasRemoteCoincidence = hasRemoteCoincidence || (remotePolarity == localPolarity);
       }

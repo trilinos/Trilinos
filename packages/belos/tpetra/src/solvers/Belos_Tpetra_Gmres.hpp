@@ -470,7 +470,12 @@ protected:
     const SC one  = STS::one ();
 
     // timers
-    Teuchos::RCP< Teuchos::Time > spmvTimer = Teuchos::TimeMonitor::getNewCounter ("Gmres::Sparse Mat-Vec");
+    Teuchos::RCP< Teuchos::Time > spmvTimer  = Teuchos::TimeMonitor::getNewCounter ("Gmres::matrix-apply ");
+    Teuchos::RCP< Teuchos::Time > precTimer  = Teuchos::TimeMonitor::getNewCounter ("Gmres::precondition ");
+    Teuchos::RCP< Teuchos::Time > orthTimer  = Teuchos::TimeMonitor::getNewCounter ("Gmres::orthogonalize");
+
+    Teuchos::RCP< Teuchos::Time > totalTimer = Teuchos::TimeMonitor::getNewCounter ("Gmres::total        ");
+    Teuchos::TimeMonitor GmresTimer (*totalTimer);
 
     // initialize output parameters
     SolverOutput<SC> output {};
@@ -509,7 +514,10 @@ protected:
     R.update (one, B, -one);
     b0_norm = R.norm2 (); // residual norm, not-preconditioned
     if (input.precoSide == "left") {
-      M.apply (R, P);
+      {
+        Teuchos::TimeMonitor LocalTimer (*precTimer);
+        M.apply (R, P);
+      }
       b_norm = P.norm2 (); // residual norm, left-preconditioned
     }
     else {
@@ -583,7 +591,10 @@ protected:
           A.apply (P, AP);
         }
         else if (input.precoSide == "right") {
-          M.apply (P, MP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*precTimer);
+            M.apply (P, MP);
+          }
           {
             Teuchos::TimeMonitor LocalTimer (*spmvTimer);
             A.apply (MP, AP);
@@ -594,11 +605,18 @@ protected:
             Teuchos::TimeMonitor LocalTimer (*spmvTimer);
             A.apply (P, MP);
           }
-          M.apply (MP, AP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*precTimer);
+            M.apply (MP, AP);
+          }
         }
         output.numIters++;
 
-        const int rank = this->projectAndNormalize (iter, input, Q, H, h);
+        int rank = 0;
+        {
+          Teuchos::TimeMonitor LocalTimer (*orthTimer);
+          rank = this->projectAndNormalize (iter, input, Q, H, h);
+        }
         // Save H if Ritz values are requested
         if (input.computeRitzValues && output.numRests == 0) {
           blas.COPY (iter+2, &H(0, iter), 1, &G(0, iter), 1);
@@ -649,7 +667,10 @@ protected:
         if (input.precoSide == "right") {
           //MVT::MvTimesMatAddMv (one, *Qj, y, zero, R);
           MVT::MvTimesMatAddMv (one, *Qj, y_iter, zero, R);
-          M.apply (R, MP);
+          {
+            Teuchos::TimeMonitor LocalTimer (*precTimer);
+            M.apply (R, MP);
+          }
           X.update (one, MP, one);
         }
         else {
@@ -683,7 +704,10 @@ protected:
           iter = 0;
           P = * (Q.getVectorNonConst (0));
           if (input.precoSide == "left") {
-            M.apply (R, P);
+            {
+              Teuchos::TimeMonitor LocalTimer (*precTimer);
+              M.apply (R, P);
+            }
             r_norm = P.norm2 (); // norm
           }
           else {

@@ -183,7 +183,7 @@ Teuchos::RCP<SolutionState<Scalar> >
 SolutionHistory<Scalar>::findState(const Scalar time) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
-    !(minTime() <= time and time <= maxTime()), std::logic_error,
+    !(minTime() <= time && time <= maxTime()), std::logic_error,
     "Error - SolutionHistory::findState() Requested time out of range!\n"
     "        [Min, Max] = [" << minTime() << ", " << maxTime() << "]\n"
     "        time = "<< time <<"\n");
@@ -278,6 +278,26 @@ void SolutionHistory<Scalar>::promoteWorkingState()
     *out << "Warning - WorkingState is not passing, so not promoted!\n"
          << std::endl;
   }
+}
+
+
+template<class Scalar>
+void SolutionHistory<Scalar>::copy(Teuchos::RCP<const SolutionHistory<Scalar> > sh)
+{
+  this->setName(sh->getName());
+
+  this->clear();
+  auto sh_history = sh->getHistory();
+  typename std::vector<Teuchos::RCP<SolutionState<Scalar> > >::iterator
+    state_it = sh_history->begin();
+  for (; state_it < sh_history->end(); state_it++)
+    this->addState( *state_it );
+
+  auto interpolator = Teuchos::rcp_const_cast<Interpolator<Scalar> >(sh->getInterpolator());
+  this->setInterpolator(interpolator);
+
+  this->setStorageType(sh->getStorageType());
+  this->setStorageLimit(sh->getStorageLimit());
 }
 
 
@@ -566,12 +586,6 @@ void SolutionHistory<Scalar>::setInterpolator(
   } else {
     interpolator_ = interpolator;
   }
-  if (Teuchos::as<int>(this->getVerbLevel()) >=
-      Teuchos::as<int>(Teuchos::VERB_HIGH)) {
-    Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
-    Teuchos::OSTab ostab(out,1,"SolutionHistory::setInterpolator");
-    *out << "interpolator = " << interpolator_->description() << std::endl;
-  }
   isInitialized_ = false;
 }
 
@@ -614,7 +628,7 @@ void SolutionHistory<Scalar>::printHistory(std::string verb) const
     else if (state->getIsInterpolated() == true) *out<<"i - ";
     else *out << "    ";
     *out << "[" << i << "] = " << state << std::endl;
-    if (verb == "medium" or verb == "high") {
+    if (verb == "medium" || verb == "high") {
       if (state != Teuchos::null) {
         auto x = state->getX();
         *out << "      x       = " << x << std::endl

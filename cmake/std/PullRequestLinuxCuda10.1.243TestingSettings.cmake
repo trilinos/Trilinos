@@ -129,11 +129,11 @@ set (KokkosCore_UnitTest_Cuda_MPI_1_EXTRA_ARGS
   "--gtest_filter=-cuda.debug_pin_um_to_host:cuda.debug_serial_execution"
   CACHE STRING "Temporary disable for CUDA PR testing")
 
-# Disable a few failing tests for initial release of Cuda 10.1.105 PR build
-# set (EpetraExt_inout_test_LL_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
-# set (EpetraExt_inout_test_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
-# set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
-# set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+# Disable a few failing tests for initial release of Cuda 10.1.243 PR build
+# these fail due to a bug in spectrum-mpi : see issue #8798 for details
+set (Zoltan_ch_simple_zoltan_parallel_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (Zoltan_hg_simple_zoltan_parallel_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
+set (Zoltan_mpiMinLoc_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
 # Disable SEACAS tests that grep results out of stderr...
 set (SEACASIoss_create_path_fpp_DISABLE ON CACHE BOOL "Temporary disable due to jsrun polluting stderr")

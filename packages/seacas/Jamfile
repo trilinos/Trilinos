@@ -54,6 +54,7 @@ project votd
   : usage-requirements
     <include>$(seacas-root-inc)
     <address-model>64:<define>Build64
+    <architecture>power:<cxxflags>-Wno-psabi
   : build-dir $(seacas-builddir)
   ;
 
@@ -101,6 +102,7 @@ local installed-end-user-files =
   io_info
   io_modify
   shell_to_hex
+  slice
   cth_pressure_map
   struc_to_unstruc
   $(seacas-root)/scripts/blot
@@ -154,7 +156,8 @@ alias install-user-include : install-user-include0
                              install-user-include2b
                              install-user-include3
                              install-user-include4
-                             install-user-include5 ;
+                             install-user-include5
+                             install-user-include6 ;
 
 # This rule copies all headers it finds in the include directory of the
 # source to the include directory of the install-root.
@@ -209,6 +212,14 @@ explicit install-user-include5 ;
 install install-user-include5
   : [ glob $(seacas-root)/libraries/suplib_cpp/*.h ]
   : <location>$(install-root)/seacas/include
+  ;
+
+explicit install-user-include6 ;
+install install-user-include6
+  : [ glob $(seacas-root)/libraries/ioss/src/visualization/utils/*.h
+           $(seacas-root)/libraries/ioss/src/visualization/exodus/*.h
+           $(seacas-root)/libraries/ioss/src/visualization/cgns/*.h ]
+  : <location>$(install-root)/io_system/include
   ;
 
 explicit install-user-env ;
@@ -472,7 +483,9 @@ lib iovs
     [ ifdevbuild
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
-        [ glob $(seacas-root)/libraries/ioss/src/visualization/*.C ]
+        [ glob $(seacas-root)/libraries/ioss/src/visualization/exodus/*.C 
+	       $(seacas-root)/libraries/ioss/src/visualization/cgns/*.C
+               $(seacas-root)/libraries/ioss/src/visualization/utils/*.C ]
     ]
     ioss
   :
@@ -481,6 +494,9 @@ lib iovs
     # Any parameters within this 'ifdevbuild' block apply to development
     # builds only and will not be present for user builds.
         <include>$(seacas-root)/libraries/ioss/src/visualization/ParaViewCatalystIossAdapter/include
+        <include>$(seacas-root)/libraries/ioss/src/visualization/exodus
+        <include>$(seacas-root)/libraries/ioss/src/visualization/cgns
+        <include>$(seacas-root)/libraries/ioss/src/visualization/utils
     ]
     [ ifuserbuild
     # Any parameters within this 'ifuserbuild' block apply to user
@@ -1378,6 +1394,18 @@ exe conjoin
     <tag>@utility-exec-tag
   :
   : <include>$(seacas-root)/applications/conjoin
+  ;
+
+exe slice
+  :
+  $(seacas-root)/applications/slice/Slice.C
+  $(seacas-root)/applications/slice/SL_SystemInterface.C
+    suplib_cpp
+    suplib_c
+    ioinit
+  : <include>$(seacas-root)/applications/slice
+    <define>USE_METIS
+    <tag>@utility-exec-tag
   ;
 
 exe ejoin

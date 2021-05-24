@@ -126,7 +126,7 @@ public:
     virtual bool isExplicit()         const {return false;}
     virtual bool isImplicit()         const {return true;}
     virtual bool isExplicitImplicit() const
-      {return isExplicit() and isImplicit();}
+      {return isExplicit() && isImplicit();}
     virtual bool isOneStepMethod()   const {return true;}
     virtual bool isMultiStepMethod() const {return !isOneStepMethod();}
     virtual void setUseFSAL(bool a) { this->setUseFSALTrueOnly(a); }
@@ -137,8 +137,6 @@ public:
   virtual Scalar getAlpha(const Scalar dt) const { return Scalar(2.0)/dt; }
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const { return Scalar(1.0); }
-
-  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
   /// \name Overridden from Teuchos::Describable
   //@{

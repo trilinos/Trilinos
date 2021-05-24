@@ -853,7 +853,7 @@ TEST ( UnitTestBulkData_new , testEntityComm )
         i = new_recv.end() ; i != new_recv.begin() ; ) {
     --i ;
 
-    const unsigned erank = bulk.entity_rank(*i);
+    const EntityRank erank = bulk.entity_rank(*i);
 
     MeshIndex mesh_idx = bulk.mesh_index(*i);
     Bucket &bkt = *mesh_idx.bucket;
@@ -1001,7 +1001,7 @@ void new_insert_transitive_closure( BulkData& bulk_data, std::set<EntityProc,Ent
     if ( result.second ) {
       // A new insertion, must also insert the closure
 
-      const unsigned erank = bulk_data.entity_rank(entry.first);
+      const EntityRank erank = bulk_data.entity_rank(entry.first);
 
       for (EntityRank irank = stk::topology::BEGIN_RANK; irank < erank; ++irank)
       {

@@ -56,6 +56,8 @@ public:
 
   virtual std::vector<unsigned> map_new_subdomains_to_original_processors();
 
+  unsigned num_required_subdomains_for_each_proc();
+
 protected:
   stk::mesh::BulkData & m_bulkData;
   const stk::balance::BalanceSettings & m_balanceSettings;

@@ -770,7 +770,7 @@ localTriangularSolve (const MV& Y,
         std::min (X.getNumVectors (), Y.getNumVectors ());
       for (size_t j = 0; j < numVecs; ++j) {
         auto X_j = X.getVectorNonConst (j);
-        auto Y_j = Y.getVector (j);  // In develop, this was X, not Y.
+        auto Y_j = Y.getVector (j);
         auto X_lcl = X_j->getLocalViewHost (Tpetra::Access::ReadWrite);
         auto Y_lcl = Y_j->getLocalViewHost (Tpetra::Access::ReadOnly);
         KokkosSparse::trsv (uplo.c_str (), trans.c_str (),

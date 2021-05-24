@@ -1,0 +1,31 @@
+cmake_minimum_required(VERSION 3.13)
+project(kokkoskernels_install_test CXX)
+
+include(CTest)
+
+find_package(KokkosKernels REQUIRED)
+
+add_executable(kokkoskernels_install_test KokkosSparse_block_pcg.cpp)
+target_link_libraries(kokkoskernels_install_test PRIVATE Kokkos::kokkoskernels)
+
+if(BUILD_TESTING)
+
+  add_test(NAME cg_test_serial COMMAND kokkoskernels_install_test --mtx auto --serial)
+
+  if(KOKKOS_ENABLE_THREADS)
+    add_test(NAME cg_test_threads COMMAND kokkoskernels_install_test --mtx auto --threads 2)
+  endif()
+
+  if(KOKKOS_ENABLE_OPENMP)
+    add_test(NAME cg_test_openmp COMMAND kokkoskernels_install_test --mtx auto --openmp 2)
+  endif()
+
+  if(KOKKOS_ENABLE_CUDA)
+    add_test(NAME cg_test_cuda COMMAND kokkoskernels_install_test --mtx auto --cuda)
+  endif()
+
+  if(KOKKOS_ENABLE_HIP)
+    add_test(NAME cg_test_hip COMMAND kokkoskernels_install_test --mtx auto --hip)
+  endif()
+
+endif()

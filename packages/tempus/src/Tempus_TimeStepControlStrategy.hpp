@@ -9,9 +9,6 @@
 #ifndef Tempus_TimeStepControlStrategy_hpp
 #define Tempus_TimeStepControlStrategy_hpp
 
-// Teuchos
-#include "Teuchos_ParameterListAcceptorDefaultBase.hpp"
-
 #include "Tempus_config.hpp"
 #include "Tempus_SolutionHistory.hpp"
 
