@@ -185,8 +185,6 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
       Get<Teuchos::ArrayRCP<LO>>(fineLevel, "LineDetection_VertLineIds");
   Teuchos::ArrayRCP<LO> TLayerId =
       Get<Teuchos::ArrayRCP<LO>>(fineLevel, "LineDetection_Layers");
-  LO *VertLineId = TVertLineId.getRawPtr();
-  LO *LayerId = TLayerId.getRawPtr();
 
   // compute number of coarse layers
   TEUCHOS_TEST_FOR_EXCEPTION(FineNumZLayers < 2, Exceptions::RuntimeError,
@@ -201,7 +199,7 @@ void SemiCoarsenPFactory_kokkos<Scalar, LocalOrdinal, GlobalOrdinal,
   RCP<Matrix> P;
   RCP<MultiVector> coarseNullspace;
   BuildSemiCoarsenP(coarseLevel, Ndofs, Nnodes, BlkSize, FineNumZLayers,
-                    CoarseNumZLayers, LayerId, VertLineId, A, fineNullspace, P,
+                    CoarseNumZLayers, TLayerId, TVertLineId, A, fineNullspace, P,
                     coarseNullspace);
 
   // Store number of coarse z-layers on the coarse level container
@@ -353,8 +351,8 @@ void SemiCoarsenPFactory_kokkos<
     Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>>::
     BuildSemiCoarsenP(Level &coarseLevel, const LO NFRows, const LO NFNodes,
                       const LO DofsPerNode, const LO NFLayers,
-                      const LO NCLayers, const LO LayerId[],
-                      const LO VertLineId[], const RCP<Matrix> &Amat,
+                      const LO NCLayers, const ArrayRCP<LO> LayerId,
+                      const ArrayRCP<LO> VertLineId, const RCP<Matrix> &Amat,
                       const RCP<MultiVector> fineNullspace, RCP<Matrix> &P,
                       RCP<MultiVector> &coarseNullspace) const {
   SubFactoryMonitor m2(*this, "BuildSemiCoarsenP", coarseLevel);

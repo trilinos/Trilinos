@@ -125,7 +125,7 @@ public:
   SemiCoarsenPFactory_kokkos() : bTransferCoordinates_(false) {}
 
   //! Destructor.
-  virtual ~SemiCoarsenPFactory_kokkos() {}
+  virtual ~SemiCoarsenPFactory_kokkos() = default;
   //@}
 
   RCP<const ParameterList> GetValidParameterList() const;
@@ -147,8 +147,8 @@ public:
 
   void BuildSemiCoarsenP(Level &coarseLevel, const LO NFRows, const LO NFNodes,
                          const LO DofsPerNode, const LO NFLayers,
-                         const LO NCLayers, const LO LayerId[],
-                         const LO VertLineId[], const RCP<Matrix> &Amat,
+                         const LO NCLayers, const ArrayRCP<LO> LayerId,
+                         const ArrayRCP<LO> VertLineId, const RCP<Matrix> &Amat,
                          const RCP<MultiVector> fineNullspace, RCP<Matrix> &P,
                          RCP<MultiVector> &coarseNullspace) const;
 
