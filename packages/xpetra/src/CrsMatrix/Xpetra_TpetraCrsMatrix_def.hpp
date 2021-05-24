@@ -346,7 +346,7 @@ namespace Xpetra {
         {
           // preform communication to propagate local interface
           // values to all the processor that share interfaces.
-          RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
+          RCP<MultiVector> matvecInterfaceTmp = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(regionInterfaceMap, 1);
           matvecInterfaceTmp->doImport(Y, *regionInterfaceImporter, INSERT);
 
           // sum all contributions to interface values
