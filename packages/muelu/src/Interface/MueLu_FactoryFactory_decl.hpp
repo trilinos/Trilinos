@@ -310,7 +310,7 @@ namespace MueLu {
       if (factoryName == "GeometricInterpolationPFactory_kokkos") return Build2<GeometricInterpolationPFactory_kokkos> (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "NullspaceFactory_kokkos")               return Build2<NullspaceFactory_kokkos>               (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "SaPFactory_kokkos")                     return Build2<SaPFactory_kokkos>                     (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "SemiCoarsenPFactory_kokkos")            return Build2<SemiCoarsenPFactory_kokkos>                     (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SemiCoarsenPFactory_kokkos")            return Build2<SemiCoarsenPFactory_kokkos>            (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "StructuredAggregationFactory_kokkos")   return Build2<StructuredAggregationFactory_kokkos>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "TentativePFactory_kokkos")              return Build2<TentativePFactory_kokkos>              (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "UncoupledAggregationFactory_kokkos")    return Build2<UncoupledAggregationFactory_kokkos>    (paramList, factoryMapIn, factoryManagersIn);
