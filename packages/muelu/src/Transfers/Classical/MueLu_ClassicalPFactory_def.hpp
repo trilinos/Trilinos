@@ -63,7 +63,7 @@
 #include "MueLu_MasterList.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
-#include "MueLu_ClassicalPFactory.hpp"
+#include "MueLu_ClassicalPFactory_decl.hpp"
 #include "MueLu_ClassicalMapFactory.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
@@ -181,16 +181,17 @@ namespace MueLu {
 
 
     // Ghost the FC splitting and grab the data (if needed)
-    RCP<LocalOrdinalVector> fc_splitting;
+    RCP<const LocalOrdinalVector> fc_splitting;
     ArrayRCP<const LO> myPointType;
     if(Importer.is_null()) {
-      myPointType = owned_fc_splitting->getData(0);      
+      fc_splitting = owned_fc_splitting;
     }
     else {
-      fc_splitting = LocalOrdinalVectorFactory::Build(A->getCrsGraph()->getColMap());
-      fc_splitting->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
-      myPointType = fc_splitting->getData(0);      
+      RCP<LocalOrdinalVector> fc_splitting_nonconst = LocalOrdinalVectorFactory::Build(A->getCrsGraph()->getColMap());
+      fc_splitting_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
+      fc_splitting = fc_splitting_nonconst;
     }
+    myPointType = fc_splitting->getData(0);      
 
     /* Ghost A (if needed) */
     RCP<const Matrix> Aghost;
@@ -1051,7 +1052,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const Grap
         for(LO j=0; j<(LO)strong_neighbors.size(); j++) {
           if(myPointType[strong_neighbors[j]] == F_PT) {
             LO row2 = strong_neighbors[j];
-            if(row2 < Nrows) A.getLocalRowView(row2, indices, vals);
+            if(row2 < (LO)Nrows) A.getLocalRowView(row2, indices, vals);
             else Aghost->getLocalRowView(row2-Nrows,indices,vals);
               
             // C-neighbors of strong F-neighbors

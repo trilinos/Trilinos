@@ -47,8 +47,15 @@
 #ifndef MUELU_CLASSICALMAPFACTORY_DEF_HPP_
 #define MUELU_CLASSICALMAPFACTORY_DEF_HPP_
 
+
+
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
+
+
+#ifdef HAVE_MPI
+#include <Teuchos_DefaultMpiComm.hpp>
+#endif
 
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_StridedMapFactory.hpp>
@@ -65,6 +72,13 @@
 #include "MueLu_Graph.hpp"
 #include "MueLu_LWGraph.hpp"
 
+#ifdef HAVE_MUELU_ZOLTAN2
+#include "MueLu_Zoltan2GraphAdapter.hpp"
+#include <Zoltan2_XpetraCrsGraphAdapter.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
+#include <Zoltan2_ColoringSolution.hpp>
+
+#endif
 
 // NOTE: We should be checking for KokkosKernels here, but
 // MueLu doesn't have a macro for that
@@ -159,7 +173,7 @@ namespace MueLu {
 #ifdef HAVE_MUELU_ZOLTAN2
     else if(coloringAlgo.find("Zoltan2")!=std::string::npos && graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
       SubFactoryMonitor sfm(*this,"DistributedGraphColoring",currentLevel);
-      DoDistributedGraphColoring(*graph,myColors,numColors);
+      DoDistributedGraphColoring(graph,myColors,numColors);
     }
 #endif
     else if(coloringAlgo == "MIS" || graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
@@ -232,13 +246,9 @@ namespace MueLu {
       SubFactoryMonitor sfm(*this,"Coarse Map",currentLevel);
       GenerateCoarseMap(*A->getRowMap(),num_c_points,coarseMap);
     }
-    
- 
-    
+        
     Set(currentLevel, "FC Splitting",fc_splitting);
     Set(currentLevel, "CoarseMap", coarseMap);    
-
-    
    
   }
 
@@ -329,7 +339,7 @@ DoGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numCo
                                            numRows, // FIXME: This should be the number of columns
                                            graphLWK->getRowPtrs(),
                                            graphLWK->getEntries(),
-                                         true);
+                                           true);
   }
   else if(graphLW) {
     auto rowptrs = graphLW->getRowPtrs();
@@ -344,7 +354,7 @@ DoGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numCo
                                            numRows, // FIXME: This should be the number of columns
                                            rowptrs_v,
                                            entries_v,
-                                           true);    
+                                           true);
   }
   else if(graphG) {  
     // FIXME:  This is a terrible, terrible hack, based on 0-based local indexing.
@@ -422,13 +432,49 @@ DoMISNaive(const GraphBase & graph, ArrayRCP<LO> & myColors, LO & numColors) con
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-DoDistributedGraphColoring(const GraphBase & graph, ArrayRCP<LO> & myColors_out, LO & numColors) const {
+DoDistributedGraphColoring(RCP<const GraphBase> & graph, ArrayRCP<LO> & myColors_out, LO & numColors) const {
 #ifdef HAVE_MUELU_ZOLTAN2
-  //const ParameterList& pL = GetParameterList();
-  // TODO: We'll need specialty versions of the Zoltan2 adapters that take 
-  // LWGraph and LWGraph_kokkos.  They already have adapters for XpetraCrsGraph
+  //  const ParameterList& pL = GetParameterList();
+  Teuchos::ParameterList params;
+  params.set("color_choice","FirstFit");
+  params.set("color_method","D1");
+  //  params.set("color_choice", colorMethod);
+  //  params.set("color_method", colorAlg);
+  //  params.set("verbose", verbose);
+  //  params.set("serial_threshold",serialThreshold);
+  //params.set("recolor_degrees",recolorDegrees);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(1, std::invalid_argument,"Zoltan2 distributed coloring not currently supported.");
+  // Do the coloring via Zoltan2
+  using GraphAdapter = MueLuGraphBaseAdapter<GraphBase>;
+  GraphAdapter z_adapter(graph);
+
+  // We need to provide the MPI Comm, or else we wind up using the default (eep!)
+  Zoltan2::ColoringProblem<GraphAdapter> problem(&z_adapter,&params,graph->GetDomainMap()->getComm());
+  problem.solve();
+  Zoltan2::ColoringSolution<GraphAdapter> * soln = problem.getSolution();
+  ArrayRCP<int> colors = soln->getColorsRCP();
+  numColors = (LO)soln->getNumColors();
+
+  // Assign the Array RCP or Copy Out
+  // FIXME:  This probably won't work if LO!=int
+  if(std::is_same<LO,int>::value) 
+    myColors_out = colors;
+  else {
+    myColors_out.resize(colors.size());
+    for(LO i=0; i<(LO)myColors_out.size(); i++)
+      myColors_out[i] = (LO) colors[i];
+  }
+
+  /*
+
+  printf("CMS: numColors = %d\ncolors = ",numColors);
+  for(int i=0;i<colors.size(); i++) 
+    printf("%d ",colors[i]);
+  printf("\n");
+
+  */
+
+   
 
 #endif
 }
