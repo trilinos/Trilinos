@@ -198,6 +198,10 @@ namespace Tpetra {
   void writeMatrixStrip(BlockCrsMatrix<Scalar,LO,GO,Node> const &A, std::ostream &os, Teuchos::ParameterList const &params) {
     using Teuchos::RCP;
     using map_type = Tpetra::Map<LO, GO, Node>;
+    using bcrs_type = BlockCrsMatrix<Scalar,LO,GO,Node>;
+    using bcrs_local_inds_host_view_type = typename bcrs_type::local_inds_host_view_type;
+    using bcrs_values_host_view_type = typename bcrs_type::values_host_view_type;
+    using impl_scalar_type = typename bcrs_type::impl_scalar_type;
 
     size_t numRows = A.getGlobalNumRows();
     RCP<const map_type> rowMap = A.getRowMap();
@@ -246,30 +250,28 @@ namespace Tpetra {
       for (localRowInd = 0; localRowInd < numLocalRows; ++localRowInd) {
 
         // Get a view of the current row.
-        const LO*     localColInds;
-        Scalar* vals;
+        bcrs_local_inds_host_view_type localColInds;
+        bcrs_values_host_view_type vals;
         LO numEntries;
-        err = A.getLocalRowView (localRowInd, localColInds, vals, numEntries);
-        if (err != 0)
-          break;
+        A.getLocalRowView (localRowInd, localColInds, vals); numEntries = localColInds.extent(0);
         GO globalMeshRowID = rowMap->getGlobalElement(localRowInd) - meshRowOffset;
 
         for (LO k = 0; k < numEntries; ++k) {
           GO globalMeshColID = colMap->getGlobalElement(localColInds[k]) - meshColOffset;
-          Scalar* const curBlock = vals + blockSize * blockSize * k;
+          const impl_scalar_type* curBlock = vals.data() + blockSize * blockSize * k;
           // Blocks are stored in row-major format.
           for (LO j = 0; j < blockSize; ++j) {
             GO globalPointRowID = globalMeshRowID * blockSize + j + pointOffset;
             for (LO i = 0; i < blockSize; ++i) {
               GO globalPointColID = globalMeshColID * blockSize + i + pointOffset;
-              const Scalar curVal = curBlock[i + j * blockSize];
+              const impl_scalar_type curVal = curBlock[i + j * blockSize];
 
               os << globalPointRowID << " " << globalPointColID << " ";
-              if (Teuchos::ScalarTraits<Scalar>::isComplex) {
+              if (Teuchos::ScalarTraits<impl_scalar_type>::isComplex) {
                 // Matrix Market format wants complex values to be
                 // written as space-delimited pairs.  See Bug 6469.
-                os << Teuchos::ScalarTraits<Scalar>::real (curVal) << " "
-                   << Teuchos::ScalarTraits<Scalar>::imag (curVal);
+                os << Teuchos::ScalarTraits<impl_scalar_type>::real (curVal) << " "
+                   << Teuchos::ScalarTraits<impl_scalar_type>::imag (curVal);
               }
               else {
                 os << curVal;

@@ -102,7 +102,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
-  auto val = A.getValuesHost ();
+  auto val = A.getValuesHostNonConst ();
 
   auto gblGraph = A.getCrsGraph ();
   auto lclGraph = G.getLocalGraphHost ();

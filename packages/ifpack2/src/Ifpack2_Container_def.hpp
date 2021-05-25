@@ -264,13 +264,15 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //Use efficient blocked version
     ArrayView<const LO> blockRows = this->getBlockRows(i);
     const size_t localNumRows = this->blockSizes_[i];
+    using inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using vals_type = typename block_crs_matrix_type::values_host_view_type;
     for(size_t j = 0; j < localNumRows; j++)
     {
       LO row = blockRows[j]; // Containers_[i]->ID (j);
-      LO numEntries;
-      SC* values;
-      const LO* colinds;
-      this->inputBlockMatrix_->getLocalRowView(row, colinds, values, numEntries);
+      vals_type values;
+      inds_type colinds;
+      this->inputBlockMatrix_->getLocalRowView(row, colinds, values);
+      LO numEntries = (LO) colinds.size();
       for(size_t m = 0; m < numVecs; m++)
       {
         for (int localR = 0; localR < this->bcrsBlockSize_; localR++)
@@ -855,11 +857,16 @@ getInputRowView(LO row) const
 
   if(this->hasBlockCrs_)
   {
-    const LO* colinds;
-    SC* values;
-    LO numEntries;
-    this->inputBlockMatrix_->getLocalRowView(row / this->bcrsBlockSize_, colinds, values, numEntries);
-    return StridedRowView(values + row % this->bcrsBlockSize_, colinds, this->bcrsBlockSize_, numEntries * this->bcrsBlockSize_);
+    using h_inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using h_vals_type = typename block_crs_matrix_type::values_host_view_type;
+    h_inds_type colinds;
+    h_vals_type values;
+    this->inputBlockMatrix_->getLocalRowView(row / this->bcrsBlockSize_, colinds, values);
+    size_t numEntries = colinds.size();
+    // CMS: Can't say I understand what this really does
+    //return StridedRowView(values + row % this->bcrsBlockSize_, colinds, this->bcrsBlockSize_, numEntries * this->bcrsBlockSize_);
+    h_vals_type subvals = Kokkos::subview(values,std::pair<size_t,size_t>(row % this->bcrsBlockSize_,values.size()));
+    return StridedRowView(subvals, colinds, this->bcrsBlockSize_, numEntries * this->bcrsBlockSize_);
   }
   else if(!this->inputMatrix_->supportsRowViews())
   {
@@ -879,7 +886,7 @@ getInputRowView(LO row) const
     local_inds_host_view_type colinds;
     values_host_view_type values;
     this->inputMatrix_->getLocalRowView(row, colinds, values);
-    return StridedRowView(reinterpret_cast<const SC*>(values.data()), colinds.data(), 1, colinds.size());
+    return StridedRowView(values, colinds, 1, colinds.size());
   }
 }
 
@@ -899,14 +906,14 @@ namespace Details {
 //Implementation of Ifpack2::Details::StridedRowView
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StridedRowView<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-StridedRowView(const SC* vals_, const LO* inds_, int blockSize_, size_t nnz_)
+StridedRowView(h_vals_type vals_, h_inds_type inds_, int blockSize_, size_t nnz_)
   : vals(vals_), inds(inds_), blockSize(blockSize_), nnz(nnz_)
 {}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StridedRowView<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 StridedRowView(Teuchos::Array<SC>& vals_, Teuchos::Array<LO>& inds_)
-  : vals(nullptr), inds(nullptr), blockSize(1), nnz(vals_.size())
+  : vals(), inds(), blockSize(1), nnz(vals_.size())
 {
   valsCopy.swap(vals_);
   indsCopy.swap(inds_);
@@ -920,7 +927,7 @@ val(size_t i) const
   TEUCHOS_TEST_FOR_EXCEPTION(i >= nnz, std::runtime_error,
       "Out-of-bounds access into Ifpack2::Container::StridedRowView");
   #endif
-  if(vals)
+  if(vals.size() > 0)
   {
     if(blockSize == 1)
       return vals[i];
@@ -940,7 +947,7 @@ ind(size_t i) const
         "Out-of-bounds access into Ifpack2::Container::StridedRowView");
   #endif
   //inds is smaller than vals by a factor of the block size (dofs/node)
-  if(inds)
+    if(inds.size() > 0)
   {
     if(blockSize == 1)
       return inds[i];
