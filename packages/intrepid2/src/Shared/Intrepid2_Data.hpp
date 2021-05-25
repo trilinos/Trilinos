@@ -340,8 +340,160 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION(variationModulus_[d] == 0, std::logic_error, "variationModulus should not ever be 0");
       }
     }
+
+  public:
+    //! storeInPlaceCombination with compile-time rank -- implementation for rank < 7.
+    template<class BinaryOperator, int rank>
+    enable_if_t<rank != 7, void>
+    storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      auto policy = dataExtentRangePolicy<rank>();
+      
+      // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      const bool A_constant = (A.getUnderlyingViewRank() == 1) && (A.getUnderlyingViewSize() == 1);
+      const bool B_constant = (B.getUnderlyingViewRank() == 1) && (B.getUnderlyingViewSize() == 1);
+      
+      if (A_constant)
+      {
+        auto A_underlying = A.getUnderlyingView<1>();
+        if (this->underlyingMatchesLogical())
+        {
+          auto this_underlying = this->getUnderlyingView<rank>();
+          if (B.underlyingMatchesLogical())
+          {
+            auto B_underlying = B.getUnderlyingView<rank>();
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const auto &...args) {
+              auto & result = this_underlying(args...);
+              const auto & A_val = A_underlying(0);
+              const auto & B_val = B_underlying(args...);
+              
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+          else
+          {
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const auto &...args) {
+              auto & result = this_underlying(args...);
+              const auto & A_val = A_underlying(0);
+              const auto & B_val = B(args...);
+              
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+        }
+        else
+        {
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const auto &...args) {
+            auto & result = thisData.getWritableEntry(args...);
+            const auto & A_val = A_underlying(0);
+            const auto & B_val = B(args...);
+            result = binaryOperator(A_val,B_val);
+          });
+        }
+      }
+      else if (B_constant)
+      {
+        auto B_underlying = B.getUnderlyingView<1>();
+        if (this->underlyingMatchesLogical())
+        {
+          auto this_underlying = this->getUnderlyingView<rank>();
+          if (A.underlyingMatchesLogical())
+          {
+            auto A_underlying = A.getUnderlyingView<rank>();
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const auto &...args) {
+              auto & result = this_underlying(args...);
+              const auto & A_val = A_underlying(args...);
+              const auto & B_val = B_underlying(0);
+              
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+          else
+          {
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const auto &...args) {
+              auto & result = this_underlying(args...);
+              const auto & A_val = A(args...);
+              const auto & B_val = B_underlying(0);
+              
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+        }
+        else
+        {
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const auto &...args) {
+            auto & result = thisData.getWritableEntry(args...);
+            const auto & A_val = A(args...);
+            const auto & B_val = B_underlying(0);
+            
+            result = binaryOperator(A_val,B_val);
+          });
+        }
+      }
+      else // neither A nor B constant
+      {
+        if (this->underlyingMatchesLogical())
+        {
+          auto this_underlying = this->getUnderlyingView<rank>();
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const auto &...args) {
+            auto & result = this_underlying(args...);
+            const auto & A_val = A(args...);
+            const auto & B_val = B(args...);
+            
+            result = binaryOperator(A_val,B_val);
+          });
+        }
+        else
+        {
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const auto &...args) {
+            auto & result = thisData.getWritableEntry(args...);
+            const auto & A_val = A(args...);
+            const auto & B_val = B(args...);
+            result = binaryOperator(A_val,B_val);
+          });
+        }
+      }
+    }
     
-    //! special case when underlying matches logical for all arguments.
+    //! storeInPlaceCombination with compile-time rank -- implementation for rank of 7.  (Not optimized; expectation is this case will be rarely used.)
+    template<class BinaryOperator, int rank>
+    enable_if_t<rank == 7, void>
+    storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      auto policy = dataExtentRangePolicy<rank>();
+      
+      // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
+      Data<DataScalar,DeviceType> thisData = *this;
+      
+      auto this_underlying = this->getUnderlyingView<rank>();
+      auto A_underlying = A.getUnderlyingView<rank>();
+      auto B_underlying = B.getUnderlyingView<rank>();
+    
+      const ordinal_type dim6 = getDataExtent(6);
+      Kokkos::parallel_for("compute in-place", policy,
+      KOKKOS_LAMBDA (const auto &...args) {
+        for (int i6=0; i6<dim6; i6++)
+        {
+          auto & result = thisData.getWritableEntry(args...);
+          const auto & A_val = A(args...);
+          const auto & B_val = B(args...);
+          
+          result = binaryOperator(A_val,B_val);
+        }
+      });
+    }
+    
+    //! special case when underlying matches logical for all arguments -- implementation for underlying rank < 7.
     template<class BinaryOperator, int underlyingRank>
     enable_if_t<underlyingRank != 7, void>
     storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
@@ -353,17 +505,16 @@ namespace Intrepid2 {
       auto B_underlying = B.getUnderlyingView<underlyingRank>();
       
         Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (auto ...args) {
+        KOKKOS_LAMBDA (const auto &...args) {
           auto & result      = this_underlying(args...);
           const auto & A_val = A_underlying   (args...);
           const auto & B_val = B_underlying   (args...);
           
           result = binaryOperator(A_val,B_val);
         });
-      
     }
     
-    //! special case when underlying matches logical for all arguments.
+    //! special case when underlying matches logical for all arguments -- case for underlying rank == 7.
     template<class BinaryOperator, int underlyingRank>
     enable_if_t<underlyingRank == 7, void>
     storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
@@ -376,7 +527,7 @@ namespace Intrepid2 {
     
       const ordinal_type dim6 = getDataExtent(6);
       Kokkos::parallel_for("compute in-place", policy,
-      KOKKOS_LAMBDA (auto ...args) {
+      KOKKOS_LAMBDA (const auto &...args) {
         for (int i6=0; i6<dim6; i6++)
         {
           auto & result      = this_underlying(args...,i6);
@@ -1764,8 +1915,12 @@ namespace Intrepid2 {
       // TODO: add some checks that data extent of this suffices to accept combined A + B data.
 #endif
       
+      const bool this_constant = (this->getUnderlyingViewRank() == 1) && (this->getUnderlyingViewSize() == 1);
+      const bool A_constant = (A.getUnderlyingViewRank() == 1) && (A.getUnderlyingViewSize() == 1);
+      const bool B_constant = (B.getUnderlyingViewRank() == 1) && (B.getUnderlyingViewSize() == 1);
+      
       // special cases:
-      if (this->getUnderlyingViewSize() == 1)
+      if (this_constant)
       {
         // constant data
         Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,1); // just 1 entry
@@ -1798,191 +1953,20 @@ namespace Intrepid2 {
         }
         return;
       }
-      
-      // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
-      Data<DataScalar,DeviceType> thisData = *this;
-      
-      const bool A_constant = (A.getUnderlyingViewSize() == 1) && (A.getUnderlyingViewRank() == 1);
-      const bool B_constant = (B.getUnderlyingViewSize() == 1) && (B.getUnderlyingViewRank() == 1);
-      
-      if (rank_ == 1)
-      {
-        int dataExtent = this->getDataExtent(0);
-        Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,dataExtent);
-        if (A_constant)
-        {
-          auto A_underlying = A.getUnderlyingView<1>();
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0) {
-            auto & result = thisData.getWritableEntry(i0);
-            const auto & A_val = A_underlying(0);
-            const auto & B_val = B(i0);
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-        else if (B_constant)
-        {
-          auto B_underlying = B.getUnderlyingView<1>();
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0) {
-            auto & result = thisData.getWritableEntry(i0);
-            const auto & A_val = A(i0);
-            const auto & B_val = B_underlying(0);
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-        else
-        {
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0) {
-            auto & result = thisData.getWritableEntry(i0);
-            const auto & A_val = A(i0);
-            const auto & B_val = B(i0);
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-      }
-      else if (rank_ == 2)
-      {
-        auto policy = dataExtentRangePolicy<2>();
-        if (A_constant)
-        {
-          auto A_underlying = A.getUnderlyingView<1>();
-          if (this->underlyingMatchesLogical())
-          {
-            auto this_underlying = this->getUnderlyingView<2>();
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const int &i0, const int &i1) {
-              auto & result = this_underlying(i0, i1);
-              const auto & A_val = A_underlying(0);
-              const auto & B_val = B(i0,i1);
-              result = binaryOperator(A_val,B_val);
-            });
-          }
-          else
-          {
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const int &i0, const int &i1) {
-              auto & result = thisData.getWritableEntry(i0, i1);
-              const auto & A_val = A_underlying(0);
-              const auto & B_val = B(i0,i1);
-              result = binaryOperator(A_val,B_val);
-            });
-          }
-        }
-        else if (B_constant)
-        {
-          auto B_underlying = B.getUnderlyingView<1>();
-          if (this->underlyingMatchesLogical())
-          {
-            auto this_underlying = this->getUnderlyingView<2>();
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const int &i0, const int &i1) {
-              auto & result = this_underlying(i0, i1);
-              const auto & A_val = A(i0,i1);
-              const auto & B_val = B_underlying(0);
-              result = binaryOperator(A_val,B_val);
-            });
-          }
-          else
-          {
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const int &i0, const int &i1) {
-              auto & result = thisData.getWritableEntry(i0, i1);
-              const auto & A_val = A(i0,i1);
-              const auto & B_val = B_underlying(0);
-              result = binaryOperator(A_val,B_val);
-            });
-          }
-        }
-        else
-        {
-          if (this->underlyingMatchesLogical())
-          {
-            auto this_underlying = this->getUnderlyingView<2>();
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const int &i0, const int &i1) {
-              auto & result = this_underlying(i0, i1);
-              const auto & A_val = A(i0,i1);
-              const auto & B_val = B(i0,i1);
-              result = binaryOperator(A_val,B_val);
-            });
-          }
-          else
-          {
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const int &i0, const int &i1) {
-              auto & result = thisData.getWritableEntry(i0, i1);
-              const auto & A_val = A(i0,i1);
-              const auto & B_val = B(i0,i1);
-              result = binaryOperator(A_val,B_val);
-            });
-          }
-          
-        }
-      }
-      else if (rank_ == 3)
-      {
-        auto policy = dataExtentRangePolicy<3>();
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2);
-          const auto & A_val = A(i0,i1,i2);
-          const auto & B_val = B(i0,i1,i2);
-          result = binaryOperator(A_val,B_val);
-        });
-      }
-      else if (rank_ == 4)
-      {
-        auto policy = dataExtentRangePolicy<4>();
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, i3);
-          const auto & A_val = A(i0,i1,i2,i3);
-          const auto & B_val = B(i0,i1,i2,i3);
-          result = binaryOperator(A_val,B_val);
-        });
-      }
-      else if (rank_ == 5)
-      {
-        auto policy = dataExtentRangePolicy<5>();
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4);
-          const auto & A_val = A(i0,i1,i2,i3,i4);
-          const auto & B_val = B(i0,i1,i2,i3,i4);
-          result = binaryOperator(A_val,B_val);
-        });
-      }
-      else if (rank_ == 6)
-      {
-        auto policy = dataExtentRangePolicy<6>();
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, i5);
-          const auto & A_val = A(i0,i1,i2,i3,i4,i5);
-          const auto & B_val = B(i0,i1,i2,i3,i4,i5);
-          result = binaryOperator(A_val,B_val);
-        });
-      }
-      else if (rank_ == 7)
-      {
-        auto policy = dataExtentRangePolicy<6>(); // MDRangePolicy only goes up to 6
-        const int dataExtent6 = getDataExtent(6);
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
-          for (int i6=0; i6<dataExtent6; i6++)
-          {
-            auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, i5, i6);
-            const auto & A_val = A(i0,i1,i2,i3,i4,i5,i6);
-            const auto & B_val = B(i0,i1,i2,i3,i4,i5,i6);
-            result = binaryOperator(A_val,B_val);
-          }
-        });
-      }
       else
       {
-        INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Unsupported rank");
+        switch (rank_)
+        {
+          case 1: storeInPlaceCombination<BinaryOperator, 1>(A, B, binaryOperator); break;
+          case 2: storeInPlaceCombination<BinaryOperator, 2>(A, B, binaryOperator); break;
+          case 3: storeInPlaceCombination<BinaryOperator, 3>(A, B, binaryOperator); break;
+          case 4: storeInPlaceCombination<BinaryOperator, 4>(A, B, binaryOperator); break;
+          case 5: storeInPlaceCombination<BinaryOperator, 5>(A, B, binaryOperator); break;
+          case 6: storeInPlaceCombination<BinaryOperator, 6>(A, B, binaryOperator); break;
+          case 7: storeInPlaceCombination<BinaryOperator, 7>(A, B, binaryOperator); break;
+          default:
+            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "unhandled rank in switch");
+        }
       }
     }
     
