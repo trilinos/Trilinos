@@ -399,7 +399,7 @@ namespace Intrepid2 {
               }
             });
             
-            if (composedTransform_.underlyingMatchesNotional())
+            if (composedTransform_.underlyingMatchesLogical())
             {
               const auto & composedTransformView = composedTransform_.getUnderlyingView4();
               Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {

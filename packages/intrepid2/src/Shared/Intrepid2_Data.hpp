@@ -12,7 +12,7 @@
 #include "Intrepid2_Utils.hpp"
 
 /** \file  Intrepid2_Data.hpp
-   \brief  Defines the Data class, a wrapper around a Kokkos::View that allows data that is constant or repeating in various notional dimensions to be stored just once, while providing a similar interface to that of View.
+   \brief  Defines the Data class, a wrapper around a Kokkos::View that allows data that is constant or repeating in various logical dimensions to be stored just once, while providing a similar interface to that of View.
    \author Created by N.V. Roberts.
 */
 
@@ -153,19 +153,19 @@ namespace Intrepid2 {
 
     /**
       \class  Intrepid2::Data
-      \brief  Wrapper around a Kokkos::View that allows data that is constant or repeating in various notional dimensions to be stored just once, while providing a similar interface to that of View.
+      \brief  Wrapper around a Kokkos::View that allows data that is constant or repeating in various logical dimensions to be stored just once, while providing a similar interface to that of View.
      
-      The Data class distinguishes between the notional extent and the data extent.  For example, one could construct a data container corresponding to constant (cell, point) data with 100 cells
+      The Data class distinguishes between the logical extent and the data extent.  For example, one could construct a data container corresponding to constant (cell, point) data with 100 cells
      and 25 points per cell as follows:
           auto cpData = Data(value, Kokkos::Array<int>{100,25});
-     The data extent of the container is 1 in every dimension, while the notional extent is 100 in the first dimension, and 25 in the second.  Similarly, the notional rank of the container is 2, but the rank of the
+     The data extent of the container is 1 in every dimension, while the logical extent is 100 in the first dimension, and 25 in the second.  Similarly, the logical rank of the container is 2, but the rank of the
      underlying View is 1.
      
-     There are four possible variation types in a notional dimension:
-     - GENERAL: the data varies arbitrarily.  The underlying View will have the same extent in its corresponding dimension (which may be distinct from the notional dimension).
+     There are four possible variation types in a logical dimension:
+     - GENERAL: the data varies arbitrarily.  The underlying View will have the same extent in its corresponding dimension (which may be distinct from the logical dimension).
      - CONSTANT: the data does not vary.  The underlying View will not have a dimension corresponding to this dimension.
      - MODULAR: the data varies with a modulus.  The underlying View will have a corresponding dimension with extent corresponding to the modulus.
-     - BLOCK_PLUS_DIAGONAL: the data varies in this notional dimension and one other, corresponding to a square matrix that has some (possibly trivial) full block, with diagonal entries in the remaining dimensions.  The underlying View will have one dimension corresponding to the two notional dimensions, with extent corresponding to the number of nonzeros in the matrix.
+     - BLOCK_PLUS_DIAGONAL: the data varies in this logical dimension and one other, corresponding to a square matrix that has some (possibly trivial) full block, with diagonal entries in the remaining dimensions.  The underlying View will have one dimension corresponding to the two logical dimensions, with extent corresponding to the number of nonzeros in the matrix.
      
   */
   template<class DataScalar,typename DeviceType>
@@ -187,8 +187,8 @@ namespace Intrepid2 {
     Kokkos::Array<int,7> variationModulus_;            // for each dimension, a value by which indices should be modulused (only used when variationType_ is MODULAR)
     int blockPlusDiagonalLastNonDiagonal_ = -1;        // last row/column that is part of the non-diagonal part of the matrix indicated by BLOCK_PLUS_DIAGONAL (if any dimensions are thus marked)
     
-    bool hasNontrivialModulusUNUSED_;  // this is a little nutty, but having this UNUSED member variable improves performance, probably by shifting the alignment of underlyingMatchesNotional_.  This is true with nvcc; it may also be true with Apple clang
-    bool underlyingMatchesNotional_;   // if true, this Data object has the same rank and extent as the underlying view
+    bool hasNontrivialModulusUNUSED_;  // this is a little nutty, but having this UNUSED member variable improves performance, probably by shifting the alignment of underlyingMatchesLogical_.  This is true with nvcc; it may also be true with Apple clang
+    bool underlyingMatchesLogical_;   // if true, this Data object has the same rank and extent as the underlying view
     Kokkos::Array<ordinal_type,7> activeDims_;
     int numActiveDims_; // how many of the 7 entries are actually filled in
     
@@ -253,7 +253,7 @@ namespace Intrepid2 {
       
       numActiveDims_ = 0;
       int blockPlusDiagonalCount = 0;
-      underlyingMatchesNotional_ = true;
+      underlyingMatchesLogical_ = true;
       for (ordinal_type i=0; i<7; i++)
       {
         if (variationType_[i] == GENERAL)
@@ -271,7 +271,7 @@ namespace Intrepid2 {
         }
         else if (variationType_[i] == MODULAR)
         {
-          underlyingMatchesNotional_ = false;
+          underlyingMatchesLogical_ = false;
           if (extents_[i] != getUnderlyingViewExtent(numActiveDims_))
           {
             const int dataExtent = getUnderlyingViewExtent(numActiveDims_);
@@ -291,7 +291,7 @@ namespace Intrepid2 {
         }
         else if (variationType_[i] == BLOCK_PLUS_DIAGONAL)
         {
-          underlyingMatchesNotional_ = false;
+          underlyingMatchesLogical_ = false;
           blockPlusDiagonalCount++;
           if (blockPlusDiagonalCount == 1) // first dimension thus marked --> active
           {
@@ -318,7 +318,7 @@ namespace Intrepid2 {
         {
           if (i < rank_)
           {
-            underlyingMatchesNotional_ = false;
+            underlyingMatchesLogical_ = false;
           }
           variationModulus_[i] = 1; // trivial modulus
         }
@@ -326,7 +326,7 @@ namespace Intrepid2 {
       
       if (rank_ != dataRank_)
       {
-        underlyingMatchesNotional_ = false;
+        underlyingMatchesLogical_ = false;
       }
       
       for (int d=numActiveDims_; d<7; d++)
@@ -341,10 +341,10 @@ namespace Intrepid2 {
       }
     }
     
-    //! special case when underlying matches notional for all arguments.
+    //! special case when underlying matches logical for all arguments.
     template<class BinaryOperator, int underlyingRank>
     enable_if_t<underlyingRank != 7, void>
-    storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
       auto policy = dataExtentRangePolicy<underlyingRank>();
       
@@ -363,10 +363,10 @@ namespace Intrepid2 {
       
     }
     
-    //! special case when underlying matches notional for all arguments.
+    //! special case when underlying matches logical for all arguments.
     template<class BinaryOperator, int underlyingRank>
     enable_if_t<underlyingRank == 7, void>
-    storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
       auto policy = dataExtentRangePolicy<underlyingRank>();
       
@@ -501,7 +501,7 @@ namespace Intrepid2 {
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numArgs != rank_, std::invalid_argument, "getWritableEntry() should have the same number of arguments as the logical rank.");
 #endif
       constexpr int numArgs = sizeof...(intArgs);
-      if (underlyingMatchesNotional_)
+      if (underlyingMatchesLogical_)
       {
         // in this case, we require that numArgs == dataRank_
         return getUnderlyingView<numArgs>()(intArgs...);
@@ -1273,7 +1273,7 @@ namespace Intrepid2 {
       }
     }
     
-    //! returns the true extent of the data corresponding to the notional dimension provided; if the data does not vary in that dimension, returns 1
+    //! returns the true extent of the data corresponding to the logical dimension provided; if the data does not vary in that dimension, returns 1
     KOKKOS_INLINE_FUNCTION int getDataExtent(const ordinal_type &d) const
     {
       for (unsigned i=0; i<activeDims_.size(); i++)
@@ -1291,7 +1291,7 @@ namespace Intrepid2 {
     }
     
     /** \brief  Variation modulus accessor.
-       \param [in] d - the notional dimension whose variation modulus is requested.
+       \param [in] d - the logical dimension whose variation modulus is requested.
        \return the variation modulus.
      
      The variation modulus is defined as the number of unique entries in the specified dimension.
@@ -1299,7 +1299,7 @@ namespace Intrepid2 {
      - for CONSTANT variation, the variation modulus is 1
      - for MODULAR variation, the variation modulus is exactly the modulus by which the data repeats in the specified dimension
      - for GENERAL variation, the variation modulus is the extent in the specified dimension
-     - for BLOCK_PLUS_DIAGONAL, the variation modulus in the first notional dimension of the matrix is the number of nonzeros in the matrix; in the second notional dimension the variation modulus is 1.
+     - for BLOCK_PLUS_DIAGONAL, the variation modulus in the first logical dimension of the matrix is the number of nonzeros in the matrix; in the second logical dimension the variation modulus is 1.
     */
     KOKKOS_INLINE_FUNCTION
     int getVariationModulus(const int &d) const
@@ -1307,14 +1307,14 @@ namespace Intrepid2 {
       return variationModulus_[d];
     }
     
-    //! Returns an array with the variation types in each notional dimension.
+    //! Returns an array with the variation types in each logical dimension.
     KOKKOS_INLINE_FUNCTION
     const Kokkos::Array<DataVariationType,7> & getVariationTypes() const
     {
       return variationType_;
     }
     
-    //! Returns a (read-only) value corresponding to the specified notional data location.
+    //! Returns a (read-only) value corresponding to the specified logical data location.
     template<class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
     return_type getEntry(const IntArgs... intArgs) const
@@ -1332,7 +1332,7 @@ namespace Intrepid2 {
     
     static_assert(valid_args<int,long,unsigned>::value, "valid args works");
 
-    //! Returns a value corresponding to the specified notional data location.
+    //! Returns a value corresponding to the specified logical data location.
     template <class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
     enable_if_t<valid_args<IntArgs...>::value && (sizeof...(IntArgs) <= 7),return_type>
@@ -1340,115 +1340,7 @@ namespace Intrepid2 {
       return getEntry(intArgs...);
     }
 
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType>::value),
-//        return_type>::type
-//    operator()(const iType& i0) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data1_(i0);
-//      }
-//      return getEntry(i0);
-//    }
-//
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType0, typename iType1>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value),
-//        return_type>::type
-//    operator()(const iType0& i0, const iType1& i1) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data2_(i0,i1);
-//      }
-//      return getEntry(i0,i1);
-//    }
-//
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType0, typename iType1, typename iType2>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-//         std::is_integral<iType2>::value),
-//        return_type>::type
-//    operator()(const iType0& i0, const iType1& i1, const iType2& i2) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data3_(i0,i1,i2);
-//      }
-//      return getEntry(i0,i1,i2);
-//    }
-//
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType0, typename iType1, typename iType2, typename iType3>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-//         std::is_integral<iType2>::value && std::is_integral<iType3>::value),
-//        return_type>::type
-//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-//               const iType3& i3) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data4_(i0,i1,i2,i3);
-//      }
-//      return getEntry(i0,i1,i2,i3);
-//    }
-//
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType0, typename iType1, typename iType2, typename iType3,
-//              typename iType4>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-//         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-//         std::is_integral<iType4>::value),
-//        return_type>::type
-//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-//               const iType3& i3, const iType4& i4) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data5_(i0,i1,i2,i3,i4);
-//      }
-//      return getEntry(i0,i1,i2,i3,i4);
-//    }
-//
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType0, typename iType1, typename iType2, typename iType3,
-//              typename iType4, typename iType5>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-//         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-//         std::is_integral<iType4>::value && std::is_integral<iType5>::value),
-//        return_type>::type
-//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-//               const iType3& i3, const iType4& i4, const iType5& i5) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data6_(i0,i1,i2,i3,i4,i5);
-//      }
-//      return getEntry(i0,i1,i2,i3,i4,i5);
-//    }
-//
-//    //! Returns a value corresponding to the specified notional data location.
-//    template <typename iType0, typename iType1, typename iType2, typename iType3,
-//              typename iType4, typename iType5, typename iType6>
-//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-//         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-//         std::is_integral<iType4>::value && std::is_integral<iType5>::value &&
-//         std::is_integral<iType6>::value),
-//        return_type>::type
-//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-//               const iType3& i3, const iType4& i4, const iType5& i5,
-//               const iType6& i6) const {
-//      if (underlyingMatchesNotional_)
-//      {
-//        return data7_(i0,i1,i2,i3,i4,i5,i6);
-//      }
-//      return getEntry(i0,i1,i2,i3,i4,i5,i6);
-//    }
-//
-    //! Returns the notional extent in the specified dimension.
+    //! Returns the logical extent in the specified dimension.
     KOKKOS_INLINE_FUNCTION
     int extent_int(const int& r) const
     {
@@ -1890,17 +1782,17 @@ namespace Intrepid2 {
         });
         return;
       }
-      else if (this->underlyingMatchesNotional() && A.underlyingMatchesNotional() && B.underlyingMatchesNotional())
+      else if (this->underlyingMatchesLogical() && A.underlyingMatchesLogical() && B.underlyingMatchesLogical())
       {
         switch (dataRank_)
         {
-          case 1: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 1>(A, B, binaryOperator); break;
-          case 2: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 2>(A, B, binaryOperator); break;
-          case 3: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 3>(A, B, binaryOperator); break;
-          case 4: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 4>(A, B, binaryOperator); break;
-          case 5: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 5>(A, B, binaryOperator); break;
-          case 6: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 6>(A, B, binaryOperator); break;
-          case 7: storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs<BinaryOperator, 7>(A, B, binaryOperator); break;
+          case 1: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 1>(A, B, binaryOperator); break;
+          case 2: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 2>(A, B, binaryOperator); break;
+          case 3: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 3>(A, B, binaryOperator); break;
+          case 4: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 4>(A, B, binaryOperator); break;
+          case 5: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 5>(A, B, binaryOperator); break;
+          case 6: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 6>(A, B, binaryOperator); break;
+          case 7: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 7>(A, B, binaryOperator); break;
           default:
             INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "unhandled rank in switch");
         }
@@ -1956,7 +1848,7 @@ namespace Intrepid2 {
         if (A_constant)
         {
           auto A_underlying = A.getUnderlyingView<1>();
-          if (this->underlyingMatchesNotional())
+          if (this->underlyingMatchesLogical())
           {
             auto this_underlying = this->getUnderlyingView<2>();
             Kokkos::parallel_for("compute in-place", policy,
@@ -1981,7 +1873,7 @@ namespace Intrepid2 {
         else if (B_constant)
         {
           auto B_underlying = B.getUnderlyingView<1>();
-          if (this->underlyingMatchesNotional())
+          if (this->underlyingMatchesLogical())
           {
             auto this_underlying = this->getUnderlyingView<2>();
             Kokkos::parallel_for("compute in-place", policy,
@@ -2005,7 +1897,7 @@ namespace Intrepid2 {
         }
         else
         {
-          if (this->underlyingMatchesNotional())
+          if (this->underlyingMatchesLogical())
           {
             auto this_underlying = this->getUnderlyingView<2>();
             Kokkos::parallel_for("compute in-place", policy,
@@ -2268,7 +2160,7 @@ namespace Intrepid2 {
       {
         // (C,P,D,D), perhaps
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace, Kokkos::Rank<2> >({0,0},{getDataExtent(0),getDataExtent(1)});
-        if (underlyingMatchesNotional_) // receiving data object is completely expanded
+        if (underlyingMatchesLogical_) // receiving data object is completely expanded
         {
           Kokkos::parallel_for("compute mat-mat", policy,
           KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal) {
@@ -2329,15 +2221,15 @@ namespace Intrepid2 {
       return extents_[0] > 0;
     }
     
-    //! Returns the notional rank of the Data container.
+    //! Returns the logical rank of the Data container.
     KOKKOS_INLINE_FUNCTION
     unsigned rank() const
     {
       return rank_;
     }
     
- /** \brief sets the notional extent in the specified dimension.  If needed, the underlying data container is resized.
-     \param [in] d - the notional dimension in which the extent is to be changed
+ /** \brief sets the logical extent in the specified dimension.  If needed, the underlying data container is resized.
+     \param [in] d - the logical dimension in which the extent is to be changed
      \param [in] newExtent - the new extent
      \note Not supported for dimensions in which the variation type is BLOCK_PLUS_DIAGONAL.
      \note If the variation type is MODULAR, the existing modulus must evenly divide the new extent; the underlying data structure will not be resized in this case.
@@ -2393,11 +2285,11 @@ namespace Intrepid2 {
       extents_[d] = newExtent;
     }
     
-    //! Returns true if the underlying container has exactly the same rank and extents as the notional container.
+    //! Returns true if the underlying container has exactly the same rank and extents as the logical container.
     KOKKOS_INLINE_FUNCTION
-    bool underlyingMatchesNotional() const
+    bool underlyingMatchesLogical() const
     {
-      return underlyingMatchesNotional_;
+      return underlyingMatchesLogical_;
     }
   };
 }

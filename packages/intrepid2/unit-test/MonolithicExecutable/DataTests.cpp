@@ -402,7 +402,7 @@ namespace
   }
 
 // #pragma mark Data: MatMatExplicitIdentity_PDD
-/** \brief Data provides matrix-matrix multiplication support.  This method checks correctness of the computed mat-mat for several cases involving 3x3 identity matrices.  Here, the notional dimensions (C,P,D,D) differ from the stored dimensions of (P,D,D).  We test each possible transpose combination.
+/** \brief Data provides matrix-matrix multiplication support.  This method checks correctness of the computed mat-mat for several cases involving 3x3 identity matrices.  Here, the logical dimensions (C,P,D,D) differ from the stored dimensions of (P,D,D).  We test each possible transpose combination.
 */
 TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; notionally (C,P,D,D)
 {
@@ -473,7 +473,7 @@ TEUCHOS_UNIT_TEST( Data, MatMatExplicitIdentity_PDD ) // (P,D,D) underlying; not
 }
 
   // #pragma mark Data: MatMatBlockPlusDiagonal
-/** \brief Data provides matrix-matrix multiplication support.  This method checks correctness of the computed mat-mat for a case involving one 3x3 matrix that has a 2x2 upper left block, and diagonal entry in the (3,3) position, and one 3x3 matrix that is entirely diagonal.  Here, the notional dimensions (C,D,D) match the stored dimensions.
+/** \brief Data provides matrix-matrix multiplication support.  This method checks correctness of the computed mat-mat for a case involving one 3x3 matrix that has a 2x2 upper left block, and diagonal entry in the (3,3) position, and one 3x3 matrix that is entirely diagonal.  Here, the logical dimensions (C,D,D) match the stored dimensions.
 */
   TEUCHOS_UNIT_TEST( Data, MatMatBlockPlusDiagonal )
   {
