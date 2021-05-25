@@ -166,6 +166,7 @@ void fillView(CaseChoice caseChoice, Kokkos::View<Scalar**,DeviceType> view, con
   switch (caseChoice) {
     case Constant:
       Kokkos::deep_copy(view, baseValue);
+      break;
     case Affine:
     {
       Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{numCells,numPoints});
@@ -175,6 +176,7 @@ void fillView(CaseChoice caseChoice, Kokkos::View<Scalar**,DeviceType> view, con
         view(i0,i1) = i0 * baseValue;
       });
     }
+      break;
     case General:
     {
       Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{numCells,numPoints});
@@ -184,6 +186,7 @@ void fillView(CaseChoice caseChoice, Kokkos::View<Scalar**,DeviceType> view, con
         view(i0,i1) = i0 * baseValue + i1;
       });
     }
+    break;
     default:
       break;
   }
@@ -215,6 +218,8 @@ int main( int argc, char* argv[] )
   using std::endl;
   using std::string;
   using std::vector;
+  
+  bool success = true;
   
   {
     vector<CaseChoice> allCaseChoices {Constant, Affine, General};
@@ -289,17 +294,19 @@ int main( int argc, char* argv[] )
     using std::scientific;
     using std::fixed;
     
+    const double absTol = 1e-15, relTol = 1e-15;
+    
     for (CaseChoice caseChoice1 : caseChoices)
     {
       for (CaseChoice caseChoice2 : caseChoices)
       {
-        {
-          // DEBUGGING:
-          if ((caseChoice1 != General) && (caseChoice2 == General))
-          {
-            cout << "Set breakpoint here.\n";
-          }
-        }
+//        {
+//          // DEBUGGING:
+//          if ((caseChoice1 != General) && (caseChoice2 == General))
+//          {
+//            cout << "Set breakpoint here.\n";
+//          }
+//        }
         
         // since constant takes so little time (and measurement is therefore noisy), we do a bunch of measurements and use their average
         const bool bothConstant   = (caseChoice1 == Constant) && (caseChoice2 == Constant);
@@ -360,378 +367,33 @@ int main( int argc, char* argv[] )
           cout << "Actual speedup:       " << setw(charWidth) << std::setprecision(2) << scientific << actualSpeedup << endl;
           cout << "Percentage of ideal:  " << setw(charWidth) << std::setprecision(2) << fixed << percentage << "%" << endl;
           cout << endl;
+          
+          // to optimize for the case where the test passes, we output to a Teuchos::oblackholestream first.
+          // if the test fails, we repeat the comparison to std::cout.
+          Teuchos::oblackholestream  outNothing;
+          Teuchos::basic_FancyOStream<char> out(Teuchos::rcp(&outNothing,false));
+          bool localSuccess = true;
+          testFloatingEquality2(resultView, result, relTol, absTol, out, localSuccess);
+          
+          if (!localSuccess)
+          {
+            cout << "Error: results do not match.  Comparison details:\n";
+            
+            Teuchos::oblackholestream  outNothing;
+            Teuchos::basic_FancyOStream<char> out(Teuchos::rcp(&outNothing,false));
+            
+            Teuchos::basic_FancyOStream<char> std_out(Teuchos::rcp(&std::cout,false));
+            testFloatingEquality2(resultView, result, relTol, absTol, std_out, localSuccess);
+            
+            success = false;
+          }
         }
       }
     }
-    
-//
-//    using std::vector;
-//    using std::map;
-//    using std::pair;
-//    using std::make_pair;
-//    using std::tuple;
-//    using std::cout;
-//    using std::endl;
-//    using std::setw;
-//
-//    using WorksetForAlgorithmChoice = map<AlgorithmChoice, int>;
-//
-//    vector< tuple<int,int,WorksetForAlgorithmChoice> > polyOrderMeshWidthWorksetTestCases;
-//
-//    const int meshWidth = 16;
-//    vector<int> worksetSizes {1,2,4,8,16,32,64,128,256,512,1024,2048,4096};
-//
-//    // due to memory constraints, restrict the workset size for higher orders
-//    map<int,int> maxWorksetSizeForPolyOrder;
-//    maxWorksetSizeForPolyOrder[1] = 4096;
-//    maxWorksetSizeForPolyOrder[2] = 4096;
-//    maxWorksetSizeForPolyOrder[3] = 4096;
-//    maxWorksetSizeForPolyOrder[4] = 4096;
-//    maxWorksetSizeForPolyOrder[5] = 4096;
-//    maxWorksetSizeForPolyOrder[6] = 2048;
-//    maxWorksetSizeForPolyOrder[7] = 1024;
-//    maxWorksetSizeForPolyOrder[8] = 512;
-//
-//    map<int,int> minWorksetSizeForPolyOrder;
-//    minWorksetSizeForPolyOrder[1] = 1;
-//    minWorksetSizeForPolyOrder[2] = 1;
-//    minWorksetSizeForPolyOrder[3] = 1;
-//    minWorksetSizeForPolyOrder[4] = 1;
-//    minWorksetSizeForPolyOrder[5] = 1;
-//    minWorksetSizeForPolyOrder[6] = 1;
-//    minWorksetSizeForPolyOrder[7] = 1;
-//    minWorksetSizeForPolyOrder[8] = 1;
-//
-//    switch (mode) {
-//      case Calibration:
-//      {
-//        for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
-//        {
-//          for (int worksetSize : worksetSizes)
-//          {
-//            if (worksetSize > maxWorksetSizeForPolyOrder[polyOrder])
-//            {
-//              continue;
-//            }
-//            if (worksetSize < minWorksetSizeForPolyOrder[polyOrder])
-//            {
-//              continue;
-//            }
-//            // use the same worksetSize for all AlgorithmChoice's
-//            WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-//            for (auto algorithmChoice : algorithmChoices)
-//            {
-//              worksetForAlgorithmChoice[algorithmChoice] = worksetSize;
-//            }
-//            polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
-//          }
-//        }
-//      }
-//      break;
-//      case Test:
-//      {
-//        // for test run, use the same modestly-sized tuples for each AlgorithmChoice
-//        // (note that meshWidth varies here)
-//        vector< tuple<int,int,int> > testCases { tuple<int,int,int> {1,8,512},
-//                                                 tuple<int,int,int> {2,8,256},
-//                                                 tuple<int,int,int> {3,4,64},
-//                                                 tuple<int,int,int> {3,4,9} // test case whose workset size does not evenly divide the cell count
-//        };
-//
-//        for (auto testCase : testCases )
-//        {
-//          int polyOrder   = std::get<0>(testCase);
-//          int meshWidth   = std::get<1>(testCase);
-//
-//          int numCells = 1;
-//          for (int d=0; d<spaceDim; d++)
-//          {
-//            numCells *= meshWidth;
-//          }
-//
-//          WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-//          for (auto algorithmChoice : algorithmChoices)
-//          {
-//            worksetForAlgorithmChoice[algorithmChoice] = std::get<2>(testCase);
-//          }
-//          worksetForAlgorithmChoice[Uniform] = numCells;
-//          polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
-//        }
-//      }
-//      break;
-//      case BestSerial:
-//      {
-//        // manually calibrated workset sizes on iMac Pro (2.3 GHz Xeon W, 18-core, running in serial)
-//        // (these were calibrated without much tuning for the affine tensor case; if/when that happens, will want to recalibrate.)
-//
-//        map<int,int> standardWorksetForPolyOrder;
-//        standardWorksetForPolyOrder[1] = 64;
-//        standardWorksetForPolyOrder[2] = 64;
-//        standardWorksetForPolyOrder[3] = 128;
-//        standardWorksetForPolyOrder[4] = 64;
-//        standardWorksetForPolyOrder[5] = 16;
-//        standardWorksetForPolyOrder[6] = 2;
-//        standardWorksetForPolyOrder[7] = 2;
-//        standardWorksetForPolyOrder[8] = 1;
-//
-//        // Non-Affine Tensor
-//        // it turns out 4096 is the best choice for the PointValueCache algorithm for any polyOrder from 1 to 5
-//        // this likely means we're not exposing enough parallelism within the cell.
-//        map<int,int> nonAffineTensorWorksetForPolyOrder;
-//        nonAffineTensorWorksetForPolyOrder[1] = 256;
-//        nonAffineTensorWorksetForPolyOrder[2] = 256;
-//        nonAffineTensorWorksetForPolyOrder[3] = 128;
-//        nonAffineTensorWorksetForPolyOrder[4] = 64;
-//        nonAffineTensorWorksetForPolyOrder[5] = 16;
-//        nonAffineTensorWorksetForPolyOrder[6] = 8;
-//        nonAffineTensorWorksetForPolyOrder[7] = 2;
-//        nonAffineTensorWorksetForPolyOrder[8] = 2;
-//
-//        map<int,int> affineTensorWorksetForPolyOrder;
-//        affineTensorWorksetForPolyOrder[1] = 256;
-//        affineTensorWorksetForPolyOrder[2] = 128;
-//        affineTensorWorksetForPolyOrder[3] = 16;
-//        affineTensorWorksetForPolyOrder[4] = 4;
-//        affineTensorWorksetForPolyOrder[5] = 2;
-//        affineTensorWorksetForPolyOrder[6] = 1;
-//        affineTensorWorksetForPolyOrder[7] = 1;
-//        affineTensorWorksetForPolyOrder[8] = 1;
-//
-//        // for the cases that we have not tried yet, we try to choose sensible guesses for workset size:
-//        // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
-//        int worksetSize = 1;
-//        for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
-//        {
-//          nonAffineTensorWorksetForPolyOrder[polyOrder] = worksetSize;
-//          affineTensorWorksetForPolyOrder[polyOrder]    = worksetSize;
-//          standardWorksetForPolyOrder[polyOrder]        = worksetSize;
-//        }
-//
-//        int numCells = 1;
-//        for (int d=0; d<spaceDim; d++)
-//        {
-//          numCells *= meshWidth;
-//        }
-//
-//        for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
-//        {
-//          WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-//          worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
-//          worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-//          worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
-//          worksetForAlgorithmChoice[Uniform]         = numCells;
-//
-//          polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
-//        }
-//      }
-//        break;
-//      case BestCuda:
-//      {
-//        {
-//          // STANDARD
-//          // manually calibrated workset size on P100 (ride) - best for Standard
-//          // these are for 4096-element meshes
-//          map<int,int> standardWorksetForPolyOrder;
-//          standardWorksetForPolyOrder[1] = 4096;
-//          standardWorksetForPolyOrder[2] = 1024;
-//          standardWorksetForPolyOrder[3] = 128;
-//          standardWorksetForPolyOrder[4] = 64;
-//          standardWorksetForPolyOrder[5] = 8;
-//          standardWorksetForPolyOrder[6] = 4;
-//          standardWorksetForPolyOrder[7] = 2;
-//          standardWorksetForPolyOrder[8] = 1;
-//
-//          // Non-Affine Tensor
-//          // it turns out 4096 is the best choice for the PointValueCache algorithm for any polyOrder from 1 to 5
-//          // this likely means we're not exposing enough parallelism within the cell.
-//          map<int,int> nonAffineTensorWorksetForPolyOrder;
-//          nonAffineTensorWorksetForPolyOrder[1] = 4096;
-//          nonAffineTensorWorksetForPolyOrder[2] = 4096;
-//          nonAffineTensorWorksetForPolyOrder[3] = 4096;
-//          nonAffineTensorWorksetForPolyOrder[4] = 4096;
-//          nonAffineTensorWorksetForPolyOrder[5] = 4096;
-//          nonAffineTensorWorksetForPolyOrder[6] = 2048;
-//          nonAffineTensorWorksetForPolyOrder[7] = 512;
-//          nonAffineTensorWorksetForPolyOrder[8] = 512;
-//
-//          // for the cases that we have not tried yet, we try to choose sensible guesses for workset size:
-//          int nonAffineWorksetSize = 256; // divide by 2 for each polyOrder beyond 8
-//          int standardWorksetSize  = 1;  // 1 is best, we think, for polyOrder 8, so it'll be the best for the rest.
-//          for (int polyOrder=9; polyOrder <= polyOrderMax; polyOrder++)
-//          {
-//            nonAffineTensorWorksetForPolyOrder[polyOrder] = nonAffineWorksetSize;
-//            nonAffineWorksetSize = (nonAffineWorksetSize > 1) ? nonAffineWorksetSize / 2 : 1;
-//            standardWorksetForPolyOrder[polyOrder] = standardWorksetSize;
-//          }
-//
-//          int numCells = 1;
-//          for (int d=0; d<spaceDim; d++)
-//          {
-//            numCells *= meshWidth;
-//          }
-//
-//          for (int polyOrder=polyOrderMin; polyOrder<=polyOrderMax; polyOrder++)
-//          {
-//            WorksetForAlgorithmChoice worksetForAlgorithmChoice;
-//            worksetForAlgorithmChoice[Standard]        = standardWorksetForPolyOrder       [polyOrder];
-//            worksetForAlgorithmChoice[NonAffineTensor] = nonAffineTensorWorksetForPolyOrder[polyOrder];
-//            worksetForAlgorithmChoice[AffineTensor]    = nonAffineTensorWorksetForPolyOrder[polyOrder];
-//            worksetForAlgorithmChoice[Uniform]         = numCells;
-//
-//            polyOrderMeshWidthWorksetTestCases.push_back(tuple<int,int,WorksetForAlgorithmChoice>{polyOrder,meshWidth,worksetForAlgorithmChoice} );
-//          }
-//        }
-//        break;
-//
-//      default:
-//        break;
-//    }
-//    }
-//
-//    cout << std::setprecision(2) << std::scientific;
-//
-//    map< AlgorithmChoice, map<int, pair<double,int> > > maxAlgorithmThroughputForPolyOrder; // values are (throughput in GFlops/sec, worksetSize)
-//
-//    const int charWidth = 15;
-//
-//    for (auto & testCase : polyOrderMeshWidthWorksetTestCases)
-//    {
-//      int polyOrder       = std::get<0>(testCase);
-//      int meshWidth       = std::get<1>(testCase);
-//      auto worksetSizeMap = std::get<2>(testCase);
-//      std::cout << "\n\n";
-//      std::cout << "Running with polyOrder = " << polyOrder << ", meshWidth = " << meshWidth << std::endl;
-//      for (auto algorithmChoice : algorithmChoices)
-//      {
-//        int worksetSize = worksetSizeMap[algorithmChoice];
-//        auto geometry = getMesh<Scalar, spaceDim, ExecutionSpace>(algorithmChoice, meshWidth);
-//
-//        // timers recorded in performStructuredQuadratureHypercubeGRADGRAD, performStandardQuadratureHypercubeGRADGRAD
-//        auto jacobianAndCellMeasureTimer = Teuchos::TimeMonitor::getNewTimer("Jacobians");
-//        auto fstIntegrateCall = Teuchos::TimeMonitor::getNewTimer("transform + integrate()");
-//        auto initialSetupTimer = Teuchos::TimeMonitor::getNewTimer("Initial Setup");
-//
-//        jacobianAndCellMeasureTimer->reset();
-//        fstIntegrateCall->reset();
-//        initialSetupTimer->reset();
-//
-//        double elapsedTimeSeconds = 0;
-//        double jacobianCellMeasureFlopCount = 0;
-//        double transformIntegrateFlopCount = 0;
-//
-//        if (algorithmChoice == Standard)
-//        {
-//          // each cell needs on the order of polyOrder^N quadrature points, each of which has a Jacobian of size N * N.
-//          auto timer = Teuchos::TimeMonitor::getNewTimer("Standard Integration");
-//          timer->start();
-//          performStandardQuadratureHypercubeGRADGRAD<Scalar,Scalar,spaceDim,ExecutionSpace>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-//          timer->stop();
-//          elapsedTimeSeconds = timer->totalElapsedTime();
-//
-//          cout << "Standard, workset size:          " << setw(charWidth) << worksetSize << endl;
-//
-//          timer->reset();
-//        }
-//        else if (algorithmChoice == AffineTensor)
-//        {
-//          auto timer = Teuchos::TimeMonitor::getNewTimer("Affine tensor Integration");
-//          timer->start();
-//          performStructuredQuadratureHypercubeGRADGRAD<Scalar>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-//          timer->stop();
-//
-//          elapsedTimeSeconds = timer->totalElapsedTime();
-//
-//          cout << "Affine Tensor, workset size:     " << setw(charWidth) << worksetSize << endl;
-//
-//          timer->reset();
-//        }
-//        else if (algorithmChoice == NonAffineTensor)
-//        {
-//          auto timer = Teuchos::TimeMonitor::getNewTimer("Non-affine tensor Integration");
-//          timer->start();
-//          performStructuredQuadratureHypercubeGRADGRAD<Scalar>(geometry, polyOrder, worksetSize, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-//          timer->stop();
-//
-//          elapsedTimeSeconds = timer->totalElapsedTime();
-//
-//          cout << "Non-Affine Tensor, workset size: " << setw(charWidth) << worksetSize << endl;
-//
-//          timer->reset();
-//        }
-//        else if (algorithmChoice == Uniform)
-//        {
-//          // for uniform, override worksetSize: no loss in taking maximal worksetSize
-//          int numCells = 1;
-//          for (int d=0; d<spaceDim; d++)
-//          {
-//            numCells *= meshWidth;
-//          }
-//          auto timer = Teuchos::TimeMonitor::getNewTimer("Uniform Integration");
-//          timer->start();
-//          performStructuredQuadratureHypercubeGRADGRAD<Scalar>(geometry, polyOrder, numCells, transformIntegrateFlopCount, jacobianCellMeasureFlopCount);
-//          timer->stop();
-//
-//          elapsedTimeSeconds = timer->totalElapsedTime();
-//
-//          cout << "Uniform, workset size:           " << setw(charWidth) << worksetSize << endl;
-//
-//          timer->reset();
-//        }
-//
-//        const double approximateFlopCountTotal = transformIntegrateFlopCount + jacobianCellMeasureFlopCount;
-//        const double overallThroughputInGFlops = approximateFlopCountTotal / elapsedTimeSeconds / 1.0e9;
-//
-//        const double previousMaxThroughput = maxAlgorithmThroughputForPolyOrder[algorithmChoice][polyOrder].first;
-//        if (overallThroughputInGFlops > previousMaxThroughput)
-//        {
-//          maxAlgorithmThroughputForPolyOrder[algorithmChoice][polyOrder] = make_pair(overallThroughputInGFlops,worksetSize);
-//        }
-//
-//        // timing details
-//        double integrateCallTime       = fstIntegrateCall->totalElapsedTime();
-//        double integrateCallPercentage = integrateCallTime / elapsedTimeSeconds * 100.0;
-//        double jacobianTime            = jacobianAndCellMeasureTimer->totalElapsedTime();
-//        double jacobianPercentage      = jacobianTime / elapsedTimeSeconds * 100.0;
-//        double initialSetupTime        = initialSetupTimer->totalElapsedTime();
-//        double initialSetupPercentage  = initialSetupTime / elapsedTimeSeconds * 100.0;
-//        double remainingTime           = elapsedTimeSeconds - (integrateCallTime + jacobianTime + initialSetupTime);
-//        double remainingPercentage     = remainingTime / elapsedTimeSeconds * 100.0;
-//
-//        const double transformIntegrateThroughputInGFlops = transformIntegrateFlopCount  / integrateCallTime / 1.0e9;
-//        const double jacobiansThroughputInGFlops          = jacobianCellMeasureFlopCount / jacobianTime      / 1.0e9;
-//        cout << "Time (core integration)          " << setw(charWidth) << std::scientific << integrateCallTime << " seconds (" << std::fixed << integrateCallPercentage << "%)." << endl;
-//        cout << "flop estimate (core):            " << setw(charWidth) << std::scientific << transformIntegrateFlopCount << endl;
-//        cout << "estimated throughput (core):     " << setw(charWidth) << std::scientific << transformIntegrateThroughputInGFlops << " GFlops" << endl;
-//        cout << std::fixed;
-//        cout << "Time (Jacobians)                 " << setw(charWidth) << std::scientific << jacobianTime      << " seconds (" << std::fixed << jacobianPercentage      << "%)." << endl;
-//        cout << "flop estimate (Jacobians):       " << setw(charWidth) << std::scientific << jacobianCellMeasureFlopCount << endl;
-//        cout << "estimated throughput (Jac.):     " << setw(charWidth) << std::scientific << jacobiansThroughputInGFlops << " GFlops" << endl;
-//        cout << "Time (initial setup)             " << setw(charWidth) << std::scientific << initialSetupTime  << " seconds (" << std::fixed << initialSetupPercentage  << "%)." << endl;
-//        cout << "Time (other)                     " << setw(charWidth) << std::scientific << remainingTime     << " seconds (" << std::fixed << remainingPercentage     << "%)." << endl;
-//        cout << "Time (total):                    " << setw(charWidth) << std::scientific << elapsedTimeSeconds   << " seconds.\n";
-//        cout << "flop estimate (total):           " << setw(charWidth) << std::scientific << approximateFlopCountTotal << endl;
-//        cout << "estimated throughput (total):    " << setw(charWidth) << std::scientific << overallThroughputInGFlops << " GFlops" << endl;
-//
-//        cout << endl;
-//      }
-//    }
-//
-//    if (mode == Calibration)
-//    {
-//      for (auto & algorithmChoice : algorithmChoices)
-//      {
-//        cout << "Best workset sizes for " << to_string(algorithmChoice) << ":" << endl;
-//
-//        for (auto & maxThroughputEntry : maxAlgorithmThroughputForPolyOrder[algorithmChoice])
-//        {
-//          int polyOrder   = maxThroughputEntry.first;
-//          int worksetSize = maxThroughputEntry.second.second;
-//          double throughput = maxThroughputEntry.second.first;
-//          cout << "p = " << polyOrder << ":" << setw(5) << worksetSize << " (" << throughput << " GFlops/sec)\n";
-//        }
-//      }
-//    }
   }
   
-  return 0;
+  if (success)
+    return 0;
+  else
+    return -1;
 }
