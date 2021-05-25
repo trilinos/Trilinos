@@ -147,6 +147,10 @@ namespace
     B_dimInfo.variationType = CONSTANT;
     AB_dimInfo.variationType = GENERAL;
     
+    A_dimInfo.dataExtent  =  A_dimInfo.nominalExtent / ( A_dimInfo.nominalExtent /  A_dimInfo.variationModulus);
+    B_dimInfo.dataExtent  =  B_dimInfo.nominalExtent / ( B_dimInfo.nominalExtent /  B_dimInfo.variationModulus);
+    AB_dimInfo.dataExtent = AB_dimInfo.nominalExtent / (AB_dimInfo.nominalExtent / AB_dimInfo.variationModulus);
+    
     // combinedDimensionInfo should commute, so let's test both directions:
     DimensionInfo AB_dimInfoActual_LR = combinedDimensionInfo(A_dimInfo, B_dimInfo);
     DimensionInfo AB_dimInfoActual_RL = combinedDimensionInfo(B_dimInfo, A_dimInfo);
@@ -196,7 +200,7 @@ namespace
     Kokkos::RangePolicy<ExecSpaceType> policy(0,1); // trivial policy: 1 entry
     Kokkos::parallel_for("set lastVal", policy,
     KOKKOS_LAMBDA (const int &i) {
-      auto & lastVal = data.getWritableEntry(numRows-1, numCols-1, 0, 0, 0, 0, 0);
+      auto & lastVal = data.getWritableEntry(numRows-1, numCols-1);
       lastVal = lastValueToSet;
     });
     

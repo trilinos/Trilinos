@@ -341,166 +341,51 @@ namespace Intrepid2 {
       }
     }
     
-    //! special-case for when underlying matches notional for all arguments.
+    //! special case when underlying matches notional for all arguments.
     template<class BinaryOperator, int underlyingRank>
-    void storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    enable_if_t<underlyingRank != 7, void>
+    storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
-      Kokkos::Array<int,underlyingRank> zero;
-      Kokkos::Array<int,underlyingRank> extents;
-      for (int i=0; i<underlyingRank; i++)
-      {
-        zero[i]    = 0;
-        extents[i] = this->extent_int(i);
-      }
+      auto policy = dataExtentRangePolicy<underlyingRank>();
       
-      switch (underlyingRank)
-      {
-        case 1:
-        {
-          const int dataRank = 1;
-          
-          const int dataExtent = this->getDataExtent(0);
-          using ExecutionSpace = typename DeviceType::execution_space;
-          Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,dataExtent);
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0) {
-            auto & result      = this_underlying(i0);
-            const auto & A_val = A_underlying   (i0);
-            const auto & B_val = B_underlying   (i0);
-            
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-          break;
-        case 2:
-        {
-          const int dataRank = 2;
-          auto policy = dataExtentRangePolicy<dataRank>();
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0, const int &i1) {
-            auto & result      = this_underlying(i0,i1);
-            const auto & A_val = A_underlying   (i0,i1);
-            const auto & B_val = B_underlying   (i0,i1);
-            
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-          break;
-        case 3:
-        {
-          const int dataRank = 3;
-          auto policy = dataExtentRangePolicy<dataRank>();
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2) {
-            auto & result      = this_underlying(i0,i1,i2);
-            const auto & A_val = A_underlying   (i0,i1,i2);
-            const auto & B_val = B_underlying   (i0,i1,i2);
-            
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-          break;
-        case 4:
-        {
-          const int dataRank = 4;
-          auto policy = dataExtentRangePolicy<dataRank>();
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3) {
-            auto & result      = this_underlying(i0,i1,i2,i3);
-            const auto & A_val = A_underlying   (i0,i1,i2,i3);
-            const auto & B_val = B_underlying   (i0,i1,i2,i3);
-            
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-          break;
-        case 5:
-        {
-          const int dataRank = 5;
-          auto policy = dataExtentRangePolicy<dataRank>();
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4) {
-            auto & result      = this_underlying(i0,i1,i2,i3,i4);
-            const auto & A_val = A_underlying   (i0,i1,i2,i3,i4);
-            const auto & B_val = B_underlying   (i0,i1,i2,i3,i4);
-            
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-          break;
-        case 6:
-        {
-          const int dataRank = 6;
-          auto policy = dataExtentRangePolicy<dataRank>();
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
-            auto & result      = this_underlying(i0,i1,i2,i3,i4,i5);
-            const auto & A_val = A_underlying   (i0,i1,i2,i3,i4,i5);
-            const auto & B_val = B_underlying   (i0,i1,i2,i3,i4,i5);
-            
-            result = binaryOperator(A_val,B_val);
-          });
-        }
-          break;
-        case 7:
-        {
-          const int dataRank = 7;
-          auto policy = dataExtentRangePolicy<6>();
-          
-          auto this_underlying = this->getUnderlyingView<dataRank>();
-          auto A_underlying = A.getUnderlyingView<dataRank>();
-          auto B_underlying = B.getUnderlyingView<dataRank>();
-          
-          const int dim6 = this->extent_int(6);
-          
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
-            for (int i6=0; i6<dim6; i6++)
-            {
-              auto & result      = this_underlying(i0,i1,i2,i3,i4,i5,i6);
-              const auto & A_val = A_underlying   (i0,i1,i2,i3,i4,i5,i6);
-              const auto & B_val = B_underlying   (i0,i1,i2,i3,i4,i5,i6);
-              
-              result = binaryOperator(A_val,B_val);
-            }
-          });
-        }
-          break;
-        default:
-          INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "rank not handled in switch");
-      }
+      auto this_underlying = this->getUnderlyingView<underlyingRank>();
+      auto A_underlying = A.getUnderlyingView<underlyingRank>();
+      auto B_underlying = B.getUnderlyingView<underlyingRank>();
       
+        Kokkos::parallel_for("compute in-place", policy,
+        KOKKOS_LAMBDA (auto ...args) {
+          auto & result      = this_underlying(args...);
+          const auto & A_val = A_underlying   (args...);
+          const auto & B_val = B_underlying   (args...);
+          
+          result = binaryOperator(A_val,B_val);
+        });
       
+    }
+    
+    //! special case when underlying matches notional for all arguments.
+    template<class BinaryOperator, int underlyingRank>
+    enable_if_t<underlyingRank == 7, void>
+    storeInPlaceCombination_UnderlyingMatchesNotionalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
+    {
+      auto policy = dataExtentRangePolicy<underlyingRank>();
+      
+      auto this_underlying = this->getUnderlyingView<underlyingRank>();
+      auto A_underlying = A.getUnderlyingView<underlyingRank>();
+      auto B_underlying = B.getUnderlyingView<underlyingRank>();
+    
+      const ordinal_type dim6 = getDataExtent(6);
+      Kokkos::parallel_for("compute in-place", policy,
+      KOKKOS_LAMBDA (auto ...args) {
+        for (int i6=0; i6<dim6; i6++)
+        {
+          auto & result      = this_underlying(args...,i6);
+          const auto & A_val = A_underlying   (args...,i6);
+          const auto & B_val = B_underlying   (args...,i6);
+          
+          result = binaryOperator(A_val,B_val);
+        }
+      });
     }
   public:
     //! applies the specified unary operator to each entry
@@ -608,72 +493,66 @@ namespace Intrepid2 {
     }
     
     //! Returns an l-value reference to the specified nominal entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
+    template<class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
-    reference_type getWritableEntry(const int & i0, const int & i1, const int & i2,
-                                    const int & i3, const int & i4, const int & i5,
-                                    const int & i6) const
+    reference_type getWritableEntry(const IntArgs... intArgs) const
     {
+#ifdef INTREPID2_HAVE_DEBUG
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(numArgs != rank_, std::invalid_argument, "getWritableEntry() should have the same number of arguments as the logical rank.");
+#endif
+      constexpr int numArgs = sizeof...(intArgs);
       if (underlyingMatchesNotional_)
       {
-        switch (dataRank_)
-        {
-          case 1: return data1_.access(i0,i1,i2,i3,i4,i5,i6);
-          case 2: return data2_.access(i0,i1,i2,i3,i4,i5,i6);
-          case 3: return data3_.access(i0,i1,i2,i3,i4,i5,i6);
-          case 4: return data4_.access(i0,i1,i2,i3,i4,i5,i6);
-          case 5: return data5_.access(i0,i1,i2,i3,i4,i5,i6);
-          case 6: return data6_.access(i0,i1,i2,i3,i4,i5,i6);
-          case 7: return data7_.access(i0,i1,i2,i3,i4,i5,i6);
-          default:
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "invalid dataRank_");
-        }
+        // in this case, we require that numArgs == dataRank_
+        return getUnderlyingView<numArgs>()(intArgs...);
       }
       
-      const Kokkos::Array<int,7> args {i0,i1,i2,i3,i4,i5,i6};
-      Kokkos::Array<int,7> refEntry;
+      // extract the type of the first argument; use that for the arrays below
+      using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
       
-      for (int d=0; d<7; d++)
+      const Kokkos::Array<int_type, numArgs> args {intArgs...};
+      Kokkos::Array<int_type, 7> refEntry;
+      for (int d=0; d<numArgs; d++)
       {
-        if (variationType_[d] == GENERAL)
+        switch (variationType_[d])
         {
-          refEntry[d] = args[d];
-        }
-        else if (variationType_[d] == MODULAR)
-        {
-          refEntry[d] = args[d] % variationModulus_[d];
-        }
-        else if (variationType_[d] == BLOCK_PLUS_DIAGONAL)
-        {
-          const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
-          
-          const int &i = args[d];
-          const int &j = args[d+1];
-          
-          if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
+          case CONSTANT: refEntry[d] = 0;                              break;
+          case GENERAL:  refEntry[d] = args[d];                        break;
+          case MODULAR:  refEntry[d] = args[d] % variationModulus_[d]; break;
+          case BLOCK_PLUS_DIAGONAL:
           {
-            if (i != j)
+            const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
+            
+            const int_type &i = args[d];
+            const int_type &j = args[d+1];
+            
+            if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
             {
-              // off diagonal: zero
-              return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
+              if (i != j)
+              {
+                // off diagonal: zero
+                return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
+              }
+              else
+              {
+                refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
+              }
             }
             else
             {
-              refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
+              refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
             }
+            
+            // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
+            refEntry[d+1] = 0;
+            d++;
           }
-          else
-          {
-            refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
-          }
-          
-          // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
-          refEntry[d+1] = 0;
-          d++;
         }
-        else if (variationType_[d] == CONSTANT)
-        {
-          refEntry[d] = 0;
-        }
+      }
+       // refEntry should be zero-filled beyond numArgs, for cases when rank_ < dataRank_ (this only is allowed if the extra dimensions each has extent 1).
+      for (int d=numArgs; d<7; d++)
+      {
+        refEntry[d] = 0;
       }
       
       if (dataRank_ == 1)
@@ -1435,209 +1314,140 @@ namespace Intrepid2 {
       return variationType_;
     }
     
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4, typename iType5, typename iType6>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value && std::is_integral<iType5>::value &&
-         std::is_integral<iType6>::value),
-        return_type>::type
-    getEntry(const iType0& i0, const iType1& i1, const iType2& i2,
-             const iType3& i3, const iType4& i4, const iType5& i5,
-             const iType6& i6) const
+    //! Returns a (read-only) value corresponding to the specified notional data location.
+    template<class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+    return_type getEntry(const IntArgs... intArgs) const
     {
-      const Kokkos::Array<int,7> args {static_cast<int>(i0),static_cast<int>(i1),static_cast<int>(i2),
-                                       static_cast<int>(i3),static_cast<int>(i4),static_cast<int>(i5),
-                                       static_cast<int>(i6)};
-      Kokkos::Array<int,7> refEntry;
-      
-      for (int d=0; d<7; d++)
-      {
-        if (variationType_[d] == GENERAL)
-        {
-          refEntry[d] = args[d];
-        }
-        else if (variationType_[d] == MODULAR)
-        {
-          refEntry[d] = args[d] % variationModulus_[d];
-        }
-        else if (variationType_[d] == BLOCK_PLUS_DIAGONAL)
-        {
-          const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
-          
-          const int &i = args[d];
-          const int &j = args[d+1];
-          
-          if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
-          {
-            if (i != j)
-            {
-              // off diagonal: zero
-              return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
-            }
-            else
-            {
-              refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
-            }
-          }
-          else
-          {
-            refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
-          }
-          
-          // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
-          refEntry[d+1] = 0;
-          d++;
-        }
-        else if (variationType_[d] == CONSTANT)
-        {
-          refEntry[d] = 0;
-        }
-      }
-      
-      if (dataRank_ == 1)
-      {
-        return data1_(refEntry[activeDims_[0]]);
-      }
-      else if (dataRank_ == 2)
-      {
-        return data2_(refEntry[activeDims_[0]],refEntry[activeDims_[1]]);
-      }
-      else if (dataRank_ == 3)
-      {
-        return data3_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]]);
-      }
-      else if (dataRank_ == 4)
-      {
-        return data4_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]]);
-      }
-      else if (dataRank_ == 5)
-      {
-        return data5_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]]);
-      }
-      else if (dataRank_ == 6)
-      {
-        return data6_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]],refEntry[activeDims_[5]]);
-      }
-      else // dataRank_ == 7
-      {
-        return data7_(refEntry[activeDims_[0]],refEntry[activeDims_[1]],refEntry[activeDims_[2]],refEntry[activeDims_[3]],
-                      refEntry[activeDims_[4]],refEntry[activeDims_[5]],refEntry[activeDims_[6]]);
-      }
+      return getWritableEntry(intArgs...);
     }
     
+    template <bool...> struct bool_pack;
+
+    template <bool... v>
+    using all_true = std::is_same<bool_pack<true, v...>, bool_pack<v..., true>>;
+    
+    template <class ...IntArgs>
+    using valid_args = all_true<std::is_integral<IntArgs>{}...>;
+    
+    static_assert(valid_args<int,long,unsigned>::value, "valid args works");
+
     //! Returns a value corresponding to the specified notional data location.
-    template <typename iType>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType>::value),
-        return_type>::type
-    operator()(const iType& i0) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data1_(i0);
-      }
-      return getEntry(i0,0,0,0,0,0,0);
+    template <class ...IntArgs>
+    KOKKOS_INLINE_FUNCTION
+    enable_if_t<valid_args<IntArgs...>::value && (sizeof...(IntArgs) <= 7),return_type>
+    operator()(const IntArgs&... intArgs) const {
+      return getEntry(intArgs...);
     }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data2_(i0,i1);
-      }
-      return getEntry(i0,i1,0,0,0,0,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data3_(i0,i1,i2);
-      }
-      return getEntry(i0,i1,i2,0,0,0,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data4_(i0,i1,i2,i3);
-      }
-      return getEntry(i0,i1,i2,i3,0,0,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3, const iType4& i4) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data5_(i0,i1,i2,i3,i4);
-      }
-      return getEntry(i0,i1,i2,i3,i4,0,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4, typename iType5>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value && std::is_integral<iType5>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3, const iType4& i4, const iType5& i5) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data6_(i0,i1,i2,i3,i4,i5);
-      }
-      return getEntry(i0,i1,i2,i3,i4,i5,0);
-    }
-    
-    //! Returns a value corresponding to the specified notional data location.
-    template <typename iType0, typename iType1, typename iType2, typename iType3,
-              typename iType4, typename iType5, typename iType6>
-    KOKKOS_INLINE_FUNCTION typename std::enable_if<
-        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
-         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
-         std::is_integral<iType4>::value && std::is_integral<iType5>::value &&
-         std::is_integral<iType6>::value),
-        return_type>::type
-    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
-               const iType3& i3, const iType4& i4, const iType5& i5,
-               const iType6& i6) const {
-      if (underlyingMatchesNotional_)
-      {
-        return data7_(i0,i1,i2,i3,i4,i5,i6);
-      }
-      return getEntry(i0,i1,i2,i3,i4,i5,i6);
-    }
-    
+
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType>::value),
+//        return_type>::type
+//    operator()(const iType& i0) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data1_(i0);
+//      }
+//      return getEntry(i0);
+//    }
+//
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType0, typename iType1>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value),
+//        return_type>::type
+//    operator()(const iType0& i0, const iType1& i1) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data2_(i0,i1);
+//      }
+//      return getEntry(i0,i1);
+//    }
+//
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType0, typename iType1, typename iType2>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
+//         std::is_integral<iType2>::value),
+//        return_type>::type
+//    operator()(const iType0& i0, const iType1& i1, const iType2& i2) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data3_(i0,i1,i2);
+//      }
+//      return getEntry(i0,i1,i2);
+//    }
+//
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType0, typename iType1, typename iType2, typename iType3>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
+//         std::is_integral<iType2>::value && std::is_integral<iType3>::value),
+//        return_type>::type
+//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
+//               const iType3& i3) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data4_(i0,i1,i2,i3);
+//      }
+//      return getEntry(i0,i1,i2,i3);
+//    }
+//
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType0, typename iType1, typename iType2, typename iType3,
+//              typename iType4>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
+//         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
+//         std::is_integral<iType4>::value),
+//        return_type>::type
+//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
+//               const iType3& i3, const iType4& i4) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data5_(i0,i1,i2,i3,i4);
+//      }
+//      return getEntry(i0,i1,i2,i3,i4);
+//    }
+//
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType0, typename iType1, typename iType2, typename iType3,
+//              typename iType4, typename iType5>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
+//         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
+//         std::is_integral<iType4>::value && std::is_integral<iType5>::value),
+//        return_type>::type
+//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
+//               const iType3& i3, const iType4& i4, const iType5& i5) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data6_(i0,i1,i2,i3,i4,i5);
+//      }
+//      return getEntry(i0,i1,i2,i3,i4,i5);
+//    }
+//
+//    //! Returns a value corresponding to the specified notional data location.
+//    template <typename iType0, typename iType1, typename iType2, typename iType3,
+//              typename iType4, typename iType5, typename iType6>
+//    KOKKOS_INLINE_FUNCTION typename std::enable_if<
+//        (std::is_integral<iType0>::value && std::is_integral<iType1>::value &&
+//         std::is_integral<iType2>::value && std::is_integral<iType3>::value &&
+//         std::is_integral<iType4>::value && std::is_integral<iType5>::value &&
+//         std::is_integral<iType6>::value),
+//        return_type>::type
+//    operator()(const iType0& i0, const iType1& i1, const iType2& i2,
+//               const iType3& i3, const iType4& i4, const iType5& i5,
+//               const iType6& i6) const {
+//      if (underlyingMatchesNotional_)
+//      {
+//        return data7_(i0,i1,i2,i3,i4,i5,i6);
+//      }
+//      return getEntry(i0,i1,i2,i3,i4,i5,i6);
+//    }
+//
     //! Returns the notional extent in the specified dimension.
     KOKKOS_INLINE_FUNCTION
     int extent_int(const int& r) const
@@ -2000,9 +1810,10 @@ namespace Intrepid2 {
       return Data<DataScalar,DeviceType>(data,resultRank,resultExtents,resultVariationTypes);
     }
     
-    //! returns an MDRangePolicy over the underlying data extents (but with the nominal shape).
+    //! returns an MDRangePolicy over the underlying data extents (but with the logical shape).
     template<int rank>
-    Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<rank>> dataExtentRangePolicy()
+    enable_if_t<(rank!=1) && (rank!=7), Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<rank>> >
+    dataExtentRangePolicy()
     {
       using ExecutionSpace = typename DeviceType::execution_space;
       Kokkos::Array<int,rank> startingOrdinals;
@@ -2017,12 +1828,41 @@ namespace Intrepid2 {
       return policy;
     }
     
+    //! returns an MDRangePolicy over the first six underlying data extents (but with the logical shape).
+    template<int rank>
+    enable_if_t<rank==7, Kokkos::MDRangePolicy<typename DeviceType::execution_space,Kokkos::Rank<6>> >
+    dataExtentRangePolicy()
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::Array<int,6> startingOrdinals;
+      Kokkos::Array<int,6> extents;
+      
+      for (int d=0; d<6; d++)
+      {
+        startingOrdinals[d] = 0;
+        extents[d] = getDataExtent(d);
+      }
+      auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<6>>(startingOrdinals,extents);
+      return policy;
+    }
+    
+    template<int rank>
+    KOKKOS_INLINE_FUNCTION
+    enable_if_t<rank==1, Kokkos::RangePolicy<typename DeviceType::execution_space> >
+    dataExtentRangePolicy()
+    {
+      using ExecutionSpace = typename DeviceType::execution_space;
+      Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,getDataExtent(0));
+      return policy;
+    }
+    
     //! Places the result of an in-place combination (e.g., entrywise sum) into this data container.
     template<class BinaryOperator>
     void storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
       using ExecutionSpace = typename DeviceType::execution_space;
 
+#ifdef INTREPID2_HAVE_DEBUG
       // check nominal extents
       for (int d=0; d<rank_; d++)
       {
@@ -2030,6 +1870,7 @@ namespace Intrepid2 {
         INTREPID2_TEST_FOR_EXCEPTION(B.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all nominal extents");
       }
       // TODO: add some checks that data extent of this suffices to accept combined A + B data.
+#endif
       
       // special cases:
       if (this->getUnderlyingViewSize() == 1)
@@ -2069,35 +1910,131 @@ namespace Intrepid2 {
       // shallow copy of this to avoid implicit references to this in call to getWritableEntry() below
       Data<DataScalar,DeviceType> thisData = *this;
       
+      const bool A_constant = (A.getUnderlyingViewSize() == 1) && (A.getUnderlyingViewRank() == 1);
+      const bool B_constant = (B.getUnderlyingViewSize() == 1) && (B.getUnderlyingViewRank() == 1);
+      
       if (rank_ == 1)
       {
         int dataExtent = this->getDataExtent(0);
         Kokkos::RangePolicy<ExecutionSpace> policy(ExecutionSpace(),0,dataExtent);
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0) {
-          auto & result = thisData.getWritableEntry(i0, 0, 0, 0, 0, 0, 0);
-          const auto & A_val = A(i0);
-          const auto & B_val = B(i0);
-          result = binaryOperator(A_val,B_val);
-        });
+        if (A_constant)
+        {
+          auto A_underlying = A.getUnderlyingView<1>();
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const int &i0) {
+            auto & result = thisData.getWritableEntry(i0);
+            const auto & A_val = A_underlying(0);
+            const auto & B_val = B(i0);
+            result = binaryOperator(A_val,B_val);
+          });
+        }
+        else if (B_constant)
+        {
+          auto B_underlying = B.getUnderlyingView<1>();
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const int &i0) {
+            auto & result = thisData.getWritableEntry(i0);
+            const auto & A_val = A(i0);
+            const auto & B_val = B_underlying(0);
+            result = binaryOperator(A_val,B_val);
+          });
+        }
+        else
+        {
+          Kokkos::parallel_for("compute in-place", policy,
+          KOKKOS_LAMBDA (const int &i0) {
+            auto & result = thisData.getWritableEntry(i0);
+            const auto & A_val = A(i0);
+            const auto & B_val = B(i0);
+            result = binaryOperator(A_val,B_val);
+          });
+        }
       }
       else if (rank_ == 2)
       {
         auto policy = dataExtentRangePolicy<2>();
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const int &i0, const int &i1) {
-          auto & result = thisData.getWritableEntry(i0, i1, 0, 0, 0, 0, 0);
-          const auto & A_val = A(i0,i1);
-          const auto & B_val = B(i0,i1);
-          result = binaryOperator(A_val,B_val);
-        });
+        if (A_constant)
+        {
+          auto A_underlying = A.getUnderlyingView<1>();
+          if (this->underlyingMatchesNotional())
+          {
+            auto this_underlying = this->getUnderlyingView<2>();
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const int &i0, const int &i1) {
+              auto & result = this_underlying(i0, i1);
+              const auto & A_val = A_underlying(0);
+              const auto & B_val = B(i0,i1);
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+          else
+          {
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const int &i0, const int &i1) {
+              auto & result = thisData.getWritableEntry(i0, i1);
+              const auto & A_val = A_underlying(0);
+              const auto & B_val = B(i0,i1);
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+        }
+        else if (B_constant)
+        {
+          auto B_underlying = B.getUnderlyingView<1>();
+          if (this->underlyingMatchesNotional())
+          {
+            auto this_underlying = this->getUnderlyingView<2>();
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const int &i0, const int &i1) {
+              auto & result = this_underlying(i0, i1);
+              const auto & A_val = A(i0,i1);
+              const auto & B_val = B_underlying(0);
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+          else
+          {
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const int &i0, const int &i1) {
+              auto & result = thisData.getWritableEntry(i0, i1);
+              const auto & A_val = A(i0,i1);
+              const auto & B_val = B_underlying(0);
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+        }
+        else
+        {
+          if (this->underlyingMatchesNotional())
+          {
+            auto this_underlying = this->getUnderlyingView<2>();
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const int &i0, const int &i1) {
+              auto & result = this_underlying(i0, i1);
+              const auto & A_val = A(i0,i1);
+              const auto & B_val = B(i0,i1);
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+          else
+          {
+            Kokkos::parallel_for("compute in-place", policy,
+            KOKKOS_LAMBDA (const int &i0, const int &i1) {
+              auto & result = thisData.getWritableEntry(i0, i1);
+              const auto & A_val = A(i0,i1);
+              const auto & B_val = B(i0,i1);
+              result = binaryOperator(A_val,B_val);
+            });
+          }
+          
+        }
       }
       else if (rank_ == 3)
       {
         auto policy = dataExtentRangePolicy<3>();
         Kokkos::parallel_for("compute in-place", policy,
         KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, 0, 0, 0, 0);
+          auto & result = thisData.getWritableEntry(i0, i1, i2);
           const auto & A_val = A(i0,i1,i2);
           const auto & B_val = B(i0,i1,i2);
           result = binaryOperator(A_val,B_val);
@@ -2108,7 +2045,7 @@ namespace Intrepid2 {
         auto policy = dataExtentRangePolicy<4>();
         Kokkos::parallel_for("compute in-place", policy,
         KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, 0, 0, 0);
+          auto & result = thisData.getWritableEntry(i0, i1, i2, i3);
           const auto & A_val = A(i0,i1,i2,i3);
           const auto & B_val = B(i0,i1,i2,i3);
           result = binaryOperator(A_val,B_val);
@@ -2119,7 +2056,7 @@ namespace Intrepid2 {
         auto policy = dataExtentRangePolicy<5>();
         Kokkos::parallel_for("compute in-place", policy,
         KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, 0, 0);
+          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4);
           const auto & A_val = A(i0,i1,i2,i3,i4);
           const auto & B_val = B(i0,i1,i2,i3,i4);
           result = binaryOperator(A_val,B_val);
@@ -2130,7 +2067,7 @@ namespace Intrepid2 {
         auto policy = dataExtentRangePolicy<6>();
         Kokkos::parallel_for("compute in-place", policy,
         KOKKOS_LAMBDA (const int &i0, const int &i1, const int &i2, const int &i3, const int &i4, const int &i5) {
-          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, i5, 0);
+          auto & result = thisData.getWritableEntry(i0, i1, i2, i3, i4, i5);
           const auto & A_val = A(i0,i1,i2,i3,i4,i5);
           const auto & B_val = B(i0,i1,i2,i3,i4,i5);
           result = binaryOperator(A_val,B_val);
@@ -2217,7 +2154,7 @@ namespace Intrepid2 {
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<3>>({0,0,0},{getDataExtent(0),getDataExtent(1),matRows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &cellOrdinal, const int &pointOrdinal, const int &i) {
-          auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i, 0, 0, 0, 0);
+          auto & val_i = thisData.getWritableEntry(cellOrdinal, pointOrdinal, i);
           val_i = 0;
           for (int j=0; j<matCols; j++)
           {
@@ -2231,7 +2168,7 @@ namespace Intrepid2 {
         auto policy = Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>>({0,0},{getDataExtent(0),matRows});
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &vectorOrdinal, const int &i) {
-          auto & val_i = thisData.getWritableEntry(vectorOrdinal, i, 0, 0, 0, 0, 0);
+          auto & val_i = thisData.getWritableEntry(vectorOrdinal, i);
           val_i = 0;
           for (int j=0; j<matCols; j++)
           {
@@ -2245,7 +2182,7 @@ namespace Intrepid2 {
         Kokkos::RangePolicy<ExecutionSpace> policy(0,matRows);
         Kokkos::parallel_for("compute mat-vec", policy,
         KOKKOS_LAMBDA (const int &i) {
-          auto & val_i = thisData.getWritableEntry(i, 0, 0, 0, 0, 0, 0);
+          auto & val_i = thisData.getWritableEntry(i);
           val_i = 0;
           for (int j=0; j<matCols; j++)
           {
@@ -2308,7 +2245,7 @@ namespace Intrepid2 {
           {
             for (int j=0; j<rightCols; j++)
             {
-              auto & val_ij = thisData.getWritableEntry(matrixOrdinal, i, j, 0, 0, 0, 0);
+              auto & val_ij = thisData.getWritableEntry(matrixOrdinal, i, j);
               val_ij = 0;
               for (int k=0; k<leftCols; k++)
               {
@@ -2320,7 +2257,7 @@ namespace Intrepid2 {
           }
           for (int i=diagonalStart; i<leftRows; i++)
           {
-            auto & val_ii = thisData.getWritableEntry(matrixOrdinal, i, i, 0, 0, 0, 0);
+            auto & val_ii = thisData.getWritableEntry(matrixOrdinal, i, i);
             const auto & left  = A_MatData(matrixOrdinal,i,i);
             const auto & right = B_MatData(matrixOrdinal,i,i);
             val_ii = left * right;
@@ -2359,7 +2296,7 @@ namespace Intrepid2 {
             {
               for (int j=0; j<rightCols; j++)
               {
-                auto & val_ij = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, j, 0, 0, 0);
+                auto & val_ij = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, j);
                 val_ij = 0;
                 for (int k=0; k<leftCols; k++)
                 {
@@ -2371,7 +2308,7 @@ namespace Intrepid2 {
             }
             for (int i=diagonalStart; i<leftRows; i++)
             {
-              auto & val_ii = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, i, 0, 0, 0);
+              auto & val_ii = thisData.getWritableEntry(cellOrdinal,pointOrdinal, i, i);
               const auto & left  = A_MatData(cellOrdinal,pointOrdinal,i,i);
               const auto & right = B_MatData(cellOrdinal,pointOrdinal,i,i);
               val_ii = left * right;

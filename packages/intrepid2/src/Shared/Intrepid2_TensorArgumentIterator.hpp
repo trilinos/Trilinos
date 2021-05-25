@@ -92,7 +92,6 @@ namespace Intrepid2
     }
     
     //! Basic constructor in which only the bounds of the tensor components are required.
-    KOKKOS_INLINE_FUNCTION
     TensorArgumentIterator(const std::vector<ordinal_type> tensorComponentBounds)
     :
     numTensorComponents_(tensorComponentBounds.size())

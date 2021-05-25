@@ -134,7 +134,7 @@ Data<Scalar, DeviceType> getData(CaseChoice caseChoice, const int numPoints, con
   }
 }
 
-double theoreticalSpeedup(CaseChoice caseChoice, const int numPoints)
+double idealSpeedup(CaseChoice caseChoice, const int numPoints)
 {
   switch (caseChoice) {
     case Constant:
@@ -289,59 +289,78 @@ int main( int argc, char* argv[] )
     using std::scientific;
     using std::fixed;
     
-    for (CaseChoice caseChoice : caseChoices)
+    for (CaseChoice caseChoice1 : caseChoices)
     {
-      cout << "\n\n***************************************************\n";
-      cout <<     "******   " << setw(20) << to_string(caseChoice) << setw(23) << "   ******\n";
-      cout << "***************************************************\n";
-      for (int pointCount=pointCountMin; pointCount<=pointCountMax; pointCount *= 2)
+      for (CaseChoice caseChoice2 : caseChoices)
       {
-        double baseValue1 = M_PI;
-        auto data1 = getData<Scalar, DeviceType>(caseChoice, pointCount, baseValue1);
+        {
+          // DEBUGGING:
+          if ((caseChoice1 != General) && (caseChoice2 == General))
+          {
+            cout << "Set breakpoint here.\n";
+          }
+        }
         
-        double baseValue2 = 1.0;
-        auto data2 = getData<Scalar, DeviceType>(caseChoice, pointCount, baseValue2);
+        // since constant takes so little time (and measurement is therefore noisy), we do a bunch of measurements and use their average
+        const bool bothConstant   = (caseChoice1 == Constant) && (caseChoice2 == Constant);
+        const int numMeasurements = bothConstant ? 1000 : 1;
         
-        auto result = DataType::allocateInPlaceCombinationResult(data1, data2);
-        
-        DeviceType::execution_space().fence();
-        auto dataTimer = Teuchos::TimeMonitor::getNewTimer("Data sum");
-        dataTimer->start();
-        result.storeInPlaceSum(data1, data2);
-        DeviceType::execution_space().fence();
-        dataTimer->stop();
-        double dataElapsedTimeSeconds = dataTimer->totalElapsedTime();
-        
-        cout << "Point count:          " << setw(charWidth) << pointCount << endl;
-        cout << "Time (sum - data):    " << setw(charWidth) << std::setprecision(2) << scientific << dataElapsedTimeSeconds << endl;
-        
-        dataTimer->reset();
-        
-        auto viewTimer = Teuchos::TimeMonitor::getNewTimer("View sum");
-        auto view1 = allocateView<Scalar, DeviceType>(pointCount);
-        auto view2 = allocateView<Scalar, DeviceType>(pointCount);
-        auto resultView = allocateView<Scalar, DeviceType>(pointCount);
-        
-        fillView(caseChoice, view1, baseValue1);
-        fillView(caseChoice, view2, baseValue2);
-        
-        DeviceType::execution_space().fence();
-        viewTimer->start();
-        sumViews(resultView, view1, view2);
-        DeviceType::execution_space().fence();
-        viewTimer->stop();
-        double viewElapsedTimeSeconds = viewTimer->totalElapsedTime();
-        cout << "Time (sum - view):    " << setw(charWidth) << std::setprecision(2) << scientific << viewElapsedTimeSeconds << endl;
-        
-        viewTimer->reset();
-        
-        const double maxSpeedup = theoreticalSpeedup(caseChoice, pointCount);
-        const double actualSpeedup = viewElapsedTimeSeconds / dataElapsedTimeSeconds;
-        const double percentage = actualSpeedup / maxSpeedup * 100.0;
-        cout << "Ideal speedup:        " << setw(charWidth) << std::setprecision(2) << scientific << maxSpeedup << endl;
-        cout << "Actual speedup:       " << setw(charWidth) << std::setprecision(2) << scientific << actualSpeedup << endl;
-        cout << "Percentage of ideal:  " << setw(charWidth) << std::setprecision(2) << fixed << percentage << "%" << endl;
-        cout << endl;
+        cout << "\n\n*******************************************\n";
+        cout <<     "******   " << setw(12) << to_string(caseChoice1) << "/" << to_string(caseChoice2) << setw(14) << "   ******\n";
+        cout << "*******************************************\n";
+        for (int pointCount=pointCountMin; pointCount<=pointCountMax; pointCount *= 2)
+        {
+          const double baseValue1 = M_PI;
+          const double baseValue2 = 1.0;
+
+          Data<Scalar, DeviceType> result;
+          auto dataTimer = Teuchos::TimeMonitor::getNewTimer("Data sum");
+          for (int i=0; i<numMeasurements; i++)
+          {
+            auto data1 = getData<Scalar, DeviceType>(caseChoice1, pointCount, baseValue1);
+            auto data2 = getData<Scalar, DeviceType>(caseChoice2, pointCount, baseValue2);
+            
+            result = DataType::allocateInPlaceCombinationResult(data1, data2);
+            
+            DeviceType::execution_space().fence();
+            dataTimer->start();
+            result.storeInPlaceSum(data1, data2);
+            DeviceType::execution_space().fence();
+            dataTimer->stop();
+          }
+          double dataElapsedTimeSeconds = dataTimer->totalElapsedTime() / numMeasurements;
+          
+          cout << "Point count:          " << setw(charWidth) << pointCount << endl;
+          cout << "Time (sum - data):    " << setw(charWidth) << std::setprecision(2) << scientific << dataElapsedTimeSeconds << endl;
+          
+          dataTimer->reset();
+          
+          auto viewTimer = Teuchos::TimeMonitor::getNewTimer("View sum");
+          auto view1 = allocateView<Scalar, DeviceType>(pointCount);
+          auto view2 = allocateView<Scalar, DeviceType>(pointCount);
+          auto resultView = allocateView<Scalar, DeviceType>(pointCount);
+          
+          fillView(caseChoice1, view1, baseValue1);
+          fillView(caseChoice2, view2, baseValue2);
+          
+          DeviceType::execution_space().fence();
+          viewTimer->start();
+          sumViews(resultView, view1, view2);
+          DeviceType::execution_space().fence();
+          viewTimer->stop();
+          double viewElapsedTimeSeconds = viewTimer->totalElapsedTime();
+          cout << "Time (sum - view):    " << setw(charWidth) << std::setprecision(2) << scientific << viewElapsedTimeSeconds << endl;
+          
+          viewTimer->reset();
+          
+          const double maxSpeedup = std::min(idealSpeedup(caseChoice1, pointCount),idealSpeedup(caseChoice2, pointCount));
+          const double actualSpeedup = viewElapsedTimeSeconds / dataElapsedTimeSeconds;
+          const double percentage = actualSpeedup / maxSpeedup * 100.0;
+          cout << "Ideal speedup:        " << setw(charWidth) << std::setprecision(2) << scientific << maxSpeedup << endl;
+          cout << "Actual speedup:       " << setw(charWidth) << std::setprecision(2) << scientific << actualSpeedup << endl;
+          cout << "Percentage of ideal:  " << setw(charWidth) << std::setprecision(2) << fixed << percentage << "%" << endl;
+          cout << endl;
+        }
       }
     }
     
