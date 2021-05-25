@@ -327,6 +327,9 @@ Relaxation<MatrixType>::getValidParameters () const
     const int cluster_size = 1;
     pl->set("relaxation: mtgs cluster size", cluster_size);
 
+    const int long_row_threshold = 0;
+    pl->set("relaxation: long row threshold", long_row_threshold);
+
     validParams_ = rcp_const_cast<const ParameterList> (pl);
   }
   return validParams_;
@@ -367,6 +370,9 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   int cluster_size = 1;
   if(pl.isParameter ("relaxation: mtgs cluster size")) //optional parameter
     cluster_size = pl.get<int> ("relaxation: mtgs cluster size");
+  int long_row_threshold = 0;
+  if(pl.isParameter ("relaxation: long row threshold")) //optional parameter
+    long_row_threshold = pl.get<int> ("relaxation: long row threshold");
 
   Teuchos::ArrayRCP<local_ordinal_type> localSmoothingIndices = pl.get<Teuchos::ArrayRCP<local_ordinal_type> >("relaxation: local smoothing indices");
 
@@ -396,6 +402,7 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
   fixTinyDiagEntries_    = fixTinyDiagEntries;
   checkDiagEntries_      = checkDiagEntries;
   clusterSize_           = cluster_size;
+  longRowThreshold_      = long_row_threshold;
   is_matrix_structurally_symmetric_ = is_matrix_structurally_symmetric;
   ifpack2_dump_matrix_ = ifpack2_dump_matrix;
   localSmoothingIndices_ = localSmoothingIndices;
@@ -726,8 +733,10 @@ void Relaxation<MatrixType>::initialize ()
       if (mtKernelHandle_->get_gs_handle () == nullptr) {
         if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2)
           mtKernelHandle_->create_gs_handle (KokkosSparse::GS_TWOSTAGE);
-        else if(this->clusterSize_ == 1)
+        else if(this->clusterSize_ == 1) {
           mtKernelHandle_->create_gs_handle ();
+          mtKernelHandle_->get_point_gs_handle()->set_long_row_threshold(longRowThreshold_);
+        }
         else
           mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
       }
