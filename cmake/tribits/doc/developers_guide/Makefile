@@ -43,8 +43,13 @@ $(BASE_NAME).pdf: $(BASE_NAME).html
 $(BASE_NAME).html: $(EXTRA_FILES) 
 	../../python_utils/generate-docutils-output.py \
 	  --file-base=TribitsDevelopersGuide \
-	  --generate-latex-options="--stylesheet-path=rst2latex.tex" \
+	--generate-latex= --generate-pdf= \
 	  $(EXTRA_ARGS)
+
+# 	  --generate-latex-options="--stylesheet-path=rst2latex.tex" \
+
+# NOTE: Can't build latex anymore because list of functions nests deeper than
+# 6 levels deep now!
 
 clean:
 	-rm -f $(BASE_NAME).html
