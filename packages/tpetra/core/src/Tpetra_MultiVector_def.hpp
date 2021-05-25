@@ -4738,12 +4738,9 @@ namespace Tpetra {
     input_view_type src_view =
       Kokkos::subview (src_orig, pair_type (0, numRows), Kokkos::ALL ());
 
-    /// KJ : this does not sound correct
-    //dst.clear_sync_state ();
-    //dst.modify_device ();
     constexpr bool src_isConstantStride = true;
     Teuchos::ArrayView<const size_t> srcWhichVectors (nullptr, 0);
-    localDeepCopy (dst.getLocalViewDevice(Access::ReadWrite),
+    localDeepCopy (dst.getLocalViewHost(Access::ReadWrite),
                    src_view,
                    dst.isConstantStride (),
                    src_isConstantStride,
@@ -4784,22 +4781,12 @@ namespace Tpetra {
     Teuchos::ArrayView<const size_t> dstWhichVectors (nullptr, 0);
 
     // Prefer the host version of src's data.
-    if (src.need_sync_host ()) { // last modified on device
-      localDeepCopy (dst_view,
-                     src.getLocalViewDevice(Access::ReadOnly),
-                     dst_isConstantStride,
-                     src.isConstantStride (),
-                     dstWhichVectors,
-                     getMultiVectorWhichVectors (src));
-    }
-    else {
-      localDeepCopy (dst_view,
-                     src.getLocalViewHost(Access::ReadOnly),
-                     dst_isConstantStride,
-                     src.isConstantStride (),
-                     dstWhichVectors,
-                     getMultiVectorWhichVectors (src));
-    }
+    localDeepCopy (dst_view,
+                   src.getLocalViewHost(Access::ReadOnly),
+                   dst_isConstantStride,
+                   src.isConstantStride (),
+                   dstWhichVectors,
+                   getMultiVectorWhichVectors (src));
   }
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 
