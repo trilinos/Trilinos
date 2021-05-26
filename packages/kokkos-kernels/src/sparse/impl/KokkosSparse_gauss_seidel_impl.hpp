@@ -699,7 +699,7 @@ namespace KokkosSparse{
               if(numLongRows > lmostPerColor)
                 lmostPerColor = numLongRows;
             });
-          nnz_lno_t max_row_length;
+          nnz_lno_t max_row_length = 0;
           Kokkos::parallel_reduce(Kokkos::TeamThreadRange(t, colorBegin, colorBegin + colorLen),
             [&](nnz_lno_t i, nnz_lno_t& lmaxLength)
             {
