@@ -123,7 +123,7 @@ namespace {
     size_t v_size  = sizeof(std::vector<INT>);
     size_t vv_size = sizeof(std::vector<std::vector<INT>>);
     size_t total   = vv_size + mesh->num_nodes * v_size + sur_elem_total_size * sizeof(INT);
-    fmt::print(stderr, "\ttotal size of reverse connectivity array: {:n} entries ({:n} bytes).\n",
+    fmt::print(stderr, "\ttotal size of reverse connectivity array: {:L} entries ({:L} bytes).\n",
                sur_elem_total_size, total);
     vec_free(last_element);
 

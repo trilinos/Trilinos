@@ -2,9 +2,9 @@
 # for Trilinos for the CUDA 10.1.105 UVM pull request testing builds, and to reproduce
 # the errors reported by those builds. Prior to using this this file, the
 # appropriate set of modules must be loaded and path must be augmented.
-# (See the sems/PullRequestCuda10.1.105uvmTestingEnv.sh files.)
+# (See the sems/PullRequestCuda10.1.105uvmOffTestingEnv.sh files.)
 
-# Usage: cmake -C PullRequestLinuxCUDA10.1.105uvmTestingSettings.cmake
+# Usage: cmake -C PullRequestLinuxCUDA10.1.105uvmOffTestingSettings.cmake
 
 set (CMAKE_CXX_STANDARD "14" CACHE STRING "Set C++ standard to C++14")
 
@@ -128,6 +128,9 @@ set (EpetraExt_inout_test_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUD
 set (Teko_testdriver_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 set (Zoltan2_fix4785_MPI_4_DISABLE ON CACHE BOOL "Temporary disable for CUDA PR testing")
 
+set (Trilinos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
+set (Teuchos_ENABLE_COMPLEX ON CACHE BOOL "Testing for #9025")
+set (Tpetra_INST_COMPLEX_DOUBLE ON CACHE BOOL "Testing for #9025")
 
 # UVM = OFF
 set (Kokkos_ENABLE_CUDA_UVM OFF CACHE BOOL "Set by default for CUDA PR testing")

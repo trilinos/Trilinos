@@ -140,7 +140,7 @@ static void *smalloc(size_t n)
   if (pntr == nullptr && n != 0) {
     fmt::print(stderr,
                "smalloc: Out of space - number of bytes "
-               "requested = {:n}\n",
+               "requested = {:L}\n",
                n);
     exit(0);
   }

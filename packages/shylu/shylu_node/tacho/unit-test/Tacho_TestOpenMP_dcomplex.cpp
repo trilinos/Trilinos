@@ -12,8 +12,8 @@ static const std::string MM_TEST_FILE="test_dcomplex";
 #include "Tacho_config.h"
 #include "Tacho_Util.hpp"
 
-typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type HostDeviceType;
-typedef typename Tacho::UseThisDevice<Kokkos::OpenMP>::device_type DeviceType;
+typedef typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type HostDeviceType;
+typedef typename Tacho::UseThisDevice<Kokkos::OpenMP>::type DeviceType;
 
 typedef Kokkos::complex<double> ValueType;
 typedef double MagnitudeType;

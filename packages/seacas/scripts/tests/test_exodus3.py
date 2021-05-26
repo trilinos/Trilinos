@@ -1,3 +1,12 @@
+"""
+Copyright(C) 1999-2021 National Technology & Engineering Solutions
+of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
+NTESS, the U.S. Government retains certain rights in this software.
+
+See packages/seacas/LICENSE for details
+
+"""
+
 import unittest
 import sys
 import os
@@ -51,7 +60,28 @@ class MyTestCase(unittest.TestCase):
         root.entity_list = [100, 200, 300, 400]
         self.assertEqual(str(root), str(assemblies[0]))
 
-    def test_add_assembly(self):
+    def test_get_assemblies(self):
+        temp_exofile = exo.exodus("test-assembly.exo", mode='r')
+        assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
+        assemblies = temp_exofile.get_assemblies(assembly_ids)
+        expected = [exo.assembly(name='Root', type='assembly', id=100),
+                    exo.assembly(name='Child2', type='element block', id=200),
+                    exo.assembly(name='Child3', type='element block', id=300),
+                    exo.assembly(name='Child4', type='element block', id=400),
+                    exo.assembly(name='NewAssembly', type='assembly', id=222),
+                    exo.assembly(name='FromPython', type='assembly', id=333)]
+        for i, x in enumerate(expected):
+            entity_lists = [[100, 200, 300, 400],
+                            [10, 11, 12, 13],
+                            [14, 15, 16],
+                            [10, 16],
+                            [100, 200, 300, 400],
+                            [100, 222]]
+            x.entity_list = entity_lists[i]
+        self.maxDiff=None
+        self.assertEqual(str(expected), str(assemblies))
+
+    def test_put_assembly(self):
         new = exo.assembly(name='Unit_test', type='EX_ASSEMBLY', id=444)
         new.entity_list = [100, 222]
         self.temp_exofile.put_assembly(new)
@@ -89,6 +119,42 @@ class MyTestCase(unittest.TestCase):
         values = temp_exofile.get_reduction_variable_values('EX_ASSEMBLY', assemblies[5].id, 1)
         self.assertListEqual([0.00, 0.00, 0.00, 0.00], list(values))
 
+
+    def test_put_assemblies(self):
+        new = exo.assembly(name='Unit_test', type='EX_ASSEMBLY', id=444)
+        new.entity_list = [100, 222]
+        self.temp_exofile.put_assemblies([new])
+        self.temp_exofile.close()
+        temp_exofile = exo.exodus(self.temp_exo_path)
+        assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
+        assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
+        print(assemblies)
+        self.assertEqual(new.name, assemblies[6].name)
+        self.assertEqual('assembly', assemblies[6].type)
+        self.assertEqual(new.id, assemblies[6].id)
+        self.assertEqual(new.entity_list, assemblies[6].entity_list)
+
+
+    def test_put_assemblies_multiple_assemblies(self):
+        new = exo.assembly(name='Unit_test1', type='EX_ASSEMBLY', id=444)
+        new.entity_list = [100, 222]
+        new2 = exo.assembly(name='Unit_test2', type='EX_ASSEMBLY', id=448)
+        new2.entity_list = [102, 224]
+        self.temp_exofile.put_assemblies([new, new2])
+        self.temp_exofile.close()
+        temp_exofile = exo.exodus(self.temp_exo_path)
+        assembly_ids = temp_exofile.get_ids("EX_ASSEMBLY")
+        assemblies = [temp_exofile.get_assembly(assembly) for assembly in assembly_ids]
+        print(assemblies)
+        self.assertEqual(new.name, assemblies[6].name)
+        self.assertEqual('assembly', assemblies[6].type)
+        self.assertEqual(new.id, assemblies[6].id)
+        self.assertEqual(new.entity_list, assemblies[6].entity_list)
+
+        self.assertEqual(new2.name, assemblies[7].name)
+        self.assertEqual('assembly', assemblies[7].type)
+        self.assertEqual(new2.id, assemblies[7].id)
+        self.assertEqual(new2.entity_list, assemblies[7].entity_list)
 
 
 if __name__ == '__main__':

@@ -291,7 +291,8 @@ C  CHECK A REGION OR GROUP
      &                  AMESUR, XNOLD, YNOLD, NXKOLD, MMPOLD, LINKEG,
      &                  LISTEG, BMESUR, MLINK, NPROLD, NPNOLD, NPEOLD,
      &                  NNXK, REMESH, REXMIN, REXMAX, REYMIN, REYMAX,
-     &                  IDIVIS, SIZMIN, EMAX, EMIN, NOROOM, ERRCHK, ERR)
+     &                  IDIVIS, SIZMIN, EMAX, EMIN, NOROOM, ERRCHK,
+     $                    ERR)
                   END IF
   180          CONTINUE
             END IF
@@ -1378,8 +1379,8 @@ C  BEGIN PROCESSING BAR SETS
 
 C  SEE IF THIS BAR SET IS FOR SPRINGS
 
-         IF ((IPNTR .GT. 0) .AND. (IBARST(IPNTR) .LT. 0) .AND.
-     &      (JMAT(IPNTR) .LT. 0)) THEN
+         IF (IPNTR .GT. 0) THEN
+            IF ((IBARST(IPNTR) .LT. 0) .AND. (JMAT(IPNTR) .LT. 0)) THEN
             L = IPNTR
             WRITE (*, 10130) ABS(IBARST(L))
 
@@ -1498,7 +1499,7 @@ C  MARK THESE POINTS AND THE LINE AS BEING USED
 
 C  WRITE OUT THE BAR SET ELEMENTS AND BOUNDARY CONDITIONS
 
-         IF ((IPNTR .GT. 0) .AND. (IBARST(IPNTR) .LT. 0)) THEN
+         IF (IBARST(IPNTR) .LT. 0) THEN
             BAR = .TRUE.
             KSBC = 0
             CALL GETSBC (MXND, NNN, NNN, NLPB(L), ML, MAXSBC, 1,
@@ -1538,7 +1539,7 @@ C  WRITE OUT THE BAR SET ELEMENTS AND BOUNDARY CONDITIONS
             IBARST(L) = ABS(IBARST(L))
             WRITE (*, 10140) IBARST(L)
          END IF
-
+         END IF
 C  END OF THIS BAR SET
 
   430    CONTINUE

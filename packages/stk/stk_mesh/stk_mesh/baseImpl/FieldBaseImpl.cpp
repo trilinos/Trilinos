@@ -500,23 +500,6 @@ std::ostream & operator << ( std::ostream & s , const FieldBaseImpl & field )
   return s ;
 }
 
-std::ostream & print( std::ostream & s ,
-                      const char * const b ,
-                      const FieldBase & field )
-{
-  const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
-  s << field.name() ;
-  s << " {" ;
-  for ( FieldBase::RestrictionVector::const_iterator
-        i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    s << std::endl << b << "  " ;
-    i->print( s, i->selector(), field.field_array_rank() );
-    s << std::endl;
-  }
-  s << std::endl << b << "}" ;
-  return s ;
-}
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk

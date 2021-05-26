@@ -37,14 +37,14 @@
 #include <string>
 #include <vector>
 
-#include <stk_io/DatabasePurpose.hpp> // for stk::io::DatabasePurpose
-#include <stk_io/FillMesh.hpp>
-#include <stk_io/WriteMesh.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-namespace stk { namespace mesh { class BulkData; }}
-namespace stk { namespace mesh { class FieldBase; }}
-namespace stk { namespace io { class StkMeshIoBroker; } }
+#include "stk_io/DatabasePurpose.hpp" // for stk::io::DatabasePurpose
+#include "stk_io/FillMesh.hpp"
+#include "stk_io/WriteMesh.hpp"
+#include "stk_mesh/base/Types.hpp"
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
+#include "stk_mesh/base/BulkData.hpp"
+#include "stk_mesh/base/MetaData.hpp"
+#include "stk_io/StkMeshIoBroker.hpp"
 
 namespace stk
 {
@@ -71,6 +71,56 @@ class IdAndTimeFieldValueSetter : public FieldValueSetter
 {
 public:
     virtual void populate_field(stk::mesh::BulkData &bulk, stk::mesh::FieldBase* field, const unsigned step, const double time) const;
+};
+
+class MeshFromFile
+{
+public:
+  MeshFromFile(const MPI_Comm& c);
+
+  void fill_from_serial(const std::string& fileName);
+  void fill_from_parallel(const std::string& baseName);
+  bool is_empty() const { return m_empty; }
+
+private:
+  MPI_Comm m_comm;
+  bool m_empty;
+
+public:
+  stk::mesh::MetaData meta;
+  stk::mesh::BulkData bulk;
+  stk::io::StkMeshIoBroker broker;
+};
+
+class TransientVerifier
+{
+public:
+  TransientVerifier(const MPI_Comm& c);
+
+  void verify_num_transient_fields(const MeshFromFile& mesh, unsigned expectedNumFields) const;
+  void verify_time_steps(const MeshFromFile& mesh, const std::vector<double>& expectedTimeSteps) const;
+  void verify_global_variables_at_each_time_step(MeshFromFile& mesh,
+                                                 const std::string& globalVariableName,
+                                                 const std::vector<double>& expectedTimeSteps) const;
+  void verify_sideset_orientation(const MeshFromFile& mesh,
+                                  int expectedProc,
+                                  const stk::mesh::EntityId expectedId,
+                                  const stk::mesh::ConnectivityOrdinal expectedOrdinal) const;
+  void compare_entity_rank_names(const MeshFromFile& meshA, const MeshFromFile& meshB) const;
+  void verify_transient_field_names(const MeshFromFile& mesh, const std::string& fieldBaseName) const;
+  void verify_transient_fields(MeshFromFile& mesh) const;
+  void verify_decomp(MeshFromFile& mesh, const stk::mesh::EntityIdProcVec& expectedDecomp) const;
+
+private:
+  void verify_global_variable_names(const MeshFromFile& mesh, const std::string& baseName) const;
+  void verify_global_double(const MeshFromFile& mesh, const std::string& variable, double goldValue) const;
+  void verify_global_int(const MeshFromFile& mesh, const std::string& variable, int goldValue) const;
+  void verify_global_real_vec(const MeshFromFile& mesh, const std::string& variable, double goldValue) const;
+  void verify_transient_field_name(stk::mesh::FieldBase* field, const std::string& fieldName) const;
+  void verify_transient_field_values(const stk::mesh::BulkData& bulk, stk::mesh::FieldBase* field, double timeStep) const;
+
+  MPI_Comm m_comm;
+  const double m_epsilon;
 };
 
 void generated_mesh_with_transient_data_to_file_in_serial(const std::string &meshSizeSpec,

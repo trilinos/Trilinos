@@ -1,7 +1,7 @@
 # This script can be used to load the appropriate environment for the
 # PR build on ride using CUDA.
 
-# usage: $ source PullRequestCUDA10.1.105uvmTestingEnv.sh
+# usage: $ source PullRequestCUDA10.1.105uvmOffTestingEnv.sh
 
 module load git/2.10.1
 module load devpack/20190404/openmpi/4.0.1/gcc/7.2.0/cuda/10.1.105

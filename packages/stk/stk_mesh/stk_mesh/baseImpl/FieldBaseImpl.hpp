@@ -215,11 +215,6 @@ private:
 /** \brief  Print the field type, text name, and number of states. */
 std::ostream & operator << ( std::ostream & , const FieldBaseImpl & );
 
-/** \brief  Print field and field restrictions on new lines. */
-std::ostream & print( std::ostream & ,
-                      const char * const , const FieldBase & );
-
-
 } // namespace impl
 } // namespace mesh
 } // namespace stk

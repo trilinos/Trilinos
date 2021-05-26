@@ -617,10 +617,18 @@ int generate_loadbal(Machine_Description *machine, Problem_Description *problem,
       }
       else {
         tmp_nv    = problem->num_vertices;
-        tmp_start = &graph->start[0];
-        tmp_adj   = &graph->adj[0];
-        tmp_vwgts = &weight->vertices[0];
-        tmp_ewgts = &weight->edges[0];
+	if (!graph->start.empty()) {
+	  tmp_start = &graph->start[0];
+	}
+	if (!graph->adj.empty()) {
+	  tmp_adj   = &graph->adj[0];
+	}
+	if (!weight->vertices.empty()) {
+	  tmp_vwgts = &weight->vertices[0];
+	}
+	if (!weight->edges.empty()) {
+	  tmp_ewgts = &weight->edges[0];
+	}
         tmp_x     = x_ptr;
         tmp_y     = y_ptr;
         tmp_z     = z_ptr;

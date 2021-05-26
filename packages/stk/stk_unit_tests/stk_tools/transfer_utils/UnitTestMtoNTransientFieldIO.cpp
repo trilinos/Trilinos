@@ -190,7 +190,7 @@ TEST(TransientFieldTransfer, writeStaticMesh)
   if(stk::parallel_machine_size(MPI_COMM_WORLD) > 2) { return; }
 
   stk::mesh::MetaData meta(3);
-  stk::mesh::BulkData bulk(meta, MPI_COMM_WORLD);
+  stk::transfer_utils::M2NOutputSerializerBulkData bulk(meta, MPI_COMM_WORLD);
 
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, "generated:1x1x2", bulk);
@@ -336,7 +336,7 @@ TEST(TransientFieldTransfer, writeTransientMesh)
   create_n_hex_mesh_with_transient_field(globalNumElems, inputFileName, numSteps, fieldName, stk::topology::NODE_RANK); 
   
   stk::mesh::MetaData inputMeta(3);
-  stk::mesh::BulkData inputBulk(inputMeta, MPI_COMM_WORLD);
+  stk::transfer_utils::M2NOutputSerializerBulkData inputBulk(inputMeta, MPI_COMM_WORLD);
   stk::io::StkMeshIoBroker ioBroker;
   stk::io::fill_mesh_preexisting(ioBroker, inputFileName, inputBulk);
   int subdomain = inputBulk.parallel_rank();
@@ -452,7 +452,7 @@ TEST(TransientFieldTransfer, transferTransientData)
   test_load_transient_data(ioBroker, fieldName, fieldRank, numSteps);
 
   stk::mesh::MetaData outputMeta;
-  stk::mesh::BulkData outputBulk(outputMeta, MPI_COMM_WORLD);
+  stk::transfer_utils::M2NOutputSerializerBulkData outputBulk(outputMeta, MPI_COMM_WORLD);
   int subdomain = inputBulk.parallel_rank();
 
   stk::tools::copy_mesh(inputBulk, inputMeta.universal_part(), outputBulk);
@@ -558,7 +558,7 @@ TEST(TransientFieldTransfer, testTransferAndWrite)
   test_load_transient_data(ioBroker, fieldName, fieldRank, numSteps);
 
   stk::mesh::MetaData outputMeta;
-  stk::mesh::BulkData outputBulk(outputMeta, MPI_COMM_WORLD);
+  stk::transfer_utils::M2NOutputSerializerBulkData outputBulk(outputMeta, MPI_COMM_WORLD);
   int subdomain = inputBulk.parallel_rank();
 
   stk::tools::copy_mesh(inputBulk, inputMeta.universal_part(), outputBulk);
@@ -597,7 +597,7 @@ TEST(TransientFieldTransfer, testTransferAndWriteWithGlobalVar)
   test_load_transient_data(ioBroker, fieldName, fieldRank, numSteps);
 
   stk::mesh::MetaData outputMeta;
-  stk::mesh::BulkData outputBulk(outputMeta, MPI_COMM_WORLD);
+  stk::transfer_utils::M2NOutputSerializerBulkData outputBulk(outputMeta, MPI_COMM_WORLD);
   int subdomain = inputBulk.parallel_rank();
 
   stk::tools::copy_mesh(inputBulk, inputMeta.universal_part(), outputBulk);
@@ -667,7 +667,7 @@ TEST(TransientFieldTransfer, testMockBalance2x4)
     int subdomain = id-1;
 
     stk::mesh::MetaData outputMeta;
-    stk::mesh::BulkData outputBulk(outputMeta, MPI_COMM_SELF);
+    stk::transfer_utils::M2NOutputSerializerBulkData outputBulk(outputMeta, MPI_COMM_SELF);
     stk::tools::copy_mesh(inputBulk, *partVector[subdomain], outputBulk);
 
     stk::io::EntitySharingInfo nodeSharingInfo = get_four_hex_mesh_node_sharing_info(inputBulk, subdomain);

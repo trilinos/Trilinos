@@ -150,6 +150,14 @@ int main(int argc, char **argv)
       printf("num_attr = %2d\n", num_attr[i]);
       printf("name = '%s'\n", block_names[i]);
     }
+
+    free(ids);
+    free(num_elem_in_block);
+    free(num_nodes_per_elem);
+    free(num_attr);
+    for (i = 0; i < num_elem_blk; i++) {
+      free(block_names[i]);
+    }
   }
 
   /* Read assembly information */
@@ -159,11 +167,11 @@ int main(int argc, char **argv)
     printf("error in ex_inquire_int for EX_INQ_ASSEMBLY: %d vs %d\n", chk_num_assembly,
            num_assembly);
   }
+  char *assembly_names[10];
   if (num_assembly > 0) {
     int assembly_ids[10];
     ex_get_ids(exoid, EX_ASSEMBLY, assembly_ids);
 
-    char *assembly_names[10];
     char *assembly_name2[10];
     for (i = 0; i < num_assembly; i++) {
       assembly_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
@@ -211,6 +219,10 @@ int main(int argc, char **argv)
       if (strcmp(assembly_name2[i], assemblies[i].name) != 0) {
         printf("error in ex_get_names for EX_ASSEMBLY\n");
       }
+    }
+
+    for (i = 0; i < num_assembly; i++) {
+      free(assembly_name2[i]);
     }
 
     /* Read attributes... */
@@ -297,7 +309,9 @@ int main(int argc, char **argv)
       free(var_values);
     }
   }
-  /*  free(block_names[i]); */
+  for (i = 0; i < num_assembly; i++) {
+    free(assembly_names[i]);
+  }
   EXCHECK(ex_close(exoid));
   return 0;
 }

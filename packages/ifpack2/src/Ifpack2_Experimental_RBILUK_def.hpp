@@ -860,8 +860,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           for (size_t i = 0; i < D_block_->getNodeNumRows(); ++i)
           {
             LO local_row = i;
-            const_host_little_vec_type xval = xBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type cval = cBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
+            const_host_little_vec_type xval = 
+                   xBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
+            little_host_vec_type cval = 
+                   cBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
             //cval.assign(xval);
             Tpetra::COPY (xval, cval);
 
@@ -873,7 +875,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             for (LO j = 0; j < NumL; ++j)
             {
               LO col = colValsL[j];
-              const_host_little_vec_type prevVal = cBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
+              const_host_little_vec_type prevVal = 
+                    cBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
 
               const LO matOffset = blockMatSize*j;
               little_block_host_type lij((typename little_block_host_type::value_type*) &valsL[matOffset],blockSize_,rowStride);
@@ -894,8 +897,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
           for (LO i = 0; i < numRows; ++i)
           {
             LO local_row = (numRows-1)-i;
-            const_host_little_vec_type rval = rBlock.getLocalBlock(local_row, imv, Tpetra::Access::ReadOnly);
-            little_host_vec_type yval = yBlock.getLocalBlock(local_row, imv, Tpetra::Access::OverwriteAll);
+            const_host_little_vec_type rval = 
+                   rBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::ReadOnly);
+            little_host_vec_type yval = 
+                   yBlock.getLocalBlockHost(local_row, imv, Tpetra::Access::OverwriteAll);
             //yval.assign(rval);
             Tpetra::COPY (rval, yval);
 
@@ -907,7 +912,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
             for (LO j = 0; j < NumU; ++j)
             {
               LO col = colValsU[NumU-1-j];
-              const_host_little_vec_type prevVal = yBlock.getLocalBlock(col, imv, Tpetra::Access::ReadOnly);
+              const_host_little_vec_type prevVal = 
+                   yBlock.getLocalBlockHost(col, imv, Tpetra::Access::ReadOnly);
 
               const LO matOffset = blockMatSize*(NumU-1-j);
               little_block_host_type uij((typename little_block_host_type::value_type*) &valsU[matOffset], blockSize_, rowStride);

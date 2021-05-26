@@ -119,22 +119,7 @@ int main(int argc, char *argv[])
   return -1;
 #endif
 
-#ifdef HAVE_COMPLEX
-  typedef std::complex<double> ScalarType;
-#elif HAVE_COMPLEX_H
-  typedef ::complex<double> ScalarType;
-#else
-  typedef double ScalarType;
-  // no complex. quit with failure.
-  if (verbose && MyPID == 0) {
-    cout << "Not compiled with complex support." << endl;
-    cout << "End Result: TEST FAILED" << endl;
-#ifdef HAVE_MPI
-    MPI_Finalize();
-#endif
-    return -1;
-  }
-#endif
+  typedef std::complex<double>                ScalarType;
   typedef ScalarTraits<ScalarType>                   SCT;
   typedef SCT::magnitudeType               MagnitudeType;
   typedef Anasazi::MultiVec<ScalarType>               MV;

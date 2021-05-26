@@ -40,6 +40,8 @@
 namespace stk {
 namespace balance {
 
+class M2NBalanceSettings;
+
 struct M2NOptionNames
 {
   const std::string infile = "infile";
@@ -62,28 +64,21 @@ private:
   const M2NOptionNames m_optionNames;
 };
 
-struct M2NParsedOptions
-{
-    std::string inFile;
-    int targetNumProcs;
-    bool useNestedDecomp;
-};
-
 class M2NParser {
 
 public:
   M2NParser(MPI_Comm comm);
 
-  void parse_command_line_options(int argc, const char** argv, M2NParsedOptions& options);
+  void parse_command_line_options(int argc, const char** argv, M2NBalanceSettings& settings);
   std::string get_quick_error() const;
 
 private:
   void add_options_to_parser();
   void setup_messages(const char** argv);
 
-  void set_filename(M2NParsedOptions& options) const;
-  void set_num_procs(M2NParsedOptions& options) const;
-  void set_use_nested_decomp(M2NParsedOptions& options) const;
+  void set_filename(M2NBalanceSettings& settings) const;
+  void set_num_procs(M2NBalanceSettings& settings) const;
+  void set_use_nested_decomp(M2NBalanceSettings& settings) const;
 
   const MPI_Comm m_comm;
   const M2NOptionNames m_optionNames;

@@ -7,8 +7,16 @@
 #include "Tacho.hpp"
 #include "Tacho_CrsMatrixBase.hpp"
 #include "Tacho_MatrixMarket.hpp"
+
+#define TACHO_TEST_REFACTOR_DRIVER
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+#include "Tacho_Driver.hpp"
+#else
 #include "Tacho_Solver.hpp"
+#endif
 #include "Tacho_CommandLineParser.hpp"
+
+
 
 namespace tacho {
 
@@ -16,6 +24,10 @@ namespace tacho {
     {USEDEFAULTSOLVERPARAMETERS,
      VERBOSITY,
      SMALLPROBLEMTHRESHOLDSIZE,
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+     MATRIX_SYMMETRIC,
+     MATRIX_POSITIVE_DEFINITE,
+#endif
      TASKING_OPTION_BLOCKSIZE,
      TASKING_OPTION_PANELSIZE,
      TASKING_OPTION_MAXNUMSUPERBLOCKS, 
@@ -28,10 +40,10 @@ namespace tacho {
      INDEX_LENGTH
     };
 
-  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::device_type;
+  using device_type = typename Tacho::UseThisDevice<Kokkos::DefaultExecutionSpace>::type;
   using exec_space = typename device_type::execution_space;
   
-  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type;
+  using host_device_type = typename Tacho::UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type;
   using host_space = typename host_device_type::execution_space;
 
   using ViewVectorType = Kokkos::View<double*,device_type>; 
@@ -40,8 +52,13 @@ namespace tacho {
   template <class SX> class tachoSolver
   {
   public:
+
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+    typedef Tacho::Driver<SX,device_type> solver_type;
+#else
     using sched_type = Kokkos::TaskSchedulerMultiple<exec_space>;
     typedef Tacho::Solver<SX,sched_type> solver_type;
+#endif
 
     typedef Tacho::ordinal_type ordinal_type;
     typedef Tacho::size_type size_type;
@@ -222,6 +239,11 @@ namespace tacho {
       // common options
       m_Solver.setVerbose                       (solverParams[VERBOSITY]);
       m_Solver.setSmallProblemThresholdsize     (solverParams[SMALLPROBLEMTHRESHOLDSIZE]);
+
+      // matrix type
+#if defined(TACHO_TEST_REFACTOR_DRIVER)
+      m_Solver.setMatrixType(solverParams[MATRIX_SYMMETRIC], solverParams[MATRIX_POSITIVE_DEFINITE]);
+#endif
 
       // tasking options
       m_Solver.setBlocksize                     (solverParams[TASKING_OPTION_BLOCKSIZE]);

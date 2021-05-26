@@ -339,6 +339,11 @@ struct GraphEdge
         return std::abs(vertex)%max_num_sides_per_elem;
     }
 
+    bool is_elem2_local() const
+    {
+      return vertex2 >= 0;
+    }
+
     // elem1, side1, elem2, side2
 
     impl::LocalId vertex1;

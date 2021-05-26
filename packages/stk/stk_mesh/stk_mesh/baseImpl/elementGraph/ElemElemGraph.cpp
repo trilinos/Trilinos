@@ -143,22 +143,15 @@ void ElemElemGraph::fill_from_mesh()
 
 void ElemElemGraph::update_number_of_parallel_edges()
 {
-    // Figure out the real number of sides that can be generated, using
-    // the rule of one side entity per element side (with multiple
-    // coincident elements each being connected to the same side)
-    m_num_parallel_edges = 0;
-    for(size_t i = 0; i < m_graph.get_num_elements_in_graph(); ++i)
-    {
-        size_t numConnectedElems = m_graph.get_num_edges_for_element(i);
-        for(size_t j = 0; j < numConnectedElems; ++j)
-        {
-            const GraphEdge & graphEdge = m_graph.get_edge_for_element(i, j);
-            if(graphEdge.elem2() < 0)
-            {
-                m_num_parallel_edges++;
-            }
-        }
+  m_num_parallel_edges = 0;
+  for (size_t i = 0; i < m_graph.get_num_elements_in_graph(); ++i) {
+    const GraphEdgesForElement& graphEdges = m_graph.get_edges_for_element(i);
+    for (const GraphEdge& graphEdge : graphEdges) {
+      if (!graphEdge.is_elem2_local()) {
+        ++m_num_parallel_edges;
+      }
     }
+  }
 }
 
 ElemElemGraph::~ElemElemGraph() {}

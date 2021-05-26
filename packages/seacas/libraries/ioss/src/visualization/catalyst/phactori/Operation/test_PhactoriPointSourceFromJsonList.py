@@ -79,6 +79,6 @@ class Test_PhactoriPointSourceFromJsonList(unittest.TestCase):
     self.assertEqual(pt3, tuple(theSource.JsonList[3]))
     
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
-
-

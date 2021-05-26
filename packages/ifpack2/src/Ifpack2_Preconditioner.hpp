@@ -146,6 +146,11 @@ public:
   //! Set this preconditioner's parameters.
   virtual void setParameters (const Teuchos::ParameterList& List) = 0;
 
+  virtual bool supportsZeroStartingSolution () { return false; };
+
+  //! Set this preconditioner's parameters.
+  virtual void setZeroStartingSolution (bool zeroStartingSolution) { TEUCHOS_ASSERT(false); };
+
   /// @brief Set up the graph structure of this preconditioner.
   ///
   /// If the graph structure of the constructor's input matrix has

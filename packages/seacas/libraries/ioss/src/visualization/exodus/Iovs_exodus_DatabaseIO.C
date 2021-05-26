@@ -7,6 +7,7 @@
 #include <Ioss_CodeTypes.h>
 #include <tokenize.h>
 #include <visualization/exodus/Iovs_exodus_DatabaseIO.h>
+#include <visualization/utils/Iovs_Utils.h>
 
 #include <cctype>
 #include <cstdlib>
