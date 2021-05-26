@@ -370,6 +370,7 @@ namespace Intrepid2 {
       }
     };
     
+    //! For use with read-only functors (such as Data objects).
     struct FullArgExtractorConst
     {
       template<class ViewType, class ...IntArgs>
@@ -382,21 +383,54 @@ namespace Intrepid2 {
     template<int whichArg>
     struct SingleArgExtractor
     {
+//      template<class ViewType, class itype0, class itype1, int M=whichArg>
+//      static inline
+//      enable_if_t<M == 0, reference_type>
+//      get(const ViewType &view, const itype0 &i0, const itype1 &i1)
+//      {
+//        return view(i0);
+//      }
+//
+//      template<class ViewType, class itype0, class itype1, int M=whichArg>
+//      static inline
+//      enable_if_t<M == 1, reference_type>
+//      get(const ViewType &view, const itype0 &i0, const itype1 &i1)
+//      {
+//        return view(i1);
+//      }
+//
+//      template<class ViewType, class itype0, class itype1, int M=whichArg>
+//      static inline
+//      enable_if_t<M >= 2, reference_type>
+//      get(const ViewType &view, const itype0 &i0, const itype1 &i1)
+//      {
+//        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"calling SingleArgExtractor with out-of-bounds argument");
+//      }
+      
       template<class ViewType, class ...IntArgs>
-      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      static inline
+      enable_if_t<whichArg < sizeof...(IntArgs), reference_type>
+      get(const ViewType &view, const IntArgs&... intArgs)
       {
-        const auto & arg = std::get<whichArg>(intArgs...);
+        const auto & arg = std::get<whichArg>(std::tuple<IntArgs...>(intArgs...));
         return view(arg);
+      }
+      
+      template<class ViewType, class ...IntArgs>
+      static inline
+      enable_if_t<whichArg >= sizeof...(IntArgs), reference_type>
+      get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"calling SingleArgExtractor with out-of-bounds argument");
       }
     };
     
-    //! storeInPlaceCombination with compile-time rank -- implementation for rank < 7, and compile-time underlying views and argument interpretation.  Intended for internal and expert use.
-    template<class BinaryOperator, int rank, class PolicyType, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
+    //! storeInPlaceCombination implementation for rank < 7, with compile-time underlying views and argument interpretation.  Intended for internal and expert use.
+    template<class BinaryOperator, class PolicyType, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
              class ArgExtractorThis, class ArgExtractorA, class ArgExtractorB>
-    enable_if_t<rank != 7, void>
-    storeInPlaceCombination(PolicyType policy, ThisUnderlyingViewType this_underlying,
-                            AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
-                            BinaryOperator binaryOperator)
+    void storeInPlaceCombination(PolicyType policy, ThisUnderlyingViewType this_underlying,
+                                 AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
+                                 BinaryOperator binaryOperator, ArgExtractorThis argThis, ArgExtractorA argA, ArgExtractorB argB)
     {
       Kokkos::parallel_for("compute in-place", policy,
       KOKKOS_LAMBDA (const auto &...args) {
@@ -421,12 +455,40 @@ namespace Intrepid2 {
       
       const bool A_1D       = A.getUnderlyingViewRank() == 1;
       const bool B_1D       = B.getUnderlyingViewRank() == 1;
+      const bool this_1D    = this->getUnderlyingViewRank() == 1;
       const bool A_constant = A_1D && (A.getUnderlyingViewSize() == 1);
       const bool B_constant = B_1D && (B.getUnderlyingViewSize() == 1);
       const bool A_full     = A.underlyingMatchesLogical();
       const bool B_full     = B.underlyingMatchesLogical();
       const bool this_full  = this->underlyingMatchesLogical();
       
+      const ConstantArgExtractor constArg;
+      
+      const FullArgExtractor fullArgs;
+      const FullArgExtractorConst fullArgsConst;
+      const FullArgExtractorWritableData fullArgsWritable;
+      
+      const SingleArgExtractor<0> arg0;
+      const SingleArgExtractor<1> arg1;
+      const SingleArgExtractor<2> arg2;
+      const SingleArgExtractor<3> arg3;
+      const SingleArgExtractor<4> arg4;
+      const SingleArgExtractor<5> arg5;
+      
+      // this lambda returns -1 if there is not a rank-1 underlying view whose data extent matches the logical extent in the corresponding dimension;
+      // otherwise, it returns the logical index of the corresponding dimension.
+      auto get1DArgIndex = [](const Data<DataScalar,DeviceType> &data) -> int
+      {
+        const auto & variationTypes = data.getVariationTypes();
+        for (int d=0; d<rank; d++)
+        {
+          if (variationTypes[d] == GENERAL)
+          {
+            return d;
+          }
+        }
+        return -1;
+      };
       /*
        TODO: optimize 1D cases
        In the lambda, we will want something like:
@@ -440,91 +502,253 @@ namespace Intrepid2 {
        */
       if (A_constant)
       {
-        using AAE    = ConstantArgExtractor;
+        auto AAE = constArg;
         auto A_underlying = A.getUnderlyingView<1>();
         if (this_full)
         {
-          using ThisAE = FullArgExtractor;
+          auto thisAE = fullArgs;
           auto this_underlying = this->getUnderlyingView<rank>();
           
           if (B_full)
           {
-            using BAE    = FullArgExtractor;
+            auto BAE = fullArgs;
             auto B_underlying = B.getUnderlyingView<rank>();
-            
-            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B_underlying), ThisAE, AAE, BAE>
-            (policy, this_underlying, A_underlying, B_underlying, binaryOperator);
+            storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
           else // this_full, not B_full: B may have modular data, etc.
           {
-            // use B (the Data object).  This could be further optimized by using B's underlying View and an appropriately-defined ArgExtractor.
-            using BAE    = FullArgExtractorConst;
-            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B), ThisAE, AAE, BAE>
-            (policy, this_underlying, A_underlying, B, binaryOperator);
+            auto BAE = fullArgsConst;
+            storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
           }
         }
         else // this is not full
         {
-          // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
-          using ThisAE = FullArgExtractorWritableData;
-          using BAE    = FullArgExtractorConst;
-          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(thisData), decltype(A_underlying), decltype(B), ThisAE, AAE, BAE>
-          (policy, thisData, A_underlying, B, binaryOperator);
+          // below, we optimize for the case of 1D data in B, when A is constant.  Still need to handle other cases…
+          if (B_1D && (get1DArgIndex(B) != -1) )
+          {
+            // since A is constant, that implies that this_1D is true, and has the same 1DArgIndex
+            const int argIndex = get1DArgIndex(B);
+            auto B_underlying    = B.getUnderlyingView<1>();
+            auto this_underlying = this->getUnderlyingView<1>();
+            switch (argIndex)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, AAE, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg1, AAE, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg2, AAE, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg3, AAE, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg4, AAE, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg5, AAE, arg5); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else
+          {
+            // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
+            auto thisAE = fullArgsWritable;
+            auto BAE    = fullArgsConst;
+            storeInPlaceCombination(policy, thisData, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
+          }
         }
       }
       else if (B_constant)
       {
-        using BAE    = ConstantArgExtractor;
+        auto BAE = constArg;
         auto B_underlying = B.getUnderlyingView<1>();
         if (this_full)
         {
-          using ThisAE = FullArgExtractor;
+          auto thisAE = fullArgs;
           auto this_underlying = this->getUnderlyingView<rank>();
           if (A_full)
           {
-            using AAE = FullArgExtractor;
+            auto AAE = fullArgs;
             auto A_underlying = A.getUnderlyingView<rank>();
             
-            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B_underlying), ThisAE, AAE, BAE>
-            (policy, this_underlying, A_underlying, B_underlying, binaryOperator);
+            storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
           else  // this_full, not A_full: A may have modular data, etc.
           {
             // use A (the Data object).  This could be further optimized by using A's underlying View and an appropriately-defined ArgExtractor.
-            using AAE    = FullArgExtractorConst;
-            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A), decltype(B_underlying), ThisAE, AAE, BAE>
-            (policy, this_underlying, A, B_underlying, binaryOperator);
+            auto AAE = fullArgsConst;
+            storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
         }
-        else
+        else // this is not full
         {
-          // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
-          using ThisAE = FullArgExtractorWritableData;
-          using AAE    = FullArgExtractorConst;
-          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(thisData), decltype(A), decltype(B_underlying), ThisAE, AAE, BAE>
-          (policy, thisData, A, B_underlying, binaryOperator);
+          // below, we optimize for the case of 1D data in A, when B is constant.  Still need to handle other cases…
+          if (A_1D && (get1DArgIndex(A) != -1) )
+          {
+            // since B is constant, that implies that this_1D is true, and has the same 1DArgIndex as A
+            const int argIndex = get1DArgIndex(A);
+            auto A_underlying    = A.getUnderlyingView<1>();
+            auto this_underlying = this->getUnderlyingView<1>();
+            switch (argIndex)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, arg0, BAE); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg1, arg1, BAE); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg2, arg2, BAE); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg3, arg3, BAE); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg4, arg4, BAE); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg5, arg5, BAE); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else
+          {
+            // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
+            auto thisAE = fullArgsWritable;
+            auto AAE    = fullArgsConst;
+            storeInPlaceCombination(policy, thisData, A, B_underlying, binaryOperator, thisAE, AAE, BAE);
+          }
         }
       }
       else // neither A nor B constant
       {
-        if (this_full)
+        if (this_1D && (get1DArgIndex(thisData) != -1))
+        {
+          // possible ways that "this" could have full-extent, 1D data
+          // 1. A constant, B 1D
+          // 2. A 1D, B constant
+          // 3. A 1D, B 1D
+          // The constant possibilities are already addressed above, leaving us with (3).  Note that A and B don't have to be full-extent, however
+          const int argThis = get1DArgIndex(thisData);
+          const int argA    = get1DArgIndex(A); // if not full-extent, will be -1
+          const int argB    = get1DArgIndex(B); // ditto
+          
+          auto A_underlying    = A.getUnderlyingView<1>();
+          auto B_underlying    = B.getUnderlyingView<1>();
+          auto this_underlying = this->getUnderlyingView<1>();
+          if ((argA != -1) && (argB != -1))
+          {
+#ifdef INTREPID2_HAVE_DEBUG
+            INTREPID2_TEST_FOR_EXCEPTION(argA != argThis, std::logic_error, "Unexpected 1D arg combination.");
+            INTREPID2_TEST_FOR_EXCEPTION(argB != argThis, std::logic_error, "Unexpected 1D arg combination.");
+#endif
+            switch (argThis)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, arg0, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg1, arg1, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg2, arg2, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg3, arg3, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg4, arg4, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg5, arg5, arg5); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else if (argA != -1)
+          {
+            // B is not full-extent in dimension argThis; use the Data object
+            switch (argThis)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg0, arg0, fullArgsConst); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg1, arg1, fullArgsConst); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg2, arg2, fullArgsConst); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg3, arg3, fullArgsConst); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg4, arg4, fullArgsConst); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, arg5, arg5, fullArgsConst); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+          else
+          {
+            // A is not full-extent in dimension argThis; use the Data object
+            switch (argThis)
+            {
+              case 0: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg0, fullArgsConst, arg0); break;
+              case 1: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg1, fullArgsConst, arg1); break;
+              case 2: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg2, fullArgsConst, arg2); break;
+              case 3: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg3, fullArgsConst, arg3); break;
+              case 4: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg4, fullArgsConst, arg4); break;
+              case 5: storeInPlaceCombination(policy, this_underlying, A, B_underlying, binaryOperator, arg5, fullArgsConst, arg5); break;
+              default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+            }
+          }
+        }
+        else if (this_full)
         {
           // This case uses A,B Data objects; could be optimized by dividing into subcases and using underlying Views with appropriate ArgExtractors.
           auto this_underlying = this->getUnderlyingView<rank>();
-          using ThisAE = FullArgExtractor;
-          using AAE    = FullArgExtractorConst;
-          using BAE    = FullArgExtractorConst;
-          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A), decltype(B), ThisAE, AAE, BAE>
-          (policy, this_underlying, A, B, binaryOperator);
+          auto thisAE = fullArgs;
+          
+          if (A_full)
+          {
+            auto A_underlying = A.getUnderlyingView<rank>();
+            auto AAE = fullArgs;
+            
+            if (B_1D && (get1DArgIndex(B) != -1))
+            {
+              const int argIndex = get1DArgIndex(B);
+              auto B_underlying = B.getUnderlyingView<1>();
+              switch (argIndex)
+              {
+                case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg0); break;
+                case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg1); break;
+                case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg2); break;
+                case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg3); break;
+                case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg4); break;
+                case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg5); break;
+                default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+              }
+            }
+            else
+            {
+              // A is full; B is not full, but not constant or full-extent 1D
+              // unoptimized in B access:
+              auto BAE = fullArgsConst;
+              storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, AAE, BAE);
+            }
+          }
+          else // A is not full
+          {
+            if (A_1D && (get1DArgIndex(A) != -1))
+            {
+              const int argIndex = get1DArgIndex(A);
+              auto A_underlying  = A.getUnderlyingView<1>();
+              if (B_full)
+              {
+                auto B_underlying = B.getUnderlyingView<rank>();
+                auto BAE = fullArgs;
+                switch (argIndex)
+                {
+                  case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg0, BAE); break;
+                  case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg1, BAE); break;
+                  case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg2, BAE); break;
+                  case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg3, BAE); break;
+                  case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg4, BAE); break;
+                  case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, arg5, BAE); break;
+                  default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+                }
+              }
+              else
+              {
+                auto BAE = fullArgsConst;
+                switch (argIndex)
+                {
+                  case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg0, BAE); break;
+                  case 1: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg1, BAE); break;
+                  case 2: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg2, BAE); break;
+                  case 3: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg3, BAE); break;
+                  case 4: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg4, BAE); break;
+                  case 5: storeInPlaceCombination(policy, this_underlying, A_underlying, B, binaryOperator, thisAE, arg5, BAE); break;
+                  default: INTREPID2_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Invalid/unexpected arg index");
+                }
+              }
+            }
+            else // A not full, and not full-extent 1D
+            {
+              // unoptimized in A, B accesses.
+              auto AAE    = fullArgsConst;
+              auto BAE    = fullArgsConst;
+              storeInPlaceCombination(policy, this_underlying, A, B, binaryOperator, thisAE, AAE, BAE);
+            }
+          }
         }
         else
         {
           // completely un-optimized case: we use Data objects for this, A, B.
-          using ThisAE = FullArgExtractorWritableData;
-          using AAE    = FullArgExtractorConst;
-          using BAE    = FullArgExtractorConst;
-          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(thisData), decltype(A), decltype(B), ThisAE, AAE, BAE>
-          (policy, thisData, A, B, binaryOperator);
+          auto thisAE = fullArgsWritable;
+          auto AAE    = fullArgsConst;
+          auto BAE    = fullArgsConst;
+          storeInPlaceCombination(policy, thisData, A, B, binaryOperator, thisAE, AAE, BAE);
         }
       }
     }
@@ -546,11 +770,11 @@ namespace Intrepid2 {
       const ordinal_type dim6 = getDataExtent(6);
       Kokkos::parallel_for("compute in-place", policy,
       KOKKOS_LAMBDA (const auto &...args) {
-        for (int i6=0; i6<dim6; i6++)
+        for (unsigned long long i6=0; i6<dim6; i6++) // TODO: figure out the right way to determine the int type for i6
         {
-          auto & result = thisData.getWritableEntry(args...);
-          const auto & A_val = A(args...);
-          const auto & B_val = B(args...);
+          auto & result = thisData.getWritableEntry(args...,i6);
+          const auto & A_val = A(args...,i6);
+          const auto & B_val = B(args...,i6);
           
           result = binaryOperator(A_val,B_val);
         }
