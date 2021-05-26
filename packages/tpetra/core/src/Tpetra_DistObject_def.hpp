@@ -1101,7 +1101,7 @@ namespace Tpetra {
                  numImportPacketsPerLID_av);
             }
           }
-          else { // pack on device
+          else { // comm on device
             Kokkos::fence(); // for UVM
             this->imports_.modify_device ();
             if (revOp == DoReverse) {

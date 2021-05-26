@@ -577,39 +577,63 @@ public:
   ///   is invalid on the calling process.
   bool sumIntoGlobalValues (const GO globalRowIndex, const LO colIndex, const Scalar vals[]);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  /// \brief Get a writeable view of the entries at the given mesh
+  ///   point, using a local index.
+  ///
+  /// \param localRowIndex [in] Local index of the mesh point.
+  /// \param colIndex [in] Column (vector) to view.
+  /// \param vals [out] View of the entries at the given mesh point.
+  ///
+  /// \return true if successful, else false.  This method will
+  ///   <i>not</i> succeed if the given local index of the mesh point
+  ///   is invalid on the calling process.
+  // TPETRA_DEPRECATED
+  bool getLocalRowView (const LO localRowIndex, const LO colIndex, Scalar*& vals);
+
+  /// \brief Get a writeable view of the entries at the given mesh
+  ///   point, using a global index.
+  ///
+  /// \param globalRowIndex [in] Global index of the mesh point.
+  /// \param colIndex [in] Column (vector) to view.
+  /// \param vals [out] View of the entries at the given mesh point.
+  ///
+  /// \return true if successful, else false.  This method will
+  ///   <i>not</i> succeed if the given global index of the mesh point
+  ///   is invalid on the calling process.
+  // TPETRA_DEPRECATED
+  bool getGlobalRowView (const GO globalRowIndex, const LO colIndex, Scalar*& vals);
+
   /// \brief Get a host view of the degrees of freedom at the given
   ///   mesh point.
-  ///
-  /// \warning This method's interface may change or disappear at any
-  ///   time.  Please do not rely on it in your code yet.
   ///
   /// Prefer using \c auto to let the compiler compute the return
   /// type.  This gives us the freedom to change this type in the
   /// future.  If you insist not to use \c auto, then please use the
   /// \c little_vec_type typedef to deduce the correct return type;
   /// don't try to hard-code the return type yourself.
-#ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //TPETRA_DEPRECATED 
-  little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex) const;
-#endif //TPETRA_DEPRECATED
+  little_host_vec_type getLocalBlock (const LO localRowIndex, const LO colIndex);
 
-  const_little_host_vec_type getLocalBlock(
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
+
+  const_little_host_vec_type getLocalBlockHost(
     const LO localRowIndex, 
     const LO colIndex, 
-    Access::ReadOnlyStruct) const;
+    const Access::ReadOnlyStruct) const;
 
-  little_host_vec_type getLocalBlock(
+  little_host_vec_type getLocalBlockHost(
     const LO localRowIndex, 
     const LO colIndex, 
-    Access::ReadWriteStruct);
+    const Access::ReadWriteStruct);
 
   /// \brief Get a local block on host, with the intent to overwrite all blocks in the BlockMultiVector
-  ///   before accessing the data on device. If you only intend to modify some blocks on host, use ReadWrite
-  ///   instead (otherwise, previous changes on device may be lost)
-  little_host_vec_type getLocalBlock(
+  ///   before accessing the data on device. If you intend to modify only some blocks on host, use 
+  ///   Access::ReadWrite instead (otherwise, previous changes on device may be lost)
+  little_host_vec_type getLocalBlockHost(
     const LO localRowIndex, 
     const LO colIndex, 
-    Access::OverwriteAllStruct);
+    const Access::OverwriteAllStruct);
   //@}
 
 protected:

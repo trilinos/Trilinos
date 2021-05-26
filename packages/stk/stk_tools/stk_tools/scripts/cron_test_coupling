@@ -1,0 +1,30 @@
+#!/bin/bash
+
+source ~/.bashrc
+module load sierra-devel
+
+USERNAME=william
+sierra_code=/scratch/${USERNAME}/code_v
+
+date_suffix=`date +%F_%H-%M-%S`
+
+repo_log=${sierra_code}/test_coupling_repo_sync_$date_suffix
+test_log=${sierra_code}/test_coupling_$date_suffix
+
+#if your cronjob doesn't have access to a kerberos ticket you can't do repo sync here.
+cd ${sierra_code}
+repo sync >& ${repo_log}
+if [ $? -ne 0 ] ; then
+  mail -s "Error doing 'repo sync' before testing coupling" ${USERNAME}@sandia.gov < ${repo_log};
+  exit 1;
+fi
+
+${sierra_code}/stk/stk_tools/stk_tools/scripts/test_coupling_today_to_yesterday.sh >& ${test_log}
+
+if [ $? -ne 0 ] ; then
+  mail -s "Error in testing coupling " ${USERNAME}@sandia.gov < ${test_log};
+  exit 1;
+fi
+
+exit 0;
+

@@ -76,8 +76,7 @@ namespace Iovs {
     void loadPluginLibrary();
     void setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath);
 
-    void getCatalystPluginPath(std::string &catalystPluginPath, bool callDlopenLibOSMesa,
-                               std::string &libOSMesaPath);
+    bool getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath);
 
     std::string getSierraInstallDirectory();
 

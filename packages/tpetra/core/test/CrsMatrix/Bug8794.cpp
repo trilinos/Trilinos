@@ -145,6 +145,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Bug8794, InsertDenseRows,
               << "  nrows     " << Amat.getNodeNumRows() << "\n"
               << "  nnz       " << Amat.getNodeNumEntries() << "\n"
               << "  maxPerRow " << Amat.getNodeMaxNumRowEntries() << "\n"
+              << "  norm      " << Amat.getFrobeniusNorm() << "\n"
               << std::endl;
   }
 

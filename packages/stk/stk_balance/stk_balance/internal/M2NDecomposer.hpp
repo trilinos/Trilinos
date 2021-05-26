@@ -37,8 +37,7 @@
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace balance { class BalanceSettings; } }
-namespace stk { namespace balance { class M2NParsedOptions; } }
+namespace stk { namespace balance { class M2NBalanceSettings; } }
 
 namespace stk {
 namespace balance {
@@ -48,8 +47,7 @@ class M2NDecomposer
 {
 public:
   M2NDecomposer(stk::mesh::BulkData & bulkData,
-                const stk::balance::BalanceSettings & balanceSettings,
-                const stk::balance::M2NParsedOptions & parsedOptions);
+                const M2NBalanceSettings & balanceSettings);
   virtual ~M2NDecomposer() = default;
 
   virtual stk::mesh::EntityProcVec get_partition();
@@ -60,16 +58,14 @@ public:
 
 protected:
   stk::mesh::BulkData & m_bulkData;
-  const stk::balance::BalanceSettings & m_balanceSettings;
-  const stk::balance::M2NParsedOptions & m_parsedOptions;
+  const stk::balance::M2NBalanceSettings & m_balanceSettings;
 };
 
 class M2NDecomposerNested : public M2NDecomposer
 {
 public:
   M2NDecomposerNested(stk::mesh::BulkData & bulkData,
-                      const stk::balance::BalanceSettings & balanceSettings,
-                      const stk::balance::M2NParsedOptions & parsedOptions);
+                      const stk::balance::M2NBalanceSettings & balanceSettings);
   virtual ~M2NDecomposerNested() override = default;
 
   virtual stk::mesh::EntityProcVec get_partition() override;

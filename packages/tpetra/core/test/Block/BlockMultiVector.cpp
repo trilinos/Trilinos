@@ -289,7 +289,7 @@ namespace {
     // has 48 rows on each process: 12 mesh points, and 4 degrees of
     // freedom per mesh point ("block size").  Rows 20-23 thus
     // correspond to local mesh point 5.
-    auto X_5_1 = X.getLocalBlock (5, colToModify, Tpetra::Access::ReadWrite);
+    auto X_5_1 = X.getLocalBlockHost (5, colToModify, Tpetra::Access::ReadWrite);
 
     // All entries of X_5_1 must be zero.  First make a block with all
     // zero entries, then test.  It's not worth testing the
@@ -307,10 +307,10 @@ namespace {
     }
     TEST_ASSERT( ! equal (X_5_1, zeroLittleVector) && ! equal (zeroLittleVector, X_5_1) );
 
-    // Make sure that getLocalBlock() returns a read-and-write view,
-    // not a deep copy.  Do this by calling getLocalBlock(5,1) again,
+    // Make sure that getLocalBlockHost() returns a read-and-write view,
+    // not a deep copy.  Do this by calling getLocalBlockHost(5,1) again,
     // and testing that changes to X_5_1 are reflected in the result.
-    auto X_5_1_new = X.getLocalBlock (5, colToModify, Tpetra::Access::ReadOnly);
+    auto X_5_1_new = X.getLocalBlockHost (5, colToModify, Tpetra::Access::ReadOnly);
     TEST_ASSERT( equal (X_5_1_new, X_5_1) && equal (X_5_1, X_5_1_new) );
     TEST_ASSERT( ! equal (X_5_1_new, zeroLittleVector) &&
                  ! equal (zeroLittleVector, X_5_1_new) );
@@ -320,7 +320,7 @@ namespace {
          localMeshIndex < static_cast<LO> (numLocalMeshPoints);
          ++localMeshIndex) {
       for (LO curCol = 0; curCol < numVecs; ++curCol) {
-        auto X_cur = X.getLocalBlock (localMeshIndex, curCol,
+        auto X_cur = X.getLocalBlockHost (localMeshIndex, curCol,
                                       Tpetra::Access::ReadOnly);
         if (curCol != colToModify) {
           TEST_ASSERT( equal (X_cur, zeroLittleVector) &&
@@ -427,7 +427,7 @@ namespace {
     const LO colToModify = 1;
     {
       auto X_overlap =
-        X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), 
+        X.getLocalBlockHost (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), 
                          colToModify, Tpetra::Access::OverwriteAll);
       TEST_ASSERT( X_overlap.data () != NULL );
       TEST_EQUALITY_CONST( static_cast<size_t> (X_overlap.extent (0)),
@@ -455,7 +455,7 @@ namespace {
 
     {
       auto X_overlap =
-           X.getLocalBlock (meshMap.getLocalElement(meshMap.getMinGlobalIndex()), 
+           X.getLocalBlockHost (meshMap.getLocalElement(meshMap.getMinGlobalIndex()), 
                             colToModify, Tpetra::Access::ReadOnly);
 
       typename BMV::little_host_vec_type zeroLittleVector ("zero", blockSize);
@@ -464,7 +464,7 @@ namespace {
       for (LO col = 0; col < numVecs; ++col) {
         for (LO localMeshRow = meshMap.getMinLocalIndex ();
              localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
-          auto Y_cur = Y.getLocalBlock (localMeshRow, col,
+          auto Y_cur = Y.getLocalBlockHost (localMeshRow, col,
                                         Tpetra::Access::ReadOnly);
           if (col != colToModify) {
             TEST_ASSERT( equal (Y_cur, zeroLittleVector) &&

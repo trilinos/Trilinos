@@ -103,19 +103,10 @@ void SideNodeConnector::connect_side_to_other_elements_nodes(const GraphEdge &ed
 
 void check_entity_has_local_id(const stk::mesh::BulkData &bulk, const stk::mesh::impl::ElementLocalIdMapper &localMapper, stk::mesh::Entity elemEntity)
 {
-    if(!localMapper.does_entity_have_local_id(elemEntity))
-    {
-        std::cerr << "no local id for " << (bulk.is_valid(elemEntity) ? "valid" : "invalid")
-                  << " elem " << bulk.identifier(elemEntity)
-                  << ", local_offset=" << elemEntity.local_offset();
-        if(bulk.is_valid(elemEntity))
-        {
-            std::cerr << " " << bulk.bucket(elemEntity).topology()
-                      << ", owned=" << bulk.bucket(elemEntity).owned()
-                      << ", bucket=" << bulk.bucket(elemEntity).bucket_id()
-                      << ", bucket_ord=" << bulk.mesh_index(elemEntity).bucket_ordinal;
-        }
-    }
+  ThrowRequireMsg(localMapper.does_entity_have_local_id(elemEntity),
+      "no local id for " << (bulk.is_valid(elemEntity) ? "valid" : "invalid")
+                << " elem " << bulk.identifier(elemEntity)
+                << ", local_offset=" << elemEntity.local_offset());
 }
 
 void SideConnector::connect_side_to_all_elements(stk::mesh::Entity sideEntity, stk::mesh::Entity elemEntity, int elemSide)

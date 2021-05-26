@@ -169,13 +169,13 @@ bool BalanceSettings::setVertexWeightsBasedOnNumberAdjacencies() const
     return false;
 }
 
-// For graph based methods (parmetis) only
+// For graph based methods only
 bool BalanceSettings::allowModificationOfVertexWeightsForSmallMeshes() const
 {
     return true;
 }
 
-// For graph based methods (parmetis) only
+// For graph based methods only
 bool BalanceSettings::shouldFixMechanisms() const
 {
     return false;

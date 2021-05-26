@@ -815,6 +815,9 @@ void StepperIMEX_RK<Scalar>::takeStep(
         StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STAGE);
     }
 
+    // reset the stage number
+    this->setStageNumber(-1);
+
     // Sum for solution: x_n = x_n-1 - dt*Sum{ bHat(i)*f(i) + b(i)*g(i) }
     Thyra::assign((workingState->getX()).ptr(), *(currentState->getX()));
     for (int i=0; i < numStages; ++i) {
@@ -831,8 +834,6 @@ void StepperIMEX_RK<Scalar>::takeStep(
     this->stepperRKAppAction_->execute(solutionHistory, thisStepper,
       StepperRKAppAction<Scalar>::ACTION_LOCATION::END_STEP);
   }
-  // reset the stage number
-  this->setStageNumber(-1);
   return;
 }
 

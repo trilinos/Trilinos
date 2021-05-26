@@ -42,50 +42,14 @@
 #include "Tacho_TaskFunctor_SolveLowerChol.hpp"
 #include "Tacho_TaskFunctor_SolveUpperChol.hpp"
 
+#include "Tacho_LDL_Supernodes.hpp"
+#include "Tacho_LDL_Supernodes_Serial.hpp"
+
 namespace Tacho {
 
   ///
   /// Utility on host with deep copy
   ///
-  template<typename ValueType, typename DeviceType>
-  inline
-  double
-  computeRelativeResidual(const CrsMatrixBase<ValueType,DeviceType> &A,
-                          const Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceType> &x,
-                          const Kokkos::View<ValueType**,Kokkos::LayoutLeft,DeviceType> &b) {
-    TACHO_TEST_FOR_EXCEPTION(size_t(A.NumRows()) != size_t(A.NumCols()) ||
-                             size_t(A.NumRows()) != size_t(b.extent(0)) ||
-                             size_t(x.extent(0)) != size_t(b.extent(0)) ||
-                             size_t(x.extent(1)) != size_t(b.extent(1)), std::logic_error,
-                             "A,x and b dimensions are not compatible");
-    typedef ValueType value_type;
-    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
-    typedef typename host_device_type::memory_space host_memory_space;
-
-    CrsMatrixBase<value_type,host_device_type> h_A;
-    h_A.createMirror(A); h_A.copy(A);
-
-    auto h_x = Kokkos::create_mirror_view(host_memory_space(), x); Kokkos::deep_copy(h_x, x);
-    auto h_b = Kokkos::create_mirror_view(host_memory_space(), b); Kokkos::deep_copy(h_b, b);
-
-    typedef ArithTraits<value_type> arith_traits;
-    const ordinal_type m = h_A.NumRows(), k = h_b.extent(1);
-    double diff = 0, norm = 0;
-    for (ordinal_type i=0;i<m;++i) {
-      for (ordinal_type p=0;p<k;++p) {
-        value_type s = 0;
-        const ordinal_type jbeg = h_A.RowPtrBegin(i), jend = h_A.RowPtrEnd(i);
-        for (ordinal_type j=jbeg;j<jend;++j) {
-          const ordinal_type col = h_A.Col(j);
-          s += h_A.Value(j)*h_x(col,p);
-        }
-        norm += arith_traits::real(h_b(i,p)*arith_traits::conj(h_b(i,p)));
-        diff += arith_traits::real((h_b(i,p) - s)*arith_traits::conj(h_b(i,p) - s));
-      }
-    }
-    return sqrt(diff/norm);
-  }
-  
   template<typename ValueType, typename SchedulerType>
   class NumericTools {
   public:
@@ -97,7 +61,7 @@ namespace Tacho {
     ///
     typedef SchedulerType scheduler_type;
 
-    typedef typename UseThisDevice<typename scheduler_type::execution_space>::device_type device_type;
+    typedef typename UseThisDevice<typename scheduler_type::execution_space>::type device_type;
     typedef typename device_type::execution_space exec_space;
     typedef typename device_type::memory_space exec_memory_space;
 
@@ -117,7 +81,7 @@ namespace Tacho {
 
     typedef Kokkos::MemoryPool<device_type> memory_pool_type;
 
-    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::device_type host_device_type;
+    typedef typename UseThisDevice<Kokkos::DefaultHostExecutionSpace>::type host_device_type;
     typedef typename host_device_type::execution_space host_space;
     typedef typename host_device_type::memory_space host_memory_space;
 
@@ -152,8 +116,10 @@ namespace Tacho {
     // supernode tree
     ordinal_type_array_host _stree_level, _stree_roots;
 
-    // output : factors
+    // output : factors, pivot, diagonal blocks
     value_type_array _superpanel_buf;
+    ordinal_type_array _piv;
+    value_type_array _diag;
 
     ///
     /// supernode info: supernode data structure with "unamanged" view
@@ -339,6 +305,12 @@ namespace Tacho {
                        stree_children);
       track_alloc(_superpanel_buf.span()*sizeof(value_type));
 
+      _piv = ordinal_type_array("piv", 4*_m);
+      track_alloc(_piv.span()*sizeof(ordinal_type));
+
+      _diag = value_type_array("diag", 2*_m);
+      track_alloc(_diag.span()*sizeof(value_type));
+
       ///
       /// max number of superblocks
       ///
@@ -405,6 +377,10 @@ namespace Tacho {
         track_free(_sched_solve_capacity);
         _sched_solve = scheduler_type();
       }
+
+      // release diagonal blocks and pivots
+      track_free(_piv.span()*sizeof(ordinal_type));
+      track_free(_diag.span()*sizeof(value_type));
 
       // release supernode buffer
       track_free(_superpanel_buf.span()*sizeof(value_type));
@@ -512,8 +488,8 @@ namespace Tacho {
       stat.t_factor = timer.seconds();
           
       if (verbose) {
-        printf("Summary: NumericTools (SerialFactorization)\n");
-        printf("===========================================\n");
+        printf("Summary: NumericTools, Cholesky (SerialFactorization)\n");
+        printf("=====================================================\n");
           
         print_stat_factor();
       }
@@ -566,8 +542,8 @@ namespace Tacho {
       stat.t_factor = timer.seconds();
         
       if (verbose) {
-        printf("Summary: NumericTools (SerialPanelFactorization: %3d)\n", nb);
-        printf("=====================================================\n");
+        printf("Summary: NumericTools, Cholesky (SerialPanelFactorization: %3d)\n", nb);
+        printf("===============================================================\n");
 
         print_stat_factor();
       }
@@ -629,12 +605,129 @@ namespace Tacho {
       stat.t_extra += timer.seconds();
 
       if (verbose) {
-        printf("Summary: NumericTools (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
-        printf("========================================\n");
+        printf("Summary: NumericTools, Cholesky (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
+        printf("==================================================\n");
 
         print_stat_solve();
       }
     }
+
+    inline
+    void
+    factorizeLDL_Serial(const value_type_array &ax,
+                        const ordinal_type verbose = 0) {
+      if (!std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
+        printf("factorizeLDL_Serial cannot be executed on non-host devices\n");          
+        return;
+      }
+
+      Kokkos::Impl::Timer timer;
+      {
+        timer.reset();
+        {
+          /// matrix values
+          _ax = ax;
+            
+          /// copy the input matrix into super panels
+          _info.copySparseToSuperpanels(_ap, _aj, _ax, _perm, _peri);
+        }
+        stat.t_copy = timer.seconds();
+      }
+          
+      timer.reset();
+      {
+        /// valgrind reports the following buf array as uninitialized even if it is initialized
+        /// while the task is executed. to remove the valgrind error, we initialize the array with zero.
+        /// value_type_array buf(do_not_initialize_tag("buf"), _info.max_schur_size*(_info.max_schur_size + 1));
+        value_type_array 
+          buf("buf", 
+              _info.max_schur_size*(_info.max_schur_size + 1) + // ABR
+              _info.max_supernode_size*std::max(32,_info.max_schur_size)); // ATR copy and workspace for LDL
+        const size_t bufsize = buf.span()*sizeof(value_type);
+        track_alloc(bufsize);
+          
+        /// recursive tree traversal
+        const ordinal_type member = 0, nroots = _stree_roots.extent(0);
+        for (ordinal_type i=0;i<nroots;++i)
+          LDL_Supernodes<Algo::Workflow::Serial>
+            ::factorize_recursive_serial(member, _info, _stree_roots(i), true, 
+                                         _piv.data(), _diag.data(), buf.data(), bufsize);
+          
+        track_free(bufsize);
+      }
+      stat.t_factor = timer.seconds();
+          
+      if (verbose) {
+        printf("Summary: NumericTools, LDL (SerialFactorization)\n");
+        printf("================================================\n");
+          
+        print_stat_factor();
+      }
+    }
+
+    inline
+    void
+    solveLDL_Serial(const value_type_matrix &x,   // solution
+                    const value_type_matrix &b,   // right hand side
+                    const value_type_matrix &t,   // temporary workspace (store permuted vectors)
+                    const ordinal_type verbose = 0) {
+      if (!std::is_same<exec_memory_space,Kokkos::HostSpace>::value) {
+        printf("solveLDL_Serial cannot be executed on non-host devices\n");          
+        return;
+      }
+
+      TACHO_TEST_FOR_EXCEPTION(x.extent(0) != b.extent(0) ||
+                               x.extent(1) != b.extent(1) ||
+                               x.extent(0) != t.extent(0) ||
+                               x.extent(1) != t.extent(1), std::logic_error,
+                               "supernode data structure is not allocated");
+
+      TACHO_TEST_FOR_EXCEPTION(x.data() == b.data() ||
+                               x.data() == t.data() ||
+                               t.data() == b.data(), std::logic_error,
+                               "x, b and t have the same data pointer");
+
+      Kokkos::Impl::Timer timer;
+
+      _info.x = t;
+
+      // copy b -> t
+      timer.reset();
+      applyRowPermutationToDenseMatrix(t, b, _perm);
+      stat.t_extra = timer.seconds();
+        
+      timer.reset();
+      {
+        value_type_array buf(do_not_initialize_tag("buf"), _info.max_schur_size*x.extent(1));
+        const size_t bufsize = buf.span()*sizeof(value_type);
+        track_alloc(bufsize);
+          
+        /// recursive tree traversal
+        const ordinal_type member = 0, nroots = _stree_roots.extent(0);
+        for (ordinal_type i=0;i<nroots;++i)
+          LDL_Supernodes<Algo::Workflow::Serial>
+            ::solve_lower_recursive_serial(member, _info, _stree_roots(i), true, _piv.data(), buf.data(), bufsize);
+        for (ordinal_type i=0;i<nroots;++i)
+          LDL_Supernodes<Algo::Workflow::Serial>
+            ::solve_upper_recursive_serial(member, _info, _stree_roots(i), true, _piv.data(), _diag.data(), buf.data(), bufsize);
+          
+        track_free(bufsize);
+      }
+      stat.t_solve = timer.seconds();
+        
+      // copy t -> x
+      timer.reset();
+      applyRowPermutationToDenseMatrix(x, t, _peri);
+      stat.t_extra += timer.seconds();
+
+      if (verbose) {
+        printf("Summary: NumericTools, Cholesky (SerialSolve: %3d)\n", ordinal_type(x.extent(1)));
+        printf("==================================================\n");
+
+        print_stat_solve();
+      }
+    }
+
 #endif
 
     ///

@@ -65,7 +65,7 @@ namespace {
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");
     for (auto eb : ebs) {
       const std::string &name = eb->name();
-      fmt::print("\t|{2:^{0}}|{3:{1}n}  |\n", max_name, max_face - 2, name,
+      fmt::print("\t|{2:^{0}}|{3:{1}L}  |\n", max_name, max_face - 2, name,
                  boundary_faces[name].size());
     }
     fmt::print("\t+{2:-^{0}}+{2:-^{1}}+\n", max_name, max_face, "");

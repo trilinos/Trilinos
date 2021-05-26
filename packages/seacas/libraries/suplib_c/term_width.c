@@ -10,6 +10,7 @@
 
 #ifdef _MSC_VER
 #include <io.h>
+#define NOMINMAX
 #include <windows.h>
 #define isatty _isatty
 #else
