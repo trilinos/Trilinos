@@ -229,8 +229,8 @@ int main( int argc, char* argv[] )
     string caseChoiceString = "All"; // alternatives: Standard, NonAffineTensor, AffineTensor, Uniform
     
     int pointCountFixed = -1;
-    int pointCountMin = 64;
-    int pointCountMax = 4096;
+    int pointCountMin = 16;
+    int pointCountMax = 1024;
     
     cmdp.setOption("case", &caseChoiceString, "Options: All, Constant, Affine, General");
     cmdp.setOption("pointCount", &pointCountFixed, "Single point count to run with");
