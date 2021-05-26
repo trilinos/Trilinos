@@ -127,10 +127,6 @@ namespace MueLu {
     ArrayRCP<LO> myColors;
     LO numColors=0;
 
-    // FIXME:  This is not going to respect coloring at or near processor
-    // boundaries, so that'll need to get cleaned up later
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument,"Coloring on more than 1 MPI rank currently not supported");
-
     RCP<LocalOrdinalVector> fc_splitting;
     std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
     if(coloringAlgo == "file") {
@@ -177,12 +173,14 @@ namespace MueLu {
     }
 #endif
     else if(coloringAlgo == "MIS" || graph->GetDomainMap()->lib() == Xpetra::UseTpetra) {
-      SubFactoryMonitor sfm(*this,"MIS",currentLevel);
+      SubFactoryMonitor sfm(*this,"MIS",currentLevel)
+;      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument,"MIS on more than 1 MPI rank is not supported");
       DoMISNaive(*graph,myColors,numColors);
     }
 #ifdef HAVE_MUELU_KOKKOSCORE  
     else {
       SubFactoryMonitor sfm(*this,"GraphColoring",currentLevel);
+      TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() != 1, std::invalid_argument,"KokkosKernels graph coloring on more than 1 MPI rank is not supported");
       DoGraphColoring(*graph,myColors,numColors);
     }
 #else

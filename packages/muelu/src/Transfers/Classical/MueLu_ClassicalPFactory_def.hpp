@@ -174,10 +174,22 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
 
     // FIXME: This does not work in parallel yet
-    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
+//    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
  
     // NOTE: Let's hope we never need to deal with this case
     TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*A->getDomainMap()),Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
+
+
+    // Do we need ghosts rows of A and myPointType?
+    std::string scheme = pL.get<std::string>("aggregation: classical scheme");
+    bool need_ghost_rows =false;
+    if(scheme == "ext+i") 
+      need_ghost_rows=true;
+    else if(scheme == "direct")
+      need_ghost_rows=false;
+    else if(scheme == "classical modified") 
+      need_ghost_rows=true;
+    // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
 
     // Ghost the FC splitting and grab the data (if needed)
@@ -185,17 +197,22 @@ namespace MueLu {
     ArrayRCP<const LO> myPointType;
     if(Importer.is_null()) {
       fc_splitting = owned_fc_splitting;
+      printf("No Importer for fc_splitting size = %d\n",(int)owned_fc_splitting->getMap()->getNodeNumElements());
     }
     else {
       RCP<LocalOrdinalVector> fc_splitting_nonconst = LocalOrdinalVectorFactory::Build(A->getCrsGraph()->getColMap());
       fc_splitting_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
       fc_splitting = fc_splitting_nonconst;
+      printf("Using Importer for fc_splitting size = %d/%d\n",(int)owned_fc_splitting->getMap()->getNodeNumElements(),(int)fc_splitting->getMap()->getNodeNumElements());
     }
     myPointType = fc_splitting->getData(0);      
 
+
     /* Ghost A (if needed) */
     RCP<const Matrix> Aghost;
-    if(!Importer.is_null()){      
+    RCP<const LocalOrdinalVector> fc_splitting_ghost;
+    ArrayRCP<const LO> myPointType_ghost;
+    if(need_ghost_rows && !Importer.is_null()){      
       ArrayView<const LO> remoteLIDs = Importer->getRemoteLIDs();
       size_t numRemote = Importer->getNumRemoteIDs();
       Array<GO> remoteRows(numRemote);
@@ -211,14 +228,29 @@ namespace MueLu {
 #ifdef HAVE_MUELU_EPETRA
         RCP<CrsMatrix> Ecrs = rcp(new EpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
         Aghost = rcp(new CrsMatrixWrap(Ecrs));
+        RCP<const Import> Importer2 = Ecrs->getCrsGraph()->getImporter();
+        if(Importer2.is_null()) {
+          RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Ecrs->getColMap());
+          fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
+          fc_splitting_ghost = fc_splitting_ghost_nonconst;
+          myPointType_ghost  = fc_splitting_ghost->getData(0);      
+        }
 #endif
       }
       else {
 #ifdef HAVE_MUELU_TPETRA
         RCP<CrsMatrix> Tcrs = rcp(new TpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
         Aghost = rcp(new CrsMatrixWrap(Tcrs));
+        // We also need to ghost myPointType for Aghost, if we've created an Aghost
+        RCP<const Import> Importer2 = Tcrs->getCrsGraph()->getImporter();
+        if(Importer2.is_null()) {
+          RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Tcrs->getColMap());
+          fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
+          fc_splitting_ghost = fc_splitting_ghost_nonconst;
+          myPointType_ghost  = fc_splitting_ghost->getData(0);      
+        }
 #endif
-      }
+      }     
     }
 
     /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/   
@@ -304,19 +336,17 @@ namespace MueLu {
     // Phase 3: Generate the P matrix
     RCP<const Map> coarseColMap = coarseMap;
     RCP<const Map> coarseDomainMap = ownedCoarseMap;
-
-    std::string scheme = pL.get<std::string>("aggregation: classical scheme");
     if(scheme == "ext+i") {
       SubFactoryMonitor sfm(*this,"Ext+i Interpolation",coarseLevel);
-      Coarsen_Ext_Plus_I(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_Ext_Plus_I(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),myPointType_ghost(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     else if(scheme == "direct") {
       SubFactoryMonitor sfm(*this,"Direct Interpolation",coarseLevel);
-      Coarsen_Direct(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_Direct(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),myPointType_ghost(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     else if(scheme == "classical modified") {
       SubFactoryMonitor sfm(*this,"Classical Modified Interpolation",coarseLevel);
-      Coarsen_ClassicalModified(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_ClassicalModified(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),myPointType_ghost(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
     }
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
@@ -342,7 +372,7 @@ namespace MueLu {
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Classical Modified Interpolation                    */
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -714,7 +744,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Direct Interpolation                                */
     /* We do not use De Sterck, Falgout, Nolting and Yang (2008)     */
@@ -968,7 +998,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
 
     /* ============================================================= */
     /* Phase 3 : Extended+i Interpolation                            */
@@ -1052,18 +1082,23 @@ Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const Grap
         for(LO j=0; j<(LO)strong_neighbors.size(); j++) {
           if(myPointType[strong_neighbors[j]] == F_PT) {
             LO row2 = strong_neighbors[j];
-            if(row2 < (LO)Nrows) A.getLocalRowView(row2, indices, vals);
-            else Aghost->getLocalRowView(row2-Nrows,indices,vals);
-              
-            // C-neighbors of strong F-neighbors
-            // FIXME:  This needs double ghosting doesn't it.  Ugh.
-            for(LO k=0; k<indices.size(); k++) {
-              if(myPointType[indices[k]] == C_PT)
-                C_hat.insert(cpoint2pcol[indices[k]]);
+            if(row2 < (LO)Nrows) {
+              A.getLocalRowView(row2, indices, vals);
+              for(LO k=0; k<indices.size(); k++) {
+                if(myPointType[indices[k]] == C_PT)
+                  C_hat.insert(cpoint2pcol[indices[k]]);
+              }
+            }
+            else {
+              Aghost->getLocalRowView(row2-Nrows,indices,vals);
+              for(LO k=0; k<indices.size(); k++) {
+                if(myPointType_ghost[indices[k]] == C_PT)
+                  C_hat.insert(cpoint2pcol[indices[k]]);
+              }
             }         
           }
         }
-      }// end else 
+      }// end else myPointType
 
       // Realloc if needed
       if(ct + (size_t)C_hat.size() > (size_t)tmp_colind.size()) {
@@ -1355,7 +1390,7 @@ GhostCoarseMap(const Matrix &A, const Import & Importer, const ArrayRCP<const LO
       
   for(LO i=0; i<(LO)d_data.size(); i++) {
     if(myPointType[i] == C_PT) {
-      d_data[i] = ct;
+      d_data[i] = coarseMap->getGlobalElement(ct);
       ct++;
     }
     else
