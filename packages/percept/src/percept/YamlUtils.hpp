@@ -72,8 +72,8 @@
           case YAML::NodeType::Map:
             emout << YAML::BeginMap ;
             for (YAML::const_iterator i = node.begin(); i != node.end(); ++i) {
-              const YAML::Node & key   = i->first;
-              const YAML::Node & value = i->second;
+              const YAML::Node key   = i->first;
+              const YAML::Node value = i->second;
               out = key.as<std::string>();
               emout << YAML::Key << out;
               emout << YAML::Value;
