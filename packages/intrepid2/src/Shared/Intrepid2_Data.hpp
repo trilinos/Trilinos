@@ -360,6 +360,25 @@ namespace Intrepid2 {
       }
     };
     
+    //! For use with Data object into which a value will be stored.
+    struct FullArgExtractorWritableData
+    {
+      template<class ViewType, class ...IntArgs>
+      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        return view.getWritableEntry(intArgs...);
+      }
+    };
+    
+    struct FullArgExtractorConst
+    {
+      template<class ViewType, class ...IntArgs>
+      static inline const_reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        return view(intArgs...);
+      }
+    };
+    
     template<int whichArg>
     struct SingleArgExtractor
     {
@@ -439,29 +458,18 @@ namespace Intrepid2 {
           else // this_full, not B_full: B may have modular data, etc.
           {
             // use B (the Data object).  This could be further optimized by using B's underlying View and an appropriately-defined ArgExtractor.
-            using BAE    = FullArgExtractor;
-//            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B), ThisAE, AAE, BAE>
-//            (policy, this_underlying, A_underlying, B, binaryOperator);
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const auto &...args) {
-              auto & result = this_underlying(args...);
-              const auto & A_val = A_underlying(0);
-              const auto & B_val = B(args...);
-              
-              result = binaryOperator(A_val,B_val);
-            });
+            using BAE    = FullArgExtractorConst;
+            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B), ThisAE, AAE, BAE>
+            (policy, this_underlying, A_underlying, B, binaryOperator);
           }
         }
         else // this is not full
         {
-          // since storing to Data object requires a call to getWritableEntry(), we don't yet support this case with FullArgExtractor
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const auto &...args) {
-            auto & result = thisData.getWritableEntry(args...);
-            const auto & A_val = A_underlying(0);
-            const auto & B_val = B(args...);
-            result = binaryOperator(A_val,B_val);
-          });
+          // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
+          using ThisAE = FullArgExtractorWritableData;
+          using BAE    = FullArgExtractorConst;
+          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(thisData), decltype(A_underlying), decltype(B), ThisAE, AAE, BAE>
+          (policy, thisData, A_underlying, B, binaryOperator);
         }
       }
       else if (B_constant)
@@ -483,55 +491,40 @@ namespace Intrepid2 {
           else  // this_full, not A_full: A may have modular data, etc.
           {
             // use A (the Data object).  This could be further optimized by using A's underlying View and an appropriately-defined ArgExtractor.
-            using AAE    = FullArgExtractor;
-//            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A), decltype(B_underlying), ThisAE, AAE, BAE>
-//            (policy, this_underlying, A, B_underlying, binaryOperator);
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const auto &...args) {
-              auto & result = this_underlying(args...);
-              const auto & A_val = A(args...);
-              const auto & B_val = B_underlying(0);
-              
-              result = binaryOperator(A_val,B_val);
-            });
+            using AAE    = FullArgExtractorConst;
+            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A), decltype(B_underlying), ThisAE, AAE, BAE>
+            (policy, this_underlying, A, B_underlying, binaryOperator);
           }
         }
         else
         {
-          // since storing to Data object requires a call to getWritableEntry(), we don't yet support this case with FullArgExtractor
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const auto &...args) {
-            auto & result = thisData.getWritableEntry(args...);
-            const auto & A_val = A(args...);
-            const auto & B_val = B_underlying(0);
-            
-            result = binaryOperator(A_val,B_val);
-          });
+          // since storing to Data object requires a call to getWritableEntry(), we use FullArgExtractorWritableData
+          using ThisAE = FullArgExtractorWritableData;
+          using AAE    = FullArgExtractorConst;
+          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(thisData), decltype(A), decltype(B_underlying), ThisAE, AAE, BAE>
+          (policy, thisData, A, B_underlying, binaryOperator);
         }
       }
       else // neither A nor B constant
       {
         if (this_full)
         {
+          // This case uses A,B Data objects; could be optimized by dividing into subcases and using underlying Views with appropriate ArgExtractors.
           auto this_underlying = this->getUnderlyingView<rank>();
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const auto &...args) {
-            auto & result = this_underlying(args...);
-            const auto & A_val = A(args...);
-            const auto & B_val = B(args...);
-            
-            result = binaryOperator(A_val,B_val);
-          });
+          using ThisAE = FullArgExtractor;
+          using AAE    = FullArgExtractorConst;
+          using BAE    = FullArgExtractorConst;
+          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A), decltype(B), ThisAE, AAE, BAE>
+          (policy, this_underlying, A, B, binaryOperator);
         }
         else
         {
-          Kokkos::parallel_for("compute in-place", policy,
-          KOKKOS_LAMBDA (const auto &...args) {
-            auto & result = thisData.getWritableEntry(args...);
-            const auto & A_val = A(args...);
-            const auto & B_val = B(args...);
-            result = binaryOperator(A_val,B_val);
-          });
+          // completely un-optimized case: we use Data objects for this, A, B.
+          using ThisAE = FullArgExtractorWritableData;
+          using AAE    = FullArgExtractorConst;
+          using BAE    = FullArgExtractorConst;
+          storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(thisData), decltype(A), decltype(B), ThisAE, AAE, BAE>
+          (policy, thisData, A, B, binaryOperator);
         }
       }
     }
