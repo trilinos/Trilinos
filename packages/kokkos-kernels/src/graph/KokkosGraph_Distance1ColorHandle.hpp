@@ -192,8 +192,8 @@ private:
     overall_coloring_time_phase4(0),
     overall_coloring_time_phase5(0),
     coloring_time(0),
-    num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(), use_vtx_list(false),
-    vertex_colors(), is_coloring_called_before(false), num_colors(0)
+    num_phases(0), size_of_edge_list(0), lower_triangle_src(), lower_triangle_dst(),
+    use_vtx_list(false), vertex_colors(), is_coloring_called_before(false), num_colors(0)
   {
     this->choose_default_algorithm();
     this->set_defaults(this->coloring_algorithm_type);
@@ -651,9 +651,9 @@ private:
   int get_num_phases() const { return this->num_phases;}
   color_view_t get_vertex_colors() const {return this->vertex_colors;}
   bool is_coloring_called() const {return this->is_coloring_called_before;}
-  bool get_use_vtx_list() const{return this->use_vtx_list;}
+  bool get_use_vtx_list() const {return this->use_vtx_list;}
   nnz_lno_temp_work_view_t get_vertex_list() const {return this->vertex_list;}
-  size_type get_vertex_list_size() const{return this->vertex_list_size;}
+  size_type get_vertex_list_size() const {return this->vertex_list_size;}
   //setters
   void set_vertex_list(nnz_lno_temp_work_view_t vertex_list_, size_type vertex_list_size_){
     this->vertex_list = vertex_list_;
