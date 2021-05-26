@@ -43,17 +43,17 @@ INCLUDE(TribitsConstants)
 INCLUDE(TribitsProcessExtraRepositoriesList)
 INCLUDE(TribitsProcessPackagesAndDirsLists)
 INCLUDE(TribitsProcessTplsLists)
-INCLUDE(TribitsAdjustPackageEnables)
+INCLUDE(TribitsReadDepsFilesCreateDepsGraph)
 
 # Standard TriBITS utilities includes
 INCLUDE(TimingUtils)
 
 
-# @MACRO: TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+# @MACRO: TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()
 #
 # Usage::
 #
-#   TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+#   TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()
 #
 # Macro run at the top project-level scope that reads in packages and TPLs,
 # process dependencies, and (optimally) writes XML files of dependency
@@ -63,32 +63,18 @@ INCLUDE(TimingUtils)
 # data-structures described in `TriBITS System Data Structures and
 # Functions`_.
 #
-MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
+# See `Function call tree for constructing package dependency graph`_
+#
+MACRO(TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH)
 
-  #
-  # A) Read in list of packages and package dependencies
-  #
-
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_START_SECONDS)
-  ENDIF()
+  TRIBITS_CONFIG_CODE_START_TIMER(SET_UP_DEPENDENCIES_TIME_START_SECONDS)
 
   TRIBITS_READ_DEFINED_EXTERNAL_AND_INTENRAL_TOPLEVEL_PACKAGES_LISTS()
 
-  TRIBITS_READ_PROJECT_AND_PACKAGE_DEPENDENCIES_CREATE_GRAPH_PRINT_DEPS()
+  TRIBITS_READ_DEPS_FILES_CREATE_DEPS_GRAPH()
 
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(SET_UP_DEPENDENCIES_TIME_STOP_SECONDS)
-    TIMER_PRINT_REL_TIME(${SET_UP_DEPENDENCIES_TIME_START_SECONDS}
-      ${SET_UP_DEPENDENCIES_TIME_STOP_SECONDS}
-      "\nTotal time to read in and process all package dependencies")
-  ENDIF()
-
-  #
-  # B) Dump dependnecy info as XML files if asked
-  #
-
-  TRIBITS_WRITE_XML_DEPENDENCY_FILES_IF_SUPPORTED()
+  TRIBITS_CONFIG_CODE_STOP_TIMER(SET_UP_DEPENDENCIES_TIME_START_SECONDS
+    "\nTotal time to read in all dependencies files and build dependencies graph")
 
 ENDMACRO()
 
@@ -109,7 +95,6 @@ ENDMACRO()
 #   ${PROJECT_NAME}_DEFINED_TPLS
 #   ${PROJECT_NAME}_DEFINED_INTERNAL_PACKAGES
 #   ${PROJECT_NAME}_ALL_DEFINED_TOPLEVEL_PACKAGES
-#   ${PROJECT_NAME}_NUM_ALL_DEFINED_TOPLEVEL_PACKAGES
 #
 #   ${PROJECT_NAME}_NUM_DEFINED_TPLS
 #   ${PROJECT_NAME}_NUM_DEFINED_INTERNAL_PACKAGES
@@ -131,6 +116,8 @@ ENDMACRO()
 #  * `TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS()`_
 #
 # which set their varaibles.
+#
+# See `Function call tree for constructing package dependency graph`_
 #
 MACRO(TRIBITS_READ_DEFINED_EXTERNAL_AND_INTENRAL_TOPLEVEL_PACKAGES_LISTS)
 
@@ -247,14 +234,22 @@ MACRO(TRIBITS_READ_DEFINED_EXTERNAL_AND_INTENRAL_TOPLEVEL_PACKAGES_LISTS)
 ENDMACRO()
 
 
+# @FUNCTION: TRIBITS_WRITE_XML_DEPENDENCY_FILES_IF_SUPPORTED()
+#
+# Usage::
+#
+#   TRIBITS_WRITE_XML_DEPENDENCY_FILES_IF_SUPPORTED()
+#
 # Function that writes XML dependnecy files if support for that exists in this
-# installation of TriBITS.
+# instance of TriBITs.
+#
+# See `Function call tree for constructing package dependency graph`_
 #
 FUNCTION(TRIBITS_WRITE_XML_DEPENDENCY_FILES_IF_SUPPORTED)
   SET(TRIBITS_PROJECT_CI_SUPPORT_DIR
      "${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_CI_SUPPORT_DIR}")
   SET(TRIBITS_DUMP_XML_DEPS_MODULE
-   "${TRIBITS_PROJECT_CI_SUPPORT_DIR}/TribitsDumpXmlDependenciesFiles.cmake")
+   "${TRIBITS_PROJECT_CI_SUPPORT_DIR}/TribitsWriteXmlDependenciesFiles.cmake")
   IF (EXISTS "${TRIBITS_DUMP_XML_DEPS_MODULE}")
     INCLUDE(${TRIBITS_DUMP_XML_DEPS_MODULE})
     TRIBITS_WRITE_XML_DEPENDENCY_FILES()

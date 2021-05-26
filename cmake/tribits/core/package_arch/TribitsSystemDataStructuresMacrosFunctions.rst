@@ -55,14 +55,14 @@ read in order.  This list does **not** include any subpackages.
 Note that some of the packages listed in
 `${PACKAGE_NAME}_DEFINED_INTERNAL_TOPLEVEL_PACKAGES`_ may actually be treated
 as external packages and not build from source code and instead will be found
-out on the system and pre-built packages using
-``find_package(${PACKAGE_NAME})``.  The final decision for if a package is
-treated as an internal or external package is determined by the variable::
+out on the system as pre-built/pre-installed packages using
+``find_package(<externalPackageName>)``.  The final decision for if a package
+is treated as an internal or external package is determined by the variable::
 
   ${PACKAGE_NAME}_PACKAGE_STATUS=[INTERNAL|EXTERNAL]
 
-which gets set by a set of different criteria as described in section
-`Determining if a package is internal or external`_.  This determines what
+which gets set variouscriteria as described in section `Determining if a
+package is internal or external`_.  This varaible determines what
 pre-built/pre-installed packages must be found out on the system if enabled
 and what internal packages need to be built if enabled.
 
@@ -72,6 +72,11 @@ is used with an adjective, it is usually meant in this more general context.
 
 ToDo: Describe the data-structures of all "Packages" which includes
 subpackages as well and the lists of enabled packages.
+
+These data-stractures as well as the package dependencies graph is built up in
+the macro `TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()`_ with the
+call graph described in the section `Function call tree for constructing
+package dependency graph`_.
 
 A set of enable/disable logic is applied in the macro
 `TRIBITS_ADJUST_PACKAGE_ENABLES()`_.  Once all of this logic has been applied,
@@ -124,7 +129,7 @@ project-level non-cache list variable::
 That list is created from the information in the
 `<repoDir>/PackagesList.cmake`_ and `<packageDir>/cmake/Dependencies.cmake`_
 files for the top-level packages read and processed in the macro
-`TRIBITS_READ_PROJECT_AND_PACKAGE_DEPENDENCIES_CREATE_GRAPH_PRINT_DEPS()`_ using macros in the file::
+`TRIBITS_READ_DEPS_FILES_CREATE_DEPS_GRAPH()`_ using macros in the file::
 
   TribitsAdjustPackageEnables.cmake
 
@@ -416,32 +421,35 @@ Function call tree for constructing package dependency graph
 Below is the CMake macro and function call graph for constructing the packages
 lists and dependency data-structures described above.
 
-| `TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()`_
+| `TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()`_
 |   `TRIBITS_READ_DEFINED_EXTERNAL_AND_INTENRAL_TOPLEVEL_PACKAGES_LISTS()`_
-|     For each ``<repoDir>`` in all defined TriBITS repositories:
+|     Foreach ``<repoDir>`` in ``${PROJECT_NAME}_ALL_REPOSITORIES``:
 |       ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)``
 |       `TRIBITS_PROCESS_TPLS_LISTS()`_
 |       ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
 |       `TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS()`_
-|   `TRIBITS_READ_PROJECT_AND_PACKAGE_DEPENDENCIES_CREATE_GRAPH_PRINT_DEPS()`_
-|     `TRIBITS_PROCESS_ALL_REPOSITORY_DEPENDENCY_SETUP_LOGIC()`_
-|     `TRIBITS_PROCESS_PROJECT_DEPENDENCY_SETUP_LOGIC()`_
-|     `TRIBITS_READ_ALL_PACKAGE_DEPS_AND_CREATE_DEPS_GRAPH()`_
+|   `TRIBITS_READ_DEPS_FILES_CREATE_DEPS_GRAPH()`_
+|     `TRIBITS_PROCESS_ALL_REPOSITORY_DEPS_SETUP_FILES()`_
+|       Foreach ``<repoDir>`` in ``${PROJECT_NAME}_ALL_REPOSITORIES``:
+|         ``INCLUDE(`` `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ ``)``
+|     `TRIBITS_PROCESS_PROJECT_DEPENDENCY_SETUP_FILE()`_
+|       ``INCLUDE(``  `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
+|     `TRIBITS_READ_ALL_PACKAGE_DEPS_FILES_CREATE_DEPS_GRAPH()`_
 |       Foreach ``TOPLEVEL_PACKAGE``:
-|         `TRIBITS_READ_PACKAGE_DEPENDENCIES()`_
+|         `TRIBITS_READ_TOPLEVEL_PACKAGE_DEPS_FILES_ADD_TO_GRAPH()`_
 |           `TRIBITS_PREP_TO_READ_DEPENDENCIES()`_
 |           ``INCLUDE(`` `<packageDir>/cmake/Dependencies.cmake`_ ``)``
 |           `TRIBITS_ASSERT_READ_DEPENDENCY_VARS()`_
 |           `TRIBITS_SAVE_OFF_DEPENDENCIES_VARS()`_
-|           `TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS()`_
-|           `TRIBITS_READ_ALL_PACKAGE_SUBPACKAGE_DEPENDENCIES()`_
+|           `TRIBITS_PARSE_SUBPACKAGES_APPEND_SE_PACKAGES_ADD_OPTIONS()`_
+|           `TRIBITS_READ_PACKAGE_SUBPACKAGE_DEPS_FILES_ADD_TO_GRAPH()`_
 |             Foreach ``SUBPACKAGE``:
-|               `TRIBITS_READ_SUBPACKAGE_DEPENDENCIES_AND_ADD_TO_GRAPH()`_
+|               `TRIBITS_READ_SUBPACKAGE_DEPS_FILE_ADD_TO_GRAPH()`_
 |                 `TRIBITS_PREP_TO_READ_DEPENDENCIES()`_
 |                 ``INCLUDE(`` `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ ``)``
 |                 `TRIBITS_ASSERT_READ_DEPENDENCY_VARS()`_
 |                 `TRIBITS_PROCESS_PACKAGE_DEPENDENCIES_LISTS()`_
-|                   See same call stack for this macro below
+|                   See same call stack for this macro as shown below
 |           `TRIBITS_READ_BACK_DEPENDENCIES_VARS()`_
 |           `TRIBITS_PROCESS_PACKAGE_DEPENDENCIES_LISTS()`_
 |             `TRIBITS_SET_DEP_PACKAGES()`_
@@ -449,8 +457,6 @@ lists and dependency data-structures described above.
 |               `TRIBITS_ABORT_ON_MISSING_PACKAGE()`_
 |             `TRIBITS_APPEND_FORWARD_DEP_PACKAGES()`_
 |               `TRIBITS_ABORT_ON_MISSING_PACKAGE()`_
-|     `TRIBITS_PRINT_TENTATIVELY_ENABLED_TPLS()`_
-|     `TRIBITS_DUMP_PACKAGE_DEPENDENCIES_INFO()`_
 
 
 Notes on dependency logic

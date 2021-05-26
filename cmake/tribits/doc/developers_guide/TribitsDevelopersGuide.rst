@@ -2372,7 +2372,7 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |   7)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_ ``)``
 |       * Call macro ``TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()``
-|   9)  Call `TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()`_:
+|   9)  Call `TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()`_:
 |     a)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |         * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)`` and process list
 |         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)`` and process list
@@ -2434,7 +2434,7 @@ is described below.
 
 | 1.  Read `<projectDir>/ProjectName.cmake`_ (sets `PROJECT_NAME`_)
 | 2. ``INCLUDE(`` `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ ``)``
-| 3.  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
+| 3.  Call ``TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()``:
 |   a)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)``
 |       * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
@@ -5039,7 +5039,7 @@ project's `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ file.
 All of the email dependency management logic must be accessible by just running
 the macro::
 
-    TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+    TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()
 
 The above email address configuration variables are read from the Repository
 and Project files `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ and

@@ -53,7 +53,6 @@ INCLUDE(TribitsListHelpers)
 #
 
 
-#
 # @MACRO: TRIBITS_REPOSITORY_DEFINE_PACKAGES()
 #
 # Define the set of packages for a given `TriBITS Repository`_.  This macro is
@@ -141,7 +140,6 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGES)
 ENDMACRO()
 
 
-#
 # @FUNCTION: TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 #
 # Allow listed packages to be missing and automatically excluded from the
@@ -226,14 +224,12 @@ ENDFUNCTION()
 #
 
 
-#
 # Macro that sets up standard user options a package
 #
 # On completion, the following variables are set:
 #
 # * ${PACKAGE_NAME_IN}_TESTGROUP: Set to PT, ST, or EX
 #
-
 MACRO(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS  PACKAGE_NAME_IN  PACKAGE_TESTGROUP_IN)
 
   IF (TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS_DEBUG)
@@ -297,12 +293,10 @@ MACRO(TRIBITS_INSERT_STANDARD_PACKAGE_OPTIONS  PACKAGE_NAME_IN  PACKAGE_TESTGROU
 ENDMACRO()
 
 
-#
 # Function that determines if a package is a primary meta-project package
 #  according to the variables
 #  ${PARENT_REPO_NAME}_NO_PRIMARY_META_PROJECT_PACKAGES[_EXCEPT].
 #
-
 FUNCTION(TRIBITS_IS_PRIMARY_META_PROJECT_PACKAGE  PACKAGE_NAME_IN
   IS_PRIMARY_META_PROJECT_PACKAGE_OUT
   )
@@ -340,11 +334,9 @@ FUNCTION(TRIBITS_IS_PRIMARY_META_PROJECT_PACKAGE  PACKAGE_NAME_IN
 ENDFUNCTION()
 
 
-#
 # Function that determines if it is okay to allow an implicit package enable
 # based on its classification.
 #
-
 FUNCTION(TRIBITS_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED  UPSTREAM_PACKAGE_NAME_IN
   PACKAGE_NAME_IN  IMPLICIT_PACKAGE_ENABLE_ALLOWED_OUT
   )
@@ -370,7 +362,6 @@ FUNCTION(TRIBITS_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED  UPSTREAM_PACKAGE_NAME_IN
 ENDFUNCTION()
 
 
-#
 # @MACRO: TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS()
 #
 # Usage::
@@ -402,6 +393,8 @@ ENDFUNCTION()
 #
 # NOTE: Set TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS_VERBOSE=TRUE to see really
 # verbose debug ouptut from this macro.
+#
+# See `Function call tree for constructing package dependency graph`_
 #
 MACRO(TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 

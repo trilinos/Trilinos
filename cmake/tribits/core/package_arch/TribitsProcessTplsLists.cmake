@@ -121,7 +121,6 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_TPLS)
 ENDMACRO()
 
 
-#
 # @MACRO: TRIBITS_PROCESS_TPLS_LISTS()
 #
 # This macro that processes the project-level variable::
@@ -138,6 +137,8 @@ ENDMACRO()
 #
 #   ${TPL_NAME}_FINDMOD
 #   ${TPL_NAME}_TESTGROUP
+#
+# See `Function call tree for constructing package dependency graph`_
 #
 MACRO(TRIBITS_PROCESS_TPLS_LISTS  REPOSITORY_NAME  REPOSITORY_DIR)
 

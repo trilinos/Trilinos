@@ -43,7 +43,6 @@
 # tribits implementation to use in {PROJECT_NAME}_TRIBITS_DIR.
 #
 
-
 SET(CMAKE_MODULE_PATH
    ${CMAKE_CURRENT_SOURCE_DIR}
    ${CMAKE_CURRENT_SOURCE_DIR}/cmake
@@ -67,6 +66,7 @@ INCLUDE(TribitsFindPythonInterp)
 INCLUDE(TribitsGlobalMacros)
 INCLUDE(TribitsConfigureCTestCustom)
 INCLUDE(TribitsGenerateResourceSpecFile)
+INCLUDE(TribitsPrintDependencyInfo)
 
 INCLUDE(AdvancedSet)
 INCLUDE(AdvancedOption)
@@ -130,9 +130,7 @@ MACRO(TRIBITS_PROJECT_IMPL)
 
   # Have to start timing after we read in the major options since that
   # determines the timing option var.
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(GLOBAL_TIME_START_SECONDS)
-  ENDIF()
+  TRIBITS_CONFIG_CODE_START_TIMER(GLOBAL_TIME_START_SECONDS)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
 
@@ -151,28 +149,19 @@ MACRO(TRIBITS_PROJECT_IMPL)
   TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL()
 
   # Read in and process all of the project's package, TPL, listss and
-  # dependency definition files.  The order these are read in are:
-  #
-  # * Read in all PackagesList.cmake and TPLsList.cmake files for all
-  #   native and extra repos in repo order.
-  # * Process each repos's cmake/RepositoryDependenciesSetup.cmake file
-  #   in repo order.
-  # * Process the project's cmake/cmake/ProjectDependenciesSetup.cmake
-  # * Process each package's Dependencies.cmake file.  If a package a subpackages,
-  #   The subpackage Dependencies.cmake files are read before setting up the
-  #   parent package's dependenices.
-  #
-  TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+  # dependency definition files.
+  TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()
+  TRIBITS_PRINT_INITIAL_DEPENDENCY_INFO()
+  TRIBITS_WRITE_XML_DEPENDENCY_FILES_IF_SUPPORTED()
 
   #
-  # D) Apply dependency logic to enable and disable TriBITS packages packages
-  # and tests
+  # D) Apply dependency logic to enable and disable TriBITS packages and tests
   #
 
   TRIBITS_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
 
   #
-  # E) Stop after all dependencies handling is finished if asked.
+  # E) Stop after all dependencies handling is finished if asked
   #
 
   IF (${PROJECT_NAME}_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
@@ -268,19 +257,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
       MESSAGE("Generating dummy makefiles in each directory to call Ninja ...")
       MESSAGE("")
   
-      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-        TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_START_SECONDS)
-      ENDIF()
+      TRIBITS_CONFIG_CODE_START_TIMER(NINJA_MAKEFILES_TIME_START_SECONDS)
   
       INCLUDE(GenerateNinjaMakefiles)
       GENERATE_NINJA_MAKEFILES(${CMAKE_SOURCE_DIR})
   
-      IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-        TIMER_GET_RAW_SECONDS(NINJA_MAKEFILES_TIME_END_SECONDS)
-        TIMER_PRINT_REL_TIME(${NINJA_MAKEFILES_TIME_START_SECONDS}
-         ${NINJA_MAKEFILES_TIME_END_SECONDS}
-           "Total time generate Ninja makefiles ${PROJECT_NAME}")
-      ENDIF()
+      TRIBITS_CONFIG_CODE_STOP_TIMER(NINJA_MAKEFILES_TIME_START_SECONDS
+         "Total time generate Ninja makefiles ${PROJECT_NAME}")
 
     ELSE()
 
@@ -334,11 +317,8 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("")
   MESSAGE("Finished configuring ${PROJECT_NAME}!")
   MESSAGE("")
-  IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
-    TIMER_GET_RAW_SECONDS(GLOBAL_TIME_STOP_SECONDS)
-    TIMER_PRINT_REL_TIME(${GLOBAL_TIME_START_SECONDS}  ${GLOBAL_TIME_STOP_SECONDS}
-      "Total time to configure ${PROJECT_NAME}")
-  ENDIF()
+  TRIBITS_CONFIG_CODE_STOP_TIMER(GLOBAL_TIME_START_SECONDS
+    "Total time to configure ${PROJECT_NAME}")
 
 ENDMACRO()
 

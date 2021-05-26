@@ -69,7 +69,7 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
   echo "Extracting TriBITS documentation from *.cmake files ..."
   echo
   ../../python_utils/extract_rst_cmake_doc.py \
-    --extract-from=../../core/package_arch/,../../core/utils/,../../ctest_driver/ \
+    --extract-from=../../core/package_arch/,../../ci_support/,../../core/utils/,../../ctest_driver/ \
     --rst-file-pairs=TribitsMacroFunctionDocTemplate.rst:TribitsMacroFunctionDoc.rst.tmp,UtilsMacroFunctionDocTemplate.rst:UtilsMacroFunctionDoc.rst.tmp,TribitsSystemMacroFunctionDocTemplate.rst:TribitsSystemMacroFunctionDoc.rst.tmp \
     --show-file-name-line-num \
     --file-name-path-base-dir=../.. \
