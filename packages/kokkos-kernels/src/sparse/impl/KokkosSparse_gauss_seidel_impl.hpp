@@ -1710,6 +1710,15 @@ namespace KokkosSparse{
           nnz_lno_t block_size = gsHandle->get_block_size();
 
           for (int doingBackward = 0; doingBackward < 2; doingBackward++) {
+            const char* labelRegular = doingBackward ? "KokkosSparse::GaussSeidel::Team_PSGS::backward" :
+              "KokkosSparse::GaussSeidel::Team_PSGS::forward";
+            const char* labelBlock = doingBackward ? "KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::backward" :
+              "KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::forward";
+            const char* labelBigBlock = doingBackward ? "KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::backward" :
+              "KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::forward";
+            const char* labelLong = doingBackward ? "KokkosSparse::GaussSeidel::Team_PSGS::backwardLongRows" :
+              "KokkosSparse::GaussSeidel::Team_PSGS::forwardLongRows";
+
             if(!doingBackward && !apply_forward)
               continue;
             if(doingBackward && !apply_backward)
@@ -1729,16 +1738,16 @@ namespace KokkosSparse{
 
               if (numRegularRows) {
                 if (block_size == 1){
-                  Kokkos::parallel_for("KokkosSparse::GaussSeidel::Team_PSGS::forward",
+                  Kokkos::parallel_for(labelRegular,
                                        team_policy_t((numRegularRows + team_row_chunk_size - 1) / team_row_chunk_size, suggested_team_size, vector_size),
                                        gs );
                 } else if (gs.num_max_vals_in_l2 == 0){
-                  Kokkos::parallel_for("KokkosSparse::GaussSeidel::BLOCK_Team_PSGS::forward",
+                  Kokkos::parallel_for(labelBlock,
                                        block_apply_team_policy_t((numRegularRows + team_row_chunk_size - 1) / team_row_chunk_size, suggested_team_size, vector_size),
                                        gs );
                 }
                 else {
-                  Kokkos::parallel_for("KokkosSparse::GaussSeidel::BIGBLOCK_Team_PSGS::forward",
+                  Kokkos::parallel_for(labelBigBlock,
                                        bigblock_apply_team_policy_t((numRegularRows + team_row_chunk_size - 1) / team_row_chunk_size, suggested_team_size, vector_size),
                                        gs );
                 }
@@ -1755,7 +1764,7 @@ namespace KokkosSparse{
                   auto Ycol = Kokkos::subview(gs._Yvector, Kokkos::ALL(), long_row_col);
                   gs._long_row_col = long_row_col;
                   Kokkos::deep_copy(long_row_x, nnz_scalar_t());
-                  Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::forward",
+                  Kokkos::parallel_for(labelLong,
                       longrow_apply_team_policy_t(numLongRows * teams_per_row, longRowTeamSize), gs);
                   Kokkos::parallel_for("KokkosSparse::GaussSeidel::LongRows::x_update",
                       range_pol(color_index_end - numLongRows, color_index_end),
