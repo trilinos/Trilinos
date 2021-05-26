@@ -170,9 +170,8 @@ void Ifpack2PreconditionerFactory<MatrixType>::initializePrec(
   // precTypeUpper is the upper-case version of preconditionerType.
   std::string precTypeUpper (preconditionerType);
   if (precTypeUpper.size () > 0) {
-    std::locale locale;
     for (size_t k = 0; k < precTypeUpper.size (); ++k) {
-      precTypeUpper[k] = std::toupper<char> (precTypeUpper[k], locale);
+      precTypeUpper[k] = ::toupper(precTypeUpper[k]);
     }
   }
   
