@@ -244,6 +244,9 @@ ENDMACRO()
 #
 MACRO(TRIBITS_SETUP_PACKAGES)
 
+  INCLUDE(TribitsPrintDependencyInfo)
+  INCLUDE(TribitsWriteXmlDependenciesFiles)
+
   # Here, we must point into the source tree just cloned (or updated)
   # and not the "driver" source dir tree for two reasons.  First, the
   # list of core packages may be more recent in what was checked out.
@@ -279,7 +282,9 @@ MACRO(TRIBITS_SETUP_PACKAGES)
 
   TRIBITS_READ_IN_NATIVE_REPOSITORIES()
   TRIBITS_COMBINE_NATIVE_AND_EXTRA_REPOS()
-  TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
+  TRIBITS_READ_ALL_PROJECT_DEPS_FILES_CREATE_DEPS_GRAPH()
+  TRIBITS_PRINT_INITIAL_DEPENDENCY_INFO()
+  TRIBITS_WRITE_XML_DEPENDENCY_FILES()
 
   # When we get here, we will have the basic dependency structure set up
   # with only defaults set
@@ -668,7 +673,7 @@ MACRO(TRIBITS_REMEMBER_IF_CONFIGURE_ATTEMPTED)
     ENDIF()
   ELSEIF(CTEST_DO_NEW_START)
     IF (EXISTS "${CONFIGURE_ATTEMPTED_FILE}")
-      FILE(REMOTE "${CONFIGURE_ATTEMPTED_FILE}")
+      FILE(REMOVE "${CONFIGURE_ATTEMPTED_FILE}")
     ENDIF()
     IF (EXISTS "${CONFIGURE_PASSED_FILE}")
       FILE(REMOVE "${CONFIGURE_PASSED_FILE}")
