@@ -342,39 +342,106 @@ namespace Intrepid2 {
     }
 
   public:
+    struct ConstantArgExtractor
+    {
+      template<class ViewType, class ...IntArgs>
+      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        return view(0);
+      }
+    };
+    
+    struct FullArgExtractor
+    {
+      template<class ViewType, class ...IntArgs>
+      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        return view(intArgs...);
+      }
+    };
+    
+    template<int whichArg>
+    struct SingleArgExtractor
+    {
+      template<class ViewType, class ...IntArgs>
+      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      {
+        const auto & arg = std::get<whichArg>(intArgs...);
+        return view(arg);
+      }
+    };
+    
+    //! storeInPlaceCombination with compile-time rank -- implementation for rank < 7, and compile-time underlying views and argument interpretation.  Intended for internal and expert use.
+    template<class BinaryOperator, int rank, class PolicyType, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
+             class ArgExtractorThis, class ArgExtractorA, class ArgExtractorB>
+    enable_if_t<rank != 7, void>
+    storeInPlaceCombination(PolicyType policy, ThisUnderlyingViewType this_underlying,
+                            AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
+                            BinaryOperator binaryOperator)
+    {
+      Kokkos::parallel_for("compute in-place", policy,
+      KOKKOS_LAMBDA (const auto &...args) {
+        auto      & result = ArgExtractorThis::get( this_underlying, args... );
+        const auto & A_val =    ArgExtractorA::get(    A_underlying, args... );
+        const auto & B_val =    ArgExtractorB::get(    B_underlying, args... );
+        
+        result = binaryOperator(A_val,B_val);
+      });
+    }
+    
     //! storeInPlaceCombination with compile-time rank -- implementation for rank < 7.
     template<class BinaryOperator, int rank>
     enable_if_t<rank != 7, void>
     storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
       auto policy = dataExtentRangePolicy<rank>();
+      using PolicyType = decltype(policy);
       
       // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
       Data<DataScalar,DeviceType> thisData = *this;
       
-      const bool A_constant = (A.getUnderlyingViewRank() == 1) && (A.getUnderlyingViewSize() == 1);
-      const bool B_constant = (B.getUnderlyingViewRank() == 1) && (B.getUnderlyingViewSize() == 1);
+      const bool A_1D       = A.getUnderlyingViewRank() == 1;
+      const bool B_1D       = B.getUnderlyingViewRank() == 1;
+      const bool A_constant = A_1D && (A.getUnderlyingViewSize() == 1);
+      const bool B_constant = B_1D && (B.getUnderlyingViewSize() == 1);
+      const bool A_full     = A.underlyingMatchesLogical();
+      const bool B_full     = B.underlyingMatchesLogical();
+      const bool this_full  = this->underlyingMatchesLogical();
       
+      /*
+       TODO: optimize 1D cases
+       In the lambda, we will want something like:
+       
+       auto arg_1D = std::get<arg_1D_index>(intArgs...);
+       
+       const auto & A_val = A_underlying(arg_1D);
+       
+       // the get<> thing might need to be more like:
+       auto arg_1D = std::get<arg_1D_index>(std::tuple<IntArgs...>(intArgs...));
+       */
       if (A_constant)
       {
+        using AAE    = ConstantArgExtractor;
         auto A_underlying = A.getUnderlyingView<1>();
-        if (this->underlyingMatchesLogical())
+        if (this_full)
         {
+          using ThisAE = FullArgExtractor;
           auto this_underlying = this->getUnderlyingView<rank>();
-          if (B.underlyingMatchesLogical())
+          
+          if (B_full)
           {
+            using BAE    = FullArgExtractor;
             auto B_underlying = B.getUnderlyingView<rank>();
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const auto &...args) {
-              auto & result = this_underlying(args...);
-              const auto & A_val = A_underlying(0);
-              const auto & B_val = B_underlying(args...);
-              
-              result = binaryOperator(A_val,B_val);
-            });
+            
+            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B_underlying), ThisAE, AAE, BAE>
+            (policy, this_underlying, A_underlying, B_underlying, binaryOperator);
           }
-          else
+          else // this_full, not B_full: B may have modular data, etc.
           {
+            // use B (the Data object).  This could be further optimized by using B's underlying View and an appropriately-defined ArgExtractor.
+            using BAE    = FullArgExtractor;
+//            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B), ThisAE, AAE, BAE>
+//            (policy, this_underlying, A_underlying, B, binaryOperator);
             Kokkos::parallel_for("compute in-place", policy,
             KOKKOS_LAMBDA (const auto &...args) {
               auto & result = this_underlying(args...);
@@ -385,8 +452,9 @@ namespace Intrepid2 {
             });
           }
         }
-        else
+        else // this is not full
         {
+          // since storing to Data object requires a call to getWritableEntry(), we don't yet support this case with FullArgExtractor
           Kokkos::parallel_for("compute in-place", policy,
           KOKKOS_LAMBDA (const auto &...args) {
             auto & result = thisData.getWritableEntry(args...);
@@ -398,24 +466,26 @@ namespace Intrepid2 {
       }
       else if (B_constant)
       {
+        using BAE    = ConstantArgExtractor;
         auto B_underlying = B.getUnderlyingView<1>();
-        if (this->underlyingMatchesLogical())
+        if (this_full)
         {
+          using ThisAE = FullArgExtractor;
           auto this_underlying = this->getUnderlyingView<rank>();
-          if (A.underlyingMatchesLogical())
+          if (A_full)
           {
+            using AAE = FullArgExtractor;
             auto A_underlying = A.getUnderlyingView<rank>();
-            Kokkos::parallel_for("compute in-place", policy,
-            KOKKOS_LAMBDA (const auto &...args) {
-              auto & result = this_underlying(args...);
-              const auto & A_val = A_underlying(args...);
-              const auto & B_val = B_underlying(0);
-              
-              result = binaryOperator(A_val,B_val);
-            });
+            
+            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A_underlying), decltype(B_underlying), ThisAE, AAE, BAE>
+            (policy, this_underlying, A_underlying, B_underlying, binaryOperator);
           }
-          else
+          else  // this_full, not A_full: A may have modular data, etc.
           {
+            // use A (the Data object).  This could be further optimized by using A's underlying View and an appropriately-defined ArgExtractor.
+            using AAE    = FullArgExtractor;
+//            storeInPlaceCombination<BinaryOperator, rank, PolicyType, decltype(this_underlying), decltype(A), decltype(B_underlying), ThisAE, AAE, BAE>
+//            (policy, this_underlying, A, B_underlying, binaryOperator);
             Kokkos::parallel_for("compute in-place", policy,
             KOKKOS_LAMBDA (const auto &...args) {
               auto & result = this_underlying(args...);
@@ -428,6 +498,7 @@ namespace Intrepid2 {
         }
         else
         {
+          // since storing to Data object requires a call to getWritableEntry(), we don't yet support this case with FullArgExtractor
           Kokkos::parallel_for("compute in-place", policy,
           KOKKOS_LAMBDA (const auto &...args) {
             auto & result = thisData.getWritableEntry(args...);
@@ -440,7 +511,7 @@ namespace Intrepid2 {
       }
       else // neither A nor B constant
       {
-        if (this->underlyingMatchesLogical())
+        if (this_full)
         {
           auto this_underlying = this->getUnderlyingView<rank>();
           Kokkos::parallel_for("compute in-place", policy,
