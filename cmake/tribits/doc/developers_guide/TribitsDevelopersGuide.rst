@@ -2,7 +2,7 @@
 TriBITS Developers Guide and Reference
 =======================================
 
-:Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
+:Author: Roscoe A. Bartlett (rabartl@sandia.gov)
 :Date: |date|
 :Version: .. include:: TribitsGitVersion.txt
 
@@ -56,8 +56,6 @@ needs to understand how CMake defines and uses targets for various qualities
 like libraries, executables, etc.  Without this basic understanding of CMake,
 one will have trouble resolving problems when they occur.
 
-.. jfrye: Below paragraph is redundant with table of contents above?
-
 The remainder of this documented is structured as follows.  First, there is
 some additional `Background`_ material provided.  Then, a detailed
 specification of `TriBITS Project Structure`_ is given which lists and defines
@@ -74,6 +72,7 @@ fit well into other sections.  Then the main bulk of the detailed reference
 material for TriBITS is given in the section `TriBITS Detailed Reference
 Documentation`_.  Finally, several bits of information are provided in the
 `Appendix`_.
+
 
 Background
 ==========
@@ -1782,6 +1781,8 @@ Once all of the TriBITS SE package's ``Dependencies.cmake`` files have been
 processed, the following *TriBITS Package Top-Level Local Variables* are
 defined:
 
+  .. _${PACKAGE_NAME}_SOURCE_DIR:
+
   ``${PACKAGE_NAME}_SOURCE_DIR``
 
     The absolute path to the package's base source directory.  CMake code, for
@@ -1791,6 +1792,18 @@ defined:
     defined for all declared packages that exist, independent of whether they
     are enabled or not.  This variable is set as soon as it is known if the
     given package exists or not.
+
+  .. _${PACKAGE_NAME}_REL_SOURCE_DIR:
+
+  ``${PACKAGE_NAME}_REL_SOURCE_DIR``
+
+    The **relative path** to the package's base source directory, relative to
+    the projects base source directory `${PROJECT_NAME}_SOURCE_DIR`_.  This is
+    used in various contexts such as processing the packages
+    `<packageDir>/CMakeLists.txt`_ file and generating the projects
+    `<Project>PackageDependencies.xml`_ file where relative paths are needed.
+
+  .. _${PACKAGE_NAME}_BINARY_DIR:
 
   ``${PACKAGE_NAME}_BINARY_DIR``
 
@@ -2119,6 +2132,13 @@ to refer to its parent package where a top-level package does not have a
 parent package.  The extra variables that are defined when processing a
 subpackage's files are:
 
+  .. _${PACKAGE_NAME}_PARENT_PACKAGE:
+
+  ``${PACKAGE_NAME}_PARENT_PACKAGE``
+
+    The name of the parent package.  (NOTE: If this is empty "", then
+    ``${PACKAGE_NAME}`` is actually a parent package and not a subpackage.)
+
   .. _PARENT_PACKAGE_NAME:
 
   ``PARENT_PACKAGE_NAME``
@@ -2158,6 +2178,7 @@ testing.  This is a type of "all for one and all for one" when it comes to the
 relationship between the subpackages within a single parent package.  These
 are some of the issues to consider when breaking up software into packages and
 subpackages that will be mentioned in other sections as well.
+
 
 TriBITS TPL
 +++++++++++
@@ -2207,7 +2228,7 @@ module which is currently:
 Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find module to fill in the
 guts of finding at TPL which is perfectly fine.  In this case, the purpose for
-the wrapping ``FindTPL${TPL_NAME}.cmake`` is to standardize the output
+the wrapping ``FindTPL${TPL_NAME}.cmake`` file is to standardize the output
 variables ``TPL_${TPL_NAME}_INCLUDE_DIRS`` and ``TPL_${TPL_NAME}_LIBRARIES``.
 For more details on properly using ``FIND_PACKAGE()`` to define a
 ``FindTPL${TPL_NAME}.cmake`` file, see `How to use FIND_PACKAGE() for a
@@ -2215,6 +2236,8 @@ TriBITS TPL`_.
 
 Once the `<repoDir>/TPLsList.cmake`_ files are all processed, then each
 defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
+
+  .. _${PACKAGE_NAME}_FINDMOD:
 
   .. _${TPL_NAME}_FINDMOD:
 
@@ -2248,6 +2271,10 @@ defined TPL ``TPL_NAME`` is assigned the following global non-cache variables:
     be used.  Therefore, the project can override the test group for a given
     TPL if desired.
 
+As noted above, it is allowed for the same TPL to be listed in multiple
+`<repoDir>/TPLsList.cmake`_ files.  In this case, the rules for overrides of
+the find module and the test group as as described above.
+
 The specification given in `Enabling support for an optional Third-Party
 Library (TPL)`_ and `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ describes
 how the a ``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to
@@ -2265,6 +2292,7 @@ The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
 `TRIBITS_TPL_FIND_INCLUDE_DIRS_AND_LIBRARIES()`_ need to be defined.  For more
 details, see `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
+
 
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
@@ -2344,10 +2372,10 @@ proceeds through the call to `TRIBITS_PROJECT()`_.
 |   7)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_ ``)``
 |       * Call macro ``TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()``
-|   9)  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
+|   9)  Call `TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()`_:
 |     a)  For each ``<repoDir>`` in all defined TriBITS repositories:
-|         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)`` and process list
 |         * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)`` and process list
+|         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)`` and process list
 |     b)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |         * ``INCLUDE(`` `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ ``)``
 |     c)  ``INCLUDE(`` `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
@@ -2408,8 +2436,8 @@ is described below.
 | 2. ``INCLUDE(`` `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ ``)``
 | 3.  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
 |   a)  For each ``<repoDir>`` in all defined TriBITS repositories:
-|       * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
 |       * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)``
+|       * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
 |   b)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ ``)``
 |   c)  ``INCLUDE(`` `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
@@ -9277,6 +9305,20 @@ Below is a snapshot of the output from ``install_devtools.py --help``.
 
 .. include:: install_devtools-help.txt
    :literal:
+
+
+TriBITS System Maintainers Guide
+================================
+
+In this last section, information for maintainers of the TriBITS system itself
+is contained.  This information is meant to make it easier to understand and
+manipulate the internal implementation of TriBITS.
+
+
+.. include:: ../../core/package_arch/TribitsSystemDataStructuresMacrosFunctions.rst
+
+
+.. include:: TribitsSystemMacroFunctionDoc.rst
 
 
 
