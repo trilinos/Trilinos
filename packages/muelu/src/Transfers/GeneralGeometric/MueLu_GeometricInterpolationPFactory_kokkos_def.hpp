@@ -63,7 +63,6 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
-    SET_VALID_ENTRY("interp: interpolation order");
     SET_VALID_ENTRY("interp: build coarse coordinates");
 #undef  SET_VALID_ENTRY
 
@@ -82,6 +81,8 @@ namespace MueLu {
                                                  "Number of nodes per spatial dimension on the coarse grid.");
     validParamList->set<RCP<const FactoryBase> >("indexManager",                 Teuchos::null,
                                                  "The index manager associated with the local mesh.");
+    validParamList->set<RCP<const FactoryBase> >("structuredInterpolationOrder", Teuchos::null,
+    						 "Interpolation order for constructing the prolongator.");
 
     return validParamList;
   }
@@ -96,9 +97,10 @@ namespace MueLu {
     Input(fineLevel, "numDimensions");
     Input(fineLevel, "prolongatorGraph");
     Input(fineLevel, "lCoarseNodesPerDim");
+    Input(fineLevel, "structuredInterpolationOrder");
 
     if( pL.get<bool>("interp: build coarse coordinates") ||
-        (pL.get<int>("interp: interpolation order") == 1) ) {
+        Get<int>(fineLevel, "structuredInterpolationOrder") == 1) {
       Input(fineLevel, "Coordinates");
       Input(fineLevel, "indexManager");
     }
@@ -130,7 +132,7 @@ namespace MueLu {
     // Get inputs from the parameter list
     const ParameterList& pL = GetParameterList();
     const bool buildCoarseCoordinates = pL.get<bool>("interp: build coarse coordinates");
-    const int interpolationOrder      = pL.get<int> ("interp: interpolation order");
+    const int interpolationOrder      = Get<int>(fineLevel, "structuredInterpolationOrder");
     const int numDimensions           = Get<int>(fineLevel, "numDimensions");
 
     // Declared main input/outputs to be retrieved and placed on the fine resp. coarse level

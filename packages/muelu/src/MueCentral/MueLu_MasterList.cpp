@@ -284,7 +284,6 @@ namespace MueLu {
   "<Parameter name=\"sa: max eigenvalue\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement tolerance\" type=\"double\" value=\"-1.0\"/>"
   "<Parameter name=\"sa: rowsumabs diagonal replacement value\" type=\"double\" value=\"0.0\"/>"
-  "<Parameter name=\"interp: interpolation order\" type=\"int\" value=\"1\"/>"
   "<Parameter name=\"interp: build coarse coordinates\" type=\"bool\" value=\"true\"/>"
   "<ParameterList name=\"transfer: params\"/>"
   "<Parameter name=\"pcoarsen: element\" type=\"string\" value=\"\"/>"
@@ -768,8 +767,6 @@ namespace MueLu {
          ("not supported by ML","sa: rowsumabs diagonal replacement tolerance")
       
          ("not supported by ML","sa: rowsumabs diagonal replacement value")
-      
-         ("interp: interpolation order","interp: interpolation order")
       
          ("interp: build coarse coordinates","interp: build coarse coordinates")
       
