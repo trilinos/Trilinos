@@ -384,6 +384,18 @@ void Relaxation<MatrixType>::setParametersImpl (Teuchos::ParameterList& pl)
     pl.remove("relaxation: inner damping factor");
     pl.set("relaxation: inner damping factor",df);
   }
+  //If long row algorithm was requested, make sure non-cluster (point) multicolor Gauss-Seidel (aka MTGS/MTSGS) will be used.
+  if (long_row_threshold > 0) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        cluster_size != 1, std::invalid_argument, "Ifpack2::Relaxation: "
+        "Requested long row MTGS/MTSGS algorithm and cluster GS/SGS, but those are not compatible.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        precType != Details::RelaxationType::MTGS && precType != Details::RelaxationType::MTSGS,
+        std::invalid_argument, "Ifpack2::Relaxation: "
+        "Requested long row MTGS/MTSGS algorithm, but this is only compatible with preconditioner types "
+        "'MT Gauss-Seidel' and 'MT Symmetric Gauss-Seidel'.");
+  }
+
   const ST innerDampingFactor = pl.get<ST> ("relaxation: inner damping factor");
   const int numInnerSweeps = pl.get<int> ("relaxation: inner sweeps");
   const int numOuterSweeps = pl.get<int> ("relaxation: outer sweeps");

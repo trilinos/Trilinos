@@ -1151,11 +1151,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Relaxation, MTSGS_LongRows, Scalar, Loc
   RCP<const map_type> rowmap = tif_utest::create_tpetra_map<LocalOrdinal, GlobalOrdinal, Node>(100);
   RCP<const crs_matrix_type> A = tif_utest::create_banded_matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(rowmap, 3);
   RCP<prec_type> prec = rcp(new prec_type(A));
-  ParameterList params;
-  params.set("relaxation: type", "MT Symmetric Gauss-Seidel");
-  params.set("relaxation: sweeps", 3);
-  params.set("relaxation: long row threshold", 3);
-  prec->setParameters (params);
+  ParameterList goodParams;
+  goodParams.set("relaxation: type", "MT Symmetric Gauss-Seidel");
+  goodParams.set("relaxation: sweeps", 3);
+  goodParams.set("relaxation: long row threshold", 3);
+  //Try setting up precondition with incompatible type, and make sure this throws.
+  {
+    ParameterList badParams = goodParams;
+    badParams.set("relaxation: type", "Gauss-Seidel");
+    TEST_THROW (prec->setParameters (badParams), std::invalid_argument);
+  }
+  //Try setting up cluster GS preconditioner with long row algorithm enabled - should also throw.
+  {
+    ParameterList badParams = goodParams;
+    badParams.set("relaxation: mtgs cluster size", 4);
+    TEST_THROW(prec->setParameters (badParams), std::invalid_argument);
+  }
+  prec->setParameters (goodParams);
   prec->initialize();
   prec->compute();
   //Set up linear problem
