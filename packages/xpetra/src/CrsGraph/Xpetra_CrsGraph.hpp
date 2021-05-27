@@ -130,15 +130,13 @@ namespace Xpetra {
     virtual void fillComplete(const RCP< ParameterList > &params=null)= 0;
 
     //! Expert version of fillComplete
-    void
-    expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
-                              const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
-                              const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
-                              Teuchos::null,
-                              const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
-                              Teuchos::null,
-                              const Teuchos::RCP<Teuchos::ParameterList>& params =
-                              Teuchos::null);
+    virtual void
+    expertStaticFillComplete (const RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                              const RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                              const RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =null,
+                              const RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =null,
+                              const RCP<Teuchos::ParameterList>& params = null)=0;
+
 
     //@}
 

@@ -200,6 +200,18 @@ public:
 
   //! Signal that data entry is complete.
   void fillComplete(const RCP< ParameterList > &params=null) {  }
+
+  //! Expert version of fillComplete
+  void
+  expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                            const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                            const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                            Teuchos::null,
+                            const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                            Teuchos::null,
+                            const Teuchos::RCP<Teuchos::ParameterList>& params =
+                            Teuchos::null) { }
+
   //@}
 
   //! @name Methods implementing RowGraph.
@@ -587,6 +599,22 @@ public:
     if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
     if (doOptimizeStorage) graph_->OptimizeStorage();
   }
+
+  //! Expert version of fillComplete
+  void
+  expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                            const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                            const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                            Teuchos::null,
+                            const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                            Teuchos::null,
+                            const Teuchos::RCP<Teuchos::ParameterList>& params =
+                            Teuchos::null) { 
+    // Not optimized
+    graph_->FillComplete(toEpetra<GlobalOrdinal,Node>(domainMap), toEpetra<GlobalOrdinal,Node>(rangeMap));
+    graph_->OptimizeStorage();
+  }
+
   //@}
 
   //! @name Methods implementing RowGraph.
@@ -1022,6 +1050,22 @@ public:
     if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
     if (doOptimizeStorage) graph_->OptimizeStorage();
   }
+
+  //! Expert version of fillComplete
+  void
+  expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                            const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                            const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                            Teuchos::null,
+                            const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                            Teuchos::null,
+                            const Teuchos::RCP<Teuchos::ParameterList>& params =
+                            Teuchos::null) { 
+    // Not optimized
+    graph_->FillComplete(toEpetra<GlobalOrdinal,Node>(domainMap), toEpetra<GlobalOrdinal,Node>(rangeMap));
+    graph_->OptimizeStorage();
+  }
+
   //@}
 
   //! @name Methods implementing RowGraph.

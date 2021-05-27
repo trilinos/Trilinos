@@ -571,8 +571,8 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     //! Expert version of fillComplete
     void expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
                                    const Teuchos::RCP<const map_type>& rangeMap,
-                                   const Teuchos::RCP<const Import>& importer = null,
-                                   const Teuchos::RCP<const Export>& exporter = null,                          
+                                   const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer = null,
+                                   const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter = null,                          
                                    const Teuchos::RCP<Teuchos::ParameterList>& params=null){ } 
 
     //@}
@@ -912,8 +912,8 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     //! Expert version of fillComplete
     void expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
                                    const Teuchos::RCP<const map_type>& rangeMap,
-                                   const Teuchos::RCP<const Import>& importer = null,
-                                   const Teuchos::RCP<const Export>& exporter = null,                          
+                                   const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer = null,
+                                   const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter = null,                          
                                    const Teuchos::RCP<Teuchos::ParameterList>& params=null){ } 
 
     //@}
