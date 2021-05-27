@@ -383,30 +383,6 @@ namespace Intrepid2 {
     template<int whichArg>
     struct SingleArgExtractor
     {
-//      template<class ViewType, class itype0, class itype1, int M=whichArg>
-//      static inline
-//      enable_if_t<M == 0, reference_type>
-//      get(const ViewType &view, const itype0 &i0, const itype1 &i1)
-//      {
-//        return view(i0);
-//      }
-//
-//      template<class ViewType, class itype0, class itype1, int M=whichArg>
-//      static inline
-//      enable_if_t<M == 1, reference_type>
-//      get(const ViewType &view, const itype0 &i0, const itype1 &i1)
-//      {
-//        return view(i1);
-//      }
-//
-//      template<class ViewType, class itype0, class itype1, int M=whichArg>
-//      static inline
-//      enable_if_t<M >= 2, reference_type>
-//      get(const ViewType &view, const itype0 &i0, const itype1 &i1)
-//      {
-//        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"calling SingleArgExtractor with out-of-bounds argument");
-//      }
-      
       template<class ViewType, class ...IntArgs>
       static inline
       enable_if_t<whichArg < sizeof...(IntArgs), reference_type>
@@ -425,21 +401,79 @@ namespace Intrepid2 {
       }
     };
     
+    template<class BinaryOperator, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
+             class ArgExtractorThis, class ArgExtractorA, class ArgExtractorB, bool includeInnerLoop=false>
+    struct InPlaceCombinationFunctor
+    {
+    private:
+      ThisUnderlyingViewType this_underlying_;
+      AUnderlyingViewType A_underlying_;
+      BUnderlyingViewType B_underlying_;
+      BinaryOperator binaryOperator_;
+      int innerLoopSize_;
+    public:
+      InPlaceCombinationFunctor(ThisUnderlyingViewType this_underlying, AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
+                                BinaryOperator binaryOperator)
+      :
+      this_underlying_(this_underlying),
+      A_underlying_(A_underlying),
+      B_underlying_(B_underlying),
+      binaryOperator_(binaryOperator)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
+      }
+      
+      InPlaceCombinationFunctor(ThisUnderlyingViewType this_underlying, AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
+                                BinaryOperator binaryOperator, int innerLoopSize)
+      :
+      this_underlying_(this_underlying),
+      A_underlying_(A_underlying),
+      B_underlying_(B_underlying),
+      binaryOperator_(binaryOperator),
+      innerLoopSize_(innerLoopSize)
+      {
+        INTREPID2_TEST_FOR_EXCEPTION(includeInnerLoop,std::invalid_argument,"If includeInnerLoop is true, must specify the size of the inner loop");
+      }
+      
+      template<class ...IntArgs, bool M=includeInnerLoop>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<!M, void>
+      operator()(const IntArgs&... args) const
+      {
+        auto      & result = ArgExtractorThis::get( this_underlying_, args... );
+        const auto & A_val =    ArgExtractorA::get(    A_underlying_, args... );
+        const auto & B_val =    ArgExtractorB::get(    B_underlying_, args... );
+        
+        result = binaryOperator_(A_val,B_val);
+      }
+      
+      template<class ...IntArgs, bool M=includeInnerLoop>
+      KOKKOS_INLINE_FUNCTION
+      enable_if_t<M, void>
+      operator()(const IntArgs&... args) const
+      {
+        using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
+        for (int_type iFinal=0; iFinal<innerLoopSize_; iFinal++)
+        {
+          auto      & result = ArgExtractorThis::get( this_underlying_, args..., iFinal );
+          const auto & A_val =    ArgExtractorA::get(    A_underlying_, args..., iFinal );
+          const auto & B_val =    ArgExtractorB::get(    B_underlying_, args..., iFinal );
+          
+          result = binaryOperator_(A_val,B_val);
+        }
+      }
+    };
+    
     //! storeInPlaceCombination implementation for rank < 7, with compile-time underlying views and argument interpretation.  Intended for internal and expert use.
     template<class BinaryOperator, class PolicyType, class ThisUnderlyingViewType, class AUnderlyingViewType, class BUnderlyingViewType,
              class ArgExtractorThis, class ArgExtractorA, class ArgExtractorB>
-    void storeInPlaceCombination(PolicyType policy, ThisUnderlyingViewType this_underlying,
-                                 AUnderlyingViewType A_underlying, BUnderlyingViewType B_underlying,
-                                 BinaryOperator binaryOperator, ArgExtractorThis argThis, ArgExtractorA argA, ArgExtractorB argB)
+    void storeInPlaceCombination(PolicyType &policy, ThisUnderlyingViewType &this_underlying,
+                                 AUnderlyingViewType &A_underlying, BUnderlyingViewType &B_underlying,
+                                 BinaryOperator &binaryOperator, ArgExtractorThis argThis, ArgExtractorA argA, ArgExtractorB argB)
     {
-      Kokkos::parallel_for("compute in-place", policy,
-      KOKKOS_LAMBDA (const auto &...args) {
-        auto      & result = ArgExtractorThis::get( this_underlying, args... );
-        const auto & A_val =    ArgExtractorA::get(    A_underlying, args... );
-        const auto & B_val =    ArgExtractorB::get(    B_underlying, args... );
-        
-        result = binaryOperator(A_val,B_val);
-      });
+      using Functor = InPlaceCombinationFunctor<BinaryOperator, ThisUnderlyingViewType, AUnderlyingViewType, BUnderlyingViewType, ArgExtractorThis, ArgExtractorA, ArgExtractorB>;
+      Functor functor(this_underlying, A_underlying, B_underlying, binaryOperator);
+      Kokkos::parallel_for("compute in-place", policy, functor);
     }
     
     //! storeInPlaceCombination with compile-time rank -- implementation for rank < 7.
@@ -453,14 +487,15 @@ namespace Intrepid2 {
       // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
       Data<DataScalar,DeviceType> thisData = *this;
       
-      const bool A_1D       = A.getUnderlyingViewRank() == 1;
-      const bool B_1D       = B.getUnderlyingViewRank() == 1;
-      const bool this_1D    = this->getUnderlyingViewRank() == 1;
-      const bool A_constant = A_1D && (A.getUnderlyingViewSize() == 1);
-      const bool B_constant = B_1D && (B.getUnderlyingViewSize() == 1);
-      const bool A_full     = A.underlyingMatchesLogical();
-      const bool B_full     = B.underlyingMatchesLogical();
-      const bool this_full  = this->underlyingMatchesLogical();
+      const bool A_1D          = A.getUnderlyingViewRank() == 1;
+      const bool B_1D          = B.getUnderlyingViewRank() == 1;
+      const bool this_1D       = this->getUnderlyingViewRank() == 1;
+      const bool A_constant    = A_1D && (A.getUnderlyingViewSize() == 1);
+      const bool B_constant    = B_1D && (B.getUnderlyingViewSize() == 1);
+      const bool this_constant = this_1D && (this->getUnderlyingViewSize() == 1);
+      const bool A_full        = A.underlyingMatchesLogical();
+      const bool B_full        = B.underlyingMatchesLogical();
+      const bool this_full     = this->underlyingMatchesLogical();
       
       const ConstantArgExtractor constArg;
       
@@ -489,30 +524,42 @@ namespace Intrepid2 {
         }
         return -1;
       };
-      /*
-       TODO: optimize 1D cases
-       In the lambda, we will want something like:
-       
-       auto arg_1D = std::get<arg_1D_index>(intArgs...);
-       
-       const auto & A_val = A_underlying(arg_1D);
-       
-       // the get<> thing might need to be more like:
-       auto arg_1D = std::get<arg_1D_index>(std::tuple<IntArgs...>(intArgs...));
-       */
-      if (A_constant)
+      if (this_constant)
+      {
+        // then A, B are constant, too
+        auto thisAE = constArg;
+        auto AAE    = constArg;
+        auto BAE    = constArg;
+        auto & this_underlying = this->getUnderlyingView<1>();
+        auto & A_underlying    = A.getUnderlyingView<1>();
+        auto & B_underlying    = B.getUnderlyingView<1>();
+        storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
+      }
+      else if (this_full && A_full && B_full)
+      {
+        auto thisAE = fullArgs;
+        auto AAE    = fullArgs;
+        auto BAE    = fullArgs;
+        
+        auto & this_underlying = this->getUnderlyingView<rank>();
+        auto & A_underlying    = A.getUnderlyingView<rank>();
+        auto & B_underlying    = B.getUnderlyingView<rank>();
+        
+        storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
+      }
+      else if (A_constant)
       {
         auto AAE = constArg;
-        auto A_underlying = A.getUnderlyingView<1>();
+        auto & A_underlying = A.getUnderlyingView<1>();
         if (this_full)
         {
           auto thisAE = fullArgs;
-          auto this_underlying = this->getUnderlyingView<rank>();
+          auto & this_underlying = this->getUnderlyingView<rank>();
           
           if (B_full)
           {
             auto BAE = fullArgs;
-            auto B_underlying = B.getUnderlyingView<rank>();
+            auto & B_underlying = B.getUnderlyingView<rank>();
             storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
           else // this_full, not B_full: B may have modular data, etc.
@@ -528,8 +575,8 @@ namespace Intrepid2 {
           {
             // since A is constant, that implies that this_1D is true, and has the same 1DArgIndex
             const int argIndex = get1DArgIndex(B);
-            auto B_underlying    = B.getUnderlyingView<1>();
-            auto this_underlying = this->getUnderlyingView<1>();
+            auto & B_underlying    = B.getUnderlyingView<1>();
+            auto & this_underlying = this->getUnderlyingView<1>();
             switch (argIndex)
             {
               case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, AAE, arg0); break;
@@ -553,15 +600,15 @@ namespace Intrepid2 {
       else if (B_constant)
       {
         auto BAE = constArg;
-        auto B_underlying = B.getUnderlyingView<1>();
+        auto & B_underlying = B.getUnderlyingView<1>();
         if (this_full)
         {
           auto thisAE = fullArgs;
-          auto this_underlying = this->getUnderlyingView<rank>();
+          auto & this_underlying = this->getUnderlyingView<rank>();
           if (A_full)
           {
             auto AAE = fullArgs;
-            auto A_underlying = A.getUnderlyingView<rank>();
+            auto & A_underlying = A.getUnderlyingView<rank>();
             
             storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, BAE);
           }
@@ -579,8 +626,8 @@ namespace Intrepid2 {
           {
             // since B is constant, that implies that this_1D is true, and has the same 1DArgIndex as A
             const int argIndex = get1DArgIndex(A);
-            auto A_underlying    = A.getUnderlyingView<1>();
-            auto this_underlying = this->getUnderlyingView<1>();
+            auto & A_underlying    = A.getUnderlyingView<1>();
+            auto & this_underlying = this->getUnderlyingView<1>();
             switch (argIndex)
             {
               case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, arg0, arg0, BAE); break;
@@ -614,9 +661,9 @@ namespace Intrepid2 {
           const int argA    = get1DArgIndex(A); // if not full-extent, will be -1
           const int argB    = get1DArgIndex(B); // ditto
           
-          auto A_underlying    = A.getUnderlyingView<1>();
-          auto B_underlying    = B.getUnderlyingView<1>();
-          auto this_underlying = this->getUnderlyingView<1>();
+          auto & A_underlying    = A.getUnderlyingView<1>();
+          auto & B_underlying    = B.getUnderlyingView<1>();
+          auto & this_underlying = this->getUnderlyingView<1>();
           if ((argA != -1) && (argB != -1))
           {
 #ifdef INTREPID2_HAVE_DEBUG
@@ -666,18 +713,18 @@ namespace Intrepid2 {
         else if (this_full)
         {
           // This case uses A,B Data objects; could be optimized by dividing into subcases and using underlying Views with appropriate ArgExtractors.
-          auto this_underlying = this->getUnderlyingView<rank>();
+          auto & this_underlying = this->getUnderlyingView<rank>();
           auto thisAE = fullArgs;
           
           if (A_full)
           {
-            auto A_underlying = A.getUnderlyingView<rank>();
+            auto & A_underlying = A.getUnderlyingView<rank>();
             auto AAE = fullArgs;
             
             if (B_1D && (get1DArgIndex(B) != -1))
             {
               const int argIndex = get1DArgIndex(B);
-              auto B_underlying = B.getUnderlyingView<1>();
+              auto & B_underlying = B.getUnderlyingView<1>();
               switch (argIndex)
               {
                 case 0: storeInPlaceCombination(policy, this_underlying, A_underlying, B_underlying, binaryOperator, thisAE, AAE, arg0); break;
@@ -702,10 +749,10 @@ namespace Intrepid2 {
             if (A_1D && (get1DArgIndex(A) != -1))
             {
               const int argIndex = get1DArgIndex(A);
-              auto A_underlying  = A.getUnderlyingView<1>();
+              auto & A_underlying  = A.getUnderlyingView<1>();
               if (B_full)
               {
-                auto B_underlying = B.getUnderlyingView<rank>();
+                auto & B_underlying = B.getUnderlyingView<rank>();
                 auto BAE = fullArgs;
                 switch (argIndex)
                 {
@@ -760,71 +807,16 @@ namespace Intrepid2 {
     {
       auto policy = dataExtentRangePolicy<rank>();
       
-      // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
-      Data<DataScalar,DeviceType> thisData = *this;
+      using DataType = Data<DataScalar,DeviceType>;
+      using ThisAE = FullArgExtractorWritableData;
+      using AAE    = FullArgExtractorConst;
+      using BAE    = FullArgExtractorConst;
       
-      auto this_underlying = this->getUnderlyingView<rank>();
-      auto A_underlying = A.getUnderlyingView<rank>();
-      auto B_underlying = B.getUnderlyingView<rank>();
-    
       const ordinal_type dim6 = getDataExtent(6);
-      Kokkos::parallel_for("compute in-place", policy,
-      KOKKOS_LAMBDA (const auto &...args) {
-        for (unsigned long long i6=0; i6<dim6; i6++) // TODO: figure out the right way to determine the int type for i6
-        {
-          auto & result = thisData.getWritableEntry(args...,i6);
-          const auto & A_val = A(args...,i6);
-          const auto & B_val = B(args...,i6);
-          
-          result = binaryOperator(A_val,B_val);
-        }
-      });
-    }
-    
-    //! special case when underlying matches logical for all arguments -- implementation for underlying rank < 7.
-    template<class BinaryOperator, int underlyingRank>
-    enable_if_t<underlyingRank != 7, void>
-    storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
-    {
-      auto policy = dataExtentRangePolicy<underlyingRank>();
-      
-      auto this_underlying = this->getUnderlyingView<underlyingRank>();
-      auto A_underlying = A.getUnderlyingView<underlyingRank>();
-      auto B_underlying = B.getUnderlyingView<underlyingRank>();
-      
-        Kokkos::parallel_for("compute in-place", policy,
-        KOKKOS_LAMBDA (const auto &...args) {
-          auto & result      = this_underlying(args...);
-          const auto & A_val = A_underlying   (args...);
-          const auto & B_val = B_underlying   (args...);
-          
-          result = binaryOperator(A_val,B_val);
-        });
-    }
-    
-    //! special case when underlying matches logical for all arguments -- case for underlying rank == 7.
-    template<class BinaryOperator, int underlyingRank>
-    enable_if_t<underlyingRank == 7, void>
-    storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
-    {
-      auto policy = dataExtentRangePolicy<underlyingRank>();
-      
-      auto this_underlying = this->getUnderlyingView<underlyingRank>();
-      auto A_underlying = A.getUnderlyingView<underlyingRank>();
-      auto B_underlying = B.getUnderlyingView<underlyingRank>();
-    
-      const ordinal_type dim6 = getDataExtent(6);
-      Kokkos::parallel_for("compute in-place", policy,
-      KOKKOS_LAMBDA (const auto &...args) {
-        for (int i6=0; i6<dim6; i6++)
-        {
-          auto & result      = this_underlying(args...,i6);
-          const auto & A_val = A_underlying   (args...,i6);
-          const auto & B_val = B_underlying   (args...,i6);
-          
-          result = binaryOperator(A_val,B_val);
-        }
-      });
+      const bool includeInnerLoop = true;
+      using Functor = InPlaceCombinationFunctor<BinaryOperator, DataType, DataType, DataType, ThisAE, AAE, BAE, includeInnerLoop>;
+      Functor functor(*this, A, B, binaryOperator, dim6);
+      Kokkos::parallel_for("compute in-place", policy, functor);
     }
   public:
     //! applies the specified unary operator to each entry
@@ -2206,8 +2198,8 @@ namespace Intrepid2 {
       const bool this_constant = (this->getUnderlyingViewRank() == 1) && (this->getUnderlyingViewSize() == 1);
       const bool A_constant = (A.getUnderlyingViewRank() == 1) && (A.getUnderlyingViewSize() == 1);
       const bool B_constant = (B.getUnderlyingViewRank() == 1) && (B.getUnderlyingViewSize() == 1);
-      
-      // special cases:
+
+      // we special-case for constant output here; since the constant case is essentially all overhead, we want to avoid as much of the overhead of storeInPlaceCombination() as possible…
       if (this_constant)
       {
         // constant data
@@ -2223,23 +2215,6 @@ namespace Intrepid2 {
           
           result = binaryOperator(A_val,B_val);
         });
-        return;
-      }
-      else if (this->underlyingMatchesLogical() && A.underlyingMatchesLogical() && B.underlyingMatchesLogical())
-      {
-        switch (dataRank_)
-        {
-          case 1: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 1>(A, B, binaryOperator); break;
-          case 2: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 2>(A, B, binaryOperator); break;
-          case 3: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 3>(A, B, binaryOperator); break;
-          case 4: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 4>(A, B, binaryOperator); break;
-          case 5: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 5>(A, B, binaryOperator); break;
-          case 6: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 6>(A, B, binaryOperator); break;
-          case 7: storeInPlaceCombination_UnderlyingMatchesLogicalForAllArgs<BinaryOperator, 7>(A, B, binaryOperator); break;
-          default:
-            INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::logic_error, "unhandled rank in switch");
-        }
-        return;
       }
       else
       {
