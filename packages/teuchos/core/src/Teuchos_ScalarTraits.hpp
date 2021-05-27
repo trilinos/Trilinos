@@ -783,6 +783,117 @@ struct ScalarTraits<double>
 };
 
 
+template<>
+struct ScalarTraits<long double>
+{
+  typedef long double magnitudeType;
+  typedef double halfPrecision;
+  /* there are different options as to how to double "double"
+     - QD's DD (if available)
+     - ARPREC
+     - GNU MP
+     - a true hardware quad
+
+     in the shortterm, this should be specified at configure time. I have inserted a configure-time option (--enable-teuchos-double-to-dd)
+     which uses QD's DD when available. This must be used alongside --enable-teuchos-qd.
+   */
+//IKT 5/26/2021: not sure what the following is for...
+//I assume it is not relevant for long double
+//what is dd_real and mp_real?
+/*#if defined(HAVE_TEUCHOS_DOUBLE_TO_QD)
+  typedef dd_real doublePrecision;
+#elif defined(HAVE_TEUCHOS_DOUBLE_TO_ARPREC)
+  typedef mp_real doublePrecision;
+#else*/
+  typedef double doublePrecision;     // don't double "double" in this case
+//#endif
+  typedef long double coordinateType;
+  static const bool isComplex = false;
+  static const bool isOrdinal = false;
+  static const bool isComparable = true;
+  static const bool hasMachineParameters = true;
+  static inline long double eps()   {
+    return std::numeric_limits<long double>::epsilon();
+  }
+  static inline long double sfmin() {
+    return std::numeric_limits<long double>::min();
+  }
+  static inline long double base()  {
+    return std::numeric_limits<long double>::radix;
+  }
+  static inline long double prec()  {
+    return eps()*base();
+  }
+  static inline long double t()     {
+    return std::numeric_limits<long double>::digits;
+  }
+  static inline long double rnd()   {
+    return ( std::numeric_limits<long double>::round_style == std::round_to_nearest ? (long double)(1.0) : (long double)(0.0) );
+  }
+  static inline long double emin()  {
+    return std::numeric_limits<long double>::min_exponent;
+  }
+  static inline long double rmin()  {
+    return std::numeric_limits<long double>::min();
+  }
+  static inline long double emax()  {
+    return std::numeric_limits<long double>::max_exponent;
+  }
+  static inline long double rmax()  {
+    return std::numeric_limits<long double>::max();
+  }
+  static inline magnitudeType magnitude(long double a)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        a, "Error, the input value to magnitude(...) a = " << a << " can not be NaN!" );
+#endif
+      return std::fabs(a);
+    }
+  static inline long double zero()  { return 0.0; }
+  static inline long double one()   { return 1.0; }
+  static inline long double conjugate(long double x)   { return(x); }
+  static inline long double real(long double x) { return(x); }
+  static inline long double imag(long double) { return(0); }
+  static inline long double nan() {
+#ifdef __sun
+    return 0.0/std::sin(0.0);
+#else
+    return std::numeric_limits<long double>::quiet_NaN();
+#endif
+  }
+  static inline bool isnaninf(long double x) {
+    return generic_real_isnaninf<long double>(x);
+  }
+  static inline void seedrandom(unsigned int s) {
+    std::srand(s);
+#ifdef __APPLE__
+    // throw away first random number to address bug 3655
+    // http://software.sandia.gov/bugzilla/show_bug.cgi?id=3655
+    random();
+#endif
+  }
+  static inline long double random() { long double rnd = (long double) std::rand() / RAND_MAX; return (long double)(-1.0 + 2.0 * rnd); }
+  static inline std::string name() { return "long double"; }
+  static inline long double squareroot(long double x)
+    {
+#ifdef TEUCHOS_DEBUG
+      TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR(
+        x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
+#endif
+      errno = 0;
+      const long double rtn = std::sqrt(x);
+      if (errno)
+        return nan();
+      return rtn;
+    }
+  static inline long double pow(long double x, long double y) { return std::pow(x,y); }
+  static inline long double pi() { return 3.14159265358979323846264338327950288419716939937510; }
+  static inline long double log(double x) { return std::log(x); }
+  static inline long double log10(double x) { return std::log10(x); }
+};
+
+
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
 
 template<>
