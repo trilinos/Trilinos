@@ -568,6 +568,13 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
     //! Signal that data entry is complete.
     void fillComplete(const RCP< ParameterList > &params=null) { }
 
+    //! Expert version of fillComplete
+    void expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                                   const Teuchos::RCP<const map_type>& rangeMap,
+                                   const Teuchos::RCP<const Import>& importer = null,
+                                   const Teuchos::RCP<const Export>& exporter = null,                          
+                                   const Teuchos::RCP<Teuchos::ParameterList>& params=null){ } 
+
     //@}
 
     //! @name Methods implementing RowGraph.
@@ -901,6 +908,13 @@ RCP< const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > TpetraCrsGraph<
 
     //! Signal that data entry is complete.
     void fillComplete(const RCP< ParameterList > &params=null) { }
+
+    //! Expert version of fillComplete
+    void expertStaticFillComplete (const Teuchos::RCP<const map_type>& domainMap,
+                                   const Teuchos::RCP<const map_type>& rangeMap,
+                                   const Teuchos::RCP<const Import>& importer = null,
+                                   const Teuchos::RCP<const Export>& exporter = null,                          
+                                   const Teuchos::RCP<Teuchos::ParameterList>& params=null){ } 
 
     //@}
 
