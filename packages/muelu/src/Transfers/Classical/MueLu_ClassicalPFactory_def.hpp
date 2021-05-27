@@ -48,6 +48,7 @@
 
 #include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_VectorFactory.hpp>
+#include <Xpetra_CrsGraphFactory.hpp>
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Map.hpp>
@@ -70,7 +71,7 @@
 #include "MueLu_GraphBase.hpp"
 
 
-//#define CMS_DEBUG
+#define CMS_DEBUG
 #define CMS_DUMP
 
 namespace { 
@@ -212,6 +213,7 @@ namespace MueLu {
     RCP<const Matrix> Aghost;
     RCP<const LocalOrdinalVector> fc_splitting_ghost;
     ArrayRCP<const LO> myPointType_ghost;
+    RCP<const Import> remoteOnlyImporter;
     if(need_ghost_rows && !Importer.is_null()){      
       ArrayView<const LO> remoteLIDs = Importer->getRemoteLIDs();
       size_t numRemote = Importer->getNumRemoteIDs();
@@ -222,8 +224,20 @@ namespace MueLu {
       RCP<const Map> remoteRowMap = MapFactory::Build(lib,Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), remoteRows(),
                                                       A->getDomainMap()->getIndexBase(), A->getDomainMap()->getComm());
 
-      RCP<const Import> remoteOnlyImporter = Importer->createRemoteOnlyImport(remoteRowMap);
+      remoteOnlyImporter = Importer->createRemoteOnlyImport(remoteRowMap);
       RCP<const CrsMatrix> Acrs = rcp_dynamic_cast<const CrsMatrixWrap>(A)->getCrsMatrix();
+      RCP<CrsMatrix> Aghost_crs = CrsMatrixFactory::Build(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap());
+      Aghost = rcp(new CrsMatrixWrap(Aghost_crs));
+      // We also may need need to ghost myPointType for Aghos
+      RCP<const Import> Importer2 = Aghost->getCrsGraph()->getImporter();
+      if(Importer2.is_null()) {
+        RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Aghost->getColMap());
+        fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
+        fc_splitting_ghost = fc_splitting_ghost_nonconst;
+        myPointType_ghost  = fc_splitting_ghost->getData(0);      
+      }
+      /*
+#if OLD_AND_BUSTED
       if(lib == Xpetra::UseEpetra) {
 #ifdef HAVE_MUELU_EPETRA
         RCP<CrsMatrix> Ecrs = rcp(new EpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
@@ -250,8 +264,12 @@ namespace MueLu {
           myPointType_ghost  = fc_splitting_ghost->getData(0);      
         }
 #endif
+#endif
       }     
+    */
     }
+
+
 
     /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/   
     RCP<const Map> coarseMap;
@@ -346,7 +364,7 @@ namespace MueLu {
     }
     else if(scheme == "classical modified") {
       SubFactoryMonitor sfm(*this,"Classical Modified Interpolation",coarseLevel);
-      Coarsen_ClassicalModified(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),myPointType_ghost(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,P);
+      Coarsen_ClassicalModified(*A,Aghost,*graph,coarseColMap,coarseDomainMap,num_c_points,num_f_points,myPointType(),myPointType_ghost(),cpoint2pcol,pcol2cpoint,eis_rowptr,edgeIsStrong,BlockNumber,remoteOnlyImporter,P);
     }
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
@@ -372,7 +390,7 @@ namespace MueLu {
 /* ************************************************************************* */
 template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node>
 void ClassicalPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<Matrix> & P) const {
+Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBase & graph,  RCP<const Map> & coarseColMap, RCP<const Map> & coarseDomainMap, LO num_c_points, LO num_f_points, const Teuchos::ArrayView<const LO> & myPointType, const Teuchos::ArrayView<const LO> & myPointType_ghost, const Teuchos::Array<LO> & cpoint2pcol, const Teuchos::Array<LO> & pcol2cpoint, Teuchos::Array<size_t> & eis_rowptr, Teuchos::Array<bool> & edgeIsStrong, RCP<LocalOrdinalVector> & BlockNumber, RCP<const Import> remoteOnlyImporter,RCP<Matrix> & P) const {
     /* ============================================================= */
     /* Phase 3 : Classical Modified Interpolation                    */
     /* De Sterck, Falgout, Nolting and Yang. "Distance-two           */
@@ -474,24 +492,40 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     // Resize down
     tmp_colind.resize(tmp_rowptr[Nrows]);  
 
-    // Allocate memory & copy
-    P = rcp(new CrsMatrixWrap(A.getRowMap(), coarseColMap, 0));
-    RCP<CrsMatrix> PCrs   = rcp_dynamic_cast<CrsMatrixWrap>(P)->getCrsMatrix();
+    // Make the graph (since we'll need to migrate this before we have entries)
+    RCP<CrsGraph> Pgraph = CrsGraphFactory::Build(A.getRowMap(),coarseColMap,0);
     ArrayRCP<size_t>  P_rowptr;
     ArrayRCP<LO>      P_colind;
-    ArrayRCP<SC>      P_values;
+    Pgraph->allocateAllIndices(tmp_rowptr[Nrows],P_rowptr,P_colind);
+
+    // FIXME:  This can be short-circuited for Tpetra, if we decide we care
+    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
+    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());  
+    Pgraph->setAllIndices(P_rowptr,P_colind);
+    Pgraph->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+
+    // Generate a remote-ghosted version of the graph (if we're in parallel)
+    RCP<CrsGraph> Pghost;
+    ArrayRCP<const size_t> Pghost_rowptr;
+    ArrayRCP<const LO> Pghost_colind;
+    if(!remoteOnlyImporter.is_null()) {
+      Pghost = CrsGraphFactory::Build(Pgraph,*remoteOnlyImporter,Pgraph->getDomainMap(),remoteOnlyImporter->getTargetMap());
+      Pghost->getAllIndices(Pghost_rowptr,Pghost_colind);
+    }
+
+    // Now, make the matrix
+    // Allocate memory for the matrix
+    RCP<const CrsGraph> Pgraph_const = Pgraph;
+    RCP<CrsMatrix> Pcrs = CrsMatrixFactory::Build(Pgraph_const);
+    P = rcp(new CrsMatrixWrap(Pcrs));
+    ArrayRCP<SC> P_values;
+    Pcrs->resumeFill();
+    // Accessor which just gets the values array
+    Pcrs->getAllValues(P_values);
 
 #ifdef CMS_DEBUG
 printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 #endif
-    PCrs->allocateAllValues(tmp_rowptr[Nrows], P_rowptr, P_colind, P_values);
-    TEUCHOS_TEST_FOR_EXCEPTION(tmp_rowptr.size() !=P_rowptr.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (rowptr)");
-    TEUCHOS_TEST_FOR_EXCEPTION(tmp_colind.size() !=P_colind.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (colind)");
-    // FIXME:  This can be short-circuited for Tpetra, if we decide we care
-    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
-    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());     
-
-
     // Gustavson-style perfect hashes
     //    ArrayRCP<size_t> A_column_to_index(A.getColMap()->getNodeNumElements(),LO_INVALID);
     
@@ -551,8 +585,17 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           }
           else if(myPointType[k] == F_PT && edgeIsStrong[row_start+j]) {
             // We want strong F-neighbors with no common strong C-Points with i.  
-            ArrayView<LO> P_indices_k = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
-            
+            // FIXME: This will run off the array if we need off-rank rows of P.
+            ArrayView<const LO> P_indices_k;
+            if(k < (LO) Nrows) P_indices_k = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
+            else {
+              LO k1 = k-Nrows;
+              P_indices_k = Pghost_colind.view(Pghost_rowptr[k1],Pghost_rowptr[k1+1] - Pghost_rowptr[k1]);
+            }
+
+            // FIXME:  Is the column index of Pghost locally fitted to the one of P?  If not, the stuff
+            // below won't work.
+
             // std::sets are sorted, so...
             /*
               in_fis_star[j] = true;
@@ -736,8 +779,8 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     }//end for numRows
 
     // Finish up
-    PCrs->setAllValues(P_rowptr, P_colind, P_values);
-    PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+    //    Pcrs->setAllValues(P_rowptr, P_colind, P_values);
+    Pcrs->fillComplete(Pcrs->getDomainMap(),Pcrs->getRangeMap());
 }
 
 
@@ -1124,6 +1167,7 @@ Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const Grap
     TEUCHOS_TEST_FOR_EXCEPTION(tmp_rowptr.size() !=P_rowptr.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (rowptr)");
     TEUCHOS_TEST_FOR_EXCEPTION(tmp_colind.size() !=P_colind.size(), Exceptions::RuntimeError,"ClassicalPFactory: Allocation size error (colind)");
 
+
     // FIXME:  This can be short-circuited for Tpetra, if we decide we care
     std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
     std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());
@@ -1320,8 +1364,8 @@ Coarsen_Ext_Plus_I(const Matrix & A,const RCP<const Matrix> & Aghost, const Grap
 
     // Finish up
     PCrs->setAllValues(P_rowptr, P_colind, P_values);
-    PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
-    //    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
+    PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());    
+//    PCrs->fillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());// Yes, we want A's domainMap here.
 }
 
 
