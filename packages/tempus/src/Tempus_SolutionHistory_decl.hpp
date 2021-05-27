@@ -350,6 +350,10 @@ protected:
 /// Nonmember constructor from a ParameterList
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
+createSolutionHistory();
+
+template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
 createSolutionHistoryPL(Teuchos::RCP<Teuchos::ParameterList> pList);
 
 /// Nonmember contructor from a SolutionState.

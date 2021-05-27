@@ -460,8 +460,13 @@ void TimeStepControl<Scalar>::describe(
    Teuchos::FancyOStream               &out,
    const Teuchos::EVerbosityLevel      verbLevel) const
 {
-  if (verbLevel == Teuchos::VERB_EXTREME) {
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
 
+  *l_out << "\n--- " << this->description() << " ---" <<std::endl;
+
+  if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
     std::vector<int> idx = getOutputIndices();
     std::ostringstream listIdx;
     if (!idx.empty()) {
@@ -472,37 +477,36 @@ void TimeStepControl<Scalar>::describe(
     std::vector<Scalar> times = getOutputTimes();
     std::ostringstream listTimes;
     if (!times.empty()) {
-      for(std::size_t i = 0; i < times.size()-1; ++i) listTimes << times[i] << ", ";
+      for(std::size_t i = 0; i < times.size()-1; ++i)
+        listTimes << times[i] << ", ";
       listTimes << times[times.size()-1];
     }
 
-    auto l_out = Teuchos::fancyOStream( out.getOStream() );
-    l_out->setOutputToRootOnly(0);
-    *l_out << description() << "::describe:" << std::endl
-           << "stepType           = " << getStepType()            << std::endl
-           << "initTime           = " << getInitTime()            << std::endl
-           << "finalTime          = " << getFinalTime()           << std::endl
-           << "minTimeStep        = " << getMinTimeStep()         << std::endl
-           << "initTimeStep       = " << getInitTimeStep()        << std::endl
-           << "maxTimeStep        = " << getMaxTimeStep()         << std::endl
-           << "initIndex          = " << getInitIndex()           << std::endl
-           << "finalIndex         = " << getFinalIndex()          << std::endl
-           << "maxAbsError        = " << getMaxAbsError()         << std::endl
-           << "maxRelError        = " << getMaxRelError()         << std::endl
-           << "maxFailures        = " << getMaxFailures()         << std::endl
-           << "maxConsecFailures  = " << getMaxConsecFailures()   << std::endl
-           << "numTimeSteps       = " << getNumTimeSteps()        << std::endl
-           << "printDtChanges     = " << getPrintDtChanges()      << std::endl
-           << "outputExactly      = " << getOutputExactly()       << std::endl
-           << "outputIndices      = " << listIdx.str()            << std::endl
-           << "outputTimes        = " << listTimes.str()          << std::endl
-           << "outputIndexInterval= " << getOutputIndexInterval() << std::endl
-           << "outputTimeInterval = " << getOutputTimeInterval()  << std::endl
-           << "outputAdjustedDt   = " << outputAdjustedDt_        << std::endl
-           << "dtAfterOutput      = " << dtAfterOutput_           << std::endl
-           << "stepControlSrategy = " << std::endl;
-           stepControlStrategy_->describe(out, verbLevel);
+    *l_out << "  stepType           = " << getStepType()            << std::endl
+           << "  initTime           = " << getInitTime()            << std::endl
+           << "  finalTime          = " << getFinalTime()           << std::endl
+           << "  minTimeStep        = " << getMinTimeStep()         << std::endl
+           << "  initTimeStep       = " << getInitTimeStep()        << std::endl
+           << "  maxTimeStep        = " << getMaxTimeStep()         << std::endl
+           << "  initIndex          = " << getInitIndex()           << std::endl
+           << "  finalIndex         = " << getFinalIndex()          << std::endl
+           << "  maxAbsError        = " << getMaxAbsError()         << std::endl
+           << "  maxRelError        = " << getMaxRelError()         << std::endl
+           << "  maxFailures        = " << getMaxFailures()         << std::endl
+           << "  maxConsecFailures  = " << getMaxConsecFailures()   << std::endl
+           << "  numTimeSteps       = " << getNumTimeSteps()        << std::endl
+           << "  printDtChanges     = " << getPrintDtChanges()      << std::endl
+           << "  outputExactly      = " << getOutputExactly()       << std::endl
+           << "  outputIndices      = " << listIdx.str()            << std::endl
+           << "  outputTimes        = " << listTimes.str()          << std::endl
+           << "  outputIndexInterval= " << getOutputIndexInterval() << std::endl
+           << "  outputTimeInterval = " << getOutputTimeInterval()  << std::endl
+           << "  outputAdjustedDt   = " << outputAdjustedDt_        << std::endl
+           << "  dtAfterOutput      = " << dtAfterOutput_           <<std::endl;
+           stepControlStrategy_->describe(*l_out, verbLevel);
   }
+  *l_out << std::string(this->description().length()+8, '-') <<std::endl;
+
 }
 
 

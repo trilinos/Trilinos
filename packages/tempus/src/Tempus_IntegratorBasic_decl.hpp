@@ -100,6 +100,9 @@ public:
     /// Get the SolutionHistory
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
       {return solutionHistory_;}
+    /// Get the SolutionHistory
+    virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override
+      {return solutionHistory_;}
     /// Set the SolutionHistory
     virtual void setSolutionHistory(
       Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null);
@@ -206,6 +209,12 @@ protected:
   Teuchos::RCP<Teuchos::Time> stepperTimer_;
 
 };
+
+
+/// Nonmember constructor
+template<class Scalar>
+Teuchos::RCP<IntegratorBasic<Scalar> > createIntegratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                pList);
 
 
 /// Nonmember constructor

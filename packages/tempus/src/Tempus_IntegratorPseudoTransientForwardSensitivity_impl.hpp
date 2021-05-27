@@ -177,6 +177,14 @@ getSolutionHistory() const
 }
 
 template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+IntegratorPseudoTransientForwardSensitivity<Scalar>::
+getNonConstSolutionHistory()
+{
+  return solutionHistory_;
+}
+
+template<class Scalar>
 Teuchos::RCP<const TimeStepControl<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 getTimeStepControl() const
@@ -343,14 +351,16 @@ template<class Scalar>
 void
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
 describe(
-  Teuchos::FancyOStream          &in_out,
+  Teuchos::FancyOStream          &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-  auto out = Teuchos::fancyOStream( in_out.getOStream() );
-  out->setOutputToRootOnly(0);
-  *out << description() << "::describe" << std::endl;
-  state_integrator_->describe(in_out, verbLevel);
-  sens_integrator_->describe(in_out, verbLevel);
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << description() << "::describe" << std::endl;
+  state_integrator_->describe(*l_out, verbLevel);
+  sens_integrator_->describe(*l_out, verbLevel);
 }
 
 template<class Scalar>

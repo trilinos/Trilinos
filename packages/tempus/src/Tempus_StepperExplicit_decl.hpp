@@ -46,6 +46,7 @@ public:
 
   /// \name Basic explicit stepper methods
   //@{
+    /// Set model
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 

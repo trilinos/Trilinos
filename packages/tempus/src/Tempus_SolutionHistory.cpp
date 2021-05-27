@@ -18,8 +18,11 @@ namespace Tempus {
 
   // Nonmember constructor from a ParameterList
   template Teuchos::RCP<SolutionHistory<double> >
-  createSolutionHistoryPL(
-    Teuchos::RCP<Teuchos::ParameterList> pList);
+  createSolutionHistory();
+
+  // Nonmember constructor from a ParameterList
+  template Teuchos::RCP<SolutionHistory<double> >
+  createSolutionHistoryPL(Teuchos::RCP<Teuchos::ParameterList> pList);
 
   // Nonmember contructor from a SolutionState.
   template Teuchos::RCP<SolutionHistory<double> >
