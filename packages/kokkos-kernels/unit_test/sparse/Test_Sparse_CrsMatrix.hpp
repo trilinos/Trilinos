@@ -47,11 +47,15 @@
 #include <Kokkos_Core.hpp>
 #include <stdexcept>
 #include "KokkosSparse_CrsMatrix.hpp"
+#include "Kokkos_ArithTraits.hpp"
 
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+// #ifndef kokkos_complex_double
+// #define kokkos_complex_double Kokkos::complex<double>
+// #define kokkos_complex_float Kokkos::complex<float>
+// #endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 namespace Test{ // anonymous
 
@@ -191,6 +195,40 @@ testCrsMatrix ()
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
 void
+testCrsMatrixRawConstructor()
+{
+  int nrows = 5;
+  //note: last 2 columns will be empty.
+  //This makes sure the ncols provided to constructor is preserved.
+  int ncols = 7;
+  int nnz = 9;
+  //NOTE: this is not a mistake, the raw ptr constructor takes rowmap as ordinal.
+  std::vector<lno_t> rowmap = {0, 0, 2, 5, 6, 9};
+  std::vector<lno_t> entries = {3, 4, 0, 1, 2, 2, 0, 3, 4};
+  std::vector<scalar_t> values;
+  for(int i = 0; i < nnz; i++)
+    values.push_back(Kokkos::ArithTraits<scalar_t>::one() * (1.0 * rand() / RAND_MAX));
+  KokkosSparse::CrsMatrix<scalar_t, lno_t, device, void, size_type> A(
+      "A", nrows, ncols, nnz, values.data(), rowmap.data(), entries.data());
+  EXPECT_EQ(A.numRows(), nrows);
+  EXPECT_EQ(A.numCols(), ncols);
+  EXPECT_EQ(A.nnz(), nnz);
+  //verify rowmap, entries, values: should all be identical to original raw arrays
+  //(except the rowmap elements are now size_type)
+  auto checkRowmap = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.row_map);
+  auto checkEntries = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.graph.entries);
+  auto checkValues = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), A.values);
+  for(int i = 0; i < nrows + 1; i++)
+    EXPECT_EQ(checkRowmap(i), (size_type) rowmap[i]);
+  for(int i = 0; i < nnz; i++)
+  {
+    EXPECT_EQ(checkEntries(i), entries[i]);
+    EXPECT_EQ(checkValues(i), values[i]);
+  }
+}
+
+template <typename scalar_t, typename lno_t, typename size_type, typename device>
+void
 testCrsMatrixHostMirror ()
 {
   using namespace Test;
@@ -226,6 +264,7 @@ testCrsMatrixHostMirror ()
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory, sparse ## _ ## crsmatrix ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   testCrsMatrix<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
+  testCrsMatrixRawConstructor<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
 } \
 TEST_F( TestCategory, sparse ## _ ## crsmatrix_host_mirror ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
   testCrsMatrixHostMirror<SCALAR, ORDINAL, OFFSET, DEVICE> (); \
@@ -329,4 +368,4 @@ TEST_F( TestCategory, sparse ## _ ## crsmatrix_host_mirror ## _ ## SCALAR ## _ #
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST

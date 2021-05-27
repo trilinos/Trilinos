@@ -368,12 +368,13 @@ public:
     nnz_lno_temp_work_view_t current_vertexList =
         nnz_lno_temp_work_view_t(Kokkos::ViewAllocateWithoutInitializing("vertexList"), this->nv);
     nnz_lno_t current_vertexListLength = this->nv;
-
-    //init vertexList sequentially.
+    
     if(this->cp->get_use_vtx_list()){
+      //get the vertexList from the color handle, if it exists.
       current_vertexList = this->cp->get_vertex_list();
       current_vertexListLength = this->cp->get_vertex_list_size();
     } else {
+      //init vertexList sequentially.
       Kokkos::parallel_for("KokkosGraph::GraphColoring::InitList",
           my_exec_space(0, this->nv), functorInitList<nnz_lno_temp_work_view_t> (current_vertexList));
     }
@@ -2526,6 +2527,7 @@ public:
     color_temp_work_view_type color_ban; //colors
     color_t hash; //the number of colors to be assigned initially.
     nnz_lno_temp_work_view_t color_set;
+
     //the value to initialize the color_ban_. We avoid using the first bit representing the sign.
     //Therefore if idx is int, it can represent 32-1 colors. Use color_set to represent more.
     color_t color_ban_init_val;
@@ -2539,11 +2541,11 @@ public:
 
     KOKKOS_INLINE_FUNCTION
     void operator()(const size_type &ii) const {
-      //set colors based on their indices.
+      //set colors based on their input colors.
       if(kokcolors(ii) > 0){
         color_t colorsize = sizeof(color_t) * 8 - 1;
-	color_set(ii) = (kokcolors(ii) - 1) / colorsize;
-	kokcolors(ii) = 1 << ((kokcolors(ii) - 1) % colorsize);
+        color_set(ii) = (kokcolors(ii) - 1) / colorsize;
+        kokcolors(ii) = 1 << ((kokcolors(ii) - 1) % colorsize);
       }
       color_ban(ii) = color_ban_init_val;
     }
