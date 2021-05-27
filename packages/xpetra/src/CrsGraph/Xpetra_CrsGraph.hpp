@@ -90,7 +90,7 @@ namespace Xpetra {
     typedef Node node_type;
 
     //! @name Constructor/Destructor Methods
-    //@{
+    //@
 
     //! Destructor.
     virtual ~CrsGraph() { }
@@ -109,6 +109,15 @@ namespace Xpetra {
     //! Remove all graph indices from the specified local row.
     virtual void removeLocalIndices(LocalOrdinal localRow)= 0;
 
+    //! Allocates the 1D pointer arrays of the graph
+    virtual void allocateAllIndices(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind)=0;
+
+    //! Sets the 1D pointer arrays of the graph.
+    virtual void setAllIndices(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind)=0;
+
+    //! Gets the 1D pointer arrays of the graph.
+    virtual void getAllIndices(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind) const = 0;
+
     //@}
 
     //! @name Transformational Methods
@@ -119,6 +128,17 @@ namespace Xpetra {
 
     //! Signal that data entry is complete.
     virtual void fillComplete(const RCP< ParameterList > &params=null)= 0;
+
+    //! Expert version of fillComplete
+    void
+    expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                              const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                              const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                              Teuchos::null,
+                              const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                              Teuchos::null,
+                              const Teuchos::RCP<Teuchos::ParameterList>& params =
+                              Teuchos::null);
 
     //@}
 
