@@ -71,8 +71,8 @@
 #include "MueLu_GraphBase.hpp"
 
 
-#define CMS_DEBUG
-#define CMS_DUMP
+//#define CMS_DEBUG
+//#define CMS_DUMP
 
 namespace { 
 
@@ -434,6 +434,9 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     //    size_t ST_INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
     SC SC_ZERO = STS::zero();
+#ifdef CMS_DEBUG
+    int rank = A.getRowMap()->getComm()->getRank();
+#endif
 
     // Get the block number if we have it.
     ArrayRCP<const LO> block_id; 
@@ -535,7 +538,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
         // Dirichlet points get ignored completely
 #ifdef CMS_DEBUG        
         // DEBUG
-        printf("** A(%d,:) is a Dirichlet-Point.\n",i);
+        printf("[%d] ** A(%d,:) is a Dirichlet-Point.\n",rank,i);
 #endif
       }
       else if (myPointType[i] == C_PT) {
@@ -543,7 +546,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
         P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
 #ifdef CMS_DEBUG        
         // DEBUG
-        printf("** A(%d,:) is a C-Point.\n",i);
+        printf("[%d] ** A(%d,:) is a C-Point.\n",rank,i);
 #endif
       }
       else {
@@ -585,7 +588,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           }
           else if(myPointType[k] == F_PT && edgeIsStrong[row_start+j]) {
             // We want strong F-neighbors with no common strong C-Points with i.  
-            // FIXME: This will run off the array if we need off-rank rows of P.
+
             ArrayView<const LO> P_indices_k;
             if(k < (LO) Nrows) P_indices_k = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
             else {
@@ -594,7 +597,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
             }
 
             // FIXME:  Is the column index of Pghost locally fitted to the one of P?  If not, the stuff
-            // below won't work.
+            // below won't work.  The same is true of local indices for Aghost
 
             // std::sets are sorted, so...
             /*
@@ -624,12 +627,12 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 
 #ifdef CMS_DEBUG          
         // DEBUG
-        printf("** A(%d,:) is an F-Point.\n",i);
+        printf("[%d] ** A(%d,:) is an F-Point.\n",rank,i);
         {
           char mylabel[5]="FUCD";
           char sw[3]="ws";
           char start[3]=" *";
-          printf("** A(%d,:) = ",i);
+          printf("[%d] ** A(%d,:) = ",rank,i);
           for(LO j=0; j<(LO)A_indices_i.size(); j++){  
             printf("%6.4e(%d-%c%c%c) ",A_vals_i[j],A_indices_i[j],mylabel[1+myPointType[A_indices_i[j]]],sw[(int)edgeIsStrong[row_start+j]],
                    start[(int)in_fis_star[j]]);
@@ -647,6 +650,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 
           if(myPointType[k] == F_PT && !in_fis_star[j])  {
             // Strong F-point neighbor and not in F_i^s\star
+            // FIXME: need to grab ghosts as needed
             A.getLocalRowView(k, A_indices_k, A_vals_k);
 
             // Find the diagonal
@@ -696,7 +700,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
 
 #ifdef CMS_DEBUG
         {
-          printf("- second_denominator = ");
+          printf("[%d]  - second_denominator = ",rank);
           for(LO j=0; j<(LO)A_indices_i.size(); j++) {
             printf("%6.4e[%d] ",second_denominator[j],A_indices_i[j]);
           }
@@ -735,8 +739,9 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
             if(myPointType[k] == F_PT && edgeIsStrong[row_start+a_j] && !in_fis_star[a_j]) {       
               // Strong F-neighbors that are not in F_i^s\star
 #ifdef CMS_DEBUG
-              printf(" - A(%d,%d) is a strong F-neighbor and has a common C-Point\n",i,k);
+              printf("[%d]  - A(%d,%d) is a strong F-neighbor and has a common C-Point\n",rank,i,k);
 #endif
+            // FIXME: need to grab ghosts as needed
               A.getLocalRowView(k, A_indices_k, A_vals_k);
               
               // Find the diagonal and a_kj
@@ -755,7 +760,7 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
                 }
               }//end for A_indices_k
 #ifdef CMS_DEBUG
-              printf(" - - - Found Aik(%d,%d) = %6.4e Akk(%d,%d) = %6.4e Akj(%d,%d) = %6.4e\n",i,k,a_ik,k,k,a_kk,k,P_col,a_kj);
+              printf("[%d]  - - - Found Aik(%d,%d) = %6.4e Akk(%d,%d) = %6.4e Akj(%d,%d) = %6.4e\n",rank,i,k,a_ik,k,k,a_kk,k,P_col,a_kj);
 #endif
               int sign_akk = Sign(a_kk);
               SC a_kj_bar = (Sign(a_kj) == sign_akk) ? SC_ZERO : a_kj;
@@ -763,14 +768,14 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
                 f_ij += a_ik * a_kj_bar / second_denominator[a_j];
 #ifdef CMS_DEBUG
               if (a_ik != SC_ZERO)
-                printf(" - - - f_ij(%d,%d) +=  (%6.4e = %6.4e * %6.4e / %6.4e)\n",i,P_col,a_ik*a_kj_bar / second_denominator[a_j],a_ik,a_kj_bar,second_denominator[a_j]);
+                printf("[%d]  - - - f_ij(%d,%d) +=  (%6.4e = %6.4e * %6.4e / %6.4e)\n",rank,i,P_col,a_ik*a_kj_bar / second_denominator[a_j],a_ik,a_kj_bar,second_denominator[a_j]);
 #endif
 
              }//end if F_PT \ F_i^s\star
           }//end for A_indices_i          
           SC w_ij = - (a_ij + f_ij) / (a_ii + diagonal_sum);
 #ifdef CMS_DEBUG
-          printf("P(%d,%d/%d) = (%6.4e + %6.4e) / (%6.4e + %6.4e) = %6.4e\n",i,P_indices_i[p_j],pcol2cpoint[P_indices_i[p_j]],a_ij,f_ij,a_ii,diagonal_sum,w_ij);
+          printf("[%d] P(%d,%d/%d) = (%6.4e + %6.4e) / (%6.4e + %6.4e) = %6.4e\n",rank,i,P_indices_i[p_j],pcol2cpoint[P_indices_i[p_j]],a_ij,f_ij,a_ii,diagonal_sum,w_ij);
 #endif
           P_vals_i[p_j] = w_ij;
 
@@ -1004,37 +1009,6 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
     // Finish up
     PCrs->setAllValues(P_rowptr, P_colind, P_values);
     PCrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
-
-
-#ifdef CMS_DEBUG
-    {
-      printf("****** Final P ******\n");
-      ArrayRCP<const size_t> rp;
-      ArrayRCP<const LO> ci;
-      ArrayRCP<const SC> vv;
-      PCrs->getAllValues(rp,ci,vv);
-      printf("tmp_rowptr = ");
-      for(LO i=Nrows-20;i<Nrows+1; i++)
-        printf("%d ",(int)tmp_rowptr[i]);
-      printf("\n");
-
-      printf("P_rowptr = ");
-      for(LO i=Nrows-20;i<Nrows+1; i++)
-        printf("%d ",(int)P_rowptr[i]);
-      printf("\n");
-
-      printf("rp = ");
-      for(LO i=Nrows-20;i<Nrows+1; i++)
-        printf("%d ",(int)rp[i]);
-      printf("\n");
-      
-      //      for(LO i=0;i<(LO)rp.size()-1; i++) {
-      //        for(size_t j=rp[i]; j<rp[i+1]; j++)
-      //          printf("%d %d %6.4e\n",i,ci[j],vv[j]);
-      //      }      
-    }
-#endif
-
 }
 
 
