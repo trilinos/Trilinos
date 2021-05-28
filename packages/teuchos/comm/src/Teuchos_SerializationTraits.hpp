@@ -414,6 +414,12 @@ class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
 
+template<typename Ordinal>
+class SerializationTraits<Ordinal,long double>
+  : public DirectSerializationTraits<Ordinal,long double>
+{};
+
+
 // FIXME: How do we know that P1 and P2 are directly serializable?
 template<typename Ordinal, typename P1, typename P2>
 class SerializationTraits<Ordinal,std::pair<P1,P2> >
