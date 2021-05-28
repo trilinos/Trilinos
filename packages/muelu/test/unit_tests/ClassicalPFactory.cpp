@@ -104,6 +104,15 @@ namespace MueLuTests {
     RCP<Matrix> A = test_factory::Build1DPoisson(nx);
     A->SetFixedBlockSize(1);
     fineLevel.Set("A", A);
+   
+    // This test only works in parallel if we have Zoltan2 & Tpetra
+#ifndef HAVE_MUELU_ZOLTAN2
+    if(A->getRowMap()->getComm()->getRank() > 1)
+      return;
+#else
+    if(A->getRowMap()->lib() == Xpetra::UseEpetra)
+      return;
+#endif
 
     Teuchos::ParameterList galeriList;
     galeriList.set("nx", nx);
@@ -278,7 +287,7 @@ namespace MueLuTests {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Direct,Scalar,LO,GO,Node) 
 
   // Disabled until we actually have code to run these
-#ifdef 0
+#if 0
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_ClassicalModified,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Ext,Scalar,LO,GO,Node)
 #endif

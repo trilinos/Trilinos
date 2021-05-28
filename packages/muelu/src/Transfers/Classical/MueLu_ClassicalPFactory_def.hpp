@@ -198,13 +198,11 @@ namespace MueLu {
     ArrayRCP<const LO> myPointType;
     if(Importer.is_null()) {
       fc_splitting = owned_fc_splitting;
-      printf("No Importer for fc_splitting size = %d\n",(int)owned_fc_splitting->getMap()->getNodeNumElements());
     }
     else {
       RCP<LocalOrdinalVector> fc_splitting_nonconst = LocalOrdinalVectorFactory::Build(A->getCrsGraph()->getColMap());
       fc_splitting_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
       fc_splitting = fc_splitting_nonconst;
-      printf("Using Importer for fc_splitting size = %d/%d\n",(int)owned_fc_splitting->getMap()->getNodeNumElements(),(int)fc_splitting->getMap()->getNodeNumElements());
     }
     myPointType = fc_splitting->getData(0);      
 

@@ -129,6 +129,10 @@ namespace MueLu {
 
     RCP<LocalOrdinalVector> fc_splitting;
     std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
+    // Switch From Zoltan2 to MIS if we're using Epetra
+    if(coloringAlgo.find("Zoltan2")!=std::string::npos && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
+      coloringAlgo="MIS";
+    
     if(coloringAlgo == "file") {
       // Read the CF splitting from disk
       // NOTE: For interoperability reasons, this is dependent on the point_type enum not changing
@@ -139,6 +143,7 @@ namespace MueLu {
       using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
       using RealValuedMultiVector = typename Xpetra::MultiVector<real_type,LO,GO,NO>;
       RCP<RealValuedMultiVector> mv;
+           
 
       if(mapfile) {
         fclose(mapfile);
