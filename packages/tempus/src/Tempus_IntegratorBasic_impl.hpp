@@ -63,6 +63,19 @@ IntegratorBasic<Scalar>::IntegratorBasic(
 }
 
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+// This is just a wrapper to the nonmember constructor to circumvent
+// a compiler problem of reconciling objects through Teuchos::RCPs.
+template<class Scalar>
+IntegratorBasic<Scalar>::IntegratorBasic(
+  Teuchos::RCP<Teuchos::ParameterList>                inputPL,
+  const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
+{
+  *this = *createIntegratorBasic(inputPL, model);
+}
+#endif
+
+
 template<class Scalar>
 void IntegratorBasic<Scalar>::setIntegratorType(std::string i)
 {

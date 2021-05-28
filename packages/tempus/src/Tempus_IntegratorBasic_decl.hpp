@@ -43,6 +43,13 @@ public:
     std::vector<int>                          outputScreenIndices,
     int                                       outputScreenInterval);
 
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+  /// Old Constructor with ParameterList and model, and will be fully initialized.
+  IntegratorBasic(
+    Teuchos::RCP<Teuchos::ParameterList>                inputPL,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model);
+#endif
+
   /// Destructor
   virtual ~IntegratorBasic() {}
 

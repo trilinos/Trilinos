@@ -51,13 +51,42 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Construction)
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref.xml");
 
   bool pass = haveSameValuesSorted(*testPL, *referencePL, true);
-  if (!pass) {
-    std::cout << std::endl;
-    std::cout << "testPL      -------------- \n" << *testPL << std::endl;
-    std::cout << "referencePL -------------- \n" << *referencePL << std::endl;
-  }
+  out << std::endl;
+  out << "testPL      -------------- \n" << *testPL << std::endl;
+  out << "referencePL -------------- \n" << *referencePL << std::endl;
   TEST_ASSERT(pass)
 }
+
+#ifndef TEMPUS_HIDE_DEPRECATED_CODE
+// Test OLD Integrator construction from ParameterList and ModelEvaluator.
+TEUCHOS_UNIT_TEST(IntegratorBasic, PL_ME_Construction_DEP)
+{
+  // 1) Setup the ParameterList (here we start with params from .xml file)
+  RCP<ParameterList> pl = getParametersFromXmlFile("Tempus_default.xml");
+
+  // 2) Setup the ModelEvaluator
+  RCP<SinCosModel<double> > model = Teuchos::rcp(new SinCosModel<double> ());
+
+  // 3) Setup the Integrator
+  RCP<ParameterList> tempusPL = sublist(pl, "Tempus", true);
+  auto integrator = rcp(new Tempus::IntegratorBasic<double>(tempusPL, model));
+
+  // Test the ParameterList
+  auto testPL = integrator->getValidParameters();
+  // Write out ParameterList to rebaseline test.
+  //writeParameterListToXmlFile(*testPL, "Tempus_IntegratorBasic_ref-test.xml");
+
+  // Read params from reference .xml file
+  RCP<ParameterList> referencePL =
+    getParametersFromXmlFile("Tempus_IntegratorBasic_ref.xml");
+
+  bool pass = haveSameValuesSorted(*testPL, *referencePL, true);
+  out << std::endl;
+  out << "testPL      -------------- \n" << *testPL << std::endl;
+  out << "referencePL -------------- \n" << *referencePL << std::endl;
+  TEST_ASSERT(pass)
+}
+#endif
 
 
 // Test integator construction, and then setParameterList, setStepper, and
@@ -94,11 +123,9 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Construction)
     getParametersFromXmlFile("Tempus_IntegratorBasic_ref2.xml");
 
   bool pass = haveSameValuesSorted(*testPL, *referencePL, true);
-  if (!pass) {
-    std::cout << std::endl;
-    std::cout << "testPL      -------------- \n" << *testPL << std::endl;
-    std::cout << "referencePL -------------- \n" << *referencePL << std::endl;
-  }
+  out << std::endl;
+  out << "testPL      -------------- \n" << *testPL << std::endl;
+  out << "referencePL -------------- \n" << *referencePL << std::endl;
   TEST_ASSERT(pass)
 }
 
