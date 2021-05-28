@@ -44,7 +44,7 @@
 #include <Kokkos_DualView.hpp>
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+// #define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
@@ -315,9 +315,10 @@ private:
 
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
-std::cout << " KDDKDD throwIfHostViewAlive " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() 
+          << "; host use_count = " << dualView.h_view.use_count()
+          << "; device use_count = " << dualView.d_view.use_count() << "): "
           << "Cannot access data on device while a host view is alive";
       throw std::runtime_error(msg.str());
     }
@@ -325,9 +326,10 @@ std::cout << " KDDKDD throwIfHostViewAlive " << dualView.h_view.use_count() << "
 
   void throwIfDeviceViewAlive() const {
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
-std::cout << " KDDKDD throwIfDeviceViewAlive " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
+          << "; host use_count = " << dualView.h_view.use_count()
+          << "; device use_count = " << dualView.d_view.use_count() << "): "
           << "Cannot access data on host while a device view is alive";
       throw std::runtime_error(msg.str());
     }

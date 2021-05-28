@@ -1061,10 +1061,6 @@ public:
                    Scalar*& vals,
                    LO& numInds) const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] =
-      "Tpetra::BlockCrsMatrix::getLocalRowView: ";
-#endif // HAVE_TPETRA_DEBUG
     
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       colInds = NULL;
@@ -1191,7 +1187,7 @@ public:
     impl_scalar_type* vOut = val_out.data();
 
     const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
-    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    const ptrdiff_t STINV = Teuchos::OrdinalTraits<ptrdiff_t>::invalid ();
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid offsets
 
@@ -3018,9 +3014,6 @@ public:
     using Teuchos::RCP;
     using Teuchos::wait;
     using std::endl;
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] = "Tpetra::BlockCrsMatrix::describe: ";
-#endif // HAVE_TPETRA_DEBUG
 
     // Set default verbosity if applicable.
     const Teuchos::EVerbosityLevel vl =
@@ -3418,11 +3411,6 @@ public:
                    local_inds_host_view_type &colInds,
                    values_host_view_type &vals) const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] =
-      "Tpetra::BlockCrsMatrix::getLocalRowView: ";
-#endif // HAVE_TPETRA_DEBUG
-    
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       colInds = local_inds_host_view_type();
       vals = values_host_view_type();
@@ -3443,11 +3431,6 @@ public:
                            local_inds_host_view_type &colInds,
                            nonconst_values_host_view_type &vals) const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] =
-      "Tpetra::BlockCrsMatrix::getLocalRowView: ";
-#endif // HAVE_TPETRA_DEBUG
-    
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       colInds = nonconst_local_inds_host_view_type();
       vals = nonconst_values_host_view_type();
@@ -3467,11 +3450,6 @@ public:
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   getLocalDiagCopy (::Tpetra::Vector<Scalar,LO,GO,Node>& diag) const
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char prefix[] =
-      "Tpetra::BlockCrsMatrix::getLocalDiagCopy: ";
-#endif // HAVE_TPETRA_DEBUG
-
     const size_t lclNumMeshRows = graph_.getNodeNumRows ();
 
     Kokkos::View<size_t*, device_type> diagOffsets ("diagOffsets", lclNumMeshRows);

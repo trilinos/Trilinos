@@ -82,8 +82,8 @@ TEUCHOS_UNIT_TEST(WrappedDualView, InitFromNull) {
     size_t use_d = dvNull.d_view.use_count();
 
     std::cout << "Null DualView:     "
-              << "host.use_count = " << dvNull.h_view.use_count() << ";  "
-              << "device.use_count = " << dvNull.d_view.use_count()
+              << "host.use_count = " << use_h << ";  "
+              << "device.use_count = " << use_d 
               << std::endl;
     // For UVM or serial builds, use_h == use_d == 0.
     // But for non-UVM CUDA builds, use_h == 2 and use_d == 0.
