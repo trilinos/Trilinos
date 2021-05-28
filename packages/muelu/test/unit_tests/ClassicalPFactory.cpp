@@ -275,9 +275,13 @@ namespace MueLuTests {
 
 #  define MUELU_ETI_GROUP(Scalar, LO, GO, Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,Constructor,Scalar,LO,GO,Node) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Direct,Scalar,LO,GO,Node) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Direct,Scalar,LO,GO,Node) 
+
+  // Disabled until we actually have code to run these
+#ifdef 0
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_ClassicalModified,Scalar,LO,GO,Node) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT(ClassicalPFactory,BuildP_Ext,Scalar,LO,GO,Node)
+#endif
 
 #include <MueLu_ETI_4arg.hpp>
 
