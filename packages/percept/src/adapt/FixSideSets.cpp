@@ -881,6 +881,11 @@ namespace percept {
         reduced_mod_end = false;
       (void)reduced_mod_end;
 
+      bool skip_side_part_fixes = false;
+      if (m_eMesh.getProperty("Refiner_skip_side_part_fixes") == "true")
+        skip_side_part_fixes = true;
+
+
       // loop over all sides that are leaves (not parent or have no family tree),
       //   loop over their nodes and their associated elements,
       //     connect element and side if they share a face
@@ -909,6 +914,7 @@ namespace percept {
       fix_permutation(side_set);
 
       end_begin(msg+"moveSides");
-      move_sides_to_correct_surfaces();
+      if (!skip_side_part_fixes)
+        move_sides_to_correct_surfaces();
     }
 }
