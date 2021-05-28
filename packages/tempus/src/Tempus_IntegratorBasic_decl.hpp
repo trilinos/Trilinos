@@ -187,6 +187,12 @@ public:
   /// Get the Integrator Type.
   std::string getIntegratorType() const { return integratorType_; }
 
+  /// Get isInitialized.
+  bool getIsInitialized() const { return isInitialized_; }
+
+  /// Make a shallow copy from another IntegratorBasic.
+  virtual void copy(Teuchos::RCP<IntegratorBasic<Scalar> > integrator);
+
 protected:
 
   /// Set the Integrator Type

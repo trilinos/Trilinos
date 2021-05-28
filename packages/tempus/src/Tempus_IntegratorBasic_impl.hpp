@@ -71,7 +71,7 @@ IntegratorBasic<Scalar>::IntegratorBasic(
   Teuchos::RCP<Teuchos::ParameterList>                inputPL,
   const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> >& model)
 {
-  *this = *createIntegratorBasic(inputPL, model);
+  this->copy(createIntegratorBasic(inputPL, model));
 }
 #endif
 
@@ -556,6 +556,26 @@ IntegratorBasic<Scalar>::getValidParameters() const
   tempusPL->set(stepper_->getStepperName(), *stepper_->getValidParameters());
 
   return tempusPL;
+}
+
+
+// Shallow copy.
+template<class Scalar>
+void IntegratorBasic<Scalar>::copy(
+  Teuchos::RCP<IntegratorBasic<Scalar> > integrator)
+{
+  this->setIntegratorName     (integrator->getIntegratorName() );
+  this->setIntegratorType     (integrator->getIntegratorType() );
+  this->setStepper            (integrator->getStepper()        );
+  this->setSolutionHistory    (Teuchos::rcp_const_cast<SolutionHistory<Scalar> >(integrator->getSolutionHistory()));
+  this->setTimeStepControl    (Teuchos::rcp_const_cast<TimeStepControl<Scalar> >(integrator->getTimeStepControl()));
+  this->integratorObserver_ = (integrator->getObserver()       );
+  this->setScreenOutputIndexList    (integrator->getScreenOutputIndexList());
+  this->setScreenOutputIndexInterval(integrator->getScreenOutputIndexInterval());
+  this->integratorStatus_   = (integrator->getStatus()         );
+  this->isInitialized_      = (integrator->getIsInitialized()  );
+  this->integratorTimer_    = (integrator->getIntegratorTimer());
+  this->stepperTimer_       = (integrator->getStepperTimer()   );
 }
 
 
