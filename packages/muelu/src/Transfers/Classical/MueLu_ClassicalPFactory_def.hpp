@@ -79,9 +79,9 @@ namespace {
 template<class SC>
 int Sign(SC val) {
   using STS = typename Teuchos::ScalarTraits<SC>;
-  typename STS::magnitudeType SC_ZERO = STS::zero();
-  if(STS::real(val) > SC_ZERO) return 1;
-  else if(STS::real(val) < SC_ZERO) return -1;
+  typename STS::magnitudeType MT_ZERO = Teuchos::ScalarTraits<typename STS::magnitudeType>::zero();
+  if(STS::real(val) > MT_ZERO) return 1;
+  else if(STS::real(val) < MT_ZERO) return -1;
   else return 0;
 }
 
@@ -839,6 +839,8 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
     // needs to be a copy below.
     using STS = typename Teuchos::ScalarTraits<SC>;
+    using MT  = typename STS::magnitudeType;
+    using MTS = typename Teuchos::ScalarTraits<MT>;
     size_t Nrows = A.getNodeNumRows();
     double c_point_density = (double)num_c_points / (num_c_points+num_f_points);
     double mean_strong_neighbors_per_row = (double) graph.GetNodeNumEdges() / graph.GetNodeNumVertices();
@@ -846,7 +848,8 @@ Coarsen_Direct(const Matrix & A,const RCP<const Matrix> & Aghost, const GraphBas
     double nnz_per_row_est = c_point_density*mean_strong_neighbors_per_row;
 
     size_t nnz_est = std::max(Nrows,std::min((size_t)A.getNodeNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
-    SC SC_ZERO = Teuchos::ScalarTraits<SC>::zero();
+    SC SC_ZERO = STS::zero();
+    MT MT_ZERO = MTS::zero();
     Array<size_t> tmp_rowptr(Nrows+1);
     Array<LO> tmp_colind(nnz_est);
 
@@ -967,19 +970,19 @@ printf("CMS: Allocating P w/ %d nonzeros\n",(int)tmp_rowptr[Nrows]);
           }          
           // Only strong C-neighbors are in the denomintor
           if(myPointType[k] == C_PT && edgeIsStrong[row_start + j]) {
-            if(STS::real(a_ik) > SC_ZERO) pos_denominator += a_ik;
+            if(STS::real(a_ik) > MT_ZERO) pos_denominator += a_ik;
             else neg_denominator += a_ik;
           }  
           
           // All neighbors are in the numerator
           // NOTE: As per PyAMG, this does not include the diagonal
           if(i != k) {
-            if(STS::real(a_ik) > SC_ZERO) pos_numerator += a_ik;
+            if(STS::real(a_ik) > MT_ZERO) pos_numerator += a_ik;
             else neg_numerator += a_ik;
           }   
         }
-        SC alpha = (neg_denominator == SC_ZERO) ? SC_ZERO : (neg_numerator / neg_denominator);
-        SC beta  = (pos_denominator == SC_ZERO) ? SC_ZERO : (pos_numerator / pos_denominator);
+        SC alpha = (neg_denominator == MT_ZERO) ? SC_ZERO : (neg_numerator / neg_denominator);
+        SC beta  = (pos_denominator == MT_ZERO) ? SC_ZERO : (pos_numerator / pos_denominator);
         alpha /= -a_ii;        
         beta  /= -a_ii;
 

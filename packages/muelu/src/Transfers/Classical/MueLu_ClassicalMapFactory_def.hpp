@@ -163,7 +163,7 @@ namespace MueLu {
         if(boundaryNodes[i]) 
           fc_data[i] = DIRICHLET_PT;
         else
-          fc_data[i] = (LO) mv_data[i];
+          fc_data[i] = Teuchos::as<LO>(mv_data[i]);
       }
     }
 #ifdef HAVE_MUELU_ZOLTAN2

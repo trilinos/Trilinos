@@ -270,7 +270,7 @@ tol = 0.;
     static Teuchos::ArrayRCP<Magnitude> GetMatrixMaxMinusOffDiagonal(const Xpetra::Matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A) { 
       size_t numRows = A.getRowMap()->getNodeNumElements();
       Magnitude ZERO = Teuchos::ScalarTraits<Magnitude>::zero();
-      Teuchos::ArrayRCP<Scalar> maxvec(numRows);
+      Teuchos::ArrayRCP<Magnitude> maxvec(numRows);
       Teuchos::ArrayView<const LocalOrdinal> cols;
       Teuchos::ArrayView<const Scalar> vals;
       for (size_t i = 0; i < numRows; ++i) {

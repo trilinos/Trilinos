@@ -452,7 +452,7 @@ namespace MueLu {
                 // Signed classical
                 for (LO colID = 0; colID < Teuchos::as<LO>(nnz); colID++) {
                   LO col = indices[colID];               
-                  MT max_neg_aik = threshold * negMaxOffDiagonal[row];
+                  MT max_neg_aik = realThreshold * STS::real(negMaxOffDiagonal[row]);
                   MT neg_aij    = - STS::real(vals[colID]);
                   //printf(" - a_ij = %6.4e >? %6.4e * %6.4e = alpha max(-aik)\n",neg_aij,threshold, negMaxOffDiagonal[row]);
                   if (neg_aij > max_neg_aik || row == col) {
