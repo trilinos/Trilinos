@@ -42,6 +42,7 @@
 
 #include <Tpetra_Access.hpp>
 #include <Kokkos_DualView.hpp>
+#include "Teuchos_TestForException.hpp"
 #include <sstream>
 
 // #define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
@@ -131,11 +132,20 @@ public:
   { }
 
   WrappedDualView(const DeviceViewType deviceView) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        deviceView.data() != nullptr && deviceView.use_count() == 0,
+        std::invalid_argument,
+        "Tpetra::Details::WrappedDualView: cannot construct with a device view that\n"
+        "does not own its memory (i.e. constructed with a raw pointer and dimensions)\n"
+        "because the WrappedDualView needs to assume ownership of the memory.");
+    //If the provided view is default-constructed (null, 0 extent, 0 use count),
+    //leave the host mirror default-constructed as well in order to have a matching use count of 0.
     HostViewType hostView;
-    if (deviceView.data() != nullptr) {
+    if(deviceView.use_count() != 0)
+    {
       hostView = Kokkos::create_mirror_view_and_copy(
-                                       typename HostViewType::memory_space(),
-                                       deviceView);
+          typename HostViewType::memory_space(),
+          deviceView);
     }
     originalDualView = DualViewType(deviceView, hostView);
     dualView = originalDualView;
