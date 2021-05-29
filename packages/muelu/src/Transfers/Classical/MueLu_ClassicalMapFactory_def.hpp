@@ -129,10 +129,17 @@ namespace MueLu {
 
     RCP<LocalOrdinalVector> fc_splitting;
     std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
-    // Switch From Zoltan2 to MIS if we're using Epetra
-    if(coloringAlgo.find("Zoltan2")!=std::string::npos && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
+
+    // Switch to Zoltan2 if we're parallel and Tpetra (and not file)
+    int numProcs = A->getRowMap()->getComm()->getSize();
+    if(coloringAlgo!="file" && numProcs && graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
+      coloringAlgo="Zoltan2";
+
+    // Switch to MIS if we're in Epetra (and not file)
+    if(coloringAlgo!="file" && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
       coloringAlgo="MIS";
-    
+
+
     if(coloringAlgo == "file") {
       // Read the CF splitting from disk
       // NOTE: For interoperability reasons, this is dependent on the point_type enum not changing

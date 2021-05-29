@@ -610,7 +610,7 @@
     <parameter>
       <name>aggregation: coloring algorithm</name>
       <type>string</type>
-      <default>Zoltan2</default>
+      <default>serial</default>
       <description>Choice of distance 2 coloring algorithm used by Uncoupled Aggregation. Currently set by default to COLORING\_D2\_SERIAL.</description>
       <comment-ML>parameter not existing in ML</comment-ML>
     </parameter>
