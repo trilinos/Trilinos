@@ -158,14 +158,14 @@ namespace MueLu {
     RCP<const Map> ownedCoarseMap   = Get<RCP<const Map> >(fineLevel,"CoarseMap");
     RCP<const LocalOrdinalVector> owned_fc_splitting = Get<RCP<LocalOrdinalVector> >(fineLevel,"FC Splitting");
     RCP<const GraphBase> graph      = Get< RCP<GraphBase> >(fineLevel, "Graph");
-    LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
+    //    LO nDofsPerNode                 = Get<LO>(fineLevel, "DofsPerNode");
     RCP<AmalgamationInfo> amalgInfo = Get< RCP<AmalgamationInfo> >     (fineLevel, "UnAmalgamationInfo");
     RCP<const Import>    Importer   = A->getCrsGraph()->getImporter();
     Xpetra::UnderlyingLib lib = ownedCoarseMap->lib();
 
     //    RCP<MultiVector> fineNullspace = Get< RCP<MultiVector> > (fineLevel, "Nullspace");
     RCP<Matrix> P;
-    SC SC_ZERO = STS::zero();
+    //    SC SC_ZERO = STS::zero();
     LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
     const point_type C_PT = ClassicalMapFactory::C_PT;
     const point_type F_PT = ClassicalMapFactory::F_PT;
