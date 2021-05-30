@@ -210,6 +210,21 @@ namespace Kokkos {
     KOKKOS_INLINE_FUNCTION
     double drand(const double& start, const double& end );
 
+    //Draw a equidistributed long double in the range [0,1.0)
+    KOKKOS_INLINE_FUNCTION
+    long double ldrand();
+
+    //Draw a equidistributed long double in the range [0,range)
+    KOKKOS_INLINE_FUNCTION
+    long double ldrand(const long double& range);
+
+    //Draw a equidistributed long double in the range [start,end)
+    KOKKOS_INLINE_FUNCTION
+    long double ldrand(const long double& start, const long double& end );
+
+    //Draw a standard normal distributed double
+    KOKKOS_INLINE_FUNCTION
+    double normal() ;
     //Draw a standard normal distributed double
     KOKKOS_INLINE_FUNCTION
     double normal() ;
@@ -476,6 +491,22 @@ struct rand<Generator, double> {
   KOKKOS_INLINE_FUNCTION
   static double draw(Generator& gen, const double& start, const double& end) {
     return gen.drand(start, end);
+  }
+};
+
+template <class Generator>
+struct rand<Generator, long double> {
+  KOKKOS_INLINE_FUNCTION
+  static long double max() { return 1.0; }
+  KOKKOS_INLINE_FUNCTION
+  static long double draw(Generator& gen) { return gen.ldrand(); }
+  KOKKOS_INLINE_FUNCTION
+  static long double draw(Generator& gen, const long double& range) {
+    return gen.ldrand(range);
+  }
+  KOKKOS_INLINE_FUNCTION
+  static long double draw(Generator& gen, const long double& start, const long double& end) {
+    return gen.ldrand(start, end);
   }
 };
 
@@ -830,6 +861,19 @@ class Random_XorShift64 {
   KOKKOS_INLINE_FUNCTION
   double drand(const double& start, const double& end) {
     return drand(end - start) + start;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  long double ldrand() { return urand64() / static_cast<long double>(MAX_URAND64); }
+
+  KOKKOS_INLINE_FUNCTION
+  long double ldrand(const long double& range) {
+    return range * urand64() / static_cast<long double>(MAX_URAND64);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  double ldrand(const long double& start, const long double& end) {
+    return ldrand(end - start) + start;
   }
 
   // Marsaglia polar method for drawing a standard normal distributed random
