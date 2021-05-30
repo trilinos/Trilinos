@@ -873,6 +873,23 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 ASSERT_DEFINED (Tpetra_INST_FLOAT)
 GLOBAL_SET(HAVE_TPETRA_FLOAT ${Tpetra_INST_FLOAT})
 
+IF (Trilinos_ENABLE_LONG_DOUBLE)
+  GLOBAL_SET(Tpetra_INST_LONG_DOUBLE_DEFAULT  ON)
+ELSE()
+  GLOBAL_SET(Tpetra_INST_LONG_DOUBLE_DEFAULT  OFF)
+ENDIF()
+
+# Set up the Tpetra_INST_LONG_DOUBLE option: whether to instantiate / test
+# Scalar = float.
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_LONG_DOUBLE
+  HAVE_TPETRA_INST_LONG_DOUBLE
+  "Instantiate and/or test classes over Scalar = long double.  This option is ${Tpetra_INST_LONG_DOUBLE_DEFAULT} by default."
+  ${Tpetra_INST_LONG_DOUBLE_DEFAULT}
+  )
+ASSERT_DEFINED (Tpetra_INST_LONG_DOUBLE)
+GLOBAL_SET(HAVE_TPETRA_LONG_DOUBLE ${Tpetra_INST_LONG_DOUBLE})
+
 # Make sure that it's OK to instantiate/test over Scalar = float.
 # Tpetra requires BLAS support for this case.  It presumes that a BLAS
 # could exist without float (S) support.  Furthermore, it presumes
@@ -891,6 +908,17 @@ IF (Tpetra_INST_FLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is not defined.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
   ELSEIF (NOT HAVE_TEUCHOS_BLASFLOAT)
     MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_FLOAT is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = float), but HAVE_TEUCHOS_BLASFLOAT is OFF.  This means that you are linking with a BLAS library that lacks float (S) support.  Tpetra needs a BLAS implementation that supports float.")
+  ENDIF ()
+
+ENDIF ()
+
+# Make sure that it's OK to instantiate/test over Scalar = long double.
+IF (Tpetra_INST_LONG_DOUBLE)
+
+IF (NOT DEFINED Teuchos_ENABLE_LONG_DOUBLE)
+	MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_LONG_DOUBLE is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = long double), but Teuchos_ENABLE_LONG_DOUBLE is not defined.  Tpetra needs Teuchos to support long double.  Please set Teuchos_ENABLE_LONG_DOUBLE:BOOL=ON, reconfigure, and rebuild.")
+  ELSEIF (NOT Teuchos_ENABLE_LONG_DOUBLE)
+	  MESSAGE(FATAL_ERROR "Tpetra: Tpetra_INST_LONG_DOUBLE is ON (meaning that you want to instantiate and/or test Tpetra with Scalar = long double), but Teuchos_ENABLE_LONG_DOUBLE is OFF.  Tpetra needs Teuchos to support long double.  Please set Teuchos_ENABLE_LONG_DOUBLE:BOOL=ON, reconfigure, and rebuild.")
   ENDIF ()
 
 ENDIF ()
@@ -1121,6 +1149,13 @@ IF(Tpetra_INST_DOUBLE)
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "double")
   LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "double")
+  GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
+ENDIF()
+IF(Tpetra_INST_LONG_DOUBLE)
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long_double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long_double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "long_double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "long_double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT)

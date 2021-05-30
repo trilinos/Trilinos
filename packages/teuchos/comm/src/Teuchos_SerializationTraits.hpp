@@ -414,10 +414,12 @@ class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
 
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
 template<typename Ordinal>
 class SerializationTraits<Ordinal,long double>
   : public DirectSerializationTraits<Ordinal,long double>
 {};
+#endif
 
 
 // FIXME: How do we know that P1 and P2 are directly serializable?

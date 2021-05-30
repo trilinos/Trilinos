@@ -783,6 +783,7 @@ struct ScalarTraits<double>
 };
 
 
+#ifdef HAVE_TEUCHOS_LONG_DOUBLE
 template<>
 struct ScalarTraits<long double>
 {
@@ -874,7 +875,7 @@ struct ScalarTraits<long double>
   static inline long double log(double x) { return std::log(x); }
   static inline long double log10(double x) { return std::log10(x); }
 };
-
+#endif
 
 #ifdef HAVE_TEUCHOSCORE_QUADMATH
 
