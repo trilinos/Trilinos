@@ -1726,7 +1726,18 @@ namespace Tacho {
         const ordinal_type half_level = _nlevel/2;
         //const ordinal_type team_size_factor[2] = { 64, 16 }, vector_size_factor[2] = { 8, 8};
         //const ordinal_type team_size_factor[2] = { 16, 16 }, vector_size_factor[2] = { 32, 32};
+#if defined (CUDA_VERSION)
+#if (11000 > CUDA_VERSION)
+        /// cuda 11.1 below
+        const ordinal_type team_size_factor[2] = { 32, 64 }, vector_size_factor[2] = { 8, 4};        
+#else 
+        /// cuda 11.1 and higher
         const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
+#endif
+#else
+        /// not cuda ... whatever..
+        const ordinal_type team_size_factor[2] = { 64, 64 }, vector_size_factor[2] = { 8, 4};
+#endif
         const ordinal_type team_size_update[2] = { 16, 8 }, vector_size_update[2] = { 32, 32};
         {
           typedef TeamFunctor_FactorizeLDL<supernode_info_type> functor_type;
@@ -1848,7 +1859,18 @@ namespace Tacho {
 #endif
         // this should be considered with average problem sizes in levels
         const ordinal_type half_level = _nlevel/2;
+#if defined (CUDA_VERSION)
+#if (11000 > CUDA_VERSION)
+        /// cuda 11.1 below
+        const ordinal_type team_size_solve[2] = { 32, 16 }, vector_size_solve[2] = { 8, 8};
+#else
+        /// cuda 11.1 and higher
+        const ordinal_type team_size_solve[2] = { 32, 16 }, vector_size_solve[2] = { 8, 8};
+#endif
+#else
+        /// not cuda whatever...
         const ordinal_type team_size_solve[2] = { 64, 16 }, vector_size_solve[2] = { 8, 8};
+#endif
         const ordinal_type team_size_update[2] = { 128, 32}, vector_size_update[2] = { 1, 1};
         {
           typedef TeamFunctor_SolveLowerLDL<supernode_info_type> functor_type;
