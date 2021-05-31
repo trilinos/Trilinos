@@ -36,17 +36,23 @@ FUNCTION(TPETRA_SLG_MACRO_NAME NAME_OUT NAME_IN)
       IF(IS_COMPLEX_DOUBLE)
         SET(${NAME_OUT} "COMPLEX_DOUBLE" PARENT_SCOPE)
       ELSE()
-        # Convert to upper case, convert double colons to underscores,
-        # and hope for the best.
-        #
-        # It would be nice if CMake were consistent about where output
-        # arguments go.  Alas, this is not to be.  TOUPPER puts the
-        # output argument last; REPLACE puts it after the search and
-        # substitute strings, before the input string.
-        STRING(TOUPPER "${NAME_IN}" TMP0)
-        STRING(REPLACE "::" "_" TMP1 "${TMP0}")
-        STRING(REPLACE " " "_" TMP2 "${TMP1}")
-        SET(${NAME_OUT} ${TMP2} PARENT_SCOPE)
+	#long double is a special name; add _ to macro name
+        STRING(COMPARE EQUAL "${NAME_IN}" "long double" IS_LONG_DOUBLE)
+	IF(IS_LONG_DOUBLE) 
+	  SET(${NAME_OUT} "LONG_DOUBLE" PARENT_SCOPE)
+        ELSE()
+          # Convert to upper case, convert double colons to underscores,
+          # and hope for the best.
+          #
+          # It would be nice if CMake were consistent about where output
+          # arguments go.  Alas, this is not to be.  TOUPPER puts the
+          # output argument last; REPLACE puts it after the search and
+          # substitute strings, before the input string.
+          STRING(TOUPPER "${NAME_IN}" TMP0)
+          STRING(REPLACE "::" "_" TMP1 "${TMP0}")
+          STRING(REPLACE " " "_" TMP2 "${TMP1}")
+          SET(${NAME_OUT} ${TMP2} PARENT_SCOPE)
+        ENDIF()
       ENDIF()
     ENDIF()
   ENDIF()
