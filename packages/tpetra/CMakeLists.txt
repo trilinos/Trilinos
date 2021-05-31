@@ -303,7 +303,7 @@ ENDIF ()
 #
 # The ordinal types are: INT_INT, INT_UNSIGNED, INT_LONG, INT_LONG_LONG, INT_UNSIGNED_LONG
 # The node types are:    SERIAL, OPENMP, PTHREAD, CUDA
-# The scalar types are:  DOUBLE, FLOAT, COMPLEX_DOUBLE, COMPLEX_FLOAT
+# The scalar types are:  DOUBLE, FLOAT, LONG_DOUBLE, COMPLEX_DOUBLE, COMPLEX_FLOAT
 #
 # A downstream package or application should use the availability
 # macros to check whether something can be used/instantiated.
@@ -1152,10 +1152,10 @@ IF(Tpetra_INST_DOUBLE)
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_LONG_DOUBLE)
-  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long_double")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long_double")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "long_double")
-  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "long_double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS "long double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS "long double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_NO_ORDS "long double")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_SCALARS_KOKKOS_NO_ORDS "long double")
   GLOBAL_SET (HAVE_TPETRA_SCALAR ON)
 ENDIF()
 IF(Tpetra_INST_COMPLEX_FLOAT)
