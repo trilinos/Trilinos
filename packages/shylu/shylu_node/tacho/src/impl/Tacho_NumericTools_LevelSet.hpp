@@ -524,7 +524,7 @@ namespace Tacho {
       track_free(_factorize_mode.span()*sizeof(ordinal_type));
       track_free(_solve_mode.span()*sizeof(ordinal_type));
       track_free(_level_sids.span()*sizeof(ordinal_type));
-      if (verbose || true) {
+      if (verbose) {
         printf("Summary: LevelSetTools-Variant-%d (Release)\n", variant);
         printf("============================================\n");
         print_stat_memory();
@@ -616,7 +616,7 @@ namespace Tacho {
       for (ordinal_type i=0;i<_nstreams;++i) {
         ExecSpaceFactory<exec_space>::createInstance(_cuda_streams[i], _exec_instances[i]);
       }
-      if (verbose || true) {
+      if (verbose) {
         printf("Summary: CreateStream : %3d\n", _nstreams);
         printf("===========================\n");          
       }
