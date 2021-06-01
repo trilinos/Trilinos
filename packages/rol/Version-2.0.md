@@ -245,7 +245,7 @@ Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
 ## Output to stream and string
 
 The interface for ___Version 2.0___ can print to an `std::ostream`, but does not return
-an `std::vector` of `std::string` as in ___Version 1.0___.  To reproduce ___Version 1.0___
+an `std::vector<std::string>` as in ___Version 1.0___.  To reproduce ___Version 1.0___
 behavior, the user can inherit from `std::streambuf`, as follows.
 
 ```cpp
