@@ -218,6 +218,9 @@ namespace Xpetra {
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
    ;
 
+    //! Gets the 1D pointer arrays of the graph.
+    void getAllValues(ArrayRCP<Scalar>& values);
+
     bool haveGlobalConstants() const
    ;
 
@@ -624,6 +627,9 @@ namespace Xpetra {
     //! Gets the 1D pointer arrays of the graph.
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
 
+    //! Gets the 1D pointer arrays of the graph.
+    void getAllValues(ArrayRCP<Scalar>& values){ }
+
     bool haveGlobalConstants() const  { return false;}
 
     //@}
@@ -1023,6 +1029,10 @@ namespace Xpetra {
 
     //! Gets the 1D pointer arrays of the graph.
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {  }
+
+    //! Gets the 1D pointer arrays of the graph.
+    void getAllValues(ArrayRCP<Scalar>& values) { }
+
 
     bool haveGlobalConstants() const  { return false;}
 

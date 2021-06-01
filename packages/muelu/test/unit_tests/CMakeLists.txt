@@ -29,6 +29,7 @@ APPEND_SET(SOURCES
   BlackBoxPFactory.cpp
   CoalesceDropFactory.cpp
   CoarseMapFactory.cpp
+  ClassicalPFactory.cpp
 # CoupledAggregationFactory.cpp
   FineLevelInputDataFactory.cpp
   GeneralGeometricPFactory.cpp

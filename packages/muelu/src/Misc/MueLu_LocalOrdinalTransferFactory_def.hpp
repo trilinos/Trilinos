@@ -49,6 +49,8 @@
 #include "Xpetra_ImportFactory.hpp"
 #include "Xpetra_VectorFactory.hpp"
 #include "Xpetra_MapFactory.hpp"
+#include "Xpetra_CrsGraph.hpp"
+
 #include "Xpetra_IO.hpp"
 
 #include "MueLu_CoarseMapFactory.hpp"
@@ -64,7 +66,8 @@ namespace MueLu {
   RCP<const ParameterList> LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::GetValidParameterList() const {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
-    validParamList->set<RCP<const FactoryBase> >(TransferVecName_,              Teuchos::null, "Factory for TransferVec generation");
+    validParamList->set<RCP<const FactoryBase> >(TransferVecName_,               Teuchos::null, "Factory for TransferVec generation");
+    validParamList->set<RCP<const FactoryBase> >("P Graph",                      Teuchos::null, "Factory for P generation");
     validParamList->set<RCP<const FactoryBase> >("Aggregates",                   Teuchos::null, "Factory for aggregates generation");
     validParamList->set<RCP<const FactoryBase> >("CoarseMap",                    Teuchos::null, "Generating factory of the coarse map");
 
@@ -78,8 +81,13 @@ namespace MueLu {
       isAvailableXfer = coarseLevel.IsAvailable(TransferVecName_, this);
       if (isAvailableXfer == false) {
         Input(fineLevel, TransferVecName_);
-        Input(fineLevel, "Aggregates");
         Input(fineLevel, "CoarseMap");
+
+        if(useAggregatesMode_) 
+          Input(fineLevel, "Aggregates");
+        else {
+          Input(coarseLevel, "P Graph");
+        }
       }
     }
 
@@ -87,6 +95,73 @@ namespace MueLu {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::Build(Level & fineLevel, Level &coarseLevel) const {
+    if(useAggregatesMode_) BuildAggregates(fineLevel,coarseLevel);
+    else BuildFC(fineLevel,coarseLevel);
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::BuildFC(Level & fineLevel, Level &coarseLevel) const {
+    FactoryMonitor m(*this, "Build", coarseLevel);
+
+    GetOStream(Runtime0) << "Transferring " <<TransferVecName_ << std::endl;
+    LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+
+    if (coarseLevel.IsAvailable(TransferVecName_, this)) {
+      GetOStream(Runtime0) << "Reusing "<<TransferVecName_ << std::endl;
+      return;
+    }
+
+    // Get everything we need
+    RCP<const CrsGraph> P                = Get< RCP<const CrsGraph> >(coarseLevel,"P Graph");
+    RCP<LocalOrdinalVector> fineTV       = Get< RCP<LocalOrdinalVector> >(fineLevel, TransferVecName_);
+    RCP<const Map>      coarseMap  = Get< RCP<const Map> >  (fineLevel, "CoarseMap");
+    RCP<const Map>      uniqueMap  = fineTV->getMap();
+    ArrayRCP<const LO> fineData    = fineTV->getData(0);
+    
+    // FIXME: Handle MPI parallel
+    // Sanity checks
+    TEUCHOS_TEST_FOR_EXCEPTION(P->getRowMap()->getComm()->getSize() != 1,Exceptions::RuntimeError,"BuildFC: Only currently supports 1 MPI rank.");
+     
+    // Allocate new LO Vector
+    RCP<LocalOrdinalVector> coarseTV   = LocalOrdinalVectorFactory::Build(coarseMap,1);
+    ArrayRCP<LO>     coarseData = coarseTV->getDataNonConst(0);
+            
+    // Invalidate everything first, to check for errors
+    for(LO i=0; i<coarseData.size(); i++)
+      coarseData[i] = LO_INVALID;
+   
+    // Fill in coarse TV
+    size_t error_count = 0;
+    for (LO row=0; row<(LO)P->getNodeNumRows(); row++) {
+      LO fineNumber = fineData[row];
+      ArrayView<const LO> indices;
+      P->getLocalRowView(row,indices);
+      
+      // FIXME: MPI parallel
+      for(LO j=0; j<(LO)indices.size(); j++) {
+        if(coarseData[indices[j]] == LO_INVALID) 
+          coarseData[indices[j]] = fineNumber;
+        else if (coarseData[indices[j]] != fineNumber)
+          error_count++;          
+      }
+
+    }
+
+    // Error checking:  All nodes in an aggregate must share a local ordinal
+    if(error_count > 0) {
+      std::ostringstream ofs;
+      ofs << "LocalOrdinalTransferFactory("<<TransferVecName_<<"): ERROR:  Each coarse dof must have a unique LO value.  We had "<<std::to_string(error_count)<<" unknowns that did not match.";
+      throw std::runtime_error(ofs.str());
+    }
+      
+    Set<RCP<LocalOrdinalVector> >(coarseLevel, TransferVecName_, coarseTV);
+
+  }
+  
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  void LocalOrdinalTransferFactory<LocalOrdinal, GlobalOrdinal, Node>::BuildAggregates(Level & fineLevel, Level &coarseLevel) const {
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     GetOStream(Runtime0) << "Transferring " <<TransferVecName_ << std::endl;
