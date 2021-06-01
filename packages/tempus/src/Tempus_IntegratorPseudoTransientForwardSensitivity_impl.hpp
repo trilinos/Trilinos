@@ -176,6 +176,13 @@ getSolutionHistory() const
   return solutionHistory_;
 }
 
+template <class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar>>
+IntegratorPseudoTransientForwardSensitivity<
+    Scalar>::getNonConstSolutionHistory() {
+  return solutionHistory_;
+}
+
 template<class Scalar>
 Teuchos::RCP<const TimeStepControl<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::

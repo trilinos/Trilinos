@@ -123,7 +123,10 @@ public:
   virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) override;
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override;
-   /// Get the TimeStepControl
+  /// Get the SolutionHistory
+  virtual Teuchos::RCP<const SolutionHistory<Scalar>>
+  getNonConstSolutionHistory() override;
+  /// Get the TimeStepControl
   virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const override;
   virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() override;
   virtual Teuchos::RCP<Teuchos::Time> getIntegratorTimer() const override

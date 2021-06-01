@@ -280,6 +280,12 @@ getSolutionHistory() const
   return solutionHistory_;
 }
 
+template <class Scalar>
+Teuchos::RCP<const SolutionHistory<Scalar>>
+IntegratorAdjointSensitivity<Scalar>::getNonConstSolutionHistory() {
+  return solutionHistory_;
+}
+
 template<class Scalar>
 Teuchos::RCP<const TimeStepControl<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
