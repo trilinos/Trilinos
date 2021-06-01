@@ -345,7 +345,7 @@ namespace Intrepid2 {
     struct ConstantArgExtractor
     {
       template<class ViewType, class ...IntArgs>
-      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
         return view(0);
       }
@@ -354,7 +354,7 @@ namespace Intrepid2 {
     struct FullArgExtractor
     {
       template<class ViewType, class ...IntArgs>
-      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
         return view(intArgs...);
       }
@@ -364,7 +364,7 @@ namespace Intrepid2 {
     struct FullArgExtractorWritableData
     {
       template<class ViewType, class ...IntArgs>
-      static inline reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
         return view.getWritableEntry(intArgs...);
       }
@@ -374,7 +374,7 @@ namespace Intrepid2 {
     struct FullArgExtractorConst
     {
       template<class ViewType, class ...IntArgs>
-      static inline const_reference_type get(const ViewType &view, const IntArgs&... intArgs)
+      static KOKKOS_INLINE_FUNCTION const_reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
         return view(intArgs...);
       }
@@ -384,7 +384,7 @@ namespace Intrepid2 {
     struct SingleArgExtractor
     {
       template<class ViewType, class ...IntArgs>
-      static inline
+      static KOKKOS_INLINE_FUNCTION
       enable_if_t<whichArg < sizeof...(IntArgs), reference_type>
       get(const ViewType &view, const IntArgs&... intArgs)
       {
@@ -393,11 +393,12 @@ namespace Intrepid2 {
       }
       
       template<class ViewType, class ...IntArgs>
-      static inline
+      static KOKKOS_INLINE_FUNCTION
       enable_if_t<whichArg >= sizeof...(IntArgs), reference_type>
       get(const ViewType &view, const IntArgs&... intArgs)
       {
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"calling SingleArgExtractor with out-of-bounds argument");
+        Kokkos::abort("Intrepid2::Data: calling SingleArgExtractor with out-of-bounds argument\n");
       }
     };
     
@@ -2170,7 +2171,7 @@ namespace Intrepid2 {
     }
     
     template<int rank>
-    KOKKOS_INLINE_FUNCTION
+    inline
     enable_if_t<rank==1, Kokkos::RangePolicy<typename DeviceType::execution_space> >
     dataExtentRangePolicy()
     {
