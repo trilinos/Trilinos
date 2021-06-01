@@ -210,7 +210,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
     check_precond_apply(prec_relax, out, success);
   }
 
-  // NOTE: As we expand support for the BlockCrsMatrix to other smoother types besides RELAXATION, tests should be added here.
+
 }
 
 
