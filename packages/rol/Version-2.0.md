@@ -241,6 +241,51 @@ Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
     algo.run(x, obj, bnd, outStream);
 ```
 
+## Reproducing legacy ROL output
+
+The new interface for ROL output prints to an `std::ostream`, but does not output
+an `std::vector` of `std::string` as before.  To reproduce this behaviour, the user
+can inherite from `std::streambuf`.  The following code demonstrates this.
+
+```cpp
+#include <iostream>
+#include <sstream>
+
+template<class charT=char, class Traits=std::char_traits<charT>>
+class mybuffer : public std::basic_streambuf<charT,Traits> {
+public:
+  const std::stringstream& getStringStream() const { return ss; }
+
+protected:
+  inline virtual int overflow(int c = Traits::eof()) {
+    if (c != Traits::eof())          ss << static_cast<charT>(c);
+    if (putchar(c) == Traits::eof()) return Traits::eof();
+    return c;
+  }
+
+private:
+  std::stringstream ss;
+};
+```
+
+The user can then build an `std::ostream` using this buffere, i.e.,
+
+```cpp
+  mybuffer<> buf;
+  std::ostream mystream(&buf);
+  ... // Print something to mystream
+```
+To print the output to file, the user simply grabs the member
+`std::stringstream`, i.e.,
+
+```cpp
+  std::ofstream file;
+  file.open("output.txt");
+  if (file.is_open()) {
+    file << buf.getStringStream().str();
+    file.close();
+  }
+```
 
 
 ## Input XML files
