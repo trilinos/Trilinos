@@ -49,7 +49,7 @@
 
 #include "MueLu_ConfigDefs.hpp"
 
-#if defined(HAVE_MUELU_ZOLTAN2) && defined(HAVE_MPI)
+#if defined(HAVE_MUELU_ZOLTAN2)
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Comm.hpp>

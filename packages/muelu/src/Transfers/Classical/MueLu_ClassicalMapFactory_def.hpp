@@ -131,9 +131,11 @@ namespace MueLu {
     std::string coloringAlgo = pL.get<std::string>("aggregation: coloring algorithm");
 
     // Switch to Zoltan2 if we're parallel and Tpetra (and not file)
+#ifdef HAVE_MUELU_ZOLTAN2
     int numProcs = A->getRowMap()->getComm()->getSize();
     if(coloringAlgo!="file" && numProcs && graph->GetDomainMap()->lib() == Xpetra::UseTpetra)
       coloringAlgo="Zoltan2";
+#endif
 
     // Switch to MIS if we're in Epetra (and not file)
     if(coloringAlgo!="file" && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
