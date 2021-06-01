@@ -164,6 +164,21 @@ Piro::TempusIntegrator<Scalar>::getSolutionHistory() const
 }
 
 template <typename Scalar>
+Teuchos::RCP<const Tempus::SolutionHistory<Scalar>>
+Piro::TempusIntegrator<Scalar>::getNonConstSolutionHistory() {
+  if (basicIntegrator_ != Teuchos::null) {
+    return basicIntegrator_->getSolutionHistory();
+  }
+  if (fwdSensIntegrator_ != Teuchos::null) {
+    return fwdSensIntegrator_->getSolutionHistory();
+  }
+  if (adjSensIntegrator_ != Teuchos::null) {
+    return adjSensIntegrator_->getSolutionHistory();
+  }
+  return Teuchos::null;
+}
+
+template <typename Scalar>
 Teuchos::RCP<const Tempus::TimeStepControl<Scalar>> 
 Piro::TempusIntegrator<Scalar>::getTimeStepControl() const
 {

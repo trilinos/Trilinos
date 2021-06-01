@@ -77,6 +77,8 @@ public:
   Teuchos::RCP<const Thyra::VectorBase<Scalar>> getX() const;
 
   Teuchos::RCP<const Tempus::SolutionHistory<Scalar>> getSolutionHistory() const;
+  Teuchos::RCP<const Tempus::SolutionHistory<Scalar>>
+  getNonConstSolutionHistory();
 
   Teuchos::RCP<const Tempus::TimeStepControl<Scalar>> getTimeStepControl() const;
 
