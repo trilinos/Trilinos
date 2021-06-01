@@ -130,7 +130,7 @@ Data<Scalar, DeviceType> getData(CaseChoice caseChoice, const int numPoints, con
       return Data<Scalar, DeviceType>(cellView,extents,variationTypes);
     }
     default:
-      break;
+      return Data<Scalar, DeviceType>();
   }
 }
 
@@ -144,7 +144,7 @@ double idealSpeedup(CaseChoice caseChoice, const int numPoints)
     case General:
       return 1.0;
     default:
-      break;
+      return -1.0;
   }
 }
 
