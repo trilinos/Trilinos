@@ -66,6 +66,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
                    const MultiVector<SC,LO,GO,NO> & X_colmap,
                    const MultiVector<SC,LO,GO,NO> & B,
                    MultiVector<SC,LO,GO,NO> & R,
+                   const Kokkos::View<const size_t*, typename NO::device_type>& offsets,
                    const MultiVector<SC,LO,GO,NO> * X_domainmap=nullptr) {
   using Tpetra::Details::ProfilingRegion;
   using Teuchos::NO_TRANS;
@@ -214,19 +215,18 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
           Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
               const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
               const LO numRows = A_lcl.numRows ();
-            
               if (lclRow >= numRows) {
                 return;
               }
+              const LO offRankOffset = offsets(lclRow);
+              const size_t start = A_lcl.graph.row_map(lclRow);
+              const size_t end = A_lcl.graph.row_map(lclRow+1);
+              residual_value_type A_x = KAT::zero ();
 
-              const auto A_row = A_lcl.rowConst(lclRow);
-              const LO row_length = static_cast<LO> (A_row.length);
-              residual_value_type A_x = KAT::zero ();          
-            
-              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
-                  const auto A_val = A_row.value(iEntry);
-                  const auto lclCol = A_row.colidx(iEntry);
-                  if (lclCol < numRows)
+              Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, start, end), [&] (const LO iEntry, residual_value_type& lsum) {
+                  const auto A_val = A_lcl.values(iEntry);
+                  const auto lclCol = A_lcl.graph.entries(iEntry);
+                  if (iEntry < offRankOffset)
                     lsum += A_val * X_domainmap_lcl(lclCol,0);
                   else
                     lsum += A_val * X_colmap_lcl(lclCol,0);
@@ -237,7 +237,7 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
                 });           
             });//end parallel_for TeamThreadRange
         });//end parallel_for "residual-vector"
-      
+
     }
   } else {
     // MultiVector case
@@ -280,27 +280,29 @@ void localResidual(const CrsMatrix<SC,LO,GO,NO> &  A,
           Kokkos::parallel_for(Kokkos::TeamThreadRange (dev, 0, rows_per_team),[&] (const LO& loop) {
               const LO lclRow = static_cast<LO> (dev.league_rank ()) * rows_per_team + loop;
               const LO numRows = A_lcl.numRows ();
-              
               if (lclRow >= numRows) {
                 return;
               }
-              const auto A_row = A_lcl.rowConst(lclRow);
-              const LO row_length = static_cast<LO> (A_row.length);
+
+              const LO offRankOffset = offsets(lclRow);
+              const size_t start = A_lcl.graph.row_map(lclRow);
+              const size_t end = A_lcl.graph.row_map(lclRow+1);
+
               for(LO v=0; v<numVectors; v++) {
                 residual_value_type A_x = KAT::zero ();          
               
-                Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, row_length), [&] (const LO iEntry, residual_value_type& lsum) {
-                    const auto A_val = A_row.value(iEntry);
-                    const auto lclCol = A_row.colidx(iEntry);
-                    if (lclCol < numRows)
-                      lsum += A_val * X_domainmap_lcl(lclCol,v);
-                    else
-                      lsum += A_val * X_colmap_lcl(lclCol,v);
-                  }, A_x);
+                Kokkos::parallel_reduce(Kokkos::ThreadVectorRange (dev, start, end), [&] (const LO iEntry, residual_value_type& lsum) {
+                  const auto A_val = A_lcl.values(iEntry);
+                  const auto lclCol = A_lcl.graph.entries(iEntry);
+                  if (iEntry < offRankOffset)
+                    lsum += A_val * X_domainmap_lcl(lclCol,v);
+                  else
+                    lsum += A_val * X_colmap_lcl(lclCol,v);
+                }, A_x);
               
                 Kokkos::single(Kokkos::PerThread(dev),[&] () {            
-                    R_lcl(lclRow,v) = B_lcl(lclRow,v) - A_x;
-                  });
+                  R_lcl(lclRow,v) = B_lcl(lclRow,v) - A_x;
+                });
               
               }//end for numVectors
             });//end parallel_for TeamThreadRange
@@ -345,6 +347,9 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   using import_type = typename CrsMatrix<SC,LO,GO,NO>::import_type;
   using export_type = typename CrsMatrix<SC,LO,GO,NO>::export_type;
   using MV = MultiVector<SC,LO,GO,NO>;
+  using graph_type = Tpetra::CrsGraph<LO,GO,NO>;
+  using local_graph_type = typename graph_type::local_graph_type;
+  using offset_type = typename graph_type::offset_device_view_type;
 
   // We treat the case of a replicated MV output specially.
   const bool R_is_replicated =
@@ -403,6 +408,10 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
     X_colMap = rcp_const_cast<const MV> (X_colMapNonConst);
   }
 
+  offset_type offsets;
+  if (restrictedMode)
+    A.getCrsGraph()->getLocalOffRankOffsets(offsets);
+
   // Get a vector for the R_rowMap output residual, handling the 
   // non-constant stride and exporter cases.  Since R gets clobbered
   // we don't need to worry about the data in it
@@ -451,9 +460,9 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
   if (! exporter.is_null ()) {
 
     if (restrictedMode && !importer.is_null ())
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, &X_in);
+      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, &X_in);
     else
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
+      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
     
     {
       ProfilingRegion regionExport ("Tpetra::CrsMatrix::residual: R Export");
@@ -471,14 +480,14 @@ void residual(const Operator<SC,LO,GO,NO> &   Aop,
     //
     if (! R_in.isConstantStride () ) {
       // We need to be sure to do a copy out in this case.
-      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
+      localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
       Tpetra::deep_copy (R_in, *R_rowMap);
     }
     else {
       if (restrictedMode && !importer.is_null ())
-        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, &X_in);
+        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets, &X_in);
       else
-        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap);
+        localResidual (A, *X_colMap, *B_rowMap, *R_rowMap, offsets);
     }
   }
 
