@@ -20,8 +20,9 @@ to ___Version 2.0___.
 2. [Optimization solver](#optimization-solver)
 3. [Algorithms](#algorithms)
 4. [Input XML files](#input-xml-files)
-5. [Stochastic optimization](#stochastic-optimization)
-6. [Avoiding recomputations](#avoiding-recomputations)
+5. [Output to stream and string](#output-to-stream-and-string)
+6. [Stochastic optimization](#stochastic-optimization)
+7. [Avoiding recomputations](#avoiding-recomputations)
 
 
 
@@ -241,11 +242,11 @@ Here is an example of ___Version 1.0___ and ___Version 2.0___ usage.
     algo.run(x, obj, bnd, outStream);
 ```
 
-## Reproducing legacy ROL output
+## Output to stream and string
 
-The new interface for ROL output prints to an `std::ostream`, but does not output
-an `std::vector` of `std::string` as before.  To reproduce this behaviour, the user
-can inherite from `std::streambuf`.  The following code demonstrates this.
+The interface for ___Version 2.0___ can print to an `std::ostream`, but does not return
+an `std::vector` of `std::string` as in ___Version 1.0___.  To reproduce ___Version 1.0___
+behavior, the user can inherit from `std::streambuf`, as follows.
 
 ```cpp
 #include <iostream>
@@ -268,15 +269,15 @@ private:
 };
 ```
 
-The user can then build an `std::ostream` using this buffere, i.e.,
+The user can then build an `std::ostream` using this buffer, i.e.,
 
 ```cpp
   mybuffer<> buf;
   std::ostream mystream(&buf);
   ... // Print something to mystream
 ```
-To print the output to file, the user simply grabs the member
-`std::stringstream`, i.e.,
+To print the output to file, the user simply grabs the `std::stringstream`
+member, i.e.,
 
 ```cpp
   std::ofstream file;
