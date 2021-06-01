@@ -124,9 +124,6 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Describe)
   integrator->describe(*myOut, Teuchos::VERB_EXTREME);
 
   auto testS = ss.str();
-  //std::cout << "\n\n+++++++++++++++++++++++++++++++++++++++ " << std::endl;
-  //std::cout << testS << std::endl;
-  //std::cout << "+++++++++++++++++++++++++++++++++++++++ " << std::endl;
 
   // Find major headers.
   auto npos = std::string::npos;

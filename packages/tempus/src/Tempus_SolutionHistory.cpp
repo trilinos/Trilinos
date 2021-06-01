@@ -16,7 +16,7 @@ namespace Tempus {
 
   TEMPUS_INSTANTIATE_TEMPLATE_CLASS(SolutionHistory)
 
-  // Nonmember constructor from a ParameterList
+  // Nonmember constructor
   template Teuchos::RCP<SolutionHistory<double> >
   createSolutionHistory();
 

@@ -89,7 +89,7 @@ setModel(
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
 StepperStaggeredForwardSensitivity<Scalar>::
-getModel()
+getModel() const
 {
   return combined_fsa_model_;
 }

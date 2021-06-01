@@ -185,7 +185,7 @@ void SolutionStateMetaData<Scalar>::describe(
   Teuchos::OSTab ostab(*l_out, 2, this->description());
   l_out->setOutputToRootOnly(0);
 
-  *l_out << "--- " << this->description() << " ---" <<std::endl;
+  *l_out << "\n--- " << this->description() << " ---" <<std::endl;
 
   if (verbLevel >= Teuchos::VERB_MEDIUM) {
     *l_out << "  time           = " << time_ << std::endl

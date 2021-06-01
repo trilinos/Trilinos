@@ -190,7 +190,7 @@ public:
       Teuchos::SerialDenseMatrix<int,Scalar> A = this->tableau_->A();
       bool isExplicit = false;
       for (int i=0; i<numStages; ++i) if (A(i,i) == 0.0) isExplicit = true;
-      return isExplicit;
+      return isExplicit && this->tableau_->isDIRK();
     }
     virtual bool isImplicit()         const override {return true;}
     virtual bool isExplicitImplicit() const override
@@ -209,11 +209,24 @@ public:
   /// Return alpha = d(xDot)/dx.
   virtual Scalar getAlpha(const Scalar dt) const override
   {
+    const int numStages = this->tableau_->numStages();
     const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
-    return Scalar(1.0)/(dt*A(0,0));  // Getting the first diagonal coeff!
+    Scalar aii = A(0,0);
+    for (int i=0; i<numStages; ++i) {
+      if (A(i,i) != 0.0) aii = A(i,i);
+      break;
+    }
+    return (aii == 0.0) ? std::numeric_limits<Scalar>::infinity() : Scalar(1.0)/(dt*aii);
   }
   /// Return beta  = d(x)/dx.
   virtual Scalar getBeta (const Scalar   ) const override { return Scalar(1.0); }
+
+  /// Return alpha = d(xDot)/dx for stage i.
+  virtual Scalar getAlpha(const Scalar dt, int i) const
+  {
+    const Teuchos::SerialDenseMatrix<int,Scalar> & A=this->tableau_->A();
+    return (A(i,i) == 0.0) ? std::numeric_limits<Scalar>::infinity() : Scalar(1.0)/(dt*A(i,i));
+  }
 
   virtual Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 

@@ -50,8 +50,9 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel);
 
+    /// Return the application ModelEvaluator.
     virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-      getModel(){return appModel_;}
+      getModel() const {return appModel_;}
 
     virtual Scalar getInitTimeStep(
         const Teuchos::RCP<SolutionHistory<Scalar> >& /* solutionHistory */) const

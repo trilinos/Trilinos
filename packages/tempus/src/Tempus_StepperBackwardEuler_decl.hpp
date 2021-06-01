@@ -144,6 +144,7 @@ public:
   virtual void computePredictor(
     const Teuchos::RCP<SolutionHistory<Scalar> >& solutionHistory);
 
+  /// Return a valid ParameterList with current settings.
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const override;
 
   /// \name Overridden from Teuchos::Describable

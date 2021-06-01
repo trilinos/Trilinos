@@ -85,7 +85,7 @@ void StepperOperatorSplit<Scalar>::setModel(
 
 template<class Scalar>
 Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >
-StepperOperatorSplit<Scalar>::getModel()
+StepperOperatorSplit<Scalar>::getModel() const
 {
   Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
   typename std::vector<Teuchos::RCP<Stepper<Scalar> > >::const_iterator

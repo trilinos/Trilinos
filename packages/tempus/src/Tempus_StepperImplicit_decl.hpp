@@ -235,7 +235,7 @@ public:
     virtual void setModel(
       const Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> >& appModel) override;
 
-    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() override
+    virtual Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > getModel() const override
     {
       Teuchos::RCP<const Thyra::ModelEvaluator<Scalar> > model;
       if (wrapperModel_ != Teuchos::null) model = wrapperModel_->getAppModel();

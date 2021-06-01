@@ -76,7 +76,7 @@ public:
       Teuchos::OSTab ostab(*l_out, 2, this->description());
       l_out->setOutputToRootOnly(0);
 
-      *l_out << "--- " << this->description() << " ---" << std::endl;
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
 
       if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
         *l_out << "  Strategy Type = " << this->getStrategyType()<< std::endl

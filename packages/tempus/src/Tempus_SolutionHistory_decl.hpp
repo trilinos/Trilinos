@@ -347,11 +347,12 @@ protected:
 };
 
 
-/// Nonmember constructor from a ParameterList
+/// Nonmember constructor
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
 createSolutionHistory();
 
+/// Nonmember constructor from a ParameterList
 template<class Scalar>
 Teuchos::RCP<SolutionHistory<Scalar> >
 createSolutionHistoryPL(Teuchos::RCP<Teuchos::ParameterList> pList);
