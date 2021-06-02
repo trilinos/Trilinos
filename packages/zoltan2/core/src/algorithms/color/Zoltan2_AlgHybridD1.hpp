@@ -233,7 +233,9 @@ class AlgDistance1 : public Algorithm<Adapter>
         }
       },recoloringSize(0));
       Kokkos::fence();
-      Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
+      Kokkos::parallel_for("Rebuild verts_to_send_view",
+		           Kokkos::RangePolicy<ExecutionSpace>(0,n_local), 
+			   KOKKOS_LAMBDA(const int& i){
         if(femv_colors(i) == 0){
           verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
         }
