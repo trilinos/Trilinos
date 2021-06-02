@@ -1238,6 +1238,22 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  getAllValues(Teuchos::ArrayRCP<Scalar>& values) {
+    using Teuchos::RCP;
+    const char tfecfFuncName[] = "getAllValues: ";
+    RCP<const crs_graph_type> relevantGraph = getCrsGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      relevantGraph.is_null (), std::runtime_error,
+      "Requires that getCrsGraph() is not null.");
+    Teuchos::ArrayRCP<impl_scalar_type> vals =
+      Kokkos::Compat::persistingView (k_values1D_);
+    values = Teuchos::arcp_reinterpret_cast<Scalar> (vals);
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   fillLocalGraphAndMatrix (const Teuchos::RCP<Teuchos::ParameterList>& params)
   {
     using ::Tpetra::Details::computeOffsetsFromCounts;

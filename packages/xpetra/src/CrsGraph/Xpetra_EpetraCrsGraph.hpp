@@ -117,6 +117,18 @@ public:
       "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
   }
 
+  // Constructor for fused import
+  EpetraCrsGraphT(const RCP<const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > >& sourceGraph,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > & importer,
+                  const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node >>& domainMap = Teuchos::null,
+                  const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >& rangeMap = Teuchos::null,
+                  const RCP<Teuchos::ParameterList>& params = Teuchos::null)  {
+    TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError,
+      "Xpetra::EpetraCrsGraph only available for GO=int or GO=long long with EpetraNode (Serial or OpenMP depending on configuration)");
+  }
+
+
+
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
   //! Constructor specifying column Map, number of entries in each row and column indices in each row.
@@ -168,6 +180,16 @@ public:
   //! Remove all graph indices from the specified local row.
   void removeLocalIndices(LocalOrdinal localRow) {  }
 
+  //! Allocates the 1D pointer arrays of the graph
+  void allocateAllIndices(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind) { }
+  
+  //! Sets the 1D pointer arrays of the graph.
+  void setAllIndices(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind){ }
+  
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllIndices(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind) const { }
+  
+
   //@}
 
   //! @name Transformational Methods
@@ -178,6 +200,18 @@ public:
 
   //! Signal that data entry is complete.
   void fillComplete(const RCP< ParameterList > &params=null) {  }
+
+  //! Expert version of fillComplete
+  void
+  expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                            const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                            const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                            Teuchos::null,
+                            const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                            Teuchos::null,
+                            const Teuchos::RCP<Teuchos::ParameterList>& params =
+                            Teuchos::null) { }
+
   //@}
 
   //! @name Methods implementing RowGraph.
@@ -387,6 +421,30 @@ public:
     Teuchos::Array<int> numEntriesPerRowToAlloc(NumEntriesPerRowToAlloc.begin(), NumEntriesPerRowToAlloc.end()); // convert array of "size_t" to array of "int"
     graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy, toEpetra<GlobalOrdinal,Node>(rowMap), toEpetra<GlobalOrdinal,Node>(colMap), numEntriesPerRowToAlloc.getRawPtr(), true));
   }
+  
+  // Constructor for fused import
+  EpetraCrsGraphT(const RCP<const CrsGraph< LocalOrdinal, GlobalOrdinal, Node > >& sourceGraph,
+                  const Import< LocalOrdinal, GlobalOrdinal, Node > & importer,
+                  const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node >>& domainMap = Teuchos::null,
+                  const RCP<const Map< LocalOrdinal, GlobalOrdinal, Node > >& rangeMap = Teuchos::null,
+                  const RCP<Teuchos::ParameterList>& params = Teuchos::null)  {
+
+    XPETRA_DYNAMIC_CAST(const EpetraCrsGraphT<GlobalOrdinal XPETRA_COMMA Node>, *sourceGraph, tSourceGraph, "Xpetra::EpetraCrsGraphT() only accepts Xpetra::EpetraCrsGraphT as input arguments.");
+    XPETRA_DYNAMIC_CAST(const EpetraImportT<GlobalOrdinal XPETRA_COMMA Node>, importer, tImporter, "Xpetra::EpetraCrsGraphT::doImport only accept Xpetra::EpetraImportT as input arguments.");
+    RCP< const Epetra_CrsGraph> eSourceGraph = tSourceGraph.getEpetra_CrsGraph();
+
+    // NOTE: Unlike Tpetra, Epetra does not have a FusedTransfer for Graphs.  So we do this the slow way
+    graph_ = Teuchos::rcp(new Epetra_CrsGraph(Copy,eSourceGraph->RowMap(),0,false));
+    graph_->Import(*eSourceGraph,*tImporter.getEpetra_Import(),Insert);
+
+    const Epetra_BlockMap & myDomainMap = domainMap!=Teuchos::null ? toEpetra<GlobalOrdinal,Node>(domainMap) : eSourceGraph->ColMap();
+    const Epetra_BlockMap & myRangeMap  = rangeMap!=Teuchos::null  ? toEpetra<GlobalOrdinal,Node>(rangeMap) : toEpetra<LocalOrdinal,Node>(importer.getTargetMap());
+    
+    graph_->FillComplete(myDomainMap,myRangeMap);
+
+  }
+
+
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 #ifdef HAVE_XPETRA_TPETRA
@@ -449,6 +507,74 @@ public:
   //! Remove all graph indices from the specified local row.
   void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("EpetraCrsGraphT::removeLocalIndices"); graph_->RemoveMyIndices(localRow); }
 
+  //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+  //** \warning This is an expert-only routine and should not be called from user code. */
+  void allocateAllIndices(size_t numNonZeros, ArrayRCP<size_t>& rowptr, ArrayRCP<LocalOrdinal>& colind) {
+       XPETRA_MONITOR("EpetraCrsGraphT::allocateAllIndies");
+
+      // Row offsets
+      // Unfortunately, we cannot do this in the same manner as column indices
+      // and values (see below).  The problem is that Tpetra insists on using
+      // size_t, and Epetra uses int internally.  So we only resize here, and
+      // will need to copy in setAllValues
+      rowptr.resize(getNodeNumRows()+1);
+
+      int  lowerOffset = 0;
+      bool ownMemory   = false;
+
+      // Column indices
+      // Extract, resize, set colind
+      Epetra_IntSerialDenseVector& myColind = graph_->ExpertExtractIndices();
+      myColind.Resize(numNonZeros);
+      colind = Teuchos::arcp(myColind.Values(), lowerOffset, numNonZeros, ownMemory);
+    }
+
+  //! Sets the 1D pointer arrays of the graph.
+  void setAllIndices(const ArrayRCP<size_t>& rowptr, const ArrayRCP<LocalOrdinal>& colind) {
+    XPETRA_MONITOR("EpetraCrsGraphT::setAllIndices");
+
+    // Check sizes
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
+    if (colind.size() > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr() != graph_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+    }
+
+    // We have to make a copy here, it is unavoidable
+    // See comments in allocateAllIndices
+    const size_t N = getNodeNumRows();
+
+    Epetra_IntSerialDenseVector& myRowptr = graph_->ExpertExtractIndexOffset();
+    myRowptr.Resize(N+1);
+    for (size_t i = 0; i < N+1; i++)
+      myRowptr[i] = Teuchos::as<int>(rowptr[i]);
+  }
+
+
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllIndices(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getAllIndices");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t n   = getNodeNumRows();
+    const size_t nnz = getNodeNumEntries();
+
+    // Row offsets
+    // We have to make a copy here, it is unavoidable (see comments in allocateAllValues)
+    Epetra_IntSerialDenseVector& myRowptr = graph_->ExpertExtractIndexOffset();
+    rowptr.resize(n+1);
+    for (size_t i = 0; i < n+1; i++)
+      (*const_cast<size_t*>(&rowptr[i])) = Teuchos::as<size_t>(myRowptr[i]);
+
+    // Column indices
+    colind = Teuchos::arcp(graph_->ExpertExtractIndices().Values(), lowerOffset, nnz, ownMemory);
+  }
+
+
+
   //@}
 
   //! @name Transformational Methods
@@ -473,6 +599,22 @@ public:
     if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
     if (doOptimizeStorage) graph_->OptimizeStorage();
   }
+
+  //! Expert version of fillComplete
+  void
+  expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                            const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                            const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                            Teuchos::null,
+                            const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                            Teuchos::null,
+                            const Teuchos::RCP<Teuchos::ParameterList>& params =
+                            Teuchos::null) { 
+    // Not optimized
+    graph_->FillComplete(toEpetra<GlobalOrdinal,Node>(domainMap), toEpetra<GlobalOrdinal,Node>(rangeMap));
+    graph_->OptimizeStorage();
+  }
+
   //@}
 
   //! @name Methods implementing RowGraph.
@@ -816,6 +958,74 @@ public:
   //! Remove all graph indices from the specified local row.
   void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("EpetraCrsGraphT::removeLocalIndices"); graph_->RemoveMyIndices(localRow); }
 
+  //! Allocates and returns ArrayRCPs of the Crs arrays --- This is an Xpetra-only routine.
+  //** \warning This is an expert-only routine and should not be called from user code. */
+  void allocateAllIndices(size_t numNonZeros, ArrayRCP<size_t>& rowptr, ArrayRCP<LocalOrdinal>& colind) {
+       XPETRA_MONITOR("EpetraCrsGraphT::allocateAllIndies");
+
+      // Row offsets
+      // Unfortunately, we cannot do this in the same manner as column indices
+      // and values (see below).  The problem is that Tpetra insists on using
+      // size_t, and Epetra uses int internally.  So we only resize here, and
+      // will need to copy in setAllValues
+      rowptr.resize(getNodeNumRows()+1);
+
+      int  lowerOffset = 0;
+      bool ownMemory   = false;
+
+      // Column indices
+      // Extract, resize, set colind
+      Epetra_IntSerialDenseVector& myColind = graph_->ExpertExtractIndices();
+      myColind.Resize(numNonZeros);
+      colind = Teuchos::arcp(myColind.Values(), lowerOffset, numNonZeros, ownMemory);
+    }
+
+  //! Sets the 1D pointer arrays of the graph.
+  void setAllIndices(const ArrayRCP<size_t>& rowptr, const ArrayRCP<LocalOrdinal>& colind) {
+    XPETRA_MONITOR("EpetraCrsGraphT::setAllIndices");
+
+    // Check sizes
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
+    if (colind.size() > 0) {
+      TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr() != graph_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+    }
+
+    // We have to make a copy here, it is unavoidable
+    // See comments in allocateAllIndices
+    const size_t N = getNodeNumRows();
+
+    Epetra_IntSerialDenseVector& myRowptr = graph_->ExpertExtractIndexOffset();
+    myRowptr.Resize(N+1);
+    for (size_t i = 0; i < N+1; i++)
+      myRowptr[i] = Teuchos::as<int>(rowptr[i]);
+  }
+
+
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllIndices(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind) const {
+    XPETRA_MONITOR("EpetraCrsGraphT::getAllIndices");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t n   = getNodeNumRows();
+    const size_t nnz = getNodeNumEntries();
+
+    // Row offsets
+    // We have to make a copy here, it is unavoidable (see comments in allocateAllValues)
+    Epetra_IntSerialDenseVector& myRowptr = graph_->ExpertExtractIndexOffset();
+    rowptr.resize(n+1);
+    for (size_t i = 0; i < n+1; i++)
+      (*const_cast<size_t*>(&rowptr[i])) = Teuchos::as<size_t>(myRowptr[i]);
+
+    // Column indices
+    colind = Teuchos::arcp(graph_->ExpertExtractIndices().Values(), lowerOffset, nnz, ownMemory);
+  }
+
+
+
   //@}
 
   //! @name Transformational Methods
@@ -840,6 +1050,22 @@ public:
     if (params != null && params->get("Optimize Storage",true) == false) doOptimizeStorage = false;
     if (doOptimizeStorage) graph_->OptimizeStorage();
   }
+
+  //! Expert version of fillComplete
+  void
+  expertStaticFillComplete (const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& domainMap,
+                            const Teuchos::RCP<const Map < LocalOrdinal, GlobalOrdinal, Node > >& rangeMap,
+                            const Teuchos::RCP<const Import< LocalOrdinal, GlobalOrdinal, Node > >& importer =
+                            Teuchos::null,
+                            const Teuchos::RCP<const Export< LocalOrdinal, GlobalOrdinal, Node > >& exporter =
+                            Teuchos::null,
+                            const Teuchos::RCP<Teuchos::ParameterList>& params =
+                            Teuchos::null) { 
+    // Not optimized
+    graph_->FillComplete(toEpetra<GlobalOrdinal,Node>(domainMap), toEpetra<GlobalOrdinal,Node>(rangeMap));
+    graph_->OptimizeStorage();
+  }
+
   //@}
 
   //! @name Methods implementing RowGraph.

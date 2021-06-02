@@ -271,6 +271,10 @@ namespace MueLu {
     static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename NO::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
     static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename NO::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+    
+    static void ApplyRowSumCriterion(const Matrix& A,
+                                     const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                     Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
 
     static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 
@@ -419,6 +423,10 @@ namespace MueLu {
     static void ZeroDirichletRows(RCP<MultiVector>& X, const Kokkos::View<const bool*, typename Node::device_type>& dirichletRows, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
 
     static void ZeroDirichletCols(RCP<Matrix>& A, const Kokkos::View<const bool*, typename Node::device_type>& dirichletCols, SC replaceWith=Teuchos::ScalarTraits<SC>::zero());
+
+    static void ApplyRowSumCriterion(const Matrix& A,
+                                     const typename Teuchos::ScalarTraits<Scalar>::magnitudeType rowSumTol,
+                                     Kokkos::View<bool*, typename NO::device_type> & dirichletRows);
 
     static RCP<MultiVector> RealValuedToScalarMultiVector(RCP<RealValuedMultiVector> X);
 

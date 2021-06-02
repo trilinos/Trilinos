@@ -1813,6 +1813,14 @@ namespace Tpetra {
                   Teuchos::ArrayRCP<const LocalOrdinal>& columnIndices,
                   Teuchos::ArrayRCP<const Scalar>& values) const;
 
+    /// Gets just the values array.  This *will* be a shallow copy
+    /// of the array (at least on the host memory space.  This
+    /// is not a const function, since the user can change these
+    /// values.
+    ///
+    /// \param values [out] Array of values. 
+    void getAllValues(Teuchos::ArrayRCP<Scalar>& values);
+
     //@}
     //! @name Transformational methods
     //@{

@@ -167,6 +167,7 @@ public:
   void allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<LocalOrdinal> & colind, ArrayRCP<Scalar> & values) { }
   void setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<LocalOrdinal> & colind, const ArrayRCP<Scalar> & values) { }
   void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const { }
+  void getAllValues(ArrayRCP<Scalar>& values) { }
   bool haveGlobalConstants() const  { return true;}
   void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
       const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
@@ -668,6 +669,18 @@ public:
     // Column indices
     colind = Teuchos::arcp(mtx_->ExpertExtractIndices().Values(), lowerOffset, nnz, ownMemory);
 
+    // Values
+    values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
+  }
+
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllValues(ArrayRCP<Scalar>& values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getAllValues");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t nnz = getNodeNumEntries();
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
@@ -1690,6 +1703,20 @@ public:
     // Values
     values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
   }
+
+
+  //! Gets the 1D pointer arrays of the graph.
+  void getAllValues(ArrayRCP<Scalar>& values) {
+    XPETRA_MONITOR("EpetraCrsMatrixT::getAllValues");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t nnz = getNodeNumEntries();
+    // Values
+    values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
+  }
+
 
   // Epetra always has global constants
   bool haveGlobalConstants() const  { return true;}
