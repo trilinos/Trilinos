@@ -49,12 +49,16 @@
  2. "Affine" data.  This has shape (C,P), but only varies in the cell dimension.
  3. General data.  There is no redundancy in the data.  This case favors the View objects most heavily, and will maximally expose overhead from the Data implementation.
  
- We fix the cell count at 16,000, and allow the point count to vary.  For the first two cases, we expect there to be some threshold point count at which the data redundancy is sufficient to
- overcome the overhead of Data; for all higher point counts, we expect performance savings for Data.  For the third case, we expect (with a "smart" Data combination implementation) that the
- relative overhead of Data will diminish as the point count goes up.
+ We can define an ideal speedup as the relative reduction in flop count.  Any write to a general data container will have an ideal speedup of 1.0 (no reduction in flop count); affine data will have
+ an ideal speedup of P; constant will have an ideal speedup of C*P.
  
  In addition to combinations of "like" Data (e.g., constant plus constant), we can also test combinations of "unlike" Data (e.g., constant plus affine).  We expect these tests to have performance
- characteristics somewhere between the corresponding "like" tests.
+ characteristics somewhere between the corresponding "like" tests, but the ideal speedups for these tests will correspond to that of the more general container (e.g., constant plus affine will have
+ the same ideal speedup as affine plus affine: P).
+ 
+ We fix the cell count at 16,000, and allow the point count to vary.  We expect (and observe) that constant/constant operations will not come close to the ideal speedup (because the overhead
+ surrounding the operation dwarfs the single-flop cost); affine/affine operations fare somewhat better, with some non-negligible fraction of the ideal speedup; general/general operations are quite
+ close to the 1.0 ideal speedup.  The mixed operations that result in general containers (e.g., general/constant) often do substantially better than the ideal speedup, thanks to enhanced data locality.
  
  After measuring timings, we also confirm that the two algorithms agree on the results.
  */
