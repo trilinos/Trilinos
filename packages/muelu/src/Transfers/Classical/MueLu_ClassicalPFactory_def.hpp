@@ -173,13 +173,9 @@ namespace MueLu {
   
     // FIXME: This guy doesn't work right now for NumPDEs != 1
     TEUCHOS_TEST_FOR_EXCEPTION(A->GetFixedBlockSize() != 1, Exceptions::RuntimeError,"ClassicalPFactory: Multiple PDEs per node not supported yet");
-
-    // FIXME: This does not work in parallel yet
-//    TEUCHOS_TEST_FOR_EXCEPTION(A->getRowMap()->getComm()->getSize() !=  1,Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
  
     // NOTE: Let's hope we never need to deal with this case
     TEUCHOS_TEST_FOR_EXCEPTION(!A->getRowMap()->isSameAs(*A->getDomainMap()),Exceptions::RuntimeError,"ClassicalPFactory: MPI Ranks > 1 not supported yet");
-
 
     // Do we need ghosts rows of A and myPointType?
     std::string scheme = pL.get<std::string>("aggregation: classical scheme");
@@ -234,40 +230,7 @@ namespace MueLu {
         fc_splitting_ghost = fc_splitting_ghost_nonconst;
         myPointType_ghost  = fc_splitting_ghost->getData(0);      
       }
-      /*
-#if OLD_AND_BUSTED
-      if(lib == Xpetra::UseEpetra) {
-#ifdef HAVE_MUELU_EPETRA
-        RCP<CrsMatrix> Ecrs = rcp(new EpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
-        Aghost = rcp(new CrsMatrixWrap(Ecrs));
-        RCP<const Import> Importer2 = Ecrs->getCrsGraph()->getImporter();
-        if(Importer2.is_null()) {
-          RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Ecrs->getColMap());
-          fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
-          fc_splitting_ghost = fc_splitting_ghost_nonconst;
-          myPointType_ghost  = fc_splitting_ghost->getData(0);      
-        }
-#endif
-      }
-      else {
-#ifdef HAVE_MUELU_TPETRA
-        RCP<CrsMatrix> Tcrs = rcp(new TpetraCrsMatrix(Acrs,*remoteOnlyImporter,A->getDomainMap(),remoteOnlyImporter->getTargetMap()));
-        Aghost = rcp(new CrsMatrixWrap(Tcrs));
-        // We also need to ghost myPointType for Aghost, if we've created an Aghost
-        RCP<const Import> Importer2 = Tcrs->getCrsGraph()->getImporter();
-        if(Importer2.is_null()) {
-          RCP<LocalOrdinalVector> fc_splitting_ghost_nonconst = LocalOrdinalVectorFactory::Build(Tcrs->getColMap());
-          fc_splitting_ghost_nonconst->doImport(*owned_fc_splitting,*Importer,Xpetra::INSERT);
-          fc_splitting_ghost = fc_splitting_ghost_nonconst;
-          myPointType_ghost  = fc_splitting_ghost->getData(0);      
-        }
-#endif
-#endif
-      }     
-    */
     }
-
-
 
     /* Generate the ghosted Coarse map using the "Tuminaro maneuver" (if needed)*/   
     RCP<const Map> coarseMap;
@@ -276,10 +239,9 @@ namespace MueLu {
     else {
       // Generate a domain vector with the coarse ID's as entries for C points
       GhostCoarseMap(*A,*Importer,myPointType,ownedCoarseMap,coarseMap);
-    }
-  
+    }  
 
-    // Get the block number, if we need it (and ghost it)
+    /* Get the block number, if we need it (and ghost it) */
     RCP<LocalOrdinalVector>  BlockNumber;
     std::string drop_algo = pL.get<std::string>("aggregation: drop scheme");
     if (drop_algo.find("block diagonal") != std::string::npos) {
