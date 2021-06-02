@@ -164,6 +164,9 @@ public:
   /// Get the SolutionHistory
   virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const override
     { return integrator_->getSolutionHistory(); }
+  /// Get the SolutionHistory
+  virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() override
+    { return integrator_->getNonConstSolutionHistory(); }
   /// Set the SolutionHistory
   virtual void setSolutionHistory(
     Teuchos::RCP<SolutionHistory<Scalar> > sh = Teuchos::null)
