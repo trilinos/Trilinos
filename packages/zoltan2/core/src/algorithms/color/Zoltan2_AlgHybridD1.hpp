@@ -232,11 +232,15 @@ class AlgDistance1 : public Algorithm<Adapter>
           }
         }
       },recoloringSize(0));
-      Kokkos::parallel_for(n_local, KOKKOS_LAMBDA(const int& i){
+      Kokkos::fence();
+      Kokkos::parallel_for("Rebuild verts_to_send_view",
+		           Kokkos::RangePolicy<ExecutionSpace>(0,n_local), 
+			   KOKKOS_LAMBDA(const int& i){
         if(femv_colors(i) == 0){
           verts_to_send_view(verts_to_send_size_atomic(0)++) = i;
         }
       });
+      Kokkos::fence();
     }
 
   private:
@@ -317,8 +321,8 @@ class AlgDistance1 : public Algorithm<Adapter>
       std::vector<int> recvcnts(comm->getSize(), 0);
       Teuchos::ArrayView<int> recvcnts_view = Teuchos::arrayViewFromVector(recvcnts);
 
-      //if we're computing statistics, remove the computation imbalance from the comm timer.
-      if(verbose) comm->barrier();
+      //if we're reporting timings, remove the computation imbalance from the comm timer.
+      if(timing) comm->barrier();
       double comm_total = 0.0;
       double comm_temp = timer();
 
@@ -346,7 +350,7 @@ class AlgDistance1 : public Algorithm<Adapter>
     RCP<Environment> env;
     RCP<const Teuchos::Comm<int> > comm;
     bool verbose;
-
+    bool timing;
   public:
     //constructor for the  hybrid distributed distance-1 algorithm
     AlgDistance1(
@@ -356,6 +360,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       const RCP<const Teuchos::Comm<int> > &comm_)
     : adapter(adapter_), pl(pl_), env(env_), comm(comm_) {
       verbose = pl->get<bool>("verbose",false);
+      timing = pl->get<bool>("timing", false);
       if(verbose) std::cout<<comm->getRank()<<": inside coloring constructor\n";
       modelFlag_t flags;
       flags.reset();
@@ -724,18 +729,18 @@ class AlgDistance1 : public Algorithm<Adapter>
       if(verbose) std::cout<<comm->getRank()<<": Coloring interior\n";
       //initialize interior and total timers, barrier to prevent any imbalance from setup.
       //Only use a barrier if timing is happening.
-      if(verbose) comm->barrier();
+      if(timing) comm->barrier();
       interior_time = timer();
       total_time = timer();
       //call the KokkosKernels coloring function with the Tpetra default spaces.
       bool use_vbbit = (global_max_degree < 6000);
       this->colorInterior<execution_space,memory_space>
                  (nVtx, dist_adjs, dist_offsets, femv,dist_adjs,0,use_vbbit);
-      if(verbose){
+      if(timing){
         interior_time = timer() - interior_time;
         comp_time = interior_time;
-        std::cout<<comm->getRank()<<": Going to recolor\n";
       }
+      if(verbose) std::cout<<comm->getRank()<<": Going to recolor\n";
       bool recolor_degrees = this->pl->template get<bool>("recolor_degrees", true);
 
       //if there is more than a single process, check distributed conflicts and recolor
@@ -819,7 +824,6 @@ class AlgDistance1 : public Algorithm<Adapter>
         if(distributedRounds < numStatisticRecordingRounds) {
           vertsPerRound[distributedRounds] = recoloringSize_host(0);
         }
-        if(verbose) std::cout<<comm->getRank()<<": starting to recolor\n";
 	
 	//copying the send view to the recolor view is necessary because
 	//KokkosKernels can change the view passed in, and we need the send view
@@ -844,9 +848,12 @@ class AlgDistance1 : public Algorithm<Adapter>
           comp_time += recoloringPerRound[distributedRounds];
           compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
           totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
+	} else if(timing) {
+	  double recolor_round_time = timer() - recolor_temp;
+	  recoloring_time += recolor_round_time;
+	  comp_time += recolor_round_time;
 	}
         
-        if(verbose) std::cout<<comm->getRank()<<": done recoloring\n";
 	//reset the recoloringSize device host and device views
 	//to zero
         recoloringSize_host(0) = 0;
@@ -874,10 +881,6 @@ class AlgDistance1 : public Algorithm<Adapter>
         comm_time += curr_comm_time;
         if(distributedRounds < numStatisticRecordingRounds){
 	  commPerRound[distributedRounds] = curr_comm_time;
-	  if(verbose){
-            std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
-            std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
-  	  }
           sentPerRound[distributedRounds] = sent;
           recvPerRound[distributedRounds] = recv;
           totalPerRound[distributedRounds] += commPerRound[distributedRounds];
@@ -913,6 +916,10 @@ class AlgDistance1 : public Algorithm<Adapter>
           compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
           totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
           comp_time += conflictDetectionPerRound[distributedRounds];
+	} else if(timing){
+	  double conflict_detection_round_time = timer()- detection_temp;
+	  conflict_detection += conflict_detection_round_time;
+	  comp_time += conflict_detection_round_time;
 	}
         //do a reduction to determine if we're done
         int globalDone = 0;
@@ -942,7 +949,6 @@ class AlgDistance1 : public Algorithm<Adapter>
 	if(distributedRounds < 100){
 	  vertsPerRound[distributedRounds] = recoloringSize_host(0);
 	}
-	if(verbose) std::cout<<comm->getRank()<<": starting to recolor, serial\n";
 
 	double recolor_temp = timer();
 	//use KokkosKernels to recolor the conflicting vertices
@@ -958,9 +964,12 @@ class AlgDistance1 : public Algorithm<Adapter>
 	  comp_time += recoloringPerRound[distributedRounds];
 	  compPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
 	  totalPerRound[distributedRounds] = recoloringPerRound[distributedRounds];
-        }
+        } else if(timing){
+	  double recolor_serial_round_time = timer() - recolor_temp;
+	  recoloring_time += recolor_serial_round_time;
+	  comp_time += recolor_serial_round_time;
+	}
 
-	if(verbose) std::cout<<comm->getRank()<<": done recoloring\n";
 	recoloringSize_host(0) = 0;
 
 	for(size_t i = 0; i < rand.size() -nVtx; i++){
@@ -980,10 +989,6 @@ class AlgDistance1 : public Algorithm<Adapter>
 
 	if(distributedRounds < numStatisticRecordingRounds){
 	  commPerRound[distributedRounds] = curr_comm_time;
-	  if(verbose){
-	    std::cout<<comm->getRank()<<": total sent in round "<<distributedRounds<<" = "<<sent<<"\n";
-	    std::cout<<comm->getRank()<<": total recv in round "<<distributedRounds<<" = "<<recv<<"\n";
-	  }
 	  sentPerRound[distributedRounds] = sent;
 	  recvPerRound[distributedRounds] = recv;
 	  totalPerRound[distributedRounds] += commPerRound[distributedRounds];
@@ -1012,7 +1017,11 @@ class AlgDistance1 : public Algorithm<Adapter>
 	  compPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
 	  totalPerRound[distributedRounds] += conflictDetectionPerRound[distributedRounds];
 	  comp_time += conflictDetectionPerRound[distributedRounds];
-        }
+        } else if(timing){
+	  double conflict_detection_serial_round_time = timer() - detection_temp;
+	  conflict_detection += conflict_detection_serial_round_time;
+	  comp_time += conflict_detection_serial_round_time;
+	}
 	//do a reduction to determine if we're done
 	int globalDone = 0;
 	int localDone = recoloringSize_host(0);
@@ -1036,8 +1045,8 @@ class AlgDistance1 : public Algorithm<Adapter>
         }
         //print how many rounds of speculating/correcting happened (this should be the same for all ranks):
         if(comm->getRank()==0) printf("did %d rounds of distributed coloring\n", distributedRounds);
+	int totalBoundarySize = 0;
         int totalVertsPerRound[numStatisticRecordingRounds];
-        int totalBoundarySize = 0;
         double finalTotalPerRound[numStatisticRecordingRounds];
         double maxRecoloringPerRound[numStatisticRecordingRounds];
         double finalSerialRecoloringPerRound[numStatisticRecordingRounds];
@@ -1072,6 +1081,7 @@ class AlgDistance1 : public Algorithm<Adapter>
         Teuchos::reduceAll<int,gno_t> (*comm, Teuchos::REDUCE_SUM,numStatisticRecordingRounds,sentPerRound, finalSentPerRound);
         
         printf("Rank %d: boundary size: %d\n",comm->getRank(),localBoundaryVertices);
+        if(comm->getRank()==0) printf("Total boundary size: %d\n",totalBoundarySize);
         for(int i = 0; i < std::min(distributedRounds,numStatisticRecordingRounds); i++){
           printf("Rank %d: recolor %d vertices in round %d\n",comm->getRank(),vertsPerRound[i],i);
           if(comm->getRank()==0) printf("recolored %d vertices in round %d\n",totalVertsPerRound[i],i);
@@ -1085,7 +1095,7 @@ class AlgDistance1 : public Algorithm<Adapter>
           if(comm->getRank()==0) printf("total recv in round %d: %lld\n",i,finalRecvPerRound[i]);
           if(comm->getRank()==0) printf("comp time in round %d: %f\n",i,finalCompPerRound[i]);
         }
-        
+      } else if(timing){
         double global_total_time = 0.0;
         double global_recoloring_time=0.0;
         double global_min_recoloring_time=0.0;
@@ -1103,7 +1113,6 @@ class AlgDistance1 : public Algorithm<Adapter>
         comm->barrier();
         fflush(stdout);
         if(comm->getRank()==0){
-          printf("Boundary size: %d\n",totalBoundarySize);
           printf("Total Time: %f\n",global_total_time);
           printf("Interior Time: %f\n",global_interior_time);
           printf("Recoloring Time: %f\n",global_recoloring_time);
@@ -1112,8 +1121,8 @@ class AlgDistance1 : public Algorithm<Adapter>
           printf("Comm Time: %f\n",global_comm_time);
           printf("Comp Time: %f\n",global_comp_time);
         }
-        std::cout<<comm->getRank()<<": exiting coloring\n";
       }
+      if(verbose) std::cout<<comm->getRank()<<": exiting coloring\n";
     }
 };
 
