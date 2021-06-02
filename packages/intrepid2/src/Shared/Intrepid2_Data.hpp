@@ -8,6 +8,7 @@
 #ifndef Intrepid2_Data_h
 #define Intrepid2_Data_h
 
+#include "Intrepid2_ArgExtractor.hpp"
 #include "Intrepid2_ScalarView.hpp"
 #include "Intrepid2_Utils.hpp"
 
@@ -342,24 +343,6 @@ namespace Intrepid2 {
     }
 
   public:
-    struct ConstantArgExtractor
-    {
-      template<class ViewType, class ...IntArgs>
-      static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
-      {
-        return view(0);
-      }
-    };
-    
-    struct FullArgExtractor
-    {
-      template<class ViewType, class ...IntArgs>
-      static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
-      {
-        return view(intArgs...);
-      }
-    };
-    
     //! For use with Data object into which a value will be stored.
     struct FullArgExtractorWritableData
     {
@@ -367,138 +350,6 @@ namespace Intrepid2 {
       static KOKKOS_INLINE_FUNCTION reference_type get(const ViewType &view, const IntArgs&... intArgs)
       {
         return view.getWritableEntry(intArgs...);
-      }
-    };
-    
-    //! For use with read-only functors (such as Data objects).
-    struct FullArgExtractorConst
-    {
-      template<class ViewType, class ...IntArgs>
-      static KOKKOS_INLINE_FUNCTION const_reference_type get(const ViewType &view, const IntArgs&... intArgs)
-      {
-        return view(intArgs...);
-      }
-    };
-    
-    template<int whichArg>
-    struct SingleArgExtractor
-    {
-      template<class ViewType, class int_type, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 0, reference_type>
-      get(const ViewType &view, const int_type &i0)
-      {
-        return view(i0);
-      }
-      
-      template<class ViewType, class int_type, class ...IntArgs, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 0, reference_type>
-      get(const ViewType &view, const int_type &i0, const IntArgs&... intArgs)
-      {
-        return view(i0);
-      }
-      
-      template<class ViewType, class int_type, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 1, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1)
-      {
-        return view(i1);
-      }
-      
-      template<class ViewType, class int_type, class ...IntArgs, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 1, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const IntArgs&... intArgs)
-      {
-        return view(i1);
-      }
-      
-      template<class ViewType, class int_type, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 2, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2)
-      {
-        return view(i2);
-      }
-      
-      template<class ViewType, class int_type, class ...IntArgs, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 2, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const IntArgs&... intArgs)
-      {
-        return view(i2);
-      }
-      
-      template<class ViewType, class int_type, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 3, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const int_type &i3)
-      {
-        return view(i3);
-      }
-      
-      template<class ViewType, class int_type, class ...IntArgs, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 3, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const int_type &i3, const IntArgs&... intArgs)
-      {
-        return view(i3);
-      }
-      
-      template<class ViewType, class int_type, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 4, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const int_type &i3, const int_type &i4)
-      {
-        return view(i4);
-      }
-      
-      template<class ViewType, class int_type, class ...IntArgs, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 4, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const int_type &i3, const int_type &i4, const IntArgs&... intArgs)
-      {
-        return view(i4);
-      }
-      
-      template<class ViewType, class int_type, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 5, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const int_type &i3, const int_type &i4, const int_type &i5)
-      {
-        return view(i5);
-      }
-      
-      template<class ViewType, class int_type, class ...IntArgs, int M=whichArg>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<M == 5, reference_type>
-      get(const ViewType &view, const int_type &i0, const int_type &i1, const int_type &i2, const int_type &i3, const int_type &i4, const int_type &i5, const IntArgs&... intArgs)
-      {
-        return view(i5);
-      }
-      
-      // the commented-out code below is a cleaner way to implement the above, but we can't support this on CUDA until we can require KOKKOS_ENABLE_CUDA_CONSTEXPR
-      /*
-      template<class ViewType, class ...IntArgs>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<whichArg < sizeof...(IntArgs), reference_type>
-      get(const ViewType &view, const IntArgs&... intArgs)
-      {
-        const auto & arg = std::get<whichArg>(std::tuple<IntArgs...>(intArgs...));
-        return view(arg);
-      }
-       */
-      
-      template<class ViewType, class ...IntArgs>
-      static KOKKOS_INLINE_FUNCTION
-      enable_if_t<whichArg >= sizeof...(IntArgs), reference_type>
-      get(const ViewType &view, const IntArgs&... intArgs)
-      {
-        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"calling SingleArgExtractor with out-of-bounds argument");
-        Kokkos::abort("Intrepid2::Data: calling SingleArgExtractor with out-of-bounds argument\n");
-        return view(0); // line added to avoid missing return statement warning under nvcc
       }
     };
     
@@ -598,18 +449,18 @@ namespace Intrepid2 {
       const bool B_full        = B.underlyingMatchesLogical();
       const bool this_full     = this->underlyingMatchesLogical();
       
-      const ConstantArgExtractor constArg;
+      const ConstantArgExtractor<reference_type> constArg;
       
-      const FullArgExtractor fullArgs;
-      const FullArgExtractorConst fullArgsConst;
+      const FullArgExtractor<reference_type> fullArgs;
+      const FullArgExtractor<const_reference_type> fullArgsConst;
       const FullArgExtractorWritableData fullArgsWritable;
       
-      const SingleArgExtractor<0> arg0;
-      const SingleArgExtractor<1> arg1;
-      const SingleArgExtractor<2> arg2;
-      const SingleArgExtractor<3> arg3;
-      const SingleArgExtractor<4> arg4;
-      const SingleArgExtractor<5> arg5;
+      const SingleArgExtractor<reference_type,0> arg0;
+      const SingleArgExtractor<reference_type,1> arg1;
+      const SingleArgExtractor<reference_type,2> arg2;
+      const SingleArgExtractor<reference_type,3> arg3;
+      const SingleArgExtractor<reference_type,4> arg4;
+      const SingleArgExtractor<reference_type,5> arg5;
       
       // this lambda returns -1 if there is not a rank-1 underlying view whose data extent matches the logical extent in the corresponding dimension;
       // otherwise, it returns the logical index of the corresponding dimension.
@@ -910,8 +761,8 @@ namespace Intrepid2 {
       
       using DataType = Data<DataScalar,DeviceType>;
       using ThisAE = FullArgExtractorWritableData;
-      using AAE    = FullArgExtractorConst;
-      using BAE    = FullArgExtractorConst;
+      using AAE    = FullArgExtractor<const_reference_type>;
+      using BAE    = FullArgExtractor<const_reference_type>;
       
       const ordinal_type dim6 = getDataExtent(6);
       const bool includeInnerLoop = true;
