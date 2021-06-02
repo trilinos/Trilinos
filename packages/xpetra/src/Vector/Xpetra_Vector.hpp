@@ -81,11 +81,10 @@ namespace Xpetra {
 
 #ifdef HAVE_XPETRA_KOKKOS_REFACTOR
 
+
     typedef typename Xpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
 
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getHostLocalView;
-    using MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::getDeviceLocalView;
-
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     /// \brief Return an unmanaged non-const view of the local data on a specific device.
     /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
     ///
@@ -106,6 +105,19 @@ namespace Xpetra {
     getLocalView () const {
       return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>();
     }
+#endif
+
+    template<class TargetDeviceType, class AccessType>
+     typename Kokkos::Impl::if_c<
+       std::is_same<
+         typename dual_view_type::t_dev_um::execution_space::memory_space,
+         typename TargetDeviceType::memory_space>::value,
+         typename dual_view_type::t_dev_um,
+         typename dual_view_type::t_host_um>::type
+     getLocalView (AccessType access_type) const {
+       return this->MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node >::template getLocalView<TargetDeviceType>(access_type);
+     }
+
 #endif
 
     //! @name Constructor/Destructor Methods

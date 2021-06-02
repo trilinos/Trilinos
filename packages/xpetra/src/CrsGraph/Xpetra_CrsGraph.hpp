@@ -244,7 +244,14 @@ namespace Xpetra {
     ///
     /// This is only a valid representation of the local graph if the
     /// (global) graph is fill complete.
-    virtual local_graph_type getLocalGraph () const = 0;
+    virtual typename local_graph_type::HostMirror getLocalGraphHost () const = 0;
+    virtual local_graph_type getLocalGraphDevice () const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual typename local_graph_type::HostMirror getLocalGraph () const {
+      return getLocalGraphHost();
+    }
+#endif
+
 #else
 #ifdef __GNUC__
 #warning "Xpetra Kokkos interface for CrsMatrix is enabled (HAVE_XPETRA_KOKKOS_REFACTOR) but Tpetra is disabled. The Kokkos interface needs Tpetra to be enabled, too."
