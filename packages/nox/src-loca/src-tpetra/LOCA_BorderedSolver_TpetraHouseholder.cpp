@@ -56,11 +56,14 @@
 #include "LOCA_Thyra_Group.H"
 #include "NOX_TpetraTypedefs.hpp"
 #include "NOX_Thyra_MultiVector.H"
+#include "Thyra_TpetraVectorSpace.hpp"
 #include "Thyra_TpetraMultiVector.hpp"
 #include "Thyra_TpetraLinearOp.hpp"
+#include "Thyra_DefaultLinearOpSource.hpp"
 #include "LOCA_Tpetra_LowRankUpdateRowMatrix.hpp"
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "LOCA_BorderedSolver_LowerTriangularBlockElimination.H"
 #include "LOCA_BorderedSolver_UpperTriangularBlockElimination.H"
 #include "LOCA_Abstract_TransposeSolveGroup.H"
@@ -70,6 +73,16 @@
 
 // To suppress unreachable return warnings on cuda
 #include "Teuchos_CompilerCodeTweakMacros.hpp"
+
+// For debugging output
+#include <fstream>
+
+// Forward declaration needed for ParameterList validation
+namespace LOCA {
+  namespace MultiContinuation {
+    class ConstraintModelEvaluator;
+  }
+}
 
 // Utility for extracting tpetra vector from nox vector
 using ST = NOX::Scalar;
@@ -155,9 +168,23 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
   isComplex(false),
   omega(0.0)
 {
-  scale_rows = solverParams->get("Scale Augmented Rows", true);
+  Teuchos::ParameterList validParams;
+  validParams.set("Bordered Solver Method", "Householder");
+  validParams.set("Constraint Object",Teuchos::RCP<LOCA::MultiContinuation::ConstraintModelEvaluator>(Teuchos::null));
+  validParams.set("Constraint Parameter Names",Teuchos::RCP<std::vector<std::string>>(Teuchos::null));
+  validParams.set("Scale Augmented Rows", true);
+  Teuchos::setStringToIntegralParameter<int>("Preconditioner Method",
+                                             "Jacobian",
+                                             "Matrix to use for Preconditioning",
+                                             Teuchos::tuple<std::string> ("Jacobian","SWM"),
+                                             &validParams);
+  validParams.set("Include UV In Preconditioner", false);
+  validParams.set("Use P For Preconditioner", false);
+  solverParams->validateParametersAndSetDefaults(validParams);
+
+  scale_rows = solverParams->get<bool>("Scale Augmented Rows");
   std::string prec_method =
-    solverParams->get("Preconditioner Method", "Jacobian");
+    solverParams->get<std::string>("Preconditioner Method");
   if (prec_method == "Jacobian")
     precMethod = JACOBIAN;
   else if (prec_method == "SMW")
@@ -166,10 +193,11 @@ TpetraHouseholder(const Teuchos::RCP<LOCA::GlobalData>& global_data,
     globalData->locaErrorCheck->throwError(
         "LOCA::BorderedSolver::TpetraHouseholder::TpetraHouseholder()",
         "Unknown preconditioner method!  Choices are Jacobian, SMW");
+
   includeUV =
-    solverParams->get("Include UV In Preconditioner", false);
+    solverParams->get<bool>("Include UV In Preconditioner");
   use_P_For_Prec =
-    solverParams->get("Use P For Preconditioner", false);
+    solverParams->get<bool>("Use P For Preconditioner");
 }
 
 LOCA::BorderedSolver::TpetraHouseholder::~TpetraHouseholder()
@@ -725,14 +753,61 @@ LOCA::BorderedSolver::TpetraHouseholder::solve(
     //                                                        false));
   }
 
-  // Overwrite J with J + U*V^T if it's a CRS matrix and we aren't
-  // using P for the preconditioner
-  Teuchos::RCP<NOX::TCrsMatrix> jac_crs;
+  // Allocate a separate matrix for the preconditioner. Don't want to
+  // corrupt J with U*V^T if not using P for Prec (we can't for
+  // tpetra).  Copy J values and add in U*V^T if it's a CRS matrix
+  // and we aren't using P for the preconditioner
   if (includeUV && !use_P_For_Prec) {
-    jac_crs = Teuchos::rcp_dynamic_cast<NOX::TCrsMatrix>(tpetraOp);
-    if (jac_crs != Teuchos::null) {
-      updateJacobianForPreconditioner(*U, *V, *jac_crs);
+    auto jac_crs = Teuchos::rcp_dynamic_cast<NOX::TCrsMatrix>(tpetraOp,true);
+    if (tpetraPrecMatrix.is_null()) {
+      tpetraPrecMatrix = Teuchos::rcp(new NOX::TCrsMatrix(*jac_crs,Teuchos::Copy));
+      Teuchos::RCP<::Thyra::VectorSpaceBase<double>> domain = ::Thyra::tpetraVectorSpace<double>(tpetraPrecMatrix->getDomainMap());
+      Teuchos::RCP<::Thyra::VectorSpaceBase<double>> range = ::Thyra::tpetraVectorSpace<double>(tpetraPrecMatrix->getRangeMap());
+      auto prec_thyra_op = Teuchos::rcp(new ::Thyra::TpetraLinearOp<ST,LO,GO,NT>);
+      prec_thyra_op->initialize(range,domain,tpetraPrecMatrix);
+      Teuchos::RCP<::Thyra::LinearOpBase<double>> tmp_for_thyra_ambiguity = prec_thyra_op;
+      prec_losb = Teuchos::rcp(new ::Thyra::DefaultLinearOpSource<double>(tmp_for_thyra_ambiguity));
     }
+
+    // Copy J values into preconditioner matrix
+    //*tpetraPrecMatrix = *jac_crs;
+    {
+      tpetraPrecMatrix->resumeFill();
+      auto jac_view = jac_crs->getLocalMatrix().values;
+      auto prec_view = tpetraPrecMatrix->getLocalMatrix().values;
+      Kokkos::deep_copy(prec_view,jac_view);
+      tpetraPrecMatrix->fillComplete();
+    }
+
+    bool print_debug = false;
+    if (print_debug) {
+      std::fstream fsj("jac_matrix_before.out",std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream tfsj(Teuchos::rcpFromRef(fsj));
+      jac_crs->describe(tfsj,Teuchos::VERB_EXTREME);
+      std::fstream fsp("prec_matrix_before.out",std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream tfsp(Teuchos::rcpFromRef(fsp));
+      tpetraPrecMatrix->describe(tfsp,Teuchos::VERB_EXTREME);
+      std::fstream fsu("u_vector.out",std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream tfsu(Teuchos::rcpFromRef(fsu));
+      tpetra_U->describe(tfsu,Teuchos::VERB_EXTREME);
+      std::fstream fsv("v_vector.out",std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream tfsv(Teuchos::rcpFromRef(fsv));
+      tpetra_V->describe(tfsv,Teuchos::VERB_EXTREME);
+    }
+
+    // Update locally owned non-zero values for U*V^T
+    updateCrsMatrixForPreconditioner(*U, *V, *tpetraPrecMatrix);
+
+    if (print_debug) {
+      std::fstream fsj("jac_matrix_after.out",std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream tfsj(Teuchos::rcpFromRef(fsj));
+      jac_crs->describe(tfsj,Teuchos::VERB_EXTREME);
+      std::fstream fsp("prec_matrix_after.out",std::fstream::out|std::fstream::trunc);
+      Teuchos::FancyOStream tfsp(Teuchos::rcpFromRef(fsp));
+      tpetraPrecMatrix->describe(tfsp,Teuchos::VERB_EXTREME);
+    }
+
+    grp->setPreconditionerMatrix(prec_losb);
   }
 
   // Set operator in solver to compute preconditioner
@@ -1032,13 +1107,58 @@ LOCA::BorderedSolver::TpetraHouseholder::computeUV(
 }
 
 void
-LOCA::BorderedSolver::TpetraHouseholder::updateJacobianForPreconditioner(
-              const NOX::Abstract::MultiVector& UU,
-              const NOX::Abstract::MultiVector& VV,
-              NOX::TCrsMatrix& jac) const
+LOCA::BorderedSolver::TpetraHouseholder::
+updateCrsMatrixForPreconditioner(const NOX::Abstract::MultiVector& UU,
+                                 const NOX::Abstract::MultiVector& VV,
+                                 NOX::TCrsMatrix& matrix) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
-                             "ERROR: LOCA::BorderedSolver::TpetraHouseholder::updateJacobianForPreconditioner - NOT IMPLEMENTED YET!");
+  matrix.resumeFill();
+
+  auto& UU_tpetra = NOX::Tpetra::getTpetraMultiVector(UU);
+  auto& VV_tpetra = NOX::Tpetra::getTpetraMultiVector(VV);
+  const_cast<NOX::TMultiVector&>(UU_tpetra).sync_device();
+  const_cast<NOX::TMultiVector&>(VV_tpetra).sync_device();
+  const auto uu = UU_tpetra.getLocalViewDevice();
+  const auto vv = VV_tpetra.getLocalViewDevice();
+
+  const auto numRows = matrix.getNodeNumRows();
+  const auto rowMap = matrix.getRowMap()->getLocalMap();
+  const auto colMap = matrix.getColMap()->getLocalMap();
+  const auto uMap = UU_tpetra.getMap()->getLocalMap();
+  const auto vMap = VV_tpetra.getMap()->getLocalMap();
+  auto J_view = matrix.getLocalMatrix();
+  auto numConstraintsLocal = numConstraints; // for cuda lambda capture
+
+  TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getNodeNumElements()) == uu.extent(0));
+  TEUCHOS_ASSERT(static_cast<size_t>(matrix.getRowMap()->getNodeNumElements()) == vv.extent(0));
+  TEUCHOS_ASSERT(numConstraintsLocal == static_cast<int>(uu.extent(1)));
+  TEUCHOS_ASSERT(numConstraintsLocal == static_cast<int>(vv.extent(1)));
+
+  Kokkos::parallel_for("Add UV^T to M",Kokkos::RangePolicy<NOX::DeviceSpace>(0,numRows),KOKKOS_LAMBDA (const int row) {
+    const GO row_gid = rowMap.getGlobalElement(row);
+    const LO u_row_lid = uMap.getLocalElement(row_gid);
+    auto rowView = J_view.row(row);
+
+    const auto numEntries = rowView.length;
+    for (int col=0; col<numEntries; ++col) {
+
+      // Only included contributions from U*V^T on this proc
+      const GO col_gid = colMap.getGlobalElement(rowView.colidx(col));
+      int v_row_lid = vMap.getLocalElement(col_gid);
+      if (v_row_lid != ::Tpetra::Details::OrdinalTraits<LO>::invalid()) {
+
+        // val = sum_{k=0}^m U(i,k)*V(j,k)
+        ST val = 0.0;
+        for (int k=0; k<numConstraintsLocal; ++k)
+          val += uu(u_row_lid,k) * vv(v_row_lid,k);
+
+        // replace J(row,col) with J(row,col) + U*V^T
+        rowView.value(col) += val;
+      }
+    }
+  });
+  Kokkos::fence();
+  matrix.fillComplete();
 
   /*
   // Get number of rows on this processor
