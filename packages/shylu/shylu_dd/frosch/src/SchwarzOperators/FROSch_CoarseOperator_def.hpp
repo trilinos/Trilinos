@@ -106,6 +106,13 @@ namespace FROSch {
             this->ParameterList_->set("RCP(Phi)", Phi_);
         }
 
+        // Store current Coarse Matrix in ParameterList_
+        if ( this->ParameterList_->get("Store Coarse Matrix",false) ) {
+            FROSCH_NOTIFICATION("FROSch::CoarseOperator",this->Verbose_,"Storing current Coarse Matrix in Parameterlist.");
+            this->ParameterList_->set("RCP(Coarse Matrix)", CoarseMatrix_);
+            this->ParameterList_->set("bool(CoarseSolveComm)", OnCoarseSolveComm_);
+        }
+
         return 0;
     }
 
@@ -875,7 +882,7 @@ namespace FROSch {
             }
 
             CoarseSolveMap_ = Xpetra::MapFactory<LO,GO,NO>::Build(CoarseMap_->lib(),-1,GatheringMaps_[gatheringSteps-1]->getNodeElementList(),0,CoarseSolveComm_);
-            
+
         } else if (!DistributionList_->get("Type","linear").compare("Zoltan2")) {
 #ifdef HAVE_SHYLU_DDFROSCH_ZOLTAN2
             GatheringMaps_.resize(1);

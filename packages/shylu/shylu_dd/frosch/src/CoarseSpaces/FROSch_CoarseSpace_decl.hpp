@@ -45,6 +45,8 @@
 //#include <Xpetra_Operator_fwd.hpp>
 #include <Xpetra_MapFactory_fwd.hpp>
 
+#include<KokkosKernels_Utils.hpp>
+
 #include <FROSch_Tools_def.hpp>
 
 

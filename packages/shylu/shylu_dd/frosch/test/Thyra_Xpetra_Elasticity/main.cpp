@@ -207,22 +207,22 @@ int main(int argc, char *argv[])
         RCP<Map<LO,GO,NO> > RepeatedMap;
         RCP<const Map<LO,GO,NO> > FullRepeatedMapNode;
         if(useGeoMap){
-        if(Dimension == 2){
-          {
-            FullRepeatedMap = BuildRepeatedMapGaleriStruct2D<SC,LO,GO,NO>(K,M,Dimension);
-            RepeatedMap = FullRepeatedMap;
-          }
-        }else if(Dimension == 3){
-          {
-            FullRepeatedMapNode = BuildRepeatedMapGaleriStruct3D<SC,LO,GO,NO>(K->getMap(),M,Dimension);
-            FullRepeatedMap = BuildMapFromNodeMap(FullRepeatedMapNode,Dimension,NodeWise);
-            //FullRepeatedMapNode->describe(*fancy,Teuchos::VERB_EXTREME);
-            RepeatedMap = FullRepeatedMap;
-          }
+            if(Dimension == 2){
+                {
+                    FullRepeatedMap = BuildRepeatedMapGaleriStruct2D<SC,LO,GO,NO>(K,M,Dimension);
+                    RepeatedMap = FullRepeatedMap;
+                }
+            }else if(Dimension == 3){
+                {
+                    FullRepeatedMapNode = BuildRepeatedMapGaleriStruct3D<SC,LO,GO,NO>(K->getMap(),M,Dimension);
+                    FullRepeatedMap = BuildMapFromNodeMap(FullRepeatedMapNode,Dimension,NodeWise);
+                    //FullRepeatedMapNode->describe(*fancy,Teuchos::VERB_EXTREME);
+                    RepeatedMap = FullRepeatedMap;
+                }
+            }
+        } else {
+            RepeatedMap = BuildRepeatedMapNonConst<LO,GO,NO>(K->getCrsGraph());
         }
-       }else{
-        RepeatedMap = BuildRepeatedMapNonConst<LO,GO,NO>(K->getCrsGraph());
-       }
 
 
         RCP<MultiVector<SC,LO,GO,NO> > xSolution = MultiVectorFactory<SC,LO,GO,NO>::Build(UniqueMap,1);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
         RCP<const MultiVectorBase<SC> >thyraB = ThyraUtils<SC,LO,GO,NO>::toThyraMultiVector(xRightHandSide);
 
         //-----------Set Coordinates and RepMap in ParameterList--------------------------
-        RCP<ParameterList> plList =  sublist(parameterList,"Preconditioner Types");
+        RCP<ParameterList> plList = sublist(parameterList,"Preconditioner Types");
         sublist(plList,"FROSch")->set("Dimension",Dimension);
         sublist(plList,"FROSch")->set("Overlap",Overlap);
         sublist(plList,"FROSch")->set("DofOrdering","NodeWise");
