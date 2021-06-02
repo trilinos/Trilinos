@@ -498,6 +498,7 @@ namespace Intrepid2 {
       {
         INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true,std::invalid_argument,"calling SingleArgExtractor with out-of-bounds argument");
         Kokkos::abort("Intrepid2::Data: calling SingleArgExtractor with out-of-bounds argument\n");
+        return view(0); // line added to avoid missing return statement warning under nvcc
       }
     };
     
