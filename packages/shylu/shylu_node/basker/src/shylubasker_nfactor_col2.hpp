@@ -171,6 +171,11 @@ namespace BaskerNS
     Int b_size = pow(2, 1);
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 0, LU(U_col)(U_row).scol, 0);
+    for(Int tid = 0; tid < num_threads; tid++) {
+      if (thread_array(tid).error_type != BASKER_SUCCESS) {
+        info = BASKER_ERROR;
+      }
+    }
     #endif
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n done with 1st UPPER, kid: %d \n\n", kid); fflush(stdout);
@@ -235,6 +240,11 @@ namespace BaskerNS
     //        kid,  my_leader, b_size, lvl);
     t_basker_barrier(thread, kid, my_leader,
                      b_size, 3, LU(U_col)(U_row).scol, 0);
+    for(Int ti = 0; ti < num_threads; ti++) {
+      if (thread_array(kid).error_type != BASKER_SUCCESS) {
+        info = BASKER_ERROR;
+      }
+    }
     #endif
     #ifdef BASKER_DEBUG_NFACTOR_COL2
     printf("\n done with UPPER, kid: %d \n\n", kid);
@@ -255,18 +265,18 @@ namespace BaskerNS
       Kokkos::Impl::Timer timer_faccol;
       Kokkos::Impl::Timer timer_facoff;
       #endif
-      for(Int k = 0; k < ncol; ++k)
+      for(Int k = 0; k < ncol && info == BASKER_SUCCESS; ++k)
       {
         // ------------------------------------------------------- //
         // > accumulate the last update into k-th column of LU(U_col)(U_row)
         #ifdef BASKER_TIMER
         timer_extend.reset();
         #endif
-        #ifdef BASKER_DEBUG_NFACTOR_COL2
-        printf( " kid=%d: calling t_add_extend(k=%d/%d)\n",kid,k,ncol ); fflush(stdout);
-        #endif
         if (info == BASKER_SUCCESS)
         {
+          #ifdef BASKER_DEBUG_NFACTOR_COL2
+          printf( " kid=%d: calling t_add_extend(k=%d/%d)\n",kid,k,ncol ); fflush(stdout);
+          #endif
           t_add_extend(thread, kid,lvl,lvl-1, k,
                        LU(U_col)(U_row).scol,
                        BASKER_TRUE);
@@ -295,10 +305,10 @@ namespace BaskerNS
                                       lvl, lvl-1, 
                                       k, pivot);
           }
-          #ifdef BASKER_DEBUG_NFACTOR_COL2
-          printf(" > done calling lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
-          #endif
         }
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf(" > done calling lower factor, kid: %d k: %d info=%d\n", kid, k, info); fflush(stdout);
+        #endif
         #ifdef BASKER_DEBUG_NFACTOR_COL2
         else {
           printf(" + skipping lower factor, kid: %d k: %d \n", kid, k); fflush(stdout);
@@ -310,10 +320,21 @@ namespace BaskerNS
         #else
         my_leader = find_leader(kid, lvl-1);
         b_size    = pow(2, lvl);
-        //printf("barrier test, leader 4: %d b_size: %d lvl: %d \n",
-        //       my_leader, b_size, lvl);
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf("barrier test-4: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
+               kid, k, my_leader, b_size, lvl); fflush(stdout);
+        #endif
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 4, k, lvl-1);
+        for(Int tid = 0; tid < num_threads; tid++) {
+          if (thread_array(tid).error_type != BASKER_SUCCESS) {
+            info = BASKER_ERROR;
+          }
+        }
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf("barrier test-4 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d, info = %d \n",
+               kid, k, my_leader, b_size, lvl, info); fflush(stdout);
+        #endif
         #endif
         #ifdef BASKER_TIMER
         time_faccol += timer_faccol.seconds();
@@ -341,10 +362,16 @@ namespace BaskerNS
         #else
         my_leader = find_leader(kid, lvl-1);
         b_size    = pow(2, lvl);
-        //printf("barrier test 5, leader: %d b_size: %d lvl: %d \n",
-        //       my_leader, b_size, lvl);
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf("barrier test-5: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
+               kid, k, my_leader, b_size, lvl); fflush(stdout);
+        #endif
         t_basker_barrier(thread, kid, my_leader,
                          b_size, 5, k, lvl-1);
+        #ifdef BASKER_DEBUG_NFACTOR_COL2
+        printf("barrier test-5 done: kid = %d, k = %d, leader = %d, b_size = %d, lvl = %d \n",
+               kid, k, my_leader, b_size, lvl); fflush(stdout);
+        #endif
         #endif
         #ifdef BASKER_TIMER
         time_facoff += timer_facoff.seconds();
