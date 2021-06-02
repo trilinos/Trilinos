@@ -201,7 +201,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Factory, BlockCrs, Scalar, LocalOrdinal
     params.set("relaxation: container", "BlockTriDi");
     params.set("relaxation: type", "MT Split Jacobi");
     params.set("partitioner: type", "linear");
-    params.set("partitioner: local parts", num_rows_per_proc);
+    params.set("partitioner: PDE equations", blockSize);
 
     prec_relax = factory.create<row_matrix_type> ("BLOCKRELAXATION", rowmatrix);
     TEST_EQUALITY(prec_relax != Teuchos::null, true);
