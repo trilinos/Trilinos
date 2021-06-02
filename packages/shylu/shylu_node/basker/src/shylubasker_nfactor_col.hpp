@@ -1055,6 +1055,8 @@ namespace BaskerNS
     const Int U_row = LU_size(U_col)-1;
     const Int X_col = S(0)(kid);
     //Int col_idx_offset = 0; //can we get rid of now?
+    const Mag eps = STS::eps ();
+    const Mag normA = BTF_A.gnorm;
 
     #ifdef BASKER_DEBUG_NFACTOR_COL
     printf("LOWER_COL_FACTOR kid: %d \n", kid);
@@ -1295,12 +1297,17 @@ namespace BaskerNS
         cout << "Error: Col Matrix is singular, col k = " << k << ", lvl = " << l <<endl;
         cout << "MaxIndex: " << maxindex << " pivot " << pivot << endl;
       }
-      thread_array(kid).error_type   = BASKER_ERROR_SINGULAR;
-      thread_array(kid).error_blk    = L_col;
-      thread_array(kid).error_subblk = -1;
-      thread_array(kid).error_info   = k;
-      return BASKER_ERROR;
-    }          
+      if (Options.replace_tiny_pivot && normA > abs(zero) && maxindex != BASKER_MAX_IDX) {
+        pivot = normA * eps;
+        X(maxindex) = pivot;
+      } else {
+        thread_array(kid).error_type   = BASKER_ERROR_SINGULAR;
+        thread_array(kid).error_blk    = L_col;
+        thread_array(kid).error_subblk = -1;
+        thread_array(kid).error_info   = k;
+        return BASKER_ERROR;
+      }
+    }
   
     //gperm[maxindex] = k;
     gperm(maxindex+brow_g) = k+brow_g; 
@@ -2879,7 +2886,7 @@ namespace BaskerNS
     //__itt_pause();
     #endif
 
-    //printf( " t_basker_barrier(size = %d, thread.team_size = %d\n",size,thread.team_size() );
+    //printf( " t_basker_barrier(size = %d, thread.team_size = %d: my_id = %d, leader_id = %d)\n",size,thread.team_size(), my_kid,leader_kid ); fflush(stdout);
     //if(size < 0)
     if(size <= thread.team_size())
     {
