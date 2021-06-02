@@ -9,13 +9,6 @@
   <Parameter name="multigrid algorithm" type="string" value="sa"/>
   <Parameter name="sa: damping factor"  type="double" value="1.33333"/>
 
-   <!-- THE BIG DATA DUMP -->
-    <ParameterList    name="export data">
-       <Parameter  name="P"                             type="string"   value="{1234}"/>
-       <Parameter  name="A"                             type="string"   value="{12345}"/>
-       <Parameter  name="Coordinates"                   type="string"   value="{30}"/>
-    </ParameterList>
-
    <!-- 
   <Parameter name="coarse: type" type="string" value="RELAXATION"/>
   <ParameterList name="coarse: params">
@@ -95,10 +88,6 @@
   <Parameter name="aggregation: min agg size" type="int" value="2"/>
   <Parameter name="aggregation: max agg size" type="int" value="299"/>
   <Parameter name="aggregation: drop tol" type="double" value="0.000000000001"/>
-    <ParameterList    name="export data">
-       <Parameter  name="P"                             type="string"   value="{1234}"/>
-       <Parameter  name="A"                             type="string"   value="{1234}"/>
-    </ParameterList>
     <Parameter        name="smoother: type"                       type="string"   value="RELAXATION"/>
     <ParameterList    name="smoother: params">
         <Parameter      name="relaxation: type"                    type="string"      value="Jacobi"/>
