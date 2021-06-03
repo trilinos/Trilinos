@@ -405,7 +405,7 @@ namespace Intrepid2 {
       operator()(const IntArgs&... args) const
       {
         using int_type = std::tuple_element_t<0, std::tuple<IntArgs...>>;
-        for (int_type iFinal=0; iFinal<innerLoopSize_; iFinal++)
+        for (int_type iFinal=0; iFinal<static_cast<int_type>(innerLoopSize_); iFinal++)
         {
           auto      & result = ArgExtractorThis::get( this_underlying_, args..., iFinal );
           const auto & A_val =    ArgExtractorA::get(    A_underlying_, args..., iFinal );
@@ -915,7 +915,7 @@ namespace Intrepid2 {
             {
               const int_type &j = args[d+1];
               
-              if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
+              if ((i > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)) || (j > static_cast<int_type>(blockPlusDiagonalLastNonDiagonal_)))
               {
                 if (i != j)
                 {
