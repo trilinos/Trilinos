@@ -907,27 +907,34 @@ namespace Intrepid2 {
             const int numNondiagonalEntries = blockPlusDiagonalNumNondiagonalEntries(blockPlusDiagonalLastNonDiagonal_);
             
             const int_type &i = args[d];
-            const int_type &j = args[d+1];
-            
-            if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
+            if (d+1 >= numArgs)
             {
-              if (i != j)
-              {
-                // off diagonal: zero
-                return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
-              }
-              else
-              {
-                refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
-              }
+              INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(true, std::invalid_argument, "BLOCK_PLUS_DIAGONAL must be present for two dimensions; here, encountered only one");
             }
             else
             {
-              refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
+              const int_type &j = args[d+1];
+              
+              if ((i > blockPlusDiagonalLastNonDiagonal_) || (j > blockPlusDiagonalLastNonDiagonal_))
+              {
+                if (i != j)
+                {
+                  // off diagonal: zero
+                  return zeroView_(0); // NOTE: this branches in an argument-dependent way; this is not great for CUDA performance.  When using BLOCK_PLUS_DIAGONAL, should generally avoid calls to this getEntry() method.  (Use methods that directly take advantage of the data packing instead.)
+                }
+                else
+                {
+                  refEntry[d] = blockPlusDiagonalDiagonalEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i);
+                }
+              }
+              else
+              {
+                refEntry[d] = blockPlusDiagonalBlockEntryIndex(blockPlusDiagonalLastNonDiagonal_, numNondiagonalEntries, i, j);
+              }
+
+              // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
+              refEntry[d+1] = 0;
             }
-            
-            // skip next d (this is required also to be BLOCK_PLUS_DIAGONAL, and we've consumed its arg as j above)
-            refEntry[d+1] = 0;
             d++;
           }
         }
@@ -1034,7 +1041,6 @@ namespace Intrepid2 {
           const DimensionInfo & dimInfo = dimInfoVector[d];
           extents_[d] = dimInfo.nominalExtent;
           variationType_[d] = dimInfo.variationType;
-          const bool isConstant = (variationType_[d] == CONSTANT);
           const bool isBlockPlusDiagonal = (variationType_[d] == BLOCK_PLUS_DIAGONAL);
           const bool isSecondBlockPlusDiagonal = isBlockPlusDiagonal && blockPlusDiagonalEncountered;
           if (isBlockPlusDiagonal)
