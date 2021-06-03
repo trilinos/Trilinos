@@ -80,6 +80,7 @@ private:
   Real gtol_;
   Real ctol_;
   Real ltol_;
+  bool useRelTol_;
   // Penalty parameter information
   Real penaltyParam_;
   Real maxPen_;
@@ -110,6 +111,7 @@ public:
     print_     = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Print Subproblem Solve History",false);
     gtolmin_   = parlist.sublist("Status Test").get("Gradient Tolerance", 1e-8);
     ctolmin_   = parlist.sublist("Status Test").get("Constraint Tolerance", 1e-8);
+    useRelTol_ = parlist.sublist("Status Test").get("Use Relative Tolerances", false);
     ltolmin_   = parlist.sublist("SOL").sublist("Primal Dual Risk").get("Dual Tolerance",1e-6);
     gtolmin_   = (gtolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : gtolmin_);
     ctolmin_   = (ctolmin_ <= static_cast<Real>(0) ?     std::sqrt(ROL_EPSILON<Real>()) : ctolmin_);
@@ -228,6 +230,41 @@ public:
     int spiter(0);
     iter_ = 0; converged_ = true; lnorm_ = ROL_INF<Real>();
     nfval_ = 0; ncval_ = 0; ngrad_ = 0;
+    // Compute initial gnorm and cnorm if using relative tolerances
+    Real gnorm(1), cnorm(1);
+    if (useRelTol_) {
+      parlist_.sublist("Status Test").set("Use Relative Tolerances", false);
+      Real tol(std::sqrt(ROL_EPSILON<Real>()));
+      // Compute objective function gradient
+      Ptr<Vector<Real>> x = pd_problem_->getPrimalOptimizationVector()->clone();
+      Ptr<Vector<Real>> g = pd_problem_->getDualOptimizationVector()->clone();
+      x->set(*pd_problem_->getPrimalOptimizationVector());
+      pd_problem_->getObjective()->gradient(*g,*x,tol);
+      // Compute constraint value and Lagrangian gradient
+      if (pd_problem_->getConstraint() != nullPtr) {
+        Ptr<Vector<Real>> c = pd_problem_->getResidualVector()->clone();
+        pd_problem_->getConstraint()->value(*c,*x,tol);
+        Ptr<Vector<Real>> ajlam = g->clone();
+        pd_problem_->getConstraint()->applyAdjointJacobian(*ajlam,
+          *pd_problem_->getMultiplierVector(),*x,tol);
+        g->plus(*ajlam);
+        cnorm     = c->norm();
+        ctol_    *= cnorm;
+        ctolmin_ *= cnorm;
+      }
+      // Compute criticality measure
+      if (pd_problem_->getPolyhedralProjection() == nullPtr) {
+        gnorm = g->norm();
+      }
+      else {
+        x->axpy(-one,g->dual());
+        pd_problem_->getPolyhedralProjection()->project(*x);
+        x->axpy(-one,*pd_problem_->getPrimalOptimizationVector());
+        gnorm = x->norm();
+      }
+      gtol_    *= gnorm;
+      gtolmin_ *= gnorm;
+    }
     // Output
     printHeader(outStream);
     Ptr<Solver<Real>> solver;
