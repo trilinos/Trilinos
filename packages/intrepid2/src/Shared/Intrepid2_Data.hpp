@@ -1706,7 +1706,7 @@ namespace Intrepid2 {
     //! Returns a (read-only) value corresponding to the specified logical data location.
     template<class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
-    return_type getEntry(const IntArgs... intArgs) const
+    return_type getEntry(const IntArgs&... intArgs) const
     {
       return getWritableEntry(intArgs...);
     }
@@ -1724,7 +1724,14 @@ namespace Intrepid2 {
     //! Returns a value corresponding to the specified logical data location.
     template <class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
+#ifndef __INTEL_COMPILER
+    // icc has a bug that prevents compilation with this enable_if_t
+    // (possibly the same as https://community.intel.com/t5/Intel-C-Compiler/Intel-Compiler-bug-while-deducing-template-arguments-inside/m-p/1164358)
+    // so with icc we'll just skip the argument type/count check
     enable_if_t<valid_args<IntArgs...>::value && (sizeof...(IntArgs) <= 7),return_type>
+#else
+    return_type
+#endif
     operator()(const IntArgs&... intArgs) const {
       return getEntry(intArgs...);
     }
