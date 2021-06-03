@@ -682,8 +682,11 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   create_banded_block_matrix(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& graph, const int blockSize, const size_t rbandwidth)
 {
-  Teuchos::RCP<Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > bcrsmatrix
-    = Teuchos::rcp(new Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*graph, blockSize));
+  using block_crs_matrix_type = Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
+  using h_inds = typename block_crs_matrix_type::local_inds_host_view_type;
+  using h_vals = typename block_crs_matrix_type::nonconst_values_host_view_type;
+
+  Teuchos::RCP<block_crs_matrix_type> bcrsmatrix = Teuchos::rcp(new block_crs_matrix_type(*graph, blockSize));
   const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& meshRowMap = *bcrsmatrix->getRowMap();
 
   const int blockMatSize = blockSize*blockSize;
@@ -699,11 +702,10 @@ Teuchos::RCP<const Tpetra::BlockCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   for(LocalOrdinal l_row = 0; (size_t) l_row < meshRowMap.getNodeNumElements(); ++l_row)
   {
-
-    const LocalOrdinal * inds;
-    Scalar * vals;
-    LocalOrdinal numInd;
-    bcrsmatrix->getLocalRowView(l_row, inds, vals, numInd);
+    h_inds inds;
+    h_vals vals;
+    bcrsmatrix->getLocalRowViewNonConst(l_row, inds, vals);
+    LocalOrdinal numInd = (LocalOrdinal)inds.size();
     for (LocalOrdinal j = 0; j < numInd; ++j)
     {
       const LocalOrdinal lcl_col = inds[j];

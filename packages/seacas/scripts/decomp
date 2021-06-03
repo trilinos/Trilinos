@@ -17,7 +17,7 @@ function usage {
 function usage_new {
 cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
-               [--root <root directory>] [--subdir <sub directory]
+               [--root <root directory>] [--subdir <sub directory>] [--spread_suffix <suffix>]
                [--multikl] [--spectral] [--inertial] [--linear]
                [--rcb] [--rcb_ignore_z] [--rib] [--hsfc] [--random] [--scattered]
                [...others...] meshfile.ext
@@ -56,6 +56,7 @@ Other options:
 --processors #p    Specify number of processors (-p, -j)
 --root root_dir    Root directory to begin the path to on the separate disks (-R)
 --subdir sub_dir   Continuation of the path on the separate disks to the files (-S)
+--spread_suffix x  Suffix for parallel files (default: meshfile suffix) (-X)
 --64               Force creation of 64-bit integer decomposed files (-6)
    help-email: sierra-help@sandia.gov
 
@@ -66,7 +67,7 @@ exit 1
 function usage_old {
 cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] -p <processor count> [-n <nemslice options>]
-               [-R <root directory>] [-S <sub directory]
+               [-R <root directory>] [-S <sub directory>] [-X <suffix>]
                [-l multikl] [-l spectral] [-l inertial] [-l linear]
                [-l rcb] [-l rcb_ignore_z] [-l rib] [-l hsfc] [-l random] [-l scattered]
                [...others...] meshfile.ext
@@ -102,6 +103,7 @@ Other options:
 -p #p       Specify number of processors (or -j)
 -R root_dir Root directory to begin the path to on the separate disks
 -S sub_dir  Continuation of the path on the separate disks to the files
+-X suffix   Suffix for parallel files (default: meshfile suffix)
 -V          Output mesh showing processor distribution of elements
 -6          Force creation of 64-bit integer decomposed files
 
@@ -271,6 +273,7 @@ decomp_method="-l inertial"
 nem_slice_flag="-c"
 rootdir="`pwd`/"
 subdir="."
+suffix_spread=''
 spheres="-S"
 do_viz=""
 curdir=`pwd`
@@ -298,10 +301,10 @@ fi
 ########################################################################
 # decomp options:
 if [ $OLDGETOPT -eq 1 ] ; then
-   TEMP=`getopt Hh6ENn:i:o:p:j:r:R:S:sl:vVd: $*`
+   TEMP=`getopt Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: $*`
 else
-   TEMP=`getopt -o Hh6ENn:i:o:p:j:r:R:S:sl:vVd: -a \
-       --long input:,help,nem_slice_flag,64,processors:,rootdir:,subdir:,spheres_linear,viz_mesh,verbose,debug:,nodal,elemental \
+   TEMP=`getopt -o Hh6ENn:i:o:p:j:r:R:S:X:sl:vVd: -a \
+       --long input:,help,nem_slice_flag,64,processors:,rootdir:,subdir:,spread_suffix:,spheres_linear,viz_mesh,verbose,debug:,nodal,elemental \
        --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
        -n 'decomp' -- "$@"`
 fi
@@ -336,6 +339,8 @@ while true ; do
         rootdir=$2 ; shift 2 ;;
     (-S|--subdir)
         subdir=$2 ; shift 2 ;;
+    (-X|--spread_suffix)
+        suffix_spread=$2 ; shift 2 ;;
     (-s|--spheres_linear)
         spheres="" ; shift ;;
     (-6|--64)
@@ -412,7 +417,10 @@ else
     then
         file=$1
         suffix_mesh=${file##*.}
-        suffix_spread=$suffix_mesh
+        if test -z "$suffix_spread"
+        then
+            suffix_spread=$suffix_mesh
+        fi
         basename=${file%.*}
     else
     echo ${txtred}

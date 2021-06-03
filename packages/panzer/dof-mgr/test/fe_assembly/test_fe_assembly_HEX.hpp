@@ -333,11 +333,11 @@ int feAssemblyHex(int argc, char *argv[]) {
       auto refVerticesHost = Kokkos::create_mirror_view(refVertices);   
       Kokkos::deep_copy(refVerticesHost, refVertices);
    
-      auto elemTriplet = connManager->getMyElementsTriplet();
+      auto elemTriplet = connManager->getMyBrickElementsTriplet();
       double h[3] = {hx, hy, hz};
 
       for(int i=0; i<numOwnedElems; ++i) {
-        elemTriplet =  connManager->computeLocalElementGlobalTriplet(i,connManager->getMyElementsTriplet(),connManager->getMyOffsetTriplet());
+        elemTriplet =  connManager->computeLocalBrickElementGlobalTriplet(i,connManager->getMyBrickElementsTriplet(),connManager->getMyBrickOffsetTriplet());
         double offset[3] = {leftX + elemTriplet.x*hx+hx/2, leftY +elemTriplet.y*hy+hy/2, leftX +elemTriplet.z*hz+hz/2};
         for(int j=0; j<numNodesPerElem; ++j) {
           for(int k=0; k<dim; ++k)

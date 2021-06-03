@@ -98,7 +98,8 @@ void CommBuffer::set_buffer_ptrs(unsigned char* begin, unsigned char* ptr, unsig
   m_end = end;
 }
 
-void CommBuffer::deallocate( const unsigned number , CommBuffer * buffers )
+#ifndef STK_HIDE_DEPRECATED_CODE // Delete after June 2021
+STK_DEPRECATED void CommBuffer::deallocate( const unsigned number , CommBuffer * buffers )
 {
   if ( nullptr != buffers ) {
     for ( unsigned i = 0 ; i < number ; ++i ) {
@@ -108,7 +109,7 @@ void CommBuffer::deallocate( const unsigned number , CommBuffer * buffers )
   }
 }
 
-CommBuffer * CommBuffer::allocate(
+STK_DEPRECATED CommBuffer * CommBuffer::allocate(
   const unsigned number , const unsigned * const size )
 {
   const size_t n_base = align_quad( number * sizeof(CommBuffer) );
@@ -150,6 +151,7 @@ CommBuffer * CommBuffer::allocate(
 
   return b_base ;
 }
+#endif
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

@@ -95,5 +95,6 @@ class TestPhactoriSampledCellInfo(unittest.TestCase):
     self.assertEqual(minCellmaxCellPair[1].ToStrTerseOneLineList(), maxCellGoldString)
 
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
-

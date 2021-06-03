@@ -129,7 +129,7 @@ namespace Details
       omega = omega_;
       auto AlocalGraph = A.getCrsGraph().getLocalGraphDevice();
       //A.sync_host();  //note: this only syncs values, not graph
-      Avalues = A.getValuesHost();
+      Avalues = A.getValuesHostNonConst();
       Arowmap = Kokkos::create_mirror_view(AlocalGraph.row_map);
       Aentries = Kokkos::create_mirror_view(AlocalGraph.entries);
       Kokkos::deep_copy(Arowmap, AlocalGraph.row_map);
@@ -240,7 +240,7 @@ namespace Details
           row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
+          auto bRow = b.getLocalBlockHost (row, v, Tpetra::Access::ReadOnly);
           for(LO k = 0; k < blockSize; k++)
           {
             accum(k, v) = KAT::zero();
@@ -254,7 +254,7 @@ namespace Details
           IST* blk = &Avalues(j * bs2);
           for(LO v = 0; v < numVecs; v++)
           {
-            auto xCol = x.getLocalBlock (col, v, Tpetra::Access::ReadOnly);
+            auto xCol = x.getLocalBlockHost (col, v, Tpetra::Access::ReadOnly);
             for(LO br = 0; br < blockSize; br++)
             {
               for(LO bc = 0; bc < blockSize; bc++)
@@ -270,7 +270,7 @@ namespace Details
         Kokkos::deep_copy(dinv_accum, KAT::zero());
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
+          auto bRow = b.getLocalBlockHost (row, v, Tpetra::Access::ReadOnly);
           for(LO br = 0; br < blockSize; br++)
           {
             accum(br, v) = bRow(br) - accum(br, v);
@@ -289,7 +289,7 @@ namespace Details
         //Update x
         for(LO v = 0; v < numVecs; v++)
         {
-          auto xRow = x.getLocalBlock (row, v, Tpetra::Access::ReadWrite);
+          auto xRow = x.getLocalBlockHost (row, v, Tpetra::Access::ReadWrite);
           for(LO k = 0; k < blockSize; k++)
           {
             xRow(k) += omega * dinv_accum(k, v);

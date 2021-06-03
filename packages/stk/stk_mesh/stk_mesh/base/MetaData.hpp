@@ -323,8 +323,8 @@ public:
   const std::vector<std::string> & entity_rank_names() const
     { return m_entity_rank_names ; }
 
-  std::vector<std::string>::size_type entity_rank_count() const
-    { return m_entity_rank_names.size(); }
+  EntityRank entity_rank_count() const
+    { return static_cast<EntityRank>(m_entity_rank_names.size()); }
 
   const std::string & entity_rank_name( EntityRank entity_rank ) const ;
 

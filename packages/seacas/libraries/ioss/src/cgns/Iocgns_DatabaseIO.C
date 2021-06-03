@@ -44,7 +44,7 @@
 #include "Ioss_SmartAssert.h"
 #include "Ioss_SubSystem.h"
 
-extern char hdf5_access[64];
+//extern char hdf5_access[64];
 
 namespace {
   size_t global_to_zone_local_idx(size_t i, const Ioss::Map *block_map, const Ioss::Map &nodeMap,
@@ -578,10 +578,17 @@ namespace Iocgns {
   void DatabaseIO::openDatabase__() const
   {
     if (m_cgnsFilePtr < 0) {
+#if 0
+      // This is currently disabled due to a recent change in CGNS
+      // that changed how `hdf5_access` was dealt with...  Since
+      // memory_read and memory_write are experimental in SEACAS/IOSS,
+      // I disabled until we can determine how best to handle this in
+      // current CGNS.
       if ((is_input() && properties.exists("MEMORY_READ")) ||
           (!is_input() && properties.exists("MEMORY_WRITE"))) {
-        Ioss::Utils::copy_string(hdf5_access, "PARALLEL");
+	Ioss::Utils::copy_string(hdf5_access, "PARALLEL");
       }
+#endif
 
       CGCHECKM(cg_set_file_type(CG_FILE_HDF5));
 
@@ -613,10 +620,12 @@ namespace Iocgns {
 #endif
       // Will not return if error...
       check_valid_file_open(ierr);
+#if 0
       if ((is_input() && properties.exists("MEMORY_READ")) ||
           (!is_input() && properties.exists("MEMORY_WRITE"))) {
         Ioss::Utils::copy_string(hdf5_access, "NATIVE");
       }
+#endif
 
       if (properties.exists("INTEGER_SIZE_API")) {
         int isize = properties.get("INTEGER_SIZE_API").get_int();

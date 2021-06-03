@@ -315,11 +315,35 @@ public:
   ///   is invalid on the calling process.
   bool sumIntoGlobalValues (const GO globalRowIndex, const Scalar vals[]);
 
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+  /// \brief Get a writeable view of the entries at the given mesh
+  ///   point, using a local index.
+  ///
+  /// \param localRowIndex [in] Local index of the mesh point.
+  /// \param vals [in] Input values with which to replace whatever
+  ///   existing values are at the mesh point.
+  ///
+  /// \return true if successful, else false.  This method will
+  ///   <i>not</i> succeed if the given local index of the mesh point
+  ///   is invalid on the calling process.
+  bool getLocalRowView (const LO localRowIndex, Scalar*& vals);
+
+  /// \brief Get a writeable view of the entries at the given mesh
+  ///   point, using a global index.
+  ///
+  /// \param globalRowIndex [in] Global index of the mesh point.
+  /// \param vals [in] Input values with which to replace whatever
+  ///   existing values are at the mesh point.
+  ///
+  /// \return true if successful, else false.  This method will
+  ///   <i>not</i> succeed if the given global index of the mesh point
+  ///   is invalid on the calling process.
+  bool getGlobalRowView (const GO globalRowIndex, Scalar*& vals);
+
+#endif //TPETRA_ENABLE_DEPRECATED_CODE
+
   /// \brief Get a view of the degrees of freedom at the given mesh point,
   ///   using a local index.
-  ///
-  /// \warning This method's interface may change or disappear at any
-  ///   time.  Please do not rely on it in your code yet.
   ///
   /// The preferred way to refer to little_vec_type is to get it from
   /// BlockVector's typedef.  This is because different
@@ -329,14 +353,14 @@ public:
   /// refactor version.
 #ifdef TPETRA_ENABLE_DEPRECATED_CODE
   //TPETRA_DEPRECATED 
-  little_host_vec_type getLocalBlock (const LO localRowIndex) const;
+  little_host_vec_type getLocalBlock (const LO localRowIndex);
 #endif
-  const_little_host_vec_type getLocalBlock (const LO localRowIndex,
-                                            Access::ReadOnlyStruct) const;
-  little_host_vec_type getLocalBlock (const LO localRowIndex,
-                                      Access::OverwriteAllStruct);
-  little_host_vec_type getLocalBlock (const LO localRowIndex,
-                                      Access::ReadWriteStruct);
+  const_little_host_vec_type getLocalBlockHost (const LO localRowIndex,
+                                                Access::ReadOnlyStruct) const;
+  little_host_vec_type getLocalBlockHost (const LO localRowIndex,
+                                          Access::OverwriteAllStruct);
+  little_host_vec_type getLocalBlockHost (const LO localRowIndex,
+                                          Access::ReadWriteStruct);
   //@}
 };
 

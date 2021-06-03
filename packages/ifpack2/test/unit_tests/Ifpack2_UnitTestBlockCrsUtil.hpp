@@ -246,7 +246,7 @@ struct BlockCrsMatrixMaker {
     const auto& g = a.getCrsGraph();
     const auto& rowptr = g.getLocalGraphHost().row_map;
     const auto& colidx = g.getLocalGraphHost().entries;
-    const auto& values = a.getValuesHost();
+    const auto& values = a.getValuesHostNonConst();
 
     const auto row_map = g.getRowMap();
     const auto col_map = g.getColMap();
@@ -596,7 +596,7 @@ struct BlockCrsMatrixMaker {
       if (tridiag_is_identity || block_diag)
         zero_offdiag_idxs(offdiag_idxs, blockrow);
       for (size_t j = rowptr(lr); j < rowptr(lr+1); ++j) {
-        auto block = m->getLocalBlock(lr, colidx(j));
+        auto block = m->getLocalBlockHostNonConst(lr, colidx(j));
         const auto b = j - rowptr(lr);
         for (Int bi = 0; bi < bs; ++bi)
           for (Int bj = 0; bj < bs; ++bj)

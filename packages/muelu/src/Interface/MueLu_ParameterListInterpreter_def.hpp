@@ -1668,6 +1668,7 @@ namespace MueLu {
       ParameterList linedetectionParams;
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: number of levels", int,         togglePParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: coarsen rate",     int,         semicoarsenPParams);
+      MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "semicoarsen: piecewise constant", bool,      semicoarsenPParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: orientation",    std::string, linedetectionParams);
       MUELU_TEST_AND_SET_PARAM_2LIST(paramList, defaultList, "linedetection: num layers",     int,         linedetectionParams);
 

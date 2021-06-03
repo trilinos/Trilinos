@@ -1563,10 +1563,10 @@ namespace Ifpack2 {
 
       // construct the D and R graphs in A = D + R.
       {
-        const auto& local_graph = g.getLocalGraphDevice();
-        const auto& local_graph_rowptr = local_graph.row_map;
+        const auto local_graph = g.getLocalGraphHost();
+        const auto local_graph_rowptr = local_graph.row_map;
         TEUCHOS_ASSERT(local_graph_rowptr.size() == static_cast<size_t>(nrows + 1));
-        const auto& local_graph_colidx = local_graph.entries;
+        const auto local_graph_colidx = local_graph.entries;
 
         //assume no overlap.
 
@@ -1783,8 +1783,8 @@ namespace Ifpack2 {
           }
 
           // Allocate or view values.
-          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->
-                               template getValues<node_memory_space>());
+          amd.tpetra_values = (const_cast<block_crs_matrix_type*>(A.get())->getValuesDeviceNonConst());
+                               
         }
       }
     }
@@ -1915,7 +1915,7 @@ namespace Ifpack2 {
         max_partsz(interf_.max_partsz),
         // block crs matrix
         A_rowptr(A_->getCrsGraph().getLocalGraphDevice().row_map),
-        A_values(const_cast<block_crs_matrix_type*>(A_.get())->template getValues<memory_space>()),
+        A_values(const_cast<block_crs_matrix_type*>(A_.get())->getValuesDeviceNonConst()),
         // block tridiags
         pack_td_ptr(btdm_.pack_td_ptr),
         flat_td_ptr(btdm_.flat_td_ptr),

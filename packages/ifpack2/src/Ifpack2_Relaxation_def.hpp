@@ -1227,12 +1227,12 @@ void Relaxation<MatrixType>::compute ()
         auto diag = Diagonal->getLocalViewHost(Tpetra::Access::ReadWrite);
         const magnitude_type two = STM::one () + STM::one ();
         const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
-        Array<local_ordinal_type> indices (maxLength);
-        Array<scalar_type> values (maxLength);
+        nonconst_local_inds_host_view_type indices("indices",maxLength);
+        nonconst_values_host_view_type values("values",maxLength);
         size_t numEntries;
 
         for (LO i = 0; i < numMyRows; ++i) {
-          A_row.getLocalRowCopy (i, indices (), values (), numEntries);
+          A_row.getLocalRowCopy (i, indices, values, numEntries);
           magnitude_type diagonal_boost = STM::zero ();
           for (size_t k = 0 ; k < numEntries; ++k) {
             if (indices[k] >= numMyRows) {

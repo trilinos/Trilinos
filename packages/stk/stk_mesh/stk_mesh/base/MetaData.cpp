@@ -224,9 +224,9 @@ void MetaData::initialize(size_t spatial_dimension,
 
 const std::string& MetaData::entity_rank_name( EntityRank entity_rank ) const
 {
-  ThrowErrorMsgIf( entity_rank >= m_entity_rank_names.size(),
+  ThrowErrorMsgIf( entity_rank >= entity_rank_count(),
       "entity-rank " << entity_rank <<
-      " out of range. Must be in range 0.." << m_entity_rank_names.size());
+      " out of range. Must be in range 0.." << entity_rank_count());
 
   return m_entity_rank_names[entity_rank];
 }
@@ -1068,7 +1068,7 @@ void set_topology(Part & part, stk::topology topo)
   try {
       root_part = &meta.get_topology_root_part(topo);
   }
-  catch(std::exception& e) {
+  catch(std::exception&) {
       meta.register_topology(topo);
       root_part = &meta.get_topology_root_part(topo);
   }

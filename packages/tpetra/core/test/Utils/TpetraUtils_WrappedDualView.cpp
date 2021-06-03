@@ -1331,6 +1331,28 @@ TEUCHOS_UNIT_TEST(WrappedDualView, accessDeviceTwoSubviewsOfSubview_ReadOnly) {
   TEST_ASSERT(fixture.valuesCorrectOnDevice(deviceSubviewSecondHalf, startSecondHalf+startSubview, lengthHalf, 2));
 }
 
+TEUCHOS_UNIT_TEST(WrappedDualView, attemptConstructUnmanaged) {
+  WrappedDualViewFixture fixture;
+  fixture.fillDualViewOnHostDevice();
+  WrappedDualViewType wrappedView(fixture.getDualView());
+  auto owningView = wrappedView.getDeviceView(Tpetra::Access::ReadWrite);
+  static_assert(decltype(owningView)::rank == 1,
+      "This test requires WrappedDualViewType to be rank 1. If this breaks, use a custom type here.");
+
+  //Although this view doesn't have Unmanaged memory traits in its type,
+  //it behaves as if it did (does not do reference counting), and has use_count() == 0
+  typename WrappedDualViewType::DeviceViewType unmanagedView(owningView.data(), owningView.extent(0));
+  //This should throw - WrappedDualView must be able to take ownership
+  //of the device memory from user, but the user's view does not own it
+  try
+  {
+    WrappedDualViewType cannotConstructThis(unmanagedView);
+    TEST_ASSERT(false);
+  }
+  catch(std::exception&)
+  {}
+}
+
 }
 
 int main(int argc, char* argv[]) {

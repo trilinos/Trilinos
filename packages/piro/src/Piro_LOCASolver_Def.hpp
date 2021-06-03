@@ -167,6 +167,13 @@ Piro::LOCASolver<Scalar>::getStepSizeParams()
 }
 
 template <typename Scalar>
+Teuchos::RCP<LOCA::Stepper>
+Piro::LOCASolver<Scalar>::getStepper()
+{
+  return stepper_;
+}
+
+template <typename Scalar>
 void
 Piro::LOCASolver<Scalar>::evalModelImpl(
     const Thyra::ModelEvaluatorBase::InArgs<Scalar>& inArgs,

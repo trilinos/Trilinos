@@ -83,22 +83,6 @@ EntityRepository::~EntityRepository()
 {
 }
 
-template<typename VecType>
-size_t capacity_in_bytes(const VecType& v)
-{
-  return sizeof(typename VecType::value_type)*v.capacity();
-}
-
-size_t EntityRepository::heap_memory_in_bytes() const
-{
-    size_t bytes = 0;
-    for(auto vec : m_entities) { bytes += capacity_in_bytes(vec); }
-    for(auto vec : m_create_cache) { bytes += capacity_in_bytes(vec); }
-    for(auto vec : m_update_cache) { bytes += capacity_in_bytes(vec); }
-    for(auto vec : m_destroy_cache) { bytes += capacity_in_bytes(vec); }
-    return bytes;
-}
-
 void EntityRepository::clear_all_cache()
 {
   EntityRank nRanks = static_cast<EntityRank>(m_create_cache.size());
@@ -245,7 +229,7 @@ stk::mesh::entity_iterator EntityRepository::get_from_cache(const EntityKey& key
 std::pair<stk::mesh::entity_iterator ,bool>
 EntityRepository::internal_create_entity( const EntityKey & key)
 {
-  if (key.rank() > m_entities.size()) {
+  if (key.rank() > entity_rank_count()) {
     m_entities.resize(key.rank());
     m_create_cache.resize(key.rank());
     m_update_cache.resize(key.rank());
@@ -284,7 +268,7 @@ Entity EntityRepository::get_entity(const EntityKey &key) const
   ThrowErrorMsgIf( ! key.is_valid(),
       "Invalid key: " << key.rank() << " " << key.id());
 
-  if (rank >= m_entities.size()) {
+  if (rank >= entity_rank_count()) {
     return Entity();
   }
 

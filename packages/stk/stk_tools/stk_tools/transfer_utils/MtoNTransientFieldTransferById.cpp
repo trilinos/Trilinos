@@ -89,9 +89,9 @@ void MtoNTransientFieldTransferById::initialize_transfer(unsigned subdomain)
   }
 }
 
-void MtoNTransientFieldTransferById::setup_subdomain(stk::mesh::BulkData& outputBulk, const std::string &filename,
+void MtoNTransientFieldTransferById::setup_subdomain(M2NOutputSerializerBulkData& outputBulk, const std::string &filename,
                                                      unsigned subdomain, const stk::io::EntitySharingInfo& nodeSharingInfo,
-                                                     int global_num_nodes, int global_num_elems)
+                                                     int globalNumNodes, int globalNumElems)
 {
   SubdomainWriterBase * subdomainWriter = nullptr;
 
@@ -102,7 +102,7 @@ void MtoNTransientFieldTransferById::setup_subdomain(stk::mesh::BulkData& output
     subdomainWriter = new EmptySubdomainWriter(m_inputBroker, &outputBulk);
   }
 
-  subdomainWriter->setup_output_file(filename, subdomain, m_numSubDomain, global_num_nodes, global_num_elems);
+  subdomainWriter->setup_output_file(filename, subdomain, m_numSubDomain, globalNumNodes, globalNumElems);
   m_subdomainWriters[subdomain] = subdomainWriter;
 
   initialize_transfer(subdomain);

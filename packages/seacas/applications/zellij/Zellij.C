@@ -247,11 +247,11 @@ namespace {
     grid.handle_file_count();
 
     if (my_rank == 0) {
-      fmt::print("\n Lattice:\tUnit Cells: {:n},\tGrid Size:  {:n} x {:n} x {:n}\n",
+      fmt::print("\n Lattice:\tUnit Cells: {:L},\tGrid Size:  {:L} x {:L} x {:L}\n",
                  grid.unit_cells().size(), II, JJ, KK);
     }
     if (interFace.ranks() > 1) {
-      fmt::print("         \t[{}] Ranks: {:n}, Outputting {:n} ranks starting at rank {:n}.\n",
+      fmt::print("         \t[{}] Ranks: {:L}, Outputting {:L} ranks starting at rank {:L}.\n",
                  my_rank, interFace.ranks(), interFace.rank_count(), interFace.start_rank());
     }
 

@@ -135,9 +135,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Simple2DTpetraModelEvaluator, eval, Scalar )
   const RCP<const Tpetra::CrsMatrix<Scalar> > W_tpetra =
     rcp_dynamic_cast<Tpetra::CrsMatrix<Scalar> >(
       ConverterT::getTpetraOperator(W_op));
-
-  ArrayView<const LO> row_indices;
-  ArrayView<const Scalar> row_values;
+  using crs_t = Tpetra::CrsMatrix<Scalar>;
+    typename crs_t::local_inds_host_view_type row_indices;
+    typename crs_t::values_host_view_type row_values;
 
   W_tpetra->getLocalRowView(0, row_indices, row_values);
   // FIXME (mfh 22 Oct 2015) This test assumes that local indices

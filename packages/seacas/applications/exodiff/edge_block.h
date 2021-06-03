@@ -38,7 +38,7 @@ private:
   mutable INT *edgeIndex{nullptr};
 
   std::string elmt_type;
-  int         num_edges_per_elmt;
+  int         num_edges_per_elmt{-1};
 
   friend class ExoII_Read<INT>;
 };

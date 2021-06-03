@@ -58,6 +58,7 @@
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Tpetra_CrsGraph.hpp>
+#include <Tpetra_Details_WrappedDualView.hpp>
 #include <Tpetra_Import.hpp>
 #include <Ifpack2_CreateOverlapGraph.hpp>
 #include <Ifpack2_Parameters.hpp>
@@ -287,16 +288,15 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
 
   using device_type = typename node_type::device_type;
   using execution_space = typename device_type::execution_space;
-  Kokkos::DualView<size_t*, device_type> numEntPerRow("numEntPerRow", NumMyRows);
-  auto numEntPerRow_d = numEntPerRow.template view<device_type>();
-
+  using dual_view_type = Kokkos::DualView<size_t*,device_type>;
+  dual_view_type numEntPerRow_dv("numEntPerRow",NumMyRows);
+  Tpetra::Details::WrappedDualView<dual_view_type> numEntPerRow(numEntPerRow_dv);
 
   const auto overalloc = Overalloc_;
   const auto levelfill = LevelFill_;
-  numEntPerRow.sync_device();
-  numEntPerRow.modify_device();
   {
     // Scoping for the  localOverlapGraph access
+    auto numEntPerRow_d = numEntPerRow.getDeviceView(Tpetra::Access::OverwriteAll);
     auto localOverlapGraph = OverlapGraph_->getLocalGraphDevice();
     Kokkos::parallel_for("CountOverlapGraphRowEntries",
                          Kokkos::RangePolicy<execution_space>(0, NumMyRows),
@@ -310,17 +310,17 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
                          });
    
   };
-  numEntPerRow.sync_host();
 
   bool insertError;  // No error found yet while inserting entries
   do {
     insertError = false;
+    Teuchos::ArrayView<const size_t> a_numEntPerRow(numEntPerRow.getHostView(Tpetra::Access::ReadOnly).data(),NumMyRows);
     L_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
                                         OverlapGraph_->getRowMap (),
-                                        numEntPerRow));
+                                        a_numEntPerRow));
     U_Graph_ = rcp (new crs_graph_type (OverlapGraph_->getRowMap (),
                                         OverlapGraph_->getRowMap (),
-                                        numEntPerRow));
+                                        a_numEntPerRow));
 
     Array<local_ordinal_type> L (MaxNumIndices);
     Array<local_ordinal_type> U (MaxNumIndices);
@@ -531,8 +531,7 @@ void IlukGraph<GraphType, KKHandleType>::initialize()
       }
       catch (std::runtime_error &e) {
         insertError = true;
-        numEntPerRow.sync_device();
-        numEntPerRow.modify_device();
+        auto numEntPerRow_d = numEntPerRow.getDeviceView(Tpetra::Access::OverwriteAll);
         Kokkos::parallel_for("CountOverlapGraphRowEntries",
           Kokkos::RangePolicy<execution_space>(0, NumMyRows),
           KOKKOS_LAMBDA(const int i)

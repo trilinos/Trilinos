@@ -42,9 +42,10 @@
 
 #include <Tpetra_Access.hpp>
 #include <Kokkos_DualView.hpp>
+#include "Teuchos_TestForException.hpp"
 #include <sstream>
 
-//#define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
+// #define DEBUG_UVM_REMOVAL  // Works only with gcc > 4.8
 
 #ifdef DEBUG_UVM_REMOVAL
 
@@ -131,11 +132,20 @@ public:
   { }
 
   WrappedDualView(const DeviceViewType deviceView) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+        deviceView.data() != nullptr && deviceView.use_count() == 0,
+        std::invalid_argument,
+        "Tpetra::Details::WrappedDualView: cannot construct with a device view that\n"
+        "does not own its memory (i.e. constructed with a raw pointer and dimensions)\n"
+        "because the WrappedDualView needs to assume ownership of the memory.");
+    //If the provided view is default-constructed (null, 0 extent, 0 use count),
+    //leave the host mirror default-constructed as well in order to have a matching use count of 0.
     HostViewType hostView;
-    if (deviceView.data() != nullptr) {
+    if(deviceView.use_count() != 0)
+    {
       hostView = Kokkos::create_mirror_view_and_copy(
-                                       typename HostViewType::memory_space(),
-                                       deviceView);
+          typename HostViewType::memory_space(),
+          deviceView);
     }
     originalDualView = DualViewType(deviceView, hostView);
     dualView = originalDualView;
@@ -315,9 +325,10 @@ private:
 
   void throwIfHostViewAlive() const {
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
-std::cout << " KDDKDD throwIfHostViewAlive " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() 
+          << "; host use_count = " << dualView.h_view.use_count()
+          << "; device use_count = " << dualView.d_view.use_count() << "): "
           << "Cannot access data on device while a host view is alive";
       throw std::runtime_error(msg.str());
     }
@@ -325,9 +336,10 @@ std::cout << " KDDKDD throwIfHostViewAlive " << dualView.h_view.use_count() << "
 
   void throwIfDeviceViewAlive() const {
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
-std::cout << " KDDKDD throwIfDeviceViewAlive " << dualView.h_view.use_count() << " " << dualView.d_view.use_count() << std::endl;
       std::ostringstream msg;
-      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() << "): "
+      msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
+          << "; host use_count = " << dualView.h_view.use_count()
+          << "; device use_count = " << dualView.d_view.use_count() << "): "
           << "Cannot access data on host while a device view is alive";
       throw std::runtime_error(msg.str());
     }

@@ -38,6 +38,8 @@ void GeneratedMeshToFile::setup_mesh(const std::string &meshSizeSpec, const std:
     broker.add_mesh_database("generated:" + meshSizeSpec, stk::io::READ_MESH);
     broker.create_input_mesh();
     broker.populate_bulk_data();
+    broker.property_add(Ioss::Property("INTEGER_SIZE_API", 8));
+    broker.property_add(Ioss::Property("INTEGER_SIZE_DB", 8));
     outputFileIndex = broker.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
 }
 

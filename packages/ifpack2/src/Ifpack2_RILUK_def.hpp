@@ -947,11 +947,7 @@ void RILUK<MatrixType>::compute ()
     row_map_type U_rowmap  = U_->getLocalMatrixDevice().graph.row_map;
     auto U_entries = U_->getLocalMatrixDevice().graph.entries;
     auto U_values  = U_->getLocalValuesView();
-    using exec_space = typename crs_matrix_type::local_matrix_device_type::execution_space;
-       
-    KokkosKernels::Impl::sort_crs_graph<exec_space, decltype(L_rowmap), decltype(L_entries)>(L_rowmap, L_entries);
-    KokkosKernels::Impl::sort_crs_graph<exec_space, decltype(U_rowmap), decltype(U_entries)>(U_rowmap, U_entries);
-    
+
     KokkosSparse::Experimental::spiluk_numeric( KernelHandle_.getRawPtr(), LevelOfFill_, 
                                                 A_local_rowmap_, A_local_entries_, A_local_values_, 
                                                 L_rowmap, L_entries, L_values, U_rowmap, U_entries, U_values );
