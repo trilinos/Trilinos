@@ -245,19 +245,47 @@ void Reduced_Objective_SimOpt<Real>::setParameter(const std::vector<Real> &param
 }
 
 template<typename Real>
-void Reduced_Objective_SimOpt<Real>::summarize(std::ostream &stream) const {
+void Reduced_Objective_SimOpt<Real>::summarize(std::ostream &stream, const Ptr<BatchManager<Real>> &bman) const {
+  int nupda(0), nvalu(0), ngrad(0), nhess(0), nprec(0), nstat(0), nadjo(0), nssen(0), nasen(0);
+  if (bman == nullPtr) {
+    nupda = nupda_;
+    nvalu = nvalu_;
+    ngrad = ngrad_;
+    nhess = nhess_;
+    nprec = nprec_;
+    nstat = nstat_;
+    nadjo = nadjo_;
+    nssen = nssen_;
+    nasen = nasen_;
+  }
+  else {
+    auto sumAll = [bman](int val) {
+      Real global(0), local(val); 
+      bman->sumAll(&local,&global,1);
+      return static_cast<int>(global);
+    };
+    nupda = sumAll(nupda_);
+    nvalu = sumAll(nvalu_);
+    ngrad = sumAll(ngrad_);
+    nhess = sumAll(nhess_);
+    nprec = sumAll(nprec_);
+    nstat = sumAll(nstat_);
+    nadjo = sumAll(nadjo_);
+    nssen = sumAll(nssen_);
+    nasen = sumAll(nasen_);
+  }
   stream << std::endl;
   stream << std::string(80,'=') << std::endl;
   stream << "  ROL::Reduced_Objective_SimOpt::summarize" << std::endl;
-  stream << "    Number of calls to update:            " << nupda_ << std::endl;
-  stream << "    Number of calls to value:             " << nvalu_ << std::endl;
-  stream << "    Number of calls to gradient:          " << ngrad_ << std::endl;
-  stream << "    Number of calls to hessvec:           " << nhess_ << std::endl;
-  stream << "    Number of calls to precond:           " << nprec_ << std::endl;
-  stream << "    Number of state solves:               " << nstat_ << std::endl;
-  stream << "    Number of adjoint solves:             " << nadjo_ << std::endl;
-  stream << "    Number of state sensitivity solves:   " << nssen_ << std::endl;
-  stream << "    Number of adjoint sensitivity solves: " << nssen_ << std::endl;
+  stream << "    Number of calls to update:            " << nupda << std::endl;
+  stream << "    Number of calls to value:             " << nvalu << std::endl;
+  stream << "    Number of calls to gradient:          " << ngrad << std::endl;
+  stream << "    Number of calls to hessvec:           " << nhess << std::endl;
+  stream << "    Number of calls to precond:           " << nprec << std::endl;
+  stream << "    Number of state solves:               " << nstat << std::endl;
+  stream << "    Number of adjoint solves:             " << nadjo << std::endl;
+  stream << "    Number of state sensitivity solves:   " << nssen << std::endl;
+  stream << "    Number of adjoint sensitivity solves: " << nasen << std::endl;
   stream << std::string(80,'=') << std::endl;
   stream << std::endl;
 }

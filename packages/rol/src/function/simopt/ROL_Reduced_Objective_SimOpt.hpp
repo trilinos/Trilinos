@@ -47,6 +47,7 @@
 #include "ROL_Objective_SimOpt.hpp"
 #include "ROL_Constraint_SimOpt.hpp"
 #include "ROL_VectorController.hpp"
+#include "ROL_BatchManager.hpp"
 
 namespace ROL {
 
@@ -203,7 +204,7 @@ public:
 
   /** Write summary to stream.
   */
-  void summarize(std::ostream &stream) const;
+  void summarize(std::ostream &stream, const Ptr<BatchManager<Real>> &bman = nullPtr) const;
 
   /** Reset summary data.
   */
