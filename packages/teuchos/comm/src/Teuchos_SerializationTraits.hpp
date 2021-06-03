@@ -92,7 +92,8 @@ struct UndefinedSerializationTraits {
  * Teuchos defines specializations of this class for many commonly
  * used types in distributed-memory communication, such as char, int
  * (signed and unsigned), float, double, long double and std::pair<P1, P2> for
- * certain types P1 and P2.  Depending on your Trilinos build options,
+ * certain types P1 and P2.  Note that long double does not work with Kokkos + CUDA. 
+ * Depending on your Trilinos build options,
  * other specializations may be defined as well, for example for long
  * long int, double-double and quad-double real types (dd_real
  * resp. qd_real), or certain std::complex<T> specializations.  If a
@@ -414,11 +415,12 @@ class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
 
+#ifndef Kokkos_ENABLE_CUDA
 template<typename Ordinal>
 class SerializationTraits<Ordinal,long double>
   : public DirectSerializationTraits<Ordinal,long double>
 {};
-
+#endif
 
 // FIXME: How do we know that P1 and P2 are directly serializable?
 template<typename Ordinal, typename P1, typename P2>
