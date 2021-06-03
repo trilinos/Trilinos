@@ -252,8 +252,9 @@ namespace {
      * test matrix that we construct on the fly.
      */
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename MAT::impl_scalar_type matrix_scalar_t;
     typedef MatrixAdapter<MAT> ADAPT;
-    typedef std::pair<Scalar,GO> my_pair_t;
+    typedef std::pair<matrix_scalar_t, GO> my_pair_t;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t rank          = comm->getRank();
 
@@ -273,17 +274,14 @@ namespace {
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
-    Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
-    Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
-    Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+    Array<global_size_t>   rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+    Array<matrix_scalar_t> nzvals_test(tuple<matrix_scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
+    Array<GO>              colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
 
-    //Array<Scalar> nzvals(adapter->getGlobalNNZ());
-    //Array<GO> colind(adapter->getGlobalNNZ());
-    //Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
     typename MAT::nonconst_values_host_view_type       nzvals ("nzvals", adapter->getGlobalNNZ());
     typename MAT::nonconst_global_inds_host_view_type  colind ("colind", adapter->getGlobalNNZ());
     typename MAT::nonconst_global_inds_host_view_type  rowptr ("rowptr", adapter->getGlobalNumRows() + 1);
-    size_t nnz;
+    size_t nnz = 0;
 
     ///////////////////////////////////////////
     // Check getting a rooted representation //
@@ -303,12 +301,8 @@ namespace {
         global_size_t row_nnz = nrp - rp;
         TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
         TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
-        //const RCP<Array<my_pair_t> > expected_pairs
-        //  = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
-        //const RCP<Array<my_pair_t> > got_pairs
-        //  = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
-        ArrayView<Scalar> nzvals_array (&(nzvals(rp)), row_nnz);
-        ArrayView<GO>     colind_array (&(colind(rp)), row_nnz);
+        ArrayView<matrix_scalar_t> nzvals_array (&(nzvals(rp)), row_nnz);
+        ArrayView<GO>              colind_array (&(colind(rp)), row_nnz);
         const RCP<Array<my_pair_t> > expected_pairs
           = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
         const RCP<Array<my_pair_t> > got_pairs
@@ -344,8 +338,9 @@ namespace {
      * test matrix that we construct on the fly.
      */
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename MAT::impl_scalar_type matrix_scalar_t;
     typedef MatrixAdapter<MAT> ADAPT;
-    typedef std::pair<Scalar,GO> my_pair_t;
+    typedef std::pair<matrix_scalar_t, GO> my_pair_t;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     // create a Map for our matrix
     global_size_t nrows = 6;
@@ -366,13 +361,10 @@ namespace {
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
-    Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
-    Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
-    Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+    Array<global_size_t>   rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+    Array<matrix_scalar_t> nzvals_test(tuple<matrix_scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
+    Array<GO>              colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
 
-    //Array<Scalar> nzvals(adapter->getGlobalNNZ());
-    //Array<GO> colind(adapter->getGlobalNNZ());
-    //Array<global_size_t> rowptr(adapter->getGlobalNumRows() + 1);
     typename MAT::nonconst_values_host_view_type       nzvals ("nzvals", adapter->getGlobalNNZ());
     typename MAT::nonconst_global_inds_host_view_type  colind ("colind", adapter->getGlobalNNZ());
     typename MAT::nonconst_global_inds_host_view_type  rowptr ("rowptr", adapter->getGlobalNumRows() + 1);
@@ -397,12 +389,8 @@ namespace {
       global_size_t row_nnz = nrp - rp;
       TEST_ASSERT( rp < as<global_size_t>(nzvals.size()) );
       TEST_ASSERT( rp < as<global_size_t>(colind.size()) );
-      //const RCP<Array<my_pair_t> > expected_pairs
-      //  = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
-      //const RCP<Array<my_pair_t> > got_pairs
-      //  = zip(nzvals.view(rp,row_nnz), colind.view(rp,row_nnz));
-      ArrayView<Scalar> nzvals_array (&(nzvals(rp)), row_nnz);
-      ArrayView<GO>     colind_array (&(colind(rp)), row_nnz);
+      ArrayView<matrix_scalar_t> nzvals_array (&(nzvals(rp)), row_nnz);
+      ArrayView<GO>              colind_array (&(colind(rp)), row_nnz);
       const RCP<Array<my_pair_t> > expected_pairs
         = zip(nzvals_test.view(rp,row_nnz), colind_test.view(rp,row_nnz));
       const RCP<Array<my_pair_t> > got_pairs
@@ -435,6 +423,7 @@ namespace {
      * test matrix that we construct on the fly.
      */
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename MAT::impl_scalar_type matrix_scalar_t;
     typedef MatrixAdapter<MAT> ADAPT;
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
     const size_t numprocs = comm->getSize();
@@ -458,9 +447,9 @@ namespace {
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
-    Array<Scalar> nzvals_test(tuple<Scalar>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
-    Array<GO> colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
-    Array<global_size_t> rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
+    Array<GO>              colind_test(tuple<GO>(0,2,4,0,1,2,0,3,1,4,3,5));
+    Array<matrix_scalar_t> nzvals_test(tuple<matrix_scalar_t>(7,-3,-1,2,8,1,-3,5,-1,4,-2,6));
+    Array<global_size_t>   rowptr_test(tuple<global_size_t>(0,3,5,6,8,10,12));
 
     //Array<Scalar> nzvals(adapter->getGlobalNNZ());
     //Array<GO> colind(adapter->getGlobalNNZ());
@@ -495,24 +484,18 @@ namespace {
      * found in the top half of the rows, and the other half are found
      * in the bottom half of the rows.
      */
-    ArrayView<Scalar> nzvals_array (&(nzvals(0)), 6);
-    ArrayView<GO>     colind_array (&(colind(0)), 6);
+    ArrayView<matrix_scalar_t> nzvals_array (&(nzvals(0)), 6);
+    ArrayView<GO>              colind_array (&(colind(0)), 6);
     if(rank == 0) {
-      //TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(0,6));
-      //TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(0,6));
       TEST_COMPARE_ARRAYS(nzvals_array, nzvals_test.view(0,6));
       TEST_COMPARE_ARRAYS(colind_array, colind_test.view(0,6));
       for(int i = 0; i < 4; i++) {
-        //TEST_EQUALITY_CONST(rowptr[i], rowptr_test[i]);
         TEST_EQUALITY_CONST(rowptr(i), rowptr_test[i]);
       }
     } else if(rank == 1) {
-      //TEST_COMPARE_ARRAYS(nzvals.view(0,6), nzvals_test.view(6,6));
-      //TEST_COMPARE_ARRAYS(colind.view(0,6), colind_test.view(6,6));
       TEST_COMPARE_ARRAYS(nzvals_array, nzvals_test.view(6,6));
       TEST_COMPARE_ARRAYS(colind_array, colind_test.view(6,6));
       for(int i = 0; i < 4; i++) {
-        //TEST_EQUALITY_CONST(rowptr[i], rowptr_test[3 + i] - rowptr_test[3]);
         TEST_EQUALITY_CONST(rowptr(i), rowptr_test[3 + i] - rowptr_test[3]);
       }
     }
@@ -524,6 +507,7 @@ namespace {
      * matrix
      */
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename MAT::impl_scalar_type matrix_scalar_t;
     typedef MatrixAdapter<MAT> ADAPT;
 
     RCP<const Comm<int> > comm = Tpetra::getDefaultComm();
@@ -544,9 +528,9 @@ namespace {
 
     RCP<ADAPT> adapter = Amesos2::createMatrixAdapter<MAT>(mat);
 
-    Array<Scalar> nzvals_test(tuple<Scalar>(7,2,-3,8,-1,-3,1,5,-2,-1,4,6));
-    Array<GO> rowind_test(tuple<GO>(0,1,3,1,4,0,2,3,5,0,4,5));
-    Array<global_size_t> colptr_test(tuple<global_size_t>(0,3,5,7,9,11,12));
+    Array<global_size_t>   colptr_test(tuple<global_size_t>(0,3,5,7,9,11,12));
+    Array<matrix_scalar_t> nzvals_test(tuple<matrix_scalar_t>(7,2,-3,8,-1,-3,1,5,-2,-1,4,6));
+    Array<GO>              rowind_test(tuple<GO>(0,1,3,1,4,0,2,3,5,0,4,5));
 
     //Array<Scalar> nzvals(adapter->getGlobalNNZ());
     //Array<GO> rowind(adapter->getGlobalNNZ());
@@ -564,9 +548,9 @@ namespace {
       // getCCS() does guarantee an increasing row permutation for
       // rowind, so we can just compare the expected and received
       // straight-up
-      ArrayView<Scalar> nzvals_array (&(nzvals(0)), adapter->getGlobalNNZ());
-      ArrayView<GO>     rowind_array (&(rowind(0)), adapter->getGlobalNNZ());
-      ArrayView<GO>     colptr_array (&(colptr(0)), adapter->getGlobalNumRows() + 1);
+      ArrayView<matrix_scalar_t> nzvals_array (&(nzvals(0)), adapter->getGlobalNNZ());
+      ArrayView<GO>              rowind_array (&(rowind(0)), adapter->getGlobalNNZ());
+      ArrayView<GO>              colptr_array (&(colptr(0)), adapter->getGlobalNumRows() + 1);
       TEST_COMPARE_ARRAYS(nzvals_array,nzvals_test);
       TEST_COMPARE_ARRAYS(rowind_array,rowind_test);
       TEST_COMPARE_ARRAYS(colptr_array,colptr_test);
