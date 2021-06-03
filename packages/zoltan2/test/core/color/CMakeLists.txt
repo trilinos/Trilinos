@@ -37,7 +37,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-  "--inputFile=simple --colorMethod=D1"
+  "--inputFile=simple --colorMethod=D1 --timing"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
@@ -155,7 +155,7 @@ TRIBITS_ADD_TEST(
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS
-  "--inputFile=simple --colorMethod=D1-2GL"
+  "--inputFile=simple --colorMethod=D1-2GL --timing"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

@@ -133,13 +133,13 @@ namespace LOCA {
       //***************************************
       // Derived from Tpetra::Operator interface
       //***************************************
-      virtual Teuchos::RCP<const NOX::TMap> getDomainMap() const;
-      virtual Teuchos::RCP<const NOX::TMap> getRangeMap() const;
+      virtual Teuchos::RCP<const NOX::TMap> getDomainMap() const override;
+      virtual Teuchos::RCP<const NOX::TMap> getRangeMap() const override;
       virtual void apply(const NOX::TMultiVector &X,
                          NOX::TMultiVector &Y,
                          Teuchos::ETransp mode = Teuchos::NO_TRANS,
                          NOX::Scalar alpha = Teuchos::ScalarTraits<NOX::Scalar>::one(),
-                         NOX::Scalar beta = Teuchos::ScalarTraits<NOX::Scalar>::zero()) const;
+                         NOX::Scalar beta = Teuchos::ScalarTraits<NOX::Scalar>::zero()) const override;
 
     protected:
 

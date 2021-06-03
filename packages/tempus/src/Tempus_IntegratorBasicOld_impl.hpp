@@ -387,8 +387,8 @@ bool IntegratorBasicOld<Scalar>::advanceTime()
     startIntegrator();
     integratorObserver_->observeStartIntegrator(*this);
 
-    while (integratorStatus_ == WORKING and
-        timeStepControl_->timeInRange (solutionHistory_->getCurrentTime()) and
+    while (integratorStatus_ == WORKING &&
+        timeStepControl_->timeInRange (solutionHistory_->getCurrentTime()) &&
         timeStepControl_->indexInRange(solutionHistory_->getCurrentIndex())){
 
       stepperTimer_->reset();
@@ -483,11 +483,11 @@ void IntegratorBasicOld<Scalar>::checkTimeStep()
   }
 
   // Check Stepper failure.
-  if (ws->getSolutionStatus() == Status::FAILED or
+  if (ws->getSolutionStatus() == Status::FAILED ||
        // Constant time step failure
-       ((timeStepControl_->getStepType() == "Constant") and
-        (ws->getTimeStep() != timeStepControl_->getInitTimeStep()) and
-        (ws->getOutput() != true) and
+       ((timeStepControl_->getStepType() == "Constant") &&
+        (ws->getTimeStep() != timeStepControl_->getInitTimeStep()) &&
+        (ws->getOutput() != true) &&
         (ws->getTime() != timeStepControl_->getFinalTime())
        )
      )
@@ -502,7 +502,7 @@ void IntegratorBasicOld<Scalar>::checkTimeStep()
     if (ws->getSolutionStatus() == Status::FAILED) {
       *out << "Solution Status = " << toString(ws->getSolutionStatus())
            << std::endl;
-    } else if ((timeStepControl_->getStepType() == "Constant") and
+    } else if ((timeStepControl_->getStepType() == "Constant") &&
                (ws->getTimeStep() != timeStepControl_->getInitTimeStep())) {
       *out << "dt != Constant dt (="<<timeStepControl_->getInitTimeStep()<<")"
            << std::endl;
@@ -526,7 +526,7 @@ void IntegratorBasicOld<Scalar>::endIntegrator()
 {
   std::string exitStatus;
   if (solutionHistory_->getCurrentState()->getSolutionStatus() ==
-      Status::FAILED or integratorStatus_ == Status::FAILED) {
+      Status::FAILED || integratorStatus_ == Status::FAILED) {
     exitStatus = "Time integration FAILURE!";
   } else {
     integratorStatus_ = Status::PASSED;

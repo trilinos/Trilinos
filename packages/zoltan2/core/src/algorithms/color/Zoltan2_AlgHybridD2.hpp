@@ -255,7 +255,9 @@ class AlgDistance2 : public AlgTwoGhostLayer<Adapter> {
       Kokkos::fence();
 
       //update the verts_to_send and verts_to_recolor views.
-      Kokkos::parallel_for(femv_colors.size(), KOKKOS_LAMBDA(const uint64_t& i){
+      Kokkos::parallel_for("rebuild verts_to_send and verts_to_recolor",
+		           Kokkos::RangePolicy<ExecutionSpace>(0,femv_colors.size()), 
+			   KOKKOS_LAMBDA(const uint64_t& i){
         if(femv_colors(i) == 0){
 	  //we only send vertices owned by the current process
           if(i < n_local){
