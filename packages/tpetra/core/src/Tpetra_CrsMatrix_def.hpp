@@ -5088,21 +5088,37 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
       size_t totalNumDups = 0;
       // FIXME (mfh 10 May 2017) This may assume CUDA UVM.
-      Kokkos::parallel_reduce (range_type (0, lclNumRows),
-        [this, &graph, sorted, merged] (const LO& lclRow, size_t& numDups) {
-          const RowInfo rowInfo = graph.getRowInfo (lclRow);
-          if (! sorted) {
-            auto lclColInds = graph.getLocalIndsViewHostNonConst (rowInfo);
-            auto vals = this->getValuesViewHostNonConst (rowInfo);
+      // KK: graph is passed as reference which cause a race condition
+      //     graph needs to be non-const object.
+      // Kokkos::parallel_reduce (range_type (0, lclNumRows),
+      //   [this, &graph, sorted, merged] (const LO& lclRow, size_t& numDups) {
+      //     const RowInfo rowInfo = graph.getRowInfo (lclRow);
+      //     if (! sorted) {
+      //       auto lclColInds = graph.getLocalIndsViewHostNonConst (rowInfo);
+      //       auto vals = this->getValuesViewHostNonConst (rowInfo);
 
-            sort2 (lclColInds.data (),
-                   lclColInds.data () + rowInfo.numEntries,
-                   vals.data ());
-          }
-          if (! merged) {
-            numDups += this->mergeRowIndicesAndValues (graph, rowInfo);
-          }
-        }, totalNumDups);
+      //       sort2 (lclColInds.data (),
+      //              lclColInds.data () + rowInfo.numEntries,
+      //              vals.data ());
+      //     }
+      //     if (! merged) {
+      //       numDups += this->mergeRowIndicesAndValues (graph, rowInfo);
+      //     }
+      //   }, totalNumDups);
+      for (LO lclRow=0;lclRow<lclNumRows;++lclRow) {
+	const RowInfo rowInfo = graph.getRowInfo (lclRow);
+	if (! sorted) {
+	  auto lclColInds = graph.getLocalIndsViewHostNonConst (rowInfo);
+	  auto vals = this->getValuesViewHostNonConst (rowInfo);
+	  
+	  sort2 (lclColInds.data (),
+		 lclColInds.data () + rowInfo.numEntries,
+		 vals.data ());
+	}
+	if (! merged) {
+	  totalNumDups += this->mergeRowIndicesAndValues (graph, rowInfo);
+	}
+      }
       if (! sorted) {
         graph.indicesAreSorted_ = true; // we just sorted every row
       }
