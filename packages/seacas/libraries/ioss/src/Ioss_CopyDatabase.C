@@ -19,7 +19,7 @@
 #if defined(_WIN32)
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
-#include <Windows.h>
+#include <windows.h>
 #undef IN
 #undef OUT
 #endif
@@ -71,7 +71,7 @@ namespace {
                        Ioss::Field::RoleType role, const Ioss::MeshCopyOptions &options, int rank);
 
   void transfer_fields(const Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge,
-                       Ioss::Field::RoleType role, const std::string &prefix = "");
+                       Ioss::Field::RoleType role, const std::string &prefix = ""s);
 
   void add_proc_id(Ioss::Region &region, int rank);
 
@@ -82,7 +82,7 @@ namespace {
 
   void transfer_field_data(Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge, DataPool &pool,
                            Ioss::Field::RoleType role, const Ioss::MeshCopyOptions &options,
-                           const std::string &prefix = "");
+                           const std::string &prefix = ""s);
 
   void transfer_properties(const Ioss::GroupingEntity *ige, Ioss::GroupingEntity *oge);
 
@@ -96,37 +96,43 @@ namespace {
   void set_owned_node_count(Ioss::Region &region, int my_processor, INT dummy);
 
   template <typename T>
-  size_t calculate_maximum_field_size(const std::vector<T> &entities, size_t max_field_size)
+  std::pair<size_t, std::string>
+  calculate_maximum_field_size(const std::vector<T> &          entities,
+                               std::pair<size_t, std::string> &max_field)
   {
-    size_t max_size = max_field_size;
+    size_t      max_size = max_field.first;
+    std::string max_name = max_field.second;
     for (const auto &entity : entities) {
       Ioss::NameList fields;
       entity->field_describe(&fields);
       for (const auto &field_name : fields) {
         Ioss::Field field = entity->get_field(field_name);
-        max_size          = std::max(field.get_size(), max_size);
+        if (field.get_size() > max_size) {
+          max_size = field.get_size();
+          max_name = field_name;
+        }
       }
     }
-    return max_size;
+    return std::make_pair(max_size, max_name);
   }
 
-  size_t calculate_maximum_field_size(const Ioss::Region &region)
+  std::pair<size_t, std::string> calculate_maximum_field_size(const Ioss::Region &region)
   {
-    size_t max_field_size = 0;
-    max_field_size        = calculate_maximum_field_size(region.get_node_blocks(), max_field_size);
-    max_field_size        = calculate_maximum_field_size(region.get_edge_blocks(), max_field_size);
-    max_field_size        = calculate_maximum_field_size(region.get_face_blocks(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_element_blocks(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_sidesets(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_nodesets(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_edgesets(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_facesets(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_elementsets(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_commsets(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_structured_blocks(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_assemblies(), max_field_size);
-    max_field_size = calculate_maximum_field_size(region.get_blobs(), max_field_size);
-    return max_field_size;
+    std::pair<size_t, std::string> max_field{};
+    max_field = calculate_maximum_field_size(region.get_node_blocks(), max_field);
+    max_field = calculate_maximum_field_size(region.get_edge_blocks(), max_field);
+    max_field = calculate_maximum_field_size(region.get_face_blocks(), max_field);
+    max_field = calculate_maximum_field_size(region.get_element_blocks(), max_field);
+    max_field = calculate_maximum_field_size(region.get_sidesets(), max_field);
+    max_field = calculate_maximum_field_size(region.get_nodesets(), max_field);
+    max_field = calculate_maximum_field_size(region.get_edgesets(), max_field);
+    max_field = calculate_maximum_field_size(region.get_facesets(), max_field);
+    max_field = calculate_maximum_field_size(region.get_elementsets(), max_field);
+    max_field = calculate_maximum_field_size(region.get_commsets(), max_field);
+    max_field = calculate_maximum_field_size(region.get_structured_blocks(), max_field);
+    max_field = calculate_maximum_field_size(region.get_assemblies(), max_field);
+    max_field = calculate_maximum_field_size(region.get_blobs(), max_field);
+    return max_field;
   }
 
   template <typename INT>
@@ -139,7 +145,7 @@ namespace {
       el_side.push_back(face.element[0] / 10);
       el_side.push_back(face.element[0] % 10 + 1);
     }
-    sb->put_field_data("element_side", el_side);
+    sb->put_field_data("element_side"s, el_side);
   }
 } // namespace
 
@@ -225,13 +231,14 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   int               rank = dbi->util().parallel_rank();
 
   // Minimize number of times that we grow the memory buffer used for transferring field data.
-  size_t max_field_size = calculate_maximum_field_size(region);
+  auto max_field = calculate_maximum_field_size(region);
   if (options.verbose && rank == 0) {
-    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes.\n", max_field_size);
+    fmt::print(Ioss::DEBUG(), "\n Maximum Field size = {:L} bytes for field '{}'.\n",
+               max_field.first, max_field.second);
   }
 
   DataPool data_pool;
-  data_pool.data.resize(max_field_size);
+  data_pool.data.resize(max_field.first);
   if (options.verbose && rank == 0) {
     fmt::print(Ioss::DEBUG(), " Resize finished...\n");
   }
@@ -264,7 +271,7 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   if (options.debug && rank == 0) {
     fmt::print(Ioss::DEBUG(), "TRANSFERRING TRANSIENT FIELDS ... \n");
   }
-  dbi->progress("TRANSFERRING TRANSIENT FIELDS... ");
+  dbi->progress("TRANSFERRING TRANSIENT FIELDS... "s);
 
   // Get the timesteps from the input database.  Step through them
   // and transfer fields to output database...
@@ -272,7 +279,7 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   // to the output region based on values in `options`
   std::vector<int> selected_steps = get_selected_steps(region, options);
 
-  int step_count = region.get_property("state_count").get_int();
+  int step_count = region.get_property("state_count"s).get_int();
   for (int istep = 1; istep <= step_count; istep++) {
     if (selected_steps[istep] == 1) {
       transfer_step(region, output_region, data_pool, istep, options, rank);
@@ -282,10 +289,10 @@ void Ioss::copy_database(Ioss::Region &region, Ioss::Region &output_region,
   if (options.debug && rank == 0) {
     fmt::print(Ioss::DEBUG(), "END STATE_TRANSIENT... \n");
   }
-  dbi->progress("END STATE_TRANSIENT (begin) ... ");
+  dbi->progress("END STATE_TRANSIENT (begin) ... "s);
 
   output_region.end_mode(Ioss::STATE_TRANSIENT);
-  dbi->progress("END STATE_TRANSIENT (end) ... ");
+  dbi->progress("END STATE_TRANSIENT (end) ... "s);
   Ioss::Utils::clear(data_pool.data);
 
   if (rank == 0) {
@@ -300,7 +307,7 @@ namespace {
     // This routine checks all steps of the input database and selects those which
     // meet the requirements specified in `options`.  The returned (1-based) vector will have a
     // value of `1` if the step is to be output and `0` if skipped.
-    int              step_count = region.get_property("state_count").get_int();
+    int              step_count = region.get_property("state_count"s).get_int();
     std::vector<int> selected_steps(step_count + 1);
 
     // If user specified a list of times to transfer to output database,
@@ -366,7 +373,7 @@ namespace {
       }
 
       // Get vector of all boundary faces which will be output as the skin...
-      auto &faces = face_generator.faces("ALL");
+      auto &faces = face_generator.faces("ALL"s);
       for (auto &face : faces) {
         if (face.elementCount_ == 1) {
           boundary.push_back(face);
@@ -384,7 +391,7 @@ namespace {
       fmt::print(Ioss::DEBUG(), "DEFINING MODEL ... \n");
     }
     Ioss::DatabaseIO *dbi = region.get_database();
-    dbi->progress("DEFINING MODEL");
+    dbi->progress("DEFINING MODEL"s);
     if (!output_region.begin_mode(Ioss::STATE_DEFINE_MODEL)) {
       if (options.verbose) {
         std::ostringstream errmsg;
@@ -440,9 +447,9 @@ namespace {
       auto        elem_topo = topo->name();
       auto        face_topo = topo->boundary_type(0)->name();
 
-      auto ss = new Ioss::SideSet(output_region.get_database(), "boundary");
+      auto ss = new Ioss::SideSet(output_region.get_database(), "boundary"s);
       output_region.add(ss);
-      auto sb = new Ioss::SideBlock(output_region.get_database(), "boundary", face_topo, elem_topo,
+      auto sb = new Ioss::SideBlock(output_region.get_database(), "boundary"s, face_topo, elem_topo,
                                     boundary.size());
       ss->add(sb);
     }
@@ -458,10 +465,10 @@ namespace {
     if (options.debug && rank == 0) {
       fmt::print(Ioss::DEBUG(), "END STATE_DEFINE_MODEL...\n");
     }
-    dbi->progress("END STATE_DEFINE_MODEL");
+    dbi->progress("END STATE_DEFINE_MODEL"s);
 
     output_region.end_mode(Ioss::STATE_DEFINE_MODEL);
-    dbi->progress("output_region.end_mode(Ioss::STATE_DEFINE_MODEL) finished");
+    dbi->progress("output_region.end_mode(Ioss::STATE_DEFINE_MODEL) finished"s);
   }
 
   void transfer_model(Ioss::Region &region, Ioss::Region &output_region, DataPool &data_pool,
@@ -472,7 +479,7 @@ namespace {
       fmt::print(Ioss::DEBUG(), "TRANSFERRING MESH FIELD DATA ...\n");
     }
     Ioss::DatabaseIO *dbi = region.get_database();
-    dbi->progress("TRANSFERRING MESH FIELD DATA ... ");
+    dbi->progress("TRANSFERRING MESH FIELD DATA ... "s);
 
     // Model defined, now fill in the model data...
     output_region.begin_mode(Ioss::STATE_MODEL);
@@ -609,9 +616,9 @@ namespace {
       }
 
       if (options.define_geometry && options.boundary_sideset) {
-        auto *ss = output_region.get_sideset("boundary");
+        auto *ss = output_region.get_sideset("boundary"s);
         if (ss != nullptr) {
-          auto sb = ss->get_side_block("boundary");
+          auto sb = ss->get_side_block("boundary"s);
           if (output_region.get_database()->int_byte_size_api() == 4) {
             output_boundary_sideset(sb, boundary, (int)0);
           }
@@ -636,12 +643,13 @@ namespace {
     }
 
     Ioss::DatabaseIO *dbi = region.get_database();
-    dbi->progress("DEFINING TRANSIENT FIELDS ... ");
+    dbi->progress("DEFINING TRANSIENT FIELDS ... "s);
 
-    if (region.property_exists("state_count") && region.get_property("state_count").get_int() > 0) {
+    if (region.property_exists("state_count"s) &&
+        region.get_property("state_count"s).get_int() > 0) {
       if (options.verbose && rank == 0) {
         fmt::print(Ioss::DEBUG(), "\n Number of time steps on database = {}\n",
-                   region.get_property("state_count").get_int());
+                   region.get_property("state_count"s).get_int());
       }
 
       output_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
@@ -673,7 +681,7 @@ namespace {
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DEBUG(), "END STATE_DEFINE_TRANSIENT... \n");
       }
-      dbi->progress("END STATE_DEFINE_TRANSIENT... ");
+      dbi->progress("END STATE_DEFINE_TRANSIENT... "s);
       output_region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
     }
   }
@@ -771,10 +779,10 @@ namespace {
 #ifndef _MSC_VER
       struct timespec delay;
       delay.tv_sec  = (int)options.delay;
-      delay.tv_nsec = (options.delay - delay.tv_sec) * 1000000000L;
+      delay.tv_nsec = (options.delay - delay.tv_sec) * 1'000'000'000L;
       nanosleep(&delay, nullptr);
 #else
-      Sleep((int)(options.delay * 1000));
+      Sleep((int)(options.delay * 1'000));
 #endif
     }
   }
@@ -789,7 +797,7 @@ namespace {
         fmt::print(Ioss::DEBUG(), "{}, ", name);
       }
       size_t num_nodes = inb->entity_count();
-      size_t degree    = inb->get_property("component_degree").get_int();
+      size_t degree    = inb->get_property("component_degree"s).get_int();
       if (options.verbose && rank == 0) {
         fmt::print(Ioss::DEBUG(), " Number of Coordinates per Node = {:14L}\n", degree);
         fmt::print(Ioss::DEBUG(), " Number of Nodes                = {:14L}\n", num_nodes);
@@ -802,16 +810,16 @@ namespace {
         // nodeblock, transfer it and the "ids" field to the output
         // nodeblock at this time since it is used to determine
         // per-processor sizes of nodeblocks and nodesets.
-        if (inb->field_exists("owning_processor")) {
-          size_t isize = inb->get_field("ids").get_size();
+        if (inb->field_exists("owning_processor"s)) {
+          size_t isize = inb->get_field("ids"s).get_size();
           pool.data.resize(isize);
-          inb->get_field_data("ids", pool.data.data(), isize);
-          nb->put_field_data("ids", pool.data.data(), isize);
+          inb->get_field_data("ids"s, pool.data.data(), isize);
+          nb->put_field_data("ids"s, pool.data.data(), isize);
 
-          isize = inb->get_field("owning_processor").get_size();
+          isize = inb->get_field("owning_processor"s).get_size();
           pool.data.resize(isize);
-          inb->get_field_data("owning_processor", pool.data.data(), isize);
-          nb->put_field_data("owning_processor", pool.data.data(), isize);
+          inb->get_field_data("owning_processor"s, pool.data.data(), isize);
+          nb->put_field_data("owning_processor"s, pool.data.data(), isize);
         }
       }
     }
@@ -876,9 +884,9 @@ namespace {
       }
       if (options.verbose && rank == 0) {
         fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->type_string() + "s", blocks.size());
+                   (*blocks.begin())->type_string() + "s"s, blocks.size());
         fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->contains_string() + "s", total_entities);
+                   (*blocks.begin())->contains_string() + "s"s, total_entities);
       }
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DEBUG(), "\n");
@@ -944,9 +952,9 @@ namespace {
 
       if (options.verbose && rank == 0) {
         fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->type_string() + "s", blocks.size());
+                   (*blocks.begin())->type_string() + "s"s, blocks.size());
         fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                   (*blocks.begin())->contains_string() + "s", total_entities);
+                   (*blocks.begin())->contains_string() + "s"s, total_entities);
       }
       if (options.debug && rank == 0) {
         fmt::print(Ioss::DEBUG(), "\n");
@@ -1002,10 +1010,10 @@ namespace {
     }
 
     if (options.verbose && rank == 0 && !fss.empty()) {
-      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n", (*fss.begin())->type_string() + "s",
-                 fss.size());
       fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
-                 (*fss.begin())->contains_string() + "s", total_sides);
+                 (*fss.begin())->type_string() + "s"s, fss.size());
+      fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}\n",
+                 (*fss.begin())->contains_string() + "s"s, total_sides);
     }
     if (options.debug && rank == 0) {
       fmt::print(Ioss::DEBUG(), "\n");
@@ -1031,7 +1039,7 @@ namespace {
 
       if (options.verbose && rank == 0) {
         fmt::print(Ioss::DEBUG(), " Number of {:20s} = {:14L}",
-                   (*sets.begin())->type_string() + "s", sets.size());
+                   (*sets.begin())->type_string() + "s"s, sets.size());
         fmt::print(Ioss::DEBUG(), "\tLength of entity list = {:14L}\n", total_entities);
       }
       if (options.debug && rank == 0) {
@@ -1097,7 +1105,7 @@ namespace {
     // whose names begin with the prefix
     for (const auto &field_name : fields) {
       Ioss::Field field = ige->get_field(field_name);
-      if (field_name != "ids" && !oge->field_exists(field_name) &&
+      if (field_name != "ids"s && !oge->field_exists(field_name) &&
           Ioss::Utils::substr_equal(prefix, field_name)) {
         // If the field does not already exist, add it to the output node block
         oge->field_add(field);
@@ -1114,7 +1122,7 @@ namespace {
     // NodeBlocks that belong to a StructuredBlock have no field data that needs to be transferred.
     // A permanent and comprehensive fix that handles this issue still needs to be developed.
     // --sll 21aug20
-    if (ige->type() == Ioss::NODEBLOCK && ige->name().find("_nodes") != std::string::npos) {
+    if (ige->type() == Ioss::NODEBLOCK && ige->name().find("_nodes"s) != std::string::npos) {
       return;
     }
 
@@ -1125,9 +1133,9 @@ namespace {
 
     // Complication here is that if the 'role' is 'Ioss::Field::MESH',
     // then the 'ids' field must be transferred first...
-    if (role == Ioss::Field::MESH && ige->field_exists("ids")) {
-      assert(oge->field_exists("ids"));
-      transfer_field_data_internal(ige, oge, pool, "ids", options);
+    if (role == Ioss::Field::MESH && ige->field_exists("ids"s)) {
+      assert(oge->field_exists("ids"s));
+      transfer_field_data_internal(ige, oge, pool, "ids"s, options);
     }
 
     for (const auto &field_name : state_fields) {
@@ -1136,10 +1144,10 @@ namespace {
       // Ioss::ElementBlock class. On the other classes, it just
       // generates overhead...
 
-      if (field_name == "connectivity" && ige->type() != Ioss::ELEMENTBLOCK) {
+      if (field_name == "connectivity"s && ige->type() != Ioss::ELEMENTBLOCK) {
         continue;
       }
-      if (field_name == "ids") {
+      if (field_name == "ids"s) {
         continue;
       }
 
@@ -1160,46 +1168,46 @@ namespace {
 
     int basic_type = ige->get_field(field_name).get_type();
 
-    if (field_name == "mesh_model_coordinates_x") {
+    if (field_name == "mesh_model_coordinates_x"s) {
       return;
     }
-    if (field_name == "mesh_model_coordinates_y") {
+    if (field_name == "mesh_model_coordinates_y"s) {
       return;
     }
-    if (field_name == "mesh_model_coordinates_z") {
+    if (field_name == "mesh_model_coordinates_z"s) {
       return;
     }
-    if (field_name == "connectivity_raw") {
+    if (field_name == "connectivity_raw"s) {
       return;
     }
-    if (field_name == "element_side_raw") {
+    if (field_name == "element_side_raw"s) {
       return;
     }
-    if (field_name == "ids_raw") {
+    if (field_name == "ids_raw"s) {
       return;
     }
-    if (field_name == "implicit_ids") {
+    if (field_name == "implicit_ids"s) {
       return;
     }
-    if (field_name == "node_connectivity_status") {
+    if (field_name == "node_connectivity_status"s) {
       return;
     }
-    if (field_name == "owning_processor") {
+    if (field_name == "owning_processor"s) {
       return;
     }
-    if (field_name == "entity_processor_raw") {
+    if (field_name == "entity_processor_raw"s) {
       return;
     }
-    if (field_name == "ids" && ige->type() == Ioss::SIDEBLOCK) {
+    if (field_name == "ids"s && ige->type() == Ioss::SIDEBLOCK) {
       return;
     }
-    if (field_name == "ids" && ige->type() == Ioss::STRUCTUREDBLOCK) {
+    if (field_name == "ids"s && ige->type() == Ioss::STRUCTUREDBLOCK) {
       return;
     }
-    if (field_name == "cell_ids" && ige->type() == Ioss::STRUCTUREDBLOCK) {
+    if (field_name == "cell_ids"s && ige->type() == Ioss::STRUCTUREDBLOCK) {
       return;
     }
-    if (field_name == "cell_node_ids" && ige->type() == Ioss::STRUCTUREDBLOCK) {
+    if (field_name == "cell_node_ids"s && ige->type() == Ioss::STRUCTUREDBLOCK) {
       return;
     }
 
@@ -1301,7 +1309,7 @@ namespace {
       break;
 #endif
     default:
-      if (field_name == "mesh_model_coordinates") {
+      if (field_name == "mesh_model_coordinates"s) {
         fmt::print(Ioss::DEBUG(), "data_storage option not recognized.");
       }
       return;
@@ -1431,20 +1439,20 @@ namespace {
   template <typename INT>
   void set_owned_node_count(Ioss::Region &region, int my_processor, INT /*dummy*/)
   {
-    Ioss::NodeBlock *nb = region.get_node_block("nodeblock_1");
-    if (nb->field_exists("owning_processor")) {
+    Ioss::NodeBlock *nb = region.get_node_block("nodeblock_1"s);
+    if (nb->field_exists("owning_processor"s)) {
       std::vector<int> my_data;
-      nb->get_field_data("owning_processor", my_data);
+      nb->get_field_data("owning_processor"s, my_data);
 
       INT owned = std::count(my_data.begin(), my_data.end(), my_processor);
-      nb->property_add(Ioss::Property("locally_owned_count", owned));
+      nb->property_add(Ioss::Property("locally_owned_count"s, owned));
 
       // Set locally_owned_count property on all nodesets...
       const Ioss::NodeSetContainer &nss = region.get_nodesets();
       for (auto ns : nss) {
 
         std::vector<INT> ids;
-        ns->get_field_data("ids_raw", ids);
+        ns->get_field_data("ids_raw"s, ids);
         owned = 0;
         for (size_t n = 0; n < ids.size(); n++) {
           INT id = ids[n];
@@ -1452,7 +1460,7 @@ namespace {
             ++owned;
           }
         }
-        ns->property_add(Ioss::Property("locally_owned_count", owned));
+        ns->property_add(Ioss::Property("locally_owned_count"s, owned));
       }
     }
   }
@@ -1463,13 +1471,13 @@ namespace {
     auto &sblocks = region.get_structured_blocks();
     for (auto &sb : sblocks) {
       sb->field_add(
-          Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
+          Ioss::Field("processor_id"s, Ioss::Field::REAL, "scalar"s, Ioss::Field::TRANSIENT));
     }
 
     auto &eblocks = region.get_element_blocks();
     for (auto &eb : eblocks) {
       eb->field_add(
-          Ioss::Field("processor_id", Ioss::Field::REAL, "scalar", Ioss::Field::TRANSIENT));
+          Ioss::Field("processor_id"s, Ioss::Field::REAL, "scalar"s, Ioss::Field::TRANSIENT));
     }
     region.end_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
@@ -1480,12 +1488,12 @@ namespace {
 
     for (auto &sb : sblocks) {
       std::vector<double> proc_id(sb->entity_count(), rank);
-      sb->put_field_data("processor_id", proc_id);
+      sb->put_field_data("processor_id"s, proc_id);
     }
 
     for (auto &eb : eblocks) {
       std::vector<double> proc_id(eb->entity_count(), rank);
-      eb->put_field_data("processor_id", proc_id);
+      eb->put_field_data("processor_id"s, proc_id);
     }
 
     region.end_state(step);

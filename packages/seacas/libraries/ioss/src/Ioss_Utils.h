@@ -116,6 +116,9 @@ namespace Ioss {
       }
     }
 
+    /** \brief guess file type from extension */
+    static std::string get_type_from_file(const std::string &filename);
+
     template <typename T> static void uniquify(std::vector<T> &vec, bool skip_first = false)
     {
       auto it = vec.begin();
@@ -290,8 +293,8 @@ namespace Ioss {
      * string `1..3, 5..8`
      */
     static std::string format_id_list(const std::vector<size_t> &ids,
-                                      const std::string &        rng_sep = " to ",
-                                      const std::string &        seq_sep = ", ");
+                                      const std::string &        rng_sep = " to "s,
+                                      const std::string &        seq_sep = ", "s);
 
     /** \brief Convert a string to lower case, and convert spaces to `_`.
      *
@@ -490,10 +493,10 @@ namespace Ioss {
     static void generate_history_mesh(Ioss::Region *region);
 
     static void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                            const std::string &header, const std::string &suffix = "\n\t");
+                            const std::string &header, const std::string &suffix = "\n\t"s);
 
     static void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
-                              const std::string &header, const std::string &suffix = "\n\t",
+                              const std::string &header, const std::string &suffix = "\n\t"s,
                               bool print_empty = false);
   };
 

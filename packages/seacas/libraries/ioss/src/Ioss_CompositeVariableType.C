@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -13,10 +13,12 @@
 #include <string>
 #include <utility>
 
+using namespace std::string_literals;
+
 namespace Ioss {
   std::string CompositeVariableType::composite_name(const std::string &base, int copies)
   {
-    static std::string SEPARATOR("*");
+    static std::string SEPARATOR("*"s);
     std::string        name = base;
     name += SEPARATOR;
     name += std::to_string(copies);

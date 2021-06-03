@@ -16,6 +16,7 @@
 #include <vector>
 
 #include <Ioss_CodeTypes.h>
+using namespace std::string_literals;
 
 namespace {
   size_t internal_get_size(Ioss::Field::BasicType type, size_t count,
@@ -24,14 +25,14 @@ namespace {
   std::string type_string(Ioss::Field::BasicType type)
   {
     switch (type) {
-    case Ioss::Field::REAL: return std::string("real");
-    case Ioss::Field::INTEGER: return std::string("integer");
-    case Ioss::Field::INT64: return std::string("64-bit integer");
-    case Ioss::Field::COMPLEX: return std::string("complex");
-    case Ioss::Field::STRING: return std::string("string");
-    case Ioss::Field::CHARACTER: return std::string("char");
-    case Ioss::Field::INVALID: return std::string("invalid");
-    default: return std::string("internal error");
+    case Ioss::Field::REAL: return "real"s;
+    case Ioss::Field::INTEGER: return "integer"s;
+    case Ioss::Field::INT64: return "64-bit integer"s;
+    case Ioss::Field::COMPLEX: return "complex"s;
+    case Ioss::Field::STRING: return "string"s;
+    case Ioss::Field::CHARACTER: return "char"s;
+    case Ioss::Field::INVALID: return "invalid"s;
+    default: return "internal error"s;
     }
   }
 
@@ -48,7 +49,7 @@ namespace {
 
 /** \brief Create an empty field.
  */
-Ioss::Field::Field() { rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid"); }
+Ioss::Field::Field() { rawStorage_ = transStorage_ = Ioss::VariableType::factory("invalid"s); }
 
 /** \brief Create a field.
  *

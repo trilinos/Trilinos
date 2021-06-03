@@ -18,6 +18,11 @@
 #include <libgen.h>
 #include <sys/stat.h>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+
 namespace Iovs {
   std::string persistentLdLibraryPathEnvForCatalyst = "";
 
@@ -332,7 +337,11 @@ namespace Iovs {
     else {
       persistentLdLibraryPathEnvForCatalyst = paraviewPythonZipFilePath + ":" + existingPythonpath;
     }
+#ifdef _WIN32
+    SetEnvironmentVariableA("PYTHONPATH", persistentLdLibraryPathEnvForCatalyst.c_str());
+#else
     setenv("PYTHONPATH", persistentLdLibraryPathEnvForCatalyst.c_str(), 1);
+#endif
   }
 
   std::string Utils::getCatalystPythonDriverPath()
@@ -373,7 +382,11 @@ namespace Iovs {
       IOSS_ERROR(errmsg);
     }
 
-    char *      cbuf          = realpath(sierraInsDir.c_str(), nullptr);
+#ifdef _WIN32
+    char *cbuf = _fullpath(nullptr, sierraInsDir.c_str(), _MAX_PATH);
+#else
+    char *cbuf = realpath(sierraInsDir.c_str(), nullptr);
+#endif
     std::string sierraInsPath = cbuf;
     free(cbuf);
 

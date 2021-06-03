@@ -46,11 +46,13 @@
 #include <utility>
 #include <vector>
 
+using namespace std::string_literals;
+
 namespace {
-  std::string id_str() { return std::string("id"); }
-  std::string db_name_str() { return std::string("db_name"); }
-  std::string orig_topo_str() { return std::string("original_topology_type"); }
-  std::string orig_block_order() { return std::string("original_block_order"); }
+  std::string id_str() { return "id"s; }
+  std::string db_name_str() { return "db_name"s; }
+  std::string orig_topo_str() { return "original_topology_type"s; }
+  std::string orig_block_order() { return "original_block_order"s; }
 
   template <typename T>
   Ioss::GroupingEntity *get_entity_internal(int64_t id, const std::vector<T> &entities)
@@ -345,28 +347,28 @@ namespace Ioss {
       }
     }
 
-    properties.add(Property(this, "spatial_dimension", Property::INTEGER));
-    properties.add(Property(this, "node_block_count", Property::INTEGER));
-    properties.add(Property(this, "edge_block_count", Property::INTEGER));
-    properties.add(Property(this, "face_block_count", Property::INTEGER));
-    properties.add(Property(this, "element_block_count", Property::INTEGER));
-    properties.add(Property(this, "structured_block_count", Property::INTEGER));
-    properties.add(Property(this, "assembly_count", Property::INTEGER));
-    properties.add(Property(this, "blob_count", Property::INTEGER));
-    properties.add(Property(this, "side_set_count", Property::INTEGER));
-    properties.add(Property(this, "node_set_count", Property::INTEGER));
-    properties.add(Property(this, "edge_set_count", Property::INTEGER));
-    properties.add(Property(this, "face_set_count", Property::INTEGER));
-    properties.add(Property(this, "element_set_count", Property::INTEGER));
-    properties.add(Property(this, "comm_set_count", Property::INTEGER));
-    properties.add(Property(this, "node_count", Property::INTEGER));
-    properties.add(Property(this, "edge_count", Property::INTEGER));
-    properties.add(Property(this, "face_count", Property::INTEGER));
-    properties.add(Property(this, "element_count", Property::INTEGER));
-    properties.add(Property(this, "coordinate_frame_count", Property::INTEGER));
-    properties.add(Property(this, "state_count", Property::INTEGER));
-    properties.add(Property(this, "current_state", Property::INTEGER));
-    properties.add(Property(this, "database_name", Property::STRING));
+    properties.add(Property(this, "spatial_dimension"s, Property::INTEGER));
+    properties.add(Property(this, "node_block_count"s, Property::INTEGER));
+    properties.add(Property(this, "edge_block_count"s, Property::INTEGER));
+    properties.add(Property(this, "face_block_count"s, Property::INTEGER));
+    properties.add(Property(this, "element_block_count"s, Property::INTEGER));
+    properties.add(Property(this, "structured_block_count"s, Property::INTEGER));
+    properties.add(Property(this, "assembly_count"s, Property::INTEGER));
+    properties.add(Property(this, "blob_count"s, Property::INTEGER));
+    properties.add(Property(this, "side_set_count"s, Property::INTEGER));
+    properties.add(Property(this, "node_set_count"s, Property::INTEGER));
+    properties.add(Property(this, "edge_set_count"s, Property::INTEGER));
+    properties.add(Property(this, "face_set_count"s, Property::INTEGER));
+    properties.add(Property(this, "element_set_count"s, Property::INTEGER));
+    properties.add(Property(this, "comm_set_count"s, Property::INTEGER));
+    properties.add(Property(this, "node_count"s, Property::INTEGER));
+    properties.add(Property(this, "edge_count"s, Property::INTEGER));
+    properties.add(Property(this, "face_count"s, Property::INTEGER));
+    properties.add(Property(this, "element_count"s, Property::INTEGER));
+    properties.add(Property(this, "coordinate_frame_count"s, Property::INTEGER));
+    properties.add(Property(this, "state_count"s, Property::INTEGER));
+    properties.add(Property(this, "current_state"s, Property::INTEGER));
+    properties.add(Property(this, "database_name"s, Property::STRING));
   }
 
   Region::~Region()
@@ -458,13 +460,13 @@ namespace Ioss {
   const std::string Region::mesh_type_string() const
   {
     switch (mesh_type()) {
-    case MeshType::UNKNOWN: return "Unknown";
-    case MeshType::HYBRID: return "Hybrid";
-    case MeshType::STRUCTURED: return "Structured";
-    case MeshType::UNSTRUCTURED: return "Unstructured";
+    case MeshType::UNKNOWN: return "Unknown"s;
+    case MeshType::HYBRID: return "Hybrid"s;
+    case MeshType::STRUCTURED: return "Structured"s;
+    case MeshType::UNSTRUCTURED: return "Unstructured"s;
     }
     SMART_ASSERT(1 == 0 && "Program Error");
-    return "Invalid";
+    return "Invalid"s;
   }
 
   /** \brief Print a summary of entities in the region.
@@ -486,20 +488,21 @@ namespace Ioss {
       total_sides += get_entity_count(fs->get_side_blocks());
     }
 
-    int64_t total_nodes    = get_property("node_count").get_int();
-    int64_t total_elements = get_property("element_count").get_int();
+    int64_t total_nodes    = get_property("node_count"s).get_int();
+    int64_t total_elements = get_property("element_count"s).get_int();
     auto    max_entity = std::max({total_sides, total_es_elements, total_fs_faces, total_es_edges,
                                 total_ns_nodes, total_cells, total_nodes, total_elements});
 
-    int64_t num_ts = get_property("state_count").get_int();
+    int64_t num_ts = get_property("state_count"s).get_int();
     auto    max_sb = std::max(
-        {get_property("spatial_dimension").get_int(), get_property("node_block_count").get_int(),
-         get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
-         get_property("element_block_count").get_int(),
-         get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
-         get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
-         get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
-         get_property("assembly_count").get_int(), get_property("blob_count").get_int(), num_ts});
+        {get_property("spatial_dimension"s).get_int(), get_property("node_block_count"s).get_int(),
+         get_property("edge_block_count"s).get_int(), get_property("face_block_count"s).get_int(),
+         get_property("element_block_count"s).get_int(),
+         get_property("structured_block_count"s).get_int(),
+         get_property("node_set_count"s).get_int(), get_property("edge_set_count"s).get_int(),
+         get_property("face_set_count"s).get_int(), get_property("element_set_count"s).get_int(),
+         get_property("side_set_count"s).get_int(), get_property("assembly_count"s).get_int(),
+         get_property("blob_count"s).get_int(), num_ts});
 
     // Global variables transitioning from TRANSIENT to REDUCTION..
     size_t num_glo_vars  = field_count(Ioss::Field::TRANSIENT);
@@ -566,19 +569,19 @@ namespace Ioss {
         " Blobs              = {42:{24}L}\t                 {38:{23}s}\t Blob       = {43:{25}L}\t{55:{25}L}\n\n"
         " Time steps         = {32:{24}L}\n",
         get_database()->get_filename(), mesh_type_string(),
-        get_property("spatial_dimension").get_int(), get_property("node_count").get_int(),
-        get_property("edge_count").get_int(), get_property("face_count").get_int(),
-        get_property("element_count").get_int(), get_property("node_block_count").get_int(),
-        get_property("edge_block_count").get_int(), get_property("face_block_count").get_int(),
-        get_property("element_block_count").get_int(),
-        get_property("structured_block_count").get_int(), get_property("node_set_count").get_int(),
-        get_property("edge_set_count").get_int(), get_property("face_set_count").get_int(),
-        get_property("element_set_count").get_int(), get_property("side_set_count").get_int(),
+        get_property("spatial_dimension"s).get_int(), get_property("node_count"s).get_int(),
+        get_property("edge_count"s).get_int(), get_property("face_count"s).get_int(),
+        get_property("element_count"s).get_int(), get_property("node_block_count"s).get_int(),
+        get_property("edge_block_count"s).get_int(), get_property("face_block_count"s).get_int(),
+        get_property("element_block_count"s).get_int(),
+        get_property("structured_block_count"s).get_int(), get_property("node_set_count"s).get_int(),
+        get_property("edge_set_count"s).get_int(), get_property("face_set_count"s).get_int(),
+        get_property("element_set_count"s).get_int(), get_property("side_set_count"s).get_int(),
         total_cells, total_ns_nodes, total_es_edges, total_fs_faces, total_es_elements, total_sides,
         num_width, sb_width, vr_width, num_glo_vars, num_nod_vars, num_ele_vars, num_str_vars,
         num_ns_vars, num_ss_vars, num_ts, num_edg_vars, num_fac_vars, num_es_vars, num_fs_vars,
-        num_els_vars, " ", get_database()->get_format(), get_property("assembly_count").get_int(),
-        num_asm_vars, get_property("blob_count").get_int(), num_blob_vars, num_glo_red_vars,
+        num_els_vars, " "s, get_database()->get_format(), get_property("assembly_count"s).get_int(),
+        num_asm_vars, get_property("blob_count"s).get_int(), num_blob_vars, num_glo_red_vars,
         num_nod_red_vars, num_edg_red_vars, num_fac_red_vars, num_ele_red_vars, num_str_red_vars,
         num_ns_red_vars, num_es_red_vars, num_fs_red_vars, num_els_red_vars, num_asm_red_vars,
         num_blob_red_vars);
@@ -745,7 +748,7 @@ namespace Ioss {
       bool check_consistency = false;
 #endif
       Ioss::Utils::check_set_bool_property(get_database()->get_property_manager(),
-                                           "CHECK_PARALLEL_CONSISTENCY", check_consistency);
+                                           "CHECK_PARALLEL_CONSISTENCY"s, check_consistency);
       if (check_consistency) {
         bool ok = check_parallel_consistency(*this);
         if (!ok) {
@@ -1036,16 +1039,16 @@ namespace Ioss {
       // values)
       if (!structuredBlocks.empty()) {
         auto   prev_block = structuredBlocks.back();
-        size_t num_node   = prev_block->get_property("node_count").get_int();
-        size_t num_cell   = prev_block->get_property("cell_count").get_int();
+        size_t num_node   = prev_block->get_property("node_count"s).get_int();
+        size_t num_cell   = prev_block->get_property("cell_count"s).get_int();
         num_node += prev_block->get_node_offset();
         num_cell += prev_block->get_cell_offset();
 
         structured_block->set_node_offset(num_node);
         structured_block->set_cell_offset(num_cell);
 
-        size_t global_num_node = prev_block->get_property("global_node_count").get_int();
-        size_t global_num_cell = prev_block->get_property("global_cell_count").get_int();
+        size_t global_num_node = prev_block->get_property("global_node_count"s).get_int();
+        size_t global_num_cell = prev_block->get_property("global_cell_count"s).get_int();
         global_num_node += prev_block->get_node_global_offset();
         global_num_cell += prev_block->get_cell_global_offset();
 
@@ -1059,8 +1062,8 @@ namespace Ioss {
 
       // This will possibly be overwritten at a later time when the block is output
       // to the cgns file
-      structured_block->property_add(Ioss::Property("zone", (int)structuredBlocks.size()));
-      structured_block->property_add(Ioss::Property("base", 1));
+      structured_block->property_add(Ioss::Property("zone"s, (int)structuredBlocks.size()));
+      structured_block->property_add(Ioss::Property("base"s, 1));
       // Add name as alias to itself to simplify later uses...
       add_alias__(structured_block);
       return true;
@@ -1559,8 +1562,8 @@ namespace Ioss {
     bool success = add_alias__(db_name, db_name);
 
     // "db_name" property is used with the canonical name setting.
-    if (success && ge->property_exists("db_name")) {
-      std::string canon_name = ge->get_property("db_name").get_string();
+    if (success && ge->property_exists("db_name"s)) {
+      std::string canon_name = ge->get_property("db_name"s).get_string();
       if (canon_name != db_name) {
         success = add_alias__(db_name, canon_name);
       }
@@ -1627,7 +1630,7 @@ namespace Ioss {
     std::string ci_alias = Ioss::Utils::uppercase(alias);
     auto        I        = aliases_.find(ci_alias);
     if (I == aliases_.end()) {
-      return "";
+      return ""s;
     }
     return (*I).second;
   }
@@ -2161,84 +2164,84 @@ namespace Ioss {
     // to this function, so they are somewhat exodusII specific...).
     if (((io_type & NODEBLOCK) != 0u) && get_node_block(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "NODE_BLOCK";
+        *my_type = "NODE_BLOCK"s;
       }
       return true;
     }
     if (((io_type & ASSEMBLY) != 0u) && get_assembly(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "ASSEMBLY";
+        *my_type = "ASSEMBLY"s;
       }
       return true;
     }
     if (((io_type & BLOB) != 0u) && get_blob(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "BLOB";
+        *my_type = "BLOB"s;
       }
       return true;
     }
     if (((io_type & EDGEBLOCK) != 0u) && get_edge_block(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "EDGE_BLOCK";
+        *my_type = "EDGE_BLOCK"s;
       }
       return true;
     }
     if (((io_type & FACEBLOCK) != 0u) && get_face_block(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "FACE_BLOCK";
+        *my_type = "FACE_BLOCK"s;
       }
       return true;
     }
     if (((io_type & ELEMENTBLOCK) != 0u) && get_element_block(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "ELEMENT_BLOCK";
+        *my_type = "ELEMENT_BLOCK"s;
       }
       return true;
     }
     if (((io_type & STRUCTUREDBLOCK) != 0u) && get_structured_block(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "STRUCTURED_BLOCK";
+        *my_type = "STRUCTURED_BLOCK"s;
       }
       return true;
     }
     if (((io_type & SIDESET) != 0u) && get_sideset(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "SURFACE";
+        *my_type = "SURFACE"s;
       }
       return true;
     }
     else if (((io_type & NODESET) != 0u) && get_nodeset(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "NODESET";
+        *my_type = "NODESET"s;
       }
       return true;
     }
     else if (((io_type & EDGESET) != 0u) && get_edgeset(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "EDGESET";
+        *my_type = "EDGESET"s;
       }
       return true;
     }
     else if (((io_type & FACESET) != 0u) && get_faceset(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "FACESET";
+        *my_type = "FACESET"s;
       }
       return true;
     }
     else if (((io_type & ELEMENTSET) != 0u) && get_elementset(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "ELEMENTSET";
+        *my_type = "ELEMENTSET"s;
       }
       return true;
     }
     else if (((io_type & COMMSET) != 0u) && get_commset(my_name) != nullptr) {
       if (my_type != nullptr) {
-        *my_type = "COMMSET";
+        *my_type = "COMMSET"s;
       }
       return true;
     }
     if (my_type != nullptr) {
-      *my_type = "INVALID";
+      *my_type = "INVALID"s;
     }
     return false;
   }
@@ -2262,7 +2265,7 @@ namespace Ioss {
     fmt::print(errmsg,
                "ERROR: In Ioss::Region::get_element_block, an invalid local_id of {} is specified. "
                " The valid range is 1 to {}",
-               local_id, get_implicit_property("element_count").get_int());
+               local_id, get_implicit_property("element_count"s).get_int());
     IOSS_ERROR(errmsg);
   }
 
@@ -2299,79 +2302,79 @@ namespace Ioss {
    */
   Property Region::get_implicit_property(const std::string &my_name) const
   {
-    if (my_name == "spatial_dimension") {
+    if (my_name == "spatial_dimension"s) {
       if (!nodeBlocks.empty()) {
-        return nodeBlocks[0]->get_property("component_degree");
+        return nodeBlocks[0]->get_property("component_degree"s);
       }
 
       return Property(my_name, 0);
     }
 
-    if (my_name == "node_block_count") {
+    if (my_name == "node_block_count"s) {
       return Property(my_name, static_cast<int>(nodeBlocks.size()));
     }
 
-    if (my_name == "edge_block_count") {
+    if (my_name == "edge_block_count"s) {
       return Property(my_name, static_cast<int>(edgeBlocks.size()));
     }
 
-    if (my_name == "face_block_count") {
+    if (my_name == "face_block_count"s) {
       return Property(my_name, static_cast<int>(faceBlocks.size()));
     }
 
-    if (my_name == "element_block_count") {
+    if (my_name == "element_block_count"s) {
       return Property(my_name, static_cast<int>(elementBlocks.size()));
     }
 
-    if (my_name == "structured_block_count") {
+    if (my_name == "structured_block_count"s) {
       return Property(my_name, static_cast<int>(structuredBlocks.size()));
     }
 
-    if (my_name == "assembly_count") {
+    if (my_name == "assembly_count"s) {
       return Property(my_name, static_cast<int>(assemblies.size()));
     }
 
-    if (my_name == "blob_count") {
+    if (my_name == "blob_count"s) {
       return Property(my_name, static_cast<int>(blobs.size()));
     }
 
-    if (my_name == "side_set_count") {
+    if (my_name == "side_set_count"s) {
       return Property(my_name, static_cast<int>(sideSets.size()));
     }
 
-    if (my_name == "node_set_count") {
+    if (my_name == "node_set_count"s) {
       return Property(my_name, static_cast<int>(nodeSets.size()));
     }
 
-    if (my_name == "edge_set_count") {
+    if (my_name == "edge_set_count"s) {
       return Property(my_name, static_cast<int>(edgeSets.size()));
     }
 
-    if (my_name == "face_set_count") {
+    if (my_name == "face_set_count"s) {
       return Property(my_name, static_cast<int>(faceSets.size()));
     }
 
-    if (my_name == "element_set_count") {
+    if (my_name == "element_set_count"s) {
       return Property(my_name, static_cast<int>(elementSets.size()));
     }
 
-    if (my_name == "comm_set_count") {
+    if (my_name == "comm_set_count"s) {
       return Property(my_name, static_cast<int>(commSets.size()));
     }
 
-    if (my_name == "coordinate_frame_count") {
+    if (my_name == "coordinate_frame_count"s) {
       return Property(my_name, static_cast<int>(coordinateFrames.size()));
     }
 
-    if (my_name == "state_count") {
+    if (my_name == "state_count"s) {
       return Property(my_name, stateCount);
     }
 
-    if (my_name == "current_state") {
+    if (my_name == "current_state"s) {
       return Property(my_name, currentState);
     }
 
-    if (my_name == "element_count") {
+    if (my_name == "element_count"s) {
       int64_t count = 0;
       for (auto eb : elementBlocks) {
         count += eb->entity_count();
@@ -2379,15 +2382,15 @@ namespace Ioss {
       return Property(my_name, count);
     }
 
-    if (my_name == "cell_count") {
+    if (my_name == "cell_count"s) {
       int64_t count = 0;
       for (auto eb : structuredBlocks) {
-        count += eb->get_property("cell_count").get_int();
+        count += eb->get_property("cell_count"s).get_int();
       }
       return Property(my_name, count);
     }
 
-    if (my_name == "face_count") {
+    if (my_name == "face_count"s) {
       int64_t count = 0;
       for (auto fb : faceBlocks) {
         count += fb->entity_count();
@@ -2395,7 +2398,7 @@ namespace Ioss {
       return Property(my_name, count);
     }
 
-    if (my_name == "edge_count") {
+    if (my_name == "edge_count"s) {
       int64_t count = 0;
       for (auto eb : edgeBlocks) {
         count += eb->entity_count();
@@ -2403,7 +2406,7 @@ namespace Ioss {
       return Property(my_name, count);
     }
 
-    if (my_name == "node_count") {
+    if (my_name == "node_count"s) {
       int64_t count = 0;
       for (auto nb : nodeBlocks) {
         count += nb->entity_count();
@@ -2411,7 +2414,7 @@ namespace Ioss {
       return Property(my_name, count);
     }
 
-    if (my_name == "database_name") {
+    if (my_name == "database_name"s) {
       std::string filename = get_database()->get_filename();
       return Property(my_name, filename);
     }

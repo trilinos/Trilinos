@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -9,46 +9,47 @@
 
 #include <cassert>
 #include <string>
+using namespace std::string_literals;
 
 namespace {
-  const std::string X() { return std::string("x"); }
-  const std::string Y() { return std::string("y"); }
-  const std::string Z() { return std::string("z"); }
-  const std::string Q() { return std::string("q"); }
-  const std::string S() { return std::string("s"); }
+  const std::string X() { return "x"s; }
+  const std::string Y() { return "y"s; }
+  const std::string Z() { return "z"s; }
+  const std::string Q() { return "q"s; }
+  const std::string S() { return "s"s; }
 
-  const std::string XX() { return std::string("xx"); }
-  const std::string YY() { return std::string("yy"); }
-  const std::string ZZ() { return std::string("zz"); }
-  const std::string XY() { return std::string("xy"); }
-  const std::string YZ() { return std::string("yz"); }
-  const std::string ZX() { return std::string("zx"); }
-  const std::string YX() { return std::string("yx"); }
-  const std::string ZY() { return std::string("zy"); }
-  const std::string XZ() { return std::string("xz"); }
+  const std::string XX() { return "xx"s; }
+  const std::string YY() { return "yy"s; }
+  const std::string ZZ() { return "zz"s; }
+  const std::string XY() { return "xy"s; }
+  const std::string YZ() { return "yz"s; }
+  const std::string ZX() { return "zx"s; }
+  const std::string YX() { return "yx"s; }
+  const std::string ZY() { return "zy"s; }
+  const std::string XZ() { return "xz"s; }
 
-  const std::string invalid() { return std::string("invalid"); }
-  const std::string scalar() { return std::string("scalar"); }
-  const std::string vector_2d() { return std::string("vector_2d"); }
-  const std::string vector_3d() { return std::string("vector_3d"); }
-  const std::string quaternion_2d() { return std::string("quaternion_2d"); }
-  const std::string quaternion_3d() { return std::string("quaternion_3d"); }
-  const std::string full_tensor_36() { return std::string("full_tensor_36"); }
-  const std::string full_tensor_32() { return std::string("full_tensor_32"); }
-  const std::string full_tensor_22() { return std::string("full_tensor_22"); }
-  const std::string full_tensor_16() { return std::string("full_tensor_16"); }
-  const std::string full_tensor_12() { return std::string("full_tensor_12"); }
-  const std::string sym_tensor_33() { return std::string("sym_tensor_33"); }
-  const std::string sym_tensor_31() { return std::string("sym_tensor_31"); }
-  const std::string sym_tensor_21() { return std::string("sym_tensor_21"); }
-  const std::string sym_tensor_13() { return std::string("sym_tensor_13"); }
-  const std::string sym_tensor_11() { return std::string("sym_tensor_11"); }
-  const std::string sym_tensor_10() { return std::string("sym_tensor_10"); }
-  const std::string asym_tensor_03() { return std::string("asym_tensor_03"); }
-  const std::string asym_tensor_02() { return std::string("asym_tensor_02"); }
-  const std::string asym_tensor_01() { return std::string("asym_tensor_01"); }
-  const std::string matrix_22() { return std::string("matrix_22"); }
-  const std::string matrix_33() { return std::string("matrix_33"); }
+  const std::string invalid() { return "invalid"s; }
+  const std::string scalar() { return "scalar"s; }
+  const std::string vector_2d() { return "vector_2d"s; }
+  const std::string vector_3d() { return "vector_3d"s; }
+  const std::string quaternion_2d() { return "quaternion_2d"s; }
+  const std::string quaternion_3d() { return "quaternion_3d"s; }
+  const std::string full_tensor_36() { return "full_tensor_36"s; }
+  const std::string full_tensor_32() { return "full_tensor_32"s; }
+  const std::string full_tensor_22() { return "full_tensor_22"s; }
+  const std::string full_tensor_16() { return "full_tensor_16"s; }
+  const std::string full_tensor_12() { return "full_tensor_12"s; }
+  const std::string sym_tensor_33() { return "sym_tensor_33"s; }
+  const std::string sym_tensor_31() { return "sym_tensor_31"s; }
+  const std::string sym_tensor_21() { return "sym_tensor_21"s; }
+  const std::string sym_tensor_13() { return "sym_tensor_13"s; }
+  const std::string sym_tensor_11() { return "sym_tensor_11"s; }
+  const std::string sym_tensor_10() { return "sym_tensor_10"s; }
+  const std::string asym_tensor_03() { return "asym_tensor_03"s; }
+  const std::string asym_tensor_02() { return "asym_tensor_02"s; }
+  const std::string asym_tensor_01() { return "asym_tensor_01"s; }
+  const std::string matrix_22() { return "matrix_22"s; }
+  const std::string matrix_33() { return "matrix_33"s; }
 } // namespace
 
 Ioss::StorageInitializer::StorageInitializer()
@@ -98,18 +99,18 @@ std::string Ioss::Invalid_Storage::label_name(const std::string &base, int /*whi
 Ioss::Scalar::Scalar() : Ioss::VariableType(scalar(), 1)
 {
   // Sierra uses 'REAL' as a variable storage type
-  Ioss::VariableType::alias("scalar", "real");
+  Ioss::VariableType::alias("scalar"s, "real"s);
   // Sierra also uses 'INTEGER' as a variable storage type
-  Ioss::VariableType::alias("scalar", "integer");
-  Ioss::VariableType::alias("scalar", "unsigned integer");
+  Ioss::VariableType::alias("scalar"s, "integer"s);
+  Ioss::VariableType::alias("scalar"s, "unsigned integer"s);
 }
 
 std::string Ioss::Scalar::label(int which, const char /*suffix_sep*/) const
 {
   assert(which > 0 && which <= component_count());
   switch (which) {
-  case 1: return "";
-  default: return "";
+  case 1: return ""s;
+  default: return ""s;
   }
 }
 
@@ -123,7 +124,7 @@ std::string Ioss::Scalar::label_name(const std::string &base, int /*which*/,
 
 Ioss::Vector_2D::Vector_2D() : Ioss::VariableType(vector_2d(), 2)
 {
-  Ioss::VariableType::alias("vector_2d", "pair");
+  Ioss::VariableType::alias("vector_2d"s, "pair"s);
 }
 
 std::string Ioss::Vector_2D::label(int which, const char /*suffix_sep*/) const
@@ -132,7 +133,7 @@ std::string Ioss::Vector_2D::label(int which, const char /*suffix_sep*/) const
   switch (which) {
   case 1: return X();
   case 2: return Y();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -147,7 +148,7 @@ std::string Ioss::Vector_3D::label(int which, const char /*suffix_sep*/) const
   case 1: return X();
   case 2: return Y();
   case 3: return Z();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -161,7 +162,7 @@ std::string Ioss::Quaternion_2D::label(int which, const char /*suffix_sep*/) con
   switch (which) {
   case 1: return S();
   case 2: return Q();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -177,7 +178,7 @@ std::string Ioss::Quaternion_3D::label(int which, const char /*suffix_sep*/) con
   case 2: return Y();
   case 3: return Z();
   case 4: return Q();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -198,7 +199,7 @@ std::string Ioss::Full_Tensor_36::label(int which, const char /*suffix_sep*/) co
   case 7: return YX();
   case 8: return ZY();
   case 9: return XZ();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -215,7 +216,7 @@ std::string Ioss::Full_Tensor_32::label(int which, const char /*suffix_sep*/) co
   case 3: return ZZ();
   case 4: return XY();
   case 5: return YX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -231,7 +232,7 @@ std::string Ioss::Full_Tensor_22::label(int which, const char /*suffix_sep*/) co
   case 2: return YY();
   case 3: return XY();
   case 4: return YX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -250,7 +251,7 @@ std::string Ioss::Full_Tensor_16::label(int which, const char /*suffix_sep*/) co
   case 5: return YX();
   case 6: return ZY();
   case 7: return XZ();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -265,7 +266,7 @@ std::string Ioss::Full_Tensor_12::label(int which, const char /*suffix_sep*/) co
   case 1: return XX();
   case 2: return XY();
   case 3: return YX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -283,7 +284,7 @@ std::string Ioss::Sym_Tensor_33::label(int which, const char /*suffix_sep*/) con
   case 4: return XY();
   case 5: return YZ();
   case 6: return ZX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -299,7 +300,7 @@ std::string Ioss::Sym_Tensor_31::label(int which, const char /*suffix_sep*/) con
   case 2: return YY();
   case 3: return ZZ();
   case 4: return XY();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -314,7 +315,7 @@ std::string Ioss::Sym_Tensor_21::label(int which, const char /*suffix_sep*/) con
   case 1: return XX();
   case 2: return YY();
   case 3: return XY();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -330,7 +331,7 @@ std::string Ioss::Sym_Tensor_13::label(int which, const char /*suffix_sep*/) con
   case 2: return XY();
   case 3: return YZ();
   case 4: return ZX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -344,7 +345,7 @@ std::string Ioss::Sym_Tensor_11::label(int which, const char /*suffix_sep*/) con
   switch (which) {
   case 1: return XX();
   case 2: return XY();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -357,7 +358,7 @@ std::string Ioss::Sym_Tensor_10::label(int which, const char /*suffix_sep*/) con
   assert(which > 0 && which <= component_count());
   switch (which) {
   case 1: return XX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -372,7 +373,7 @@ std::string Ioss::Asym_Tensor_03::label(int which, const char /*suffix_sep*/) co
   case 1: return XY();
   case 2: return YZ();
   case 3: return ZX();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -386,7 +387,7 @@ std::string Ioss::Asym_Tensor_02::label(int which, const char /*suffix_sep*/) co
   switch (which) {
   case 1: return XY();
   case 2: return YZ();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -399,7 +400,7 @@ std::string Ioss::Asym_Tensor_01::label(int which, const char /*suffix_sep*/) co
   assert(which > 0 && which <= component_count());
   switch (which) {
   case 1: return XY();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -415,7 +416,7 @@ std::string Ioss::Matrix_22::label(int which, const char /*suffix_sep*/) const
   case 2: return XY();
   case 3: return YX();
   case 4: return YY();
-  default: return "";
+  default: return ""s;
   }
 }
 
@@ -436,7 +437,7 @@ std::string Ioss::Matrix_33::label(int which, const char /*suffix_sep*/) const
   case 7: return ZX();
   case 8: return ZY();
   case 9: return ZZ();
-  default: return "";
+  default: return ""s;
   }
 }
 

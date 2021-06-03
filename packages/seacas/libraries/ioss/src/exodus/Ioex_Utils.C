@@ -668,7 +668,17 @@ namespace Ioex {
 
         if (common_ftopo == nullptr && sides[iel] != current_side) {
           current_side = sides[iel];
-          assert(current_side > 0 && current_side <= block->topology()->number_boundaries());
+          if (current_side <= 0 || current_side > block->topology()->number_boundaries()) {
+            std::ostringstream errmsg;
+            fmt::print(
+                errmsg,
+                "ERROR: In sideset/surface '{}' for the element with id {:L} of topology '{}';\n\t"
+                "an invalid face index '{}' is specified.\n\tFace indices "
+                "must be between 1 and {}. ({})",
+                surface_name, elem_id, block->topology()->name(), current_side,
+                block->topology()->number_boundaries(), __func__);
+            IOSS_ERROR(errmsg);
+          }
           topo = block->topology()->boundary_type(sides[iel]);
           assert(topo != nullptr);
         }

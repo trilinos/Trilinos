@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,8 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
+using namespace std::string_literals;
+
 namespace Ioss {
 
   using EntityContainer = std::vector<const Ioss::GroupingEntity *>;
@@ -33,11 +35,11 @@ namespace Ioss {
 
     Assembly(DatabaseIO *io_database, const std::string &my_name);
 
-    std::string type_string() const override { return "Assembly"; }
-    std::string short_type_string() const override { return "assembly"; }
+    std::string type_string() const override { return "Assembly"s; }
+    std::string short_type_string() const override { return "assembly"s; }
     std::string contains_string() const override
     {
-      return m_members.empty() ? "<EMPTY>" : m_members[0]->type_string();
+      return m_members.empty() ? "<EMPTY>"s : m_members[0]->type_string();
     }
     EntityType type() const override { return ASSEMBLY; }
 

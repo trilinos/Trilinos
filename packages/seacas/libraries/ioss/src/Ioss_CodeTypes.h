@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -21,6 +21,8 @@
 #endif
 #endif
 
+using namespace std::string_literals;
+
 namespace Ioss {
   using IntVector   = std::vector<int>;
   using Int64Vector = std::vector<int64_t>;
@@ -28,10 +30,10 @@ namespace Ioss {
   using IJK_t       = std::array<int, 3>;
 } // namespace Ioss
 
-inline const std::string IOSS_SCALAR() { return std::string("scalar"); }
-inline const std::string IOSS_VECTOR_2D() { return std::string("vector_2d"); }
-inline const std::string IOSS_VECTOR_3D() { return std::string("vector_3d"); }
-inline const std::string IOSS_SYM_TENSOR() { return std::string("sym_tensor_33"); }
+inline const std::string IOSS_SCALAR() { return "scalar"s; }
+inline const std::string IOSS_VECTOR_2D() { return "vector_2d"s; }
+inline const std::string IOSS_VECTOR_3D() { return "vector_3d"s; }
+inline const std::string IOSS_SYM_TENSOR() { return "sym_tensor_33"s; }
 
 #if defined(BUILT_IN_SIERRA)
 #define SEACAS_HAVE_MPI

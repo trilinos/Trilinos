@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -17,9 +17,8 @@ Ioss::ConstructedVariableType::ConstructedVariableType(const std::string &my_nam
 }
 
 Ioss::ConstructedVariableType::ConstructedVariableType(int number_components, bool delete_me)
-    : Ioss::VariableType(std::string("Real[") + std::to_string(number_components) +
-                             std::string("]"),
-                         number_components, delete_me)
+    : Ioss::VariableType("Real["s + std::to_string(number_components) + "]"s, number_components,
+                         delete_me)
 {
 }
 
@@ -27,7 +26,7 @@ std::string Ioss::ConstructedVariableType::label(int which, const char /*suffix_
 {
   assert(which > 0 && which <= component_count());
   if (component_count() == 1) {
-    return "";
+    return ""s;
   }
   return VariableType::numeric_label(which, component_count(), name());
 }

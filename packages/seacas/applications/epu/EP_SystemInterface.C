@@ -94,6 +94,13 @@ void Excn::SystemInterface::enroll_options()
                   nullptr);
 
   options_.enroll(
+      "verify_valid_file", GetLongOption::NoValue,
+      "Reopen the output file right after closing it to verify that the file is valid.\n"
+      "\t\tThis tries to detect file corruption immediately instead of later. Mainly useful in "
+      "large subcycle runs.",
+      nullptr);
+
+  options_.enroll(
       "add_nodal_communication_map", GetLongOption::NoValue,
       "In subcycle mode, add the `nodal communication map` data to the output files.\n"
       "\t\tThe resulting files can then be used as input to a subsequent analysis (N to M)",
@@ -328,10 +335,11 @@ bool Excn::SystemInterface::parse_options(int argc, char **argv)
   sumSharedNodes_ = options_.retrieve("sum_shared_nodes") != nullptr;
   append_         = options_.retrieve("append") != nullptr;
 
-  subcycle_      = options_.get_option_value("subcycle", subcycle_);
-  cycle_         = options_.get_option_value("cycle", cycle_);
-  subcycleJoin_  = options_.retrieve("join_subcycles") != nullptr;
-  keepTemporary_ = options_.retrieve("keep_temporary") != nullptr;
+  subcycle_        = options_.get_option_value("subcycle", subcycle_);
+  cycle_           = options_.get_option_value("cycle", cycle_);
+  subcycleJoin_    = options_.retrieve("join_subcycles") != nullptr;
+  keepTemporary_   = options_.retrieve("keep_temporary") != nullptr;
+  verifyValidFile_ = options_.retrieve("verify_valid_file") != nullptr;
 
   if (options_.retrieve("map") != nullptr) {
     mapIds_ = true;

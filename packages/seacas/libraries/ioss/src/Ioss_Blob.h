@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2020 National Technology & Engineering Solutions
+// Copyright(C) 1999-2021 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -18,6 +18,8 @@ namespace Ioss {
   class Field;
 } // namespace Ioss
 
+using namespace std::string_literals;
+
 namespace Ioss {
 
   using EntityContainer = std::vector<const Ioss::GroupingEntity *>;
@@ -33,9 +35,9 @@ namespace Ioss {
 
     Blob(DatabaseIO *io_database, const std::string &my_name, int64_t item_count);
 
-    std::string type_string() const override { return "Blob"; }
-    std::string short_type_string() const override { return "blob"; }
-    std::string contains_string() const override { return "Entries"; }
+    std::string type_string() const override { return "Blob"s; }
+    std::string short_type_string() const override { return "blob"s; }
+    std::string contains_string() const override { return "Entries"s; }
     EntityType  type() const override { return BLOB; }
 
     // Handle implicit properties -- These are calcuated from data stored

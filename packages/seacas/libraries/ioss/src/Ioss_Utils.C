@@ -5,6 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_CodeTypes.h>
+#include <Ioss_FileInfo.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 
@@ -74,7 +75,7 @@
 std::ostream *Ioss::Utils::m_warningStream  = &std::cerr;
 std::ostream *Ioss::Utils::m_debugStream    = &std::cerr;
 std::ostream *Ioss::Utils::m_outputStream   = &std::cerr;
-std::string   Ioss::Utils::m_preWarningText = "\nIOSS WARNING: ";
+std::string   Ioss::Utils::m_preWarningText = "\nIOSS WARNING: "s;
 
 namespace {
   auto initial_time = std::chrono::steady_clock::now();
@@ -124,7 +125,7 @@ namespace {
 
       // determine if current character is a separator
       bool is_sep = is_separator(separator, curr_char);
-      if (is_sep && curr_token != "") {
+      if (is_sep && curr_token != ""s) {
         // we just completed a token
         tokens.push_back(curr_token);
         curr_token.clear();
@@ -137,7 +138,7 @@ namespace {
         curr_token += curr_char;
       }
     }
-    if (curr_token != "") {
+    if (curr_token != ""s) {
       tokens.push_back(curr_token);
     }
   }
@@ -218,7 +219,7 @@ std::string Ioss::Utils::format_id_list(const std::vector<size_t> &ids, const st
 {
   // Based on function from cubit (but I wrote original cubit version long time ago... ;-)
   if (ids.empty()) {
-    return "";
+    return ""s;
   }
 
   // PRECONDITION: `ids` is monotonically increasing -- will throw IOSS_ERROR if violated.
@@ -298,52 +299,52 @@ std::string Ioss::Utils::fixup_type(const std::string &base, int nodes_per_eleme
   // to unambiguous names for the IO Subsystem.  The 2D name
   // stays the same, the 3D name becomes 'trishell#'
   if (spatial == 3) {
-    if (type == "triangle3") {
-      type = "trishell3";
+    if (type == "triangle3"s) {
+      type = "trishell3"s;
     }
-    else if (type == "triangle4") {
-      type = "trishell4";
+    else if (type == "triangle4"s) {
+      type = "trishell4"s;
     }
-    else if (type == "triangle6") {
-      type = "trishell6";
+    else if (type == "triangle6"s) {
+      type = "trishell6"s;
     }
-    else if (type == "tri3") {
-      type = "trishell3";
+    else if (type == "tri3"s) {
+      type = "trishell3"s;
     }
-    else if (type == "tri4") {
-      type = "trishell4";
+    else if (type == "tri4"s) {
+      type = "trishell4"s;
     }
-    else if (type == "tri6") {
-      type = "trishell6";
+    else if (type == "tri6"s) {
+      type = "trishell6"s;
     }
   }
 
   if (spatial == 2) {
-    if (type == "shell2") {
-      type = "shellline2d2";
+    if (type == "shell2"s) {
+      type = "shellline2d2"s;
     }
-    else if (type == "rod2" || type == "bar2" || type == "truss2") {
-      type = "rod2d2";
+    else if (type == "rod2"s || type == "bar2"s || type == "truss2"s) {
+      type = "rod2d2"s;
     }
-    else if (type == "shell3") {
-      type = "shellline2d3";
+    else if (type == "shell3"s) {
+      type = "shellline2d3"s;
     }
-    else if (type == "bar3" || type == "rod3" || type == "truss3") {
-      type = "rod2d3";
+    else if (type == "bar3"s || type == "rod3"s || type == "truss3"s) {
+      type = "rod2d3"s;
     }
-    else if (type == "bar4" || type == "rod4" || type == "truss4") {
-      type = "rod2d4";
+    else if (type == "bar4"s || type == "rod4"s || type == "truss4"s) {
+      type = "rod2d4"s;
     }
   }
 
-  if (Ioss::Utils::substr_equal("super", type)) {
+  if (Ioss::Utils::substr_equal("super"s, type)) {
     // A super element can have a varying number of nodes.  Create
     // an IO element type for this super element just so the IO
     // system can read a mesh containing super elements.  This
     // allows the "omit volume" command to be used in the Sierra
     // applications to skip creating a corresponding element block
     // in the application.
-    type = "super" + std::to_string(nodes_per_element);
+    type = "super"s + std::to_string(nodes_per_element);
   }
   return type;
 }
@@ -352,7 +353,7 @@ std::string Ioss::Utils::local_filename(const std::string &relative_filename,
                                         const std::string &type,
                                         const std::string &working_directory)
 {
-  if (relative_filename[0] == '/' || type == "generated" || working_directory.empty()) {
+  if (relative_filename[0] == '/' || type == "generated"s || working_directory.empty()) {
     return relative_filename;
   }
   std::string filename = working_directory;
@@ -482,7 +483,7 @@ namespace {
 
     if (!found_valid) {
       // Return an invalid field...
-      return Ioss::Field("", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1);
+      return Ioss::Field(""s, Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1);
     }
 
     // At this point, name[index] should be a valid potential field
@@ -598,7 +599,7 @@ namespace {
 
       suffix_size--;
     }
-    return Ioss::Field("", Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1);
+    return Ioss::Field(""s, Ioss::Field::INVALID, IOSS_SCALAR(), fld_role, 1);
   }
 
   // common
@@ -775,7 +776,7 @@ std::string Ioss::Utils::platform_information()
       fmt::format("Node: {0}, OS: {1} {2}, {3}, Machine: {4}", sys_info.nodename, sys_info.sysname,
                   sys_info.release, sys_info.version, sys_info.machine);
 #else
-  std::string                 info = "Node: Unknown, OS: Unknown, Machine: Unknown";
+  std::string                 info = "Node: Unknown, OS: Unknown, Machine: Unknown"s;
 #endif
   return info;
 }
@@ -891,7 +892,7 @@ size_t Ioss::Utils::get_hwm_memory_info()
 
 bool Ioss::Utils::block_is_omitted(Ioss::GroupingEntity *block)
 {
-  bool omitted = block->get_optional_property("omitted", 0) == 1;
+  bool omitted = block->get_optional_property("omitted"s, 0) == 1;
   return omitted;
 }
 
@@ -905,7 +906,7 @@ void Ioss::Utils::calculate_sideblock_membership(IntVector &            face_is_
 
   face_is_member.reserve(number_sides);
 
-  const ElementTopology *unknown = Ioss::ElementTopology::factory("unknown");
+  const ElementTopology *unknown = Ioss::ElementTopology::factory("unknown"s);
 
   // Topology of faces in this face block...
   const ElementTopology *ftopo = ef_blk->topology();
@@ -1051,7 +1052,7 @@ void Ioss::Utils::input_file(const std::string &file_name, std::vector<std::stri
         do {
           std::string sub = input_line.substr(ibeg, max_line_length - 1);
           if (ibeg + max_line_length - 1 < input_line.length()) {
-            sub += "\\";
+            sub += "\\"s;
           }
           lines->push_back(sub);
           ibeg += max_line_length - 1;
@@ -1096,10 +1097,10 @@ bool Ioss::Utils::check_set_bool_property(const Ioss::PropertyManager &propertie
     }
     else {
       std::string yesno = Ioss::Utils::uppercase(properties.get(prop_name).get_string());
-      if (yesno == "TRUE" || yesno == "YES" || yesno == "ON") {
+      if (yesno == "TRUE"s || yesno == "YES"s || yesno == "ON"s) {
         prop_value = true;
       }
-      else if (yesno == "FALSE" || yesno == "NO" || yesno == "OFF") {
+      else if (yesno == "FALSE"s || yesno == "NO"s || yesno == "OFF"s) {
         prop_value = false;
       }
       else {
@@ -1225,7 +1226,7 @@ std::string Ioss::Utils::variable_name_kluge(const std::string &name, size_t com
 
   // NOTE: The hash is not added if the name is not shortened.
   std::string hash_string = two_letter_hash(name.c_str());
-  new_str += std::string(".");
+  new_str += "."s;
   new_str += hash_string;
   return lowercase(new_str);
 }
@@ -1306,6 +1307,38 @@ int Ioss::Utils::term_width()
 #endif /* TIOCGSIZE */
   }
   return cols != 0 ? cols : 100;
+}
+
+std::string Ioss::Utils::get_type_from_file(const std::string &filename)
+{
+  Ioss::FileInfo file(filename);
+  auto           extension = file.extension();
+
+  // If the extension is numeric, then we are probably dealing with a single file of a
+  // set of FPP decomposed files (e.g. file.cgns.32.17).  In that case, we tokenize
+  // with "." as delimiter and see if last two tokens are all digits and if there
+  // are at least 4 tokens (basename.extension.#proc.proc)...
+  bool all_dig = extension.find_first_not_of("0123456789") == std::string::npos;
+  if (all_dig) {
+    auto tokens = Ioss::tokenize(filename, ".");
+    if (tokens.size() >= 4) {
+      auto proc_count = tokens[tokens.size() - 2];
+      if (proc_count.find_first_not_of("0123456789") == std::string::npos) {
+        extension = tokens[tokens.size() - 3];
+      }
+    }
+  }
+
+  if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
+    return "exodus";
+  }
+  else if (extension == "cgns") {
+    return "cgns";
+  }
+  else {
+    // "exodus" is default...
+    return "exodus";
+  }
 }
 
 void Ioss::Utils::info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
