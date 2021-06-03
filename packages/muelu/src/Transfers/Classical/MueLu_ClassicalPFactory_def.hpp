@@ -284,7 +284,8 @@ namespace MueLu {
     // Note: cpoint2pcol is ghosted if myPointType is
     // NOTE: Since the ghosted coarse column map follows the ordering of
     // the fine column map, this *should* work, because it is in local indices.
-    // FIXME:  Add a check for this in debug mode.
+    // pcol2cpoint - Takes a LCID for P and turns in into an LCID for A.
+    // cpoint2pcol - Takes a LCID for A --- if it is a C Point --- and turns in into an LCID for P.
     Array<LO> cpoint2pcol(myPointType.size(),LO_INVALID);
     Array<LO> pcol2cpoint(coarseMap->getNodeNumElements(),LO_INVALID);   
     LO num_c_points = 0;
@@ -387,8 +388,266 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     /*                                                                     */ 
     /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
  
+   const point_type F_PT = ClassicalMapFactory::F_PT;
+    const point_type C_PT = ClassicalMapFactory::C_PT;
+    const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
+    using STS = typename Teuchos::ScalarTraits<SC>;
+    LO LO_INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    //    size_t ST_INVALID = Teuchos::OrdinalTraits<size_t>::invalid();
+    SC SC_ZERO = STS::zero();
+#ifdef CMS_DEBUG
+    int rank = A.getRowMap()->getComm()->getRank();
+#endif
 
-    TEUCHOS_TEST_FOR_EXCEPTION(1,std::runtime_error,"ClassicalPFactory: ClassicalModified not implemented");
+    // Get the block number if we have it.
+    ArrayRCP<const LO> block_id; 
+    if(!BlockNumber.is_null()) 
+      block_id = BlockNumber->getData(0);
+
+    // Initial (estimated) allocation
+    // NOTE: If we only used Tpetra, then we could use these guys as is, but because Epetra, we can't, so there
+    // needs to be a copy below.
+    size_t Nrows = A.getNodeNumRows();
+    double c_point_density = (double)num_c_points / (num_c_points+num_f_points);
+    double mean_strong_neighbors_per_row = (double) graph.GetNodeNumEdges() / graph.GetNodeNumVertices();
+    //    double mean_neighbors_per_row = (double)A.getNodeNumEntries() / Nrows;
+    double nnz_per_row_est = c_point_density*mean_strong_neighbors_per_row;
+
+    size_t nnz_est = std::max(Nrows,std::min((size_t)A.getNodeNumEntries(),(size_t)(nnz_per_row_est*Nrows)));
+    Array<size_t> tmp_rowptr(Nrows+1);
+    Array<LO> tmp_colind(nnz_est);
+
+    // Algorithm (count+realloc)
+    // For each row, i, 
+    // - Count the number of elements in \hat{C}_j, aka [C-neighbors and C-neighbors of strong F-neighbors of i]   
+    size_t ct=0;
+    for(LO row=0; row < (LO) Nrows; row++) {
+      size_t row_start = eis_rowptr[row];
+      ArrayView<const LO> indices;
+      ArrayView<const SC> vals;
+      std::set<LO> C_hat;
+      if(myPointType[row] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+      }
+      else if(myPointType[row] == C_PT) {
+        // C-Points get a single 1 in their row
+        C_hat.insert(cpoint2pcol[row]);
+      }
+      else {
+        // F-Points have a more complicated interpolation
+
+        // C-neighbors of row 
+        A.getLocalRowView(row, indices, vals);
+        for(LO j=0; j<indices.size(); j++)
+          if(myPointType[indices[j]] == C_PT && edgeIsStrong[row_start + j])
+            C_hat.insert(cpoint2pcol[indices[j]]);
+      }// end else 
+      
+      // Realloc if needed
+      if(ct + (size_t)C_hat.size() > (size_t)tmp_colind.size()) {
+        tmp_colind.resize(std::max(ct+(size_t)C_hat.size(),(size_t)2*tmp_colind.size()));
+      }
+      
+      // Copy
+      std::copy(C_hat.begin(), C_hat.end(),tmp_colind.begin()+ct);
+      ct+=C_hat.size();
+      tmp_rowptr[row+1] = tmp_rowptr[row] + C_hat.size();
+    }
+    // Resize down
+    tmp_colind.resize(tmp_rowptr[Nrows]);  
+
+    // Make the graph (since we'll need to migrate this before we have entries)
+    RCP<CrsGraph> Pgraph = CrsGraphFactory::Build(A.getRowMap(),coarseColMap,0);
+    ArrayRCP<size_t>  P_rowptr;
+    ArrayRCP<LO>      P_colind;
+    Pgraph->allocateAllIndices(tmp_rowptr[Nrows],P_rowptr,P_colind);
+
+    // FIXME:  This can be short-circuited for Tpetra, if we decide we care
+    std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
+    std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());  
+    Pgraph->setAllIndices(P_rowptr,P_colind);
+    Pgraph->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+
+    // Generate a remote-ghosted version of the graph (if we're in parallel)
+    RCP<CrsGraph> Pghost;
+    ArrayRCP<const size_t> Pghost_rowptr;
+    ArrayRCP<const LO> Pghost_colind;
+    if(!remoteOnlyImporter.is_null()) {
+      Pghost = CrsGraphFactory::Build(Pgraph,*remoteOnlyImporter,Pgraph->getDomainMap(),remoteOnlyImporter->getTargetMap());
+      Pghost->getAllIndices(Pghost_rowptr,Pghost_colind);
+    }
+
+    // Now, make the matrix
+    // Allocate memory for the matrix
+    RCP<const CrsGraph> Pgraph_const = Pgraph;
+    RCP<CrsMatrix> Pcrs = CrsMatrixFactory::Build(Pgraph_const);
+    P = rcp(new CrsMatrixWrap(Pcrs));
+    ArrayRCP<SC> P_values;
+    Pcrs->resumeFill();
+    // Accessor which just gets the values array
+    Pcrs->getAllValues(P_values);
+
+    // Gustavston-style perfect hashing
+    RCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
+    //    RCP<LO> Acol_is_Fine(A.getColMap()->getNodeNumElements(),LO_INVALID);
+
+    (Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
+    //    RCP<LO> Aghostcol_is_Fine(Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
+
+    // Get a quick reindexing array from Pghost LCIDs to P LCIDs
+    RCP<LO> Pghostcol_to_Pcol;
+    if(!Pghost.is_null()) {
+      Pghostcol_to_Pcol.resize(Pghost->getColMap(),LO_INVALID);
+      for(LO i=0; i<Pghost->getColMap().getNodeNumElements(); i++) 
+        Pghostcol_to_Pcol[i] = P->getColMap()->getLocalElement(Pghost->getColMap()->getGlobalElement(i));
+    }//end Pghost
+
+    // Get a quick reindexing array from Aghost LCIDs to A LCIDs
+    RCP<LO> Aghostcol_to_Acol;
+    if(!Aghost.is_null()) {
+      Aghostcol_to_Acol.resize(Aghost->getColMap(),LO_INVALID);
+      for(LO i=0; i<Aghost->getColMap().getNodeNumElements(); i++) 
+        Aghostcol_to_Acol[i] = A.getColMap()->getLocalElement(Aghost->getColMap()->getGlobalElement(i));
+    }//end Aghost
+
+
+    // Algorithm (numeric)    
+    for(LO i=0; i < (LO)Nrows; i++) {
+      if(myPointType[i] == DIRICHLET_PT) {
+        // Dirichlet points get ignored completely
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("[%d] ** A(%d,:) is a Dirichlet-Point.\n",rank,i);
+#endif
+      }
+      else if (myPointType[i] == C_PT) {
+        // C Points get a single 1 in their row
+        P_values[P_rowptr[i]] = Teuchos::ScalarTraits<SC>::one();  
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("[%d] ** A(%d,:) is a C-Point.\n",rank,i);
+#endif
+      }
+      else {
+        // F Points get all of the fancy stuff
+#ifdef CMS_DEBUG        
+        // DEBUG
+        printf("[%d] ** A(%d,:) is a F-Point.\n",rank,i);
+#endif
+        
+        // Get all of the relevant information about this row
+        ArrayView<const LO> A_indices_i, A_indices_k;
+        ArrayView<const SC> A_vals_i, A_vals_k;
+        A.getLocalRowView(i, A_indices_i, A_vals_i);
+        size_t row_start = eis_rowptr[i];
+        
+        ArrayView<LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        //        ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        
+        // Stash the hash:  Flag any strong C-points with their index into P_colind
+        // NOTE:  We'll consider any points that are LO_INVALID or less than P_rowptr[i] as not strong C-points
+        for(LO j=0; j<(LO)P_indices_i.size(); j++)  { 
+          Acol_to_Pcol[pcol2cpoint[P_indices_i[j]]] = P_rowptr[i] + j;
+        }
+
+        // Stash the hash: Flag any strong F-Points (also grab the diagonal)
+        // NOTE:  We'll consider any points that are LO_INVALID or less than eis_rowptr[i] as not strong F-points
+        //        SC a_ii = SC_ZERO;
+        //        for(LO j=0; j<(LO)A_indices_i.size(); j++) {
+          //          if(eis_colind[row_start + j] == true)
+          //            Acol_is_Fine[A_indices_i[j]] = eis_rowptr[i];
+        //          if(A_indices_i[j] == i) a_ii = A_values_i[j];
+        //        }
+
+        // Loop over the entries in the row
+        SC first_denominator  = SC_ZERO;
+        SC second_denominator = SC_ZERO;
+        for(LO k0=0; k0<(LO)A_indices_i.size(); k0++) {
+          LO k = A_indices[k0];
+          SC a_ik = A_vals_i[k0]; 
+          LO pcol_k = Acol_to_Pcol[k];
+
+          if(A_indices_i[j] == i) { 
+            // Case A: Diagonal value (add to first denominator)
+            first_denominator += A_values_i[j];
+          }
+          else if(myPointType[k] == DIRICHLET_PT) {
+            // Case B: Ignore dirichlet connections completely
+            
+          }
+          else if(pcol_k != LO_INVALID && pcol_k >= P_rowptr[i]) {
+            // Case C: a_ik is strong C-Point (goes directly into the weight)
+            P_values[pcol_k] += a_ik;
+          }
+          else if (!eis_colind[row_start + k0]) {
+            // Case D: Weak non-Dirichlet neighbor (add to first denominator)
+            first_denominator += a_ik;
+            
+          }
+          else {
+            // Case E: Strong F-Point (adds to the first denominator if we don't share a
+            // a strong C-Point with i; adds to the second denominator otherwise)
+
+            // Do I share a strong C-Point?  If so, I'm not in fis_star
+            bool in_fis_star = true;
+            if(k < Nrows) {
+              ArrayView<LO> P_indices_k  = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
+              for(LO m0=0; m0<(LO)P_indices_k.size() && !in_fis_star; m0++) {
+                LO m = P_indicies_k[m0]; //P's LCID                
+                LO pcol_m = Acol_to_Pcol[pcol2cpoint[P_indices_k[m]]]// A's LCID
+                if(pcol_k != LO_INVALID && pcol_k >= P_rowptr[i]) 
+                  in_fis_star = false;
+              }//end for P_indices_k
+            }//end if k < Nrows
+            else{ 
+              LO kless = k-Nrows;
+              ArrayView<LO> P_indices_k  = Pghost_colind.view(Pghost_rowptr[kless],Pghost_rowptr[kless+1] - Pghost_rowptr[kless]);
+              for(LO m0=0; m0<(LO)P_indices_k.size() && !in_fis_star; m0++) {
+                LO mghost = P_indicies_k[m0]; // Pghost's LCID
+                LO m = Pghostcol_to_Pcol[mghost]; // P's LCID
+                if(m != LO_INVALID && Acol_to_Pcol[pcol2cpoint[pcol_m]] >= P_rowptr[i]) 
+                  in_fis_star = false;                 
+              }//end for P_indices_k
+            }//end else Nrows
+            
+            if(in_fis_star) {
+              // If we're in fis_star we add to the first denominator
+              first_denominator += a_ik;
+            }
+            else {
+              // If we're not in fis_star, then we contribute to the second term
+              SC a_kk = SC_ZERO;              
+
+              // Grab the diagonal a_kk
+              if(k < Nrows) {
+                A.getLocalRowView(k, A_indices_k, A_vals_k);
+                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                  LO m    = A_indices_k[m0];
+                  if(k == m) {
+                    a_kk = A_vals_k[m0];
+                    break;
+                  }
+                }                
+              }
+              else {
+                LO kless = k - Nrows;
+                //A->getLocalRowView(i, A_indices_i, A_vals_i);
+                  // FIXME
+                }
+
+
+              }//end for A_indices_k
+
+            }
+
+
+          }//end else Case A,...,E
+
+          
+          
+        }//end for A_indices_i
+
+      }//end else C-Point
 
 }
 
