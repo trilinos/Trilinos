@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -16,10 +16,8 @@
 #include <string>
 #include <vector>
 
-using namespace std::string_literals;
-
 namespace {
-  const std::string id_str() { return "id"s; }
+  const std::string id_str() { return std::string("id"); }
   void              check_is_valid(const Ioss::Assembly *assem, const Ioss::GroupingEntity *member)
   {
     // Ensure that `member` is not already a member and that its type matches
@@ -79,8 +77,8 @@ namespace Ioss {
 Ioss::Assembly::Assembly(Ioss::DatabaseIO *io_database, const std::string &my_name)
     : Ioss::GroupingEntity(io_database, my_name, 1)
 {
-  properties.add(Ioss::Property(this, "member_count"s, Ioss::Property::INTEGER));
-  properties.add(Ioss::Property(this, "member_type"s, Ioss::Property::INTEGER));
+  properties.add(Ioss::Property(this, "member_count", Ioss::Property::INTEGER));
+  properties.add(Ioss::Property(this, "member_type", Ioss::Property::INTEGER));
 }
 
 Ioss::Assembly::Assembly(const Ioss::Assembly &other) : GroupingEntity(other)
@@ -148,10 +146,10 @@ int64_t Ioss::Assembly::internal_put_field_data(const Ioss::Field &field, void *
 
 Ioss::Property Ioss::Assembly::get_implicit_property(const std::string &my_name) const
 {
-  if (my_name == "member_count"s) {
+  if (my_name == "member_count") {
     return Ioss::Property(my_name, static_cast<int>(m_members.size()));
   }
-  if (my_name == "member_type"s) {
+  if (my_name == "member_type") {
     return Ioss::Property(my_name, static_cast<int>(m_type));
   }
 

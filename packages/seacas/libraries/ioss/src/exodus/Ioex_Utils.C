@@ -242,7 +242,7 @@ namespace Ioex {
     const char *s = substring;
     const char *t = type.c_str();
 
-    assert(s != nullptr && t != nullptr);
+    SMART_ASSERT(s != nullptr && t != nullptr);
     while (*s != '\0' && *t != '\0') {
       if (*s++ != tolower(*t++)) {
         return false;
@@ -309,7 +309,7 @@ namespace Ioex {
         // later...
         auto *new_entity = const_cast<Ioss::GroupingEntity *>(entity);
         new_entity->property_erase(id_prop);
-        assert(!entity->property_exists(id_prop));
+        SMART_ASSERT(!entity->property_exists(id_prop))(id_prop);
       }
     }
     return succeed;
@@ -434,7 +434,7 @@ namespace Ioex {
 
   void fix_bad_name(char *name)
   {
-    assert(name != nullptr);
+    SMART_ASSERT(name != nullptr);
 
     size_t len = std::strlen(name);
     for (size_t i = 0; i < len; i++) {
@@ -655,8 +655,8 @@ namespace Ioex {
         }
         if (block == nullptr || !block->contains(elem_id)) {
           block = region->get_element_block(elem_id);
-          assert(block != nullptr);
-          assert(!Ioss::Utils::block_is_omitted(block)); // Filtered out above.
+          SMART_ASSERT(block != nullptr);
+          SMART_ASSERT(!Ioss::Utils::block_is_omitted(block)); // Filtered out above.
 
           // nullptr if hetero sides on element
           common_ftopo = block->topology()->boundary_type(0);
@@ -680,7 +680,7 @@ namespace Ioex {
             IOSS_ERROR(errmsg);
           }
           topo = block->topology()->boundary_type(sides[iel]);
-          assert(topo != nullptr);
+          SMART_ASSERT(topo != nullptr);
         }
         std::pair<std::string, const Ioss::ElementTopology *> name_topo;
         if (split_type == Ioss::SPLIT_BY_TOPOLOGIES) {

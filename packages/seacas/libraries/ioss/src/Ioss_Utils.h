@@ -294,8 +294,8 @@ namespace Ioss {
      * string `1..3, 5..8`
      */
     static std::string format_id_list(const std::vector<size_t> &ids,
-                                      const std::string &        rng_sep = " to "s,
-                                      const std::string &        seq_sep = ", "s);
+                                      const std::string &        rng_sep = " to ",
+                                      const std::string &        seq_sep = ", ");
 
     /** \brief Convert a string to lower case, and convert spaces to `_`.
      *
@@ -494,10 +494,10 @@ namespace Ioss {
     static void generate_history_mesh(Ioss::Region *region);
 
     static void info_fields(const Ioss::GroupingEntity *ige, Ioss::Field::RoleType role,
-                            const std::string &header, const std::string &suffix = "\n\t"s);
+                            const std::string &header, const std::string &suffix = "\n\t");
 
     static void info_property(const Ioss::GroupingEntity *ige, Ioss::Property::Origin origin,
-                              const std::string &header, const std::string &suffix = "\n\t"s,
+                              const std::string &header, const std::string &suffix = "\n\t",
                               bool print_empty = false);
   };
 

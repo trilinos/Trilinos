@@ -16,14 +16,14 @@ namespace {
   std::string type_string(Ioss::Property::BasicType type)
   {
     switch (type) {
-    case Ioss::Property::INVALID: return "invalid"s;
-    case Ioss::Property::REAL: return "real"s;
-    case Ioss::Property::INTEGER: return "integer"s;
-    case Ioss::Property::POINTER: return "pointer"s;
-    case Ioss::Property::STRING: return "string"s;
-    case Ioss::Property::VEC_INTEGER: return "vector<int>"s;
-    case Ioss::Property::VEC_DOUBLE: return "vector<double>"s;
-    default: return "internal error"s;
+    case Ioss::Property::INVALID: return std::string("invalid");
+    case Ioss::Property::REAL: return std::string("real");
+    case Ioss::Property::INTEGER: return std::string("integer");
+    case Ioss::Property::POINTER: return std::string("pointer");
+    case Ioss::Property::STRING: return std::string("string");
+    case Ioss::Property::VEC_INTEGER: return std::string("vector<int>");
+    case Ioss::Property::VEC_DOUBLE: return std::string("vector<double>");
+    default: return std::string("internal error");
     }
   }
 
@@ -260,7 +260,7 @@ std::string Ioss::Property::get_string() const
   std::string value;
   bool        valid = get_value(&value);
   if (!valid) {
-    error_message(*this, "string"s);
+    error_message(*this, "string");
   }
   return value;
 }
@@ -274,7 +274,7 @@ std::vector<double> Ioss::Property::get_vec_double() const
   std::vector<double> value;
   bool                valid = get_value(&value);
   if (!valid) {
-    error_message(*this, "vector<double>"s);
+    error_message(*this, "vector<double>");
   }
   return value;
 }
@@ -288,7 +288,7 @@ std::vector<int> Ioss::Property::get_vec_int() const
   std::vector<int> value;
   bool             valid = get_value(&value);
   if (!valid) {
-    error_message(*this, "vector<int>"s);
+    error_message(*this, "vector<int>");
   }
   return value;
 }
@@ -302,7 +302,7 @@ int64_t Ioss::Property::get_int() const
   int64_t value;
   bool    valid = get_value(&value);
   if (!valid) {
-    error_message(*this, "int"s);
+    error_message(*this, "int");
   }
   return value;
 }
@@ -316,7 +316,7 @@ double Ioss::Property::get_real() const
   double value;
   bool   valid = get_value(&value);
   if (!valid) {
-    error_message(*this, "real"s);
+    error_message(*this, "real");
   }
   return value;
 }
@@ -330,7 +330,7 @@ void *Ioss::Property::get_pointer() const
   void *value = nullptr;
   bool  valid = get_value(value);
   if (!valid) {
-    error_message(*this, "pointer"s);
+    error_message(*this, "pointer");
   }
   return value;
 }

@@ -11,8 +11,6 @@
 #include <string> // for string
 #include <vector> // for vector
 
-using namespace std::string_literals;
-
 namespace {
   int sign(int value) { return value < 0 ? -1 : 1; }
 
@@ -28,7 +26,7 @@ namespace Ioss {
   std::ostream &operator<<(std::ostream &os, const ZoneConnectivity &zgc)
   {
 #if 0
-    std::array<std::string, 7> tf{{"-k"s, "-j"s, "-i"s, " "s, "i"s, "j"s, "k"s}};
+    std::array<std::string, 7> tf{{"-k", "-j", "-i", " ", "i", "j", "k"}};
 
     // 0 -3 -k
     // 1 -2 -j
@@ -37,13 +35,13 @@ namespace Ioss {
     // 4  1  i
     // 5  2  j
     // 6  3  k
-    std::string transform = "[i.."s;
+    std::string transform = "[i..";
     transform += tf[zgc.m_transform[0] + 3];
-    transform += " j.."s;
+    transform += " j..";
     transform += tf[zgc.m_transform[1] + 3];
-    transform += " k.."s;
+    transform += " k..";
     transform += tf[zgc.m_transform[2] + 3];
-    transform += "] "s;
+    transform += "] ";
 #endif
 
 #if 1

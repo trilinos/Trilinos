@@ -45,8 +45,6 @@
 #error "Requires exodusII version 4.68 or later"
 #endif
 
-using namespace std::string_literals;
-
 namespace {
   template <typename T> void clear(std::vector<T> &vec)
   {
@@ -175,7 +173,7 @@ namespace {
   }
 } // namespace
 
-std::string tsFormat = "[{:%H:%M:%S}] "s;
+std::string tsFormat = "[{:%H:%M:%S}] ";
 
 // prototypes
 
@@ -485,7 +483,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
     bool             used = false;
     int              nts  = ex_inquire_int(id, EX_INQ_TIME);
     if (nts == 0) {
-      std::string part = "Part " + std::to_string(p) + ": "s;
+      std::string part = "Part " + std::to_string(p) + ": ";
       part += interFace.inputFiles_[p - 1];
       fmt::print(stderr,
                  "\nWARNING: '{}'\n\tdoes not contain any time steps so it will not be in the "
@@ -523,7 +521,7 @@ int conjoin(Excn::SystemInterface &interFace, T /* dummy */, INT /* dummy int */
       t_min                           = t_min < times[0] ? t_min : times[0];
 
       if (!used) {
-        std::string part = "Part " + std::to_string(p) + ": "s;
+        std::string part = "Part " + std::to_string(p) + ": ";
         part += interFace.inputFiles_[p - 1];
         fmt::print(stderr,
                    "\nWARNING: '{}'\n\tdoes not contain any time steps which will be used in "
@@ -2719,15 +2717,15 @@ namespace {
     };
     uname(&sys_info);
 
-    std::string info = "CONJOIN: "s;
+    std::string info = "CONJOIN: ";
     info += sys_info.nodename;
-    info += ", OS: "s;
+    info += ", OS: ";
     info += sys_info.sysname;
-    info += " "s;
+    info += " ";
     info += sys_info.release;
-    info += ", "s;
+    info += ", ";
     info += sys_info.version;
-    info += ", Machine: "s;
+    info += ", Machine: ";
     info += sys_info.machine;
     const char *sinfo = info.c_str();
     copy_string(info_record, sinfo, size + 1);
@@ -2784,7 +2782,7 @@ namespace {
   std::string time_stamp(const std::string &format)
   {
     if (format == "") {
-      return ""s;
+      return std::string("");
     }
 
     time_t      calendar_time = std::time(nullptr);
@@ -2797,7 +2795,7 @@ namespace {
   {
     char suffix = 'u';
     if (seconds > 0.0 && seconds < 1.0) {
-      return " <1s"s;
+      return " <1s";
     }
 
     if (seconds > 86400) {

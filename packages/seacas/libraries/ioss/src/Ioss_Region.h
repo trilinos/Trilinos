@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -41,7 +41,6 @@ namespace Ioss {
 } // namespace Ioss
 // Needed for node_global_to_local inline function.
 
-using namespace std::string_literals;
 namespace Ioss {
 
   class CoordinateFrame;
@@ -78,13 +77,13 @@ namespace Ioss {
   class Region : public GroupingEntity
   {
   public:
-    explicit Region(DatabaseIO *iodatabase = nullptr, const std::string &my_name = ""s);
+    explicit Region(DatabaseIO *iodatabase = nullptr, const std::string &my_name = "");
 
     ~Region() override;
 
-    std::string type_string() const override { return "Region"s; }
-    std::string short_type_string() const override { return "region"s; }
-    std::string contains_string() const override { return "Entities"s; }
+    std::string type_string() const override { return "Region"; }
+    std::string short_type_string() const override { return "region"; }
+    std::string contains_string() const override { return "Entities"; }
     EntityType  type() const override { return REGION; }
 
     MeshType          mesh_type() const;
@@ -254,7 +253,7 @@ namespace Ioss {
 
     const std::vector<std::string> &get_qa_records() const;
     void add_qa_record(const std::string &code, const std::string &code_qa,
-                       const std::string &date = ""s, const std::string &time = ""s);
+                       const std::string &date = "", const std::string &time = "");
 
   protected:
     int64_t internal_get_field_data(const Field &field, void *data,

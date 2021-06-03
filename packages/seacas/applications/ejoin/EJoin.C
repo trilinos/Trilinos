@@ -1,4 +1,4 @@
-// Copyright(C) 1999-2021 National Technology & Engineering Solutions
+// Copyright(C) 1999-2020 National Technology & Engineering Solutions
 // of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 // NTESS, the U.S. Government retains certain rights in this software.
 //
@@ -45,8 +45,6 @@
 #include <mpi.h>
 #endif
 
-using namespace std::string_literals;
-
 namespace {
   bool valid_variable(const std::string &variable, size_t id, const StringIdVector &variable_list);
   void define_global_fields(Ioss::Region &output_region, RegionVector &part_mesh,
@@ -89,7 +87,7 @@ namespace {
     int  omitted = 0;
     auto blocks  = region->get_element_blocks();
     for (auto &block : blocks) {
-      if (block->property_exists("omitted"s)) {
+      if (block->property_exists(std::string("omitted"))) {
         omitted++;
       }
     }
@@ -758,7 +756,7 @@ namespace {
   std::string time_stamp(const std::string &format)
   {
     if (format == "") {
-      return ""s;
+      return std::string("");
     }
 
     const int   length = 256;
@@ -773,7 +771,7 @@ namespace {
       return std::string(time_string);
     }
 
-    return "[ERROR]"s;
+    return std::string("[ERROR]");
   }
 
   template <typename T, typename INT>
@@ -1486,14 +1484,14 @@ namespace {
         if (omit[p][0] == "ALL") {
           const Ioss::NodeSetContainer &nodesets = part_mesh[p]->get_nodesets();
           for (auto ns : nodesets) {
-            ns->property_add(Ioss::Property("omitted"s, 1));
+            ns->property_add(Ioss::Property(std::string("omitted"), 1));
           }
         }
         else {
           for (const auto &omitted : omit[p]) {
             Ioss::NodeSet *ns = part_mesh[p]->get_nodeset(omitted);
             if (ns != nullptr) {
-              ns->property_add(Ioss::Property("omitted"s, 1));
+              ns->property_add(Ioss::Property(std::string("omitted"), 1));
             }
           }
         }
@@ -1510,14 +1508,14 @@ namespace {
         if (omit[p][0] == "ALL") {
           const Ioss::SideSetContainer &sidesets = part_mesh[p]->get_sidesets();
           for (auto ss : sidesets) {
-            ss->property_add(Ioss::Property("omitted"s, 1));
+            ss->property_add(Ioss::Property(std::string("omitted"), 1));
           }
         }
         else {
           for (const auto &omitted : omit[p]) {
             Ioss::SideSet *ss = part_mesh[p]->get_sideset(omitted);
             if (ss != nullptr) {
-              ss->property_add(Ioss::Property("omitted"s, 1));
+              ss->property_add(Ioss::Property(std::string("omitted"), 1));
             }
           }
         }

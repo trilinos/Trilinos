@@ -34,8 +34,6 @@
 #define TRANSIENT_FIELD_STEP_VALUE_MISMATCH                                                        \
   "FIELD data ({} / step {}): TRANSIENT FIELD data mismatch"
 
-using namespace std::string_literals;
-
 // For compare_database...
 namespace {
   bool compare_properties(const Ioss::GroupingEntity *ige_1, const Ioss::GroupingEntity *ige_2);
@@ -78,7 +76,7 @@ namespace {
                           const Ioss::Field::RoleType role, const Ioss::MeshCopyOptions &options);
   bool compare_field_data(const Ioss::GroupingEntity *ige_1, const Ioss::GroupingEntity *ige_2,
                           DataPool &pool, const Ioss::Field::RoleType role,
-                          const Ioss::MeshCopyOptions &options, const std::string &prefix = ""s);
+                          const Ioss::MeshCopyOptions &options, const std::string &prefix = "");
   bool compare_field_data_internal(const Ioss::GroupingEntity *ige_1,
                                    const Ioss::GroupingEntity *ige_2, DataPool &in_pool,
                                    const std::string &          field_name,
@@ -1295,46 +1293,46 @@ namespace {
       fmt::print(Ioss::WARNING(), "FIELD size mismatch ({} vs. {})\n", isize, osize);
     }
 
-    if (field_name == "mesh_model_coordinates_x"s) {
+    if (field_name == "mesh_model_coordinates_x") {
       return true;
     }
-    if (field_name == "mesh_model_coordinates_y"s) {
+    if (field_name == "mesh_model_coordinates_y") {
       return true;
     }
-    if (field_name == "mesh_model_coordinates_z"s) {
+    if (field_name == "mesh_model_coordinates_z") {
       return true;
     }
-    if (field_name == "connectivity_raw"s) {
+    if (field_name == "connectivity_raw") {
       return true;
     }
-    if (field_name == "element_side_raw"s) {
+    if (field_name == "element_side_raw") {
       return true;
     }
-    if (field_name == "ids_raw"s) {
+    if (field_name == "ids_raw") {
       return true;
     }
-    if (field_name == "implicit_ids"s) {
+    if (field_name == "implicit_ids") {
       return true;
     }
-    if (field_name == "node_connectivity_status"s) {
+    if (field_name == "node_connectivity_status") {
       return true;
     }
-    if (field_name == "owning_processor"s) {
+    if (field_name == "owning_processor") {
       return true;
     }
-    if (field_name == "entity_processor_raw"s) {
+    if (field_name == "entity_processor_raw") {
       return true;
     }
-    if (field_name == "ids"s && ige_1->type() == Ioss::SIDEBLOCK) {
+    if (field_name == "ids" && ige_1->type() == Ioss::SIDEBLOCK) {
       return true;
     }
-    if (field_name == "ids"s && ige_1->type() == Ioss::STRUCTUREDBLOCK) {
+    if (field_name == "ids" && ige_1->type() == Ioss::STRUCTUREDBLOCK) {
       return true;
     }
-    if (field_name == "cell_ids"s && ige_1->type() == Ioss::STRUCTUREDBLOCK) {
+    if (field_name == "cell_ids" && ige_1->type() == Ioss::STRUCTUREDBLOCK) {
       return true;
     }
-    if (field_name == "cell_node_ids"s && ige_1->type() == Ioss::STRUCTUREDBLOCK) {
+    if (field_name == "cell_node_ids" && ige_1->type() == Ioss::STRUCTUREDBLOCK) {
       return true;
     }
 
@@ -1365,7 +1363,7 @@ namespace {
       }
       break;
     default:
-      if (field_name == "mesh_model_coordinates"s) {
+      if (field_name == "mesh_model_coordinates") {
         fmt::print(Ioss::WARNING(), "data_storage option not recognized.");
       }
       return false;

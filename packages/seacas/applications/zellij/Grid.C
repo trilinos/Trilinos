@@ -72,7 +72,7 @@ namespace {
   std::string time_stamp(const std::string &format)
   {
     if (format == "") {
-      return std::string(""s);
+      return std::string("");
     }
 
     time_t      calendar_time = std::time(nullptr);
@@ -271,29 +271,30 @@ void Grid::create_output_regions(SystemInterface &interFace)
   int                   int_size   = interFace.ints32bit() ? 4 : 8;
   Ioss::PropertyManager properties = parse_properties(interFace, int_size);
   if (parallel_size() == 1) {
-    properties.add(Ioss::Property("OMIT_EXODUS_NUM_MAPS"s, 1));
+    properties.add(Ioss::Property("OMIT_EXODUS_NUM_MAPS", 1));
   }
-  properties.add(Ioss::Property("MINIMAL_NEMESIS_DATA"s, 1));
+  properties.add(Ioss::Property("MINIMAL_NEMESIS_DATA", 1));
 
   if (debug_level & 2) {
-    properties.add(Ioss::Property("ENABLE_TRACING"s, 1));
+    properties.add(Ioss::Property("ENABLE_TRACING", 1));
   }
 
   for (int i = m_startRank; i < m_startRank + m_rankCount; i++) {
     // Define the output database(s)...
     if (m_parallelSize > 1) {
-      properties.add(Ioss::Property("processor_count"s, parallel_size()));
-      properties.add(Ioss::Property("my_processor"s, i));
+      properties.add(Ioss::Property("processor_count", parallel_size()));
+      properties.add(Ioss::Property("my_processor", i));
     }
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(
-        "exodus"s, interFace.outputName_, Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_SELF, properties);
+        "exodus", interFace.outputName_, Ioss::WRITE_RESTART, (MPI_Comm)MPI_COMM_SELF, properties);
     if (dbo == nullptr || !dbo->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
-    m_outputRegions[i] = std::make_unique<Ioss::Region>(dbo, "zellij_output_region"s);
+    m_outputRegions[i] =
+        std::unique_ptr<Ioss::Region>(new Ioss::Region(dbo, "zellij_output_region"));
     output_region(i)->begin_mode(Ioss::STATE_DEFINE_MODEL);
-    output_region(i)->property_add(Ioss::Property("code_name"s, qainfo[0]));
-    output_region(i)->property_add(Ioss::Property("code_version"s, qainfo[2]));
+    output_region(i)->property_add(Ioss::Property("code_name", qainfo[0]));
+    output_region(i)->property_add(Ioss::Property("code_version", qainfo[2]));
 
     if (interFace.minimize_open_files() == Minimize::OUTPUT ||
         interFace.minimize_open_files() == Minimize::ALL) {
@@ -503,7 +504,7 @@ template <typename INT> void Grid::output_model(INT /*dummy*/)
     }
   }
   if (debug_level & 2) {
-    util().progress("\tEnd Nodal Coordinate Output"s);
+    util().progress("\tEnd Nodal Coordinate Output");
   }
 
   // Surfaces do not depend on order of operations, so can do these
@@ -526,7 +527,7 @@ template <typename INT> void Grid::output_model(INT /*dummy*/)
     }
   }
   if (debug_level & 2) {
-    util().progress("\tEnd Surface Output"s);
+    util().progress("\tEnd Surface Output");
   }
 
   // All the rest of these depend on progressing through the cells in
@@ -545,7 +546,7 @@ template <typename INT> void Grid::output_model(INT /*dummy*/)
     }
   }
   if (debug_level & 2) {
-    util().progress("\tEnd Nodal Communication Map Output"s);
+    util().progress("\tEnd Nodal Communication Map Output");
   }
 
   if (parallel_size() > 1) {
@@ -557,7 +558,7 @@ template <typename INT> void Grid::output_model(INT /*dummy*/)
       }
     }
     if (debug_level & 2) {
-      util().progress("\tEnd Node/Element Map Output"s);
+      util().progress("\tEnd Node/Element Map Output");
     }
   }
 }
@@ -571,9 +572,9 @@ void Grid::output_nodal_coordinates(const Cell &cell)
   std::vector<double> coord_y;
   std::vector<double> coord_z;
 
-  nb->get_field_data("mesh_model_coordinates_x"s, coord_x);
-  nb->get_field_data("mesh_model_coordinates_y"s, coord_y);
-  nb->get_field_data("mesh_model_coordinates_z"s, coord_z);
+  nb->get_field_data("mesh_model_coordinates_x", coord_x);
+  nb->get_field_data("mesh_model_coordinates_y", coord_y);
+  nb->get_field_data("mesh_model_coordinates_z", coord_z);
 
   // Apply coordinate offsets to all nodes...
   if (cell.m_offX != 0.0) {
@@ -664,7 +665,7 @@ template <typename INT> void Grid::output_generated_surfaces(Cell &cell, INT /*d
         }
       }
 
-      auto id    = osurf->get_property("id"s).get_int();
+      auto id    = osurf->get_property("id").get_int();
       auto start = cell.m_localSurfaceOffset[generated_surface_names[face]];
       ex_put_partial_set(exoid, EX_SIDE_SET, id, start + 1, count, elements.data(), faces.data());
     }
@@ -694,7 +695,7 @@ template <typename INT> void Grid::output_surfaces(Cell &cell, INT /*dummy*/)
     for (const auto *block : blocks) {
       // Get the element/face pairs for the SideBlock in this surface...
       std::vector<INT> element_side;
-      block->get_field_data("element_side_raw"s, element_side);
+      block->get_field_data("element_side_raw", element_side);
 
       // Now separate the element and the face into different vectors and
       // update the element number to match the elements in this cell...
@@ -720,7 +721,7 @@ template <typename INT> void Grid::output_surfaces(Cell &cell, INT /*dummy*/)
       }
     }
 
-    auto id    = osurf->get_property("id"s).get_int();
+    auto id    = osurf->get_property("id").get_int();
     auto start = cell.m_localSurfaceOffset[osurf->name()];
     auto count = elements.size();
     ex_put_partial_set(exoid, EX_SIDE_SET, id, start + 1, count, elements.data(), faces.data());
@@ -741,13 +742,13 @@ void Grid::output_block_connectivity(Cell &cell, const std::vector<INT> &node_ma
     auto &           blocks = cell.region()->get_element_blocks();
     std::vector<INT> connect;
     for (const auto *block : blocks) {
-      block->get_field_data("connectivity_raw"s, connect);
+      block->get_field_data("connectivity_raw", connect);
       for (size_t k = 0; k < connect.size(); k++) {
         connect[k] = node_map[connect[k]];
       }
       auto start = cell.m_localElementIdOffset[block->name()] + 1;
       auto count = block->entity_count();
-      auto id    = block->get_property("id"s).get_int();
+      auto id    = block->get_property("id").get_int();
       if (debug_level & 8) {
         fmt::print(stderr, "Rank: {}, Cell({}, {}), Block {}, id {}, start {}, count {}\n", rank,
                    cell.m_i, cell.m_j, block->name(), id, start, count);
@@ -894,7 +895,7 @@ template <typename INT> void Grid::output_element_map(Cell &cell, INT /*dummy*/)
       // If we were outputting a single file, then this element
       // block in that file would have this many elements.
       auto global_block_element_count =
-          output_element_block->get_property("global_entity_count"s).get_int();
+          output_element_block->get_property("global_entity_count").get_int();
       global_id_offset += global_block_element_count;
     }
     if (minimize_open_files(Minimize::OUTPUT)) {
@@ -951,7 +952,7 @@ void Grid::handle_file_count()
   }
 
   if (util().parallel_rank() == 0 && m_minimizeOpenFiles != Minimize::NONE) {
-    std::array<std::string, 4> smode{"NONE"s, "UNIT"s, "OUTPUT"s, "ALL"s};
+    std::array<std::string, 4> smode{"NONE", "UNIT", "OUTPUT", "ALL"};
     fmt::print(" Setting `minimize_open_files` mode to {}.\n", smode[(int)m_minimizeOpenFiles]);
   }
 }
@@ -994,7 +995,8 @@ namespace {
 
           // Create output element block if does not exist yet...
           if (output_element_blocks.find(blk) == output_element_blocks.end()) {
-            output_element_blocks.emplace(blk, std::make_unique<Ioss::ElementBlock>(*block));
+            output_element_blocks.emplace(
+                blk, std::make_unique<Ioss::ElementBlock>(Ioss::ElementBlock(*block)));
           }
         }
       }
@@ -1016,10 +1018,10 @@ namespace {
     for (int rank = start_rank; rank < start_rank + rank_count; rank++) {
       for (auto &blk : output_element_blocks) {
         auto *block = new Ioss::ElementBlock(*blk.second.get());
-        block->property_update("entity_count"s, element_block_elem_count[rank][block->name()]);
-        block->property_update("global_entity_count"s, global_block_element_count[block->name()]);
+        block->property_update("entity_count", element_block_elem_count[rank][block->name()]);
+        block->property_update("global_entity_count", global_block_element_count[block->name()]);
         grid.output_region(rank)->property_add(
-            Ioss::Property("global_element_count"s, (int64_t)global_element_count));
+            Ioss::Property("global_element_count", (int64_t)global_element_count));
         grid.output_region(rank)->add(block);
         if (debug_level & 8) {
           fmt::print("rank, blk, element_count: {}: {} {}\n", rank, block->name(),
@@ -1059,10 +1061,10 @@ namespace {
       int         spatial_dimension = 3;
       auto        block = new Ioss::NodeBlock(grid.output_region(i)->get_database(), block_name,
                                        local_node_count[i], spatial_dimension);
-      block->property_add(Ioss::Property("id"s, 1));
+      block->property_add(Ioss::Property("id", 1));
       grid.output_region(i)->add(block);
       grid.output_region(i)->property_add(
-          Ioss::Property("global_node_count"s, (int64_t)global_node_count));
+          Ioss::Property("global_node_count", (int64_t)global_node_count));
     }
     return global_node_count;
   }
@@ -1088,8 +1090,8 @@ namespace {
 
     // Now add communication sets to all output databases...
     for (int rank = start_rank; rank < start_rank + rank_count; rank++) {
-      auto *cs = new Ioss::CommSet(grid.output_region(rank)->get_database(), "commset_node"s,
-                                   "node"s, bnode[rank]);
+      auto *cs = new Ioss::CommSet(grid.output_region(rank)->get_database(), "commset_node", "node",
+                                   bnode[rank]);
       grid.output_region(rank)->add(cs);
     }
   }
@@ -1130,7 +1132,7 @@ namespace {
 
           // Create output surface if does not exist yet...
           if (output_surfaces.find(surf) == output_surfaces.end()) {
-            output_surfaces.emplace(surf, std::make_unique<Ioss::SideSet>(*surface));
+            output_surfaces.emplace(surf, std::make_unique<Ioss::SideSet>(Ioss::SideSet(*surface)));
           }
         }
       }
@@ -1143,12 +1145,11 @@ namespace {
             new Ioss::SideSet(grid.output_region(rank)->get_database(), surf.second->name());
         auto *block =
             new Ioss::SideBlock(grid.output_region(rank)->get_database(), surf.second->name(),
-                                "quad4"s, "hex8"s, surface_face_count[rank][surface->name()]);
+                                "quad4", "hex8", surface_face_count[rank][surface->name()]);
         surface->add(block);
-        block->property_update("global_entity_count"s, global_surface_face_count[surface->name()]);
-        surface->property_update("global_entity_count"s,
-                                 global_surface_face_count[surface->name()]);
-        block->property_update("distribution_factor_count"s, 0);
+        block->property_update("global_entity_count", global_surface_face_count[surface->name()]);
+        surface->property_update("global_entity_count", global_surface_face_count[surface->name()]);
+        block->property_update("distribution_factor_count", 0);
         grid.output_region(rank)->add(surface);
       }
     }
@@ -1203,11 +1204,11 @@ namespace {
           auto *surface = new Ioss::SideSet(grid.output_region(rank)->get_database(),
                                             grid.generated_surface_names[i]);
           auto *block   = new Ioss::SideBlock(grid.output_region(rank)->get_database(),
-                                            grid.generated_surface_names[i], "quad4"s, "hex8"s,
+                                            grid.generated_surface_names[i], "quad4", "hex8",
                                             surface_face_count[rank][i]);
-          surface->property_update("global_entity_count"s, global_surface_face_count[i]);
-          block->property_update("global_entity_count"s, global_surface_face_count[i]);
-          block->property_update("distribution_factor_count"s, 0);
+          surface->property_update("global_entity_count", global_surface_face_count[i]);
+          block->property_update("global_entity_count", global_surface_face_count[i]);
+          block->property_update("distribution_factor_count", 0);
           surface->add(block);
           grid.output_region(rank)->add(surface);
         }
@@ -1266,27 +1267,27 @@ namespace {
   {
     Ioss::PropertyManager properties;
     if (int_size == 8) {
-      properties.add(Ioss::Property("INTEGER_SIZE_DB"s, 8));
-      properties.add(Ioss::Property("INTEGER_SIZE_API"s, 8));
+      properties.add(Ioss::Property("INTEGER_SIZE_DB", 8));
+      properties.add(Ioss::Property("INTEGER_SIZE_API", 8));
     }
 
     if (interFace.use_netcdf4()) {
-      properties.add(Ioss::Property("FILE_TYPE"s, "netcdf4"));
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
     }
 
     if (interFace.use_netcdf5()) {
-      properties.add(Ioss::Property("FILE_TYPE"s, "netcdf5"));
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf5"));
     }
 
     if (interFace.compression_level() > 0 || interFace.szip()) {
-      properties.add(Ioss::Property("FILE_TYPE"s, "netcdf4"));
-      properties.add(Ioss::Property("COMPRESSION_LEVEL"s, interFace.compression_level()));
-      properties.add(Ioss::Property("COMPRESSION_SHUFFLE"s, true));
+      properties.add(Ioss::Property("FILE_TYPE", "netcdf4"));
+      properties.add(Ioss::Property("COMPRESSION_LEVEL", interFace.compression_level()));
+      properties.add(Ioss::Property("COMPRESSION_SHUFFLE", true));
       if (interFace.szip()) {
-        properties.add(Ioss::Property("COMPRESSION_METHOD"s, "szip"));
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "szip"));
       }
       else if (interFace.zlib()) {
-        properties.add(Ioss::Property("COMPRESSION_METHOD"s, "zlib"));
+        properties.add(Ioss::Property("COMPRESSION_METHOD", "zlib"));
       }
     }
     return properties;
@@ -1298,7 +1299,7 @@ namespace {
     // Check that 'filename' does not contain a starting/ending double quote...
     filename.erase(remove(filename.begin(), filename.end(), '\"'), filename.end());
     Ioss::DatabaseIO *dbi =
-        Ioss::IOFactory::create("exodus"s, filename, Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_SELF);
+        Ioss::IOFactory::create("exodus", filename, Ioss::READ_RESTART, (MPI_Comm)MPI_COMM_SELF);
     if (dbi == nullptr || !dbi->ok(true)) {
       std::exit(EXIT_FAILURE);
     }
@@ -1323,8 +1324,8 @@ namespace {
 
   void output_summary(Ioss::Region *region, std::ostream &strm)
   {
-    int64_t nodes    = region->get_property("node_count"s).get_int();
-    int64_t elements = region->get_property("element_count"s).get_int();
+    int64_t nodes    = region->get_property("node_count").get_int();
+    int64_t elements = region->get_property("element_count").get_int();
 
     fmt::print(strm, " Database: {}\tNodes = {:L} \tElements = {:L}\n",
                region->get_database()->get_filename(), nodes, elements);
