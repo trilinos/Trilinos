@@ -2161,8 +2161,6 @@ namespace Intrepid2 {
 #endif
       
       const bool this_constant = (this->getUnderlyingViewRank() == 1) && (this->getUnderlyingViewSize() == 1);
-      const bool A_constant = (A.getUnderlyingViewRank() == 1) && (A.getUnderlyingViewSize() == 1);
-      const bool B_constant = (B.getUnderlyingViewRank() == 1) && (B.getUnderlyingViewSize() == 1);
 
       // we special-case for constant output here; since the constant case is essentially all overhead, we want to avoid as much of the overhead of storeInPlaceCombination() as possible…
       if (this_constant)
