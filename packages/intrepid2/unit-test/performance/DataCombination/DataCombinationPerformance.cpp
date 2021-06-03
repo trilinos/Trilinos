@@ -164,8 +164,6 @@ inline
 void fillView(CaseChoice caseChoice, Kokkos::View<Scalar**,DeviceType> view, const double baseValue)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
-  const int numCells  = view.extent_int(0);
-  const int numPoints = view.extent_int(1);
   
   switch (caseChoice) {
     case Constant:
@@ -173,7 +171,7 @@ void fillView(CaseChoice caseChoice, Kokkos::View<Scalar**,DeviceType> view, con
       break;
     case Affine:
     {
-      Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{numCells,numPoints});
+      Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{view.extent_int(0),view.extent_int(1)});
       // (C,P); varies in C dimension
       Kokkos::parallel_for("initialize underlying view data", policy,
       KOKKOS_LAMBDA (const int &i0, const int &i1) {
@@ -183,7 +181,7 @@ void fillView(CaseChoice caseChoice, Kokkos::View<Scalar**,DeviceType> view, con
       break;
     case General:
     {
-      Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{numCells,numPoints});
+      Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{view.extent_int(0),view.extent_int(1)});
       // (C,P); varies in C and P dimensions
       Kokkos::parallel_for("initialize underlying view data", policy,
       KOKKOS_LAMBDA (const int &i0, const int &i1) {
@@ -202,9 +200,7 @@ void sumViews(Kokkos::View<Scalar**,DeviceType> resultView,
               Kokkos::View<Scalar**,DeviceType> view1, Kokkos::View<Scalar**,DeviceType> view2)
 {
   using ExecutionSpace = typename DeviceType::execution_space;
-  const int numCells  = resultView.extent_int(0);
-  const int numPoints = resultView.extent_int(1);
-  Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{numCells,numPoints});
+  Kokkos::MDRangePolicy<ExecutionSpace,Kokkos::Rank<2>> policy({0,0},{resultView.extent_int(0),resultView.extent_int(1)});
   
   Kokkos::parallel_for("initialize underlying view data", policy,
   KOKKOS_LAMBDA (const int &i0, const int &i1) {
