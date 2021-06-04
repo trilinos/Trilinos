@@ -206,19 +206,15 @@ int main(int argc, char *argv[])
         RCP<Map<LO,GO,NO> > FullRepeatedMap;
         RCP<Map<LO,GO,NO> > RepeatedMap;
         RCP<const Map<LO,GO,NO> > FullRepeatedMapNode;
-        if(useGeoMap){
-            if(Dimension == 2){
-                {
-                    FullRepeatedMap = BuildRepeatedMapGaleriStruct2D<SC,LO,GO,NO>(K,M,Dimension);
-                    RepeatedMap = FullRepeatedMap;
-                }
-            }else if(Dimension == 3){
-                {
-                    FullRepeatedMapNode = BuildRepeatedMapGaleriStruct3D<SC,LO,GO,NO>(K->getMap(),M,Dimension);
-                    FullRepeatedMap = BuildMapFromNodeMap(FullRepeatedMapNode,Dimension,NodeWise);
-                    //FullRepeatedMapNode->describe(*fancy,Teuchos::VERB_EXTREME);
-                    RepeatedMap = FullRepeatedMap;
-                }
+        if (useGeoMap) {
+            if (Dimension == 2) {
+                FullRepeatedMap = BuildRepeatedMapGaleriStruct2D<SC,LO,GO,NO>(K,M,Dimension);
+                RepeatedMap = FullRepeatedMap;
+            } else if (Dimension == 3) {
+                FullRepeatedMapNode = BuildRepeatedMapGaleriStruct3D<SC,LO,GO,NO>(K->getMap(),M,Dimension);
+                FullRepeatedMap = BuildMapFromNodeMap(FullRepeatedMapNode,Dimension,NodeWise);
+                //FullRepeatedMapNode->describe(*fancy,Teuchos::VERB_EXTREME);
+                RepeatedMap = FullRepeatedMap;
             }
         } else {
             RepeatedMap = BuildRepeatedMapNonConst<LO,GO,NO>(K->getCrsGraph());
