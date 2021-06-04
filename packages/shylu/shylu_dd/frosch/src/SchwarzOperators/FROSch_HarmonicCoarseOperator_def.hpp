@@ -102,7 +102,7 @@ namespace FROSch {
 
         //Detect linear dependencies
         if (!this->ParameterList_->get("Skip DetectLinearDependencies",false)) {
-            LOVecPtr linearDependentVectors = detectLinearDependencies(indicesGammaDofsAll(),this->K_->getRowMap(),this->K_->getRangeMap(),repeatedMap,this->ParameterList_->get("Threshold Phi",1.e-8));
+            LOVecPtr linearDependentVectors = detectLinearDependencies(indicesGammaDofsAll(),this->K_->getRowMap(),this->K_->getRangeMap(),repeatedMap,this->ParameterList_->get("Phi: Dropping Threshold",1.e-8),this->ParameterList_->get("Phi: Orthogonalization Threshold",1.e-12));
             // cout << this->MpiComm_->getRank() << " " << linearDependentVectors.size() << endl;
             AssembledInterfaceCoarseSpace_->zeroOutBasisVectors(linearDependentVectors());
         }
@@ -263,11 +263,11 @@ namespace FROSch {
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                 << setw(89) << "========================================================================================="
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(20) << "Volumes " << " | " << setw(19) << " Translations" << right
+                << "| " << left << setw(19) << "Volumes " << " | " << setw(19) << "Translations " << right
                 << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                << "| " << left << setw(20) << "Volumes " << " | " << setw(19) << " Rotations" << right
+                << "| " << left << setw(19) << "Volumes " << " | " << setw(19) << "Rotations " << right
                 << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                 << " |"
                 << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
@@ -491,13 +491,24 @@ namespace FROSch {
                                                                                                                          ConstXMapPtr rowMap,
                                                                                                                          ConstXMapPtr rangeMap,
                                                                                                                          ConstXMapPtr repeatedMap,
-                                                                                                                         SC treshold)
+                                                                                                                         SC tresholdDropping,
+                                                                                                                         SC tresholdOrthogonalization)
     {
         FROSCH_DETAILTIMER_START_LEVELID(detectLinearDependenciesTime,"HarmonicCoarseOperator::detectLinearDependencies");
         LOVecPtr linearDependentVectors(AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements()); //if (this->Verbose_) cout << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors() << " " << AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength() << " " << indicesGammaDofsAll.size() << endl;
         if (AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors()>0 && AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength()>0) {
             //Construct matrix phiGamma
             XMatrixPtr phiGamma = MatrixFactory<SC,LO,GO,NO>::Build(rowMap,AssembledInterfaceCoarseSpace_->getBasisMap()->getNodeNumElements());
+
+            // Array for scaling the columns of PhiGamma (1/norm(PhiGamma(:,i)))
+            SCVec scale(AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(),0.0);
+            for (UN i = 0; i < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); i++) {
+                ConstSCVecPtr assembledInterfaceCoarseSpaceData = AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(i);
+                for (UN j = 0; j < AssembledInterfaceCoarseSpace_->getAssembledBasis()->getLocalLength(); j++) {
+                    scale[i] += assembledInterfaceCoarseSpaceData[j]*assembledInterfaceCoarseSpaceData[j];
+                }
+                scale[i] = 1.0/sqrt(scale[i]);
+            }
 
             LO iD;
             SC valueTmp;
@@ -506,9 +517,9 @@ namespace FROSch {
                 SCVec values;
                 for (UN j=0; j<AssembledInterfaceCoarseSpace_->getAssembledBasis()->getNumVectors(); j++) {
                     valueTmp=AssembledInterfaceCoarseSpace_->getAssembledBasis()->getData(j)[i];
-                    if (fabs(valueTmp)>treshold) {
+                    if (fabs(valueTmp)>tresholdDropping) {
                         indices.push_back(AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(j));
-                        values.push_back(valueTmp);
+                        values.push_back(valueTmp*scale[j]);
                     }
                 }
                 iD = repeatedMap->getGlobalElement(indicesGammaDofsAll[i]);
@@ -560,11 +571,16 @@ namespace FROSch {
             TSerialDenseMatrixPtr r = qRSolver->getR();
             LO tmp = 0;
             for (LO i=0; i<r->numRows(); i++) {
-                SC normRow = 0.0;
-                for (LO j=0; j<r->numCols(); j++) {
-                    normRow += (*r)(i,j)*(*r)(i,j);
-                }
-                if (sqrt(normRow)<treshold) {
+                // SC normRow = 0.0;
+                // for (LO j=0; j<r->numCols(); j++) {
+                //     normRow += (*r)(i,j)*(*r)(i,j);
+                // }
+                // if (sqrt(normRow)<treshold) {
+                //     //cout << this->MpiComm_->getRank() << " " << i << " " << AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(i) << " " << sqrt(normRow) << std::endl;
+                //     linearDependentVectors[tmp] = i;
+                //     tmp++;
+                // }
+                if (fabs((*r)(i,i))<tresholdOrthogonalization) {
                     //cout << this->MpiComm_->getRank() << " " << i << " " << AssembledInterfaceCoarseSpace_->getBasisMap()->getGlobalElement(i) << " " << sqrt(normRow) << std::endl;
                     linearDependentVectors[tmp] = i;
                     tmp++;
