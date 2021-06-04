@@ -3065,3 +3065,13 @@ Epetra_CrsGraph& Epetra_CrsGraph::operator = (const Epetra_CrsGraph& Source) {
 
   return(*this);
 }
+
+//=============================================================================
+Epetra_IntSerialDenseVector& Epetra_CrsGraph::ExpertExtractIndexOffset(){
+   return CrsGraphData_->IndexOffset_;
+ }
+
+//=============================================================================
+Epetra_IntSerialDenseVector& Epetra_CrsGraph::ExpertExtractIndices() {
+  return CrsGraphData_->data->All_Indices_;
+ }

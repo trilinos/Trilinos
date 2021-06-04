@@ -56,6 +56,8 @@
 
 #include "MueLu_AggregationExportFactory_fwd.hpp"
 #include "MueLu_BrickAggregationFactory_fwd.hpp"
+#include "MueLu_ClassicalMapFactory_fwd.hpp"
+#include "MueLu_ClassicalPFactory_fwd.hpp"
 #include "MueLu_CoalesceDropFactory_fwd.hpp"
 #include "MueLu_CoarseMapFactory_fwd.hpp"
 #include "MueLu_ConstraintFactory_fwd.hpp"
@@ -231,7 +233,7 @@ namespace MueLu {
                                         int levelID, std::vector<keep_pair>& keeps, RCP<Factory> & nullSpaceFactory) const;
     void UpdateFactoryManager_BlockNumber(Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, 
                                           FactoryManager& manager,int levelID, std::vector<keep_pair>& keeps) const;
-    void UpdateFactoryManager_LocalOrdinalTransfer(const std::string VarName, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, 
+    void UpdateFactoryManager_LocalOrdinalTransfer(const std::string& VarName, const std::string& multigridAlgo, Teuchos::ParameterList& paramList, const Teuchos::ParameterList& defaultList, 
                                            FactoryManager& manager,int levelID, std::vector<keep_pair>& keeps) const;
 
     // Algorithm-specific components for UpdateFactoryManager

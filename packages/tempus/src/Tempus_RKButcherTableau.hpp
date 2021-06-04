@@ -158,6 +158,8 @@ class RKButcherTableau :
       virtual void describe( Teuchos::FancyOStream &out,
                              const Teuchos::EVerbosityLevel verbLevel) const
       {
+        out.setOutputToRootOnly(0);
+
         if (verbLevel != Teuchos::VERB_NONE) {
           out << this->description() << std::endl;
           out << "number of Stages = " << this->numStages() << std::endl;

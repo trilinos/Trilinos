@@ -41,6 +41,16 @@
 
 namespace {
 
+TEST(UnitTestSyncInfo, string_to_sync_mode)
+{
+  EXPECT_EQ(stk::coupling::Minimum, stk::coupling::string_to_sync_mode("Minimum"));
+  EXPECT_EQ(stk::coupling::Minimum, stk::coupling::string_to_sync_mode("minIMum"));
+  EXPECT_EQ(stk::coupling::Receive, stk::coupling::string_to_sync_mode("Receive"));
+  EXPECT_EQ(stk::coupling::Send, stk::coupling::string_to_sync_mode("Send"));
+  EXPECT_EQ(stk::coupling::Any, stk::coupling::string_to_sync_mode("Any"));
+  EXPECT_ANY_THROW(stk::coupling::string_to_sync_mode("BadInput"));
+}
+
 TEST(UnitTestSyncInfo, defaultConstructorStillWorks)
 {
   stk::coupling::SyncInfo info;

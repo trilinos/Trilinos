@@ -60,8 +60,6 @@ void verifyMeshPriorToRebalance(stk::mesh::BulkData &stkMeshBulkData);
 template<typename GlobalId, typename LocalNumber>
 void writeDotFile(const std::string &fileName, const std::vector<GlobalId>& globalIds, const std::vector<LocalNumber> &offsets, const std::vector<GlobalId>& adjacency);
 
-std::string getSubdomainPartName(int subdomainId);
-
 template <typename GlobalIds>
 void gatherLoadBalanceDiagnostics(const std::vector<double> &vertexWeights, const std::vector<double> &edgeWeights, const std::vector<GlobalIds> &adjacency, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator, struct LoadBalanceDiagnostics &diagnostics);
 void printLoadBalanceDiagnostics(const struct LoadBalanceDiagnostics &loadBalanceDiagnostics);
@@ -746,133 +744,6 @@ TEST(LoadBalance, DISABLED_zoltan1decomposition)
         std::vector<int> coloring(27, 0);
         balance_utils::putFieldDataOnMesh(stkMeshBulkData, coloring);
         writeParFiles(ioBroker, output_file_name);
-    }
-}
-
-TEST(LoadBalance, MxN_decomposition)
-{
-    MPI_Comm communicator = MPI_COMM_WORLD;
-    int numProcs = -1;
-    MPI_Comm_size(communicator, &numProcs);
-    int procId;
-    MPI_Comm_rank(communicator, &procId);
-
-    Options options = getOptionsForTest("generated:3x3x3");
-
-    if(numProcs == 2 || options.overRideTest())
-    {
-        stk::io::StkMeshIoBroker ioBroker(communicator);
-        fillIoBroker(communicator, options.getMeshFileName(), ioBroker);
-
-        stk::mesh::BulkData &stkMeshBulkData = ioBroker.bulk_data();
-
-        stk::balance::GraphCreationSettingsWithCustomTolerances loadBalanceSettings;
-
-        loadBalanceSettings.setToleranceForFaceSearch(options.getToleranceForFaceSearch());
-        loadBalanceSettings.setToleranceForParticleSearch(options.getToleranceForParticleSearch());
-
-        unsigned num_procs_decomp = static_cast<unsigned>(options.numSubdomains());
-        stk::mesh::EntityProcVec decomp;
-        std::vector<stk::mesh::Selector> selectors = {stkMeshBulkData.mesh_meta_data().universal_part()};
-        stk::balance::internal::calculateGeometricOrGraphBasedDecomp(stkMeshBulkData, selectors,
-                                                                     stkMeshBulkData.parallel(), num_procs_decomp,
-                                                                     loadBalanceSettings, decomp);
-
-        std::string output_file_name = "output.exo";
-        balance_utils::putEntityProcOnMeshField(stkMeshBulkData, decomp);
-        writeParFiles(ioBroker, output_file_name);
-
-        std::vector<unsigned> mappings(num_procs_decomp, 0);
-        int procCounter = 0;
-        for(unsigned i = 0; i < num_procs_decomp; i++)
-        {
-            mappings[i] = procCounter;
-            procCounter++;
-            if(procCounter >= numProcs)
-            {
-                procCounter = 0;
-            }
-        }
-
-        stk::balance::internal::rebalance(stkMeshBulkData, mappings, decomp);
-
-        const std::string fieldName2 = "Coloring";
-        stk::mesh::FieldBase *subdomainField = stkMeshBulkData.mesh_meta_data().get_field(stk::topology::ELEMENT_RANK, fieldName2);
-        for(size_t i = 0; i < num_procs_decomp; i++)
-        {
-            std::vector<stk::mesh::Entity> entities;
-            stkMeshBulkData.modification_begin();
-
-            if(mappings[i] == static_cast<unsigned>(procId))
-            {
-                const stk::mesh::BucketVector &buckets = stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK);
-                for(size_t j = 0; j < buckets.size(); j++)
-                {
-                    stk::mesh::Bucket &bucket = *buckets[j];
-                    if(bucket.owned())
-                    {
-                        double *bucketSubdomainData = static_cast<double*>(stk::mesh::field_data(*subdomainField, bucket));
-                        for(size_t k = 0; k < bucket.size(); k++)
-                        {
-                            if(bucketSubdomainData[k] == static_cast<double>(i))
-                            {
-                                entities.push_back(bucket[k]);
-                            }
-                        }
-                    }
-                }
-            }
-
-            stk::mesh::PartVector partVector;
-            std::string partNameForSubdomain = getSubdomainPartName(i);
-            stk::mesh::Part& subdomain = stkMeshBulkData.mesh_meta_data().declare_part(partNameForSubdomain, stk::topology::ELEMENT_RANK);
-            partVector.push_back(&subdomain);
-
-            for(size_t j = 0; j < entities.size(); j++)
-            {
-                stkMeshBulkData.change_entity_parts(entities[j], partVector);
-            }
-
-            stkMeshBulkData.modification_end();
-        }
-
-        //////////////// write out the files
-
-        std::string filename = "subdomain.exo";
-
-        for(size_t i = 0; i < num_procs_decomp; i++)
-        {
-            if(mappings[i] == static_cast<unsigned>(procId))
-            {
-                std::string partNameForSubdomain = getSubdomainPartName(i);
-                stk::mesh::MetaData &stkMeshMetaData = stkMeshBulkData.mesh_meta_data();
-                stk::mesh::Part& subdomain = *stkMeshMetaData.get_part(partNameForSubdomain);
-
-                stk::mesh::MetaData newMeta;
-                stk::mesh::BulkData newBulkData(newMeta, MPI_COMM_SELF);
-                stk::tools::copy_mesh(stkMeshBulkData, subdomain, newBulkData);
-
-                if(!options.overRideTest())
-                {
-                    EXPECT_EQ(9u, stk::mesh::count_selected_entities(newMeta.universal_part(), newBulkData.buckets(stk::topology::ELEMENT_RANK)));
-                }
-
-                std::string localFilename = balance_utils::getFilename(filename, num_procs_decomp, i);
-                stk::io::StkMeshIoBroker meshIO(MPI_COMM_SELF);
-                meshIO.set_bulk_data(newBulkData);
-                size_t index = meshIO.create_output_mesh(localFilename, stk::io::WRITE_RESULTS);
-                meshIO.write_output_mesh(index);
-            }
-        }
-
-        if(procId == 0)
-        {
-            if(options.deleteFiles())
-            {
-                balance_utils::clearFiles(output_file_name, numProcs);
-                balance_utils::clearFiles(filename, num_procs_decomp);
-            }
-        }
     }
 }
 
@@ -1708,16 +1579,6 @@ void writeDotFile(const std::string &fileName, const std::vector<GlobalId>& glob
     out << "}\n";
     out.close();
 }
-
-std::string getSubdomainPartName(int subdomainId)
-{
-    std::ostringstream out;
-    out << "subdomain_" << subdomainId;
-    return out.str();
-}
-
-// 10. 0+1 = 1
-// 100. 1+1 = 2
 
 TEST(LoadBalance, checkWidth)
 {

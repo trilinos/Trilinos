@@ -191,8 +191,8 @@ namespace NOX {
       /// Dangerous power user function for LOCA Householder bordered algorithm.
       void setJacobianOperator(const Teuchos::RCP<::Thyra::LinearOpBase<double>>& op);
 
-      /// Dangerous power user function for LOCA Householder bordered algorithm.
-      void setPreconditionerOperator(const Teuchos::RCP<::Thyra::PreconditionerBase<double>>& op);
+      /// Dangerous power user function for LOCA Householder bordered algorithm. This is the Matrix M that is used to initialize a stratimikos preconditioner. NOTE: this sets the losb_ object used to update prec_!
+      void setPreconditionerMatrix(const Teuchos::RCP<const ::Thyra::DefaultLinearOpSource<double>>& op);
 
       /** @name "Compute" functions. */
       //@{

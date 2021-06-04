@@ -318,7 +318,7 @@ TEST_F( NgpMeshChangeElementPartMembershipWithFields, Timing )
 {
   if (get_parallel_size() != 1) return;
 
-  const int NUM_RUNS = 200;
+  const int NUM_RUNS = 800;
 
   stk::performance_tests::Timer timer(get_comm());
   setup_host_mesh();

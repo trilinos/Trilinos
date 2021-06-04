@@ -118,7 +118,7 @@ namespace Excn {
 
     void dump() const
     {
-      fmt::print("NodeSet {}, Name: '{}', {:n} nodes, {:n} df,\torder = {}\n", id, name_, nodeCount,
+      fmt::print("NodeSet {}, Name: '{}', {:L} nodes, {:L} df,\torder = {}\n", id, name_, nodeCount,
                  dfCount, position_);
     }
 
@@ -157,7 +157,7 @@ namespace Excn {
 
     void dump() const
     {
-      fmt::print("SideSet {}, Name: '{}', {:n} sides, {:n} df\toffset = {}, order = {}\n", id,
+      fmt::print("SideSet {}, Name: '{}', {:L} sides, {:L} df\toffset = {}, order = {}\n", id,
                  name_, sideCount, dfCount, offset_, position_);
     }
   };

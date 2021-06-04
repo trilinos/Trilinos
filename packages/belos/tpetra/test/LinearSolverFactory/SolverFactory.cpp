@@ -159,8 +159,8 @@ testSolver (Teuchos::FancyOStream& out,
   Teuchos::OSTab tab1 (out);
 
   RCP<Belos::SolverManager<SC, MV, OP> > solver;
+  Belos::SolverFactory<SC, MV, OP> factory;
   try {
-    Belos::SolverFactory<SC, MV, OP> factory;
     solver = factory.create (solverName, Teuchos::null);
   } catch (std::exception& e) {
     out << "*** FAILED: Belos::SolverFactory::create threw an exception: "
@@ -178,6 +178,7 @@ testSolver (Teuchos::FancyOStream& out,
 
   out << "Create the Belos::LinearProblem to solve" << endl;
   typedef Belos::LinearProblem<SC, MV, OP> linear_problem_type;
+  X->putScalar (STS::zero ());
   RCP<linear_problem_type> problem (new linear_problem_type (A, X, B));
   problem->setProblem ();
 
@@ -186,8 +187,14 @@ testSolver (Teuchos::FancyOStream& out,
 
   out << "Apply solver to \"solve\" AX=B for X.  Belos already has solver "
     "tests; the point is to check that solve() doesn't throw." << endl;
-  X->putScalar (STS::zero ());
-  solver->solve ();
+  try {
+    solver->solve ();
+  } catch (std::exception& e) {
+    out << "*** FAILED: Belos::SolverFactory::solve threw an exception: "
+        << e.what () << endl;
+    success = false;
+    return;
+  }
 }
 
 template<class SC, class LO, class GO, class NT>
@@ -290,8 +297,18 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( SolverFactory, CreateAndSolve, SC, LO, GO, NT
   //
   // Teuchos::Array<std::string> solverNames = factory.supportedSolverNames ();
   // const int numSolvers = static_cast<int> (solverNames.size ());
-  const char* solverNames[2] = {"CG", "GMRES"};
-  const int numSolvers = 2;
+  const char* solverNames[10] = {
+    "BICGSTAB",
+    "BLOCK CG",
+    "BLOCK GMRES",
+    "FIXED POINT",
+    "GCRODR",
+    "MINRES",
+    "PSEUDOBLOCK CG",
+    "PSEUDOBLOCK GMRES",
+    "PSEUDOBLOCK TFQMR",
+    "TFQMR"};
+  const int numSolvers = 10;
 
   int numSolversTested = 0;
   for (int k = 0; k < numSolvers; ++k) {

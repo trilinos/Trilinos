@@ -564,6 +564,6 @@ class TestPhactoriGeometricCellSampler1(unittest.TestCase):
     #  PhactoriGeometricCellSampler1Instance.GeometricallySampledCellsForThisProcess)
 
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
-
-

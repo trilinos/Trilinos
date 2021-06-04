@@ -78,7 +78,7 @@
 #include "ROL_TempusDynamicConstraint.hpp"
 
 #include <iostream>
-#include <fenv.h>
+//#include <fenv.h>
 #include <ctime>
 
 int main(int argc, char *argv[]) {

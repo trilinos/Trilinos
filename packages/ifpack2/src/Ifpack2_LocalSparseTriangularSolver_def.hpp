@@ -377,7 +377,7 @@ initialize ()
   using Tpetra::Details::determineLocalTriangularStructure;
   using crs_matrix_type = Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
     global_ordinal_type, node_type>;
-  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+  using local_matrix_type = typename crs_matrix_type::local_matrix_device_type;
   using LO = local_ordinal_type;
 
   const char prefix[] = "Ifpack2::LocalSparseTriangularSolver::initialize: ";
@@ -411,7 +411,7 @@ initialize ()
   // mfh 30 Apr 2018: See GitHub Issue #2658.
   constexpr bool ignoreMapsForTriStructure = true;
   auto lclTriStructure = [&] {
-    auto lclMatrix = A_crs_->getLocalMatrix ();
+    auto lclMatrix = A_crs_->getLocalMatrixDevice ();
     auto lclRowMap = A_crs_->getRowMap ()->getLocalMap ();
     auto lclColMap = A_crs_->getColMap ()->getLocalMap ();
     auto lclTriStruct =
@@ -429,7 +429,7 @@ initialize ()
   if (reverseStorage_ && lclTriStructure.couldBeUpperTriangular &&
       htsImpl_.is_null ()) {
     // Reverse the storage for an upper triangular matrix
-    auto Alocal = A_crs_->getLocalMatrix();
+    auto Alocal = A_crs_->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
@@ -563,7 +563,7 @@ compute ()
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_)
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (A_);
-    auto Alocal = A_crs->getLocalMatrix();
+    auto Alocal = A_crs->getLocalMatrixDevice();
     auto ptr    = Alocal.graph.row_map;
     auto ind    = Alocal.graph.entries;
     auto val    = Alocal.values;
@@ -731,7 +731,7 @@ localTriangularSolve (const MV& Y,
   if (Teuchos::nonnull(kh_) && this->isKokkosKernelsSptrsv_ && trans == "N")
   {
     auto A_crs = Teuchos::rcp_dynamic_cast<const crs_matrix_type> (this->A_);
-    auto A_lclk = A_crs->getLocalMatrix ();
+    auto A_lclk = A_crs->getLocalMatrixDevice ();
     auto ptr    = A_lclk.graph.row_map;
     auto ind    = A_lclk.graph.entries;
     auto val    = A_lclk.values;
@@ -753,7 +753,11 @@ localTriangularSolve (const MV& Y,
   else
   {
     const std::string diag = this->diag_;
-    auto A_lcl = this->A_crs_->getLocalMatrix ();
+    // NOTE (mfh 20 Aug 2017): KokkosSparse::trsv currently is a
+    // sequential, host-only code.  See
+    // https://github.com/kokkos/kokkos-kernels/issues/48. 
+
+    auto A_lcl = this->A_crs_->getLocalMatrixHost ();
 
     if (X.isConstantStride () && Y.isConstantStride ()) {
       auto X_lcl = X.getLocalViewHost (Tpetra::Access::ReadWrite);

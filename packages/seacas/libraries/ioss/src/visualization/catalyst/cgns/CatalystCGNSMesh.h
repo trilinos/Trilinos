@@ -7,27 +7,26 @@
 #ifndef __CATALYST_CGNS_MESH_H
 #define __CATALYST_CGNS_MESH_H
 
-#include "CatalystCGNSMeshBase.h"
-#include "CatalystManager.h"
-#include <vector>
 #include <map>
+#include <vector>
+#include <visualization/catalyst/manager/CatalystManager.h>
+#include <visualization/cgns/CatalystCGNSMeshBase.h>
 
 class vtkMultiBlockDataSet;
 
 namespace Iovs_cgns {
 
-class CatalystCGNSMesh : public CatalystCGNSMeshBase {
+  class CatalystCGNSMesh : public CatalystCGNSMeshBase
+  {
 
     using CatalystPipelineInfo = Iovs::CatalystManager::CatalystPipelineInfo;
 
-public:
-
-    CatalystCGNSMesh(Iovs::CatalystManager *cm,
-        CatalystPipelineInfo& catalystPipelineInfo);
+  public:
+    CatalystCGNSMesh(Iovs::CatalystManager *cm, CatalystPipelineInfo &catalystPipelineInfo);
 
     ~CatalystCGNSMesh();
 
-    void PerformCoProcessing(std::vector<int> &error_and_warning_codes,
+    void PerformCoProcessing(std::vector<int> &        error_and_warning_codes,
                              std::vector<std::string> &error_and_warning_messages);
 
     void SetTimeData(double currentTime, int timeStep);
@@ -38,26 +37,16 @@ public:
 
     void Delete();
 
-    void CreateBase(int base_id,
-                    const std::string& base_name);
+    void CreateBase(int base_id, const std::string &base_name);
 
-    void AddStructuredZoneData(int base_id,
-                               int zone_id,
-                               const std::string& zone_name,
-                               const std::string& data_name,
-                               int ni,
-                               int nj,
-                               int nk,
-                               int comp_count,
-                               bool is_cell_field,
-                               char field_suffix_separator,
-                               double* data,
+    void AddStructuredZoneData(int base_id, int zone_id, const std::string &zone_name,
+                               const std::string &data_name, int ni, int nj, int nk, int comp_count,
+                               bool is_cell_field, char field_suffix_separator, double *data,
                                int size);
 
-    vtkMultiBlockDataSet* getMultiBlockDataSet();
+    vtkMultiBlockDataSet *getMultiBlockDataSet();
 
-private:
-
+  private:
     const unsigned int BASES_BLOCK_ID   = 0;
     const char *       BASES_BLOCK_NAME = "Bases";
 
@@ -68,22 +57,23 @@ private:
     CatalystCGNSMesh(const CatalystCGNSMesh &) = delete;
     CatalystCGNSMesh &operator=(const CatalystCGNSMesh &) = delete;
 
-    std::string createFieldVariableName(std::string fieldNamePrefix,
-        char fieldSuffixSeparator, int componentIndex, int componentCount);  
+    std::string createFieldVariableName(std::string fieldNamePrefix, char fieldSuffixSeparator,
+                                        int componentIndex, int componentCount);
 
-    struct base {
-        int base_location;
-        std::map<int, int> zone_id_to_zone_location_map;
+    struct base
+    {
+      int                base_location;
+      std::map<int, int> zone_id_to_zone_location_map;
     };
 
     std::map<int, base> base_id_to_base_map;
 
-    vtkMultiBlockDataSet* multiBlock = nullptr;
-    Iovs::CatalystManager* catManager = nullptr;
-    bool writeCatalystMesh;
-    std::string catalystMeshFilePrefix;
-    CatalystPipelineInfo catalystPipelineInfo;
-};
+    vtkMultiBlockDataSet * multiBlock = nullptr;
+    Iovs::CatalystManager *catManager = nullptr;
+    bool                   writeCatalystMesh;
+    std::string            catalystMeshFilePrefix;
+    CatalystPipelineInfo   catalystPipelineInfo;
+  };
 
 } // namespace Iovs_cgns
 

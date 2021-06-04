@@ -508,8 +508,8 @@ void Add(
   }
 
   size_t a_numEntries;
-  Array<GO> a_inds(A.getNodeMaxNumRowEntries());
-  Array<SC> a_vals(A.getNodeMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_global_inds_host_view_type a_inds("a_inds",A.getNodeMaxNumRowEntries());
+  typename crs_matrix_type::nonconst_values_host_view_type a_vals("a_vals",A.getNodeMaxNumRowEntries());
   GO row;
 
   if (scalarB != Teuchos::ScalarTraits<SC>::one())
@@ -520,16 +520,16 @@ void Add(
   if (scalarA != Teuchos::ScalarTraits<SC>::zero()) {
     for (LO i = 0; (size_t)i < numMyRows; ++i) {
       row = B.getRowMap()->getGlobalElement(i);
-      Aprime->getGlobalRowCopy(row, a_inds(), a_vals(), a_numEntries);
+      Aprime->getGlobalRowCopy(row, a_inds, a_vals, a_numEntries);
 
       if (scalarA != Teuchos::ScalarTraits<SC>::one())
         for (size_t j = 0; j < a_numEntries; ++j)
           a_vals[j] *= scalarA;
 
       if (bFilled)
-        B.sumIntoGlobalValues(row, a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+        B.sumIntoGlobalValues(row, a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
       else
-        B.insertGlobalValues(row,  a_inds(0,a_numEntries), a_vals(0,a_numEntries));
+        B.insertGlobalValues(row,  a_numEntries, reinterpret_cast<Scalar *>(a_vals.data()), a_inds.data());
     }
   }
 }
@@ -759,8 +759,8 @@ add (const Scalar& alpha,
   {
     doFillComplete = params->get<bool>("Call fillComplete");
   }
-  auto Alocal = Aprime->getLocalMatrix();
-  auto Blocal = Bprime->getLocalMatrix();
+  auto Alocal = Aprime->getLocalMatrixDevice();
+  auto Blocal = Bprime->getLocalMatrixDevice();
   LO numLocalRows = Alocal.numRows();
   if(numLocalRows == 0)
   {
@@ -1017,8 +1017,8 @@ void Add(
 
   // do a loop over each matrix to add: A reordering might be more efficient
   for (int k = 0; k < 2; ++k) {
-    Array<GlobalOrdinal> Indices;
-    Array<Scalar> Values;
+    typename crs_matrix_type::nonconst_global_inds_host_view_type Indices;
+    typename crs_matrix_type::nonconst_values_host_view_type Values;
 
     // Loop over each locally owned row of the current matrix (either
     // Aprime or Bprime), and sum its entries into the corresponding
@@ -1041,9 +1041,9 @@ void Add(
       const GlobalOrdinal globalRow = curRowMap->getGlobalElement (i);
       size_t numEntries = Mat[k]->getNumEntriesInGlobalRow (globalRow);
       if (numEntries > 0) {
-        Indices.resize (numEntries);
-        Values.resize (numEntries);
-        Mat[k]->getGlobalRowCopy (globalRow, Indices (), Values (), numEntries);
+        Kokkos::resize(Indices,numEntries);
+        Kokkos::resize(Values,numEntries);
+        Mat[k]->getGlobalRowCopy (globalRow, Indices, Values, numEntries);
 
         if (scalar[k] != STS::one ()) {
           for (size_t j = 0; j < numEntries; ++j) {
@@ -1052,9 +1052,11 @@ void Add(
         }
 
         if (C->isFillComplete ()) {
-          C->sumIntoGlobalValues (globalRow, Indices, Values);
+          C->sumIntoGlobalValues (globalRow, numEntries, 
+                                  reinterpret_cast<Scalar *>(Values.data()), Indices.data());
         } else {
-          C->insertGlobalValues (globalRow, Indices, Values);
+          C->insertGlobalValues (globalRow,  numEntries, 
+                                 reinterpret_cast<Scalar *>(Values.data()), Indices.data());
         }
       }
     }
@@ -1567,7 +1569,7 @@ void mult_A_B_newmatrix(
 
   // Kokkos typedefs
   typedef typename map_type::local_map_type local_map_type;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename NO::execution_space execution_space;
@@ -1733,7 +1735,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -1756,8 +1758,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -1767,9 +1769,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
     b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
@@ -1955,7 +1958,7 @@ void mult_A_B_reuse(
 
   // Kokkos typedefs
   typedef typename map_type::local_map_type local_map_type;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename NO::execution_space execution_space;
@@ -2050,7 +2053,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
 
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -2071,9 +2074,9 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   size_t n = Ccolmap->getNodeNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
-  const KCRS & Cmat = C.getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS & Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -2084,9 +2087,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
@@ -2194,7 +2198,7 @@ void jacobi_A_B_newmatrix(
   typedef typename map_type::local_map_type local_map_type;
 
   // All of the Kokkos typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename NO::execution_space execution_space;
@@ -2362,7 +2366,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -2388,8 +2392,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   size_t b_max_nnz_per_row = Bview.origMatrix->getNodeMaxNumRowEntries();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries;
@@ -2399,9 +2403,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
     b_max_nnz_per_row = std::max(b_max_nnz_per_row,Bview.importMatrix->getNodeMaxNumRowEntries());
   }
 
@@ -2600,7 +2605,7 @@ void jacobi_A_B_reuse(
 
   // Kokkos typedefs
   typedef typename map_type::local_map_type local_map_type;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename NO::execution_space execution_space;
@@ -2702,7 +2707,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   using Teuchos::rcp;
 
   // Lots and lots of typedefs
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::const_type c_lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -2724,9 +2729,9 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   size_t n = Ccolmap->getNodeNumElements();
 
   // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-  const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bmat = Bview.origMatrix->getLocalMatrix();
-  const KCRS & Cmat = C.getLocalMatrix();
+  const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+  const KCRS & Bmat = Bview.origMatrix->getLocalMatrixHost();
+  const KCRS & Cmat = C.getLocalMatrixHost();
 
   c_lno_view_t Arowptr = Amat.graph.row_map, Browptr = Bmat.graph.row_map, Crowptr = Cmat.graph.row_map;
   const lno_nnz_view_t Acolind = Amat.graph.entries, Bcolind = Bmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -2737,9 +2742,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType
   lno_nnz_view_t  Icolind;
   scalar_view_t  Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixHost();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
   // Jacobi-specific inner stuff
@@ -3056,7 +3062,7 @@ void import_and_extract_views(
 /*********************************************************************************************************/
  // This only merges matrices that look like B & Bimport, aka, they have no overlapping rows
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node, class LocalOrdinalViewType>
-const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type
+const typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type
 merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                     CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Bview,
                     const LocalOrdinalViewType & Acol2Brow,
@@ -3066,14 +3072,14 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
                     const size_t mergedNodeNumCols) {
 
   using Teuchos::RCP;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
   typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
   typedef typename KCRS::values_type::non_const_type scalar_view_t;
   // Grab the  Kokkos::SparseCrsMatrices
-  const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-  const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+  const KCRS & Ak = Aview.origMatrix->getLocalMatrixDevice();
+  const KCRS & Bk = Bview.origMatrix->getLocalMatrixDevice();
 
   // We need to do this dance if either (a) We have Bimport or (b) We don't A's colMap is not the same as B's rowMap
   if(!Bview.importMatrix.is_null() || (Bview.importMatrix.is_null() && (&*Aview.origMatrix->getGraph()->getColMap() != &*Bview.origMatrix->getGraph()->getRowMap()))) {
@@ -3081,7 +3087,7 @@ merge_matrices(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview
     // NOTE: We're going merge Borig and Bimport into a single matrix and reindex the columns *before* we multiply.
     // This option was chosen because we know we don't have any duplicate entries, so we can allocate once.
     RCP<const KCRS> Ik_;
-    if(!Bview.importMatrix.is_null()) Ik_ = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrix());
+    if(!Bview.importMatrix.is_null()) Ik_ = Teuchos::rcpFromRef<const KCRS>(Bview.importMatrix->getLocalMatrixDevice());
     const KCRS * Ik     = Bview.importMatrix.is_null() ? 0 : &*Ik_;
     KCRS Iks;
     if(Ik!=0) Iks = *Ik;

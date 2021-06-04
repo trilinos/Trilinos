@@ -86,8 +86,8 @@ namespace Belos {
 /// Implementation of the preconditioned Minimal Residual Method
 /// (MINRES) iteration.  This a bilinear form implementation, that
 /// uses inner products of the form <x,My> to solve the preconditioned
-/// linear system M^{-1}*A x = b.  Thus, it is necessary that the
-/// left preconditioner M is positive definite.
+/// linear system.  Thus, it is necessary that the left preconditioner 
+/// M is positive definite.
 ///
 /// \ingroup belos_solver_framework
 ///
@@ -402,13 +402,13 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero, one.
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = SMT::zero();
+    const MagnitudeType m_zero = SMT::zero();
 
     // Set up y and v for the first Lanczos vector v_1.
     // y  =  beta1_ P' v1,  where  P = C**(-1).
     // v is really P' v1.
-    MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *R2_ );
-    MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *R1_ );
+    MVT::Assign( *newstate.Y, *R2_ );
+    MVT::Assign( *newstate.Y, *R1_ );
 
     // Initialize the W's to 0.
     MVT::MvInit ( *W_ );
@@ -416,11 +416,18 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     if ( lp_->getLeftPrec() != Teuchos::null ) {
       lp_->applyLeftPrec( *newstate.Y, *Y_ );
+      if ( lp_->getRightPrec() != Teuchos::null ) {
+        Teuchos::RCP<MV> tmp = MVT::CloneCopy( *Y_ );
+        lp_->applyRightPrec( *tmp, *Y_ );
+      }
+    }
+    else if ( lp_->getRightPrec() != Teuchos::null ) {
+      lp_->applyRightPrec( *newstate.Y, *Y_ );
     }
     else {
       if (newstate.Y != Y_) {
         // copy over the initial residual (unpreconditioned).
-        MVT::MvAddMv( one, *newstate.Y, zero, *newstate.Y, *Y_ );
+        MVT::Assign( *newstate.Y, *Y_ );
       }
     }
 
@@ -428,11 +435,11 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     beta1_ = Teuchos::SerialDenseMatrix<int,ScalarType>( 1, 1 );
     MVT::MvTransMv( one, *newstate.Y, *Y_, beta1_ );
 
-    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < zero,
+    TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta1_(0,0)) < m_zero,
                         std::invalid_argument,
                         "The preconditioner is not positive definite." );
 
-    if( SCT::magnitude(beta1_(0,0)) == zero )
+    if( SCT::magnitude(beta1_(0,0)) == m_zero )
     {
         // X = 0
         Teuchos::RCP<MV> cur_soln_vec = lp_->getCurrLHSVec();
@@ -462,13 +469,13 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
     // Create convenience variables for zero and one.
     const ScalarType one = SCT::one();
-    const MagnitudeType zero = SMT::zero();
+    const ScalarType zero = SCT::zero();
+    const MagnitudeType m_zero = SMT::zero();
 
     // Allocate memory for scalars.
     Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
     Teuchos::SerialDenseMatrix<int,ScalarType> beta( beta1_ );
     phibar_ = Teuchos::ScalarTraits<ScalarType>::magnitude( beta1_(0,0) );
-    ScalarType shift = zero; // TODO Allow for proper shift.
 
     // Initialize a few variables.
     ScalarType oldBeta = zero;
@@ -511,10 +518,6 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // Apply operator.
       lp_->applyOp (*V, *Y_);
 
-      // Apply shift
-      if (shift != zero)
-	MVT::MvAddMv (one, *Y_, -shift, *V, *Y_);
-
       if (iter_ > 1)
 	MVT::MvAddMv (one, *Y_, -beta(0,0)/oldBeta, *R1_, *Y_);
 
@@ -531,12 +534,19 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       R2_ = Y_;
       Y_ = tmpY;
 
-      // apply left preconditioner
+      // apply preconditioner
       if ( lp_->getLeftPrec() != Teuchos::null ) {
         lp_->applyLeftPrec( *R2_, *Y_ );
+        if ( lp_->getRightPrec() != Teuchos::null ) {
+          Teuchos::RCP<MV> tmp = MVT::CloneCopy( *Y_ );
+          lp_->applyRightPrec( *tmp, *Y_ );
+        }
+      }
+      else if ( lp_->getRightPrec() != Teuchos::null ) {
+        lp_->applyRightPrec( *R2_, *Y_ );
       } // else "y = r2"
       else {
-        MVT::MvAddMv( one, *R2_, zero, *R2_, *Y_ );
+        MVT::Assign( *R2_, *Y_ );
       }
 
       // Get new beta.
@@ -553,10 +563,10 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
       // algebra library to compute a posteriori rounding error bounds
       // for the inner product, and then changing
       // Belos::MultiVecTraits to make this information available).
-      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) <= zero,
+      TEUCHOS_TEST_FOR_EXCEPTION( SCT::real(beta(0,0)) < m_zero,
                           MinresIterateFailure,
-                          "Belos::MinresIter::iterate(): Encountered nonpositi"
-			  "ve value " << beta(0,0) << " for r2^H*M*r2 at itera"
+                          "Belos::MinresIter::iterate(): Encountered negative "
+			  "value " << beta(0,0) << " for r2^H*M*r2 at itera"
 			  "tion " << iter_ << ": MINRES cannot continue." );
       beta(0,0) = SCT::squareroot( beta(0,0) );
 
@@ -579,7 +589,7 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
 
       //  w1 = w2;
       //  w2 = w;
-      MVT::MvAddMv( one, *W_, zero, *W_, *W1_ );
+      MVT::Assign( *W_, *W1_ );
       tmpW = W1_;
       W1_ = W2_;
       W2_ = W_;

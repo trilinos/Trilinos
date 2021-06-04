@@ -8,9 +8,9 @@
 #define Iovs_cgns_DatabaseIO_h
 
 #include <Ioss_DatabaseIO.h>
-#include <Iovs_Utils.h>
 
 namespace Iovs_cgns {
+  class CatalystCGNSMeshBase;
 
   class DatabaseIO : public Ioss::DatabaseIO
   {

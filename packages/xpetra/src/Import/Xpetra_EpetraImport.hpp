@@ -93,6 +93,10 @@ namespace Xpetra {
     //! Destructor.
     ~EpetraImportT() { }
 
+    //! Special "constructor"
+    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> >
+    createRemoteOnlyImport (const Teuchos::RCP<const map_type>& remoteTarget) const {TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO EpetraImportT<EpetraGlobalOrdinal>::createRemoteOnlyImport not implemented"); }
+
     //@}
 
     //! @name Import Attribute Methods

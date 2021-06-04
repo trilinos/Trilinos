@@ -5,11 +5,11 @@
 // See packages/seacas/LICENSE for details
 
 #include <Ioss_Utils.h>
-#include <Iovs_Utils.h>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <visualization/utils/Iovs_Utils.h>
 
 #ifdef IOSS_DLOPEN_ENABLED
 #include <dlfcn.h>
@@ -265,7 +265,7 @@ namespace Iovs {
     bool        callDlopenLibOSMesa{};
     std::string libOSMesaPath;
 
-    this->getCatalystPluginPath(pluginLibraryPath, callDlopenLibOSMesa, libOSMesaPath);
+    callDlopenLibOSMesa = this->getCatalystPluginPath(pluginLibraryPath, libOSMesaPath);
 
 #ifdef IOSS_DLOPEN_ENABLED
     if (callDlopenLibOSMesa) {
@@ -287,15 +287,15 @@ namespace Iovs {
 #endif
   }
 
-  void Utils::getCatalystPluginPath(std::string &catalystPluginPath, bool callDlopenLibOSMesa,
-                                    std::string &libOSMesaPath)
+  bool Utils::getCatalystPluginPath(std::string &catalystPluginPath, std::string &libOSMesaPath)
   {
+    bool callDlopenLibOSMesa = false;
 
     if (getenv("CATALYST_PLUGIN") != nullptr) {
       catalystPluginPath  = getenv("CATALYST_PLUGIN");
       callDlopenLibOSMesa = false;
       libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return;
+      return callDlopenLibOSMesa;
     }
 
     std::string catalystInsDir = this->getCatalystAdapterInstallDirectory();
@@ -305,7 +305,7 @@ namespace Iovs {
           catalystInsDir + std::string(CATALYST_INSTALL_LIB_DIR) + CATALYST_PLUGIN_DYNAMIC_LIBRARY;
       callDlopenLibOSMesa = false;
       libOSMesaPath       = CATALYST_LIB_OSMESA;
-      return;
+      return callDlopenLibOSMesa;
     }
 
     catalystPluginPath =
@@ -320,6 +320,7 @@ namespace Iovs {
     std::string paraviewPythonZipFile =
         this->getSierraInstallDirectory() + CATALYST_PARAVIEW_PYTHON_ZIP_FILE;
     setPythonPathForParaViewPythonZipFile(paraviewPythonZipFile);
+    return callDlopenLibOSMesa;
   }
 
   void Utils::setPythonPathForParaViewPythonZipFile(std::string &paraviewPythonZipFilePath)

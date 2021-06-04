@@ -174,16 +174,16 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
     }
   }
 
-  using local_matrix_type = typename crs_matrix_type::local_matrix_type;
-  using local_graph_type = typename crs_matrix_type::local_graph_type;
-  using offset_type = typename local_graph_type::size_type;
-  using row_map_type = typename local_matrix_type::row_map_type::non_const_type;
-  using index_type = typename local_matrix_type::index_type::non_const_type;
-  using values_type = typename local_matrix_type::values_type::non_const_type;
-  using execution_space = typename local_matrix_type::execution_space;
+  using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
+  using local_graph_device_type = typename crs_matrix_type::local_graph_device_type;
+  using offset_type = typename local_graph_device_type::size_type;
+  using row_map_type = typename local_matrix_device_type::row_map_type::non_const_type;
+  using index_type = typename local_matrix_device_type::index_type::non_const_type;
+  using values_type = typename local_matrix_device_type::values_type::non_const_type;
+  using execution_space = typename local_matrix_device_type::execution_space;
 
-  local_matrix_type lclMatrix = crsMatrix->getLocalMatrix ();
-  local_graph_type lclGraph = lclMatrix.graph;
+  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
+  local_graph_device_type lclGraph = lclMatrix.graph;
 
   // Determine how many nonzeros there are per row in the transpose.
   using DT = typename crs_matrix_type::device_type;
@@ -255,7 +255,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       });
   }
 
-  local_matrix_type lclTransposeMatrix ("transpose", lclNumCols,
+  local_matrix_device_type lclTransposeMatrix ("transpose", lclNumCols,
                                         lclNumRows, nnz,
                                         t_vals, t_offsets, t_cols);
 

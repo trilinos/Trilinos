@@ -82,6 +82,8 @@ public:
     virtual void setTempusParameterList(Teuchos::RCP<Teuchos::ParameterList> pl) = 0;
     /// Returns the SolutionHistory for this Integrator
     virtual Teuchos::RCP<const SolutionHistory<Scalar> > getSolutionHistory() const = 0;
+    /// Returns the SolutionHistory for this Integrator
+    virtual Teuchos::RCP<SolutionHistory<Scalar> > getNonConstSolutionHistory() = 0;
     /// Returns the TimeStepControl for this Integrator
     virtual Teuchos::RCP<const TimeStepControl<Scalar> > getTimeStepControl() const = 0;
     virtual Teuchos::RCP<TimeStepControl<Scalar> > getNonConstTimeStepControl() = 0;

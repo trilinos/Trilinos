@@ -441,6 +441,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
   //! Create a directory object for the given Epetra_BlockMap.
+// CreateDirectory is defined in Winbase.h as a macro!
+#ifdef CreateDirectory
+#undef CreateDirectory
+#endif
   Epetra_Directory * CreateDirectory(const Epetra_BlockMap & Map) const;
   //@}
 

@@ -769,53 +769,13 @@ namespace MueLu {
     //        initial value at the end but there is no way right now to get
     //        the current value of the "zero starting solution" in ifpack2.
     //        It's not really an issue, as prec_  can only be used by this method.
-    // TODO: When https://software.sandia.gov/bugzilla/show_bug.cgi?id=5283#c2 is done
-    // we should remove the if/else/elseif and just test if this
-    // option is supported by current ifpack2 preconditioner
     Teuchos::ParameterList paramList;
     bool supportInitialGuess = false;
     const Teuchos::ParameterList params = this->GetParameterList();
-    if (type_ == "CHEBYSHEV") {
-      const std::string paramName = "chebyshev: zero starting solution";
-      if (!params.isType<bool>(paramName) ||
-          (params.get<bool>(paramName) != InitialGuessIsZero)) {
-        paramList.set(paramName, InitialGuessIsZero);
-        SetPrecParameters(paramList);
-      }
-      supportInitialGuess = true;
 
-    } else if (type_ == "RELAXATION"       ||
-               type_ == "BLOCK_RELAXATION" ||
-               type_ == "BLOCK RELAXATION" ||
-               type_ == "BLOCKRELAXATION"  ||
-               // Banded
-               type_ == "BANDED_RELAXATION" ||
-               type_ == "BANDED RELAXATION" ||
-               type_ == "BANDEDRELAXATION"  ||
-               // Tridiagonal
-               type_ == "TRIDI_RELAXATION"       ||
-               type_ == "TRIDI RELAXATION"       ||
-               type_ == "TRIDIRELAXATION"        ||
-               type_ == "TRIDIAGONAL_RELAXATION" ||
-               type_ == "TRIDIAGONAL RELAXATION" ||
-               type_ == "TRIDIAGONALRELAXATION") {
-      const std::string paramName = "relaxation: zero starting solution";
-      if (!params.isType<bool>(paramName) ||
-          (params.get<bool>(paramName) != InitialGuessIsZero)) {
-        paramList.set(paramName, InitialGuessIsZero);
-        SetPrecParameters(paramList);
-      }
+    if (prec_->supportsZeroStartingSolution()) {
+      prec_->setZeroStartingSolution(InitialGuessIsZero);
       supportInitialGuess = true;
-
-    } else if (type_ == "KRYLOV") {
-      const std::string paramName = "krylov: zero starting solution";
-      if (!params.isType<bool>(paramName) ||
-          (params.get<bool>(paramName) != InitialGuessIsZero)) {
-        paramList.set(paramName, InitialGuessIsZero);
-        SetPrecParameters(paramList);
-      }
-      supportInitialGuess = true;
-
     } else if (type_ == "SCHWARZ") {
       paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
       //Because additive Schwarz has "delta" semantics, it's sufficient to
