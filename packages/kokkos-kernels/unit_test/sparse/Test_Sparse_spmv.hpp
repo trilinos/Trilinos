@@ -359,7 +359,7 @@ Kokkos::complex<float> randomUpperBound<Kokkos::complex<float>>(int mag)
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, class Device>
-void test_spmv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance){
+void test_spmv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool heavy){
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
   typedef typename crsMat_t::values_type::non_const_type scalar_view_t;
@@ -390,24 +390,40 @@ void test_spmv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_vari
   Kokkos::fill_random(input_xt,rand_pool,randomUpperBound<ScalarX>(10));
   Kokkos::fill_random(output_yt,rand_pool,randomUpperBound<ScalarY>(10));
 
-  std::vector<char> nonTransModes = {'N', 'C'};
-  std::vector<char> transModes = {'T', 'H'};
+  std::vector<char> nonTransModes = {'N'};
+  std::vector<char> transModes = {'T'};
+  std::vector<double> testAlphaBeta = {0.0, 1.0};
+  if(heavy)
+  {
+    nonTransModes.push_back('C');
+    transModes.push_back('H');
+    testAlphaBeta.push_back(-1.0);
+    testAlphaBeta.push_back(2.5);
+  }
   for(auto mode : nonTransModes)
   {
-    Test::check_spmv(input_mat, input_x, output_y, 1.0, 0.0, mode);
-    Test::check_spmv(input_mat, input_x, output_y, 0.0, 1.0, mode);
-    Test::check_spmv(input_mat, input_x, output_y, 1.0, 1.0, mode);
+    for(double alpha : testAlphaBeta)
+    {
+      for(double beta : testAlphaBeta)
+      {
+        Test::check_spmv(input_mat, input_x, output_y, alpha, beta, mode);
+      }
+    }
   }
   for(auto mode : transModes)
   {
-    Test::check_spmv(input_mat, input_xt, output_yt, 1.0, 0.0, mode);
-    Test::check_spmv(input_mat, input_xt, output_yt, 0.0, 1.0, mode);
-    Test::check_spmv(input_mat, input_xt, output_yt, 1.0, 1.0, mode);
+    for(double alpha : testAlphaBeta)
+    {
+      for(double beta : testAlphaBeta)
+      {
+        Test::check_spmv(input_mat, input_xt, output_yt, alpha, beta, mode);
+      }
+    }
   }
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename layout, class Device>
-void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance, int numMV){
+void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_variance, bool heavy, int numMV){
   lno_t numCols = numRows;
 
   typedef typename KokkosSparse::CrsMatrix<scalar_t, lno_t, Device, void, size_type> crsMat_t;
@@ -435,19 +451,35 @@ void test_spmv_mv(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_size_v
   Kokkos::deep_copy(b_y_copy, b_y);
   Kokkos::deep_copy(b_yt_copy, b_yt);
 
-  std::vector<char> nonTransModes = {'N', 'C'};
-  std::vector<char> transModes = {'T', 'H'};
+  std::vector<char> nonTransModes = {'N'};
+  std::vector<char> transModes = {'T'};
+  std::vector<double> testAlphaBeta = {0.0, 1.0};
+  if(heavy)
+  {
+    nonTransModes.push_back('C');
+    transModes.push_back('H');
+    testAlphaBeta.push_back(-1.0);
+    testAlphaBeta.push_back(2.5);
+  }
   for(auto mode : nonTransModes)
   {
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, numMV, mode);
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, numMV, mode);
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, numMV, mode);
+    for(double alpha : testAlphaBeta)
+    {
+      for(double beta : testAlphaBeta)
+      {
+        Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, alpha, beta, numMV, mode);
+      }
+    }
   }
   for(auto mode : transModes)
   {
-    Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, 1.0, 0.0, numMV, mode);
-    Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, 0.0, 1.0, numMV, mode);
-    Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, 1.0, 1.0, numMV, mode);
+    for(double alpha : testAlphaBeta)
+    {
+      for(double beta : testAlphaBeta)
+      {
+        Test::check_spmv_mv(input_mat, b_xt, b_yt, b_yt_copy, alpha, beta, numMV, mode);
+      }
+    }
   }
 }
 
@@ -477,7 +509,19 @@ void test_spmv_mv_heavy(lno_t numRows,size_type nnz, lno_t bandwidth, lno_t row_
     Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, 'N');
     Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 0.0, nv, 'T');
     Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 0.0, 1.0, nv, 'T');
-    Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, 1.0, 1.0, nv, 'T');
+    //Testing all modes together, since matrix is square
+    std::vector<char> modes = {'N', 'C', 'T', 'H'};
+    std::vector<double> testAlphaBeta = {0.0, 1.0, -1.0, 2.5};
+    for(auto mode : modes)
+    {
+      for(double alpha : testAlphaBeta)
+      {
+        for(double beta : testAlphaBeta)
+        {
+          Test::check_spmv_mv(input_mat, b_x, b_y, b_y_copy, alpha, beta, nv, mode);
+        }
+      }
+    }
   }
 }
 
@@ -836,17 +880,23 @@ TEST_F( TestCategory,sparse ## _ ## spmv_issue_101 ## _ ## OFFSET ## _ ## DEVICE
 
 #define EXECUTE_TEST(SCALAR, ORDINAL, OFFSET, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## DEVICE ) { \
-  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (50000, 50000 * 30, 200, 10); \
-  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (50000, 50000 * 30, 100, 10); \
-  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (10000, 10000 * 20, 100, 5); \
+  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (1000, 1000 * 30, 200, 10, true); \
+  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (1000, 1000 * 30, 100, 10, true); \
+  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (1000, 1000 * 20, 100, 5, true); \
+  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (50000, 50000 * 30, 200, 10, false); \
+  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (50000, 50000 * 30, 100, 10, false); \
+  test_spmv<SCALAR,ORDINAL,OFFSET,DEVICE> (10000, 10000 * 20, 100, 5, false); \
   test_spmv_controls<SCALAR,ORDINAL,OFFSET,DEVICE> (10000, 10000 * 20, 100, 5); \
 }
 
 #define EXECUTE_TEST_MV(SCALAR, ORDINAL, OFFSET, LAYOUT, DEVICE) \
 TEST_F( TestCategory,sparse ## _ ## spmv_mv ## _ ## SCALAR ## _ ## ORDINAL ## _ ## OFFSET ## _ ## LAYOUT ## _ ## DEVICE ) { \
-  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 100, 10, 5); \
-  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 200, 10, 1); \
-  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10000, 10000 * 20, 100, 5, 10); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (1000, 1000 * 30, 200, 10, true, 1); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (1000, 1000 * 30, 100, 10, true, 5); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (1000, 1000 * 20, 100, 5, true, 10); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 200, 10, false, 1); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (50000, 50000 * 30, 100, 10, false, 5); \
+  test_spmv_mv<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (10000, 10000 * 20, 100, 5, false, 10); \
   test_spmv_mv_heavy<SCALAR,ORDINAL,OFFSET,Kokkos::LAYOUT,DEVICE> (200, 200 * 10, 60, 4, 30); \
 }
 

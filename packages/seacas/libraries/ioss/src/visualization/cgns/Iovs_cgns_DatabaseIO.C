@@ -5,6 +5,7 @@
 // See packages/seacas/LICENSE for details
 
 #include <visualization/cgns/Iovs_cgns_DatabaseIO.h>
+#include <visualization/utils/Iovs_Utils.h>
 
 #include "Ioss_Property.h"
 #include "Ioss_Region.h"

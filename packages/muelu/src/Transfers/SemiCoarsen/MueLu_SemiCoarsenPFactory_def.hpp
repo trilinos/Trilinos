@@ -69,6 +69,7 @@ namespace MueLu {
     RCP<ParameterList> validParamList = rcp(new ParameterList());
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
+    SET_VALID_ENTRY("semicoarsen: piecewise constant");
     SET_VALID_ENTRY("semicoarsen: coarsen rate");
 #undef  SET_VALID_ENTRY
     validParamList->set< RCP<const FactoryBase> >("A",               Teuchos::null, "Generating factory of the matrix A");
@@ -154,6 +155,9 @@ namespace MueLu {
       P->CreateView("stridedMaps", A->getRowMap("stridedMaps"), theCoarseMap);
     else
       P->CreateView("stridedMaps", P->getRangeMap(), theCoarseMap);
+
+    if  (pL.get<bool>("semicoarsen: piecewise constant"))
+      RevertToPieceWiseConstant(P, BlkSize);
 
     // Store number of coarse z-layers on the coarse level container
     // This information is used by the LineDetectionAlgorithm
@@ -789,6 +793,46 @@ namespace MueLu {
 
     return NCLayers*NVertLines*DofsPerNode;
   }
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  void SemiCoarsenPFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RevertToPieceWiseConstant( RCP<Matrix>& P, LO BlkSize) const {
+    // This function is a bit of a hack. We basically compute the semi-coarsening transfers and then throw
+    // away all the interpolation coefficients, instead replacing them by piecewise constants. The reason for this
+    // is that SemiCoarsening has no notion of aggregates so defining piecewise constants in the "usual way" is
+    // not possible. Instead, we look for the largest entry in each row, make it a one, and zero out the other
+    // non-zero entries
+
+    ArrayView<const LocalOrdinal> inds;
+    ArrayView<const Scalar> vals1;
+    ArrayView<      Scalar> vals;
+    Scalar ZERO = Teuchos::ScalarTraits<Scalar>::zero();
+    Scalar ONE  = Teuchos::ScalarTraits<Scalar>::one();
+
+    for (size_t i = 0; i < P->getRowMap()->getNodeNumElements(); i++) {
+      P->getLocalRowView(i, inds, vals1);
+
+      size_t nnz = inds.size();
+      if (nnz != 0) vals = ArrayView<Scalar>(const_cast<Scalar*>(vals1.getRawPtr()), nnz);
+
+      LO largestIndex = -1;
+      Scalar largestValue = 0.0;
+      /* find largest value in row and change that one to a 1 while the others are set to 0 */
+
+      LO rowDof = i%BlkSize;
+      for (size_t j =0; j < nnz; j++) {
+        if (Teuchos::ScalarTraits<SC>::magnitude(vals[ j ]) > Teuchos::ScalarTraits<SC>::magnitude(largestValue)) {
+          if ( inds[j]%BlkSize == rowDof ) {
+            largestValue = vals[j]; 
+            largestIndex = (int) j;
+          }
+        }
+        vals[j] = ZERO;
+      }
+      if (largestIndex != -1) vals[largestIndex] = ONE; 
+      else 
+        TEUCHOS_TEST_FOR_EXCEPTION(nnz > 0, Exceptions::RuntimeError, "no nonzero column associated with a proper dof within node.");
+    }
+  }
+
 } //namespace MueLu
 
 #define MUELU_SEMICOARSENPFACTORY_SHORT

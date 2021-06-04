@@ -221,6 +221,10 @@ namespace Xpetra {
     { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(rowptr,colind,values); }
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getAllValues(ArrayRCP<Scalar>& values)
+    { XPETRA_MONITOR("TpetraCrsMatrix::getAllValues"); mtx_->getAllValues(values); }
+
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
     bool TpetraCrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::haveGlobalConstants() const
     { return mtx_->haveGlobalConstants();}
 
@@ -346,7 +350,7 @@ namespace Xpetra {
         {
           // preform communication to propagate local interface
           // values to all the processor that share interfaces.
-          RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
+          RCP<MultiVector> matvecInterfaceTmp = Xpetra::MultiVectorFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node>::Build(regionInterfaceMap, 1);
           matvecInterfaceTmp->doImport(Y, *regionInterfaceImporter, INSERT);
 
           // sum all contributions to interface values

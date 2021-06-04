@@ -278,7 +278,17 @@ namespace Xpetra {
                  ArrayRCP<const Scalar>& values) const
     { 
       throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
+    }  
+
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    void 
+    TpetraBlockCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+    getAllValues(ArrayRCP<Scalar>& values) 
+    { 
+      throw std::runtime_error("Xpetra::TpetraBlockCrsMatrix function not implemented"); 
     }
+
 
 
     //@}
@@ -940,7 +950,11 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
     //! Gets the 1D pointer arrays of the graph (not implemented)
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
     {}
-
+    
+    
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values) 
+    {}
 
     //! @name Transformational Methods
 
@@ -1279,6 +1293,11 @@ setAllValues (const typename local_matrix_type::row_map_type& ptr,
 
     //! Gets the 1D pointer arrays of the graph (not implemented)
     void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const
+    {}
+
+    
+    //! Gets the 1D pointer arrays of the graph (not implemented)
+    void getAllValues(ArrayRCP<Scalar>& values) 
     {}
 
 

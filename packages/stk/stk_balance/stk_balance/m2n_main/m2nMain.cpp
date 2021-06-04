@@ -38,18 +38,18 @@ void set_output_streams(MPI_Comm comm)
   Ioss::Utils::set_output_stream(sierra::Env::outputP0());
 }
 
-void rebalance_m_to_n(stk::balance::M2NParsedOptions &parsedOptions, MPI_Comm comm)
+void rebalance_m_to_n(stk::balance::M2NBalanceSettings &balanceSettings, MPI_Comm comm)
 {
     stk::mesh::MetaData meta;
     stk::mesh::BulkData bulk(meta, comm);
 
-    stk::mesh::Field<double> &field = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
-    stk::mesh::put_field_on_mesh(field, meta.universal_part(), (double*)nullptr);
+    stk::mesh::Field<unsigned> &field = meta.declare_field<stk::mesh::Field<unsigned> >(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
+    stk::mesh::put_field_on_mesh(field, meta.universal_part(), static_cast<unsigned*>(nullptr));
 
     stk::io::StkMeshIoBroker ioBroker;
-    stk::io::fill_mesh_preexisting(ioBroker, parsedOptions.inFile, bulk);
+    stk::io::fill_mesh_preexisting(ioBroker, balanceSettings.get_input_filename(), bulk);
 
-    stk::balance::internal::rebalanceMtoN(ioBroker, field, parsedOptions);
+    stk::balance::internal::rebalanceMtoN(ioBroker, field, balanceSettings);
 }
 
 }
@@ -59,12 +59,13 @@ int main(int argc, const char**argv)
     MPI_Init(&argc, const_cast<char***>(&argv));
     MPI_Comm comm = MPI_COMM_WORLD;
 
+    stk::balance::M2NBalanceSettings balanceSettings;
+
     stk::balance::M2NParser parser(comm);
-    stk::balance::M2NParsedOptions parsedOptions;
-    parser.parse_command_line_options(argc, argv, parsedOptions);
+    parser.parse_command_line_options(argc, argv, balanceSettings);
 
     set_output_streams(comm);
-    rebalance_m_to_n(parsedOptions, comm);
+    rebalance_m_to_n(balanceSettings, comm);
 
     size_t hwmMax = 0, hwmMin = 0, hwmAvg = 0;
     stk::get_memory_high_water_mark_across_processors(comm, hwmMax, hwmMin, hwmAvg);

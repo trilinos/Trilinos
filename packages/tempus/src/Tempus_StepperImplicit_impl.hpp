@@ -328,6 +328,7 @@ template<class Scalar>
 void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
 {
+  out.setOutputToRootOnly(0);
   out << "--- StepperImplicit ---\n";
   out << "  wrapperModel_     = " << wrapperModel_ << std::endl;
   out << "  solver_           = " << solver_ << std::endl;
@@ -340,6 +341,7 @@ void StepperImplicit<Scalar>::describe(Teuchos::FancyOStream        & out,
 template<class Scalar>
 bool StepperImplicit<Scalar>::isValidSetup(Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if (wrapperModel_->getAppModel() == Teuchos::null) {

@@ -797,6 +797,8 @@ private:
   bool checkDiagEntries_ = false;
   //! For MTSGS, the cluster size (use point coloring if equal to 1)
   int clusterSize_ = 1;
+  //! For MTSGS, the threshold for long/bulk rows (rows with at least this many nonzeros)
+  int longRowThreshold_ = 0;
 
   //! Number of outer-sweeps for the two-stage Gauss Seidel
   int NumOuterSweeps_ = 1;

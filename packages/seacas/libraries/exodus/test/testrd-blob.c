@@ -37,6 +37,7 @@ int main(int argc, char **argv)
   int CPU_word_size;
   int IO_word_size;
   int idum;
+  char *blob_names[10];
 
   float version;
 
@@ -100,7 +101,6 @@ int main(int argc, char **argv)
     int blob_ids[10];
     ex_get_ids(exoid, EX_BLOB, blob_ids);
 
-    char *blob_names[10];
     for (i = 0; i < num_blob; i++) {
       blob_names[i] = (char *)calloc((MAX_STR_LENGTH + 1), sizeof(char));
     }
@@ -246,6 +246,10 @@ int main(int argc, char **argv)
     free(var_values);
     free(vals);
   }
+  for (i = 0; i < num_blob; i++) {
+    free(blob_names[i]);
+  }
+
   EXCHECK(ex_close(exoid));
   return 0;
 }

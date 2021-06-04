@@ -69,25 +69,31 @@ public:
     std::string description() const override
     { return "Tempus::TimeStepControlComposite"; }
 
-    void describe(Teuchos::FancyOStream          &in_out,
+    void describe(Teuchos::FancyOStream          &out,
                   const Teuchos::EVerbosityLevel verbLevel) const override
     {
-      auto out = Teuchos::fancyOStream( in_out.getOStream() );
-      out->setOutputToRootOnly(0);
-      Teuchos::OSTab ostab(*out,2,"describe");
-      *out << description() << "::describe:" << std::endl
-           << "Strategy Type = " << this->getStrategyType()<< std::endl
-           << "Step Type     = " << this->getStepType()<< std::endl;
+      auto l_out = Teuchos::fancyOStream( out.getOStream() );
+      Teuchos::OSTab ostab(*l_out, 2, this->description());
+      l_out->setOutputToRootOnly(0);
 
-      std::stringstream sList;
-      for(std::size_t i = 0; i < strategies_.size(); ++i) {
-        sList << strategies_[i]->getStrategyType();
-        if (i < strategies_.size()-1) sList << ", ";
+      *l_out << "\n--- " << this->description() << " ---" << std::endl;
+
+      if (Teuchos::as<int>(verbLevel) >= Teuchos::as<int>(Teuchos::VERB_MEDIUM)) {
+        *l_out << "  Strategy Type = " << this->getStrategyType()<< std::endl
+             << "  Step Type     = " << this->getStepType()<< std::endl;
+
+        std::stringstream sList;
+        for(std::size_t i = 0; i < strategies_.size(); ++i) {
+          sList << strategies_[i]->getStrategyType();
+          if (i < strategies_.size()-1) sList << ", ";
+        }
+        *l_out << "  Strategy List = " << sList.str() << std::endl;
+
+        for(auto& s : strategies_)
+          s->describe(*l_out, verbLevel);
+
+        *l_out << std::string(this->description().length()+8, '-') <<std::endl;
       }
-      *out << "Strategy List = " << sList.str() << std::endl;
-
-      for(auto& s : strategies_)
-        s->describe(*out, verbLevel);
     }
   //@}
 

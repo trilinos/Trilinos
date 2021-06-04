@@ -281,6 +281,14 @@ getSolutionHistory() const
 }
 
 template<class Scalar>
+Teuchos::RCP<SolutionHistory<Scalar> >
+IntegratorAdjointSensitivity<Scalar>::
+getNonConstSolutionHistory()
+{
+  return solutionHistory_;
+}
+
+template<class Scalar>
 Teuchos::RCP<const TimeStepControl<Scalar> >
 IntegratorAdjointSensitivity<Scalar>::
 getTimeStepControl() const
@@ -376,12 +384,13 @@ describe(
   Teuchos::FancyOStream          &out,
   const Teuchos::EVerbosityLevel verbLevel) const
 {
-
   auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
   l_out->setOutputToRootOnly(0);
+
   *l_out << description() << "::describe" << std::endl;
-  state_integrator_->describe(out, verbLevel);
-  adjoint_integrator_->describe(out, verbLevel);
+  state_integrator_->describe(*l_out, verbLevel);
+  adjoint_integrator_->describe(*l_out, verbLevel);
 }
 
 template<class Scalar>

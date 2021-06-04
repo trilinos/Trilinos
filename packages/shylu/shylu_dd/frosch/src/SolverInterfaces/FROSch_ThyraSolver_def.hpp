@@ -96,7 +96,7 @@ namespace FROSch {
 
         // It seems that we have to convert the Thyra vector back to Xpetra. Is there a cheaper/more elegant way?
         // Same for ThyraPreconditioner
-        RCP<MultiVector> yXpetra = ThyraUtils<SC,LO,GO,NO>::toXpetra(YT_,y->getMap()->getComm());
+        XMultiVectorPtr yXpetra = ThyraUtils<SC,LO,GO,NO>::toXpetra(YT_,y.getMap()->getComm());
         y = *yXpetra;
 
         y.update(alpha,*YX_,beta);

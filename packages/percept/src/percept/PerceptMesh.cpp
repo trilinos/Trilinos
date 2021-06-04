@@ -2142,9 +2142,12 @@
     void PerceptMesh::
     createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity>& requested_entities)
     {
-      std::vector<size_t> requests(  m_metaData->entity_rank_count() , 0 );
-      requests[entityRank] = count;
-      get_bulk_data()->generate_new_entities( requests, requested_entities );
+      std::vector<stk::mesh::EntityId> requestedIds;
+      get_bulk_data()->generate_new_ids(entityRank, count, requestedIds);
+      stk::mesh::PartVector addParts;
+      requested_entities.clear();
+      get_bulk_data()->declare_entities(entityRank, requestedIds, addParts, requested_entities);
+
       if (entityRank == node_rank())
         {
           stk::mesh::Part& nodePart = get_fem_meta_data()->get_topology_root_part(stk::topology::NODE);
@@ -7206,8 +7209,8 @@
         {
           std::string K, V;
           for (YAML::const_iterator i = node.begin(); i != node.end(); ++i) {
-            const YAML::Node & key   = i->first;
-            const YAML::Node & value = i->second;
+            const YAML::Node key   = i->first;
+            const YAML::Node value = i->second;
             K = key.as<std::string>();
             V = value.as<std::string>();
             setProperty(K, V);

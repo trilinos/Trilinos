@@ -46,6 +46,7 @@
 #include <gtest/gtest.h>
 
 #include <Kokkos_Core.hpp>
+#include "KokkosKernels_TestUtils.hpp"
 #include "KokkosKernels_Handle.hpp"
 #include "KokkosKernels_IOUtils.hpp"
 //#include <Kokkos_Sparse_CrsMatrix.hpp>
@@ -58,10 +59,13 @@
 #include <complex>
 #include "KokkosSparse_gauss_seidel.hpp"
 
-#ifndef kokkos_complex_double
-#define kokkos_complex_double Kokkos::complex<double>
-#define kokkos_complex_float Kokkos::complex<float>
-#endif
+// #ifndef kokkos_complex_double
+// #define kokkos_complex_double Kokkos::complex<double>
+// #define kokkos_complex_float Kokkos::complex<float>
+// #endif
+
+typedef Kokkos::complex<double> kokkos_complex_double;
+typedef Kokkos::complex<float> kokkos_complex_float;
 
 using namespace KokkosKernels;
 using namespace KokkosKernels::Experimental;
@@ -139,37 +143,6 @@ int run_block_gauss_seidel_1(
   return 0;
 }
 
-template<typename vec_t>
-vec_t create_x_vector(vec_t& kok_x, double max_value = 10.0) {
-  typedef typename vec_t::value_type scalar_t;
-  auto h_x = Kokkos::create_mirror_view (kok_x);
-  for (size_t j = 0; j < h_x.extent(1); ++j){
-    for (size_t i = 0; i < h_x.extent(0); ++i){
-      scalar_t r =
-          static_cast <scalar_t> (rand()) /
-          static_cast <scalar_t> (RAND_MAX / max_value);
-      h_x.access(i, j) = r;
-    }
-  }
-  Kokkos::deep_copy (kok_x, h_x);
-  return kok_x;
-}
-
-template <typename crsMat_t, typename vector_t>
-vector_t create_y_vector(crsMat_t crsMat, vector_t x_vector){
-  vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
-      crsMat.numRows());
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
-
-template <typename crsMat_t, typename vector_t>
-vector_t create_y_vector_mv(crsMat_t crsMat, vector_t x_vector){
-  vector_t y_vector (Kokkos::ViewAllocateWithoutInitializing("Y VECTOR"),
-      crsMat.numRows(), x_vector.extent(1));
-  KokkosSparse::spmv("N", 1, crsMat, x_vector, 0, y_vector);
-  return y_vector;
-}
 }
 
 template <typename scalar_t, typename lno_t, typename size_type, typename device>
@@ -226,10 +199,10 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
   lno_t nv = ((crsmat2.numRows() + block_size - 1) / block_size) * block_size;
 
   const scalar_view_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv);
-  //create_x_vector operates on host mirror, then copies to device. But create_y does everything on device.
-  create_x_vector(solution_x);
+  //create_random_x_vector operates on host mirror, then copies to device. But create_y does everything on device.
+  create_random_x_vector(solution_x);
   exec_space().fence();
-  scalar_view_t y_vector = create_y_vector(crsmat2, solution_x);
+  scalar_view_t y_vector = create_random_y_vector(crsmat2, solution_x);
   mag_t initial_norm_res = KokkosBlas::nrm2(solution_x);
 #ifdef gauss_seidel_testmore
   GSAlgorithm gs_algorithms[] ={GS_DEFAULT, GS_TEAM, GS_PERMUTED};
@@ -252,7 +225,7 @@ void test_block_gauss_seidel_rank1(lno_t numRows, size_type nnz, lno_t bandwidth
 
     bool is_symmetric_graph = true;
     size_t shmem_size = 32128;
-    
+
     for(int i = 0; i < 2; ++i)
     {
       if (i == 1) shmem_size = 2008; //make the shmem small on gpus so that it will test 2 level algorithm.
@@ -335,8 +308,8 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
   constexpr lno_t numVecs = 2;
 
   scalar_view2d_t solution_x(Kokkos::ViewAllocateWithoutInitializing("X"), nv, numVecs);
-  create_x_vector(solution_x);
-  scalar_view2d_t y_vector = create_y_vector_mv(crsmat2, solution_x);
+  create_random_x_vector(solution_x);
+  scalar_view2d_t y_vector = create_random_y_vector_mv(crsmat2, solution_x);
   exec_space().fence();
   auto solution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), solution_x);
   //Need to fence before reading from solution_host
@@ -375,7 +348,7 @@ void test_block_gauss_seidel_rank2(lno_t numRows, size_type nnz, lno_t bandwidth
 
     scalar_view_t res_norms("Residuals", numVecs);
     auto h_res_norms = Kokkos::create_mirror_view(res_norms);
-    
+
     for(int i = 0; i < 2; ++i)
     {
       if (i == 1) shmem_size = 2008; //make the shmem small on gpus so that it will test 2 level algorithm.
@@ -518,6 +491,6 @@ TEST_F( TestCategory, sparse ## _ ## block_gauss_seidel_rank2 ## _ ## SCALAR ## 
  EXECUTE_TEST(kokkos_complex_float, int64_t, size_t, TestExecSpace)
 #endif
 
-
+#undef EXECUTE_TEST
 
 

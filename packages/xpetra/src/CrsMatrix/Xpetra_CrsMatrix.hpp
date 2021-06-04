@@ -127,6 +127,9 @@ namespace Xpetra {
     //! Gets the 1D pointer arrays of the graph.
     virtual void getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const = 0;
 
+    //! Gets the 1D pointer arrays of the graph.
+    virtual void getAllValues(ArrayRCP<Scalar>& values) =0;
+
     //@}
 
     //! @name Transformational Methods

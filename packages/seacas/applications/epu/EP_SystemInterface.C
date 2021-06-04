@@ -81,7 +81,7 @@ void Excn::SystemInterface::enroll_options()
   options_.enroll("Part_count", GetLongOption::MandatoryValue,
                   "How many pieces (files) of the model should be joined.", "0");
 
-  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {n} (file)", "0");
+  options_.enroll("start_part", GetLongOption::MandatoryValue, "Start with piece {L} (file)", "0");
 
   options_.enroll("cycle", GetLongOption::MandatoryValue,
                   "Cycle number. If subcycle # is specified, then only execute\n"

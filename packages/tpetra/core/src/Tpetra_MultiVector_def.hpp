@@ -336,7 +336,8 @@ namespace { // (anonymous)
     if (! imports.need_sync_device ()) {
       return false; // most up-to-date on device
     }
-    else { // most up-to-date on host
+    else { // most up-to-date on host, 
+           // but if large enough, worth running on device anyway
       size_t localLengthThreshold = 
              Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return imports.extent(0) <= localLengthThreshold;
@@ -352,6 +353,7 @@ namespace { // (anonymous)
       return false; // most up-to-date on device
     }
     else { // most up-to-date on host
+           // but if large enough, worth running on device anyway
       size_t localLengthThreshold = 
              Tpetra::Details::Behavior::multivectorKernelLocationThreshold();
       return X.getLocalLength () <= localLengthThreshold;
@@ -1691,9 +1693,17 @@ namespace Tpetra {
     }
 
     // mfh 12 Apr 2016, 04 Feb 2019: Decide where to unpack based on
-    // the memory space in which the imports buffer was last modified.
-    // DistObject::doTransferNew gets to decide this.
+    // the memory space in which the imports buffer was last modified and
+    // the size of the imports buffer.
+    // DistObject::doTransferNew decides where it was last modified (based on
+    // whether communication buffers used were on host or device).
     const bool unpackOnHost = runKernelOnHost(imports);
+    if (unpackOnHost) {
+      if (this->imports_.need_sync_host()) this->imports_.sync_host();
+    }
+    else {
+      if (this->imports_.need_sync_device()) this->imports_.sync_device();
+    }
 
     if (printDebugOutput) {
       std::ostringstream os;
@@ -4684,16 +4694,6 @@ namespace Tpetra {
     if ((l1!=l2) || (this->getNumVectors() != vec.getNumVectors())) {
       return false;
     }
-    if (l1==0) {
-      return true;
-    }
-
-    auto v1 = this->getLocalViewHost(Access::ReadOnly);
-    auto v2 = vec.getLocalViewHost(Access::ReadOnly);
-    if (PackTraits<ST>::packValueCount (v1(0,0)) !=
-        PackTraits<ST>::packValueCount (v2(0,0))) {
-      return false;
-    }
 
     return true;
   }
@@ -4738,12 +4738,9 @@ namespace Tpetra {
     input_view_type src_view =
       Kokkos::subview (src_orig, pair_type (0, numRows), Kokkos::ALL ());
 
-    /// KJ : this does not sound correct
-    //dst.clear_sync_state ();
-    //dst.modify_device ();
     constexpr bool src_isConstantStride = true;
     Teuchos::ArrayView<const size_t> srcWhichVectors (nullptr, 0);
-    localDeepCopy (dst.getLocalViewDevice(Access::ReadWrite),
+    localDeepCopy (dst.getLocalViewHost(Access::ReadWrite),
                    src_view,
                    dst.isConstantStride (),
                    src_isConstantStride,
@@ -4784,22 +4781,12 @@ namespace Tpetra {
     Teuchos::ArrayView<const size_t> dstWhichVectors (nullptr, 0);
 
     // Prefer the host version of src's data.
-    if (src.need_sync_host ()) { // last modified on device
-      localDeepCopy (dst_view,
-                     src.getLocalViewDevice(Access::ReadOnly),
-                     dst_isConstantStride,
-                     src.isConstantStride (),
-                     dstWhichVectors,
-                     getMultiVectorWhichVectors (src));
-    }
-    else {
-      localDeepCopy (dst_view,
-                     src.getLocalViewHost(Access::ReadOnly),
-                     dst_isConstantStride,
-                     src.isConstantStride (),
-                     dstWhichVectors,
-                     getMultiVectorWhichVectors (src));
-    }
+    localDeepCopy (dst_view,
+                   src.getLocalViewHost(Access::ReadOnly),
+                   dst_isConstantStride,
+                   src.isConstantStride (),
+                   dstWhichVectors,
+                   getMultiVectorWhichVectors (src));
   }
 #endif // HAVE_TPETRACORE_TEUCHOSNUMERICS
 

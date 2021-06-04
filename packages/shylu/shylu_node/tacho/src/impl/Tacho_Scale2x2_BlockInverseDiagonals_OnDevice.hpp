@@ -75,7 +75,7 @@ namespace Tacho {
                     det = a00*a11-a10*a01;
                   Kokkos::parallel_for
                     (Kokkos::TeamVectorRange(member, n),
-                     [&](const ordinal_type &j) {
+                     [=](const ordinal_type &j) {
                       const value_type 
                         x0 = A(i-1,j),
                         x1 = A(i,j);
@@ -87,7 +87,7 @@ namespace Tacho {
                     a00 = D(i,0);
                   Kokkos::parallel_for
                     (Kokkos::TeamVectorRange(member, n),
-                     [&](const ordinal_type &j) {
+                     [=](const ordinal_type &j) {
                       A(i,j) /= a00;
                     });
                 }

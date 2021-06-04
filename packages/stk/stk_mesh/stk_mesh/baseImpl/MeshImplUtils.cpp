@@ -632,18 +632,16 @@ void find_side_nodes(BulkData& mesh, Entity element, int side_ordinal, EntityVec
 }
 
 void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData       & mesh,
-                             const Entity           entity_from,
+                             const Bucket&          bucket_from,
                              const OrdinalVector  & omit,
                                    EntityRank       entity_rank_to,
                                    OrdinalVector  & induced_parts)
 {
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
-  const int      local_proc_rank  = mesh.parallel_rank();
 
   // Only induce parts for normal (not back) relations. Can only trust
   // 'entity_from' to be accurate if it is owned by the local process.
-  if ( dont_check_owner || local_proc_rank == mesh.parallel_owner_rank(entity_from) ) {
-    const Bucket   & bucket_from    = mesh.bucket(entity_from);
+  if ( dont_check_owner || bucket_from.owned() ) {
     const EntityRank entity_rank_from = bucket_from.entity_rank();
     ThrowAssert(entity_rank_from > entity_rank_to);
 
@@ -659,16 +657,15 @@ void get_part_ordinals_to_induce_on_lower_ranks_except_for_omits(const BulkData 
   }
 }
 
-void get_part_ordinals_to_induce_on_lower_ranks(const BulkData       & mesh,
-                             const Entity           entity_from,
-                                   EntityRank       entity_rank_to,
-                                   OrdinalVector  & induced_parts)
+void get_part_ordinals_to_induce_on_lower_ranks(const BulkData& mesh,
+                                                const Bucket& bucket_from,
+                                                EntityRank       entity_rank_to,
+                                                OrdinalVector  & induced_parts)
 {
   const bool dont_check_owner     = mesh.parallel_size() == 1; // critical for fmwk
 
   // Only induce parts for normal (not back) relations. Can only trust
   // 'entity_from' to be accurate if it is owned by the local process.
-  const Bucket& bucket_from = mesh.bucket(entity_from);
   if ( dont_check_owner || bucket_from.owned() ) {
     const EntityRank entity_rank_from = bucket_from.entity_rank();
     ThrowAssert(entity_rank_from > entity_rank_to);
@@ -1559,7 +1556,7 @@ bool is_good_rank_and_id(const MetaData& meta,
                          EntityRank rank,
                          EntityId id)
 {
-  const size_t rank_count = meta.entity_rank_count();
+  const EntityRank rank_count = meta.entity_rank_count();
   const bool ok_id   = EntityKey::is_valid_id(id);
   const bool ok_rank = rank < rank_count &&
                  !(rank == stk::topology::FACE_RANK && meta.spatial_dimension() == 2);

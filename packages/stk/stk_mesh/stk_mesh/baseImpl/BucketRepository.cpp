@@ -326,7 +326,7 @@ void BucketRepository::internal_modification_end()
 
 void BucketRepository::sync_from_partitions()
 {
-  for (EntityRank rank = stk::topology::NODE_RANK; rank < m_partitions.size(); ++rank)
+  for (EntityRank rank = stk::topology::NODE_RANK; rank < static_cast<EntityRank>(m_partitions.size()); ++rank)
   {
     sync_from_partitions(rank);
   }

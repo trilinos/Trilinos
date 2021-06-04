@@ -145,7 +145,7 @@ namespace FROSch {
                                                                   ConstXMultiVectorPtr nodeList)
     {
         FROSCH_DETAILTIMER_START_LEVELID(sortInterfaceTime,"GDSWInterfacePartitionOfUnity::sortInterface");
-        if (this->ParameterList_->get("Test Unconnected Interface",false)) {
+        if (this->ParameterList_->get("Test Unconnected Interface",true)) {
             if (matrix.is_null()) {
                 FROSCH_WARNING("FROSch::GDSWInterfacePartitionOfUnity",this->Verbose_,"divideUnconnectedEntities() cannot be performed without the matrix.");
             } else this->DDInterface_->divideUnconnectedEntities(matrix);

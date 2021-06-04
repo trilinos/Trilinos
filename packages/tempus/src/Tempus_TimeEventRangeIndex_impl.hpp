@@ -138,6 +138,7 @@ void TimeEventRangeIndex<Scalar>::describe() const
 {
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
+  out->setOutputToRootOnly(0);
   *out << "TimeEventRange:" << "\n"
        << "name       = " << this->getName() << "\n"
        << "start_     = " << start_     << "\n"

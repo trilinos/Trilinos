@@ -90,7 +90,7 @@ void graph_color_distance2(
   InternalEntries rowentries_internal(row_entries.data(), nnz);
   auto gch_d2 = handle->get_distance2_graph_coloring_handle();
   //note: last template argument 'false' means do distance-2, not bipartite
-  Impl::GraphColorDistance2
+  KokkosGraph::Impl::GraphColorDistance2
     <typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap, InternalEntries, false>
     gc(num_verts, num_verts, rowmap_internal, rowentries_internal, rowmap_internal, rowentries_internal, gch_d2);
   gc.compute_distance2_color();
@@ -174,7 +174,7 @@ void bipartite_color_rows(
   }
   auto gch_d2 = handle->get_distance2_graph_coloring_handle();
   //note: last template argument 'true' means do bipartite one-sided
-  Impl::GraphColorDistance2
+  KokkosGraph::Impl::GraphColorDistance2
     <typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap, InternalEntries, true>
     gc(num_rows, num_columns, rowmap_internal, rowentries_internal, colmap_internal, colentries_internal, gch_d2);
   gc.compute_distance2_color();
@@ -237,7 +237,7 @@ void bipartite_color_columns(
   InternalEntries rowentries_internal(row_entries.data(), nnz);
   auto gch_d2 = handle->get_distance2_graph_coloring_handle();
   //note: last template argument 'true' means do bipartite one-sided
-  Impl::GraphColorDistance2
+  KokkosGraph::Impl::GraphColorDistance2
     <typename KernelHandle::GraphColorDistance2HandleType, InternalRowmap, InternalEntries, true>
     gc(num_columns, num_rows, colmap_internal, colentries_internal, rowmap_internal, rowentries_internal, gch_d2);
   gc.compute_distance2_color();
