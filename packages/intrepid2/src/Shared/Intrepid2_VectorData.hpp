@@ -477,7 +477,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     int extent_int(const int &r) const
     {
-      // nominally (F,P,D) container
+      // logically (F,P,D) container
       if      (r == 0) return numFields();
       else if (r == 1) return numPoints();
       else if (r == 2) return totalDimension_;
@@ -491,7 +491,7 @@ namespace Intrepid2 {
     KOKKOS_INLINE_FUNCTION
     unsigned rank() const
     {
-      // nominally (F,P,D) container
+      // logically (F,P,D) container
       return 3;
     }
     

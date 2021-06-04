@@ -57,12 +57,12 @@ namespace
 {
   using namespace Intrepid2;
 
-/** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of nominal shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
+/** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of logical shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
 */
   TEUCHOS_UNIT_TEST( Data, AllocateInPlaceCombinationResult )
   {
     // test allocateInPlaceCombinationResult()
-    // Use two Data objects A and B, each with nominal shape (5,9,15) -- (C,F,P), say.
+    // Use two Data objects A and B, each with logical shape (5,9,15) -- (C,F,P), say.
     // with A having variation types of GENERAL, MODULAR, and CONSTANT,
     // and B having variation types of CONSTANT, CONSTANT, and GENERAL.
     // Result should have variation types of GENERAL, MODULAR, GENERAL.
@@ -131,9 +131,9 @@ namespace
     DimensionInfo B_dimInfo;
     DimensionInfo AB_dimInfo;
     
-    A_dimInfo.nominalExtent = 15;
-    B_dimInfo.nominalExtent = 15;
-    AB_dimInfo.nominalExtent = 15;
+    A_dimInfo.logicalExtent = 15;
+    B_dimInfo.logicalExtent = 15;
+    AB_dimInfo.logicalExtent = 15;
     
     A_dimInfo.blockPlusDiagonalLastNonDiagonal = -1;
     B_dimInfo.blockPlusDiagonalLastNonDiagonal = -1;
@@ -147,9 +147,9 @@ namespace
     B_dimInfo.variationType = CONSTANT;
     AB_dimInfo.variationType = GENERAL;
     
-    A_dimInfo.dataExtent  =  A_dimInfo.nominalExtent / ( A_dimInfo.nominalExtent /  A_dimInfo.variationModulus);
-    B_dimInfo.dataExtent  =  B_dimInfo.nominalExtent / ( B_dimInfo.nominalExtent /  B_dimInfo.variationModulus);
-    AB_dimInfo.dataExtent = AB_dimInfo.nominalExtent / (AB_dimInfo.nominalExtent / AB_dimInfo.variationModulus);
+    A_dimInfo.dataExtent  =  A_dimInfo.logicalExtent / ( A_dimInfo.logicalExtent /  A_dimInfo.variationModulus);
+    B_dimInfo.dataExtent  =  B_dimInfo.logicalExtent / ( B_dimInfo.logicalExtent /  B_dimInfo.variationModulus);
+    AB_dimInfo.dataExtent = AB_dimInfo.logicalExtent / (AB_dimInfo.logicalExtent / AB_dimInfo.variationModulus);
     
     // combinedDimensionInfo should commute, so let's test both directions:
     DimensionInfo AB_dimInfoActual_LR = combinedDimensionInfo(A_dimInfo, B_dimInfo);
@@ -159,7 +159,7 @@ namespace
     
     for (const auto & dimInfoActual : actualCombinations)
     {
-      TEST_EQUALITY(dimInfoActual.nominalExtent, AB_dimInfo.nominalExtent);
+      TEST_EQUALITY(dimInfoActual.logicalExtent, AB_dimInfo.logicalExtent);
       TEST_EQUALITY(dimInfoActual.dataExtent, AB_dimInfo.dataExtent);
       TEST_EQUALITY(dimInfoActual.variationType, AB_dimInfo.variationType);
       TEST_EQUALITY(dimInfoActual.variationModulus, AB_dimInfo.variationModulus);
@@ -213,7 +213,7 @@ namespace
     testFloatingEquality2(expectedView, data, relTol, absTol, out, success);
   }
 
-/** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of nominal shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
+/** \brief Data has facilities for in-place combinations of logical data.  Suppose you have two containers of logical shape (C,P), one of which is constant across cells, the other of which is constant across points.  To combine these (e.g., sum them together entrywise), you want a container that varies in both cells and points.  The test below exercises the facility for allocation of the combined container.
 */
 
   TEUCHOS_UNIT_TEST( Data, InPlaceSum )
@@ -221,7 +221,7 @@ namespace
     double relTol = 1e-13;
     double absTol = 1e-13;
     
-    // Use two Data objects A and B, each with nominal shape (5,9,15) -- (C,F,P), say.
+    // Use two Data objects A and B, each with logical shape (5,9,15) -- (C,F,P), say.
     // with A having variation types of GENERAL, MODULAR, and CONSTANT,
     // and B having variation types of CONSTANT, CONSTANT, and GENERAL.
     // Result should have variation types of GENERAL, MODULAR, GENERAL.
@@ -293,7 +293,7 @@ namespace
     
     AB_actual.storeInPlaceSum(A, B);
     
-    // test AB_actual equals AB_expected.  (This will iterate over the nominal extents.)
+    // test AB_actual equals AB_expected.  (This will iterate over the logical extents.)
     testFloatingEquality3(AB_actual, AB_expected, relTol, absTol, out, success);
   }
 
