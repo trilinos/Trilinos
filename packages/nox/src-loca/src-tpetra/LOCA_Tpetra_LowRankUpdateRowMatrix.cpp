@@ -104,6 +104,44 @@ namespace LOCA {
 
     void
     LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal GlobalRow,
+                                             NOX::TRowMatrix::nonconst_global_inds_host_view_type &Indices,
+                                             NOX::TRowMatrix::nonconst_values_host_view_type &Values,
+                                             size_t &NumEntries) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getGlobalRowCopy() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getLocalRowCopy (NOX::LocalOrdinal LocalRow,
+                                             NOX::TRowMatrix::nonconst_local_inds_host_view_type &Indices,
+                                             NOX::TRowMatrix::nonconst_values_host_view_type &Values,
+                                             size_t &NumEntries) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getLocalRowCopy() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getGlobalRowView (NOX::GlobalOrdinal GlobalRow,
+                                              NOX::TRowMatrix::global_inds_host_view_type &indices,
+                                              NOX::TRowMatrix::values_host_view_type &values) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getGlobalRowView() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getLocalRowView(NOX::LocalOrdinal LocalRow,
+                                            NOX::TRowMatrix::local_inds_host_view_type &indices,
+                                            NOX::TRowMatrix::values_host_view_type &values) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(true,std::runtime_error,
+                                 "ERROR - LOCA::LowRankRowMatrix::getLocalRowView() - NOT implemented yet!");
+    }
+
+    void
+    LowRankUpdateRowMatrix::getGlobalRowCopy(NOX::GlobalOrdinal GlobalRow,
                                              const Teuchos::ArrayView<NOX::GlobalOrdinal> &Indices,
                                              const Teuchos::ArrayView<NOX::Scalar> &Values,
                                              size_t &NumEntries) const

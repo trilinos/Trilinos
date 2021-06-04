@@ -99,12 +99,55 @@ namespace Tpetra {
     //! The Kokkos Node type.
     typedef Node          node_type;
 
+    /// \brief The type used internally in place of \c Scalar.
+    ///
+    /// Some \c Scalar types might not work with Kokkos on all
+    /// execution spaces, due to missing CUDA device macros or
+    /// volatile overloads.  The C++ standard type std::complex<T> has
+    /// this problem.  To fix this, we replace std::complex<T> values
+    /// internally with the (usually) bitwise identical type
+    /// Kokkos::complex<T>.  The latter is the \c impl_scalar_type
+    /// corresponding to \c Scalar = std::complex.
+    using impl_scalar_type = typename Kokkos::ArithTraits<Scalar>::val_type;
     /// \brief Type of a norm result.
     ///
     /// This is usually the same as the type of the magnitude
     /// (absolute value) of <tt>Scalar</tt>, but may differ for
     /// certain <tt>Scalar</tt> types.
     using mag_type = typename Kokkos::ArithTraits<Scalar>::mag_type;
+
+    typedef typename 
+        Kokkos::View<impl_scalar_type*, typename Node::device_type>::const_type
+        values_device_view_type;
+    typedef typename values_device_view_type::HostMirror::const_type
+        values_host_view_type;
+    typedef typename values_device_view_type::HostMirror
+        nonconst_values_host_view_type;
+
+    typedef typename
+        Kokkos::View<LocalOrdinal *, typename Node::device_type>::const_type
+        local_inds_device_view_type;
+    typedef typename local_inds_device_view_type::HostMirror::const_type
+        local_inds_host_view_type;
+    typedef typename local_inds_device_view_type::HostMirror
+        nonconst_local_inds_host_view_type;
+
+    typedef typename
+        Kokkos::View<GlobalOrdinal *, typename Node::device_type>::const_type
+        global_inds_device_view_type;
+    typedef typename global_inds_device_view_type::HostMirror::const_type
+        global_inds_host_view_type;
+    typedef typename global_inds_device_view_type::HostMirror
+        nonconst_global_inds_host_view_type;
+
+
+    typedef typename
+        Kokkos::View<const size_t*, typename Node::device_type>::const_type
+        row_ptrs_device_view_type;
+    typedef typename row_ptrs_device_view_type::HostMirror::const_type
+        row_ptrs_host_view_type;
+
+
 
     //@}
     //! @name Destructor
@@ -255,10 +298,16 @@ namespace Tpetra {
     /// not modify Indices or Values.
     virtual void
     getGlobalRowCopy (GlobalOrdinal GlobalRow,
+                      nonconst_global_inds_host_view_type &Indices,
+                      nonconst_values_host_view_type &Values,
+                      size_t& NumEntries) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getGlobalRowCopy (GlobalOrdinal GlobalRow,
                       const Teuchos::ArrayView<GlobalOrdinal> &Indices,
                       const Teuchos::ArrayView<Scalar> &Values,
                       size_t &NumEntries) const = 0;
-
+#endif
     /// \brief Get a copy of the given local row's entries.
     ///
     /// This method only gets the entries in the given row that are
@@ -281,10 +330,16 @@ namespace Tpetra {
     /// not modify Indices or Values.
     virtual void
     getLocalRowCopy (LocalOrdinal LocalRow,
+                     nonconst_local_inds_host_view_type &Indices,
+                     nonconst_values_host_view_type &Values,
+                     size_t& NumEntries) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getLocalRowCopy (LocalOrdinal LocalRow,
                      const Teuchos::ArrayView<LocalOrdinal> &Indices,
                      const Teuchos::ArrayView<Scalar> &Values,
                      size_t &NumEntries) const = 0;
-
+#endif
     /// \brief Get a constant, nonpersisting, globally indexed view of
     ///   the given row of the matrix.
     ///
@@ -311,8 +366,14 @@ namespace Tpetra {
     /// is set to \c null.
     virtual void
     getGlobalRowView (GlobalOrdinal GlobalRow,
+                      global_inds_host_view_type &indices,
+                      values_host_view_type &values) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
+    virtual void
+    getGlobalRowView (GlobalOrdinal GlobalRow,
                       Teuchos::ArrayView<const GlobalOrdinal> &indices,
                       Teuchos::ArrayView<const Scalar> &values) const = 0;
+#endif
 
     /// \brief Get a constant, nonpersisting, locally indexed view of
     ///   the given row of the matrix.
@@ -338,6 +399,11 @@ namespace Tpetra {
     ///
     /// If \c LocalRow does not belong to this node, then \c indices
     /// is set to \c null.
+    virtual void
+    getLocalRowView (LocalOrdinal LocalRow,
+                     local_inds_host_view_type & indices,
+                     values_host_view_type & values) const = 0;
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
     virtual void
     getLocalRowView (LocalOrdinal LocalRow,
                      Teuchos::ArrayView<const LocalOrdinal>& indices,
@@ -374,6 +440,7 @@ namespace Tpetra {
                         LocalOrdinal& numEnt,
                         const LocalOrdinal*& lclColInds,
                         const Scalar*& vals) const;
+#endif // TPETRA_ENABLE_DEPRECATED_CODE
 
     /// \brief Get a copy of the diagonal entries, distributed by the row Map.
     ///

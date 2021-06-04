@@ -72,7 +72,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(Ifpack2IlukGraph, IlukGraphTest0, LocalOrdinal
 //Teuchos::FancyOStream& out, bool& success
 
   typedef Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> crs_graph_type;
-  typedef typename crs_graph_type::local_graph_type local_graph_type;
+  typedef typename crs_graph_type::local_graph_device_type local_graph_type;
   typedef typename local_graph_type::row_map_type lno_row_view_t;
   typedef typename local_graph_type::entries_type lno_nonzero_view_t;
   typedef typename local_graph_type::device_type::memory_space TemporaryMemorySpace;

@@ -189,6 +189,10 @@ main (int argc, char *argv[])
   typedef Tpetra::Vector<>::global_ordinal_type global_ordinal_type;
   typedef Tpetra::Vector<>::mag_type magnitude_type;
   typedef Tpetra::CrsMatrix<> crs_matrix_type;
+  typedef Tpetra::CrsMatrix<>::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+  typedef Tpetra::CrsMatrix<>::nonconst_local_inds_host_view_type nonconst_locaal_inds_host_view_type;
+  typedef Tpetra::CrsMatrix<>::nonconst_values_host_view_type nonconst_values_host_view_type;
+
   Teuchos::oblackholestream blackhole;
 
   Tpetra::ScopeGuard tpetraScope(&argc, &argv);
@@ -279,8 +283,8 @@ main (int argc, char *argv[])
       // matrix.
       const global_ordinal_type idOfFirstRow = 0;
       size_t numEntriesInRow = A->getNumEntriesInGlobalRow (idOfFirstRow);
-      Array<scalar_type>         rowvals (numEntriesInRow);
-      Array<global_ordinal_type> rowinds (numEntriesInRow);
+      nonconst_global_inds_host_view_type rowinds ("indices",numEntriesInRow);
+      nonconst_values_host_view_type rowvals ("vals",numEntriesInRow);
       // Fill rowvals and rowinds with the values resp. (global) column
       // indices of the sparse matrix entries owned by the calling
       // process.
@@ -296,7 +300,7 @@ main (int argc, char *argv[])
       //
       // The parentheses after rowinds and rowvalues indicate "a view of
       // the Array's data."  Array::operator() returns an ArrayView.
-      A->getGlobalRowCopy (idOfFirstRow, rowinds (), rowvals (), numEntriesInRow);
+      A->getGlobalRowCopy(idOfFirstRow, rowinds, rowvals, numEntriesInRow);
       for (size_t i = 0; i < numEntriesInRow; i++) {
         if (rowinds[i] == idOfFirstRow) {
           // We have found the diagonal entry; modify it.
@@ -309,7 +313,7 @@ main (int argc, char *argv[])
       // method throws an exception.  If you want to modify the
       // structure (by adding new entries), you'll need to call
       // insertGlobalValues().
-      A->replaceGlobalValues (idOfFirstRow, rowinds (), rowvals ());
+      A->replaceGlobalValues (idOfFirstRow, rowinds, rowvals);
     }
     // Call fillComplete() again to signal that we are done changing the
     // matrix.

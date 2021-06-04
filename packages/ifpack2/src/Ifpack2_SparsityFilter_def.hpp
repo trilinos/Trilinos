@@ -86,8 +86,8 @@ SparsityFilter<MatrixType>::SparsityFilter(const Teuchos::RCP<const Tpetra::RowM
   MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries();
 
   // ExtractMyRowCopy() will use these vectors
-  Indices_.resize(MaxNumEntries_);
-  Values_.resize(MaxNumEntries_);
+  Kokkos::resize(Indices_,MaxNumEntries_);
+  Kokkos::resize(Values_,MaxNumEntries_);
 
   size_t ActualMaxNumEntries = 0;
   for (size_t i = 0 ; i < NumRows_ ; ++i) {
@@ -274,22 +274,36 @@ bool SparsityFilter<MatrixType>::isFillComplete() const
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
+void SparsityFilter<MatrixType>::
+getGlobalRowCopy (GlobalOrdinal /*GlobalRow*/,
+                  nonconst_global_inds_host_view_type &/*Indices*/,
+                  nonconst_values_host_view_type &/*Values*/,
+                  size_t& /*NumEntries*/) const {
+  throw std::runtime_error("Ifpack2::SparsityFilter does not implement getGlobalRowCopy.");
+}
+
+//==========================================================================
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE  
+template<class MatrixType>
+void SparsityFilter<MatrixType>::
+getGlobalRowCopy(GlobalOrdinal /* GlobalRow */,
                                                   const Teuchos::ArrayView<GlobalOrdinal> &/* Indices */,
                                                   const Teuchos::ArrayView<Scalar> &/* Values */,
                                                   size_t &/* NumEntries */) const
 {
   throw std::runtime_error("Ifpack2::SparsityFilter does not implement getGlobalRowCopy.");
 }
+#endif
 
 //==========================================================================
 template<class MatrixType>
-void SparsityFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
-                                              const Teuchos::ArrayView<LocalOrdinal> &Indices,
-                                              const Teuchos::ArrayView<Scalar> &Values,
-                                              size_t &NumEntries) const
+void SparsityFilter<MatrixType>::
+  getLocalRowCopy (LocalOrdinal LocalRow,
+      nonconst_local_inds_host_view_type &Indices,
+      nonconst_values_host_view_type &Values,
+      size_t& NumEntries) const 
 {
-  TEUCHOS_TEST_FOR_EXCEPTION((LocalRow < 0 || (size_t) LocalRow >=  NumRows_ || (size_t) Indices.size() <  NumEntries_[LocalRow]), std::runtime_error, "Ifpack2::SparsityFilter::getLocalRowCopy invalid row or array size.");
+TEUCHOS_TEST_FOR_EXCEPTION((LocalRow < 0 || (size_t) LocalRow >=  NumRows_ || (size_t) Indices.size() <  NumEntries_[LocalRow]), std::runtime_error, "Ifpack2::SparsityFilter::getLocalRowCopy invalid row or array size.");
 
   // Note: This function will work correctly if called by apply, say, with Indices_ and Values_ as
   // parameters.  The structure of the loop below should make that obvious.
@@ -298,7 +312,7 @@ void SparsityFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
   // This is because I need more space than that given by
   // the user (for the external nodes)
   size_t A_NumEntries=0;
-  A_->getLocalRowCopy(LocalRow,Indices_(),Values_(),A_NumEntries);
+  A_->getLocalRowCopy(LocalRow,Indices_,Values_,A_NumEntries);
   magnitudeType Threshold = Teuchos::ScalarTraits<magnitudeType>::zero();
   std::vector<magnitudeType> Values2(A_NumEntries,Teuchos::ScalarTraits<magnitudeType>::zero());
 
@@ -339,9 +353,35 @@ void SparsityFilter<MatrixType>::getLocalRowCopy(LocalOrdinal LocalRow,
       break;
   }
 
+
 }
 
 //==========================================================================
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE  
+template<class MatrixType>
+void SparsityFilter<MatrixType>::
+getLocalRowCopy(LocalOrdinal DropRow,
+    const Teuchos::ArrayView<LocalOrdinal> &Indices,
+    const Teuchos::ArrayView<Scalar> &Values,
+    size_t &NumEntries) const 
+{
+  using IST = typename row_matrix_type::impl_scalar_type;
+  nonconst_local_inds_host_view_type ind_in(Indices.data(),Indices.size());
+  nonconst_values_host_view_type val_in(reinterpret_cast<IST*>(Values.data()),Values.size());
+  getLocalRowCopy(DropRow,ind_in,val_in,NumEntries);  
+}
+#endif
+
+//==========================================================================
+template<class MatrixType>
+void SparsityFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
+                                                  global_inds_host_view_type &/*indices*/,
+                                                  values_host_view_type &/*values*/) const
+{
+  throw std::runtime_error("Ifpack2::SparsityFilter: does not support getGlobalRowView.");
+}
+
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void SparsityFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
                                                   Teuchos::ArrayView<const GlobalOrdinal> &/* indices */,
@@ -349,8 +389,17 @@ void SparsityFilter<MatrixType>::getGlobalRowView(GlobalOrdinal /* GlobalRow */,
 {
   throw std::runtime_error("Ifpack2::SparsityFilter: does not support getGlobalRowView.");
 }
+#endif
 
 //==========================================================================
+template<class MatrixType>
+void SparsityFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
+    local_inds_host_view_type & /*indices*/,
+    values_host_view_type & /*values*/) const
+{
+  throw std::runtime_error("Ifpack2::SparsityFilter: does not support getLocalRowView.");
+}
+#ifdef TPETRA_ENABLE_DEPRECATED_CODE
 template<class MatrixType>
 void SparsityFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
                                                  Teuchos::ArrayView<const LocalOrdinal> &/* indices */,
@@ -358,6 +407,7 @@ void SparsityFilter<MatrixType>::getLocalRowView(LocalOrdinal /* LocalRow */,
 {
   throw std::runtime_error("Ifpack2::SparsityFilter: does not support getLocalRowView.");
 }
+#endif
 
 //==========================================================================
 template<class MatrixType>
@@ -404,21 +454,22 @@ void SparsityFilter<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrd
   for (size_t i = 0 ; i < NumRows_ ; ++i) {
     size_t Nnz;
     // Use this class's getrow to make the below code simpler
-    getLocalRowCopy(i,Indices_(),Values_(),Nnz);
+    getLocalRowCopy(i,Indices_,Values_,Nnz);
+    Scalar* Values = reinterpret_cast<Scalar*>(Values_.data());
     if (mode==Teuchos::NO_TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][i] += Values_[j] * x_ptr[k][Indices_[j]];
+          y_ptr[k][i] += Values[j] * x_ptr[k][Indices_[j]];
     }
     else if (mode==Teuchos::TRANS){
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += Values_[j] * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += Values[j] * x_ptr[k][i];
     }
     else { //mode==Teuchos::CONJ_TRANS
       for (size_t j = 0 ; j < Nnz ; ++j)
         for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values_[j]) * x_ptr[k][i];
+          y_ptr[k][Indices_[j]] += Teuchos::ScalarTraits<Scalar>::conjugate(Values[j]) * x_ptr[k][i];
     }
   }
 }

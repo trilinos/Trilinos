@@ -378,7 +378,7 @@ namespace Tpetra {
 
       // Kokkos typedefs
       typedef typename map_type::local_map_type local_map_type;
-      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
       typedef typename KCRS::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::non_const_type lno_view_t;
       typedef typename NO::execution_space execution_space;
@@ -543,7 +543,7 @@ namespace Tpetra {
 
       // Kokkos typedefs
       typedef typename map_type::local_map_type local_map_type;
-      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
       typedef typename KCRS::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::non_const_type lno_view_t;
       typedef typename NO::execution_space execution_space;
@@ -643,7 +643,7 @@ namespace Tpetra {
 
       // Kokkos typedefs
       typedef typename map_type::local_map_type local_map_type;
-      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
       typedef typename KCRS::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::non_const_type lno_view_t;
       typedef typename NO::execution_space execution_space;
@@ -807,7 +807,7 @@ namespace Tpetra {
 
       // Kokkos typedefs
       typedef typename map_type::local_map_type local_map_type;
-      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
       typedef typename KCRS::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::non_const_type lno_view_t;
       typedef typename NO::execution_space execution_space;
@@ -890,10 +890,10 @@ namespace Tpetra {
     void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_R_A_P_newmatrix_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                                                                                           const LocalOrdinalViewType & Acol2Prow,
-                                                                                                                           const LocalOrdinalViewType & Acol2PIrow,
-                                                                                                                           const LocalOrdinalViewType & Pcol2Accol,
-                                                                                                                           const LocalOrdinalViewType & PIcol2Accol,
+                                                                                                                           const LocalOrdinalViewType & Acol2Prow_dev,
+                                                                                                                           const LocalOrdinalViewType & Acol2PIrow_dev,
+                                                                                                                           const LocalOrdinalViewType & Pcol2Accol_dev,
+                                                                                                                           const LocalOrdinalViewType & PIcol2Accol_dev,
                                                                                                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
                                                                                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
                                                                                                                            const std::string& label,
@@ -911,7 +911,7 @@ namespace Tpetra {
       using Teuchos::rcp;
 
       // Lots and lots of typedefs
-      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_device_type KCRS;
       typedef typename KCRS::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::const_type c_lno_view_t;
       typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -933,22 +933,39 @@ namespace Tpetra {
       size_t n = Accolmap->getNodeNumElements();
       size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
 
+      // Routine runs on host; have to put arguments on host, too
+      auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                           Acol2Prow_dev);
+      auto Acol2PIrow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Acol2PIrow_dev);
+      auto Pcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Pcol2Accol_dev);
+      auto PIcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                             PIcol2Accol_dev);
+
       // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-      const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-      const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
-      const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
+      const auto Amat = Aview.origMatrix->getLocalMatrixHost();
+      const auto Pmat = Pview.origMatrix->getLocalMatrixHost();
+      const auto Rmat = Rview.origMatrix->getLocalMatrixHost();
 
-      c_lno_view_t Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map,  Rrowptr = Rmat.graph.row_map;
-      const lno_nnz_view_t Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries , Rcolind = Rmat.graph.entries;
-      const scalar_view_t Avals = Amat.values, Pvals = Pmat.values, Rvals = Rmat.values;
+      auto Arowptr = Amat.graph.row_map;
+      auto Prowptr = Pmat.graph.row_map;
+      auto Rrowptr = Rmat.graph.row_map;
+      const auto Acolind = Amat.graph.entries;
+      const auto Pcolind = Pmat.graph.entries;
+      const auto Rcolind = Rmat.graph.entries;
+      const auto Avals = Amat.values;
+      const auto Pvals = Pmat.values;
+      const auto Rvals = Rmat.values;
 
-      c_lno_view_t  Irowptr;
-      lno_nnz_view_t  Icolind;
-      scalar_view_t  Ivals;
+      typename c_lno_view_t::HostMirror::const_type  Irowptr;
+      typename lno_nnz_view_t::HostMirror  Icolind;
+      typename scalar_view_t::HostMirror  Ivals;
       if(!Pview.importMatrix.is_null()) {
-        Irowptr = Pview.importMatrix->getLocalMatrix().graph.row_map;
-        Icolind = Pview.importMatrix->getLocalMatrix().graph.entries;
-        Ivals   = Pview.importMatrix->getLocalMatrix().values;
+        auto lclP = Pview.importMatrix->getLocalMatrixHost();
+        Irowptr = lclP.graph.row_map;
+        Icolind = lclP.graph.entries;
+        Ivals   = lclP.values;
         p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
       }
 
@@ -964,9 +981,9 @@ namespace Tpetra {
       // ML; for the non-threaded case, ML found it faster to spend less
       // effort on estimation and risk an occasional reallocation.
       size_t CSR_alloc = std::max(C_estimate_nnz(*Aview.origMatrix, *Pview.origMatrix), n);
-      lno_view_t Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
-      lno_nnz_view_t Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
-      scalar_view_t Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
+      typename lno_view_t::HostMirror Crowptr(Kokkos::ViewAllocateWithoutInitializing("Crowptr"),m+1);
+      typename lno_nnz_view_t::HostMirror Ccolind(Kokkos::ViewAllocateWithoutInitializing("Ccolind"),CSR_alloc);
+      typename scalar_view_t::HostMirror Cvals(Kokkos::ViewAllocateWithoutInitializing("Cvals"),CSR_alloc);
 
       // mfh 27 Sep 2016: The ac_status array is an implementation detail
       // of the local sparse matrix-matrix multiply routine.
@@ -1088,11 +1105,17 @@ namespace Tpetra {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
       MM = Teuchos::null; MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix Final Sort"))));
 #endif
+      auto Crowptr_dev = Kokkos::create_mirror_view_and_copy(
+                         typename KCRS::device_type(), Crowptr);
+      auto Ccolind_dev = Kokkos::create_mirror_view_and_copy(
+                         typename KCRS::device_type(), Ccolind);
+      auto Cvals_dev = Kokkos::create_mirror_view_and_copy(
+                         typename KCRS::device_type(), Cvals);
 
       // Final sort & set of CRS arrays
       if (params.is_null() || params->get("sort entries",true))
-        Import_Util::sortCrsEntries(Crowptr,Ccolind, Cvals);
-      Ac.setAllValues(Crowptr, Ccolind, Cvals);
+        Import_Util::sortCrsEntries(Crowptr_dev, Ccolind_dev, Cvals_dev);
+      Ac.setAllValues(Crowptr_dev, Ccolind_dev, Cvals_dev);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
      MM = Teuchos::null;  MM = rcp(new TimeMonitor (*TimeMonitor::getNewTimer(prefix_mmm + std::string("RAP Newmatrix ESFC"))));
@@ -1129,10 +1152,10 @@ namespace Tpetra {
     void KernelWrappers3<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalOrdinalViewType>::mult_R_A_P_reuse_kernel_wrapper(CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Rview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Aview,
                                                                                                                            CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Pview,
-                                                                                                                           const LocalOrdinalViewType & Acol2Prow,
-                                                                                                                           const LocalOrdinalViewType & Acol2PIrow,
-                                                                                                                           const LocalOrdinalViewType & Pcol2Accol,
-                                                                                                                           const LocalOrdinalViewType & PIcol2Accol,
+                                                                                                                           const LocalOrdinalViewType & Acol2Prow_dev,
+                                                                                                                           const LocalOrdinalViewType & Acol2PIrow_dev,
+                                                                                                                           const LocalOrdinalViewType & Pcol2Accol_dev,
+                                                                                                                           const LocalOrdinalViewType & PIcol2Accol_dev,
                                                                                                                            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>& Ac,
                                                                                                                            Teuchos::RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > Acimport,
                                                                                                                            const std::string& label,
@@ -1150,7 +1173,7 @@ namespace Tpetra {
       using Teuchos::rcp;
 
       // Lots and lots of typedefs
-      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_type KCRS;
+      typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>::local_matrix_host_type KCRS;
       typedef typename KCRS::StaticCrsGraphType graph_t;
       typedef typename graph_t::row_map_type::const_type c_lno_view_t;
       typedef typename graph_t::entries_type::non_const_type lno_nnz_view_t;
@@ -1171,11 +1194,21 @@ namespace Tpetra {
       size_t n = Accolmap->getNodeNumElements();
       size_t p_max_nnz_per_row = Pview.origMatrix->getNodeMaxNumRowEntries();
 
+      // Routine runs on host; have to put arguments on host, too
+      auto Acol2Prow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                           Acol2Prow_dev);
+      auto Acol2PIrow = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Acol2PIrow_dev);
+      auto Pcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                            Pcol2Accol_dev);
+      auto PIcol2Accol = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(),
+                                                             PIcol2Accol_dev);
+
       // Grab the  Kokkos::SparseCrsMatrices & inner stuff
-      const KCRS & Amat = Aview.origMatrix->getLocalMatrix();
-      const KCRS & Pmat = Pview.origMatrix->getLocalMatrix();
-      const KCRS & Rmat = Rview.origMatrix->getLocalMatrix();
-      const KCRS & Cmat = Ac.getLocalMatrix();
+      const KCRS & Amat = Aview.origMatrix->getLocalMatrixHost();
+      const KCRS & Pmat = Pview.origMatrix->getLocalMatrixHost();
+      const KCRS & Rmat = Rview.origMatrix->getLocalMatrixHost();
+      const KCRS & Cmat = Ac.getLocalMatrixHost();
 
       c_lno_view_t Arowptr = Amat.graph.row_map, Prowptr = Pmat.graph.row_map,  Rrowptr = Rmat.graph.row_map, Crowptr =  Cmat.graph.row_map;
       const lno_nnz_view_t Acolind = Amat.graph.entries, Pcolind = Pmat.graph.entries , Rcolind = Rmat.graph.entries, Ccolind = Cmat.graph.entries;
@@ -1186,9 +1219,10 @@ namespace Tpetra {
       lno_nnz_view_t  Icolind;
       scalar_view_t  Ivals;
       if(!Pview.importMatrix.is_null()) {
-        Irowptr = Pview.importMatrix->getLocalMatrix().graph.row_map;
-        Icolind = Pview.importMatrix->getLocalMatrix().graph.entries;
-        Ivals   = Pview.importMatrix->getLocalMatrix().values;
+        auto lclP = Pview.importMatrix->getLocalMatrixHost();
+        Irowptr = lclP.graph.row_map;
+        Icolind = lclP.graph.entries;
+        Ivals   = lclP.values;
         p_max_nnz_per_row = std::max(p_max_nnz_per_row,Pview.importMatrix->getNodeMaxNumRowEntries());
       }
 

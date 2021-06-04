@@ -281,9 +281,7 @@ int main (int argc, char *argv[])
       // - all internal views are allocated on device; mirror as mesh database is constructed on host
       const auto mesh_gids_host = mesh.getElementGlobalIDs();
       const auto mesh_gids =
-        Kokkos::create_mirror_view (typename exec_space::memory_space {},
-                                    mesh.getElementGlobalIDs ());
-      Kokkos::deep_copy(mesh_gids, mesh_gids_host);
+        Kokkos::create_mirror_view_and_copy (typename exec_space::memory_space(), mesh_gids_host);
 
       // for convenience, separate the access to owned and remote gids
       const auto owned_gids =
@@ -315,9 +313,9 @@ int main (int argc, char *argv[])
       // Graph Construction
       // ------------------
       // local graph is constructed on device space
-      typedef tpetra_crs_graph_type::local_graph_type local_graph_type;
-      typedef local_graph_type::row_map_type::non_const_type rowptr_view_type;
-      typedef typename local_graph_type::entries_type colidx_view_type;
+      typedef tpetra_crs_graph_type::local_graph_device_type local_graph_device_type;
+      typedef local_graph_device_type::row_map_type::non_const_type rowptr_view_type;
+      typedef typename local_graph_device_type::entries_type colidx_view_type;
 
       rowptr_view_type rowptr;
       colidx_view_type colidx;
@@ -344,8 +342,7 @@ int main (int argc, char *argv[])
         // the last entry of rowptr is the total number of nonzeros in the local graph
         // mirror to host to use the information in constructing colidx
         auto nnz = Kokkos::subview(rowptr, num_owned_elements);
-        const auto nnz_host = Kokkos::create_mirror_view(nnz);
-        Kokkos::deep_copy(nnz_host, nnz);
+        const auto nnz_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), nnz);
 
         // allocate colidx
         colidx = colidx_view_type("colidx", nnz_host());
@@ -370,7 +367,14 @@ int main (int argc, char *argv[])
       RCP<tpetra_crs_graph_type> bcrs_graph;
       {
         TimeMonitor timerGlobalGraphConstruction(*TimeMonitor::getNewTimer("1) GlobalGraphConstruction"));
-        bcrs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, local_graph_type(colidx, rowptr),
+        rowptr_view_type rowptr_tpetra = 
+          rowptr_view_type(Kokkos::ViewAllocateWithoutInitializing("rowptr_tpetra"), rowptr.extent(0));
+        colidx_view_type colidx_tpetra =
+          colidx_view_type(Kokkos::ViewAllocateWithoutInitializing("colidx_tpetra"), colidx.extent(0));
+        Kokkos::deep_copy(rowptr_tpetra, rowptr);
+        Kokkos::deep_copy(colidx_tpetra, colidx);
+        bcrs_graph = rcp(new tpetra_crs_graph_type(row_map, col_map, 
+                                                   local_graph_device_type(colidx_tpetra, rowptr_tpetra),
                                                    Teuchos::null));
       } // end global graph timer
 
@@ -398,29 +402,31 @@ int main (int argc, char *argv[])
 
         // Tpetra BlockCrsMatrix only has high level access functions
         // To fill this on device, we need an access to the meta data of blocks
-        const auto rowptr_host = Kokkos::create_mirror_view(rowptr);
-        const auto colidx_host = Kokkos::create_mirror_view(colidx);
-
-        Kokkos::deep_copy(rowptr_host, rowptr);
-        Kokkos::deep_copy(colidx_host, colidx);
+        const auto rowptr_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr);
+        const auto colidx_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colidx);
 
         blocks = Kokkos::View<block_type*,exec_space>("blocks", rowptr_host(num_owned_elements));
-
-        const auto blocks_host = Kokkos::create_mirror_view(blocks);
+        auto blocks_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), blocks);
         // This MUST run on host, since it invokes a host-only method,
         // getLocalBlock.  This means we must NOT use KOKKOS_LAMBDA,
         // since that would build the lambda for both host AND device.
 
-        Kokkos::parallel_for
-          (Kokkos::RangePolicy<host_space, LO> (0, num_owned_elements),
-           [&] (const LO row) {
-            const auto beg = rowptr_host(row);
-            const auto end = rowptr_host(row+1);
-            typedef typename std::remove_const<decltype (beg) >::type offset_type;
-            for (offset_type loc = beg; loc < end; ++loc) {
-              blocks_host(loc) = A_bcrs->getLocalBlock(row, colidx(loc));
-            }
-          });
+        /// without UVM, the getLocalBlockDeviceNonConst cannot be called within the parallel for 
+        /// even though it is host execution space as the method can involve kernel launch 
+        /// for memory transfers.
+        // Kokkos::parallel_for
+        //   (Kokkos::RangePolicy<host_space, LO> (0, num_owned_elements),
+        //    [&] (const LO row) {
+        for (LO row=0;row<LO(num_owned_elements);++row) {
+          const auto beg = rowptr_host(row);
+          const auto end = rowptr_host(row+1);
+          typedef typename std::remove_const<decltype (beg) >::type offset_type;
+          for (offset_type loc = beg; loc < end; ++loc) {
+            blocks_host(loc) = A_bcrs->getLocalBlockDeviceNonConst(row, colidx_host(loc));
+          }
+        }
+        //   });
+
         Kokkos::deep_copy(blocks, blocks_host);
 
         Kokkos::parallel_for
@@ -519,7 +525,7 @@ int main (int argc, char *argv[])
         // point-wise row map can be obtained from A_bcrs->getDomainMap().
         // A constructor exist for crs matrix with a local matrix and a row map.
         // see, Tpetra_CrsMatrix_decl.hpp, line 504
-        //     CrsMatrix (const local_matrix_type& lclMatrix,
+        //     CrsMatrix (const local_matrix_device_type& lclMatrix,
         //                const Teuchos::RCP<const map_type>& rowMap,
         //                const Teuchos::RCP<const map_type>& colMap = Teuchos::null,
         //                const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
@@ -545,7 +551,7 @@ int main (int argc, char *argv[])
 
         rowptr_view_type crs_rowptr = rowptr_view_type("crs_rowptr", num_owned_elements*blocksize+1);
         colidx_view_type crs_colidx = colidx_view_type("crs_colidx", colidx.extent(0)*blocksize*blocksize);
-        typename tpetra_crs_matrix_type::local_matrix_type::values_type
+        typename tpetra_crs_matrix_type::local_matrix_device_type::values_type
           crs_values("crs_values", colidx.extent(0)*blocksize*blocksize);
 
         Kokkos::parallel_for
@@ -579,11 +585,11 @@ int main (int argc, char *argv[])
             }
           });
 
-        typename tpetra_crs_matrix_type::local_matrix_type
+        typename tpetra_crs_matrix_type::local_matrix_device_type
           local_matrix("local_crs_matrix",
                        num_owned_and_remote_elements*blocksize,
                        crs_values,
-                       local_graph_type(crs_colidx, crs_rowptr));
+                       local_graph_device_type(crs_colidx, crs_rowptr));
 
         A_crs = rcp(new tpetra_crs_matrix_type(row_crs_map,
                                                col_crs_map,

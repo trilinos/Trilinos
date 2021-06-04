@@ -205,7 +205,7 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
 
   // Lots and lots of typedefs
   using Teuchos::RCP;
-  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type KCRS;
+  typedef typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_device_type KCRS;
   typedef typename KCRS::device_type device_t;
   typedef typename KCRS::StaticCrsGraphType graph_t;
   typedef typename graph_t::row_map_type::non_const_type lno_view_t;
@@ -239,8 +239,8 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpen
        typename device_t::execution_space, typename device_t::memory_space,typename device_t::memory_space > KernelHandle;
 
     // Grab the  Kokkos::SparseCrsMatrices
-    const KCRS & Ak = Aview.origMatrix->getLocalMatrix();
-    // const KCRS & Bk = Bview.origMatrix->getLocalMatrix();
+    const KCRS & Ak = Aview.origMatrix->getLocalMatrixDevice();
+    // const KCRS & Bk = Bview.origMatrix->getLocalMatrixDevice();
 
     // Get the algorithm mode
     std::string alg = nodename+std::string(" algorithm");
@@ -544,7 +544,7 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
 
   // Usings
   using device_t = typename Kokkos::Compat::KokkosOpenMPWrapperNode::device_type;
-  using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_type;
+  using matrix_t = typename Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpenMPWrapperNode>::local_matrix_device_type;
   using graph_t = typename matrix_t::StaticCrsGraphType;
   using lno_view_t = typename graph_t::row_map_type::non_const_type;
   using c_lno_view_t = typename graph_t::row_map_type::const_type;
@@ -561,17 +561,18 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosOpe
   lno_nnz_view_t Icolind;
   scalar_view_t Ivals;
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Bview.importMatrix->getLocalMatrix().graph.row_map;
-    Icolind = Bview.importMatrix->getLocalMatrix().graph.entries;
-    Ivals   = Bview.importMatrix->getLocalMatrix().values;
+    auto lclB = Bview.importMatrix->getLocalMatrixDevice();
+    Irowptr = lclB.graph.row_map;
+    Icolind = lclB.graph.entries;
+    Ivals   = lclB.values;
   }
 
   // Merge the B and Bimport matrices
   const matrix_t Bmerged = Tpetra::MMdetails::merge_matrices(Aview,Bview,Acol2Brow,Acol2Irow,Bcol2Ccol,Icol2Ccol,C.getColMap()->getNodeNumElements());
 
   // Get the properties and arrays of input matrices
-  const matrix_t & Amat = Aview.origMatrix->getLocalMatrix();
-  const matrix_t & Bmat = Bview.origMatrix->getLocalMatrix();
+  const matrix_t & Amat = Aview.origMatrix->getLocalMatrixDevice();
+  const matrix_t & Bmat = Bview.origMatrix->getLocalMatrixDevice();
 
   typename handle_t::nnz_lno_t AnumRows = Amat.numRows();
   typename handle_t::nnz_lno_t BnumRows = Bmerged.numRows();

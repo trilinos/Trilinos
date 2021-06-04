@@ -384,7 +384,7 @@ fusedCase (vector_type& W,
   using Impl::scaled_damped_residual_vector;
   using STS = Teuchos::ScalarTraits<SC>;
 
-  auto A_lcl = A.getLocalMatrix ();
+  auto A_lcl = A.getLocalMatrixDevice ();
   auto Dinv_lcl = Kokkos::subview(D_inv.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   auto B_lcl = Kokkos::subview(B.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);
   auto X_lcl = Kokkos::subview(X_colMap.getLocalViewDevice(Tpetra::Access::ReadOnly), Kokkos::ALL(), 0);

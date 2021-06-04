@@ -83,7 +83,7 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
     // never been called on it before.  A never-initialized (and thus
     // invalid) local matrix has zero rows, because it was default
     // constructed.
-    auto A_lcl = A.getLocalMatrix ();
+    auto A_lcl = A.getLocalMatrixDevice ();
     const LO lclNumRows =
       static_cast<LO> (A.getRowMap ()->getNodeNumElements ());
     TEUCHOS_TEST_FOR_EXCEPTION
@@ -100,13 +100,13 @@ leftAndOrRightScaleCrsMatrix (Tpetra::CrsMatrix<SC, LO, GO, NT>& A,
 
   const bool divide = scaling == SCALING_DIVIDE;
   if (leftScale) {
-    Details::leftScaleLocalCrsMatrix (A.getLocalMatrix (),
+    Details::leftScaleLocalCrsMatrix (A.getLocalMatrixDevice (),
                                       rowScalingFactors,
                                       assumeSymmetric,
                                       divide);
   }
   if (rightScale) {
-    Details::rightScaleLocalCrsMatrix (A.getLocalMatrix (),
+    Details::rightScaleLocalCrsMatrix (A.getLocalMatrixDevice (),
                                        colScalingFactors,
                                        assumeSymmetric,
                                        divide);
