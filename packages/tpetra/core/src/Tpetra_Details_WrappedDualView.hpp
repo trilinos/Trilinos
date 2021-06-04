@@ -324,6 +324,8 @@ private:
   }
 
   void throwIfHostViewAlive() const {
+    if( deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data()) return;
+
     if (dualView.h_view.use_count() > dualView.d_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label() 
@@ -335,6 +337,8 @@ private:
   }
 
   void throwIfDeviceViewAlive() const {
+    if(deviceMemoryIsHostAccessible && dualView.h_view.data() == dualView.d_view.data()) return;
+
     if (dualView.d_view.use_count() > dualView.h_view.use_count()) {
       std::ostringstream msg;
       msg << "Tpetra::Details::WrappedDualView (name = " << dualView.d_view.label()
