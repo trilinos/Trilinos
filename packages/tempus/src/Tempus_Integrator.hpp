@@ -75,6 +75,8 @@ public:
     virtual int getIndex() const = 0;
     /// Get the Status
     virtual Tempus::Status getStatus() const = 0;
+    /// Set the Status
+    virtual void setStatus(const Tempus::Status st) = 0;
     /// Get the stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const = 0;
     /// Return a copy of the Tempus ParameterList
