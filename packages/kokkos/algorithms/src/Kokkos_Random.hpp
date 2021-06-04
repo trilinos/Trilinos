@@ -858,7 +858,7 @@ class Random_XorShift64 {
   }
 
   KOKKOS_INLINE_FUNCTION
-  long double drand(const long double& start, const long double& end) {
+  long double ldrand(const long double& start, const long double& end) {
     return ldrand(end - start) + start;
   }
 #endif 
