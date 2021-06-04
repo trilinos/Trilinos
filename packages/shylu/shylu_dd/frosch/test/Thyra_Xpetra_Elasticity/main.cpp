@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
     }
 
     RCP<const Comm<int> > Comm = CommWorld->split(color,CommWorld->getRank());
-    Teuchos::RCP<Teuchos::TimeMonitor> AssemblyTime;
+
     if (color==0) {
 
         RCP<ParameterList> parameterList = getParametersFromXmlFile(xmlFile);

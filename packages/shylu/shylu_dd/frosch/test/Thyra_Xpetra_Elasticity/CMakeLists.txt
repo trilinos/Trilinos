@@ -214,7 +214,7 @@ NUM_MPI_PROCS 4
 TRIBITS_ADD_TEST(
 thyra_xpetra_elasticity
 NAME test_thyra_xpetra_elasticity_TLP_IPOUHarmonic_GDSW_ML_DIM3_TPETRA
-ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml  --USETPETRA--useAlgMap"
+ARGS "--M=3 --DIM=3 --O=1 --PLIST=ParameterLists/ParameterList_TwoLevelPreconditioner_IPOUHarmonic_GDSW_Klu_ML.xml  --USETPETRA"
 COMM mpi
 NUM_MPI_PROCS 8
 )
