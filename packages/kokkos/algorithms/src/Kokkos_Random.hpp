@@ -547,6 +547,22 @@ struct rand<Generator, long double> {
 #endif 
 
 template <class Generator>
+struct rand<Generator, long double> {
+  KOKKOS_INLINE_FUNCTION
+  static long double max() { return 1.0; }
+  KOKKOS_INLINE_FUNCTION
+  static long double draw(Generator& gen) { return gen.ldrand(); }
+  KOKKOS_INLINE_FUNCTION
+  static long double draw(Generator& gen, const long double& range) {
+    return gen.ldrand(range);
+  }
+  KOKKOS_INLINE_FUNCTION
+  static long double draw(Generator& gen, const long double& start, const long double& end) {
+    return gen.ldrand(start, end);
+  }
+};
+
+template <class Generator>
 struct rand<Generator, Kokkos::complex<float> > {
   KOKKOS_INLINE_FUNCTION
   static Kokkos::complex<float> max() {
@@ -881,6 +897,19 @@ class Random_XorShift64 {
   KOKKOS_INLINE_FUNCTION
   double drand(const double& start, const double& end) {
     return drand(end - start) + start;
+  }
+  
+  KOKKOS_INLINE_FUNCTION
+  long double ldrand() { return urand64() / static_cast<long double>(MAX_URAND64); }
+
+  KOKKOS_INLINE_FUNCTION
+  long double ldrand(const long double& range) {
+    return range * urand64() / static_cast<long double>(MAX_URAND64);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  long double ldrand(const long double& start, const long double& end) {
+    return ldrand(end - start) + start;
   }
 
 #if !defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA) && \
