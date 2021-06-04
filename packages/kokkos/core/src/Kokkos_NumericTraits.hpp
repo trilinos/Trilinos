@@ -48,6 +48,11 @@
 #include <climits>
 #include <cfloat>
 
+#define Tpetra_ENABLE_quadmath
+#ifdef Tpetra_ENABLE_quadmath
+  #include <quadmath.h>
+#endif
+
 namespace Kokkos {
 
 template <class T>
@@ -383,6 +388,24 @@ struct reduction_identity<long double> {
   }
   KOKKOS_FORCEINLINE_FUNCTION constexpr static long double min() {
     return LDBL_MAX;
+  }
+};
+#endif
+
+#ifdef Tpetra_ENABLE_quadmath
+template <>
+struct reduction_identity<__float128> {
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static __float128 sum() {
+    return static_cast<__float128>(0.0);
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static __float128 prod() {
+    return static_cast<__float128>(1.0);
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static __float128 max() {
+    return -FLT128_MAX;
+  }
+  KOKKOS_FORCEINLINE_FUNCTION constexpr static __float128 min() {
+    return FLT128_MAX;
   }
 };
 #endif

@@ -182,8 +182,6 @@ ELSE()
   SET(KOKKOS_IS_SUBDIRECTORY FALSE)
 ENDIF()
 
-
-
 #------------------------------------------------------------------------------
 #
 # A) Forward declare the package so that certain options are also defined for
