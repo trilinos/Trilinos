@@ -274,7 +274,11 @@ public:
       {}
     /** \brief . */
     const std::type_info & type() const
+/*#ifdef HAVE_TEUCHOSCORE_QUADMATH
       { return typeid(ValueType); }
+#else*/
+      { }
+//#endif
     /** \brief . */
     std::string typeName() const
       { return TypeNameTraits<ValueType>::name(); }
@@ -339,12 +343,14 @@ template<typename ValueType>
 ValueType& any_cast(any &operand)
 {
   const std::string ValueTypeName = TypeNameTraits<ValueType>::name();
+/*#ifdef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION(
     operand.type() != typeid(ValueType), bad_any_cast,
     "any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "
     << "any::holder<"<<ValueTypeName<<"> failed since the actual underlying type is \'"
     << typeName(*operand.access_content()) << "!"
     );
+#endif*/
   TEUCHOS_TEST_FOR_EXCEPTION(
     !operand.access_content(), bad_any_cast
     ,"any_cast<"<<ValueTypeName<<">(operand): Error, cast to type "

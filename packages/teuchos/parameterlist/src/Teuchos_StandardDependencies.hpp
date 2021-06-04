@@ -814,6 +814,7 @@ RCP<const SimpleFunctionObject<T> >
 template<class T>
 void NumberVisualDependency<T>::validateDep() const{
   RCP<const ParameterEntry> dependee = getFirstDependee();
+/*#ifndef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION(
     !dependee->isType<T>(),
     InvalidDependencyException,
@@ -823,6 +824,7 @@ void NumberVisualDependency<T>::validateDep() const{
     "Type Encountered: " << dependee->getAny().typeName() << std::endl <<
     "Template Type: " << TypeNameTraits<T>::name() << std::endl <<
     std::endl);
+#endif*/
 }
 
 
@@ -981,6 +983,7 @@ ArrayModifierDependency<DependeeType,DependentType>::ArrayModifierDependency(
 
 template<class DependeeType, class DependentType>
 void ArrayModifierDependency<DependeeType,DependentType>::validateDep() const{
+  /*#ifndef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION(
     typeid(DependeeType) != getFirstDependee()->getAny().type(),
     InvalidDependencyException,
@@ -989,6 +992,8 @@ void ArrayModifierDependency<DependeeType,DependentType>::validateDep() const{
     std::endl <<
     "Dependee Parameter Type: " << getFirstDependee()->getAny().typeName()
     << std::endl << std::endl);
+   #endif
+   */
 }
 
 template<class DependeeType, class DependentType>
@@ -1176,6 +1181,7 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
     it != this->getDependents().end();
     ++it)
   {
+  /*#ifndef HAVE_TEUCHOSCORE_QUADMATH
     TEUCHOS_TEST_FOR_EXCEPTION(
       typeid(Teuchos::Array<DependentType>) != (*it)->getAny().type(),
         InvalidDependencyException,
@@ -1184,6 +1190,8 @@ NumberArrayLengthDependency<DependeeType, DependentType>::validateDep()
         TypeNameTraits<DependentType>::name() << std::endl <<
         "Dependent Parameter Type: " <<
         (*it)->getAny().typeName() << std::endl << std::endl);
+  #endif
+  */
   }
 }
 
@@ -1729,13 +1737,15 @@ void RangeValidatorDependency<T>::evaluate(){
 template<class T>
 void RangeValidatorDependency<T>::validateDep() const{
   RCP<const ParameterEntry> dependee = getFirstDependee();
+  /*#ifndef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION(dependee->getAny().type() != typeid(T),
     InvalidDependencyException,
     "The dependee of a RangeValidatorDependency must be the same type as " <<
     "The RangeValidatorDependency template type!" << std::endl <<
     "Dependee Type: " << dependee->getAny().typeName() << std::endl <<
     "Templated Type: " << TypeNameTraits<T>::name() << std::endl << std::endl);
-
+  #endif
+  */
   TEUCHOS_TEST_FOR_EXCEPTION(
     rangesAndValidators_.size() < 1,
     InvalidDependencyException,
@@ -1901,6 +1911,7 @@ TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep()
     it != this->getDependents().end();
     ++it)
   {
+  /*#ifndef HAVE_TEUCHOSCORE_QUADMATH
     TEUCHOS_TEST_FOR_EXCEPTION(
       typeid(Teuchos::TwoDArray<DependentType>) != (*it)->getAny().type(),
         InvalidDependencyException,
@@ -1909,6 +1920,8 @@ TwoDArrayModifierDependency<DependeeType, DependentType>::validateDep()
         TypeNameTraits<DependentType>::name() << std::endl <<
         "Dependent Parameter Type: " <<
         (*it)->getAny().typeName() << std::endl << std::endl);
+  #endif
+  */
   }
 }
 

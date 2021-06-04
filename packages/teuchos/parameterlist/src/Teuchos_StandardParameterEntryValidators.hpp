@@ -2530,6 +2530,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
   ) const
 {
   const bool validType = ( entry.getAny(activeQuery).type() == typeid(std::string) );
+/*#ifdef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     !validType, Exceptions::InvalidParameterType
     ,"Error, the parameter {paramName=\""<<(paramName.length()?paramName:defaultParameterName_)
@@ -2538,6 +2539,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
     << "\nhas the wrong type."
     << "\n\nThe correct type is \"string\"!"
     );
+#endif*/
   const std::string
     &strValue = any_cast<std::string>(entry.getAny(activeQuery)); // This cast should not fail!
   return getIntegralValue(strValue,paramName,sublistName); // This will validate the value and throw!

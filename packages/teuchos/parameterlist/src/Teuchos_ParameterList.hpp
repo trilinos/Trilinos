@@ -1279,6 +1279,7 @@ void ParameterList::validateEntryType(
   const ParameterEntry &entry_in
   ) const
 {
+/*#ifndef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     entry_in.getAny().type() != typeid(T), Exceptions::InvalidParameterType
     ,"Error!  An attempt was made to access parameter \""<<name_in<<"\""
@@ -1286,6 +1287,7 @@ void ParameterList::validateEntryType(
     "\nin the parameter (sub)list \""<<this->name()<<"\""
     "\nusing the incorrect type \""<<TypeNameTraits<T>::name()<<"\"!"
     );
+#endif*/
 }
 
 

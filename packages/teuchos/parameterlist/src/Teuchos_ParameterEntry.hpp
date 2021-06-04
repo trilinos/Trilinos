@@ -387,7 +387,11 @@ bool ParameterEntry::isUsed() const
 template <typename T>
 inline
 bool ParameterEntry::isType() const
+/*#ifdef HAVE_TEUCHOSCORE_QUADMATH
 { return val_.type() == typeid(T); }
+#else*/ 
+{ return true; }
+//#endif
 
 inline
 bool ParameterEntry::isDefault() const
