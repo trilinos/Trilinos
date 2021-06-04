@@ -440,42 +440,6 @@ struct rand<Generator, long long> {
   }
 };
 
-// NOTE (mfh 26 oct 2014) This is a partial specialization for
-// unsigned long long, a C99 / C++11 unsigned type which is
-// guaranteed to be at least 64 bits.  Do NOT write a partial
-// specialization for uint64_t!!!  This is just a typedef!  It could
-// be either unsigned long or unsigned long long.  We don't know
-// which a priori, and I've seen both.  The types unsigned long and
-// unsigned long long are guaranteed to differ, so it's always safe
-// to specialize for both.
-template <class Generator>
-struct rand<Generator, unsigned long long> {
-  KOKKOS_INLINE_FUNCTION
-  static unsigned long long max() {
-    // FIXME (mfh 26 Oct 2014) It's legal for unsigned long long to be > 64
-    // bits.
-    return Generator::MAX_URAND64;
-  }
-  KOKKOS_INLINE_FUNCTION
-  static unsigned long long draw(Generator& gen) {
-    // FIXME (mfh 26 Oct 2014) It's legal for unsigned long long to be > 64
-    // bits.
-    return gen.urand64();
-  }
-  KOKKOS_INLINE_FUNCTION
-  static unsigned long long draw(Generator& gen,
-                                 const unsigned long long& range) {
-    // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
-    return gen.urand64(range);
-  }
-  KOKKOS_INLINE_FUNCTION
-  static unsigned long long draw(Generator& gen,
-                                 const unsigned long long& start,
-                                 const unsigned long long& end) {
-    // FIXME (mfh 26 Oct 2014) It's legal for long long to be > 64 bits.
-    return gen.urand64(start, end);
-  }
-};
 
 template <class Generator>
 struct rand<Generator, float> {
@@ -545,22 +509,6 @@ struct rand<Generator, long double> {
   }
 };
 #endif 
-
-template <class Generator>
-struct rand<Generator, long double> {
-  KOKKOS_INLINE_FUNCTION
-  static long double max() { return 1.0; }
-  KOKKOS_INLINE_FUNCTION
-  static long double draw(Generator& gen) { return gen.ldrand(); }
-  KOKKOS_INLINE_FUNCTION
-  static long double draw(Generator& gen, const long double& range) {
-    return gen.ldrand(range);
-  }
-  KOKKOS_INLINE_FUNCTION
-  static long double draw(Generator& gen, const long double& start, const long double& end) {
-    return gen.ldrand(start, end);
-  }
-};
 
 template <class Generator>
 struct rand<Generator, Kokkos::complex<float> > {
@@ -899,19 +847,6 @@ class Random_XorShift64 {
     return drand(end - start) + start;
   }
   
-  KOKKOS_INLINE_FUNCTION
-  long double ldrand() { return urand64() / static_cast<long double>(MAX_URAND64); }
-
-  KOKKOS_INLINE_FUNCTION
-  long double ldrand(const long double& range) {
-    return range * urand64() / static_cast<long double>(MAX_URAND64);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  long double ldrand(const long double& start, const long double& end) {
-    return ldrand(end - start) + start;
-  }
-
 #if !defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_CUDA) && \
     !defined(KOKKOS_ACTIVE_EXECUTION_MEMORY_SPACE_HIP_GPU)
   KOKKOS_INLINE_FUNCTION
