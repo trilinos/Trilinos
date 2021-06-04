@@ -355,7 +355,7 @@ namespace Intrepid2
     
     //! return the index into the specified tensorial component in the dimension specified corresponding to the enumerationIndex given for that dimension.
     KOKKOS_INLINE_FUNCTION
-    ordinal_type getTensorComponentIndex(const ordinal_type &tensorComponent, const ordinal_type &dim, const ordinal_type &enumerationIndex)
+    ordinal_type getTensorComponentIndex(const ordinal_type &tensorComponent, const ordinal_type &dim, const ordinal_type &enumerationIndex) const
     {
       ordinal_type remainingEntryOrdinal = enumerationIndex;
       for (ordinal_type r=0; r<tensorComponent; r++)
