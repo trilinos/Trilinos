@@ -98,6 +98,8 @@ public:
                     const Ptr<Vector<Real>>    &x,
                     const Ptr<Vector<Real>>    &g = nullPtr);
 
+  StochasticProblem(const Problem<Real> &problem) : Problem<Real>(problem) {}
+
   /***************************************************************************/
   /*** Set and remove methods for constraints ********************************/
   /***************************************************************************/
@@ -106,6 +108,11 @@ public:
                                const Ptr<SampleGenerator<Real>> &fsampler,
                                const Ptr<SampleGenerator<Real>> &gsampler = nullPtr,
                                const Ptr<SampleGenerator<Real>> &hsampler = nullPtr);
+  void makeObjectiveStochastic(const Ptr<RandVarFunctional<Real>> &rvf,
+                               ParameterList                      &list,
+                               const Ptr<SampleGenerator<Real>>   &fsampler,
+                               const Ptr<SampleGenerator<Real>>   &gsampler = nullPtr,
+                               const Ptr<SampleGenerator<Real>>   &hsampler = nullPtr);
   void makeConstraintStochastic(std::string                       name,
                                 ParameterList                    &list,
                                 const Ptr<SampleGenerator<Real>> &sampler,

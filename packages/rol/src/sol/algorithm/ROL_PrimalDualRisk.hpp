@@ -45,6 +45,7 @@
 #define ROL_PRIMALDUALRISK_H
 
 #include "ROL_Solver.hpp"
+#include "ROL_StochasticProblem.hpp"
 #include "ROL_StochasticObjective.hpp"
 #include "ROL_PD_MeanSemiDeviation.hpp"
 #include "ROL_PD_MeanSemiDeviationFromTarget.hpp"
@@ -93,7 +94,7 @@ private:
   Ptr<BoundConstraint<Real>>     pd_bound_;
   Ptr<Constraint<Real>>          pd_constraint_;
   Ptr<Constraint<Real>>          pd_linear_constraint_;
-  Ptr<Problem<Real>>             pd_problem_;
+  Ptr<StochasticProblem<Real>>   pd_problem_;
 
   int iter_, nfval_, ngrad_, ncval_;
   bool converged_;
@@ -189,35 +190,38 @@ public:
       message << ">>> " << name_ << " is not implemented!";
       throw Exception::NotImplemented(message.str());
     }
-    pd_vector_    = makePtr<RiskVector<Real>>(parlistptr,
-                                              input_->getPrimalOptimizationVector());
-    rvf_->setData(*sampler_, penaltyParam_);
-    pd_objective_ = makePtr<StochasticObjective<Real>>(input_->getObjective(),
-                                                       rvf_, sampler_, true);
-    // Create risk bound constraint
-    pd_bound_     = makePtr<RiskBoundConstraint<Real>>(parlistptr,
-                                                       input_->getBoundConstraint());
-    // Create riskless constraint
-    pd_constraint_ = nullPtr;
-    if (input_->getConstraint() != nullPtr) {
-      pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
-    }
-    pd_linear_constraint_ = nullPtr;
-    if (input_->getPolyhedralProjection() != nullPtr) {
-      pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
-    }
-    // Build primal-dual subproblems
-    pd_problem_ = makePtr<Problem<Real>>(pd_objective_, pd_vector_);
-    if (pd_bound_->isActivated()) {
-      pd_problem_->addBoundConstraint(pd_bound_);
-    }
-    if (pd_constraint_ != nullPtr) {
-      pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
-    }
-    if (pd_linear_constraint_ != nullPtr) {
-      pd_problem_->addLinearConstraint("PD Linear Constraint",pd_linear_constraint_,input_->getPolyhedralProjection()->getMultiplier());
-      pd_problem_->setProjectionAlgorithm(parlist);
-    }
+    pd_problem_ = makePtr<StochasticProblem<Real>>(*input_);
+    pd_problem_->makeObjectiveStochastic(rvf_,*parlistptr,sampler_);
+//
+//    pd_vector_    = makePtr<RiskVector<Real>>(parlistptr,
+//                                              input_->getPrimalOptimizationVector());
+//    rvf_->setData(*sampler_, penaltyParam_);
+//    pd_objective_ = makePtr<StochasticObjective<Real>>(input_->getObjective(),
+//                                                       rvf_, sampler_, true);
+//    // Create risk bound constraint
+//    pd_bound_     = makePtr<RiskBoundConstraint<Real>>(parlistptr,
+//                                                       input_->getBoundConstraint());
+//    // Create riskless constraint
+//    pd_constraint_ = nullPtr;
+//    if (input_->getConstraint() != nullPtr) {
+//      pd_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getConstraint());
+//    }
+//    pd_linear_constraint_ = nullPtr;
+//    if (input_->getPolyhedralProjection() != nullPtr) {
+//      pd_linear_constraint_ = makePtr<RiskLessConstraint<Real>>(input_->getPolyhedralProjection()->getLinearConstraint());
+//    }
+//    // Build primal-dual subproblems
+//    pd_problem_ = makePtr<Problem<Real>>(pd_objective_, pd_vector_);
+//    if (pd_bound_->isActivated()) {
+//      pd_problem_->addBoundConstraint(pd_bound_);
+//    }
+//    if (pd_constraint_ != nullPtr) {
+//      pd_problem_->addConstraint("PD Constraint",pd_constraint_,input_->getMultiplierVector());
+//    }
+//    if (pd_linear_constraint_ != nullPtr) {
+//      pd_problem_->addLinearConstraint("PD Linear Constraint",pd_linear_constraint_,input_->getPolyhedralProjection()->getMultiplier());
+//      pd_problem_->setProjectionAlgorithm(parlist);
+//    }
   }
 
   void check(std::ostream &outStream = std::cout) {
@@ -305,8 +309,8 @@ public:
         }
       }
     }
-    input_->getPrimalOptimizationVector()->set(
-      *dynamicPtrCast<RiskVector<Real>>(pd_problem_->getPrimalOptimizationVector())->getVector());
+    //input_->getPrimalOptimizationVector()->set(
+    //  *dynamicPtrCast<RiskVector<Real>>(pd_problem_->getPrimalOptimizationVector())->getVector());
     // Output reason for termination
     if (iter_ >= maxit_) {
       outStream << "Maximum number of iterations exceeded" << std::endl;
