@@ -5991,7 +5991,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (refill_num_row_entries) { // unpacked storage
       // We can't assume correct *this capture until C++17, and it's
       // likely more efficient just to capture what we need anyway.
-      num_row_entries_d = create_mirror_view_and_copy(execution_space(),
+      num_row_entries_d = create_mirror_view_and_copy(memory_space(),
                                                  myGraph_->k_numRowEntries_);
       Kokkos::parallel_for
         ("Fill end row pointers", range_policy(0, N),

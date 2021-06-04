@@ -281,7 +281,8 @@ int main (int argc, char *argv[])
       // - all internal views are allocated on device; mirror as mesh database is constructed on host
       const auto mesh_gids_host = mesh.getElementGlobalIDs();
       const auto mesh_gids =
-        Kokkos::create_mirror_view_and_copy (typename exec_space::memory_space(), mesh_gids_host);
+        Kokkos::create_mirror_view_and_copy (typename map_type::node_type::memory_space{},
+                                             mesh_gids_host);
 
       // for convenience, separate the access to owned and remote gids
       const auto owned_gids =
