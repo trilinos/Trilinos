@@ -69,13 +69,13 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK OR ${PACKAGE_NAME}_HAVE_EPETRA_SOLV
 
  TRIBITS_ADD_EXECUTABLE(
    ImportPerformance
-   SOURCES ImportPerformance
+   SOURCES ImportPerformance.cpp
    COMM mpi
    )
 
  TRIBITS_ADD_EXECUTABLE(
    TAFCPerformance
-   SOURCES TAFCPerformance
+   SOURCES TAFCPerformance.cpp
    COMM mpi
    )
 
