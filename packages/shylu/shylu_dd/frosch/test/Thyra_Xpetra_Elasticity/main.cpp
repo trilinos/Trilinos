@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
     My_CLP.setOption("PLIST",&xmlFile,"File name of the parameter list.");
     bool useepetra = false;
     My_CLP.setOption("USEEPETRA","USETPETRA",&useepetra,"Use Epetra infrastructure for the linear algebra.");
-    bool useGeoMap = true;
+    bool useGeoMap = false;
     My_CLP.setOption("useGeoMap","useAlgMap",&useGeoMap,"Use Geometric Map");
     My_CLP.recogniseAllOptions(true);
     My_CLP.throwExceptions(false);
