@@ -754,10 +754,13 @@ void ParameterList::validateEntryIsList(
   const std::string &name_in, const ParameterEntry &entry_in
   ) const
 {
+/*#ifndef HAVE_TEUCHOSCORE_QUADMATH
   TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(
     !entry_in.isList(), Exceptions::InvalidParameterType
     ,"Error, the parameter \"" << name_in << "\" is not a list, it is of type \""
     <<entry_in.getAny(false).typeName()<<"\"!" );
+#endif
+*/
 }
 
 
