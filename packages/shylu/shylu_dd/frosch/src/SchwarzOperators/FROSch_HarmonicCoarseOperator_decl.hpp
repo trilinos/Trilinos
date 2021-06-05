@@ -179,7 +179,8 @@ namespace FROSch {
                                                         ConstXMapPtr rowMap,
                                                         ConstXMapPtr rangeMap,
                                                         ConstXMapPtr repeatedMap,
-                                                        SC treshold);
+                                                        SC tresholdDropping,
+                                                        SC tresholdOrthogonalization);
 
         virtual XMultiVectorPtr computeExtensions(ConstXMapPtr localMap,
                                                   GOVecView indicesGammaDofsAll,

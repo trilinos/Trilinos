@@ -70,7 +70,10 @@ public:
   typedef typename GraphType::local_ordinal_type local_ordinal_type;
   typedef typename GraphType::global_ordinal_type global_ordinal_type;
   typedef typename GraphType::node_type node_type;
-
+  typedef typename GraphType::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename GraphType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename GraphType::global_inds_host_view_type global_inds_host_view_type;
+  typedef typename GraphType::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
   //@}
   //! \name Destructor
   //@{

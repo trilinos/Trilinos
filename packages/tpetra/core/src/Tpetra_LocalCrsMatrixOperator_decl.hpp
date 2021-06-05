@@ -72,25 +72,25 @@ namespace Tpetra {
       ::Tpetra::Details::DefaultTypes::local_ordinal_type;
     using execution_space = typename Device::execution_space;
   public:
-    using local_matrix_type =
+    using local_matrix_device_type =
       KokkosSparse::CrsMatrix<matrix_scalar_type,
                               local_ordinal_type,
                               device_type,
                               void,
                               size_t>;
   private:
-    //The type of a matrix with offset=ordinal, but otherwise the same as local_matrix_type
+    //The type of a matrix with offset=ordinal, but otherwise the same as local_matrix_device_type
     using local_cusparse_matrix_type =
       KokkosSparse::CrsMatrix<matrix_scalar_type,
                               local_ordinal_type,
                               device_type,
                               void,
                               local_ordinal_type>;
-    using local_graph_type = typename local_matrix_type::StaticCrsGraphType;
-    using ordinal_view_type = typename local_graph_type::entries_type::non_const_type;
+    using local_graph_device_type = typename local_matrix_device_type::StaticCrsGraphType;
+    using ordinal_view_type = typename local_graph_device_type::entries_type::non_const_type;
 
   public:
-    LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A);
+    LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A);
     ~LocalCrsMatrixOperator () override = default;
 
     void
@@ -114,10 +114,10 @@ namespace Tpetra {
 
     bool hasTransposeApply () const override;
 
-    const local_matrix_type& getLocalMatrix () const;
+    const local_matrix_device_type& getLocalMatrixDevice () const;
 
   private:
-    std::shared_ptr<local_matrix_type> A_;
+    std::shared_ptr<local_matrix_device_type> A_;
     //If the number of entries in A_ can be represented as ordinal,
     //make a copy of the rowptrs as ordinal. This allows the use of cuSPARSE spmv.
     //If cusparse is not enabled or there would be no benefit from using these,

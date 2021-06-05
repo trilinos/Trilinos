@@ -50,12 +50,14 @@
 #include "Tpetra_FECrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_FEMultiVector.hpp"
+#include "Tpetra_Details_WrappedDualView.hpp"
 
 namespace TpetraExamples {
 
+using deviceType = Tpetra::Map<>::device_type;
 using local_ordinal_type = Tpetra::Map<>::local_ordinal_type;
 using global_ordinal_type = Tpetra::Map<>::global_ordinal_type;
-using execution_space = Tpetra::Map<>::device_type::execution_space;
+using execution_space = deviceType::execution_space;
 
 using map_type = Tpetra::Map<>;
 using crs_graph_type = Tpetra::CrsGraph<>;
@@ -69,20 +71,32 @@ using export_type = Tpetra::Export<>;
 using multivector_type = Tpetra::MultiVector<Scalar>;
 using fe_multivector_type = Tpetra::FEMultiVector<Scalar>;
 
+using globalDualViewType = Kokkos::DualView<global_ordinal_type*, deviceType>;
+using localDualViewType = Kokkos::DualView<local_ordinal_type*, deviceType>;
+using scalarDualViewType = Kokkos::DualView<Scalar*, deviceType>;
+using global2DArrayDualViewType = Kokkos::DualView<global_ordinal_type*[4], deviceType>;
+using local2DArrayDualViewType = Kokkos::DualView<local_ordinal_type*[4], deviceType>;
+using scalar2DArrayDualViewType = Kokkos::DualView<Scalar*[4], deviceType>;
+using boolDualViewType = Kokkos::DualView<bool*, execution_space>;
 
 using global_ordinal_view_type =
-  Kokkos::View<global_ordinal_type*, execution_space>;
+  Tpetra::Details::WrappedDualView<globalDualViewType>;
 using local_ordinal_view_type =
+  Tpetra::Details::WrappedDualView<localDualViewType>;
+using local_ordinal_single_view_type = 
   Kokkos::View<local_ordinal_type*, execution_space>;
-using scalar_1d_array_type = Kokkos::View<Scalar*, execution_space>;
-using bool_1d_array_type = Kokkos::View<bool*, execution_space>;
+using scalar_1d_array_type = 
+  Kokkos::View<Scalar*, execution_space>;
+using bool_1d_array_type = 
+  Tpetra::Details::WrappedDualView<boolDualViewType>;
 
 // NOTE: Arrays are hardwired for QUAD4
 using local_ordinal_2d_array_type =
-  Kokkos::View<local_ordinal_type*[4], execution_space>;
+  Tpetra::Details::WrappedDualView<local2DArrayDualViewType>;
 using global_ordinal_2d_array_type =
-  Kokkos::View<global_ordinal_type*[4], execution_space>;
-using scalar_2d_array_type = Kokkos::View<Scalar*[4], execution_space>;
+  Tpetra::Details::WrappedDualView<global2DArrayDualViewType>;
+using scalar_2d_array_type = 
+  Kokkos::View<Scalar*[4], execution_space>;
 
 
 }

@@ -264,13 +264,15 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //Use efficient blocked version
     ArrayView<const LO> blockRows = this->getBlockRows(i);
     const size_t localNumRows = this->blockSizes_[i];
+    using inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using vals_type = typename block_crs_matrix_type::values_host_view_type;
     for(size_t j = 0; j < localNumRows; j++)
     {
       LO row = blockRows[j]; // Containers_[i]->ID (j);
-      LO numEntries;
-      SC* values;
-      const LO* colinds;
-      this->inputBlockMatrix_->getLocalRowView(row, colinds, values, numEntries);
+      vals_type values;
+      inds_type colinds;
+      this->inputBlockMatrix_->getLocalRowView(row, colinds, values);
+      LO numEntries = (LO) colinds.size();
       for(size_t m = 0; m < numVecs; m++)
       {
         for (int localR = 0; localR < this->bcrsBlockSize_; localR++)
@@ -318,8 +320,8 @@ void ContainerImpl<MatrixType, LocalScalarType>::DoGSBlock(
     //But, can only do this if the matrix is accessible directly from host, since it's not a DualView
     using container_exec_space = typename ContainerImpl<MatrixType, LocalScalarType>::crs_matrix_type::execution_space;
     container_exec_space().fence();
-    auto localA = this->inputCrsMatrix_->getLocalMatrix();
-    using size_type = typename crs_matrix_type::local_matrix_type::size_type;
+    auto localA = this->inputCrsMatrix_->getLocalMatrixHost();
+    using size_type = typename crs_matrix_type::local_matrix_host_type::size_type;
     const auto& rowmap = localA.graph.row_map;
     const auto& entries = localA.graph.entries;
     const auto& values = localA.values;
@@ -844,33 +846,47 @@ Details::StridedRowView<
   typename ContainerImpl<MatrixType, LocalScalarType>::NO>
 ContainerImpl<MatrixType, LocalScalarType>::
 getInputRowView(LO row) const
-{
+{  
+
+  typedef typename MatrixType::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+  typedef typename MatrixType::nonconst_values_host_view_type nonconst_values_host_view_type;
+
+  typedef typename MatrixType::local_inds_host_view_type local_inds_host_view_type;
+  typedef typename MatrixType::values_host_view_type values_host_view_type;
+  using IST = typename row_matrix_type::impl_scalar_type;
+
   if(this->hasBlockCrs_)
   {
-    const LO* colinds;
-    SC* values;
-    LO numEntries;
-    this->inputBlockMatrix_->getLocalRowView(row / this->bcrsBlockSize_, colinds, values, numEntries);
-    return StridedRowView(values + row % this->bcrsBlockSize_, colinds, this->bcrsBlockSize_, numEntries * this->bcrsBlockSize_);
+    using h_inds_type = typename block_crs_matrix_type::local_inds_host_view_type;
+    using h_vals_type = typename block_crs_matrix_type::values_host_view_type;
+    h_inds_type colinds;
+    h_vals_type values;
+    this->inputBlockMatrix_->getLocalRowView(row / this->bcrsBlockSize_, colinds, values);
+    size_t numEntries = colinds.size();
+    // CMS: Can't say I understand what this really does
+    //return StridedRowView(values + row % this->bcrsBlockSize_, colinds, this->bcrsBlockSize_, numEntries * this->bcrsBlockSize_);
+    h_vals_type subvals = Kokkos::subview(values,std::pair<size_t,size_t>(row % this->bcrsBlockSize_,values.size()));
+    return StridedRowView(subvals, colinds, this->bcrsBlockSize_, numEntries * this->bcrsBlockSize_);
   }
   else if(!this->inputMatrix_->supportsRowViews())
   {
     size_t maxEntries = this->inputMatrix_->getNodeMaxNumRowEntries();
-    Teuchos::Array<LO> indsCopy(maxEntries);
-    Teuchos::Array<SC> valsCopy(maxEntries);
+    Teuchos::Array<LO> inds(maxEntries);
+    Teuchos::Array<SC> vals(maxEntries);
+    nonconst_local_inds_host_view_type inds_v(inds.data(),maxEntries);
+    nonconst_values_host_view_type vals_v(reinterpret_cast<IST*>(vals.data()),maxEntries);
     size_t numEntries;
-    this->inputMatrix_->getLocalRowCopy(row, indsCopy, valsCopy, numEntries);
-    indsCopy.resize(numEntries);
-    valsCopy.resize(numEntries);
-    return StridedRowView(valsCopy, indsCopy);
+    this->inputMatrix_->getLocalRowCopy(row, inds_v, vals_v, numEntries);
+    vals.resize(numEntries); inds.resize(numEntries);
+    return StridedRowView(vals, inds);
   }
   else
   {
-    const LO* colinds;
-    const SC* values;
-    LO numEntries;
-    this->inputMatrix_->getLocalRowViewRaw(row, numEntries, colinds, values);
-    return StridedRowView(values, colinds, 1, numEntries);
+    // CMS - This is dangerous and might not work.
+    local_inds_host_view_type colinds;
+    values_host_view_type values;
+    this->inputMatrix_->getLocalRowView(row, colinds, values);
+    return StridedRowView(values, colinds, 1, colinds.size());
   }
 }
 
@@ -890,14 +906,14 @@ namespace Details {
 //Implementation of Ifpack2::Details::StridedRowView
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StridedRowView<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-StridedRowView(const SC* vals_, const LO* inds_, int blockSize_, size_t nnz_)
+StridedRowView(h_vals_type vals_, h_inds_type inds_, int blockSize_, size_t nnz_)
   : vals(vals_), inds(inds_), blockSize(blockSize_), nnz(nnz_)
 {}
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 StridedRowView<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
 StridedRowView(Teuchos::Array<SC>& vals_, Teuchos::Array<LO>& inds_)
-  : vals(nullptr), inds(nullptr), blockSize(1), nnz(vals_.size())
+  : vals(), inds(), blockSize(1), nnz(vals_.size())
 {
   valsCopy.swap(vals_);
   indsCopy.swap(inds_);
@@ -911,7 +927,7 @@ val(size_t i) const
   TEUCHOS_TEST_FOR_EXCEPTION(i >= nnz, std::runtime_error,
       "Out-of-bounds access into Ifpack2::Container::StridedRowView");
   #endif
-  if(vals)
+  if(vals.size() > 0)
   {
     if(blockSize == 1)
       return vals[i];
@@ -931,7 +947,7 @@ ind(size_t i) const
         "Out-of-bounds access into Ifpack2::Container::StridedRowView");
   #endif
   //inds is smaller than vals by a factor of the block size (dofs/node)
-  if(inds)
+    if(inds.size() > 0)
   {
     if(blockSize == 1)
       return inds[i];

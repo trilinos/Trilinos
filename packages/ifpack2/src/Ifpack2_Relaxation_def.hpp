@@ -752,7 +752,7 @@ void Relaxation<MatrixType>::initialize ()
         else
           mtKernelHandle_->create_gs_handle (KokkosSparse::CLUSTER_DEFAULT, this->clusterSize_);
       }
-      local_matrix_type kcsr = crsMat->getLocalMatrix ();
+      local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
       if (PrecType_ == Details::GS2 || PrecType_ == Details::SGS2) {
         // set parameters for two-stage GS
         mtKernelHandle_->set_gs_set_num_inner_sweeps (NumInnerSweeps_);
@@ -916,13 +916,14 @@ void Relaxation<MatrixType>::computeBlockCrs ()
     if (DoL1Method_ && IsParallel_) {
       const scalar_type two = one + one;
       const size_t maxLength = A_->getNodeMaxNumRowEntries ();
-      Array<LO> indices (maxLength);
-      Array<scalar_type> values (maxLength * blockSize * blockSize);
+      nonconst_local_inds_host_view_type indices ("indices",maxLength);
+      nonconst_values_host_view_type values_ ("values",maxLength * blockSize * blockSize);
       size_t numEntries = 0;
 
       for (LO i = 0; i < lclNumMeshRows; ++i) {
         // FIXME (mfh 16 Dec 2015) Get views instead of copies.
-        blockCrsA->getLocalRowCopy (i, indices (), values (), numEntries);
+        blockCrsA->getLocalRowCopy (i, indices, values_, numEntries);
+        scalar_type * values = reinterpret_cast<scalar_type*>(values_.data());
 
         auto diagBlock = Kokkos::subview (blockDiag, i, ALL (), ALL ());
         for (LO subRow = 0; subRow < blockSize; ++subRow) {
@@ -1247,12 +1248,12 @@ void Relaxation<MatrixType>::compute ()
         auto diag = Diagonal->getLocalViewHost(Tpetra::Access::ReadWrite);
         const magnitude_type two = STM::one () + STM::one ();
         const size_t maxLength = A_row.getNodeMaxNumRowEntries ();
-        Array<local_ordinal_type> indices (maxLength);
-        Array<scalar_type> values (maxLength);
+        nonconst_local_inds_host_view_type indices("indices",maxLength);
+        nonconst_values_host_view_type values("values",maxLength);
         size_t numEntries;
 
         for (LO i = 0; i < numMyRows; ++i) {
-          A_row.getLocalRowCopy (i, indices (), values (), numEntries);
+          A_row.getLocalRowCopy (i, indices, values, numEntries);
           magnitude_type diagonal_boost = STM::zero ();
           for (size_t k = 0 ; k < numEntries; ++k) {
             if (indices[k] >= numMyRows) {
@@ -1325,7 +1326,7 @@ void Relaxation<MatrixType>::compute ()
         (crsMat == nullptr, std::logic_error, methodName << ": "
          "Multithreaded Gauss-Seidel methods currently only work "
          "when the input matrix is a Tpetra::CrsMatrix.");
-      local_matrix_type kcsr = crsMat->getLocalMatrix ();
+      local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
 
       //TODO BMK: This should be ReadOnly, and KokkosKernels should accept a
       //const-valued view for user-provided D^-1. OK for now, Diagonal_ is nonconst.
@@ -2101,7 +2102,7 @@ ApplyInverseMTGS_CrsMatrix(
       */
   }
 
-  local_matrix_type kcsr = crsMat->getLocalMatrix ();
+  local_matrix_device_type kcsr = crsMat->getLocalMatrixDevice ();
 
   bool update_y_vector = true;
   //false as it was done up already, and we dont want to zero it in each sweep.

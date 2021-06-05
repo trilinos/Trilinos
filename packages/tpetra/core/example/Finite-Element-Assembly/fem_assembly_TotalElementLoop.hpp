@@ -133,9 +133,9 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   // Build Tpetra Maps
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
-  RCP<const map_type> row_map = rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
-  RCP<const map_type> owned_element_map = rcp(new map_type(GO_INVALID, mesh.getOwnedElementGlobalIDs(), 0, comm));
-  RCP<const map_type> ghost_element_map = rcp(new map_type(GO_INVALID, mesh.getGhostElementGlobalIDs(), 0, comm));
+  RCP<const map_type> row_map = rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly), 0, comm));
+  RCP<const map_type> owned_element_map = rcp(new map_type(GO_INVALID, mesh.getOwnedElementGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly), 0, comm));
+  RCP<const map_type> ghost_element_map = rcp(new map_type(GO_INVALID, mesh.getGhostElementGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly), 0, comm));
   RCP<const import_type> elementImporter = rcp(new import_type(owned_element_map,ghost_element_map));
 
   if(opts.verbose) row_map->describe(out);
@@ -149,8 +149,8 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
-  auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
+  auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
@@ -183,7 +183,7 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
@@ -199,10 +199,11 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
+
 
   timerElementLoopGraph = Teuchos::null;
 
@@ -285,10 +286,10 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
 
     // Fill the global column ids array for this element
     for (size_t element_node_idx = 0;
-         element_node_idx < owned_element_to_node_ids.extent(1);
-         ++element_node_idx) {
+	 element_node_idx < owned_element_to_node_ids.extent(1);
+	 ++element_node_idx) {
       column_global_ids[element_node_idx] =
-        owned_element_to_node_ids(element_gidx, element_node_idx);
+	owned_element_to_node_ids(element_gidx, element_node_idx);
     }
 
     // For each node (row) on the current element:
@@ -296,19 +297,19 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
     // - add values to crs_matrix if the row is owned.
     //   Note: hardcoded 4 here because we're using quads.
     for (size_t element_node_idx = 0; element_node_idx < 4;
-         ++element_node_idx) {
+	 ++element_node_idx) {
       const global_ordinal_type global_row_id =
-        owned_element_to_node_ids(element_gidx, element_node_idx);
+	owned_element_to_node_ids(element_gidx, element_node_idx);
       if (mesh.nodeIsOwned (global_row_id)) {
-        for (size_t col_idx = 0; col_idx < 4; ++col_idx) {
-          column_scalar_values[col_idx] =
-            element_matrix(element_node_idx, col_idx);
-        }
-        crs_matrix.sumIntoGlobalValues (global_row_id,
-                                        column_global_ids,
-                                        column_scalar_values);
-        rhs.sumIntoGlobalValue (global_row_id, 0,
-                                element_rhs[element_node_idx]);
+	for (size_t col_idx = 0; col_idx < 4; ++col_idx) {
+	  column_scalar_values[col_idx] =
+	    element_matrix(element_node_idx, col_idx);
+	}
+	crs_matrix.sumIntoGlobalValues (global_row_id,
+					column_global_ids,
+					column_scalar_values);
+	rhs.sumIntoGlobalValue (global_row_id, 0,
+				element_rhs[element_node_idx]);
       }
     }
   }
@@ -331,12 +332,12 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
       global_ordinal_type global_row_id = ghost_element_to_node_ids(element_gidx, element_node_idx);
       if(mesh.nodeIsOwned(global_row_id))
       {
-        for(size_t col_idx=0; col_idx<4; col_idx++)
+	for(size_t col_idx=0; col_idx<4; col_idx++)
         {
-          column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
-        }
-        crs_matrix.sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
-        rhs.sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
+	  column_scalar_values[col_idx] = element_matrix(element_node_idx, col_idx);
+	}
+	crs_matrix.sumIntoGlobalValues(global_row_id, column_global_ids, column_scalar_values);
+	rhs.sumIntoGlobalValue(global_row_id, 0, element_rhs[element_node_idx]);
       }
     }
   }
@@ -412,9 +413,9 @@ executeTotalElementLoopSPKokkos_
   // -----------------
   // -- https://trilinos.org/docs/dev/packages/tpetra/doc/html/classTpetra_1_1Map.html#a24490b938e94f8d4f31b6c0e4fc0ff77
   RCP<const map_type> row_map =
-    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs(), 0, comm));
-  RCP<const map_type> owned_element_map = rcp(new map_type(GO_INVALID, mesh.getOwnedElementGlobalIDs(), 0, comm));
-  RCP<const map_type> ghost_element_map = rcp(new map_type(GO_INVALID, mesh.getGhostElementGlobalIDs(), 0, comm));
+    rcp(new map_type(GO_INVALID, mesh.getOwnedNodeGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly), 0, comm));
+  RCP<const map_type> owned_element_map = rcp(new map_type(GO_INVALID, mesh.getOwnedElementGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly), 0, comm));
+  RCP<const map_type> ghost_element_map = rcp(new map_type(GO_INVALID, mesh.getGhostElementGlobalIDs().getDeviceView(Tpetra::Access::ReadOnly), 0, comm));
   RCP<const import_type> elementImporter = rcp(new import_type(owned_element_map,ghost_element_map));
 
   if(opts.verbose) row_map->describe(out);
@@ -428,8 +429,8 @@ executeTotalElementLoopSPKokkos_
   auto domain_map = row_map;
   auto range_map  = row_map;
 
-  auto owned_element_to_node_ids = mesh.getOwnedElementToNode();
-  auto ghost_element_to_node_ids = mesh.getGhostElementToNode();
+  auto owned_element_to_node_ids = mesh.getOwnedElementToNode().getHostView(Tpetra::Access::ReadOnly);
+  auto ghost_element_to_node_ids = mesh.getGhostElementToNode().getHostView(Tpetra::Access::ReadOnly);
 
   Teuchos::TimeMonitor::getStackedTimer()->startBaseTimer();
   RCP<TimeMonitor> timerElementLoopGraph = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("1) ElementLoop  (Graph)")));
@@ -462,7 +463,7 @@ executeTotalElementLoopSPKokkos_
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
@@ -478,7 +479,7 @@ executeTotalElementLoopSPKokkos_
     {
       if(mesh.nodeIsOwned(global_ids_in_row[element_node_idx]))
       {
-       crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
+	crs_graph->insertGlobalIndices(global_ids_in_row[element_node_idx], global_ids_in_row());
       }
     }
   }
@@ -548,7 +549,7 @@ executeTotalElementLoopSPKokkos_
   RCP<crs_matrix_type> crs_matrix = rcp(new crs_matrix_type(crs_graph));
   RCP<multivector_type> rhs = rcp(new multivector_type(crs_graph->getRowMap(), 1));
 
-  auto localMatrix  = crs_matrix->getLocalMatrix();
+  auto localMatrix  = crs_matrix->getLocalMatrixDevice();
   auto localRHS     = rhs->getLocalViewDevice(Tpetra::Access::OverwriteAll);
   auto localRowMap  = crs_matrix->getRowMap()->getLocalMap();
   auto localColMap  = crs_matrix->getColMap()->getLocalMap();
@@ -560,7 +561,7 @@ executeTotalElementLoopSPKokkos_
   pair_type alln = pair_type(0,nperel);
   scalar_2d_array_type all_element_matrix("all_element_matrix",nperel*std::max(numOwnedElements,numGhostElements));
   scalar_1d_array_type all_element_rhs("all_element_rhs",nperel*std::max(numOwnedElements,numGhostElements));
-  local_ordinal_view_type  all_lcids("all_lids",nperel*std::max(numOwnedElements,numGhostElements));
+  local_ordinal_single_view_type  all_lcids("all_lids",nperel*std::max(numOwnedElements,numGhostElements));
 
 
   timerElementLoopMemory = Teuchos::null;

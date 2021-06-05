@@ -58,7 +58,7 @@ APPEND_SET(SOURCES
   TransPFactory.cpp
   UnsmooshFactory.cpp
   UserData/CreateXpetraPreconditioner.cpp
-  Utilities
+  Utilities.cpp
   VariableContainer.cpp
   VariableDofLaplacianFactory.cpp
 )

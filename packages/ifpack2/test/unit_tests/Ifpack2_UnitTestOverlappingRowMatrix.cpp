@@ -228,8 +228,8 @@ void reducedMatvec(const OverlappedMatrixClass & A,
   if(overlapLevel >= (int) hstarts.size()) 
     throw std::runtime_error("reducedMatvec: Exceeded available overlap");
 
-  auto undA_lcl = undA->getLocalMatrix ();
-  auto extA_lcl = extA->getLocalMatrix ();
+  auto undA_lcl = undA->getLocalMatrixDevice ();
+  auto extA_lcl = extA->getLocalMatrixDevice ();
   auto X_lcl = X.getLocalViewDevice (Tpetra::Access::ReadOnly);
   auto Y_lcl = Y.getLocalViewDevice (Tpetra::Access::OverwriteAll);
   

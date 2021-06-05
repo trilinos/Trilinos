@@ -227,11 +227,11 @@ namespace FROSch {
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
                     << setw(89) << "========================================================================================="
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Translations" << right
+                    << "| " << left << setw(19) << "Coarse nodes " << " | " << setw(19) << "Translations " << right
                     << " | " << setw(41) << boolalpha << useForCoarseSpace << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "
-                    << "| " << left << setw(20) << "Coarse nodes " << " | " << setw(19) << " Rotations" << right
+                    << "| " << left << setw(19) << "Coarse nodes " << " | " << setw(19) << "Rotations " << right
                     << " | " << setw(41) << boolalpha << useRotations << noboolalpha
                     << " |"
                     << "\n" << setw(FROSCH_OUTPUT_INDENT) << " "

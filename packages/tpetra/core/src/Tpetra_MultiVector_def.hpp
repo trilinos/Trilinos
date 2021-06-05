@@ -1996,7 +1996,6 @@ namespace Tpetra {
     using Teuchos::RCP;
     // View of all the dot product results.
     typedef Kokkos::View<dot_type*, Kokkos::HostSpace> RV;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     typedef typename dual_view_type::t_dev_const XMV;
     const char tfecfFuncName[] = "Tpetra::MultiVector::dot: ";
 
@@ -2695,7 +2694,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node> MV;
     const char tfecfFuncName[] = "scale: ";
 
     const size_t lclNumRows = getLocalLength ();
@@ -2742,7 +2740,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   reciprocal (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "reciprocal: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2782,7 +2779,6 @@ namespace Tpetra {
   MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   abs (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& A)
   {
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "abs";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
@@ -2827,7 +2823,6 @@ namespace Tpetra {
     const char tfecfFuncName[] = "update: ";
     using Kokkos::subview;
     using Kokkos::ALL;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     ::Tpetra::Details::ProfilingRegion region ("Tpetra::MV::update(alpha,A,beta)");
 
@@ -2881,7 +2876,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
 
     const char tfecfFuncName[] = "update(alpha,A,beta,B,gamma): ";
 
@@ -2945,7 +2939,6 @@ namespace Tpetra {
   getData (size_t j) const
   {
     using Kokkos::ALL;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getData: ";
 
@@ -2977,7 +2970,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using IST = impl_scalar_type;
     const char tfecfFuncName[] = "getDataNonConst: ";
 
@@ -3630,7 +3622,6 @@ namespace Tpetra {
       // Since get1dView() is and was always marked const, I have to
       // cast away const here in order not to break backwards
       // compatibility.
-      using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
       auto X_lcl = getLocalViewHost(Access::ReadOnly);
       Teuchos::ArrayRCP<const impl_scalar_type> dataAsArcp =
         Kokkos::Compat::persistingView (X_lcl);
@@ -3828,7 +3819,6 @@ namespace Tpetra {
     // Since get2dView() is and was always marked const, I have to
     // cast away const here in order not to break backwards
     // compatibility.
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     auto X_lcl = getLocalViewHost(Access::ReadOnly);
 
     // Don't use the row range here on the outside, in order to avoid
@@ -4099,8 +4089,6 @@ namespace Tpetra {
   {
     using Kokkos::ALL;
     using Kokkos::subview;
-    using MV = MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
-    using V = Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char tfecfFuncName[] = "elementWiseMultiply: ";
 
     const size_t lclNumRows = this->getLocalLength ();
