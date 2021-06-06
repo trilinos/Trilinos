@@ -48,7 +48,7 @@
 #include <climits>
 #include <cfloat>
 
-#define Tpetra_ENABLE_quadmath
+//#define Tpetra_ENABLE_quadmath
 #ifdef Tpetra_ENABLE_quadmath
   #include <quadmath.h>
 #endif
