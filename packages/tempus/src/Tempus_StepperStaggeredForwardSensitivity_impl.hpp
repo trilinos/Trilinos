@@ -138,6 +138,7 @@ takeStep(
     RCP<SolutionState<Scalar> > state = solutionHistory->getCurrentState();
     RCP<DMVPV> X, XDot, XDotDot;
     X = rcp_dynamic_cast<DMVPV>(state->getX(),true);
+
     XDot = rcp_dynamic_cast<DMVPV>(state->getXDot(),true);
     if (state->getXDotDot() != Teuchos::null)
       XDotDot = rcp_dynamic_cast<DMVPV>(state->getXDotDot(),true);
