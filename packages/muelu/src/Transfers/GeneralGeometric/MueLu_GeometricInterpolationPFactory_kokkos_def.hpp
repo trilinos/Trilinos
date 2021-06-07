@@ -160,9 +160,10 @@ namespace MueLu {
         Build(coarseCoordsMap, fineCoordinates->getNumVectors());
 
       // Construct and launch functor to fill coarse coordinates values
+      // function should take a const view really
       coarseCoordinatesBuilderFunctor myCoarseCoordinatesBuilder(geoData,
-                                                                 fineCoordinates->  getDeviceLocalView(),
-                                                                 coarseCoordinates->getDeviceLocalView());
+                                                                 fineCoordinates->  getDeviceLocalView(Xpetra::Access::ReadWrite),
+                                                                 coarseCoordinates->getDeviceLocalView(Xpetra::Access::OverwriteAll));
       Kokkos::parallel_for("GeometricInterpolation: build coarse coordinates",
                            Kokkos::RangePolicy<execution_space>(0, geoData->getNumCoarseNodes()),
                            myCoarseCoordinatesBuilder);

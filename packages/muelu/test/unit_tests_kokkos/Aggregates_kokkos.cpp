@@ -184,7 +184,7 @@ namespace MueLuTests {
     using memory_space      = typename LWGraph_kokkos::memory_space;
 
     const LO numNodes = graph.GetNodeNumVertices();
-    auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView();
+    auto vertex2AggId = aggregates.GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadOnly);
     auto aggSizes     = aggregates.ComputeAggregateSizes(true);
 
     Kokkos::View<LO*, memory_space> discontiguousAggs("discontiguous aggregates",
@@ -365,8 +365,8 @@ namespace MueLuTests {
     Kokkos::deep_copy(aggStat, MueLu::READY);
 
     // Performing fake aggregates to generate a discontiguous aggregate
-    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView();
-    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> procWinner   = aggregates->GetProcWinner()->getDeviceLocalView();
+    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> vertex2AggId = aggregates->GetVertex2AggId()->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space> procWinner   = aggregates->GetProcWinner()->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
     typename Kokkos::View<LO**, Kokkos::LayoutLeft, memory_space>::HostMirror vertex2AggId_h
       = Kokkos::create_mirror_view(vertex2AggId);
