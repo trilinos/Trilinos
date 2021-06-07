@@ -53,6 +53,8 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
+#include <type_traits>
+
 namespace {
 
 using DeviceType = Tpetra::Map<>::device_type;
@@ -1336,7 +1338,7 @@ TEUCHOS_UNIT_TEST(WrappedDualView, attemptConstructUnmanaged) {
   fixture.fillDualViewOnHostDevice();
   WrappedDualViewType wrappedView(fixture.getDualView());
   auto owningView = wrappedView.getDeviceView(Tpetra::Access::ReadWrite);
-  static_assert(decltype(owningView)::rank == 1,
+  static_assert(WrappedDualViewType::DeviceViewType::rank == 1,
       "This test requires WrappedDualViewType to be rank 1. If this breaks, use a custom type here.");
 
   //Although this view doesn't have Unmanaged memory traits in its type,
