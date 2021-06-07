@@ -20,6 +20,9 @@
  * This include file is used by MDCGI.C and all CGISxxx.C files.
  */
 
+#ifndef IFDEFX_H
+#define IFDEFX_H
+
 #if defined(ADDC_)
 #endif
 #if !defined(CRA) && !defined(ADDC_) && !defined(COUGAR)
@@ -79,4 +82,4 @@
 #define cgifsq_ CGIFSQ
 #endif
 
-/* end ifdefx.h */
+#endif
