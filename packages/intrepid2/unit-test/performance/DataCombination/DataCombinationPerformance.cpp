@@ -44,7 +44,7 @@
 /** \file   DataCombinationPerformance.cpp
     \brief  Main for performance tests comparing performance when combining Intrepid2 Data objects (as sums and products) with the performance of (expanded) Kokkos View objects.
  
- Specifically, we consider a few use cases, each with nominal shape (C,P):
+ Specifically, we consider a few use cases, each with logical shape (C,P):
  1. Constant data.  This case favors Data objects most heavily, since redundancy in the Views will be maximal.
  2. "Affine" data.  This has shape (C,P), but only varies in the cell dimension.
  3. General data.  There is no redundancy in the data.  This case favors the View objects most heavily, and will maximally expose overhead from the Data implementation.

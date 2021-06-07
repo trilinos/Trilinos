@@ -37,11 +37,11 @@ namespace Intrepid2 {
   };
 
 /** \struct  Intrepid2::DimensionInfo
-    \brief Struct expressing all variation information about a Data object in a single dimension, including its nominal extent and storage extent.
+    \brief Struct expressing all variation information about a Data object in a single dimension, including its logical extent and storage extent.
 */
   struct DimensionInfo
   {
-    int nominalExtent;
+    int logicalExtent;
     DataVariationType variationType;
     int dataExtent;
     int variationModulus; // should be equal to dataExtent variationType other than MODULAR and CONSTANT
@@ -52,9 +52,9 @@ namespace Intrepid2 {
   KOKKOS_INLINE_FUNCTION
   DimensionInfo combinedDimensionInfo(const DimensionInfo &myData, const DimensionInfo &otherData)
   {
-    const int myNominalExtent    = myData.nominalExtent;
+    const int myNominalExtent    = myData.logicalExtent;
 #ifdef HAVE_INTREPID2_DEBUG
-    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(myNominalExtent != otherData.nominalExtent, std::invalid_argument, "both Data objects must match in their nominal extent in the specified dimension");
+    INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(myNominalExtent != otherData.logicalExtent, std::invalid_argument, "both Data objects must match in their logical extent in the specified dimension");
 #endif
     const DataVariationType & myVariation    = myData.variationType;
     const DataVariationType & otherVariation = otherData.variationType;
@@ -66,7 +66,7 @@ namespace Intrepid2 {
     int otherDataExtent = otherData.dataExtent;
     
     DimensionInfo combinedDimensionInfo;
-    combinedDimensionInfo.nominalExtent = myNominalExtent;
+    combinedDimensionInfo.logicalExtent = myNominalExtent;
     
     switch (myVariation)
     {
@@ -333,7 +333,7 @@ namespace Intrepid2 {
       for (int d=numActiveDims_; d<7; d++)
       {
         // for *inactive* dims, the activeDims_ map just is the identity
-        // (this allows getEntry() to work even when the nominal rank of the Data object is lower than that of the underlying View.  This can happen for gradients in 1D.)
+        // (this allows getEntry() to work even when the logical rank of the Data object is lower than that of the underlying View.  This can happen for gradients in 1D.)
         activeDims_[d] = d;
       }
       for (int d=0; d<7; d++)
@@ -875,7 +875,7 @@ namespace Intrepid2 {
       }
     }
     
-    //! Returns an l-value reference to the specified nominal entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
+    //! Returns an l-value reference to the specified logical entry in the underlying view.  Note that for variation types other than GENERAL, multiple valid argument sets will refer to the same memory location.  Intended for Intrepid2 developers and expert users only.
     template<class ...IntArgs>
     KOKKOS_INLINE_FUNCTION
     reference_type getWritableEntry(const IntArgs... intArgs) const
@@ -1023,7 +1023,7 @@ namespace Intrepid2 {
       }
     }
     
-    //! Constructor in terms of DimensionInfo for each nominal dimension; does not require a View to be specified.  Will allocate a View of appropriate rank, zero-filled.
+    //! Constructor in terms of DimensionInfo for each logical dimension; does not require a View to be specified.  Will allocate a View of appropriate rank, zero-filled.
     Data(std::vector<DimensionInfo> dimInfoVector)
     :
     // initialize member variables as if default constructor; if dimInfoVector is empty, we want default constructor behavior.
@@ -1039,7 +1039,7 @@ namespace Intrepid2 {
         for (int d=0; d<rank_; d++)
         {
           const DimensionInfo & dimInfo = dimInfoVector[d];
-          extents_[d] = dimInfo.nominalExtent;
+          extents_[d] = dimInfo.logicalExtent;
           variationType_[d] = dimInfo.variationType;
           const bool isBlockPlusDiagonal = (variationType_[d] == BLOCK_PLUS_DIAGONAL);
           const bool isSecondBlockPlusDiagonal = isBlockPlusDiagonal && blockPlusDiagonalEncountered;
@@ -1344,7 +1344,7 @@ namespace Intrepid2 {
       return blockPlusDiagonalLastNonDiagonal_;
     }
     
-    //! Returns an array containing the nominal extents in each dimension.
+    //! Returns an array containing the logical extents in each dimension.
     KOKKOS_INLINE_FUNCTION
     Kokkos::Array<int,7> getExtents() const
     {
@@ -1357,7 +1357,7 @@ namespace Intrepid2 {
     {
       DimensionInfo dimInfo;
       
-      dimInfo.nominalExtent = extent_int(dim);
+      dimInfo.logicalExtent = extent_int(dim);
       dimInfo.variationType = variationType_[dim];
       dimInfo.dataExtent    = getDataExtent(dim);
       dimInfo.variationModulus = variationModulus_[dim];
@@ -1767,19 +1767,19 @@ namespace Intrepid2 {
       return false; // statement should be unreachable; included because compilers don't necessarily recognize that fact...
     }
     
-    //! Constructs a container suitable for storing the result of an in-place combination of the two provided data containers.  The two containers must have the same nominal shape.
+    //! Constructs a container suitable for storing the result of an in-place combination of the two provided data containers.  The two containers must have the same logical shape.
     //! \see storeInPlaceCombination()
     //! \param A  [in] - the first data container.
-    //! \param B  [in] - the second data container.  Must have the same nominal shape as A.
-    //! \return A container with the same nominal shape as A and B, with underlying View storage sufficient to store the result of A + B (or any other in-place combination).
+    //! \param B  [in] - the second data container.  Must have the same logical shape as A.
+    //! \return A container with the same logical shape as A and B, with underlying View storage sufficient to store the result of A + B (or any other in-place combination).
     static Data<DataScalar,DeviceType> allocateInPlaceCombinationResult( const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B )
     {
-      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.rank() != B.rank(), std::invalid_argument, "A and B must have the same nominal shape");
+      INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.rank() != B.rank(), std::invalid_argument, "A and B must have the same logical shape");
       const int rank = A.rank();
       std::vector<DimensionInfo> dimInfo(rank);
       for (int d=0; d<rank; d++)
       {
-        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(d) != B.extent_int(d), std::invalid_argument, "A and B must have the same nominal shape");
+        INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A.extent_int(d) != B.extent_int(d), std::invalid_argument, "A and B must have the same logical shape");
         dimInfo[d] = A.combinedDataDimensionInfo(B, d);
       }
       Data<DataScalar,DeviceType> result(dimInfo);
@@ -1788,13 +1788,13 @@ namespace Intrepid2 {
     
     //! Constructs a container suitable for storing the result of a matrix-vector multiply corresponding to the two provided containers.
     //! \see storeMatMat()
-    //! \param A_MatData                                            [in] - nominally (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
+    //! \param A_MatData                                            [in] - logically (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
     //! \param transposeA                                          [in] - if true, A will be transposed prior to being multiplied by B (or B's transpose).
-    //! \param B_MatData                                            [in] - nominally (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
+    //! \param B_MatData                                            [in] - logically (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
     //! \param transposeB                                          [in] - if true, B will be transposed prior to the multiplication by A (or A's transpose).
     static Data<DataScalar,DeviceType> allocateMatMatResult( const bool transposeA, const Data<DataScalar,DeviceType> &A_MatData, const bool transposeB, const Data<DataScalar,DeviceType> &B_MatData )
     {
-      // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
+      // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A_MatData.rank() != B_MatData.rank(), std::invalid_argument, "AmatData and BmatData have incompatible ranks");
       
       const int D1_DIM = A_MatData.rank() - 2;
@@ -1976,7 +1976,7 @@ namespace Intrepid2 {
     //! \see storeMatVec()
     static Data<DataScalar,DeviceType> allocateMatVecResult( const Data<DataScalar,DeviceType> &matData, const Data<DataScalar,DeviceType> &vecData )
     {
-      // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
+      // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(matData.rank() != vecData.rank() + 1, std::invalid_argument, "matData and vecData have incompatible ranks");
       const int vecDim  = vecData.extent_int(vecData.rank() - 1);
       const int matRows = matData.extent_int(matData.rank() - 2);
@@ -2151,11 +2151,11 @@ namespace Intrepid2 {
       using ExecutionSpace = typename DeviceType::execution_space;
 
 #ifdef INTREPID2_HAVE_DEBUG
-      // check nominal extents
+      // check logical extents
       for (int d=0; d<rank_; d++)
       {
-        INTREPID2_TEST_FOR_EXCEPTION(A.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all nominal extents");
-        INTREPID2_TEST_FOR_EXCEPTION(B.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all nominal extents");
+        INTREPID2_TEST_FOR_EXCEPTION(A.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all logical extents");
+        INTREPID2_TEST_FOR_EXCEPTION(B.extent_int(d) != this->extent_int(d), std::invalid_argument, "A, B, and this must agree on all logical extents");
       }
       // TODO: add some checks that data extent of this suffices to accept combined A + B data.
 #endif
@@ -2301,16 +2301,16 @@ namespace Intrepid2 {
     
     //! Places the result of a matrix-matrix multiply corresponding to the two provided containers into this Data container.  This Data container should have been constructed by a call to allocateMatMatResult(), or should match such a container in underlying data extent and variation types.
     //! \see allocateMatMat()
-    //! \param A_MatData                                            [in] - nominally (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
+    //! \param A_MatData                                            [in] - logically (...,D1,D2)-dimensioned container, where D1,D2 correspond to matrix dimensions.
     //! \param transposeA                                          [in] - if true, A will be transposed prior to being multiplied by B (or B's transpose).
-    //! \param B_MatData                                            [in] - nominally (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
+    //! \param B_MatData                                            [in] - logically (...,D3,D4)-dimensioned container, where D3,D4 correspond to matrix dimensions.
     //! \param transposeB                                          [in] - if true, B will be transposed prior to the multiplication by A (or A's transpose).
     void storeMatMat( const bool transposeA, const Data<DataScalar,DeviceType> &A_MatData, const bool transposeB, const Data<DataScalar,DeviceType> &B_MatData )
     {
       // TODO: add a compile-time (SFINAE-type) guard against DataScalar types that do not support arithmetic operations.  (We support Orientation as a DataScalar type; it might suffice just to compare DataScalar to Orientation, and eliminate this method for that case.)
       // TODO: check for invalidly shaped containers.
       
-      // we treat last two nominal dimensions of matData as the matrix; last dimension of vecData as the vector
+      // we treat last two logical dimensions of matData as the matrix; last dimension of vecData as the vector
       INTREPID2_TEST_FOR_EXCEPTION_DEVICE_SAFE(A_MatData.rank() != B_MatData.rank(), std::invalid_argument, "AmatData and BmatData have incompatible ranks");
       
       const int D1_DIM = A_MatData.rank() - 2;
