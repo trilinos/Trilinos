@@ -123,7 +123,13 @@ namespace MueLu {
 
     // Build Stratimikos solver
     Stratimikos::DefaultLinearSolverBuilder linearSolverBuilder;
-    if (recurMgOnFilteredA_) Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+    if (recurMgOnFilteredA_) {
+#ifdef MUELU_RECURMG
+       Stratimikos::enableMueLu<LocalOrdinal,GlobalOrdinal,Node>(linearSolverBuilder);
+#else
+    TEUCHOS_TEST_FOR_EXCEPTION( true , Exceptions::RuntimeError, "MueLu::StratimikosSmoother:: must compile with MUELU_RECURMG defined. Unfortunately, cmake does not always produce a proper link.txt file (which sometimes requires libmuelu.a before and after libmuelu-interface.a). After configuring, run script muelu/utils/misc/patchLinkForRecurMG to change link.txt files manually. If you want to create test example, add -DMUELU_RECURMG=ON to cmake arguments.");
+#endif
+    }
 
     typedef Thyra::PreconditionerFactoryBase<Scalar> Base;
 #if defined(HAVE_MUELU_THYRATPETRAADAPTERS) && defined(HAVE_MUELU_IFPACK2)

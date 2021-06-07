@@ -440,13 +440,15 @@ IF (${PACKAGE_NAME}_HAVE_TPETRA_SOLVER_STACK)
       NUM_MPI_PROCS 3
       COMM mpi
       )
-    MUELU_ADD_SERIAL_AND_MPI_TEST(
-      Driver
-      NAME "RecursiveMGWithSemiCoarsening"
-      ARGS "--linAlgebra=Tpetra --xml=recurMG.xml --matrixType=Elasticity3D --nx=12  --ny=12 --nz=99 --belosType=\"Pseudoblock GMRES\" --noscale --its=50 --tol=1e-5"
-      NUM_MPI_PROCS 4
-      COMM serial mpi
-      )
+    IF ( MUELU_RECURMG )
+      MUELU_ADD_SERIAL_AND_MPI_TEST(
+        Driver
+        NAME "RecursiveMGWithSemiCoarsening"
+        ARGS "--linAlgebra=Tpetra --xml=recurMG.xml --matrixType=Elasticity3D --nx=12  --ny=12 --nz=99 --belosType=\"Pseudoblock GMRES\" --noscale --its=50 --tol=1e-5"
+        NUM_MPI_PROCS 4
+        COMM serial mpi
+        )
+    ENDIF()
 
 
   ENDIF()
