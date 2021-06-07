@@ -143,6 +143,13 @@ getStatus() const
   return PASSED;
 }
 
+template <class Scalar>
+void IntegratorPseudoTransientForwardSensitivity<Scalar>::setStatus(
+    const Status st) {
+  state_integrator_->setStatus(st);
+  sens_integrator_->setStatus(st);
+}
+
 template<class Scalar>
 Teuchos::RCP<Stepper<Scalar> >
 IntegratorPseudoTransientForwardSensitivity<Scalar>::
