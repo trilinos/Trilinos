@@ -127,7 +127,7 @@ class AlgDistance1 : public Algorithm<Adapter>
 
       //set the initial coloring of the kh.get_graph_coloring_handle() to be
       //the data view from the femv.
-      auto femvColors = femv->template getLocalView<MemorySpace>();
+      auto femvColors = femv->template getLocalView<MemorySpace>(Tpetra::Access::ReadWrite);
       auto  sv = subview(femvColors, Kokkos::ALL, 0);
       kh.get_graph_coloring_handle()->set_vertex_colors(sv);
       kh.get_graph_coloring_handle()->set_tictoc(verbose);
@@ -286,7 +286,7 @@ class AlgDistance1 : public Algorithm<Adapter>
                          Teuchos::RCP<femv_t> femv,
 			 const std::unordered_map<lno_t, std::vector<int>>& procs_to_send,
                          gno_t& recv, gno_t& send){ 
-      auto femvColors = femv->getLocalViewHost();
+      auto femvColors = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
       auto colors = subview(femvColors, Kokkos::ALL, 0);
       int nprocs = comm->getSize();
       
@@ -750,7 +750,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       //if there is more than a single process, check distributed conflicts and recolor
       if(comm->getSize() > 1){
 	//get the colors from the femv
-        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>();
+        Kokkos::View<int**, Kokkos::LayoutLeft> femvColors = femv->template getLocalView<memory_space>(Tpetra::Access::ReadWrite); // Partial write
         Kokkos::View<int*, device_type> femv_colors = subview(femvColors, Kokkos::ALL, 0);
 	
         if(verbose)std::cout<<comm->getRank()<<": going to communicate\n";
@@ -822,7 +822,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       while(recoloringSize_host(0) > 0 || !done){
 	if(recoloringSize_host(0) < serial_threshold) break;
         //get a subview of the colors:
-        auto femvColors = femv->getLocalViewDevice();
+        auto femvColors = femv->getLocalViewDevice(Tpetra::Access::ReadWrite);
         auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
         //color everything in the recoloring queue, put everything on conflict queue
         if(distributedRounds < numStatisticRecordingRounds) {
@@ -870,7 +870,7 @@ class AlgDistance1 : public Algorithm<Adapter>
         //communicate
         Kokkos::deep_copy(verts_to_send_host, verts_to_send_view);
 	Kokkos::deep_copy(verts_to_send_size_host, verts_to_send_size);
-	auto femvColors_host = femv->getLocalViewHost();
+	auto femvColors_host = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
 	auto femv_colors_host = subview(femvColors_host, Kokkos::ALL, 0);
 	gno_t sent,recv;
         
@@ -946,7 +946,7 @@ class AlgDistance1 : public Algorithm<Adapter>
       //finish the local coloring in serial on the host
       while(recoloringSize_host(0) > 0 || !done){
 	//Use non-templated call to get the Host view
-	auto femvColors = femv->getLocalViewHost();
+	auto femvColors = femv->getLocalViewHost(Tpetra::Access::ReadWrite);
 	auto femv_colors = subview(femvColors, Kokkos::ALL, 0);
 	/*Kokkos::View<int*, Kokkos::Device<Kokkos::Serial, Kokkos::HostSpace>>femv_colors_host = create_mirror(femv_colors);
 	Kokkos::deep_copy(femv_colors_host, femv_colors);*/

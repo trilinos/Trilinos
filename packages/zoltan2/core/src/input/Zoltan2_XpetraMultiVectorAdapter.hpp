@@ -339,7 +339,7 @@ template <typename User>
         dynamic_cast<const xt_mvector_t *>(vector_.get());
     // coordinates in MJ are LayoutLeft since Tpetra Multivector gives LayoutLeft
     Kokkos::View<scalar_t **, Kokkos::LayoutLeft, typename node_t::device_type> view2d =
-      tvector->getTpetra_MultiVector()->template getLocalView<node_t>();
+      tvector->getTpetra_MultiVector()->template getLocalView<node_t>(Tpetra::Access::ReadWrite);
     elements = view2d;
   }
   else if (map_->lib() == Xpetra::UseEpetra){

@@ -87,8 +87,9 @@ size_t computeBandwidth(RCP<SparseMatrix> A, z2TestLO *iperm)
 // if passed in, otherwise is calculating the original value.
 {
   z2TestLO ii, i, j, k;
-  ArrayView<const z2TestLO> indices;
-  ArrayView<const z2TestScalar> values;
+  typename SparseMatrix::local_inds_host_view_type  indices;
+  typename SparseMatrix::values_host_view_type values;
+
   z2TestLO bw_left = 0;
   z2TestLO bw_right = 0;
 
