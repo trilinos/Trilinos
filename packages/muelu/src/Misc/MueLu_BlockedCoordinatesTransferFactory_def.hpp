@@ -124,17 +124,15 @@ namespace MueLu {
 
       ArrayView<const GO> elementAList = coarseMap->getFullMap()->getNodeElementList();
 
-      LO blkSize = 0;
-      LO otherBlkSize;
-      for(size_t i=0; i<numSubFactories; i++) {
-        if (rcp_dynamic_cast<const StridedMap>(coarseMap->getMap(i, thyraMode)) != Teuchos::null){
+      LO blkSize = 1;
+      if (rcp_dynamic_cast<const StridedMap>(coarseMap->getMap(0, thyraMode)) != Teuchos::null)
+        blkSize = rcp_dynamic_cast<const StridedMap>(coarseMap->getMap(0, thyraMode))->getFixedBlockSize();
+
+      for(size_t i=1; i<numSubFactories; i++) {
+        LO otherBlkSize = 1;
+        if (rcp_dynamic_cast<const StridedMap>(coarseMap->getMap(i, thyraMode)) != Teuchos::null)
           otherBlkSize = rcp_dynamic_cast<const StridedMap>(coarseMap->getMap(i, thyraMode))->getFixedBlockSize();
-        } else {
-          otherBlkSize = 1;
-        }
-        if( i>0 && blkSize/i != otherBlkSize)
-          GetOStream(Warnings1) << "BlockedCoordinatesTransferFactory: Subblocks have different stride. Might cause problems..." << std::endl;
-        blkSize += otherBlkSize;
+        TEUCHOS_TEST_FOR_EXCEPTION(otherBlkSize != blkSize, Exceptions::RuntimeError, "BlockedCoordinatesTransferFactory: Subblocks have different Block sizes. This is not yet supported.");
       }
 
       GO        indexBase   = coarseMap->getFullMap()->getIndexBase();
