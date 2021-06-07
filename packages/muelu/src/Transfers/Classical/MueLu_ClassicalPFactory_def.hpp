@@ -188,6 +188,9 @@ namespace MueLu {
       need_ghost_rows=true;
     // NOTE: ParameterList validator will check this guy so we don't really need an "else" here
 
+    if (GetVerbLevel() & Statistics1) {
+      GetOStream(Statistics1) << "ClassicalPFactory: scheme = "<<scheme<<std::endl;
+    }
 
     // Ghost the FC splitting and grab the data (if needed)
     RCP<const LocalOrdinalVector> fc_splitting;
@@ -387,8 +390,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     /* f_ij = \sum_{k\in{F_i^s\setminusF_i^s*}} \frac{a_ik \bar{a}_kj}{\sum_{m\inC_i^s \bar{a}_km}}    */ 
     /*                                                                     */ 
     /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
- 
-   const point_type F_PT = ClassicalMapFactory::F_PT;
+  
+  const point_type F_PT = ClassicalMapFactory::F_PT;
     const point_type C_PT = ClassicalMapFactory::C_PT;
     const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
     using STS = typename Teuchos::ScalarTraits<SC>;
@@ -488,25 +491,25 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     Pcrs->getAllValues(P_values);
 
     // Gustavston-style perfect hashing
-    RCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
+    ArrayRCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
     //    RCP<LO> Acol_is_Fine(A.getColMap()->getNodeNumElements(),LO_INVALID);
 
-    (Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
+    //    (Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
     //    RCP<LO> Aghostcol_is_Fine(Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
 
     // Get a quick reindexing array from Pghost LCIDs to P LCIDs
-    RCP<LO> Pghostcol_to_Pcol;
+    ArrayRCP<LO> Pghostcol_to_Pcol;
     if(!Pghost.is_null()) {
-      Pghostcol_to_Pcol.resize(Pghost->getColMap(),LO_INVALID);
-      for(LO i=0; i<Pghost->getColMap().getNodeNumElements(); i++) 
+      Pghostcol_to_Pcol.resize(Pghost->getColMap()->getNodeNumElements(),LO_INVALID);
+      for(LO i=0; i<(LO) Pghost->getColMap()->getNodeNumElements(); i++) 
         Pghostcol_to_Pcol[i] = P->getColMap()->getLocalElement(Pghost->getColMap()->getGlobalElement(i));
     }//end Pghost
 
     // Get a quick reindexing array from Aghost LCIDs to A LCIDs
-    RCP<LO> Aghostcol_to_Acol;
+    ArrayRCP<LO> Aghostcol_to_Acol;
     if(!Aghost.is_null()) {
-      Aghostcol_to_Acol.resize(Aghost->getColMap(),LO_INVALID);
-      for(LO i=0; i<Aghost->getColMap().getNodeNumElements(); i++) 
+      Aghostcol_to_Acol.resize(Aghost->getColMap()->getNodeNumElements(),LO_INVALID);
+      for(LO i=0; i<(LO)Aghost->getColMap()->getNodeNumElements(); i++) 
         Aghostcol_to_Acol[i] = A.getColMap()->getLocalElement(Aghost->getColMap()->getGlobalElement(i));
     }//end Aghost
 
@@ -541,8 +544,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
         A.getLocalRowView(i, A_indices_i, A_vals_i);
         size_t row_start = eis_rowptr[i];
         
-        ArrayView<LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
-        //        ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        ArrayView<const LO> P_indices_i  = P_colind.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
+        ArrayView<SC> P_vals_i     = P_values.view(P_rowptr[i],P_rowptr[i+1] - P_rowptr[i]);
         
         // Stash the hash:  Flag any strong C-points with their index into P_colind
         // NOTE:  We'll consider any points that are LO_INVALID or less than P_rowptr[i] as not strong C-points
@@ -561,51 +564,57 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 
         // Loop over the entries in the row
         SC first_denominator  = SC_ZERO;
-        SC second_denominator = SC_ZERO;
+#ifdef CMS_DEBUG
+        SC a_ii = SC_ZERO;
+#endif
         for(LO k0=0; k0<(LO)A_indices_i.size(); k0++) {
-          LO k = A_indices[k0];
-          SC a_ik = A_vals_i[k0]; 
+          LO k      = A_indices_i[k0];
+          SC a_ik   = A_vals_i[k0]; 
           LO pcol_k = Acol_to_Pcol[k];
 
-          if(A_indices_i[j] == i) { 
+          if(k == i) { 
             // Case A: Diagonal value (add to first denominator)
-            first_denominator += A_values_i[j];
+            // FIXME:  Add BlockNumber matching here
+            first_denominator += a_ik;
+#ifdef CMS_DEBUG
+            a_ii = a_ik;
+#endif
           }
           else if(myPointType[k] == DIRICHLET_PT) {
             // Case B: Ignore dirichlet connections completely
             
           }
-          else if(pcol_k != LO_INVALID && pcol_k >= P_rowptr[i]) {
+          else if(pcol_k != LO_INVALID && pcol_k >= (LO)P_rowptr[i]) {
             // Case C: a_ik is strong C-Point (goes directly into the weight)
             P_values[pcol_k] += a_ik;
           }
-          else if (!eis_colind[row_start + k0]) {
+          else if (!edgeIsStrong[row_start + k0]) {
             // Case D: Weak non-Dirichlet neighbor (add to first denominator)
             first_denominator += a_ik;
             
           }
-          else {
+          else {//Case E
             // Case E: Strong F-Point (adds to the first denominator if we don't share a
             // a strong C-Point with i; adds to the second denominator otherwise)
 
             // Do I share a strong C-Point?  If so, I'm not in fis_star
             bool in_fis_star = true;
-            if(k < Nrows) {
-              ArrayView<LO> P_indices_k  = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
+            if(k < (LO)Nrows) {
+              ArrayView<const LO> P_indices_k  = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
               for(LO m0=0; m0<(LO)P_indices_k.size() && !in_fis_star; m0++) {
-                LO m = P_indicies_k[m0]; //P's LCID                
-                LO pcol_m = Acol_to_Pcol[pcol2cpoint[P_indices_k[m]]]// A's LCID
-                if(pcol_k != LO_INVALID && pcol_k >= P_rowptr[i]) 
+                LO m = P_indices_k[m0]; //P's LCID                
+                LO pcol_m = Acol_to_Pcol[pcol2cpoint[m]];// A's LCID
+                if(pcol_k != LO_INVALID && pcol_k >= (LO) P_rowptr[i]) 
                   in_fis_star = false;
               }//end for P_indices_k
             }//end if k < Nrows
             else{ 
-              LO kless = k-Nrows;
-              ArrayView<LO> P_indices_k  = Pghost_colind.view(Pghost_rowptr[kless],Pghost_rowptr[kless+1] - Pghost_rowptr[kless]);
+              LO kless = k-(LO)Nrows;
+              ArrayView<const LO> P_indices_k  = Pghost_colind.view(Pghost_rowptr[kless],Pghost_rowptr[kless+1] - Pghost_rowptr[kless]);
               for(LO m0=0; m0<(LO)P_indices_k.size() && !in_fis_star; m0++) {
-                LO mghost = P_indicies_k[m0]; // Pghost's LCID
+                LO mghost = P_indices_k[m0]; // Pghost's LCID
                 LO m = Pghostcol_to_Pcol[mghost]; // P's LCID
-                if(m != LO_INVALID && Acol_to_Pcol[pcol2cpoint[pcol_m]] >= P_rowptr[i]) 
+                if(m != LO_INVALID && Acol_to_Pcol[pcol2cpoint[m]] >= (LO)P_rowptr[i]) 
                   in_fis_star = false;                 
               }//end for P_indices_k
             }//end else Nrows
@@ -617,9 +626,12 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
             else {
               // If we're not in fis_star, then we contribute to the second term
               SC a_kk = SC_ZERO;              
+              SC second_denominator = SC_ZERO;
+              int sign_akk = 0;
 
-              // Grab the diagonal a_kk
-              if(k < Nrows) {
+              if(k < (LO) Nrows) {
+                // On rank row
+                // Grab the diagonal a_kk
                 A.getLocalRowView(k, A_indices_k, A_vals_k);
                 for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
                   LO m    = A_indices_k[m0];
@@ -628,28 +640,103 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                     break;
                   }
                 }                
-              }
+                
+                // Compute the second denominator term
+                sign_akk = Sign(a_kk);
+                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                  LO m    = A_indices_k[m0];
+                  if(m != k && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
+                    SC a_km = A_vals_k[m0];
+                    second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
+                  }
+                }//end for A_indices_k
+                
+                // Now we have the second denominator, for this particular strong F point.  
+                // So we can now add the sum to the w_ij components for the P values 
+                if(second_denominator != SC_ZERO) {
+                  for(LO j0=0; j0<(LO)A_indices_k.size(); j0++) {
+                    LO j    = A_indices_k[j0];            
+                    // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
+                    if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
+                      SC a_kj = A_vals_k[j0];
+                      SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
+                      P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
+                    }                 
+                  }//end for A_indices_k
+                }//end if second_denominator != 0
+              }//end if k < Nrows
               else {
-                LO kless = k - Nrows;
-                //A->getLocalRowView(i, A_indices_i, A_vals_i);
-                  // FIXME
-                }
+                // Ghost row
+                LO kless = k-Nrows;
+                // Grab the diagonal a_kk
+                // NOTE: ColMap is not locally fitted to the RowMap
+                // so we need to check GIDs here
+                Aghost->getLocalRowView(kless, A_indices_k, A_vals_k);
+                GO k_g = Aghost->getRowMap()->getGlobalElement(kless);                
+                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                  GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
+                  if(k_g == m_g) {
+                    a_kk = A_vals_k[m0];
+                    break;
+                  }
+                }//end for A_indices_k
+
+                // Compute the second denominator term
+                sign_akk = Sign(a_kk);
+                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                  GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
+                  LO mghost = A_indices_k[m0];//Aghost LCID
+                  LO m = Aghostcol_to_Acol[mghost]; //A's LID (could be LO_INVALID)
+                  if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
+                    SC a_km = A_vals_k[m0];
+                    second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
+                  }
+                }//end for A_indices_k
 
 
-              }//end for A_indices_k
-
-            }
+                // Now we have the second denominator, for this particular strong F point.  
+                // So we can now add the sum to the w_ij components for the P values 
+                if(second_denominator != SC_ZERO) {
+                  for(LO j0=0; j0<(LO)A_indices_k.size(); j0++){
+                    LO jghost = A_indices_k[j0];//Aghost LCID
+                    LO j = Aghostcol_to_Acol[jghost]; //A's LID (could be LO_INVALID)
+                    // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
+                    if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
+                      SC a_kj = A_vals_k[j0];
+                      SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
+                      P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
+                    }
+                  }//end for A_indices_k
+                }//end if secon_denominator != 0
+              }// end else k<Nrows
+            }//end else is_fis_star
 
 
           }//end else Case A,...,E
-
-          
-          
+                           
         }//end for A_indices_i
 
+        // Now, downscale by the first_denominator
+        if(first_denominator != SC_ZERO) {
+          for(LO j0=0; j0<(LO)P_indices_i.size(); j0++)  { 
+#ifdef CMS_DEBUG
+            SC old_pij = P_vals_i[j0];
+            P_vals_i[j0] /= -first_denominator;
+            fprintf('P(%d,%d) = %6.4e = %6.4e / (%6.4e + %6.4e) \n',i,P_indices_i[j0],P_vals_i[j],old_pij,a_ii,first_denominator - a_ii);
+#else
+            P_vals_i[j0] /= -first_denominator;
+#endif
+          }//end for P_indices_i
+        }//end if first_denominator != 0
+ 
       }//end else C-Point
 
-}
+    }// end if i < Nrows
+
+    // Finish up
+    Pcrs->fillComplete(Pcrs->getDomainMap(),Pcrs->getRangeMap());
+    
+}//end Coarsen_ClassicalModified
 
 
 /* ************************************************************************* */
