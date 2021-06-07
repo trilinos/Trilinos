@@ -204,8 +204,8 @@ namespace MueLu {
     TEUCHOS_ASSERT(dirichletDomain.extent(0) == domMap->getNodeNumElements());
     RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > myColsToZero = Xpetra::VectorFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Build(colMap, /*zeroOut=*/true);
     // Find all local column indices that are in Dirichlet rows, record in myColsToZero as 1.0
-    auto myColsToZeroView = myColsToZero->getDeviceLocalView();
-    auto localMatrix = A.getLocalMatrix();
+    auto myColsToZeroView = myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite);
+    auto localMatrix = A.getLocalMatrixDevice();
     Kokkos::parallel_for("MueLu:RefMaxwell::DetectDirichletCols", range_type(0,rowMap->getNodeNumElements()),
                          KOKKOS_LAMBDA(const LocalOrdinal row) {
                            if (dirichletRows(row)) {
@@ -228,8 +228,8 @@ namespace MueLu {
     }
     else
       globalColsToZero = myColsToZero;
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(),dirichletDomain);
-    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(),dirichletCols);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(globalColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite),dirichletDomain);
+    FindNonZeros<Scalar,LocalOrdinal,GlobalOrdinal,Node>(myColsToZero->getDeviceLocalView(Xpetra::Access::ReadWrite),dirichletCols);
   }
 
 #endif
@@ -1696,7 +1696,7 @@ namespace MueLu {
       typedef typename KCRS::values_type::non_const_type scalar_view_t;
 
       // Get data out of P_nodal_imported and D0.
-      auto localD0 = D0_Matrix_->getLocalMatrix();
+      auto localD0 = D0_Matrix_->getLocalMatrixHost();
 
       // Which algorithm should we use for the construction of the special prolongator?
       // Option "mat-mat":
@@ -1706,7 +1706,7 @@ namespace MueLu {
 
       if (skipFirstLevel_) {
 
-        auto localP = P_nodal_imported->getLocalMatrix();
+        auto localP = P_nodal_imported->getLocalMatrixHost();
 
         if (algo == "mat-mat") {
           RCP<Matrix> D0_P_nodal = MatrixFactory::Build(SM_Matrix_->getRowMap());
@@ -1717,7 +1717,7 @@ namespace MueLu {
 #endif
 
           // Get data out of D0*P.
-          auto localD0P = D0_P_nodal->getLocalMatrix();
+          auto localD0P = D0_P_nodal->getLocalMatrixHost();
 
           // Create the matrix object
           RCP<Map> blockColMap    = Xpetra::MapFactory<LO,GO,NO>::Build(P_nodal_imported->getColMap(), dim);
@@ -1743,7 +1743,7 @@ namespace MueLu {
                                  }
                                });
 
-          auto localNullspace = Nullspace_->getDeviceLocalView();
+          auto localNullspace = Nullspace_->getDeviceLocalView(Xpetra::Access::ReadOnly);
 
           // enter values
           if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {
@@ -1815,8 +1815,8 @@ namespace MueLu {
 
         NullspaceH_ = MultiVectorFactory::Build(P11_->getDomainMap(), dim);
 
-        auto localNullspace_nodal = Nullspace_nodal->getDeviceLocalView();
-        auto localNullspaceH = NullspaceH_->getDeviceLocalView();
+        auto localNullspace_nodal = Nullspace_nodal->getDeviceLocalView(Xpetra::Access::ReadOnly);
+        auto localNullspaceH = NullspaceH_->getDeviceLocalView(Xpetra::Access::ReadWrite);
         Kokkos::parallel_for("MueLu:RefMaxwell::buildProlongator_nullspace", range_type(0,Nullspace_nodal->getLocalLength()),
                              KOKKOS_LAMBDA(const size_t i) {
                                Scalar val = localNullspace_nodal(i,0);
@@ -1854,7 +1854,7 @@ namespace MueLu {
                                  }
                                });
 
-          auto localNullspace = Nullspace_->getDeviceLocalView();
+          auto localNullspace = Nullspace_->getDeviceLocalView(Xpetra::Access::ReadOnly);
 
           // enter values
           if (D0_Matrix_->getNodeMaxNumRowEntries()>2) {

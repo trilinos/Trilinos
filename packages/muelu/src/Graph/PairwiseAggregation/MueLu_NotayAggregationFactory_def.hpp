@@ -161,7 +161,7 @@ namespace MueLu {
 
     RCP<const GraphBase> graph = Get< RCP<GraphBase> >(currentLevel, "Graph");
     RCP<const Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
-    local_matrix_type localA = A->getLocalMatrix();
+    local_matrix_type localA = A->getLocalMatrixDevice();
 
     // Setup aggregates & aggStat objects
     RCP<Aggregates> aggregates = rcp(new Aggregates(*graph));
@@ -232,7 +232,7 @@ namespace MueLu {
     // columns corresponding to local rows.
     LO numLocalDirichletNodes = numDirichletNodes;
     Array<LO> localVertex2AggId(aggregates->GetVertex2AggId()->getData(0).view(0, numRows));
-    BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseLocalA);
+    BuildOnRankLocalMatrix(A->getLocalMatrixDevice(), coarseLocalA);
     for(LO aggregationIter = 1; aggregationIter < maxNumIter; ++aggregationIter) {
       // Compute the intermediate prolongator
       BuildIntermediateProlongator(coarseLocalA.numRows(), numLocalDirichletNodes, numLocalAggregates,

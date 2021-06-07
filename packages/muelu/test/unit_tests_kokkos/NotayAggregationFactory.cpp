@@ -296,7 +296,7 @@ namespace MueLuTests {
     std::vector<unsigned> aggStat(numRows, MueLu::READY);
     LO numUnaggregatedNodes = numRows, numDirichletNodes = 0;
     typename Matrix::local_matrix_type intermediateP;
-    typename Matrix::local_matrix_type coarseA = A->getLocalMatrix();
+    typename Matrix::local_matrix_type coarseA = A->getLocalMatrixHost();
 
     Array<LO> orderingVector(numRows);
     for (LO i = 0; i < numRows; i++) {
@@ -314,7 +314,7 @@ namespace MueLuTests {
 
     TEST_EQUALITY(numUnaggregatedNodes, 0);
 
-    NAF->BuildOnRankLocalMatrix(A->getLocalMatrix(), coarseA);
+    NAF->BuildOnRankLocalMatrix(A->getLocalMatrixHost(), coarseA);
     NAF->BuildIntermediateProlongator(A->getNodeNumRows(), numDirichletNodes,
                                       aggregates->GetNumAggregates(),
                                       v2a.view(0, A->getNodeNumRows()),

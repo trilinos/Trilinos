@@ -528,7 +528,7 @@ namespace MueLu {
       boundaryNodes = Utilities_kokkos::DetectDirichletRows(*A, dirichletThreshold);
 
       // Trivial LWGraph construction
-      graph = rcp(new LWGraph_kokkos(A->getLocalMatrix().graph, A->getRowMap(), A->getColMap(), "graph of A"));
+      graph = rcp(new LWGraph_kokkos(A->getLocalMatrixDevice().graph, A->getRowMap(), A->getColMap(), "graph of A"));
       graph->SetBoundaryNodeMap(boundaryNodes);
 
       numTotal = A->getNodeNumEntries();
@@ -546,7 +546,7 @@ namespace MueLu {
       typedef typename local_matrix_type::values_type::non_const_type     vals_type;
 
       LO   numRows      = A->getNodeNumRows();
-      auto kokkosMatrix = A->getLocalMatrix();
+      auto kokkosMatrix = A->getLocalMatrixDevice();
       auto nnzA  = kokkosMatrix.nnz();
       auto rowsA = kokkosMatrix.graph.row_map;
 
@@ -573,7 +573,7 @@ namespace MueLu {
         filteredA->fillComplete(fillCompleteParams);
 
         // No need to reuseFill, just modify in place
-        valsAux = filteredA->getLocalMatrix().values;
+        valsAux = filteredA->getLocalMatrixDevice().values;
 
       } else {
         // Need an extra array to compress
@@ -596,7 +596,7 @@ namespace MueLu {
           {
             SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
-            auto ghostedDiagView = ghostedDiag->getDeviceLocalView();
+            auto ghostedDiagView = ghostedDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
             CoalesceDrop_Kokkos_Details::ClassicalDropFunctor<LO, decltype(ghostedDiagView)> dropFunctor(ghostedDiagView, threshold);
             CoalesceDrop_Kokkos_Details::ScalarFunctor<typename ATS::val_type, LO, local_matrix_type, decltype(bndNodes), decltype(dropFunctor)>
@@ -626,7 +626,7 @@ namespace MueLu {
             ghostedCoords->doImport(*coords, *importer, Xpetra::INSERT);
           }
 
-          auto ghostedCoordsView = ghostedCoords->getDeviceLocalView();
+          auto ghostedCoordsView = ghostedCoords->getDeviceLocalView(Xpetra::Access::ReadWrite);
           CoalesceDrop_Kokkos_Details::DistanceFunctor<LO, decltype(ghostedCoordsView)> distFunctor(ghostedCoordsView);
 
           // Construct Laplacian diagonal
@@ -636,7 +636,7 @@ namespace MueLu {
 
             localLaplDiag = VectorFactory::Build(uniqueMap);
 
-            auto localLaplDiagView = localLaplDiag->getDeviceLocalView();
+            auto localLaplDiagView = localLaplDiag->getDeviceLocalView(Xpetra::Access::OverwriteAll);
             auto kokkosGraph = kokkosMatrix.graph;
 
             Kokkos::parallel_for("MueLu:CoalesceDropF:Build:scalar_filter:laplacian_diag", range_type(0,numRows),
@@ -666,7 +666,7 @@ namespace MueLu {
           {
             SubFactoryMonitor m2(*this, "MainLoop", currentLevel);
 
-            auto ghostedLaplDiagView = ghostedLaplDiag->getDeviceLocalView();
+            auto ghostedLaplDiagView = ghostedLaplDiag->getDeviceLocalView(Xpetra::Access::ReadWrite);
 
             CoalesceDrop_Kokkos_Details::DistanceLaplacianDropFunctor<LO, decltype(ghostedLaplDiagView), decltype(distFunctor)>
                 dropFunctor(ghostedLaplDiagView, distFunctor, threshold);
@@ -818,7 +818,7 @@ namespace MueLu {
         if (blkId > -1)
           blkPartSize = Teuchos::as<LocalOrdinal>(strMap->getStridingData()[blkId]);
       }
-      auto kokkosMatrix = A->getLocalMatrix(); // access underlying kokkos data
+      auto kokkosMatrix = A->getLocalMatrixDevice(); // access underlying kokkos data
 
       //
       typedef typename LWGraph_kokkos::local_graph_type   kokkos_graph_type;
