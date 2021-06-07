@@ -53,8 +53,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_DefaultComm.hpp>
 
-#include <type_traits>
-
 namespace {
 
 using DeviceType = Tpetra::Map<>::device_type;
