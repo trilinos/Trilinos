@@ -28,7 +28,7 @@ check_coloring(
 
   Teuchos::RCP<const Teuchos::Comm<int>> comm = graph.getRowMap()->getComm();
   const int rank = comm->getRank();
-  auto local_graph = graph.getLocalGraph();
+  auto local_graph = graph.getLocalGraphDevice();
   const size_t num_rows = graph.getNodeNumRows();
   size_t num_conflict = 0;
 
@@ -119,10 +119,10 @@ compute_transpose_graph(const Tpetra::CrsGraph<LO, GO, NO> &graph)
   using Teuchos::rcp;
 
   typedef Tpetra::CrsGraph<LO, GO, NO> graph_t;
-  typedef typename graph_t::local_graph_type local_graph_t;
+  typedef typename graph_t::local_graph_device_type local_graph_t;
 
   // Transpose local graph
-  local_graph_t local_graph = graph.getLocalGraph();
+  local_graph_t local_graph = graph.getLocalGraphDevice();
   local_graph_t local_trans_graph = 
                    compute_local_transpose_graph(local_graph,
                                                  graph.getNodeNumCols());

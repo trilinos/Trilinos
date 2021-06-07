@@ -88,15 +88,14 @@ int validateColoring(RCP<SparseMatrix> A, int *color)
 // returns 0 if coloring is valid, nonzero if invalid
 {
   int nconflicts = 0;
-  Teuchos::ArrayView<const zlno_t> indices;
-  Teuchos::ArrayView<const zscalar_t> values; // Not used
-
+  typename tcrsMatrix_t::local_inds_host_view_type  indices;
+  typename tcrsMatrix_t::values_host_view_type values;
   // Count conflicts in the graph.
   // Loop over local rows, treat local column indices as edges.
   zlno_t n = A->getNodeNumRows();
   for (zlno_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
-    for (zlno_t j=0; j<indices.size(); j++) {
+    for (zlno_t j=0; j<static_cast<zlno_t>(indices.size()); j++) {
       if ((indices[j]<n) && (indices[j]!=i) && (color[i]==color[indices[j]])){
         nconflicts++;
         //std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
@@ -121,8 +120,8 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
   Import imp = Import(rowMap, colMap);
   C.doImport(R, imp, Tpetra::REPLACE);
 
-  Teuchos::ArrayView<const zlno_t> indices;
-  Teuchos::ArrayView<const zscalar_t> values; // not used
+  typename tcrsMatrix_t::local_inds_host_view_type indices;
+  typename tcrsMatrix_t::values_host_view_type values;
 
   //count conflicts in the graph
   //loop over local rows, treat local column indices as edges
@@ -130,7 +129,7 @@ int validateDistributedColoring(RCP<SparseMatrix> A, int *color){
   auto colorData = C.getData();
   for(size_t i = 0; i < n; i++){
     A->getLocalRowView(i, indices, values);
-    for(Teuchos_Ordinal j = 0; j < indices.size(); j++){
+    for(size_t j = 0; j < indices.size(); j++){
       if(values[j] == 0) continue; //this catches removed entries.
       if( (rowMap->getGlobalElement(i) != colMap->getGlobalElement(indices[j])) && (color[i] == colorData[indices[j]]) ){
         nconflicts++;
@@ -407,18 +406,18 @@ int main(int narg, char** arg)
   std::cout<<"Got row indices, replacing diagonals\n";
   //loop through all rows
   for(size_t i = 0; i < rowInds.size(); i++){
-    Kokkos::View<zgno_t*> idx("idx",1);
-    Kokkos::View<zscalar_t*> val("val",1);
-    idx(0) = rowInds[i];
-    val(0) = 0;
+    typename tcrsMatrix_t::nonconst_global_inds_host_view_type  idx("Idx",1);
+    typename tcrsMatrix_t::nonconst_values_host_view_type val("val",1);
+    Kokkos::deep_copy(idx, rowInds[i]);
+    Kokkos::deep_copy(val, 0.0);
     //get the entries in the current row
     size_t numEntries = Matrix->getNumEntriesInGlobalRow(rowInds[i]);
-    Teuchos::ArrayRCP<zgno_t> inds(numEntries);
-    Teuchos::ArrayRCP<zscalar_t> vals(numEntries);
-    Matrix->getGlobalRowCopy(rowInds[i], inds(), vals(),numEntries);
+    typename tcrsMatrix_t::nonconst_global_inds_host_view_type  inds("Indices", numEntries);
+    typename tcrsMatrix_t::nonconst_values_host_view_type vals("Values", numEntries);
+    Matrix->getGlobalRowCopy(rowInds[i], inds, vals, numEntries);
     //check to see if this row has a diagonal
     bool hasDiagonal = false;
-    for(int j = 0; j < inds.size(); j++){
+    for(size_t j = 0; j < inds.size(); j++){
       if(inds[j] == rowInds[i]) hasDiagonal = true;
     }
     //replace the diagonal if it exists.
