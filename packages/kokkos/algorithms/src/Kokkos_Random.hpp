@@ -512,6 +512,7 @@ struct rand<Generator, long double> {
 };
 #endif
 
+
 template <class Generator>
 struct rand<Generator, Kokkos::complex<float> > {
   KOKKOS_INLINE_FUNCTION
@@ -879,6 +880,7 @@ class Random_XorShift64 {
     return ldrand(end - start) + start;
   }
 #endif
+
   // Marsaglia polar method for drawing a standard normal distributed random
   // number
   KOKKOS_INLINE_FUNCTION
