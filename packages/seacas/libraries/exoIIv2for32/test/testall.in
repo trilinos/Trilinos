@@ -1,5 +1,5 @@
 #! /usr/bin/env bash
-# Copyright(C) 1999-2020 National Technology & Engineering Solutions
+# Copyright(C) 1999-2021 National Technology & Engineering Solutions
 # of Sandia, LLC (NTESS).  Under the terms of Contract DE-NA0003525 with
 # NTESS, the U.S. Government retains certain rights in this software.
 #
@@ -30,6 +30,8 @@ SRCDIR=@CMAKE_CURRENT_SOURCE_DIR@
 NCDUMP=@NETCDF_NCDUMP@
 DIFF="diff -w"
 
+ret_status=0
+
 # testwt - single precision write test
 echo "************************************************************************"
 echo "************************************************************************"
@@ -37,32 +39,40 @@ rm -f test.output
 echo "testwt ..."
 echo "begin testwt" > test.output
 ${PREFIX} ${BINDIR}/f32_testwt${SUFFIX} >> test.output
+ret_status=$((ret_status+$?))
 echo "end testwt" >> test.output
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/test.dmp | tee testwt.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testrd - single precision read test
 echo "testrd ..."
 ${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" |${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 
 # testrdd - double precision read of single precision file
 echo "testrdd ..."
 ${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 
 # testwtd - double precision write test
 echo "testwtd ..."
 echo "begin testwtd" >> test.output
 ${PREFIX} ${BINDIR}/f32_testwtd${SUFFIX} >> test.output
-echo "end testwtd" >> test.output
+ret_status=$((ret_status+$?))
 ${NCDUMP} -d5,5 test.exo | grep -v version | grep -v _FillValue | ${DIFF} - ${SRCDIR}/testd.dmp | tee testwtd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[3]}))
 
 # testrdd - double precision read test
 echo "testrdd ..."
 ${PREFIX} ${BINDIR}/f32_testrdd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrdd.dmp | tee testrdd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 
 # testrd - single precision read of double precision file
 echo "testrd ..."
 ${PREFIX} ${BINDIR}/f32_testrd${SUFFIX} | grep -v version | grep -v _FillValue | grep -v "word size" | ${DIFF} - ${SRCDIR}/testrd.dmp | tee testrd.res
+ret_status=$((ret_status+${PIPESTATUS[0]}+${PIPESTATUS[4]}))
 
 echo "************************************************************************"
 echo "************************************************************************"
 
+exit $ret_status
