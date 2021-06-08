@@ -159,7 +159,7 @@
 #endif
 
 #if defined(__APPLE_CC__)
-#define KOKKOS_COMPILER_APPLECC __APPLE_CC__
+  #define KOKKOS_COMPILER_APPLECC __APPLE_CC__
 #endif
 
 #if defined(__clang__) && !defined(KOKKOS_COMPILER_INTEL) && \
