@@ -31,26 +31,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
+#ifndef STK_BALANCE_MTON_HPP
+#define STK_BALANCE_MTON_HPP
 
-#ifndef STK_MXN_UTILS_H
-#define STK_MXN_UTILS_H
+#include <stk_mesh/base/Field.hpp>
+#include <string>
 
-#include <stk_balance/balanceUtils.hpp>
-#include <vector>
-#include <limits>
-#include <stk_mesh/base/Types.hpp>
-
-namespace stk { namespace mesh { class BulkData; }}
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace io { class StkMeshIoBroker; } }
+namespace stk { namespace balance { class M2NBalanceSettings; } }
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
-std::vector<unsigned> assign_target_subdomains_roundrobin_to_procs(unsigned num_procs_M, unsigned num_procs_N);
-void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings, stk::mesh::EntityProcVec &decomp);
-stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings);
+bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker,
+                   const stk::balance::M2NBalanceSettings & balanceSettings,
+                   int numSteps = -1,
+                   double timeStep = 0.0);
 
 }}}
 
 #endif
-

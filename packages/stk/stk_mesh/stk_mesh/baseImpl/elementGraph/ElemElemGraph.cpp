@@ -137,21 +137,21 @@ void ElemElemGraph::fill_from_mesh()
     GraphInfo graphInfo(m_graph, m_parallelInfoForGraphEdges, m_element_topologies);
     remove_graph_edges_blocked_by_shell(graphInfo);
 
-    update_number_of_parallel_edges();
     m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
-void ElemElemGraph::update_number_of_parallel_edges()
+size_t ElemElemGraph::num_parallel_edges() const
 {
-  m_num_parallel_edges = 0;
+  size_t numParallelEdges = 0;
   for (size_t i = 0; i < m_graph.get_num_elements_in_graph(); ++i) {
     const GraphEdgesForElement& graphEdges = m_graph.get_edges_for_element(i);
     for (const GraphEdge& graphEdge : graphEdges) {
       if (!graphEdge.is_elem2_local()) {
-        ++m_num_parallel_edges;
+        ++numParallelEdges;
       }
     }
   }
+  return numParallelEdges;
 }
 
 ElemElemGraph::~ElemElemGraph() {}
@@ -243,7 +243,6 @@ int ElemElemGraph::size_data_members()
 
     m_idMapper.initialize(m_bulk_data);
 
-    m_num_parallel_edges = 0;
     return numElems;
 }
 
@@ -253,7 +252,6 @@ void ElemElemGraph::clear_data_members()
     m_idMapper.clear();
     m_element_topologies.clear();
     m_any_shell_elements_exist = false;
-    m_num_parallel_edges = 0;
     m_parallelInfoForGraphEdges.clear();
     m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
     m_deleted_element_local_id_pool.clear();
@@ -1296,7 +1294,6 @@ void ElemElemGraph::delete_elements(const stk::mesh::impl::DeletedElementInfoVec
         reconnect_volume_elements_across_deleted_shells(shellConnectivityList);
     }
 
-    update_number_of_parallel_edges();
     m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
@@ -1454,7 +1451,6 @@ void ElemElemGraph::add_elements(const stk::mesh::EntityVector &allUnfilteredEle
         unpack_remote_edge_across_shell(comm);
     }
 
-    update_number_of_parallel_edges();
     m_modCycleWhenGraphModified = m_bulk_data.synchronized_count();
 }
 
