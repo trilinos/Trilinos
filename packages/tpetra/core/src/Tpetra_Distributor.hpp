@@ -95,6 +95,12 @@ namespace Tpetra {
     std::string
     DistributorHowInitializedEnumToString (EDistributorHowInitialized how);
 
+    class DistributorPlan {
+    };
+
+    class DistributorActor {
+    };
+
   } // namespace Details
 
   /// \brief Valid values for Distributor's "Send type" parameter.
@@ -790,6 +796,9 @@ namespace Tpetra {
     //@}
 
   private:
+    Details::DistributorPlan plan_;
+    Details::DistributorActor actor_;
+
     //! The communicator over which to perform distributions.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
@@ -1555,28 +1564,6 @@ namespace Tpetra {
     const Details::EDistributorSendType sendType = sendType_;
     const bool doBarrier = barrierBetween_;
 
-// #ifdef HAVE_TEUCHOS_DEBUG
-//     // Prepare for verbose output, if applicable.
-//     Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel ();
-//     Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream ();
-//     const bool doPrint = out.get () && (comm_->getRank () == 0) &&
-//       includesVerbLevel (verbLevel, Teuchos::VERB_EXTREME, true);
-
-//     if (doPrint) {
-//       // Only need one process to print out parameters.
-//       *out << "Distributor::doPosts (4 args)" << endl;
-//     }
-//     // Add one tab level.  We declare this outside the doPrint scopes
-//     // so that the tab persists until the end of this method.
-//     if (doPrint) {
-//       *out << "Parameters:" << endl;
-//       {
-//         *out << "sendType: " << DistributorSendTypeEnumToString (sendType)
-//              << endl << "barrierBetween: " << doBarrier << endl;
-//       }
-//     }
-// #endif // HAVE_TEUCHOS_DEBUG
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       sendType == Details::DISTRIBUTOR_RSEND && ! doBarrier,
       std::logic_error,
@@ -2149,53 +2136,6 @@ namespace Tpetra {
       "Please report this bug to the Tpetra developers.");
 
     size_t selfReceiveOffset = 0;
-
-    // mfh 30 Mar 2016: See Github Issue #227 to see why we need to
-    // check whether we're doing reverse mode before checking the
-    // length of the imports array.
-    if (false /* howInitialized_ != Details::DISTRIBUTOR_INITIALIZED_BY_REVERSE */) {
-      // Each message has the same number of packets.
-      const size_t totalNumImportPackets = totalReceiveLength_ * numPackets;
-
-      if (verbose_) {
-        std::ostringstream os;
-        os << *prefix << "totalNumImportPackets = " <<
-          totalNumImportPackets << " = " << totalReceiveLength_ << " * " <<
-          numPackets << "; imports.extent(0) = " << imports.extent (0)
-           << endl;
-        std::cerr << os.str();
-      }
-
-#ifdef HAVE_TPETRA_DEBUG
-      // mfh 31 Mar 2016: Extra special all-reduce check to help diagnose #227.
-      {
-        const size_t importBufSize = static_cast<size_t> (imports.extent (0));
-        const int lclBad = (importBufSize < totalNumImportPackets) ? 1 : 0;
-        int gblBad = 0;
-        using Teuchos::reduceAll;
-        using Teuchos::REDUCE_MAX;
-        using Teuchos::outArg;
-        reduceAll (*comm_, REDUCE_MAX, lclBad, outArg (gblBad));
-        TEUCHOS_TEST_FOR_EXCEPTION
-          (gblBad != 0,
-           std::runtime_error,
-           "Tpetra::Distributor::doPosts(3 args, Kokkos): "
-           "On one or more MPI processes, the 'imports' array "
-           "does not have enough entries to hold the expected number of "
-           "import packets.  ");
-      }
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION
-        (static_cast<size_t> (imports.extent (0)) < totalNumImportPackets,
-         std::runtime_error,
-         "Tpetra::Distributor::doPosts(3 args, Kokkos): The 'imports' "
-         "array must have enough entries to hold the expected number of import "
-         "packets.  imports.extent(0) = " << imports.extent (0) << " < "
-         "totalNumImportPackets = " << totalNumImportPackets << " = "
-         "totalReceiveLength_ (" << totalReceiveLength_ << ") * numPackets ("
-         << numPackets << ").");
-#endif // HAVE_TPETRA_DEBUG
-    }
 
     // MPI tag for nonblocking receives and blocking sends in this
     // method.  Some processes might take the "fast" path
