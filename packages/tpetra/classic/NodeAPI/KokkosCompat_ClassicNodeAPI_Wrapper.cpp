@@ -40,6 +40,14 @@ namespace Kokkos {
     }
 #endif // KOKKOS_ENABLE_HIP
 
+#ifdef KOKKOS_ENABLE_SYCL
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>::name() {
+      return std::string("SYCL/Wrapper");
+    }
+#endif // KOKKOS_ENABLE_SYCL
+
+
   } // namespace Compat
 } // namespace Kokkos
 

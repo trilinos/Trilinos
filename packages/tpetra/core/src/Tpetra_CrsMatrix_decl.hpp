@@ -437,6 +437,8 @@ namespace Tpetra {
     using device_type = typename Node::device_type;
     //! The Kokkos execution space.
     using execution_space = typename device_type::execution_space;
+    //! The Kokkos memory space.
+    using memory_space = typename device_type::memory_space;
 
     /// \brief This class' Kokkos Node type.
     ///

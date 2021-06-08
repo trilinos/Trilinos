@@ -33,7 +33,12 @@ ENDIF ()
 # objects for CUDA.  See Trilinos GitHub issue #1939.
 
 ASSERT_DEFINED(TPL_ENABLE_CUDA)
+
+ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
+ASSERT_DEFINED(Kokkos_ENABLE_PTHREAD)
+ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
 ASSERT_DEFINED(Kokkos_ENABLE_CUDA)
+ASSERT_DEFINED(Kokkos_ENABLE_SYCL)
 
 IF (TPL_ENABLE_CUDA AND Kokkos_ENABLE_CUDA)
   SET (Tpetra_ENABLE_CUDA_DEFAULT ON)
@@ -362,10 +367,7 @@ GLOBAL_SET(HAVE_TPETRA_INST_SERIAL_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_PTHREAD_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_OPENMP_DEFAULT OFF)
 GLOBAL_SET(HAVE_TPETRA_INST_CUDA_DEFAULT OFF)
-
-ASSERT_DEFINED(Kokkos_ENABLE_OPENMP)
-ASSERT_DEFINED(Kokkos_ENABLE_PTHREAD)
-ASSERT_DEFINED(Kokkos_ENABLE_SERIAL)
+GLOBAL_SET(HAVE_TPETRA_INST_SYCL_DEFAULT OFF)
 
 # We already have a separate Tpetra_ENABLE_CUDA option that we defined
 # above, so we don't have to check Kokkos_ENABLE_CUDA here.
@@ -509,7 +511,7 @@ ELSE () # NOT Tpetra_INST_CUDA
 ENDIF () # Tpetra_INST_CUDA
 
 # Kokkos::HIP (Kokkos::Compat::KokkosHIPWrapperNode)
-GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT off)
+GLOBAL_SET(HAVE_TPETRA_INST_HIP_DEFAULT OFF)
 TRIBITS_ADD_OPTION_AND_DEFINE(
   Tpetra_INST_HIP
   HAVE_TPETRA_INST_HIP
@@ -529,6 +531,28 @@ ELSE () # NOT Tpetra_INST_HIP
     MESSAGE(STATUS "NOTE: Kokkos::HIP is ON (the CMake option Kokkos_ENABLE_HIP is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::HIP in Tpetra, please also set the CMake option Tpetra_INST_HIP:BOOL=ON.  If you use the Kokkos::HIP version of Tpetra without doing this, you will get link errors!")
   ENDIF ()
 ENDIF () # Tpetra_INST_HIP
+
+# Kokkos::SYCL (Kokkos::Compat::KokkosSYCLWrapperNode)
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Tpetra_INST_SYCL
+  HAVE_TPETRA_INST_SYCL
+  "Instantiate and/or test Tpetra classes over Node = Kokkos::Compat::KokkosSYCLWrapperNode.  If ETI is OFF, enable tests for that Node type.  This option is ${HAVE_TPETRA_INST_SYCL_DEFAULT} by default."
+  ${HAVE_TPETRA_INST_SYCL_DEFAULT}
+  )
+GLOBAL_SET(HAVE_TPETRA_SYCL ${Tpetra_INST_SYCL})
+IF (Tpetra_INST_SYCL)
+  IF (NOT Kokkos_ENABLE_SYCL)
+    MESSAGE(FATAL_ERROR "Tpetra: The Kokkos::SYCL execution space is disabled, but you enabled the corresponding Tpetra Node type by setting Tpetra_INST_SYCL=ON.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, you must enable the Kokkos::SYCL execution space by setting Kokkos_ENABLE_SYCL=ON.")
+  ENDIF ()
+ELSE () # NOT Tpetra_INST_SYCL
+  IF (HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
+    MESSAGE(FATAL_ERROR "Tpetra: Node = Kokkos::Compat::KokkosSYCLWrapperNode is disabled (since Tpetra_INST_SYCL=OFF), but you set it as the default Node type.  Try setting the CMake options Kokkos_ENABLE_SYCL:BOOL=ON and Tpetra_INST_SYCL:BOOL=ON.  If you are building with a SYCL-capable compiler and Kokkos can detect that, then you are unlikely to see this message, since both Kokkos and Tpetra enable SYCL support by default in that case.")
+  ENDIF()
+  IF (Kokkos_ENABLE_SYCL)
+    MESSAGE(STATUS "NOTE: Kokkos::SYCL is ON (the CMake option Kokkos_ENABLE_SYCL is ON), but the corresponding Tpetra Node type is disabled.  If you want to enable instantiation and use of Kokkos::SYCL in Tpetra, please also set the CMake option Tpetra_INST_SYCL:BOOL=ON.  If you use the Kokkos::SYCL version of Tpetra without doing this, you will get link errors!")
+  ENDIF ()
+ENDIF () # Tpetra_INST_SYCL
+
 #
 # Check that users did not attempt to enable both the OpenMP and
 # Pthreads back-ends.
@@ -567,6 +591,13 @@ IF(Tpetra_INST_HIP)
   LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace>")
   LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosHIPWrapperNode")
 ENDIF()
+IF(Tpetra_INST_SYCL)
+  # TpetraCore currently requires UVM, so it doesn't make sense to
+  # instantiate over Kokkos::SYCLDeviceUSMSpace as well as
+  # Kokkos::SYCLSharedUSMSpace.
+  LIST(APPEND ${PACKAGE_NAME}_ETI_DEVICES "Kokkos::Device<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace>")
+  LIST(APPEND ${PACKAGE_NAME}_ETI_NODES "Kokkos::Compat::KokkosSYCLWrapperNode")
+ENDIF()
 
 # Tell users what Nodes are enabled.
 MESSAGE(STATUS "Tpetra execution space availability (ON means available): ")
@@ -575,11 +606,12 @@ MESSAGE(STATUS "  - Threads: ${HAVE_TPETRA_PTHREAD}")
 MESSAGE(STATUS "  - OpenMP:  ${HAVE_TPETRA_OPENMP}")
 MESSAGE(STATUS "  - Cuda:    ${HAVE_TPETRA_CUDA}")
 MESSAGE(STATUS "  - HIP:     ${HAVE_TPETRA_HIP}")
+MESSAGE(STATUS "  - SYCL:    ${HAVE_TPETRA_SYCL}")
 
 # Fix Github Issue #190 by making sure that users enabled at least one
 # Node type.
-IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP)
-  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_PTHREAD, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, or Tpetra_INST_CUDA.")
+IF(NOT Tpetra_INST_SERIAL AND NOT Tpetra_INST_PTHREAD AND NOT Tpetra_INST_OPENMP AND NOT Tpetra_INST_CUDA AND NOT Tpetra_INST_HIP AND NOT Tpetra_INST_SYCL)
+  MESSAGE(FATAL_ERROR "It appears that you have disabled all of Tpetra's Node types.  This is a bad idea; please don't do this.  This may have happened either if all Kokkos execution spaces got disabled, or if you explicitly disabled some Tpetra Node types.  To fix this, look in your CMake configuration to see if you set any of the following variables to OFF explicitly:  Kokkos_ENABLE_SYCL, Kokkos_ENABLE_HIP, Kokkos_ENABLE_CUDA, Kokkos_ENABLE_OPENMP, Kokkos_ENABLE_SERIAL, Kokkos_ENABLE_PTHREAD, Tpetra_INST_SERIAL, Tpetra_INST_PTHREAD, Tpetra_INST_OPENMP, Tpetra_INST_HIP, Tpetra_INST_SYCL or Tpetra_INST_CUDA.")
 ENDIF()
 
 # ============================================================

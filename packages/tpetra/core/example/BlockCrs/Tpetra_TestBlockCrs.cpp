@@ -238,7 +238,7 @@ int main (int argc, char *argv[])
     // uses a different device. An easy check is device configuration for
     // 4 mpi nodes as the typical number of GPUs per node is 4.
     if (commTest->getRank () < 4) {
-      exec_space::print_configuration (std::cout, false);
+      exec_space{}.print_configuration (std::cout, false);
     }
 
     if (debug) {
@@ -281,7 +281,8 @@ int main (int argc, char *argv[])
       // - all internal views are allocated on device; mirror as mesh database is constructed on host
       const auto mesh_gids_host = mesh.getElementGlobalIDs();
       const auto mesh_gids =
-        Kokkos::create_mirror_view_and_copy (typename exec_space::memory_space(), mesh_gids_host);
+        Kokkos::create_mirror_view_and_copy (typename map_type::node_type::memory_space{},
+                                             mesh_gids_host);
 
       // for convenience, separate the access to owned and remote gids
       const auto owned_gids =
@@ -477,7 +478,7 @@ int main (int argc, char *argv[])
       {
         TimeMonitor timerMultiVectorFill(*TimeMonitor::getNewTimer("4) MultiVectorFill"));
 
-        auto value = X->getLocalView<typename exec_space::memory_space>(Tpetra::Access::OverwriteAll);
+        auto value = X->getLocalViewDevice(Tpetra::Access::OverwriteAll);
         auto map = X->getMap()->getLocalMap();
         Kokkos::parallel_for
           (value.extent(0), KOKKOS_LAMBDA(const LO i) {

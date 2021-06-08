@@ -49,6 +49,10 @@ public:
   static std::string name ();
 };
 
+#ifdef KOKKOS_ENABLE_SYCL
+  typedef KokkosDeviceWrapperNode<Kokkos::Experimental::SYCL, Kokkos::Experimental::SYCLSharedUSMSpace> KokkosSYCLWrapperNode;
+#endif
+
 #ifdef KOKKOS_ENABLE_HIP
   typedef KokkosDeviceWrapperNode<Kokkos::Experimental::HIP, Kokkos::Experimental::HIPHostPinnedSpace> KokkosHIPWrapperNode;
 #endif

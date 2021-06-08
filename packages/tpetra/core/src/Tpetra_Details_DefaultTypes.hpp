@@ -87,7 +87,10 @@ namespace DefaultTypes {
 
   /// \typedef execution_space
   /// \brief Default Tpetra execution space and Node type.
-#if defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
+#if defined(HAVE_TPETRA_DEFAULTNODE_SYCLWRAPPERNODE)
+  using execution_space = ::Kokkos::Experimental::SYCL;
+  using node_type = ::Kokkos::Compat::KokkosSYCLWrapperNode;
+#elif defined(HAVE_TPETRA_DEFAULTNODE_HIPWRAPPERNODE)
   using execution_space = ::Kokkos::Experimental::HIP;
   using node_type = ::Kokkos::Compat::KokkosHIPWrapperNode;
 #elif defined(HAVE_TPETRA_DEFAULTNODE_CUDAWRAPPERNODE)
@@ -129,6 +132,14 @@ namespace DefaultTypes {
   struct CommBufferMemorySpace<Kokkos::Experimental::HIPHostPinnedSpace>
   {
     using type = Kokkos::Experimental::HIPHostPinnedSpace;
+  };
+#endif
+
+#ifdef KOKKOS_ENABLE_SYCL
+  template<>
+  struct CommBufferMemorySpace<Kokkos::Experimental::SYCL>
+  {
+    using type = Kokkos::Experimental::SYCLDeviceUSMSpace;
   };
 #endif
 
