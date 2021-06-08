@@ -5020,7 +5020,6 @@ namespace Tpetra {
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
     using this_type = CrsGraph<LO, GO, node_type>;
-    using row_graph_type = RowGraph<LO, GO, node_type>;
     const char tfecfFuncName[] = "copyAndPermute: ";
     const bool verbose = verbose_;
 
@@ -5698,8 +5697,6 @@ namespace Tpetra {
     using std::endl;
     using crs_graph_type =
       CrsGraph<local_ordinal_type, global_ordinal_type, node_type>;
-    using row_graph_type =
-      RowGraph<local_ordinal_type, global_ordinal_type, node_type>;
     const char tfecfFuncName[] = "packAndPrepare: ";
     ProfilingRegion region_papn ("Tpetra::CrsGraph::packAndPrepare");
 
