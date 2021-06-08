@@ -248,7 +248,7 @@ namespace MueLu {
 
       RCP<const Teuchos::Comm<int> > comm = A->getRowMap()->getComm();
       Teuchos::reduceAll(*comm, Teuchos::REDUCE_SUM, 3, l_counts, g_counts);
-      GetOStream(Statistics1) << "ClassicalMapFactory: C/F/D = "<<g_counts[0]<<"/"<<g_counts[1]<<"/"<<g_counts[2]<<std::endl;
+      GetOStream(Statistics1) << "ClassicalMapFactory("<<coloringAlgo<<"): C/F/D = "<<g_counts[0]<<"/"<<g_counts[1]<<"/"<<g_counts[2]<<std::endl;
     }
 
 

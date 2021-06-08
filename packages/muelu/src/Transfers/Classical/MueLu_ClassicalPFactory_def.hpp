@@ -71,8 +71,8 @@
 #include "MueLu_GraphBase.hpp"
 
 
-//#define CMS_DEBUG
-//#define CMS_DUMP
+#define CMS_DEBUG
+#define CMS_DUMP
 
 namespace { 
 
@@ -578,40 +578,54 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
             first_denominator += a_ik;
 #ifdef CMS_DEBUG
             a_ii = a_ik;
+            printf("- A(%d,%d) is the diagonal\n",i,k);
 #endif
+
           }
           else if(myPointType[k] == DIRICHLET_PT) {
             // Case B: Ignore dirichlet connections completely
+#ifdef CMS_DEBUG
+            printf("- A(%d,%d) is a Dirichlet point\n",i,k);
+#endif
             
           }
           else if(pcol_k != LO_INVALID && pcol_k >= (LO)P_rowptr[i]) {
             // Case C: a_ik is strong C-Point (goes directly into the weight)
             P_values[pcol_k] += a_ik;
+#ifdef CMS_DEBUG
+            printf("- A(%d,%d) is a strong C-Point\n",i,k);
+#endif
           }
           else if (!edgeIsStrong[row_start + k0]) {
             // Case D: Weak non-Dirichlet neighbor (add to first denominator)
             first_denominator += a_ik;
+#ifdef CMS_DEBUG
+            printf("- A(%d,%d) is weak\n",i,k);
+#endif
             
           }
           else {//Case E
             // Case E: Strong F-Point (adds to the first denominator if we don't share a
             // a strong C-Point with i; adds to the second denominator otherwise)
+#ifdef CMS_DEBUG
+            printf("- A(%d,%d) is a strong F-Point\n",i,k);
+#endif
 
             // Do I share a strong C-Point?  If so, I'm not in fis_star
             bool in_fis_star = true;
             if(k < (LO)Nrows) {
               ArrayView<const LO> P_indices_k  = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
-              for(LO m0=0; m0<(LO)P_indices_k.size() && !in_fis_star; m0++) {
+              for(LO m0=0; m0<(LO)P_indices_k.size() && in_fis_star; m0++) {
                 LO m = P_indices_k[m0]; //P's LCID                
                 LO pcol_m = Acol_to_Pcol[pcol2cpoint[m]];// A's LCID
-                if(pcol_k != LO_INVALID && pcol_k >= (LO) P_rowptr[i]) 
+                if(pcol_m != LO_INVALID && pcol_m >= (LO) P_rowptr[i]) 
                   in_fis_star = false;
               }//end for P_indices_k
             }//end if k < Nrows
             else{ 
               LO kless = k-(LO)Nrows;
               ArrayView<const LO> P_indices_k  = Pghost_colind.view(Pghost_rowptr[kless],Pghost_rowptr[kless+1] - Pghost_rowptr[kless]);
-              for(LO m0=0; m0<(LO)P_indices_k.size() && !in_fis_star; m0++) {
+              for(LO m0=0; m0<(LO)P_indices_k.size() && in_fis_star; m0++) {
                 LO mghost = P_indices_k[m0]; // Pghost's LCID
                 LO m = Pghostcol_to_Pcol[mghost]; // P's LCID
                 if(m != LO_INVALID && Acol_to_Pcol[pcol2cpoint[m]] >= (LO)P_rowptr[i]) 
@@ -621,10 +635,16 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
             
             if(in_fis_star) {
               // If we're in fis_star we add to the first denominator
+#ifdef CMS_DEBUG
+              printf("- - Is in fis_star\n");
+#endif
               first_denominator += a_ik;
             }
             else {
               // If we're not in fis_star, then we contribute to the second term
+#ifdef CMS_DEBUG
+              printf("- - Is NOT in fis_star\n");
+#endif
               SC a_kk = SC_ZERO;              
               SC second_denominator = SC_ZERO;
               int sign_akk = 0;
@@ -664,6 +684,10 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                     }                 
                   }//end for A_indices_k
                 }//end if second_denominator != 0
+                else {
+                  first_denominator += a_ik;
+                }//end else second_denominator != 0
+
               }//end if k < Nrows
               else {
                 // Ghost row
@@ -707,7 +731,11 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                       P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
                     }
                   }//end for A_indices_k
-                }//end if secon_denominator != 0
+                }//end if second_denominator != 0
+                else {
+                  first_denominator += a_ik;
+                }//end else second_denominator != 0
+
               }// end else k<Nrows
             }//end else is_fis_star
 
@@ -722,7 +750,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
 #ifdef CMS_DEBUG
             SC old_pij = P_vals_i[j0];
             P_vals_i[j0] /= -first_denominator;
-            fprintf('P(%d,%d) = %6.4e = %6.4e / (%6.4e + %6.4e) \n',i,P_indices_i[j0],P_vals_i[j],old_pij,a_ii,first_denominator - a_ii);
+            printf("P(%d,%d) = %6.4e = %6.4e / (%6.4e + %6.4e)\n",i,P_indices_i[j0],P_vals_i[j0],old_pij,a_ii,first_denominator - a_ii);
 #else
             P_vals_i[j0] /= -first_denominator;
 #endif
