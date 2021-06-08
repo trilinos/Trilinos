@@ -59,7 +59,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
@@ -738,7 +737,6 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP,true>::solve() {
   // Set the current parameters if are not set already.
   if (!isSet_) { setParameters( params_ ); }
 
-  Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();

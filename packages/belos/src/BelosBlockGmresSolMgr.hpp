@@ -63,7 +63,6 @@
 #include "BelosStatusTestOutput.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -888,8 +887,6 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   if (!isSet_) {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
-
-  Teuchos::BLAS<int,ScalarType> blas;
 
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null,BlockGmresSolMgrLinearProblemFailure,
     "Belos::BlockGmresSolMgr::solve(): Linear problem is not a valid object.");
