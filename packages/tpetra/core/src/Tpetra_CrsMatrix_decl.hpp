@@ -3792,9 +3792,9 @@ public:
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    size_t
-    mergeRowIndicesAndValues (crs_graph_type& graph,
-                              const RowInfo& rowInfo);
+    /// \return The new row length, after merging.
+    static size_t
+    mergeRowIndicesAndValues (size_t rowLen, local_ordinal_type* cols, impl_scalar_type* vals);
 
     /// \brief Sort and merge duplicate local column indices in all
     ///   rows on the calling process, along with their corresponding
