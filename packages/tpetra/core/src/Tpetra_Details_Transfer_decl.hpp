@@ -201,6 +201,13 @@ public:
   /// Maps in the way that you expect.
   bool isLocallyComplete () const;
 
+
+  void detectRemoteExportLIDsContiguous() const;
+
+  bool areRemoteLIDsContiguous() const;
+
+  bool areExportLIDsContiguous() const;
+
   /// \brief Describe this object in a human-readable way to the given
   ///   output stream.
   ///
