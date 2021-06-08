@@ -1,0 +1,4 @@
+# Turn off tests for Issue #8759
+ATDM_SET_ENABLE(TeuchosComm_UnitTestHarness_Parallel_UnitTests_MPI_2_DISABLE ON)
+ATDM_SET_ENABLE(TeuchosComm_UnitTestHarness_Parallel_UnitTests_MPI_4_DISABLE ON)
+
