@@ -611,135 +611,95 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
             printf("- A(%d,%d) is a strong F-Point\n",i,k);
 #endif
 
-            // Do I share a strong C-Point?  If so, I'm not in fis_star
-            bool in_fis_star = true;
-            if(k < (LO)Nrows) {
-              ArrayView<const LO> P_indices_k  = P_colind.view(P_rowptr[k],P_rowptr[k+1] - P_rowptr[k]);
-              for(LO m0=0; m0<(LO)P_indices_k.size() && in_fis_star; m0++) {
-                LO m = P_indices_k[m0]; //P's LCID                
-                LO pcol_m = Acol_to_Pcol[pcol2cpoint[m]];// A's LCID
-                if(pcol_m != LO_INVALID && pcol_m >= (LO) P_rowptr[i]) 
-                  in_fis_star = false;
-              }//end for P_indices_k
-            }//end if k < Nrows
-            else{ 
-              LO kless = k-(LO)Nrows;
-              ArrayView<const LO> P_indices_k  = Pghost_colind.view(Pghost_rowptr[kless],Pghost_rowptr[kless+1] - Pghost_rowptr[kless]);
-              for(LO m0=0; m0<(LO)P_indices_k.size() && in_fis_star; m0++) {
-                LO mghost = P_indices_k[m0]; // Pghost's LCID
-                LO m = Pghostcol_to_Pcol[mghost]; // P's LCID
-                if(m != LO_INVALID && Acol_to_Pcol[pcol2cpoint[m]] >= (LO)P_rowptr[i]) 
-                  in_fis_star = false;                 
-              }//end for P_indices_k
-            }//end else Nrows
+            SC a_kk = SC_ZERO;              
+            SC second_denominator = SC_ZERO;
+            int sign_akk = 0;
             
-            if(in_fis_star) {
-              // If we're in fis_star we add to the first denominator
-#ifdef CMS_DEBUG
-              printf("- - Is in fis_star\n");
-#endif
-              first_denominator += a_ik;
-            }
-            else {
-              // If we're not in fis_star, then we contribute to the second term
-#ifdef CMS_DEBUG
-              printf("- - Is NOT in fis_star\n");
-#endif
-              SC a_kk = SC_ZERO;              
-              SC second_denominator = SC_ZERO;
-              int sign_akk = 0;
+            if(k < (LO)Nrows) {
+              // Grab the diagonal a_kk 
+              A.getLocalRowView(k, A_indices_k, A_vals_k);
+              for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                LO m    = A_indices_k[m0];
+                if(k == m) {
+                  a_kk = A_vals_k[m0];
+                  break;
+                }               
+              }//end for A_indices_k
+              
+              // Compute the second denominator term
+              sign_akk = Sign(a_kk);
+              for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                LO m    = A_indices_k[m0];
+                if(m != k && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
+                  SC a_km = A_vals_k[m0];
+                  second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
+                }
+              }//end for A_indices_k
 
-              if(k < (LO) Nrows) {
-                // On rank row
-                // Grab the diagonal a_kk
-                A.getLocalRowView(k, A_indices_k, A_vals_k);
-                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
-                  LO m    = A_indices_k[m0];
-                  if(k == m) {
-                    a_kk = A_vals_k[m0];
-                    break;
-                  }
-                }                
-                
-                // Compute the second denominator term
-                sign_akk = Sign(a_kk);
-                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
-                  LO m    = A_indices_k[m0];
-                  if(m != k && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
-                    SC a_km = A_vals_k[m0];
-                    second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
-                  }
+              // Now we have the second denominator, for this particular strong F point.  
+              // So we can now add the sum to the w_ij components for the P values 
+              if(second_denominator != SC_ZERO) {
+                for(LO j0=0; j0<(LO)A_indices_k.size(); j0++) {
+                  LO j    = A_indices_k[j0];            
+                  // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
+                  if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
+                    SC a_kj = A_vals_k[j0];
+                    SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
+                    P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
+                  }                 
                 }//end for A_indices_k
-                
-                // Now we have the second denominator, for this particular strong F point.  
-                // So we can now add the sum to the w_ij components for the P values 
-                if(second_denominator != SC_ZERO) {
-                  for(LO j0=0; j0<(LO)A_indices_k.size(); j0++) {
-                    LO j    = A_indices_k[j0];            
-                    // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
-                    if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
-                      SC a_kj = A_vals_k[j0];
-                      SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
-                      P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
-                    }                 
-                  }//end for A_indices_k
-                }//end if second_denominator != 0
-                else {
-                  first_denominator += a_ik;
-                }//end else second_denominator != 0
-
-              }//end if k < Nrows
+              }//end if second_denominator != 0
               else {
-                // Ghost row
-                LO kless = k-Nrows;
-                // Grab the diagonal a_kk
-                // NOTE: ColMap is not locally fitted to the RowMap
-                // so we need to check GIDs here
-                Aghost->getLocalRowView(kless, A_indices_k, A_vals_k);
-                GO k_g = Aghost->getRowMap()->getGlobalElement(kless);                
-                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
-                  GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
-                  if(k_g == m_g) {
-                    a_kk = A_vals_k[m0];
-                    break;
+                first_denominator += a_ik;
+              }//end else second_denominator != 0
+            }// end if k < Nrows
+            else {
+              // Ghost row
+              LO kless = k-Nrows;
+              // Grab the diagonal a_kk
+              // NOTE: ColMap is not locally fitted to the RowMap
+              // so we need to check GIDs here
+              Aghost->getLocalRowView(kless, A_indices_k, A_vals_k);
+              GO k_g = Aghost->getRowMap()->getGlobalElement(kless);                
+              for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
+                if(k_g == m_g) {
+                  a_kk = A_vals_k[m0];
+                  break;
+                }
+              }//end for A_indices_k
+
+              // Compute the second denominator term
+              sign_akk = Sign(a_kk);
+              for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
+                GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
+                LO mghost = A_indices_k[m0];//Aghost LCID
+                LO m = Aghostcol_to_Acol[mghost]; //A's LID (could be LO_INVALID)
+                if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
+                  SC a_km = A_vals_k[m0];
+                  second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
+                }
+              }//end for A_indices_k
+              
+              
+              // Now we have the second denominator, for this particular strong F point.  
+              // So we can now add the sum to the w_ij components for the P values 
+              if(second_denominator != SC_ZERO) {
+                for(LO j0=0; j0<(LO)A_indices_k.size(); j0++){
+                  LO jghost = A_indices_k[j0];//Aghost LCID
+                  LO j = Aghostcol_to_Acol[jghost]; //A's LID (could be LO_INVALID)
+                  // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
+                  if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
+                    SC a_kj = A_vals_k[j0];
+                    SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
+                    P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
                   }
                 }//end for A_indices_k
-
-                // Compute the second denominator term
-                sign_akk = Sign(a_kk);
-                for(LO m0=0; m0<(LO)A_indices_k.size(); m0++){
-                  GO m_g    = Aghost->getColMap()->getGlobalElement(A_indices_k[m0]);
-                  LO mghost = A_indices_k[m0];//Aghost LCID
-                  LO m = Aghostcol_to_Acol[mghost]; //A's LID (could be LO_INVALID)
-                  if(m_g != k_g && m != LO_INVALID && Acol_to_Pcol[A_indices_k[m0]] >=  (LO)P_rowptr[i]) {
-                    SC a_km = A_vals_k[m0];
-                    second_denominator+= (Sign(a_km) == sign_akk ? SC_ZERO : a_km);
-                  }
-                }//end for A_indices_k
-
-
-                // Now we have the second denominator, for this particular strong F point.  
-                // So we can now add the sum to the w_ij components for the P values 
-                if(second_denominator != SC_ZERO) {
-                  for(LO j0=0; j0<(LO)A_indices_k.size(); j0++){
-                    LO jghost = A_indices_k[j0];//Aghost LCID
-                    LO j = Aghostcol_to_Acol[jghost]; //A's LID (could be LO_INVALID)
-                    // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
-                    if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
-                      SC a_kj = A_vals_k[j0];
-                      SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
-                      P_values[Acol_to_Pcol[j]] += a_ik * sign_akj_val / second_denominator;
-                    }
-                  }//end for A_indices_k
-                }//end if second_denominator != 0
-                else {
-                  first_denominator += a_ik;
-                }//end else second_denominator != 0
-
-              }// end else k<Nrows
-            }//end else is_fis_star
-
-
+              }//end if second_denominator != 0
+              else {
+                first_denominator += a_ik;
+              }//end else second_denominator != 0                           
+            }//end else k < Nrows
           }//end else Case A,...,E
                            
         }//end for A_indices_i
