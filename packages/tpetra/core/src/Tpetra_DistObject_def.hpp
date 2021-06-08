@@ -293,8 +293,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doImportPost(source, importer, CM, restrictedMode);
-    this->doImportWait(source, importer, CM, restrictedMode);
+    this->beginImport(source, importer, CM, restrictedMode);
+    this->endImport(source, importer, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -325,8 +325,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doExportPost(source, exporter, CM, restrictedMode);
-    this->doExportWait(source, exporter, CM, restrictedMode);
+    this->beginExport(source, exporter, CM, restrictedMode);
+    this->endExport(source, exporter, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -357,8 +357,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doImportPost(source, exporter, CM, restrictedMode);
-    this->doImportWait(source, exporter, CM, restrictedMode);
+    this->beginImport(source, exporter, CM, restrictedMode);
+    this->endImport(source, exporter, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -389,8 +389,8 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doExportPost(source, importer, CM, restrictedMode);
-    this->doExportWait(source, importer, CM, restrictedMode);
+    this->beginExport(source, importer, CM, restrictedMode);
+    this->endExport(source, importer, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -401,10 +401,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doImportPost(const SrcDistObject& source,
-               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-               const CombineMode CM,
-               const bool restrictedMode)
+  beginImport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -421,7 +421,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferPost(source, importer, modeString, DoForward, CM, restrictedMode);
+    this->beginTransfer(source, importer, modeString, DoForward, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -432,10 +432,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doExportPost(const SrcDistObject& source,
-               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-               const CombineMode CM,
-               const bool restrictedMode)
+  beginExport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -452,7 +452,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferPost(source, exporter, modeString, DoForward, CM, restrictedMode);
+    this->beginTransfer(source, exporter, modeString, DoForward, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -463,10 +463,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doImportPost(const SrcDistObject& source,
-               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-               const CombineMode CM,
-               const bool restrictedMode)
+  beginImport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -483,7 +483,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferPost(source, exporter, modeString, DoReverse, CM, restrictedMode);
+    this->beginTransfer(source, exporter, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -494,10 +494,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doExportPost(const SrcDistObject& source,
-               const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
-               const CombineMode CM,
-               const bool restrictedMode)
+  beginExport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
+              const CombineMode CM,
+              const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -514,7 +514,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferPost(source, importer, modeString, DoReverse, CM, restrictedMode);
+    this->beginTransfer(source, importer, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -525,10 +525,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doImportWait(const SrcDistObject& source,
-               const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-               const CombineMode CM,
-               const bool restrictedMode)
+  endImport(const SrcDistObject& source,
+            const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -545,7 +545,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferWait(source, importer, modeString, DoForward, CM, restrictedMode);
+    this->endTransfer(source, importer, modeString, DoForward, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -556,10 +556,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doExportWait(const SrcDistObject& source,
-               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-               const CombineMode CM,
-               const bool restrictedMode)
+  endExport(const SrcDistObject& source,
+            const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -576,7 +576,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferWait(source, exporter, modeString, DoForward, CM, restrictedMode);
+    this->endTransfer(source, exporter, modeString, DoForward, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -587,10 +587,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doImportWait(const SrcDistObject& source,
-               const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-               const CombineMode CM,
-               const bool restrictedMode)
+  endImport(const SrcDistObject& source,
+            const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -607,7 +607,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferWait(source, exporter, modeString, DoReverse, CM, restrictedMode);
+    this->endTransfer(source, exporter, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -618,10 +618,10 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doExportWait(const SrcDistObject& source,
-               const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
-               const CombineMode CM,
-               const bool restrictedMode)
+  endExport(const SrcDistObject& source,
+            const Import<LocalOrdinal, GlobalOrdinal, Node> & importer,
+            const CombineMode CM,
+            const bool restrictedMode)
   {
     using Details::Behavior;
     using std::endl;
@@ -638,7 +638,7 @@ namespace Tpetra {
       os << *prefix << "Start" << endl;
       std::cerr << os.str ();
     }
-    this->doTransferWait(source, importer, modeString, DoReverse, CM, restrictedMode);
+    this->endTransfer(source, importer, modeString, DoReverse, CM, restrictedMode);
     if (verbose) {
       std::ostringstream os;
       os << *prefix << "Done" << endl;
@@ -670,8 +670,8 @@ namespace Tpetra {
               const CombineMode CM,
               bool restrictedMode)
   {
-    doTransferPost(src, transfer, modeString, revOp, CM, restrictedMode);
-    doTransferWait(src, transfer, modeString, revOp, CM, restrictedMode);
+    beginTransfer(src, transfer, modeString, revOp, CM, restrictedMode);
+    endTransfer(src, transfer, modeString, revOp, CM, restrictedMode);
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -773,12 +773,12 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doTransferPost(const SrcDistObject& src,
-                 const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
-                 const char modeString[],
-                 const ReverseOption revOp,
-                 const CombineMode CM,
-                 bool restrictedMode)
+  beginTransfer(const SrcDistObject& src,
+                const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                const char modeString[],
+                const ReverseOption revOp,
+                const CombineMode CM,
+                bool restrictedMode)
   {
     using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;
@@ -1124,12 +1124,12 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   DistObject<Packet, LocalOrdinal, GlobalOrdinal, Node>::
-  doTransferWait(const SrcDistObject& src,
-                 const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
-                 const char modeString[],
-                 const ReverseOption revOp,
-                 const CombineMode CM,
-                 bool restrictedMode)
+  endTransfer(const SrcDistObject& src,
+              const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+              const char modeString[],
+              const ReverseOption revOp,
+              const CombineMode CM,
+              bool restrictedMode)
   {
     using Details::Behavior;
     using ::Tpetra::Details::dualViewStatusToString;

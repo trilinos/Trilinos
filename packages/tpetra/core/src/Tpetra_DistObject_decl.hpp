@@ -516,52 +516,52 @@ namespace Tpetra {
               const bool restrictedMode = false);
 
     void
-    doImportPost(const SrcDistObject& source,
-                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    beginImport(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode = false);
 
     void
-    doExportPost(const SrcDistObject& source,
-                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    beginExport(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode = false);
 
     void
-    doImportPost(const SrcDistObject& source,
-                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    beginImport(const SrcDistObject& source,
+                const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+                const CombineMode CM,
+                const bool restrictedMode = false);
 
     void
-    doExportPost(const SrcDistObject& source,
-                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    beginExport(const SrcDistObject& source,
+                const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+                const CombineMode CM,
+                const bool restrictedMode = false);
 
     void
-    doImportWait(const SrcDistObject& source,
-                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    endImport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     void
-    doExportWait(const SrcDistObject& source,
-                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    endExport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     void
-    doImportWait(const SrcDistObject& source,
-                 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    endImport(const SrcDistObject& source,
+              const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     void
-    doExportWait(const SrcDistObject& source,
-                 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
-                 const CombineMode CM,
-                 const bool restrictedMode = false);
+    endExport(const SrcDistObject& source,
+              const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+              const CombineMode CM,
+              const bool restrictedMode = false);
 
     //@}
     //! @name Attribute accessor methods
@@ -769,19 +769,19 @@ namespace Tpetra {
     /// LID DualViews come from the Transfer object given to
     /// doTransfer.  They are <i>always</i> sync'd on both host and
     /// device.  Users must never attempt to modify or sync them.
-    void doTransferPost(const SrcDistObject& src,
-                        const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
-                        const char modeString[],
-                        const ReverseOption revOp,
-                        const CombineMode CM,
-                        const bool restrictedMode);
+    void beginTransfer(const SrcDistObject& src,
+                       const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                       const char modeString[],
+                       const ReverseOption revOp,
+                       const CombineMode CM,
+                       const bool restrictedMode);
 
-    void doTransferWait(const SrcDistObject& src,
-                        const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
-                        const char modeString[],
-                        const ReverseOption revOp,
-                        const CombineMode CM,
-                        const bool restrictedMode);
+    void endTransfer(const SrcDistObject& src,
+                     const ::Tpetra::Details::Transfer<local_ordinal_type, global_ordinal_type, node_type>& transfer,
+                     const char modeString[],
+                     const ReverseOption revOp,
+                     const CombineMode CM,
+                     const bool restrictedMode);
 
     void doPosts(Distributor& distor,
                  size_t constantNumPackets,
