@@ -2,10 +2,6 @@
 
 set +x
 
-if [[ "${Trilinos_ENABLE_BUILD_STATS}" == "" ]] ; then
-  export Trilinos_ENABLE_BUILD_STATS=ON
-fi
-
 # Need to load env so we define some vars
 source $WORKSPACE/Trilinos/cmake/std/atdm/load-env.sh $JOB_NAME
 
