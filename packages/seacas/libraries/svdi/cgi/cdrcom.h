@@ -7,8 +7,9 @@
  */
 /* cdrcom.h - external structure is used to hook up with fortran
  *            common block /cdrcom/
- * 9 Sep, 1989 - date last modified
  */
+#ifndef CDRCOM_H
+#define CDRCOM_H
 
 extern struct cdr
 {
@@ -23,4 +24,4 @@ extern struct cdr
   int KCOMTP;
 } cdrcom;
 
-/* end cdrcom.h */
+#endif

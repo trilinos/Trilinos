@@ -298,7 +298,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
   if (isInitialized_ == false) {
     Teuchos::OSTab ostab(out,1,"StartIntegrator");
     *out << "Failure - IntegratorBasic is not initialized." << std::endl;
-    integratorStatus_ = Status::FAILED;
+    setStatus(Status::FAILED);
     return;
   }
 
@@ -315,7 +315,7 @@ void IntegratorBasic<Scalar>::startIntegrator()
   // update initial time step
   timeStepControl_->setInitTimeStep(initDt);
   timeStepControl_->initialize();
-  integratorStatus_ = WORKING;
+  setStatus(WORKING);
 }
 
 
@@ -405,7 +405,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
     *out << "Failure - Stepper has failed more than the maximum allowed.\n"
          << "  (nFailures = "<<ws->getNFailures()<< ") >= (nFailuresMax = "
          << timeStepControl_->getMaxFailures()<<")" << std::endl;
-    integratorStatus_ = Status::FAILED;
+    setStatus(Status::FAILED);
     return;
   }
   if (ws->getNConsecutiveFailures()
@@ -419,7 +419,7 @@ void IntegratorBasic<Scalar>::checkTimeStep()
          << ") >= (nConsecutiveFailuresMax = "
          << timeStepControl_->getMaxConsecFailures()
          << ")" << std::endl;
-    integratorStatus_ = Status::FAILED;
+    setStatus(Status::FAILED);
     return;
   }
 
@@ -471,7 +471,7 @@ void IntegratorBasic<Scalar>::endIntegrator()
       Status::FAILED || integratorStatus_ == Status::FAILED) {
     exitStatus = "Time integration FAILURE!";
   } else {
-    integratorStatus_ = Status::PASSED;
+    setStatus(Status::PASSED);
     exitStatus = "Time integration complete.";
   }
 

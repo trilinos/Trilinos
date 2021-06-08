@@ -102,6 +102,8 @@ public:
   virtual int getIndex() const override;
   /// Get Status
   virtual Status getStatus() const override;
+  /// Set Status
+  virtual void setStatus(const Status st) override;
   /// Get the Stepper
   virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override;
   /// Return a copy of the Tempus ParameterList

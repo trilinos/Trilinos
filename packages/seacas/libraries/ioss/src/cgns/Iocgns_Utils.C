@@ -57,6 +57,17 @@
     Iocgns::Utils::cgns_error(file_ptr, __FILE__, __func__, __LINE__, -1);                         \
   }
 
+#ifdef _WIN32
+char *strcasestr(char *haystack, const char *needle)
+{
+  char *c;
+  for (c = haystack; *c; c++)
+    if (!strncasecmp(c, needle, strlen(needle)))
+      return c;
+  return 0;
+}
+#endif
+
 namespace {
   int power_2(int count)
   {
@@ -547,7 +558,12 @@ int Iocgns::Utils::get_db_zone(const Ioss::GroupingEntity *entity)
   IOSS_ERROR(errmsg);
 }
 
-size_t Iocgns::Utils::index(const Ioss::Field &field) { return field.get_index() & 0xffffffff; }
+namespace {
+  const size_t CG_CELL_CENTER_FIELD_ID = 1ul << 30;
+  const size_t CG_VERTEX_FIELD_ID      = 1ul << 31;
+}
+
+size_t Iocgns::Utils::index(const Ioss::Field &field) { return field.get_index() & 0x00ffffff; }
 
 void Iocgns::Utils::set_field_index(const Ioss::Field &field, size_t index,
                                     CG_GridLocation_t location)
@@ -1238,7 +1254,7 @@ size_t Iocgns::Utils::common_write_meta_data(int file_ptr, const Ioss::Region &r
     std::set<std::string> zgc_names;
 
     for (const auto &zgc : sb->m_zoneConnectivity) {
-      if (zgc.is_valid() && zgc.is_active()) {
+      if (zgc.is_valid() && (zgc.is_active() || (!is_parallel && zgc.m_donorProcessor != zgc.m_ownerProcessor))) {
         int                     zgc_idx = 0;
         std::array<cgsize_t, 6> owner_range{{zgc.m_ownerRangeBeg[0], zgc.m_ownerRangeBeg[1],
                                              zgc.m_ownerRangeBeg[2], zgc.m_ownerRangeEnd[0],

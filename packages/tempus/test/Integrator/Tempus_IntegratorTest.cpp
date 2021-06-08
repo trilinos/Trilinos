@@ -138,6 +138,13 @@ TEUCHOS_UNIT_TEST(IntegratorBasic, Describe)
   TEST_ASSERT(npos != testS.find("--- Stepper ---"));
   TEST_ASSERT(npos != testS.find("stepperType_        = Forward Euler"));
   TEST_ASSERT(npos != testS.find("--- StepperExplicit ---"));
+
+  integrator->setStatus(Tempus::Status::FAILED);
+  TEST_ASSERT(integrator->getStatus() == Tempus::Status::FAILED);
+  integrator->setStatus(Tempus::Status::WORKING);
+  TEST_ASSERT(integrator->getStatus() == Tempus::Status::WORKING);
+  integrator->setStatus(Tempus::Status::PASSED);
+  TEST_ASSERT(integrator->getStatus() == Tempus::Status::PASSED);
 }
 
 

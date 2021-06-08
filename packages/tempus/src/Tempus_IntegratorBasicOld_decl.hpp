@@ -90,6 +90,8 @@ public:
     /// Get Status
     virtual Status getStatus() const override
     {return integratorStatus_;}
+    /// Set Status
+    virtual void setStatus(const Status st) override { integratorStatus_ = st; }
     /// Get the Stepper
     virtual Teuchos::RCP<Stepper<Scalar> > getStepper() const override
     {return stepper_;}

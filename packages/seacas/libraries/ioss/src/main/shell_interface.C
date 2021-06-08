@@ -6,7 +6,6 @@
  * See packages/seacas/LICENSE for details
  */
 #include "Ioss_CodeTypes.h"
-#include "Ioss_FileInfo.h"
 #include "Ioss_GetLongOpt.h" // for GetLongOption, etc
 #include "Ioss_Sort.h"
 #include "Ioss_Utils.h" // for Utils
@@ -21,24 +20,6 @@
 #include <iostream> // for operator<<, basic_ostream, etc
 #include <string>   // for string, char_traits
 #include <vector>   // for vector
-
-namespace {
-  std::string get_type_from_file(const std::string &filename)
-  {
-    Ioss::FileInfo file(filename);
-    auto           extension = file.extension();
-    if (extension == "e" || extension == "g" || extension == "gen" || extension == "exo") {
-      return "exodus";
-    }
-    else if (extension == "cgns") {
-      return "cgns";
-    }
-    else {
-      // "exodus" is default...
-      return "exodus";
-    }
-  }
-} // namespace
 
 IOShell::Interface::Interface(const std::string &app_version) : version(app_version)
 {
@@ -665,10 +646,10 @@ bool IOShell::Interface::parse_options(int argc, char **argv, int my_processor)
 
   // If inFileType and/or outFileType not specified, see if can infer from file suffix type...
   if (inFiletype == "unknown") {
-    inFiletype = get_type_from_file(inputFile[0]);
+    inFiletype = Ioss::Utils::get_type_from_file(inputFile[0]);
   }
   if (outFiletype == "unknown") {
-    outFiletype = get_type_from_file(outputFile);
+    outFiletype = Ioss::Utils::get_type_from_file(outputFile);
   }
   return true;
 }
