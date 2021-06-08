@@ -167,10 +167,10 @@ void KernelWrappers<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosHIPW
   int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer
   std::string myalg("SPGEMM_KK_MEMORY");
   if(!params.is_null()) {
-    if(params->isParameter("cuda: algorithm"))
-      myalg = params->get("cuda: algorithm",myalg);
-    if(params->isParameter("cuda: team work size"))
-      team_work_size = params->get("cuda: team work size",team_work_size);
+    if(params->isParameter("hip: algorithm"))
+      myalg = params->get("hip: algorithm",myalg);
+    if(params->isParameter("hip: team work size"))
+      team_work_size = params->get("hip: team work size",team_work_size);
   }
 
   // KokkosKernelsHandle
@@ -426,8 +426,8 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosHIP
   //int team_work_size = 16;  // Defaults to 16 as per Deveci 12/7/16 - csiefer // unreferenced
   std::string myalg("KK");
   if(!params.is_null()) {
-    if(params->isParameter("cuda: jacobi algorithm"))
-      myalg = params->get("cuda: jacobi algorithm",myalg);
+    if(params->isParameter("hip: jacobi algorithm"))
+      myalg = params->get("hip: jacobi algorithm",myalg);
   }
 
   if(myalg == "MSAK") {
@@ -716,10 +716,10 @@ void KernelWrappers2<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosHIP
   int team_work_size = 16; 
   std::string myalg("SPGEMM_KK_MEMORY");
   if(!params.is_null()) {
-    if(params->isParameter("cuda: algorithm"))
-      myalg = params->get("cuda: algorithm",myalg);
-    if(params->isParameter("cuda: team work size"))
-      team_work_size = params->get("cuda: team work size",team_work_size);
+    if(params->isParameter("hip: algorithm"))
+      myalg = params->get("hip: algorithm",myalg);
+    if(params->isParameter("hip: team work size"))
+      team_work_size = params->get("hip: team work size",team_work_size);
   }
 
   // Get the algorithm mode
