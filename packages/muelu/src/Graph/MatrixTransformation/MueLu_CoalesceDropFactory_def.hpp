@@ -437,6 +437,7 @@ namespace MueLu {
           rows[0] = 0;
           for (LO row = 0; row < Teuchos::as<LO>(A->getRowMap()->getNodeNumElements()); ++row) {
             size_t nnz = A->getNumEntriesInLocalRow(row);
+            bool rowIsDirichlet = boundaryNodes[row];
             ArrayView<const LO> indices;
             ArrayView<const SC> vals;
             A->getLocalRowView(row, indices, vals);
@@ -455,7 +456,7 @@ namespace MueLu {
                   MT max_neg_aik = realThreshold * STS::real(negMaxOffDiagonal[row]);
                   MT neg_aij    = - STS::real(vals[colID]);
                   //printf(" - a_ij = %6.4e >? %6.4e * %6.4e = alpha max(-aik)\n",neg_aij,threshold, negMaxOffDiagonal[row]);
-                  if (neg_aij > max_neg_aik || row == col) {
+                  if ((!rowIsDirichlet && neg_aij > max_neg_aik) || row == col) {
                     columns[realnnz++] = col;
                     rownnz++;
                   } else
@@ -470,7 +471,7 @@ namespace MueLu {
                   MT  aiiajj = STS::magnitude(threshold*threshold * ghostedDiagVals[col]*ghostedDiagVals[row]);  // eps^2*|a_ii|*|a_jj|
                   MT aij    = STS::magnitude(vals[colID]*vals[colID]);                                          // |a_ij|^2
                   
-                  if (aij > aiiajj || row == col) {
+                  if ((!rowIsDirichlet && aij > aiiajj) || row == col) {
                   columns[realnnz++] = col;
                   rownnz++;
                   } else
@@ -488,6 +489,7 @@ namespace MueLu {
               const real_type zero = Teuchos::ScalarTraits<real_type>::zero();
               const real_type one  = Teuchos::ScalarTraits<real_type>::one();
               LO rownnz = 0;
+              // NOTE: This probably needs to be fixed for rowsum
 
               // find magnitudes
               for (LO colID = 0; colID < (LO)nnz; colID++) {
