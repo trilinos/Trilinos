@@ -434,7 +434,6 @@ namespace Intrepid2 {
     storeInPlaceCombination(const Data<DataScalar,DeviceType> &A, const Data<DataScalar,DeviceType> &B, BinaryOperator binaryOperator)
     {
       auto policy = dataExtentRangePolicy<rank>();
-      using PolicyType = decltype(policy);
       
       // shallow copy of this to avoid implicit references to this in calls to getWritableEntry() below
       Data<DataScalar,DeviceType> thisData = *this;
