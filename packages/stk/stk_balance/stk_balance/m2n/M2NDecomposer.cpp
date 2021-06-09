@@ -39,7 +39,7 @@
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
 M2NDecomposer::M2NDecomposer(stk::mesh::BulkData & bulkData,
                              const stk::balance::M2NBalanceSettings & balanceSettings)
@@ -114,17 +114,6 @@ M2NDecomposerNested::get_partition()
     targetProc += m_bulkData.parallel_rank()*m_numFinalSubdomainsPerProc;
   }
 
-  return decomp;
-}
-
-stk::mesh::EntityProcVec
-M2NDecomposerNested::get_partition_for_subdomain(int subdomainId)
-{
-  stk::mesh::EntityProcVec decomp;
-  std::vector<stk::mesh::Selector> selectors = { *m_bulkData.mesh_meta_data().get_part(get_initial_subdomain_part_name(subdomainId)) };
-  stk::balance::internal::calculateGeometricOrGraphBasedDecomp(m_bulkData, selectors,
-                                                               m_bulkData.parallel(), m_numFinalSubdomainsPerProc,
-                                                               m_balanceSettings, decomp);
   return decomp;
 }
 

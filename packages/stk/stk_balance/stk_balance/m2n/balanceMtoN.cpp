@@ -31,26 +31,49 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#ifndef STK_BALANCE_MTON_HPP
-#define STK_BALANCE_MTON_HPP
-
+#include "balanceMtoN.hpp"
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Field.hpp>
-#include <string>
+#include <stk_mesh/base/FieldBase.hpp>
+#include <stk_balance/internal/privateDeclarations.hpp>
+#include <stk_balance/internal/entityDataToField.hpp>
+#include <stk_balance/m2n/M2NDecomposer.hpp>
 
-namespace stk { namespace mesh { class BulkData; } }
-namespace stk { namespace io { class StkMeshIoBroker; } }
-namespace stk { namespace balance { class M2NBalanceSettings; } }
+#include <stk_io/StkMeshIoBroker.hpp>
+#include <stk_io/IossBridge.hpp>
+#include <stk_mesh/base/Comm.hpp>
+#include "MxNutils.hpp"
+#include "MtoNRebalancer.hpp"
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
+
+using DecomposerPtr = std::shared_ptr<M2NDecomposer>;
+
+DecomposerPtr make_decomposer(stk::mesh::BulkData& bulkData,
+                              const stk::balance::M2NBalanceSettings& balanceSettings)
+{
+  DecomposerPtr decomposer;
+  if (balanceSettings.get_use_nested_decomp()) {
+    decomposer = std::make_shared<M2NDecomposerNested>(bulkData, balanceSettings);
+  }
+  else {
+    decomposer = std::make_shared<M2NDecomposer>(bulkData, balanceSettings);
+  }
+  return decomposer;
+}
 
 bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker,
-                   stk::mesh::Field<unsigned> &targetDecompField,
                    const stk::balance::M2NBalanceSettings & balanceSettings,
-                   int numSteps = -1,
-                   double timeStep = 0.0);
+                   int numSteps,
+                   double timeStep)
+{
+    DecomposerPtr decomposer = make_decomposer(ioBroker.bulk_data(), balanceSettings);
+    MtoNRebalancer m2nRebalancer(ioBroker, *decomposer, balanceSettings);
+    m2nRebalancer.rebalance(numSteps, timeStep);
 
+    return true;
+}
 }}}
-
-#endif

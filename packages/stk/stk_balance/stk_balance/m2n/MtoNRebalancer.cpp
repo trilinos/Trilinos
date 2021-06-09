@@ -5,8 +5,8 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_balance/internal/privateDeclarations.hpp>
 #include <stk_balance/internal/entityDataToField.hpp>
-#include <stk_balance/internal/MxNutils.hpp>
-#include <stk_balance/internal/M2NDecomposer.hpp>
+#include <stk_balance/m2n/MxNutils.hpp>
+#include <stk_balance/m2n/M2NDecomposer.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_tools/mesh_clone/MeshClone.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -14,16 +14,14 @@
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
 MtoNRebalancer::MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker,
-                               stk::mesh::Field<unsigned>& targetField,
                                M2NDecomposer& decomposer,
                                const M2NBalanceSettings& balanceSettings)
   : m_bulkData(ioBroker.bulk_data()),
     m_subdomainCreator(ioBroker, balanceSettings.get_num_output_processors()),
     m_decomposer(decomposer),
-    m_inputMeshTargetDecompField(targetField),
     m_balanceSettings(balanceSettings)
 {
   std::vector<size_t> counts;
@@ -43,7 +41,7 @@ MtoNRebalancer::rebalance(int numSteps, double timeStep)
 
   for (const std::vector<unsigned> & targetSubdomains : targetSubdomainsForEachBatch) {
     OutputMesh outputMesh = clone_target_subdomains(targetSubdomains);
-    move_subdomain_to_owning_processor(outputMesh);
+    move_subdomain_to_owning_processor(outputMesh, targetSubdomains);
     create_subdomain_and_write(m_balanceSettings.get_input_filename(), targetSubdomains, outputMesh, numSteps, timeStep);
   }
 }
@@ -62,7 +60,6 @@ MtoNRebalancer::map_new_subdomains_to_original_processors()
 
 void MtoNRebalancer::store_final_decomp_on_elements()
 {
-    store_off_target_proc_on_elements_before_moving_subdomains();
     move_entities_into_mapped_subdomain_parts();
 }
 
@@ -106,18 +103,18 @@ MtoNRebalancer::clone_target_subdomains(const std::vector<unsigned> & targetSubd
 }
 
 void
-MtoNRebalancer::move_subdomain_to_owning_processor(OutputMesh & outputMesh)
+MtoNRebalancer::move_subdomain_to_owning_processor(OutputMesh & outputMesh, const std::vector<unsigned> & targetSubdomains)
 {
-  stk::mesh::Field<unsigned> & outputMeshTargetDecompField =
-      *reinterpret_cast<stk::mesh::Field<unsigned> *>(outputMesh.meta().get_field(stk::topology::ELEM_RANK,
-                                                                                  m_inputMeshTargetDecompField.name()));
-
   stk::mesh::EntityProcVec subdomainDecomp;
-  const stk::mesh::Part & locallyOwned = outputMesh.meta().locally_owned_part();
-  for (const stk::mesh::Bucket * bucket : outputMesh.bulk().get_buckets(stk::topology::ELEM_RANK, locallyOwned)) {
-    for (const stk::mesh::Entity & elem : *bucket) {
-      const unsigned * destination = stk::mesh::field_data(outputMeshTargetDecompField, elem);
-      subdomainDecomp.emplace_back(elem, *destination);
+  for (unsigned subdomain : targetSubdomains) {
+    if (stk::transfer_utils::is_valid_subdomain(subdomain)) {
+      const stk::mesh::Selector & locallyOwnedSubdomain = outputMesh.meta().locally_owned_part() &
+                                                          *outputMesh.meta().get_part(m_subdomainCreator.get_subdomain_part_name(subdomain));
+      for (const stk::mesh::Bucket * bucket : outputMesh.bulk().get_buckets(stk::topology::ELEM_RANK, locallyOwnedSubdomain)) {
+        for (const stk::mesh::Entity & elem : *bucket) {
+          subdomainDecomp.emplace_back(elem, subdomain);
+        }
+      }
     }
   }
 
@@ -135,25 +132,10 @@ void MtoNRebalancer::move_entities_into_mapped_subdomain_parts()
   m_bulkData.modification_end();
 }
 
-stk::mesh::BulkData& MtoNRebalancer::get_bulk()
-{
-    return m_bulkData;
-}
-
 SubdomainCreator&
 MtoNRebalancer::get_subdomain_creator()
 {
    return m_subdomainCreator;
-}
-
-stk::mesh::MetaData& MtoNRebalancer::get_meta()
-{
-    return m_bulkData.mesh_meta_data();
-}
-
-void MtoNRebalancer::store_off_target_proc_on_elements_before_moving_subdomains()
-{
-    stk::balance::internal::put_entity_data_to_field(m_decomp, &m_inputMeshTargetDecompField);
 }
 
 void MtoNRebalancer::create_subdomain_and_write(const std::string &filename, const std::vector<unsigned> & targetSubdomains,
@@ -161,11 +143,6 @@ void MtoNRebalancer::create_subdomain_and_write(const std::string &filename, con
 {
     m_subdomainCreator.create_subdomain_and_write(filename, targetSubdomains, m_ownerForEachFinalSubdomain,
                                                   outputMesh, m_globalNumNodes, m_globalNumElems, numSteps, timeStep);
-}
-
-int MtoNRebalancer::get_num_target_subdomains()
-{
-  return m_subdomainCreator.get_num_final_subdomains();
 }
 
 }}}

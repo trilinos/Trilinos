@@ -46,7 +46,7 @@ namespace stk { namespace io { class StkMeshIoBroker; }}
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
 class OutputMesh
 {
@@ -76,19 +76,11 @@ public:
     SubdomainCreator(stk::io::StkMeshIoBroker& ioBroker, int numTarget);
     ~SubdomainCreator();
 
-    int get_num_final_subdomains() const { return m_numFinalSubdomains; }
     const stk::mesh::PartVector & declare_all_final_subdomain_parts();
-    void move_entities_into_final_subdomain_part(size_t i, const stk::mesh::EntityVector &entities);
-
-    stk::io::EntitySharingInfo get_node_sharing_info(unsigned subdomain);
 
     stk::io::EntitySharingInfo get_node_sharing_info(unsigned mySubdomain,
                                                      const std::vector<unsigned> & targetSubdomains,
                                                      const std::vector<unsigned> & ownerForEachFinalSubdomain);
-
-    void create_subdomain_and_write(const std::string &filename, unsigned subdomain,
-                                    int global_num_nodes, int global_num_elems,
-                                    int numSteps = -1, double timeStep = 0.0);
 
     void create_subdomain_and_write(const std::string &filename, const std::vector<unsigned> & targetSubdomains,
                                     const std::vector<unsigned> & ownerForEachFinalSubdomain,
