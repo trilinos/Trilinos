@@ -59,8 +59,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
-#include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
 #endif
@@ -599,9 +597,6 @@ ReturnType FixedPointSolMgr<ScalarType,MV,OP>::solve() {
   if (!isSet_) {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
-
-  Teuchos::BLAS<int,ScalarType> blas;
-  Teuchos::LAPACK<int,ScalarType> lapack;
 
   TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),
     FixedPointSolMgrLinearProblemFailure,
