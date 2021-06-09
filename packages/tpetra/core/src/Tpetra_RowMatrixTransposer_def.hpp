@@ -48,6 +48,7 @@
 #include "Tpetra_Details_shortSort.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
+#include "KokkosKernels_SparseUtils.hpp"
 
 namespace Tpetra {
 
@@ -144,9 +145,7 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
       params->get (sortParamName, sortDefault);
   } ();
 
-  const LO lclNumCols (origMatrix_->getNodeNumCols ());
   const LO lclNumRows (origMatrix_->getNodeNumRows ());
-  const size_t nnz (origMatrix_->getNodeNumEntries ());
 
   RCP<const crs_matrix_type> crsMatrix =
     rcp_dynamic_cast<const crs_matrix_type> (origMatrix_);
@@ -182,82 +181,10 @@ createTransposeLocal (const Teuchos::RCP<Teuchos::ParameterList>& params)
   using values_type = typename local_matrix_device_type::values_type::non_const_type;
   using execution_space = typename local_matrix_device_type::execution_space;
 
-  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrixDevice ();
-  local_graph_device_type lclGraph = lclMatrix.graph;
-
-  // Determine how many nonzeros there are per row in the transpose.
-  using DT = typename crs_matrix_type::device_type;
-  Kokkos::View<LO*, DT> t_counts ("transpose row counts", lclNumCols);
-  using range_type = Kokkos::RangePolicy<LO, execution_space>;
-  Kokkos::parallel_for
-    ("Compute row counts of local transpose",
-     range_type (0, lclNumRows),
-     KOKKOS_LAMBDA (const LO row) {
-      auto rowView = lclGraph.rowConst(row);
-      const LO length  = rowView.length;
-
-      for (LO colID = 0; colID < length; ++colID) {
-        const LO col = rowView(colID);
-        Kokkos::atomic_fetch_add (&t_counts[col], LO (1));
-      }
-    });
-
-  using Kokkos::view_alloc;
-  using Kokkos::WithoutInitializing;
-  row_map_type t_offsets
-    (view_alloc ("transpose ptr", WithoutInitializing), lclNumCols + 1);
-
-  // TODO (mfh 10 Jul 2019): This returns the sum of all counts,
-  // which could be useful for checking nnz.
-  (void) Details::computeOffsetsFromCounts (t_offsets, t_counts);
-
-  index_type t_cols
-    (view_alloc ("transpose lcl ind", WithoutInitializing), nnz);
-  values_type t_vals
-    (view_alloc ("transpose val", WithoutInitializing), nnz);
-  Kokkos::parallel_for
-    ("Compute local transpose",
-     range_type (0, lclNumRows),
-     KOKKOS_LAMBDA (const LO row) {
-      auto rowView = lclMatrix.rowConst(row);
-      const LO length  = rowView.length;
-
-      for (LO colID = 0; colID < length; colID++) {
-        const LO col = rowView.colidx(colID);
-        const offset_type beg = t_offsets[col];
-        const LO old_count =
-          Kokkos::atomic_fetch_sub (&t_counts[col], LO (1));
-        const LO len (t_offsets[col+1] - beg);
-        const offset_type insert_pos = beg + (len - old_count);
-        t_cols[insert_pos] = row;
-        t_vals[insert_pos] = rowView.value(colID);
-      }
-    });
-
-  // Invariant: At this point, all entries of t_counts are zero.
-  // This means we can use it to store new post-merge counts.
-
-  if (sort) {
-    // NOTE (mfh 11 Jul 2019) Merging is unnecessary: above
-    // parallel_for visits each row of the original matrix once, so
-    // there can be no duplicate column indices in the transpose.
-    using Details::shellSortKeysAndValues;
-    Kokkos::parallel_for
-      ("Sort rows of local transpose",
-       range_type (0, lclNumCols),
-       KOKKOS_LAMBDA (const LO lclCol) {
-        const offset_type beg = t_offsets[lclCol];
-        const LO len (t_offsets[lclCol+1] - t_offsets[lclCol]);
-
-        LO* cols_beg = t_cols.data () + beg;
-        IST* vals_beg = t_vals.data () + beg;
-        shellSortKeysAndValues (cols_beg, vals_beg, len);
-      });
-  }
-
-  local_matrix_device_type lclTransposeMatrix ("transpose", lclNumCols,
-                                        lclNumRows, nnz,
-                                        t_vals, t_offsets, t_cols);
+  local_matrix_device_type lclMatrix = crsMatrix->getLocalMatrix ();
+  local_matrix_device_type lclTransposeMatrix = KokkosKernels::Impl::transpose_matrix(lclMatrix);
+  if (sort)
+    KokkosKernels::Impl::sort_crs_matrix(lclTransposeMatrix);
 
   // Prebuild the importers and exporters the no-communication way,
   // flipping the importers and exporters around.

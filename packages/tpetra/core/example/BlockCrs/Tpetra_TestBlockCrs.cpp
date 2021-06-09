@@ -281,8 +281,7 @@ int main (int argc, char *argv[])
       // - all internal views are allocated on device; mirror as mesh database is constructed on host
       const auto mesh_gids_host = mesh.getElementGlobalIDs();
       const auto mesh_gids =
-        Kokkos::create_mirror_view_and_copy (typename map_type::node_type::memory_space{},
-                                             mesh_gids_host);
+        Kokkos::create_mirror_view_and_copy (mem_space(), mesh_gids_host);
 
       // for convenience, separate the access to owned and remote gids
       const auto owned_gids =
@@ -397,7 +396,7 @@ int main (int argc, char *argv[])
         std::cerr << os.str ();
       }
       typedef tpetra_blockcrs_matrix_type::little_block_type block_type;
-      Kokkos::View<block_type*,exec_space> blocks;
+      Kokkos::View<block_type*, device_type> blocks;
       {
         TimeMonitor timerLocalBlockCrsFill(*TimeMonitor::getNewTimer("2) LocalBlockCrsFill"));
 
@@ -406,8 +405,9 @@ int main (int argc, char *argv[])
         const auto rowptr_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rowptr);
         const auto colidx_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), colidx);
 
-        blocks = Kokkos::View<block_type*,exec_space>("blocks", rowptr_host(num_owned_elements));
-        auto blocks_host = Kokkos::create_mirror_view(Kokkos::HostSpace(), blocks);
+        blocks = Kokkos::View<block_type*, device_type>("blocks", rowptr_host(num_owned_elements));
+
+        const auto blocks_host = Kokkos::create_mirror_view(blocks);
         // This MUST run on host, since it invokes a host-only method,
         // getLocalBlock.  This means we must NOT use KOKKOS_LAMBDA,
         // since that would build the lambda for both host AND device.

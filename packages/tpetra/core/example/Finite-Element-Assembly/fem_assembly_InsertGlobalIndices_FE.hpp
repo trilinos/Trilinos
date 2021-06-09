@@ -248,7 +248,7 @@ int executeInsertGlobalIndicesFESP_(const Teuchos::RCP<const Teuchos::Comm<int> 
     fe_matrix = rcp(new fe_matrix_type(fe_graph));
     rhs = rcp (new fe_multivector_type(domain_map, fe_graph->getImporter(), 1));
 
-    Kokkos::View<local_ordinal_type[4][4], execution_space> element_matrix ("element_matrix");
+    Kokkos::View<local_ordinal_type[4][4], deviceType> element_matrix ("element_matrix");
     Teuchos::Array<Scalar> element_rhs(4);
 
     Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list

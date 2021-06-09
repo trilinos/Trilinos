@@ -270,7 +270,7 @@ int executeTotalElementLoopSP_(const Teuchos::RCP<const Teuchos::Comm<int> >& co
   crs_matrix_type crs_matrix (crs_graph);
   multivector_type rhs (crs_graph->getRowMap(), 1);
 
-  Kokkos::View<Scalar[4][4], execution_space> element_matrix ("element_matrix");
+  Kokkos::View<Scalar[4][4], deviceType> element_matrix ("element_matrix");
   Teuchos::Array<Scalar> element_rhs(4);
 
   Teuchos::Array<global_ordinal_type> column_global_ids(4);     // global column ids list
