@@ -31,50 +31,25 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-#include "balanceMtoN.hpp"
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-#include <stk_balance/internal/privateDeclarations.hpp>
-#include <stk_balance/internal/entityDataToField.hpp>
-#include <stk_balance/internal/M2NDecomposer.hpp>
 
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include "MxNutils.hpp"
-#include "MtoNRebalancer.hpp"
+#ifndef STK_MXN_UTILS_H
+#define STK_MXN_UTILS_H
+
+#include <stk_balance/balanceUtils.hpp>
+#include <vector>
+#include <limits>
+#include <stk_mesh/base/Types.hpp>
+
+namespace stk { namespace mesh { class BulkData; }}
 
 namespace stk {
 namespace balance {
 namespace internal {
 
-using DecomposerPtr = std::shared_ptr<stk::balance::internal::M2NDecomposer>;
+void fill_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings, stk::mesh::EntityProcVec &decomp);
+stk::mesh::EntityProcVec get_element_decomp(const int num_partitions, stk::mesh::BulkData& bulk, const stk::balance::BalanceSettings &graphSettings);
 
-DecomposerPtr make_decomposer(stk::mesh::BulkData& bulkData,
-                              const stk::balance::M2NBalanceSettings& balanceSettings)
-{
-  DecomposerPtr decomposer;
-  if (balanceSettings.get_use_nested_decomp()) {
-    decomposer = std::make_shared<stk::balance::internal::M2NDecomposerNested>(bulkData, balanceSettings);
-  }
-  else {
-    decomposer = std::make_shared<stk::balance::internal::M2NDecomposer>(bulkData, balanceSettings);
-  }
-  return decomposer;
-}
-
-bool rebalanceMtoN(stk::io::StkMeshIoBroker& ioBroker,
-                   stk::mesh::Field<unsigned> &targetDecompField,
-                   const stk::balance::M2NBalanceSettings & balanceSettings,
-                   int numSteps,
-                   double timeStep)
-{
-    DecomposerPtr decomposer = make_decomposer(ioBroker.bulk_data(), balanceSettings);
-    MtoNRebalancer m2nRebalancer(ioBroker, targetDecompField, *decomposer, balanceSettings);
-    m2nRebalancer.rebalance(numSteps, timeStep);
-
-    return true;
-}
 }}}
+
+#endif
+

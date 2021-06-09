@@ -250,9 +250,6 @@ class MtoNTransientFieldTransferById
 public:
     MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain);
 
-    MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain,
-                                   const std::vector<stk::mesh::EntityRank> &entityRanks);
-
     ~MtoNTransientFieldTransferById();
 
     void setup_subdomain(M2NOutputSerializerBulkData& bulk, const std::string &filename,

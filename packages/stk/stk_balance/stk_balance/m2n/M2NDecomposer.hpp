@@ -41,7 +41,7 @@ namespace stk { namespace balance { class M2NBalanceSettings; } }
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
 class M2NDecomposer
 {
@@ -73,7 +73,6 @@ public:
   virtual std::vector<unsigned> map_new_subdomains_to_original_processors() override;
 
 private:
-  stk::mesh::EntityProcVec get_partition_for_subdomain(int subdomainId);
   std::string get_initial_subdomain_part_name(int subdomainId);
   void declare_all_initial_subdomain_parts();
   void move_entities_into_initial_subdomain_part();

@@ -437,6 +437,8 @@ namespace Tpetra {
     using device_type = typename Node::device_type;
     //! The Kokkos execution space.
     using execution_space = typename device_type::execution_space;
+    //! The Kokkos memory space.
+    using memory_space = typename device_type::memory_space;
 
     /// \brief This class' Kokkos Node type.
     ///
@@ -3792,9 +3794,9 @@ public:
     ///
     /// \pre The graph is not already storage optimized:
     ///   <tt>isStorageOptimized() == false</tt>
-    size_t
-    mergeRowIndicesAndValues (crs_graph_type& graph,
-                              const RowInfo& rowInfo);
+    /// \return The new row length, after merging.
+    static size_t
+    mergeRowIndicesAndValues (size_t rowLen, local_ordinal_type* cols, impl_scalar_type* vals);
 
     /// \brief Sort and merge duplicate local column indices in all
     ///   rows on the calling process, along with their corresponding

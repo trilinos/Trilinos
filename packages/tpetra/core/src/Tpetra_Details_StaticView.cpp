@@ -123,6 +123,33 @@ void finalize_hip_host_pinned_memory ()
 }
 #endif // KOKKOS_ENABLE_HIP
 
+#ifdef KOKKOS_ENABLE_SYCL
+
+void* sycl_memory_ = nullptr;
+size_t sycl_memory_size_ = 0;
+
+void finalize_sycl_memory ()
+{
+  if (sycl_memory_ != nullptr) {
+    Kokkos::kokkos_free<Kokkos::Experimental::SYCLDeviceUSMSpace> (sycl_memory_);
+    sycl_memory_ = nullptr;
+    sycl_memory_size_ = 0;
+  }
+}
+
+void* sycl_shared_memory_ = nullptr;
+size_t sycl_shared_memory_size_ = 0;
+
+void finalize_sycl_shared_memory ()
+{
+  if (sycl_shared_memory_ != nullptr) {
+    Kokkos::kokkos_free<Kokkos::Experimental::SYCLSharedUSMSpace> (sycl_shared_memory_);
+    sycl_shared_memory_ = nullptr;
+    sycl_shared_memory_size_ = 0;
+  }
+}
+#endif // KOKKOS_ENABLE_SYCL
+
 void* host_memory_ = nullptr;
 size_t host_memory_size_ = 0;
 
@@ -264,6 +291,60 @@ resize (Kokkos::Experimental::HIPHostPinnedSpace /* space */,
 }
 
 #endif // KOKKOS_ENABLE_HIP
+
+#ifdef KOKKOS_ENABLE_SYCL
+
+template <>
+void*
+StaticKokkosAllocation<Kokkos::Experimental::SYCLDeviceUSMSpace>::
+resize (Kokkos::Experimental::SYCLDeviceUSMSpace /* space */,
+        const size_t size)
+{
+  using memory_space = Kokkos::Experimental::SYCLDeviceUSMSpace;
+  static bool created_finalize_hook = false;
+
+  if (size > sycl_memory_size_) {
+    if (sycl_memory_ != nullptr) {
+      Kokkos::kokkos_free<memory_space> (sycl_memory_);
+    }
+    const size_t req_size = size > minimum_initial_size ? size : minimum_initial_size;
+    sycl_memory_ = Kokkos::kokkos_malloc<memory_space> (req_size);
+    sycl_memory_size_ = size;
+  }
+  if (! created_finalize_hook) {
+    Kokkos::push_finalize_hook (finalize_sycl_memory);
+    created_finalize_hook = true;
+  }
+
+  return sycl_memory_;
+}
+
+template <>
+void*
+StaticKokkosAllocation<Kokkos::Experimental::SYCLSharedUSMSpace>::
+resize (Kokkos::Experimental::SYCLSharedUSMSpace /* space */,
+        const size_t size)
+{
+  using memory_space = Kokkos::Experimental::SYCLSharedUSMSpace;
+  static bool created_finalize_hook = false;
+
+  const size_t req_size = size > minimum_initial_size ? size : minimum_initial_size;
+  if (req_size > sycl_shared_memory_size_) {
+    if (sycl_shared_memory_ != nullptr) {
+      Kokkos::kokkos_free<memory_space> (sycl_shared_memory_);
+    }
+    sycl_shared_memory_ = Kokkos::kokkos_malloc<memory_space> (req_size);
+    sycl_shared_memory_size_ = req_size;
+  }
+  if (! created_finalize_hook) {
+    Kokkos::push_finalize_hook (finalize_sycl_shared_memory);
+    created_finalize_hook = true;
+  }
+
+  return sycl_shared_memory_;
+}
+
+#endif // KOKKOS_ENABLE_SYCL
 
 void*
 StaticKokkosAllocation<Kokkos::HostSpace>::

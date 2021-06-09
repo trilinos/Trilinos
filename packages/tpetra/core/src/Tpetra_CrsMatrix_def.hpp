@@ -1867,7 +1867,6 @@ namespace Tpetra {
                      const Teuchos::ArrayView<const Scalar>& values)
   {
     using std::endl;
-    typedef impl_scalar_type IST;
     const char tfecfFuncName[] = "insertLocalValues: ";
 
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -1965,7 +1964,6 @@ namespace Tpetra {
                           const impl_scalar_type vals[],
                           const size_t numInputEnt)
   {
-    typedef impl_scalar_type IST;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "insertGlobalValuesImpl: ";
     const size_t origNumEnt = graph.getNumEntriesInLocalRow (rowInfo.localRow);
@@ -3284,7 +3282,6 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
 
       range_type range (rowinfo.offset1D, rowinfo.offset1D + rowinfo.allocSize);
-      typedef View<const ST*, device_type, MemoryUnmanaged> subview_type;
       // mfh 23 Nov 2015: Don't just create a subview of k_values1D_
       // directly, because that first creates a _managed_ subview,
       // then returns an unmanaged version of that.  That touches the
@@ -3806,7 +3803,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   scale (const Scalar& alpha)
   {
-    typedef LocalOrdinal LO;
     const char tfecfFuncName[] = "scale: ";
     const impl_scalar_type theAlpha = static_cast<impl_scalar_type> (alpha);
 
@@ -5014,40 +5010,18 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
-  mergeRowIndicesAndValues (crs_graph_type& graph,
-                            const RowInfo& rowInfo)
+  size_t CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
+  mergeRowIndicesAndValues (size_t rowLen, LocalOrdinal* cols, impl_scalar_type* vals)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "mergeRowIndicesAndValues: ";
-#endif // HAVE_TPETRA_DEBUG
-
-    auto rowValues = this->getValuesViewHostNonConst (rowInfo);
-    typedef typename std::decay<decltype (rowValues[0]) >::type value_type;
-    value_type* rowValueIter = rowValues.data ();
-
-    auto inds_view = graph.getLocalIndsViewHostNonConst (rowInfo);
-
+    impl_scalar_type* rowValueIter = vals;
     // beg,end define a half-exclusive interval over which to iterate.
-    LocalOrdinal* beg = inds_view.data ();
-    LocalOrdinal* end = inds_view.data () + rowInfo.numEntries;
-
-#ifdef HAVE_TPETRA_DEBUG
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
-      (rowInfo.allocSize != static_cast<size_t> (inds_view.extent (0)) ||
-       rowInfo.allocSize != static_cast<size_t> (rowValues.extent (0)),
-       std::runtime_error, "rowInfo.allocSize = " << rowInfo.allocSize
-       << " != inds_view.extent(0) = " << inds_view.extent (0)
-       << " || rowInfo.allocSize = " << rowInfo.allocSize
-       << " != rowValues.extent(0) = " << rowValues.extent (0) << ".");
-#endif // HAVE_TPETRA_DEBUG
-
+    LocalOrdinal* beg = cols;
+    LocalOrdinal* end = cols + rowLen;
     LocalOrdinal* newend = beg;
     if (beg != end) {
       LocalOrdinal* cur = beg + 1;
-      value_type* vcur = rowValueIter + 1;
-      value_type* vend = rowValueIter;
+      impl_scalar_type* vcur = rowValueIter + 1;
+      impl_scalar_type* vend = rowValueIter;
       cur = beg+1;
       while (cur != end) {
         if (*cur != *newend) {
@@ -5067,10 +5041,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       }
       ++newend; // one past the last entry, per typical [beg,end) semantics
     }
-    const size_t mergedEntries = newend - beg;
-    graph.k_numRowEntries_(rowInfo.localRow) = mergedEntries;
-    const size_t numDups = rowInfo.numEntries - mergedEntries;
-    return numDups;
+    return newend - beg;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -5083,7 +5054,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     typedef typename Kokkos::View<LO*, device_type>::HostMirror::execution_space
       host_execution_space;
     typedef Kokkos::RangePolicy<host_execution_space, LO> range_type;
-    //typedef Kokkos::RangePolicy<Kokkos::Serial, LO> range_type;
     const char tfecfFuncName[] = "sortAndMergeIndicesAndValues: ";
     ProfilingRegion regionSAM ("Tpetra::CrsMatrix::sortAndMergeIndicesAndValues");
 
@@ -5103,22 +5073,28 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
       crs_graph_type& graph = * (this->myGraph_);
       const LO lclNumRows = static_cast<LO> (this->getNodeNumRows ());
       size_t totalNumDups = 0;
-      // FIXME (mfh 10 May 2017) This may assume CUDA UVM.
-      Kokkos::parallel_reduce (range_type (0, lclNumRows),
-        [this, &graph, sorted, merged] (const LO& lclRow, size_t& numDups) {
-          const RowInfo rowInfo = graph.getRowInfo (lclRow);
-          if (! sorted) {
-            auto lclColInds = graph.getLocalIndsViewHostNonConst (rowInfo);
-            auto vals = this->getValuesViewHostNonConst (rowInfo);
-
-            sort2 (lclColInds.data (),
-                   lclColInds.data () + rowInfo.numEntries,
-                   vals.data ());
-          }
-          if (! merged) {
-            numDups += this->mergeRowIndicesAndValues (graph, rowInfo);
-          }
-        }, totalNumDups);
+      {
+        //Accessing host unpacked (4-array CRS) local matrix.
+        auto rowBegins_ = graph.rowPtrsUnpacked_host_;
+        auto rowLengths_ = graph.k_numRowEntries_;
+        auto vals_ = this->valuesUnpacked_wdv.getHostView(Access::ReadWrite);
+        auto cols_ = graph.lclIndsUnpacked_wdv.getHostView(Access::ReadWrite);
+        Kokkos::parallel_reduce ("sortAndMergeIndicesAndValues", range_type (0, lclNumRows),
+          [=] (const LO lclRow, size_t& numDups) {
+            size_t rowBegin = rowBegins_(lclRow);
+            size_t rowLen = rowLengths_(lclRow);
+            LO* cols = cols_.data() + rowBegin;
+            impl_scalar_type* vals = vals_.data() + rowBegin;
+            if (! sorted) {
+              sort2 (cols, cols + rowLen, vals);
+            }
+            if (! merged) {
+              size_t newRowLength = mergeRowIndicesAndValues (rowLen, cols, vals);
+              rowLengths_(lclRow) = newRowLength;
+              numDups += rowLen - newRowLength;
+            }
+          }, totalNumDups);
+      }
       if (! sorted) {
         graph.indicesAreSorted_ = true; // we just sorted every row
       }
@@ -5895,7 +5871,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     // Currently, the source object must be a RowMatrix with the same
     // four template parameters as the target CrsMatrix.  We might
     // relax this requirement later.
-    typedef RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> row_matrix_type;
     const row_matrix_type* srcRowMat =
       dynamic_cast<const row_matrix_type*> (&source);
     return (srcRowMat != nullptr);
@@ -5991,7 +5966,7 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     if (refill_num_row_entries) { // unpacked storage
       // We can't assume correct *this capture until C++17, and it's
       // likely more efficient just to capture what we need anyway.
-      num_row_entries_d = create_mirror_view_and_copy(execution_space(),
+      num_row_entries_d = create_mirror_view_and_copy(memory_space(),
                                                  myGraph_->k_numRowEntries_);
       Kokkos::parallel_for
         ("Fill end row pointers", range_policy(0, N),
@@ -6622,7 +6597,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
         std::cerr << os.str ();
       }
 
-      using row_matrix_type = RowMatrix<Scalar, LO, GO, Node>;
       const row_matrix_type* srcRowMat =
         dynamic_cast<const row_matrix_type*> (&source);
       TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC
@@ -7034,8 +7008,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using LO = LocalOrdinal;
     using GO = GlobalOrdinal;
     using ST = impl_scalar_type;
-    using HES =
-      typename View<int*, device_type>::HostMirror::execution_space;
     const char tfecfFuncName[] = "packNonStaticNew: ";
 
     const bool verbose = Behavior::verbose("CrsMatrix");
@@ -7854,8 +7826,6 @@ CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>::
     using std::endl;
     using LO = local_ordinal_type;
     using GO = global_ordinal_type;
-    using row_matrix_type =
-      RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     using crs_matrix_type =
       CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>;
     const char errPfx[] = "Tpetra::CrsMatrix::add: ";

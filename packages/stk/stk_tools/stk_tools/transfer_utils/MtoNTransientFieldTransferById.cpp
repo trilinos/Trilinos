@@ -52,14 +52,6 @@ MtoNTransientFieldTransferById::MtoNTransientFieldTransferById(stk::io::StkMeshI
   }
 }
 
-MtoNTransientFieldTransferById::MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain,
-                                                               const std::vector<stk::mesh::EntityRank> &entityRanks)
-  : m_inputBroker(inputBroker),
-    m_numSubDomain(numSubDomain),
-    m_entityRanks(entityRanks)
-{
-}
-
 MtoNTransientFieldTransferById::~MtoNTransientFieldTransferById()
 {
   for (auto & writerPair : m_subdomainWriters) {

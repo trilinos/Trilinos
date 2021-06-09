@@ -45,18 +45,17 @@ namespace stk { namespace mesh { class BulkData; }}
 namespace stk { namespace mesh { class FieldBase; }}
 namespace stk { namespace mesh { class Bucket; }}
 namespace stk { namespace balance { class M2NParsedOptions; }}
-namespace stk { namespace balance { namespace internal { class M2NDecomposer; }}}
+namespace stk { namespace balance { namespace m2n { class M2NDecomposer; }}}
 namespace stk { namespace io { class StkMeshIoBroker; }}
 
 namespace stk {
 namespace balance {
-namespace internal {
+namespace m2n {
 
 class MtoNRebalancer
 {
 public:
     MtoNRebalancer(stk::io::StkMeshIoBroker& ioBroker,
-                   stk::mesh::Field<unsigned> &targetField,
                    M2NDecomposer &decomposer,
                    const M2NBalanceSettings &balanceSettings);
 
@@ -72,22 +71,17 @@ public:
 
     OutputMesh clone_target_subdomains(const std::vector<unsigned> & targetSubdomains);
 
-    void move_subdomain_to_owning_processor(OutputMesh & outputMesh);
+    void move_subdomain_to_owning_processor(OutputMesh & outputMesh, const std::vector<unsigned> & targetSubdomains);
 
     void create_subdomain_and_write(const std::string &filename, const std::vector<unsigned> & targetSubdomains,
                                     OutputMesh & outputMesh,  int numSteps = -1, double timeStep = 0.0);
 
-    stk::mesh::MetaData& get_meta();
-    stk::mesh::BulkData& get_bulk();
     SubdomainCreator& get_subdomain_creator();
-
-    int get_num_target_subdomains();
 
     const std::vector<unsigned> & get_owner_for_each_final_subdomain() const { return m_ownerForEachFinalSubdomain; }
 
 private:
     void move_entities_into_mapped_subdomain_parts();
-    void store_off_target_proc_on_elements_before_moving_subdomains();
 
     MtoNRebalancer( const MtoNRebalancer& other );
     MtoNRebalancer& operator=( const MtoNRebalancer& other );
@@ -95,7 +89,6 @@ private:
     stk::mesh::BulkData &m_bulkData;
     SubdomainCreator m_subdomainCreator;
     M2NDecomposer &m_decomposer;
-    stk::mesh::Field<unsigned> &m_inputMeshTargetDecompField;
     const M2NBalanceSettings &m_balanceSettings;
     stk::mesh::EntityProcVec m_decomp;
     std::vector<unsigned> m_ownerForEachFinalSubdomain;

@@ -1,6 +1,6 @@
 #ifndef NGS_INDEPENDENT_SET_LIB_INDEPENDENTSETFINDER_HPP_
 #define NGS_INDEPENDENT_SET_LIB_INDEPENDENTSETFINDER_HPP_
-#include <IndependentSetInfoToInfoGraph.hpp>
+#include <stk_emend/independent_set/IndependentSetInfoToInfoGraph.hpp>
 #include <stk_util/parallel/ParallelReduceBool.hpp>
 #include <stk_util/parallel/CommSparse.hpp>
 #include <stk_util/util/ReportHandler.hpp>

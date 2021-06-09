@@ -69,7 +69,6 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   std::string addTimerName = "CG: axpby";
   std::string matvecTimerName = "CG: spmv";
   std::string dotTimerName = "CG: dot";
-  std::string replaceValsName = "CG: replaceLocalValues";
   static_assert (std::is_same<typename CrsMatrix::scalar_type, typename Vector::scalar_type>::value,
                  "The CrsMatrix and Vector template parameters must have the same scalar_type.");
 
@@ -82,16 +81,6 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   r = Tpetra::createVector<ScalarType>(A->getRangeMap());
   p = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
-
-  {
-    TimeMonitor t(*TimeMonitor::getNewTimer(replaceValsName));
-    int length = r->getLocalLength();
-    for(int i = 0;i<length;i++) {
-      x->replaceLocalValue(i,0);
-      r->replaceLocalValue(i,1);
-      Ap->replaceLocalValue(i,1);
-    }
-  }
 
   magnitude_type normr = 0;
   magnitude_type rtrans = 0;
@@ -216,8 +205,6 @@ int run()
   typedef Tpetra::Vector<Scalar,LO,GO,Node>             vec_type;
   typedef Tpetra::Map<LO,GO,Node>                       map_type;
 
-  typedef typename vec_type::mag_type                   mag_type;
-
   //
   // Get the communicator and node
   //
@@ -268,8 +255,7 @@ int run()
                                      map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
-                                         );
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ());
   }
 
   // The vector x on input is the initial guess for the CG solve.

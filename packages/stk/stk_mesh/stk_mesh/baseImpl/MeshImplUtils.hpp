@@ -207,10 +207,10 @@ void comm_sync_send_recv(
   std::set< EntityKey > & new_recv );
 
 void comm_sync_send_recv(
-  BulkData & mesh ,
-  std::set< EntityProc , EntityLess > & new_send ,
-  std::vector<Entity> & new_recv,
-  std::vector<bool>& ghostStatus );
+  const BulkData & mesh ,
+  const std::vector<Entity>& removeRecvGhosts,
+  std::set< EntityProc, EntityLess> & newSendGhosts,
+  std::set< EntityKeyProc> & removeSendGhosts);
 
 void comm_sync_aura_send_recv(
   BulkData & mesh ,
