@@ -24,13 +24,15 @@ tribits_add_advanced_test( Results
     SKIP_CLEAN_WORKING_DIRECTORY  # Critical or you delete the entire working dir!
     ALWAYS_FAIL_ON_NONZERO_RETURN
   TEST_1
-    MESSAGE "Sumarize the build stats from the already created build_stats.csv file"
+    MESSAGE "Sumarize the build stats from the already created build_stats.csv file (CTEST_FULL_OUTPUT)"
     CMND "${${PROJECT_NAME}_SOURCE_DIR}/commonTools/build_stats/summarize_build_stats.py"
     ARGS --bin-by-subdirs-under-dirs=commonTools,packages
       "${${PROJECT_NAME}_BINARY_DIR}/build_stats.csv"
     ALWAYS_FAIL_ON_NONZERO_RETURN
   ADDED_TEST_NAME_OUT Results_TEST_NAME
   )
+  # Note, above CTEST_FULL_OUTPUT is in the MESSAGE to get ctest to keep the
+  # full test output and send and display on CDash.
 
 if (Results_TEST_NAME)
   set_tests_properties( ${Results_TEST_NAME} PROPERTIES
