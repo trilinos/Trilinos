@@ -61,7 +61,9 @@
 #include "MueLu_FactoryManagerBase.hpp"
 #include "MueLu_Utilities.hpp"
 #include "MueLu_Monitor.hpp"
+#ifdef MUELU_RECURMG
 #include "Stratimikos_MueLuHelpers.hpp"
+#endif
 
 #include <Stratimikos_DefaultLinearSolverBuilder.hpp>
 #include "Teuchos_AbstractFactoryStd.hpp"
