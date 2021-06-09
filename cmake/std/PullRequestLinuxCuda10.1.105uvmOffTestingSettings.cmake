@@ -161,10 +161,6 @@ set (Teko_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Xpetra_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Zoltan2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 
-# Tpetra UVM = OFF tests
-set (TpetraCore_BlockCrsMatrix_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-set (TpetraCore_BlockCrsPerfTest_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for UVM build")
-
 # ShyLU_DD UVM = OFF tests
 set (ShyLU_DDFROSch_test_thyra_xpetra_laplace_one_rank_TLP_IPOU_DIM3_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (ShyLU_DDFROSch_test_thyra_xpetra_laplace_one_rank_TLP_GDSW_DIM2_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
