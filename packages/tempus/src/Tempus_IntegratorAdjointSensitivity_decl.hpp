@@ -11,7 +11,7 @@
 
 // Tempus
 #include "Tempus_config.hpp"
-#include "Tempus_IntegratorBasicOld.hpp"
+#include "Tempus_IntegratorBasic.hpp"
 #include "Tempus_AdjointAuxSensitivityModelEvaluator.hpp"
 
 namespace Tempus {
@@ -181,9 +181,10 @@ protected:
 
   Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > model_;
   Teuchos::RCP<AdjointAuxSensitivityModelEvaluator<Scalar> > adjoint_model_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > state_integrator_;
-  Teuchos::RCP<IntegratorBasicOld<Scalar> > adjoint_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > state_integrator_;
+  Teuchos::RCP<IntegratorBasic<Scalar> > adjoint_integrator_;
   Teuchos::RCP<SolutionHistory<Scalar> > solutionHistory_;
+  Teuchos::RCP<Teuchos::ParameterList>      tempusPL_;
   int p_index_;
   int g_index_;
   bool g_depends_on_p_;

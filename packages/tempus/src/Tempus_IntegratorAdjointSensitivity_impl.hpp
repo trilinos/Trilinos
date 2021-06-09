@@ -27,7 +27,7 @@ IntegratorAdjointSensitivity(
 {
   model_ = model;
   setParameterList(inputPL);
-  state_integrator_ = integratorBasic<Scalar>(inputPL, model_);
+  state_integrator_ = createIntegratorBasic<Scalar>(inputPL, model_);
 
   TEUCHOS_TEST_FOR_EXCEPTION( getStepper()->getUseFSAL(), std::logic_error,
     "Error - IntegratorAdjointSensitivity(): Cannot use FSAL with\n"
@@ -38,15 +38,15 @@ IntegratorAdjointSensitivity(
     "        which has not been implemented yet.\n");
 
   adjoint_model_ = createAdjointModel(model_, inputPL);
-  adjoint_integrator_ = integratorBasic<Scalar>(inputPL, adjoint_model_);
+  adjoint_integrator_ = createIntegratorBasic<Scalar>(inputPL, adjoint_model_);
 }
 
 template<class Scalar>
 IntegratorAdjointSensitivity<Scalar>::
 IntegratorAdjointSensitivity()
 {
-  state_integrator_ = integratorBasic<Scalar>();
-  adjoint_integrator_ = integratorBasic<Scalar>();
+  state_integrator_ = createIntegratorBasic<Scalar>();
+  adjoint_integrator_ = createIntegratorBasic<Scalar>();
 }
 
 template<class Scalar>
@@ -404,10 +404,14 @@ void
 IntegratorAdjointSensitivity<Scalar>::
 setParameterList(const Teuchos::RCP<Teuchos::ParameterList> & inputPL)
 {
+  if (inputPL != Teuchos::null){
+    auto integrator_name = inputPL->get<std::string>("Integrator Name");
+    tempusPL_ = Teuchos::sublist(inputPL, integrator_name, true);
+  }
   if (state_integrator_ != Teuchos::null)
-    state_integrator_->setParameterList(inputPL);
+    state_integrator_->setTempusParameterList(tempusPL_);
   if (adjoint_integrator_ != Teuchos::null)
-    adjoint_integrator_->setParameterList(inputPL);
+    adjoint_integrator_->setTempusParameterList(tempusPL_);
   Teuchos::ParameterList& spl = inputPL->sublist("Sensitivities");
   p_index_ = spl.get<int>("Sensitivity Parameter Index", 0);
   g_index_ = spl.get<int>("Response Function Index", 0);
@@ -422,8 +426,9 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorAdjointSensitivity<Scalar>::
 unsetParameterList()
 {
-  state_integrator_->unsetParameterList();
-  return adjoint_integrator_->unsetParameterList();
+  //state_integrator_->unsetParameterList();
+  //return adjoint_integrator_->unsetParameterList();
+  return adjoint_integrator_->getTempusParameterList();
 }
 
 template<class Scalar>
@@ -455,7 +460,7 @@ Teuchos::RCP<Teuchos::ParameterList>
 IntegratorAdjointSensitivity<Scalar>::
 getNonconstParameterList()
 {
-  return state_integrator_->getNonconstParameterList();
+  return state_integrator_->getTempusParameterList();
 }
 
 template <class Scalar>
@@ -504,8 +509,7 @@ buildSolutionHistory(
   // Create combined solution histories combining the forward and adjoint
   // solutions.  We do not include the auxiliary part from the adjoint solution.
   RCP<ParameterList> shPL =
-    Teuchos::sublist(state_integrator_->getIntegratorParameterList(),
-                     "Solution History", true);
+    Teuchos::sublist(tempusPL_, "Solution History", true);
   solutionHistory_ = createSolutionHistoryPL<Scalar>(shPL);
 
   RCP<const VectorSpaceBase<Scalar> > x_space = model_->get_x_space();
