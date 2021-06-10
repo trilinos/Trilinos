@@ -679,8 +679,8 @@ namespace Amesos2 {
                          EDistribution distribution,
                          EStorage_Ordering ordering)
       {
-        typedef typename M::scalar_t mat_scalar_t;
         typedef typename M::global_ordinal_t mat_go_t;
+        typedef typename Kokkos::ArithTraits<typename M::scalar_t>::val_type mat_scalar_t;
         typedef typename Kokkos::View<mat_scalar_t*, Kokkos::HostSpace> KV_TMP;
         size_t i, size = nzvals.extent(0);
         KV_TMP nzvals_tmp(Kokkos::ViewAllocateWithoutInitializing("nzvals_tmp"), size);
