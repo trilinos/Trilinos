@@ -5,7 +5,11 @@
 #include <unordered_map>
 #include <iostream>
 #include <queue>
+#ifdef _WIN32
+#include <time.h>
+#else
 #include <sys/time.h>
+#endif
 
 #include "Zoltan2_Algorithm.hpp"
 #include "Zoltan2_GraphModel.hpp"
