@@ -180,20 +180,40 @@ Systems," SIAM Journal on Scientific Computing, 28(5), pp. 1651-1674,
   class GCRODRSolMgr<ScalarType, MV, OP, true> :
     public Details::SolverManagerRequiresLapack<ScalarType, MV, OP, true>
   {
+
 #if defined(HAVE_TEUCHOSCORE_CXX11)
 #  if defined(HAVE_TEUCHOS_COMPLEX)
-    static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
-                   std::is_same<ScalarType, std::complex<double> >::value ||
-                   std::is_same<ScalarType, float>::value ||
-                   std::is_same<ScalarType, double>::value,
-                   "Belos::GCRODRSolMgr: ScalarType must be one of the four "
-                   "types (S,D,C,Z) supported by LAPACK.");
+      #if defined(HAVE_TEUCHOS_LONG_DOUBLE) 
+        static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
+                       std::is_same<ScalarType, std::complex<double> >::value ||
+                       std::is_same<ScalarType, float>::value ||
+                       std::is_same<ScalarType, double>::value ||
+                       std::is_same<ScalarType, long double>::value,
+                       "Belos::GCRODRSolMgr: ScalarType must be one of the four "
+                       "types (S,D,C,Z) supported by LAPACK or long double (largely not impl'd).");
+       #else
+        static_assert (std::is_same<ScalarType, std::complex<float> >::value ||
+                       std::is_same<ScalarType, std::complex<double> >::value ||
+                       std::is_same<ScalarType, float>::value ||
+                       std::is_same<ScalarType, double>::value,
+                       "Belos::GCRODRSolMgr: ScalarType must be one of the four "
+                       "types (S,D,C,Z) supported by LAPACK.");
+       #endif	
 #  else
-    static_assert (std::is_same<ScalarType, float>::value ||
-                   std::is_same<ScalarType, double>::value,
-                   "Belos::GCRODRSolMgr: ScalarType must be float or double.  "
-                   "Complex arithmetic support is currently disabled.  To "
-                   "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
+      #if defined(HAVE_TEUCHOS_LONG_DOUBLE) 
+        static_assert (std::is_same<ScalarType, float>::value ||
+                       std::is_same<ScalarType, double>::value ||
+                       std::is_same<ScalarType, long double>::value,
+                       "Belos::GCRODRSolMgr: ScalarType must be float, double or long double.  "
+                       "Complex arithmetic support is currently disabled.  To "
+                       "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
+      #else
+        static_assert (std::is_same<ScalarType, float>::value ||
+                       std::is_same<ScalarType, double>::value,
+                       "Belos::GCRODRSolMgr: ScalarType must be float or double.  "
+                       "Complex arithmetic support is currently disabled.  To "
+                       "enable it, set Teuchos_ENABLE_COMPLEX=ON.");
+      #endif	
 #  endif // defined(HAVE_TEUCHOS_COMPLEX)
 #endif // defined(HAVE_TEUCHOSCORE_CXX11)
 
