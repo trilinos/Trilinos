@@ -77,16 +77,16 @@ using scalarDualViewType = Kokkos::DualView<Scalar*, deviceType>;
 using global2DArrayDualViewType = Kokkos::DualView<global_ordinal_type*[4], deviceType>;
 using local2DArrayDualViewType = Kokkos::DualView<local_ordinal_type*[4], deviceType>;
 using scalar2DArrayDualViewType = Kokkos::DualView<Scalar*[4], deviceType>;
-using boolDualViewType = Kokkos::DualView<bool*, execution_space>;
+using boolDualViewType = Kokkos::DualView<bool*, deviceType>;
 
 using global_ordinal_view_type =
   Tpetra::Details::WrappedDualView<globalDualViewType>;
 using local_ordinal_view_type =
   Tpetra::Details::WrappedDualView<localDualViewType>;
 using local_ordinal_single_view_type = 
-  Kokkos::View<local_ordinal_type*, execution_space>;
+  Kokkos::View<local_ordinal_type*, deviceType>;
 using scalar_1d_array_type = 
-  Kokkos::View<Scalar*, execution_space>;
+  Kokkos::View<Scalar*, deviceType>;
 using bool_1d_array_type = 
   Tpetra::Details::WrappedDualView<boolDualViewType>;
 
@@ -96,7 +96,7 @@ using local_ordinal_2d_array_type =
 using global_ordinal_2d_array_type =
   Tpetra::Details::WrappedDualView<global2DArrayDualViewType>;
 using scalar_2d_array_type = 
-  Kokkos::View<Scalar*[4], execution_space>;
+  Kokkos::View<Scalar*[4], deviceType>;
 
 
 }

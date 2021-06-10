@@ -1022,6 +1022,7 @@ namespace {
 
     using local_inds_host_view_type = typename BCM::local_inds_host_view_type;
     using values_host_view_type = typename BCM::values_host_view_type;
+    using nonconst_values_host_view_type = typename BCM::nonconst_values_host_view_type;
 
     int lclSuccess = 1;
     int gblSuccess = 1;
@@ -1183,10 +1184,10 @@ namespace {
          lclRowInd <= meshRowMap.getMaxLocalIndex (); ++lclRowInd) {
       const GO gblRowInd = meshRowMap.getGlobalElement (lclRowInd);
       local_inds_host_view_type lclColInds;
-      values_host_view_type myVals;
+      nonconst_values_host_view_type myVals;
       LO numEnt = 0;
-      blockMat.getLocalRowView (lclRowInd, lclColInds, myVals); numEnt = lclColInds.extent(0);
-
+      blockMat.getLocalRowViewNonConst (lclRowInd, lclColInds, myVals); numEnt = lclColInds.extent(0);
+      
       // Fill the diagonal block D such that D(i,j) = (lclRowInd+1) *
       // (1 + i + j*blockSize).  Fill the off-diagonal block with -1.
       // This ensures that we can tell we got the right blocks, and

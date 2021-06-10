@@ -74,7 +74,6 @@
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_TimeMonitor.hpp"
-#include "Teuchos_BLAS.hpp"
 
 namespace Belos {
 
@@ -464,8 +463,6 @@ class MinresIter : virtual public MinresIteration<ScalarType,MV,OP> {
     if (initialized_ == false) {
       initialize();
     }
-
-    Teuchos::BLAS<int,ScalarType> blas;
 
     // Create convenience variables for zero and one.
     const ScalarType one = SCT::one();

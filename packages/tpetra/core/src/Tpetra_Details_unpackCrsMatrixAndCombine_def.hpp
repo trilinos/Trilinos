@@ -1216,7 +1216,7 @@ unpackCrsMatrixAndCombine(
   typedef typename device_type::execution_space XS;
 
   // Convert all Teuchos::Array to Kokkos::View.
-  typename XS::device_type outputDevice;
+  device_type outputDevice;
 
   // numPacketsPerLID, importLIDs, and imports are input, so we have to copy
   // them to device.  Since unpacking is done directly in to the local matrix
@@ -1498,7 +1498,7 @@ unpackAndCombineIntoCrsArrays (
   auto local_col_map = sourceMatrix.getColMap()->getLocalMap();
 
   // Convert input arrays to Kokkos::View
-  typename XS::device_type outputDevice;
+  DT outputDevice;
   auto import_lids_d =
     create_mirror_view_from_raw_host_array(outputDevice, importLIDs.getRawPtr(),
         importLIDs.size(), true, "import_lids");

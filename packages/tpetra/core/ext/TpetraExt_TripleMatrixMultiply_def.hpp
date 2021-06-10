@@ -73,6 +73,7 @@
 // NOTE: This needs to be outside all namespaces
 #include "TpetraExt_MatrixMatrix_OpenMP.hpp"
 #include "TpetraExt_MatrixMatrix_Cuda.hpp"
+#include "TpetraExt_MatrixMatrix_HIP.hpp"
 
 namespace Tpetra {
 

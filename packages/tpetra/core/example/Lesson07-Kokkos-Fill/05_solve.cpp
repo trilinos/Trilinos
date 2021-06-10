@@ -144,6 +144,8 @@ int main (int argc, char* argv[]) {
   // respect Tpetra's choices of local and global indices.
   using LO = Tpetra::Map<>::local_ordinal_type;
   using GO = Tpetra::Map<>::global_ordinal_type;
+  using NT = Tpetra::Map<>::node_type;
+  using device_type = typename NT::device_type;
 
   Tpetra::ScopeGuard tpetraScope (&argc, &argv);
   {
@@ -163,14 +165,14 @@ int main (int argc, char* argv[]) {
     // Describe the physical problem (heat equation with
     // nonhomogeneous Dirichlet boundary conditions) and its
     // discretization.
-    Kokkos::View<double*> temperature ("temperature", numLclNodes);
+    Kokkos::View<double*, device_type> temperature ("temperature", numLclNodes);
     const double diffusionCoeff = 1.0;
     const double x_left = 0.0; // position of the left boundary
     const double T_left = 0.0; // temperature at the left boundary
     const double x_right = 1.0; // position of the right boundary
     const double T_right = 1.0; // temperature at the right boundary
     const double dx = (x_right - x_left) / numGblElements;
-    Kokkos::View<double*> forcingTerm ("forcing term", numLclNodes);
+    Kokkos::View<double*, device_type> forcingTerm ("forcing term", numLclNodes);
 
     // Set the forcing term.  We picked it so that we can know the exact
     // solution of the heat equation, namely
@@ -191,7 +193,7 @@ int main (int argc, char* argv[]) {
     // of (local) entries in each row, using Kokkos' atomic updates.
     // We may use LO for the number of entries in each row, since it
     // may not exceed the number of columns in the local matrix.
-    Kokkos::View<LO*> rowCounts ("row counts", numLclRows);
+    Kokkos::View<LO*, device_type> rowCounts ("row counts", numLclRows);
     size_t numLclEntries = 0;
     Kokkos::parallel_reduce ("Count graph", numLclElements,
       KOKKOS_LAMBDA (const LO elt, size_t& curNumLclEntries) {
@@ -241,7 +243,7 @@ int main (int argc, char* argv[]) {
 
     // Use a parallel scan (prefix sum) over the array of row counts, to
     // compute the array of row offsets for the sparse graph.
-    Kokkos::View<row_offset_type*> rowOffsets ("row offsets", numLclRows+1);
+    Kokkos::View<row_offset_type*, device_type> rowOffsets ("row offsets", numLclRows+1);
     Kokkos::parallel_scan ("Row offsets", numLclRows+1,
       KOKKOS_LAMBDA (const LO lclRows,
                      row_offset_type& update,
@@ -268,8 +270,8 @@ int main (int argc, char* argv[]) {
     // without resetting its entries.
     Kokkos::deep_copy (rowCounts, 0);
 
-    Kokkos::View<LO*> colIndices ("column indices", numLclEntries);
-    Kokkos::View<double*> matrixValues ("matrix values", numLclEntries);
+    Kokkos::View<LO*, device_type> colIndices ("column indices", numLclEntries);
+    Kokkos::View<double*, device_type> matrixValues ("matrix values", numLclEntries);
 
     // Iterate over elements in parallel to fill the graph, matrix,
     // and right-hand side (forcing term).  The latter gets the
@@ -355,7 +357,7 @@ int main (int argc, char* argv[]) {
     // issues are that Teuchos::RCP isn't thread safe, and the Kokkos
     // version of Tpetra::Map isn't quite ready yet.  We will change
     // the latter soon.
-    Kokkos::View<GO*>::HostMirror colInds ("Column Map", num_col_inds);
+    Kokkos::View<GO*, Kokkos::HostSpace> colInds ("Column Map", num_col_inds);
     for (LO k = 0; k < numLclElements; ++k) {
       colInds(k) = rowMap->getGlobalElement (k);
     }
@@ -384,13 +386,13 @@ int main (int argc, char* argv[]) {
 
     // Hack to deal with the fact that Tpetra::Vector needs a
     // DualView<double**> for now, rather than a View<double*>.
-    Kokkos::DualView<double**, Kokkos::LayoutLeft> b_lcl ("b", numLclRows, 1);
-    b_lcl.modify<Kokkos::DualView<double**, Kokkos::LayoutLeft>::t_dev::execution_space> ();
+    Kokkos::DualView<double**, Kokkos::LayoutLeft, device_type> b_lcl ("b", numLclRows, 1);
+    b_lcl.modify_device ();
     Kokkos::deep_copy (Kokkos::subview (b_lcl.d_view, Kokkos::ALL (), 0), forcingTerm);
     Tpetra::Vector<> b (A.getRangeMap (), b_lcl);
 
-    Kokkos::DualView<double**, Kokkos::LayoutLeft> x_lcl ("b", numLclRows, 1);
-    x_lcl.modify<Kokkos::DualView<double**, Kokkos::LayoutLeft>::t_dev::execution_space> ();
+    Kokkos::DualView<double**, Kokkos::LayoutLeft, device_type> x_lcl ("b", numLclRows, 1);
+    x_lcl.modify_device ();
     Kokkos::deep_copy (Kokkos::subview (x_lcl.d_view, Kokkos::ALL (), 0), temperature);
     Tpetra::Vector<> x (A.getDomainMap (), x_lcl);
 
@@ -403,7 +405,7 @@ int main (int argc, char* argv[]) {
     // DualView<double**> for now, rather than a View<double*>.  This
     // means that we have to make a deep copy back into the
     // 'temperature' output array.
-    x_lcl.sync<Kokkos::DualView<double**, Kokkos::LayoutLeft>::t_dev::execution_space> ();
+    x_lcl.sync_device ();
     Kokkos::deep_copy (temperature, Kokkos::subview (b_lcl.d_view, Kokkos::ALL (), 0));
 
     // Correct the solution for the nonhomogenous Dirichlet boundary
@@ -419,23 +421,11 @@ int main (int argc, char* argv[]) {
     // u(x) = -4.0 * (x - 0.5) * (x - 0.5) + 1.0 + (T_left - T_right)x.
     Tpetra::Vector<> x_exact (x, Teuchos::Copy);
     typedef Tpetra::Vector<>::dual_view_type dual_view_type;
-    typedef dual_view_type::t_dev::execution_space execution_space;
-    typedef dual_view_type::t_dev::memory_space memory_space;
+    typedef typename device_type::execution_space execution_space;
+    typedef typename device_type::memory_space memory_space;
     typedef Kokkos::RangePolicy<execution_space, LO> policy_type;
 
-    // Slight breakage with respect to GCC < 4.8.
-    // mfh 20 Aug 2017: See also GitHub issue #1629.
-#if defined(__GNUC__)
-#  if __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-    auto x_exact_lcl = x_exact.getLocalView<memory_space> (Tpetra::Access::ReadWrite);
-#  elif __GNUC__ == 4 && __GNUC_MINOR__ > 7 // GCC >= 4.8
-    auto x_exact_lcl = x_exact.template getLocalView<memory_space> (Tpetra::Access::ReadWrite);
-#  else // GCC >= 5
-    auto x_exact_lcl = x_exact.getLocalView<memory_space> (Tpetra::Access::ReadWrite);
-#  endif // __GNUC__ == 4 && __GNUC_MINOR__ <= 7
-#else // ! defined(__GNUC__)
-    auto x_exact_lcl = x_exact.template getLocalView<memory_space> (Tpetra::Access::ReadWrite);
-#endif // defined(__GNUC__)
+    auto x_exact_lcl = x_exact.getLocalViewDevice (Tpetra::Access::ReadWrite);
 
     Kokkos::parallel_for ("Compare solutions",
       policy_type (0, numLclNodes),

@@ -496,14 +496,12 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT> >& colMap,
   return errCode;
 }
 
-template<typename GO, typename device_t>
+template<typename GOView, typename bitset_t>
 struct GatherPresentEntries
 {
-  using bitset_t = Kokkos::Bitset<device_t>;
-  using mem_space = typename device_t::memory_space;
-  using GOView = Kokkos::View<GO*, mem_space>;
+  using GO = typename GOView::non_const_value_type;
 
-  GatherPresentEntries(GO minGID_, const GOView& gids_, bitset_t& present_)
+  GatherPresentEntries(GO minGID_, const GOView& gids_, const bitset_t& present_)
     : minGID(minGID_), gids(gids_), present(present_)
   {}
 
@@ -517,10 +515,9 @@ struct GatherPresentEntries
   bitset_t present;
 };
 
-template<typename LO, typename GO, typename device_t, typename LocalMapType, bool doingRemotes>
+template<typename LO, typename GO, typename device_t, typename LocalMapType, typename const_bitset_t, bool doingRemotes>
 struct ListGIDs
 {
-  using const_bitset_t = Kokkos::ConstBitset<device_t>;
   using mem_space = typename device_t::memory_space;
   using GOView = Kokkos::View<GO*, mem_space>;
   using SingleView = Kokkos::View<GO, mem_space>;
@@ -590,8 +587,13 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   using device_t = typename NT::device_type;
   using exec_space = typename device_t::execution_space;
   using memory_space = typename device_t::memory_space;
-  using bitset_t = Kokkos::Bitset<device_t>;
-  using const_bitset_t = Kokkos::ConstBitset<device_t>;
+  // Note BMK 5-2021: this is deliberately not just device_t.
+  // Bitset cannot use HIPHostPinnedSpace currently, so this needs to
+  // use the default memory space for HIP (HIPSpace). Using the default mem
+  // space is fine for all other backends too. This bitset type is only used
+  // in this function so it won't cause type mismatches.
+  using bitset_t = Kokkos::Bitset<typename exec_space::memory_space>;
+  using const_bitset_t = Kokkos::ConstBitset<typename exec_space::memory_space>;
   using GOView = Kokkos::View<GO*, memory_space>;
   using SingleView = Kokkos::View<GO, memory_space>;
   using map_type = Tpetra::Map<LO, GO, NT>;
@@ -608,7 +610,7 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   //Now, know the full range of input GIDs.
   //Determine the set of GIDs in the column map using a dense bitset, which corresponds to the range [minGID, maxGID]
   bitset_t presentGIDs(maxGID - minGID + 1);
-  Kokkos::parallel_for(RangePolicy<exec_space>(0, nentries), GatherPresentEntries<GO, device_t>(minGID, gids, presentGIDs));
+  Kokkos::parallel_for(RangePolicy<exec_space>(0, nentries), GatherPresentEntries<GOView, bitset_t>(minGID, gids, presentGIDs));
   const_bitset_t constPresentGIDs(presentGIDs);
   //Get the set of local and remote GIDs on device
   SingleView numLocals("Num local GIDs");
@@ -618,11 +620,11 @@ makeColMap (Teuchos::RCP<const Tpetra::Map<LO, GO, NT>>& colMap,
   LocalMap localDomMap = domMap->getLocalMap();
   //This lists the locally owned GIDs in localGIDView
   Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
-      ListGIDs<LO, GO, device_t, LocalMap, false>
+      ListGIDs<LO, GO, device_t, LocalMap, const_bitset_t, false>
       (minGID, localGIDView, numLocals, constPresentGIDs, localDomMap));
   //And this lists the remote GIDs in remoteGIDView
   Kokkos::parallel_scan(RangePolicy<exec_space>(0, constPresentGIDs.size()),
-      ListGIDs<LO, GO, device_t, LocalMap, true>
+      ListGIDs<LO, GO, device_t, LocalMap, const_bitset_t, true>
       (minGID, remoteGIDView, numRemotes, constPresentGIDs, localDomMap));
   //Pull down the sizes
   GO numLocalColGIDs = 0;

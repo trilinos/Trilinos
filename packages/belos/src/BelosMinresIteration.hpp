@@ -117,26 +117,6 @@ namespace Belos {
     MinresIterateFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
-  /** \brief MinresIterationOrthoFailure is thrown when the MinresIteration object is unable to
-   * compute independent direction vectors in the MinresIteration::iterate() routine.
-   *
-   * This std::exception is thrown from the MinresIteration::iterate() method.
-   *
-   */
-  class MinresIterationOrthoFailure : public BelosError {public:
-    MinresIterationOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief MinresIterationLAPACKFailure is thrown when a nonzero return value is passed back
-   * from an LAPACK routine.
-   *
-   * This std::exception is thrown from the MinresIteration::iterate() method.
-   *
-   */
-  class MinresIterationLAPACKFailure : public BelosError {public:
-    MinresIterationLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
   //@}
 
 
