@@ -161,9 +161,11 @@ set (Xpetra_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 set (Zoltan2_ENABLE_TESTS OFF CACHE BOOL "Turn off tests for non-UVM build")
 
 # Ifpack2 UVM = OFF tests
+set (Ifpack2_AdditiveSchwarz_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (Ifpack2_RILUK_HTS_hb_belos_MPI_2_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (Ifpack2_RILUK_HTS_hb_belos_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 set (Ifpack2_BlockTriDiContainerUnitAndPerfTests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
+set (Ifpack2_unit_tests_MPI_4_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
 
 # ShyLU_DD UVM = OFF tests
 set (ShyLU_DDFROSch_test_thyra_xpetra_laplace_one_rank_TLP_IPOU_DIM3_TPETRA_MPI_1_DISABLE ON CACHE BOOL "Turn off tests for non-UVM build")
