@@ -126,6 +126,7 @@ void TimeEventListIndex<Scalar>::describe() const
 {
   Teuchos::RCP<Teuchos::FancyOStream> out =
     Teuchos::VerboseObjectBase::getDefaultOStream();
+  out->setOutputToRootOnly(0);
   *out << "TimeEventListIndex:" << "\n"
        << "name       = " << this->getName() << "\n"
        << "IndexList_ = " << std::endl;

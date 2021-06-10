@@ -6,9 +6,10 @@
  * See packages/seacas/LICENSE for details
  */
 /* cgidef.h   CGI enumerated type definitions for C programs
- * 8 Sep 1989, last date modified
- * Pat McGee, jpm@lanl.gov
  */
+
+#ifndef CGIDEF_H
+#define CGIDEF_H
 
 /* escape enumerations */
 #define XEMFNM -28372 /* metafile name */
@@ -195,4 +196,4 @@
 #define CVALL 1
 #define CVSOME 2
 
-/* end cgidef.h */
+#endif

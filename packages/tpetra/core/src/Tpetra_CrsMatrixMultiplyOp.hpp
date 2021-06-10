@@ -108,8 +108,8 @@ namespace Tpetra {
     using map_type = Map<LocalOrdinal, GlobalOrdinal, Node>;
 
   private:
-    using local_matrix_type =
-      typename crs_matrix_type::local_matrix_type;
+    using local_matrix_device_type =
+      typename crs_matrix_type::local_matrix_device_type;
 
   public:
     //! @name Constructor and destructor
@@ -121,7 +121,8 @@ namespace Tpetra {
     ///   <tt>Operator<Scalar, ...></tt>.
     CrsMatrixMultiplyOp (const Teuchos::RCP<const crs_matrix_type>& A) :
       matrix_ (A),
-      localMultiply_ (std::make_shared<local_matrix_type> (A->getLocalMatrix ()))
+      localMultiply_ (std::make_shared<local_matrix_device_type> (
+                                       A->getLocalMatrixDevice ()))
     {}
 
     //! Destructor (virtual for memory safety of derived classes).

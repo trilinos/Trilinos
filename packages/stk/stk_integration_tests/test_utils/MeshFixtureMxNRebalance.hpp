@@ -49,8 +49,8 @@
 
 #include <stk_io/IossBridge.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_balance/internal/balanceMtoN.hpp>
-#include <stk_balance/internal/MxNutils.hpp>
+#include <stk_balance/m2n/balanceMtoN.hpp>
+#include <stk_balance/m2n/MxNutils.hpp>
 #include <stk_balance/internal/entityDataToField.hpp>
 #include <stk_balance/setup/M2NParser.hpp>
 
@@ -68,8 +68,8 @@ protected:
     void write_rebalanced_mxn()
     {
         setup_initial_mesh(stk::mesh::BulkData::NO_AUTO_AURA);
-        stk::balance::M2NParsedOptions parsedOptions{get_output_filename(), static_cast<int>(get_num_procs_target_decomp()), false};
-        stk::balance::internal::rebalanceMtoN(m_ioBroker, *targetDecompField, parsedOptions);
+        stk::balance::M2NBalanceSettings balanceSettings(get_output_filename(), get_num_procs_target_decomp());
+        stk::balance::m2n::rebalanceMtoN(m_ioBroker, balanceSettings);
     }
 
     void setup_initial_mesh(stk::mesh::BulkData::AutomaticAuraOption auraOption)
@@ -78,25 +78,8 @@ protected:
       stk::unit_test_util::generated_mesh_to_file_in_serial(get_generated_mesh_spec(), tempInputFilename);
 
       allocate_bulk(auraOption);
-      create_target_decomp_field_on_entire_mesh();
       m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
       stk::io::fill_mesh_preexisting(m_ioBroker, tempInputFilename, get_bulk());
-    }
-
-    void create_field_on_entire_mesh(const std::string& fieldName)
-    {
-        targetDecompField = &get_meta().declare_field<stk::mesh::Field<double> >(stk::topology::ELEMENT_RANK, fieldName, 1);
-        stk::mesh::put_field_on_mesh(*targetDecompField, get_meta().universal_part(), static_cast<double*>(nullptr));
-    }
-
-    void create_target_decomp_field_on_entire_mesh()
-    {
-        create_field_on_entire_mesh(get_target_decomp_field_name());
-    }
-
-    const std::string get_target_decomp_field_name()
-    {
-        return "Target_Decomp";
     }
 
     void test_decomp()
@@ -213,7 +196,6 @@ protected:
     virtual unsigned get_num_procs_initial_decomp() const = 0;
     virtual unsigned get_num_procs_target_decomp() const = 0;
 
-    stk::mesh::Field<double> *targetDecompField;
     stk::io::StkMeshIoBroker m_ioBroker;
 };
 

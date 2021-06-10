@@ -79,7 +79,7 @@ struct BlockTriDiContainerTester {
     const auto col_map = g.getColMap();
     const auto gid = row_map->getGlobalElement(row_lid_to_match);
     const auto col_lid = col_map->getLocalElement(gid);
-    auto block = A.getLocalBlock(row_lid, col_lid);
+    auto block = A.getLocalBlockHostNonConst(row_lid, col_lid);
     const Int bs = block.extent(1);
     for (Int bi = 0; bi < bs; ++bi)
       for (Int bj = 0; bj < bs; ++bj)

@@ -1527,7 +1527,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   size_t nrows = 1000;
   size_t nnzPerRow = 20;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using KCRS = typename crs_matrix_type::local_matrix_device_type;
   using ISC = typename crs_matrix_type::impl_scalar_type;
   using ValuesType = typename KCRS::values_type::non_const_type;
   using RowptrsType = typename KCRS::row_map_type::non_const_type;
@@ -1539,10 +1539,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
   RowptrsType rowptrsCRS[3];
   ColindsType colindsCRS[3];
   //Populate A and B
+  typename ValuesType::HostMirror vals[3];
+     vals[0] = typename ValuesType::HostMirror("vals0", nrows*nnzPerRow);
+     vals[1] = typename ValuesType::HostMirror("vals1", nrows*nnzPerRow);
+  typename RowptrsType::HostMirror rowptrs[3];
+     rowptrs[0] = typename RowptrsType::HostMirror("rowptr0", nrows+1);
+     rowptrs[1] = typename RowptrsType::HostMirror("rowptr1", nrows+1);
+  typename ColindsType::HostMirror colinds[3]; 
+     colinds[0] = typename ColindsType::HostMirror("colind0", nrows*nnzPerRow);
+     colinds[1] = typename ColindsType::HostMirror("colind1", nrows*nnzPerRow);
   {
-    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
-    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
-    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
     //want consistent test results
     srand(12);
     for(LO m = 0; m < 2; m++)
@@ -1577,34 +1583,37 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
       {
         rowptrs[m][row] = row * nnzPerRow;
       }
-      valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
-      rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
-      colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
-      for(size_t i = 0; i < nrows + 1; i++)
-      {
-        rowptrsCRS[m](i) = rowptrs[m][i];
-      }
-      for(size_t i = 0; i < nrows * nnzPerRow; i++)
-      {
-        valsCRS[m](i) = vals[m][i];
-        colindsCRS[m](i) = colinds[m][i];
-      }
-    }
-    for(int i = 0; i < 2; i++)
-    {
-      delete[] vals[i];
-      delete[] rowptrs[i];
-      delete[] colinds[i];
+      valsCRS[m] = Kokkos::create_mirror_view_and_copy(
+                                      typename NT::memory_space(), vals[m]);
+      rowptrsCRS[m] = Kokkos::create_mirror_view_and_copy(
+                                      typename NT::memory_space(), rowptrs[m]);
+      colindsCRS[m] = Kokkos::create_mirror_view_and_copy(
+                                      typename NT::memory_space(), colinds[m]);
     }
   }
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
-  //the above function is an unfenced kernel launch, and the verification below relies on UVM, so fence here.
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addSorted(
+                                valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, 
+                                valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, 
+                                valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+
   ExecSpace().fence();
+
+  vals[2] = Kokkos::create_mirror_view_and_copy(
+                           typename ValuesType::HostMirror::memory_space(),
+                           valsCRS[2]);
+  rowptrs[2] = Kokkos::create_mirror_view_and_copy(
+                              typename RowptrsType::HostMirror::memory_space(),
+                              rowptrsCRS[2]);
+  colinds[2] = Kokkos::create_mirror_view_and_copy(
+                              typename ColindsType::HostMirror::memory_space(),
+                              colindsCRS[2]);
+  
+  //the above function is an unfenced kernel launch, and the verification below relies on UVM, so fence here.
   //now scan through C's rows and entries to check they are correct
-  TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
+  TEST_ASSERT(rowptrs[0].extent(0) == rowptrs[2].extent(0));
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1612,11 +1621,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
     std::vector<bool> correctEntries(nrows, false);
     for(size_t j = 0; j < nnzPerRow; j++)
     {
-      int col1 = colindsCRS[0](i * nnzPerRow + j);
-      int col2 = colindsCRS[1](i * nnzPerRow + j);
-      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      int col1 = colinds[0](i * nnzPerRow + j);
+      int col2 = colinds[1](i * nnzPerRow + j);
+      correctVals[col1] += vals[0](i * nnzPerRow + j);
       correctEntries[col1] = true;
-      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctVals[col2] += vals[1](i * nnzPerRow + j);
       correctEntries[col2] = true;
     }
     size_t actualNNZ = 0;
@@ -1625,8 +1634,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
       if(correctEntries[j])
         actualNNZ++;
     }
-    size_t Crowstart = rowptrsCRS[2](i);
-    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    size_t Crowstart = rowptrs[2](i);
+    size_t Crowlen = rowptrs[2](i + 1) - Crowstart;
     TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
@@ -1634,9 +1643,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_sorted, SC, LO, GO
       if(j > 0)
       {
         //Check entries are sorted
-        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
+        TEST_ASSERT(colinds[2](Coffset - 1) <= colinds[2](Coffset));
       }
-      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
+      TEST_FLOATING_EQUALITY(vals[2](Coffset), correctVals[colinds[2](Coffset)], 1e-12);
     }
   }
 }
@@ -1672,7 +1681,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   size_t nrows = 1000;
   size_t nnzPerRow = 20;
   typedef Tpetra::CrsMatrix<SC, LO, GO, NT> crs_matrix_type;
-  typedef typename crs_matrix_type::local_matrix_type KCRS;
+  typedef typename crs_matrix_type::local_matrix_device_type KCRS;
   typedef typename crs_matrix_type::impl_scalar_type ISC;
   typedef typename KCRS::values_type::non_const_type ValuesType;
   typedef typename KCRS::row_map_type::non_const_type RowptrsType;
@@ -1682,10 +1691,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
   RowptrsType rowptrsCRS[3];
   ColindsType colindsCRS[3];
   //Populate A and B
+  typename ValuesType::HostMirror vals[3];
+     vals[0] = typename ValuesType::HostMirror("vals0", nrows*nnzPerRow);
+     vals[1] = typename ValuesType::HostMirror("vals1", nrows*nnzPerRow);
+     vals[2] = typename ValuesType::HostMirror("vals2", nrows*nnzPerRow);
+  typename RowptrsType::HostMirror rowptrs[3];
+     rowptrs[0] = typename RowptrsType::HostMirror("rowptr0", nrows+1);
+     rowptrs[1] = typename RowptrsType::HostMirror("rowptr1", nrows+1);
+     rowptrs[2] = typename RowptrsType::HostMirror("rowptr2", nrows+1);
+  typename ColindsType::HostMirror colinds[3]; 
+     colinds[0] = typename ColindsType::HostMirror("colind0", nrows*nnzPerRow);
+     colinds[1] = typename ColindsType::HostMirror("colind1", nrows*nnzPerRow);
+     colinds[2] = typename ColindsType::HostMirror("colind2", nrows*nnzPerRow);
   {
-    ISC* vals[2] = {new ISC[nrows * nnzPerRow], new ISC[nrows * nnzPerRow]};
-    LO* rowptrs[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
-    LO* colinds[2] = {new LO[nrows * nnzPerRow], new LO[nrows * nnzPerRow]};
     //want consistent test results
     srand(12);
     for(LO m = 0; m < 2; m++)
@@ -1719,32 +1737,35 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
       {
         rowptrs[m][row] = row * nnzPerRow;
       }
-      valsCRS[m] = ValuesType("Values", nrows * nnzPerRow);
-      rowptrsCRS[m] = RowptrsType("RowPtrs", nrows + 1);
-      colindsCRS[m] = ColindsType("ColInds", nrows * nnzPerRow);
-      for(size_t i = 0; i < nrows + 1; i++)
-      {
-        rowptrsCRS[m](i) = rowptrs[m][i];
-      }
-      for(size_t i = 0; i < nrows * nnzPerRow; i++)
-      {
-        valsCRS[m](i) = vals[m][i];
-        colindsCRS[m](i) = colinds[m][i];
-      }
-    }
-    for(int i = 0; i < 2; i++)
-    {
-      delete[] vals[i];
-      delete[] rowptrs[i];
-      delete[] colinds[i];
+      valsCRS[m] = Kokkos::create_mirror_view_and_copy(
+                                      typename NT::memory_space(), vals[m]);
+      rowptrsCRS[m] = Kokkos::create_mirror_view_and_copy(
+                                      typename NT::memory_space(), rowptrs[m]);
+      colindsCRS[m] = Kokkos::create_mirror_view_and_copy(
+                                      typename NT::memory_space(), colinds[m]);
     }
   }
   //now run the threaded addition on mats[0] and mats[1]
   ISC zero(0);
   ISC one(1);
-  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+  Tpetra::MMdetails::AddKernels<SC, LO, GO, NT>::addUnsorted(
+                               valsCRS[0], rowptrsCRS[0], colindsCRS[0], one, 
+                               valsCRS[1], rowptrsCRS[1], colindsCRS[1], one, 
+                               nrows, valsCRS[2], rowptrsCRS[2], colindsCRS[2]);
+
   //now scan through C's rows and entries to check they are correct
   TEST_ASSERT(rowptrsCRS[0].extent(0) == rowptrsCRS[2].extent(0));
+
+  vals[2] = Kokkos::create_mirror_view_and_copy(
+                           typename ValuesType::HostMirror::memory_space(),
+                           valsCRS[2]);
+  rowptrs[2] = Kokkos::create_mirror_view_and_copy(
+                              typename RowptrsType::HostMirror::memory_space(),
+                              rowptrsCRS[2]);
+  colinds[2] = Kokkos::create_mirror_view_and_copy(
+                              typename ColindsType::HostMirror::memory_space(),
+                              colindsCRS[2]);
+
   for(size_t i = 0; i < nrows; i++)
   {
     //also compute what C's row should be (as dense values)
@@ -1752,11 +1773,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
     std::vector<bool> correctEntries(nrows, false);
     for(size_t j = 0; j < nnzPerRow; j++)
     {
-      int col1 = colindsCRS[0][i * nnzPerRow + j];
-      int col2 = colindsCRS[1][i * nnzPerRow + j];
-      correctVals[col1] += valsCRS[0](i * nnzPerRow + j);
+      int col1 = colinds[0][i * nnzPerRow + j];
+      int col2 = colinds[1][i * nnzPerRow + j];
+      correctVals[col1] += vals[0](i * nnzPerRow + j);
       correctEntries[col1] = true;
-      correctVals[col2] += valsCRS[1](i * nnzPerRow + j);
+      correctVals[col2] += vals[1](i * nnzPerRow + j);
       correctEntries[col2] = true;
     }
     size_t actualNNZ = 0;
@@ -1765,8 +1786,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
       if(correctEntries[j])
         actualNNZ++;
     }
-    size_t Crowstart = rowptrsCRS[2](i);
-    size_t Crowlen = rowptrsCRS[2](i + 1) - Crowstart;
+    size_t Crowstart = rowptrs[2](i);
+    size_t Crowlen = rowptrs[2](i + 1) - Crowstart;
     TEST_ASSERT(Crowlen == actualNNZ);
     for(size_t j = 0; j < Crowlen; j++)
     {
@@ -1774,9 +1795,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(Tpetra_MatMat, threaded_add_unsorted, SC, LO, 
       if(j > 0)
       {
         //Check entries are sorted
-        TEST_ASSERT(colindsCRS[2](Coffset - 1) <= colindsCRS[2](Coffset));
+        TEST_ASSERT(colinds[2](Coffset - 1) <= colinds[2](Coffset));
       }
-      TEST_FLOATING_EQUALITY(valsCRS[2](Coffset), correctVals[colindsCRS[2](Coffset)], 1e-12);
+      TEST_FLOATING_EQUALITY(vals[2](Coffset), correctVals[colinds[2](Coffset)], 1e-12);
     }
   }
 }
@@ -1792,7 +1813,7 @@ bool checkLocallySorted(const CrsMat& A)
   using LO = typename CrsMat::local_ordinal_type;
   using Teuchos::reduceAll;
   using Teuchos::outArg;
-  auto graph = A.getLocalMatrix().graph;
+  auto graph = A.getLocalMatrixHost().graph;
   LO numLocalRows = A.getNodeNumRows();
   int allSorted = 1;
   for(int i = 0; i < numLocalRows; i++)
@@ -1822,37 +1843,40 @@ bool verifySum(const CrsMat& A, const CrsMat& B, const CrsMat& C)
   using GO = typename CrsMat::global_ordinal_type;
   using KAT = Kokkos::Details::ArithTraits<SC>;
   using Teuchos::Array;
+  typedef typename CrsMat::nonconst_global_inds_host_view_type gids_type;
+  typedef typename CrsMat::nonconst_values_host_view_type vals_type;
+
   auto rowMap = A.getRowMap();
   LO numLocalRows = rowMap->getNodeNumElements();
   GO Amax = A.getGlobalMaxNumRowEntries();
   GO Bmax = B.getGlobalMaxNumRowEntries();
   GO Cmax = C.getGlobalMaxNumRowEntries();
-  Array<GO> Ainds(Amax);
-  Array<SC> Avals(Amax);
-  Array<GO> Binds(Bmax);
-  Array<SC> Bvals(Bmax);
-  Array<GO> Cinds(Cmax);
-  Array<SC> Cvals(Cmax);
+  gids_type Ainds("Ainds",Amax);
+  vals_type Avals("Avals",Amax);
+  gids_type Binds("Binds",Bmax);
+  vals_type Bvals("Bvals",Bmax);
+  gids_type Cinds("Cinds",Cmax);
+  vals_type Cvals("Cvals",Cmax);
   for(LO i = 0; i < numLocalRows; i++)
   {
     GO gid = rowMap->getGlobalElement(i);
     size_t Aentries;
     size_t Bentries;
     size_t Centries;
-    A.getGlobalRowCopy(gid, Ainds(), Avals(), Aentries);
-    B.getGlobalRowCopy(gid, Binds(), Bvals(), Bentries);
-    C.getGlobalRowCopy(gid, Cinds(), Cvals(), Centries);
-    Tpetra::sort2(Ainds.begin(), Ainds.begin() + Aentries, Avals.begin());
-    Tpetra::sort2(Binds.begin(), Binds.begin() + Bentries, Bvals.begin());
-    Tpetra::sort2(Cinds.begin(), Cinds.begin() + Centries, Cvals.begin());
+    A.getGlobalRowCopy(gid, Ainds, Avals, Aentries);
+    B.getGlobalRowCopy(gid, Binds, Bvals, Bentries);
+    C.getGlobalRowCopy(gid, Cinds, Cvals, Centries);
+    Tpetra::sort2(Ainds, Aentries, Avals);
+    Tpetra::sort2(Binds, Bentries, Bvals);
+    Tpetra::sort2(Cinds, Centries, Cvals);
     //Now, scan through the row to make sure C's entries match
     size_t Ait = 0;
     size_t Bit = 0;
     for(size_t Cit = 0; Cit < Centries; Cit++)
     {
       GO col = Cinds[Cit];
-      SC val = Cvals[Cit];
-      SC goldVal = 0;
+      typename vals_type::value_type val = Cvals[Cit];
+      typename vals_type::value_type goldVal = 0;
       if(Ait < Aentries && Ainds[Ait] == col)
         goldVal += Avals[Ait++];
       if(Bit < Bentries && Binds[Bit] == col)
@@ -1946,7 +1970,7 @@ RCP<Tpetra::CrsMatrix<SC, LO, GO, NT>> getUnsortedTestMatrix(
   using Teuchos::RCP;
   using Teuchos::ParameterList;
   using crs_matrix_type = Tpetra::CrsMatrix<SC, LO, GO, NT>;
-  using KCRS = typename crs_matrix_type::local_matrix_type;
+  using KCRS = typename crs_matrix_type::local_matrix_device_type;
   using size_type = typename KCRS::row_map_type::non_const_value_type;
   using lno_t =     typename KCRS::index_type::non_const_value_type;
   using kk_scalar_t =  typename KCRS::values_type::non_const_value_type;

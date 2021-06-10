@@ -89,6 +89,7 @@ public:
     {
       Teuchos::RCP<Teuchos::FancyOStream> out =
         Teuchos::VerboseObjectBase::getDefaultOStream();
+      out->setOutputToRootOnly(0);
       *out << "TimeEventBase name = " << getName() << std::endl;
     }
   //@}

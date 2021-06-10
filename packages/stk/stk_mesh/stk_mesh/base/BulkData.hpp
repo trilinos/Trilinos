@@ -45,6 +45,7 @@
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
 #include <set>
+#include <stk_mesh/base/EntityIterator.hpp>
 #include <stk_mesh/base/Entity.hpp>     // for Entity, etc
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for EntityCommDatabase
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
@@ -1049,7 +1050,7 @@ protected: //functions
   void internal_change_ghosting( Ghosting & ghosts,
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity> & remove_receive,
-                                 bool is_full_regen = false); // Mod Mark
+                                 bool add_send_is_globally_empty = false);
 
   void internal_change_ghosting( Ghosting & ghosts,
                                  EntityProcMapping& entityProcMapping,
@@ -1289,7 +1290,7 @@ private:
   void delete_buckets(const stk::mesh::BucketVector & buckets);
   void mark_entities_as_deleted(stk::mesh::Bucket * bucket);
 
-  void generate_ghosting_receive_list(const stk::mesh::Ghosting &ghosting, const std::vector <Entity> &remove_receive,
+  void filter_ghosting_remove_receives(const stk::mesh::Ghosting &ghosting, const std::vector <Entity> &remove_receive,
     std::vector<Entity> &recvGhosts, std::vector<bool>& ghostStatus);
 
   void verify_and_filter_add_send(Ghosting & ghosts, const std::vector<EntityProc> & add_send, bool &need_to_change_ghosting,

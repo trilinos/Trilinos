@@ -120,12 +120,14 @@ Stepper<Scalar>::getStepperXDotDot(Teuchos::RCP<SolutionState<Scalar> > state)
 
 
 template<class Scalar>
-void Stepper<Scalar>::describe(Teuchos::FancyOStream        & in_out,
+void Stepper<Scalar>::describe(Teuchos::FancyOStream        & out,
                                const Teuchos::EVerbosityLevel verbLevel) const
 {
-  auto out = Teuchos::fancyOStream( in_out.getOStream() );
-  out->setOutputToRootOnly(0);
-  *out << "--- Stepper ---\n"
+  auto l_out = Teuchos::fancyOStream( out.getOStream() );
+  Teuchos::OSTab ostab(*l_out, 2, this->description());
+  l_out->setOutputToRootOnly(0);
+
+  *l_out << "--- Stepper ---\n"
        << "  isInitialized_      = " << Teuchos::toString(isInitialized_) << std::endl
        << "  stepperType_        = " << stepperType_ << std::endl
        << "  useFSAL_            = " << Teuchos::toString(useFSAL_) << std::endl
@@ -139,18 +141,19 @@ void Stepper<Scalar>::describe(Teuchos::FancyOStream        & in_out,
 
 template<class Scalar>
 bool Stepper<Scalar>::isValidSetup(
-  Teuchos::FancyOStream & in_out) const
+  Teuchos::FancyOStream & out) const
 {
+  out.setOutputToRootOnly(0);
   bool isValidSetup = true;
 
   if ( !(ICConsistency_ == "None" || ICConsistency_ == "Zero" ||
          ICConsistency_ == "App"  || ICConsistency_ == "Consistent") ) {
     isValidSetup = false;
-    auto out = Teuchos::fancyOStream( in_out.getOStream() );
-    out->setOutputToRootOnly(0);
-    *out << "The IC consistency does not have a valid value!\n"
-         << "('None', 'Zero', 'App' or 'Consistent')\n"
-         << "  ICConsistency  = " << ICConsistency_ << "\n";
+    auto l_out = Teuchos::fancyOStream( out.getOStream() );
+    l_out->setOutputToRootOnly(0);
+    *l_out << "The IC consistency does not have a valid value!\n"
+           << "('None', 'Zero', 'App' or 'Consistent')\n"
+           << "  ICConsistency  = " << ICConsistency_ << "\n";
   }
 
   return isValidSetup;

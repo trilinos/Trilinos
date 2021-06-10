@@ -399,7 +399,7 @@ namespace Intrepid2 {
               }
             });
             
-            if (composedTransform_.underlyingMatchesNotional())
+            if (composedTransform_.underlyingMatchesLogical())
             {
               const auto & composedTransformView = composedTransform_.getUnderlyingView4();
               Kokkos::parallel_for(Kokkos::TeamThreadRange(teamMember,0,composedTransformView.extent_int(1)), [&] (const int& pointOrdinal) {
@@ -2241,8 +2241,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               {
                 auto functor = Impl::F_IntegratePointValueCache<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
                 
-                const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
-                const int teamSize    = functor.teamSize(maxTeamSize);
+                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
+                const int teamSize            = functor.teamSize(recommendedTeamSize);
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 
@@ -2257,8 +2257,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               {
                 auto functor = Impl::F_Integrate<Scalar, DeviceType, 2>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
                 
-                const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
-                const int teamSize    = functor.teamSize(maxTeamSize);
+                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
+                const int teamSize            = functor.teamSize(recommendedTeamSize);
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
@@ -2276,8 +2276,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               {
                 auto functor = Impl::F_IntegratePointValueCache<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset);
                 
-                const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
-                const int teamSize    = functor.teamSize(maxTeamSize);
+                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
+                const int teamSize            = functor.teamSize(recommendedTeamSize);
                 
                 policy = Kokkos::TeamPolicy<ExecutionSpace>(cellDataExtent,teamSize,vectorSize);
                 
@@ -2292,8 +2292,8 @@ void IntegrationTools<DeviceType>::integrate(Data<Scalar,DeviceType> integrals, 
               {
                 auto functor = Impl::F_Integrate<Scalar, DeviceType, 3>(integrals, leftComponent, composedTransform, rightComponent, cellMeasures, a_offset, b_offset, leftFieldOrdinalOffset, rightFieldOrdinalOffset, forceNonSpecialized);
                 
-                const int maxTeamSize = policy.team_size_max(functor,Kokkos::ParallelForTag());
-                const int teamSize    = functor.teamSize(maxTeamSize);
+                const int recommendedTeamSize = policy.team_size_recommended(functor,Kokkos::ParallelForTag());
+                const int teamSize            = functor.teamSize(recommendedTeamSize);
                 
                 policy = Kokkos::TeamPolicy<DeviceType>(cellDataExtent,teamSize,vectorSize);
                 

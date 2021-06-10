@@ -46,6 +46,39 @@
 namespace stk {
 namespace transfer_utils {
 
+class M2NOutputSerializerBulkData : public stk::mesh::BulkData
+{
+public:
+  M2NOutputSerializerBulkData(stk::mesh::MetaData & mesh_meta_data, ParallelMachine parallel)
+    : BulkData(mesh_meta_data, parallel, stk::mesh::BulkData::NO_AUTO_AURA, true)
+  {}
+
+  virtual ~M2NOutputSerializerBulkData() override = default;
+
+  void switch_to_serial_mesh() {
+
+    modification_begin();
+
+    stk::mesh::EntityVector nodesToUnshare;
+    stk::mesh::get_entities(*this, stk::topology::NODE_RANK, mesh_meta_data().globally_shared_part(), nodesToUnshare);
+
+    for (const stk::mesh::Entity & node : nodesToUnshare) {
+      internal_set_owner(node, 0);
+      remove_entity_comm(node);
+      entity_comm_map_clear(entity_key(node));
+    }
+    destroy_all_ghosting();
+
+    stk::mesh::PartVector addParts{&mesh_meta_data().locally_owned_part()};
+    stk::mesh::PartVector removeParts{&mesh_meta_data().globally_shared_part()};
+    internal_verify_and_change_entity_parts(nodesToUnshare, addParts, removeParts);
+
+    m_parallel = Parallel(MPI_COMM_SELF);
+
+    modification_end();
+  }
+};
+
 constexpr unsigned INVALID_SUBDOMAIN = std::numeric_limits<unsigned>::max();
 
 inline bool is_valid_subdomain(unsigned subdomain) {
@@ -54,7 +87,7 @@ inline bool is_valid_subdomain(unsigned subdomain) {
 
 class SubdomainWriterBase {
 public:
-  SubdomainWriterBase(const stk::io::StkMeshIoBroker & inputBroker, stk::mesh::BulkData * bulk)
+  SubdomainWriterBase(const stk::io::StkMeshIoBroker & inputBroker, M2NOutputSerializerBulkData * bulk)
     : m_inputBroker(inputBroker),
       m_bulk(bulk)
   {}
@@ -73,13 +106,13 @@ public:
 
 protected:
   const stk::io::StkMeshIoBroker & m_inputBroker;
-  stk::mesh::BulkData* m_bulk;
+  M2NOutputSerializerBulkData* m_bulk;
 };
 
 
 class SubdomainWriter : public SubdomainWriterBase {
 public:
-  SubdomainWriter(const stk::io::StkMeshIoBroker & inputBroker, stk::mesh::BulkData * bulk,
+  SubdomainWriter(const stk::io::StkMeshIoBroker & inputBroker, M2NOutputSerializerBulkData * bulk,
                   const stk::io::EntitySharingInfo & nodeSharingInfo)
     : SubdomainWriterBase(inputBroker, bulk),
       m_nodeSharingInfo(nodeSharingInfo)
@@ -92,7 +125,7 @@ public:
   }
 
   virtual void setup_output_file(const std::string & fileName, unsigned subdomain, unsigned numSubdomains,
-                                 int globalNumNodes, int globalNumElems)
+                                 int globalNumNodes, int globalNumElems) override
   {
     Ioss::DatabaseIO *dbo = stk::io::create_database_for_subdomain(fileName, subdomain, numSubdomains);
     m_outRegion = new Ioss::Region(dbo, fileName);
@@ -184,7 +217,7 @@ protected:
 
 class EmptySubdomainWriter : public SubdomainWriterBase {
 public:
-  EmptySubdomainWriter(const stk::io::StkMeshIoBroker & inputBroker, stk::mesh::BulkData * bulk)
+  EmptySubdomainWriter(const stk::io::StkMeshIoBroker & inputBroker, M2NOutputSerializerBulkData * bulk)
     : SubdomainWriterBase(inputBroker, bulk)
   {}
 
@@ -217,12 +250,9 @@ class MtoNTransientFieldTransferById
 public:
     MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain);
 
-    MtoNTransientFieldTransferById(stk::io::StkMeshIoBroker &inputBroker, unsigned numSubDomain,
-                                   const std::vector<stk::mesh::EntityRank> &entityRanks);
-
     ~MtoNTransientFieldTransferById();
 
-    void setup_subdomain(stk::mesh::BulkData& bulk, const std::string &filename,
+    void setup_subdomain(M2NOutputSerializerBulkData& bulk, const std::string &filename,
                          unsigned subdomain, const stk::io::EntitySharingInfo& nodeSharingInfo,
                          int global_num_nodes, int global_num_elems);
 

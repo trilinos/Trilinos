@@ -244,9 +244,9 @@ struct BlockCrsMatrixMaker {
   // of local column abs sums.
   static void make_row_and_col_diag_dominant (Tpetra_BlockCrsMatrix& a) {
     const auto& g = a.getCrsGraph();
-    const auto& rowptr = g.getLocalGraph().row_map;
-    const auto& colidx = g.getLocalGraph().entries;
-    const auto& values = a.getValuesHost();
+    const auto& rowptr = g.getLocalGraphHost().row_map;
+    const auto& colidx = g.getLocalGraphHost().entries;
+    const auto& values = a.getValuesHostNonConst();
 
     const auto row_map = g.getRowMap();
     const auto col_map = g.getColMap();
@@ -385,10 +385,10 @@ struct BlockCrsMatrixMaker {
       }
     }
 
-    typename Tpetra_CrsGraph::local_graph_type g;
+    typename Tpetra_CrsGraph::local_graph_device_type g;
     {
-      typedef typename Tpetra_CrsGraph::local_graph_type::row_map_type row_map_type;
-      typedef typename Tpetra_CrsGraph::local_graph_type::entries_type entries_type;
+      typedef typename Tpetra_CrsGraph::local_graph_device_type::row_map_type row_map_type;
+      typedef typename Tpetra_CrsGraph::local_graph_device_type::entries_type entries_type;
       const GO nr = my_row_gids.size();
       typename row_map_type::non_const_type::HostMirror rowptr("rowptr", nr + 1);
       typename entries_type::HostMirror colidx;
@@ -440,7 +440,7 @@ struct BlockCrsMatrixMaker {
         Kokkos::deep_copy(row_map_tmp, rowptr);
         entries_type entries("entries", colidx.size());
         Kokkos::deep_copy(entries, colidx);
-        g = typename Tpetra_CrsGraph::local_graph_type(entries, row_map_tmp);
+        g = typename Tpetra_CrsGraph::local_graph_device_type(entries, row_map_tmp);
       }
 
       if ( ! tridiags_only) {
@@ -490,8 +490,8 @@ struct BlockCrsMatrixMaker {
   get_offdiag_idxs (const StructuredBlock& sb, const Tpetra_CrsGraph& g, const Tpetra_Map& col_map,
                     const Int& lr, const Int& I, const Int& J, const Int& K, Int offdiag_idxs[2]) {
     offdiag_idxs[0] = offdiag_idxs[1] = -1;
-    const auto& rowptr = g.getLocalGraph().row_map;
-    const auto& colidx = g.getLocalGraph().entries;
+    const auto& rowptr = g.getLocalGraphHost().row_map;
+    const auto& colidx = g.getLocalGraphHost().entries;
     GO rid_offdiags[2];
     rid_offdiags[0] = rid_offdiags[1] = Teuchos::OrdinalTraits<GO>::invalid();
     if (K > 0) rid_offdiags[0] = sb.ijk2id(I, J, K-1);
@@ -529,8 +529,8 @@ struct BlockCrsMatrixMaker {
     // Raw pointers for threading.
     auto m = mr.get();
     auto g = gr.get();
-    const auto& rowptr = g->getLocalGraph().row_map;
-    const auto& colidx = g->getLocalGraph().entries;
+    const auto& rowptr = g->getLocalGraphHost().row_map;
+    const auto& colidx = g->getLocalGraphHost().entries;
     const LO nr = rowptr.extent_int(0) - 1;
     const auto row_map = g->getRowMap().get();
     const auto col_map = g->getColMap().get();
@@ -596,7 +596,7 @@ struct BlockCrsMatrixMaker {
       if (tridiag_is_identity || block_diag)
         zero_offdiag_idxs(offdiag_idxs, blockrow);
       for (size_t j = rowptr(lr); j < rowptr(lr+1); ++j) {
-        auto block = m->getLocalBlock(lr, colidx(j));
+        auto block = m->getLocalBlockHostNonConst(lr, colidx(j));
         const auto b = j - rowptr(lr);
         for (Int bi = 0; bi < bs; ++bi)
           for (Int bj = 0; bj < bs; ++bj)

@@ -35,13 +35,16 @@
 #define MESHFIXTUREM2NREBALANCE_HPP
 
 #include <stk_unit_test_utils/MeshFixture.hpp>
-#include <stk_balance/internal/balanceMtoN.hpp>
+#include <stk_balance/m2n/balanceMtoN.hpp>
 #include <stk_balance/balanceUtils.hpp>
-#include <stk_balance/setup/M2NParser.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
+#include <Ioss_IOFactory.h>
+#include "Ioss_CommSet.h"
 #include <vector>
 #include <unistd.h>
+
+using NodeIdSharingProc = std::pair<stk::mesh::EntityId, int>;
 
 class MeshFixtureM2NRebalance : public stk::unit_test_util::MeshFixture
 {
@@ -52,41 +55,54 @@ protected:
 
   ~MeshFixtureM2NRebalance() override = default;
 
-  std::string get_output_file_name() { return "junk.g"; }
+  std::string get_input_file_name() { return "TemporaryInputMesh.g"; }
+
+  std::string get_output_file_name() { return "TemporaryOutputMesh.g"; }
 
   void setup_initial_mesh(const std::string & inputMeshSpec)
   {
-    const std::string tempInputFilename = "TemporaryInputMesh.g";
-    stk::unit_test_util::generated_mesh_to_file_in_serial(inputMeshSpec, tempInputFilename);
+    stk::unit_test_util::generated_mesh_to_file_in_serial(inputMeshSpec, get_input_file_name());
 
     allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
     create_target_decomp_field_on_entire_mesh();
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
-    stk::io::fill_mesh_preexisting(m_ioBroker, tempInputFilename, get_bulk());
+    stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
 
   void setup_initial_mesh_with_transient_field_data(const std::string & inputMeshSpec)
   {
-    const std::string tempInputFilename = "TemporaryTransientInputMesh.g";
+    m_transientTimeSteps = {0.0, 1.0, 2.0};
+    m_transientFieldName = "transient_field";
+    m_globalVariableName = "global_variable";
     stk::unit_test_util::generated_mesh_with_transient_data_to_file_in_serial(inputMeshSpec,
-                                                                              tempInputFilename,
-                                                                              "transient_field",
-                                                                              "global_variable",
-                                                                              {0.0, 1.0, 2.0},
+                                                                              get_input_file_name(),
+                                                                              m_transientFieldName,
+                                                                              m_globalVariableName,
+                                                                              m_transientTimeSteps,
                                                                               stk::unit_test_util::IdAndTimeFieldValueSetter());
 
     allocate_bulk(stk::mesh::BulkData::NO_AUTO_AURA);
     create_target_decomp_field_on_entire_mesh();
     m_ioBroker.property_add(Ioss::Property("DECOMPOSITION_METHOD", "RCB"));
-    stk::io::fill_mesh_preexisting(m_ioBroker, tempInputFilename, get_bulk());
+    stk::io::fill_mesh_preexisting(m_ioBroker, get_input_file_name(), get_bulk());
   }
 
   virtual void rebalance_mesh_m2n(int numFinalProcs) = 0;
 
   void create_target_decomp_field_on_entire_mesh()
   {
-    m_targetDecompField = &get_meta().declare_field<stk::mesh::Field<double>>(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
-    stk::mesh::put_field_on_mesh(*m_targetDecompField, get_meta().universal_part(), static_cast<double*>(nullptr));
+    m_targetDecompField = &get_meta().declare_field<stk::mesh::Field<unsigned>>(stk::topology::ELEMENT_RANK, "TargetDecomp", 1);
+    stk::mesh::put_field_on_mesh(*m_targetDecompField, get_meta().universal_part(), static_cast<unsigned*>(nullptr));
+  }
+
+  void clean_up_temporary_files()
+  {
+    if (get_parallel_rank() == 0) {
+      unlink(get_input_file_name().c_str());
+      for (unsigned i = 0; i < m_numFinalProcs; ++i) {
+        unlink(get_subdomain_filename(m_numFinalProcs, i).c_str());
+      }
+    }
   }
 
   void test_decomposed_mesh_element_distribution(const std::vector<unsigned> & elemsPerProc)
@@ -100,9 +116,60 @@ protected:
       for (size_t i = 0; i < elemsPerProc.size(); ++i) {
         test_num_elements_this_subdomain(elemsPerProc.size(), i, elemsPerProc[i]);
       }
+    }
+  }
 
-      for (unsigned i = 0; i < m_numFinalProcs; ++i) {
-        unlink(get_subdomain_filename(m_numFinalProcs, i).c_str());
+  void test_decomposed_mesh_element_distribution_and_fields(const std::vector<unsigned> & elemsPerProc)
+  {
+    // Make sure all procs have written their files before p0 tries to read them
+    MPI_Barrier(get_comm());
+
+    ASSERT_EQ(m_numFinalProcs, elemsPerProc.size());
+
+    if (get_parallel_rank() == 0) {
+      for (size_t i = 0; i < elemsPerProc.size(); ++i) {
+        stk::unit_test_util::MeshFromFile finalMesh(MPI_COMM_SELF);
+        finalMesh.fill_from_serial(get_subdomain_filename(elemsPerProc.size(), i));
+
+        stk::unit_test_util::TransientVerifier verifier(MPI_COMM_SELF);
+        verifier.verify_time_steps(finalMesh, m_transientTimeSteps);
+        verifier.verify_global_variables_at_each_time_step(finalMesh, m_globalVariableName, m_transientTimeSteps);
+        verifier.verify_num_transient_fields(finalMesh, 2);
+        verifier.verify_transient_field_names(finalMesh, m_transientFieldName);
+        verifier.verify_transient_fields(finalMesh);
+      }
+    }
+
+    test_decomposed_mesh_element_distribution(elemsPerProc);
+  }
+
+  void test_decomposed_mesh_node_sharing(const std::vector<std::vector<NodeIdSharingProc>> & expectedNodeSharingForEachProc)
+  {
+    ASSERT_EQ(m_numFinalProcs, expectedNodeSharingForEachProc.size());
+
+    if (get_parallel_rank() == 0) {
+      for (size_t subdomain = 0; subdomain < m_numFinalProcs; ++subdomain) {
+        std::string dbtype("exodusII");
+        const std::string subdomainFilename = get_subdomain_filename(m_numFinalProcs, subdomain);
+        Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, subdomainFilename, Ioss::READ_MODEL, MPI_COMM_SELF);
+        Ioss::Region region(dbo, get_subdomain_filename(m_numFinalProcs, subdomain));
+        Ioss::CommSet* iocs = region.get_commset("commset_node");
+
+        if (iocs != nullptr) {
+          size_t numSharing = iocs->get_field("entity_processor").raw_count();
+          std::vector<uint64_t> entityProc;
+          iocs->get_field_data("entity_processor", entityProc);
+
+          std::set<NodeIdSharingProc> expectedSharing(expectedNodeSharingForEachProc[subdomain].begin(),
+                                                      expectedNodeSharingForEachProc[subdomain].end());
+
+          std::set<NodeIdSharingProc> actualSharing;
+          for (unsigned i = 0; i < numSharing; ++i) {
+            actualSharing.emplace(entityProc[i*2], entityProc[i*2+1]);
+          }
+
+          EXPECT_EQ(expectedSharing, actualSharing) << "Incorrect node sharing in " << subdomainFilename;
+        }
       }
     }
   }
@@ -138,8 +205,11 @@ protected:
   }
 
   unsigned m_numFinalProcs;
-  stk::mesh::Field<double> *m_targetDecompField;
+  stk::mesh::Field<unsigned> *m_targetDecompField;
   stk::io::StkMeshIoBroker m_ioBroker;
+  std::vector<double> m_transientTimeSteps;
+  std::string m_transientFieldName;
+  std::string m_globalVariableName;
 };
 
 #endif // MESHFIXTUREM2NREBALANCE_HPP

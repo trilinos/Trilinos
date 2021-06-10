@@ -136,7 +136,7 @@ public:
 
     size_t num_edges() const;
 
-    size_t num_parallel_edges() const { return m_num_parallel_edges; }
+    size_t num_parallel_edges() const;
 
     void add_elements(const stk::mesh::EntityVector &elements);
 
@@ -223,7 +223,6 @@ public:
 
 protected:
     void fill_graph();
-    void update_number_of_parallel_edges();
     void fill_parallel_graph(impl::ElemSideToProcAndFaceId & elementSidesToSend, SideNodeToReceivedElementDataMap & elementSidesReceived);
     void create_parallel_graph_edge(const impl::ParallelElementData &elementData,
                                     const stk::mesh::impl::ParallelElementData &remoteElementData,
@@ -311,7 +310,6 @@ protected:
     std::vector<stk::topology> m_element_topologies;
     bool m_any_shell_elements_exist;
     std::vector<int> m_deleted_elem_pool;
-    size_t m_num_parallel_edges;
     impl::SparseGraph m_coincidentGraph;
     impl::ElementLocalIdMapper m_idMapper;
 private:

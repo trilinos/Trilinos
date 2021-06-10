@@ -82,13 +82,6 @@ bool cg_solve (Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<V
   p = Tpetra::createVector<ScalarType>(A->getRangeMap());
   Ap = Tpetra::createVector<ScalarType>(A->getRangeMap());
 
-  int length = r->getLocalLength();
-  for(int i = 0;i<length;i++) {
-    x->replaceLocalValue(i,0);
-    r->replaceLocalValue(i,1);
-    Ap->replaceLocalValue(i,1);
-  }
-
   magnitude_type normr = 0;
   magnitude_type rtrans = 0;
   magnitude_type oldrtrans = 0;
@@ -212,8 +205,6 @@ int run()
   typedef Tpetra::Vector<Scalar,LO,GO,Node>             vec_type;
   typedef Tpetra::Map<LO,GO,Node>                       map_type;
 
-  typedef typename vec_type::mag_type                   mag_type;
-
   //
   // Get the communicator and node
   //
@@ -264,8 +255,7 @@ int run()
                                      map);
   } else {
     typedef Tpetra::Utils::MatrixGenerator<crs_matrix_type> gen_type;
-    b = gen_type::generate_miniFE_vector (nsize, map->getComm ()
-                                         );
+    b = gen_type::generate_miniFE_vector (nsize, map->getComm ());
   }
 
   // The vector x on input is the initial guess for the CG solve.

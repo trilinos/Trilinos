@@ -865,7 +865,7 @@ void NemSpread<T, INT>::read_side_set_ids(int mesh_exoid, INT num_elem_in_ssets[
 
     if (globals.Num_Side_Set > 0) {
       for (int i = 0; i < globals.Num_Side_Set; i++) {
-        fmt::print("{:6d}{:11d}  {:12n}\n", i, (size_t)Side_Set_Ids[i],
+        fmt::print("{:6d}{:11d}  {:12L}\n", i, (size_t)Side_Set_Ids[i],
                    (size_t)num_elem_in_ssets[i]);
       }
     }
@@ -965,7 +965,7 @@ void NemSpread<T, INT>::read_coord(int exoid, int max_name_length)
       if (global_node_ids[i] <= 0) {
         fmt::print(stderr,
                    "---------------------------------------------------------------------\n"
-                   "ERROR: Local node {:n} has a global id of {:n} which is invalid.\n"
+                   "ERROR: Local node {:L} has a global id of {:L} which is invalid.\n"
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_node_ids[i]);
@@ -1154,7 +1154,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::extract_elem_blk()
                  "Glb_Elm_In_Blk");
       print_line("-", 79);
       for (int i = 0; i < globals.Proc_Num_Elem_Blk[iproc]; i++) {
-        fmt::print("{:4d}\t\t{:5n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\t{:8n}\n", i,
+        fmt::print("{:4d}\t\t{:5L}\t{:8L}\t{:8L}\t{:8L}\t{:8L}\t{:8L}\t{:8L}\n", i,
                    globals.GElem_Blks[iproc][i], globals.Proc_Elem_Blk_Ids[iproc][i],
                    globals.Proc_Nodes_Per_Elem[iproc][i], globals.Proc_Num_Attr[iproc][i],
                    globals.Proc_Elem_Blk_Types[iproc][i], globals.Proc_Num_Elem_In_Blk[iproc][i],
@@ -1485,7 +1485,7 @@ template <typename T, typename INT> void NemSpread<T, INT>::read_elem_blk(int ex
       if (global_ids[i] <= 0) {
         fmt::print(stderr,
                    "---------------------------------------------------------------------\n"
-                   "ERROR: Local element {:n} has a global id of {:n} which is invalid.\n"
+                   "ERROR: Local element {:L} has a global id of {:L} which is invalid.\n"
                    "       All global ids must be greater than 0. The map will be ignored.\n"
                    "---------------------------------------------------------------------\n",
                    i + 1, global_ids[i]);

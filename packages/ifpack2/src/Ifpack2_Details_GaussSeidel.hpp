@@ -51,20 +51,24 @@ namespace Details
     using crs_matrix_type = Tpetra::CrsMatrix<Scalar, LO, GO, NT>;
     using bcrs_matrix_type = Tpetra::BlockCrsMatrix<Scalar, LO, GO, NT>;
     using row_matrix_type = Tpetra::RowMatrix<Scalar, LO, GO, NT>;
-    using local_matrix_type = typename crs_matrix_type::local_matrix_type;
+    using local_matrix_device_type = typename crs_matrix_type::local_matrix_device_type;
     using vector_type = Tpetra::Vector<Scalar, LO, GO, NT>;
     using multivector_type = Tpetra::MultiVector<Scalar, LO, GO, NT>;
     using block_multivector_type = Tpetra::BlockMultiVector<Scalar, LO, GO, NT>;
-    using mem_space_t = typename local_matrix_type::memory_space;
-    using rowmap_t = typename local_matrix_type::row_map_type::HostMirror;
-    using entries_t = typename local_matrix_type::index_type::HostMirror;
-    using values_t = typename local_matrix_type::values_type::HostMirror;
+    using mem_space_t = typename local_matrix_device_type::memory_space;
+    using rowmap_t = typename local_matrix_device_type::row_map_type::HostMirror;
+    using entries_t = typename local_matrix_device_type::index_type::HostMirror;
+    using values_t = typename local_matrix_device_type::values_type::HostMirror;
     using Offset = typename rowmap_t::non_const_value_type;
     using IST = typename crs_matrix_type::impl_scalar_type;
     using KAT = Kokkos::ArithTraits<IST>;
     //Type of view representing inverse diagonal blocks, and its HostMirror.
     using InverseBlocks = Kokkos::View<IST***, typename bcrs_matrix_type::device_type>;
     using InverseBlocksHost = typename InverseBlocks::HostMirror;
+
+    typedef typename crs_matrix_type::nonconst_global_inds_host_view_type nonconst_global_inds_host_view_type;
+    typedef typename crs_matrix_type::nonconst_local_inds_host_view_type nonconst_local_inds_host_view_type;
+    typedef typename crs_matrix_type::nonconst_values_host_view_type nonconst_values_host_view_type;
 
     //Setup for CrsMatrix
     GaussSeidel(const crs_matrix_type& A, Teuchos::RCP<vector_type>& inverseDiagVec_, Teuchos::ArrayRCP<LO>& applyRows_, Scalar omega_)
@@ -74,7 +78,7 @@ namespace Details
       applyRows = applyRows_;
       blockSize = 1;
       omega = omega_;
-      auto Alocal = A.getLocalMatrix();
+      auto Alocal = A.getLocalMatrixDevice();
       Arowmap = Kokkos::create_mirror_view(Alocal.graph.row_map);
       Aentries = Kokkos::create_mirror_view(Alocal.graph.entries);
       Avalues = Kokkos::create_mirror_view(Alocal.values);
@@ -95,8 +99,8 @@ namespace Details
       Aentries = entries_t(Kokkos::ViewAllocateWithoutInitializing("Aentries"), A.getNodeNumEntries());
       Avalues = values_t(Kokkos::ViewAllocateWithoutInitializing("Avalues"), A.getNodeNumEntries());
       size_t maxDegree = A.getNodeMaxNumRowEntries();
-      Teuchos::Array<Scalar> rowValues(maxDegree);
-      Teuchos::Array<LO> rowEntries(maxDegree);
+      nonconst_values_host_view_type rowValues("rowValues",maxDegree);
+      nonconst_local_inds_host_view_type rowEntries("rowEntries",maxDegree);
       size_t accum = 0;
       for(LO i = 0; i <= numRows; i++)
       {
@@ -104,7 +108,7 @@ namespace Details
         if(i == numRows)
           break;
         size_t degree;
-        A.getLocalRowCopy(i, rowEntries(), rowValues(), degree);
+        A.getLocalRowCopy(i, rowEntries, rowValues, degree);
         accum += degree;
         size_t rowBegin = Arowmap(i);
         for(size_t j = 0; j < degree; j++)
@@ -123,9 +127,9 @@ namespace Details
       Kokkos::deep_copy(inverseBlockDiag, inverseBlockDiag_);
       applyRows = applyRows_;
       omega = omega_;
-      auto AlocalGraph = A.getCrsGraph().getLocalGraph();
+      auto AlocalGraph = A.getCrsGraph().getLocalGraphDevice();
       //A.sync_host();  //note: this only syncs values, not graph
-      Avalues = A.getValuesHost();
+      Avalues = A.getValuesHostNonConst();
       Arowmap = Kokkos::create_mirror_view(AlocalGraph.row_map);
       Aentries = Kokkos::create_mirror_view(AlocalGraph.entries);
       Kokkos::deep_copy(Arowmap, AlocalGraph.row_map);
@@ -236,7 +240,7 @@ namespace Details
           row = useApplyRows ? applyRows[numApplyRows - 1 - i] : numApplyRows - 1 - i;
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
+          auto bRow = b.getLocalBlockHost (row, v, Tpetra::Access::ReadOnly);
           for(LO k = 0; k < blockSize; k++)
           {
             accum(k, v) = KAT::zero();
@@ -250,7 +254,7 @@ namespace Details
           IST* blk = &Avalues(j * bs2);
           for(LO v = 0; v < numVecs; v++)
           {
-            auto xCol = x.getLocalBlock (col, v, Tpetra::Access::ReadOnly);
+            auto xCol = x.getLocalBlockHost (col, v, Tpetra::Access::ReadOnly);
             for(LO br = 0; br < blockSize; br++)
             {
               for(LO bc = 0; bc < blockSize; bc++)
@@ -266,7 +270,7 @@ namespace Details
         Kokkos::deep_copy(dinv_accum, KAT::zero());
         for(LO v = 0; v < numVecs; v++)
         {
-          auto bRow = b.getLocalBlock (row, v, Tpetra::Access::ReadOnly);
+          auto bRow = b.getLocalBlockHost (row, v, Tpetra::Access::ReadOnly);
           for(LO br = 0; br < blockSize; br++)
           {
             accum(br, v) = bRow(br) - accum(br, v);
@@ -285,7 +289,7 @@ namespace Details
         //Update x
         for(LO v = 0; v < numVecs; v++)
         {
-          auto xRow = x.getLocalBlock (row, v, Tpetra::Access::ReadWrite);
+          auto xRow = x.getLocalBlockHost (row, v, Tpetra::Access::ReadWrite);
           for(LO k = 0; k < blockSize; k++)
           {
             xRow(k) += omega * dinv_accum(k, v);

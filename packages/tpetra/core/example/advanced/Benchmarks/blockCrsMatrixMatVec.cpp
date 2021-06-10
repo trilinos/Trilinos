@@ -102,20 +102,18 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
   // Get the matrix values.  Blocks are stored contiguously, each
   // block in row-major order (Kokkos::LayoutRight).
-  auto val = A.getValuesHost ();
+  auto val = A.getValuesHostNonConst ();
 
   auto gblGraph = A.getCrsGraph ();
-  auto lclGraph = G.getLocalGraph ();
-  auto ptrHost = Kokkos::create_mirror_view (lclGraph.row_map);
-  Kokkos::deep_copy (ptrHost, lclGraph.row_map);
-  auto indHost = Kokkos::create_mirror_view (lclGraph.entries);
-  Kokkos::deep_copy (indHost, lclGraph.entries);
+  auto lclGraph = G.getLocalGraphHost ();
+  auto ptrHost = lclGraph.row_map;
+  auto indHost = lclGraph.entries;
   Teuchos::Array<IST> localMem (blockSize);
   little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
 
   for (LO j = 0; j < numVecs; ++j) {
     for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
-      auto Y_cur = Y.getLocalBlock (lclRow, j, Tpetra::Access::ReadWrite);
+      auto Y_cur = Y.getLocalBlockHost (lclRow, j, Tpetra::Access::ReadWrite);
       if (beta == zero) {
         FILL (Y_lcl, zero);
       } else if (beta == one) {
@@ -132,7 +130,7 @@ localApplyBlockNoTrans (Tpetra::BlockCrsMatrix<Scalar, LO, GO, Node>& A,
 
         auto A_cur_1d = Kokkos::subview (val, absBlkOff * blockSize * blockSize);
         little_blk_type A_cur (A_cur_1d.data (), blockSize, blockSize);
-        auto X_cur = X.getLocalBlock (meshCol, j, Tpetra::Access::ReadOnly);
+        auto X_cur = X.getLocalBlockHost (meshCol, j, Tpetra::Access::ReadOnly);
 
         GEMV (alpha, A_cur, X_cur, Y_lcl); // Y_lcl += alpha*A_cur*X_cur
       } // for each entry in the current local row of the matrix
@@ -566,7 +564,7 @@ getTpetraBlockCrsMatrix (Teuchos::FancyOStream& out,
   // Fill in the block sparse matrix.
   out << "Fill the BlockCrsMatrix" << endl;
   for (LO lclRow = 0; lclRow < lclNumRows; ++lclRow) { // for each of my rows
-    Teuchos::ArrayView<const LO> lclColInds;
+    Tpetra::CrsGraph<>::local_inds_host_view_type lclColInds;
     graph->getLocalRowView (lclRow, lclColInds);
 
     // Put some entries in the matrix.

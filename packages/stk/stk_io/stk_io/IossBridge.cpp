@@ -1410,6 +1410,19 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
       return false;
     }
 
+    void sort_by_descending_field_size(stk::mesh::PartVector& parts,
+                                       const stk::mesh::FieldBase& field)
+    {
+      auto compare_field_size = [&field](stk::mesh::Part* lhs, stk::mesh::Part* rhs)
+      {
+        const stk::mesh::FieldBase::Restriction &lhsRestriction = stk::mesh::find_restriction(field, field.entity_rank(), *lhs);
+        const stk::mesh::FieldBase::Restriction &rhsRestriction = stk::mesh::find_restriction(field, field.entity_rank(), *rhs);
+        return lhsRestriction.num_scalars_per_entity() > rhsRestriction.num_scalars_per_entity();
+      };
+
+      std::sort(parts.begin(), parts.end(), compare_field_size);
+    }
+
     void ioss_add_fields_for_subpart(const stk::mesh::Part &part,
                                      const stk::mesh::EntityRank part_type,
                                      Ioss::GroupingEntity *entity,
@@ -1417,8 +1430,9 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
                                      const Ioss::Field::RoleType filter_role)
     {
         stk::mesh::EntityRank part_rank = part_primary_entity_rank(part);
-        const stk::mesh::PartVector &blocks = part.subsets();
+        stk::mesh::PartVector blocks = part.subsets();
         const stk::mesh::FieldBase *f = namedField.field();
+        sort_by_descending_field_size(blocks, *f);
 
         for (size_t j = 0; j < blocks.size(); j++) {
             mesh::Part & side_block_part = *blocks[j];
@@ -2551,11 +2565,13 @@ const stk::mesh::FieldBase *declare_stk_field_internal(stk::mesh::MetaData &meta
           io_cs->property_add(Ioss::Property(s_internal_selector_name, select));
 
           // Update global node and element count...
-          std::vector<size_t> entityCounts;
-          stk::mesh::comm_mesh_counts(bulk, entityCounts);
+          if (!io_region.property_exists("global_node_count") || !io_region.property_exists("global_element_count")) {
+            std::vector<size_t> entityCounts;
+            stk::mesh::comm_mesh_counts(bulk, entityCounts);
 
-          io_region.property_add(Ioss::Property("global_node_count",    static_cast<int64_t>(entityCounts[stk::topology::NODE_RANK])));
-          io_region.property_add(Ioss::Property("global_element_count", static_cast<int64_t>(entityCounts[stk::topology::ELEMENT_RANK])));
+            io_region.property_add(Ioss::Property("global_node_count",    static_cast<int64_t>(entityCounts[stk::topology::NODE_RANK])));
+            io_region.property_add(Ioss::Property("global_element_count", static_cast<int64_t>(entityCounts[stk::topology::ELEMENT_RANK])));
+          }
         }
       }
 

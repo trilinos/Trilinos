@@ -61,7 +61,6 @@
 #include "BelosStatusTestCombo.hpp"
 #include "BelosStatusTestOutputFactory.hpp"
 #include "BelosOutputManager.hpp"
-#include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
 #  include "Teuchos_TimeMonitor.hpp"
@@ -101,17 +100,6 @@ namespace Belos {
   class BlockCGSolMgrLinearProblemFailure : public BelosError {public:
     BlockCGSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
-
-  /** \brief BlockCGSolMgrOrthoFailure is thrown when the orthogonalization manager is
-   * unable to generate orthonormal columns from the initial basis vectors.
-   *
-   * This std::exception is thrown from the BlockCGSolMgr::solve() method.
-   *
-   */
-  class BlockCGSolMgrOrthoFailure : public BelosError {public:
-    BlockCGSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
 
   template<class ScalarType, class MV, class OP,
            const bool lapackSupportsScalarType =
@@ -374,7 +362,13 @@ namespace Belos {
     static constexpr const char * label_default_ = "Belos";
     static constexpr const char * orthoType_default_ = "ICGS";
     static constexpr bool assertPositiveDefiniteness_default_ = true;
+// https://stackoverflow.com/questions/24398102/constexpr-and-initialization-of-a-static-const-void-pointer-with-reinterpret-cas
+#if defined(_WIN32) && defined(__clang__)
+    static constexpr std::ostream * outputStream_default_ =
+       __builtin_constant_p(reinterpret_cast<const std::ostream*>(&std::cout));
+#else
     static constexpr std::ostream * outputStream_default_ = &std::cout;
+#endif
 
     //
     // Current solver parameters and other values.
@@ -840,7 +834,6 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP,true>::solve() {
     setParameters(Teuchos::parameterList(*getValidParameters()));
   }
 
-  Teuchos::BLAS<int,ScalarType> blas;
   Teuchos::LAPACK<int,ScalarType> lapack;
 
   TEUCHOS_TEST_FOR_EXCEPTION( !problem_->isProblemSet(),

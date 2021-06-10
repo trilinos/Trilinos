@@ -130,26 +130,6 @@ class LSQRIterateFailure : public BelosError {public:
       LSQRIterateFailure(const std::string& what_arg) : BelosError(what_arg)
     {}};
   
-  /** \brief LSQRIterationOrthoFailure is thrown when the LSQRIteration object is unable to
-   * compute independent direction vectors in the iterate() routine. 
-   *
-   * This std::exception is thrown from the iterate() method.
-   *
-   */
-class LSQRIterationOrthoFailure : public BelosError {public:
-      LSQRIterationOrthoFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-
-  /** \brief LSQRIterationLAPACKFailure is thrown when a nonzero return value is passed back
-   * from an LAPACK routine.
-   *
-   * This std::exception is thrown from the iterate() method.
-   *
-   */
-class LSQRIterationLAPACKFailure : public BelosError {public:
-      LSQRIterationLAPACKFailure(const std::string& what_arg) : BelosError(what_arg)
-    {}};
-  
   //@}
 
 } // end Belos namespace

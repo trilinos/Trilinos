@@ -136,5 +136,6 @@ class TestPhactoriCreateSegmentsNormalToCells(unittest.TestCase):
     self.assertEqual((1, 63, [1.5, 0.0075, 1.5], [0.0, 1.0, 0.0]), lastSegment)
 
 if __name__ == '__main__':
+    cc = Cone()
+    rr = Show()
     unittest.main()
-

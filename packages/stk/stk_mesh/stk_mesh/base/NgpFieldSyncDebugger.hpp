@@ -201,10 +201,12 @@ public:
   template <typename NgpField>
   void sync_to_host(NgpField* ngpField)
   {
-    Kokkos::deep_copy(lastFieldValue, ngpField->deviceData);
+    set_last_device_field_value(ngpField, get_modified_selector(ngpField));
     reset_last_modification_state(ngpField, LastModLocation::HOST_OR_DEVICE);
     lostDeviceFieldData() = false;
-    anyPotentialDeviceFieldModification() = false;
+    if (!ngpField->userSpecifiedSelector) {
+      anyPotentialDeviceFieldModification() = false;
+    }
   }
 
   template <typename NgpField>
@@ -317,7 +319,7 @@ public:
     stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
     stk::mesh::Selector fieldSelector(*(ngpField->hostField));
 
-    UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceAllFieldsBucketsNumComponentsPerEntity;
+    UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceFieldBucketsNumComponentsPerEntity;
     FieldDataDeviceViewType<T> & localDeviceData = ngpField->deviceData;
     FieldDataDeviceViewType<T> & localLastFieldValue = lastFieldValue;
     LastFieldModLocationType & localLastFieldModLocation = lastFieldModLocation;
@@ -329,7 +331,7 @@ public:
                                    KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& index)
     {
       const unsigned offsetBucketId = localDebugDeviceSelectedBucketOffset(index.bucket_id);
-      const unsigned numComponents = localDeviceNumComponentsPerEntity(index.bucket_id);
+      const unsigned numComponents = localDeviceNumComponentsPerEntity(offsetBucketId);
       for (unsigned component = 0; component < numComponents; ++component) {
         if (localDeviceData(offsetBucketId, ORDER_INDICES(index.bucket_ord, component)) !=
             localLastFieldValue(offsetBucketId, ORDER_INDICES(index.bucket_ord, component)))
@@ -366,6 +368,28 @@ public:
   STK_INLINE_FUNCTION
   unsigned get_bucket_offset(unsigned bucketOrdinal) const {
     return debugHostSelectedBucketOffset(bucketOrdinal);
+  }
+
+  template <typename NgpField>
+  void set_last_device_field_value(NgpField* ngpField, const stk::mesh::Selector& modifiedSelector)
+  {
+    const stk::mesh::BulkData & bulk = *ngpField->hostBulk;
+    stk::mesh::NgpMesh & ngpMesh = stk::mesh::get_updated_ngp_mesh(bulk);
+    UnsignedViewType & localDeviceNumComponentsPerEntity = ngpField->deviceFieldBucketsNumComponentsPerEntity;
+    FieldDataDeviceViewType<T> & localDeviceData = ngpField->deviceData;
+    FieldDataDeviceViewType<T> & localLastFieldValue = lastFieldValue;
+    UnsignedViewType & localDebugDeviceSelectedBucketOffset = debugDeviceSelectedBucketOffset;
+
+    stk::mesh::for_each_entity_run(ngpMesh, ngpField->rank, modifiedSelector,
+                                   KOKKOS_LAMBDA(const stk::mesh::FastMeshIndex& index)
+    {
+      const unsigned offsetBucketId = localDebugDeviceSelectedBucketOffset(index.bucket_id);
+      const unsigned numComponents = localDeviceNumComponentsPerEntity(offsetBucketId);
+      for (unsigned component = 0; component < numComponents; ++component) {
+        localLastFieldValue(offsetBucketId, ORDER_INDICES(index.bucket_ord, component)) =
+                localDeviceData(offsetBucketId, ORDER_INDICES(index.bucket_ord, component));
+      }
+    });
   }
 
 private:
@@ -405,9 +429,13 @@ private:
       const stk::mesh::BucketVector & buckets = bulk.get_buckets(stkField.entity_rank(), *ngpField->syncSelector);
 
       for (auto bucket : buckets) {
+        unsigned offsetBucketId = debugHostSelectedBucketOffset(bucket->bucket_id());
+        if (offsetBucketId == INVALID_BUCKET_ID) {
+          print_outside_selector_warning(*ngpField->syncSelector);
+          continue;
+        }
         for (size_t j = 0; j < lastFieldModLocation.extent(1); ++j) {
           for (size_t k = 0; k < lastFieldModLocation.extent(2); ++k) {
-            unsigned offsetBucketId = debugHostSelectedBucketOffset(bucket->bucket_id());
             lastFieldModLocation(offsetBucketId, j, k) = value;
           }
         }
@@ -447,6 +475,12 @@ private:
   bool data_is_stale_on_device(int bucketId, int bucketOrdinal, int component) const {
     return !(lastFieldModLocation(debugDeviceSelectedBucketOffset(bucketId),
                                   ORDER_INDICES(bucketOrdinal, component)) & LastModLocation::DEVICE);
+  }
+
+  void print_outside_selector_warning(const Selector& badSelector) const
+  {
+    std::cout << "*** WARNING: Marked field " << fieldName.data() << " modified with selector " << badSelector
+      << " that includes buckets outside the subset of the mesh that the field is defined on." << std::endl;
   }
 
   STK_INLINE_FUNCTION
@@ -489,6 +523,16 @@ private:
       printf("%s:%i *** WARNING: Accessing stale data on Device for Field %s[%i]\n",
              fileName, lineNumber, fieldName.data(), component);
     }
+  }
+
+  template <typename NgpField>
+  stk::mesh::Selector get_modified_selector(NgpField* ngpField)
+  {
+    stk::mesh::Selector modifiedSelector(*(ngpField->hostField));
+    if (ngpField->userSpecifiedSelector) {
+      modifiedSelector &= *(ngpField->syncSelector);
+    }
+    return modifiedSelector;
   }
 
 

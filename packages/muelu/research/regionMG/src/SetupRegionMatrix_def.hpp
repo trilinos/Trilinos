@@ -499,69 +499,6 @@ void SetupMatVec(const Teuchos::RCP<Xpetra::MultiVector<GlobalOrdinal, LocalOrdi
   tm = Teuchos::null;
 } // SetupMatVec
 
-/*! \brief Compute a matrix vector product \f$Y = beta*Y + alpha*Ax\f$
- *
- *  The residual is computed based on matrices and vectors in a regional layout.
- *  1. Compute y = A*x in regional layout.
- *  2. Sum interface values of y to account for duplication of interface DOFs.
- */
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-void ApplyMatVec(const Scalar alpha,
-                 const RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& regionMatrix,
-                 const RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& X,
-                 const Scalar beta,
-                 const RCP<Xpetra::Import<LocalOrdinal, GlobalOrdinal, Node> >& regionInterfaceImporter,
-                 const Teuchos::ArrayRCP<LocalOrdinal>& regionInterfaceLIDs,
-                 RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >& Y,
-                 const Teuchos::ETransp transposeMode,
-                 const bool sumInterfaceValues) {
-#include "Xpetra_UseShortNames.hpp"
-  using Teuchos::TimeMonitor;
-  using local_matrix_type = typename Xpetra::Matrix<SC,LO,GO,Node>::local_matrix_type;
-  using device_type       = typename local_matrix_type::device_type;
-
-  RCP<TimeMonitor> tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 1 - local apply")));
-  RCP<const Map> regionInterfaceMap = regionInterfaceImporter->getTargetMap();
-
-  // Step 1: apply the local operator
-  // since in region formate the matrix is block diagonal
-  // regionMatrix->apply(*X, *Y, Teuchos::NO_TRANS, alpha, beta);
-  local_matrix_type localA = regionMatrix->getLocalMatrix();
-  auto localX = X->getDeviceLocalView();
-  auto localY = Y->getDeviceLocalView();
-  char spmvMode = KokkosSparse::NoTranspose[0];
-  if (transposeMode == Teuchos::TRANS)
-    spmvMode = KokkosSparse::Transpose[0];
-  else
-    TEUCHOS_TEST_FOR_EXCEPT_MSG(false, "Unsupported mode.");
-  KokkosSparse::spmv(&spmvMode, alpha, localA, localX, beta, localY);
-
-  if (sumInterfaceValues)
-  {
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 2 - communicate data")));
-
-    // Step 2: preform communication to propagate local interface
-    // values to all the processor that share interfaces.
-    RCP<MultiVector> matvecInterfaceTmp = MultiVectorFactory::Build(regionInterfaceMap, 1);
-    matvecInterfaceTmp->doImport(*Y, *regionInterfaceImporter, Xpetra::INSERT);
-
-    tm = Teuchos::null;
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ApplyMatVec: 3 - sum interface contributions")));
-
-    // Step 3: sum all contributions to interface values
-    // on all ranks
-    ArrayRCP<Scalar> YData = Y->getDataNonConst(0);
-    ArrayRCP<Scalar> interfaceData = matvecInterfaceTmp->getDataNonConst(0);
-    for(LO interfaceIdx = 0; interfaceIdx < static_cast<LO>(interfaceData.size()); ++interfaceIdx) {
-      YData[regionInterfaceLIDs[interfaceIdx]] += interfaceData[interfaceIdx];
-    }
-  }
-
-  tm = Teuchos::null;
-} // ApplyMatVec
-
-
 /*! \brief Compute the residual \f$r = b - Ax\f$ with pre-computed communication patterns
  *
  *  The residual is computed based on matrices and vectors in a regional layout.
@@ -589,8 +526,7 @@ computeResidual(RCP<Xpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> >&
 
   // Step 1: Compute region version of y = Ax
   RCP<Vector> aTimesX = VectorFactory::Build(regionMats->getRangeMap(), true);
-  ApplyMatVec(TST::one(), regionMats, regX,
-      TST::zero(), regionInterfaceImporter, regionInterfaceLIDs, aTimesX, Teuchos::NO_TRANS, true);
+  regionMats->apply(*regX, *aTimesX, Teuchos::NO_TRANS, TST::one(), TST::zero(), true, regionInterfaceImporter, regionInterfaceLIDs);
 
   // Step 2: Compute region version of r = b - y
   regRes->update(TST::one(), *regB, -TST::one(), *aTimesX, TST::zero());

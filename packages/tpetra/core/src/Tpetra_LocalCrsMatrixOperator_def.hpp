@@ -50,7 +50,7 @@ namespace Tpetra {
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
 LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
-LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A)
+LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_device_type>& A)
   : A_ (A)
 {
   const char tfecfFuncName[] = "LocalCrsMatrixOperator: ";
@@ -63,8 +63,8 @@ LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A)
   //  - The execution space is CUDA
   //  - The local matrix offset and ordinal types are different (otherwise, no reason to enable)
   //  - The number of entries can be represented by the ordinal type.
-  using kk_offset_t = typename std::remove_const<typename local_matrix_type::size_type>::type;
-  using kk_ordinal_t = typename std::remove_const<typename local_matrix_type::ordinal_type>::type;
+  using kk_offset_t = typename std::remove_const<typename local_matrix_device_type::size_type>::type;
+  using kk_ordinal_t = typename std::remove_const<typename local_matrix_device_type::ordinal_type>::type;
   using exec_space = typename Device::execution_space;
   if(std::is_same<exec_space, Kokkos::Cuda>::value &&
       !std::is_same<kk_offset_t, kk_ordinal_t>::value &&
@@ -72,7 +72,7 @@ LocalCrsMatrixOperator (const std::shared_ptr<local_matrix_type>& A)
   {
     A_ordinal_rowptrs = ordinal_view_type(Kokkos::ViewAllocateWithoutInitializing("A_ordinal_rowptrs"), A_->numRows() + 1);
     //This is just like a deep copy, but it implicitly converts each element
-    KokkosKernels::Impl::copy_view<typename local_graph_type::row_map_type, ordinal_view_type, exec_space>
+    KokkosKernels::Impl::copy_view<typename local_graph_device_type::row_map_type, ordinal_view_type, exec_space>
       (A_ordinal_rowptrs.extent(0), A_->graph.row_map, A_ordinal_rowptrs);
     A_cusparse = local_cusparse_matrix_type("A(cusparse)", A_->numRows(), A_->numCols(), A_->nnz(), A_->values, A_ordinal_rowptrs, A_->graph.entries);
   }
@@ -189,9 +189,9 @@ applyImbalancedRows (
 }
 
 template<class MultiVectorScalar, class MatrixScalar, class Device>
-const typename LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::local_matrix_type&
+const typename LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::local_matrix_device_type&
 LocalCrsMatrixOperator<MultiVectorScalar, MatrixScalar, Device>::
-getLocalMatrix () const
+getLocalMatrixDevice () const
 {
   return *A_;
 }

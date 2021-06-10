@@ -55,10 +55,12 @@
 namespace {
 
 template<class DeviceViewType>
-struct create_views {
+struct create_device_views {
   DeviceViewType d;
   typename DeviceViewType::HostMirror h;
-  create_views(const std::vector<typename DeviceViewType::value_type>& x)
+  create_device_views(
+    const std::vector<typename DeviceViewType::value_type>& x
+  )
   {
     d = DeviceViewType("x_d", x.size());
     h = Kokkos::create_mirror_view(d);
@@ -319,11 +321,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
 {
   using Tpetra::Import_Util::sortCrsEntries;
 
-  typedef typename Tpetra::CrsMatrix<Scalar,LO,GO,NT>::local_matrix_type local_matrix_type;
-  typedef typename local_matrix_type::StaticCrsGraphType graph_type;
+  typedef typename Tpetra::CrsMatrix<Scalar,LO,GO,NT>::local_matrix_device_type
+                   local_matrix_device_type;
+  typedef typename local_matrix_device_type::StaticCrsGraphType graph_type;
   typedef typename graph_type::row_map_type::non_const_type rowptr_view_type;
   typedef typename graph_type::entries_type::non_const_type colind_view_type;
-  typedef typename local_matrix_type::values_type::non_const_type vals_view_type;
+  typedef typename local_matrix_device_type::values_type::non_const_type 
+                   vals_view_type;
 
   typedef typename rowptr_view_type::value_type index_type;
   typedef typename colind_view_type::value_type ordinal_type;
@@ -348,7 +352,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
   vals_type vals, vals2;
 
   generate_crs_entries<scalar_type,ordinal_type,index_type>(
-      rowptr, rowptr2, colind, colind2, vals, vals2, max_num_entries_per_row, num_cols);
+      rowptr, rowptr2, colind, colind2, vals, vals2, 
+      max_num_entries_per_row, num_cols);
 
   {
     //
@@ -364,10 +369,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( Import_Util, SortCrsEntriesKokkos, Scalar, LO
         colind_rand, vals_rand, rowptr, colind, vals);
 
     // Create mirror views of the CRS entries
-    auto rowptr_views = create_views<rowptr_view_type>(rowptr);
-    auto colind_rand_views = create_views<colind_view_type>(colind_rand);
-    auto colind_rand_copy_views = create_views<colind_view_type>(colind_rand);
-    auto vals_rand_views = create_views<vals_view_type>(vals_rand);
+    auto rowptr_views = 
+         create_device_views<rowptr_view_type>(rowptr);
+    auto colind_rand_views = 
+         create_device_views<colind_view_type>(colind_rand);
+    auto colind_rand_copy_views = 
+         create_device_views<colind_view_type>(colind_rand);
+    auto vals_rand_views = 
+         create_device_views<vals_view_type>(vals_rand);
 
     //
     // Sort the GIDs and associated values

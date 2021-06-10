@@ -71,7 +71,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
   ENDIF()
 
   SET(Trilinos_REPOSITORY_LOCATION_NIGHTLY_DEFAULT "git@gitlab-ex.sandia.gov:trilinos-project/Trilinos.git")
-  SET(Trilinos_BRANCH "tpetraCrsRefactor" )
+  SET(Trilinos_BRANCH "develop" )
 
   SET(CTEST_DASHBOARD_ROOT  "${TRILINOS_CMAKE_DIR}/../../${BUILD_DIR_NAME}" )
   SET(CTEST_NOTES_FILES     "${CTEST_SCRIPT_DIRECTORY}/${CTEST_SCRIPT_NAME}" )

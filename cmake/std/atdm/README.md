@@ -14,6 +14,7 @@ build locally as described below.
 
 **Outline:**
 * <a href="#quick-start">Quick-start</a>
+* <a href="#setting-and-overridding-compiler-flags">Setting and overridding compiler flags</a>
 * <a href="#parallel-build-and-test-processes">Parallel build and test processes</a>
 * <a href="#installation-and-usage">Installation and usage</a>
 * <a href="#checkin-test-atdmsh">checkin-test-atdm.sh</a>
@@ -412,6 +413,21 @@ configure-time using the CMake cache variable:
 
 where if the CMake cache variable `ATDM_INSTALLED_ENV_LOAD_SCRIPT_NAME` is not
 specified, then it is given the name `load_matching_env.sh` by default.
+
+
+## Setting and overridding compiler flags
+
+Any selected configuration may set C, C++, and Fortran compiler flags by
+internally setting the variables `CMAKE_C_FLAGS`, `CMAKE_CXX_FLAGS`, and
+`CMAKE_Fortran_FLAGS`.  However, the user can also append (and therefore
+override) any of these compiler flags by configuring with the standard CMake
+cache variables:
+
+```
+  -D CMAKE_C_FLAGS="<extra_c_flags>"
+  -D CMAKE_CXX_FLAGS="<extra_cxx_flags>"
+  -D CMAKE_Fortran_FLAGS="<extra_fortran_flags>"
+```
 
 
 ## Parallel build and test processes
