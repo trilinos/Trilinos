@@ -264,7 +264,8 @@ namespace Amesos2 {
     if ( num_vecs == 1 && this->getComm()->getRank() == 0 && this->getComm()->getSize() == 1 ) {
       if(mv_->isConstantStride()) {
         bool bAssigned;
-        deep_copy_or_assign_view(bInitialize, kokkos_view, mv_->getLocalViewDevice(Tpetra::Access::ReadOnly), bAssigned);
+        //deep_copy_or_assign_view(bInitialize, kokkos_view, mv_->getLocalViewDevice(Tpetra::Access::ReadOnly), bAssigned);
+        deep_copy_only(bInitialize, kokkos_view, mv_->getLocalViewDevice(Tpetra::Access::ReadOnly), bAssigned);
         return bAssigned; // if bAssigned is true we are accessing the mv data directly without a copy
       }
       else {
@@ -525,7 +526,8 @@ namespace Amesos2 {
 
       // If this is the optimized path then kokkos_new_data will be the dst
       auto mv_view_to_modify_2d = mv_->getLocalViewDevice(Tpetra::Access::OverwriteAll);
-      deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
+      //deep_copy_or_assign_view(mv_view_to_modify_2d, kokkos_new_data);
+      deep_copy_only(mv_view_to_modify_2d, kokkos_new_data);
     }
     else {
 
