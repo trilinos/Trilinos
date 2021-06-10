@@ -2,7 +2,7 @@
   <Parameter name="mm_file" type="string" value="5w_missing_diag.mtx"/>
   <Parameter name="rhs_mm_file" type="string" value="5w.vec"/>
 
-  <Parameter name="solver_type" type="string" value="PseudoBlockGmres"/>
+  <Parameter name="solver_type" type="string" value="PseudoBlock Gmres"/>
   <ParameterList name="Belos">
     <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
     <Parameter name="Num Blocks" type="int" value="3"/>
