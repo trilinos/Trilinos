@@ -471,7 +471,6 @@ void TpetraVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyImpl(
 {
   // Try to extract Tpetra objects from X and Y
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
-  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TV;
   Teuchos::RCP<const TMV> X_tpetra = this->getConstTpetraMultiVector(Teuchos::rcpFromRef(X));
   Teuchos::RCP<TMV> Y_tpetra = this->getTpetraMultiVector(Teuchos::rcpFromPtr(Y));
 

@@ -4675,7 +4675,6 @@ namespace Tpetra {
   isSameSize (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& vec) const
   {
     using ::Tpetra::Details::PackTraits;
-    using ST = impl_scalar_type;
 
     const size_t l1 = this->getLocalLength();
     const size_t l2 = vec.getLocalLength();
