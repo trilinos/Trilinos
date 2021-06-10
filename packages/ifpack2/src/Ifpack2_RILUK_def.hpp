@@ -775,16 +775,16 @@ void RILUK<MatrixType>::compute ()
 
     // Now start the factorization.
 
-    // Need some integer workspace and pointers
-    size_t NumUU;
-    local_inds_host_view_type UUI;
-    values_host_view_type UUV;
     for (size_t j = 0; j < num_cols; ++j) {
       colflag[j] = -1;
     }
     using IST = typename row_matrix_type::impl_scalar_type;
     for (size_t i = 0; i < L_->getNodeNumRows (); ++i) {
       local_ordinal_type local_row = i;
+      // Need some integer workspace and pointers
+      size_t NumUU;
+      local_inds_host_view_type UUI;
+      values_host_view_type UUV;
 
       // Fill InV, InI with current row of L, D and U combined
 

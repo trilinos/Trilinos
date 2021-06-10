@@ -64,6 +64,7 @@ struct BlockCrsMatrixMaker {
   typedef LO Int;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
   typedef Tpetra::Map<LO, GO> Tpetra_Map;
+  typedef typename Tpetra_Map::node_type::device_type DeviceType;
   typedef Tpetra::Import<LO, GO> Tpetra_Import;
   typedef Tpetra::Export<LO, GO> Tpetra_Export;
   typedef Tpetra::MultiVector<Scalar, LO, GO> Tpetra_MultiVector;

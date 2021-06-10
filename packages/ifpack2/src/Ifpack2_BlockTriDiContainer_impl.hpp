@@ -1471,8 +1471,7 @@ namespace Ifpack2 {
       using impl_type = ImplType<MatrixType>;
       using local_ordinal_type_1d_view = typename impl_type::local_ordinal_type_1d_view;
       using size_type_1d_view = typename impl_type::size_type_1d_view;
-      using impl_scalar_type_1d_view_tpetra = typename impl_type::impl_scalar_type_1d_view_tpetra;
-
+      using impl_scalar_type_1d_view_tpetra = Unmanaged<typename impl_type::impl_scalar_type_1d_view_tpetra>;
       // rowptr points to the start of each row of A_colindsub.
       size_type_1d_view rowptr, rowptr_remote;
       // Indices into A's rows giving the blocks to extract. rowptr(i) points to
@@ -3784,6 +3783,13 @@ namespace Ifpack2 {
                                   "The seq method for applyInverseJacobi, " <<
                                   "which in any case is for developer use only, " <<
                                   "does not support norm-based termination.");
+      const bool device_accessible_from_host = Kokkos::SpaceAccessibility<
+        Kokkos::DefaultHostExecutionSpace, node_memory_space>::accessible;
+      TEUCHOS_TEST_FOR_EXCEPTION(is_seq_method_requested && !device_accessible_from_host,
+                                 std::invalid_argument,
+                                 "The seq method for applyInverseJacobi, " <<
+                                 "which in any case is for developer use only, " <<
+                                 "only supports memory spaces accessible from host.");
 
       // if workspace is needed more, resize it
       const size_type work_span_required = num_blockrows*num_vectors*blocksize;
