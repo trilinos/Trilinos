@@ -776,7 +776,7 @@ tol = 0.;
           rowsum += vals[colID];
         }
         if (STS::magnitude(rowsum) > STS::magnitude(diagval) * rowSumTol) {
-          printf("Row %d triggers rowsum\n",(int)row);
+          //printf("Row %d triggers rowsum\n",(int)row);
           dirichletRows[row] = true;
         }
       }
