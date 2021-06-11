@@ -9,6 +9,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetNgpMesh.hpp>
+#include <stk_mesh/base/NgpSpaces.hpp>
 #include <stk_unit_test_utils/TextMesh.hpp>
 #include <stk_unit_test_utils/GetMeshSpec.hpp>
 
@@ -125,7 +126,6 @@ inline void check_bucket_layout(const stk::mesh::BulkData& bulk, const std::vect
                          }
                        });
 }
-
 
 } // ngp_unit_test_utils
 
