@@ -71,8 +71,8 @@
 #include "MueLu_GraphBase.hpp"
 
 
-#define CMS_DEBUG
-#define CMS_DUMP
+//#define CMS_DEBUG
+//#define CMS_DUMP
 
 namespace { 
 
@@ -260,10 +260,16 @@ namespace MueLu {
 
 #if defined(CMS_DEBUG) || defined(CMS_DUMP)
     {
-      std::ofstream ofs(std::string("dropped_graph_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat"),std::ofstream::out);
+      RCP<const CrsMatrix> Acrs = rcp_dynamic_cast<const CrsMatrixWrap>(A)->getCrsMatrix();
+      int rank = A->getRowMap()->getComm()->getRank();
+      printf("[%d] A local size = %dx%d\n",rank,(int)Acrs->getRowMap()->getNodeNumElements(),(int)Acrs->getColMap()->getNodeNumElements());
+
+      printf("[%d] graph local size = %dx%d\n",rank,(int)graph->GetDomainMap()->getNodeNumElements(),(int)graph->GetImportMap()->getNodeNumElements());
+
+      std::ofstream ofs(std::string("dropped_graph_") + std::to_string(fineLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
       RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
       graph->print(*fancy,Debug);
-      std::string out_fc = std::string("fc_splitting_") + std::to_string(fineLevel.GetLevelID()) + std::string(".dat");
+      std::string out_fc = std::string("fc_splitting_") + std::to_string(fineLevel.GetLevelID()) +std::string("_") + std::to_string(rank)+ std::string(".dat");
 
       // We don't support writing LO vectors in Xpetra (boo!) so....
       using real_type = typename Teuchos::ScalarTraits<SC>::magnitudeType;
@@ -277,9 +283,9 @@ namespace MueLu {
       for(LO i=0; i<(LO)fc_data.size(); i++)
         mv_data[i] = Teuchos::as<real_type>(fc_data[i]);
       Xpetra::IO<real_type,LO,GO,NO>::Write(out_fc,*mv);
-
-
     }
+
+
 #endif
 
   
@@ -391,7 +397,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     /*                                                                     */ 
     /* w_ij = \frac{1}{\tilde{a}_ii} ( a_ij + f_ij)  for all j in C_i^s    */ 
   
-  const point_type F_PT = ClassicalMapFactory::F_PT;
+    const point_type F_PT = ClassicalMapFactory::F_PT;
     const point_type C_PT = ClassicalMapFactory::C_PT;
     const point_type DIRICHLET_PT = ClassicalMapFactory::DIRICHLET_PT;
     using STS = typename Teuchos::ScalarTraits<SC>;
@@ -459,17 +465,22 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     // Resize down
     tmp_colind.resize(tmp_rowptr[Nrows]);  
 
-    // Make the graph (since we'll need to migrate this before we have entries)
-    RCP<CrsGraph> Pgraph = CrsGraphFactory::Build(A.getRowMap(),coarseColMap,0);
+    // Make the matrix and then get the graph out of it (necessary for Epetra)
+    // NOTE: The lack of an Epetra_CrsGraph::ExpertStaticFillComplete makes this
+    // impossible to do the obvious way
+    RCP<CrsMatrix> Pcrs = CrsMatrixFactory::Build(A.getRowMap(),coarseColMap,0);
     ArrayRCP<size_t>  P_rowptr;
     ArrayRCP<LO>      P_colind;
-    Pgraph->allocateAllIndices(tmp_rowptr[Nrows],P_rowptr,P_colind);
+    ArrayRCP<SC>      P_values;
+    Pcrs->allocateAllValues(tmp_rowptr[Nrows],P_rowptr,P_colind,P_values);
 
     // FIXME:  This can be short-circuited for Tpetra, if we decide we care
     std::copy(tmp_rowptr.begin(),tmp_rowptr.end(), P_rowptr.begin());
     std::copy(tmp_colind.begin(),tmp_colind.end(), P_colind.begin());  
-    Pgraph->setAllIndices(P_rowptr,P_colind);
-    Pgraph->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
+    Pcrs->expertStaticFillComplete(/*domain*/coarseDomainMap, /*range*/A.getDomainMap());
+
+    RCP<const CrsGraph> Pgraph = Pcrs->getCrsGraph();
 
     // Generate a remote-ghosted version of the graph (if we're in parallel)
     RCP<CrsGraph> Pghost;
@@ -480,22 +491,13 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
       Pghost->getAllIndices(Pghost_rowptr,Pghost_colind);
     }
 
-    // Now, make the matrix
-    // Allocate memory for the matrix
-    RCP<const CrsGraph> Pgraph_const = Pgraph;
-    RCP<CrsMatrix> Pcrs = CrsMatrixFactory::Build(Pgraph_const);
+    // Wrap from CrsMatrix to Matrix and resumeFill
     P = rcp(new CrsMatrixWrap(Pcrs));
-    ArrayRCP<SC> P_values;
     Pcrs->resumeFill();
-    // Accessor which just gets the values array
     Pcrs->getAllValues(P_values);
 
     // Gustavston-style perfect hashing
     ArrayRCP<LO> Acol_to_Pcol(A.getColMap()->getNodeNumElements(),LO_INVALID);
-    //    RCP<LO> Acol_is_Fine(A.getColMap()->getNodeNumElements(),LO_INVALID);
-
-    //    (Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
-    //    RCP<LO> Aghostcol_is_Fine(Aghost.getColMap()->getNodeNumElements(),LO_INVALID);
 
     // Get a quick reindexing array from Pghost LCIDs to P LCIDs
     ArrayRCP<LO> Pghostcol_to_Pcol;
@@ -553,15 +555,6 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
           Acol_to_Pcol[pcol2cpoint[P_indices_i[j]]] = P_rowptr[i] + j;
         }
 
-        // Stash the hash: Flag any strong F-Points (also grab the diagonal)
-        // NOTE:  We'll consider any points that are LO_INVALID or less than eis_rowptr[i] as not strong F-points
-        //        SC a_ii = SC_ZERO;
-        //        for(LO j=0; j<(LO)A_indices_i.size(); j++) {
-          //          if(eis_colind[row_start + j] == true)
-          //            Acol_is_Fine[A_indices_i[j]] = eis_rowptr[i];
-        //          if(A_indices_i[j] == i) a_ii = A_values_i[j];
-        //        }
-
         // Loop over the entries in the row
         SC first_denominator  = SC_ZERO;
 #ifdef CMS_DEBUG
@@ -598,7 +591,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
           }
           else if (!edgeIsStrong[row_start + k0]) {
             // Case D: Weak non-Dirichlet neighbor (add to first denominator)
-            first_denominator += a_ik;
+            if(block_id.size() == 0 || block_id[i] == block_id[k]) 
+              first_denominator += a_ik;
 #ifdef CMS_DEBUG
             printf("- A(%d,%d) is weak\n",i,k);
 #endif
@@ -642,6 +636,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                 for(LO j0=0; j0<(LO)A_indices_k.size(); j0++) {
                   LO j    = A_indices_k[j0];            
                   // NOTE: Row k should be in fis_star, so I should have to check for diagonals here
+                  //                  printf("Acol_to_Pcol[%d] = %d P_values.size() = %d\n",j,Acol_to_Pcol[j],(int)P_values.size());
                   if(Acol_to_Pcol[j] >=  (LO)P_rowptr[i]) {
                     SC a_kj = A_vals_k[j0];
                     SC sign_akj_val = sign_akk == Sign(a_kj) ? SC_ZERO : a_kj;
@@ -650,7 +645,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                 }//end for A_indices_k
               }//end if second_denominator != 0
               else {
-                first_denominator += a_ik;
+                if(block_id.size() == 0 || block_id[i] == block_id[k])
+                  first_denominator += a_ik;
               }//end else second_denominator != 0
             }// end if k < Nrows
             else {
@@ -697,7 +693,8 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
                 }//end for A_indices_k
               }//end if second_denominator != 0
               else {
-                first_denominator += a_ik;
+                if(block_id.size() == 0 || block_id[i] == block_id[k]) 
+                  first_denominator += a_ik;
               }//end else second_denominator != 0                           
             }//end else k < Nrows
           }//end else Case A,...,E
@@ -722,6 +719,7 @@ Coarsen_ClassicalModified(const Matrix & A,const RCP<const Matrix> & Aghost, con
     }// end if i < Nrows
 
     // Finish up
+    Pcrs->setAllValues(P_rowptr,P_colind,P_values);
     Pcrs->fillComplete(Pcrs->getDomainMap(),Pcrs->getRangeMap());
     
 }//end Coarsen_ClassicalModified
