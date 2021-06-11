@@ -137,6 +137,25 @@ namespace MueLu {
       coloringAlgo="Zoltan2";
 #endif
 
+    //#define CMS_DUMP
+#ifdef CMS_DUMP
+    {
+      int rank = graph->GetDomainMap()->getComm()->getRank();
+
+      printf("[%d,%d] graph local size = %dx%d\n",rank,currentLevel.GetLevelID(),(int)graph->GetDomainMap()->getNodeNumElements(),(int)graph->GetImportMap()->getNodeNumElements());
+
+      std::ofstream ofs(std::string("m_dropped_graph_") + std::to_string(currentLevel.GetLevelID())+std::string("_") + std::to_string(rank) + std::string(".dat"),std::ofstream::out);
+      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(ofs));
+      graph->print(*fancy,Debug);
+    }
+    {
+      A->getRowMap()->getComm()->barrier();
+    }
+
+#endif
+
+
+
     // Switch to MIS if we're in Epetra (and not file)
     if(coloringAlgo!="file" && graph->GetDomainMap()->lib() == Xpetra::UseEpetra)
       coloringAlgo="MIS";
